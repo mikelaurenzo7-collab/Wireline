@@ -52,15 +52,17 @@ describe("BotBound knowledge", () => {
     expect(combined).toContain("BotBound");
   });
 
-  it("keeps marketing outbound behind explicit compliance readiness", () => {
+  it("keeps the growth-engine safety condition without launch-status copy in feature blurbs", () => {
     const combined = [
       WIRELINE_GROWTH_ENGINE,
       ...WIRELINE_FEATURES.map((feature) => feature.blurb),
     ].join(" ");
 
-    expect(combined).toContain("Federal Do Not Call screening");
-    expect(combined).toContain("server-verifiable consent records");
-    expect(combined).toContain("Live outbound calling stays gated until");
+    expect(WIRELINE_GROWTH_ENGINE).toContain("required consent rules, federal DNC screening");
+    expect(
+      WIRELINE_FEATURES.find((feature) => feature.title === "Outbound Sales")?.blurb,
+    ).toContain("qualify interest");
+    expect(combined).not.toContain("stays gated");
     expect(combined).not.toContain("launch outbound campaigns");
     expect(combined).not.toContain("campaigns that dial and qualify leads");
   });

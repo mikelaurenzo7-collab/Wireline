@@ -69,8 +69,10 @@ describe("sales trust copy contract", () => {
     expect(sales.statValue).toBe("Fast Follow-Up");
     expect(sales.trustLine).toContain("remain visible in BotBound");
     expect(JSON.stringify(sales)).not.toMatch(/consent|do not call|\bDNC\b|coming soon/i);
-    expect(security).toContain("Federal Do Not Call screening");
-    expect(security).toContain("server-owned recipient-consent records");
+    expect(security).toContain(
+      "Outbound call policy accounts for recipient consent and Do Not Call screening before a call can start.",
+    );
+    expect(security).not.toContain("Live outbound dialing is gated");
     expect(product).toContain('name: "Sales Rep"');
     expect(product).toContain('category: "Operations" as const');
   });

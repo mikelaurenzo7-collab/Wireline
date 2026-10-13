@@ -87,7 +87,7 @@ export const WIRELINE_FEATURES = [
   {
     title: "Outbound Sales",
     blurb:
-      "Lead Hunt surfaces prospects through connected sources, or you import a list. Set up and privately rehearse the Sales Bot playbook. Live outbound calling stays gated until server-verifiable consent records and Federal Do Not Call screening are in place.",
+      "Find prospects through connected sources or import a list. Give your Sales Bot a playbook to qualify interest, follow up, and book next steps.",
   },
   {
     title: "Email Workflows",

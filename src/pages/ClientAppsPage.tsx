@@ -1,13 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  ArrowUpRight,
-  Check,
-  Copy,
-  MessageSquareText,
-  MonitorDown,
-  Sparkles,
-  Terminal,
-} from "lucide-react";
+import { ArrowUpRight, Check, Copy, MessageSquareText, MonitorDown, Terminal } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
 import { Badge, Button } from "../components/atoms";
@@ -36,13 +28,6 @@ const clientSurfaces = [
     blurb: "Set up and rehearse privately.",
     action: "Set Up",
     href: "/settings/apps#chatgpt-mcp",
-  },
-  {
-    icon: Sparkles,
-    title: "Claude",
-    blurb: "Set up and rehearse privately.",
-    action: "Connect",
-    href: "https://claude.ai/settings/connectors",
   },
   {
     icon: Terminal,

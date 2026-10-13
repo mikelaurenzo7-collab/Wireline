@@ -55,9 +55,8 @@ describe("home landing launch clarity", () => {
     expect(landing).toContain("plan.price_usd_monthly");
     expect(landing).toContain('id === "email"');
     expect(landing).toContain("canActivate(id)");
-    expect(landing).toContain(
-      "<span>Create a Bot for free. Rehearse privately.</span> <span>No card required.</span>",
-    );
+    expect(landing).toContain('className="landing-prestige__reassurance">No card required.');
+    expect(landing).toContain('className="landing-prestige__activation" role="status"');
     expect(landing).not.toMatch(/coming soon/i);
     expect(landing.indexOf('className="landing-prestige__direction is-inbound"')).toBeLessThan(
       landing.indexOf('className="landing-prestige__direction is-outbound"'),

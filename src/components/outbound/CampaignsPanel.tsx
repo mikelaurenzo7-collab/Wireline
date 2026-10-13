@@ -204,11 +204,8 @@ export default function CampaignsPanel() {
     <div className="flex h-full min-h-0 flex-col">
       <div
         // Same 1rem inset as the cards below, so the actions share their edge.
-        className="flex flex-col items-stretch gap-2 px-4 pt-4 sm:flex-row sm:items-center sm:justify-between"
+        className="flex flex-col items-stretch gap-2 px-4 pt-4 sm:flex-row sm:items-center sm:justify-end"
       >
-        <p className="hidden text-sm text-muted-foreground sm:block">
-          TCPA-guarded batch dialing within call windows.
-        </p>
         <div className="flex shrink-0 items-center justify-end gap-2">
           <ShadButton
             type="button"

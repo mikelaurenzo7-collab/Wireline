@@ -170,10 +170,10 @@ describe("BotBound product voice", () => {
       "Human Bot",
     ]);
     expect(BOT_PRODUCT_TYPES.find((type) => type.name === "Phone Bot")?.description).toContain(
-      "rehearse outbound playbooks",
+      "build outbound playbooks",
     );
-    expect(BOT_PRODUCT_TYPES.find((type) => type.name === "Phone Bot")?.description).toContain(
-      "Live outbound dialing requires server-verifiable consent records and Federal Do Not Call screening.",
+    expect(BOT_PRODUCT_TYPES.find((type) => type.name === "Phone Bot")?.description).not.toContain(
+      "Live outbound dialing",
     );
     expect(
       BOT_PRODUCT_TYPES.find((type) => type.name === "Conversation Bot")?.description,

@@ -305,9 +305,6 @@ export default function Cadences() {
           <h3 className="text-xl font-semibold leading-tight tracking-tight text-foreground">
             Sequences
           </h3>
-          <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground">
-            Build timed call, SMS, and email follow-up sequences.
-          </p>
         </div>
         {cadences.length > 0 && !showBuilder ? (
           <ShadButton
@@ -353,10 +350,10 @@ export default function Cadences() {
                   onClick={() => loadTemplate(t)}
                   className="h-auto w-full flex-col items-stretch justify-start gap-0 overflow-visible whitespace-normal rounded-md border-border p-4 text-left hover:border-brand/30 group touch-press hover:scale-[1.02]"
                 >
-                  <p className="text-[length:var(--wireline-typography-caption-size)] font-semibold text-foreground mb-1">
-                    {t.name}
+                  <p className="mb-1 text-sm font-semibold text-foreground">{t.name}</p>
+                  <p className="mb-3 text-sm leading-relaxed text-muted-foreground">
+                    {t.description}
                   </p>
-                  <p className="wl-micro-meta mb-3">{t.description}</p>
                   <div className="flex items-center gap-1 flex-wrap">
                     {t.steps.map((s, i) => (
                       <span

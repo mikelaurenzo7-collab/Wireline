@@ -200,11 +200,6 @@ export default function Compare() {
                   >
                     <th className="px-5 py-5 align-top text-sm font-semibold text-foreground">
                       {option.name}
-                      {option.internal ? (
-                        <span className="ml-2 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary">
-                          This Product
-                        </span>
-                      ) : null}
                     </th>
                     <td className="px-5 py-5 align-top text-sm font-semibold text-foreground">
                       {option.price}

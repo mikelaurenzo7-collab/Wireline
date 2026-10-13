@@ -5,7 +5,6 @@ import { ChevronRight, Download, ExternalLink, Loader2, Shield } from "lucide-re
 import DncManager from "./DncManager";
 import { authFetch } from "../lib/api";
 import type { ConsentLedgerEvent } from "../lib/tcpa-consent";
-import { DIRECT_OUTBOUND_AVAILABILITY } from "../lib/outbound-call-purpose";
 import { Button, Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";
 
@@ -134,7 +133,7 @@ export default function ComplianceCenter() {
               <div className="flex items-baseline justify-between gap-4 sm:block">
                 <dt className="shrink-0 text-xs font-medium text-muted-foreground">Federal DNC</dt>
                 <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">
-                  {summary.federal_dnc_configured ? "Configured" : "Marketing outbound blocked"}
+                  {summary.federal_dnc_configured ? "Configured" : "Screening setup needed"}
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-4 sm:block">
@@ -155,23 +154,6 @@ export default function ComplianceCenter() {
                 </dd>
               </div>
             </dl>
-            {!DIRECT_OUTBOUND_AVAILABILITY.available || !summary.federal_dnc_configured ? (
-              <StatusNotice
-                tone="warning"
-                title={
-                  DIRECT_OUTBOUND_AVAILABILITY.available
-                    ? "Federal DNC Setup Pending"
-                    : "Outbound Calls Unavailable"
-                }
-              >
-                {!DIRECT_OUTBOUND_AVAILABILITY.available
-                  ? DIRECT_OUTBOUND_AVAILABILITY.message
-                  : "Marketing calls remain blocked until federal DNC setup is complete."}{" "}
-                <Link to="/security" className="text-primary underline underline-offset-2">
-                  Open Trust / Security
-                </Link>
-              </StatusNotice>
-            ) : null}
           </div>
         ) : null}
 

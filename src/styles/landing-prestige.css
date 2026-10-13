@@ -126,9 +126,9 @@
   margin: 0 0 1.1rem;
   color: var(--wireline-color-action-primary-default);
   font-family: var(--wireline-font-family-mono);
-  font-size: clamp(0.68rem, 0.85vw, 0.78rem);
+  font-size: var(--wireline-typography-overline-size);
   font-weight: 650;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   line-height: 1.5;
   text-transform: uppercase;
 }
@@ -251,13 +251,9 @@
 
 .landing-prestige__reassurance {
   margin: 1rem 0 0;
-  color: var(--wireline-color-text-tertiary);
-  font-size: 0.85rem;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.875rem;
   line-height: 1.5;
-}
-
-.landing-prestige__reassurance > span {
-  white-space: nowrap;
 }
 
 .landing-prestige__directions {
@@ -266,7 +262,7 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
   margin-top: clamp(2rem, 4.5vh, 3rem);
-  text-align: left;
+  text-align: center;
 }
 
 .landing-prestige__direction {
@@ -300,6 +296,7 @@
 .landing-prestige__direction-label {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.45rem;
   color: var(--wireline-color-action-primary-default);
   font-family: var(--wireline-font-family-mono);
@@ -328,12 +325,12 @@
 .landing-prestige__direction-action {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 0.5rem;
   padding-top: 0.6rem;
   border-top: 1px solid color-mix(in srgb, var(--wireline-color-border-default) 75%, transparent);
   color: var(--wireline-color-text-secondary);
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   line-height: 1.5;
 }
 
@@ -371,12 +368,12 @@
 }
 
 .landing-prestige .landing-prestige__section-heading > p {
-  margin: 0 0 0.9rem;
+  margin: 0 auto 0.9rem;
   color: var(--wireline-color-action-primary-default);
   font-family: var(--wireline-font-family-mono);
-  font-size: 0.7rem;
+  font-size: var(--wireline-typography-overline-size);
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
@@ -403,11 +400,11 @@
   text-wrap: balance;
 }
 
-.landing-prestige__section-heading > .landing-prestige__activation,
-.landing-prestige__section-heading > .landing-prestige__outbound-note {
-  margin-top: 0.4rem;
-  color: var(--wireline-color-text-tertiary);
-  font-size: 0.85rem;
+.landing-prestige__section-heading > .landing-prestige__activation {
+  max-width: 38rem;
+  margin-top: 0.45rem;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.875rem;
 }
 
 .landing-prestige__role-grid {
@@ -475,7 +472,7 @@
 
 .landing-prestige__role-topline > span {
   min-width: 0;
-  color: var(--wireline-color-text-tertiary);
+  color: var(--wireline-color-text-secondary);
   font-family: var(--wireline-font-family-mono);
   font-size: var(--wireline-typography-overline-size);
   font-weight: 650;
@@ -496,8 +493,12 @@
 
 .landing-prestige__role-card > p {
   margin: 0.6rem 0 0;
-  color: var(--wireline-color-text-secondary);
-  font-size: 0.92rem;
+  color: color-mix(
+    in srgb,
+    var(--wireline-color-text-secondary) 75%,
+    var(--wireline-color-text-primary)
+  );
+  font-size: 0.95rem;
   line-height: 1.55;
   text-wrap: balance;
 }
@@ -517,7 +518,7 @@
   align-items: start;
   gap: 0.6rem;
   color: var(--wireline-color-text-secondary);
-  font-size: 0.84rem;
+  font-size: 0.875rem;
   line-height: 1.45;
 }
 
@@ -601,7 +602,7 @@
 .landing-prestige__price-card > div > span {
   display: block;
   margin-top: 0.15rem;
-  color: var(--wireline-color-text-tertiary);
+  color: var(--wireline-color-text-secondary);
   font-family: var(--wireline-font-family-mono);
   font-size: var(--wireline-typography-overline-size);
   font-weight: 650;
@@ -636,7 +637,7 @@
   padding: 1.1rem 0 0;
   border-top: 1px solid var(--wireline-color-border-default);
   color: var(--wireline-color-text-secondary);
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   line-height: 1.4;
   list-style: none;
 }
@@ -875,6 +876,13 @@
 
   .landing-prestige__actions > .landing-prestige__cta {
     padding-inline: 1rem;
+  }
+}
+
+@media (max-width: 380px) {
+  /* A whole pricing phrase exceeds a 320px viewport; let it wrap at word breaks. */
+  .landing-prestige__section-heading h2 > span {
+    white-space: normal;
   }
 }
 

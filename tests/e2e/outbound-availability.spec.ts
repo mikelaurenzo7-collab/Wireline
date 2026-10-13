@@ -55,7 +55,7 @@ for (const width of [320, 1280]) {
     const dialog = page.getByRole("dialog", { name: "New Outbound Call", exact: true });
     await expect(dialog).toBeVisible();
     await expect(dialog).toContainText(
-      "Live outbound calling is gated until server-verifiable recipient consent records and Federal Do Not Call screening are in place.",
+      "Direct calls need BotBound verification before this workspace can place them. Rehearse in Studio while we complete setup.",
     );
     await expect(dialog.locator("input, textarea, select")).toHaveCount(0);
     await expect(dialog.getByRole("button", { name: "Place call", exact: true })).toHaveCount(0);

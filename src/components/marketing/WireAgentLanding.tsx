@@ -62,7 +62,7 @@ const PUBLIC_PLANS = PUBLIC_PLAN_IDS.map((id) => {
 });
 
 export default function WireAgentLanding() {
-  const { canActivate, needsEmailSetupReview, notice } = usePaidPlanAvailability();
+  const { available, canActivate, needsEmailSetupReview, notice } = usePaidPlanAvailability();
   useEffect(() => {
     emitProductEventOnce({
       event: "landing_viewed",
@@ -109,9 +109,7 @@ export default function WireAgentLanding() {
                 Sign In
               </Link>
             </div>
-            <p className="landing-prestige__reassurance">
-              <span>Create a Bot for free. Rehearse privately.</span> <span>No card required.</span>
-            </p>
+            <p className="landing-prestige__reassurance">No card required.</p>
             <nav className="landing-prestige__directions" aria-label="Choose Bot direction">
               <Link
                 className="landing-prestige__direction is-inbound"
@@ -196,9 +194,11 @@ export default function WireAgentLanding() {
                 <span>Create Your Bot for Free.</span> <span>Go Live on Your Terms.</span>
               </h2>
               <span>Choose your channels and monthly capacity.</span>
-              <span className="landing-prestige__activation" role="status">
-                {notice}
-              </span>
+              {!available ? (
+                <span className="landing-prestige__activation" role="status">
+                  {notice}
+                </span>
+              ) : null}
             </header>
             <div className="landing-prestige__price-grid">
               {PUBLIC_PLANS.map(({ id, plan }) => {

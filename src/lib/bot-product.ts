@@ -16,7 +16,7 @@ export const BOT_PRODUCT_TYPES = [
     name: "Phone Bot",
     label: "PHONE BOT",
     description:
-      "Answer inbound calls and rehearse outbound playbooks. Live outbound dialing requires server-verifiable consent records and Federal Do Not Call screening.",
+      "Answer inbound calls and build outbound playbooks to follow up, qualify, and book.",
   },
   {
     key: "conversation" as const,
@@ -44,7 +44,7 @@ export const BOT_CHANNELS = [
     key: "voice" as const,
     label: "Call",
     description:
-      "Answer inbound calls, hold natural conversations, qualify needs, book, transfer, and recap. Outbound playbooks can be rehearsed privately; live dialing requires verified consent and Federal Do Not Call screening.",
+      "Answer inbound calls, follow up by phone, qualify needs, book, transfer, and recap.",
   },
   {
     key: "text" as const,

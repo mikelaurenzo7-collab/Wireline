@@ -171,7 +171,6 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     items: [
       "Outbound call policy accounts for recipient consent and Do Not Call screening before a call can start.",
       "Tenant DNC lists are enforced before expensive PSTN actions.",
-      "Live outbound dialing is gated until BotBound can verify server-owned recipient-consent records and Federal Do Not Call screening.",
     ],
   },
   {

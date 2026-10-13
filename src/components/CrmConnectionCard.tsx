@@ -234,6 +234,7 @@ const PROVIDERS: {
 
 export default function CrmConnectionCard() {
   const [state, setState] = useState<IntegrationState | null>(null);
+  const [showUnavailable, setShowUnavailable] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
@@ -561,6 +562,13 @@ export default function CrmConnectionCard() {
   const integrationSummary = summarizeIntegrationAvailability(
     PROVIDERS.map((provider) => state[provider.key]),
   );
+  const hiddenProviders = PROVIDERS.filter(({ key }) => {
+    const availability = resolveIntegrationAvailability(state[key]);
+    return !availability.available && !availability.hasSavedGrant;
+  });
+  const visibleProviders = showUnavailable
+    ? PROVIDERS
+    : PROVIDERS.filter(({ key }) => !hiddenProviders.some((provider) => provider.key === key));
 
   return (
     <div className="space-y-4">
@@ -597,11 +605,13 @@ export default function CrmConnectionCard() {
         </ShadButton>
       </div>
 
-      {/* One flat grid keeps the page symmetric at every viewport; each card
-          carries its own category chip instead of a one-card section. */}
-      <div className="grid grid-cols-1 items-start sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3">
+      {/* Keep usable and saved connections in view; tuck away unconfigured tools. */}
+      <div
+        id="integration-provider-grid"
+        className="grid grid-cols-1 items-start sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3"
+      >
         <AnimatePresence mode="popLayout">
-          {PROVIDERS.map(({ key, label, logo, group, beta }) => {
+          {visibleProviders.map(({ key, label, logo, group, beta }) => {
             const styles = CONNECTED_STYLES;
             const s = state[key];
             if (!s) return null;
@@ -953,6 +963,20 @@ export default function CrmConnectionCard() {
           })}
         </AnimatePresence>
       </div>
+      {hiddenProviders.length > 0 ? (
+        <ShadButton
+          type="button"
+          variant="ghost"
+          size="sm"
+          disableAnimations
+          aria-expanded={showUnavailable}
+          aria-controls="integration-provider-grid"
+          onClick={() => setShowUnavailable((visible) => !visible)}
+        >
+          {showUnavailable ? "Hide" : "Show"} {hiddenProviders.length} unavailable{" "}
+          {hiddenProviders.length === 1 ? "tool" : "tools"}
+        </ShadButton>
+      ) : null}
     </div>
   );
 }

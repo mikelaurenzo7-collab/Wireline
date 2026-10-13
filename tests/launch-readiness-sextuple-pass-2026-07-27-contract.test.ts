@@ -33,9 +33,7 @@ describe("launch readiness cross-surface contract", () => {
     expect(security).toMatch(
       /Outbound call policy accounts for recipient consent and Do Not Call screening before a call can start/i,
     );
-    expect(security).toMatch(
-      /Live outbound dialing is gated until BotBound can verify server-owned recipient-consent records and Federal Do Not Call screening/i,
-    );
+    expect(security).not.toContain("Live outbound dialing is gated");
     expect(security).not.toContain("FEDERAL_DNC_API_KEY");
   });
 

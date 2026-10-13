@@ -189,6 +189,7 @@ export default function TeamSettings() {
             <Button
               type="button"
               size="sm"
+              variant={canInvite ? "default" : "secondary"}
               disabled={!canInvite}
               onClick={openInviteDialog}
               title={teamAccess === "certifying" ? TEAM_INVITES_UNAVAILABLE : undefined}
