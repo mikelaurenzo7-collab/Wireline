@@ -49,9 +49,23 @@ const HEARTBEAT_MS = 60_000;
 const STOP_GRACE_MS = 60_000;
 const MAX_TASK_LIFETIME_MS =
   CLOUD_COMPUTER_LIMITS.maxRunMs + CLOUD_COMPUTER_LIMITS.ownerWaitBudgetMs + 12 * 60_000;
+const SESSION_CLOSE_DEADLINE_MS = 10_000;
+// Browserless bills one unit per started 30 seconds; its paid-plan overage is
+// $0.002 per unit. Reserve the full watchdog envelope before opening a browser,
+// then settle the actual connected time. The buffer covers a late heartbeat and
+// closing a stuck socket without assuming the account's current vendor tier.
+const BROWSERLESS_UNIT_MS = 30_000;
+const BROWSERLESS_UNIT_USD = 0.002;
+const BROWSERLESS_RESERVE_MS =
+  MAX_TASK_LIFETIME_MS + HEARTBEAT_MS + SESSION_CLOSE_DEADLINE_MS + 60_000;
+const BROWSERLESS_RESERVE_USD = browserlessSessionCostUsd(BROWSERLESS_RESERVE_MS);
+
+export function browserlessSessionCostUsd(connectionMs: number): number {
+  if (!Number.isFinite(connectionMs) || connectionMs <= 0) return 0;
+  return Math.ceil(connectionMs / BROWSERLESS_UNIT_MS) * BROWSERLESS_UNIT_USD;
+}
 // A failed final write is retried before the outcome is left for a read to settle.
 const TERMINAL_PERSIST_BACKOFF_MS = [0, 500, 1_500] as const;
-const SESSION_CLOSE_DEADLINE_MS = 10_000;
 const SHUTDOWN_DEADLINE_MS = 5_000;
 const ACTIVE_STATUSES: ComputerTaskStatus[] = ["running", "needs_input"];
 const INTERRUPTED_SUMMARY = "This task was interrupted by a BotBound update. Start it again.";
@@ -717,6 +731,45 @@ function failureOutcome(error: unknown): CloudComputerOutcome {
 
 async function executeTask(
   task: LiveTask,
+  input: Parameters<typeof executeTaskWithBrowser>[1],
+): Promise<void> {
+  try {
+    await runWithManagedAiSpend({
+      userId: task.userId,
+      action: "computer.browser",
+      model: "browserless/session",
+      reserveUsd: BROWSERLESS_RESERVE_USD,
+      requestMeta: {
+        agent_id: task.agentId,
+        task_hash: createHash("sha256").update(task.taskId).digest("hex").slice(0, 24),
+      },
+      operation: async () => {
+        try {
+          await executeTaskWithBrowser(task, input);
+        } finally {
+          // A failed connection has no usable session, and BotBound absorbs
+          // that setup attempt. Once connected, include owner-control idle time.
+          const connectionMs = task.session?.browserlessConnectionMs ?? 0;
+          recordUsage(
+            "browserless/session",
+            {
+              inference_provider: "browserless",
+              provider_tool_call_cost_usd: browserlessSessionCostUsd(connectionMs),
+              usage: {},
+            },
+            connectionMs,
+          );
+        }
+      },
+    });
+  } catch (error) {
+    // A failed pre-connection reservation still needs a durable task outcome.
+    if (!task.finished) await forceFinish(task, terminalOutcome(failureOutcome(error)));
+  }
+}
+
+async function executeTaskWithBrowser(
+  task: LiveTask,
   input: {
     goal: string;
     startUrl: string | null;
@@ -951,21 +1004,55 @@ async function executeTask(
   if (finishTask(task, terminalOutcome(outcome))) await persistTerminal(task);
 }
 
+/** Decide before the owner-wait timeout whether a paused browser has disconnected. */
+export function computerHeartbeatDecision(input: {
+  finished: boolean;
+  expiredBrowser: boolean;
+  stopRequested: boolean;
+  waitingForOwner: boolean;
+  browserClosed: boolean;
+  stopAt: number | null;
+  startedAt: number;
+  now: number;
+}): "finished" | "expired_browser" | "continue" | "timeout" {
+  if (input.finished) return "finished";
+  if (
+    input.expiredBrowser ||
+    (!input.stopRequested && input.waitingForOwner && input.browserClosed)
+  )
+    return "expired_browser";
+  const stopIgnored = input.stopAt !== null && input.now - input.stopAt > STOP_GRACE_MS;
+  return !stopIgnored && input.now - input.startedAt <= MAX_TASK_LIFETIME_MS
+    ? "continue"
+    : "timeout";
+}
+
 /**
  * One heartbeat: keep the row fresh so other processes see the task alive,
- * or end the task when its executor is stuck. Stop and every limit are
- * honored at the executor's checkpoints; a browser call with no deadline
- * never reaches one, and would otherwise hold the account and a capacity
- * slot until the process restarts.
+ * or end a disconnected owner handoff or an executor stuck past its limits.
  */
 async function heartbeatTick(task: LiveTask, heartbeat: ReturnType<typeof setInterval>) {
-  if (task.finished) {
+  const decision = computerHeartbeatDecision({
+    finished: task.finished,
+    expiredBrowser: task.expiredBrowser,
+    stopRequested: task.stop,
+    waitingForOwner: Boolean(task.reply),
+    browserClosed: task.session?.isClosed === true,
+    stopAt: task.stopAt,
+    startedAt: task.startedAt,
+    now: Date.now(),
+  });
+  if (decision === "finished") {
     clearInterval(heartbeat);
     return;
   }
-  const now = Date.now();
-  const stopIgnored = task.stopAt !== null && now - task.stopAt > STOP_GRACE_MS;
-  if (!stopIgnored && now - task.startedAt <= MAX_TASK_LIFETIME_MS) {
+  if (decision === "expired_browser") {
+    task.expiredBrowser = true;
+    clearInterval(heartbeat);
+    await forceFinish(task, terminalOutcome(EXPIRED_BROWSER_OUTCOME));
+    return;
+  }
+  if (decision === "continue") {
     await persist(task, {});
     return;
   }

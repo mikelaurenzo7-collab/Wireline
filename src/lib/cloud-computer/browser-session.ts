@@ -228,12 +228,15 @@ export class CloudBrowserSession {
   private readonly ownerEnteredValues: string[] = [];
   private closed = false;
   private disconnected = false;
+  private disconnectedAt: number | null = null;
+  private closePromise: Promise<void> | null = null;
   /** Set when a page tried to reach a private or non-web address. */
   blockedRequests = 0;
 
   private constructor(
     private readonly browser: Browser,
     private readonly context: BrowserContext,
+    private readonly remoteConnectionStartedAt: number | null,
   ) {}
 
   /**
@@ -255,6 +258,8 @@ export class CloudBrowserSession {
   private static async openUnbounded(
     connection: CloudBrowserConnection,
   ): Promise<CloudBrowserSession> {
+    // Browserless meters connection time, including setup before the first page.
+    const remoteConnectionStartedAt = connection.kind === "remote" ? Date.now() : null;
     const browser =
       connection.kind === "remote"
         ? await chromium.connect(connection.wsEndpoint, { timeout: NAVIGATION_TIMEOUT_MS })
@@ -277,9 +282,10 @@ export class CloudBrowserSession {
         locale: "en-US",
         timezoneId: "America/Chicago",
       });
-      const session = new CloudBrowserSession(browser, context);
+      const session = new CloudBrowserSession(browser, context, remoteConnectionStartedAt);
       browser.on("disconnected", () => {
         session.disconnected = true;
+        session.disconnectedAt ??= Date.now();
       });
       await context.addInitScript(ISOLATION_INIT_SCRIPT);
       await context.route("**/*", (route) => session.guard(route));
@@ -485,6 +491,12 @@ export class CloudBrowserSession {
   /** True once the session was closed or the browser connection dropped. */
   get isClosed(): boolean {
     return this.closed || this.disconnected;
+  }
+
+  /** Browserless connection time; null for a local development browser. */
+  get browserlessConnectionMs(): number | null {
+    if (this.remoteConnectionStartedAt === null) return null;
+    return Math.max(0, (this.disconnectedAt ?? Date.now()) - this.remoteConnectionStartedAt);
   }
 
   /**
@@ -745,16 +757,20 @@ export class CloudBrowserSession {
   }
 
   async close(): Promise<void> {
-    if (this.closed) return;
+    if (this.closePromise) return this.closePromise;
     this.closed = true;
     this.ownerEnteredValues.length = 0;
     if (this.activeToken) this.activeToken.cancelled = true;
-    const shutdown = async () => {
-      await this.context.close().catch(() => undefined);
-      await this.browser.close().catch(() => undefined);
-    };
-    // A dead websocket must not hold the task open.
-    await withDeadline(shutdown(), CLOSE_DEADLINE_MS).catch(() => undefined);
+    this.closePromise = (async () => {
+      const shutdown = async () => {
+        await this.context.close().catch(() => undefined);
+        await this.browser.close().catch(() => undefined);
+      };
+      // A dead websocket must not hold the task open.
+      await withDeadline(shutdown(), CLOSE_DEADLINE_MS).catch(() => undefined);
+      this.disconnectedAt ??= Date.now();
+    })();
+    await this.closePromise;
   }
 
   private async locate(page: Page, ref: string) {

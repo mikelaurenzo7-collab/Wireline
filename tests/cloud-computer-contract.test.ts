@@ -8,13 +8,26 @@ import {
   cloudComputerProcessCapacity,
   cloudComputerReadiness,
 } from "../src/lib/cloud-computer/config";
-import { hasPaidComputerPlan } from "../src/lib/cloud-computer/task-runner";
+import {
+  browserlessSessionCostUsd,
+  computerHeartbeatDecision,
+  hasPaidComputerPlan,
+} from "../src/lib/cloud-computer/task-runner";
+import { CLOUD_COMPUTER_LIMITS } from "../src/lib/cloud-computer/agent";
 import { OPENAI_MODELS } from "../src/lib/ai-models";
 import { quotaTokenDelta } from "../src/lib/managed-ai-operation-spend";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
 describe("cloud computer production gates", () => {
+  it("reserves Browserless time in rounded 30-second units", () => {
+    expect(browserlessSessionCostUsd(0)).toBe(0);
+    expect(browserlessSessionCostUsd(1)).toBe(0.002);
+    expect(browserlessSessionCostUsd(30_000)).toBe(0.002);
+    expect(browserlessSessionCostUsd(30_001)).toBe(0.004);
+    expect(browserlessSessionCostUsd(15 * 60_000)).toBe(0.06);
+  });
+
   it("requires a paid active or trialing subscription for the computer", () => {
     expect(hasPaidComputerPlan({ planId: "personal", subscriptionStatus: "active" })).toBe(false);
     expect(hasPaidComputerPlan({ planId: "starter", subscriptionStatus: "active" })).toBe(true);
@@ -102,6 +115,18 @@ describe("cloud computer source contracts", () => {
     expect(runner).toMatch(/tenantStore\s*\.run\(userId/);
   });
 
+  it("reserves browser time before connecting and settles it after closing, including owner idle", () => {
+    const runner = read("src/lib/cloud-computer/task-runner.ts");
+    const browser = read("src/lib/cloud-computer/browser-session.ts");
+    expect(runner).toContain('action: "computer.browser"');
+    expect(runner).toContain("reserveUsd: BROWSERLESS_RESERVE_USD");
+    expect(runner).toContain("await executeTaskWithBrowser(task, input)");
+    expect(runner).toContain("task.session?.browserlessConnectionMs ?? 0");
+    expect(browser).toContain("session.disconnectedAt ??= Date.now()");
+    expect(browser).toContain("this.disconnectedAt ?? Date.now()");
+    expect(browser).toContain("if (this.closePromise) return this.closePromise");
+  });
+
   it("does not wait for owner input when the question was not saved", () => {
     const runner = read("src/lib/cloud-computer/task-runner.ts");
     const ownerWait = runner.slice(
@@ -163,6 +188,33 @@ describe("cloud computer source contracts", () => {
     expect(runner).toContain("task.expiredBrowser = true;");
     expect(runner).toContain("if (task.expiredBrowser) outcome = EXPIRED_BROWSER_OUTCOME;");
     expect(runner).toMatch(/task\.stop\s*\? task\.expiredBrowser\s*\? EXPIRED_BROWSER_OUTCOME/);
+  });
+
+  it("ends a disconnected owner handoff before its reply timeout without overriding Stop", () => {
+    const now = Date.now();
+    const elapsed = 2 * 60_000;
+    expect(elapsed).toBeLessThan(CLOUD_COMPUTER_LIMITS.ownerReplyWaitMs);
+    const pending = {
+      finished: false,
+      expiredBrowser: false,
+      stopRequested: false,
+      waitingForOwner: true,
+      browserClosed: true,
+      stopAt: null,
+      startedAt: now - elapsed,
+      now,
+    };
+    expect(computerHeartbeatDecision(pending)).toBe("expired_browser");
+    expect(computerHeartbeatDecision({ ...pending, stopRequested: true, stopAt: now })).toBe(
+      "continue",
+    );
+    expect(computerHeartbeatDecision({ ...pending, waitingForOwner: false })).toBe("continue");
+    expect(computerHeartbeatDecision({ ...pending, finished: true })).toBe("finished");
+    const watchdog = read("src/lib/cloud-computer/task-runner.ts").split(
+      "async function heartbeatTick",
+    )[1];
+    expect(watchdog).toContain('if (decision === "expired_browser")');
+    expect(watchdog).toContain("forceFinish(task, terminalOutcome(EXPIRED_BROWSER_OUTCOME))");
   });
 
   it("ships the ledger with RLS, explicit grants, and account deletion coverage", () => {
@@ -261,7 +313,7 @@ describe("cloud computer source contracts", () => {
   it("ends stuck tasks and settles running tasks before the process exits", () => {
     const runner = read("src/lib/cloud-computer/task-runner.ts");
     expect(runner).toContain(
-      "const stopIgnored = task.stopAt !== null && now - task.stopAt > STOP_GRACE_MS;",
+      "const stopIgnored = input.stopAt !== null && input.now - input.stopAt > STOP_GRACE_MS;",
     );
     expect(runner).toContain('code: "COMPUTER_TIMEOUT"');
     expect(runner).toContain(

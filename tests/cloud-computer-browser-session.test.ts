@@ -130,6 +130,10 @@ describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)
     await new Promise<void>((resolve) => server?.close(() => resolve()));
   }, 30_000);
 
+  it("does not bill Browserless for a local development browser", () => {
+    expect(session.browserlessConnectionMs).toBeNull();
+  });
+
   it("reads the page as a tagged accessibility tree with stable refs", async () => {
     const first = await session.execute("read_page", { filter: "interactive" });
     expect(first.ok).toBe(true);

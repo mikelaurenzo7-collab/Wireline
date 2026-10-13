@@ -284,7 +284,7 @@ function publicPayload(state: Awaited<ReturnType<typeof loadIdentityState>>) {
     }),
     review_state_invalidated: state.staleReviewState,
     guarantee:
-      "BotBound records a verified business profile and supports provider submission through approved workflows. Final display, coverage, timing, and approval remain controlled by carriers, devices, and inbox providers.",
+      "BotBound records your business profile and supports provider submission through approved workflows. Final display, coverage, timing, and approval remain controlled by carriers, devices, and inbox providers.",
   };
 }
 

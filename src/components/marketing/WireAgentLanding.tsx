@@ -193,7 +193,10 @@ export default function WireAgentLanding() {
               <h2>
                 <span>Create Your Bot for Free.</span> <span>Go Live on Your Terms.</span>
               </h2>
-              <span>Choose your channels and monthly capacity.</span>
+              <span>
+                Starting plans. Every paid plan includes a cloud computer; tasks use its AI
+                allowance.
+              </span>
               {!available ? (
                 <span className="landing-prestige__activation" role="status">
                   {notice}
@@ -269,7 +272,7 @@ export default function WireAgentLanding() {
             </div>
             <div className="landing-prestige__pricing-more">
               <Link to="/pricing">
-                Compare plans &amp; usage
+                Compare all channels &amp; usage
                 <ArrowRight aria-hidden="true" />
               </Link>
             </div>

@@ -274,7 +274,11 @@ export default function MailboxConnectionCard() {
                 >
                   <div className="flex items-start gap-3">
                     <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-background p-1.5">
-                      {getIntegrationLogo(provider.logo)}
+                      {getIntegrationLogo(
+                        !emailIncluded && provider.id === "google"
+                          ? "google_calendar"
+                          : provider.logo,
+                      )}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-2">

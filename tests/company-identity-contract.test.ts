@@ -167,6 +167,8 @@ describe("company identity pack", () => {
     expect(identity).toContain("COMPANY_IDENTITY_CHANNELS.includes");
     expect(identity).toContain("args.requestedChannels.length > 0");
     expect(routes).toContain("final display follow supported BotBound workflows");
+    expect(routes).toContain("BotBound records your business profile");
+    expect(routes).not.toContain("records a verified business profile");
     expect(routes).not.toContain('providerStatus[channel] = "approved"');
 
     expect(guard).toContain("Canonical preference writer");
@@ -255,6 +257,7 @@ describe("company identity pack", () => {
     expect(normalizedSurface).toContain("> Identity </h2>");
     expect(surface).toContain("{identity.guarantee}");
     expect(surface).toContain("{meta.display_scope}");
+    expect(surface).toContain('selected && meta.provider_status === "not_requested"');
     expect(normalizedSurface).toContain("Maximum 15 characters for traditional CNAM fallback.");
     expect(normalizedSurface).toContain("supported mobile networks after approval");
     expect(normalizedSurface).toContain(

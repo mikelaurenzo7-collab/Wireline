@@ -43,17 +43,11 @@
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(
-      ellipse 44rem 30rem at 50% 24%,
-      color-mix(in srgb, var(--wireline-color-action-primary-default) 16%, transparent),
-      transparent 70%
-    ),
-    radial-gradient(
-      ellipse 70rem 40rem at 50% 110%,
-      color-mix(in srgb, var(--wireline-color-action-primary-default) 7%, transparent),
-      transparent 70%
-    );
+  background: radial-gradient(
+    ellipse 70rem 40rem at 50% 110%,
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 7%, transparent),
+    transparent 70%
+  );
 }
 
 .landing-prestige__hero::after {
@@ -88,7 +82,6 @@
 }
 
 .landing-prestige__hero-mark {
-  position: relative;
   display: grid;
   width: clamp(6.5rem, 11vw, 9rem);
   aspect-ratio: 1;
@@ -96,30 +89,11 @@
   margin-bottom: clamp(1.25rem, 3vh, 2rem);
 }
 
-.landing-prestige__hero-mark::before,
-.landing-prestige__hero-mark::after {
-  content: "";
-  position: absolute;
-  inset: -14%;
-  border: 1px solid
-    color-mix(in srgb, var(--wireline-color-action-primary-default) 32%, transparent);
-  border-radius: 50%;
-  animation: landing-prestige-signal 3.6s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
-}
-
-.landing-prestige__hero-mark::after {
-  animation-delay: 1.8s;
-}
-
 .landing-prestige__hero-bot {
-  position: relative;
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 1rem 2rem rgba(0, 0, 0, 0.45))
-    drop-shadow(
-      0 0 2.5rem color-mix(in srgb, var(--wireline-color-action-primary-default) 30%, transparent)
-    );
+  filter: drop-shadow(0 0.85rem 1.5rem rgba(0, 0, 0, 0.35));
 }
 
 .landing-prestige p.landing-prestige__eyebrow {
@@ -131,20 +105,6 @@
   letter-spacing: 0.14em;
   line-height: 1.5;
   text-transform: uppercase;
-}
-
-@keyframes landing-prestige-signal {
-  0% {
-    opacity: 0;
-    transform: scale(0.82);
-  }
-  30% {
-    opacity: 0.9;
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.32);
-  }
 }
 
 .landing-prestige__hero h1 {
@@ -887,17 +847,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .landing-prestige__hero-mark::before,
-  .landing-prestige__hero-mark::after {
-    animation: none;
-    opacity: 0.6;
-    transform: scale(1.1);
-  }
-
-  .landing-prestige__hero-mark::after {
-    display: none;
-  }
-
   .landing-prestige__direction,
   .landing-prestige__role-card,
   .landing-prestige__cta {

@@ -1366,7 +1366,7 @@ export default function ComputerPage() {
                   <p>
                     <ShieldCheck className="size-4" aria-hidden="true" />
                     Passwords and card details stay with you. Your Bot submits forms only when you
-                    ask. Up to {status?.limits.maxMinutes ?? 15} minutes per task.
+                    ask.
                   </p>
                   <Button
                     type="submit"

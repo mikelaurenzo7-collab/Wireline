@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { recordAmbiguousProviderAttempt, recordUsage } from "../src/lib/ai-audit";
 import { DefiniteProviderRejectionError } from "../src/lib/ai-client";
 import {
+  managedAiSettledCostUsd,
   runWithManagedAiSpend,
   type ManagedAiSpendDependencies,
 } from "../src/lib/managed-ai-operation-spend";
@@ -115,5 +116,69 @@ describe("shared setup spend lifecycle", () => {
     expect(provider).toHaveBeenCalledTimes(1);
     expect(deps.commit).toHaveBeenCalledTimes(1);
     expect(deps.release).not.toHaveBeenCalled();
+  });
+
+  it("settles Browserless time separately from nested OpenAI turns without double charging", async () => {
+    const deps = setup(1);
+    await runWithManagedAiSpend(
+      {
+        userId: "tenant",
+        action: "computer.browser",
+        reserveUsd: 0.2,
+        operation: async () => {
+          await runWithManagedAiSpend(
+            { ...input, action: "computer.browse", operation: async () => known() },
+            deps,
+          );
+          recordUsage(
+            "browserless/session",
+            { inference_provider: "browserless", provider_tool_call_cost_usd: 0.004, usage: {} },
+            60_000,
+          );
+        },
+      },
+      deps,
+    );
+    expect(deps.settleKnown).toHaveBeenCalledTimes(2);
+    const settlements = vi.mocked(deps.settleKnown).mock.calls.map(([settlement]) => settlement);
+    const browser = settlements.find((settlement) => settlement.action === "computer.browser");
+    const model = settlements.find((settlement) => settlement.action === "computer.browse");
+    expect(browser?.records).toEqual([
+      expect.objectContaining({
+        provider: "browserless",
+        provider_tool_call_cost_usd: 0.004,
+        input_tokens: 0,
+        output_tokens: 0,
+      }),
+    ]);
+    expect(model?.records).toEqual([
+      expect.objectContaining({ provider: "openai", input_tokens: 100, output_tokens: 10 }),
+    ]);
+  });
+
+  it("settles a failed pre-session browser start at zero instead of retaining its reserve", async () => {
+    const deps = setup(1);
+    await expect(
+      runWithManagedAiSpend(
+        {
+          userId: "tenant",
+          action: "computer.browser",
+          reserveUsd: 0.2,
+          operation: async () => {
+            recordUsage(
+              "browserless/session",
+              { inference_provider: "browserless", provider_tool_call_cost_usd: 0, usage: {} },
+              0,
+            );
+            throw new Error("Browserless did not connect");
+          },
+        },
+        deps,
+      ),
+    ).rejects.toThrow("Browserless did not connect");
+    const settled = vi.mocked(deps.settleKnown).mock.calls[0]?.[0];
+    expect(settled?.action).toBe("computer.browser");
+    expect(managedAiSettledCostUsd(settled?.records ?? [])).toBe(0);
+    expect(deps.commit).not.toHaveBeenCalled();
   });
 });

@@ -243,7 +243,7 @@ function ChannelCard({
         <p className="mt-4 text-xs leading-5 text-muted-foreground">
           Missing: {meta.missing.join(", ")}.
         </p>
-      ) : (
+      ) : selected && meta.provider_status === "not_requested" ? (
         <p className="mt-4 flex items-center gap-2 text-xs font-medium text-foreground">
           <CheckCircle2
             size={14}
@@ -252,7 +252,7 @@ function ChannelCard({
           />
           Ready for review
         </p>
-      )}
+      ) : null}
       <p className="mt-3 border-t border-border pt-3 text-[11px] leading-5 text-muted-foreground">
         {meta.display_scope}
       </p>
