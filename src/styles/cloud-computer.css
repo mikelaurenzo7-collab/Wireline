@@ -283,6 +283,17 @@
   background: var(--wireline-color-surface-default);
 }
 
+.wl-computer-takeover:fullscreen {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.wl-computer-takeover:fullscreen > .wl-computer-screen,
+.wl-computer-takeover:fullscreen > .wl-computer-control {
+  flex: none;
+}
+
 .wl-computer-takeover:fullscreen .wl-computer-screen,
 .wl-computer-takeover:fullscreen .wl-computer-control {
   width: min(100%, 1280px);

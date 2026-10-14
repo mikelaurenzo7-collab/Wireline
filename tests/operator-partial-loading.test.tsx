@@ -55,6 +55,7 @@ type Props = {
   onValueChange?: (value: string) => void;
   task?: { id: string };
   onResolved?: () => void;
+  onEditingChange?: (editing: boolean) => void;
 };
 function elements(node: ReactNode): Array<ReactElement<Props>> {
   if (Array.isArray(node)) return node.flatMap(elements);
@@ -354,7 +355,13 @@ describe("approval message edits", () => {
       )!;
       h.states = [];
       h.refs = [];
-      const renderCard = () => render(() => (card.type as (props: Props) => ReactNode)(card.props));
+      const renderCard = () =>
+        render(() =>
+          (card.type as (props: Props) => ReactNode)({
+            ...card.props,
+            onEditingChange: () => {},
+          }),
+        );
       elements(renderCard()).find(
         (node) => node.type === "button" && textOf(node.props.children) === "Edit",
       )!.props.onClick!();
@@ -388,7 +395,13 @@ async function approvalCard(payload: Record<string, unknown>, taskType = "send_e
   h.fetch.mockClear();
   let currentTask = task;
   const draw = () =>
-    render(() => (card.type as (props: Props) => ReactNode)({ ...card.props, task: currentTask }));
+    render(() =>
+      (card.type as (props: Props) => ReactNode)({
+        ...card.props,
+        task: currentTask,
+        onEditingChange: () => {},
+      }),
+    );
   return {
     draw,
     refresh(payload: Record<string, unknown>) {

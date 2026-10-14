@@ -109,10 +109,11 @@ describe("the Phase B activation metric requires a human, not the machine", () =
   });
 
   it("still matches the one writer that records a real approval", () => {
-    // fleet-routes stamps this exact string on approve-and-execute.
-    expect(read("src/routes/fleet-routes.ts")).toContain(
-      'resolutionNotes: "Approved and executed by Account Holder"',
-    );
+    // Executed actions retain the approval stamp used by the activation
+    // metric. A native Calendar request still awaiting confirmation must not.
+    const approvals = read("src/routes/fleet-routes.ts");
+    expect(approvals).toContain('"Approved and executed by Account Holder"');
+    expect(approvals).toContain('"Native Calendar request saved for approval"');
   });
 });
 

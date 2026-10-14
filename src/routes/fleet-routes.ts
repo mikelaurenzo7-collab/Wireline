@@ -403,7 +403,29 @@ router.post(
         "auto",
       );
 
-      if (result.queued) {
+      // A draft created before the owner connected native Calendar can now
+      // become a real Calendar request. Verify the appointment before clearing
+      // the old approval; other queued actions are still unexecuted drafts.
+      const [nativeCalendarAppointment] =
+        result.success && result.queued && taskType === "schedule_calendar" && result.actionId
+          ? await drizzle
+              .select({ status: schema.appointments.status })
+              .from(schema.appointments)
+              .where(
+                and(
+                  eq(schema.appointments.id, result.actionId),
+                  eq(schema.appointments.userId, userId),
+                  eq(schema.appointments.bookingSource, "native"),
+                ),
+              )
+              .limit(1)
+          : [];
+      const nativeCalendarRequestResolved =
+        nativeCalendarAppointment &&
+        ["Requested", "Scheduled", "Confirmed", "Rescheduled"].includes(
+          nativeCalendarAppointment.status || "",
+        );
+      if (result.queued && !nativeCalendarRequestResolved) {
         return res.status(409).json({
           code: "ACTION_NOT_EXECUTED",
           error: "This action is still a draft. Refresh and review it before approving.",
@@ -412,7 +434,14 @@ router.post(
       if (result.success) {
         await drizzle
           .update(schema.followUpTasks)
-          .set({ status: "completed", resolutionNotes: "Approved and executed by Account Holder" })
+          .set({
+            status: "completed",
+            resolutionNotes: nativeCalendarRequestResolved
+              ? nativeCalendarAppointment.status === "Requested"
+                ? "Native Calendar request saved for approval"
+                : "Native Calendar booking confirmed"
+              : "Approved and executed by Account Holder",
+          })
           .where(and(eq(schema.followUpTasks.id, taskId), eq(schema.followUpTasks.userId, userId)));
         touchNavCounts(userId);
 
@@ -428,9 +457,10 @@ router.post(
 
         const taskType = (task.taskType || "").toLowerCase();
         if (
-          taskType.includes("calendar") ||
-          taskType.includes("book") ||
-          taskType.includes("meeting")
+          nativeCalendarAppointment?.status !== "Requested" &&
+          (taskType.includes("calendar") ||
+            taskType.includes("book") ||
+            taskType.includes("meeting"))
         ) {
           emitServerProductEventOnce({
             event: "first_meeting_booked",
@@ -440,7 +470,12 @@ router.post(
           });
         }
 
-        res.json({ success: true });
+        res.json({
+          success: true,
+          ...(nativeCalendarRequestResolved
+            ? { calendar_status: nativeCalendarAppointment.status, appointment_id: result.actionId }
+            : {}),
+        });
       } else {
         const status =
           result.errorCode === "TASK_CHANGED"

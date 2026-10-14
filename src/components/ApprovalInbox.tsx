@@ -88,8 +88,10 @@ function approvalResultMessage(
   task: FollowUpTaskRow,
   recipient: string,
   manualTask: boolean,
+  calendarStatus?: string,
 ): string {
   if (manualTask) return "Marked as handled. No message was sent or call placed.";
+  if (calendarStatus === "Requested") return "Calendar request saved. Confirm it in Calendar.";
   const type = rawTaskType(task).toLowerCase();
   if (type.includes("email")) return recipient ? `Email sent to ${recipient}.` : "Email sent.";
   if (type.includes("text") || type.includes("sms"))
@@ -314,6 +316,7 @@ function ApprovalEmptyCard({ title, description }: { title: string; description:
 type ApprovalTaskCardProps = {
   task: FollowUpTaskRow;
   onResolved: () => void;
+  onEditingChange: (editing: boolean) => void;
 };
 
 function editablePayloadFields(task: FollowUpTaskRow): Record<string, unknown> {
@@ -324,7 +327,7 @@ function editablePayloadFields(task: FollowUpTaskRow): Record<string, unknown> {
   return { ...payload };
 }
 
-function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
+function ApprovalTaskCard({ task, onResolved, onEditingChange }: ApprovalTaskCardProps) {
   // Keep successful local edits visible after blocked approval, until a fresh
   // server snapshot arrives. A refetched task must replace the local snapshot.
   const [savedEdit, setSavedEdit] = useState<{
@@ -374,7 +377,9 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
           : "",
     );
     setEditNotes(savedTask.description || "");
-    setEditing((value) => !value);
+    const nextEditing = !editing;
+    setEditing(nextEditing);
+    onEditingChange(nextEditing);
   }
 
   async function approve() {
@@ -439,7 +444,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
           metadata: { task_id: task.id, task_type: task.task_type || task.taskType || "unknown" },
         });
       }
-      toastSuccess(approvalResultMessage(savedTask, recipient, manualTask));
+      toastSuccess(approvalResultMessage(savedTask, recipient, manualTask, body?.calendar_status));
       onResolved();
     } catch (reason) {
       setError(
@@ -636,6 +641,8 @@ type ApprovalInboxProps = {
 
 /** Items rendered per bucket before a "Show more" control reveals the rest. */
 const APPROVAL_PAGE_SIZE = 20;
+const APPROVAL_REFRESH_MS = 30_000;
+const APPROVAL_RETURN_REFRESH_AGE_MS = 15_000;
 
 export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) {
   const [bucket, setBucket] = useState<ApprovalBucket>("pending");
@@ -647,16 +654,22 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
   const [triageUnavailable, setTriageUnavailable] = useState(false);
   const [tasksUnavailable, setTasksUnavailable] = useState(false);
   const [visibleCount, setVisibleCount] = useState(APPROVAL_PAGE_SIZE);
+  const [editingTaskIds, setEditingTaskIds] = useState<Set<string>>(() => new Set());
   const loadAbortRef = useRef<AbortController | null>(null);
+  const lastLoadAtRef = useRef(0);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (background = false) => {
+    if (background && loadAbortRef.current) return;
     loadAbortRef.current?.abort();
     const controller = new AbortController();
     loadAbortRef.current = controller;
-    setLoading(true);
-    setError(null);
-    setTriageUnavailable(false);
-    setTasksUnavailable(false);
+    lastLoadAtRef.current = Date.now();
+    if (!background) {
+      setLoading(true);
+      setError(null);
+      setTriageUnavailable(false);
+      setTasksUnavailable(false);
+    }
     try {
       const [triageRes, tasksRes] = await Promise.all([
         authFetch("/api/triage", { signal: controller.signal }).catch(() => null),
@@ -679,6 +692,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
         setError("Could not load approval inbox.");
         return;
       }
+      setError(null);
       // A background refresh must not unmount another card's unsaved draft,
       // including when only one queue can be refreshed.
       if (validTriage) setTriage(validTriage);
@@ -692,14 +706,34 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
     } finally {
       if (loadAbortRef.current === controller && !controller.signal.aborted) {
         loadAbortRef.current = null;
-        setLoading(false);
+        if (!background) setLoading(false);
       }
     }
   }, []);
 
   useEffect(() => {
     void load();
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      return () => {
+        loadAbortRef.current?.abort();
+        loadAbortRef.current = null;
+      };
+    }
+    const refreshIfVisible = () => {
+      if (
+        document.visibilityState === "visible" &&
+        Date.now() - lastLoadAtRef.current >= APPROVAL_RETURN_REFRESH_AGE_MS
+      ) {
+        void load(true);
+      }
+    };
+    const interval = window.setInterval(refreshIfVisible, APPROVAL_REFRESH_MS);
+    document.addEventListener("visibilitychange", refreshIfVisible);
+    window.addEventListener("focus", refreshIfVisible);
     return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+      window.removeEventListener("focus", refreshIfVisible);
       loadAbortRef.current?.abort();
       loadAbortRef.current = null;
     };
@@ -755,6 +789,11 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
   const actionableTasks = bucketItems.filter(
     (item) => item.task_type !== "hot_lead_review" && item.task_type !== "escalation_review",
   );
+  // A new item can push the last visible card past the pagination boundary.
+  // Keep any open editor mounted without exposing the rest of a long queue.
+  const visibleActionableTasks = actionableTasks.filter(
+    (task, index) => index < visibleCount || editingTaskIds.has(task.id),
+  );
   const bucketUnavailable =
     bucket === "pending" || bucket === "compliance" ? tasksUnavailable : triageUnavailable;
   const bucketLoaded =
@@ -764,7 +803,23 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
     // The mutation has already succeeded. Remove only that item immediately,
     // so a failed refresh cannot offer the same action again.
     setTasks((current) => current.filter((task) => task.id !== id));
+    setEditingTaskIds((current) => {
+      if (!current.has(id)) return current;
+      const next = new Set(current);
+      next.delete(id);
+      return next;
+    });
     void load();
+  }
+
+  function setTaskEditing(id: string, editing: boolean) {
+    setEditingTaskIds((current) => {
+      if (current.has(id) === editing) return current;
+      const next = new Set(current);
+      if (editing) next.add(id);
+      else next.delete(id);
+      return next;
+    });
   }
 
   const approvalTabs = (Object.keys(BUCKET_LABELS) as ApprovalBucket[]).map((key) => {
@@ -793,7 +848,10 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       <WorkspaceTabStrip
         tabs={approvalTabs}
         activeId={bucket}
-        onSelect={(id) => setBucket(id as ApprovalBucket)}
+        onSelect={(id) => {
+          if (id !== bucket) setEditingTaskIds(new Set());
+          setBucket(id as ApprovalBucket);
+        }}
         ariaLabel="Approval buckets"
         density="compact"
         align="start"
@@ -852,10 +910,15 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
           ) : null
         ) : (
           <div className="grid gap-3">
-            {actionableTasks.slice(0, visibleCount).map((task) => (
-              <ApprovalTaskCard key={task.id} task={task} onResolved={() => resolveTask(task.id)} />
+            {visibleActionableTasks.map((task) => (
+              <ApprovalTaskCard
+                key={task.id}
+                task={task}
+                onResolved={() => resolveTask(task.id)}
+                onEditingChange={(editing) => setTaskEditing(task.id, editing)}
+              />
             ))}
-            {actionableTasks.length > visibleCount ? (
+            {actionableTasks.length > visibleActionableTasks.length ? (
               <ShadButton
                 type="button"
                 variant="outline"
@@ -867,7 +930,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
                   )
                 }
               >
-                Show More ({actionableTasks.length - visibleCount} remaining)
+                Show More ({actionableTasks.length - visibleActionableTasks.length} remaining)
               </ShadButton>
             ) : null}
           </div>

@@ -53,6 +53,7 @@ async function mockComputer(
   options: {
     status: Record<string, unknown>;
     tasks: MockTask[];
+    agents?: Array<{ id: string; name: string }>;
     frame?: Buffer | null;
     clickNavigatesTo?: string;
     /** Keep status and task-list reads unavailable until the test releases them. */
@@ -65,6 +66,7 @@ async function mockComputer(
   const takeovers: string[] = [];
   const returns: string[] = [];
   const starts: unknown[] = [];
+  let listReads = 0;
   let tasks = options.tasks;
   let frame = options.frame;
   let recoverLoad = false;
@@ -81,15 +83,12 @@ async function mockComputer(
     if (path === "/api/agents") {
       return route.fulfill({
         json: {
-          agents: [
-            {
-              id: "design-bot",
-              name: "Front Desk",
-              role: "receptionist",
-              mark_key: "spark-rose",
-              phone_number: "+15125550100",
-            },
-          ],
+          agents: (options.agents ?? [{ id: "design-bot", name: "Front Desk" }]).map((agent) => ({
+            ...agent,
+            role: "receptionist",
+            mark_key: "spark-rose",
+            phone_number: "+15125550100",
+          })),
         },
       });
     }
@@ -112,6 +111,7 @@ async function mockComputer(
         : route.fulfill({ json: options.status });
     }
     if (path === "/api/computer/tasks" && request.method() === "GET") {
+      listReads += 1;
       return options.failFirstLoad && !recoverLoad
         ? route.fulfill({ status: 500, json: { error: "Something went wrong." } })
         : route.fulfill({ json: { tasks } });
@@ -230,6 +230,12 @@ async function mockComputer(
     takeovers,
     returns,
     starts,
+    get listReads() {
+      return listReads;
+    },
+    addTask: (next: MockTask) => {
+      tasks = [next, ...tasks];
+    },
     setTask,
     setFrame: (next: Buffer | null) => {
       frame = next;
@@ -460,6 +466,135 @@ test("a running task keeps updating while the owner reads an older result", asyn
     .getByRole("textbox", { name: "What should your Bot do?" })
     .fill("Compare two supplier prices.");
   await expect(page.getByRole("button", { name: "Start Task" })).toBeEnabled();
+});
+
+test("a Bot link never starts a task on another Bot, and changing Bot updates the link", async ({
+  page,
+}) => {
+  const { starts } = await mockComputer(page, {
+    status: READY,
+    tasks: [],
+    agents: [
+      { id: "design-bot", name: "Front Desk" },
+      { id: "sales-bot", name: "Sales" },
+    ],
+  });
+
+  await page.goto("/computer?agent=deleted-bot");
+  await expect(page.getByText("Bot Unavailable")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start Task" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Open browser" })).toHaveCount(0);
+  await page.getByRole("link", { name: "Choose Bot" }).click();
+  await expect(page).toHaveURL(/\/computer$/);
+  await expect(page.getByRole("combobox", { name: "Bot" })).toHaveValue("design-bot");
+
+  await page.goto("/computer?agent=design-bot");
+  await page.getByRole("combobox", { name: "Bot" }).selectOption("sales-bot");
+  await expect(page).toHaveURL(/\/computer\?agent=sales-bot$/);
+  await page.getByRole("textbox", { name: "What should your Bot do?" }).fill("Check our listing.");
+  await page.getByRole("button", { name: "Start Task" }).click();
+  expect(starts).toEqual([expect.objectContaining({ agentId: "sales-bot" })]);
+});
+
+test("a task started elsewhere appears on the idle page without losing a draft", async ({
+  page,
+}) => {
+  const mock = await mockComputer(page, {
+    status: READY,
+    tasks: [
+      task({
+        id: "task-done",
+        status: "completed",
+        goal: "Check yesterday's listing.",
+        summary: "The listing is current.",
+        liveView: false,
+      }),
+    ],
+  });
+  await page.goto("/computer");
+  await expect(page.getByText("The listing is current.")).toBeVisible();
+  await page.getByRole("button", { name: "New task" }).click();
+  const draft = page.getByRole("textbox", { name: "What should your Bot do?" });
+  await draft.fill("Compare two supplier prices tomorrow.");
+
+  mock.addTask(task({ id: "task-elsewhere", status: "running", goal: "Check live inventory." }));
+  const readsBeforeReturn = mock.listReads;
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event("focus"));
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.getByRole("button", { name: "View active task" })).toBeVisible();
+  expect(mock.listReads).toBe(readsBeforeReturn + 1);
+  await page.getByRole("button", { name: "View active task" }).click();
+  await expect(page.getByRole("region", { name: "Check live inventory." })).toBeVisible();
+
+  mock.setTask("task-elsewhere", {
+    status: "completed",
+    summary: "Inventory checked.",
+    liveView: false,
+  });
+  await expect(page.getByText("Inventory checked.")).toBeVisible({ timeout: 7000 });
+  await page.getByRole("button", { name: "New task" }).click();
+  await expect(draft).toHaveValue("Compare two supplier prices tomorrow.");
+});
+
+test("an idle visible Computer page discovers a new task on its next light refresh", async ({
+  page,
+}) => {
+  await page.clock.install();
+  const mock = await mockComputer(page, { status: READY, tasks: [] });
+  await page.goto("/computer");
+  await expect(page.getByRole("button", { name: "Start Task" })).toBeDisabled();
+  const readsBefore = mock.listReads;
+
+  mock.addTask(task({ id: "task-from-phone", status: "running", goal: "Review today's orders." }));
+  await page.clock.fastForward(8100);
+  await expect(page.getByRole("region", { name: "Review today's orders." })).toBeVisible();
+  expect(mock.listReads).toBe(readsBefore + 1);
+});
+
+test("expanded browser keeps controls below the screen and Activity on one line", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await mockComputer(page, {
+    status: READY,
+    frame: await fakeFrame(page),
+    tasks: [
+      task({
+        id: "task-browser",
+        status: "needs_input",
+        ownerControl: true,
+        preparingBrowser: true,
+        goal: "Compare several local service providers and summarize availability and pricing.",
+        question: "Browse first, then give your Bot a task.",
+      }),
+    ],
+  });
+  await page.goto("/computer");
+  const detail = page.getByRole("region", { name: "Your browser is ready" });
+  const activity = detail.getByRole("button", { name: "Open task activity" });
+  await expect(activity).toBeVisible();
+  await expect(activity).toHaveCSS("white-space", "nowrap");
+  const textLines = await activity.evaluate((button) => {
+    const text = [...button.childNodes].find(
+      (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+    );
+    if (!text) return 0;
+    const range = document.createRange();
+    range.selectNodeContents(text);
+    return range.getClientRects().length;
+  });
+  expect(textLines).toBe(1);
+
+  await detail.getByRole("button", { name: "Expand browser" }).click();
+  await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true);
+  const screenBox = await detail.locator(".wl-computer-screen").boundingBox();
+  const handoffBox = await detail.locator("#computer-handoff-goal").boundingBox();
+  expect(
+    screenBox && handoffBox && screenBox.y + screenBox.height <= handoffBox.y + 1,
+    JSON.stringify({ screenBox, handoffBox }),
+  ).toBe(true);
 });
 
 for (const width of [390, 1440]) {

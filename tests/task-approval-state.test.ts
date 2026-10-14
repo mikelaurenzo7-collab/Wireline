@@ -6,8 +6,10 @@ const h = vi.hoisted(() => ({
   routes: new Map<string, Handler[]>(),
   task: {} as Row,
   thread: {} as Row,
+  appointment: null as Row | null,
   events: [] as string[],
   executeAction: vi.fn(),
+  emitProductEvent: vi.fn(),
   afterLock: undefined as (() => void) | undefined,
 }));
 vi.mock("express", () => ({
@@ -32,7 +34,9 @@ vi.mock("../src/lib/api-validation", () => ({
   updateFollowUpTaskSchema: {},
 }));
 vi.mock("../src/lib/action-engine", () => ({ executeAction: h.executeAction }));
-vi.mock("../src/lib/product-event-server", () => ({ emitServerProductEventOnce: () => {} }));
+vi.mock("../src/lib/product-event-server", () => ({
+  emitServerProductEventOnce: h.emitProductEvent,
+}));
 vi.mock("../src/lib/nav-counts-invalidate", () => ({ touchNavCounts: () => {} }));
 vi.mock("../src/services/presence-stream-service", () => ({ presenceStreams: {} }));
 vi.mock("../src/lib/server-context", async () => {
@@ -54,7 +58,11 @@ vi.mock("../src/lib/server-context", async () => {
           Promise.resolve(
             table === schema.auditLog
               ? []
-              : [{ ...(table === schema.followUpTasks ? h.task : h.thread) }],
+              : table === schema.appointments
+                ? h.appointment
+                  ? [h.appointment]
+                  : []
+                : [{ ...(table === schema.followUpTasks ? h.task : h.thread) }],
           ).then(resolve),
       };
       return query;
@@ -102,16 +110,17 @@ vi.mock("../src/lib/server-context", async () => {
 import "../src/routes/operator-task-routes";
 import "../src/routes/fleet-routes";
 
-const invoke = (kind: "action" | "approve" | "dismiss") => {
+const invoke = async (kind: "action" | "approve" | "dismiss") => {
   const res = { json: vi.fn(), status: vi.fn() };
   res.status.mockReturnValue(res);
   const path = kind === "dismiss" ? "dismiss-handoff" : "approve";
   const handlers = h.routes.get(`post /api/Assistants/tasks/:id/${path}`)!;
-  return handlers[kind === "action" ? 1 : 0](
+  await handlers[kind === "action" ? 1 : 0](
     { user: { id: "tenant" }, params: { id: "task" } },
     res,
     vi.fn(),
   );
+  return res;
 };
 
 beforeEach(() => {
@@ -125,6 +134,7 @@ beforeEach(() => {
     sourceId: "thread",
   };
   h.thread = { id: "thread", userId: "tenant", status: "escalated" };
+  h.appointment = null;
   h.events = [];
   h.afterLock = undefined;
   h.executeAction.mockResolvedValue({ success: true });
@@ -147,6 +157,31 @@ describe("approval lifecycle boundaries", () => {
     h.executeAction.mockResolvedValue({ success: true, queued: true });
     await invoke("action");
     expect(h.task.status).toBe("pending");
+  });
+
+  it("resolves an old Calendar draft after native Calendar saves a Requested appointment", async () => {
+    const appointmentId = "9225c30b-455e-4083-8d5c-bbcfc997c90d";
+    h.task.taskType = "schedule_calendar";
+    h.appointment = {
+      id: appointmentId,
+      userId: "tenant",
+      bookingSource: "native",
+      status: "Requested",
+    };
+    h.executeAction.mockResolvedValue({ success: true, queued: true, actionId: appointmentId });
+
+    const response = await invoke("action");
+
+    expect(h.task.status).toBe("completed");
+    expect(h.task.resolutionNotes).toBe("Native Calendar request saved for approval");
+    expect(response.json).toHaveBeenCalledWith({
+      success: true,
+      calendar_status: "Requested",
+      appointment_id: appointmentId,
+    });
+    expect(h.emitProductEvent).not.toHaveBeenCalledWith(
+      expect.objectContaining({ event: "first_meeting_booked" }),
+    );
   });
 
   it.each(["cancelled", "archived", null])("does not execute a %s task", async (status) => {

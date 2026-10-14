@@ -793,6 +793,7 @@ function TaskDetail({
             type="button"
             variant="outline"
             size="sm"
+            className="shrink-0 whitespace-nowrap"
             onClick={() => setActivityOpen(true)}
             aria-label="Open task activity"
           >
@@ -1086,7 +1087,8 @@ function TaskDetail({
 
 export default function ComputerPage() {
   const { agents, loading: agentsLoading, degraded, refresh } = useAgents();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const hasScopedAgent = searchParams.has("agent");
   const requestedAgentId = searchParams.get("agent")?.trim() || "";
   const [agentId, setAgentId] = useState<string>(requestedAgentId);
   const [status, setStatus] = useState<ComputerStatus | null>(null);
@@ -1102,21 +1104,20 @@ export default function ComputerPage() {
   const [error, setError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const tasksRef = useRef<ComputerTask[] | null>(null);
+  const listEpochRef = useRef(0);
 
   useEffect(() => {
     tasksRef.current = tasks;
   }, [tasks]);
 
   useEffect(() => {
+    if (hasScopedAgent) return;
     if (!agents.length) return;
     setAgentId((current) => {
       if (current && agents.some((agent) => agent.id === current)) return current;
-      if (requestedAgentId && agents.some((agent) => agent.id === requestedAgentId)) {
-        return requestedAgentId;
-      }
       return agents[0].id;
     });
-  }, [agents, requestedAgentId]);
+  }, [agents, hasScopedAgent]);
 
   const loadStatus = useCallback(async (signal?: AbortSignal) => {
     try {
@@ -1143,13 +1144,15 @@ export default function ComputerPage() {
     async ({
       signal,
       focusActive = false,
-    }: { signal?: AbortSignal; focusActive?: boolean } = {}) => {
+      silent = false,
+    }: { signal?: AbortSignal; focusActive?: boolean; silent?: boolean } = {}) => {
+      const epoch = listEpochRef.current;
       try {
         const response = await authFetch("/api/computer/tasks", { signal });
         const result = await readApiJson<{ tasks?: unknown }>(response);
-        if (signal?.aborted) return;
+        if (signal?.aborted || epoch !== listEpochRef.current) return;
         if (!result.ok || !Array.isArray(result.data?.tasks)) {
-          setListFailed(true);
+          if (!silent || tasksRef.current === null) setListFailed(true);
           return;
         }
         const next = result.data.tasks as ComputerTask[];
@@ -1164,7 +1167,7 @@ export default function ComputerPage() {
               : (next[0]?.id ?? null),
         );
       } catch {
-        if (!signal?.aborted) setListFailed(true);
+        if (!signal?.aborted && (!silent || tasksRef.current === null)) setListFailed(true);
       }
     },
     [],
@@ -1195,7 +1198,12 @@ export default function ComputerPage() {
   }, []);
 
   const selected = tasks?.find((task) => task.id === selectedId) ?? null;
-  const composerBot = agents.find((agent) => agent.id === agentId);
+  // An explicit Bot link is authoritative. Never fall back to another Bot if
+  // the linked one is gone, or keep an earlier Bot when the URL changes.
+  const composerAgentId = hasScopedAgent ? requestedAgentId : agentId;
+  const composerBot = degraded ? undefined : agents.find((agent) => agent.id === composerAgentId);
+  const scopedAgentUnavailable =
+    hasScopedAgent && !agentsLoading && !degraded && agents.length > 0 && !composerBot;
   // A new task cannot start while one is active, so the active task is always
   // the newest. Poll it whichever task the owner is reading, so a question or a
   // finish is never missed. Keyed on the id, not the object, so each poll result
@@ -1250,9 +1258,39 @@ export default function ComputerPage() {
     };
   }, [activeId, applyTask, loadTasks]);
 
+  // A task can start in another tab or device while this page is idle. Refresh
+  // only while visible, and on return, without replacing the owner's draft or
+  // the result they chose to read.
+  const hasLoadedTasks = tasks !== null;
+  useEffect(() => {
+    if (activeId || !hasLoadedTasks) return;
+    const controller = new AbortController();
+    let inFlight = false;
+    const refreshVisible = async () => {
+      if (document.hidden || inFlight) return;
+      inFlight = true;
+      try {
+        await loadTasks({ signal: controller.signal, silent: true });
+      } finally {
+        inFlight = false;
+      }
+    };
+    const timer = window.setInterval(() => void refreshVisible(), 8000);
+    const onReturn = () => void refreshVisible();
+    document.addEventListener("visibilitychange", onReturn);
+    window.addEventListener("focus", onReturn);
+    return () => {
+      controller.abort();
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onReturn);
+      window.removeEventListener("focus", onReturn);
+    };
+  }, [activeId, hasLoadedTasks, loadTasks]);
+
   const anyActive = activeId !== null;
 
   const start = async (prepareBrowser = false) => {
+    if (!composerBot) return;
     setStartingMode(prepareBrowser ? "browser" : "task");
     setError(null);
     setAnnouncement("");
@@ -1262,8 +1300,12 @@ export default function ComputerPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           prepareBrowser
-            ? { agentId, prepareBrowser: true, startUrl: startUrl.trim() || undefined }
-            : { agentId, goal, startUrl: startUrl.trim() || undefined },
+            ? {
+                agentId: composerBot.id,
+                prepareBrowser: true,
+                startUrl: startUrl.trim() || undefined,
+              }
+            : { agentId: composerBot.id, goal, startUrl: startUrl.trim() || undefined },
         ),
       });
       const result = await readApiJson<{ task: ComputerTask }>(response);
@@ -1271,6 +1313,8 @@ export default function ComputerPage() {
         // Started from another tab or device: bring that task into view.
         if (result.code === "COMPUTER_BUSY") {
           setShowComposer(false);
+          // An older idle list read must not overwrite this fresh busy result.
+          listEpochRef.current += 1;
           void loadTasks({ focusActive: true });
         }
         throw new Error(result.error);
@@ -1279,6 +1323,7 @@ export default function ComputerPage() {
         setGoal("");
         setStartUrl("");
       }
+      listEpochRef.current += 1;
       setTasks((current) => [result.data.task, ...(current ?? [])]);
       setSelectedId(result.data.task.id);
       setShowComposer(false);
@@ -1364,6 +1409,19 @@ export default function ComputerPage() {
             Your Bot's computer belongs to a Bot. Build one, then give it work here.
           </StatusNotice>
         ) : null}
+        {scopedAgentUnavailable ? (
+          <StatusNotice
+            tone="warning"
+            title="Bot Unavailable"
+            action={
+              <Button asChild size="sm" variant="secondary">
+                <Link to="/computer">Choose Bot</Link>
+              </Button>
+            }
+          >
+            The Bot in this link is no longer available. Choose a Bot to use its computer.
+          </StatusNotice>
+        ) : null}
 
         <div className={cn("wl-computer-layout", anyActive && "is-active")}>
           <div className="wl-computer-main">
@@ -1398,7 +1456,7 @@ export default function ComputerPage() {
               </div>
             ) : null}
             {!anyActive && selected && !showComposer ? taskDetail : null}
-            {!anyActive && (!selected || showComposer) ? (
+            {!anyActive && (!selected || showComposer) && !scopedAgentUnavailable ? (
               <form
                 className="wl-computer-composer"
                 onSubmit={(event) => {
@@ -1411,8 +1469,22 @@ export default function ComputerPage() {
                     <label htmlFor="computer-agent">Bot</label>
                     <NativeSelect
                       id="computer-agent"
-                      value={agentId}
-                      onChange={(event) => setAgentId(event.target.value)}
+                      value={composerAgentId}
+                      onChange={(event) => {
+                        const nextAgentId = event.target.value;
+                        if (hasScopedAgent) {
+                          setSearchParams(
+                            (current) => {
+                              const next = new URLSearchParams(current);
+                              next.set("agent", nextAgentId);
+                              return next;
+                            },
+                            { replace: true },
+                          );
+                        } else {
+                          setAgentId(nextAgentId);
+                        }
+                      }}
                     >
                       {agents.map((agent) => (
                         <option key={agent.id} value={agent.id}>
