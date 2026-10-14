@@ -116,7 +116,7 @@ for (const width of [320, 390, 1440]) {
     await page.goto("/features");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
-    const pillars = page.getByRole("list", { name: "What every Bot gets" });
+    const pillars = page.getByRole("list", { name: "Available Bot capabilities" });
     await expect(pillars.getByRole("heading", { level: 2 })).toHaveText([
       "Answers and Makes Calls",
       "Works From a Goal",

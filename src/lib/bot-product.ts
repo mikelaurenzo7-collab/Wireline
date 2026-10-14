@@ -198,7 +198,7 @@ export const BOT_MARKETING_VOICE = {
   headline: BOT_BRAND.slogan,
   subline: BOT_BRAND.promise,
   activationLine:
-    "Give your Bot a goal. It answers customers, calls prospects, works on its cloud computer, and follows through from its own inbox.",
+    "Start with calls, email, or both. Your Bot helps customers, reaches prospects, and tackles work from its own cloud computer.",
   primaryCta: "Start Free",
   spine: ["Call", "Text", "Email"],
 } as const;

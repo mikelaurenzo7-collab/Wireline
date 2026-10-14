@@ -112,7 +112,7 @@ Record current evidence after verification; do not copy old dollar balances or c
 ## Not launch blockers by themselves
 
 - **Supabase Auth leaked-password advisory:** BotBound customer passwords use the custom scrypt/HIBP-screened auth path, not Supabase Auth. Do not present the Supabase Auth toggle as a customer-auth control unless that architecture changes.
-- **GitHub hosted-runner billing failure:** restore CI when the account permits it, but do not call a runner-startup/billing failure a code regression. Exact-head verification and Render release certification in `docs/DEPLOYMENT_RUNBOOK.md` remain required while that external condition persists.
+- **GitHub Actions disabled:** the founder chose to keep repository Actions disabled. Restore CI when that decision changes; until then, exact-head local verification and Render release certification in `docs/DEPLOYMENT_RUNBOOK.md` remain required. Do not treat an absent hosted run as a passing check.
 - **Unused-index advisor notices on demo/test data:** do not delete indexes based on pre-customer statistics alone.
 
 ## First-customer gate

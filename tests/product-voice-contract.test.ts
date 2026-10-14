@@ -158,9 +158,10 @@ describe("BotBound product voice", () => {
     expect(MARKETING_VOICE.channelProof).toEqual(["Call", "Text", "Email"]);
     expect(BOT_MARKETING_VOICE.spine).toEqual(["Call", "Text", "Email"]);
     expect(WORKSPACE_VOICE.emptyCue).toContain("calls, text, email");
-    expect(AGENT_NUMBER_PROMISE).toContain("Every paid Bot");
+    expect(AGENT_NUMBER_PROMISE).toContain("Plans with calls");
     expect(AGENT_NUMBER_PROMISE).toContain("BotBound number");
     expect(AGENT_NUMBER_PROMISE).toContain("answer and make calls");
+    expect(AGENT_NUMBER_PROMISE).toContain("SMS requires an eligible plan and activation");
   });
 
   it("keeps Phone Bot, Conversation Bot, and Human Bot as configuration lenses", () => {

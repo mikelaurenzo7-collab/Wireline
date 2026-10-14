@@ -121,7 +121,7 @@ export default function Features() {
             </div>
           </header>
 
-          <ul className="wl-features-pillars" aria-label="What every Bot gets">
+          <ul className="wl-features-pillars" aria-label="Available Bot capabilities">
             {PILLARS.map(({ icon: Icon, label, title, body, note }) => (
               <li key={label} className="wl-features-pillar">
                 <span className="wl-features-pillar__icon" aria-hidden="true">

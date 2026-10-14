@@ -111,7 +111,7 @@ export const AGENT_DIRECTION_MODES = {
 } as const;
 
 export const AGENT_NUMBER_PROMISE =
-  "Every paid Bot includes a BotBound number at no extra line fee. It can answer and make calls, take callbacks, send texts, and manage handoffs under your direction." as const;
+  "Plans with calls include a BotBound number at no extra line fee. Your Bot can answer and make calls, take callbacks, and manage handoffs. SMS requires an eligible plan and activation." as const;
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
