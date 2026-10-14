@@ -885,10 +885,11 @@ async function executeTaskWithBrowser(
     if (!input.prepareBrowser || task.handoffGoal) {
       if (input.startUrl && !input.prepareBrowser && !task.stop) {
         const opened = await session.execute("navigate", { url: input.startUrl });
+        task.currentUrl = displayUrl(session.activeUrl()) || null;
         pushEvent(task, {
           kind: opened.ok ? "action" : "error",
           text: opened.activity,
-          url: displayUrl(session.activeUrl()) || undefined,
+          url: task.currentUrl || undefined,
           ok: opened.ok,
         });
         const frame = await session.frame();
@@ -896,6 +897,7 @@ async function executeTaskWithBrowser(
           task.frame = frame;
           task.frameAt = Date.now();
           task.frameUrl = displayUrl(session.activeUrl()) || null;
+          task.currentUrl = task.frameUrl;
         }
         await persist(task, {});
       }

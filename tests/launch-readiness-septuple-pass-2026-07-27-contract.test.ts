@@ -42,7 +42,7 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
   it("keeps UsageMeter and StripeBillingCard honest on billing fetch failures", () => {
     const usage = read("src/components/UsageMeter.tsx");
     const billing = read("src/components/StripeBillingCard.tsx");
-    expect(usage).toContain("Voice usage unavailable right now.");
+    expect(usage).toContain("Usage unavailable right now.");
     expect(usage).toContain("Showing last known usage.");
     expect(billing).toContain("if (!statusRaw.ok || !plansRaw.ok)");
     expect(billing).toContain("Billing details could not be loaded");

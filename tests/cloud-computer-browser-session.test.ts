@@ -435,6 +435,138 @@ describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)
     expect(await page.locator("#pw").inputValue()).toBe("");
   });
 
+  it("pauses a Bot submit click while allowing a harmless navigation click", async () => {
+    const page = session.activePage();
+    await page.setContent(`
+      <a id="pricing" href="#pricing-details" onclick="event.preventDefault(); document.body.dataset.nav='yes'">Pricing</a>
+      <form onsubmit="event.preventDefault(); document.body.dataset.sent='yes'">
+        <button id="send" type="submit">Send request</button>
+      </form>
+      <button id="book" type="button" onclick="document.body.dataset.booked='yes'">Book now</button>
+      <p id="pricing-details">Plans</p>
+    `);
+    const send = await page.locator("#send").boundingBox();
+    expect(send).toBeTruthy();
+    const blocked = await session.execute("left_click", {
+      target: { type: "coordinate", x: send!.x + 3, y: send!.y + 3 },
+    });
+    expect(blocked).toMatchObject({ ok: false, ownerCheckpoint: true });
+    expect(await page.locator("body").getAttribute("data-sent")).toBeNull();
+    const book = await page.locator("#book").boundingBox();
+    expect(book).toBeTruthy();
+    const booking = await session.execute("left_click", {
+      target: { type: "coordinate", x: book!.x + 3, y: book!.y + 3 },
+    });
+    expect(booking).toMatchObject({ ok: false, ownerCheckpoint: true });
+    expect(await page.locator("body").getAttribute("data-booked")).toBeNull();
+
+    const pricing = await page.locator("#pricing").boundingBox();
+    expect(pricing).toBeTruthy();
+    const navigation = await session.execute("left_click", {
+      target: { type: "coordinate", x: pricing!.x + 3, y: pricing!.y + 3 },
+    });
+    expect(navigation.ok).toBe(true);
+    expect(navigation.ownerCheckpoint).toBeUndefined();
+    expect(await page.locator("body").getAttribute("data-nav")).toBe("yes");
+    await session.executeOwnerInput({ kind: "click", x: send!.x + 3, y: send!.y + 3 });
+    expect(await page.locator("body").getAttribute("data-sent")).toBe("yes");
+    await page.setContent(FIXTURE);
+  });
+
+  it("pauses Enter on a focused form field before it submits", async () => {
+    const page = session.activePage();
+    await page.setContent(`
+      <form onsubmit="event.preventDefault(); document.body.dataset.sent='yes'">
+        <input id="message" name="message" />
+        <button type="submit">Send</button>
+      </form>
+    `);
+    await page.locator("#message").focus();
+    const blocked = await session.execute("key", { text: "Enter" });
+    expect(blocked).toMatchObject({ ok: false, ownerCheckpoint: true });
+    const shortcut = await session.execute("key", { text: "ctrl+enter" });
+    expect(shortcut).toMatchObject({ ok: false, ownerCheckpoint: true });
+    expect(await page.locator("body").getAttribute("data-sent")).toBeNull();
+    await page.setContent(FIXTURE);
+  });
+
+  it("allows a clearly read-only GET search but pauses POST and payment controls", async () => {
+    const page = session.activePage();
+    await page.setContent(`
+      <form id="search" method="get" action="/search" onsubmit="event.preventDefault(); document.body.dataset.searched='yes'">
+        <input id="query" name="q" type="text" />
+        <button id="search-button" type="submit">Google Search</button>
+      </form>
+      <form id="message" method="post" onsubmit="event.preventDefault(); document.body.dataset.sent='yes'">
+        <input id="message-text" name="q" type="text" />
+        <button id="post-button" type="submit">Search messages</button>
+      </form>
+      <form id="payment" method="get" onsubmit="event.preventDefault(); document.body.dataset.paid='yes'">
+        <input id="payment-query" name="q" type="text" />
+        <button id="pay-button" type="submit">Pay</button>
+      </form>
+      <form id="payment-full" method="get" onsubmit="event.preventDefault(); document.body.dataset.paid='yes'">
+        <input id="payment-full-query" name="q" type="text" />
+        <button id="submit-payment" type="submit">Submit Payment</button>
+        <button id="delete-button" type="button" onclick="document.body.dataset.deleted='yes'">Delete</button>
+      </form>
+    `);
+    const search = await page.locator("#search-button").boundingBox();
+    expect(search).toBeTruthy();
+    const click = await session.execute("left_click", {
+      target: { type: "coordinate", x: search!.x + 3, y: search!.y + 3 },
+    });
+    expect(click).toMatchObject({ ok: true });
+    expect(await page.locator("body").getAttribute("data-searched")).toBe("yes");
+    await page.locator("#query").focus();
+    expect((await session.execute("key", { text: "Enter" })).ok).toBe(true);
+
+    const post = await page.locator("#post-button").boundingBox();
+    expect(post).toBeTruthy();
+    expect(
+      await session.execute("left_click", {
+        target: { type: "coordinate", x: post!.x + 3, y: post!.y + 3 },
+      }),
+    ).toMatchObject({ ok: false, ownerCheckpoint: true });
+    expect(await page.locator("body").getAttribute("data-sent")).toBeNull();
+    await page.locator("#payment-query").focus();
+    expect(await session.execute("key", { text: "Enter" })).toMatchObject({
+      ok: false,
+      ownerCheckpoint: true,
+    });
+    expect(await page.locator("body").getAttribute("data-paid")).toBeNull();
+    await page.locator("#payment-full-query").focus();
+    expect(await session.execute("key", { text: "Enter" })).toMatchObject({
+      ok: false,
+      ownerCheckpoint: true,
+    });
+    const deleteButton = await page.locator("#delete-button").boundingBox();
+    expect(deleteButton).toBeTruthy();
+    expect(
+      await session.execute("left_click", {
+        target: { type: "coordinate", x: deleteButton!.x + 3, y: deleteButton!.y + 3 },
+      }),
+    ).toMatchObject({ ok: false, ownerCheckpoint: true });
+    expect(await page.locator("body").getAttribute("data-deleted")).toBeNull();
+    await page.setContent(FIXTURE);
+  });
+
+  it("pauses a consequential unlabeled HTML role if it is visibly clickable", async () => {
+    const page = session.activePage();
+    await page.setContent(`
+      <div id="send" onclick="document.body.dataset.sent='yes'">Send message</div>
+    `);
+    const send = await page.locator("#send").boundingBox();
+    expect(send).toBeTruthy();
+    expect(
+      await session.execute("left_click", {
+        target: { type: "coordinate", x: send!.x + 3, y: send!.y + 3 },
+      }),
+    ).toMatchObject({ ok: false, ownerCheckpoint: true });
+    expect(await page.locator("body").getAttribute("data-sent")).toBeNull();
+    await page.setContent(FIXTURE);
+  });
+
   it("blanks a tab that a redirect hop took to a private address, before anyone reads it", async () => {
     const page = session.activePage();
     const internals = session as unknown as {

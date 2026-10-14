@@ -34,11 +34,26 @@ beforeEach(() => {
     credit_balance_usd: 24.5,
     completion_grace_due_usd: 0,
     live_voice_blocked: false,
+    ai_spend_usd: 0.375,
+    ai_spend_limit_usd: 3,
     reset_at: "2026-10-01T00:00:00Z",
   };
 });
 
 describe("voice allowance boundary copy", () => {
+  it("shows managed AI usage and its cap separately from voice and Runtime Balance", () => {
+    const content = text(UsageMeter({ showBalance: false }));
+    expect(content).toContain("Managed AI");
+    expect(content).toContain("Computer and other AI work");
+    expect(content).toContain("$0.38 / $3.00 used");
+    expect(content).not.toContain("$24.50");
+  });
+
+  it("does not round small Computer spend down to zero", () => {
+    h.snapshot.ai_spend_usd = 0.0001;
+    expect(text(UsageMeter({}))).toContain("$0.0001 / $3.00 used");
+  });
+
   it("uses the server allowance end without promising a renewal or interpreting its opaque key", () => {
     h.snapshot.plan_id = "voice-regular";
     h.snapshot.period_key = "paid:sub_customer:1789401600";

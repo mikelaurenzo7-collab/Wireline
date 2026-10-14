@@ -127,6 +127,17 @@ describe("cloud computer source contracts", () => {
     expect(browser).toContain("if (this.closePromise) return this.closePromise");
   });
 
+  it("keeps the visible address and first frame aligned after a direct task start URL", () => {
+    const runner = read("src/lib/cloud-computer/task-runner.ts");
+    const directStart = runner.slice(
+      runner.indexOf("if (input.startUrl && !input.prepareBrowser && !task.stop)"),
+      runner.indexOf("const activeSession = session;"),
+    );
+    expect(directStart).toMatch(
+      /await session\.execute\("navigate"[\s\S]*?task\.frameUrl = displayUrl\(session\.activeUrl\(\)\) \|\| null;\s*task\.currentUrl = task\.frameUrl;/,
+    );
+  });
+
   it("does not wait for owner input when the question was not saved", () => {
     const runner = read("src/lib/cloud-computer/task-runner.ts");
     const ownerWait = runner.slice(

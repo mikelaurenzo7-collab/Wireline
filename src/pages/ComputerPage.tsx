@@ -1491,8 +1491,7 @@ export default function ComputerPage() {
                 <div className="wl-computer-composer__footer">
                   <p>
                     <ShieldCheck className="size-4" aria-hidden="true" />
-                    Passwords and card details stay with you. Your Bot submits forms only when you
-                    ask.
+                    Take control for passwords, payments, and submissions.
                   </p>
                   <Button
                     type="submit"

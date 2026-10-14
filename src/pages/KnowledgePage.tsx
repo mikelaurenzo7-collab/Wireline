@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import { BookOpen, MessageCircle } from "lucide-react";
 
 import { Button, EmptyState, NativeSelect } from "../components/atoms";
+import { StatusNotice } from "../components/molecules";
 import WorkspaceControlBand from "../components/layout/WorkspaceControlBand";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
@@ -86,7 +87,13 @@ export default function KnowledgePage() {
   const navigate = useNavigate();
   const { agents, loading, degraded, refresh } = useAgents();
   const { requestedId, resolvedId } = useStudioActiveAgentId();
-  const agentId = resolvedId || "";
+  // A requested Bot is an explicit scope. A stale link must never fall back to
+  // another Bot and let the owner save knowledge to the wrong one.
+  const requestedAgentId = requestedId?.trim() || "";
+  const requestedAgentUnavailable = Boolean(
+    requestedAgentId && !agents.some((agent) => agent.id === requestedAgentId),
+  );
+  const agentId = requestedAgentUnavailable ? "" : resolvedId || "";
   const rawRequestedTab = params.get("tab");
   const requestedTab = rawRequestedTab as KnowledgeTabId | null;
   const activeTab = knowledgeTabs.some((tab) => tab.id === requestedTab)
@@ -119,13 +126,15 @@ export default function KnowledgePage() {
 
   const secondaryControls = (
     <>
-      <Button asChild variant="secondary" size="sm" className="min-h-11 shrink-0 justify-center">
-        <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=test`}>
-          <MessageCircle size={15} aria-hidden="true" />
-          Rehearse in Studio
-        </Link>
-      </Button>
-      {populated && activeTab === "knowledge" ? (
+      {agentId ? (
+        <Button asChild variant="secondary" size="sm" className="min-h-11 shrink-0 justify-center">
+          <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=test`}>
+            <MessageCircle size={15} aria-hidden="true" />
+            Rehearse in Studio
+          </Link>
+        </Button>
+      ) : null}
+      {populated && (activeTab === "knowledge" || requestedAgentUnavailable) ? (
         <NativeSelect
           value={agentId}
           onChange={(event) =>
@@ -142,6 +151,11 @@ export default function KnowledgePage() {
           aria-label="Choose Bot"
           className="min-w-[160px] max-w-[12rem] sm:w-auto"
         >
+          {requestedAgentUnavailable ? (
+            <option value="" disabled>
+              Choose a Bot
+            </option>
+          ) : null}
           {agents.map((agent) => (
             <option key={agent.id} value={agent.id}>
               {agent.name}
@@ -179,7 +193,26 @@ export default function KnowledgePage() {
             secondary={secondaryControls}
           />
 
-          {activeTab === "knowledge" ? <KnowledgeEditor key={agentId} agentId={agentId} /> : null}
+          {requestedAgentUnavailable && !loading ? (
+            <StatusNotice
+              tone="warning"
+              title={degraded ? "Bot Lookup Unavailable" : "Bot Unavailable"}
+              action={
+                degraded ? (
+                  <Button type="button" variant="secondary" size="sm" onClick={refresh}>
+                    Retry
+                  </Button>
+                ) : undefined
+              }
+            >
+              {degraded
+                ? "We couldn't verify the Bot in this link. Retry or choose a Bot above before adding knowledge."
+                : "The Bot in this link is no longer available. Choose a Bot above before adding knowledge."}
+            </StatusNotice>
+          ) : null}
+          {activeTab === "knowledge" && !requestedAgentUnavailable ? (
+            <KnowledgeEditor key={agentId} agentId={agentId} />
+          ) : null}
           {activeTab === "reports" ? (
             <div className="space-y-5">
               <ReportingPreferences />

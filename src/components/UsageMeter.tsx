@@ -11,6 +11,11 @@ import type { WorkspaceUsageResponse } from "../types/api";
 const REFRESH_MS = 60_000;
 const BALANCE_TITLE = CONVERSATION_BALANCE_COPY.title;
 
+function formatAiSpendUsd(amount: number): string {
+  const safe = Number.isFinite(amount) ? Math.max(0, amount) : 0;
+  return `$${safe > 0 && safe < 0.01 ? safe.toFixed(4) : safe.toFixed(2)}`;
+}
+
 export default function UsageMeter({
   compact = false,
   onUpgrade,
@@ -35,7 +40,7 @@ export default function UsageMeter({
       try {
         const res = await authFetch("/api/billing/usage");
         if (!res.ok) {
-          if (alive) setLoadError("Voice usage unavailable right now.");
+          if (alive) setLoadError("Usage unavailable right now.");
           return;
         }
         const data = (await res.json()) as WorkspaceUsageResponse;
@@ -44,7 +49,7 @@ export default function UsageMeter({
           setLoadError(null);
         }
       } catch {
-        if (alive) setLoadError("Voice usage unavailable right now.");
+        if (alive) setLoadError("Usage unavailable right now.");
       } finally {
         if (alive) setLoading(false);
       }
@@ -66,7 +71,7 @@ export default function UsageMeter({
         )}
       >
         <Loader2 className="w-3 h-3 animate-spin" />
-        Loading voice usage
+        Loading usage
       </div>
     );
   }
@@ -101,18 +106,25 @@ export default function UsageMeter({
   const resetDate = new Date(snap.reset_at);
   const resetLabel = resetDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   const lowCredit = credit > 0 && credit < 5;
+  const aiUsed = Number.isFinite(snap.ai_spend_usd) ? Math.max(0, snap.ai_spend_usd) : 0;
+  const aiLimit = snap.ai_spend_limit_usd;
+  const aiPct = aiLimit > 0 ? Math.min(100, Math.round((aiUsed / aiLimit) * 100)) : 0;
   const compactTitle = isBlocked
     ? completionDue > 0
       ? `New live calls paused. Review Billing to clear $${completionDue.toFixed(2)} in completion credit.`
       : `New live calls paused. Review your plan and ${BALANCE_TITLE} in Billing.`
     : `${used} of ${included} included voice minutes used, current allowance through ${resetLabel}`;
+  const compactUsageTitle =
+    aiLimit > 0
+      ? `${compactTitle}. Managed AI: ${formatAiSpendUsd(aiUsed)} of ${formatAiSpendUsd(aiLimit)} used.`
+      : compactTitle;
 
   if (compact) {
     return (
       <div
         className="usage-meter flex items-center gap-2 py-1.5 px-3.5 rounded-full wl-panel-elevated border border-white/8 wl-micro-badge font-mono shadow-sm hover:shadow-brand/10 hover:border-brand/30 transition-all duration-300 cursor-help"
         data-usage-state={usageState}
-        title={loadError ? `${compactTitle} (${loadError})` : compactTitle}
+        title={loadError ? `${compactUsageTitle} (${loadError})` : compactUsageTitle}
       >
         <span className="w-2 h-2 rounded-full animate-pulse wl-accent-dot" data-circular />
         <span className="text-foreground/55 font-semibold tracking-wider">VOICE</span>
@@ -174,6 +186,27 @@ export default function UsageMeter({
           )}
         />
       </div>
+
+      {Number.isFinite(aiLimit) && aiLimit > 0 ? (
+        <div className="space-y-2 border-t border-white/8 pt-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Managed AI</p>
+              <p className="text-xs text-muted-foreground">Computer and other AI work</p>
+            </div>
+            <p className="shrink-0 text-sm tabular-nums text-muted-foreground">
+              <span className="font-semibold text-foreground">{formatAiSpendUsd(aiUsed)}</span> /{" "}
+              {formatAiSpendUsd(aiLimit)} used
+            </p>
+          </div>
+          <Progress
+            value={aiPct}
+            aria-label={`Managed AI allowance: ${formatAiSpendUsd(aiUsed)} of ${formatAiSpendUsd(aiLimit)} used (${aiPct}%)`}
+            className="h-2 bg-white/5"
+            indicatorClassName={aiPct >= 80 ? "bg-amber-500" : "bg-brand"}
+          />
+        </div>
+      ) : null}
 
       {isBlocked && (
         <div className="flex items-start gap-2.5 p-3.5 rounded-md shadow-lg bg-rose-500/8 border border-rose-500/25 shadow-rose-500/5">

@@ -422,7 +422,8 @@ export default function BillingSettings() {
                   {CONVERSATION_BALANCE_COPY.title}
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                  Prepaid voice, SMS, and generated work beyond your plan.
+                  Prepaid extra call minutes, SMS, and eligible live actions. Computer uses your
+                  managed AI allowance.
                 </p>
               </div>
               <ShieldCheck className="size-5 shrink-0 text-primary" aria-hidden="true" />
@@ -453,7 +454,7 @@ export default function BillingSettings() {
                             ? "Available after a live plan is active."
                             : balanceDue > 0
                               ? "A previous live action finished after coverage ran out. Restore this amount before another paid action."
-                              : "Extra usage draws only from this balance, never an automatic overage invoice."}
+                              : "Eligible extra usage draws only from this balance, never an automatic overage invoice."}
                 </p>
 
                 {canAddBalance ? (

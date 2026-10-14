@@ -148,6 +148,8 @@ export type MemberResult = {
   content: MemberResultBlock[];
   /** Short, owner-readable line for the activity feed. Never contains typed text. */
   activity: string;
+  /** The model action was not executed; the owner must handle this control. */
+  ownerCheckpoint?: true;
   /** Only set after inspecting a visible link with a fully public destination. */
   verifiedLinkUrl?: string;
 };
@@ -177,6 +179,63 @@ const TOO_MANY_SITES =
   "This task has visited too many different sites. Start a new task with a narrower goal.";
 
 class MemberError extends Error {}
+
+class OwnerCheckpointError extends Error {}
+
+const CONSEQUENTIAL_CONTROL =
+  /\b(?:buy|purchase|pay|payment|checkout|place order|send|submit|book|reserve|schedule|confirm|complete order|publish|post|invite|transfer|delete|remove|subscribe|sign(?: up)?|register)\b/i;
+
+type ActivationTarget = {
+  tag: string;
+  role: string;
+  type: string;
+  label: string;
+  inForm: boolean;
+  formMethod: string;
+  searchForm: boolean;
+  searchField: boolean;
+  defaultSubmitLabel: string;
+  clickable: boolean;
+  editable: boolean;
+  frame: boolean;
+};
+
+function needsOwnerForActivation(
+  target: ActivationTarget,
+  key: "click" | "Enter" | "Space",
+): boolean {
+  if (target.frame) return true;
+  const { tag, role, type, label, inForm } = target;
+  const isButton =
+    tag === "button" ||
+    (tag === "input" && /^(?:button|submit|image)$/.test(type)) ||
+    role === "button";
+  const isLink = tag === "a" || role === "link";
+  const isSubmit =
+    type === "submit" ||
+    type === "image" ||
+    (tag === "button" && inForm && type !== "button" && type !== "reset");
+  // A GET search form is read-only by HTML convention. Check both the form
+  // and the activated control: a payment or delete button in the same form
+  // must still pause for the owner.
+  const isSearch =
+    target.formMethod === "get" &&
+    target.searchForm &&
+    !CONSEQUENTIAL_CONTROL.test(target.defaultSubmitLabel) &&
+    ((isSubmit &&
+      /\b(?:search|find|go|look up)\b/i.test(label) &&
+      !CONSEQUENTIAL_CONTROL.test(label)) ||
+      (key === "Enter" && target.searchField));
+  if (isSubmit && !isSearch) return true;
+  if ((isButton || isLink || target.clickable) && CONSEQUENTIAL_CONTROL.test(label)) return true;
+  if (
+    key === "Enter" &&
+    !isSearch &&
+    (tag === "input" || tag === "textarea" || role === "textbox" || target.editable)
+  )
+    return true;
+  return false;
+}
 
 function fail(message: string): never {
   throw new MemberError(message);
@@ -792,6 +851,143 @@ export class CloudBrowserSession {
     return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   }
 
+  /** Bot activations are checked at the browser boundary; owner input uses a separate path. */
+  private async assertModelActivationSafe(
+    page: Page,
+    key: "click" | "Enter" | "Space",
+    point?: { x: number; y: number },
+  ): Promise<void> {
+    const checkpoint = (): never => {
+      throw new OwnerCheckpointError("The owner must handle this control directly.");
+    };
+    let inspected: unknown;
+    try {
+      inspected = await page.evaluate(
+        ({ point }) => {
+          let element: Element | null = point
+            ? document.elementFromPoint(point.x, point.y)
+            : document.activeElement;
+          if (!element) return null;
+          // Open shadow roots expose the hit target. Closed roots stay unknown.
+          while (true) {
+            const root: ShadowRoot | null = element.shadowRoot;
+            if (!root) break;
+            const inner: Element | null = point
+              ? root.elementFromPoint(point.x, point.y)
+              : root.activeElement;
+            if (!inner || inner === element) break;
+            element = inner;
+          }
+          const frame = element.closest("iframe,frame") !== null;
+          const control =
+            element.closest(
+              "button,input,textarea,a,select,[role='button'],[role='link'],[role='textbox'],[contenteditable],[onclick]",
+            ) ?? element;
+          const form =
+            control.closest("form") ??
+            ("form" in control && control.form instanceof HTMLFormElement ? control.form : null);
+          const searchInput = form?.querySelector(
+            'input[type="search"],input[name="q"],input[name="query"],input[name="search"],input[name="searchTerm"],input[name="s"]',
+          );
+          let formActionPath = "";
+          if (form) {
+            try {
+              formActionPath = new URL(form.action, location.href).pathname;
+            } catch {
+              // about:blank fixtures and malformed page URLs still need the
+              // explicit search-input checks below.
+            }
+          }
+          const searchForm = Boolean(
+            form &&
+            (form.getAttribute("role") === "search" ||
+              searchInput ||
+              /(?:^|\/)(?:search|find|query)(?:\/|$)/i.test(formActionPath)),
+          );
+          const searchField =
+            control === searchInput ||
+            (control instanceof HTMLInputElement &&
+              control.type === "search" &&
+              control.form === form);
+          const defaultSubmit = form
+            ? Array.from(form.querySelectorAll("button,input")).find(
+                (candidate) =>
+                  (candidate instanceof HTMLButtonElement && candidate.type === "submit") ||
+                  (candidate instanceof HTMLInputElement &&
+                    (candidate.type === "submit" || candidate.type === "image")),
+              )
+            : null;
+          const defaultSubmitLabel = (
+            defaultSubmit?.getAttribute("aria-label") ||
+            defaultSubmit?.textContent ||
+            defaultSubmit?.getAttribute("value") ||
+            ""
+          )
+            .trim()
+            .slice(0, 200);
+          const label = (
+            control.getAttribute("aria-label") ||
+            ("innerText" in control && typeof control.innerText === "string"
+              ? control.innerText
+              : "") ||
+            control.getAttribute("value") ||
+            control.getAttribute("title") ||
+            control.getAttribute("placeholder") ||
+            ""
+          )
+            .trim()
+            .slice(0, 200);
+          return {
+            tag: control.tagName.toLowerCase(),
+            role: control.getAttribute("role") || "",
+            type: control.getAttribute("type")?.toLowerCase() || "",
+            label,
+            inForm: Boolean(form),
+            formMethod: form?.method.toLowerCase() || "",
+            searchForm,
+            searchField,
+            defaultSubmitLabel,
+            clickable:
+              control.hasAttribute("onclick") ||
+              control.hasAttribute("tabindex") ||
+              getComputedStyle(control).cursor === "pointer",
+            editable: control instanceof HTMLElement && control.isContentEditable,
+            frame,
+          };
+        },
+        { point },
+      );
+    } catch {
+      checkpoint();
+    }
+    if (inspected === null && point) return; // Empty viewport space cannot submit a control.
+    if (!inspected || typeof inspected !== "object") checkpoint();
+    const item = inspected as Record<string, unknown>;
+    if (
+      typeof item.tag !== "string" ||
+      typeof item.role !== "string" ||
+      typeof item.type !== "string" ||
+      typeof item.label !== "string" ||
+      typeof item.inForm !== "boolean" ||
+      typeof item.formMethod !== "string" ||
+      typeof item.searchForm !== "boolean" ||
+      typeof item.searchField !== "boolean" ||
+      typeof item.defaultSubmitLabel !== "string" ||
+      typeof item.clickable !== "boolean" ||
+      typeof item.editable !== "boolean" ||
+      typeof item.frame !== "boolean" ||
+      !/^[a-z][a-z0-9-]{0,40}$/.test(item.tag) ||
+      item.role.length > 60 ||
+      item.type.length > 60 ||
+      item.label.length > 200 ||
+      item.defaultSubmitLabel.length > 200 ||
+      item.formMethod.length > 30
+    )
+      checkpoint();
+    if ((item.tag as string).includes("-")) checkpoint();
+    if (needsOwnerForActivation(item as ActivationTarget, key)) checkpoint();
+  }
+
   private async withModifiers<T>(page: Page, raw: unknown, action: () => Promise<T>): Promise<T> {
     const modifiers = parseModifiers(raw);
     if (!modifiers) fail("Unsupported modifier keys.");
@@ -873,6 +1069,19 @@ export class CloudBrowserSession {
     } catch (error) {
       // Work the member started (typing, above all) stops at its next check.
       token.cancelled = true;
+      if (error instanceof OwnerCheckpointError) {
+        return {
+          ok: false,
+          ownerCheckpoint: true,
+          content: [
+            {
+              type: "text",
+              text: "The Bot paused before activating a submit or commitment control.",
+            },
+          ],
+          activity: "Paused for owner control",
+        };
+      }
       const message =
         error instanceof MemberError
           ? this.redactOwnerText(error.message)
@@ -1030,6 +1239,8 @@ export class CloudBrowserSession {
       case "triple_click": {
         const page = this.activePage(input.tab_id);
         const target = parseTarget(input.target);
+        await this.assertModelActivationSafe(page, "click", await this.pointAt(page, target));
+        if (token.cancelled || this.closed) fail("The click was stopped before it started.");
         const button =
           member === "right_click" ? "right" : member === "middle_click" ? "middle" : "left";
         const clickCount = member === "double_click" ? 2 : member === "triple_click" ? 3 : 1;
@@ -1079,6 +1290,9 @@ export class CloudBrowserSession {
         const rawPath = Array.isArray(input.path) ? input.path : [input.from, input.target];
         if (rawPath.length < 2 || rawPath.length > 50) fail("The drag path is invalid.");
         const path = rawPath.map((point) => parseTarget(point, false) as { x: number; y: number });
+        await this.assertModelActivationSafe(page, "click", path[0]);
+        await this.assertModelActivationSafe(page, "click", path[path.length - 1]);
+        if (token.cancelled || this.closed) fail("The drag was stopped before it started.");
         await this.withModifiers(page, input.modifiers, async () => {
           const [from, ...remaining] = path;
           if (!from) fail("The drag path is invalid.");
@@ -1096,6 +1310,8 @@ export class CloudBrowserSession {
       case "left_mouse_up": {
         const page = this.activePage(input.tab_id);
         const point = parseTarget(input.target, false) as { x: number; y: number };
+        await this.assertModelActivationSafe(page, "click", point);
+        if (token.cancelled || this.closed) fail("The mouse action was stopped before it started.");
         await page.mouse.move(point.x, point.y);
         if (member === "left_mouse_down") await page.mouse.down();
         else await page.mouse.up();
@@ -1142,8 +1358,11 @@ export class CloudBrowserSession {
         for (const piece of typingPieces(text)) {
           if (token.cancelled || this.closed) fail("type was stopped before it finished.");
           await this.refuseIntoPasswordField(page);
-          if (piece === "\n") await page.keyboard.press("Enter");
-          else await page.keyboard.type(piece, { delay: 8 });
+          if (piece === "\n") {
+            await this.assertModelActivationSafe(page, "Enter");
+            if (token.cancelled || this.closed) fail("type was stopped before it finished.");
+            await page.keyboard.press("Enter");
+          } else await page.keyboard.type(piece, { delay: 8 });
         }
         return this.ok("Typed the text.", "Typed into a field");
       }
@@ -1158,6 +1377,11 @@ export class CloudBrowserSession {
           for (const chord of chords) {
             if (token.cancelled || this.closed) fail("key was stopped before it finished.");
             if (chordTypesText(chord)) await this.refuseIntoPasswordField(page);
+            const activationKey = chord.split("+").at(-1);
+            if (activationKey === "Enter" || activationKey === "Space") {
+              await this.assertModelActivationSafe(page, activationKey);
+              if (token.cancelled || this.closed) fail("key was stopped before it finished.");
+            }
             await page.keyboard.press(chord);
           }
         }
@@ -1172,6 +1396,11 @@ export class CloudBrowserSession {
         const chords = parseKeySequence(String(input.text ?? ""));
         if (!chords || chords.length !== 1) fail("hold_key needs one key or chord.");
         if (chordTypesText(chords[0])) await this.refuseIntoPasswordField(page);
+        const activationKey = chords[0].split("+").at(-1);
+        if (activationKey === "Enter" || activationKey === "Space") {
+          await this.assertModelActivationSafe(page, activationKey);
+          if (token.cancelled || this.closed) fail("hold_key was stopped before it started.");
+        }
         const keys = chords[0].split("+");
         const seconds = clampNumber(input.duration, 0, 5, 1);
         for (const key of keys) await page.keyboard.down(key);

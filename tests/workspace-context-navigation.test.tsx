@@ -291,7 +291,7 @@ describe("Bot context across workspace pages", () => {
     },
   );
 
-  it.each(["", "deleted-bot", "bot-a"])(
+  it.each(["", "bot-a"])(
     "uses a valid shared Bot for Knowledge, import and testing (requested: %s)",
     (requested) => {
       if (requested) h.params.set("agent", requested);
@@ -308,6 +308,18 @@ describe("Bot context across workspace pages", () => {
       ).toBe(`/studio?agent=${expected}&section=test`);
     },
   );
+
+  it("blocks knowledge edits for an unavailable Bot deep link until the owner chooses one", () => {
+    h.params = new URLSearchParams({ agent: "deleted-bot" });
+    const nodes = elements(render(KnowledgePage));
+    expect(nodes.find((node) => node.type === KnowledgeEditor)).toBeUndefined();
+    expect(nodes.find((node) => node.type === "notice")?.props.title).toBe("Bot Unavailable");
+    expect(nodes.find((node) => node.type === "select")?.props.value).toBe("");
+    expect(nodes.some((node) => node.type === "option" && node.props.value === "bot-a")).toBe(true);
+    expect(
+      nodes.find((node) => text(node) === "Rehearse in Studio" && node.type === "a"),
+    ).toBeUndefined();
+  });
 
   it("coordinates website import with open Knowledge drafts and its refresh", () => {
     const editor = () => elements(render(() => KnowledgeEditor({ agentId: "bot-a" })));
