@@ -104,6 +104,71 @@ describe("Office document text extraction", () => {
     );
   });
 
+  it("keeps a styled empty cell from taking the next cell's value", () => {
+    const bytes = storedZip([
+      { name: "xl/workbook.xml", contents: "<workbook/>" },
+      {
+        name: "xl/sharedStrings.xml",
+        contents: "<sst><si><t>First</t></si><si/><si><t>Third</t></si></sst>",
+      },
+      {
+        name: "xl/worksheets/sheet1.xml",
+        contents:
+          '<worksheet><sheetData><row r="1"><c r="A1" s="2"/><c r="B1" t="s"><v>2</v></c></row><row r="2"/><row r="3"><c r="A3" t="s"><v>0</v></c></row></sheetData></worksheet>',
+      },
+    ]);
+
+    expect(extractOfficeDocumentText(bytes, "xlsx")).toBe(
+      "Sheet 1\nRow 1: B1: Third\nRow 3: A3: First",
+    );
+  });
+
+  const UNCLOSED = 200_000;
+  const workbook = { name: "xl/workbook.xml", contents: "<workbook/>" };
+  it.each([
+    [
+      "DOCX paragraphs",
+      "docx",
+      [{ name: "word/document.xml", contents: "<w:p>x".repeat(UNCLOSED) }],
+    ],
+    [
+      "DOCX text runs",
+      "docx",
+      [{ name: "word/document.xml", contents: `<w:p>${"<w:t>x".repeat(UNCLOSED)}</w:p>` }],
+    ],
+    [
+      "XLSX rows",
+      "xlsx",
+      [workbook, { name: "xl/worksheets/sheet1.xml", contents: "<row>x".repeat(UNCLOSED) }],
+    ],
+    [
+      "XLSX cells",
+      "xlsx",
+      [
+        workbook,
+        { name: "xl/worksheets/sheet1.xml", contents: `<row>${"<c>x".repeat(UNCLOSED)}</row>` },
+      ],
+    ],
+    [
+      "XLSX shared strings",
+      "xlsx",
+      [
+        workbook,
+        { name: "xl/sharedStrings.xml", contents: "<si>x".repeat(UNCLOSED) },
+        { name: "xl/worksheets/sheet1.xml", contents: "<worksheet/>" },
+      ],
+    ],
+  ] as const)("reads %s with many unclosed tags in linear time", (_label, extension, files) => {
+    const bytes = storedZip(files.map((file) => ({ ...file, method: 8 as const })));
+    const started = performance.now();
+
+    expect(() => extractOfficeDocumentText(bytes, extension)).toThrow(
+      "The Office document contains no readable text.",
+    );
+    // The lazy patterns this replaced needed minutes for these 1 MB entries.
+    expect(performance.now() - started).toBeLessThan(2_000);
+  });
+
   it("rejects malformed archives, mismatched Office formats, and empty workbooks", () => {
     expect(() => extractOfficeDocumentText(Buffer.from("not a zip"), "docx")).toThrow();
     expect(() =>

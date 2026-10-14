@@ -272,14 +272,19 @@ function basePlanFromInvoiceLine(line: Stripe.InvoiceLineItem): StripePlan | nul
     : basePlanByStripePrice(candidate);
 }
 
-/** Period receipts funded by full base-plan lines, never add-ons or prorations. */
+/**
+ * Period receipts funded by full base-plan lines, never add-ons or prorations.
+ * A plan without Runtime Allowance (Calls and Email channel plans) never posts a
+ * period grant, so its invoices fund no receipt a refund or dispute could reverse.
+ */
 export function runtimeAllowanceReferencesForInvoice(
   invoice: Stripe.Invoice,
   subscriptionId: string,
 ): string[] {
   const references = new Set<string>();
   for (const line of invoice.lines?.data ?? []) {
-    if (!(line.amount > 0) || !basePlanFromInvoiceLine(line)) continue;
+    const plan = line.amount > 0 ? basePlanFromInvoiceLine(line) : null;
+    if (!plan || !(plan.runtime_allowance_usd_monthly > 0)) continue;
     const legacy = line as Stripe.InvoiceLineItem & { proration?: boolean };
     if (line.parent?.subscription_item_details?.proration || legacy.proration) continue;
     const periodStart = line.period?.start;

@@ -14,6 +14,7 @@ import {
 import { authenticateUser } from "../middleware/auth";
 import { fencePayableBillingDuringAccountDeletion } from "../middleware/account-deletion-billing-fence";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
+import { enforceVerifiedEmailForCheckout } from "../lib/trial-gate";
 import * as schema from "../db/schema";
 import type { AuthenticatedRequest } from "../types/auth";
 import { emitServerProductEvent } from "../lib/product-event-server";
@@ -48,6 +49,7 @@ router.post(
   "/api/billing/checkout",
   authenticateUser,
   enforceLaunchHardGate,
+  enforceVerifiedEmailForCheckout,
   fencePayableBillingDuringAccountDeletion,
   async (req: AuthenticatedRequest, res: Response) => {
     if (!stripeAvailable()) throw AppError.fromHttpStatus(503, "Stripe not configured.");

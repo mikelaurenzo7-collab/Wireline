@@ -432,12 +432,17 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
       }
       case "invoice.payment_succeeded": {
         const inv = event.data.object as Stripe.Invoice;
-        // Scheduled capacity is granted only after the authoritative renewal
-        // invoice is paid. Failure must release the webhook claim for retry.
+        // A renewal rolls the period while its invoice is still a draft, so the
+        // customer.subscription.updated sync cannot record the paid period.
+        // This event is the first moment that invoice is paid: re-sync every
+        // plan subscription so the paid-period receipt (and any scheduled
+        // capacity) is recorded. Failure releases the webhook claim for retry.
         const renewedSubscriptionId = stripeSubscriptionIdForInvoice(inv);
         if (renewedSubscriptionId) {
           const renewed = await stripe.subscriptions.retrieve(renewedSubscriptionId);
-          if (renewed.metadata.wireline_capacity_target_plan)
+          // The Live Video add-on is a standalone subscription; syncing it would
+          // clobber the plan row keyed on user_id (see the subscription arm).
+          if (renewed.metadata?.purpose !== "live_video_addon")
             await syncSubscriptionFromStripe(renewed);
         }
         try {

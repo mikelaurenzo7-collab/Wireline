@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Live tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
-import { and, eq, ilike, inArray, not, or } from "drizzle-orm";
+import { and, eq, ilike, inArray, not } from "drizzle-orm";
 
 import { superviseClientCommunication } from "../ai-supervisor";
 import * as schema from "../../db/schema";
@@ -243,10 +243,19 @@ export async function handleCoreToolCall(
 
   if (fn === "search_leads") {
     try {
-      const { query } = args || {};
-      const safeQuery = String(query || "")
-        .replace(/[^A-Za-z0-9 @.\-+]/g, "")
-        .slice(0, 80);
+      // The person on the line can see only their own record. A free-text
+      // query let any caller read back other leads' names and numbers.
+      const callerPhone = sanitizePhone(
+        (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
+          (message.call as { customer?: { number?: string } } | undefined)?.customer?.number,
+      );
+      if (callerPhone.replace(/\D/g, "").length < 7) {
+        return {
+          toolCallId,
+          result:
+            "This call has no caller number, so I can't look up a record. Take the caller's details instead.",
+        };
+      }
       const leads = await drizzle
         .select({
           name: schema.outboundLeads.customerName,
@@ -258,10 +267,7 @@ export async function handleCoreToolCall(
         .where(
           and(
             eq(schema.outboundLeads.userId, agent?.user_id),
-            or(
-              ilike(schema.outboundLeads.customerName, `%${safeQuery}%`),
-              ilike(schema.outboundLeads.customerNumber, `%${safeQuery}%`),
-            ),
+            ilike(schema.outboundLeads.customerNumber, `%${callerPhone}%`),
           ),
         )
         .limit(3);

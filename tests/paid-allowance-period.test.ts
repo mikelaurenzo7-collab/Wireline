@@ -172,6 +172,22 @@ describe("paid period proof", () => {
       verifiedPaidAllowanceReceipt(sub, planById("voice-high")!, "price_paid", invoice),
     ).toEqual(r);
   });
+  it("proves a renewal only once its draft invoice is paid, which is why payment success re-syncs", () => {
+    // Stripe rolls the period (customer.subscription.updated) while the renewal
+    // invoice is still a draft; it is finalized and paid about an hour later.
+    const renewal = {
+      ...receipt("2026-10-30T12:00:00Z", "2026-11-30T12:00:00Z"),
+      invoice_id: "in_renewal",
+    };
+    const { sub, invoice } = stripeObjects(renewal);
+    const draft = { ...invoice, status: "draft", amount_remaining: 11500 } as Stripe.Invoice;
+    expect(
+      verifiedPaidAllowanceReceipt(sub, planById("voice-high")!, "price_paid", draft),
+    ).toBeNull();
+    expect(
+      verifiedPaidAllowanceReceipt(sub, planById("voice-high")!, "price_paid", invoice),
+    ).toEqual(renewal);
+  });
 });
 
 describe("monthly anniversary windows", () => {

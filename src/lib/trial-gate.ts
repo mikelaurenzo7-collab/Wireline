@@ -424,6 +424,41 @@ export async function assertLiveWorkEntitlementForUser(
   return { ok: true, status: state.status };
 }
 
+/**
+ * Payment needs an inbox the account can recover. A customer who paid with a
+ * mistyped or unverified address could not connect a number afterward, and no
+ * screen lets them change it, so checkout waits for the verification link.
+ */
+export async function enforceVerifiedEmailForCheckout(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const userId = (req as any)?.user?.id as string | undefined;
+  if (!userId) return next();
+  const email = await getEmailVerificationState(userId);
+  if (email.lookupFailed) {
+    block(
+      res,
+      503,
+      "BILLING_STATE_UNAVAILABLE",
+      "BotBound could not confirm your account. No payment was started; try again shortly.",
+      { retryable: true },
+    );
+    return;
+  }
+  if (!email.verified) {
+    block(
+      res,
+      402,
+      "EMAIL_UNVERIFIED",
+      "Verify your email before choosing a plan. Check your inbox for a link from BotBound.",
+    );
+    return;
+  }
+  next();
+}
+
 /** Block number wiring and other provider-spending live actions until verified. */
 export async function enforceLiveWorkActivation(req: Request, res: Response, next: NextFunction) {
   const state = await verifyLiveWorkAccount(req, res);

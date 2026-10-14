@@ -57,6 +57,23 @@ const ENV_KEYS = [
   "RENDER_GIT_COMMIT",
   "IS_PULL_REQUEST",
   "WIRELINE_DEPLOYMENT_ENVIRONMENT",
+  // Provider keys count as live spend authority, which refuses the isolated
+  // Preview override; clear them so a developer's shell cannot change results.
+  "AGENTMAIL_API_KEY",
+  "AI_GATEWAY_API_KEY",
+  "APOLLO_API_KEY",
+  "FEDERAL_DNC_API_KEY",
+  "GEMINI_API_KEY",
+  "OPENAI_API_KEY",
+  "PERPLEXITY_PREVIEW_API_KEY",
+  "RESEND_API_KEY",
+  "STRIPE_SECRET_KEY",
+  "TWILIO_API_KEY",
+  "TWILIO_API_SECRET",
+  "TWILIO_AUTH_TOKEN",
+  "VAPI_PRIVATE_KEY",
+  "XAI_API_KEY",
+  "XAI_API_KEY_CHATKIT",
 ] as const;
 
 const originalEnv = Object.fromEntries(ENV_KEYS.map((key) => [key, process.env[key]]));

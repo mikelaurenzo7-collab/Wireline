@@ -291,6 +291,40 @@ function shopifyHeaders(token: string): Record<string, string> {
 //  Storefront operations
 // ────────────────────────────────────────────────────────────────────
 
+/** Last ten digits, enough to compare national and E.164 forms of one number. */
+function phoneKey(value: unknown): string | null {
+  const digits = String(value || "").replace(/\D/g, "");
+  return digits.length >= 7 ? digits.slice(-10) : null;
+}
+
+export type OrderCallerVerification = "phone" | "email" | null;
+
+/**
+ * How a live caller is tied to an order: their caller ID matches a phone on the
+ * order, or the email they confirmed matches the order's email. A caller who
+ * only knows an order number is neither, because order numbers are sequential.
+ */
+export function orderCallerVerification(
+  order: any,
+  caller: { callerNumber?: string | null; email?: string | null },
+): OrderCallerVerification {
+  const callerKey = phoneKey(caller.callerNumber);
+  const orderPhones = [
+    order?.phone,
+    order?.customer?.phone,
+    order?.shipping_address?.phone,
+    order?.billing_address?.phone,
+  ].map(phoneKey);
+  if (callerKey && orderPhones.includes(callerKey)) return "phone";
+  const orderEmail = String(order?.email || order?.contact_email || order?.customer?.email || "")
+    .trim()
+    .toLowerCase();
+  const callerEmail = String(caller.email || "")
+    .trim()
+    .toLowerCase();
+  return orderEmail && callerEmail && orderEmail === callerEmail ? "email" : null;
+}
+
 function mapOrder(o: any): ShopifyOrderResult {
   const fulfillments: any[] = Array.isArray(o.fulfillments) ? o.fulfillments : [];
   const tracking = fulfillments.map((f: any) => ({
@@ -327,8 +361,9 @@ function mapOrder(o: any): ShopifyOrderResult {
 export async function lookupOrder(params: {
   orderNumber?: string;
   email?: string;
+  callerNumber?: string | null;
   userId: string;
-}): Promise<ShopifyOrderResult | null> {
+}): Promise<(ShopifyOrderResult & { verified_by: OrderCallerVerification }) | null> {
   const client = await getStoreClient(params.userId);
   if (!client) {
     log.warn("Shopify not connected, skipping order lookup");
@@ -360,11 +395,41 @@ export async function lookupOrder(params: {
     const data = (await res.json()) as { orders?: any[] };
     const orders = data.orders || [];
     if (orders.length === 0) return null;
-    return mapOrder(orders[0]);
+    return {
+      ...mapOrder(orders[0]),
+      verified_by: orderCallerVerification(orders[0], {
+        callerNumber: params.callerNumber,
+        email: params.email,
+      }),
+    };
   } catch (err) {
     log.error("Shopify order lookup failed", { error: getErrorMessage(err) });
     return null;
   }
+}
+
+/**
+ * Whether the live caller may change this order. Only a caller-ID match counts:
+ * an email can be known to someone else, and these changes move goods or money.
+ * Returns null when the store is not connected or the order does not exist.
+ */
+export async function orderChangeCallerVerified(params: {
+  orderId: string;
+  callerNumber?: string | null;
+  userId: string;
+}): Promise<boolean | null> {
+  const client = await getStoreClient(params.userId);
+  if (!client) return null;
+  const res = await fetchWithTimeout(
+    `${client.apiBase}/orders/${encodeURIComponent(params.orderId)}.json`,
+    { headers: shopifyHeaders(client.token) },
+    15_000,
+  );
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Shopify order read error: ${res.status}`);
+  const data = (await res.json()) as { order?: any };
+  if (!data.order) return null;
+  return orderCallerVerification(data.order, { callerNumber: params.callerNumber }) === "phone";
 }
 
 /**

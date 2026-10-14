@@ -316,6 +316,31 @@ describe("subscription Runtime Allowance reversals with current Stripe invoices"
     expect(harness.reverseCredit).not.toHaveBeenCalled();
   });
 
+  it("acknowledges a refunded Calls plan invoice, which never funded a Runtime Allowance grant", async () => {
+    vi.stubEnv("STRIPE_VOICE_PRICE_ID", "price_calls_light_monthly");
+    configureInvoice();
+    const callsInvoice = invoice({
+      parent: {
+        type: "subscription_details",
+        subscription_details: { subscription: "sub_current" },
+      },
+    });
+    callsInvoice.lines.data[0].pricing = {
+      type: "price_details",
+      price_details: { price: "price_calls_light_monthly" },
+    } as never;
+    vi.mocked(stripe.invoices.retrieve).mockResolvedValue(callsInvoice as never);
+    harness.grants = [];
+
+    await expect(
+      reverseSubscriptionRuntimeAllowanceForChargeStrict(charge, "refund"),
+    ).resolves.toBe(false);
+    await expect(
+      reverseSubscriptionRuntimeAllowanceForChargeStrict(charge, "dispute", "dp_calls", 1900),
+    ).resolves.toBe(false);
+    expect(harness.reverseCredit).not.toHaveBeenCalled();
+  });
+
   it("loads omitted invoice lines before identifying the funded period", async () => {
     configureInvoice();
     const complete = invoice({}).lines.data;

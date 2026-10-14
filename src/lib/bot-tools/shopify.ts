@@ -5,6 +5,7 @@ import {
   createDraftOrder as shopifyCreateDraftOrder,
   lookupCustomer as shopifyLookupCustomer,
   lookupOrder as shopifyLookupOrder,
+  orderChangeCallerVerified,
   searchProducts as shopifySearchProducts,
   startReturn as shopifyStartReturn,
   updateOrderShippingAddress as shopifyUpdateAddress,
@@ -12,6 +13,24 @@ import {
 import { assertLiveExternalActionAllowed } from "../account-environment-policy";
 
 import type { ToolCallContext, ToolCallResult } from "../agent-tool-types";
+
+/** The caller ID of the live call, the only identity a stranger cannot simply claim. */
+function liveCallerNumber(context: ToolCallContext): string | null {
+  const call = (context.payload.call || context.message.call) as
+    { customer?: { number?: unknown } } | undefined;
+  const number = call?.customer?.number;
+  return typeof number === "string" && number.trim() ? number.trim() : null;
+}
+
+/** Order changes move goods or money, so they need the order's own phone on the line. */
+const ORDER_CHANGE_TOOLS = new Set([
+  "shopify_start_return",
+  "shopify_cancel_order",
+  "shopify_update_address",
+]);
+
+const ORDER_CHANGE_UNVERIFIED =
+  "This order isn't linked to the number the caller is calling from, so no change was made. Do not claim it changed. Offer to create a follow-up task so the team can verify the customer and make the change.";
 
 const LIVE_SHOPIFY_TOOLS = new Set([
   "shopify_lookup_order",
@@ -29,7 +48,7 @@ export async function handleShopifyToolCall(
   args: any,
   context: ToolCallContext,
 ): Promise<ToolCallResult | null> {
-  const { agent, message, payload, toolCallId } = context;
+  const { agent, toolCallId } = context;
 
   if (LIVE_SHOPIFY_TOOLS.has(fn)) {
     if (!agent?.user_id) {
@@ -49,6 +68,33 @@ export async function handleShopifyToolCall(
     }
   }
 
+  if (ORDER_CHANGE_TOOLS.has(fn)) {
+    const orderId = String(args?.order_id ?? "").trim();
+    if (!/^\d{1,20}$/.test(orderId)) {
+      return {
+        toolCallId,
+        result: "I need the order's numeric ID from an order lookup before changing it.",
+      };
+    }
+    try {
+      const verified = await orderChangeCallerVerified({
+        orderId,
+        callerNumber: liveCallerNumber(context),
+        userId: agent?.user_id,
+      });
+      if (verified === null) {
+        return { toolCallId, result: "I couldn't find that order in the store." };
+      }
+      if (!verified) return { toolCallId, result: ORDER_CHANGE_UNVERIFIED };
+    } catch {
+      return {
+        toolCallId,
+        result:
+          "I couldn't confirm that order right now, so no change was made. Offer to create a follow-up task for the team.",
+      };
+    }
+  }
+
   // ──────────────────────────────────────────────────────────────
   //  Shopify e-commerce handlers — order/inventory/customer
   //  lookups + return/cancel/address actions for online stores.
@@ -62,6 +108,7 @@ export async function handleShopifyToolCall(
       const order = await shopifyLookupOrder({
         orderNumber: order_number,
         email,
+        callerNumber: liveCallerNumber(context),
         userId: agent?.user_id,
       });
       if (!order) {
@@ -69,6 +116,16 @@ export async function handleShopifyToolCall(
           toolCallId,
           result:
             "I couldn't find an order matching that. Double-check the order number or the email on the order.",
+        };
+      }
+      // An email alone is the search key, so it proves nothing; it counts only
+      // alongside the order number, like a store's own order-status check.
+      const verified =
+        order.verified_by === "phone" || (order.verified_by === "email" && Boolean(order_number));
+      if (!verified) {
+        return {
+          toolCallId,
+          result: `I found order ${order.name}, but I can share its details only after the caller confirms it: ask for both the order number and the email address on the order, then look it up again with both.`,
         };
       }
       const trackingLine =
@@ -129,19 +186,24 @@ export async function handleShopifyToolCall(
 
   if (fn === "shopify_lookup_customer") {
     try {
-      const { email, phone } = args || {};
-      const fallbackNumber =
-        (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-        (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
+      // A profile holds contact details and order history, so a caller sees
+      // only the one tied to the number they are calling from.
+      const callerNumber = liveCallerNumber(context);
+      if (!callerNumber) {
+        return {
+          toolCallId,
+          result:
+            "This call has no caller number, so I can't look up a customer profile. Offer to help with an order number instead.",
+        };
+      }
       const customer = await shopifyLookupCustomer({
-        email,
-        phone: phone || fallbackNumber,
+        phone: callerNumber,
         userId: agent?.user_id,
       });
       if (!customer) {
         return {
           toolCallId,
-          result: "I couldn't find a customer record matching that email or phone number.",
+          result: "I couldn't find a customer profile for the number this call is coming from.",
         };
       }
       const recent = customer.recent_orders

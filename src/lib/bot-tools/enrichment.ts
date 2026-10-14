@@ -85,10 +85,21 @@ export async function handleEnrichmentToolCall(
   // CRM Handlers
   if (fn === "crm_search_contacts") {
     try {
-      const { query } = args || {};
+      // The person on the line can see only the CRM record for their own
+      // number; a free-text query let any caller read other contacts back.
+      const callerNumber =
+        (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
+        (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
+      if (String(callerNumber || "").replace(/\D/g, "").length < 7) {
+        return {
+          toolCallId,
+          result:
+            "This call has no caller number, so I can't look up a CRM record. Take the caller's details instead.",
+        };
+      }
       await assertTenantEnrichmentAction(agent?.user_id, "vapi_crm_contact_search");
       const service = new CRMService(agent.user_id);
-      const { contacts } = await service.searchContacts(query);
+      const { contacts } = await service.searchContacts(String(callerNumber));
       return {
         toolCallId,
         result:

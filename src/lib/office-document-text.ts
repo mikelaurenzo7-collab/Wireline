@@ -186,9 +186,138 @@ function decodeXml(value: string): string {
   });
 }
 
+type XmlStartTag = {
+  name: string;
+  attrs: string;
+  end: number;
+  selfClosing: boolean;
+};
+
+type XmlElement = { attrs: string; body: string };
+
+function isXmlNameChar(code: number): boolean {
+  return (
+    (code >= 48 && code <= 58) || // 0-9 and ":"
+    (code >= 65 && code <= 90) ||
+    (code >= 97 && code <= 122) ||
+    code === 95 || // _
+    code === 45 || // -
+    code === 46 // .
+  );
+}
+
+function isXmlSpace(code: number): boolean {
+  return code === 32 || code === 9 || code === 10 || code === 13;
+}
+
+/** `name` or `prefix:name`, as `<(?:[\w.-]+:)?name\b` matched. */
+function localName(name: string): (candidate: string) => boolean {
+  return (candidate) => {
+    if (candidate === name) return true;
+    const prefix = candidate.slice(0, -name.length - 1);
+    return candidate.endsWith(`:${name}`) && prefix.length > 0 && !prefix.includes(":");
+  };
+}
+
+/**
+ * Next start tag at or after `from` whose name passes `accepts`. Returns null
+ * once no later start tag can be complete. Each call scans forward only.
+ */
+function nextStartTag(
+  xml: string,
+  from: number,
+  accepts: (name: string) => boolean,
+): XmlStartTag | null {
+  let cursor = from;
+  for (;;) {
+    const start = xml.indexOf("<", cursor);
+    if (start === -1) return null;
+    let nameEnd = start + 1;
+    while (nameEnd < xml.length && isXmlNameChar(xml.charCodeAt(nameEnd))) nameEnd += 1;
+    const name = xml.slice(start + 1, nameEnd);
+    if (!name || !accepts(name)) {
+      cursor = Math.max(nameEnd, start + 1);
+      continue;
+    }
+    const close = xml.indexOf(">", nameEnd);
+    if (close === -1) return null;
+    const attrs = xml.slice(nameEnd, close);
+    return { name, attrs, end: close + 1, selfClosing: attrs.trimEnd().endsWith("/") };
+  }
+}
+
+/** First `</name\s*>` at or after `from`, as `<\/name\s*>` matched. */
+function nextEndTag(
+  xml: string,
+  from: number,
+  accepts: (name: string) => boolean,
+): { start: number; end: number } | null {
+  let cursor = from;
+  for (;;) {
+    const start = xml.indexOf("</", cursor);
+    if (start === -1) return null;
+    let nameEnd = start + 2;
+    while (nameEnd < xml.length && isXmlNameChar(xml.charCodeAt(nameEnd))) nameEnd += 1;
+    let close = nameEnd;
+    if (accepts(xml.slice(start + 2, nameEnd))) {
+      while (close < xml.length && isXmlSpace(xml.charCodeAt(close))) close += 1;
+      if (xml.charCodeAt(close) === 62) return { start, end: close + 1 };
+    }
+    cursor = Math.max(close, start + 2);
+  }
+}
+
+/**
+ * Elements in document order, in time linear in the input. The lazy
+ * `<tag\b[^>]*>([\s\S]*?)<\/tag\s*>` patterns this replaced rescanned the rest
+ * of the document from every unclosed start tag, so one small upload repeating
+ * an unclosed tag held the request thread for minutes. Each scan here resumes
+ * where the last ended, and the first start tag without an end tag ends the
+ * scan, because no later start tag can have one either. Self-closing elements
+ * are empty rather than swallowing the next element's content.
+ */
+function xmlElements(
+  xml: string,
+  accepts: (name: string) => boolean,
+  limit = Number.POSITIVE_INFINITY,
+): XmlElement[] {
+  const elements: XmlElement[] = [];
+  let cursor = 0;
+  while (elements.length < limit) {
+    const start = nextStartTag(xml, cursor, accepts);
+    if (!start) break;
+    if (start.selfClosing) {
+      elements.push({ attrs: start.attrs, body: "" });
+      cursor = start.end;
+      continue;
+    }
+    const end = nextEndTag(xml, start.end, accepts);
+    if (!end) break;
+    elements.push({ attrs: start.attrs, body: xml.slice(start.end, end.start) });
+    cursor = end.end;
+  }
+  return elements;
+}
+
+/** Attributes of every matching start tag, self-closing or not. */
+function xmlStartTagAttributes(xml: string, accepts: (name: string) => boolean): string[] {
+  const attributes: string[] = [];
+  let cursor = 0;
+  for (
+    let tag = nextStartTag(xml, cursor, accepts);
+    tag;
+    tag = nextStartTag(xml, cursor, accepts)
+  ) {
+    attributes.push(tag.attrs);
+    cursor = tag.end;
+  }
+  return attributes;
+}
+
 function xmlText(xml: string, tag: string): string {
-  const matcher = new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)<\\/${tag}\\s*>`, "g");
-  return [...xml.matchAll(matcher)].map((match) => decodeXml(match[1] || "")).join("");
+  return xmlElements(xml, (name) => name === tag)
+    .map((element) => decodeXml(element.body))
+    .join("");
 }
 
 function boundedOutput(lines: string[]): string {
@@ -203,17 +332,40 @@ function boundedOutput(lines: string[]): string {
   return text;
 }
 
+const WORD_RUN_CONTENT = new Set(["w:t", "w:tab", "w:br"]);
+
+/** Text, tabs, and line breaks of one paragraph, in document order. */
+function wordParagraphText(paragraph: string): string {
+  let text = "";
+  let cursor = 0;
+  // Once no `</w:t>` remains, no later `<w:t>` can close; skip their searches.
+  let textCanClose = true;
+  for (
+    let tag = nextStartTag(paragraph, cursor, (name) => WORD_RUN_CONTENT.has(name));
+    tag;
+    tag = nextStartTag(paragraph, cursor, (name) => WORD_RUN_CONTENT.has(name))
+  ) {
+    cursor = tag.end;
+    if (tag.name !== "w:t") {
+      if (tag.selfClosing) text += tag.name === "w:tab" ? "\t" : " ";
+      continue;
+    }
+    if (tag.selfClosing || !textCanClose) continue;
+    const end = nextEndTag(paragraph, tag.end, (name) => name === "w:t");
+    if (!end) {
+      textCanClose = false;
+      continue;
+    }
+    text += decodeXml(paragraph.slice(tag.end, end.start));
+    cursor = end.end;
+  }
+  return text.trim();
+}
+
 function wordText(xml: string): string {
   const lines: string[] = [];
-  const paragraphs = /<w:p\b[^>]*>([\s\S]*?)<\/w:p\s*>/g;
-  for (const paragraph of xml.matchAll(paragraphs)) {
-    const contents = /<w:t\b[^>]*>([\s\S]*?)<\/w:t\s*>|<w:tab\b[^>]*\/>|<w:br\b[^>]*\/>/g;
-    const value = [...(paragraph[1] || "").matchAll(contents)]
-      .map((part) =>
-        part[1] !== undefined ? decodeXml(part[1]) : part[0].startsWith("<w:tab") ? "\t" : " ",
-      )
-      .join("")
-      .trim();
+  for (const paragraph of xmlElements(xml, (name) => name === "w:p")) {
+    const value = wordParagraphText(paragraph.body);
     if (value) lines.push(value);
   }
   return boundedOutput(lines);
@@ -226,23 +378,19 @@ function attribute(source: string, name: string): string | null {
 
 function sheetText(xml: string, sharedStrings: string[], sheetLabel: string): string[] {
   const lines = [`Sheet ${sheetLabel}`];
-  const rows = /<row\b([^>]*)>([\s\S]*?)<\/row\s*>/g;
-  let rowIndex = 0;
-  for (const row of xml.matchAll(rows)) {
-    rowIndex += 1;
-    if (rowIndex > MAX_ROWS_PER_SHEET) break;
-    const rowNumber = attribute(row[1] || "", "r") || String(rowIndex);
+  const rows = xmlElements(xml, (name) => name === "row", MAX_ROWS_PER_SHEET);
+  for (const [rowIndex, row] of rows.entries()) {
+    const rowNumber = attribute(row.attrs, "r") || String(rowIndex + 1);
     const values: string[] = [];
-    const cells = /<c\b([^>]*)>([\s\S]*?)<\/c\s*>/g;
-    for (const cell of (row[2] || "").matchAll(cells)) {
-      const attrs = cell[1] || "";
+    for (const cell of xmlElements(row.body, (name) => name === "c")) {
+      const attrs = cell.attrs;
       const reference = attribute(attrs, "r") || "cell";
       const type = attribute(attrs, "t") || "n";
       let value = "";
       if (type === "inlineStr") {
-        value = xmlText(cell[2] || "", "t");
+        value = xmlText(cell.body, "t");
       } else {
-        value = xmlText(cell[2] || "", "v");
+        value = xmlText(cell.body, "v");
         if (type === "s") {
           const sharedIndex = Number(value);
           value = Number.isInteger(sharedIndex) ? (sharedStrings[sharedIndex] ?? "") : "";
@@ -260,9 +408,7 @@ function sheetText(xml: string, sharedStrings: string[], sheetLabel: string): st
 function visibleSheets(reader: OfficeZipReader): Array<{ path: string; label: string }> {
   const workbook = reader.read("xl/workbook.xml");
   if (!workbook) return invalidDocument();
-  const sheetsXml = /<(?:[\w.-]+:)?sheets\b[^>]*>([\s\S]*?)<\/(?:[\w.-]+:)?sheets\s*>/.exec(
-    workbook,
-  )?.[1];
+  const sheetsXml = xmlElements(workbook, localName("sheets"), 1)[0]?.body;
   // A workbook without sheet metadata is only useful in minimal ZIP fixtures.
   // A real workbook declares each visible sheet and its relationship.
   if (sheetsXml === undefined) {
@@ -279,18 +425,17 @@ function visibleSheets(reader: OfficeZipReader): Array<{ path: string; label: st
   const relationships = reader.read("xl/_rels/workbook.xml.rels");
   if (!relationships) return invalidDocument();
   const paths = new Map<string, string>();
-  for (const match of relationships.matchAll(/<(?:[\w.-]+:)?Relationship\b([^>]*)\/?\s*>/g)) {
-    const id = attribute(match[1] || "", "Id");
-    const target = attribute(match[1] || "", "Target");
-    const type = attribute(match[1] || "", "Type");
+  for (const attrs of xmlStartTagAttributes(relationships, localName("Relationship"))) {
+    const id = attribute(attrs, "Id");
+    const target = attribute(attrs, "Target");
+    const type = attribute(attrs, "Type");
     if (!id || !target || !type?.endsWith("/worksheet")) continue;
     const path = posix.normalize(target.startsWith("/") ? target.slice(1) : `xl/${target}`);
     if (/^xl\/worksheets\/sheet\d+\.xml$/.test(path)) paths.set(id, path);
   }
 
   const visible: Array<{ path: string; label: string }> = [];
-  for (const match of sheetsXml.matchAll(/<(?:[\w.-]+:)?sheet\b([^>]*)\/?\s*>/g)) {
-    const attrs = match[1] || "";
+  for (const attrs of xmlStartTagAttributes(sheetsXml, localName("sheet"))) {
     if (["hidden", "veryHidden"].includes(attribute(attrs, "state") || "")) continue;
     const path = paths.get(attribute(attrs, "r:id") || "");
     if (!path || !reader.has(path)) return invalidDocument();
@@ -307,9 +452,7 @@ function visibleSheets(reader: OfficeZipReader): Array<{ path: string; label: st
 function excelText(reader: OfficeZipReader): string {
   const sharedXml = reader.read("xl/sharedStrings.xml");
   const sharedStrings = sharedXml
-    ? [...sharedXml.matchAll(/<si\b[^>]*>([\s\S]*?)<\/si\s*>/g)].map((item) =>
-        xmlText(item[1] || "", "t"),
-      )
+    ? xmlElements(sharedXml, (name) => name === "si").map((item) => xmlText(item.body, "t"))
     : [];
   const lines: string[] = [];
   visibleSheets(reader).forEach(({ path, label }) => {

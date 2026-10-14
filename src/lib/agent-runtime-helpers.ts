@@ -474,16 +474,11 @@ export const AGENT_TOOL_DEFS = {
   search_leads: {
     name: "search_leads",
     description:
-      "Searches the lead database for existing customer records. Use to pull context before discussing account history.",
+      "Looks up the lead record for the phone number this call is coming from. Use to pull context before discussing the caller's account history. It never returns anyone else's record.",
     parameters: {
       type: "object",
-      properties: {
-        query: {
-          type: "string",
-          description: "Customer name, email, or phone number to search for.",
-        },
-      },
-      required: ["query"],
+      properties: {},
+      required: [],
     },
   },
   update_lead_status: {
@@ -778,13 +773,11 @@ export const AGENT_TOOL_DEFS = {
   crm_search_contacts: {
     name: "crm_search_contacts",
     description:
-      "Search the connected CRM (Salesforce or HubSpot) for existing contact records matching the caller's info.",
+      "Looks up the connected CRM (Salesforce or HubSpot) contact record for the phone number this call is coming from. It never returns anyone else's record.",
     parameters: {
       type: "object",
-      properties: {
-        query: { type: "string", description: "Search query, name, email, phone, or company." },
-      },
-      required: ["query"],
+      properties: {},
+      required: [],
     },
   },
   crm_log_call: {
@@ -866,7 +859,7 @@ export const AGENT_TOOL_DEFS = {
   shopify_lookup_order: {
     name: "shopify_lookup_order",
     description:
-      "Looks up a customer's Shopify order by order number or email. Returns the order status, payment status, fulfillment / tracking info, line items, and total. Use this when a caller asks 'where is my order' or about a recent purchase.",
+      "Looks up a customer's Shopify order. Returns the order status, payment status, fulfillment / tracking info, line items, and total. Details are shared only when the caller is calling from the phone number on the order, or gives both the order number and the email on the order. Use this when a caller asks 'where is my order' or about a recent purchase.",
     parameters: {
       type: "object",
       properties: {
@@ -877,7 +870,7 @@ export const AGENT_TOOL_DEFS = {
         email: {
           type: "string",
           description:
-            "The customer's email, use to find their most recent order when no order number is known.",
+            "The email address on the order, as the caller states it. Needed with the order number when the caller is not calling from the order's phone number.",
         },
       },
       required: [],
@@ -898,23 +891,17 @@ export const AGENT_TOOL_DEFS = {
   shopify_lookup_customer: {
     name: "shopify_lookup_customer",
     description:
-      "Looks up a Shopify customer by email or phone and returns their profile plus recent order history. Use to recognize a returning customer or review what they've bought.",
+      "Looks up the Shopify customer profile for the phone number this call is coming from, with recent order history. Use to recognize a returning caller. It never looks up anyone else.",
     parameters: {
       type: "object",
-      properties: {
-        email: { type: "string", description: "The customer's email address." },
-        phone: {
-          type: "string",
-          description: "The customer's phone number. Leave blank to use the caller's number.",
-        },
-      },
+      properties: {},
       required: [],
     },
   },
   shopify_start_return: {
     name: "shopify_start_return",
     description:
-      "Opens a return request for a Shopify order. This STARTS the return only, it does NOT issue a refund; a team member reviews and approves any money back. Confirm the order and reason with the caller first.",
+      "Opens a return request for a Shopify order. This STARTS the return only, it does NOT issue a refund; a team member reviews and approves any money back. Works only when the caller is calling from the phone number on the order; otherwise offer a follow-up task. Confirm the order and reason with the caller first.",
     parameters: {
       type: "object",
       properties: {
@@ -935,7 +922,7 @@ export const AGENT_TOOL_DEFS = {
   shopify_cancel_order: {
     name: "shopify_cancel_order",
     description:
-      "Cancels a Shopify order. Only do this when the caller explicitly asks to cancel and the order has not shipped. Confirm the order with them before cancelling.",
+      "Cancels a Shopify order. Only do this when the caller explicitly asks to cancel and the order has not shipped. Works only when the caller is calling from the phone number on the order; otherwise offer a follow-up task. Confirm the order with them before cancelling.",
     parameters: {
       type: "object",
       properties: {
@@ -951,7 +938,7 @@ export const AGENT_TOOL_DEFS = {
   shopify_update_address: {
     name: "shopify_update_address",
     description:
-      "Updates the shipping address on a Shopify order. Use when a caller realizes they entered the wrong address and the order has not yet shipped. Read the new address back to confirm before saving.",
+      "Updates the shipping address on a Shopify order. Use when a caller realizes they entered the wrong address and the order has not yet shipped. Works only when the caller is calling from the phone number on the order; otherwise offer a follow-up task. Read the new address back to confirm before saving.",
     parameters: {
       type: "object",
       properties: {
