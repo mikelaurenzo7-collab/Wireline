@@ -119,7 +119,8 @@ describe("marketing metadata contract", () => {
     expect(pricing).toContain(`Plans from $${planById("email")?.price_usd_monthly}/month`);
     expect(pricing).toContain("Compare Calls, Email, and combined plans");
     expect(pricing).toContain("CHANNEL_PLANS = STRIPE_PLANS.filter");
-    expect(pricing).toContain("plan.price_usd_monthly");
+    expect(pricing).toContain("plans={CHANNEL_PLANS}");
+    expect(pricing).not.toContain('"@type": "OfferCatalog"');
     // Contact is an inquiry form; prices and availability belong to Pricing.
     expect(contact).not.toContain("Starter launches at");
     expect(contact).not.toMatch(/\$\d+\/(?:mo|month)/);

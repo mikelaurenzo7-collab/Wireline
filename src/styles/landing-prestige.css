@@ -803,6 +803,23 @@
   .landing-prestige__title-line {
     display: inline;
   }
+
+  .landing-prestige__hero h1 {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .landing-prestige__title-line > span {
+    white-space: normal;
+  }
+
+  .landing-prestige__title-line.is-accent {
+    background: none;
+    -webkit-background-clip: border-box;
+    background-clip: border-box;
+    color: var(--wireline-color-action-primary-default);
+    -webkit-text-fill-color: currentColor;
+  }
 }
 
 @media (max-width: 640px) {

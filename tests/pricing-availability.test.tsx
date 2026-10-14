@@ -33,6 +33,7 @@ type Element = ReactElement<{
   children?: ReactNode;
   to?: string;
   onClick?: () => void;
+  dangerouslySetInnerHTML?: { __html: string };
 }>;
 
 function elements(node: ReactNode): Element[] {
@@ -128,6 +129,20 @@ async function load(payload: unknown) {
 }
 
 describe("public pricing activation availability", () => {
+  it("publishes FAQ metadata without offers while plan bindings need live verification", () => {
+    const script = elements(render()).find((element) => element.type === "script");
+    expect(script?.props.dangerouslySetInnerHTML?.__html).toBeTruthy();
+    const structured = JSON.parse(script!.props.dangerouslySetInnerHTML!.__html) as {
+      "@graph": Array<{
+        "@type": string;
+        mainEntity?: Array<{ name: string }>;
+      }>;
+    };
+
+    expect(structured["@graph"].map((entry) => entry["@type"])).toEqual(["FAQPage"]);
+    expect(structured["@graph"][0].mainEntity?.length).toBeGreaterThan(0);
+  });
+
   it("defaults new choices to Regular while honoring an explicit or stored Light choice", () => {
     expect(planLink("voice-regular")?.props.to).toBe("/signup?plan=voice-regular&interval=month");
     harness.states = [];

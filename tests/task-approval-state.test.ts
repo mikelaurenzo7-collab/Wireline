@@ -69,12 +69,20 @@ vi.mock("../src/lib/server-context", async () => {
     },
     update: (table: unknown) => ({
       set: (patch: Row) => ({
-        where: () => {
+        where: (condition: Parameters<typeof dialect.sqlToQuery>[0]) => {
           const apply = () => {
             const task = table === schema.followUpTasks;
             h.events.push(task ? "task" : "thread");
             if (task && !["pending", "open", "in_progress"].includes(String(h.task.status)))
               return [];
+            if (task) {
+              const query = dialect.sqlToQuery(condition);
+              if (query.sql.includes("btrim(coalesce(")) {
+                const expectedTo = query.params.at(-1);
+                const actualTo = String((h.task.payload as Row | undefined)?.to ?? "").trim();
+                if (actualTo !== expectedTo) return [];
+              }
+            }
             Object.assign(task ? h.task : h.thread, patch);
             return [{ id: task ? "task" : "thread" }];
           };
@@ -141,6 +149,185 @@ beforeEach(() => {
 });
 
 describe("approval lifecycle boundaries", () => {
+  it("rejects an edited message when its recipient changed in another tab", async () => {
+    h.task.taskType = "send_email";
+    h.task.payload = { to: "new@example.test", body: "Current message" };
+    const res = { json: vi.fn(), status: vi.fn() };
+    res.status.mockReturnValue(res);
+    const handler = h.routes.get("patch /api/Assistants/tasks/:id")![0];
+
+    await handler(
+      {
+        user: { id: "tenant" },
+        params: { id: "task" },
+        body: {
+          description: "Edited notes",
+          payload: { to: "old@example.test", body: "Draft for old recipient" },
+          expected_to: "old@example.test",
+        },
+      },
+      res,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "TASK_RECIPIENT_CHANGED" }),
+    );
+    expect(h.task.payload).toEqual({ to: "new@example.test", body: "Current message" });
+
+    res.status.mockClear();
+    res.json.mockClear();
+    await handler(
+      {
+        user: { id: "tenant" },
+        params: { id: "task" },
+        body: {
+          payload: { to: "new@example.test", body: "Reviewed message" },
+          expected_to: "new@example.test",
+          expected_payload: { to: "new@example.test", body: "Current message" },
+          expected_task_type: "send_email",
+          expected_agent_id: null,
+          expected_priority: null,
+          expected_description: null,
+        },
+      },
+      res,
+    );
+
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({ success: true });
+    expect(h.task.payload).toEqual({ to: "new@example.test", body: "Reviewed message" });
+  });
+
+  it.each(["payload", "taskType", "agentId", "priority", "description"] as const)(
+    "does not overwrite a newer %s while saving an edited message",
+    async (changedField) => {
+      h.task.taskType = "send_email";
+      h.task.agentId = "original-bot";
+      h.task.priority = "medium";
+      h.task.description = "Original notes";
+      h.task.payload = { to: "same@example.test", body: "Original message" };
+      const expected = {
+        expected_to: "same@example.test",
+        expected_payload: { to: "same@example.test", body: "Original message" },
+        expected_task_type: "send_email",
+        expected_agent_id: "original-bot",
+        expected_priority: "medium",
+        expected_description: "Original notes",
+      };
+      const newerValue: Record<typeof changedField, unknown> = {
+        payload: { to: "same@example.test", body: "Changed in another tab" },
+        taskType: "send_text_message",
+        agentId: "different-bot",
+        priority: "high",
+        description: "Newer notes",
+      };
+      h.task[changedField] = newerValue[changedField];
+      const currentTask = { ...h.task };
+      const res = { json: vi.fn(), status: vi.fn() };
+      res.status.mockReturnValue(res);
+      const handler = h.routes.get("patch /api/Assistants/tasks/:id")![0];
+
+      await handler(
+        {
+          user: { id: "tenant" },
+          params: { id: "task" },
+          body: {
+            description: "My edited notes",
+            payload: { to: "same@example.test", body: "My edited message" },
+            ...expected,
+          },
+        },
+        res,
+      );
+
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ code: "TASK_CONTENT_CHANGED" }),
+      );
+      expect(h.task).toEqual(currentTask);
+      expect(h.events).not.toContain("task");
+    },
+  );
+
+  it("blocks approval if the saved message recipient changed before execution", async () => {
+    h.task.taskType = "send_email";
+    h.task.payload = { to: "new@example.test", body: "Changed elsewhere" };
+    const res = { json: vi.fn(), status: vi.fn() };
+    res.status.mockReturnValue(res);
+    const handler = h.routes.get("post /api/Assistants/tasks/:id/approve")![1];
+
+    await handler(
+      {
+        user: { id: "tenant" },
+        params: { id: "task" },
+        body: { expected_to: "old@example.test" },
+      },
+      res,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "TASK_RECIPIENT_CHANGED" }),
+    );
+    expect(h.executeAction).not.toHaveBeenCalled();
+  });
+
+  it("blocks approval if the message changed after an edit was saved", async () => {
+    h.task.taskType = "send_email";
+    h.task.payload = { to: "same@example.test", body: "Newer body from another tab" };
+    const res = { json: vi.fn(), status: vi.fn() };
+    res.status.mockReturnValue(res);
+    const handler = h.routes.get("post /api/Assistants/tasks/:id/approve")![1];
+
+    await handler(
+      {
+        user: { id: "tenant" },
+        params: { id: "task" },
+        body: {
+          expected_to: "same@example.test",
+          expected_payload: { to: "same@example.test", body: "My saved body" },
+        },
+      },
+      res,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "TASK_CONTENT_CHANGED" }),
+    );
+    expect(h.executeAction).not.toHaveBeenCalled();
+  });
+
+  it("blocks approval if another tab changed the sending Bot", async () => {
+    h.task.taskType = "send_text_message";
+    h.task.agentId = "new-bot";
+    h.task.payload = { to: "+15125550100", body: "Reviewed text" };
+    const res = { json: vi.fn(), status: vi.fn() };
+    res.status.mockReturnValue(res);
+    const handler = h.routes.get("post /api/Assistants/tasks/:id/approve")![1];
+
+    await handler(
+      {
+        user: { id: "tenant" },
+        params: { id: "task" },
+        body: {
+          expected_to: "+15125550100",
+          expected_payload: { to: "+15125550100", body: "Reviewed text" },
+          expected_task_type: "send_text_message",
+          expected_agent_id: "old-bot",
+        },
+      },
+      res,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "TASK_CONTENT_CHANGED" }),
+    );
+    expect(h.executeAction).not.toHaveBeenCalled();
+  });
+
   it.each(["internal_task", "follow_up", "ticket", "callback", "human_escalation"])(
     "completes human %s work without invoking the action engine",
     async (taskType) => {

@@ -149,6 +149,286 @@ test("new approvals appear while open without losing a draft or polling a hidden
   );
 });
 
+test("email and SMS edits survive switching approval buckets without sending", async ({ page }) => {
+  let taskMutations = 0;
+  await page.route("**/api/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.startsWith("/api/Assistants/tasks") && route.request().method() !== "GET") {
+      taskMutations += 1;
+      await route.fulfill({ status: 500, json: { error: "Unexpected task mutation" } });
+      return;
+    }
+    const json =
+      path === "/api/auth/session"
+        ? { user: { id: "approvals-owner", email: "owner@example.test" } }
+        : path === "/api/Assistants/tasks"
+          ? {
+              tasks: [
+                {
+                  id: "email-draft",
+                  task_type: "send_email",
+                  status: "pending",
+                  payload: {
+                    to: "email@example.test",
+                    subject: "Original subject",
+                    body: "Original email",
+                  },
+                },
+                {
+                  id: "sms-draft",
+                  task_type: "send_text_message",
+                  status: "pending",
+                  payload: { to: "+15125550100", body: "Original text" },
+                },
+              ],
+            }
+          : path === "/api/triage"
+            ? {
+                hot_leads: [],
+                compliance: [],
+                pending_tasks: [],
+                knowledge_gaps: [],
+                escalations: [],
+              }
+            : { accounts: [], agents: [], numbers: [], data: [] };
+    await route.fulfill({ json });
+  });
+
+  await page.goto("/approvals");
+  const email = page.getByRole("article").filter({ hasText: "email@example.test" });
+  const sms = page.getByRole("article").filter({ hasText: "+15125550100" });
+  await email.getByRole("button", { name: "Edit", exact: true }).click();
+  await email.getByLabel("Subject", { exact: true }).fill("Revised subject");
+  await email.getByRole("textbox", { name: "Message", exact: true }).fill("Revised email");
+  await sms.getByRole("button", { name: "Edit", exact: true }).click();
+  await sms.getByRole("textbox", { name: "Message", exact: true }).fill("Revised text");
+
+  await page.getByRole("button", { name: "Compliance (0)", exact: true }).click();
+  await expect(email).toHaveCount(0);
+  await expect(sms).toHaveCount(0);
+  await page.getByRole("button", { name: "Pending Actions (2)", exact: true }).click();
+
+  await expect(email.getByLabel("Subject", { exact: true })).toHaveValue("Revised subject");
+  await expect(email.getByRole("textbox", { name: "Message", exact: true })).toHaveValue(
+    "Revised email",
+  );
+  await expect(sms.getByRole("textbox", { name: "Message", exact: true })).toHaveValue(
+    "Revised text",
+  );
+  expect(taskMutations).toBe(0);
+});
+
+test("edited approvals require a fresh recipient review if the destination changes", async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date("2026-10-14T00:00:00Z") });
+  const originalEmailTo = "email@example.test";
+  const originalSmsTo = "+15125550100";
+  let emailTo = originalEmailTo;
+  let smsTo = originalSmsTo;
+  const writes: Array<{ path: string; body: Record<string, unknown> }> = [];
+  await page.route("**/api/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.startsWith("/api/Assistants/tasks") && route.request().method() !== "GET") {
+      writes.push({ path, body: route.request().postDataJSON() as Record<string, unknown> });
+      await route.fulfill({ json: { success: true } });
+      return;
+    }
+    const json =
+      path === "/api/auth/session"
+        ? { user: { id: "approvals-owner", email: "owner@example.test" } }
+        : path === "/api/Assistants/tasks"
+          ? {
+              tasks: [
+                {
+                  id: "email-draft",
+                  task_type: "send_email",
+                  status: "pending",
+                  payload: { to: emailTo, subject: "Original subject", body: "Original email" },
+                },
+                {
+                  id: "sms-draft",
+                  task_type: "send_text_message",
+                  status: "pending",
+                  payload: { to: smsTo, body: "Original text" },
+                },
+              ],
+            }
+          : path === "/api/triage"
+            ? {
+                hot_leads: [],
+                compliance: [],
+                pending_tasks: [],
+                knowledge_gaps: [],
+                escalations: [],
+              }
+            : { accounts: [], agents: [], numbers: [], data: [] };
+    await route.fulfill({ json });
+  });
+
+  await page.goto("/approvals");
+  const email = page.getByRole("article").filter({ hasText: "Send Email" });
+  const sms = page.getByRole("article").filter({ hasText: "Send Text Message" });
+  await email.getByRole("button", { name: "Edit", exact: true }).click();
+  await email.getByLabel("Subject", { exact: true }).fill("Revised subject");
+  await email.getByRole("textbox", { name: "Message", exact: true }).fill("Revised email");
+  await sms.getByRole("button", { name: "Edit", exact: true }).click();
+  await sms.getByRole("textbox", { name: "Message", exact: true }).fill("Revised text");
+
+  emailTo = "different@example.test";
+  smsTo = "+15125550199";
+  await page.clock.fastForward(30_000);
+  await expect(email).toContainText(emailTo);
+  await expect(sms).toContainText(smsTo);
+  await email.getByRole("button", { name: "Approve", exact: true }).click();
+  await sms.getByRole("button", { name: "Approve", exact: true }).click();
+  await expect(email.getByRole("alert")).toContainText("recipient changed while you were editing");
+  await expect(sms.getByRole("alert")).toContainText("recipient changed while you were editing");
+  expect(writes).toHaveLength(0);
+
+  emailTo = originalEmailTo;
+  smsTo = originalSmsTo;
+  await page.clock.fastForward(30_000);
+  await expect(email).toContainText(originalEmailTo);
+  await expect(sms).toContainText(originalSmsTo);
+  await email.getByRole("button", { name: "Approve", exact: true }).click();
+  await expect.poll(() => writes.length).toBe(2);
+  expect(writes[0].path).toBe("/api/Assistants/tasks/email-draft");
+  expect(writes[0].body.expected_to).toBe(originalEmailTo);
+  expect(writes[1].path).toBe("/api/Assistants/tasks/email-draft/approve");
+  expect(writes[1].body.expected_to).toBe(originalEmailTo);
+  expect(writes[1].body.expected_payload).toEqual({
+    to: originalEmailTo,
+    subject: "Revised subject",
+    body: "Revised email",
+  });
+  expect(writes[1].body.expected_task_type).toBe("send_email");
+  expect(writes[1].body.expected_agent_id).toBeNull();
+  expect(writes[1].body.expected_priority).toBeNull();
+
+  await sms.getByRole("button", { name: "Cancel", exact: true }).click();
+  await sms.getByRole("button", { name: "Approve", exact: true }).click();
+  await expect.poll(() => writes.length).toBe(3);
+  expect(writes[2].path).toBe("/api/Assistants/tasks/sms-draft/approve");
+  expect(writes[2].body).toEqual({
+    expected_to: originalSmsTo,
+    expected_payload: { to: originalSmsTo, body: "Original text" },
+    expected_task_type: "send_text_message",
+    expected_agent_id: null,
+    expected_priority: null,
+  });
+});
+
+for (const conflictAt of ["save", "approve"] as const) {
+  test(`a ${conflictAt} conflict refreshes the approval without losing its draft`, async ({
+    page,
+  }) => {
+    const originalTo = "original@example.test";
+    const changedTo = "changed@example.test";
+    let payload = { to: originalTo, subject: "Original subject", body: "Original body" };
+    let taskLoads = 0;
+    let saves = 0;
+    const saveBodies: Record<string, unknown>[] = [];
+    let approvals = 0;
+    await page.route("**/api/**", async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      const method = route.request().method();
+      if (path === "/api/Assistants/tasks/email-draft" && method === "PATCH") {
+        saves += 1;
+        saveBodies.push(route.request().postDataJSON() as Record<string, unknown>);
+        if (conflictAt === "save") {
+          payload = { ...payload, to: changedTo };
+          await route.fulfill({
+            status: 409,
+            json: { code: "TASK_RECIPIENT_CHANGED", error: "Recipient changed" },
+          });
+        } else {
+          payload = (route.request().postDataJSON() as { payload: typeof payload }).payload;
+          await route.fulfill({ json: { success: true } });
+        }
+        return;
+      }
+      if (path === "/api/Assistants/tasks/email-draft/approve" && method === "POST") {
+        approvals += 1;
+        // The second case changes content without changing the recipient.
+        // Retrying a stale draft must not overwrite this newer message.
+        payload = { ...payload, body: "Another editor's message" };
+        await route.fulfill({
+          status: 409,
+          json: { code: "TASK_CONTENT_CHANGED", error: "Task changed" },
+        });
+        return;
+      }
+      if (path === "/api/Assistants/tasks") {
+        taskLoads += 1;
+        await route.fulfill({
+          json: {
+            tasks: [{ id: "email-draft", task_type: "send_email", status: "pending", payload }],
+          },
+        });
+        return;
+      }
+      const json =
+        path === "/api/auth/session"
+          ? { user: { id: "approvals-owner", email: "owner@example.test" } }
+          : path === "/api/triage"
+            ? {
+                hot_leads: [],
+                compliance: [],
+                pending_tasks: [],
+                knowledge_gaps: [],
+                escalations: [],
+              }
+            : { accounts: [], agents: [], numbers: [], data: [] };
+      await route.fulfill({ json });
+    });
+
+    await page.goto("/approvals");
+    const card = page.getByRole("article").filter({ hasText: "Send Email" });
+    await card.getByRole("button", { name: "Edit", exact: true }).click();
+    await card.getByRole("textbox", { name: "Message", exact: true }).fill("My unsaved message");
+    const initialTaskLoads = taskLoads;
+    await card.getByRole("button", { name: "Approve", exact: true }).click();
+
+    await expect(card.getByRole("alert")).toContainText("Your draft is kept");
+    await expect(card.getByRole("alert")).toContainText("Cancel it, review");
+    await expect(card).toContainText(conflictAt === "save" ? changedTo : originalTo);
+    await expect(card.getByRole("textbox", { name: "Message", exact: true })).toHaveValue(
+      "My unsaved message",
+    );
+    expect(taskLoads).toBeGreaterThan(initialTaskLoads);
+    expect(approvals).toBe(conflictAt === "save" ? 0 : 1);
+
+    const blockedSaves = saves;
+    const blockedApprovals = approvals;
+    await expect(card.getByRole("button", { name: "Approve", exact: true })).toBeDisabled();
+    await card.getByRole("button", { name: "Cancel", exact: true }).click();
+    await expect(card.getByRole("button", { name: "Approve", exact: true })).toBeDisabled();
+    expect(saves).toBe(blockedSaves);
+    expect(approvals).toBe(blockedApprovals);
+
+    await card.getByRole("button", { name: "Edit", exact: true }).click();
+    await expect(card.getByRole("button", { name: "Approve", exact: true })).toBeEnabled();
+    await expect(card.getByRole("textbox", { name: "Message", exact: true })).toHaveValue(
+      conflictAt === "save" ? "Original body" : "Another editor's message",
+    );
+    await card.getByRole("button", { name: "Approve", exact: true }).click();
+    await expect.poll(() => saves).toBe(blockedSaves + 1);
+    expect(saveBodies[saveBodies.length - 1]).toMatchObject({
+      expected_to: conflictAt === "save" ? changedTo : originalTo,
+      expected_payload: {
+        to: conflictAt === "save" ? changedTo : originalTo,
+        subject: "Original subject",
+        body: conflictAt === "save" ? "Original body" : "Another editor's message",
+      },
+      expected_task_type: "send_email",
+      expected_agent_id: null,
+      expected_priority: null,
+      expected_description: null,
+    });
+  });
+}
+
 test("a prepended approval keeps the twentieth card's open editor mounted", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-10-14T00:00:00Z") });
   const earlierTasks = Array.from({ length: 19 }, (_, index) => ({

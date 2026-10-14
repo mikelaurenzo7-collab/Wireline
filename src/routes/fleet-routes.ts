@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- task and job payloads are stored as Postgres jsonb. */
+import { isDeepStrictEqual } from "node:util";
 import { Router, Response } from "express";
 import { AppError, rethrowIfAppError } from "../lib/api-error";
 
@@ -243,8 +244,21 @@ router.patch(
   validateBody(updateFollowUpTaskSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { status, priority, due_date, agent_id, resolution_notes, description, payload } =
-        req.body;
+      const {
+        status,
+        priority,
+        due_date,
+        agent_id,
+        resolution_notes,
+        description,
+        payload,
+        expected_to,
+        expected_payload,
+        expected_task_type,
+        expected_agent_id,
+        expected_priority,
+        expected_description,
+      } = req.body;
       const updateData: any = {};
       if (status !== undefined) {
         const normalizedStatus = status === "done" ? "completed" : status;
@@ -298,15 +312,59 @@ router.patch(
           .json({ code: "BAD_REQUEST", error: "No supported task fields to update" });
       }
 
-      // The where clause scopes the update to the caller, so a task belonging to
-      // someone else simply matches no rows — but reporting `success: true` for
-      // an update that changed nothing tells a client its edit was saved when it
-      // was not. A task deleted in another tab reads back as saved and then
-      // reverts on refresh. The sibling approve route below already answers 404
-      // for the same case.
-      const updated = await drizzle.transaction(async (tx) => {
+      const hasReviewSnapshot = [
+        expected_to,
+        expected_payload,
+        expected_task_type,
+        expected_agent_id,
+        expected_priority,
+        expected_description,
+      ].some((value) => value !== undefined);
+      // The row lock in assertTaskCanBeEdited serializes this comparison with
+      // other edits and the approval claim. A recipient-only check is not enough:
+      // another tab could change the message or sending Bot before this save.
+      const result = await drizzle.transaction(async (tx) => {
         await assertTaskCanBeEdited(tx, req.user.id, req.params.id);
-        return tx
+        if (hasReviewSnapshot) {
+          const [current] = await tx
+            .select({
+              payload: schema.followUpTasks.payload,
+              customerInfo: schema.followUpTasks.customerInfo,
+              taskType: schema.followUpTasks.taskType,
+              agentId: schema.followUpTasks.agentId,
+              priority: schema.followUpTasks.priority,
+              description: schema.followUpTasks.description,
+            })
+            .from(schema.followUpTasks)
+            .where(
+              and(
+                eq(schema.followUpTasks.id, req.params.id),
+                eq(schema.followUpTasks.userId, req.user.id),
+              ),
+            )
+            .limit(1);
+          if (!current) return "not_found" as const;
+          const currentPayload = (current.payload ?? current.customerInfo ?? {}) as Record<
+            string,
+            unknown
+          >;
+          const currentTo = typeof currentPayload.to === "string" ? currentPayload.to.trim() : "";
+          if (expected_to !== undefined && currentTo !== expected_to) {
+            return "recipient_changed" as const;
+          }
+          if (
+            (expected_payload !== undefined &&
+              !isDeepStrictEqual(currentPayload, expected_payload)) ||
+            (expected_task_type !== undefined && current.taskType !== expected_task_type) ||
+            (expected_agent_id !== undefined && (current.agentId ?? null) !== expected_agent_id) ||
+            (expected_priority !== undefined && (current.priority ?? null) !== expected_priority) ||
+            (expected_description !== undefined &&
+              (current.description ?? null) !== expected_description)
+          ) {
+            return "content_changed" as const;
+          }
+        }
+        const updated = await tx
           .update(schema.followUpTasks)
           .set(updateData)
           .where(
@@ -316,10 +374,23 @@ router.patch(
             ),
           )
           .returning();
+        return updated.length ? ("updated" as const) : ("not_found" as const);
       });
 
-      if (!updated.length) {
+      if (result === "not_found") {
         return res.status(404).json({ code: "NOT_FOUND", error: "Task not found" });
+      }
+      if (result === "recipient_changed") {
+        return res.status(409).json({
+          code: "TASK_RECIPIENT_CHANGED",
+          error: "Recipient changed. Review the latest task before approving.",
+        });
+      }
+      if (result === "content_changed") {
+        return res.status(409).json({
+          code: "TASK_CONTENT_CHANGED",
+          error: "Task changed. Review the latest details before approving.",
+        });
       }
 
       if (status !== undefined) touchNavCounts(req.user.id);
@@ -359,6 +430,63 @@ router.post(
         )
       ) {
         throw AppError.fromHttpStatus(409, "This task is no longer active.");
+      }
+
+      const expectedTo = req.body?.expected_to;
+      const expectedPayload = req.body?.expected_payload;
+      const expectedTaskType = req.body?.expected_task_type;
+      const expectedAgentId = req.body?.expected_agent_id;
+      const expectedPriority = req.body?.expected_priority;
+      if (
+        (expectedTaskType !== undefined && typeof expectedTaskType !== "string") ||
+        (expectedAgentId !== undefined &&
+          expectedAgentId !== null &&
+          typeof expectedAgentId !== "string") ||
+        (expectedPriority !== undefined &&
+          expectedPriority !== null &&
+          typeof expectedPriority !== "string")
+      ) {
+        return res.status(400).json({ code: "BAD_REQUEST", error: "Review snapshot is invalid" });
+      }
+      if (
+        (expectedTaskType !== undefined && task.taskType !== expectedTaskType) ||
+        (expectedAgentId !== undefined && (task.agentId ?? null) !== expectedAgentId) ||
+        (expectedPriority !== undefined && (task.priority ?? null) !== expectedPriority)
+      ) {
+        return res.status(409).json({
+          code: "TASK_CONTENT_CHANGED",
+          error: "Task changed. Review the latest details before approving.",
+        });
+      }
+      if (expectedPayload !== undefined) {
+        if (
+          !expectedPayload ||
+          typeof expectedPayload !== "object" ||
+          Array.isArray(expectedPayload)
+        ) {
+          return res
+            .status(400)
+            .json({ code: "BAD_REQUEST", error: "expected_payload is invalid" });
+        }
+        if (!isDeepStrictEqual(task.payload ?? task.customerInfo ?? {}, expectedPayload)) {
+          return res.status(409).json({
+            code: "TASK_CONTENT_CHANGED",
+            error: "Task changed. Review the latest details before approving.",
+          });
+        }
+      }
+      if (expectedTo !== undefined) {
+        if (typeof expectedTo !== "string" || expectedTo.length > 320) {
+          return res.status(400).json({ code: "BAD_REQUEST", error: "expected_to is invalid" });
+        }
+        const payload = (task.payload ?? task.customerInfo ?? {}) as Record<string, unknown>;
+        const currentTo = typeof payload.to === "string" ? payload.to.trim() : "";
+        if (currentTo !== expectedTo) {
+          return res.status(409).json({
+            code: "TASK_RECIPIENT_CHANGED",
+            error: "Recipient changed. Review the latest task before approving.",
+          });
+        }
       }
 
       const taskType = task.taskType;

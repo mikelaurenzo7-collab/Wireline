@@ -58,18 +58,6 @@ const pricingJsonLd = {
   "@context": "https://schema.org",
   "@graph": [
     {
-      "@type": "OfferCatalog",
-      name: "BotBound pricing",
-      url: "https://botbound.app/pricing",
-      itemListElement: CHANNEL_PLANS.map((plan) => ({
-        "@type": "Offer",
-        name: plan.name,
-        price: plan.price_usd_monthly,
-        priceCurrency: "USD",
-        description: plan.features.join(". "),
-      })),
-    },
-    {
       "@type": "FAQPage",
       mainEntity: FAQ.map(([question, answer]) => ({
         "@type": "Question",

@@ -460,6 +460,12 @@ export const updateFollowUpTaskSchema = z.object({
   resolution_notes: z.string().max(5000).optional(),
   description: z.string().max(5000).optional(),
   payload: z.record(z.string(), z.unknown()).optional(),
+  expected_to: z.string().max(320).optional(),
+  expected_payload: z.record(z.string(), z.unknown()).optional(),
+  expected_task_type: z.string().optional(),
+  expected_agent_id: z.string().nullable().optional(),
+  expected_priority: z.string().nullable().optional(),
+  expected_description: z.string().nullable().optional(),
 });
 
 // ============================================================================

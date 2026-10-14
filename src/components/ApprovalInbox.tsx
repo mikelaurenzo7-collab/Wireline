@@ -317,6 +317,29 @@ type ApprovalTaskCardProps = {
   task: FollowUpTaskRow;
   onResolved: () => void;
   onEditingChange: (editing: boolean) => void;
+  onConflict: () => void;
+  reviewConflict?: ApprovalReviewConflict;
+  onReviewReset: () => void;
+  preservedDraft?: ApprovalMessageDraft;
+  onDraftChange?: (draft: ApprovalMessageDraft | null) => void;
+};
+
+type ApprovalReviewConflict = {
+  sourceTask: FollowUpTaskRow;
+  requiredLoadGeneration: number;
+  refreshed: boolean;
+};
+
+type ApprovalMessageDraft = {
+  subject: string;
+  body: string;
+  notes: string;
+  expectedTo: string;
+  expectedPayload: Record<string, unknown>;
+  expectedTaskType: string;
+  expectedAgentId: string | null;
+  expectedPriority: string | null;
+  expectedDescription: string | null;
 };
 
 function editablePayloadFields(task: FollowUpTaskRow): Record<string, unknown> {
@@ -327,7 +350,31 @@ function editablePayloadFields(task: FollowUpTaskRow): Record<string, unknown> {
   return { ...payload };
 }
 
-function ApprovalTaskCard({ task, onResolved, onEditingChange }: ApprovalTaskCardProps) {
+function isReviewConflict(status: number, code: unknown): boolean {
+  return (
+    status === 409 &&
+    (code === "TASK_CONTENT_CHANGED" ||
+      code === "TASK_RECIPIENT_CHANGED" ||
+      code === "TASK_CHANGED")
+  );
+}
+
+function reviewConflictMessage(editing: boolean): string {
+  return editing
+    ? "This action changed. Your draft is kept. Cancel it, review the refreshed details, then edit again."
+    : "This action changed. Review the refreshed details before approving.";
+}
+
+function ApprovalTaskCard({
+  task,
+  onResolved,
+  onEditingChange,
+  onConflict,
+  reviewConflict,
+  onReviewReset,
+  preservedDraft,
+  onDraftChange,
+}: ApprovalTaskCardProps) {
   // Keep successful local edits visible after blocked approval, until a fresh
   // server snapshot arrives. A refetched task must replace the local snapshot.
   const [savedEdit, setSavedEdit] = useState<{
@@ -340,9 +387,10 @@ function ApprovalTaskCard({ task, onResolved, onEditingChange }: ApprovalTaskCar
   const { success: toastSuccess } = useToast();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [editing, setEditing] = useState(false);
-  const [editNotes, setEditNotes] = useState(task.description || "");
+  const [editing, setEditing] = useState(preservedDraft !== undefined);
+  const [editNotes, setEditNotes] = useState(preservedDraft?.notes ?? task.description ?? "");
   const [editBody, setEditBody] = useState(() => {
+    if (preservedDraft) return preservedDraft.body;
     const payload = editablePayloadFields(task);
     return typeof payload.body === "string"
       ? payload.body
@@ -351,12 +399,28 @@ function ApprovalTaskCard({ task, onResolved, onEditingChange }: ApprovalTaskCar
         : "";
   });
   const [editSubject, setEditSubject] = useState(() => {
+    if (preservedDraft) return preservedDraft.subject;
     const payload = editablePayloadFields(task);
     return typeof payload.subject === "string" ? payload.subject : "";
   });
   const savedPayload = editablePayloadFields(savedTask);
   const subject = typeof savedPayload.subject === "string" ? savedPayload.subject.trim() : "";
   const recipient = typeof savedPayload.to === "string" ? savedPayload.to.trim() : "";
+  const draftRef = useRef<ApprovalMessageDraft>({
+    subject: editSubject,
+    body: editBody,
+    notes: editNotes,
+    expectedTo: preservedDraft?.expectedTo ?? recipient,
+    expectedPayload: preservedDraft ? preservedDraft.expectedPayload : editablePayloadFields(task),
+    expectedTaskType: preservedDraft ? preservedDraft.expectedTaskType : rawTaskType(task),
+    expectedAgentId: preservedDraft
+      ? preservedDraft.expectedAgentId
+      : (task.agentId ?? task.agent_id ?? null),
+    expectedPriority: preservedDraft ? preservedDraft.expectedPriority : (task.priority ?? null),
+    expectedDescription: preservedDraft
+      ? preservedDraft.expectedDescription
+      : (task.description ?? null),
+  });
   const canEditMessage = ["send_email", "send_text_message"].includes(rawTaskType(task));
   const hasSubject = rawTaskType(task).includes("email") || "subject" in savedPayload;
   const evidence = evidenceSnippet(savedTask, editing && canEditMessage, true);
@@ -368,25 +432,68 @@ function ApprovalTaskCard({ task, onResolved, onEditingChange }: ApprovalTaskCar
     evidence.replace(/\s+/g, " ").trim() !== preview.replace(/\s+/g, " ").trim();
 
   function toggleEditing() {
-    setEditSubject(subject);
-    setEditBody(
+    if (
+      !editing &&
+      reviewConflict &&
+      (!reviewConflict.refreshed || reviewConflict.sourceTask === task)
+    ) {
+      setError("Still loading the latest action. Try Edit again after the refresh.");
+      return;
+    }
+    const nextSubject = subject;
+    const nextBody =
       typeof savedPayload.body === "string"
         ? savedPayload.body
         : typeof savedPayload.description === "string"
           ? savedPayload.description
-          : "",
-    );
-    setEditNotes(savedTask.description || "");
+          : "";
+    const nextNotes = savedTask.description || "";
+    setEditSubject(nextSubject);
+    setEditBody(nextBody);
+    setEditNotes(nextNotes);
     const nextEditing = !editing;
+    if (nextEditing) {
+      draftRef.current = {
+        subject: nextSubject,
+        body: nextBody,
+        notes: nextNotes,
+        expectedTo: recipient,
+        expectedPayload: editablePayloadFields(savedTask),
+        expectedTaskType: rawTaskType(task),
+        expectedAgentId: task.agentId ?? task.agent_id ?? null,
+        expectedPriority: task.priority ?? null,
+        expectedDescription: savedTask.description ?? null,
+      };
+      onDraftChange?.(draftRef.current);
+      if (reviewConflict) onReviewReset();
+      setError(null);
+    } else {
+      onDraftChange?.(null);
+    }
     setEditing(nextEditing);
     onEditingChange(nextEditing);
   }
 
+  function rememberDraft(patch: Partial<ApprovalMessageDraft>) {
+    draftRef.current = { ...draftRef.current, ...patch };
+    onDraftChange?.(draftRef.current);
+  }
+
   async function approve() {
+    if (reviewConflict && canEditMessage) {
+      setError(reviewConflictMessage(editing));
+      return;
+    }
     setBusy(true);
     setError(null);
+    let reviewedPayload = savedPayload;
     try {
       if (canEditMessage && editing) {
+        if (recipient !== draftRef.current.expectedTo) {
+          throw new Error(
+            "The recipient changed while you were editing. Cancel this draft and review the new recipient before approving.",
+          );
+        }
         const type = rawTaskType(task);
         if ((type === "send_email" || type === "send_text_message") && !editBody.trim()) {
           throw new Error("Add a message before approving.");
@@ -394,7 +501,7 @@ function ApprovalTaskCard({ task, onResolved, onEditingChange }: ApprovalTaskCar
         if (type === "send_email" && !editSubject.trim()) {
           throw new Error("Add a subject before approving.");
         }
-        const basePayload = editablePayloadFields(savedTask);
+        const basePayload = draftRef.current.expectedPayload;
         const nextPayload: Record<string, unknown> = { ...basePayload };
         if (editSubject.trim()) nextPayload.subject = editSubject.trim();
         if (editBody.trim()) {
@@ -417,12 +524,31 @@ function ApprovalTaskCard({ task, onResolved, onEditingChange }: ApprovalTaskCar
           body: JSON.stringify({
             description: nextDescription,
             payload: nextPayload,
+            expected_to: draftRef.current.expectedTo,
+            expected_payload: draftRef.current.expectedPayload,
+            expected_task_type: draftRef.current.expectedTaskType,
+            expected_agent_id: draftRef.current.expectedAgentId,
+            expected_priority: draftRef.current.expectedPriority,
+            expected_description: draftRef.current.expectedDescription,
           }),
         });
         if (!patch.ok) {
           const failure = await patch.json().catch(() => ({}));
+          if (isReviewConflict(patch.status, failure?.code)) {
+            onConflict();
+            throw new Error(reviewConflictMessage(editing));
+          }
           throw new Error(failure?.error || "Could not save edits before approval.");
         }
+        // The saved edit becomes the next review snapshot. A failed provider
+        // execution can then be retried without conflicting with our own save.
+        draftRef.current = {
+          ...draftRef.current,
+          expectedPayload: nextPayload,
+          expectedDescription: nextDescription,
+        };
+        onDraftChange?.(draftRef.current);
+        reviewedPayload = nextPayload;
         setSavedEdit({
           source: task,
           value: { ...savedTask, description: nextDescription, payload: nextPayload },
@@ -430,9 +556,29 @@ function ApprovalTaskCard({ task, onResolved, onEditingChange }: ApprovalTaskCar
       }
       const response = await authFetch(`/api/Assistants/tasks/${task.id}/approve`, {
         method: "POST",
+        ...(canEditMessage
+          ? {
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                expected_to: editing ? draftRef.current.expectedTo : recipient,
+                expected_payload: reviewedPayload,
+                expected_task_type: editing ? draftRef.current.expectedTaskType : rawTaskType(task),
+                expected_agent_id: editing
+                  ? draftRef.current.expectedAgentId
+                  : (task.agentId ?? task.agent_id ?? null),
+                expected_priority: editing
+                  ? draftRef.current.expectedPriority
+                  : (task.priority ?? null),
+              }),
+            }
+          : {}),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
+        if (isReviewConflict(response.status, body?.code)) {
+          onConflict();
+          throw new Error(reviewConflictMessage(editing));
+        }
         throw new Error(
           body?.error || (manualTask ? "Could not complete this task." : "Approval failed."),
         );
@@ -556,6 +702,7 @@ function ApprovalTaskCard({ task, onResolved, onEditingChange }: ApprovalTaskCar
                   disabled={busy}
                   onChange={(event) => {
                     setEditSubject(event.target.value);
+                    rememberDraft({ subject: event.target.value });
                     setError(null);
                   }}
                   placeholder="Subject"
@@ -571,6 +718,7 @@ function ApprovalTaskCard({ task, onResolved, onEditingChange }: ApprovalTaskCar
                 disabled={busy}
                 onChange={(event) => {
                   setEditBody(event.target.value);
+                  rememberDraft({ body: event.target.value });
                   setError(null);
                 }}
                 placeholder="Write a message…"
@@ -585,7 +733,10 @@ function ApprovalTaskCard({ task, onResolved, onEditingChange }: ApprovalTaskCar
                   rows={2}
                   value={editNotes}
                   disabled={busy}
-                  onChange={(event) => setEditNotes(event.target.value)}
+                  onChange={(event) => {
+                    setEditNotes(event.target.value);
+                    rememberDraft({ notes: event.target.value });
+                  }}
                   placeholder="Add context…"
                 />
               </label>
@@ -599,7 +750,12 @@ function ApprovalTaskCard({ task, onResolved, onEditingChange }: ApprovalTaskCar
           </p>
         ) : null}
         <div className="mt-3 flex flex-wrap gap-2">
-          <ShadButton type="button" size="sm" disabled={busy} onClick={() => void approve()}>
+          <ShadButton
+            type="button"
+            size="sm"
+            disabled={busy || (Boolean(reviewConflict) && canEditMessage)}
+            onClick={() => void approve()}
+          >
             {busy ? (
               <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
             ) : manualHandoff ? (
@@ -655,11 +811,17 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
   const [tasksUnavailable, setTasksUnavailable] = useState(false);
   const [visibleCount, setVisibleCount] = useState(APPROVAL_PAGE_SIZE);
   const [editingTaskIds, setEditingTaskIds] = useState<Set<string>>(() => new Set());
+  const [messageDrafts, setMessageDrafts] = useState<Record<string, ApprovalMessageDraft>>({});
+  const [reviewConflicts, setReviewConflicts] = useState<Record<string, ApprovalReviewConflict>>(
+    {},
+  );
   const loadAbortRef = useRef<AbortController | null>(null);
+  const loadGenerationRef = useRef(0);
   const lastLoadAtRef = useRef(0);
 
-  const load = useCallback(async (background = false) => {
-    if (background && loadAbortRef.current) return;
+  const load = useCallback(async (background = false, replaceInFlight = false) => {
+    if (background && !replaceInFlight && loadAbortRef.current) return;
+    const generation = ++loadGenerationRef.current;
     loadAbortRef.current?.abort();
     const controller = new AbortController();
     loadAbortRef.current = controller;
@@ -699,6 +861,18 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       if (validTasks) {
         setTasks(validTasks);
         setTasksLoaded(true);
+        // Only a task response started after a conflict can release its review
+        // latch. An older in-flight refresh must not count as fresh evidence.
+        setReviewConflicts((current) => {
+          let next = current;
+          for (const [id, conflict] of Object.entries(current)) {
+            if (!conflict.refreshed && generation >= conflict.requiredLoadGeneration) {
+              if (next === current) next = { ...current };
+              next[id] = { ...conflict, refreshed: true };
+            }
+          }
+          return next;
+        });
       }
     } catch {
       if (controller.signal.aborted) return;
@@ -706,7 +880,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
     } finally {
       if (loadAbortRef.current === controller && !controller.signal.aborted) {
         loadAbortRef.current = null;
-        if (!background) setLoading(false);
+        if (!background || replaceInFlight) setLoading(false);
       }
     }
   }, []);
@@ -803,6 +977,18 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
     // The mutation has already succeeded. Remove only that item immediately,
     // so a failed refresh cannot offer the same action again.
     setTasks((current) => current.filter((task) => task.id !== id));
+    setMessageDrafts((current) => {
+      if (!(id in current)) return current;
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
+    setReviewConflicts((current) => {
+      if (!(id in current)) return current;
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
     setEditingTaskIds((current) => {
       if (!current.has(id)) return current;
       const next = new Set(current);
@@ -818,6 +1004,16 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       const next = new Set(current);
       if (editing) next.add(id);
       else next.delete(id);
+      return next;
+    });
+  }
+
+  function setTaskDraft(id: string, draft: ApprovalMessageDraft | null) {
+    setMessageDrafts((current) => {
+      if (draft) return { ...current, [id]: draft };
+      if (!(id in current)) return current;
+      const next = { ...current };
+      delete next[id];
       return next;
     });
   }
@@ -848,10 +1044,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       <WorkspaceTabStrip
         tabs={approvalTabs}
         activeId={bucket}
-        onSelect={(id) => {
-          if (id !== bucket) setEditingTaskIds(new Set());
-          setBucket(id as ApprovalBucket);
-        }}
+        onSelect={(id) => setBucket(id as ApprovalBucket)}
         ariaLabel="Approval buckets"
         density="compact"
         align="start"
@@ -916,6 +1109,31 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
                 task={task}
                 onResolved={() => resolveTask(task.id)}
                 onEditingChange={(editing) => setTaskEditing(task.id, editing)}
+                onConflict={() => {
+                  if (["send_email", "send_text_message"].includes(rawTaskType(task))) {
+                    const requiredLoadGeneration = loadGenerationRef.current + 1;
+                    setReviewConflicts((current) => ({
+                      ...current,
+                      [task.id]: {
+                        sourceTask: task,
+                        requiredLoadGeneration,
+                        refreshed: false,
+                      },
+                    }));
+                  }
+                  void load(true, true);
+                }}
+                reviewConflict={reviewConflicts[task.id]}
+                onReviewReset={() =>
+                  setReviewConflicts((current) => {
+                    if (!(task.id in current)) return current;
+                    const next = { ...current };
+                    delete next[task.id];
+                    return next;
+                  })
+                }
+                preservedDraft={messageDrafts[task.id]}
+                onDraftChange={(draft) => setTaskDraft(task.id, draft)}
               />
             ))}
             {actionableTasks.length > visibleActionableTasks.length ? (
