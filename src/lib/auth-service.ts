@@ -24,6 +24,7 @@ export {
   isOwnerEmail,
 } from "./platform-owner-emails";
 import { isOwnerEmail } from "./platform-owner-emails";
+import { emailMaskForLog } from "./twilio-webhook-privacy";
 
 const SCRYPT_KEY_LEN = 64;
 const SCRYPT_SALT_BYTES = 16;
@@ -240,11 +241,11 @@ export const authService = {
       .where(eq(schema.users.email, email))
       .limit(1);
     if (!user || !user.passwordHash) {
-      log.warn("Auth: User not found or no password set", { email });
+      log.warn("Auth: User not found or no password set", { email: emailMaskForLog(email) });
       return null;
     }
     if (!(await verifyPasswordForRequest(password, user.passwordHash))) {
-      log.warn("Auth: Invalid password", { email });
+      log.warn("Auth: Invalid password", { email: emailMaskForLog(email) });
       return null;
     }
     let sessionVersion = user.sessionVersion;
@@ -392,7 +393,7 @@ export const authService = {
           };
         });
       } catch (err: any) {
-        log.error("Auth: Sign up failed", { email, error: err.message });
+        log.error("Auth: Sign up failed", { email: emailMaskForLog(email), error: err.message });
         throw err;
       }
     });

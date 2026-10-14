@@ -103,7 +103,8 @@ router.post(
     if (existing?.stripeSubscriptionId && LIVE_SUBSCRIPTION_STATUSES.has(existing.status || "")) {
       return res.status(409).json({
         code: "ALREADY_SUBSCRIBED",
-        error: "You already have a subscription. Use the Customer Portal to change plans.",
+        error:
+          "You already have a subscription. To change plans, email support@botbound.app and we will move you over.",
         current_plan: existing.plan,
         current_status: existing.status,
       });
@@ -126,7 +127,8 @@ router.post(
       if (liveRemote) {
         return res.status(409).json({
           code: "ALREADY_SUBSCRIBED",
-          error: "You already have a subscription. Use the Customer Portal to change plans.",
+          error:
+            "You already have a subscription. To change plans, email support@botbound.app and we will move you over.",
           current_plan: existing.plan,
           current_status: liveRemote.status,
         });
