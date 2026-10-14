@@ -62,7 +62,7 @@ for (const refreshFails of [false, true]) {
       await page
         .getByRole("article")
         .filter({ hasText: "Separate manual follow-up" })
-        .getByRole("button", { name: "Mark complete", exact: true })
+        .getByRole("button", { name: "I handled this", exact: true })
         .click();
       await expect(page.getByText("Separate manual follow-up", { exact: true })).toHaveCount(0);
       await expect(draftCard.getByLabel("Subject", { exact: true })).toHaveValue(

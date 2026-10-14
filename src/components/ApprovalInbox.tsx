@@ -89,7 +89,7 @@ function approvalResultMessage(
   recipient: string,
   manualTask: boolean,
 ): string {
-  if (manualTask) return "Marked complete.";
+  if (manualTask) return "Marked as handled. No message was sent or call placed.";
   const type = rawTaskType(task).toLowerCase();
   if (type.includes("email")) return recipient ? `Email sent to ${recipient}.` : "Email sent.";
   if (type.includes("text") || type.includes("sms"))
@@ -495,6 +495,11 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
             {error}
           </p>
         ) : null}
+        {manualTask ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Handle this yourself first. This button only clears the task.
+          </p>
+        ) : null}
         <div className="mt-3 flex flex-wrap gap-2">
           <ShadButton type="button" size="sm" disabled={busy} onClick={() => void approve()}>
             {busy ? (
@@ -504,7 +509,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
             ) : (
               <Check className="size-3.5" aria-hidden="true" />
             )}
-            {manualTask ? "Mark complete" : "Approve"}
+            {manualTask ? "I handled this" : "Approve"}
           </ShadButton>
           {!manualTask ? (
             <ShadButton
