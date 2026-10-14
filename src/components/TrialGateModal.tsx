@@ -108,6 +108,8 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
         title: "Verify Your Email",
         body: "Open the link in your email to continue.",
       };
+    case "AGENT_CAPACITY_REACHED":
+      return { title: "Bot Limit Reached", body: detail.error };
     case "TRIAL_LIMIT_HIT":
       return {
         title: "Trial Limit Reached",
@@ -232,8 +234,11 @@ export default function TrialGateModal() {
     checkoutTiers.length > 0 &&
     checkoutTiers.every((tier) => tier.disabled === true);
   const showBillingPortal = detail.code === "SUBSCRIPTION_REQUIRED";
+  // Every plan sold today includes one Bot, so a plan picker cannot lift the Bot cap.
   const showPlanCheckout =
-    detail.code !== "EMAIL_UNVERIFIED" && detail.code !== "SUBSCRIPTION_REQUIRED";
+    detail.code !== "EMAIL_UNVERIFIED" &&
+    detail.code !== "SUBSCRIPTION_REQUIRED" &&
+    detail.code !== "AGENT_CAPACITY_REACHED";
   const annualFallbackNote =
     !catalogPending &&
     preferredInterval === "year" &&
@@ -428,6 +433,13 @@ export default function TrialGateModal() {
             </div>
 
             <div className="px-[clamp(16px,4vw,32px)] pb-6">
+              {detail.code === "AGENT_CAPACITY_REACHED" && (
+                <ShadButton asChild disableAnimations className="h-11 rounded-md px-5">
+                  <Link to="/studio" onClick={closeModal}>
+                    Open Studio
+                  </Link>
+                </ShadButton>
+              )}
               {detail.code === "EMAIL_UNVERIFIED" && (
                 <div className="flex flex-col items-start gap-3">
                   <ShadButton

@@ -90,6 +90,9 @@ function safeCreateAgentError(
   if (status === 401 || status === 403) {
     return "Your session expired. Please sign in again to keep building.";
   }
+  if (normalized === "agent_capacity_reached") {
+    return "Your plan includes 1 Bot. Edit your current Bot in Studio to change what it does.";
+  }
   if (status === 402 || normalized === "plan_capacity_reached") {
     return "Your current plan is at its live Bot capacity. Add capacity or contact support.";
   }

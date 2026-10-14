@@ -42,7 +42,11 @@ import {
 } from "../lib/ai-gateway";
 import { AgentBusinessProfileSchema } from "../lib/form-validators";
 import { isOwnerEmail } from "../lib/auth-service";
-import { agentCapMessage, resolveAgentEntitlement } from "../lib/agent-entitlements";
+import {
+  AGENT_CAPACITY_REACHED,
+  agentCapMessage,
+  resolveAgentEntitlement,
+} from "../lib/agent-entitlements";
 import {
   KNOWLEDGE_DOCUMENT_MAX_BASE64_CHARS,
   KNOWLEDGE_IMAGE_MAX_DATA_URL_CHARS,
@@ -549,7 +553,11 @@ router.post(
         });
 
         if (entitlement.effectiveCap !== null && existing >= entitlement.effectiveCap) {
-          throw AppError.fromHttpStatus(402, agentCapMessage(entitlement.effectiveCap));
+          throw new AppError(
+            402,
+            AGENT_CAPACITY_REACHED,
+            agentCapMessage(entitlement.effectiveCap),
+          );
         }
 
         const usedMarkKeys = new Set<BotMarkKey>();

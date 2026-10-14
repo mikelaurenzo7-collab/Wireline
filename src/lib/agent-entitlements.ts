@@ -87,5 +87,10 @@ export function agentCapHit(agentCount: number, entitlement: AgentEntitlement): 
  * wording most workspaces actually hit.
  */
 export function agentCapMessage(cap: number): string {
-  return `Agent capacity limit reached. Your plan allows up to ${cap} agent${cap === 1 ? "" : "s"}.`;
+  return cap === 1
+    ? "Your plan includes 1 Bot. Edit your current Bot in Studio to change what it does."
+    : `Your plan includes up to ${cap} Bots. Edit an existing Bot in Studio to change what it does.`;
 }
+
+/** Code for the Bot cap. No plan sold today adds Bots, so it is not a payment prompt. */
+export const AGENT_CAPACITY_REACHED = "AGENT_CAPACITY_REACHED";

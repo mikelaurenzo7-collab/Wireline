@@ -142,18 +142,23 @@ describe("agent capacity integrity", () => {
     // people actually see — and it read "up to 1 agents" while the rest of the
     // product pluralises counts.
     expect(agentCapMessage(1)).toBe(
-      "Agent capacity limit reached. Your plan allows up to 1 agent.",
+      "Your plan includes 1 Bot. Edit your current Bot in Studio to change what it does.",
     );
-    expect(agentCapMessage(0)).toContain("0 agents");
-    expect(agentCapMessage(2)).toContain("2 agents");
-    expect(agentCapMessage(25)).toContain("25 agents");
+    expect(agentCapMessage(0)).toContain("0 Bots");
+    expect(agentCapMessage(2)).toContain("2 Bots");
+    expect(agentCapMessage(25)).toContain("25 Bots");
 
     // Both surfaces raise this, so the sentence has to come from one place or
-    // the two copies drift — which is how the pluralisation bug survived.
+    // the two copies drift — which is how the pluralisation bug survived. Its
+    // own code keeps the client from showing a payment prompt no plan answers.
     for (const file of ["src/routes/agent-routes-v2.ts", "src/lib/agent-draft-service.ts"]) {
       expect(read(file)).toContain("agentCapMessage(entitlement.effectiveCap)");
+      expect(read(file)).toContain("AGENT_CAPACITY_REACHED");
       expect(read(file)).not.toContain("Your plan allows up to ${entitlement.effectiveCap} agents");
     }
+    const modal = read("src/components/TrialGateModal.tsx");
+    expect(modal).toContain('detail.code !== "AGENT_CAPACITY_REACHED"');
+    expect(modal).toContain('case "AGENT_CAPACITY_REACHED":');
   });
 });
 

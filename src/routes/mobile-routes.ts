@@ -327,7 +327,8 @@ router.post(
       if (created.kind === "plan_capacity") {
         return res.status(402).json({
           code: "AGENT_CAPACITY_REACHED",
-          error: "Your plan has reached its agent capacity.",
+          error:
+            "Your plan has reached its Bot limit. Edit your current Bot to change what it does.",
         });
       }
       if (created.kind === "mark_capacity") {

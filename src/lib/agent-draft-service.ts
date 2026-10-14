@@ -11,7 +11,11 @@ import {
   type AgentCustomizationProfile,
   isAgentCustomizationProfile,
 } from "./agent-customization";
-import { agentCapMessage, resolveAgentEntitlement } from "./agent-entitlements";
+import {
+  AGENT_CAPACITY_REACHED,
+  agentCapMessage,
+  resolveAgentEntitlement,
+} from "./agent-entitlements";
 import { isOwnerEmail } from "./auth-service";
 import { drizzle, tenantStore } from "./server-context";
 import { emitServerProductEventOnce } from "./product-event-server";
@@ -153,7 +157,7 @@ async function assertAgentCapacity(
     extraAgents: setting?.extraAgents,
   });
   if (entitlement.effectiveCap !== null && existingCount >= entitlement.effectiveCap) {
-    throw AppError.fromHttpStatus(402, agentCapMessage(entitlement.effectiveCap));
+    throw new AppError(402, AGENT_CAPACITY_REACHED, agentCapMessage(entitlement.effectiveCap));
   }
 }
 

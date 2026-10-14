@@ -168,6 +168,7 @@ export const TRIAL_GATE_CODES = [
   "TRIAL_LIMIT_HIT",
   "SUBSCRIPTION_REQUIRED",
   "EMAIL_UNVERIFIED",
+  "AGENT_CAPACITY_REACHED",
 ] as const;
 
 /**
@@ -188,6 +189,7 @@ export interface TrialGateBlockDetail {
     | "TRIAL_LIMIT_HIT"
     | "SUBSCRIPTION_REQUIRED"
     | "EMAIL_UNVERIFIED"
+    | "AGENT_CAPACITY_REACHED"
     | (string & {});
   error: string;
   /** Present on TRIAL_LIMIT_HIT */
