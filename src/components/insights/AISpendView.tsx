@@ -579,7 +579,7 @@ export default function AISpendView({ days }: { days: number }) {
                       <div className="wl-insight-label mt-1">{m.calls} events</div>
                     </div>
                     <div className="font-display text-2xl text-brand-display">
-                      ${safeFixed(m.cost, 2)}
+                      ${safeFixed(m.cost, m.cost > 0 && m.cost < 0.01 ? 3 : 2)}
                     </div>
                   </div>
                 ))}
