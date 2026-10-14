@@ -152,7 +152,80 @@ function evidenceSnippet(
     const recipient = `To: ${payload.to}`;
     if (!uniqueParts.includes(recipient)) uniqueParts.unshift(recipient);
   }
+  const structuredFields: Record<string, string[]> = {
+    schedule_calendar: [
+      "event_name",
+      "service_type",
+      "customer_name",
+      "customer_number",
+      "date",
+      "time",
+      "timezone",
+      "attendees",
+    ],
+    update_crm_lead: [
+      "crm_type",
+      "subject",
+      "to_number",
+      "customer_number",
+      "status",
+      "notes",
+      "outcome",
+      "duration_minutes",
+    ],
+  };
+  const fields = structuredFields[rawTaskType(task)] || [];
+  const structured = fields
+    .map((key) => {
+      const value = payload[key];
+      const formatted = Array.isArray(value)
+        ? value.filter((entry) => typeof entry === "string" || typeof entry === "number").join(", ")
+        : typeof value === "string" || typeof value === "number"
+          ? String(value)
+          : "";
+      const label = key.replace(/_/g, " ");
+      return formatted ? `${label.charAt(0).toUpperCase()}${label.slice(1)}: ${formatted}` : "";
+    })
+    .filter(Boolean);
+  if (structured.length) uniqueParts.push(structured.join("\n"));
   return uniqueParts.join("\n\n");
+}
+
+function approvalPreview(task: FollowUpTaskRow, manualTask: boolean): string {
+  const payload = editablePayloadFields(task);
+  const type = rawTaskType(task);
+  if (type === "schedule_calendar") {
+    return [
+      textField(payload, "event_name") || textField(payload, "service_type") || task.description,
+      [textField(payload, "date"), textField(payload, "time"), textField(payload, "timezone")]
+        .filter(Boolean)
+        .join(" · "),
+      textField(payload, "customer_name"),
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  }
+  if (type === "update_crm_lead") {
+    return [
+      task.description || "CRM lead update",
+      textField(payload, "status"),
+      textField(payload, "customer_number") || textField(payload, "to_number"),
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  }
+  const source =
+    (manualTask ? task.description : textField(payload, "body")) ||
+    textField(payload, "summary") ||
+    textField(payload, "description") ||
+    task.description ||
+    textField(payload, "reasoning");
+  const lines = source.split(/\r?\n/).map((line) => line.trim());
+  if (/^(?:hi|hello|dear)\b.{0,50}[!,]$/i.test(lines[0] || "")) lines.shift();
+  const preview = lines.join(" ").replace(/\s+/g, " ").trim();
+  if (preview.length <= 180) return preview;
+  const lastSpace = preview.lastIndexOf(" ", 180);
+  return `${preview.slice(0, lastSpace > 80 ? lastSpace : 180).trimEnd()}…`;
 }
 
 const KNOWLEDGE_GAP_PREFIX = "[KNOWLEDGE GAP]";
@@ -281,8 +354,15 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
   const savedPayload = editablePayloadFields(savedTask);
   const subject = typeof savedPayload.subject === "string" ? savedPayload.subject.trim() : "";
   const recipient = typeof savedPayload.to === "string" ? savedPayload.to.trim() : "";
+  const canEditMessage = ["send_email", "send_text_message"].includes(rawTaskType(task));
   const hasSubject = rawTaskType(task).includes("email") || "subject" in savedPayload;
-  const evidence = evidenceSnippet(savedTask, editing && !manualTask, true);
+  const evidence = evidenceSnippet(savedTask, editing && canEditMessage, true);
+  const preview = approvalPreview(savedTask, manualTask);
+  const keepDetailsOpen = ["schedule_calendar", "update_crm_lead"].includes(rawTaskType(task));
+  const hasMoreDetails =
+    !editing &&
+    evidence &&
+    evidence.replace(/\s+/g, " ").trim() !== preview.replace(/\s+/g, " ").trim();
 
   function toggleEditing() {
     setEditSubject(subject);
@@ -301,7 +381,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
     setBusy(true);
     setError(null);
     try {
-      if (!manualTask && editing) {
+      if (canEditMessage && editing) {
         const type = rawTaskType(task);
         if ((type === "send_email" || type === "send_text_message") && !editBody.trim()) {
           throw new Error("Add a message before approving.");
@@ -422,6 +502,11 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
               {task.priority}
             </span>
           ) : null}
+          {manualTask ? (
+            <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+              Manual task
+            </span>
+          ) : null}
           {task.status && task.status !== "pending" ? (
             <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
               {task.status.replace(/_/g, " ")}
@@ -436,13 +521,26 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
             {subject && !editing ? `${taskTypeLabel(task)} · ` : ""}To: {recipient}
           </p>
         ) : null}
-        {evidence ? (
-          <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">
-            {evidence}
+        {!editing && preview ? (
+          <p className="mt-2 break-words text-sm leading-relaxed text-muted-foreground">
+            {preview}
           </p>
         ) : null}
+        {hasMoreDetails ? (
+          <details
+            open={keepDetailsOpen ? true : undefined}
+            className="mt-2 text-sm text-muted-foreground"
+          >
+            <summary className="wl-focus-ring-halo w-fit cursor-pointer rounded text-xs font-medium text-foreground">
+              Read details
+            </summary>
+            <p className="mt-2 whitespace-pre-wrap break-words rounded-lg border border-border bg-muted/30 p-3 leading-relaxed">
+              {evidence}
+            </p>
+          </details>
+        ) : null}
         <TaskContactLinks phone={taskPhone(task)} source={taskSource(task)} />
-        {!manualTask && editing ? (
+        {canEditMessage && editing ? (
           <div className="mt-3 grid gap-3">
             {hasSubject ? (
               <label className="wl-preserve-case grid gap-1.5 text-sm font-medium text-muted-foreground">
@@ -495,11 +593,6 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
             {error}
           </p>
         ) : null}
-        {manualTask ? (
-          <p className="mt-3 text-xs text-muted-foreground">
-            Handle this yourself first. This button only clears the task.
-          </p>
-        ) : null}
         <div className="mt-3 flex flex-wrap gap-2">
           <ShadButton type="button" size="sm" disabled={busy} onClick={() => void approve()}>
             {busy ? (
@@ -511,7 +604,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
             )}
             {manualTask ? "I handled this" : "Approve"}
           </ShadButton>
-          {!manualTask ? (
+          {canEditMessage ? (
             <ShadButton
               type="button"
               size="sm"

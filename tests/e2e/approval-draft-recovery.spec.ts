@@ -1,5 +1,68 @@
 import { expect, test } from "@playwright/test";
 
+test("approvals show a short draft first and keep the full action available", async ({ page }) => {
+  await page.route("**/api/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    const json =
+      path === "/api/auth/session"
+        ? { user: { id: "approvals-owner", email: "owner@example.test" } }
+        : path === "/api/Assistants/tasks"
+          ? {
+              tasks: [
+                {
+                  id: "draft-task",
+                  task_type: "send_email",
+                  status: "pending",
+                  payload: {
+                    to: "customer@example.test",
+                    subject: "Plan overview",
+                    body: `Hi there,\n\nHere is the plan overview you requested. ${"The plan includes calls and email. ".repeat(8)}Final price requires review.`,
+                  },
+                },
+                {
+                  id: "calendar-task",
+                  task_type: "schedule_calendar",
+                  status: "pending",
+                  description: "Calendar request: Product demo",
+                  payload: {
+                    event_name: "Product demo",
+                    customer_name: "Taylor",
+                    date: "2026-10-15",
+                    time: "14:00",
+                    timezone: "America/Chicago",
+                  },
+                },
+              ],
+            }
+          : path === "/api/triage"
+            ? {
+                hot_leads: [],
+                compliance: [],
+                pending_tasks: [],
+                knowledge_gaps: [],
+                escalations: [],
+              }
+            : { accounts: [], agents: [], numbers: [], data: [] };
+    await route.fulfill({ json });
+  });
+  await page.goto("/approvals");
+
+  const draft = page.getByRole("article").filter({ hasText: "customer@example.test" });
+  await expect(draft.locator("p").nth(1)).toContainText("Here is the plan overview you requested.");
+  await expect(draft.locator("details p")).toBeHidden();
+  await expect(draft.getByRole("button", { name: "Approve", exact: true })).toBeVisible();
+  await draft.getByText("Read details").focus();
+  await page.keyboard.press("Enter");
+  await expect(draft.locator("details p")).toContainText("Final price requires review.");
+  await expect(draft.locator("details p")).toBeVisible();
+
+  const calendar = page.getByRole("article").filter({ hasText: "Product demo" });
+  await expect(calendar.locator("p").first()).toContainText("2026-10-15 · 14:00 · America/Chicago");
+  await expect(calendar.locator("details p")).toContainText("Customer name: Taylor");
+  await expect(calendar.locator("details p")).toBeVisible();
+  await expect(calendar.getByRole("button", { name: "Edit" })).toHaveCount(0);
+});
+
 for (const refreshFails of [false, true]) {
   test(`approval drafts survive a sibling resolution and ${refreshFails ? "failed" : "successful"} refresh`, async ({
     page,
