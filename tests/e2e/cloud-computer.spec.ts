@@ -55,7 +55,7 @@ async function mockComputer(
     tasks: MockTask[];
     frame?: Buffer | null;
     clickNavigatesTo?: string;
-    /** Answer the first status and task-list reads with a server error. */
+    /** Keep status and task-list reads unavailable until the test releases them. */
     failFirstLoad?: boolean;
   },
 ) {
@@ -67,8 +67,7 @@ async function mockComputer(
   const starts: unknown[] = [];
   let tasks = options.tasks;
   let frame = options.frame;
-  let statusReads = 0;
-  let listReads = 0;
+  let recoverLoad = false;
   const setTask = (id: string, patch: Partial<MockTask>) => {
     tasks = tasks.map((item) => (item.id === id ? { ...item, ...patch } : item));
   };
@@ -108,14 +107,12 @@ async function mockComputer(
       });
     }
     if (path === "/api/computer/status") {
-      statusReads += 1;
-      return options.failFirstLoad && statusReads === 1
+      return options.failFirstLoad && !recoverLoad
         ? route.fulfill({ status: 500, json: { error: "Something went wrong." } })
         : route.fulfill({ json: options.status });
     }
     if (path === "/api/computer/tasks" && request.method() === "GET") {
-      listReads += 1;
-      return options.failFirstLoad && listReads === 1
+      return options.failFirstLoad && !recoverLoad
         ? route.fulfill({ status: 500, json: { error: "Something went wrong." } })
         : route.fulfill({ json: { tasks } });
     }
@@ -124,18 +121,25 @@ async function mockComputer(
         agentId: string;
         prepareBrowser?: boolean;
         goal?: string;
+        startUrl?: string;
       };
       starts.push(body);
+      const initialUrl = body.startUrl
+        ? new URL(
+            body.startUrl.includes("://") ? body.startUrl : `https://${body.startUrl}`,
+          ).toString()
+        : null;
       const next = task({
         id: "task-new",
         agentId: body.agentId,
         goal: body.prepareBrowser ? "Browse first, then give your Bot a task." : (body.goal ?? ""),
+        startUrl: initialUrl,
         status: body.prepareBrowser ? "needs_input" : "running",
         question: body.prepareBrowser
           ? "Browse the web, then tell your Bot what to do from this browser."
           : null,
-        currentUrl: null,
-        frameUrl: null,
+        currentUrl: initialUrl,
+        frameUrl: initialUrl,
         frameCapturedAt: NOW,
         preparingBrowser: Boolean(body.prepareBrowser),
         ownerControl: Boolean(body.prepareBrowser),
@@ -230,6 +234,9 @@ async function mockComputer(
     setFrame: (next: Buffer | null) => {
       frame = next;
     },
+    recoverLoad: () => {
+      recoverLoad = true;
+    },
   };
 }
 
@@ -302,6 +309,8 @@ for (const width of [390, 1440]) {
     await expect(result.getByText("The listing has Saturday hours.")).toBeVisible();
     await expect(page.locator(".wl-computer-composer")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "History" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Recent tasks" })).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
     await capture(page, info, `computer-completed-result-${width}`);
 
@@ -310,8 +319,10 @@ for (const width of [390, 1440]) {
     await expect(page.getByRole("button", { name: "Back to task" })).toBeVisible();
     await capture(page, info, `computer-new-task-${width}`);
 
-    const history = page.getByRole("complementary", { name: "Recent tasks" });
+    await page.getByRole("button", { name: "History" }).click();
+    const history = page.getByRole("dialog", { name: "Recent tasks" });
     await history.getByRole("button", { name: /Compare supplier prices/ }).click();
+    await expect(history).toHaveCount(0);
     await expect(page.locator(".wl-computer-composer")).toHaveCount(0);
     await expect(page.getByText("Supplier A costs less.")).toBeVisible();
   });
@@ -369,6 +380,10 @@ for (const width of [390, 1440]) {
     const stop = await detail.getByRole("button", { name: "Stop" }).boundingBox();
     expect(stop && stop.width > stop.height).toBe(true);
     await expect(page.locator(".wl-computer-composer")).toHaveCount(0);
+    await detail.getByRole("button", { name: "Open task activity" }).click();
+    const activity = page.getByRole("dialog", { name: "Task activity" });
+    await expect(activity.getByText('Clicked "Open Saturday"')).toBeVisible();
+    await activity.getByRole("button", { name: "Close" }).click();
     await expectNoHorizontalOverflow(page);
     await capture(page, info, `computer-needs-input-${width}`);
 
@@ -377,8 +392,10 @@ for (const width of [390, 1440]) {
     await expect(detail.getByText("Working", { exact: true })).toBeVisible();
     expect(replies).toEqual(["Yes, skip the sign in."]);
 
-    const history = page.getByRole("complementary", { name: "Recent tasks" });
+    await page.getByRole("button", { name: "History" }).click();
+    const history = page.getByRole("dialog", { name: "Recent tasks" });
     await history.getByRole("button", { name: /Google Business page/ }).click();
+    await expect(history).toHaveCount(0);
     await expect(page.getByText("Your hours match on both pages.")).toBeVisible();
     // The finished task never shows the live task's screen.
     const finished = page.getByRole("region", { name: /Google Business page/ });
@@ -420,7 +437,8 @@ test("a running task keeps updating while the owner reads an older result", asyn
   expect(stops).toEqual(["task-live"]);
   await capture(page, info, "computer-stopping");
 
-  const history = page.getByRole("complementary", { name: "Recent tasks" });
+  await page.getByRole("button", { name: "History" }).click();
+  const history = page.getByRole("dialog", { name: "Recent tasks" });
   await history.getByRole("button", { name: /Google Business page/ }).click();
   await expect(page.getByText("Your hours match on both pages.")).toBeVisible();
 
@@ -431,9 +449,11 @@ test("a running task keeps updating while the owner reads an older result", asyn
     summary: "Stopped.",
     liveView: false,
   });
+  await page.getByRole("button", { name: "History" }).click();
   await expect(
     history.getByRole("button", { name: /Find three plumbers/ }).getByText("Stopped"),
   ).toBeVisible();
+  await history.getByRole("button", { name: "Close" }).click();
   await expect(page.getByText("The task stopped.")).toBeAttached();
   await page.getByRole("button", { name: "New task" }).click();
   await page
@@ -461,9 +481,9 @@ for (const width of [390, 1440]) {
 
     await page.goto("/computer");
     const detail = page.getByRole("region", { name: /Find three plumbers/ });
-    await expect(detail.getByText("Front Desk · +15125550100")).toBeVisible();
+    await expect(detail.getByText("Front Desk", { exact: true })).toBeVisible();
     await detail.getByRole("button", { name: "Take control" }).click();
-    await expect(detail.getByRole("heading", { name: "You’re in control" })).toBeVisible();
+    await expect(detail.getByText("You control the browser")).toBeVisible();
     expect(takeovers).toEqual(["task-live"]);
 
     const screen = detail.getByRole("img", {
@@ -476,18 +496,27 @@ for (const width of [390, 1440]) {
       await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
     }
     await detail
-      .getByRole("textbox", { name: "Type into the focused page field" })
+      .getByRole("textbox", { name: "Type into selected field" })
       .fill("owner@example.test");
-    await detail.getByRole("button", { name: "Send to page" }).click();
-    await expect(
-      detail.getByRole("textbox", { name: "Type into the focused page field" }),
-    ).toHaveValue("");
-    await detail.getByRole("textbox", { name: "Web address" }).fill("https://login.example.test");
-    await detail.getByRole("button", { name: "Go to website" }).click();
-    await expect(detail.getByRole("textbox", { name: "Web address" })).toHaveValue(
-      "https://login.example.test/",
+    await detail.getByRole("button", { name: "Show entered text" }).click();
+    await expect(detail.getByRole("textbox", { name: "Type into selected field" })).toHaveAttribute(
+      "type",
+      "text",
     );
-    await detail.getByRole("button", { name: "Back", exact: true }).click();
+    await detail.getByRole("button", { name: "Send to page" }).click();
+    await expect(detail.getByRole("textbox", { name: "Type into selected field" })).toHaveValue("");
+    await expect(detail.locator("#computer-owner-input")).toHaveAttribute("type", "password");
+    const browserBar = detail.locator(".wl-computer-screen__bar");
+    await browserBar.getByRole("button", { name: "Expand browser" }).click();
+    await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true);
+    await browserBar.getByRole("button", { name: "Exit expanded browser" }).click();
+    await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(false);
+    const address = browserBar.getByRole("textbox", { name: "Web address" });
+    await address.fill("https://login.example.test");
+    await browserBar.getByRole("button", { name: "Go to website" }).click();
+    await expect(address).toHaveValue("https://login.example.test/");
+    await browserBar.getByRole("button", { name: "Back", exact: true }).click();
+    await detail.getByText("Keyboard controls", { exact: true }).click();
     await detail.getByRole("button", { name: "Tab", exact: true }).click();
     expect(ownerInputs).toContainEqual(
       expect.objectContaining({ kind: "type", text: "owner@example.test" }),
@@ -501,16 +530,13 @@ for (const width of [390, 1440]) {
     );
     expect(ownerInputs.some((input) => (input as { kind?: string }).kind === "click")).toBe(true);
     await expectNoHorizontalOverflow(page);
-    if (width >= 820) {
-      const screenBox = await detail.locator(".wl-computer-screen").boundingBox();
-      const controlsBox = await detail
-        .getByRole("complementary", { name: "Browser controls" })
-        .boundingBox();
-      expect(
-        screenBox && controlsBox && screenBox.x + screenBox.width <= controlsBox.x + 1,
-        JSON.stringify({ screenBox, controlsBox }),
-      ).toBe(true);
-    }
+    const screenBox = await detail.locator(".wl-computer-screen").boundingBox();
+    const controlsBox = await detail.locator(".wl-computer-control").boundingBox();
+    // Browser controls stay below the full-width viewer instead of taking a side rail.
+    expect(
+      screenBox && controlsBox && screenBox.y + screenBox.height <= controlsBox.y + 1,
+      JSON.stringify({ screenBox, controlsBox }),
+    ).toBe(true);
     await capture(page, info, `computer-owner-control-${width}`);
 
     await detail.getByRole("button", { name: "Return control to Bot" }).click();
@@ -531,10 +557,20 @@ for (const width of [390, 1440]) {
     });
 
     await page.goto("/computer");
+    await expect(
+      page.locator(".wl-computer-launch-browser__canvas").getByText("New tab"),
+    ).toBeVisible();
+    await expect(
+      page.locator(".wl-computer-launch-browser__bar").getByRole("textbox", {
+        name: "Web address",
+      }),
+    ).toBeVisible();
+    await capture(page, info, `computer-idle-${width}`);
     await page.getByRole("button", { name: "Open browser" }).click();
     expect(starts).toEqual([{ agentId: "design-bot", prepareBrowser: true }]);
     const detail = page.getByRole("region", { name: "Your browser is ready" });
-    await expect(detail.getByRole("heading", { name: "You’re in control" })).toBeVisible();
+    await expect(detail.getByText("You control the browser")).toBeVisible();
+    await expect(detail.locator(".wl-computer-new-tab")).toBeVisible();
     await expect(
       detail.getByRole("img", {
         name: "Browser screen. Click or drag to interact with the page.",
@@ -542,11 +578,11 @@ for (const width of [390, 1440]) {
     ).toBeVisible();
     await expect(detail.getByRole("button", { name: "Give task to Bot" })).toBeDisabled();
     await capture(page, info, `computer-browse-first-${width}-top`);
-    await detail.getByRole("button", { name: "Enter a web address" }).click();
-    await expect(detail.getByRole("textbox", { name: "Web address" })).toBeFocused();
-    await detail.getByRole("textbox", { name: "Web address" }).fill("google.com");
-    await detail.getByRole("button", { name: "Go to website" }).click();
+    const browserBar = detail.locator(".wl-computer-screen__bar");
+    await browserBar.getByRole("textbox", { name: "Web address" }).fill("google.com");
+    await browserBar.getByRole("button", { name: "Go to website" }).click();
     expect(ownerInputs).toContainEqual({ kind: "navigate", url: "google.com" });
+    await expect(detail.locator(".wl-computer-new-tab")).toHaveCount(0);
     await detail
       .getByRole("textbox", { name: "What should your Bot do from here?" })
       .fill("Find the official support phone number on this site.");
@@ -558,6 +594,40 @@ for (const width of [390, 1440]) {
     });
     await expect(working.getByText("Working", { exact: true })).toBeVisible();
     expect(returns).toEqual(["task-new"]);
+  });
+}
+
+for (const width of [390, 1440]) {
+  test(`an address in the idle browser opens that site before owner control at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: width < 600 ? 844 : 1000 });
+    const { starts, ownerInputs } = await mockComputer(page, {
+      status: READY,
+      frame: await fakeFrame(page),
+      tasks: [],
+    });
+
+    await page.goto("/computer");
+    const startAddress = page
+      .locator(".wl-computer-launch-browser__bar")
+      .getByRole("textbox", { name: "Web address" });
+    await startAddress.fill("google.com");
+    await startAddress.press("Enter");
+    const detail = page.getByRole("region", { name: "Your browser is ready" });
+    await expect(detail).toBeVisible();
+    expect(starts).toEqual([
+      { agentId: "design-bot", prepareBrowser: true, startUrl: "google.com" },
+    ]);
+    await expect(
+      detail.locator(".wl-computer-screen__bar").getByRole("textbox", { name: "Web address" }),
+    ).toHaveValue("https://google.com/");
+    await expect(detail.locator(".wl-computer-new-tab")).toHaveCount(0);
+    await expect(
+      detail.getByRole("img", { name: "Browser screen. Click or drag to interact with the page." }),
+    ).toBeVisible();
+    expect(ownerInputs).toEqual([]);
+    await expectNoHorizontalOverflow(page);
   });
 }
 
@@ -653,19 +723,28 @@ test("a lost frame clears the old screen instead of looking live", async ({ page
 
 test("a page that did not load offers a retry instead of a dead form", async ({ page }, info) => {
   await page.setViewportSize({ width: 1280, height: 900 });
-  await mockComputer(page, { status: READY, tasks: [], failFirstLoad: true });
+  const { recoverLoad } = await mockComputer(page, {
+    status: READY,
+    tasks: [],
+    failFirstLoad: true,
+  });
 
   await page.goto("/computer");
   await expect(page.getByText("Your Bot's Computer Did Not Load")).toBeVisible();
-  const history = page.getByRole("complementary", { name: "Recent tasks" });
+  await page.getByRole("button", { name: "History" }).click();
+  const history = page.getByRole("dialog", { name: "Recent tasks" });
   await expect(history.getByText("Recent tasks did not load.")).toBeVisible();
   await expect(page.getByText("The Task Did Not Start")).toHaveCount(0);
   await capture(page, info, "computer-load-retry");
 
-  await page.getByRole("button", { name: "Retry" }).first().click();
+  recoverLoad();
+  await history.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: "Retry" }).click();
+  await page.getByRole("button", { name: "History" }).click();
   await history.getByRole("button", { name: "Retry" }).click();
   await expect(page.getByText("Your Bot's Computer Did Not Load")).toHaveCount(0);
   await expect(history.getByText("No tasks yet.")).toBeVisible();
+  await history.getByRole("button", { name: "Close" }).click();
   await page
     .getByRole("textbox", { name: "What should your Bot do?" })
     .fill("Compare two supplier prices.");

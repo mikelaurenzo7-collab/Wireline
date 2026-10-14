@@ -143,6 +143,8 @@ export const CONTEXT_LIMIT_OUTCOME = {
 export type CloudComputerHooks = {
   emit(event: CloudComputerEvent): Promise<void>;
   frame(jpeg: Buffer): void;
+  /** Last successful Bot mouse position; transient owner-view metadata only. */
+  cursor?: (point: { x: number; y: number }) => void;
   stopRequested(): boolean;
   askOwner(question: string, waitMs: number): Promise<string | null>;
   meter<T>(input: { reserveUsd: number; turn: number; operation: () => Promise<T> }): Promise<T>;
@@ -376,6 +378,30 @@ function coordinate(action: unknown, xKey = "x", yKey = "y") {
     return null;
   }
   return { type: "coordinate", x, y };
+}
+
+function pointerAfterAction(action: Record<string, unknown>): { x: number; y: number } | null {
+  let point: ReturnType<typeof coordinate>;
+  switch (action.type) {
+    case "click":
+    case "double_click":
+    case "move":
+    case "scroll":
+      point = coordinate(action);
+      break;
+    case "drag": {
+      const path = Array.isArray(action.path) ? action.path : [];
+      const last = path.at(-1);
+      point =
+        Array.isArray(last) && last.length >= 2
+          ? coordinate({ x: last[0], y: last[1] })
+          : coordinate(last);
+      break;
+    }
+    default:
+      return null;
+  }
+  return point ? { x: point.x, y: point.y } : null;
 }
 
 function actionModifiers(value: unknown): string | undefined {
@@ -917,12 +943,14 @@ export async function runCloudComputerAgent(input: {
           };
         }
         actions += 1;
-        const result = await executeComputerAction(
-          input.session,
-          rawAction as Record<string, unknown>,
-        );
+        const action = rawAction as Record<string, unknown>;
+        const result = await executeComputerAction(input.session, action);
         ranBrowser = true;
         ownerFrame = await refreshOwnerFrame(input);
+        if (result.ok && ownerFrame) {
+          const pointer = pointerAfterAction(action);
+          if (pointer) input.hooks.cursor?.(pointer);
+        }
         await input.hooks.emit({
           kind: result.ok ? "action" : "error",
           text: result.activity,

@@ -9,14 +9,22 @@ import {
 } from "react";
 import { Link, useSearchParams } from "react-router";
 import {
+  ArrowLeft,
+  ArrowRight,
   CheckCircle2,
   CircleAlert,
+  Eye,
+  EyeOff,
   ExternalLink,
   Globe,
   Hand,
   MousePointer2,
   Loader2,
+  Maximize2,
+  Minimize2,
   MonitorSmartphone,
+  PanelRightOpen,
+  RotateCw,
   Send,
   ShieldCheck,
   Square,
@@ -30,6 +38,7 @@ import { StatusNotice } from "../components/molecules";
 import WorkspaceRecovery from "../components/WorkspaceRecovery";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../components/ui/shadcn/Sheet";
 
 type TaskStatus =
   "running" | "needs_input" | "completed" | "blocked" | "failed" | "stopped" | "interrupted";
@@ -61,6 +70,7 @@ type ComputerTask = {
   liveView: boolean;
   frameCapturedAt?: string | null;
   frameUrl?: string | null;
+  agentPointer?: { x: number; y: number; at: string } | null;
   currentUrl: string | null;
   ownerControl: boolean;
   preparingBrowser?: boolean;
@@ -223,16 +233,22 @@ function LiveScreen({
   task,
   ownerControl = false,
   onOwnerInput,
-  onRequestAddress,
+  ownerUrl,
+  onOwnerUrlChange,
+  ownerBusy = false,
 }: {
   task: ComputerTask;
   ownerControl?: boolean;
   onOwnerInput?: (input: OwnerBrowserInput) => void;
-  onRequestAddress?: () => void;
+  ownerUrl?: string;
+  onOwnerUrlChange?: (url: string) => void;
+  ownerBusy?: boolean;
 }) {
   const [src, setSrc] = useState<string | null>(null);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [zoomed, setZoomed] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const screenRef = useRef<HTMLElement | null>(null);
   const active = ACTIVE.includes(task.status);
   const latest = useRef<string | null>(null);
   const misses = useRef(0);
@@ -299,6 +315,13 @@ function LiveScreen({
     [],
   );
 
+  useEffect(() => {
+    const update = () =>
+      setExpanded(Boolean(document.fullscreenElement?.contains(screenRef.current)));
+    document.addEventListener("fullscreenchange", update);
+    return () => document.removeEventListener("fullscreenchange", update);
+  }, []);
+
   const lastUrl = task.currentUrl || [...task.events].reverse().find((event) => event.url)?.url;
   const latestEvent = [...task.events]
     .reverse()
@@ -325,17 +348,78 @@ function LiveScreen({
   };
 
   return (
-    <figure className="wl-computer-screen">
+    <figure ref={screenRef} className="wl-computer-screen">
       <div className="wl-computer-screen__bar">
         <span className="wl-computer-screen__dots" aria-hidden="true">
           <i />
           <i />
           <i />
         </span>
-        <span className="wl-computer-screen__address">
-          <Globe className="size-3.5" />
-          {lastUrl ? hostOf(lastUrl) : "Cloud computer"}
-        </span>
+        {ownerControl ? (
+          <>
+            <div
+              className="wl-computer-screen__navigation"
+              role="group"
+              aria-label="Browser navigation"
+            >
+              {(["back", "forward", "reload"] as const).map((action) => (
+                <button
+                  key={action}
+                  type="button"
+                  aria-label={
+                    action === "back" ? "Back" : action === "forward" ? "Forward" : "Reload"
+                  }
+                  title={action === "back" ? "Back" : action === "forward" ? "Forward" : "Reload"}
+                  disabled={ownerBusy}
+                  onClick={() => onOwnerInput?.({ kind: "history", action })}
+                >
+                  {action === "back" ? (
+                    <ArrowLeft />
+                  ) : action === "forward" ? (
+                    <ArrowRight />
+                  ) : (
+                    <RotateCw />
+                  )}
+                </button>
+              ))}
+            </div>
+            <form
+              className="wl-computer-screen__address-form"
+              aria-label="Go to a website"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (ownerUrl?.trim() && !ownerBusy)
+                  onOwnerInput?.({ kind: "navigate", url: ownerUrl });
+              }}
+            >
+              <Globe className="size-3.5" aria-hidden="true" />
+              <input
+                id="computer-owner-url"
+                aria-label="Web address"
+                type="text"
+                inputMode="url"
+                value={ownerUrl ?? ""}
+                onChange={(event) => onOwnerUrlChange?.(event.target.value)}
+                placeholder="Enter a web address"
+                autoComplete="url"
+                maxLength={2048}
+                disabled={ownerBusy}
+              />
+              <button
+                type="submit"
+                disabled={!ownerUrl?.trim() || ownerBusy}
+                aria-label="Go to website"
+              >
+                Go
+              </button>
+            </form>
+          </>
+        ) : (
+          <span className="wl-computer-screen__address">
+            <Globe className="size-3.5" />
+            {lastUrl ? hostOf(lastUrl) : "Cloud computer"}
+          </span>
+        )}
         {active ? <span className="wl-computer-screen__live">Latest screen</span> : null}
         {ownerControl && zoomed ? (
           <span className="wl-computer-screen__pan-hint">Alt+wheel or touch drag pans</span>
@@ -356,13 +440,38 @@ function LiveScreen({
             {zoomed ? "Fit" : "Zoom"}
           </button>
         ) : null}
+        {active ? (
+          <button
+            type="button"
+            className="wl-computer-screen__zoom"
+            aria-label={expanded ? "Exit expanded browser" : "Expand browser"}
+            title={expanded ? "Exit expanded browser" : "Expand browser"}
+            onClick={(event) => {
+              if (document.fullscreenElement) {
+                void document.exitFullscreen();
+                return;
+              }
+              const surface =
+                event.currentTarget.closest(".wl-computer-takeover") ?? screenRef.current;
+              if (surface instanceof HTMLElement && surface.requestFullscreen) {
+                void surface.requestFullscreen().catch(() => undefined);
+              }
+            }}
+          >
+            {expanded ? (
+              <Minimize2 className="size-3.5" aria-hidden="true" />
+            ) : (
+              <Maximize2 className="size-3.5" aria-hidden="true" />
+            )}
+          </button>
+        ) : null}
       </div>
       {active ? (
-        <div className="wl-computer-screen__progress" role="status">
+        <div className="wl-computer-screen__progress">
           {ownerControl ? (
             <>
               <MousePointer2 className="size-3.5" aria-hidden="true" />
-              You control the browser
+              {ownerBusy ? "Applying your action…" : "You control the browser"}
             </>
           ) : (
             <>
@@ -387,6 +496,7 @@ function LiveScreen({
         className={cn(
           "wl-computer-screen__viewport",
           ownerControl && src && screenCurrent && "is-owner-controlled",
+          ownerBusy && "is-applying",
           zoomed && src && screenCurrent && "is-zoomed",
         )}
         role={ownerControl && src && screenCurrent ? "group" : undefined}
@@ -398,7 +508,7 @@ function LiveScreen({
             : undefined
         }
         onPointerDown={(event) => {
-          if (!ownerControl || event.button !== 0) return;
+          if (!ownerControl || ownerBusy || event.button !== 0) return;
           if (!(event.target as HTMLElement).closest(".wl-computer-screen__canvas")) return;
           const point = screenPoint(event);
           if (!point) return;
@@ -408,7 +518,7 @@ function LiveScreen({
           }
         }}
         onPointerEnter={(event) => {
-          if (ownerControl && event.pointerType !== "touch") {
+          if (ownerControl && !ownerBusy && event.pointerType !== "touch") {
             setCursor(
               (event.target as HTMLElement).closest(".wl-computer-screen__canvas")
                 ? screenPoint(event)
@@ -417,7 +527,7 @@ function LiveScreen({
           }
         }}
         onPointerMove={(event) => {
-          if (ownerControl && event.pointerType !== "touch") {
+          if (ownerControl && !ownerBusy && event.pointerType !== "touch") {
             const captured = pointerStart.current?.id === event.pointerId;
             const overCanvas = Boolean(
               (event.target as HTMLElement).closest(".wl-computer-screen__canvas"),
@@ -428,7 +538,7 @@ function LiveScreen({
         onPointerLeave={() => setCursor(null)}
         onPointerUp={(event) => {
           const start = pointerStart.current;
-          if (!ownerControl || !start || start.id !== event.pointerId) return;
+          if (!ownerControl || ownerBusy || !start || start.id !== event.pointerId) return;
           pointerStart.current = null;
           const point = screenPoint(event, true);
           if (!point) return;
@@ -454,7 +564,7 @@ function LiveScreen({
           pointerStart.current = null;
         }}
         onWheel={(event) => {
-          if (!ownerControl) return;
+          if (!ownerControl || ownerBusy) return;
           if (zoomed && event.altKey) {
             event.preventDefault();
             event.currentTarget.scrollBy({
@@ -494,6 +604,16 @@ function LiveScreen({
                 aria-hidden="true"
               />
             ) : null}
+            {!ownerControl && task.status === "running" && task.agentPointer ? (
+              <MousePointer2
+                className="wl-computer-screen__cursor is-agent"
+                style={{
+                  left: `${(task.agentPointer.x / 1280) * 100}%`,
+                  top: `${(task.agentPointer.y / 800) * 100}%`,
+                }}
+                aria-label="Bot pointer"
+              />
+            ) : null}
           </div>
         ) : (
           <div className="wl-computer-screen__empty">
@@ -519,12 +639,16 @@ function LiveScreen({
             )}
           </div>
         )}
-        {newTab && src && screenCurrent ? (
+        {newTab ? (
           <div className="wl-computer-new-tab">
             <Globe className="size-7" aria-hidden="true" />
-            <Button type="button" size="sm" onClick={onRequestAddress}>
-              Enter a web address
-            </Button>
+            <strong>Your browser is ready</strong>
+            <span>Enter a web address above, then browse or give your Bot a task.</span>
+          </div>
+        ) : null}
+        {ownerBusy ? (
+          <div className="wl-computer-screen__applying" aria-hidden="true">
+            Applying…
           </div>
         ) : null}
       </div>
@@ -536,18 +660,18 @@ function TaskDetail({
   task,
   onChanged,
   botName,
-  phoneNumber,
 }: {
   task: ComputerTask;
   onChanged: (task: ComputerTask) => void;
   botName?: string;
-  phoneNumber?: string | null;
 }) {
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState<"stop" | "reply" | "take" | "input" | "return" | null>(null);
   // An error belongs to the state it happened in; once the task moves on it is stale.
   const [failure, setFailure] = useState<{ message: string; status: TaskStatus } | null>(null);
   const [ownerText, setOwnerText] = useState("");
+  const [showOwnerText, setShowOwnerText] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
   const [ownerUrl, setOwnerUrl] = useState(
     /^https?:\/\//i.test(task.currentUrl || "") ? task.currentUrl! : task.startUrl || "",
   );
@@ -596,8 +720,10 @@ function TaskDetail({
     ownerActionInFlight.current = true;
     // Do not retain owner-entered credentials in React state through a slow
     // request, error, or a later return to this task.
-    if (kind === "input" && input?.kind === "type") setOwnerText("");
-    if (kind === "return") setOwnerText("");
+    if ((kind === "input" && input?.kind === "type") || kind === "return" || kind === "take") {
+      setOwnerText("");
+      setShowOwnerText(false);
+    }
     setBusy(kind);
     setFailure(null);
     try {
@@ -655,37 +781,44 @@ function TaskDetail({
             <span className="text-xs text-muted-foreground">
               Started {timeAgo(task.startedAt)} · {task.actionCount} actions
             </span>
-            {botName ? (
-              <span className="text-xs text-muted-foreground">
-                {botName}
-                {phoneNumber ? ` · ${phoneNumber}` : ""}
-              </span>
-            ) : null}
+            {botName ? <span className="text-xs text-muted-foreground">{botName}</span> : null}
           </div>
           {/* The goal is the owner's own sentence: body type, not a display title. */}
           <p id="computer-task-title" className="wl-computer-detail__goal">
             {task.preparingBrowser ? "Your browser is ready" : task.goal}
           </p>
         </div>
-        {active ? (
-          // Stop lands at the Bot's next checkpoint, which can follow a long
-          // thinking step: say so instead of looking like nothing happened.
+        <div className="wl-computer-detail__actions">
           <Button
+            type="button"
             variant="outline"
             size="sm"
-            className="shrink-0"
-            onClick={() => void act("stop")}
-            aria-busy={busy === "stop" || task.stopping}
-            disabled={busy === "stop" || task.stopping}
+            onClick={() => setActivityOpen(true)}
+            aria-label="Open task activity"
           >
-            {task.stopping ? (
-              <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
-            ) : (
-              <Square aria-hidden="true" />
-            )}
-            {task.stopping ? "Stopping…" : "Stop"}
+            <PanelRightOpen aria-hidden="true" />
+            Activity
           </Button>
-        ) : null}
+          {active ? (
+            // Stop lands at the Bot's next checkpoint, which can follow a long
+            // thinking step: say so instead of looking like nothing happened.
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              onClick={() => void act("stop")}
+              aria-busy={busy === "stop" || task.stopping}
+              disabled={busy === "stop" || task.stopping}
+            >
+              {task.stopping ? (
+                <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+              ) : (
+                <Square aria-hidden="true" />
+              )}
+              {task.stopping ? "Stopping…" : "Stop"}
+            </Button>
+          ) : null}
+        </div>
       </header>
 
       {task.status === "needs_input" &&
@@ -769,61 +902,14 @@ function TaskDetail({
             task={task}
             ownerControl
             onOwnerInput={(input) => void ownerAction("input", input)}
-            onRequestAddress={() => document.getElementById("computer-owner-url")?.focus()}
+            ownerUrl={ownerUrl}
+            onOwnerUrlChange={(url) => {
+              ownerUrlEditedRef.current = true;
+              setOwnerUrl(url);
+            }}
+            ownerBusy={busy !== null}
           />
-          <aside className="wl-computer-control" aria-label="Browser controls">
-            <div className="wl-computer-control__heading">
-              <MousePointer2 className="size-4" aria-hidden="true" />
-              <div>
-                <h2>You’re in control</h2>
-              </div>
-            </div>
-            <form
-              className="wl-computer-control__form"
-              aria-label="Go to a website"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (ownerUrl.trim() && busy === null) {
-                  void ownerAction("input", { kind: "navigate", url: ownerUrl });
-                }
-              }}
-            >
-              <label htmlFor="computer-owner-url">Web address</label>
-              <Input
-                id="computer-owner-url"
-                type="text"
-                inputMode="url"
-                value={ownerUrl}
-                onChange={(event) => {
-                  ownerUrlEditedRef.current = true;
-                  setOwnerUrl(event.target.value);
-                }}
-                placeholder="example.com"
-                autoComplete="url"
-                maxLength={2048}
-                disabled={busy !== null}
-              />
-              <Button type="submit" variant="outline" disabled={!ownerUrl.trim() || busy !== null}>
-                Go to website
-              </Button>
-            </form>
-            <div
-              className="wl-computer-control__keys"
-              role="group"
-              aria-label="Browser history controls"
-            >
-              {(["back", "forward", "reload"] as const).map((action) => (
-                <Button
-                  key={action}
-                  variant="outline"
-                  size="sm"
-                  disabled={busy !== null}
-                  onClick={() => void ownerAction("input", { kind: "history", action })}
-                >
-                  {action === "back" ? "Back" : action === "forward" ? "Forward" : "Reload"}
-                </Button>
-              ))}
-            </div>
+          <div className="wl-computer-control" aria-label="Browser controls">
             <form
               className="wl-computer-control__form"
               aria-label="Type into the browser"
@@ -834,10 +920,10 @@ function TaskDetail({
                 }
               }}
             >
-              <label htmlFor="computer-owner-input">Type into the focused page field</label>
+              <label htmlFor="computer-owner-input">Type into selected field</label>
               <Input
                 id="computer-owner-input"
-                type="password"
+                type={showOwnerText ? "text" : "password"}
                 value={ownerText}
                 onChange={(event) => setOwnerText(event.target.value)}
                 autoComplete="off"
@@ -848,6 +934,16 @@ function TaskDetail({
                 disabled={busy !== null}
               />
               <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label={showOwnerText ? "Hide entered text" : "Show entered text"}
+                aria-pressed={showOwnerText}
+                onClick={() => setShowOwnerText((current) => !current)}
+              >
+                {showOwnerText ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+              </Button>
+              <Button
                 type="submit"
                 disabled={!ownerText || busy !== null}
                 aria-busy={busy === "input"}
@@ -856,23 +952,26 @@ function TaskDetail({
                 Send to page
               </Button>
             </form>
-            <div
-              className="wl-computer-control__keys"
-              role="group"
-              aria-label="Browser navigation keys"
-            >
-              {(["Tab", "Enter", "Backspace", "Escape"] as const).map((key) => (
-                <Button
-                  key={key}
-                  variant="outline"
-                  size="sm"
-                  disabled={busy !== null}
-                  onClick={() => void ownerAction("input", { kind: "key", key })}
-                >
-                  {key === "Escape" ? "Esc" : key}
-                </Button>
-              ))}
-            </div>
+            <details className="wl-computer-control__more">
+              <summary>Keyboard controls</summary>
+              <div
+                className="wl-computer-control__keys"
+                role="group"
+                aria-label="Browser navigation keys"
+              >
+                {(["Tab", "Enter", "Backspace", "Escape"] as const).map((key) => (
+                  <Button
+                    key={key}
+                    variant="outline"
+                    size="sm"
+                    disabled={busy !== null}
+                    onClick={() => void ownerAction("input", { kind: "key", key })}
+                  >
+                    {key === "Escape" ? "Esc" : key}
+                  </Button>
+                ))}
+              </div>
+            </details>
             {task.preparingBrowser ? (
               <div className="wl-computer-control__form">
                 <label htmlFor="computer-handoff-goal">What should your Bot do from here?</label>
@@ -901,13 +1000,14 @@ function TaskDetail({
                   ? "Give task to Bot"
                   : "Return control to Bot"}
             </Button>
-            <p className="wl-computer-control__privacy">
-              Your clicks and text travel through BotBound to the hosted browser provider and the
-              open site. They aren’t saved in task activity or sent as separate Bot messages. When
-              you return control, a screen with form fields and your entered text masked is sent to
-              OpenAI so your Bot can continue from the updated page.
-            </p>
-          </aside>
+            <details className="wl-computer-control__privacy">
+              <summary>Privacy and browser input</summary>
+              <p>
+                Your clicks and text go to the hosted browser and open site. When you return
+                control, form fields and entered text are masked in the screen sent to OpenAI.
+              </p>
+            </details>
+          </div>
         </div>
       ) : active ? (
         <LiveScreen task={task} />
@@ -954,24 +1054,32 @@ function TaskDetail({
         </div>
       ) : null}
 
-      <div className="wl-computer-activity">
-        <h2 className="wl-overline">Activity</h2>
-        {events.length ? (
-          <ol>
-            {events.map((event, index) => (
-              <li key={`${event.at}-${index}`} data-kind={event.kind}>
-                <time dateTime={event.at}>{clockTime(event.at)}</time>
-                <span>
-                  {event.text}
-                  {event.url ? <em> · {hostOf(event.url)}</em> : null}
-                </span>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <p className="text-sm text-muted-foreground">Your Bot's steps appear here as it works.</p>
-        )}
-      </div>
+      <Sheet open={activityOpen} onOpenChange={setActivityOpen}>
+        <SheetContent side="right" className="wl-computer-activity-panel">
+          <SheetHeader>
+            <SheetTitle>Task activity</SheetTitle>
+          </SheetHeader>
+          <div className="wl-computer-activity">
+            {events.length ? (
+              <ol>
+                {events.map((event, index) => (
+                  <li key={`${event.at}-${index}`} data-kind={event.kind}>
+                    <time dateTime={event.at}>{clockTime(event.at)}</time>
+                    <span>
+                      {event.text}
+                      {event.url ? <em> · {hostOf(event.url)}</em> : null}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Your Bot's steps appear here as it works.
+              </p>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </section>
   );
 }
@@ -987,6 +1095,7 @@ export default function ComputerPage() {
   const [listFailed, setListFailed] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showComposer, setShowComposer] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [goal, setGoal] = useState("");
   const [startUrl, setStartUrl] = useState("");
   const [startingMode, setStartingMode] = useState<"browser" | "task" | null>(null);
@@ -1153,7 +1262,7 @@ export default function ComputerPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           prepareBrowser
-            ? { agentId, prepareBrowser: true }
+            ? { agentId, prepareBrowser: true, startUrl: startUrl.trim() || undefined }
             : { agentId, goal, startUrl: startUrl.trim() || undefined },
         ),
       });
@@ -1198,14 +1307,28 @@ export default function ComputerPage() {
       task={selected}
       onChanged={(next) => applyTask(next, false)}
       botName={selectedBot?.name}
-      phoneNumber={selectedBot?.phone_number}
     />
   ) : null;
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-6">
-      <WorkspacePageFrame mode="standard" className="max-w-[1240px]">
-        <WorkspacePageIntro title="Computer" />
+      <WorkspacePageFrame mode="standard" className="max-w-[1400px]">
+        <WorkspacePageIntro
+          title="Computer"
+          action={
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setHistoryOpen(true)}
+              >
+                <PanelRightOpen aria-hidden="true" />
+                History
+              </Button>
+            </div>
+          }
+        />
 
         {status && !status.available ? <UnavailableNotice status={status} /> : null}
         {!status && statusFailed ? (
@@ -1283,17 +1406,6 @@ export default function ComputerPage() {
                   if (canStart) void start(false);
                 }}
               >
-                {composerBot ? (
-                  <p className="wl-computer-agent-context">
-                    <span>{composerBot.name}</span>
-                    {composerBot.phone_number ? (
-                      <>
-                        <span aria-hidden="true">·</span>
-                        <span className="font-mono">{composerBot.phone_number}</span>
-                      </>
-                    ) : null}
-                  </p>
-                ) : null}
                 {agents.length > 1 ? (
                   <div className="wl-computer-field">
                     <label htmlFor="computer-agent">Bot</label>
@@ -1310,19 +1422,46 @@ export default function ComputerPage() {
                     </NativeSelect>
                   </div>
                 ) : null}
-                <div className="wl-computer-browse-first">
-                  <div>
-                    <h2>Start with a browser</h2>
+                <div className="wl-computer-launch-browser" aria-label="New browser">
+                  <div className="wl-computer-launch-browser__bar">
+                    <span className="wl-computer-screen__dots" aria-hidden="true">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                    <Globe className="size-4 shrink-0" aria-hidden="true" />
+                    <label className="sr-only" htmlFor="computer-start-url">
+                      Web address
+                    </label>
+                    <Input
+                      id="computer-start-url"
+                      value={startUrl}
+                      onChange={(event) => setStartUrl(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          if (canOpenBrowser) void start(true);
+                        }
+                      }}
+                      placeholder="Enter a web address"
+                      inputMode="url"
+                      autoComplete="off"
+                      maxLength={2048}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => void start(true)}
+                      disabled={!canOpenBrowser}
+                      aria-busy={startingMode === "browser"}
+                    >
+                      {startingMode === "browser" ? "Opening…" : "Open browser"}
+                    </Button>
                   </div>
-                  <Button
-                    type="button"
-                    onClick={() => void start(true)}
-                    disabled={!canOpenBrowser}
-                    aria-busy={startingMode === "browser"}
-                  >
-                    <MousePointer2 aria-hidden="true" />
-                    {startingMode === "browser" ? "Opening browser…" : "Open browser"}
-                  </Button>
+                  <div className="wl-computer-launch-browser__canvas">
+                    <Globe className="size-8" aria-hidden="true" />
+                    <span>New tab</span>
+                  </div>
                 </div>
                 <div className="wl-computer-field">
                   <label htmlFor="computer-goal">What should your Bot do?</label>
@@ -1349,19 +1488,6 @@ export default function ComputerPage() {
                     </div>
                   )}
                 </div>
-                <div className="wl-computer-field">
-                  <label htmlFor="computer-start-url">
-                    Start page <span className="font-normal text-muted-foreground">(optional)</span>
-                  </label>
-                  <Input
-                    id="computer-start-url"
-                    value={startUrl}
-                    onChange={(event) => setStartUrl(event.target.value)}
-                    placeholder="example.com"
-                    inputMode="url"
-                    autoComplete="off"
-                  />
-                </div>
                 <div className="wl-computer-composer__footer">
                   <p>
                     <ShieldCheck className="size-4" aria-hidden="true" />
@@ -1386,58 +1512,65 @@ export default function ComputerPage() {
             {!anyActive && selected && showComposer ? taskDetail : null}
           </div>
 
-          <aside className="wl-computer-history" aria-label="Recent tasks">
-            <h2 className="wl-overline">Recent Tasks</h2>
-            {tasks === null && listFailed ? (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Recent tasks did not load.</p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setListFailed(false);
-                    void loadTasks();
-                  }}
-                >
-                  Retry
-                </Button>
-              </div>
-            ) : tasks === null ? (
-              <div className="space-y-2" aria-busy="true" aria-label="Loading tasks">
-                <Skeleton className="h-14 w-full" />
-                <Skeleton className="h-14 w-full" />
-              </div>
-            ) : tasks.length ? (
-              <ul>
-                {tasks.map((task) => {
-                  const copy = STATUS_COPY[task.status];
-                  return (
-                    <li key={task.id}>
-                      <button
-                        type="button"
-                        aria-current={task.id === selectedId ? "true" : undefined}
-                        onClick={() => {
-                          setSelectedId(task.id);
-                          setShowComposer(false);
-                        }}
-                      >
-                        <span className="wl-computer-history__goal">{task.goal}</span>
-                        <span className="wl-computer-history__meta">
-                          <Badge variant={copy.variant}>{copy.label}</Badge>
-                          <span>
-                            {botName(task.agentId) ? `${botName(task.agentId)} · ` : null}
-                            {timeAgo(task.startedAt)}
-                          </span>
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">No tasks yet.</p>
-            )}
-          </aside>
+          <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
+            <SheetContent side="right" className="wl-computer-history-panel">
+              <SheetHeader>
+                <SheetTitle>Recent tasks</SheetTitle>
+              </SheetHeader>
+              <aside className="wl-computer-history" aria-label="Recent tasks">
+                {tasks === null && listFailed ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Recent tasks did not load.</p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setListFailed(false);
+                        void loadTasks();
+                      }}
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                ) : tasks === null ? (
+                  <div className="space-y-2" aria-busy="true" aria-label="Loading tasks">
+                    <Skeleton className="h-14 w-full" />
+                    <Skeleton className="h-14 w-full" />
+                  </div>
+                ) : tasks.length ? (
+                  <ul>
+                    {tasks.map((task) => {
+                      const copy = STATUS_COPY[task.status];
+                      return (
+                        <li key={task.id}>
+                          <button
+                            type="button"
+                            aria-current={task.id === selectedId ? "true" : undefined}
+                            onClick={() => {
+                              setSelectedId(task.id);
+                              setShowComposer(false);
+                              setHistoryOpen(false);
+                            }}
+                          >
+                            <span className="wl-computer-history__goal">{task.goal}</span>
+                            <span className="wl-computer-history__meta">
+                              <Badge variant={copy.variant}>{copy.label}</Badge>
+                              <span>
+                                {botName(task.agentId) ? `${botName(task.agentId)} · ` : null}
+                                {timeAgo(task.startedAt)}
+                              </span>
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No tasks yet.</p>
+                )}
+              </aside>
+            </SheetContent>
+          </Sheet>
         </div>
       </WorkspacePageFrame>
     </WorkspaceShell>

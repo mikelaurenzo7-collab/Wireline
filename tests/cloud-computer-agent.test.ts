@@ -291,7 +291,8 @@ describe("OpenAI cloud computer agent loop", () => {
     const meter = vi.fn(async ({ operation }: { operation: () => Promise<unknown> }) =>
       operation(),
     );
-    const { hooks: h } = hooks({ meter: meter as CloudComputerHooks["meter"] });
+    const cursor = vi.fn();
+    const { hooks: h } = hooks({ meter: meter as CloudComputerHooks["meter"], cursor });
 
     await runCloudComputerAgent({
       client: openai,
@@ -306,6 +307,7 @@ describe("OpenAI cloud computer agent loop", () => {
     expect(calls.map(({ member }) => member)).toEqual(["left_click", "type"]);
     expect(frameOrder).toEqual(["owner", "model", "owner", "owner", "model"]);
     expect(h.frame).toHaveBeenCalledTimes(3);
+    expect(cursor).toHaveBeenCalledExactlyOnceWith({ x: 42, y: 84 });
     expect(calls[0].input).toMatchObject({ target: { x: 42, y: 84 } });
     expect(meter).toHaveBeenCalledTimes(2);
     expect((meter.mock.calls[0]?.[0] as { reserveUsd: number }).reserveUsd).toBeGreaterThan(0.02);

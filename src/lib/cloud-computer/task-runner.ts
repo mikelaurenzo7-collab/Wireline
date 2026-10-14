@@ -37,6 +37,7 @@ import { displayUrl, parseNavigateTarget } from "./url-policy";
 
 const MAX_EVENTS = 150;
 const FRAME_RETENTION_MS = 30 * 60_000;
+const AGENT_POINTER_VISIBLE_MS = 15_000;
 const STALE_AFTER_MS = 3 * 60_000;
 // A live task touches its row well inside STALE_AFTER_MS, so a long model
 // call or an owner question never reads as abandoned to another process.
@@ -118,6 +119,7 @@ type LiveTask = {
   frameAt: number;
   frameUrl: string | null;
   currentUrl: string | null;
+  agentPointer: { x: number; y: number; at: number } | null;
   events: ComputerTaskEvent[];
   turns: number;
   actions: number;
@@ -178,6 +180,7 @@ function requestStop(task: LiveTask) {
     task.stopAt = Date.now();
   }
   task.ownerControl = false;
+  task.agentPointer = null;
   task.session?.cancelCurrentInput();
   task.reply?.(null);
 }
@@ -208,6 +211,8 @@ export type ComputerTaskView = {
   frameCapturedAt: string | null;
   frameUrl: string | null;
   currentUrl: string | null;
+  /** Recent Bot pointer position on the 1280x800 browser frame, never persisted. */
+  agentPointer?: { x: number; y: number; at: string } | null;
   /** True only while this process is holding an owner takeover at a Bot checkpoint. */
   ownerControl: boolean;
   preparingBrowser: boolean;
@@ -242,6 +247,16 @@ function toView(row: TaskRow): ComputerTaskView {
         : null,
     frameUrl: task && !task.finished && task.userId === row.userId ? task.frameUrl : null,
     currentUrl: task?.userId === row.userId && !task.finished ? task.currentUrl : null,
+    agentPointer:
+      task &&
+      task.userId === row.userId &&
+      !task.finished &&
+      !task.stop &&
+      row.status === "running" &&
+      task.agentPointer &&
+      Date.now() - task.agentPointer.at <= AGENT_POINTER_VISIBLE_MS
+        ? { ...task.agentPointer, at: new Date(task.agentPointer.at).toISOString() }
+        : null,
     ownerControl: Boolean(
       task &&
       !task.finished &&
@@ -348,8 +363,8 @@ function parseStartInput(body: unknown): {
 } {
   const record = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
   const prepareBrowser = record.prepareBrowser === true;
-  if (prepareBrowser && (record.goal || record.startUrl)) {
-    throw AppError.badRequest("Open the browser first, then choose a website and task.");
+  if (prepareBrowser && record.goal) {
+    throw AppError.badRequest("Open the browser first, then give your Bot a task.");
   }
   const goal = prepareBrowser ? BROWSE_FIRST_GOAL : parseGoal(record.goal);
   let startUrl: string | null = null;
@@ -528,6 +543,7 @@ async function admitComputerTask(
     frameAt: Date.now(),
     frameUrl: null,
     currentUrl: null,
+    agentPointer: null,
     events: [],
     turns: 0,
     actions: 0,
@@ -637,6 +653,7 @@ function finishTask(task: LiveTask, outcome: TerminalOutcome): boolean {
   task.finished = true;
   task.outcome = outcome;
   task.ownerControl = false;
+  task.agentPointer = null;
   task.currentUrl = null;
   task.reply?.(null);
   task.reply = null;
@@ -804,9 +821,31 @@ async function executeTaskWithBrowser(
     task.session = session;
     task.currentUrl = displayUrl(session.activeUrl()) || null;
     if (input.prepareBrowser && !task.stop) {
+      if (input.startUrl) {
+        // The owner may choose a start page before the remote browser opens.
+        // Navigate before publishing its first frame so the handoff starts on
+        // that page. A failed site load still leaves the browser available for
+        // the owner to enter another address.
+        const opened = await session.execute("navigate", { url: input.startUrl });
+        task.currentUrl = displayUrl(session.activeUrl()) || null;
+        pushEvent(task, {
+          kind: opened.ok ? "action" : "error",
+          text: opened.ok
+            ? opened.activity
+            : "The starting page did not open. Enter another web address.",
+          ...(opened.ok && task.currentUrl ? { url: task.currentUrl } : {}),
+          ok: opened.ok,
+        });
+      }
+      if (task.stop) {
+        throw new AppError(409, "COMPUTER_TASK_ENDED", "The browser task was stopped.");
+      }
       const firstFrame = await session.frame();
       if (!firstFrame) {
         throw AppError.serviceUnavailable("The browser could not open a safe screen. Try again.");
+      }
+      if (task.stop) {
+        throw new AppError(409, "COMPUTER_TASK_ENDED", "The browser task was stopped.");
       }
       task.frame = firstFrame;
       task.frameAt = Date.now();
@@ -877,14 +916,21 @@ async function executeTaskWithBrowser(
             await persist(task, {});
           },
           frame: (jpeg) => {
+            // A new screen may be a different page; the action callback below
+            // restores a pointer only when it belongs to this captured frame.
+            task.agentPointer = null;
             task.frame = jpeg;
             task.frameAt = Date.now();
             task.frameUrl = displayUrl(activeSession.activeUrl()) || null;
+          },
+          cursor: (point) => {
+            task.agentPointer = { ...point, at: Date.now() };
           },
           stopRequested: () => task.stop,
           askOwner: async (question, waitMs) => {
             // Stop pressed during the model call: do not park on a new question.
             if (task.stop) return null;
+            task.agentPointer = null;
             const checkpoint = await persist(task, {
               status: "needs_input",
               question: cleanText(question, 300),
@@ -1317,6 +1363,7 @@ export async function takeComputerControl(
     );
   }
   task.ownerControl = true;
+  task.agentPointer = null;
   if ((await persist(task, { status: "needs_input" })) !== "written") {
     task.ownerControl = false;
     throw new AppError(409, "COMPUTER_NOT_WAITING", "This browser task has ended.");
