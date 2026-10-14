@@ -139,16 +139,16 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
           action: { label: "Call the Line", to: `tel:${livePhone}` },
         };
 
-  // The same compact framed card as Callbacks and Lines: one next step, not a
-  // viewport-tall empty panel with a lone link in the middle.
+  // History is this tab's only content, so its empty state is a message
+  // centered in the open space, the same as Activity and Inbox: one next step.
   return (
-    <div className="flex w-full flex-col items-center px-4 py-8 sm:px-6">
+    <div className="flex min-h-[min(60vh,32rem)] w-full flex-1 flex-col px-4 sm:px-6">
       <EmptyState
-        framed
+        fill
         density="compact"
         titleTone="ui"
         withHalo={false}
-        className="w-full max-w-lg"
+        className="w-full"
         icon={History}
         title={emptyState.title}
         actions={[{ ...emptyState.action, primary: true }]}

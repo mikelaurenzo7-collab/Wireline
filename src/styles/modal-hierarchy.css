@@ -37,8 +37,7 @@
 #deploy-agent-title,
 #create-agent-title,
 #post-create-wizard-title,
-#team-invite-title,
-#phone-agent-blueprint-title {
+#team-invite-title {
   max-width: 100%;
   font-family: var(--wireline-font-family-display) !important;
   font-size: var(--wireline-modal-title-size) !important;
@@ -52,8 +51,7 @@
 }
 
 #trial-gate-description,
-#deploy-agent-description,
-#phone-agent-blueprint-description {
+#deploy-agent-description {
   max-width: 60ch !important;
   font-size: var(--wireline-modal-copy-size) !important;
   line-height: var(--wireline-modal-copy-leading) !important;
@@ -93,15 +91,6 @@
   text-wrap: balance;
 }
 
-/* Guided call-plan is intentionally dense; containment matters more than making
- * it tiny. Preserve its working area while removing viewport-edge collisions. */
-.studio-blueprint-dialog {
-  width: min(58rem, calc(100vw - 2rem));
-  max-height: calc(100dvh - 2rem);
-  border-radius: var(--wireline-radius-xl);
-  overscroll-behavior: contain;
-}
-
 @media (max-width: 639px) {
   :root {
     --wireline-modal-inline-gutter: 0.75rem;
@@ -113,7 +102,6 @@
     border-radius: var(--wireline-radius-xl);
   }
 
-  /* Studio blueprint stays a dedicated bottom-sheet; phone-agent-blueprint.css owns its geometry. */
   [role="dialog"][aria-labelledby="create-agent-title"],
   [role="dialog"][aria-labelledby="team-invite-title"],
   [role="dialog"][aria-labelledby="deploy-agent-title"] {

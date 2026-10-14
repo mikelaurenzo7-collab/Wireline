@@ -20,11 +20,9 @@ export function checkPublicTypography({ failures, read, mustInclude, mustExclude
     "public typography quality layer must be loaded",
   );
 
-  const readableImport = surfaceIndex.indexOf('@import "./marketing-readable-type.css";');
-  const longformImport = surfaceIndex.indexOf('@import "./landing-longform.css";');
-  if (readableImport < 0 || readableImport < longformImport) {
+  if (!/@import "\.\/marketing-readable-type\.css";\s*$/.test(surfaceIndex)) {
     failures.push(
-      "src/styles/wireline-marketing-surfaces.css: readable type must load after landing composition styles",
+      "src/styles/wireline-marketing-surfaces.css: readable type must load after every marketing composition layer",
     );
   }
 
@@ -32,9 +30,7 @@ export function checkPublicTypography({ failures, read, mustInclude, mustExclude
     [/--wl-public-label-size:\s*0\.75rem;/, "public labels must retain a 12px floor"],
     [/--wl-public-caption-size:\s*0\.8125rem;/, "public captions must retain a 13px floor"],
     [/--wl-public-control-size:\s*0\.875rem;/, "public controls must retain a 14px floor"],
-    [/\.landing-stage__lane strong/, "work-lane labels must use the readable floor"],
-    [/\.landing-console__channels li/, "channel labels must use the readable floor"],
-    [/\.landing-home__price-badge/, "pricing badges must use the readable floor"],
+    [/:where\(\.wl-overline, \.wl-eyebrow\)/, "public overlines must use the readable floor"],
   ]) {
     mustInclude("src/styles/marketing-readable-type.css", readableType, pattern, description);
   }

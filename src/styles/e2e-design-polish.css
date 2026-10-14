@@ -208,9 +208,8 @@
  * headline and buttons then overprinted the evidence beneath them. Below the lg
  * breakpoint these composed pages scroll their flow and let the panel grow
  * honestly with its content — the same escape hatch the short-laptop rule above
- * grants, and the same behavior the home stage already ships on mobile
- * (landing-call-stage.css). Home is not in this set: it composes its own phone
- * stage and must not gain a second scroller. */
+ * grants. Home is not in this set: it composes its own document flow and must
+ * not gain a second scroller. */
 @media (max-width: 1023px) {
   .marketing-surface:is(.wl-features-page, .wl-showcase-page, .wl-about-page) .marketing-flow {
     overflow-x: hidden;
@@ -232,7 +231,7 @@
     max-width: 12ch;
     font-size: clamp(2.35rem, 10.8vw, 3.45rem) !important;
     line-height: 1.01;
-    letter-spacing: -0.04em;
+    letter-spacing: var(--wireline-typography-display-letterSpacing);
   }
 
   .marketing-surface .wl-stitch-marketing-hero {

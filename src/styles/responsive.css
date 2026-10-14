@@ -99,7 +99,7 @@
   }
   .wl-stitch-marketing-hero {
     font-size: clamp(1.9rem, 3.4vw, 2.9rem);
-    letter-spacing: -0.03em;
+    letter-spacing: var(--wireline-typography-display-letterSpacing);
     line-height: 1.05;
   }
   .wl-stitch-display {

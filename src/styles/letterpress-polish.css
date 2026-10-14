@@ -584,7 +584,7 @@
 .wl-display-mark {
   font-family: var(--wireline-font-family-display);
   font-weight: 400;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--wireline-typography-display-letterSpacing);
   line-height: 1.04;
   text-wrap: balance;
   color: var(--wireline-color-text-primary);

@@ -185,7 +185,7 @@
     margin: 0 0 0.875rem;
     font-size: 1.4rem;
     font-style: normal;
-    letter-spacing: -0.035em;
+    letter-spacing: var(--wireline-typography-h2-letterSpacing);
     line-height: 1.08;
     text-align: center;
   }
@@ -283,13 +283,13 @@
 
   main:has(#studio-brief) h1 {
     font-size: clamp(1.7rem, 7.5vw, 2.2rem);
-    letter-spacing: -0.045em;
+    letter-spacing: var(--wireline-typography-h1-letterSpacing);
   }
 
   main:has(#studio-brief) h2,
   main:has(#studio-workroom-message) h1 {
     font-size: clamp(1.32rem, 5.8vw, 1.75rem);
-    letter-spacing: -0.04em;
+    letter-spacing: var(--wireline-typography-h2-letterSpacing);
   }
 
   main:has(#studio-brief) .studio-card,
@@ -323,7 +323,7 @@
 
   form[aria-labelledby="create-agent-title"] h2 {
     font-size: 1.35rem;
-    letter-spacing: -0.035em;
+    letter-spacing: var(--wireline-typography-h2-letterSpacing);
   }
 
   form[aria-labelledby="create-agent-title"] [data-slot="form-field"] {
@@ -366,7 +366,7 @@
 
   main[data-wireline-route^="/settings"] h1 {
     font-size: clamp(1.55rem, 7vw, 2rem);
-    letter-spacing: -0.045em;
+    letter-spacing: var(--wireline-typography-h1-letterSpacing);
     line-height: 1.04;
   }
 

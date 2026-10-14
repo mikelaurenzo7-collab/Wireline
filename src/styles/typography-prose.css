@@ -74,7 +74,7 @@
   text-transform: none;
   font-size: clamp(2.25rem, 4vw + 1rem, 3.25rem);
   font-weight: 600;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--wireline-typography-display-letterSpacing);
 }
 
 @media (max-width: 640px) {
@@ -184,7 +184,7 @@ html.light .prose {
   font-weight: 500;
   font-size: clamp(2.5rem, 1.6rem + 4vw, 4.5rem);
   line-height: 0.98;
-  letter-spacing: -0.035em;
+  letter-spacing: var(--wireline-typography-display-letterSpacing);
   text-wrap: balance;
 }
 
@@ -193,7 +193,7 @@ html.light .prose {
   font-weight: 500;
   font-size: clamp(2rem, 1.3rem + 2.8vw, 3.5rem);
   line-height: 1.02;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--wireline-typography-display-letterSpacing);
   text-wrap: balance;
 }
 

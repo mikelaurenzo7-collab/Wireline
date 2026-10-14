@@ -55,18 +55,18 @@ describe("marketing centering contract", () => {
     const polishIndex = marketingBundle.indexOf("public-marketing-polish.css");
     const hierarchyIndex = marketingBundle.indexOf("marketing-information-hierarchy.css");
     const viewportIndex = marketingBundle.indexOf("viewport-first-marketing.css");
-    const callStageIndex = marketingBundle.indexOf("landing-call-stage.css");
     const documentFlowIndex = marketingBundle.indexOf("marketing-document-flow.css");
-    const longformIndex = marketingBundle.indexOf("landing-longform.css");
     const readableTypeIndex = marketingBundle.indexOf("marketing-readable-type.css");
 
     expect(polishIndex).toBeGreaterThanOrEqual(0);
     expect(hierarchyIndex).toBeGreaterThan(polishIndex);
     expect(viewportIndex).toBeGreaterThan(hierarchyIndex);
-    expect(callStageIndex).toBeGreaterThan(viewportIndex);
-    expect(documentFlowIndex).toBeGreaterThan(callStageIndex);
-    expect(longformIndex).toBeGreaterThan(documentFlowIndex);
-    expect(readableTypeIndex).toBeGreaterThan(longformIndex);
+    expect(documentFlowIndex).toBeGreaterThan(viewportIndex);
+    expect(readableTypeIndex).toBeGreaterThan(documentFlowIndex);
+    // Retired landing compositions must not come back as dead weight.
+    expect(marketingBundle).not.toMatch(
+      /landing-(?:call-stage|longform|stage-layout|live-console)/,
+    );
     expect(marketingBundle.trimEnd()).toMatch(/@import "\.\/marketing-readable-type\.css";$/);
     expect(documentFlow).toContain('html[data-wireline-viewport="document"]');
     expect(documentFlow).toContain('body[data-wireline-viewport="document"]');

@@ -182,16 +182,15 @@ if (!header.includes('aria-label="Account"')) {
   );
 }
 
-const landingLongform = read("src/styles/landing-longform.css");
+const landingPrestige = read("src/styles/landing-prestige.css");
 for (const [needle, description] of [
-  [".landing-home__solution-grid", "solutions grid is missing"],
-  [".landing-home__compact-grid", "capabilities grid is missing"],
-  [".landing-home__pricing-grid", "pricing grid is missing"],
-  [".landing-home__control-grid", "trust controls grid is missing"],
-  ["@media (max-width: 767px)", "mobile stacking rules are missing"],
+  [".landing-prestige__role-grid", "role grid is missing"],
+  [".landing-prestige__price-grid", "pricing grid is missing"],
+  [".landing-prestige__trust", "trust exit is missing"],
+  ["@media (max-width: 820px)", "mobile stacking rules are missing"],
 ]) {
-  if (!landingLongform.includes(needle)) {
-    failures.push(`src/styles/landing-longform.css: ${description}`);
+  if (!landingPrestige.includes(needle)) {
+    failures.push(`src/styles/landing-prestige.css: ${description}`);
   }
 }
 

@@ -1,8 +1,9 @@
 import { useRef, useState, type ReactNode, type RefObject } from "react";
 import { Link, useLocation } from "react-router";
-import { ArrowUpRight, ChevronsLeft, ChevronsRight, Search } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, Search } from "lucide-react";
 
 import ActivationNudge from "./ActivationNudge";
+import BotMark from "./BotMark";
 import EmailVerifyBanner from "./layout/EmailVerifyBanner";
 import MobileNavMoreSheet from "./layout/MobileNavMoreSheet";
 import SkipToContentLink from "./layout/SkipToContentLink";
@@ -177,7 +178,6 @@ function DesktopRail({
   const secondaryRouteParent = desktopNavParentHref(pathname);
   const agent = resolvedId ? agents.find((candidate) => candidate.id === resolvedId) : undefined;
   const settingsActive = isNavActive(pathname, "/settings");
-  const studioActive = isNavActive(pathname, "/studio");
 
   return (
     <aside
@@ -223,15 +223,9 @@ function DesktopRail({
         ) : null}
       </button>
 
-      <DesktopNavGroup
-        label="Work"
-        items={WORKSPACE_NAV}
-        pathname={pathname}
-        collapsed={collapsed}
-        secondaryRouteParent={secondaryRouteParent}
-      />
-
-      {agent && !studioActive ? (
+      {/* The Bot every page acts on keeps one fixed slot, on every route, so
+          the nav below never shifts between pages. */}
+      {agent ? (
         <Link
           to={`/studio?agent=${encodeURIComponent(agent.id)}`}
           aria-label={`Current Bot: ${agent.name}`}
@@ -239,7 +233,13 @@ function DesktopRail({
           data-wireline-bot-selected="true"
           className="wl-shell-bot-context wl-focus-ring-halo"
         >
-          {collapsed ? <ArrowUpRight className="size-4" aria-hidden="true" /> : null}
+          <BotMark
+            seed={agent.id}
+            name={agent.name}
+            markKey={agent.mark_key}
+            size={28}
+            title={agent.name}
+          />
           {!collapsed ? (
             <span className="wl-shell-bot-copy">
               <span className="wl-shell-bot-name">{agent.name}</span>
@@ -247,6 +247,14 @@ function DesktopRail({
           ) : null}
         </Link>
       ) : null}
+
+      <DesktopNavGroup
+        label="Work"
+        items={WORKSPACE_NAV}
+        pathname={pathname}
+        collapsed={collapsed}
+        secondaryRouteParent={secondaryRouteParent}
+      />
 
       <div className="wl-shell-nav-divider" />
       <DesktopNavGroup

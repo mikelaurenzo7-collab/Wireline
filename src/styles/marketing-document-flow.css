@@ -187,7 +187,7 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
   font-family: var(--wireline-font-family-display);
   font-size: clamp(1.3rem, 1.8vw, 1.55rem);
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--wireline-typography-h2-letterSpacing);
   line-height: 1.15;
 }
 
@@ -216,7 +216,7 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
   font-family: var(--wireline-font-family-display);
   font-size: clamp(1.6rem, 2.6vw, 2.2rem);
   font-weight: 700;
-  letter-spacing: -0.035em;
+  letter-spacing: var(--wireline-typography-h1-letterSpacing);
   text-align: center;
   text-wrap: balance;
 }

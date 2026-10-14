@@ -371,10 +371,11 @@ export default function MailboxConnectionCard() {
                     </form>
                   ) : provider.id !== "icloud" || emailIncluded ? (
                     <div className="mt-auto pt-3">
+                      {/* Providers are equal choices, so none outranks the others. */}
                       <Button
                         type="button"
                         size="sm"
-                        variant={providerAccounts.length ? "secondary" : "primary"}
+                        variant="secondary"
                         className="w-full"
                         disabled={isBusy || access.status !== "ready"}
                         onClick={() => void connect(provider.id)}

@@ -1,5 +1,4 @@
-/* Product surfaces: phone blueprint, Studio, auth, operations, Bot presence. */
-@import "./phone-agent-blueprint.css";
+/* Product surfaces: Studio, auth, operations, computer, Bot presence. */
 @import "./precision-studio.css";
 @import "./precision-auth.css";
 @import "./studio-operations.css";
