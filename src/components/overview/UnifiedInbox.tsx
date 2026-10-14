@@ -46,7 +46,7 @@ export default function UnifiedInbox({
         <div className="flex flex-wrap items-center gap-1.5">
           {[
             ["All", "/inbox"],
-            ["Calls", "/inbox?tab=voice"],
+            ["Calls", "/phone?tab=logs"],
             ["Texts", "/inbox?tab=sms"],
             ["Email", "/inbox?tab=email"],
           ].map(([label, href], index) => (

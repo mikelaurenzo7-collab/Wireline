@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 import { useSearchParams } from "react-router";
 
 import { Button } from "../components/atoms";
+import ApprovalInbox from "../components/ApprovalInbox";
 import EmailInbox from "../components/EmailInbox";
 import { StatusNotice } from "../components/molecules";
 import SmsThreads from "../components/SmsThreads";
@@ -15,7 +16,7 @@ import { authFetch } from "../lib/api";
 import { useChannelEntitlements } from "../hooks/useChannelEntitlements";
 import ChannelAccessNotice from "../components/ChannelAccessNotice";
 
-type InboxTabId = "email" | "sms";
+type InboxTabId = "email" | "sms" | "approvals";
 
 type MailboxAccount = {
   id: string;
@@ -27,6 +28,7 @@ type MailboxAccount = {
 const inboxTabs: Array<{ id: InboxTabId; label: string }> = [
   { id: "email", label: "Email" },
   { id: "sms", label: "Text" },
+  { id: "approvals", label: "Approvals" },
 ];
 
 /**
@@ -47,11 +49,34 @@ export default function EmailPage() {
   const [mailboxAttempt, setMailboxAttempt] = useState(0);
 
   const requestedTab = params.get("tab") as InboxTabId | null;
+  const hasExplicitConversationScope = ["agent", "account", "thread"].some((key) =>
+    params.has(key),
+  );
   const activeTab: InboxTabId = inboxTabs.some((tab) => tab.id === requestedTab)
     ? (requestedTab as InboxTabId)
-    : access.includes("sms") && !access.includes("email")
-      ? "sms"
-      : "email";
+    : !hasExplicitConversationScope &&
+        access.status === "ready" &&
+        access.includes("voice") &&
+        ["active", "trialing"].includes(access.data?.subscription_status ?? "") &&
+        !access.includes("email") &&
+        !access.includes("sms")
+      ? "approvals"
+      : access.includes("sms") && !access.includes("email")
+        ? "sms"
+        : "email";
+  useEffect(() => {
+    if (requestedTab !== "approvals" || !hasExplicitConversationScope) return;
+    setParams(
+      (current) => {
+        const updated = new URLSearchParams(current);
+        updated.delete("agent");
+        updated.delete("account");
+        updated.delete("thread");
+        return updated;
+      },
+      { replace: true },
+    );
+  }, [requestedTab, hasExplicitConversationScope, setParams]);
   const requestedAgentId = params.get("agent")?.trim() || "";
   // A deep link is an explicit scope. Never substitute an all-Bot/all-mailbox
   // request while its metadata is loading, unavailable, or no longer valid.
@@ -135,6 +160,8 @@ export default function EmailPage() {
     updateParams((updated) => {
       updated.set("tab", tab);
       if (tab !== "email") updated.delete("account");
+      updated.delete("thread");
+      if (tab === "approvals") updated.delete("agent");
     });
   }
 
@@ -160,7 +187,7 @@ export default function EmailPage() {
     });
   }
 
-  const showBotFilter = agents.length > 1 || Boolean(activeAgentId);
+  const showBotFilter = activeTab !== "approvals" && (agents.length > 1 || Boolean(activeAgentId));
   const showMailboxFilter =
     activeTab === "email" && (availableMailboxes.length > 1 || Boolean(activeAccountId));
   const scopeControls =
@@ -219,7 +246,7 @@ export default function EmailPage() {
           primary={
             <WorkspaceTabStrip
               ariaLabel="Inbox sections"
-              tabs={[...inboxTabs, { id: "approvals", label: "Approvals", href: "/approvals" }]}
+              tabs={inboxTabs}
               activeId={activeTab}
               onSelect={(id) => setActiveTab(id as InboxTabId)}
               align="start"
@@ -229,7 +256,9 @@ export default function EmailPage() {
           }
           secondary={scopeControls}
         />
-        <ChannelAccessNotice access={access} channel={activeTab} />
+        {activeTab !== "approvals" ? (
+          <ChannelAccessNotice access={access} channel={activeTab} />
+        ) : null}
         {mailboxStatus === "error" && activeTab === "email" && !activeAccountId && !scopeError ? (
           <StatusNotice
             tone="warning"
@@ -245,7 +274,7 @@ export default function EmailPage() {
           </StatusNotice>
         ) : null}
         <div className="wl-inbox-route flex min-h-0 flex-1 flex-col">
-          {scopeLoading ? (
+          {activeTab !== "approvals" && scopeLoading ? (
             <div
               role="status"
               className="flex items-center justify-center gap-2 px-4 py-12 text-sm text-muted-foreground"
@@ -253,7 +282,7 @@ export default function EmailPage() {
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
               Loading selected inbox…
             </div>
-          ) : scopeError ? (
+          ) : activeTab !== "approvals" && scopeError ? (
             <StatusNotice tone="warning" title="Selected Inbox Unavailable" className="my-3">
               <p>{scopeError}</p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -274,13 +303,15 @@ export default function EmailPage() {
               channelAccessResolved={access.status === "ready"}
               initialThreadId={params.get("thread")}
             />
-          ) : (
+          ) : activeTab === "sms" ? (
             <SmsThreads
               embedded
               agentId={activeAgentId || null}
               readOnly={!access.includes("sms")}
               initialThreadId={params.get("thread")}
             />
+          ) : (
+            <ApprovalInbox embedded />
           )}
         </div>
       </WorkspacePageFrame>

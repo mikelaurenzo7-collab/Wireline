@@ -202,6 +202,19 @@ export function CapacityUpgradeContent({
   if (!current) return null;
   const pendingPlan = status?.pending && plans.find((plan) => plan.id === status.pending?.plan_id);
   const pendingIncomplete = status?.pending?.status === "incomplete";
+  if (cancelAtPeriodEnd && status && !status.pending) {
+    return (
+      <section
+        className="min-w-0 rounded-xl border border-border bg-card p-4 sm:p-5"
+        aria-label="Plan capacity"
+      >
+        <p className="text-sm font-semibold text-foreground">Capacity changes are paused</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          This plan is set to end. Use Manage Billing above to resume it before increasing capacity.
+        </p>
+      </section>
+    );
+  }
   return (
     <section
       className="min-w-0 rounded-xl border border-border bg-card p-4 sm:p-5"
@@ -307,9 +320,7 @@ export function CapacityUpgradeContent({
             </>
           ) : status && !loading && !error ? (
             <p role="status" className="text-sm text-muted-foreground">
-              {cancelAtPeriodEnd
-                ? "This plan is set to end. Use Manage Billing above to resume it. Capacity changes are unavailable while cancellation is scheduled."
-                : "No capacity increase is available for this subscription."}
+              No capacity increase is available for this subscription.
             </p>
           ) : null}
         </div>

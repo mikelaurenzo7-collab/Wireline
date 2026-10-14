@@ -63,10 +63,7 @@ test("a mailbox deep link never requests all conversations while its scope loads
   try {
     await expect(page.getByText("Loading selected inbox…", { exact: true })).toBeVisible();
     expect(requests).toHaveLength(0);
-    await expect(page.getByRole("link", { name: "Approvals", exact: true })).toHaveAttribute(
-      "href",
-      "/approvals",
-    );
+    await expect(page.getByRole("button", { name: "Approvals", exact: true })).toBeVisible();
   } finally {
     release();
   }
@@ -81,6 +78,8 @@ test("a mailbox deep link never requests all conversations while its scope loads
   await expect(page.getByRole("combobox", { name: "Filter email by mailbox" })).toHaveValue(
     "mail-desk",
   );
+  await page.getByRole("button", { name: "Approvals", exact: true }).click();
+  await expect(page).toHaveURL(/\/inbox\?tab=approvals$/);
 });
 
 for (const failure of ["unavailable", "malformed"] as const) {

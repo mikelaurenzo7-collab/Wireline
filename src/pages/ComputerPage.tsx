@@ -1361,7 +1361,17 @@ export default function ComputerPage() {
         <WorkspacePageIntro
           title="Computer"
           action={
-            <div className="flex justify-end">
+            <div className="flex items-center justify-end gap-2">
+              {!anyActive && selected ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowComposer((current) => !current)}
+                >
+                  {showComposer ? "Back to task" : "New task"}
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 variant="outline"
@@ -1443,18 +1453,6 @@ export default function ComputerPage() {
               </div>
             ) : null}
             {anyActive ? taskDetail : null}
-            {!anyActive && selected ? (
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowComposer((current) => !current)}
-                >
-                  {showComposer ? "Back to task" : "New task"}
-                </Button>
-              </div>
-            ) : null}
             {!anyActive && selected && !showComposer ? taskDetail : null}
             {!anyActive && (!selected || showComposer) && !scopedAgentUnavailable ? (
               <form

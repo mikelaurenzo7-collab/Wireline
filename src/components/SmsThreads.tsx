@@ -730,6 +730,12 @@ export default function SmsThreads({
     ? "flex min-h-0 flex-1 flex-col overflow-hidden"
     : "wl-paper flex min-h-[620px] flex-1 flex-col overflow-hidden";
 
+  // The parent already explains unavailable SMS access. Keep any saved texts
+  // visible, but avoid a second empty state and unusable search controls when
+  // this account has never had a conversation in the unscoped view.
+  if (readOnly && !agentId && !initialThreadId && !threads.length && !loading && !fetchErr)
+    return null;
+
   return (
     <section className={frameClass} aria-label="Text inbox">
       <div className="flex items-center gap-2 border-b border-border py-2.5 sm:px-4">

@@ -649,17 +649,17 @@ function ApprovalTaskCard({
             {subject && !editing ? subject : taskTypeLabel(task)}
           </h3>
           {task.priority ? (
-            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-wide text-muted-foreground">
               {task.priority}
             </span>
           ) : null}
           {manualTask ? (
-            <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+            <span className="rounded-full border border-border px-2 py-0.5 text-[length:var(--wireline-typography-overline-size)] font-semibold text-muted-foreground">
               Manual task
             </span>
           ) : null}
           {task.status && task.status !== "pending" ? (
-            <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <span className="rounded-full border border-border px-2 py-0.5 text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-wide text-muted-foreground">
               {task.status.replace(/_/g, " ")}
             </span>
           ) : null}
@@ -682,7 +682,7 @@ function ApprovalTaskCard({
             open={keepDetailsOpen ? true : undefined}
             className="mt-2 text-sm text-muted-foreground"
           >
-            <summary className="wl-focus-ring-halo w-fit cursor-pointer rounded text-xs font-medium text-foreground">
+            <summary className="wl-focus-ring-halo min-h-11 w-fit cursor-pointer rounded py-2.5 text-xs font-medium leading-6 text-foreground sm:min-h-0 sm:py-0 sm:leading-normal">
               Read details
             </summary>
             <p className="mt-2 whitespace-pre-wrap break-words rounded-lg border border-border bg-muted/30 p-3 leading-relaxed">
@@ -725,7 +725,9 @@ function ApprovalTaskCard({
               />
             </label>
             <details className="text-sm text-muted-foreground">
-              <summary className="cursor-pointer py-1 text-xs font-medium">Internal Notes</summary>
+              <summary className="wl-focus-ring-halo min-h-11 cursor-pointer rounded py-2.5 text-xs font-medium leading-6 sm:min-h-0 sm:py-1 sm:leading-normal">
+                Internal Notes
+              </summary>
               <label className="wl-preserve-case mt-2 grid gap-1.5 text-sm font-medium text-muted-foreground">
                 <span className="sr-only">Internal Notes</span>
                 <textarea

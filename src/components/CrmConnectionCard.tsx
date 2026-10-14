@@ -694,7 +694,7 @@ export default function CrmConnectionCard() {
                             href={s.instance_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-1.5 rounded-md hover:bg-white/10 text-muted hover:text-foreground transition-colors"
+                            className="p-1.5 rounded-md hover:bg-muted text-muted hover:text-foreground transition-colors"
                             title={`Open ${label}`}
                             aria-label={`Open ${label}`}
                           >
@@ -704,7 +704,7 @@ export default function CrmConnectionCard() {
                         {key === "salesforce" && (
                           <Link
                             to="/connections/salesforce"
-                            className="p-1.5 rounded-md hover:bg-white/10 text-muted hover:text-foreground transition-colors"
+                            className="p-1.5 rounded-md hover:bg-muted text-muted hover:text-foreground transition-colors"
                             title="Configure"
                             aria-label="Configure Salesforce"
                           >
@@ -788,7 +788,7 @@ export default function CrmConnectionCard() {
                   })()}
 
                 {key === "shopify" && !isConnected && shopDomainOpen && (
-                  <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
+                  <div className="mt-3 pt-3 border-t border-border space-y-1.5">
                     <div className="wl-label text-muted/90">Your store domain</div>
                     <Input
                       type="text"
@@ -813,7 +813,7 @@ export default function CrmConnectionCard() {
                   </div>
                 )}
                 {key === "slack" && isConnected && (
-                  <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+                  <div className="mt-3 pt-3 border-t border-border space-y-2">
                     <div className="wl-label text-muted/90">Default notify channel</div>
                     {slackChannelsLoading ? (
                       <div className="flex items-center gap-2 wl-micro-meta--muted">
@@ -877,7 +877,7 @@ export default function CrmConnectionCard() {
                   </div>
                 )}
                 {key === "microsoft_teams" && isConnected && (
-                  <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+                  <div className="mt-3 pt-3 border-t border-border space-y-2">
                     <div className="wl-label text-muted/90">Notify team & channel</div>
                     {teamsTargetsLoading ? (
                       <div className="flex items-center gap-2 wl-micro-meta--muted">
