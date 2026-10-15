@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import { Redis } from "@upstash/redis";
+import type { Redis } from "@upstash/redis";
+import { createUpstashRedis } from "./upstash-redis";
 
 const KEY_PREFIX = "wireline:dnc-failsafe:";
 let redis: Redis | null = null;
@@ -13,7 +14,7 @@ function getRedis(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
   const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
   if (!url || !token) return null;
-  redis = new Redis({ url, token });
+  redis = createUpstashRedis(url, token);
   return redis;
 }
 
@@ -25,9 +26,7 @@ function dncFailsafeKey(userId: string, phone: string): string | null {
   const canonicalUserId = userId.trim();
   const canonicalNumber = canonicalPhone(phone);
   if (!canonicalUserId || canonicalNumber.length < 7) return null;
-  const digest = createHash("sha256")
-    .update(`${canonicalUserId}:${canonicalNumber}`)
-    .digest("hex");
+  const digest = createHash("sha256").update(`${canonicalUserId}:${canonicalNumber}`).digest("hex");
   return `${KEY_PREFIX}${digest}`;
 }
 

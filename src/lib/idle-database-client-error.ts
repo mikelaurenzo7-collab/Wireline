@@ -23,3 +23,28 @@ export function attachIdleDatabaseClientErrorListener(pool: ErrorEmitter): void 
     });
   });
 }
+
+/**
+ * Keep a connection that drops while checked out from taking the process down.
+ *
+ * pg-pool listens for a client's "error" only while the client is idle. A
+ * checked-out client that loses its socket fails its active query and then
+ * emits "error" with nothing listening, which is an uncaught exception. Tenant
+ * checkouts add their own listener, but root work did not, and the job worker
+ * and voice call admission hold root transactions open across provider calls.
+ * Every client therefore keeps a listener for its whole life. When the failed
+ * client is released, pg-pool sees it is no longer queryable and discards it.
+ */
+export function attachCheckedOutDatabaseClientErrorListener(pool: {
+  on(event: "connect", listener: (client: ErrorEmitter) => void): unknown;
+}): void {
+  pool.on("connect", (client) => {
+    client.on("error", (error) => {
+      const code = (error as { code?: unknown }).code;
+      log.warn("A database connection failed while in use", {
+        code: typeof code === "string" ? code : undefined,
+        error: error.message,
+      });
+    });
+  });
+}

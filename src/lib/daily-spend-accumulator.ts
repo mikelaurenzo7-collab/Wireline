@@ -4,7 +4,8 @@
  * Serverless cold starts reset in-process counters; this store is shared
  * across all Vercel instances via INCRBY + PEXPIRE on a rolling 24h key.
  */
-import { Redis } from "@upstash/redis";
+import type { Redis } from "@upstash/redis";
+import { createUpstashRedis } from "./upstash-redis";
 import { log } from "./server-context";
 
 const REDIS_KEY = "wireline:claude:daily-spend:micro";
@@ -23,7 +24,7 @@ function getRedis(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) return null;
-  redis = new Redis({ url, token });
+  redis = createUpstashRedis(url, token);
   return redis;
 }
 

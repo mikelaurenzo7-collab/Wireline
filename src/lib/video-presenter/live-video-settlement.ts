@@ -20,7 +20,8 @@
  * Every declined settlement is logged so the gap is visible rather than silent.
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { Redis } from "@upstash/redis";
+import type { Redis } from "@upstash/redis";
+import { createUpstashRedis } from "../upstash-redis";
 
 import { log } from "../server-context";
 import { isVaultConfigured, getDataKey } from "../secret-vault";
@@ -46,7 +47,7 @@ function getRedis(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
   const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
   if (!url || !token) return null;
-  redis = new Redis({ url, token });
+  redis = createUpstashRedis(url, token);
   return redis;
 }
 

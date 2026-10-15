@@ -16,6 +16,20 @@ import {
   readVoiceWorkerReadiness,
   voiceWorkerSourceRevision,
 } from "../lib/voice/openai-sip-worker-readiness";
+import { reportError } from "../lib/error-reporter";
+import { getErrorMessage } from "../lib/server-utils";
+
+// The same safety nets as the API. Without them Node turns a stray rejection
+// into an uncaught exception, and the fatal-process guard ends every live call
+// with no log line and no error report.
+process.on("unhandledRejection", (reason) => {
+  log.error("unhandledRejection", { error: getErrorMessage(reason) });
+  reportError(reason, { tags: { surface: "voice-worker", kind: "unhandledRejection" } });
+});
+process.on("uncaughtException", (error) => {
+  log.error("uncaughtException", { error: getErrorMessage(error) });
+  reportError(error, { tags: { surface: "voice-worker", kind: "uncaughtException" } });
+});
 
 // A synthetic tenant validates RLS role/GUC access without customer reads.
 const checkWorkerDatabase = () =>

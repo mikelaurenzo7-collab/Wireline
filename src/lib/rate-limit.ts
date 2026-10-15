@@ -11,7 +11,8 @@
 // Algorithm: fixed window with key suffix `:{floor(now / windowMs)}`.
 // One INCR + one EXPIRE per request — both are O(1) on Redis.
 
-import { Redis } from "@upstash/redis";
+import type { Redis } from "@upstash/redis";
+import { createUpstashRedis } from "./upstash-redis";
 import { log } from "./server-context";
 import { inMemoryRateLimitAllowed } from "./preview-spend-policy";
 import { getDeploymentIdentity, isProductionDeployment } from "./deployment-environment";
@@ -24,7 +25,7 @@ function getRedis(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) return null;
-  redis = new Redis({ url, token });
+  redis = createUpstashRedis(url, token);
   return redis;
 }
 

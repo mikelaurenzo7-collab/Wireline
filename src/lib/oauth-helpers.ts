@@ -2,7 +2,8 @@
 import express from "express";
 import { googleApis } from "./google-apis";
 import { randomUUID, createHmac, timingSafeEqual } from "node:crypto";
-import { Redis } from "@upstash/redis";
+import type { Redis } from "@upstash/redis";
+import { createUpstashRedis } from "./upstash-redis";
 import { drizzle, fetchWithTimeout, IS_PROD, tenantStore } from "./server-context";
 import { isProductionRuntime, getSessionTokenFromRequest } from "./session-cookie";
 import * as schema from "../db/schema";
@@ -193,7 +194,7 @@ function getOAuthNonceRedis(): Redis | null {
     oauthNonceRedis = null;
     return null;
   }
-  oauthNonceRedis = new Redis({ url, token });
+  oauthNonceRedis = createUpstashRedis(url, token);
   return oauthNonceRedis;
 }
 

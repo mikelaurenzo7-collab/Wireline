@@ -5,7 +5,8 @@
  */
 
 import { createHash } from "node:crypto";
-import { Redis } from "@upstash/redis";
+import type { Redis } from "@upstash/redis";
+import { createUpstashRedis } from "./upstash-redis";
 import { log } from "./server-context";
 
 const CACHE_TTL_SECONDS = 120;
@@ -21,7 +22,7 @@ function getRedis(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) return null;
-  redis = new Redis({ url, token });
+  redis = createUpstashRedis(url, token);
   return redis;
 }
 

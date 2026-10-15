@@ -2,7 +2,8 @@
  * Debounce proactive_lead_enrichment jobs — at most once per caller per 24h.
  */
 
-import { Redis } from "@upstash/redis";
+import type { Redis } from "@upstash/redis";
+import { createUpstashRedis } from "./upstash-redis";
 import { log } from "./server-context";
 
 const DEBOUNCE_TTL_SECONDS = 24 * 60 * 60;
@@ -17,7 +18,7 @@ function getRedis(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) return null;
-  redis = new Redis({ url, token });
+  redis = createUpstashRedis(url, token);
   return redis;
 }
 
