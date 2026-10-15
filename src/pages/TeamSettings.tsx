@@ -139,6 +139,17 @@ export default function TeamSettings() {
         }
         throw new Error(payload?.error || payload?.message || "Invite could not be sent.");
       }
+      // The accept link exists only in that email, so an unsent email is an
+      // unusable invitation. Sending again issues a fresh link.
+      const result = (await response.json().catch(() => null)) as {
+        email_sent?: boolean;
+      } | null;
+      if (result?.email_sent === false) {
+        await loadTeam();
+        throw new Error(
+          `The invitation email to ${inviteEmail} didn't send. Send it again in a few minutes.`,
+        );
+      }
       setInviteSuccess(`Invitation sent to ${inviteEmail}.`);
       setIsInviteOpen(false);
       setInviteEmail("");

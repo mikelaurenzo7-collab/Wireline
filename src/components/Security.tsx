@@ -197,7 +197,8 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     items: [
       "Production voice: Twilio provides phone numbers, PSTN transport, SIP, and SMS. OpenAI Realtime runs every browser and phone conversation from the same 10-voice roster; OpenAI also provides the primary structured runtime. BotBound does not operate a separate voice-cloning provider.",
       "Payments: Stripe (PCI scope reduced, BotBound never stores card numbers).",
-      "Data plane: Supabase Postgres (US-East today). Rate limits: Upstash Redis.",
+      "Data plane: Supabase Postgres (US-East today). Rate limits: Upstash Redis. Hosting: Render runs the website, API, and voice runtime.",
+      "Managed AI beyond OpenAI: Google Gemini for continuity inference and grounded search. Cloud computer: Browserless hosts each Bot's isolated remote browser during computer tasks.",
       "Email: AgentMail for platform-managed Bot mailboxes and Bot email; Resend for transactional platform email.",
       "Provider credentials and routing stay server-side. BotBound owns the customer-facing experience while this Trust Center names key subprocessors for transparency.",
     ],

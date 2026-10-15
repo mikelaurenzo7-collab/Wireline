@@ -183,6 +183,29 @@ describe("team access status", () => {
     expect(h.fetch).toHaveBeenCalledTimes(2);
   });
 
+  it("keeps the invite open when the invitation email did not send, since only that email holds the link", async () => {
+    await load({ members: [] });
+    invite().onClick!();
+    render();
+    const email = elements(tree).find((node) => node.type === "input");
+    email!.props.onChange!({ target: { value: "teammate@example.test" } });
+    render();
+    h.fetch
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ success: true, email_sent: false }), { status: 200 }),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ members: [] }), { status: 200 }));
+    const form = elements(tree).find((node) => node.type === "form");
+    await form!.props.onSubmit!({ preventDefault: vi.fn() });
+    render();
+
+    expect(text(tree)).toContain("Invite Teammate");
+    expect(text(tree)).toContain(
+      "The invitation email to teammate@example.test didn't send. Send it again in a few minutes.",
+    );
+    expect(text(tree)).not.toContain("Invitation sent");
+  });
+
   it("retains confirmed roles from a successful member response", async () => {
     await load({
       members: [

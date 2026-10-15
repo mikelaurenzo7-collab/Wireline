@@ -99,7 +99,7 @@ export default function ComplianceCenter() {
       anchor.click();
       URL.revokeObjectURL(url);
     } catch {
-      setError("Could not download audit export.");
+      setError("Couldn't download your data. Try again in a moment.");
     } finally {
       setExporting(false);
     }
@@ -176,7 +176,7 @@ export default function ComplianceCenter() {
             ) : (
               <Download className="size-3.5" />
             )}
-            Audit Export
+            Download My Data
           </Button>
         </div>
       </section>

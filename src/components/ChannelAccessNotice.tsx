@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 import type { useChannelEntitlements } from "../hooks/useChannelEntitlements";
-import type { CommunicationChannel } from "../lib/plan-catalog";
+import { channelSoldSelfServe, type CommunicationChannel } from "../lib/plan-catalog";
 
 export default function ChannelAccessNotice({
   access,
@@ -57,6 +57,15 @@ export default function ChannelAccessNotice({
             ? "Your Bot's email is paused until your payment is updated."
             : "Texts are paused until your payment is updated."}{" "}
         Your Bots, numbers, and history are kept.
+      </StatusNotice>
+    );
+  }
+  // No package sells texting yet, so a package prompt would lead nowhere. Texts
+  // sent to a Bot's number are still saved, and this tab shows them.
+  if (channel === "sms" && !channelSoldSelfServe("sms")) {
+    return (
+      <StatusNotice tone="info" title="Texting Isn't Available Yet" className="my-3">
+        Texts sent to your Bot&apos;s number appear here. No plan can send texts yet.
       </StatusNotice>
     );
   }

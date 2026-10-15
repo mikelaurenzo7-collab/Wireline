@@ -83,7 +83,6 @@ const MARKET_OPTIONS = [
 
 const TABLE_ROWS = [
   ["Call during business hours", "Your Bot can handle routine coverage"],
-  ["Wait on hold", "Your Bot waits and reports back"],
   ["Repeat the same details", "Your Bot keeps the instructions"],
   ["Receive another task", "You get a clear next step"],
   ["Miss after-hours calls", "Your Bot can answer within the coverage rules you configure"],

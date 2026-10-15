@@ -1,6 +1,6 @@
 import { WEDGES, type VerticalKey } from "../data/vertical-wedges";
 import { BOTBOUND_BRAND_NAME, BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
-import { ACCOUNT_TERMS_DESCRIPTION } from "./legal-consent";
+import { ACCOUNT_PRIVACY_DESCRIPTION, ACCOUNT_TERMS_DESCRIPTION } from "./legal-consent";
 
 // Public crawl/social metadata is permanently canonical to the BotBound brand
 // origin. APP_URL remains independently configurable for provider callbacks.
@@ -126,8 +126,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   },
   "/privacy": {
     title: "Privacy Policy",
-    description:
-      "Privacy for BotBound's Bot platform: account, conversation, voice settings, billing, and measurement data. Last updated September 25, 2026.",
+    description: ACCOUNT_PRIVACY_DESCRIPTION,
   },
   "/terms": {
     title: "Terms of Service",

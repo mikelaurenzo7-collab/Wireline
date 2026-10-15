@@ -39,6 +39,16 @@ describe("channel access notice", () => {
     },
   );
 
+  it("shows saved texts without a package prompt while no plan sells texting", () => {
+    const notice = ChannelAccessNotice({
+      access: access("active", "voice"),
+      channel: "sms",
+    })!;
+    expect(notice.props.title).toBe("Texting Isn't Available Yet");
+    expect(text(notice.props.children)).toContain("Texts sent to your Bot's number appear here");
+    expect(elements(notice).some((element) => element.type === "a")).toBe(false);
+  });
+
   it("keeps the package prompt for a channel that was never bought", () => {
     const notice = ChannelAccessNotice({
       access: access("pending_activation", null),

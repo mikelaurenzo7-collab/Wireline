@@ -3,7 +3,8 @@ export const ACCOUNT_PRIVACY_VERSION = "botbound-privacy-2026-09-25" as const;
 
 export const ACCOUNT_TERMS_LAST_UPDATED = "September 27, 2026" as const;
 export const ACCOUNT_TERMS_DESCRIPTION = `BotBound's terms of service: acceptable use, synthetic voice, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated ${ACCOUNT_TERMS_LAST_UPDATED}.`;
-export const ACCOUNT_PRIVACY_LAST_UPDATED = "September 25, 2026" as const;
+export const ACCOUNT_PRIVACY_LAST_UPDATED = "October 15, 2026" as const;
+export const ACCOUNT_PRIVACY_DESCRIPTION = `Privacy for BotBound's Bot platform: account, conversation, voice settings, billing, and measurement data. Last updated ${ACCOUNT_PRIVACY_LAST_UPDATED}.`;
 
 export const ACCOUNT_TERMS_VERSION_HEADER = "X-BotBound-Terms-Version" as const;
 export const ACCOUNT_PRIVACY_VERSION_HEADER = "X-BotBound-Privacy-Version" as const;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, KeyRound, LogOut, Mail, Trash2, UserRound } from "lucide-react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
@@ -163,7 +163,15 @@ function DangerZone() {
         {!deletionScheduled && !message ? (
           <p className="mt-3 max-w-[48ch] text-sm leading-6 text-muted-foreground">
             Stops subscription renewal. Permanent deletion follows a 30-day grace period. Paid
-            access may continue until your billing period ends.
+            access may continue until your billing period ends. To keep a copy, use Download My Data
+            in{" "}
+            <Link
+              to="/settings/compliance"
+              className="text-foreground underline underline-offset-4"
+            >
+              Compliance
+            </Link>{" "}
+            first.
           </p>
         ) : null}
         {deletionStatusLoading ? (

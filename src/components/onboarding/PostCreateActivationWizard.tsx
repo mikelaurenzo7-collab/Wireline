@@ -26,6 +26,7 @@ import {
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { activationBillingHref, getStoredSignupIntent } from "../../lib/signup-intent";
+import { channelSoldSelfServe } from "../../lib/plan-catalog";
 import { useChannelEntitlements } from "../../hooks/useChannelEntitlements";
 import ChannelAccessNotice from "../ChannelAccessNotice";
 
@@ -416,7 +417,10 @@ export default function PostCreateActivationWizard({
                     <SoftOpenCheckoutNote />
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      Choose Calls, Email, SMS, or a combination. Private rehearsal stays available.
+                      {channelSoldSelfServe("sms")
+                        ? "Choose Calls, Email, SMS, or a combination."
+                        : "Choose Calls, Email, or both."}{" "}
+                      Private rehearsal stays available.
                     </p>
                   )}
                   <Button asChild size="sm">

@@ -23,7 +23,7 @@ vi.mock("react", async (original) => ({
   },
   useEffect: (effect: () => void) => h.effects.push(effect),
 }));
-vi.mock("react-router", () => ({ useNavigate: () => vi.fn() }));
+vi.mock("react-router", () => ({ Link: "a", useNavigate: () => vi.fn() }));
 vi.mock("../src/contexts/AuthContext", () => ({
   useAuth: () => ({ user: { email: "owner@example.test" }, signOut: vi.fn() }),
 }));

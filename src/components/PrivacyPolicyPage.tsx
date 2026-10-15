@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ArrowLeft, Cookie, Shield } from "lucide-react";
 import { Link } from "react-router";
 import { PageMeta } from "../lib/page-meta";
-import { ACCOUNT_PRIVACY_LAST_UPDATED } from "../lib/legal-consent";
+import { ACCOUNT_PRIVACY_DESCRIPTION, ACCOUNT_PRIVACY_LAST_UPDATED } from "../lib/legal-consent";
 import MarketingChrome from "./marketing/MarketingChrome";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
@@ -75,11 +75,7 @@ export default function PrivacyPolicyPage() {
 
   return (
     <MarketingChrome stickyCta={false}>
-      <PageMeta
-        title="Privacy Policy"
-        description="Privacy for BotBound's Bot platform: account, conversation, voice settings, billing, and measurement data. Last updated September 25, 2026."
-        path="/privacy"
-      />
+      <PageMeta title="Privacy Policy" description={ACCOUNT_PRIVACY_DESCRIPTION} path="/privacy" />
 
       <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
         <Link
@@ -270,6 +266,10 @@ export default function PrivacyPolicyPage() {
                 <strong>Render</strong>: Website and API hosting, and the persistent voice runtime
               </li>
               <li>
+                <strong>Browserless</strong>: The isolated remote browser behind each Bot&apos;s
+                cloud computer, only when you give a Bot a computer task
+              </li>
+              <li>
                 <strong>Vercel</strong>: Legacy hosting during migration
               </li>
               <li>
@@ -320,7 +320,8 @@ export default function PrivacyPolicyPage() {
             <p>
               Depending on where you live, you may have rights to access, correct, delete, restrict
               or object to processing, withdraw consent, and receive a portable copy of personal
-              data. To exercise a right, use Delete Account in Settings or contact
+              data. To download a portable copy, use Download My Data in Settings → Compliance. To
+              delete your data, use Delete Account in Settings. For any other request, contact
               <strong> support@botbound.app</strong>. Where processing relies on consent,
               withdrawing consent does not affect processing completed before withdrawal.
             </p>
