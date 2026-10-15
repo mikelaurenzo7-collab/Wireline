@@ -27,7 +27,6 @@ import { acquireDistributedLease } from "../lib/distributed-lease";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const JOB_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const DAILY_CRON_WINDOW_MINUTES = 15;
 
 type JobWithPrivateError = {
   type?: string | null;
@@ -41,10 +40,15 @@ function publicJobFailureMessage(job: JobWithPrivateError | null | undefined): s
     : "BotBound could not complete this job. Try again shortly.";
 }
 
-function isWithinUtcWindow(now: Date, hour: number, startMinute: number): boolean {
-  if (now.getUTCHours() !== hour) return false;
-  const minute = now.getUTCMinutes();
-  return minute >= startMinute && minute < startMinute + DAILY_CRON_WINDOW_MINUTES;
+/**
+ * Daily maintenance starts at its UTC time and catches up later that day. Each
+ * task also skips when its job ran in the last 23 hours, so it still runs once
+ * a day. A fixed 15-minute window lost the whole day whenever the sweep was
+ * paused across it, for example while the crons lagged an API deploy.
+ */
+function isAtOrAfterUtcTime(now: Date, hour: number, minute: number): boolean {
+  const hours = now.getUTCHours();
+  return hours > hour || (hours === hour && now.getUTCMinutes() >= minute);
 }
 
 interface SweepRequest extends AuthenticatedRequest {
@@ -326,7 +330,7 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
     const now = new Date();
     if (
       withinSweepBudget() &&
-      isWithinUtcWindow(now, 2, 0) &&
+      isAtOrAfterUtcTime(now, 2, 0) &&
       (req._sweepMode === "cron" || !req._sweepMode)
     ) {
       const tenants = await drizzle
@@ -374,7 +378,7 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
     // this, every canceled tenant's numbers billed Wireline ~$1.15/mo forever.
     if (
       withinSweepBudget() &&
-      isWithinUtcWindow(now, 4, 30) &&
+      isAtOrAfterUtcTime(now, 4, 30) &&
       (req._sweepMode === "cron" || !req._sweepMode)
     ) {
       const since23h = new Date(Date.now() - 23 * 60 * 60 * 1000);
@@ -403,7 +407,7 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
 
     if (
       withinSweepBudget() &&
-      isWithinUtcWindow(now, 3, 15) &&
+      isAtOrAfterUtcTime(now, 3, 15) &&
       (req._sweepMode === "cron" || !req._sweepMode)
     ) {
       const since23h = new Date(Date.now() - 23 * 60 * 60 * 1000);
@@ -427,22 +431,23 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
             error: getErrorMessage(e),
           }),
         );
+        // Once a day, with the orphan sweep, rather than on every catch-up minute.
+        await drizzle
+          .execute(
+            sql`DELETE FROM wireline_jobs
+                WHERE user_id = ${SYSTEM_USER_ID}
+                  AND status IN ('done', 'dead')
+                  AND created_at < now() - interval '7 days'`,
+          )
+          .catch((e: unknown) =>
+            log.warn("sentinel job cleanup failed", { error: getErrorMessage(e) }),
+          );
       }
-      await drizzle
-        .execute(
-          sql`DELETE FROM wireline_jobs
-              WHERE user_id = ${SYSTEM_USER_ID}
-                AND status IN ('done', 'dead')
-                AND created_at < now() - interval '7 days'`,
-        )
-        .catch((e: unknown) =>
-          log.warn("sentinel job cleanup failed", { error: getErrorMessage(e) }),
-        );
     }
 
     if (
       withinSweepBudget() &&
-      isWithinUtcWindow(now, 5, 0) &&
+      isAtOrAfterUtcTime(now, 5, 0) &&
       (req._sweepMode === "cron" || !req._sweepMode)
     ) {
       const since23h = new Date(Date.now() - 23 * 60 * 60 * 1000);
