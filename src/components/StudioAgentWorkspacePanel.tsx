@@ -23,6 +23,7 @@ import { StatusNotice } from "./molecules";
 import SimpleVoicePicker from "./voice/SimpleVoicePicker";
 import AgentToolPermissions from "./AgentToolPermissions";
 import BusinessHoursEditor from "./BusinessHoursEditor";
+import DeleteBotSection from "./studio/DeleteBotSection";
 
 const PERSONALITIES = ["Clear", "Warm", "Polished", "Energetic"] as const;
 
@@ -530,6 +531,8 @@ export default function StudioAgentWorkspacePanel({
             </Link>
           </Button>
         </div>
+
+        <DeleteBotSection agentId={agentId} agentName={agentName} compact={compact} />
       </div>
     </div>
   );
