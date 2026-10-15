@@ -36,6 +36,16 @@ customer, provider and database credentials in Render's server-side secret store
 The two cron callers authenticate to the API with the existing `CRON_SECRET`;
 the voice worker retains its separate service authentication.
 
+All background work (post-call digests, callbacks, alerts, retention, number
+reclamation) runs only through the jobs-sweep cron, and the crons refuse to run
+while their commit differs from the API's. Deploy both crons right after the
+API. Nothing inside BotBound notices when the sweep stops, so give each cron an
+optional `CRON_HEARTBEAT_URL` (an HTTPS check-in URL from a dead man's switch
+monitor such as Healthchecks.io). A cron checks in after each run that did work.
+Set the jobs-sweep check to a 1-minute period with about 5 minutes of grace,
+and the daily-brief check to 15 minutes with about 30 minutes of grace. Route
+the monitor's alert to a phone.
+
 Render API requests require an enabled, production, main release with a valid
 Render source SHA. The supervisor WebSocket upgrade applies the same deployment
 gate and retains its session authentication. `/healthz` is a non-probing liveness endpoint that exposes

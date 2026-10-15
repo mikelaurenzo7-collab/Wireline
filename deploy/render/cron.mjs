@@ -85,6 +85,25 @@ export async function runCron(
   log(JSON.stringify(summary));
   if (typeof result.failed === "number" && result.failed > 0)
     throw new Error("One or more scheduled operations failed; inspect protected API logs.");
+  // Optional dead man's switch. Nothing inside BotBound notices when scheduled
+  // work stops (a commit gap, an outage, a stuck job), so an external monitor
+  // pages the owner when these check-ins stop. A run that found the previous
+  // sweep still holding the lease did no work, so it does not check in.
+  const heartbeat = env.CRON_HEARTBEAT_URL?.trim();
+  if (heartbeat && result.already_running !== true) {
+    try {
+      const url = new URL(heartbeat);
+      if (url.protocol !== "https:") throw new Error("CRON_HEARTBEAT_URL must use HTTPS.");
+      await fetchImpl(url, {
+        method: "GET",
+        redirect: "error",
+        signal: AbortSignal.timeout(5_000),
+      });
+    } catch {
+      // A missed check-in surfaces at the monitor; it must not fail completed work.
+      log(JSON.stringify({ job, heartbeat: "failed" }));
+    }
+  }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)

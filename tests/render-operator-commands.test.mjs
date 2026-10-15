@@ -147,6 +147,54 @@ describe("scheduler release parity", () => {
     });
     expect(options.redirect).toBe("error");
   });
+  it("checks in with the heartbeat monitor only after a run that did work", async () => {
+    const healthy = () => json({ alive: true, trafficEnabled: true, sourceCommit: revision });
+    const env = { ...cronEnv, CRON_HEARTBEAT_URL: "https://hc.example.com/ping/sweep" };
+
+    const ran = vi
+      .fn()
+      .mockResolvedValueOnce(healthy())
+      .mockResolvedValueOnce(json({ ok: true, processed: 3 }))
+      .mockResolvedValueOnce(new Response("OK"));
+    await runCron("jobs-sweep", { env, fetchImpl: ran, log: vi.fn() });
+    expect(ran).toHaveBeenCalledTimes(3);
+    expect(String(ran.mock.calls[2][0])).toBe("https://hc.example.com/ping/sweep");
+
+    // A run that found the previous sweep still running did nothing, so a stuck
+    // job lets the monitor alert instead of hiding behind these runs.
+    const stuck = vi
+      .fn()
+      .mockResolvedValueOnce(healthy())
+      .mockResolvedValueOnce(json({ ok: true, already_running: true }, 202));
+    await runCron("jobs-sweep", { env, fetchImpl: stuck, log: vi.fn() });
+    expect(stuck).toHaveBeenCalledTimes(2);
+
+    // A failed run never checks in.
+    const failed = vi
+      .fn()
+      .mockResolvedValueOnce(healthy())
+      .mockResolvedValueOnce(json({ code: "DEPLOYMENT_REVISION_MISMATCH" }, 409));
+    await expect(runCron("jobs-sweep", { env, fetchImpl: failed })).rejects.toThrow("HTTP 409");
+    expect(failed).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not fail completed work when the heartbeat monitor is unreachable", async () => {
+    const log = vi.fn();
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(json({ alive: true, trafficEnabled: true, sourceCommit: revision }))
+      .mockResolvedValueOnce(json({ ok: true, processed: 1 }))
+      .mockRejectedValueOnce(new Error("monitor down"));
+    await runCron("jobs-sweep", {
+      env: { ...cronEnv, CRON_HEARTBEAT_URL: "https://hc.example.com/ping/sweep" },
+      fetchImpl,
+      log,
+    });
+    expect(log).toHaveBeenLastCalledWith(
+      JSON.stringify({ job: "jobs-sweep", heartbeat: "failed" }),
+    );
+  });
+
   it.each(["jobs-sweep", "daily-brief"])(
     "binds the %s build to its clean checkout and rejects the wrong artifact",
     (role) => {
