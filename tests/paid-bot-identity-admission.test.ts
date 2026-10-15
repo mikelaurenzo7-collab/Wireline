@@ -31,6 +31,7 @@ const h = vi.hoisted(() => ({
   domainIdentity: vi.fn(),
   webhookUrl: vi.fn(),
   fence: vi.fn(),
+  deleting: false,
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -123,6 +124,7 @@ vi.mock("../src/lib/account-environment-policy", () => ({
   assertLiveExternalActionAllowed: async () => {},
 }));
 vi.mock("../src/lib/agent-phone-lines", () => ({ findAgentPhoneLine: h.selectedLine }));
+vi.mock("../src/lib/bot-deletion-hold", () => ({ isBotBeingDeleted: async () => h.deleting }));
 vi.mock("../src/lib/tenant-provider-deletion-fence", () => ({
   runTenantProviderWorkWithDeletionFence: async ({
     perform,
@@ -186,6 +188,7 @@ beforeEach(() => {
   h.jobs = [];
   h.accounts = [];
   h.beforePerform = undefined;
+  h.deleting = false;
   h.enqueue.mockResolvedValue({ jobId: "test-job" });
   h.provider.mockImplementation(() => {
     throw new Error("Provider work must not run");
@@ -205,6 +208,16 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("paid identity admission at queue and provider boundaries", () => {
+  it("does not set up a Bot that is being deleted", async () => {
+    h.deleting = true;
+    await expect(
+      ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" }),
+    ).rejects.toMatchObject({ status: 409, code: "BOT_BEING_DELETED" });
+    expect(h.fence).not.toHaveBeenCalled();
+    expect(h.phoneProvision).not.toHaveBeenCalled();
+    expect(h.createInbox).not.toHaveBeenCalled();
+  });
+
   it.each([
     "voice-regular",
     "voice-high",

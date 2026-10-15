@@ -1,5 +1,5 @@
 export const ACCOUNT_TERMS_VERSION = "botbound-terms-2026-09-27" as const;
-export const ACCOUNT_PRIVACY_VERSION = "botbound-privacy-2026-09-25" as const;
+export const ACCOUNT_PRIVACY_VERSION = "botbound-privacy-2026-10-15" as const;
 
 export const ACCOUNT_TERMS_LAST_UPDATED = "September 27, 2026" as const;
 export const ACCOUNT_TERMS_DESCRIPTION = `BotBound's terms of service: acceptable use, synthetic voice, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated ${ACCOUNT_TERMS_LAST_UPDATED}.`;

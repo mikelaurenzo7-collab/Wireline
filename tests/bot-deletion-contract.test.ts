@@ -12,6 +12,7 @@ const read = (path: string) =>
  */
 describe("Bot deletion", () => {
   const service = read("src/lib/bot-deletion.ts");
+  const deleteBot = service.slice(service.indexOf("export async function deleteBot("));
   const routes = read("src/routes/agent-routes-v2.ts");
 
   it("requires the owner, the mutation rate limit, and a typed confirmation", () => {
@@ -24,36 +25,95 @@ describe("Bot deletion", () => {
     expect(routes).toContain('"/api/agents/:id/deletion",\n  authenticateUser,');
   });
 
-  it("releases the number and mailbox before removing anything locally", () => {
-    const release = service.indexOf("providers.releaseNumber(");
-    const erase = service.indexOf("providers.eraseManagedMailboxes(");
-    const transaction = service.indexOf("await db.transaction(");
-    expect(release).toBeGreaterThan(-1);
-    expect(erase).toBeGreaterThan(release);
-    expect(transaction).toBeGreaterThan(erase);
+  it("holds the Bot, releases its number and mailbox, then removes it", () => {
+    const lock = deleteBot.indexOf('lockBotAdmission(tx, agentId, "exclusive")');
+    const check = deleteBot.indexOf("findBotDeletionBlock(tx, userId, agentId)");
+    const hold = deleteBot.indexOf("placeBotDeletionHold(tx, userId, agentId)");
+    const release = deleteBot.indexOf("releaseBotIdentity(db, userId, agentId, providers)");
+    const removal = deleteBot.indexOf("await db.transaction(", release);
+    expect(lock).toBeGreaterThan(-1);
+    expect(check).toBeGreaterThan(lock);
+    expect(hold).toBeGreaterThan(check);
+    expect(release).toBeGreaterThan(hold);
+    expect(removal).toBeGreaterThan(release);
+    // Any failure after the hold lets the Bot place calls again.
+    expect(deleteBot).toContain("await clearBotDeletionHold(db, userId, holdId)");
+    expect(deleteBot).toContain('"BOT_DELETION_IN_PROGRESS"');
+
+    const number = service.indexOf("providers.releaseNumber(");
+    const mailbox = service.indexOf("providers.eraseManagedMailboxes(");
+    expect(number).toBeGreaterThan(-1);
+    expect(mailbox).toBeGreaterThan(number);
     // A failed release stops deletion instead of orphaning a billed number.
     expect(service).toContain('"NUMBER_RELEASE_FAILED"');
     expect(service).toContain('"MAILBOX_RELEASE_FAILED"');
   });
 
   it("rechecks under the creation and identity locks, then deletes the Bot last", () => {
-    const transaction = service.slice(service.indexOf("await db.transaction("));
+    const transaction = deleteBot.slice(
+      deleteBot.indexOf("await db.transaction(", deleteBot.indexOf("releaseBotIdentity(")),
+    );
     const accountLock = transaction.indexOf("pg_advisory_xact_lock(hashtext(${userId}))");
     const identityLock = transaction.indexOf("acquireCompanyIdentityMutationLock(tx, userId)");
-    const recheck = transaction.indexOf("findBotDeletionBlock(tx, userId, agentId)");
-    const deleteBot = transaction.indexOf(".delete(schema.agents)");
+    const recheck = transaction.indexOf("findBotWorkBlock(tx, userId, agentId)");
+    const changed = transaction.indexOf(
+      "identityChangedSinceRelease(tx, userId, agentId, mailboxes)",
+    );
+    const clearHold = transaction.indexOf("clearBotDeletionHold(tx, userId, holdId)");
+    const deleteRow = transaction.indexOf(".delete(schema.agents)");
     expect(accountLock).toBeGreaterThan(-1);
     expect(identityLock).toBeGreaterThan(accountLock);
     expect(recheck).toBeGreaterThan(identityLock);
-    expect(deleteBot).toBeGreaterThan(recheck);
+    expect(changed).toBeGreaterThan(recheck);
+    expect(clearHold).toBeGreaterThan(changed);
+    expect(deleteRow).toBeGreaterThan(clearHold);
     expect(transaction).toContain('"BOT_IDENTITY_CHANGED"');
   });
 
-  it("waits for calls, outbound dialing, and computer tasks", () => {
+  it("stops call placement and identity setup while a deletion holds the Bot", () => {
+    const placement = read("src/lib/voice/openai-outbound-placement.ts");
+    const claim = placement.slice(
+      placement.indexOf("export async function claimNativeOutboundPlacement("),
+      placement.indexOf("export async function markNativeOutboundPlacementAccepted("),
+    );
+    // The new-lead and existing-lead claims both check under the shared lock.
+    expect(claim.split('lockBotAdmission(tx, input.agentId, "shared")')).toHaveLength(3);
+    expect(claim.split("botDeletionHoldExists(tx, input.userId, input.agentId)")).toHaveLength(3);
+    expect(claim).not.toContain("await drizzle\n      .insert(schema.outboundLeads)");
+
+    const identity = read("src/lib/paid-bot-identity.ts");
+    const ensure = identity.slice(identity.indexOf("export async function ensurePaidBotIdentity("));
+    const held = ensure.indexOf("isBotBeingDeleted(input.userId, input.agentId)");
+    expect(held).toBeGreaterThan(-1);
+    expect(held).toBeLessThan(ensure.indexOf("runTenantProviderWorkWithDeletionFence("));
+  });
+
+  it("waits for calls, outbound dialing, computer tasks, and identity setup", () => {
     expect(service).toContain("j.type = 'post_call_digest'");
     expect(service).toContain("schema.signalPresence.startedAt");
     expect(service).toContain('["running", "needs_input"]');
     expect(service).toContain("'^CA[0-9a-fA-F]{32}$'");
+    // A claim waiting on the carrier counts, and an old pointer ages out.
+    expect(service).toContain("'placement_claimed_at'");
+    expect(service).toContain("nativeOutboundPlacementLeaseMs()");
+    expect(service).toContain('eq(schema.jobs.status, "running")');
+  });
+
+  it("cancels queued work that only affects the Bot, and lesson jobs skip a deleted Bot", () => {
+    expect(service).toContain(
+      'const BOT_ONLY_JOB_TYPES = [PAID_BOT_IDENTITY_JOB_TYPE, "adaptive_optimization"];',
+    );
+    const worker = read("src/lib/job-worker-base.ts");
+    const tuning = worker.slice(worker.indexOf('if (job.type === "adaptive_optimization")'));
+    expect(tuning.indexOf("botStillExists(userId, p.agentId)")).toBeLessThan(
+      tuning.indexOf("claudeBrain.synthesizeLesson("),
+    );
+    // The payload has no userId; the job row names the account.
+    expect(tuning).toContain(
+      'const userId = String(p.userId || owner.userId || owner.user_id || "");',
+    );
+    const enrichment = worker.slice(worker.indexOf('if (job.type === "post_call_enrichment")'));
+    expect(enrichment).toContain("lessonsHaveBot && result.lesson?.trim()");
   });
 
   it("uses the production release paths and records an audit entry", () => {
@@ -67,9 +127,11 @@ describe("Bot deletion", () => {
   it("tells the owner what is released before they confirm", () => {
     const section = read("src/components/studio/DeleteBotSection.tsx");
     expect(section).toContain("/deletion`");
+    expect(section).toContain("workspace chat, and computer task history are deleted.");
     expect(section).toContain("one new number every 31 days");
     expect(section).toContain("and the email in it are");
     expect(section).toContain("Call history, texts, appointments, and leads stay in your account.");
+    expect(section).toContain('identity_setup: "This Bot');
     expect(read("src/components/StudioAgentWorkspacePanel.tsx")).toContain("<DeleteBotSection");
   });
 });

@@ -21,6 +21,8 @@ import {
 } from "./owned-email-account";
 import { assertLiveExternalActionAllowed } from "./account-environment-policy";
 import { findAgentPhoneLine } from "./agent-phone-lines";
+import { AppError } from "./api-error";
+import { isBotBeingDeleted } from "./bot-deletion-hold";
 import { planById } from "./plan-catalog";
 import { getTenantChannelEntitlements, requireTenantChannel } from "./channel-entitlements";
 import { getIncludedPhoneLineSlots } from "./phone-line-entitlements";
@@ -514,6 +516,11 @@ export async function ensurePaidBotIdentity(input: {
   userId: string;
   agentId: string;
 }): Promise<PaidBotIdentityResult> {
+  // Deletion is releasing this Bot's number and mailbox; setting them up now
+  // would recreate what it just released. A queued retry runs after deletion.
+  if (await isBotBeingDeleted(input.userId, input.agentId)) {
+    throw new AppError(409, "BOT_BEING_DELETED", "This Bot is being deleted.");
+  }
   const [agent, plan] = await Promise.all([
     drizzle
       .select({ id: schema.agents.id, name: schema.agents.name })

@@ -42,6 +42,17 @@ async function syncLeadScoreToCrm(input: {
   });
 }
 
+/** Bots can be deleted while their jobs wait in the queue. */
+async function botStillExists(userId: string, agentId: string): Promise<boolean> {
+  if (!userId || !agentId) return false;
+  const [bot] = await drizzle
+    .select({ id: schema.agents.id })
+    .from(schema.agents)
+    .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+    .limit(1);
+  return Boolean(bot);
+}
+
 async function persistJobResult(jobId: string, result: Record<string, unknown>): Promise<void> {
   await drizzle
     .update(schema.jobs)
@@ -181,7 +192,11 @@ export async function handleJob(job: JobRow): Promise<void> {
       })
       .where(eq(schema.callLogs.vapiCallId, p.callId));
 
-    if (result.lesson?.trim()) {
+    // The call keeps its analysis if its Bot was deleted meanwhile; lessons
+    // and gaps for that Bot have nowhere to go.
+    const lessonsHaveBot = !p.agentId || (await botStillExists(p.userId, p.agentId));
+
+    if (lessonsHaveBot && result.lesson?.trim()) {
       await drizzle
         .insert(schema.agentLessons)
         .values({
@@ -197,7 +212,9 @@ export async function handleJob(job: JobRow): Promise<void> {
     }
 
     // Questions the Bot could not answer fill the Approvals "Gaps" tab.
-    const gaps = (Array.isArray(result.knowledge_gaps) ? result.knowledge_gaps : [])
+    const gaps = (
+      lessonsHaveBot && Array.isArray(result.knowledge_gaps) ? result.knowledge_gaps : []
+    )
       .map((gap) => (typeof gap === "string" ? gap.trim().slice(0, 300) : ""))
       .filter(Boolean)
       .slice(0, 3);
@@ -358,11 +375,17 @@ export async function handleJob(job: JobRow): Promise<void> {
   if (job.type === "adaptive_optimization") {
     const p = job.payload as {
       agentId: string;
-      userId: string;
+      userId?: string;
       callId: string;
       score: number;
       breakdown: any;
     };
+    // The QA job queues this with only agentId in the payload; the job row
+    // names the account the lesson belongs to. A claimed row is camelCase.
+    const owner = job as unknown as { userId?: string; user_id?: string };
+    const userId = String(p.userId || owner.userId || owner.user_id || "");
+    // Skip before spending a model call when the Bot was deleted meanwhile.
+    if (!(await botStillExists(userId, p.agentId))) return;
 
     const [call] = await drizzle
       .select({ transcript: schema.callLogs.transcript })
@@ -382,7 +405,7 @@ export async function handleJob(job: JobRow): Promise<void> {
         .insert(schema.agentLessons)
         .values({
           agentId: p.agentId,
-          userId: p.userId,
+          userId,
           lesson: lesson,
           sourceCallId: p.callId,
           source: "adaptive_tuning",

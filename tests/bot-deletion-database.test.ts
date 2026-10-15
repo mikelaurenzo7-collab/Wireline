@@ -1,6 +1,6 @@
 import { randomInt, randomUUID } from "node:crypto";
 import pg from "pg";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import type { BotDeletionProviders } from "../src/lib/bot-deletion";
 
@@ -14,9 +14,15 @@ import type { BotDeletionProviders } from "../src/lib/bot-deletion";
  */
 const databaseUrl = process.env.BOT_DELETION_TEST_DATABASE_URL || "";
 
+const brain = vi.hoisted(() => ({ synthesizeLesson: vi.fn() }));
+vi.mock("../src/lib/ai-brains", () => ({ synthesizeLesson: brain.synthesizeLesson }));
+
 describe.skipIf(!databaseUrl)("Bot deletion against real foreign keys", () => {
   let client: pg.Client;
   let service: typeof import("../src/lib/bot-deletion");
+  let hold: typeof import("../src/lib/bot-deletion-hold");
+  let placement: typeof import("../src/lib/voice/openai-outbound-placement");
+  let worker: typeof import("../src/lib/job-worker-base");
 
   beforeAll(async () => {
     const host = new URL(databaseUrl).hostname;
@@ -25,6 +31,9 @@ describe.skipIf(!databaseUrl)("Bot deletion against real foreign keys", () => {
     }
     process.env.POSTGRES_URL = databaseUrl;
     service = await import("../src/lib/bot-deletion");
+    hold = await import("../src/lib/bot-deletion-hold");
+    placement = await import("../src/lib/voice/openai-outbound-placement");
+    worker = await import("../src/lib/job-worker-base");
     client = new pg.Client({ connectionString: databaseUrl });
     await client.connect();
   });
@@ -141,8 +150,35 @@ describe.skipIf(!databaseUrl)("Bot deletion against real foreign keys", () => {
       `INSERT INTO wireline_computer_tasks (user_id, agent_id, goal, status) VALUES ($1, $2, 'Check hours', 'completed')`,
       [userId, bot],
     );
-    return { userId, bot, other, botNumber, mailbox, callLogId: String(call.id) };
+    // Tuning only changes the Bot; enrichment also scores the call in history.
+    for (const type of ["adaptive_optimization", "post_call_enrichment"]) {
+      await query(
+        `INSERT INTO wireline_jobs (user_id, type, status, payload) VALUES ($1, $2, 'pending', $3)`,
+        [userId, type, JSON.stringify({ agentId: bot, callId: String(call.id) })],
+      );
+    }
+    // A call that ended long ago, whose status callback never arrived.
+    await query(
+      `INSERT INTO wireline_outbound_leads (user_id, agent_id, status, call_id, last_called_at)
+       VALUES ($1, $2, 'Dialing', $3, now() - interval '3 hours')`,
+      [userId, bot, `CA${"b".repeat(32)}`],
+    );
+    return {
+      userId,
+      bot,
+      other,
+      botNumber,
+      mailbox,
+      managedId: String(managed.id),
+      callLogId: String(call.id),
+    };
   }
+
+  const holds = async (userId: string, bot: string) =>
+    count("wireline_account_operation_leases", "user_id = $1 AND operation = $2", [
+      userId,
+      `bot_deletion:${bot}`,
+    ]);
 
   function fakeProviders(overrides: Partial<BotDeletionProviders> = {}) {
     const released: string[] = [];
@@ -203,17 +239,20 @@ describe.skipIf(!databaseUrl)("Bot deletion against real foreign keys", () => {
     }
     expect(await count("wireline_computer_tasks", "user_id = $1", [userId])).toBe(0);
 
-    // History stays with the account, detached from the deleted Bot.
+    // History stays with the account, detached from the deleted Bot. The stale
+    // Dialing pointer did not hold deletion up.
     for (const table of [
       "wireline_call_logs",
       "wireline_appointments",
       "wireline_follow_up_tasks",
-      "wireline_outbound_leads",
       "wireline_sms_threads",
       "wireline_sms_messages",
     ]) {
       expect(await count(table, "user_id = $1 AND agent_id IS NULL", [userId])).toBe(1);
     }
+    expect(
+      await count("wireline_outbound_leads", "user_id = $1 AND agent_id IS NULL", [userId]),
+    ).toBe(2);
 
     // The managed inbox and its email are gone; the owner's own mailbox stays.
     expect(await count("wireline_email_accounts", "user_id = $1", [userId])).toBe(1);
@@ -249,12 +288,22 @@ describe.skipIf(!databaseUrl)("Bot deletion against real foreign keys", () => {
         userId,
       ]),
     ).toBe(1);
+    // Queued identity repair and tuning for the Bot are cancelled; the call's
+    // enrichment still runs for its history.
     expect(
       await count("wireline_jobs", "user_id = $1 AND payload->>'agentId' = $2", [userId, bot]),
-    ).toBe(0);
+    ).toBe(1);
+    expect(
+      await count(
+        "wireline_jobs",
+        "user_id = $1 AND payload->>'agentId' = $2 AND type = 'post_call_enrichment'",
+        [userId, bot],
+      ),
+    ).toBe(1);
     expect(
       await count("wireline_jobs", "user_id = $1 AND payload->>'agentId' = $2", [userId, other]),
     ).toBe(1);
+    expect(await holds(userId, bot)).toBe(0);
     expect(
       await count(
         "wireline_audit_log",
@@ -286,8 +335,25 @@ describe.skipIf(!databaseUrl)("Bot deletion against real foreign keys", () => {
       "outbound_call",
       async (userId: string, bot: string) =>
         query(
-          `INSERT INTO wireline_outbound_leads (user_id, agent_id, status, call_id) VALUES ($1, $2, 'Dialing', $3)`,
+          `INSERT INTO wireline_outbound_leads (user_id, agent_id, status, call_id, last_called_at)
+           VALUES ($1, $2, 'Dialing', $3, now())`,
           [userId, bot, `CA${"a".repeat(32)}`],
+        ),
+    ],
+    [
+      "outbound_call",
+      // Claimed for placement; the carrier has not returned a CallSid yet.
+      async (userId: string, bot: string) =>
+        query(
+          `INSERT INTO wireline_outbound_leads (user_id, agent_id, status, metadata)
+           VALUES ($1, $2, 'Dialing', $3)`,
+          [
+            userId,
+            bot,
+            JSON.stringify({
+              native_voice: { state: "creating", placement_claimed_at: new Date().toISOString() },
+            }),
+          ],
         ),
     ],
     [
@@ -295,6 +361,15 @@ describe.skipIf(!databaseUrl)("Bot deletion against real foreign keys", () => {
       async (userId: string, bot: string) =>
         query(
           `INSERT INTO wireline_computer_tasks (user_id, agent_id, goal, status) VALUES ($1, $2, 'Book a table', 'running')`,
+          [userId, bot],
+        ),
+    ],
+    [
+      "identity_setup",
+      async (userId: string, bot: string) =>
+        query(
+          `UPDATE wireline_jobs SET status = 'running', started_at = now()
+           WHERE user_id = $1 AND type = 'paid_bot_identity_reconcile' AND payload->>'agentId' = $2`,
           [userId, bot],
         ),
     ],
@@ -313,6 +388,114 @@ describe.skipIf(!databaseUrl)("Bot deletion against real foreign keys", () => {
     expect(fake.released).toEqual([]);
     expect(fake.erased).toEqual([]);
     expect(await count("wireline_agents", "id = $1", [bot])).toBe(1);
+    expect(await holds(userId, bot)).toBe(0);
+  });
+
+  it("refuses new calls, setup, and a second deletion while it releases the Bot", async () => {
+    const { userId, bot } = await seedAccount();
+    const during: Record<string, unknown> = {};
+    const fake = fakeProviders({
+      async releaseNumber(owner, phoneNumber) {
+        during.held = await hold.isBotBeingDeleted(owner, bot);
+        during.claim = await placement.claimNativeOutboundPlacement({
+          userId: owner,
+          agentId: bot,
+          customerNumber: "+15125550100",
+          outboundLineNumber: phoneNumber,
+          callPurpose: "service_or_requested",
+        });
+        during.second = await service
+          .deleteBot({ userId: owner, agentId: bot }, fakeProviders().providers)
+          .catch((error: unknown) => error);
+        await query(`DELETE FROM wireline_phone_numbers WHERE user_id = $1 AND phone_number = $2`, [
+          owner,
+          phoneNumber,
+        ]);
+        return { ok: true };
+      },
+    });
+
+    await service.deleteBot({ userId, agentId: bot }, fake.providers);
+
+    expect(during.held).toBe(true);
+    expect(during.claim).toEqual({ ok: false, status: 409, error: "This Bot is being deleted." });
+    expect(during.second).toMatchObject({ status: 409, code: "BOT_DELETION_IN_PROGRESS" });
+    expect(
+      await count("wireline_outbound_leads", "user_id = $1 AND customer_number = $2", [
+        userId,
+        "+15125550100",
+      ]),
+    ).toBe(0);
+    expect(await count("wireline_agents", "id = $1", [bot])).toBe(0);
+    expect(await holds(userId, bot)).toBe(0);
+  });
+
+  it("lets the Bot place calls again when deletion stops", async () => {
+    const { userId, bot, botNumber } = await seedAccount();
+    const fake = fakeProviders({
+      async releaseNumber() {
+        return { ok: false, error: "The carrier could not confirm release." };
+      },
+    });
+
+    await expect(service.deleteBot({ userId, agentId: bot }, fake.providers)).rejects.toMatchObject(
+      { code: "NUMBER_RELEASE_FAILED" },
+    );
+    expect(await holds(userId, bot)).toBe(0);
+    expect(await hold.isBotBeingDeleted(userId, bot)).toBe(false);
+    const claim = await placement.claimNativeOutboundPlacement({
+      userId,
+      agentId: bot,
+      customerNumber: "+15125550101",
+      outboundLineNumber: botNumber,
+      callPurpose: "service_or_requested",
+    });
+    expect(claim.ok).toBe(true);
+  });
+
+  it("says what was already released when a call arrives during the release", async () => {
+    const { userId, bot } = await seedAccount();
+    const fake = fakeProviders();
+    const release = fake.providers.releaseNumber;
+    fake.providers.releaseNumber = async (owner, phoneNumber) => {
+      // A caller reaches the number before the carrier lets it go.
+      await query(
+        `INSERT INTO wireline_signal_presence (id, user_id, agent_id) VALUES ($1, $2, $3)`,
+        [`openai:inbound-${owner}`, owner, bot],
+      );
+      return release(owner, phoneNumber);
+    };
+
+    await expect(service.deleteBot({ userId, agentId: bot }, fake.providers)).rejects.toMatchObject(
+      {
+        status: 409,
+        code: "BOT_BUSY",
+        message:
+          "This Bot is on a call or still wrapping one up. Delete it after the call ends. Its number and mailbox were already released.",
+      },
+    );
+    expect(await count("wireline_agents", "id = $1", [bot])).toBe(1);
+    expect(await holds(userId, bot)).toBe(0);
+  });
+
+  it("keeps the Bot when its mailbox is set up again during the release", async () => {
+    const { userId, bot, managedId } = await seedAccount();
+    const fake = fakeProviders({
+      async eraseManagedMailboxes() {
+        // Setup recreated the inbox and stored its new webhook secret.
+        await query(
+          `UPDATE wireline_email_accounts SET refresh_token = 'new-secret' WHERE id = $1`,
+          [managedId],
+        );
+      },
+    });
+
+    await expect(service.deleteBot({ userId, agentId: bot }, fake.providers)).rejects.toMatchObject(
+      { status: 409, code: "BOT_IDENTITY_CHANGED" },
+    );
+    expect(await count("wireline_agents", "id = $1", [bot])).toBe(1);
+    expect(await count("wireline_email_accounts", "id = $1", [managedId])).toBe(1);
+    expect(await holds(userId, bot)).toBe(0);
   });
 
   it("keeps the Bot when the carrier does not confirm the number release", async () => {
@@ -332,6 +515,37 @@ describe.skipIf(!databaseUrl)("Bot deletion against real foreign keys", () => {
     expect(fake.erased).toEqual([]);
     expect(await count("wireline_agents", "id = $1", [bot])).toBe(1);
     expect(await count("wireline_knowledge", "agent_id = $1", [bot])).toBe(1);
+  });
+
+  it("saves a tuning lesson to its account, and skips the model once the Bot is gone", async () => {
+    const { userId, bot, callLogId } = await seedAccount();
+    await query(
+      `UPDATE wireline_call_logs SET transcript = 'Caller: Do you open Sundays?' WHERE id = $1`,
+      [callLogId],
+    );
+    brain.synthesizeLesson.mockReset().mockResolvedValue("Say the Sunday hours up front.");
+    // A claimed job row is camelCase, and its payload carries no userId.
+    const job = (id: string) =>
+      ({
+        id,
+        type: "adaptive_optimization",
+        userId,
+        payload: { agentId: bot, callId: callLogId, score: 41, breakdown: {} },
+      }) as never;
+
+    await worker.handleJob(job(randomUUID()));
+    expect(
+      await count(
+        "wireline_agent_lessons",
+        "user_id = $1 AND agent_id = $2 AND source = 'adaptive_tuning'",
+        [userId, bot],
+      ),
+    ).toBe(1);
+
+    await service.deleteBot({ userId, agentId: bot }, fakeProviders().providers);
+    brain.synthesizeLesson.mockClear();
+    await worker.handleJob(job(randomUUID()));
+    expect(brain.synthesizeLesson).not.toHaveBeenCalled();
   });
 
   it("does not let one account delete another account's Bot", async () => {

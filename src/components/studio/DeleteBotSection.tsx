@@ -9,7 +9,7 @@ import { useToast } from "../../contexts/ToastContext";
 import { authFetch } from "../../lib/api";
 import { formatPhone } from "../../lib/safe-number";
 
-type DeletionBlock = "live_call" | "outbound_call" | "computer_task";
+type DeletionBlock = "live_call" | "outbound_call" | "computer_task" | "identity_setup";
 
 type DeletionPreview = {
   name: string;
@@ -22,6 +22,7 @@ const BLOCKED_MESSAGES: Record<DeletionBlock, string> = {
   live_call: "This Bot is on a call or still wrapping one up. Delete it after the call ends.",
   outbound_call: "This Bot is placing a call. Delete it after the call ends.",
   computer_task: "This Bot is working on a computer task. Stop the task, then delete the Bot.",
+  identity_setup: "This Bot's number or mailbox is being set up. Try again in a minute.",
 };
 
 /**
@@ -44,6 +45,10 @@ export default function DeleteBotSection({
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<DeletionPreview | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  // A failed deletion can still have released the number or mailbox, so the
+  // preview reloads after one to show what is left.
+  const [previewVersion, setPreviewVersion] = useState(0);
   const [confirmation, setConfirmation] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +57,7 @@ export default function DeleteBotSection({
     if (!open) return;
     let active = true;
     setLoading(true);
-    setError(null);
+    setLoadError(null);
     void (async () => {
       try {
         const response = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/deletion`);
@@ -64,7 +69,7 @@ export default function DeleteBotSection({
         if (active) setPreview(body);
       } catch (err) {
         if (active) {
-          setError(
+          setLoadError(
             err instanceof Error ? err.message : "Couldn't check what deleting this Bot releases.",
           );
         }
@@ -75,7 +80,7 @@ export default function DeleteBotSection({
     return () => {
       active = false;
     };
-  }, [agentId, open]);
+  }, [agentId, open, previewVersion]);
 
   async function deleteBot() {
     if (confirmation !== "DELETE" || deleting || !preview || preview.blocked_by) return;
@@ -96,10 +101,13 @@ export default function DeleteBotSection({
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't delete this Bot. Try again.");
       setDeleting(false);
+      setPreviewVersion((version) => version + 1);
     }
   }
 
   const blocked = preview?.blocked_by ?? null;
+  // A refused deletion's error already starts with the busy explanation.
+  const showBlocked = blocked && !error?.startsWith(BLOCKED_MESSAGES[blocked]);
 
   return (
     <section
@@ -108,7 +116,11 @@ export default function DeleteBotSection({
     >
       <details
         open={open}
-        onToggle={(event) => setOpen(event.currentTarget.open)}
+        onToggle={(event) => {
+          const opened = event.currentTarget.open;
+          setOpen(opened);
+          if (opened) setError(null);
+        }}
         className="group"
       >
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md text-[var(--wireline-color-status-error)] wl-focus-ring-halo [&::-webkit-details-marker]:hidden">
@@ -128,7 +140,7 @@ export default function DeleteBotSection({
             <ul className="grid list-disc gap-1.5 pl-5 text-sm leading-6 text-muted-foreground marker:text-muted-foreground">
               <li>
                 <span className="wl-preserve-case">{preview.name}</span>&apos;s training, lessons,
-                and workspace chat are deleted.
+                workspace chat, and computer task history are deleted.
               </li>
               {preview.phone_numbers.map((phoneNumber) => (
                 <li key={phoneNumber}>
@@ -147,9 +159,14 @@ export default function DeleteBotSection({
             </ul>
           ) : null}
 
-          {blocked ? (
+          {blocked && showBlocked ? (
             <StatusNotice tone="warning" title="Bot Is Busy">
               {BLOCKED_MESSAGES[blocked]}
+            </StatusNotice>
+          ) : null}
+          {loadError ? (
+            <StatusNotice tone="destructive" title="Couldn't Check This Bot">
+              {loadError}
             </StatusNotice>
           ) : null}
           {error ? (

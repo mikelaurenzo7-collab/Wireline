@@ -49,6 +49,21 @@ describe("channel access notice", () => {
     expect(elements(notice).some((element) => element.type === "a")).toBe(false);
   });
 
+  it.each(["past_due", "unpaid", "incomplete"])(
+    "does not send a %s Calls owner to pay for texting no plan includes",
+    (status) => {
+      const notice = ChannelAccessNotice({ access: access(status), channel: "sms" })!;
+      expect(notice.props.title).toBe("Texting Isn't Available Yet");
+      expect(elements(notice).some((element) => element.type === "a")).toBe(false);
+    },
+  );
+
+  it("keeps the payment prompt on the text tab when the owner's plan includes texting", () => {
+    const notice = ChannelAccessNotice({ access: access("past_due", "starter"), channel: "sms" })!;
+    expect(notice.props.title).toBe("Payment Needs Attention");
+    expect(text(notice.props.children)).toContain("Texts are paused");
+  });
+
   it("keeps the package prompt for a channel that was never bought", () => {
     const notice = ChannelAccessNotice({
       access: access("pending_activation", null),

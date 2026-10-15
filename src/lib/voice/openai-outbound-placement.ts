@@ -2,19 +2,27 @@ import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
+import { botDeletionHoldExists, lockBotAdmission } from "../bot-deletion-hold";
 import type { OutboundCallPurpose } from "../outbound-call-purpose";
 import { LEAD_STATUS } from "../outbound-status";
 import { drizzle } from "../server-context";
 import { normalizeOpenAIPhoneNumber, resolveOpenAISipSessionMaxSeconds } from "./openai-sip-config";
 
 const PLACEMENT_LEASE_GRACE_MS = 2 * 60 * 1_000;
-const IN_FLIGHT_STATES = new Set([
+export const NATIVE_OUTBOUND_IN_FLIGHT_STATES = [
   "creating",
   "accepted",
   "bridging",
   "customer_answered",
   "connected",
-]);
+] as const;
+const IN_FLIGHT_STATES = new Set<string>(NATIVE_OUTBOUND_IN_FLIGHT_STATES);
+const BOT_BEING_DELETED = "This Bot is being deleted.";
+
+/** How long after its claim a placement can still be a live call. */
+export function nativeOutboundPlacementLeaseMs(): number {
+  return resolveOpenAISipSessionMaxSeconds() * 1_000 + PLACEMENT_LEASE_GRACE_MS;
+}
 
 export type NativeOutboundPlacementClaim = {
   ok: true;
@@ -48,7 +56,7 @@ function numericLeadId(value: bigint | string | null | undefined): bigint | null
 
 function placementLeaseActive(nativeVoice: Record<string, unknown>, nowMs: number): boolean {
   const claimedAt = Date.parse(String(nativeVoice.placement_claimed_at || ""));
-  const leaseMs = resolveOpenAISipSessionMaxSeconds() * 1_000 + PLACEMENT_LEASE_GRACE_MS;
+  const leaseMs = nativeOutboundPlacementLeaseMs();
   return (
     IN_FLIGHT_STATES.has(String(nativeVoice.state || "")) &&
     Number.isFinite(claimedAt) &&
@@ -107,33 +115,45 @@ export async function claimNativeOutboundPlacement(input: {
 
   const placementId = randomUUID();
   const now = new Date();
+  // Bot deletion releases the line this call dials from. Claim only while no
+  // deletion holds the Bot, under the lock deletion takes to check for calls.
   if (requestedId === null) {
-    const [lead] = await drizzle
-      .insert(schema.outboundLeads)
-      .values({
-        userId: input.userId,
-        agentId: input.agentId,
-        customerName: input.customerName?.trim() || null,
-        customerNumber: input.customerNumber,
-        context: input.context?.trim() || null,
-        status: LEAD_STATUS.DIALING,
-        attempts: 1,
-        metadata: resetNativeOutboundPlacementMetadata(asRecord(input.leadMetadata), {
-          callPurpose: input.callPurpose,
-          outboundLineNumber: input.outboundLineNumber,
-          placementId,
-          claimedAt: now,
-          created: true,
-        }),
-      })
-      .returning();
-    if (!lead) {
-      return { ok: false, status: 500, error: "Outbound lead could not be created." };
-    }
-    return { ok: true, lead, created: true, placementId };
+    return drizzle.transaction(async (tx) => {
+      await lockBotAdmission(tx, input.agentId, "shared");
+      if (await botDeletionHoldExists(tx, input.userId, input.agentId)) {
+        return { ok: false as const, status: 409, error: BOT_BEING_DELETED };
+      }
+      const [lead] = await tx
+        .insert(schema.outboundLeads)
+        .values({
+          userId: input.userId,
+          agentId: input.agentId,
+          customerName: input.customerName?.trim() || null,
+          customerNumber: input.customerNumber,
+          context: input.context?.trim() || null,
+          status: LEAD_STATUS.DIALING,
+          attempts: 1,
+          metadata: resetNativeOutboundPlacementMetadata(asRecord(input.leadMetadata), {
+            callPurpose: input.callPurpose,
+            outboundLineNumber: input.outboundLineNumber,
+            placementId,
+            claimedAt: now,
+            created: true,
+          }),
+        })
+        .returning();
+      if (!lead) {
+        return { ok: false as const, status: 500, error: "Outbound lead could not be created." };
+      }
+      return { ok: true as const, lead, created: true, placementId };
+    });
   }
 
   return drizzle.transaction(async (tx) => {
+    await lockBotAdmission(tx, input.agentId, "shared");
+    if (await botDeletionHoldExists(tx, input.userId, input.agentId)) {
+      return { ok: false as const, status: 409, error: BOT_BEING_DELETED };
+    }
     await tx.execute(
       sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${String(requestedId)}`}))`,
     );
