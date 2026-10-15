@@ -90,9 +90,6 @@ function safeCreateAgentError(
   if (status === 401 || status === 403) {
     return "Your session expired. Please sign in again to keep building.";
   }
-  if (normalized === "agent_capacity_reached") {
-    return "Your plan includes 1 Bot. Edit your current Bot in Studio to change what it does.";
-  }
   if (status === 402 || normalized === "plan_capacity_reached") {
     return "Your current plan is at its live Bot capacity. Add capacity or contact support.";
   }
@@ -217,6 +214,10 @@ export default function CreateAgentDialog({
 
   function close() {
     if (creating) return;
+    dismiss();
+  }
+
+  function dismiss() {
     setParams(
       (current) => {
         const next = new URLSearchParams(current);
@@ -294,6 +295,13 @@ export default function CreateAgentDialog({
       if (!isCreateBriefRecoveryOwner(creationUserId) || controller.signal.aborted) return;
       if (!response.ok || !body?.id) {
         if (isCurrentAccount()) {
+          // The Bot limit opens the account-wide limit dialog, which states the
+          // plan's real cap and links to Studio. Left open beneath it, this form
+          // would outlive that link and keep covering the Bot the user must edit.
+          if (body?.code === "AGENT_CAPACITY_REACHED") {
+            dismiss();
+            return;
+          }
           setError(safeCreateAgentError(response.status, body?.code, body?.error));
           const markConflict = body?.code?.toLowerCase() === "bot_mark_conflict";
           if (response.status === 409 || markConflict) {

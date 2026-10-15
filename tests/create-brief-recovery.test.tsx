@@ -19,6 +19,8 @@ const h = vi.hoisted(() => ({
   fetch: vi.fn(),
   event: vi.fn(),
   navigate: vi.fn(),
+  setParams: vi.fn(),
+  onClose: vi.fn(),
   onCreated: vi.fn(),
   userId: "founder",
   botId: "bot",
@@ -48,7 +50,7 @@ vi.mock("react", async (original) => ({
 vi.mock("react-router", () => ({
   Link: "a",
   useNavigate: () => h.navigate,
-  useSearchParams: () => [new URLSearchParams(), vi.fn()],
+  useSearchParams: () => [new URLSearchParams(), h.setParams],
 }));
 vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: h.userId } }) }));
 vi.mock("../src/contexts/AgentsContext", () => ({
@@ -105,7 +107,7 @@ function render() {
   return surface === "create"
     ? CreateAgentDialog({
         open: true,
-        onClose: vi.fn(),
+        onClose: h.onClose,
         onCreated: h.onCreated,
         initialBrief: brief,
       })
@@ -230,6 +232,30 @@ describe("first-brief recovery after Bot creation", () => {
     expect(h.event.mock.calls.some(([event]) => event.event === "training_asset_added")).toBe(true);
     await mount("setup");
     expect(knowledge().props.value).toBe("");
+  });
+});
+
+describe("Bot limit", () => {
+  it("closes for the account-wide limit dialog instead of staying open beneath its Studio link", async () => {
+    // The server states the workspace's real cap; this form must not restate it.
+    h.fetch.mockImplementation(async () =>
+      json(
+        {
+          code: "AGENT_CAPACITY_REACHED",
+          error:
+            "Your plan includes up to 2 Bots. Edit an existing Bot in Studio to change what it does.",
+        },
+        402,
+      ),
+    );
+    await create();
+    expect(h.onClose).toHaveBeenCalledOnce();
+    const [update] = h.setParams.mock.calls[0];
+    expect(update(new URLSearchParams("create=1&brief=x&agent=a")).toString()).toBe("agent=a");
+    expect(text(render())).not.toContain("Could Not Create Bot");
+    expect(h.fetch.mock.calls.filter(([path]) => path === "/api/train/extract")).toHaveLength(0);
+    expect(h.onCreated).not.toHaveBeenCalled();
+    expect(h.navigate).not.toHaveBeenCalled();
   });
 });
 
