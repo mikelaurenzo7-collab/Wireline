@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 406
-**Protected:** 329
+**Routes scanned:** 412
+**Protected:** 335
 **Public (allowlisted):** 77
 **Violations:** 0
 
@@ -488,6 +488,12 @@
 | twilio-webhook.ts | POST | `/api/twilio-webhook/sms` | — | — | yes | Public (allowlisted) |
 | twilio-webhook.ts | POST | `/api/twilio-webhook/usage-alert` | — | — | yes | Public (allowlisted) |
 | user-preference-guard-routes.ts | POST | `/api/user-preferences` | inline | — | — | Protected |
+| voice-asset-routes.ts | GET | `/api/voice/assets` | inline | platform_admin | — | Protected |
+| voice-asset-routes.ts | POST | `/api/voice/assets` | inline | platform_admin | — | Protected |
+| voice-asset-routes.ts | DELETE | `/api/voice/assets/:assetId` | inline | platform_admin | — | Protected |
+| voice-asset-routes.ts | POST | `/api/voice/assets/:assetId/preview` | inline | platform_admin | — | Protected |
+| voice-asset-routes.ts | POST | `/api/voice/assets/:assetId/review` | inline | platform_admin | — | Protected |
+| voice-asset-routes.ts | GET | `/api/voice/assets/capabilities` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/latency` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/latency/recent` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/voice-reliability` | inline | permission | — | Protected |
