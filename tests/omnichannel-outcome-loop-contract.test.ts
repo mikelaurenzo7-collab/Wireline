@@ -104,7 +104,12 @@ describe("omnichannel outcome loop", () => {
     );
     expect(approvals).toContain('rawTaskType(task) === "human_handoff"');
     expect(approvals).toContain("manualHandoff || isManualOperatorTask(rawTaskType(task))");
-    expect(approvals).toContain('{manualTask ? "I handled this" : "Approve"}');
+    expect(approvals).toMatch(
+      /\{reviewConflict && !canEditMessage\s*\? "Review changes"\s*:\s*manualTask\s*\? "I handled this"\s*:\s*"Approve"\}/,
+    );
+    expect(approvals).toMatch(
+      /if \(reviewConflict\) \{\s*if \(!canEditMessage && refreshedReviewReady\) \{[\s\S]*?onReviewReset\(\);[\s\S]*?\}\s*return;\s*\}\s*void approve\(\);/,
+    );
     expect(approvals).toContain('{manualHandoff ? "Dismiss" : "Reject"}');
     expect(approvals).toContain("if (!manualTask) {");
   });
