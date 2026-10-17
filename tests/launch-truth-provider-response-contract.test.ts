@@ -74,7 +74,8 @@ describe("launch-truth provider and response-time contracts", () => {
     const consent = read("src/lib/legal-consent.ts");
 
     expect(privacy).toContain("const LAST_UPDATED = ACCOUNT_PRIVACY_LAST_UPDATED");
-    expect(privacy).toContain("Last updated ${LAST_UPDATED}.");
+    expect(privacy).toContain("description={ACCOUNT_PRIVACY_DESCRIPTION}");
+    expect(consent).toContain("Last updated ${ACCOUNT_PRIVACY_LAST_UPDATED}.");
     expect(consent).toContain('ACCOUNT_PRIVACY_LAST_UPDATED = "October 17, 2026"');
     expect(security).toContain("Last updated · October 17, 2026");
     expect(privacy).not.toContain("Last updated September 25, 2026");

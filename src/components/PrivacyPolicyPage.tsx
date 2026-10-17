@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ArrowLeft, Cookie, Shield } from "lucide-react";
 import { Link } from "react-router";
 import { PageMeta } from "../lib/page-meta";
-import { ACCOUNT_PRIVACY_LAST_UPDATED } from "../lib/legal-consent";
+import { ACCOUNT_PRIVACY_DESCRIPTION, ACCOUNT_PRIVACY_LAST_UPDATED } from "../lib/legal-consent";
 import MarketingChrome from "./marketing/MarketingChrome";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
@@ -75,11 +75,7 @@ export default function PrivacyPolicyPage() {
 
   return (
     <MarketingChrome stickyCta={false}>
-      <PageMeta
-        title="Privacy Policy"
-        description={`Privacy for BotBound's Bot platform: account, conversation, voice settings, billing, and measurement data. Last updated ${LAST_UPDATED}.`}
-        path="/privacy"
-      />
+      <PageMeta title="Privacy Policy" description={ACCOUNT_PRIVACY_DESCRIPTION} path="/privacy" />
 
       <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
         <Link
