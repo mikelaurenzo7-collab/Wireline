@@ -76,7 +76,9 @@ describe("Lead Hunt review and launch boundaries", () => {
       worker.indexOf('job.type === "knowledge_from_url"'),
     );
 
-    expect(prospecting).toContain("const userId = job.user_id");
+    // A claimed job row is camelCase; `job.user_id` was always undefined.
+    expect(prospecting).toContain("const userId = jobOwnerId(job);");
+    expect(prospecting).not.toContain("job.user_id");
     expect(prospecting).toContain("p.userId !== userId");
     expect(prospecting).toContain("Autonomous prospecting job tenant mismatch.");
     expect(prospecting).toContain("eq(schema.settings.userId, userId)");

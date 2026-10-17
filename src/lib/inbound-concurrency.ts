@@ -16,6 +16,13 @@
  * staleness window count — comfortably above the 3600s per-call ceiling, so a
  * genuinely live call is never aged out of the count.
  *
+ * A finished call keeps its line ("settling") until its post-call job records
+ * the minutes, so a new call can't spend them first. That job retries for
+ * about an hour and a quarter, and a crashed attempt is reclaimed after 30
+ * minutes, so settlement ends well within six hours of the call starting.
+ * Past that the job has given up and reported it; holding the line longer
+ * would only send every later caller to the busy path.
+ *
  * A lookup failure is retryable before provider acceptance. Unknown concurrency
  * must not grant a full voice session after the separate AI cap is removed.
  */
@@ -28,6 +35,7 @@ import { planById } from "./plan-catalog";
 
 const DEFAULT_INBOUND_CONCURRENT_CALL_CEILING = 10;
 const PRESENCE_STALENESS_MS = 2 * 60 * 60 * 1000;
+const SETTLING_HOLD_MS = 6 * 60 * 60 * 1000;
 
 export function inboundConcurrentCallCeiling(): number {
   const parsed = Number.parseInt(process.env.WIRELINE_INBOUND_CONCURRENT_CALL_CEILING || "", 10);
@@ -52,6 +60,7 @@ export async function inboundConcurrencyExceeded(
 ): Promise<boolean> {
   try {
     const freshSince = new Date(Date.now() - PRESENCE_STALENESS_MS);
+    const settlingSince = new Date(Date.now() - SETTLING_HOLD_MS);
     const [row] = await reader
       .select({ live: sql<string>`count(*)` })
       .from(schema.signalPresence)
@@ -60,7 +69,10 @@ export async function inboundConcurrencyExceeded(
           eq(schema.signalPresence.userId, userId),
           or(
             gte(schema.signalPresence.startedAt, freshSince),
-            eq(schema.signalPresence.status, "settling"),
+            and(
+              eq(schema.signalPresence.status, "settling"),
+              gte(schema.signalPresence.startedAt, settlingSince),
+            ),
           ),
           // Outbound campaign presence uses `${agent} · Outbound`. Counting it
           // here would refuse inbound during unrelated outbound dial bursts.

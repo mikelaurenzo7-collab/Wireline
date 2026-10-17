@@ -35,6 +35,7 @@ import {
   type JobRow,
   writeTransactionConfig,
 } from "./job-queue";
+import { jobOwnerId } from "./job-owner";
 import { handleTwilioMessageReconciliationJob } from "./twilio-message-reconciliation";
 import { processIntakeAutoDialJob, type IntakeAutoDialJobPayload } from "./intake-auto-dial";
 import { runTenantJobAfterDeletionCheck, withAccountDeletionFence } from "./account-deletion-fence";
@@ -93,11 +94,6 @@ function maxAttemptNumber(job: JobRow): number {
   const shaped = job as unknown as { maxAttempts?: number; max_attempts?: number };
   const value = Number(shaped.maxAttempts ?? shaped.max_attempts ?? DEFAULT_MAX_ATTEMPTS);
   return Number.isFinite(value) && value > 0 ? Math.floor(value) : DEFAULT_MAX_ATTEMPTS;
-}
-
-function jobOwnerId(job: JobRow): string {
-  const shaped = job as unknown as { userId?: string; user_id?: string };
-  return String(shaped.userId || shaped.user_id || "");
 }
 
 function jobScheduledAt(job: JobRow): Date | null {

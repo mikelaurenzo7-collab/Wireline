@@ -6,6 +6,7 @@ import * as claudeBrain from "./ai-brains";
 import * as geminiBrain from "./gemini-brain";
 import { getErrorMessage } from "./server-utils";
 import { startWorker, type JobRow, enqueue, writeTransactionConfig } from "./job-queue";
+import { jobOwnerId } from "./job-owner";
 import { executeAction } from "./action-engine";
 import { ActionItemSchema } from "./action-types";
 import { postCallFollowUpAction } from "./post-call-follow-up";
@@ -167,11 +168,20 @@ export async function handleJob(job: JobRow): Promise<void> {
       result = capture.result;
       records = capture.records;
     } else {
+      // The digest queues this without the Bot's role, which picks the lens the
+      // lead score is judged by (a sales Bot is not scored as a receptionist).
+      const [bot] = p.agentId
+        ? await drizzle
+            .select({ role: schema.agents.role, archetype: schema.agents.archetype })
+            .from(schema.agents)
+            .where(and(eq(schema.agents.id, p.agentId), eq(schema.agents.userId, p.userId)))
+            .limit(1)
+        : [];
       const capture = await claudeBrain.withAuditCapture(() =>
         claudeBrain.postCallAnalysis({
           agentName: p.agentName || "BotBound Bot",
-          archetype: p.archetype || "Receptionist",
-          role: p.role,
+          archetype: p.archetype || bot?.archetype || "Receptionist",
+          role: p.role || bot?.role || undefined,
           customerNumber: p.customerNumber,
           durationSeconds: p.durationSeconds ?? 0,
           summary: p.summary || "",
@@ -381,9 +391,8 @@ export async function handleJob(job: JobRow): Promise<void> {
       breakdown: any;
     };
     // The QA job queues this with only agentId in the payload; the job row
-    // names the account the lesson belongs to. A claimed row is camelCase.
-    const owner = job as unknown as { userId?: string; user_id?: string };
-    const userId = String(p.userId || owner.userId || owner.user_id || "");
+    // names the account the lesson belongs to.
+    const userId = p.userId || jobOwnerId(job);
     // Skip before spending a model call when the Bot was deleted meanwhile.
     if (!(await botStillExists(userId, p.agentId))) return;
 
@@ -607,7 +616,7 @@ export async function handleJob(job: JobRow): Promise<void> {
 
   if (job.type === "autonomous_prospecting") {
     const p = job.payload as { userId: string };
-    const userId = job.user_id;
+    const userId = jobOwnerId(job);
     if (!userId || p.userId !== userId) {
       log.error("Autonomous prospecting job tenant mismatch", {
         jobId: job.id,

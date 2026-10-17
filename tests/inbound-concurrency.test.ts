@@ -94,4 +94,15 @@ describe("inbound concurrency wiring contract", () => {
     expect(lib).toContain("gte(schema.signalPresence.startedAt, freshSince)");
     expect(lib).toContain('not like ${"% · Outbound"}');
   });
+
+  it("holds a finished call's line only while its minutes can still settle", () => {
+    const lib = read("src/lib/inbound-concurrency.ts");
+    expect(lib).toContain("const SETTLING_HOLD_MS = 6 * 60 * 60 * 1000;");
+    expect(lib).toContain(
+      'and(\n              eq(schema.signalPresence.status, "settling"),\n              gte(schema.signalPresence.startedAt, settlingSince),\n            ),',
+    );
+    // Settling must never count at any age again: one failed post-call job
+    // would leave a one-line plan busy for every later caller.
+    expect(lib).not.toContain('eq(schema.signalPresence.status, "settling"),\n          ),');
+  });
 });

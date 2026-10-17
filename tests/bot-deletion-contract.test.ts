@@ -141,9 +141,7 @@ describe("Bot deletion", () => {
       tuning.indexOf("claudeBrain.synthesizeLesson("),
     );
     // The payload has no userId; the job row names the account.
-    expect(tuning).toContain(
-      'const userId = String(p.userId || owner.userId || owner.user_id || "");',
-    );
+    expect(tuning).toContain("const userId = p.userId || jobOwnerId(job);");
     const enrichment = worker.slice(worker.indexOf('if (job.type === "post_call_enrichment")'));
     expect(enrichment).toContain("lessonsHaveBot && result.lesson?.trim()");
   });
