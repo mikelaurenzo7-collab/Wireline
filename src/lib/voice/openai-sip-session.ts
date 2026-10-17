@@ -388,7 +388,7 @@ async function openaiCallControl(
   callId: string,
   action: "refer" | "hangup",
   body?: Record<string, unknown>,
-): Promise<void> {
+): Promise<"completed" | "already_ended"> {
   const apiKey = String(process.env.OPENAI_API_KEY || "").trim();
   if (!apiKey) throw new Error("OpenAI_API_KEY is missing during call control.");
   const response = await fetchWithTimeout(
@@ -407,9 +407,12 @@ async function openaiCallControl(
     // Hangup is a desired-state operation. A provider-side missing or already
     // terminal call is equivalent to success, which keeps deletion cleanup and
     // watchdog retries idempotent. REFER remains strict for the same statuses.
-    if (action === "hangup" && (response.status === 404 || response.status === 409)) return;
+    if (action === "hangup" && (response.status === 404 || response.status === 409)) {
+      return "already_ended";
+    }
     throw new Error(`OpenAI ${action} returned HTTP ${response.status}.`);
   }
+  return "completed";
 }
 
 // The shared worker pool has five connections. Provider control is bounded
@@ -508,7 +511,8 @@ export async function referOpenAISipCall(
   });
 }
 
-export function hangupOpenAISipCall(callId: string): Promise<void> {
+/** Resolves "already_ended" when the provider had already ended the call. */
+export function hangupOpenAISipCall(callId: string): Promise<"completed" | "already_ended"> {
   return openaiCallControl(callId, "hangup");
 }
 
@@ -1807,8 +1811,16 @@ async function runRealtimeSession(
       ws.close(1000, "BotBound transferred");
     }
   };
-  const confirmOwnedProviderHangup = async () => {
-    if (!ownsSession() || endedReason === "transferred" || endedReason === "caller-dnc") return;
+  /**
+   * Ends the provider call once per session. Resolves true when the provider
+   * had already ended it, which is how a caller's hang-up shows up here.
+   */
+  let providerEndConfirmed: boolean | null = null;
+  const confirmOwnedProviderHangup = async (): Promise<boolean> => {
+    if (providerEndConfirmed !== null) return providerEndConfirmed;
+    if (!ownsSession() || endedReason === "transferred" || endedReason === "caller-dnc") {
+      return false;
+    }
     providerHangupRequired = true;
     await withOpenAISipControlLock(input.userId, input.callId, async (tx) => {
       if (!ownsSession()) return;
@@ -1818,10 +1830,11 @@ async function runRealtimeSession(
         return;
       }
       if (ownsSession()) {
-        await hangupOpenAISipCall(input.callId);
+        providerEndConfirmed = (await hangupOpenAISipCall(input.callId)) === "already_ended";
         providerHangupRequired = false;
       }
     });
+    return providerEndConfirmed ?? false;
   };
   const sessionHandle = { notifyTransferred };
   liveSipSessions.set(input.callId, sessionHandle);
@@ -2354,9 +2367,8 @@ async function runRealtimeSession(
       ws.on("close", (code, reason) => {
         endedAt ??= Date.now();
         if (accountingTimer) clearInterval(accountingTimer);
-        if (code !== 1000 && endedReason === "provider-disconnected") {
-          endedReason = `provider-close-${code}`;
-        }
+        const callerMayHaveHungUp = code !== 1000 && endedReason === "provider-disconnected";
+        if (callerMayHaveHungUp) endedReason = `provider-close-${code}`;
         log.info("OpenAI SIP WebSocket closed", {
           callId: providerCallId(input.callId),
           code,
@@ -2365,6 +2377,15 @@ async function runRealtimeSession(
         void eventChain
           .then(async () => {
             if (code !== 1000 && ownsSession()) {
+              // OpenAI drops this sideband without a close frame (1006) when
+              // the caller hangs up, so an abnormal close alone is no failure.
+              // A call the provider had already ended was a normal hang-up; one
+              // still live lost its sideband, and this hangup ends it.
+              if (callerMayHaveHungUp && (await confirmOwnedProviderHangup())) {
+                endedReason = "provider-disconnected";
+                resolveOnce();
+                return;
+              }
               if (!pipelineError) pipelineError = "connection";
               rejectOnce(new Error("OPENAI_SIP_SIDEBAND_CLOSED"));
               return;

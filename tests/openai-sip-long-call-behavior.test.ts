@@ -752,6 +752,42 @@ describe("long business-call lifecycle", () => {
     },
   );
 
+  it.each([404, 409])(
+    "records a caller hang-up, not a failure, when the sideband drops after the call ended (HTTP %s)",
+    async (status) => {
+      // OpenAI closes this sideband without a close frame when the caller
+      // hangs up; every production call so far ended with 1006.
+      const session = start();
+      await vi.advanceTimersByTimeAsync(1_000);
+      h.provider.mockResolvedValueOnce({ ok: false, status });
+      h.sockets[0].readyState = 3;
+      h.sockets[0].emit("close", 1006, Buffer.from(""));
+      await session;
+      expect(h.provider).toHaveBeenCalledOnce();
+      expect(h.provider.mock.calls[0][0]).toContain("/hangup");
+      expect(h.digest).toHaveBeenCalledWith(
+        expect.objectContaining({ endedReason: "provider-disconnected", pipelineError: null }),
+        expect.anything(),
+        expect.anything(),
+      );
+    },
+  );
+
+  it("still records a dropped sideband on a live call as a connection failure", async () => {
+    const session = start();
+    await vi.advanceTimersByTimeAsync(1_000);
+    h.provider.mockResolvedValueOnce({ ok: true, status: 200 });
+    h.sockets[0].readyState = 3;
+    h.sockets[0].emit("close", 1006, Buffer.from(""));
+    await session;
+    expect(h.provider).toHaveBeenCalledOnce();
+    expect(h.digest).toHaveBeenCalledWith(
+      expect.objectContaining({ endedReason: "provider-close-1006", pipelineError: "connection" }),
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
   it.each([200, 404, 409])(
     "confirms provider termination after a clean sideband close without inventing a call failure (HTTP %s)",
     async (status) => {
