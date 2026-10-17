@@ -60,7 +60,7 @@
 
 .wl-computer-launch-browser__canvas {
   display: flex;
-  min-height: clamp(9rem, 24vw, 16rem);
+  min-height: clamp(5.5rem, 12vw, 8rem);
   flex-direction: column;
   align-items: center;
   justify-content: center;

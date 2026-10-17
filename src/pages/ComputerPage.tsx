@@ -1578,7 +1578,6 @@ export default function ComputerPage() {
                 ) : null}
               </form>
             ) : null}
-            {!anyActive && selected && showComposer ? taskDetail : null}
           </div>
 
           <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
