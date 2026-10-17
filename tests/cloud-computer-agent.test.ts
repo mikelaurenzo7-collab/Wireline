@@ -98,6 +98,12 @@ function client(responses: unknown[]) {
   return { client: { responses: { create } } as CloudComputerClient, requests };
 }
 
+function userImages(request: Record<string, unknown>): Item[] {
+  return (request.input as Item[])
+    .filter((item) => item.role === "user" && Array.isArray(item.content))
+    .flatMap((item) => (item.content as Item[]).filter((part) => part.type === "input_image"));
+}
+
 const bot = { name: "Repair Desk", role: "front desk", facts: ["We serve Austin."], rules: [] };
 
 describe("OpenAI cloud computer agent loop", () => {
@@ -247,6 +253,199 @@ describe("OpenAI cloud computer agent loop", () => {
     expect(JSON.stringify(resumedInput)).not.toContain("Do not forward this owner input");
     expect(askOwner).toHaveBeenCalledOnce();
   });
+
+  it("keeps only the newest owner screen across repeated takeovers without resetting tool history", async () => {
+    const { session } = fakeSession({}, "https://example.com/");
+    const reasoning = {
+      type: "reasoning",
+      id: "rs_first",
+      summary: [],
+      encrypted_content: "encrypted-first",
+    };
+    const commentary = {
+      ...message("I will inspect the screen."),
+      id: "msg_first",
+      phase: "commentary",
+    };
+    const nativeCall = computerCall("native_first", [{ type: "screenshot" }]);
+    const inspectCall = functionCall("inspect_next", "inspect_visible_element", { x: 100, y: 120 });
+    const openai = client([
+      response([reasoning, commentary, nativeCall]),
+      response([inspectCall]),
+      response([
+        functionCall("finish", "finish_task", {
+          outcome: "completed",
+          summary: "Reviewed the updated screen.",
+          sources: [],
+        }),
+      ]),
+    ]);
+    let controlRequested = false;
+    const askOwner = vi.fn(async () => {
+      controlRequested = false;
+      return "Fixed owner-return signal, never typed credentials.";
+    });
+    const meter = vi.fn(async ({ operation }: { operation: () => Promise<unknown> }) =>
+      operation(),
+    );
+    const outcome = await runCloudComputerAgent({
+      client: openai.client,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Review the current heading.",
+      startUrl: "https://example.com/",
+      hooks: hooks({
+        controlRequested: () => controlRequested,
+        askOwner,
+        emit: async (event) => {
+          if (event.kind === "action") controlRequested = true;
+        },
+        meter: meter as CloudComputerHooks["meter"],
+      }).hooks,
+    });
+    expect(outcome.status).toBe("completed");
+    expect(askOwner).toHaveBeenCalledTimes(2);
+    expect(openai.requests.map((request) => userImages(request).length)).toEqual([1, 1, 1]);
+    expect(userImages(openai.requests[1])[0].image_url).toBe(
+      `data:image/jpeg;base64,${Buffer.from("model-frame-3").toString("base64")}`,
+    );
+    expect(userImages(openai.requests[2])[0].image_url).toBe(
+      `data:image/jpeg;base64,${Buffer.from("model-frame-4").toString("base64")}`,
+    );
+    const history = openai.requests[2].input as Item[];
+    expect(history[0]).toMatchObject({
+      role: "user",
+      content: [
+        {
+          type: "input_text",
+          text: buildTaskMessage("Review the current heading.", "https://example.com/"),
+        },
+      ],
+    });
+    expect(history.slice(1, 4)).toEqual([reasoning, commentary, nativeCall]);
+    expect(history.find((item) => item.type === "computer_call_output")).toEqual(
+      (openai.requests[1].input as Item[]).find((item) => item.type === "computer_call_output"),
+    );
+    expect(history).toContainEqual(inspectCall);
+    expect(history).toContainEqual({
+      type: "function_call_output",
+      call_id: "inspect_next",
+      output: "inspect_visible_element ok",
+    });
+    expect(history.filter((item) => item.role === "user")).toHaveLength(3);
+    expect(JSON.stringify(history)).toContain(
+      "Do not repeat submissions the owner may have completed",
+    );
+    expect(JSON.stringify(history)).not.toContain("typed credentials");
+    const finalMeter = meter.mock.calls[2]?.[0] as unknown as { reserveUsd: number };
+    expect(finalMeter.reserveUsd).toBe(
+      turnReserveUsd(
+        OPENAI_MODELS.GPT_5_6_TERRA,
+        String(openai.requests[2].instructions),
+        openai.requests[2].tools as unknown[],
+        history,
+      ),
+    );
+  });
+
+  it.each(["ask_owner", "open_public_url", "blocked_action"] as const)(
+    "preserves %s images and warnings after compacting an owner takeover screen",
+    async (path) => {
+      const { session } = fakeSession(
+        path === "blocked_action"
+          ? {
+              left_click: {
+                ok: false,
+                ownerCheckpoint: true,
+                activity: "Submission requires owner control.",
+                content: [],
+              },
+            }
+          : {},
+        "https://example.com/",
+      );
+      const followUp =
+        path === "ask_owner"
+          ? functionCall("owner_question", "ask_owner", {
+              question: "Which public heading should I read?",
+            })
+          : path === "open_public_url"
+            ? openPublicUrlCall("page_open", "https://example.com/next")
+            : computerCall("blocked_click", [{ type: "click", x: 20, y: 30 }]);
+      const openai = client([
+        response([computerCall("native_first", [{ type: "screenshot" }])]),
+        response([followUp]),
+        response([
+          functionCall("finish", "finish_task", {
+            outcome: "completed",
+            summary: "Reviewed the screen without submitting.",
+            sources: [],
+          }),
+        ]),
+      ]);
+      let controlRequested = false;
+      let requested = false;
+      const outcome = await runCloudComputerAgent({
+        client: openai.client,
+        model: OPENAI_MODELS.GPT_5_6_TERRA,
+        session,
+        bot,
+        goal: "Read the public heading without submitting.",
+        startUrl: "https://example.com/",
+        hooks: hooks({
+          controlRequested: () => controlRequested,
+          askOwner: async () => {
+            controlRequested = false;
+            return "Read only, skip submissions.";
+          },
+          emit: async (event) => {
+            if (!requested && event.kind === "action") {
+              requested = true;
+              controlRequested = true;
+            }
+          },
+        }).hooks,
+      });
+      expect(outcome.status).toBe("completed");
+      expect(openai.requests.map((request) => userImages(request).length)).toEqual([1, 1, 1]);
+      const history = openai.requests[2].input as Item[];
+      expect(history[0]).toMatchObject({
+        role: "user",
+        content: [
+          {
+            type: "input_text",
+            text: buildTaskMessage(
+              "Read the public heading without submitting.",
+              "https://example.com/",
+            ),
+          },
+        ],
+      });
+      expect(history).toContainEqual(followUp);
+      expect(history.find((item) => item.type === "computer_call_output")).toEqual(
+        (openai.requests[1].input as Item[]).find((item) => item.type === "computer_call_output"),
+      );
+      if (path === "blocked_action") {
+        expect(history.filter((item) => item.type === "computer_call_output")).toHaveLength(2);
+        expect(JSON.stringify(history)).toContain("was blocked and was not executed");
+      } else {
+        const toolResult = history.find(
+          (item) => item.type === "function_call_output" && item.call_id === followUp.call_id,
+        );
+        expect(toolResult?.output).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ type: "input_text" }),
+            {
+              type: "input_image",
+              image_url: `data:image/jpeg;base64,${Buffer.from("model-frame-4").toString("base64")}`,
+              detail: "original",
+            },
+          ]),
+        );
+      }
+    },
+  );
 
   it("keeps Stop authoritative while an owner-requested pause is waiting", async () => {
     const { session } = fakeSession({}, "https://example.com/");

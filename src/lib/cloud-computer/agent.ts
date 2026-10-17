@@ -239,6 +239,43 @@ function jsonBytes(value: unknown): number {
   return Buffer.byteLength(JSON.stringify(value), "utf8");
 }
 
+/** Computer outputs permit only one image across user messages in the replay. */
+function latestUserScreenHistory(items: readonly unknown[]): unknown[] {
+  const history: unknown[] = [];
+  let keptImage = false;
+  for (let index = items.length - 1; index >= 0; index -= 1) {
+    const item = items[index];
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      history.push(item);
+      continue;
+    }
+    const record = item as Record<string, unknown>;
+    if (record.role !== "user" || !Array.isArray(record.content)) {
+      history.push(item);
+      continue;
+    }
+    const content: unknown[] = [];
+    for (let partIndex = record.content.length - 1; partIndex >= 0; partIndex -= 1) {
+      const part = record.content[partIndex];
+      if (
+        part &&
+        typeof part === "object" &&
+        !Array.isArray(part) &&
+        (part as Record<string, unknown>).type === "input_image"
+      ) {
+        if (keptImage) continue;
+        keptImage = true;
+      }
+      content.push(part);
+    }
+    if (content.length === record.content.length) history.push(item);
+    // Every current owner message also carries text. Avoid an invalid empty
+    // message if an older image-only item is ever admitted into this history.
+    else if (content.length) history.push({ ...record, content: content.reverse() });
+  }
+  return history.reverse();
+}
+
 /** Only protocol shape goes into logs; never copy model or browser content. */
 function followUpInputDiagnostics(items: unknown[]): Record<string, unknown> {
   const records = items.map((item) =>
@@ -732,14 +769,15 @@ export async function runCloudComputerAgent(input: {
     // Keep that schema stable; limit new repair output with tool_choice and the
     // pre-execution guard rather than deleting computer from its own history.
     const turnTools = TOOLS;
+    const requestInput = latestUserScreenHistory(inputItems);
     const request = {
       ...requestBase,
       ...(rejectedReport ? { tool_choice: { type: "function", name: "finish_task" } } : {}),
-      input: inputItems,
+      input: requestInput,
     };
     const requestBytes = jsonBytes(request);
     if (requestBytes > CLOUD_COMPUTER_LIMITS.maxRequestBytes) return { ...CONTEXT_LIMIT_OUTCOME };
-    const reserveUsd = turnReserveUsd(input.model, instructions, turnTools, inputItems);
+    const reserveUsd = turnReserveUsd(input.model, instructions, turnTools, requestInput);
     if (!Number.isFinite(reserveUsd)) return { ...CONTEXT_LIMIT_OUTCOME };
 
     const response = await input.hooks.meter({
@@ -756,7 +794,7 @@ export async function runCloudComputerAgent(input: {
               ...(input.taskHash ? { taskHash: input.taskHash } : {}),
               turn,
               requestBytes,
-              ...followUpInputDiagnostics(inputItems),
+              ...followUpInputDiagnostics(requestInput),
             });
           }
           throw error;
