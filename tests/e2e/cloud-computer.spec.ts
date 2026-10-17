@@ -594,6 +594,7 @@ test("an idle visible Computer page discovers a new task on its next light refre
   const mock = await mockComputer(page, { status: READY, tasks: [] });
   await page.goto("/computer");
   await expect(page.getByRole("button", { name: "Start Task" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Open browser" })).toBeEnabled();
   const readsBefore = mock.listReads;
 
   mock.addTask(task({ id: "task-from-phone", status: "running", goal: "Review today's orders." }));
