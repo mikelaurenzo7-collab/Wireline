@@ -11,12 +11,14 @@ const limiter = createIpRateLimiter({
   message: { error: "Too many requests.", code: "RATE_LIMITED" },
 });
 
+// Preserve the public URL; its response explicitly distinguishes configuration
+// checks from operational certification and never initiates provider work.
 router.get("/api/integrations/certified", limiter, async (_req: Request, res: Response) => {
-  const certified = await getCertifiedIntegrationsPublic();
+  const integrations = await getCertifiedIntegrationsPublic();
   return res.json({
     ok: true,
     generated_at: new Date().toISOString(),
-    integrations: certified,
+    integrations,
   });
 });
 

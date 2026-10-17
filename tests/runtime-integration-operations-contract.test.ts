@@ -173,9 +173,9 @@ describe("runtime integration operations", () => {
   });
 
   it("classifies buyer-facing runtime connectors with current registry ids", () => {
-    expect(buyerTierForIntegration("google-workspace")).toBe("certified");
-    expect(buyerTierForIntegration("microsoft-365")).toBe("certified");
-    expect(buyerTierForIntegration("twilio")).toBe("certified");
+    expect(buyerTierForIntegration("google-workspace")).toBe("supported");
+    expect(buyerTierForIntegration("microsoft-365")).toBe("supported");
+    expect(buyerTierForIntegration("twilio")).toBe("supported");
     expect(buyerTierForIntegration("docusign")).toBe("beta");
     expect(buyerTierForIntegration("x-ads")).toBe("beta");
     expect(buyerTierForIntegration("yahoo")).toBe("beta");

@@ -1,5 +1,7 @@
 /**
- * Buyer-facing integration certification — beyond env presence.
+ * Buyer-facing integration configuration. The legacy certification endpoint
+ * has no persisted operational verification receipts; env presence must never
+ * be presented as proof that credentials or provider workflows work.
  */
 import {
   INTEGRATIONS,
@@ -7,9 +9,9 @@ import {
   type IntegrationStatusResult,
 } from "./integrations-registry";
 
-export type BuyerTier = "certified" | "beta" | "internal";
+export type BuyerTier = "supported" | "beta" | "internal";
 
-const CERTIFIED_IDS = new Set([
+const SUPPORTED_IDS = new Set([
   "openai",
   "twilio",
   "stripe",
@@ -33,7 +35,7 @@ const BETA_IDS = new Set([
 ]);
 
 export function buyerTierForIntegration(id: string): BuyerTier {
-  if (CERTIFIED_IDS.has(id)) return "certified";
+  if (SUPPORTED_IDS.has(id)) return "supported";
   if (BETA_IDS.has(id)) return "beta";
   return "internal";
 }
@@ -43,8 +45,10 @@ export type CertifiedIntegrationPublic = {
   label: string;
   buyer_tier: BuyerTier;
   status: IntegrationStatusResult["status"];
-  certified: boolean;
-  last_checked_at: string;
+  certified: false;
+  last_checked_at: null;
+  configuration_checked_at: string;
+  verification_status: "not_performed";
 };
 
 export async function getCertifiedIntegrationsPublic(): Promise<CertifiedIntegrationPublic[]> {
@@ -52,13 +56,15 @@ export async function getCertifiedIntegrationsPublic(): Promise<CertifiedIntegra
   const now = new Date().toISOString();
   return status
     .filter((s) => buyerTierForIntegration(s.id) !== "internal")
-    .map((s) => ({
+    .map((s): CertifiedIntegrationPublic => ({
       id: s.id,
       label: s.label,
       buyer_tier: buyerTierForIntegration(s.id),
       status: s.status,
-      certified: buyerTierForIntegration(s.id) === "certified" && s.status === "configured",
-      last_checked_at: now,
+      certified: false,
+      last_checked_at: null,
+      configuration_checked_at: now,
+      verification_status: "not_performed",
     }));
 }
 
