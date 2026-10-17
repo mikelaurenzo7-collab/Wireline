@@ -29,6 +29,8 @@ export default defineConfig({
       "**/dist/**",
       "tests/e2e/**",
       "**/.worktrees/**",
+      "tmp/**",
+      ".tmp/**",
     ],
     coverage: {
       provider: "v8",

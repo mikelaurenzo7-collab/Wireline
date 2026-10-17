@@ -16,6 +16,8 @@ const forbiddenTrackedPathPatterns = [
   /^official-assets\//,
   /^playwright-report\//,
   /^scratch\//,
+  /^tmp\//,
+  /^\.tmp\//,
   /^terminals\//,
   /^test-results\//,
   /^visual-qa\//,

@@ -75,6 +75,8 @@ htmlcov/
 *.orig
 *.rej
 .tmp/
+# Local runtime environments, downloaded model weights and one-off probes.
+/tmp/
 .agents/
 .grok/
 .cursor/

@@ -26,6 +26,7 @@ export default [
       "**/dist/**",
       "node_modules/**",
       ".tmp/**",
+      "tmp/**",
       ".worktrees/**",
       "worktrees/**",
       "artifacts/**",
