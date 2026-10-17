@@ -1105,6 +1105,15 @@ export async function reconcilePhoneTest(
     call.from === native(lead).outbound_line_number &&
     call.direction === "outbound-api";
   if (!matches()) throw AppError.conflict("Carrier history does not match this phone test.");
+  if (call.status === "in-progress")
+    await drizzle.transaction(async (tx) => {
+      const row = await lockedTest(tx, userId, requestKey);
+      if (!row || row.callId !== lead.callId)
+        throw AppError.conflict("The phone test carrier receipt changed.");
+      const state = testOf(row);
+      if (!phoneTestIsTerminal(state.status) && !state.answered_at)
+        await updateTest(tx, row, { answered_at: new Date().toISOString() });
+    });
   if (!TERMINAL_CARRIER.has(call.status)) {
     if (!end && !test.cancel_requested && Date.parse(test.expires_at) > Date.now())
       throw AppError.serviceUnavailable("This phone test is still in progress.");

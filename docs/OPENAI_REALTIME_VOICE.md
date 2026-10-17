@@ -58,8 +58,11 @@ and funding controls.
    termination. Closing the dialog does not redial or silently claim a call ended.
 
 Verification and AI conversation share one canonical funding and usage identity.
-The existing minimum-one-minute rule applies to accepted attempts; the carrier's
-terminal parent duration owns settlement, including verification time. A test that
+Completed verification and conversation use the carrier parent's terminal duration,
+including verification time, rounded up under the existing minimum-one-minute rule.
+An exact confirmed-unanswered self-test (`busy`, `no-answer`, `failed`, or `canceled`,
+zero duration and no answer/verification/SIP evidence) returns unused funding without
+consuming customer minutes. A test that
 never reaches SIP still gets a Calls entry without a fabricated transcript or
 recording. Normal SIP calls retain their transcript and ordinary call history.
 Phone tests cannot transfer to another recipient, be enrolled as leads, or be

@@ -591,6 +591,34 @@ describe("authoritative carrier settlement and recovery", () => {
     expect(h.release).not.toHaveBeenCalled();
     expect(h.track).not.toHaveBeenCalled();
   });
+  it("preserves an authoritative in-progress fetch before a contradictory terminal refetch", async () => {
+    await createPhoneTest(request);
+    h.fetch
+      .mockResolvedValueOnce({
+        sid,
+        accountSid: "ACunit",
+        to: phone,
+        from,
+        direction: "outbound-api",
+        status: "in-progress",
+      })
+      .mockResolvedValueOnce({
+        sid,
+        accountSid: "ACunit",
+        to: phone,
+        from,
+        direction: "outbound-api",
+        status: "busy",
+        duration: "0",
+      });
+    await expect(reconcilePhoneTest(userId, agentId, requestKey, true)).rejects.toMatchObject({
+      status: 409,
+    });
+    expect(test().answered_at).toBeTruthy();
+    expect(h.update).toHaveBeenCalledWith({ status: "completed" });
+    expect(h.release).not.toHaveBeenCalled();
+    expect(h.track).not.toHaveBeenCalled();
+  });
   it.each(["in-progress", "answered"])(
     "treats signed %s as sticky answer evidence",
     async (status) => {
