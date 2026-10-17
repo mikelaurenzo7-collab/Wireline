@@ -1758,7 +1758,17 @@ async function runRealtimeSession(
   let escalationSucceeded = false;
   let openingPlaybackConfirmed = false;
   let actualOpeningTranscript = "";
-  let sipPlaybackActive = false;
+  let anonymousSipPlaybackActive = false;
+  const playbackResponseIds = new Set<string>();
+  const activeResponseIds = new Set<string>();
+  let latestResponseId: string | null = null;
+  let callerSpeaking = false;
+  let awaitingCallerResponse = false;
+  let requestedContinuation: string | null = null;
+  let receivedFatalControl = false;
+  const pendingToolOutputs = new Set<string>();
+  const acknowledgedToolOutputs = new Set<string>();
+  const responseToolOutputs = new Map<string, string[]>();
   let hangupAfterOpening = inboundAdmissionMode(input) === "suspended";
   let awaitingExactOpeningPlayback = false;
   let capturingOpeningTranscript = false;
@@ -1860,14 +1870,120 @@ async function runRealtimeSession(
   };
 
   const requestToolContinuationWhenReady = () => {
-    if (!ownsSession()) return;
-    if (sipPlaybackActive || ws.readyState !== WebSocket.OPEN) return;
+    if (!ownsSession() || endedAt !== null || pipelineError || receivedFatalControl) return;
+    if (
+      anonymousSipPlaybackActive ||
+      playbackResponseIds.size ||
+      callerSpeaking ||
+      awaitingCallerResponse ||
+      activeResponseIds.size ||
+      requestedContinuation ||
+      ws.readyState !== WebSocket.OPEN
+    )
+      return;
     if (awaitingExactOpeningPlayback || hangupAfterOpening) return;
     if (!toolContinuationPending || endedReason === "transferred" || endedReason === "caller-dnc") {
       return;
     }
+    if (!pendingToolOutputs.size) {
+      toolContinuationPending = false;
+      return;
+    }
     toolContinuationPending = false;
-    sendJson(ws, { type: "response.create" });
+    // Reserve before sending: repeated playback/done events cannot request a
+    // second response while the provider has not acknowledged this one yet.
+    requestedContinuation = randomUUID();
+    sendJson(ws, {
+      type: "response.create",
+      response: { metadata: { botbound_tool_continuation: requestedContinuation } },
+    });
+  };
+
+  const sendToolOutput = (callId: string, output: Record<string, unknown>) => {
+    pendingToolOutputs.add(callId);
+    sendJson(ws, {
+      type: "conversation.item.create",
+      item: { type: "function_call_output", call_id: callId, output: boundedToolOutput(output) },
+    });
+  };
+
+  // Update only control bookkeeping on receipt. Tool execution stays serialized
+  // below, but a slow tool must not hide newer caller/model/playback activity.
+  const observeControlEvent = (event: Record<string, unknown>) => {
+    if (!ownsSession() || endedAt !== null || ws.readyState !== WebSocket.OPEN) return;
+    const type = String(event.type || "");
+    const response = asRecord(event.response);
+    const responseId = typeof response.id === "string" ? response.id : "";
+    const playbackId = typeof event.response_id === "string" ? event.response_id : "";
+    if (type === "error" || (type === "response.done" && response.status === "failed")) {
+      // Fatal cleanup remains serialized; fence new responses immediately even
+      // when that cleanup is queued behind an already-running business tool.
+      receivedFatalControl = true;
+      return;
+    }
+    if (type === "input_audio_buffer.speech_started") {
+      callerSpeaking = true;
+      awaitingCallerResponse = true;
+    } else if (
+      type === "input_audio_buffer.speech_stopped" ||
+      type === "input_audio_buffer.committed"
+    ) {
+      callerSpeaking = false;
+      // VAD creates the next response asynchronously after committing speech.
+      // Do not insert a manual continuation into that ownership gap.
+      awaitingCallerResponse = true;
+    } else if (
+      type === "conversation.item.added" ||
+      type === "conversation.item.done" ||
+      type === "conversation.item.created"
+    ) {
+      const item = asRecord(event.item);
+      if (item.type === "function_call_output" && typeof item.call_id === "string") {
+        if (pendingToolOutputs.has(item.call_id)) acknowledgedToolOutputs.add(item.call_id);
+      }
+    } else if (type === "response.created" && responseId) {
+      activeResponseIds.add(responseId);
+      latestResponseId = responseId;
+      const metadata = asRecord(response.metadata);
+      const ownsContinuation =
+        requestedContinuation !== null &&
+        metadata.botbound_tool_continuation === requestedContinuation;
+      if (ownsContinuation) requestedContinuation = null;
+      else awaitingCallerResponse = false;
+      // Automatic responses consume only outputs acknowledged before they
+      // started. Our own response follows its outputs on this ordered socket.
+      responseToolOutputs.set(
+        responseId,
+        [...pendingToolOutputs].filter(
+          (callId) => ownsContinuation || acknowledgedToolOutputs.has(callId),
+        ),
+      );
+    } else if (type === "response.done" && responseId) {
+      activeResponseIds.delete(responseId);
+      if (response.status === "completed") {
+        for (const callId of responseToolOutputs.get(responseId) ?? []) {
+          pendingToolOutputs.delete(callId);
+          acknowledgedToolOutputs.delete(callId);
+        }
+      }
+      responseToolOutputs.delete(responseId);
+      if (
+        responseId === latestResponseId &&
+        (response.status === "incomplete" || response.status === "cancelled")
+      ) {
+        // Keep unconsumed results in context for the next caller turn. A
+        // truncated/cancelled generation must not trigger an automatic retry
+        // loop, and a delayed old done must not fence a newer response.
+        awaitingCallerResponse = true;
+      }
+      if (pendingToolOutputs.size) toolContinuationPending = true;
+    } else if (type === "output_audio_buffer.started") {
+      if (playbackId) playbackResponseIds.add(playbackId);
+      else anonymousSipPlaybackActive = true;
+    } else if (type === "output_audio_buffer.stopped" || type === "output_audio_buffer.cleared") {
+      if (playbackId) playbackResponseIds.delete(playbackId);
+      else anonymousSipPlaybackActive = false;
+    }
   };
 
   const endForCallerDnc = async (matchedPattern: string | undefined) => {
@@ -1917,15 +2033,8 @@ async function runRealtimeSession(
         !allowedTakeMessage
       ) {
         toolCallsFailed += 1;
-        sendJson(ws, {
-          type: "conversation.item.create",
-          item: {
-            type: "function_call_output",
-            call_id: call.callId,
-            output: boundedToolOutput({
-              error: "This action is not available on this call. Continue without it.",
-            }),
-          },
+        sendToolOutput(call.callId, {
+          error: "This action is not available on this call. Continue without it.",
         });
         continue;
       }
@@ -2005,16 +2114,9 @@ async function runRealtimeSession(
               errorClass: error instanceof Error ? error.name : typeof error,
             }),
         );
-        sendJson(ws, {
-          type: "conversation.item.create",
-          item: {
-            type: "function_call_output",
-            call_id: call.callId,
-            output: boundedToolOutput({
-              error:
-                "Action confirmation timed out and the outcome is unknown. Do not claim success or retry automatically. Offer a manual follow-up or safe alternative.",
-            }),
-          },
+        sendToolOutput(call.callId, {
+          error:
+            "Action confirmation timed out and the outcome is unknown. Do not claim success or retry automatically. Offer a manual follow-up or safe alternative.",
         });
         continue;
       }
@@ -2029,16 +2131,9 @@ async function runRealtimeSession(
           toolCallId: call.callId,
           errorClass: outcome.error instanceof Error ? outcome.error.name : typeof outcome.error,
         });
-        sendJson(ws, {
-          type: "conversation.item.create",
-          item: {
-            type: "function_call_output",
-            call_id: call.callId,
-            output: boundedToolOutput({
-              error:
-                "The action could not be confirmed. Do not claim it happened; offer a safe alternative.",
-            }),
-          },
+        sendToolOutput(call.callId, {
+          error:
+            "The action could not be confirmed. Do not claim it happened; offer a safe alternative.",
         });
         continue;
       }
@@ -2053,14 +2148,7 @@ async function runRealtimeSession(
           if (call.name === "escalate_to_human") escalationSucceeded = true;
           transferCompleted = true;
         }
-        sendJson(ws, {
-          type: "conversation.item.create",
-          item: {
-            type: "function_call_output",
-            call_id: call.callId,
-            output: boundedToolOutput({ result: outcome.result.result }),
-          },
-        });
+        sendToolOutput(call.callId, { result: outcome.result.result });
         if (transferCompleted) {
           // REFER hands the PSTN call to the destination. Close only BotBound's
           // realtime session and disarm its watchdog; never hang up the new leg.
@@ -2081,16 +2169,9 @@ async function runRealtimeSession(
           toolCallId: call.callId,
           errorClass: error instanceof Error ? error.name : typeof error,
         });
-        sendJson(ws, {
-          type: "conversation.item.create",
-          item: {
-            type: "function_call_output",
-            call_id: call.callId,
-            output: boundedToolOutput({
-              error:
-                "The transfer could not be confirmed. Do not say it succeeded; offer to take a message or try a safe alternative.",
-            }),
-          },
+        sendToolOutput(call.callId, {
+          error:
+            "The transfer could not be confirmed. Do not say it succeeded; offer to take a message or try a safe alternative.",
         });
       }
     }
@@ -2109,11 +2190,9 @@ async function runRealtimeSession(
     turnTiming.observe(event, receivedAtMs);
     const type = String(event.type || "");
     if (type === "output_audio_buffer.started") {
-      sipPlaybackActive = true;
       return;
     }
     if (type === "output_audio_buffer.stopped" || type === "output_audio_buffer.cleared") {
-      sipPlaybackActive = false;
       if (finishExactOpeningIfNeeded(type === "output_audio_buffer.stopped")) return;
       requestToolContinuationWhenReady();
       return;
@@ -2174,6 +2253,7 @@ async function runRealtimeSession(
         return;
       }
       await executePendingTools();
+      requestToolContinuationWhenReady();
       return;
     }
     if (type === "error") {
@@ -2355,6 +2435,7 @@ async function runRealtimeSession(
         const receivedAtMs = Date.now();
         const event = safeJsonParse(data.toString());
         if (!event) return;
+        observeControlEvent(event);
         eventChain = eventChain.then(() => handleEvent(event, receivedAtMs));
         void eventChain.catch(rejectOnce);
       });

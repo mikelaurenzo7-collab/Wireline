@@ -1,7 +1,7 @@
 # OpenAI Realtime Voice — Browser and Twilio PSTN
 
 **Status:** Canonical production voice policy  
-**Updated:** September 19, 2026
+**Updated:** October 17, 2026
 
 BotBound uses one live-conversation runtime: OpenAI Realtime on
 `gpt-realtime-2.1`. This applies to customer Bots, founder-owned internal Bot
@@ -36,6 +36,14 @@ BotBound accepts the call with the tenant-scoped Bot configuration and then
 opens the server-side sideband WebSocket using the OpenAI call id. Tool calls,
 knowledge lookup, transfer, hangup, compliance state, and post-call persistence
 remain on the server.
+
+The SIP sideband observes caller speech, model responses and audio playback as
+events arrive, while business tool execution stays serialized. A slow tool must
+not hide a newer caller turn. Its follow-up waits for caller, automatic-response,
+generation and playback ownership to clear; acknowledged tool outputs already
+consumed by a response are not repeated. A reserved continuation prevents duplicate
+requests before the provider acknowledges them. This does not change the model,
+saved voice, turn-detection settings or fatal-error handling.
 
 ## Requested tests on the owner's phone
 

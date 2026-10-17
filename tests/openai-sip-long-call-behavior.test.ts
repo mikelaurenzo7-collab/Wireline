@@ -350,6 +350,301 @@ describe("native SIP opening delivery", () => {
 });
 
 describe("native SIP semantic tool accounting", () => {
+  it("does not continue a completed tool over a newer caller response received during the tool", async () => {
+    const held = heldResult<{ result: string }>();
+    h.tool.mockReturnValueOnce(held.promise);
+    const session = start();
+    await vi.advanceTimersByTimeAsync(0);
+    try {
+      await emit({ type: "output_audio_buffer.stopped" });
+      await emit({ type: "response.created", response: { id: "response-tool" } });
+      await emit({
+        type: "response.function_call_arguments.done",
+        name: "search_agent_knowledge",
+        call_id: "tool-held",
+        arguments: "{}",
+      });
+      await emit({
+        type: "response.done",
+        response: { id: "response-tool", status: "completed" },
+      });
+      expect(h.tool).toHaveBeenCalledOnce();
+      const responsesBefore = h.sent.filter((event) => event.type === "response.create").length;
+
+      await emit({ type: "input_audio_buffer.speech_started", item_id: "caller-follow-up" });
+      await emit({ type: "input_audio_buffer.speech_stopped", item_id: "caller-follow-up" });
+      await emit({ type: "response.created", response: { id: "response-caller" } });
+      await emit({
+        type: "conversation.item.input_audio_transcription.completed",
+        item_id: "caller-follow-up",
+        transcript: "Please explain the cancellation policy too.",
+      });
+      held.resolve({ result: "Approved knowledge found." });
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(h.sent).toContainEqual(
+        expect.objectContaining({ item: expect.objectContaining({ call_id: "tool-held" }) }),
+      );
+      expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
+        responsesBefore,
+      );
+      await emit({ type: "output_audio_buffer.started", response_id: "response-caller" });
+      // An older done and playback stop cannot clear the newer response.
+      await emit({
+        type: "response.done",
+        response: { id: "response-tool", status: "completed" },
+      });
+      await emit({
+        type: "response.done",
+        response: { id: "response-tool", status: "cancelled" },
+      });
+      await emit({ type: "output_audio_buffer.stopped", response_id: "response-tool" });
+      expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
+        responsesBefore,
+      );
+      await emit({
+        type: "response.done",
+        response: { id: "response-caller", status: "completed" },
+      });
+      expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
+        responsesBefore,
+      );
+      await emit({ type: "output_audio_buffer.stopped", response_id: "response-caller" });
+      const responses = h.sent.filter((event) => event.type === "response.create");
+      expect(responses).toHaveLength(responsesBefore + 1);
+      const metadata = responses.at(-1)?.response.metadata;
+      expect(metadata.botbound_tool_continuation).toEqual(expect.any(String));
+      await emit({ type: "output_audio_buffer.stopped", response_id: "response-caller" });
+      expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
+        responsesBefore + 1,
+      );
+      await emit({
+        type: "response.created",
+        response: { id: "response-continuation", metadata },
+      });
+      await emit({
+        type: "response.done",
+        response: { id: "response-continuation", status: "completed" },
+      });
+      await emit({ type: "output_audio_buffer.stopped", response_id: "response-continuation" });
+      expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
+        responsesBefore + 1,
+      );
+    } finally {
+      held.resolve({ result: "Approved knowledge found." });
+      h.sockets[0].close();
+      await session;
+    }
+    expect(h.digest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transcript: expect.stringContaining("Please explain the cancellation policy too."),
+      }),
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
+  it.each(["conversation.item.created", "conversation.item.added", "conversation.item.done"])(
+    "waits through caller speech and VAD admission, then consumes a result acknowledged by %s",
+    async (ackType) => {
+      const held = heldResult<{ result: string }>();
+      h.tool.mockReturnValueOnce(held.promise);
+      const session = start();
+      await vi.advanceTimersByTimeAsync(0);
+      try {
+        await emit({ type: "output_audio_buffer.stopped" });
+        await emit({
+          type: "response.function_call_arguments.done",
+          name: "search_agent_knowledge",
+          call_id: "tool-acknowledged",
+          arguments: "{}",
+        });
+        await emit({
+          type: "response.done",
+          response: { id: "response-tool", status: "completed" },
+        });
+        const responsesBefore = h.sent.filter((event) => event.type === "response.create").length;
+        await emit({ type: "input_audio_buffer.speech_started", item_id: "caller-follow-up" });
+        held.resolve({ result: "Approved knowledge found." });
+        await vi.advanceTimersByTimeAsync(0);
+        expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
+          responsesBefore,
+        );
+        await emit({ type: "input_audio_buffer.speech_stopped", item_id: "caller-follow-up" });
+        await emit({ type: "input_audio_buffer.committed", item_id: "caller-follow-up" });
+        await emit({ type: "output_audio_buffer.stopped" });
+        expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
+          responsesBefore,
+        );
+        for (const type of [ackType, "conversation.item.done"]) {
+          await emit({
+            type,
+            item: { type: "function_call_output", call_id: "tool-acknowledged" },
+          });
+        }
+        await emit({ type: "response.created", response: { id: "response-with-result" } });
+        await emit({
+          type: "response.done",
+          response: { id: "response-with-result", status: "completed" },
+        });
+        await emit({ type: "output_audio_buffer.stopped", response_id: "response-with-result" });
+        expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
+          responsesBefore,
+        );
+      } finally {
+        held.resolve({ result: "Approved knowledge found." });
+        h.sockets[0].close();
+        await session;
+      }
+    },
+  );
+
+  it("retains an unacknowledged result when an automatic response may have started before publication", async () => {
+    const held = heldResult<{ result: string }>();
+    h.tool.mockReturnValueOnce(held.promise);
+    const session = start();
+    await vi.advanceTimersByTimeAsync(0);
+    try {
+      await emit({ type: "output_audio_buffer.stopped" });
+      await emit({
+        type: "response.function_call_arguments.done",
+        name: "search_agent_knowledge",
+        call_id: "tool-not-acknowledged",
+        arguments: "{}",
+      });
+      await emit({ type: "response.done", response: { id: "response-tool", status: "completed" } });
+      await emit({ type: "input_audio_buffer.speech_started", item_id: "caller-follow-up" });
+      await emit({ type: "input_audio_buffer.committed", item_id: "caller-follow-up" });
+      held.resolve({ result: "Approved knowledge found." });
+      await vi.advanceTimersByTimeAsync(0);
+      const responsesBefore = h.sent.filter((event) => event.type === "response.create").length;
+      await emit({ type: "response.created", response: { id: "response-in-flight" } });
+      await emit({
+        type: "response.done",
+        response: { id: "response-in-flight", status: "completed" },
+      });
+      expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
+        responsesBefore + 1,
+      );
+    } finally {
+      held.resolve({ result: "Approved knowledge found." });
+      h.sockets[0].close();
+      await session;
+    }
+  });
+
+  it("does not resume a deferred tool after the call closes", async () => {
+    const held = heldResult<{ result: string }>();
+    h.tool.mockReturnValueOnce(held.promise);
+    const session = start();
+    await vi.advanceTimersByTimeAsync(0);
+    await emit({ type: "output_audio_buffer.stopped" });
+    await emit({
+      type: "response.function_call_arguments.done",
+      name: "search_agent_knowledge",
+      call_id: "tool-closing",
+      arguments: "{}",
+    });
+    await emit({ type: "response.done", response: { id: "response-tool", status: "completed" } });
+    const responsesBefore = h.sent.filter((event) => event.type === "response.create").length;
+    h.sockets[0].close();
+    held.resolve({ result: "Approved knowledge found." });
+    await session;
+    expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
+      responsesBefore,
+    );
+  });
+
+  it.each(["incomplete", "cancelled"])(
+    "does not retry a %s continuation without a new caller turn",
+    async (status) => {
+      const session = start();
+      await vi.advanceTimersByTimeAsync(0);
+      try {
+        await emit({ type: "output_audio_buffer.stopped" });
+        await emit({
+          type: "response.function_call_arguments.done",
+          name: "search_agent_knowledge",
+          call_id: "tool-next-caller",
+          arguments: "{}",
+        });
+        await emit({
+          type: "response.done",
+          response: { id: "response-tool", status: "completed" },
+        });
+        const responses = h.sent.filter((event) => event.type === "response.create");
+        const metadata = responses.at(-1)?.response.metadata;
+        expect(metadata.botbound_tool_continuation).toEqual(expect.any(String));
+        await emit({
+          type: "response.created",
+          response: { id: "response-not-completed", metadata },
+        });
+        await emit({
+          type: "conversation.item.added",
+          item: { type: "function_call_output", call_id: "tool-next-caller" },
+        });
+        await emit({ type: "response.done", response: { id: "response-not-completed", status } });
+        await emit({ type: "output_audio_buffer.stopped", response_id: "response-not-completed" });
+        await emit({ type: "output_audio_buffer.stopped", response_id: "response-not-completed" });
+        expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
+          responses.length,
+        );
+
+        await emit({ type: "input_audio_buffer.speech_started", item_id: "caller-retry" });
+        await emit({ type: "input_audio_buffer.committed", item_id: "caller-retry" });
+        await emit({ type: "response.created", response: { id: "response-next-caller" } });
+        await emit({
+          type: "response.done",
+          response: { id: "response-not-completed", status },
+        });
+        await emit({
+          type: "response.done",
+          response: { id: "response-next-caller", status: "completed" },
+        });
+        await emit({ type: "output_audio_buffer.stopped", response_id: "response-next-caller" });
+        expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
+          responses.length,
+        );
+      } finally {
+        h.sockets[0].close();
+        await session;
+      }
+    },
+  );
+
+  it.each([
+    { type: "error", error: { type: "invalid_request_error" } },
+    { type: "response.done", response: { id: "response-fatal", status: "failed" } },
+  ])("fences a continuation when $type arrives during a deferred tool", async (fatalEvent) => {
+    const held = heldResult<{ result: string }>();
+    h.tool.mockReturnValueOnce(held.promise);
+    const session = start();
+    await vi.advanceTimersByTimeAsync(0);
+    try {
+      await emit({ type: "output_audio_buffer.stopped" });
+      await emit({
+        type: "response.function_call_arguments.done",
+        name: "search_agent_knowledge",
+        call_id: "tool-fatal",
+        arguments: "{}",
+      });
+      await emit({ type: "response.done", response: { id: "response-tool", status: "completed" } });
+      const responsesBefore = h.sent.filter((event) => event.type === "response.create").length;
+      await emit(fatalEvent);
+      held.resolve({ result: "Approved knowledge found." });
+      await session;
+      expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
+        responsesBefore,
+      );
+      expect(h.provider).toHaveBeenCalledOnce();
+      expect(h.provider.mock.calls[0][0]).toContain("/hangup");
+    } finally {
+      held.resolve({ result: "Approved knowledge found." });
+      h.sockets[0].close();
+      await session;
+    }
+  });
+
   it.each([
     [
       "send_email",
