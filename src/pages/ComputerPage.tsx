@@ -177,6 +177,24 @@ const EXAMPLES = [
   },
 ];
 
+const OWNER_KEY_CONTROLS = [
+  { key: "Tab", label: "Tab" },
+  { key: "Shift+Tab", label: "Shift + Tab" },
+  { key: "Enter", label: "Enter" },
+  { key: "Space", label: "Space" },
+  { key: "Backspace", label: "Backspace" },
+  { key: "Delete", label: "Delete" },
+  { key: "Escape", label: "Esc" },
+  { key: "ArrowUp", label: "Up" },
+  { key: "ArrowDown", label: "Down" },
+  { key: "ArrowLeft", label: "Left" },
+  { key: "ArrowRight", label: "Right" },
+  { key: "Home", label: "Home" },
+  { key: "End", label: "End" },
+  { key: "PageUp", label: "Page Up" },
+  { key: "PageDown", label: "Page Down" },
+] as const;
+
 function timeAgo(iso: string): string {
   const seconds = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
   if (seconds < 60) return "just now";
@@ -974,20 +992,26 @@ function TaskDetail({
             </form>
             <details className="wl-computer-control__more">
               <summary>Keyboard controls</summary>
+              <p className="mt-2 text-xs">
+                Move site focus with Tab or Shift + Tab, then activate with Enter or Space.
+              </p>
               <div
                 className="wl-computer-control__keys"
                 role="group"
                 aria-label="Browser navigation keys"
               >
-                {(["Tab", "Enter", "Backspace", "Escape"] as const).map((key) => (
+                {OWNER_KEY_CONTROLS.map(({ key, label }) => (
                   <Button
                     key={key}
+                    type="button"
                     variant="outline"
                     size="sm"
-                    disabled={busy !== null}
+                    // Keep the focused key in the tab order while its remote
+                    // action runs, so Enter can repeat it when the response lands.
+                    aria-disabled={busy !== null}
                     onClick={() => void ownerAction("input", { kind: "key", key })}
                   >
-                    {key === "Escape" ? "Esc" : key}
+                    {label}
                   </Button>
                 ))}
               </div>

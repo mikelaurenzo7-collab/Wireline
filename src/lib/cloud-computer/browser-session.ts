@@ -46,6 +46,22 @@ const MAX_TABS = 8;
 const MAX_TYPE_CHARS = 4_000;
 const MAX_OWNER_REDACTIONS = 32;
 const MAX_OWNER_REDACTION_CHARS = 16_000;
+const OWNER_NAVIGATION_KEYS = new Set([
+  "Enter",
+  "Tab",
+  "Escape",
+  "Backspace",
+  "Delete",
+  "Space",
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "Home",
+  "End",
+  "PageUp",
+  "PageDown",
+]);
 const MODEL_EDITABLE_SELECTOR =
   'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]), textarea, select, [contenteditable="true"], [role="textbox"]';
 // Typing is sent in short runs so a deadline or a newly focused password
@@ -801,23 +817,16 @@ export class CloudBrowserSession {
               break;
             }
             case "key": {
-              const key = typeof input.key === "string" ? normalizeKeyName(input.key) : null;
-              const allowed = new Set([
-                "Enter",
-                "Tab",
-                "Escape",
-                "Backspace",
-                "Delete",
-                "ArrowUp",
-                "ArrowDown",
-                "ArrowLeft",
-                "ArrowRight",
-                "Home",
-                "End",
-                "PageUp",
-                "PageDown",
-              ]);
-              if (!key || !allowed.has(key)) fail("Choose a supported navigation key.");
+              // Owner shortcuts stay deliberately narrow: Shift+Tab is the
+              // only chord, and no arbitrary printable or modifier keys pass.
+              const key =
+                input.key === "Shift+Tab"
+                  ? "Shift+Tab"
+                  : typeof input.key === "string"
+                    ? normalizeKeyName(input.key)
+                    : null;
+              if (!key || (key !== "Shift+Tab" && !OWNER_NAVIGATION_KEYS.has(key)))
+                fail("Choose a supported navigation key.");
               await page.keyboard.press(key);
               break;
             }

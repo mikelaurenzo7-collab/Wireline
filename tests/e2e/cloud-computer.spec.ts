@@ -56,6 +56,7 @@ async function mockComputer(
     agents?: Array<{ id: string; name: string }>;
     frame?: Buffer | null;
     clickNavigatesTo?: string;
+    ownerInputDelayMs?: number;
     /** Keep status and task-list reads unavailable until the test releases them. */
     failFirstLoad?: boolean;
   },
@@ -195,6 +196,9 @@ async function mockComputer(
         setTask(controlInputMatch[1], {
           ownerTabs: tabs.map((tab) => ({ ...tab, active: tab.id === input.tabId })),
         });
+      }
+      if (options.ownerInputDelayMs) {
+        await new Promise((resolve) => setTimeout(resolve, options.ownerInputDelayMs));
       }
       return route.fulfill({
         json: { task: tasks.find((item) => item.id === controlInputMatch[1]) },
@@ -697,11 +701,37 @@ for (const width of [390, 1440]) {
     await expect(address).toHaveValue("https://login.example.test/");
     await browserBar.getByRole("button", { name: "Back", exact: true }).click();
     await detail.getByText("Keyboard controls", { exact: true }).click();
-    await detail.getByRole("button", { name: "Tab", exact: true }).click();
+    const browserKeys = detail.getByRole("group", { name: "Browser navigation keys" });
+    for (const label of [
+      "Tab",
+      "Shift + Tab",
+      "Enter",
+      "Space",
+      "Backspace",
+      "Delete",
+      "Esc",
+      "Up",
+      "Down",
+      "Left",
+      "Right",
+      "Home",
+      "End",
+      "Page Up",
+      "Page Down",
+    ]) {
+      await expect(browserKeys.getByRole("button", { name: label, exact: true })).toBeVisible();
+    }
+    for (const label of ["Tab", "Shift + Tab", "Space", "Page Down", "Delete"]) {
+      await browserKeys.getByRole("button", { name: label, exact: true }).click();
+    }
     expect(ownerInputs).toContainEqual(
       expect.objectContaining({ kind: "type", text: "owner@example.test" }),
     );
     expect(ownerInputs).toContainEqual(expect.objectContaining({ kind: "key", key: "Tab" }));
+    expect(ownerInputs).toContainEqual(expect.objectContaining({ kind: "key", key: "Shift+Tab" }));
+    expect(ownerInputs).toContainEqual(expect.objectContaining({ kind: "key", key: "Space" }));
+    expect(ownerInputs).toContainEqual(expect.objectContaining({ kind: "key", key: "PageDown" }));
+    expect(ownerInputs).toContainEqual(expect.objectContaining({ kind: "key", key: "Delete" }));
     expect(ownerInputs).toContainEqual(
       expect.objectContaining({ kind: "navigate", url: "https://login.example.test" }),
     );
@@ -722,6 +752,51 @@ for (const width of [390, 1440]) {
     await detail.getByRole("button", { name: "Return control to Bot" }).click();
     await expect(detail.getByText("Working", { exact: true })).toBeVisible();
     expect(returns).toEqual(["task-live"]);
+  });
+
+  test(`a focused browser key can be repeated after a slow owner action at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: width < 600 ? 844 : 1000 });
+    const { ownerInputs } = await mockComputer(page, {
+      status: READY,
+      frame: await fakeFrame(page),
+      ownerInputDelayMs: 600,
+      tasks: [
+        task({
+          id: "task-live",
+          status: "needs_input",
+          question: "The site asks me to sign in before I can continue.",
+        }),
+      ],
+    });
+
+    await page.goto("/computer");
+    const detail = page.getByRole("region", { name: /Find three plumbers/ });
+    await detail.getByRole("button", { name: "Take control" }).click();
+    const disclosure = detail.getByText("Keyboard controls", { exact: true });
+    await disclosure.focus();
+    await disclosure.press("Enter");
+    const tabKey = detail
+      .getByRole("group", { name: "Browser navigation keys" })
+      .getByRole("button", { name: "Tab", exact: true });
+    const tabActions = () =>
+      ownerInputs.filter((input) => {
+        const action = input as { kind?: string; key?: string };
+        return action.kind === "key" && action.key === "Tab";
+      }).length;
+
+    await tabKey.focus();
+    await tabKey.press("Enter");
+    await expect(tabKey).toHaveAttribute("aria-disabled", "true");
+    await expect(tabKey).toBeFocused();
+    await tabKey.press("Enter");
+    await expect.poll(tabActions).toBe(1);
+    await expect(tabKey).not.toHaveAttribute("aria-disabled", "true");
+    await expect(tabKey).toBeFocused();
+    await tabKey.press("Enter");
+    await expect.poll(tabActions).toBe(2);
+    await expect(tabKey).toBeFocused();
   });
 }
 

@@ -251,6 +251,45 @@ describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)
     expect(await page.locator("#pw").inputValue()).toBe("owner-secret-123");
   });
 
+  it("limits owner keyboard input to navigation and supports focus in both directions", async () => {
+    const page = session.activePage();
+    await page.setContent(`
+      <input id="first" aria-label="First" />
+      <input id="second" aria-label="Second" />
+      <label><input id="choice" type="checkbox" /> Choose</label>
+      <div style="height: 1500px"></div>
+    `);
+    await page.locator("#first").focus();
+
+    await session.executeOwnerInput({ kind: "key", key: "Tab" });
+    expect(await page.evaluate(() => document.activeElement?.id)).toBe("second");
+    await session.executeOwnerInput({ kind: "key", key: "Shift+Tab" });
+    expect(await page.evaluate(() => document.activeElement?.id)).toBe("first");
+
+    await page.locator("#choice").focus();
+    await session.executeOwnerInput({ kind: "key", key: "Space" });
+    expect(await page.locator("#choice").isChecked()).toBe(true);
+
+    for (const key of [
+      "ArrowUp",
+      "ArrowDown",
+      "ArrowLeft",
+      "ArrowRight",
+      "Home",
+      "End",
+      "PageUp",
+      "PageDown",
+      "Delete",
+    ]) {
+      expect(await session.executeOwnerInput({ kind: "key", key }), key).toBeInstanceOf(Buffer);
+    }
+    for (const key of ["A", "Control+A", "Alt+Tab", "Shift+Space", "Control+Shift+Tab"]) {
+      await expect(session.executeOwnerInput({ kind: "key", key }), key).rejects.toThrow(
+        "supported navigation key",
+      );
+    }
+  });
+
   it("keeps owner-entered values out of model screenshots and page text", async () => {
     const page = session.activePage();
     await page.setContent(
