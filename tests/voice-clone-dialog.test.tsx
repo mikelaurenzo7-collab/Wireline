@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import VoiceCloneDialog from "../src/components/voice/VoiceCloneDialog";
@@ -73,6 +74,7 @@ vi.mock("../src/components/atoms", () => ({
   DialogTitle: "title",
 }));
 vi.mock("../src/components/molecules", () => ({ StatusNotice: "notice" }));
+vi.mock("../src/components/ui/shadcn/Checkbox", () => ({ Checkbox: "checkbox" }));
 
 type Props = {
   children?: ReactNode;
@@ -469,9 +471,10 @@ describe("portable microphone encoding", () => {
           sampleRates: VOICE_REFERENCE_SAMPLE_RATES,
         }),
       ).toMatchObject({ sampleRateHz: 24_000, channels: 1, bitsPerSample: 16, durationSeconds: 6 });
-      expect(
-        Uint8Array.from(atob(voiceAudioBase64(bytes)), (character) => character.charCodeAt(0)),
-      ).toEqual(bytes);
+      const decoded = Uint8Array.from(atob(voiceAudioBase64(bytes)), (character) =>
+        character.charCodeAt(0),
+      );
+      expect(Buffer.from(decoded).equals(Buffer.from(bytes))).toBe(true);
     },
   );
   it("clamps microphone peaks and rejects invalid or overlong samples", () => {

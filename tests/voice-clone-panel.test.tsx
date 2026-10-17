@@ -60,6 +60,7 @@ vi.mock("react", async (original) => ({
 vi.mock("../src/lib/api", () => ({ authFetch: h.fetch }));
 vi.mock("../src/components/atoms", () => ({ Button: "button" }));
 vi.mock("../src/components/molecules", () => ({ StatusNotice: "notice" }));
+vi.mock("../src/components/ui/shadcn/Checkbox", () => ({ Checkbox: "checkbox" }));
 vi.mock("../src/components/voice/VoiceCloneDialog", () => ({ default: "clone-dialog" }));
 
 type Row = {
@@ -248,7 +249,9 @@ describe("private voice clone panel", () => {
     };
     button("Review My voice 1").props.onClick!();
     expect(button("Approve private preview").props.disabled).toBe(true);
-    render().find((node) => node.type === "input")!.props.onChange!({ target: { checked: true } });
+    render().find((node) => node.type === "checkbox")!.props.onChange!({
+      target: { checked: true },
+    });
     button("Approve private preview").props.onClick!();
     await flush();
     expect(copy()).toContain("Ready to preview");
@@ -261,7 +264,9 @@ describe("private voice clone panel", () => {
     mutation = async () =>
       json({ asset: { ...asset("approved", 2), id: asset("approved", 2, 2).id } });
     button("Review My voice 1").props.onClick!();
-    render().find((node) => node.type === "input")!.props.onChange!({ target: { checked: true } });
+    render().find((node) => node.type === "checkbox")!.props.onChange!({
+      target: { checked: true },
+    });
     button("Approve private preview").props.onClick!();
     await flush();
     expect(copy()).toContain("could not be verified");

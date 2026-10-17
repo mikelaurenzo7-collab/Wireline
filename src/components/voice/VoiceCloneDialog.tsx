@@ -12,6 +12,7 @@ import {
   Input,
 } from "../atoms";
 import { StatusNotice } from "../molecules";
+import { Checkbox } from "../ui/shadcn/Checkbox";
 import {
   VOICE_ASSET_CONSENT_VERSION,
   VOICE_CLONE_CONSENT_TEXT,
@@ -451,13 +452,12 @@ export default function VoiceCloneDialog({
             ) : null}
           </div>
           <label className="flex min-w-0 cursor-pointer items-start gap-3 text-sm leading-6 text-muted-foreground">
-            <input
+            <Checkbox
               id={`${id}-consent`}
-              type="checkbox"
               checked={consent}
               disabled={busy || !recording}
               onChange={(event) => setConsent(event.target.checked)}
-              className="mt-1 size-5 shrink-0 accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="mt-1 size-5"
             />
             <span>{VOICE_CLONE_CONSENT_TEXT}</span>
           </label>

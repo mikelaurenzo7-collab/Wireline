@@ -15,6 +15,7 @@ import {
 } from "../../lib/voice/voice-reference-audio";
 import { Button } from "../atoms";
 import { StatusNotice } from "../molecules";
+import { Checkbox } from "../ui/shadcn/Checkbox";
 import VoiceCloneDialog from "./VoiceCloneDialog";
 
 type Capabilities = {
@@ -711,12 +712,11 @@ export default function VoiceClonePanel({
                     Check the source recording: your own voice, clear audio, and no other speakers.
                   </p>
                   <label className="flex items-start gap-3 text-sm leading-6 text-foreground">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={reviewChecked}
                       disabled={busy || reloadRequired}
                       onChange={(event) => setReviewChecked(event.target.checked)}
-                      className="mt-1 size-5 shrink-0 accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="mt-1 size-5"
                     />
                     <span>I have reviewed my recording.</span>
                   </label>
