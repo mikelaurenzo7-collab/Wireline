@@ -9,6 +9,8 @@
  * https://elevenlabs.io/docs/api-reference/voices/get
  * https://elevenlabs.io/docs/api-reference/voices/delete
  * https://elevenlabs.io/docs/api-reference/text-to-speech/convert
+ * https://elevenlabs.io/docs/api-reference/user/get
+ * https://elevenlabs.io/docs/api-reference/user/subscription/get
  */
 import { Buffer } from "node:buffer";
 
@@ -32,7 +34,7 @@ export const ELEVENLABS_VOICE_PREVIEW = {
   outputFormat: "mp3_44100_128",
 } as const;
 
-type Operation = "create" | "get" | "list" | "delete" | "preview";
+type Operation = "create" | "get" | "list" | "delete" | "preview" | "account" | "subscription";
 type ErrorCode =
   "INVALID_INPUT" | "ABORTED" | "PROVIDER_REJECTED" | "PROVIDER_UNAVAILABLE" | "INVALID_RESPONSE";
 
@@ -67,6 +69,50 @@ export type ElevenLabsVoiceSummary = {
   verified: boolean | null;
 };
 
+// Published API enum, also generated in the official elevenlabs-js SDK's
+// SubscriptionStatusType. Unknown future states must not imply eligibility.
+const SUBSCRIPTION_STATUSES = [
+  "trialing",
+  "active",
+  "incomplete",
+  "past_due",
+  "free",
+  "free_disabled",
+] as const;
+export type ElevenLabsSubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
+
+/**
+ * A provider capability snapshot, not admission, funding or OEM authorization.
+ * Character counters are provider units and must never be treated as USD.
+ * Null optional limits remain unknown; they must not be treated as unlimited.
+ */
+export type ElevenLabsSubscriptionCapabilities = {
+  tier: string;
+  status: ElevenLabsSubscriptionStatus;
+  canUseInstantVoiceCloning: boolean;
+  canUseProfessionalVoiceCloning: boolean;
+  characterCount: number;
+  characterLimit: number;
+  nextCharacterCountResetUnix: number | null;
+  voiceSlotsUsed: number;
+  voiceLimit: number;
+  voiceAddEditCounter: number;
+  maxVoiceAddEdits: number | null;
+  /** With consolidated billing this can include other workspaces. */
+  professionalVoiceSlotsUsed: number;
+  professionalVoiceSlotsUsedInWorkspace: number;
+  professionalVoiceLimit: number;
+  canExtendCharacterLimit: boolean;
+  maxCreditLimitExtension: number | "unlimited";
+  canExtendVoiceLimit: boolean;
+};
+
+export type ElevenLabsAccountCapabilities = {
+  /** The documented workspace to which this API key belongs, never a BotBound tenant ID. */
+  workspaceId: string;
+  subscription: ElevenLabsSubscriptionCapabilities;
+};
+
 type RequestOptions = { signal?: AbortSignal };
 type CloneInput = {
   name: string;
@@ -92,6 +138,56 @@ function text(value: unknown, max: number): string | null {
 
 function voiceId(value: unknown): string | null {
   return typeof value === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(value) ? value : null;
+}
+
+function counter(value: unknown): number {
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0)
+    throw new Error("invalid capability counter");
+  return value;
+}
+
+function capability(value: unknown): boolean {
+  if (typeof value !== "boolean") throw new Error("invalid capability flag");
+  return value;
+}
+
+function subscriptionCapabilities(value: unknown): ElevenLabsSubscriptionCapabilities {
+  const row = record(value);
+  if (
+    !row ||
+    typeof row.tier !== "string" ||
+    !/^[a-z][a-z0-9_-]{0,79}$/.test(row.tier) ||
+    !SUBSCRIPTION_STATUSES.includes(row.status as ElevenLabsSubscriptionStatus)
+  )
+    throw new Error("invalid subscription");
+  const reset =
+    row.next_character_count_reset_unix == null
+      ? null
+      : counter(row.next_character_count_reset_unix);
+  // Bound Unix seconds to the range that remains representable as a JS Date.
+  if (reset !== null && reset > 8_640_000_000_000) throw new Error("invalid reset time");
+  return {
+    tier: row.tier,
+    status: row.status as ElevenLabsSubscriptionStatus,
+    canUseInstantVoiceCloning: capability(row.can_use_instant_voice_cloning),
+    canUseProfessionalVoiceCloning: capability(row.can_use_professional_voice_cloning),
+    characterCount: counter(row.character_count),
+    characterLimit: counter(row.character_limit),
+    nextCharacterCountResetUnix: reset,
+    voiceSlotsUsed: counter(row.voice_slots_used),
+    voiceLimit: counter(row.voice_limit),
+    voiceAddEditCounter: counter(row.voice_add_edit_counter),
+    maxVoiceAddEdits: row.max_voice_add_edits == null ? null : counter(row.max_voice_add_edits),
+    professionalVoiceSlotsUsed: counter(row.professional_voice_slots_used),
+    professionalVoiceSlotsUsedInWorkspace: counter(row.professional_voice_slots_used_in_workspace),
+    professionalVoiceLimit: counter(row.professional_voice_limit),
+    canExtendCharacterLimit: capability(row.can_extend_character_limit),
+    maxCreditLimitExtension:
+      row.max_credit_limit_extension === "unlimited"
+        ? "unlimited"
+        : counter(row.max_credit_limit_extension),
+    canExtendVoiceLimit: capability(row.can_extend_voice_limit),
+  };
 }
 
 function summarize(value: unknown): ElevenLabsVoiceSummary | null {
@@ -267,6 +363,39 @@ export function createElevenLabsVoiceClient(input: {
   }
 
   return {
+    /**
+     * Read one atomic account response for provider workspace binding and
+     * capabilities. Discard user identifiers, names, key previews and billing
+     * details. A successful response does not authorize any tenant's voice.
+     */
+    async getAccountCapabilities(options?: RequestOptions): Promise<ElevenLabsAccountCapabilities> {
+      return request(
+        "account",
+        "/v1/user",
+        { method: "GET" },
+        async (response, signal) => {
+          const data = await json(response, signal);
+          const workspaceId = voiceId(data.workspace_id);
+          if (!workspaceId) throw new Error("invalid workspace identity");
+          return { workspaceId, subscription: subscriptionCapabilities(data.subscription) };
+        },
+        options,
+      );
+    },
+
+    /** Operator snapshot only: this endpoint alone cannot establish asset workspace ownership. */
+    async getSubscriptionCapabilities(
+      options?: RequestOptions,
+    ): Promise<ElevenLabsSubscriptionCapabilities> {
+      return request(
+        "subscription",
+        "/v1/user/subscription",
+        { method: "GET" },
+        async (response, signal) => subscriptionCapabilities(await json(response, signal)),
+        options,
+      );
+    },
+
     async createInstantClone(clone: CloneInput, options?: RequestOptions) {
       if (!record(clone)) throw new ElevenLabsVoiceError("INVALID_INPUT", "create", false);
       const name = text(clone.name, 80);

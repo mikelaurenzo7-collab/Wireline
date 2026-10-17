@@ -107,6 +107,39 @@ by this pilot.
 
 ## Promotion checklist
 
+### Independent ElevenLabs lane
+
+The ElevenLabs transport also has bounded account/subscription readers and a
+separate recording preparation contract. It does not use or relax the Nano
+registry's pinned engine, two-megabyte limit or consent version. Preparation
+accepts 10 to 120 seconds of mono PCM16 WAV, up to 6,000,000 bytes, validates the
+selected recording fingerprint and strips arbitrary RIFF metadata from the
+upload copy. Signal diagnostics flag amplitude problems; they do not identify
+the speaker, verify speech or certify voice similarity. Longer recordings will
+need a bounded multipart route rather than increasing the global JSON limit.
+
+The operator-only `GET /api/voice/elevenlabs/status` checks configuration without
+provider I/O while `BOTBOUND_ELEVENLABS_VOICE_ENABLED` is absent or false. An
+explicitly enabled check can read a bounded account snapshot. Successful account
+access does not establish mutation scopes, funded usage or commercial rights;
+enrollment and live-call readiness remain false. The optional expected workspace
+must match the documented API-key workspace before any future asset binding.
+Never adopt a provider voice by its display name.
+
+On October 17, the founder's Starter dashboard showed 30,000 credits with none
+used. The approved restricted pilot key has a 5,000-credit refresh-period cap and
+was staged on Render's API service with the integration disabled. No automatic
+top-up, additional subscription or Render compute upgrade was configured.
+
+Before adding ElevenLabs enrollment, implement a separate durable tenant asset
+and operation ledger, explicit provider-destination permission, retention and
+provider deletion receipts. Record an operation before sending paid or mutating
+work; preserve unknown outcomes for reconciliation instead of blindly retrying.
+The current native panel is the independent in-house preview pilot, not an
+ElevenLabs upload or a cloned-call setting.
+
+### Release and enrollment gates
+
 1. Keep `VOICE_CLONE_PILOT_ENABLED=false` while prerequisites are unresolved.
 2. Run the exact-source release suite and independent application/schema review.
    Follow `DATABASE_OPERATIONS.md`; run `npm run db:health` in the authorized

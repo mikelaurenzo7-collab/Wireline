@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 412
-**Protected:** 335
+**Routes scanned:** 413
+**Protected:** 336
 **Public (allowlisted):** 77
 **Violations:** 0
 
@@ -242,6 +242,7 @@
 | dashboard-routes.ts | GET | `/api/dashboard/stats` | inline | — | — | Protected |
 | dashboard-routes.ts | GET | `/api/export/:type.csv` | inline | — | — | Protected |
 | dashboard-routes.ts | GET | `/api/nav-counts` | inline | — | — | Protected |
+| elevenlabs-voice-routes.ts | GET | `/api/voice/elevenlabs/status` | inline | platform_admin | — | Protected |
 | email-outcome-routes.ts | PATCH | `/api/emails/threads/:id/outcome` | inline | — | — | Protected |
 | email-outcome-routes.ts | GET | `/api/emails/threads/:id/outcome` | inline | — | — | Protected |
 | email-routes.ts | GET | `/api/emails/accounts` | inline | — | — | Protected |
