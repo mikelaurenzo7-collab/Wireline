@@ -55,10 +55,12 @@ describe("retired private-voice provider contract", () => {
     expect(picker).toContain("OPENAI_REALTIME_VOICES");
   });
 
-  it("states the no-cloning product truth in current legal disclosures", () => {
-    expect(terms).toContain("does not accept voice-cloning samples");
+  it("separates existing live-call voices from explicitly consented private previews", () => {
+    expect(terms).toContain("does not enable it");
+    expect(terms).toContain("separate, explicit permission");
     expect(terms).toContain("built-in artificial voices from its managed OpenAI voice roster");
-    expect(privacy).toContain("BotBound does not accept voice-cloning uploads");
+    expect(privacy).toContain("Private voice previews require separate speaker permission");
+    expect(privacy).toContain("Delete the saved voice to revoke future use");
     expect(`${terms}\n${privacy}`).not.toMatch(/ElevenLabs receives|source sample.*provider/i);
   });
 });

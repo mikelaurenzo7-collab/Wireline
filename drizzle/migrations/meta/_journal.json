@@ -540,6 +540,13 @@
       "when": 1791732958950,
       "tag": "0178_studio_proposal_review_state",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1792249828808,
+      "tag": "0179_inhouse_voice_assets",
+      "breakpoints": true
     }
   ]
 }

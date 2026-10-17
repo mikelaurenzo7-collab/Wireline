@@ -101,7 +101,7 @@ export default function PrivacyPolicyPage() {
           {[
             "We do not sell personal information.",
             "Optional advertising measurement stays off unless you allow it.",
-            "Voice settings use OpenAI's built-in voice roster; BotBound does not accept voice-cloning uploads.",
+            "Live calls use OpenAI's built-in voices. Private voice previews require separate speaker permission.",
           ].map((item) => (
             <div
               key={item}
@@ -185,6 +185,17 @@ export default function PrivacyPolicyPage() {
             <p>
               <strong>Bot configuration</strong>: Names, personas, directives, knowledge entries,
               connected tools, and voice settings you create for your Bots.
+            </p>
+            <p>
+              <strong>Optional private voice previews</strong>: In the private operator pilot, you
+              may explicitly submit a recording of your own voice. We encrypt the saved recording
+              and retain its permission, review, and processing metadata. A separate speech service
+              processes the recording to generate a private preview; it does not replace OpenAI's
+              live-call voice. Delete the saved voice to revoke future use and remove its active
+              encrypted recording. Generated previews are temporary and are not saved in the voice
+              library. Backup copies follow our account-data retention practices. We do not use
+              these recordings to identify or authenticate people, train a shared model, or create a
+              public voice library.
             </p>
             <p>
               <strong>Conversation data</strong>: Phone numbers, message addresses, recordings,

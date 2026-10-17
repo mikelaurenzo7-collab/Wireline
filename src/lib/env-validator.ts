@@ -214,6 +214,53 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     formatHint: `USD amount >= ${OPENAI_REALTIME_SESSION_MINIMUM_RESERVE_USD.toFixed(2)}`,
   },
   {
+    name: "VOICE_CLONE_PILOT_ENABLED",
+    group: "ai",
+    required: false,
+    description:
+      "Private platform-admin-only voice reference previews; never enables phone cloning",
+    validate: (value) => value === "true" || value === "false",
+    formatHint: "true or false",
+  },
+  {
+    name: "VOICE_ENGINE_URL",
+    group: "ai",
+    required: false,
+    description: "Dedicated private speech worker origin; HTTPS only",
+    validate: (value) => {
+      try {
+        const url = new URL(value);
+        return (
+          url.protocol === "https:" &&
+          !url.username &&
+          !url.password &&
+          !url.search &&
+          !url.hash &&
+          url.pathname === "/"
+        );
+      } catch {
+        return false;
+      }
+    },
+    formatHint: "https://<private speech worker>",
+  },
+  {
+    name: "VOICE_ENGINE_SERVICE_TOKEN",
+    group: "ai",
+    required: false,
+    description: "Dedicated speech-worker bearer token; not an OpenAI or other vendor key",
+    validate: (value) => /^[!-~]{32,512}$/.test(value),
+    formatHint: "32-512 printable ASCII characters without spaces",
+  },
+  {
+    name: "VOICE_ENGINE_COMPUTE_USD_PER_MINUTE",
+    group: "ai",
+    required: false,
+    description: "Positive compute tariff for conservative private-preview allowance reservation",
+    validate: (value) => Number.isFinite(Number(value)) && Number(value) > 0,
+    formatHint: "positive USD amount per compute minute",
+  },
+  {
     name: "GEMINI_API_KEY",
     group: "ai",
     required: false,

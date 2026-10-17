@@ -33,6 +33,8 @@ type AccountDeletionTarget = {
  *   outlive the deleted tenant until carrier teardown completes)
  */
 export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
+  // Private reference audio is encrypted and must disappear with its tenant.
+  { table: "wireline_voice_assets", userColumns: ["user_id"] },
   { table: "wireline_audit_log", userColumns: ["user_id"] },
   { table: "wireline_signal_presence", userColumns: ["user_id"] },
   { table: "wireline_follow_up_tasks", userColumns: ["user_id"] },

@@ -1,6 +1,6 @@
 /**
  * Canonical application schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0178_studio_proposal_review_state.sql`.
+ * Latest committed migration: `drizzle/migrations/0179_inhouse_voice_assets.sql`.
  * Runtime voice defaults remain defined by
  * `drizzle/migrations/0168_openai_realtime_voice_runtime.sql`; migrations 0169
  * and 0172 remove empty retired provider ledgers.
@@ -22,6 +22,7 @@ export * from "./schema-base";
 export * from "./voice-usage-schema";
 export * from "./resend-webhook-schema";
 export * from "./computer-task-schema";
+export * from "./voice-asset-schema";
 
 import {
   bigint,

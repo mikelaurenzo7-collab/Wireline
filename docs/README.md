@@ -26,6 +26,8 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 
 ## Product interface rules
 
+The optional voice-reference prototype is governed by [Voice cloning private pilot](./VOICE_CLONING_PILOT.md). It does not replace the ten built-in OpenAI voices or enable cloned live calls.
+
 - Public pages explain. Authenticated pages execute.
 - Create stays short; Training owns detailed setup.
 - Connections owns numbers, integrations, routing, connected tools, approvals, billing, and live launch controls.

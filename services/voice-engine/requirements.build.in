@@ -1,0 +1,4 @@
+# Fixed build tools for trusted source packages and pure-Python dependency sdists.
+setuptools==84.0.0
+wheel==0.48.0
+uv_build==0.12.7

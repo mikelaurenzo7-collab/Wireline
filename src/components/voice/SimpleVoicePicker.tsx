@@ -2,10 +2,12 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, Loader2, Volume2 } from "lucide-react";
 
 import { authFetch } from "../../lib/api";
+import { useAuth } from "../../contexts/AuthContext";
 import type { BotMarkKey } from "../../lib/bot-mark";
 import { OPENAI_REALTIME_VOICES, type VoiceOption } from "../../lib/voice-catalog";
 import OpenAILiveVoiceSandbox from "../OpenAILiveVoiceSandbox";
 import { StatusNotice } from "../molecules";
+import VoiceClonePanel from "./VoiceClonePanel";
 
 type SimpleVoicePickerProps = {
   agentId: string;
@@ -23,6 +25,8 @@ type AgentVoiceResponse = {
 };
 
 export default function SimpleVoicePicker({ agentId, agentName, markKey }: SimpleVoicePickerProps) {
+  const { user } = useAuth();
+  const ownerId = user?.id ?? null;
   const includedVoices = useMemo(() => {
     return [...OPENAI_REALTIME_VOICES];
   }, []);
@@ -35,12 +39,14 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
   const [previewOpen, setPreviewOpen] = useState(false);
   const [choicesOpen, setChoicesOpen] = useState(false);
   const activeAgentIdRef = useRef(agentId);
+  const activeOwnerIdRef = useRef(ownerId);
   const saveOperationRef = useRef(0);
 
   useLayoutEffect(() => {
     activeAgentIdRef.current = agentId;
+    activeOwnerIdRef.current = ownerId;
     saveOperationRef.current += 1;
-  }, [agentId]);
+  }, [agentId, ownerId]);
 
   useEffect(() => {
     setSavingVoiceId(null);
@@ -48,7 +54,7 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
     setSelectedProvider(null);
     setNotice(null);
     setChoicesOpen(false);
-    if (!agentId) {
+    if (!agentId || !ownerId) {
       setLoading(false);
       return;
     }
@@ -93,14 +99,17 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
     return () => {
       cancelled = true;
     };
-  }, [agentId]);
+  }, [agentId, ownerId]);
 
   async function selectVoice(voice: VoiceOption) {
-    if (!agentId || savingVoiceId) return;
+    if (!agentId || !ownerId || savingVoiceId) return;
     const requestedAgentId = agentId;
+    const requestedOwnerId = ownerId;
     const saveOperation = ++saveOperationRef.current;
     const isCurrentSave = () =>
-      activeAgentIdRef.current === requestedAgentId && saveOperationRef.current === saveOperation;
+      activeAgentIdRef.current === requestedAgentId &&
+      activeOwnerIdRef.current === requestedOwnerId &&
+      saveOperationRef.current === saveOperation;
     setSavingVoiceId(voice.id);
     setNotice(null);
     setError(null);
@@ -279,6 +288,14 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
           agentId={agentId}
           agentName={agentName}
           markKey={markKey}
+        />
+      ) : null}
+      {ownerId ? (
+        <VoiceClonePanel
+          key={`${ownerId}:${agentId}`}
+          ownerId={ownerId}
+          agentId={agentId}
+          agentName={agentName}
         />
       ) : null}
     </div>

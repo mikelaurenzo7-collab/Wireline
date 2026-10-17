@@ -9,6 +9,7 @@ const h = vi.hoisted(() => ({
   cursor: 0,
   effects: [] as Array<() => void>,
   fetch: vi.fn(),
+  ownerId: "owner-a",
 }));
 
 vi.mock("react", async (original) => {
@@ -48,10 +49,18 @@ vi.mock("react", async (original) => {
   };
 });
 vi.mock("../src/lib/api", () => ({ authFetch: (...args: unknown[]) => h.fetch(...args) }));
+vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: h.ownerId } }) }));
+vi.mock("../src/components/voice/VoiceClonePanel", () => ({ default: "voice-clone-panel" }));
 vi.mock("../src/components/OpenAILiveVoiceSandbox", () => ({ default: "voice-sandbox" }));
 vi.mock("../src/components/molecules", () => ({ StatusNotice: "notice" }));
 
-type Props = { children?: ReactNode; markKey?: string; disabled?: boolean; onClick?: () => void };
+type Props = {
+  children?: ReactNode;
+  markKey?: string;
+  disabled?: boolean;
+  onClick?: () => void;
+  "aria-pressed"?: boolean;
+};
 type Element = ReactElement<Props>;
 function elements(node: ReactNode): Element[] {
   if (Array.isArray(node)) return node.flatMap(elements);
@@ -73,10 +82,54 @@ beforeEach(() => {
   h.slots = [];
   h.cursor = 0;
   h.effects = [];
+  h.ownerId = "owner-a";
   h.fetch.mockReset().mockResolvedValue({
     ok: true,
     json: async () => ({ voice: { voiceId: "marin", provider: "openai" } }),
   });
+});
+
+it("ignores a late saved voice after the signed-in account changes", async () => {
+  render("spark-rose");
+  await vi.waitFor(() =>
+    expect(
+      render("spark-rose").find((node) => node.type === "button" && text(node).startsWith("Marin"))
+        ?.props["aria-pressed"],
+    ).toBe(true),
+  );
+  let finishSave!: (value: unknown) => void;
+  h.fetch.mockReturnValueOnce(
+    new Promise((resolve) => {
+      finishSave = resolve;
+    }),
+  );
+  render("spark-rose").find((node) => node.type === "button" && text(node).startsWith("Cedar"))!
+    .props.onClick!();
+  h.ownerId = "owner-b";
+  h.fetch.mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({ voice: { voiceId: "echo", provider: "openai" } }),
+  });
+  render("spark-rose");
+  await vi.waitFor(() =>
+    expect(
+      render("spark-rose").find((node) => node.type === "button" && text(node).startsWith("Echo"))
+        ?.props["aria-pressed"],
+    ).toBe(true),
+  );
+  finishSave({ ok: true, json: async () => ({ voice: { voiceId: "cedar", provider: "openai" } }) });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const current = render("spark-rose");
+  expect(
+    current.find((node) => node.type === "button" && text(node).startsWith("Echo"))?.props[
+      "aria-pressed"
+    ],
+  ).toBe(true);
+  expect(
+    current.find((node) => node.type === "button" && text(node).startsWith("Cedar"))?.props[
+      "aria-pressed"
+    ],
+  ).toBe(false);
 });
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 
