@@ -70,10 +70,14 @@ describe("post-call follow-up drafts", () => {
   it("queues follow-up extraction once, before scoring, and retries a failed enqueue", () => {
     const worker = read("src/lib/job-worker-base.ts");
     const enrichment = worker.slice(worker.indexOf('if (job.type === "post_call_enrichment")'));
-    // Before any scoring side effect, so a retry has nothing to repeat.
+    // The independent draft survives an unavailable scoring provider, and a
+    // retry finds the existing extraction instead of drafting twice.
     expect(enrichment.indexOf("await enqueueActionExtractionOnce(job, p);")).toBeGreaterThan(-1);
     expect(enrichment.indexOf("await enqueueActionExtractionOnce(job, p);")).toBeLessThan(
-      enrichment.indexOf("claudeBrain.withAuditCapture("),
+      enrichment.indexOf("analysisOptions.model && !process.env.OPENAI_API_KEY?.trim()"),
+    );
+    expect(enrichment.indexOf("await enqueueActionExtractionOnce(job, p);")).toBeLessThan(
+      enrichment.indexOf("runInAuditContext(auditContext"),
     );
     const helper = worker.slice(
       worker.indexOf("async function enqueueActionExtractionOnce("),
@@ -88,5 +92,28 @@ describe("post-call follow-up drafts", () => {
     expect(helper).toContain(
       "if (!queued.ok) throw new Error(`Failed to enqueue V2A extraction: ${queued.error}`);",
     );
+  });
+
+  it("uses the managed low-cost OpenAI model for starter enrichment without fabricated fallback scores", () => {
+    const worker = read("src/lib/job-worker-base.ts");
+    const enrichment = worker.slice(
+      worker.indexOf('if (job.type === "post_call_enrichment")'),
+      worker.indexOf('if (job.type === "v2a_action_extraction")'),
+    );
+    expect(enrichment).toContain("postCallAnalysisOptions({");
+    expect(enrichment).toContain("if (!transcript?.trim()) return;");
+    expect(enrichment).toContain(
+      'throw new Error("Structured AI runtime unavailable for post-call enrichment.")',
+    );
+    expect(enrichment).toContain("analysisOptions.model && !process.env.OPENAI_API_KEY?.trim()");
+    expect(enrichment).toContain("claudeBrain.postCallAnalysis(");
+    expect(enrichment).toContain("analysisOptions,");
+    expect(enrichment).not.toContain("geminiBrain.postCallAnalysis");
+    expect(enrichment).toContain("const auditContext = createAuditContext();");
+    expect(enrichment).toContain("if (auditContext.records.length) {");
+    expect(enrichment).toContain("await persistRuntimeAuditRecords({");
+    const analysis = read("src/lib/ai-brains.ts");
+    expect(analysis).toContain("maxTokens: options.maxTokens ?? 4096");
+    expect(analysis).toContain("...(options.model ? { model: options.model } : {})");
   });
 });

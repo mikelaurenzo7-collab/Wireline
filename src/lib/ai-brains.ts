@@ -230,7 +230,10 @@ export interface PostCallAnalysisResult {
   coaching_note: string;
 }
 
-export async function postCallAnalysis(input: PostCallInput): Promise<PostCallAnalysisResult> {
+export async function postCallAnalysis(
+  input: PostCallInput,
+  options: { model?: string; maxTokens?: number } = {},
+): Promise<PostCallAnalysisResult> {
   let roleGuidance = "";
   if (input.role) {
     roleGuidance = ROLE_ANALYSIS_GUIDANCE[input.role] ?? "";
@@ -264,7 +267,8 @@ ${input.transcript || "(none)"}
     tool: POST_CALL_ANALYSIS_TOOL,
     deepThink: true,
     cacheSystem: true,
-    maxTokens: 4096,
+    maxTokens: options.maxTokens ?? 4096,
+    ...(options.model ? { model: options.model } : {}),
     complexity: "complex",
   });
 }

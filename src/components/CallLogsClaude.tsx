@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import { displayCallReviewNote, isLegacyCallReviewFailure } from "../lib/call-review-note";
 import { formatPhone } from "../lib/safe-number";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { Button, EmptyState, Skeleton } from "./atoms";
@@ -208,6 +209,8 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
     () => calls.find((call) => call.id === selectedId) || null,
     [calls, selectedId],
   );
+  const reviewNote = displayCallReviewNote(selected?.coaching_note);
+  const analysisFailed = isLegacyCallReviewFailure(selected?.coaching_note);
   const visibleCalls = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return calls;
@@ -217,7 +220,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
         call.agent_name,
         call.summary,
         call.outcome_tag,
-        call.intent_label,
+        isLegacyCallReviewFailure(call.coaching_note) ? null : call.intent_label,
         call.direction,
       ]
         .filter(Boolean)
@@ -386,10 +389,12 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             ["Outcome", humanize(selected.outcome_tag)],
-            ["Intent", humanize(selected.intent_label, "Unclassified")],
+            ["Intent", humanize(analysisFailed ? null : selected.intent_label, "Unclassified")],
             [
               "Lead",
-              typeof selected.lead_score === "number" ? String(selected.lead_score) : "Not scored",
+              !analysisFailed && typeof selected.lead_score === "number"
+                ? String(selected.lead_score)
+                : "Not scored",
             ],
             [
               "Quality",
@@ -407,14 +412,12 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
           ))}
         </div>
 
-        {selected.coaching_note ? (
+        {reviewNote ? (
           <section>
             <h4 className="text-xs font-semibold tracking-[0.08em] text-muted-foreground">
-              Follow-Up
+              Call Review
             </h4>
-            <p className="wl-preserve-case mt-2 text-sm leading-6 text-foreground">
-              {selected.coaching_note}
-            </p>
+            <p className="wl-preserve-case mt-2 text-sm leading-6 text-foreground">{reviewNote}</p>
           </section>
         ) : null}
 

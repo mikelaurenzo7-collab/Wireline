@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- aggregate stats and dashboard rows draw from heterogeneous queries. */
 import { Router, Response } from "express";
 import { AppError } from "../lib/api-error";
+import { LEGACY_CALL_REVIEW_FAILURE_NOTES } from "../lib/call-review-note";
 
 import { drizzle, serialQueryBatch } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -18,6 +19,10 @@ import type { AuthenticatedRequest } from "../types/auth";
 const router = Router();
 
 const DEFAULT_AGENT_ROLE = "customer_service";
+const reviewableLeadScore = sql<number | null>`CASE
+  WHEN btrim(coalesce(${schema.callLogs.coachingNote}, '')) IN (${LEGACY_CALL_REVIEW_FAILURE_NOTES[0]}, ${LEGACY_CALL_REVIEW_FAILURE_NOTES[1]}) THEN NULL
+  ELSE coalesce(${schema.callLogs.leadScore}, 0)
+END`;
 
 /**
  * Apply a provider-spend guard only to the deep `?refresh=1` pass.
@@ -207,10 +212,9 @@ router.get(
           weekday: sql<number>`extract(dow from ${schema.callLogs.createdAt})::int`.mapWith(Number),
           hour: sql<number>`extract(hour from ${schema.callLogs.createdAt})::int`.mapWith(Number),
           count: count(),
-          avgScore:
-            sql<number>`coalesce(round(avg(coalesce(${schema.callLogs.leadScore}, 0))), 0)::int`.mapWith(
-              Number,
-            ),
+          avgScore: sql<number>`coalesce(round(avg(${reviewableLeadScore})), 0)::int`.mapWith(
+            Number,
+          ),
         })
         .from(schema.callLogs)
         .where(and(eq(schema.callLogs.userId, req.user.id), gte(schema.callLogs.createdAt, since)))
@@ -295,10 +299,9 @@ router.get(
               cost: sql<string>`coalesce(sum(coalesce(${schema.callLogs.cost}, 0)), 0)`.mapWith(
                 String,
               ),
-              avgScore:
-                sql<number>`coalesce(round(avg(coalesce(${schema.callLogs.leadScore}, 0))), 0)::int`.mapWith(
-                  Number,
-                ),
+              avgScore: sql<number>`coalesce(round(avg(${reviewableLeadScore})), 0)::int`.mapWith(
+                Number,
+              ),
             })
             .from(schema.callLogs)
             .where(callWhere)
@@ -470,6 +473,9 @@ router.get(
             eq(schema.callLogs.userId, req.user.id),
             // An agent-only greeting is not evidence of caller intent or qualification.
             sql`${schema.callLogs.transcript} ~ ${"(^|\n)Caller: [^[:space:]]"}`,
+            // Old provider-error fallbacks stored a synthetic zero lead score.
+            // Keep those calls out of failure-mode diagnosis without rewriting evidence.
+            sql`btrim(coalesce(${schema.callLogs.coachingNote}, '')) NOT IN (${LEGACY_CALL_REVIEW_FAILURE_NOTES[0]}, ${LEGACY_CALL_REVIEW_FAILURE_NOTES[1]})`,
             or(
               lt(schema.callLogs.leadScore, 30),
               eq(schema.callLogs.intentLabel, "low"),

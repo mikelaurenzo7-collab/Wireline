@@ -8,6 +8,7 @@ import { eq, and, sql, desc, lt, gte, inArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { dashboardRateLimit } from "../middleware/api-rate-limits";
 import { computeDashboardStats } from "../lib/dashboard-stats";
+import { presentCallAnalysis } from "../lib/call-review-note";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { getCachedDashboard, setCachedDashboard } from "../lib/dashboard-cache";
 import { getCachedNavCounts, setCachedNavCounts } from "../lib/nav-counts-cache";
@@ -159,7 +160,7 @@ router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res
     // metadata, recording URL — everything beyond the few fields that
     // happened to match by coincidence (id, summary, transcript, direction).
     const safeCalls = (calls || []).map((call) => ({
-      ...call,
+      ...presentCallAnalysis(call),
       recordingUrl: call.recordingUrl ? `/api/calls/${String(call.id)}/recording` : null,
     }));
 
@@ -287,11 +288,12 @@ router.get(
 
       const totalAppointments = Number(apptCountResult[0]?.count ?? 0);
       const totalLeads = Number(leadsCountResult[0]?.count ?? 0);
+      const presentedLogs = logsResult.map(presentCallAnalysis);
 
       const stats = computeDashboardStats({
         totalAppointments,
         totalLeads,
-        logs: logsResult.map((l) => ({
+        logs: presentedLogs.map((l) => ({
           ...l,
           customer_number: l.customerNumber,
           duration_seconds: l.durationSeconds,
@@ -318,7 +320,7 @@ router.get(
       const responseData = {
         ...stats,
         agents: agentsResult || [],
-        recentLogs: (logsResult || []).slice(0, 100).map((l) => ({
+        recentLogs: presentedLogs.slice(0, 100).map((l) => ({
           ...l,
           customer_number: l.customerNumber,
           duration_seconds: l.durationSeconds,

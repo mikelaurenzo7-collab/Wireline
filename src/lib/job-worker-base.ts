@@ -3,7 +3,8 @@ import { log, quotaTracker, drizzle, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, lt } from "drizzle-orm";
 import * as claudeBrain from "./ai-brains";
-import * as geminiBrain from "./gemini-brain";
+import { createAuditContext, runInAuditContext } from "./ai-audit";
+import { postCallAnalysisOptions } from "./post-call-analysis-policy";
 import { getErrorMessage } from "./server-utils";
 import { startWorker, type JobRow, enqueue, writeTransactionConfig } from "./job-queue";
 import { executeAction } from "./action-engine";
@@ -124,51 +125,61 @@ export async function handleJob(job: JobRow): Promise<void> {
       useFlash?: boolean;
     };
 
-    // Check user tier for model selection
+    // Starter enrichment uses the catalogued low-cost OpenAI model. Other
+    // tiers keep the managed structured default and its existing accounting.
     const [settings] = await drizzle
       .select({ aiTier: schema.settings.aiTier, crmType: schema.settings.crmType })
       .from(schema.settings)
       .where(eq(schema.settings.userId, p.userId))
       .limit(1);
-    const useFlash = p.useFlash || settings?.aiTier === "starter";
-    if (!useFlash && (!claudeBrain.isBrainAvailable() || !p.transcript)) return;
+    const analysisOptions = postCallAnalysisOptions({
+      aiTier: settings?.aiTier,
+      legacyUseFlash: p.useFlash,
+    });
+    const transcript = p.transcript;
+    if (!transcript?.trim()) return;
 
-    // Queue the follow-up drafts before any scoring side effect, once per
-    // enrichment job. A failed enqueue retries this job before anything has
-    // been written, and a retry after a later failure finds the extraction it
-    // already queued instead of drafting the follow-ups twice.
+    // Action extraction is independent of the score. Queue its durable draft
+    // before checking analysis availability so an outage cannot lose a promise.
     await enqueueActionExtractionOnce(job, p);
 
-    let result;
-    let records: any[] = [];
+    if (analysisOptions.model && !process.env.OPENAI_API_KEY?.trim()) {
+      throw new Error("OpenAI runtime unavailable for starter post-call enrichment.");
+    }
+    if (!claudeBrain.isBrainAvailable()) {
+      throw new Error("Structured AI runtime unavailable for post-call enrichment.");
+    }
 
-    if (useFlash) {
-      log.info("Using Gemini Flash for post-call enrichment", {
-        userId: p.userId,
-        callId: p.callId,
-      });
-      const capture = await claudeBrain.withAuditCapture(() =>
-        geminiBrain.postCallAnalysis({
-          transcript: p.transcript!,
-          summary: p.summary || "",
-        }),
+    // A provider may charge for a response that fails structured parsing.
+    // Keep its usage context even when analysis or a later database write fails.
+    const auditContext = createAuditContext();
+    let result: Awaited<ReturnType<typeof claudeBrain.postCallAnalysis>>;
+    try {
+      result = await runInAuditContext(auditContext, () =>
+        claudeBrain.postCallAnalysis(
+          {
+            agentName: p.agentName || "BotBound Bot",
+            archetype: p.archetype || "Receptionist",
+            role: p.role,
+            customerNumber: p.customerNumber,
+            durationSeconds: p.durationSeconds ?? 0,
+            summary: p.summary || "",
+            transcript,
+          },
+          analysisOptions,
+        ),
       );
-      result = capture.result;
-      records = capture.records;
-    } else {
-      const capture = await claudeBrain.withAuditCapture(() =>
-        claudeBrain.postCallAnalysis({
-          agentName: p.agentName || "BotBound Bot",
-          archetype: p.archetype || "Receptionist",
-          role: p.role,
-          customerNumber: p.customerNumber,
-          durationSeconds: p.durationSeconds ?? 0,
-          summary: p.summary || "",
-          transcript: p.transcript!,
-        }),
-      );
-      result = capture.result;
-      records = capture.records;
+    } finally {
+      if (auditContext.records.length) {
+        await persistRuntimeAuditRecords({
+          userId: p.userId,
+          action: "jobs.post_call_enrichment",
+          records: auditContext.records,
+          requestMeta: { vapi_call_id: p.callId, agent_id: p.agentId },
+        }).catch((e: unknown) =>
+          log.warn("post_call audit persist failed", { error: getErrorMessage(e) }),
+        );
+      }
     }
 
     await drizzle
@@ -216,16 +227,7 @@ export async function handleJob(job: JobRow): Promise<void> {
         });
     }
 
-    if (records.length) {
-      await persistRuntimeAuditRecords({
-        userId: p.userId,
-        action: "jobs.post_call_enrichment",
-        records,
-        requestMeta: { vapi_call_id: p.callId, agent_id: p.agentId },
-      }).catch((e: unknown) =>
-        log.warn("post_call audit persist failed", { error: getErrorMessage(e) }),
-      );
-    } else {
+    if (!auditContext.records.length) {
       const tokenCount = Math.ceil(((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4);
       await quotaTracker
         .checkAndIncrement(p.userId, "claude_tokens_daily", Math.max(1, tokenCount))

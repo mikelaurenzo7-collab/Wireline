@@ -2,6 +2,7 @@ import { Router, type Response } from "express";
 import { and, desc, eq, sql } from "drizzle-orm";
 
 import { AppError } from "../lib/api-error";
+import { presentCallAnalysis } from "../lib/call-review-note";
 import { authenticateUser } from "../middleware/auth";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
@@ -71,7 +72,7 @@ router.get(
         .offset(offset);
 
       const safeCalls = (calls || []).map((call) => ({
-        ...call,
+        ...presentCallAnalysis(call),
         agentName: agent.name,
         recordingUrl: call.recordingUrl ? `/api/calls/${String(call.id)}/recording` : null,
       }));

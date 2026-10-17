@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { ArrowRight, ClipboardList } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import { displayCallReviewNote, isLegacyCallReviewFailure } from "../lib/call-review-note";
 import { emitProductEventOnce } from "../lib/product-event-client";
 import { Button, EmptyState } from "./atoms";
 import { CardRowSkeleton } from "./atoms/skeleton-presets";
@@ -51,6 +52,8 @@ function newestTask(tasks: TaskLite[]): TaskLite | undefined {
 }
 
 function normalizeCall(row: Record<string, unknown>): OutcomeLedgerRow {
+  const rawReviewNote = (row.coaching_note ?? row.coachingNote ?? null) as string | null;
+  const analysisFailed = isLegacyCallReviewFailure(rawReviewNote);
   return {
     id: String(row.id ?? ""),
     agent_id: String(row.agent_id ?? row.agentId ?? ""),
@@ -61,11 +64,15 @@ function normalizeCall(row: Record<string, unknown>): OutcomeLedgerRow {
     summary: (row.summary as string) ?? null,
     transcript: (row.transcript as string) ?? null,
     recording_url: (row.recording_url ?? row.recordingUrl ?? null) as string | null,
-    intent_label: (row.intent_label ?? row.intentLabel ?? null) as CallLog["intent_label"],
-    sentiment: (row.sentiment as CallLog["sentiment"]) ?? null,
-    coaching_note: (row.coaching_note ?? row.coachingNote ?? null) as string | null,
+    intent_label: analysisFailed
+      ? null
+      : ((row.intent_label ?? row.intentLabel ?? null) as CallLog["intent_label"]),
+    sentiment: analysisFailed ? null : ((row.sentiment as CallLog["sentiment"]) ?? null),
+    coaching_note: displayCallReviewNote(rawReviewNote),
     outcome_tag: (row.outcome_tag ?? row.outcomeTag ?? null) as string | null,
-    lead_score: (row.lead_score ?? row.leadScore ?? null) as number | null,
+    lead_score: analysisFailed
+      ? null
+      : ((row.lead_score ?? row.leadScore ?? null) as number | null),
     campaign_source: (row.campaign_source ?? row.campaignSource ?? null) as string | null,
     created_at: String(row.created_at ?? row.createdAt ?? ""),
     owner_label: (row.agent_name ?? row.agentName ?? null) as string | null,
