@@ -334,6 +334,21 @@ beforeEach(() => {
   h.callReason = "provider-heartbeat-timeout";
 });
 
+describe("native SIP opening delivery", () => {
+  it("keeps the exact disclosure and greeting with the session's natural delivery", async () => {
+    const session = start();
+    await vi.advanceTimersByTimeAsync(0);
+    const opening = h.sent.find((event) => event.type === "response.create")?.response;
+    expect(opening?.instructions).toContain("warm, natural speaking style");
+    expect(opening?.instructions).toContain(
+      "Say exactly these words and nothing else: I am an AI assistant. How can I help?",
+    );
+    expect(opening?.output_modalities).toEqual(["audio"]);
+    h.sockets[0].close();
+    await session;
+  });
+});
+
 describe("native SIP semantic tool accounting", () => {
   it.each([
     [

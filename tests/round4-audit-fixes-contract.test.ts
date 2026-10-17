@@ -91,7 +91,7 @@ describe("round-4 audit fix contracts", () => {
     expect(session).toContain("recordingEnabled: false");
     expect(session).toContain("formatCallbackNumberForSpeech");
     expect(session).toContain("function buildOutboundOpening");
-    expect(session).toContain("Say exactly this and nothing else:");
+    expect(session).toContain("Say exactly these words and nothing else:");
     expect(factory).toContain("businessName: schema.settings.businessName");
     expect(session).toContain("input.businessName || runtime.agentName");
   });

@@ -45,6 +45,7 @@ import {
   type NativeInboundAdmissionMode,
 } from "./native-inbound-admission";
 import { buildOpenAIRealtimeAgentRuntime } from "./openai-phone-agent-runtime";
+import { OpenAISipTurnTiming } from "./openai-sip-turn-timing";
 import { enforceFundedCarrierCallLimit, readTerminalCarrierDuration } from "./funded-carrier-call";
 import {
   OPENAI_REALTIME_CALLS_URL,
@@ -1760,6 +1761,7 @@ async function runRealtimeSession(
   let heartbeat: ReturnType<typeof setInterval> | null = null;
   let missedPongs = 0;
   let providerHangupRequired = false;
+  const turnTiming = new OpenAISipTurnTiming();
 
   const ws = new WebSocket(buildOpenAISipRealtimeUrl(input.callId), {
     headers: { Authorization: `Bearer ${apiKey}` },
@@ -1919,6 +1921,7 @@ async function runRealtimeSession(
       toolCallsTotal += 1;
       if (call.name === "escalate_to_human") escalationAttempted = true;
 
+      const toolConfirmationStartedAt = Date.now();
       const operation = dispatchAgentToolCall(
         call.name,
         call.arguments,
@@ -1936,6 +1939,10 @@ async function runRealtimeSession(
         ),
         delay(TOOL_CONFIRM_TIMEOUT_MS).then(() => ({ kind: "timeout" as const })),
       ]);
+      turnTiming.observeToolConfirmation(
+        Date.now() - toolConfirmationStartedAt,
+        outcome.kind === "timeout",
+      );
       if (!ownsSession()) break;
 
       if (outcome.kind === "timeout") {
@@ -2085,9 +2092,10 @@ async function runRealtimeSession(
     }
   };
 
-  const handleEvent = async (event: Record<string, unknown>) => {
+  const handleEvent = async (event: Record<string, unknown>, receivedAtMs: number) => {
     if (!ownsSession()) return;
     observeUsage?.(event);
+    turnTiming.observe(event, receivedAtMs);
     const type = String(event.type || "");
     if (type === "output_audio_buffer.started") {
       sipPlaybackActive = true;
@@ -2208,7 +2216,7 @@ async function runRealtimeSession(
           sendJson(ws, {
             type: "response.create",
             response: {
-              instructions: `Say exactly this and nothing else: ${opening}`,
+              instructions: `Use the configured voice with a warm, natural speaking style. Say exactly these words and nothing else: ${opening}`,
               output_modalities: ["audio"],
             },
           });
@@ -2333,9 +2341,10 @@ async function runRealtimeSession(
       ws.on("message", (data) => {
         if (!ownsSession()) return;
         missedPongs = 0;
+        const receivedAtMs = Date.now();
         const event = safeJsonParse(data.toString());
         if (!event) return;
-        eventChain = eventChain.then(() => handleEvent(event));
+        eventChain = eventChain.then(() => handleEvent(event, receivedAtMs));
         void eventChain.catch(rejectOnce);
       });
       ws.on("error", (error) => {
@@ -2348,11 +2357,16 @@ async function runRealtimeSession(
         if (code !== 1000 && endedReason === "provider-disconnected") {
           endedReason = `provider-close-${code}`;
         }
-        log.info("OpenAI SIP WebSocket closed", {
-          callId: providerCallId(input.callId),
-          code,
-          reasonLength: reason.length,
-        });
+        const logClosed = () =>
+          log.info("OpenAI SIP WebSocket closed", {
+            callId: providerCallId(input.callId),
+            code,
+            reasonLength: reason.length,
+            ...turnTiming.summary(),
+          });
+        // Wait for already-received sideband events without adding another log
+        // line for each turn or blocking the provider-close cleanup.
+        void eventChain.then(logClosed, logClosed);
         void eventChain
           .then(async () => {
             if (code !== 1000 && ownsSession()) {

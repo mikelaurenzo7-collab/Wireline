@@ -12,15 +12,10 @@ import {
 import { cn } from "../../lib/utils";
 import type { VoiceLatencyRecentCallRow, VoiceReliabilityResponse } from "../../types/api";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
+import { callEndingLabel, recentCallIssueLabel } from "./voice-reliability-labels";
 
 function formatPct(value: number | null, fallback = "N/A"): string {
   return value == null ? fallback : `${value.toFixed(1)}%`;
-}
-
-function callEndingLabel(reason: string): string {
-  if (reason === "provider-close-1006") return "Unexpected disconnection";
-  if (reason === "pre-session-rejected") return "Could not connect";
-  return "Other call endings";
 }
 
 export default function VoiceReliabilityView({ days }: { days: number }) {
@@ -83,7 +78,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
     },
     {
       icon: PhoneOff,
-      label: "Abnormal hangups",
+      label: "Flagged abnormal hangups",
       value: formatPct(summary.hangups.abnormalRatePct, "0.0%"),
       sub: `${summary.hangups.abnormalCount} calls`,
       healthy: summary.hangups.abnormalRatePct <= 10,
@@ -276,7 +271,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
                       {call.ttftMs != null
                         ? `${call.ttftMs}ms response`
                         : "Response time unavailable"}
-                      {call.pipelineError ? " · Call setup issue" : ""}
+                      {call.pipelineError ? ` · ${recentCallIssueLabel(call)}` : ""}
                     </p>
                   </div>
                   <span className="font-mono text-[length:var(--wireline-typography-overline-size)] text-muted shrink-0">
