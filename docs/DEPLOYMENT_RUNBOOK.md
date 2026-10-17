@@ -496,4 +496,16 @@ Determine whether the incident is code, environment, schema, or provider state b
 
 For a voice incident, stop new admission to the affected worker and preserve active calls where possible. Roll web and worker back to a compatible reviewed pair; do not terminate the old worker until it drains. Inspect pending claims and durable post-call recovery before retrying uncertain provider actions. A healthy replacement does not recover the media or transcript of a crashed call.
 
+### Exhausted SIP finalization
+
+An exhausted `post_call_digest` with unfinished mandatory OpenAI SIP finalization retains its `dead` status and failure history. The queue atomically stages one deterministic `post_call_finalization_recovery` child, with at most five attempts, when either an active attempt fails or a stale final attempt is recovered. This child revalidates the tenant, parent, active attempt, call ownership and provider identity. It only retries critical termination and settlement; it does not rerun summaries, email, CSAT, artifacts or webhooks. Settling presence remains occupied until usage settlement succeeds. Do not delete that presence or reset the original job to bypass capacity.
+
+For an older dead digest, first run `npm run db:health` and inspect its exact owner, call and failure read-only. In the reviewed Render production main API shell, use the single-parent command below, replacing the UUIDs and full source SHA with verified values:
+
+```bash
+node --import tsx scripts/recover-post-call-finalization.mts --job-id PARENT_JOB_UUID --user-id OWNER_UUID --expected-source FULL_REVIEWED_SHA
+```
+
+The default is read-only structural eligibility; it does not certify call authority or invoke a provider. Append `--apply` only after reviewing that result to revalidate the live call and enqueue the bounded child. Repeating apply cannot create another child or reset an exhausted child. The command rejects other hosts, previews, branches, service roles and source mismatches. Inspect the child's persisted result and actual usage/presence settlement afterward. A dead child requires investigation of its original failure; never invent duration, write off unsettled usage or reopen a potentially live call.
+
 Prefer backward-compatible, append-only schema changes. After rollback, verify the production alias, health endpoint, served source SHA, affected route, provider behavior, and runtime-error stream. Record evidence and the forward fix in [INCIDENT_RESPONSE.md](./INCIDENT_RESPONSE.md).

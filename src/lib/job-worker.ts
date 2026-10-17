@@ -29,6 +29,8 @@ import { handleProactiveLeadEnrichmentJob } from "./proactive-lead-enrichment-jo
 import { retryPendingOrphanCarrierResources } from "./orphan-carrier-retry";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
+import { jobOwnerId } from "./job-owner";
+import { POST_CALL_FINALIZATION_RECOVERY_TYPE } from "./post-call-finalization-recovery";
 import {
   DEFAULT_MAX_ATTEMPTS,
   startWorker,
@@ -71,6 +73,7 @@ const OPENAI_REALTIME_HANGUP_LATE_WARNING_MS = 90_000;
  */
 const SELF_MANAGED_DELETION_FENCE_JOB_TYPES = new Set<JobRow["type"]>([
   "post_call_digest",
+  POST_CALL_FINALIZATION_RECOVERY_TYPE,
   "purge_deleted_account",
   "openai_realtime_hangup",
   PAID_BOT_IDENTITY_JOB_TYPE,
@@ -93,11 +96,6 @@ function maxAttemptNumber(job: JobRow): number {
   const shaped = job as unknown as { maxAttempts?: number; max_attempts?: number };
   const value = Number(shaped.maxAttempts ?? shaped.max_attempts ?? DEFAULT_MAX_ATTEMPTS);
   return Number.isFinite(value) && value > 0 ? Math.floor(value) : DEFAULT_MAX_ATTEMPTS;
-}
-
-function jobOwnerId(job: JobRow): string {
-  const shaped = job as unknown as { userId?: string; user_id?: string };
-  return String(shaped.userId || shaped.user_id || "");
 }
 
 function jobScheduledAt(job: JobRow): Date | null {
@@ -506,6 +504,11 @@ async function dispatchJobInProviderContext(job: JobRow): Promise<void> {
   if (job.type === "twilio_fallback_reconcile") {
     const { reconcileTwilioFallbackJob } = await import("./voice/twilio-fallback-recovery");
     await reconcileTwilioFallbackJob(job);
+    return;
+  }
+  if (job.type === POST_CALL_FINALIZATION_RECOVERY_TYPE) {
+    const { handlePostCallFinalizationRecoveryJob } = await import("./post-call-digest");
+    await handlePostCallFinalizationRecoveryJob(job);
     return;
   }
   if (job.type === "post_call_artifact") {

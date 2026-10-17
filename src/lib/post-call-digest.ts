@@ -39,6 +39,12 @@ import { ProviderSpendPausedError } from "./provider-spend-job-pause";
 import { liveExternalActionPolicyForUser } from "./account-environment-policy";
 import { enqueueCallEscalatedWebhookOnce } from "./webhook-helpers";
 import { detectOptOut } from "./tcpa-consent";
+import {
+  POST_CALL_FINALIZATION_RECOVERY_TYPE,
+  postCallFinalizationRecoveryEligibility,
+  recoveryParentId,
+} from "./post-call-finalization-recovery";
+import { jobOwnerId as validatedJobOwnerId } from "./job-owner";
 
 export type CallOutcomeTag =
   "booked" | "qualified" | "followup" | "dnc" | "unreachable" | "info" | "other";
@@ -210,6 +216,15 @@ export type PostCallDigestCoreResult = {
 
 type PostCallDeliveryProgress = {
   finalization?: { state: "completed" };
+  criticalRecovery?: {
+    state: "completed" | "stopped";
+    parentJobId: string;
+    callLogId?: string;
+    providerCallId?: string;
+    completedAt: string;
+    attempt: number;
+    reason?: string;
+  };
   core?: { state: "completed"; result: PostCallDigestCoreResult };
   effects?: Partial<{
     googleSheets: PostCallEffectProgress<{ written: boolean }>;
@@ -1382,42 +1397,55 @@ async function deliverPostCallCsat(
   });
 }
 
+async function runCriticalPostCallFinalization(
+  authorityJob: JobRow,
+  ctx: CallContext,
+  finalization: OpenAISipFinalizationContext,
+  assertCurrentAttempt?: () => Promise<void>,
+): Promise<CallContext> {
+  await withPostCallDeletionFence(ctx, async () => {
+    await assertCurrentAttempt?.();
+    const { recoverStaleOpenAISipCall, replayOpenAISipPostCallFinalization } =
+      await import("./voice/openai-sip-session");
+    if (!finalization.terminalStateReady) {
+      await assertCurrentAttempt?.();
+      await recoverStaleOpenAISipCall({
+        userId: ctx.userId,
+        callLogId: ctx.callLogId,
+        finalization,
+      });
+      ctx = await authoritativeCallContext(authorityJob);
+    }
+    await assertCurrentAttempt?.();
+    await replayOpenAISipPostCallFinalization({
+      userId: ctx.userId,
+      callLogId: ctx.callLogId,
+      agentId: ctx.agentId,
+      dialedNumber: ctx.dialedNumber,
+      customerNumber: ctx.customerNumber,
+      direction: ctx.direction,
+      durationSeconds: ctx.durationSeconds,
+      summary: ctx.summary,
+      transcript: ctx.transcript,
+      endedReason: ctx.endedReason,
+      pipelineError: ctx.pipelineError,
+      finalization,
+    });
+    if (
+      finalization.carrierDurationRequired ||
+      ["pre-session-recovery", "transferred"].includes(ctx.endedReason ?? "")
+    )
+      ctx = await authoritativeCallContext(authorityJob);
+  });
+  return ctx;
+}
+
 async function handleActivePostCallDigestJob(job: JobRow): Promise<void> {
   let ctx = await authoritativeCallContext(job);
   let progress = await readPostCallProgress(job, ctx.userId);
   const finalization = openAISipFinalizationFromJob(job);
   if (finalization && progress.finalization?.state !== "completed") {
-    await withPostCallDeletionFence(ctx, async () => {
-      const { recoverStaleOpenAISipCall, replayOpenAISipPostCallFinalization } =
-        await import("./voice/openai-sip-session");
-      if (!finalization.terminalStateReady) {
-        await recoverStaleOpenAISipCall({
-          userId: ctx.userId,
-          callLogId: ctx.callLogId,
-          finalization,
-        });
-        ctx = await authoritativeCallContext(job);
-      }
-      await replayOpenAISipPostCallFinalization({
-        userId: ctx.userId,
-        callLogId: ctx.callLogId,
-        agentId: ctx.agentId,
-        dialedNumber: ctx.dialedNumber,
-        customerNumber: ctx.customerNumber,
-        direction: ctx.direction,
-        durationSeconds: ctx.durationSeconds,
-        summary: ctx.summary,
-        transcript: ctx.transcript,
-        endedReason: ctx.endedReason,
-        pipelineError: ctx.pipelineError,
-        finalization,
-      });
-      if (
-        finalization.carrierDurationRequired ||
-        ["pre-session-recovery", "transferred"].includes(ctx.endedReason ?? "")
-      )
-        ctx = await authoritativeCallContext(job);
-    });
+    ctx = await runCriticalPostCallFinalization(job, ctx, finalization);
     progress = await checkpointPostCallProgress(job, ctx.userId, {
       finalization: { state: "completed" },
     });
@@ -1596,6 +1624,150 @@ async function handleActivePostCallDigestJob(job: JobRow): Promise<void> {
     email: progress.email?.state || "unknown",
     csat: progress.csat?.state || "unknown",
   });
+}
+
+/** A dead digest retains its history. This bounded child never enters optional follow-up. */
+export async function handlePostCallFinalizationRecoveryJob(job: JobRow): Promise<void> {
+  const userId = validatedJobOwnerId(job);
+  const parentJobId = recoveryParentId(job);
+  const attempt = jobAttempt(job);
+  if (!Number.isSafeInteger(attempt) || attempt < 1)
+    throw new Error("Critical recovery has no valid running attempt.");
+
+  const assertAttempt = async () => {
+    const [current] = await drizzle
+      .select()
+      .from(schema.jobs)
+      .where(
+        and(
+          eq(schema.jobs.id, job.id),
+          eq(schema.jobs.userId, userId),
+          eq(schema.jobs.type, POST_CALL_FINALIZATION_RECOVERY_TYPE),
+          eq(schema.jobs.status, "running"),
+          eq(schema.jobs.attempts, attempt),
+        ),
+      )
+      .limit(1);
+    if (
+      !current ||
+      current.status !== "running" ||
+      current.attempts !== attempt ||
+      validatedJobOwnerId(current) !== userId ||
+      recoveryParentId(current) !== parentJobId
+    )
+      throw new Error("Critical recovery lost its active worker attempt fence.");
+  };
+  await assertAttempt();
+  const [parent] = await drizzle
+    .select()
+    .from(schema.jobs)
+    .where(
+      and(
+        eq(schema.jobs.id, parentJobId),
+        eq(schema.jobs.userId, userId),
+        eq(schema.jobs.type, "post_call_digest"),
+        eq(schema.jobs.status, "dead"),
+      ),
+    )
+    .limit(1);
+  const planned = postCallFinalizationRecoveryEligibility(parent);
+  if (!planned.eligible || planned.userId !== userId || planned.parentJobId !== parentJobId)
+    throw new Error("Critical recovery has no matching unfinished dead digest.");
+  const authorityJob = parent as unknown as JobRow;
+  const assertAuthority = async () => {
+    await assertAttempt();
+    const [currentParent] = await drizzle
+      .select()
+      .from(schema.jobs)
+      .where(
+        and(
+          eq(schema.jobs.id, parentJobId),
+          eq(schema.jobs.userId, userId),
+          eq(schema.jobs.type, "post_call_digest"),
+          eq(schema.jobs.status, "dead"),
+        ),
+      )
+      .limit(1);
+    const fresh = postCallFinalizationRecoveryEligibility(currentParent);
+    if (
+      !fresh.eligible ||
+      fresh.userId !== userId ||
+      fresh.callLogId !== planned.callLogId ||
+      JSON.stringify(fresh.finalization) !== JSON.stringify(planned.finalization)
+    )
+      throw new Error("Critical recovery parent authority changed.");
+    const [call] = await drizzle
+      .select({
+        providerCallId: schema.callLogs.vapiCallId,
+        phase: schema.callLogs.openaiSipPhase,
+        owner: schema.callLogs.openaiSipOwnerToken,
+        lease: schema.callLogs.openaiSipLeaseExpiresAt,
+        endedReason: schema.callLogs.endedReason,
+      })
+      .from(schema.callLogs)
+      .where(
+        and(eq(schema.callLogs.id, BigInt(planned.callLogId)), eq(schema.callLogs.userId, userId)),
+      )
+      .limit(1);
+    if (!call || call.providerCallId !== `openai:${planned.finalization.callId}`)
+      throw new Error("Critical recovery provider identity does not match the call.");
+    if (call.phase === "terminal") {
+      if (!call.endedReason || call.owner || call.lease)
+        throw new Error("Critical recovery terminal call still has active ownership.");
+    } else {
+      // The existing stale-call path independently checks admission deadlines and
+      // authoritative carrier duration. A live lease must never be preempted here.
+      const lease = call.lease instanceof Date ? call.lease.getTime() : NaN;
+      if (
+        !["claimed", "running"].includes(call.phase ?? "") ||
+        planned.finalization.terminalStateReady ||
+        (call.lease && !Number.isFinite(lease)) ||
+        (Number.isFinite(lease) && lease > Date.now())
+      )
+        throw new Error("Critical recovery call may still have a live owner.");
+    }
+  };
+  try {
+    let ctx = await authoritativeCallContext(authorityJob);
+    const progress = await readPostCallProgress(job, userId);
+    if (
+      progress.criticalRecovery?.state === "completed" &&
+      progress.criticalRecovery.parentJobId === parentJobId &&
+      progress.criticalRecovery.callLogId === planned.callLogId &&
+      progress.criticalRecovery.providerCallId === `openai:${planned.finalization.callId}`
+    )
+      return;
+    ctx = await runCriticalPostCallFinalization(
+      authorityJob,
+      ctx,
+      planned.finalization,
+      assertAuthority,
+    );
+    await assertAuthority();
+    await checkpointPostCallProgress(job, userId, {
+      finalization: { state: "completed" },
+      criticalRecovery: {
+        state: "completed",
+        parentJobId,
+        callLogId: String(ctx.callLogId),
+        providerCallId: `openai:${planned.finalization.callId}`,
+        completedAt: new Date().toISOString(),
+        attempt,
+      },
+    });
+  } catch (error) {
+    if (!(error instanceof PostCallTerminalStop)) throw error;
+    await assertAttempt();
+    await checkpointPostCallProgress(job, userId, {
+      criticalRecovery: {
+        state: "stopped",
+        parentJobId,
+        completedAt: new Date().toISOString(),
+        attempt,
+        reason: error.reason,
+      },
+    });
+  }
 }
 
 /** Durable worker entrypoint; every unexpected failure reaches queue retry/dead-letter. */

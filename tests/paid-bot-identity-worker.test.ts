@@ -64,8 +64,8 @@ import { ProviderSpendPausedError } from "../src/lib/provider-spend-job-pause";
 const job = {
   id: "identity-job",
   type: "paid_bot_identity_reconcile",
-  userId: "tenant-one",
-  payload: { userId: "tenant-one", agentId: "bot-one" },
+  userId: "11111111-1111-4111-8111-111111111111",
+  payload: { userId: "11111111-1111-4111-8111-111111111111", agentId: "bot-one" },
 } as JobRow;
 
 function identity(overrides: Partial<PaidBotIdentityResult> = {}): PaidBotIdentityResult {
@@ -92,7 +92,10 @@ describe("paid identity worker completion", () => {
 
   it("completes Email-only setup without a phone and skips provider work on replay", async () => {
     await expect(handleJob(job)).resolves.toBeUndefined();
-    expect(h.ensureIdentity).toHaveBeenCalledWith({ userId: "tenant-one", agentId: "bot-one" });
+    expect(h.ensureIdentity).toHaveBeenCalledWith({
+      userId: "11111111-1111-4111-8111-111111111111",
+      agentId: "bot-one",
+    });
     expect(h.persisted).toEqual({
       eligible: true,
       plan_id: "email",
@@ -160,9 +163,20 @@ describe("paid identity worker completion", () => {
 
   it("rejects a mismatched tenant payload before identity work", async () => {
     await expect(
-      handleJob({ ...job, payload: { userId: "other-tenant", agentId: "bot-one" } }),
+      handleJob({
+        ...job,
+        payload: { userId: "22222222-2222-4222-8222-222222222222", agentId: "bot-one" },
+      }),
     ).rejects.toThrow("invalid tenant payload");
     expect(h.ensureIdentity).not.toHaveBeenCalled();
     expect(h.persist).not.toHaveBeenCalled();
+  });
+
+  it("rejects a missing immutable row owner without adopting the payload", async () => {
+    await expect(handleJob({ ...job, userId: undefined })).rejects.toThrow(
+      "no valid, consistent tenant owner",
+    );
+    expect(h.environmentAllowed).not.toHaveBeenCalled();
+    expect(h.ensureIdentity).not.toHaveBeenCalled();
   });
 });

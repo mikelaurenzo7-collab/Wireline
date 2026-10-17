@@ -3,6 +3,8 @@ import { and, eq, inArray, lte, sql } from "drizzle-orm";
 import * as schema from "../db/schema";
 import * as base from "./job-queue-base";
 import { reportError } from "./error-reporter";
+import { enqueuePostCallFinalizationRecovery } from "./post-call-finalization-recovery";
+import { acquireAccountDeletionFence } from "./account-deletion-fence";
 import {
   isProviderSpendPausedError,
   PROVIDER_SPEND_PAUSE_DELAY_MS,
@@ -34,6 +36,7 @@ export type JobType =
   | "intake_auto_dial"
   | "post_call_artifact"
   | "post_call_digest"
+  | "post_call_finalization_recovery"
   | "scheduled_report"
   | "twilio_message_reconciliation"
   | "twilio_fallback_reconcile"
@@ -254,7 +257,7 @@ export async function failJob(
   const exhausted = attempts >= maxAttempts;
 
   const [row] = await db
-    .select({ type: schema.jobs.type })
+    .select({ type: schema.jobs.type, userId: schema.jobs.userId })
     .from(schema.jobs)
     .where(eq(schema.jobs.id, job.id))
     .limit(1);
@@ -267,27 +270,39 @@ export async function failJob(
     longRunning ? 5 * 60 : 0,
   );
 
-  const [updated] = await db.transaction(
-    async (tx) =>
-      tx
-        .update(schema.jobs)
-        .set({
-          status: exhausted ? "dead" : "pending",
-          error: errorMessage.slice(0, 2000),
-          finishedAt: exhausted ? new Date() : null,
-          runAt: exhausted ? new Date() : new Date(Date.now() + retryDelaySeconds * 1000),
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(schema.jobs.id, job.id),
-            eq(schema.jobs.status, "running"),
-            eq(schema.jobs.attempts, attempts),
-          ),
-        )
-        .returning({ id: schema.jobs.id }),
-    base.writeTransactionConfig(),
-  );
+  const [updated] = await db.transaction(async (tx) => {
+    // Purge takes the tenant barrier before deleting queue rows. Preserve
+    // that lock order before changing a digest that may stage recovery.
+    if (exhausted && row?.type === "post_call_digest")
+      await acquireAccountDeletionFence(tx, row.userId);
+    const changed = await tx
+      .update(schema.jobs)
+      .set({
+        status: exhausted ? "dead" : "pending",
+        error: errorMessage.slice(0, 2000),
+        finishedAt: exhausted ? new Date() : null,
+        runAt: exhausted ? new Date() : new Date(Date.now() + retryDelaySeconds * 1000),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(schema.jobs.id, job.id),
+          eq(schema.jobs.status, "running"),
+          eq(schema.jobs.attempts, attempts),
+          ...(exhausted && row?.type === "post_call_digest"
+            ? [eq(schema.jobs.userId, row.userId)]
+            : []),
+        ),
+      )
+      .returning();
+    const dead = changed[0];
+    if (exhausted && dead?.type === "post_call_digest") {
+      // A failed insert rolls back the dead transition too: critical work
+      // must never be abandoned between marking the parent and staging recovery.
+      await enqueuePostCallFinalizationRecovery(tx, { parentJobId: dead.id, userId: dead.userId });
+    }
+    return changed;
+  }, base.writeTransactionConfig());
 
   if (exhausted && updated) {
     reportError(new Error(`Job dead-lettered: ${errorMessage}`), {
@@ -366,47 +381,78 @@ export async function recoverStaleJobs(
   staleAfterMs = 30 * 60 * 1000,
 ): Promise<number> {
   const cutoff = new Date(Date.now() - staleAfterMs);
-  return db.transaction(async (tx) => {
-    const staleJobs = await tx
-      .select({
-        id: schema.jobs.id,
-        attempts: schema.jobs.attempts,
-        maxAttempts: schema.jobs.maxAttempts,
-      })
-      .from(schema.jobs)
-      .where(and(eq(schema.jobs.status, "running"), lte(schema.jobs.startedAt, cutoff)))
-      .orderBy(schema.jobs.startedAt, schema.jobs.id)
-      .limit(STALE_RECOVERY_BATCH);
+  const staleJobs = await db
+    .select({
+      id: schema.jobs.id,
+      attempts: schema.jobs.attempts,
+      maxAttempts: schema.jobs.maxAttempts,
+      type: schema.jobs.type,
+      userId: schema.jobs.userId,
+    })
+    .from(schema.jobs)
+    .where(and(eq(schema.jobs.status, "running"), lte(schema.jobs.startedAt, cutoff)))
+    .orderBy(schema.jobs.startedAt, schema.jobs.id)
+    .limit(STALE_RECOVERY_BATCH);
 
-    let recovered = 0;
-    for (const job of staleJobs) {
-      const expectedAttempts = Number(job.attempts ?? 0);
-      const exhausted = expectedAttempts >= Number(job.maxAttempts || base.DEFAULT_MAX_ATTEMPTS);
-      const reset = await tx
-        .update(schema.jobs)
-        .set({
-          status: exhausted ? "dead" : "pending",
-          error: exhausted
-            ? "Marked dead: stuck in running state beyond timeout"
-            : "Reset from stale running state",
-          startedAt: null,
-          finishedAt: exhausted ? new Date() : null,
-          runAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(schema.jobs.id, job.id),
-            eq(schema.jobs.status, "running"),
-            attemptCountEquals(expectedAttempts),
-          ),
-        )
-        .returning({ id: schema.jobs.id });
-      if (reset.length) recovered++;
+  let recovered = 0;
+  for (const job of staleJobs) {
+    // Release every candidate's row locks before acquiring another tenant's
+    // deletion barrier. Holding an earlier row while awaiting the next barrier
+    // can deadlock with the earlier job's still-finishing provider checkpoint.
+    let changed: boolean;
+    try {
+      changed = await db.transaction(async (tx) => {
+        const expectedAttempts = Number(job.attempts ?? 0);
+        const exhausted = expectedAttempts >= Number(job.maxAttempts || base.DEFAULT_MAX_ATTEMPTS);
+        if (exhausted && job.type === "post_call_digest")
+          await acquireAccountDeletionFence(tx, job.userId);
+        const reset = await tx
+          .update(schema.jobs)
+          .set({
+            status: exhausted ? "dead" : "pending",
+            error: exhausted
+              ? "Marked dead: stuck in running state beyond timeout"
+              : "Reset from stale running state",
+            startedAt: null,
+            finishedAt: exhausted ? new Date() : null,
+            runAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(schema.jobs.id, job.id),
+              eq(schema.jobs.status, "running"),
+              attemptCountEquals(expectedAttempts),
+              ...(exhausted && job.type === "post_call_digest"
+                ? [eq(schema.jobs.userId, job.userId)]
+                : []),
+            ),
+          )
+          .returning();
+        const dead = reset[0];
+        if (exhausted && dead?.type === "post_call_digest") {
+          await enqueuePostCallFinalizationRecovery(tx, {
+            parentJobId: dead.id,
+            userId: dead.userId,
+          });
+        }
+        return reset.length > 0;
+      }, base.writeTransactionConfig());
+    } catch {
+      // Earlier candidates committed independently. Preserve their honest
+      // count, report this rollback, and leave the remainder for a later sweep.
+      reportError(
+        new Error("Stale job recovery transaction failed; remaining candidates deferred"),
+        {
+          jobId: job.id,
+          tags: { source: "job_queue", outcome: "stale_recovery_failed" },
+        },
+      );
+      break;
     }
-
-    return recovered;
-  }, base.writeTransactionConfig());
+    if (changed) recovered++;
+  }
+  return recovered;
 }
 
 /**

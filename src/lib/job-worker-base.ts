@@ -24,6 +24,7 @@ import {
 import { acquireAccountDeletionFence, runTerminalDeletionSequence } from "./account-deletion-fence";
 import { QA_SCORE_SOURCE_RUBRIC, qaRubricShouldRun } from "./qa-score-provenance";
 import { getCanonicalAppUrl } from "./app-url";
+import { assertJobPayloadOwner } from "./job-owner";
 
 /**
  * The post-call digest logs the call itself; enrichment adds only the lead
@@ -360,16 +361,40 @@ export async function handleJob(job: JobRow): Promise<void> {
   if (job.type === "adaptive_optimization") {
     const p = job.payload as {
       agentId: string;
-      userId: string;
+      userId?: string;
       callId: string;
       score: number;
       breakdown: any;
     };
+    const userId = assertJobPayloadOwner(job, p);
+    if (
+      typeof p.agentId !== "string" ||
+      !p.agentId.trim() ||
+      p.agentId.length > 200 ||
+      typeof p.callId !== "string" ||
+      !/^[1-9]\d{0,18}$/.test(p.callId) ||
+      BigInt(p.callId) > 9_223_372_036_854_775_807n ||
+      typeof p.score !== "number" ||
+      !Number.isFinite(p.score) ||
+      p.score < 0 ||
+      p.score > 100
+    )
+      throw new Error("Adaptive optimization job contains an invalid call or Bot identity.");
 
     const [call] = await drizzle
       .select({ transcript: schema.callLogs.transcript })
       .from(schema.callLogs)
-      .where(eq(schema.callLogs.id, BigInt(p.callId)))
+      .innerJoin(
+        schema.agents,
+        and(eq(schema.callLogs.agentId, schema.agents.id), eq(schema.agents.userId, userId)),
+      )
+      .where(
+        and(
+          eq(schema.callLogs.id, BigInt(p.callId)),
+          eq(schema.callLogs.userId, userId),
+          eq(schema.callLogs.agentId, p.agentId),
+        ),
+      )
       .limit(1);
     if (!call?.transcript) return;
 
@@ -384,7 +409,7 @@ export async function handleJob(job: JobRow): Promise<void> {
         .insert(schema.agentLessons)
         .values({
           agentId: p.agentId,
-          userId: p.userId,
+          userId,
           lesson: lesson,
           sourceCallId: p.callId,
           source: "adaptive_tuning",
@@ -585,16 +610,8 @@ export async function handleJob(job: JobRow): Promise<void> {
   }
 
   if (job.type === "autonomous_prospecting") {
-    const p = job.payload as { userId: string };
-    const userId = job.user_id;
-    if (!userId || p.userId !== userId) {
-      log.error("Autonomous prospecting job tenant mismatch", {
-        jobId: job.id,
-        jobUserId: userId || "missing",
-        payloadUserId: p.userId || "missing",
-      });
-      throw new Error("Autonomous prospecting job tenant mismatch.");
-    }
+    const p = job.payload as { userId?: string };
+    const userId = assertJobPayloadOwner(job, p);
     const [settings] = await drizzle
       .select()
       .from(schema.settings)
@@ -753,7 +770,8 @@ export async function handleJob(job: JobRow): Promise<void> {
   }
 
   if (job.type === "auto_qa_score") {
-    const p = job.payload as { callLogId: number | string; userId: string };
+    const p = job.payload as { callLogId: number | string; userId?: string };
+    const userId = assertJobPayloadOwner(job, p);
     if (!claudeBrain.isBrainAvailable()) {
       log.warn("auto_qa_score skipped, claude unavailable", { callLogId: p.callLogId });
       return;
@@ -783,8 +801,11 @@ export async function handleJob(job: JobRow): Promise<void> {
         agentRole: schema.agents.role,
       })
       .from(schema.callLogs)
-      .leftJoin(schema.agents, eq(schema.callLogs.agentId, schema.agents.id))
-      .where(eq(schema.callLogs.id, callLogIdBig))
+      .leftJoin(
+        schema.agents,
+        and(eq(schema.callLogs.agentId, schema.agents.id), eq(schema.agents.userId, userId)),
+      )
+      .where(and(eq(schema.callLogs.id, callLogIdBig), eq(schema.callLogs.userId, userId)))
       .limit(1);
 
     if (!call || !call.transcript) {
@@ -847,13 +868,13 @@ export async function handleJob(job: JobRow): Promise<void> {
       await drizzle
         .update(schema.callLogs)
         .set(updates)
-        .where(eq(schema.callLogs.id, callLogIdBig));
+        .where(and(eq(schema.callLogs.id, callLogIdBig), eq(schema.callLogs.userId, userId)));
 
       if (score < 60 && call.agentId) {
         await enqueue(drizzle, {
-          userId: p.userId,
+          userId,
           type: "adaptive_optimization",
-          payload: { agentId: call.agentId, callId: String(call.id), score, breakdown },
+          payload: { userId, agentId: call.agentId, callId: String(call.id), score, breakdown },
         });
       }
 

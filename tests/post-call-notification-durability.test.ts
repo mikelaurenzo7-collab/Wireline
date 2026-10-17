@@ -80,13 +80,22 @@ describe("durable post-call customer follow-up", () => {
   it("keeps finalization replay local, stale-safe, and correlated to the owning lead call", () => {
     const source = read("src/lib/voice/openai-sip-session.ts");
     const digest = read("src/lib/post-call-digest.ts");
+    const helperStart = digest.indexOf("async function runCriticalPostCallFinalization");
+    const helperEnd = digest.indexOf("async function handleActivePostCallDigestJob", helperStart);
+    const critical = digest.slice(helperStart, helperEnd);
     const replay = digest.indexOf("if (finalization && progress.finalization?.state");
-    const deletionFence = digest.indexOf("await withPostCallDeletionFence(ctx", replay);
-    const checkpoint = digest.indexOf('finalization: { state: "completed" }', deletionFence);
+    const sharedCall = digest.indexOf(
+      "await runCriticalPostCallFinalization(job, ctx, finalization)",
+      replay,
+    );
+    const checkpoint = digest.indexOf('finalization: { state: "completed" }', sharedCall);
 
-    expect(deletionFence).toBeGreaterThan(replay);
-    expect(checkpoint).toBeGreaterThan(deletionFence);
-    expect(digest.slice(replay, checkpoint)).not.toContain("withPostCallExternalFence");
+    expect(helperStart).toBeGreaterThan(0);
+    expect(critical).toContain("await withPostCallDeletionFence(ctx");
+    expect(critical).toContain("await replayOpenAISipPostCallFinalization({");
+    expect(critical).not.toContain("withPostCallExternalFence");
+    expect(sharedCall).toBeGreaterThan(replay);
+    expect(checkpoint).toBeGreaterThan(sharedCall);
     expect(source).toContain("eq(schema.callLogs.vapiCallId, providerId)");
     expect(source).toContain('endedReason: "finalization-recovery"');
     expect(source).toContain("if (currentCallId !== providerId)");

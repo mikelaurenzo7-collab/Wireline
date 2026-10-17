@@ -76,9 +76,9 @@ describe("Lead Hunt review and launch boundaries", () => {
       worker.indexOf('job.type === "knowledge_from_url"'),
     );
 
-    expect(prospecting).toContain("const userId = job.user_id");
-    expect(prospecting).toContain("p.userId !== userId");
-    expect(prospecting).toContain("Autonomous prospecting job tenant mismatch.");
+    expect(prospecting).toContain("const userId = assertJobPayloadOwner(job, p)");
+    expect(worker).toContain('import { assertJobPayloadOwner } from "./job-owner"');
+    expect(prospecting).not.toContain("const userId = job.user_id");
     expect(prospecting).toContain("eq(schema.settings.userId, userId)");
     expect(prospecting).not.toContain("eq(schema.settings.userId, p.userId)");
   });
