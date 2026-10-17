@@ -29,6 +29,10 @@ describe("owner browser input requests", () => {
       kind: "history",
       action: "back",
     });
+    expect(ownerInputFrom({ kind: "switch_tab", tabId: "tab-2" })).toEqual({
+      kind: "switch_tab",
+      tabId: "tab-2",
+    });
     expect(ownerInputFrom({ kind: "type", text: "owner value" })).toEqual({
       kind: "type",
       text: "owner value",
@@ -39,6 +43,7 @@ describe("owner browser input requests", () => {
   it("bounds owner input and rejects invalid history actions", () => {
     expect(() => ownerInputFrom({ kind: "navigate", url: "x".repeat(2_049) })).toThrow();
     expect(() => ownerInputFrom({ kind: "history", action: "delete" })).toThrow();
+    expect(() => ownerInputFrom({ kind: "switch_tab", tabId: "tab-2/secret" })).toThrow();
     expect(() => ownerInputFrom({ kind: "click", x: 1_281, y: 20 })).toThrow();
     expect(() =>
       ownerInputFrom({ kind: "scroll", x: 20, y: 30, deltaX: 0, deltaY: 1_201 }),

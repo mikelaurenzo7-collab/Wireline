@@ -380,6 +380,70 @@ describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)
     expect((closed.content[0] as { tabs: unknown[] }).tabs).toHaveLength(1);
   });
 
+  it("focuses an owner-opened login popup and lets the owner return to the original tab", async () => {
+    const original = session.activePage();
+    const originalId = session.ownerTabs().find((tab) => tab.active)!.id;
+    await original.setContent('<button id="login">Log in</button>');
+    await original.locator("#login").evaluate((button) => {
+      button.addEventListener("click", () => {
+        const popup = window.open("about:blank");
+        if (popup) popup.document.body.innerHTML = '<label>Email <input id="email"></label>';
+      });
+    });
+    const button = await original.locator("#login").boundingBox();
+    expect(button).toBeTruthy();
+
+    await session.executeOwnerInput({ kind: "click", x: button!.x + 3, y: button!.y + 3 });
+    const popup = session.activePage();
+    expect(popup).not.toBe(original);
+    expect(await popup.locator("#email").count()).toBe(1);
+    const tabs = session.ownerTabs();
+    expect(tabs).toHaveLength(2);
+    expect(tabs[1]).toMatchObject({ active: true });
+    const tabLabel = `Tab ${tabs[1].id.slice(4)}`;
+    const popupUrl = vi.spyOn(popup, "url");
+    popupUrl.mockReturnValue("https://accounts.example.com/login?code=private-code");
+    expect(session.ownerTabs()[1].label).toBe(`${tabLabel} · accounts.example.com`);
+    popupUrl.mockReturnValue("https://name:password@accounts.example.com/login");
+    expect(session.ownerTabs()[1].label).toBe(tabLabel);
+    popupUrl.mockRestore();
+    await popup.locator("#email").focus();
+    await session.executeOwnerInput({ kind: "type", text: "owner@example.test" });
+    expect(await popup.locator("#email").inputValue()).toBe("owner@example.test");
+
+    await session.executeOwnerInput({ kind: "switch_tab", tabId: originalId });
+    expect(session.activePage()).toBe(original);
+    await session.executeOwnerInput({ kind: "switch_tab", tabId: tabs[1].id });
+    expect(session.activePage()).toBe(popup);
+    await popup.close();
+    expect(session.activePage()).toBe(original);
+    await original.setContent(FIXTURE);
+  });
+
+  it("still blocks an owner popup that tries to reach loopback", async () => {
+    const original = session.activePage();
+    const originalId = session.ownerTabs().find((tab) => tab.active)!.id;
+    await original.setContent('<button id="blocked-popup">Open</button>');
+    await original.locator("#blocked-popup").evaluate((button, url) => {
+      button.addEventListener("click", () => window.open(url));
+    }, probeUrl);
+    const button = await original.locator("#blocked-popup").boundingBox();
+    expect(button).toBeTruthy();
+    const before = session.blockedRequests;
+    await session
+      .executeOwnerInput({ kind: "click", x: button!.x + 3, y: button!.y + 3 })
+      .catch(() => undefined);
+    expect(session.blockedRequests).toBeGreaterThan(before);
+    expect(probeHits).toBe(0);
+    expect(session.ownerTabs().every((tab) => !tab.label.includes("127.0.0.1"))).toBe(true);
+    for (const tab of session.ownerTabs()) {
+      if (tab.id === originalId) continue;
+      await session.executeOwnerInput({ kind: "switch_tab", tabId: originalId });
+      await session.activePage(tab.id).close();
+    }
+    await original.setContent(FIXTURE);
+  });
+
   it("blocks page requests to loopback and private addresses", async () => {
     const before = session.blockedRequests;
     const page = session.activePage();

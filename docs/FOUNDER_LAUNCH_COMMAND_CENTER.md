@@ -97,7 +97,9 @@ domain. Activation, DNS, reconciliation, customer-domain guidance, and rollback 
 
 `FEDERAL_DNC_API_KEY` remains unconfigured pending the external business/vendor credential. Marketing/campaign outbound therefore stays fail-closed.
 
-This does **not** block the first design partners: begin with inbound calls, missed-call recovery, follow-up, appointments, support, and consented non-marketing flows.
+Direct outbound is also disabled in source pending a server-owned, auditable consent artifact and the complete funding and eligibility path. An EIN or DNC credential by itself does not enable it.
+
+This does **not** block the first design partners: begin with verified inbound calling, appointment handling, support, and other non-marketing workflows whose channels have passed their own activation checks.
 
 ### Carrier and payment account state
 

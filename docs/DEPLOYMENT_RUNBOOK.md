@@ -99,12 +99,12 @@ For a Render release or traffic cutover:
    proof. Keep broad call admission closed until that proof passes. Retire the
    old host and scheduler after verification and draining; retain a deliberate
    rollback path during the migration window.
-6. After the manual Render promotion is live, dispatch the **Production visual
-   QA** GitHub Actions workflow from `main`, supplying the full deployed commit
-   as `release_sha`. It checks out and verifies that exact source against
-   `botbound.app`. A push to `main` does not trigger this capture because Render
-   auto-deploy is disabled. Retain any credential or runner billing blocker as
-   an unresolved verification item; never treat a skipped capture as passing.
+6. After the manual Render promotion is live, capture production visual QA in
+   the signed-in browser and retain screenshots and route notes tied to the
+   deployed commit. GitHub Actions is disabled by founder choice. If that
+   decision changes, dispatch the **Production visual QA** workflow from
+   `main` with the full deployed commit as `release_sha`. A skipped hosted
+   capture is not a passing check.
 
 For every voice deployment **or configuration/Blueprint update that replaces the
 process**, run `node deploy/render/drain-voice.mjs` against the old worker with
@@ -461,7 +461,7 @@ Resend must retain verified SPF/DKIM and the negative-delivery webhook. AgentMai
 
 ### OpenAI and the hosted browser (cloud computer)
 
-The cloud computer stays off, and `/computer` says it is being set up, until the API service has `OPENAI_API_KEY` and `CLOUD_COMPUTER_BROWSER_WS_URL` and migration `0176_cloud_computer_tasks` is promoted. PDF, Word, and Excel Knowledge uploads use the same OpenAI key through the Responses API. The browser endpoint must be an isolated hosted-browser vendor over `wss://`; never point it at a browser inside BotBound's network. Choose a vendor whose browsers cannot reach private, loopback, or cloud-metadata addresses: BotBound screens navigation and blanks any tab that lands on a private address, but a hostile page's redirects, WebSockets, and workers are only fully contained by the vendor's network. The URL usually carries the vendor token, so treat it as a secret and keep it out of previews.
+The cloud computer requires `OPENAI_API_KEY` and `CLOUD_COMPUTER_BROWSER_WS_URL` on the API service and promoted migration `0176_cloud_computer_tasks`. PDF Knowledge extraction uses OpenAI; Word and Excel are parsed locally through the existing Knowledge pipeline. The browser endpoint must be an isolated hosted-browser vendor over `wss://`; never point it at a browser inside BotBound's network. Choose a vendor whose browsers cannot reach private, loopback, or cloud-metadata addresses: BotBound screens navigation and blanks any tab that lands on a private address, but a hostile page's redirects, WebSockets, and workers are only fully contained by the vendor's network. The URL usually carries the vendor token, so treat it as a secret and keep it out of previews.
 
 Before announcing the feature, run one owner task end to end on production: start a task on a paid test account, watch the live screen, take control at an `ask_owner` checkpoint, complete a safe sign-in on a test site, return control to the Bot, stop a second task midway, and confirm the AI allowance ledger shows `computer.browse` entries that settle. Confirm owner-entered values do not appear in task activity, page snapshots, or the redacted screenshot the Bot receives after control returns. `CLOUD_COMPUTER_MODEL` defaults to `gpt-5.6-terra`; select an allow-listed model only after checking its current cost against the account allowance. `CLOUD_COMPUTER_MAX_CONCURRENT` caps browsers per process (default 3). Keep the API at one instance: running tasks live in that process.
 

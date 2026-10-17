@@ -56,6 +56,12 @@ export function ownerInputFrom(value: unknown): OwnerControlInput {
     }
     return { kind: "history", action: input.action };
   }
+  if (input.kind === "switch_tab") {
+    if (typeof input.tabId !== "string" || !/^tab-[1-9]\d*$/.test(input.tabId)) {
+      throw AppError.badRequest("Choose an open browser tab.");
+    }
+    return { kind: "switch_tab", tabId: input.tabId };
+  }
   if (input.kind === "type") {
     if (typeof input.text !== "string" || !input.text || input.text.length > 1_000) {
       throw AppError.badRequest("Enter up to 1,000 characters to send to the focused page field.");

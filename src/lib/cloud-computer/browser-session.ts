@@ -168,8 +168,11 @@ export type OwnerControlInput =
   | { kind: "scroll"; x: number; y: number; deltaX: number; deltaY: number }
   | { kind: "navigate"; url: string }
   | { kind: "history"; action: "back" | "forward" | "reload" }
+  | { kind: "switch_tab"; tabId: string }
   | { kind: "type"; text: string }
   | { kind: "key"; key: string };
+
+export type OwnerBrowserTab = { id: string; label: string; active: boolean };
 
 /** Set when a member's deadline passes, so work it started stops at its next check. */
 type MemberToken = { cancelled: boolean };
@@ -620,6 +623,22 @@ export class CloudBrowserSession {
     }
   }
 
+  /** Small, owner-only tab labels. Never expose page titles or URL paths. */
+  ownerTabs(): OwnerBrowserTab[] {
+    return [...this.tabs]
+      .filter(([, page]) => !page.isClosed())
+      .map(([id, page]) => {
+        let label = `Tab ${id.slice(4)}`;
+        try {
+          const url = new URL(page.url());
+          if (checkUrlAllowed(url).allowed) label += ` · ${url.hostname.replace(/^www\./, "")}`;
+        } catch {
+          // A new or blocked tab keeps its generic label.
+        }
+        return { id, label, active: id === this.activeTabId };
+      });
+  }
+
   safeCurrentEvidenceUrl(): string | null {
     const evidence = publicEvidenceUrl(this.activeUrl());
     return evidence && !this.containsOwnerEnteredUrlText(evidence.url) ? evidence.url : null;
@@ -702,7 +721,8 @@ export class CloudBrowserSession {
       if ((await withDeadline(this.enforcePublicTabs(), MEMBER_DEADLINE_MS)).size) {
         this.failPrivateAddress();
       }
-      const page = this.activePage();
+      let page = this.activePage();
+      const priorTabIds = new Set(this.tabs.keys());
       await withDeadline(
         (async () => {
           switch (input.kind) {
@@ -760,6 +780,14 @@ export class CloudBrowserSession {
                 await page.reload({ waitUntil: "domcontentloaded" });
               }
               break;
+            case "switch_tab": {
+              const selected = this.tabs.get(input.tabId);
+              if (!selected || selected.isClosed()) fail("That browser tab is no longer open.");
+              this.activeTabId = input.tabId;
+              page = selected;
+              await selected.bringToFront().catch(() => undefined);
+              break;
+            }
             case "type": {
               if (typeof input.text !== "string" || !input.text || input.text.length > 1_000) {
                 fail("Enter up to 1,000 characters to send to the focused page field.");
@@ -796,6 +824,18 @@ export class CloudBrowserSession {
           }
           await this.settle(page);
           await this.afterNavigationCheck(page);
+          // OAuth and sign-in links often open a popup. Focus a new public tab
+          // after the owner's action; the Bot's own tab changes are unaffected.
+          const opened = [...this.tabs]
+            .reverse()
+            .find(([id, tab]) => !priorTabIds.has(id) && !tab.isClosed());
+          if (opened) {
+            if ((await this.enforcePublicTabs()).size) this.failPrivateAddress();
+            if (!opened[1].isClosed()) {
+              this.activeTabId = opened[0];
+              await opened[1].bringToFront().catch(() => undefined);
+            }
+          }
         })(),
         MEMBER_DEADLINE_MS,
       );

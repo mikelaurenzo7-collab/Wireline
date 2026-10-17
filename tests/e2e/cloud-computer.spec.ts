@@ -172,7 +172,12 @@ async function mockComputer(
     }
     const controlInputMatch = /^\/api\/computer\/tasks\/([^/]+)\/control\/input$/.exec(path);
     if (controlInputMatch) {
-      const input = request.postDataJSON() as { kind?: string; url?: string; action?: string };
+      const input = request.postDataJSON() as {
+        kind?: string;
+        url?: string;
+        action?: string;
+        tabId?: string;
+      };
       ownerInputs.push(input);
       if (input.kind === "navigate" && input.url) {
         const url = new URL(
@@ -183,6 +188,12 @@ async function mockComputer(
         setTask(controlInputMatch[1], {
           currentUrl: options.clickNavigatesTo,
           frameUrl: options.clickNavigatesTo,
+        });
+      } else if (input.kind === "switch_tab" && input.tabId) {
+        const current = tasks.find((item) => item.id === controlInputMatch[1]);
+        const tabs = current?.ownerTabs as Array<{ id: string; label: string; active: boolean }>;
+        setTask(controlInputMatch[1], {
+          ownerTabs: tabs.map((tab) => ({ ...tab, active: tab.id === input.tabId })),
         });
       }
       return route.fulfill({
@@ -333,6 +344,40 @@ for (const width of [390, 1440]) {
     await expect(page.getByText("Supplier A costs less.")).toBeVisible();
   });
 }
+
+test("owner can switch back from a login popup on a narrow screen", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const { ownerInputs } = await mockComputer(page, {
+    status: READY,
+    frame: await fakeFrame(page),
+    tasks: [
+      task({
+        id: "task-popup",
+        status: "needs_input",
+        question: "Sign in to continue.",
+        ownerControl: true,
+        ownerTabs: [
+          { id: "tab-1", label: "Tab 1 · supplier.example", active: false },
+          { id: "tab-2", label: "Tab 2 · accounts.example", active: true },
+        ],
+      }),
+    ],
+  });
+
+  await page.goto("/computer");
+  const tabs = page.getByRole("group", { name: "Browser tabs" });
+  await expect(tabs.getByRole("button", { name: "Tab 2 · accounts.example" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await tabs.getByRole("button", { name: "Tab 1 · supplier.example" }).click();
+  await expect(tabs.getByRole("button", { name: "Tab 1 · supplier.example" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  expect(ownerInputs).toContainEqual({ kind: "switch_tab", tabId: "tab-1" });
+  await expectNoHorizontalOverflow(page);
+});
 
 for (const width of [390, 1440]) {
   test(`a Bot that needs the owner shows its screen, question, and reply at ${width}px`, async ({

@@ -73,6 +73,7 @@ type ComputerTask = {
   agentPointer?: { x: number; y: number; at: string } | null;
   currentUrl: string | null;
   ownerControl: boolean;
+  ownerTabs?: Array<{ id: string; label: string; active: boolean }>;
   preparingBrowser?: boolean;
   stopping: boolean;
 };
@@ -83,6 +84,7 @@ type OwnerBrowserInput =
   | { kind: "scroll"; x: number; y: number; deltaX: number; deltaY: number }
   | { kind: "navigate"; url: string }
   | { kind: "history"; action: "back" | "forward" | "reload" }
+  | { kind: "switch_tab"; tabId: string }
   | { kind: "type"; text: string }
   | { kind: "key"; key: string };
 
@@ -466,6 +468,21 @@ function LiveScreen({
           </button>
         ) : null}
       </div>
+      {ownerControl && task.ownerTabs && task.ownerTabs.length > 1 ? (
+        <div className="wl-computer-screen__tabs" role="group" aria-label="Browser tabs">
+          {task.ownerTabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              aria-current={tab.active ? "page" : undefined}
+              disabled={ownerBusy || tab.active}
+              onClick={() => onOwnerInput?.({ kind: "switch_tab", tabId: tab.id })}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
       {active ? (
         <div className="wl-computer-screen__progress">
           {ownerControl ? (
@@ -743,7 +760,8 @@ function TaskDetail({
       if (!result.ok) throw new Error(result.error);
       if (
         kind === "take" ||
-        (kind === "input" && (input?.kind === "navigate" || input?.kind === "history"))
+        (kind === "input" &&
+          (input?.kind === "navigate" || input?.kind === "history" || input?.kind === "switch_tab"))
       ) {
         ownerUrlEditedRef.current = false;
       }
@@ -751,6 +769,7 @@ function TaskDetail({
         kind === "input" &&
         (input?.kind === "navigate" ||
           input?.kind === "history" ||
+          input?.kind === "switch_tab" ||
           result.data.task.currentUrl !== task.currentUrl) &&
         !ownerUrlEditedRef.current
       ) {

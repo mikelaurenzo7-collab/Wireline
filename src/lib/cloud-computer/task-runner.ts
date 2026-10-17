@@ -25,7 +25,7 @@ import {
   type CloudComputerEvent,
   type CloudComputerOutcome,
 } from "./agent";
-import type { CloudBrowserSession, OwnerControlInput } from "./browser-session";
+import type { CloudBrowserSession, OwnerBrowserTab, OwnerControlInput } from "./browser-session";
 import {
   cloudComputerClient,
   cloudComputerConnection,
@@ -218,6 +218,7 @@ export type ComputerTaskView = {
   agentPointer?: { x: number; y: number; at: string } | null;
   /** True only while this process is holding an owner takeover at a Bot checkpoint. */
   ownerControl: boolean;
+  ownerTabs: OwnerBrowserTab[];
   preparingBrowser: boolean;
   /** Stop was requested; the task ends at its executor's next checkpoint. */
   stopping: boolean;
@@ -269,6 +270,10 @@ function toView(row: TaskRow): ComputerTaskView {
       task.userId === row.userId &&
       row.status === "needs_input",
     ),
+    ownerTabs:
+      task && !task.finished && task.ownerControl && task.userId === row.userId
+        ? (task.session?.ownerTabs() ?? [])
+        : [],
     preparingBrowser: Boolean(task && !task.finished && task.preparingBrowser),
     stopping: Boolean(
       task &&
