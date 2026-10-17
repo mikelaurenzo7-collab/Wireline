@@ -58,6 +58,9 @@ type Test = {
   status: PhoneTestStatus;
   expires_at: string;
   attempts: number;
+  /** New intents retain answered evidence before applying no-answer accounting. */
+  unanswered_release_version?: 1;
+  answered_at?: string;
   provider_attempted_at?: string;
   verified_at?: string;
   cancel_requested?: boolean;
@@ -409,6 +412,7 @@ export async function createPhoneTest(input: {
           status: "creating",
           expires_at: expiresAt,
           attempts: 0,
+          unanswered_release_version: 1,
         };
         const [lead] = await tx
           .insert(schema.outboundLeads)
@@ -730,6 +734,19 @@ export async function handlePhoneTestAnswer(
 ): Promise<string> {
   const found = await callbackLead(input);
   return tenantStore.run(found.userId, async () => {
+    // A signed answer/Gather request already proves the carrier connected.
+    // Persist this before policy/network awaits; DELETE must not erase it by
+    // replacing the public "verifying" status with "ending".
+    const answerRecorded = await drizzle.transaction(async (tx) => {
+      const row = await lockedTest(tx, found.userId, testOf(found).request_id);
+      if (!row) return false;
+      const lead = await bindCarrier(tx, row, input.callSid);
+      const test = testOf(lead);
+      if (phoneTestIsTerminal(test.status)) return false;
+      if (!test.answered_at) await updateTest(tx, lead, { answered_at: new Date().toISOString() });
+      return true;
+    });
+    if (!answerRecorded) return phoneTestHangupTwiml();
     try {
       await assertLiveExternalActionAllowed(found.userId, "phone_test_bridge");
     } catch {
@@ -838,21 +855,53 @@ async function settlePhoneTest(
   rawErrorCode?: string,
 ): Promise<void> {
   if (!TERMINAL_CARRIER.has(status)) throw AppError.conflict("The carrier call is still active.");
-  const seconds = status === "completed" ? Number(rawDuration) : 0;
+  const suppliedDuration = rawDuration !== undefined && rawDuration !== "";
+  const seconds = suppliedDuration ? Number(rawDuration) : 0;
   if (
     !Number.isSafeInteger(seconds) ||
     seconds < 0 ||
     seconds > 86_400 ||
-    (status === "completed" && !/^\d+$/.test(rawDuration || ""))
+    ((status === "completed" || suppliedDuration) && !/^\d+$/.test(rawDuration || ""))
   )
     throw AppError.serviceUnavailable("The carrier's final duration is not yet available.");
+  if (status !== "completed" && seconds !== 0)
+    throw AppError.conflict("An unanswered carrier result conflicts with its connected duration.");
   const requestKey = testOf(lead).request_id;
   const canonical = phoneTestFundingId(requestKey);
   const errorCode = normalizePhoneTestCarrierErrorCode(rawErrorCode);
-  await drizzle.transaction(async (tx) => {
+  const shouldMeter = await drizzle.transaction(async (tx) => {
     const row = await lockedTest(tx, lead.userId, requestKey);
     if (!row || row.callId !== lead.callId || !row.callId)
       throw AppError.conflict("The phone test carrier receipt changed.");
+    const state = testOf(row);
+    const sipPhase = await readVoiceIdentityReceipt(
+      tx,
+      row.userId,
+      `voice_funding_phase:${canonical}:sip`,
+    );
+    const verified = await readVoiceIdentityReceipt(
+      tx,
+      row.userId,
+      `voice_phone_test_verified:${canonical}`,
+    );
+    const answered = Boolean(
+      state.answered_at ||
+      state.verified_at ||
+      state.attempts > 0 ||
+      state.status === "verifying" ||
+      verified ||
+      sipPhase ||
+      native(row).openai_call_id ||
+      ["bridging", "connected", "customer_answered", "transferred"].includes(
+        String(native(row).state),
+      ),
+    );
+    if (status !== "completed" && answered)
+      throw AppError.conflict(
+        "An unanswered carrier result conflicts with confirmed answer evidence.",
+      );
+    const unanswered =
+      status !== "completed" && state.unanswered_release_version === 1 && !answered;
     const key = `voice_phone_test_terminal:${canonical}`;
     const prior = await readVoiceIdentityReceipt(tx, row.userId, key);
     if (prior) {
@@ -874,15 +923,10 @@ async function settlePhoneTest(
           call_sid: row.callId,
           carrier_status: status,
           duration_seconds: seconds,
+          ...(unanswered ? { unanswered_confirmed: true } : {}),
           ...(errorCode ? { carrier_error_code: errorCode } : {}),
         },
       });
-    const state = testOf(row);
-    const sipPhase = await readVoiceIdentityReceipt(
-      tx,
-      row.userId,
-      `voice_funding_phase:${canonical}:sip`,
-    );
     const terminalError =
       carrierFailureMessage(status, errorCode ?? state.carrier_error_code) ??
       (state.verified_at && status === "completed" && !sipPhase
@@ -934,10 +978,54 @@ async function settlePhoneTest(
       },
       { state: "completed" },
     );
+    // Only newly recorded explicit proof can release an accepted carrier
+    // intent. Older terminal receipts and already-posted usage are not repaired
+    // or reinterpreted by a callback/deadline replay.
+    const proof = record(prior?.metadata);
+    if (prior ? proof.unanswered_confirmed === true : unanswered) {
+      const released = await readVoiceIdentityReceipt(
+        tx,
+        row.userId,
+        `voice_admission_release:${canonical}`,
+      );
+      if (!released)
+        await releaseVoiceCallFundingInTransaction(tx, {
+          userId: row.userId,
+          providerCallId: canonical,
+          disposition: "confirmed_unanswered",
+        });
+      if (
+        released ||
+        (await readVoiceIdentityReceipt(tx, row.userId, `voice_admission_release:${canonical}`))
+      )
+        return false;
+      // An older usage claim can own an unfinished Runtime settlement. The
+      // release helper intentionally defers to it: resume that exact claim,
+      // never strand the hold or create new usage from an unexplained no-op.
+      const [usage] = await tx
+        .select({ providerCallId: schema.voiceUsageEvents.providerCallId })
+        .from(schema.voiceUsageEvents)
+        .where(
+          and(
+            eq(schema.voiceUsageEvents.userId, row.userId),
+            eq(schema.voiceUsageEvents.providerCallId, canonical),
+          ),
+        )
+        .limit(1);
+      if (!usage)
+        throw AppError.serviceUnavailable("Phone test funding release could not be confirmed.");
+      return true;
+    }
+    return true;
   });
-  // Exactly one canonical usage event across carrier/SIP retries. Every
-  // accepted attempt retains the existing minimum-one-minute commercial rule.
-  await trackVoiceMinutes({ userId: lead.userId, vapiCallId: canonical, durationSeconds: seconds });
+  // Connected verification/conversation retains the existing rounding rule.
+  // Confirmed unanswered self-tests retain history without consuming minutes.
+  if (shouldMeter)
+    await trackVoiceMinutes({
+      userId: lead.userId,
+      vapiCallId: canonical,
+      durationSeconds: seconds,
+    });
 }
 export async function handlePhoneTestStatus(input: PhoneTestCarrierInput): Promise<void> {
   const found = await callbackLead(input);
@@ -947,6 +1035,13 @@ export async function handlePhoneTestStatus(input: PhoneTestCarrierInput): Promi
       if (!row) throw AppError.notFound("Phone test not found.");
       const bound = await bindCarrier(tx, row, input.callSid);
       const state = testOf(bound);
+      if (
+        !phoneTestIsTerminal(state.status) &&
+        ["in-progress", "answered"].includes(input.status || "")
+      )
+        return updateTest(tx, bound, {
+          answered_at: state.answered_at ?? new Date().toISOString(),
+        });
       if (
         ["creating", "ringing"].includes(state.status) &&
         !state.verified_at &&

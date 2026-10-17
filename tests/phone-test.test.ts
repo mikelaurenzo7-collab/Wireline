@@ -91,6 +91,7 @@ function database() {
     wireline_credit_ledger: [],
     wireline_consent_log: [],
     wireline_call_logs: [],
+    wireline_voice_usage_events: [],
     wireline_agents: [{ id: agentId, userId }],
     wireline_phone_numbers: [
       { id: "line", userId, agentId, phoneNumber: from, vapiNumberId: `PN${"2".repeat(32)}` },
@@ -139,6 +140,8 @@ function database() {
                 return false;
               if (table === "wireline_credit_ledger")
                 return filter.params.length === 1 || row.idempotencyKey === filter.params[1];
+              if (table === "wireline_voice_usage_events")
+                return row.providerCallId === filter.params[1];
               if (table === "wireline_agents" || table === "wireline_phone_numbers")
                 return (
                   !filter.params[1] ||
@@ -254,10 +257,16 @@ beforeEach(() => {
   });
   h.create.mockResolvedValue({ sid });
   h.release.mockImplementation(async (_tx: any, input: any) => {
+    if (
+      data.ledger.some(
+        (row) => row.idempotencyKey === `voice_admission_release:${input.providerCallId}`,
+      )
+    )
+      return;
     data.ledger.push({
       userId,
       idempotencyKey: `voice_admission_release:${input.providerCallId}`,
-      metadata: { disposition: "definite_preaccept" },
+      metadata: { disposition: input.disposition ?? "definite_preaccept" },
     });
   });
   h.fetch.mockResolvedValue({
@@ -509,11 +518,151 @@ describe("authoritative carrier settlement and recovery", () => {
         data.ledger.find((row) => row.refType === "voice_phone_test_terminal").metadata,
       ).toMatchObject({ carrier_status: status, carrier_error_code: "21211", duration_seconds: 0 });
       expect(data.rows.wireline_call_logs[0].summary).toContain(message);
-      expect(h.track).toHaveBeenCalledWith({ userId, vapiCallId: canonical, durationSeconds: 0 });
+      expect(h.track).not.toHaveBeenCalled();
+      expect(h.release).toHaveBeenCalledWith(data.db, {
+        userId,
+        providerCallId: canonical,
+        disposition: "confirmed_unanswered",
+      });
       await handlePhoneTestStatus(callback({ status: "ringing" }));
       expect((await getPhoneTest(userId, agentId, requestKey)).status).toBe("failed");
     },
   );
+  it("keeps duplicate terminal and deadline recovery uncharged and releases only once", async () => {
+    await createPhoneTest(request);
+    await handlePhoneTestStatus(callback({ status: "busy", duration: "0" }));
+    await handlePhoneTestStatus(callback({ status: "busy", duration: "0" }));
+    h.fetch.mockResolvedValue({
+      sid,
+      accountSid: "ACunit",
+      to: phone,
+      from,
+      direction: "outbound-api",
+      status: "busy",
+      duration: "0",
+    });
+    vi.advanceTimersByTime(121_000);
+    await reconcilePhoneTestJob({ userId, payload: { requestKey, agentId } });
+    expect(h.release).toHaveBeenCalledOnce();
+    expect(h.track).not.toHaveBeenCalled();
+    expect(data.ledger.filter((row) => row.refType === "voice_phone_test_terminal")).toHaveLength(
+      1,
+    );
+    expect(data.rows.wireline_call_logs).toHaveLength(1);
+  });
+  it("resumes an exact existing unfinished usage claim when release defers to its finalizer", async () => {
+    await createPhoneTest(request);
+    h.release.mockResolvedValueOnce(undefined);
+    data.rows.wireline_voice_usage_events.push({
+      userId,
+      providerCallId: canonical,
+      chargedAt: null,
+    });
+    await handlePhoneTestStatus(callback({ status: "busy", duration: "0" }));
+    expect(h.track).toHaveBeenCalledWith({ userId, vapiCallId: canonical, durationSeconds: 0 });
+    expect(
+      data.ledger.some((row) => row.idempotencyKey === `voice_admission_release:${canonical}`),
+    ).toBe(false);
+  });
+  it("fails closed when release neither persists proof nor identifies existing usage", async () => {
+    await createPhoneTest(request);
+    h.release.mockResolvedValueOnce(undefined);
+    data.rows.wireline_voice_usage_events.push({
+      userId,
+      providerCallId: "outbound:unrelated",
+      chargedAt: null,
+    });
+    await expect(
+      handlePhoneTestStatus(callback({ status: "busy", duration: "0" })),
+    ).rejects.toMatchObject({ status: 503 });
+    expect(h.track).not.toHaveBeenCalled();
+  });
+  it("preserves sticky answered evidence across End call before verification", async () => {
+    await createPhoneTest(request);
+    await handlePhoneTestAnswer(callback());
+    expect(test().answered_at).toBeTruthy();
+    expect(test().attempts).toBe(0);
+    h.fetch.mockRejectedValue(new Error("carrier unavailable"));
+    await endPhoneTest(userId, agentId, requestKey);
+    expect(test().status).toBe("ending");
+    await expect(
+      handlePhoneTestStatus(callback({ status: "busy", duration: "0" })),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(h.release).not.toHaveBeenCalled();
+    expect(h.track).not.toHaveBeenCalled();
+  });
+  it.each(["in-progress", "answered"])(
+    "treats signed %s as sticky answer evidence",
+    async (status) => {
+      await createPhoneTest(request);
+      await handlePhoneTestStatus(callback({ status }));
+      expect(test().answered_at).toBeTruthy();
+      await expect(
+        handlePhoneTestStatus(callback({ status: "no-answer", duration: "0" })),
+      ).rejects.toMatchObject({ status: 409 });
+      expect(h.release).not.toHaveBeenCalled();
+    },
+  );
+  it.each(["verified", "sip"])(
+    "cannot release a terminal failure over %s evidence",
+    async (kind) => {
+      const response = await createPhoneTest(request);
+      if (kind === "verified")
+        await handlePhoneTestAnswer(
+          callback({ digits: response.verification_code, attempt: 1 }),
+          true,
+        );
+      else
+        data.ledger.push({
+          userId,
+          idempotencyKey: `voice_funding_phase:${canonical}:sip`,
+          refType: "voice_funding_phase",
+          deltaUsd: "0",
+          metadata: {},
+        });
+      await expect(
+        handlePhoneTestStatus(callback({ status: "failed", duration: "0" })),
+      ).rejects.toMatchObject({ status: 409 });
+      expect(h.release).not.toHaveBeenCalled();
+      expect(h.track).not.toHaveBeenCalled();
+    },
+  );
+  it.each(["busy", "no-answer", "failed", "canceled"])(
+    "refuses contradictory positive %s duration",
+    async (status) => {
+      await createPhoneTest(request);
+      await expect(
+        handlePhoneTestStatus(callback({ status, duration: "1" })),
+      ).rejects.toMatchObject({ status: 409 });
+      expect(h.release).not.toHaveBeenCalled();
+      expect(h.track).not.toHaveBeenCalled();
+      expect(data.rows.wireline_call_logs).toHaveLength(0);
+    },
+  );
+  it("does not reinterpret a legacy terminal receipt on replay", async () => {
+    await createPhoneTest(request);
+    delete test().unanswered_release_version;
+    await handlePhoneTestStatus(callback({ status: "busy", duration: "0" }));
+    const prior = data.ledger.find((row) => row.refType === "voice_phone_test_terminal");
+    expect(prior.metadata).not.toHaveProperty("unanswered_confirmed");
+    test().unanswered_release_version = 1;
+    await handlePhoneTestStatus(callback({ status: "busy", duration: "0" }));
+    expect(h.release).not.toHaveBeenCalled();
+    expect(prior.metadata).not.toHaveProperty("unanswered_confirmed");
+    expect(h.track).toHaveBeenCalledWith({ userId, vapiCallId: canonical, durationSeconds: 0 });
+  });
+  it("keeps contradictory later terminal proof fail-closed after an unanswered release", async () => {
+    await createPhoneTest(request);
+    await handlePhoneTestStatus(callback({ status: "busy", duration: "0" }));
+    await expect(
+      handlePhoneTestStatus(callback({ status: "completed", duration: "10" })),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(h.release).toHaveBeenCalledOnce();
+    expect(h.track).not.toHaveBeenCalled();
+    expect(data.ledger.filter((row) => row.refType === "voice_phone_test_terminal")).toHaveLength(
+      1,
+    );
+  });
   it("reads the accurate busy diagnosis for an older receipt without rewriting evidence", async () => {
     await createPhoneTest(request);
     await handlePhoneTestStatus(callback({ status: "busy", duration: "0" }));

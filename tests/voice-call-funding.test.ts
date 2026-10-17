@@ -294,6 +294,86 @@ describe("self-phone-test canonical funding", () => {
     expect(data.balance()).toBeCloseTo(0);
     expect(data.rows.some((row) => row.refType === "voice_admission_release")).toBe(false);
   });
+  async function confirmedUnansweredTest() {
+    const data = database({ balance: 0.44 });
+    await reserveTest(data);
+    await data.db.transaction((tx) =>
+      bindVoiceFundingAlias(tx, {
+        userId,
+        canonicalCallId: canonical,
+        providerCallId: `twilio:CA${"1".repeat(32)}`,
+        phase: "carrier",
+      }),
+    );
+    const terminal = {
+      userId,
+      deltaUsd: "0",
+      refType: "voice_phone_test_terminal",
+      idempotencyKey: `voice_phone_test_terminal:${canonical}`,
+      metadata: {
+        version: 1,
+        call_sid: `CA${"1".repeat(32)}`,
+        carrier_status: "busy",
+        duration_seconds: 0,
+        unanswered_confirmed: true,
+      } as Record<string, unknown>,
+    };
+    data.rows.push(terminal);
+    return { data, terminal };
+  }
+  it("returns only exact confirmed-unanswered self-test funding once", async () => {
+    const { data } = await confirmedUnansweredTest();
+    expect(data.balance()).toBeCloseTo(0);
+    await releaseVoiceCallFunding(userId, canonical, "confirmed_unanswered");
+    await releaseVoiceCallFunding(userId, canonical, "confirmed_unanswered");
+    expect(data.balance()).toBeCloseTo(0.44);
+    expect(data.rows.filter((row) => row.refType === "voice_admission_release")).toHaveLength(1);
+    expect(
+      data.rows.find((row) => row.refType === "voice_admission_release").metadata.disposition,
+    ).toBe("confirmed_unanswered");
+    await expect(reserveTest(data)).rejects.toMatchObject({ code: "VOICE_FUNDING_SETTLED" });
+  });
+  it.each([
+    "missing",
+    "legacy",
+    "wrong-call",
+    "positive-duration",
+    "completed",
+    "sip",
+    "verified",
+    "nonzero-ledger",
+    "other-tenant",
+  ])("rejects %s proof before returning accepted self-test funding", async (kind) => {
+    const { data, terminal } = await confirmedUnansweredTest();
+    if (kind === "missing") data.rows.splice(data.rows.indexOf(terminal), 1);
+    if (kind === "legacy") delete terminal.metadata.unanswered_confirmed;
+    if (kind === "wrong-call") terminal.metadata.call_sid = `CA${"2".repeat(32)}`;
+    if (kind === "positive-duration") terminal.metadata.duration_seconds = 1;
+    if (kind === "completed") terminal.metadata.carrier_status = "completed";
+    if (kind === "nonzero-ledger") terminal.deltaUsd = "1";
+    if (kind === "other-tenant") terminal.userId = "other";
+    if (kind === "sip" || kind === "verified")
+      data.rows.push({
+        userId,
+        deltaUsd: "0",
+        metadata: {},
+        idempotencyKey:
+          kind === "sip"
+            ? `voice_funding_phase:${canonical}:sip`
+            : `voice_phone_test_verified:${canonical}`,
+      });
+    await expect(
+      releaseVoiceCallFunding(userId, canonical, "confirmed_unanswered"),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(data.rows.some((row) => row.refType === "voice_admission_release")).toBe(false);
+  });
+  it("does not undo a self-test finalizer's already-posted usage", async () => {
+    const { data } = await confirmedUnansweredTest();
+    data.state.usageClaimed = true;
+    await releaseVoiceCallFunding(userId, canonical, "confirmed_unanswered");
+    expect(data.balance()).toBeCloseTo(0);
+    expect(data.rows.some((row) => row.refType === "voice_admission_release")).toBe(false);
+  });
 });
 
 describe("paid channel call periods", () => {

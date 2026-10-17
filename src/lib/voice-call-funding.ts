@@ -352,13 +352,42 @@ export async function releaseVoiceCallFundingInTransaction(
     (await receipt(tx, userId, `voice_admission_release:${providerCallId}`))
   )
     return;
-  // The parent verification call already incurs carrier usage. SIP startup
-  // failure must not refund its shared hold; its terminal carrier receipt settles it.
-  if (
-    (admission.metadata as Record<string, unknown>)?.phone_test_version === 1 &&
-    (await readVoiceIdentityReceipt(tx, userId, `voice_funding_phase:${providerCallId}:carrier`))
-  )
-    return;
+  // SIP startup failure cannot refund an answered verification parent. The
+  // one exception is exact, durable proof that this self-phone carrier never
+  // answered; only its serialized terminal owner may record that evidence.
+  if ((admission.metadata as Record<string, unknown>)?.phone_test_version === 1) {
+    const carrier = await readVoiceIdentityReceipt(
+      tx,
+      userId,
+      `voice_funding_phase:${providerCallId}:carrier`,
+    );
+    if (carrier || disposition === "confirmed_unanswered") {
+      if (disposition !== "confirmed_unanswered") return;
+      const terminal = await readVoiceIdentityReceipt(
+        tx,
+        userId,
+        `voice_phone_test_terminal:${providerCallId}`,
+      );
+      const proof = terminal?.metadata as Record<string, unknown> | undefined;
+      if (
+        carrier?.refType !== "voice_funding_phase" ||
+        Number(carrier.deltaUsd) !== 0 ||
+        (carrier.metadata as Record<string, unknown>)?.canonical_call_id !== providerCallId ||
+        (carrier.metadata as Record<string, unknown>)?.phase !== "carrier" ||
+        terminal?.refType !== "voice_phone_test_terminal" ||
+        Number(terminal.deltaUsd) !== 0 ||
+        proof?.unanswered_confirmed !== true ||
+        proof.version !== 1 ||
+        !["busy", "no-answer", "failed", "canceled"].includes(String(proof.carrier_status)) ||
+        proof.duration_seconds !== 0 ||
+        (carrier.metadata as Record<string, unknown>)?.provider_call_id !==
+          `twilio:${String(proof.call_sid)}` ||
+        (await readVoiceIdentityReceipt(tx, userId, `voice_funding_phase:${providerCallId}:sip`)) ||
+        (await readVoiceIdentityReceipt(tx, userId, `voice_phone_test_verified:${providerCallId}`))
+      )
+        throw AppError.conflict("This phone test has no exact confirmed-unanswered funding proof.");
+    }
+  }
   // Completion claimed its usage under the same wallet lock. Its durable
   // finalizer now owns the hold; a concurrent failure callback cannot refund it.
   const [usage] = await tx
