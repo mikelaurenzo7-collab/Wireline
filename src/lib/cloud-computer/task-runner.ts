@@ -37,6 +37,7 @@ import { displayUrl, parseNavigateTarget } from "./url-policy";
 
 const MAX_EVENTS = 150;
 const FRAME_RETENTION_MS = 30 * 60_000;
+const OWNER_FRAME_REFRESH_MS = 2_500;
 const AGENT_POINTER_VISIBLE_MS = 15_000;
 const STALE_AFTER_MS = 3 * 60_000;
 // A live task touches its row well inside STALE_AFTER_MS, so a long model
@@ -119,6 +120,8 @@ type LiveTask = {
   frameAt: number;
   frameUrl: string | null;
   currentUrl: string | null;
+  ownerFrameRefresh: Promise<void> | null;
+  ownerFrameEpoch: number;
   agentPointer: { x: number; y: number; at: number } | null;
   events: ComputerTaskEvent[];
   turns: number;
@@ -543,6 +546,8 @@ async function admitComputerTask(
     frameAt: Date.now(),
     frameUrl: null,
     currentUrl: null,
+    ownerFrameRefresh: null,
+    ownerFrameEpoch: 0,
     agentPointer: null,
     events: [],
     turns: 0,
@@ -1264,6 +1269,66 @@ export async function getComputerTask(userId: string, taskId: string): Promise<C
   return toView(row);
 }
 
+type OwnerFrameState = Pick<
+  LiveTask,
+  | "session"
+  | "frame"
+  | "frameAt"
+  | "frameUrl"
+  | "currentUrl"
+  | "ownerFrameRefresh"
+  | "ownerFrameEpoch"
+  | "ownerControl"
+  | "ownerInputBusy"
+  | "finished"
+  | "stop"
+>;
+
+/** Refresh a paused owner's browser without racing a newer click or navigation. */
+export async function refreshComputerOwnerFrame(task: OwnerFrameState): Promise<void> {
+  if (
+    task.finished ||
+    task.stop ||
+    !task.ownerControl ||
+    task.ownerInputBusy ||
+    !task.session ||
+    task.session.isClosed
+  )
+    return;
+  if (task.ownerFrameRefresh) return task.ownerFrameRefresh;
+  if (Date.now() - task.frameAt < OWNER_FRAME_REFRESH_MS) return;
+
+  const session = task.session;
+  const epoch = task.ownerFrameEpoch;
+  const capturedAfterFrameAt = task.frameAt;
+  const pending = (async () => {
+    // frame() checks every open tab before and after the screenshot. A null
+    // frame must not leave an older image available after a blocked redirect.
+    const jpeg = await session.frame().catch(() => null);
+    if (
+      task.finished ||
+      task.stop ||
+      !task.ownerControl ||
+      task.ownerInputBusy ||
+      task.session !== session ||
+      session.isClosed ||
+      task.ownerFrameEpoch !== epoch ||
+      task.frameAt !== capturedAfterFrameAt
+    )
+      return;
+    task.frame = jpeg;
+    task.frameAt = Date.now();
+    task.frameUrl = jpeg ? displayUrl(session.activeUrl()) || null : null;
+    task.currentUrl = displayUrl(session.activeUrl()) || null;
+  })();
+  task.ownerFrameRefresh = pending;
+  try {
+    await pending;
+  } finally {
+    if (task.ownerFrameRefresh === pending) task.ownerFrameRefresh = null;
+  }
+}
+
 export async function getComputerFrame(userId: string, taskId: string): Promise<Buffer | null> {
   const task = live.get(taskId);
   if (!task || task.userId !== userId) {
@@ -1271,6 +1336,8 @@ export async function getComputerFrame(userId: string, taskId: string): Promise<
     return null;
   }
   // The screen is cleared once a task ends; nothing is retained after it.
+  if (task.finished) return null;
+  await refreshComputerOwnerFrame(task);
   return task.finished ? null : task.frame;
 }
 
@@ -1364,6 +1431,7 @@ export async function takeComputerControl(
       "Your Bot is not waiting at a live browser checkpoint.",
     );
   }
+  task.ownerFrameEpoch += 1;
   task.ownerControl = true;
   task.agentPointer = null;
   if ((await persist(task, { status: "needs_input" })) !== "written") {
@@ -1404,6 +1472,7 @@ export async function sendComputerOwnerInput(
     );
   }
   task.ownerInputBusy = true;
+  task.ownerFrameEpoch += 1;
   try {
     if (task.session.isClosed) failExpiredBrowser(task);
     let frame: Buffer;
@@ -1506,6 +1575,7 @@ export async function returnComputerControlToBot(
   task.frameAt = Date.now();
   task.frameUrl = displayUrl(task.session.activeUrl()) || null;
   task.currentUrl = displayUrl(task.session.activeUrl()) || task.currentUrl;
+  task.ownerFrameEpoch += 1;
   task.ownerControl = false;
   const saved = await persist(task, {
     status: "running",

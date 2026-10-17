@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   cloudComputerConnection,
@@ -12,12 +12,89 @@ import {
   browserlessSessionCostUsd,
   computerHeartbeatDecision,
   hasPaidComputerPlan,
+  refreshComputerOwnerFrame,
 } from "../src/lib/cloud-computer/task-runner";
 import { CLOUD_COMPUTER_LIMITS } from "../src/lib/cloud-computer/agent";
 import { OPENAI_MODELS } from "../src/lib/ai-models";
 import { quotaTokenDelta } from "../src/lib/managed-ai-operation-spend";
 
 const read = (path: string) => readFileSync(path, "utf8");
+
+type OwnerFrame = Parameters<typeof refreshComputerOwnerFrame>[0];
+
+function ownerFrameFixture() {
+  const session = {
+    frame: vi.fn(async (): Promise<Buffer | null> => Buffer.from("fresh")),
+    activeUrl: vi.fn(() => "https://example.com/new"),
+    isClosed: false,
+  };
+  const task = {
+    session,
+    frame: Buffer.from("old"),
+    frameAt: Date.now() - 10_000,
+    frameUrl: "https://example.com/old",
+    currentUrl: "https://example.com/old",
+    ownerFrameRefresh: null,
+    ownerFrameEpoch: 0,
+    ownerControl: true,
+    ownerInputBusy: false,
+    finished: false,
+    stop: false,
+  } as unknown as OwnerFrame;
+  return { session, task };
+}
+
+describe("paused owner browser frames", () => {
+  it("refreshes an old SPA shell frame and throttles subsequent reads", async () => {
+    const { session, task } = ownerFrameFixture();
+    await refreshComputerOwnerFrame(task);
+    expect(task.frame?.toString()).toBe("fresh");
+    expect(task.frameUrl).toBe("https://example.com/new");
+    expect(task.currentUrl).toBe("https://example.com/new");
+    await refreshComputerOwnerFrame(task);
+    expect(session.frame).toHaveBeenCalledTimes(1);
+  });
+
+  it("shares one pending capture and never overwrites a newer owner action", async () => {
+    const { session, task } = ownerFrameFixture();
+    let finishCapture!: (frame: Buffer) => void;
+    session.frame.mockImplementationOnce(
+      () => new Promise<Buffer>((resolve) => (finishCapture = resolve)),
+    );
+    const first = refreshComputerOwnerFrame(task);
+    const second = refreshComputerOwnerFrame(task);
+    expect(session.frame).toHaveBeenCalledTimes(1);
+    task.ownerFrameEpoch += 1;
+    task.frame = Buffer.from("owner-action");
+    task.frameUrl = "https://example.com/action";
+    finishCapture(Buffer.from("stale-capture"));
+    await Promise.all([first, second]);
+    expect(task.frame?.toString()).toBe("owner-action");
+    expect(task.frameUrl).toBe("https://example.com/action");
+    expect(task.ownerFrameRefresh).toBeNull();
+  });
+
+  it("clears the cached frame when a public-safe capture is unavailable", async () => {
+    const { session, task } = ownerFrameFixture();
+    session.frame.mockResolvedValueOnce(null);
+    await refreshComputerOwnerFrame(task);
+    expect(task.frame).toBeNull();
+    expect(task.frameUrl).toBeNull();
+  });
+
+  it("does not capture during owner input or after control ends", async () => {
+    const { session, task } = ownerFrameFixture();
+    task.ownerInputBusy = true;
+    await refreshComputerOwnerFrame(task);
+    task.ownerInputBusy = false;
+    task.ownerControl = false;
+    await refreshComputerOwnerFrame(task);
+    task.ownerControl = true;
+    task.finished = true;
+    await refreshComputerOwnerFrame(task);
+    expect(session.frame).not.toHaveBeenCalled();
+  });
+});
 
 describe("cloud computer production gates", () => {
   it("reserves Browserless time in rounded 30-second units", () => {
