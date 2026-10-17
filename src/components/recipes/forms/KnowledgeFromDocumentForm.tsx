@@ -139,7 +139,7 @@ export function KnowledgeFromDocumentForm({
         hint={
           "PDF, Word DOCX, or Excel XLSX up to " +
           KNOWLEDGE_ASSET_MAX_LABEL +
-          ". Excel extraction reads up to 1,000 rows per sheet."
+          ". Excel: 1,000 rows per sheet and 200 visible sheets maximum."
         }
       >
         <div className="space-y-3">

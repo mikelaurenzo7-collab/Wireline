@@ -965,7 +965,7 @@ export default function KnowledgeBaseClaude({
               : "Text, Markdown, CSV, PDF, DOCX, or XLSX files"}{" "}
             up to {KNOWLEDGE_ASSET_MAX_LABEL} each.
             <span className="block">
-              Excel extraction reads up to the first 1,000 rows per sheet.
+              Excel: 1,000 rows per sheet and 200 visible sheets maximum.
             </span>
           </div>
         </div>
