@@ -146,7 +146,12 @@ export type CloudComputerHooks = {
   /** Last successful Bot mouse position; transient owner-view metadata only. */
   cursor?: (point: { x: number; y: number }) => void;
   stopRequested(): boolean;
-  askOwner(question: string, waitMs: number): Promise<string | null>;
+  controlRequested?(): boolean;
+  askOwner(
+    question: string,
+    waitMs: number,
+    options?: { takeControl: true },
+  ): Promise<string | null>;
   meter<T>(input: { reserveUsd: number; turn: number; operation: () => Promise<T> }): Promise<T>;
   recordUsage(model: string, response: Record<string, unknown>, latencyMs: number): void;
 };
@@ -635,9 +640,94 @@ export async function runCloudComputerAgent(input: {
         ? timeLimit
         : null;
 
+  const pauseForOwner = async (): Promise<
+    { resumed: true; message: unknown } | { resumed: false; outcome: CloudComputerOutcome } | null
+  > => {
+    if (!input.hooks.controlRequested?.()) return null;
+    const interrupted = interruptionOutcome();
+    if (interrupted) return { resumed: false, outcome: interrupted };
+    const waitMs = Math.min(
+      CLOUD_COMPUTER_LIMITS.ownerReplyWaitMs,
+      CLOUD_COMPUTER_LIMITS.ownerWaitBudgetMs - ownerWaitMs,
+    );
+    if (questions >= CLOUD_COMPUTER_LIMITS.maxOwnerQuestions || waitMs < MIN_OWNER_WAIT_MS) {
+      return {
+        resumed: false,
+        outcome: {
+          status: "blocked",
+          summary: "The task reached its owner-control limit. Open a new browser to continue.",
+          sources: [],
+        },
+      };
+    }
+    questions += 1;
+    const startedWaiting = now();
+    const reply = await input.hooks.askOwner(
+      "You paused your Bot. Browse, then return control when you’re ready.",
+      waitMs,
+      { takeControl: true },
+    );
+    ownerWaitMs += now() - startedWaiting;
+    const resumedInterruption = interruptionOutcome();
+    if (resumedInterruption) return { resumed: false, outcome: resumedInterruption };
+    if (reply === null) {
+      return {
+        resumed: false,
+        outcome: {
+          status: "blocked",
+          summary: "The Bot stopped because browser control was not returned in time.",
+          sources: [],
+        },
+      };
+    }
+    const screenshot = await captureModelFrame(input);
+    const capturedInterruption = interruptionOutcome();
+    if (capturedInterruption) return { resumed: false, outcome: capturedInterruption };
+    if (!screenshot) {
+      return {
+        resumed: false,
+        outcome: {
+          status: "failed",
+          code: "COMPUTER_BROWSER_LOST",
+          summary: "The cloud computer could not capture a safe screen. Try the task again.",
+        },
+      };
+    }
+    rememberCurrentPage();
+    hasPublicPage = /^https?:\/\//i.test(input.session.activeUrl());
+    screenshotBytes += screenshot.length;
+    if (screenshotBytes > CLOUD_COMPUTER_LIMITS.imageBudgetBytes)
+      return { resumed: false, outcome: { ...CONTEXT_LIMIT_OUTCOME } };
+    // Only this fixed signal and a masked screenshot cross the handoff. Owner
+    // keystrokes, credentials and other direct browser inputs stay private.
+    return {
+      resumed: true,
+      message: {
+        role: "user",
+        content: [
+          {
+            type: "input_text",
+            text: "The owner paused the task and has returned browser control. Discard any unexecuted actions from your earlier plan. Inspect the current redacted screen and re-plan before acting. Do not repeat submissions the owner may have completed.",
+          },
+          {
+            type: "input_image",
+            image_url: `data:image/jpeg;base64,${screenshot.toString("base64")}`,
+            detail: "original",
+          },
+        ],
+      },
+    };
+  };
+
   for (let turn = 1; turn <= CLOUD_COMPUTER_LIMITS.maxTurns; turn += 1) {
     const turnInterruption = interruptionOutcome();
     if (turnInterruption) return turnInterruption;
+    const initialPause = await pauseForOwner();
+    if (initialPause && !initialPause.resumed) return initialPause.outcome;
+    if (initialPause?.resumed) {
+      append(initialPause.message);
+      rejectedReport = null;
+    }
     // Tool declarations also describe historical tool items replayed below.
     // Keep that schema stable; limit new repair output with tool_choice and the
     // pre-execution guard rather than deleting computer from its own history.
@@ -712,6 +802,15 @@ export async function runCloudComputerAgent(input: {
         summary: "The AI provider requested a safety review, so the Bot stopped before acting.",
       };
     }
+    const responsePause = await pauseForOwner();
+    if (responsePause && !responsePause.resumed) return responsePause.outcome;
+    if (responsePause?.resumed) {
+      // This response was metered, but none of its actions ran. The next turn
+      // starts from the owner's updated screen instead of replaying a stale plan.
+      append(responsePause.message);
+      rejectedReport = null;
+      continue;
+    }
     if (output.length) {
       for (const item of output) append(item);
     }
@@ -771,11 +870,25 @@ export async function runCloudComputerAgent(input: {
     let ownerAsked = false;
     let ownerCheckpointReply: string | null = null;
     let finishCall: { callId: string; args: Record<string, unknown> } | null = null;
+    let ownerPauseMessage: unknown = null;
     for (const call of toolCalls) {
       const toolInterruption = interruptionOutcome();
       if (toolInterruption) return toolInterruption;
       const callId = typeof call.call_id === "string" ? call.call_id : "";
       if (!callId) continue;
+      const toolPause = await pauseForOwner();
+      if (toolPause && !toolPause.resumed) return toolPause.outcome;
+      if (toolPause?.resumed) {
+        ownerPauseMessage = toolPause.message;
+        ownerAsked = true;
+        deferred =
+          "Not executed: the owner updated the browser. Re-plan from the refreshed screen.";
+        halted = true;
+      }
+      if (ownerPauseMessage && call.type === "function_call") {
+        toolOutputs.push({ type: "function_call_output", call_id: callId, output: deferred });
+        continue;
+      }
       if (call.type === "function_call") {
         const name = String(call.name || "");
         const args = objectArguments(call.arguments);
@@ -982,6 +1095,17 @@ export async function runCloudComputerAgent(input: {
       for (const rawAction of requestedActions) {
         const actionInterruption = interruptionOutcome();
         if (actionInterruption) return actionInterruption;
+        const actionPause = await pauseForOwner();
+        if (actionPause && !actionPause.resumed) return actionPause.outcome;
+        if (actionPause?.resumed) {
+          ownerPauseMessage = actionPause.message;
+          ownerAsked = true;
+          deferred =
+            "Not executed: the owner updated the browser. Re-plan from the refreshed screen.";
+          halted = true;
+          ownerFrame = null;
+          break;
+        }
         if (!rawAction || typeof rawAction !== "object") {
           halted = true;
           break;
@@ -1086,6 +1210,13 @@ export async function runCloudComputerAgent(input: {
 
     const finishInterruption = interruptionOutcome();
     if (finishInterruption) return finishInterruption;
+    const finalPause = await pauseForOwner();
+    if (finalPause && !finalPause.resumed) return finalPause.outcome;
+    if (finalPause?.resumed) {
+      ownerPauseMessage = finalPause.message;
+      ownerAsked = true;
+      halted = true;
+    }
     if (finishCall) {
       if (
         ranBrowser ||
@@ -1168,6 +1299,10 @@ export async function runCloudComputerAgent(input: {
       };
     }
     for (const item of toolOutputs) append(item);
+    if (ownerPauseMessage) {
+      append(ownerPauseMessage);
+      rejectedReport = null;
+    }
     if (ownerCheckpointReply !== null) {
       append({
         role: "user",

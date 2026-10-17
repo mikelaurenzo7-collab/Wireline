@@ -21,11 +21,7 @@ import { planById, plansForClient, FOUNDER_CATALOG_VERSION } from "../lib/plan-c
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
 import { getTenantChannelEntitlements } from "../lib/channel-entitlements";
 import { getWorkspaceUsageSnapshot } from "../lib/workspace-usage-snapshot";
-import { reverseCredit } from "../lib/credit-wallet";
-import {
-  listSucceededRefunds,
-  reverseSubscriptionRuntimeAllowanceForChargeStrict,
-} from "../middleware/stripe-runtime-allowance-retry";
+import { reverseSubscriptionRuntimeAllowanceForChargeStrict } from "../middleware/stripe-runtime-allowance-retry";
 import Stripe from "stripe";
 import type { AuthenticatedRequest } from "../types/auth";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
@@ -51,6 +47,7 @@ import {
   type StripeEventClaimOwnership,
 } from "../lib/stripe-event-claim";
 import { reconcilePaidAllowanceFundingForCharge } from "../lib/stripe-paid-allowance-funding";
+import { reconcileStripeTopUpRefunds } from "../lib/stripe-topup-refund-reconciliation";
 
 const router = express.Router();
 const LIVE_VIDEO_CHECKOUT_TTL_MS = 24 * 60 * 60_000;
@@ -142,28 +139,6 @@ async function validateFounderCatalogPriceId(priceId: string): Promise<string | 
   }
 }
 
-/**
- * Scale a gross (tax-inclusive) refunded/disputed Stripe amount down to the
- * portion of the wallet credit it actually represents. When Automatic Tax is
- * enabled, top-up checkouts credit only the pre-tax `credit_usd`, so
- * reversing the gross amount would claw back more than was ever granted —
- * a fully-refunded customer would land at a negative balance and be blocked
- * on completion-grace debt they never spent. `credit_usd` rides on the
- * PaymentIntent metadata (set at checkout creation), and `pi.amount` is the
- * tax-inclusive total, so each reversal scales by credited/charged. Rounds
- * DOWN so cumulative partial reversals can never exceed the granted credit.
- * Falls back to the gross amount when the metadata is absent (legacy top-ups)
- * or no exclusive tax was added (ratio = 1 — identical to prior behavior).
- */
-function creditPortionUsd(grossCents: number, pi: Stripe.PaymentIntent): number {
-  const grossUsd = (grossCents || 0) / 100;
-  const creditUsd = Number(pi.metadata?.credit_usd);
-  const chargedUsd = (pi.amount || 0) / 100;
-  if (!Number.isFinite(creditUsd) || creditUsd <= 0 || chargedUsd <= 0) return grossUsd;
-  if (creditUsd >= chargedUsd) return grossUsd;
-  return Math.min(creditUsd, Math.floor(grossUsd * (creditUsd / chargedUsd) * 100) / 100);
-}
-
 // ─── Stripe Webhook ──────────────────────────────────────────────────────────
 
 router.post("/stripe-webhook", async (req: Request, res: Response) => {
@@ -244,19 +219,16 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
         break;
       }
       case "refund.updated": {
-        // A pending refund settled (or failed). Only a transition to
-        // succeeded moves money; the shared routing no-ops anything already
-        // reversed and throws on inconsistency, same as charge.refunded.
+        // A failed/canceled refund can return a previously settled debit.
+        // Both allowance and standalone top-up recovery use canonical receipts.
         const refund = event.data.object as Stripe.Refund;
         const chargeId = typeof refund.charge === "string" ? refund.charge : refund.charge?.id;
         if (!chargeId) break;
         if (refund.status !== "succeeded") {
-          if (refund.status === "failed" || refund.status === "canceled")
-            await reconcilePaidAllowanceFundingForCharge({
-              stripe,
-              chargeId,
-              providerEventId: event.id,
-            });
+          if (refund.status === "failed" || refund.status === "canceled") {
+            const charge = await stripe.charges.retrieve(chargeId);
+            await reverseSettledRefundsForCharge(charge, event, false);
+          }
           break;
         }
         const charge = await stripe.charges.retrieve(chargeId);
@@ -267,15 +239,13 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
         break;
       }
       case "refund.failed": {
-        // Fallback mounts still reconcile the canonical paid-period return.
+        // Fallback mounts also restore exact posted standalone top-up debits.
         const refund = event.data.object as Stripe.Refund;
         const chargeId = typeof refund.charge === "string" ? refund.charge : refund.charge?.id;
-        if (chargeId)
-          await reconcilePaidAllowanceFundingForCharge({
-            stripe,
-            chargeId,
-            providerEventId: event.id,
-          });
+        if (chargeId) {
+          const charge = await stripe.charges.retrieve(chargeId);
+          await reverseSettledRefundsForCharge(charge, event, false);
+        }
         break;
       }
       case "charge.dispute.created": {
@@ -592,48 +562,21 @@ async function reverseSettledRefundsForCharge(
    */
   allowSubscriptionFallback = true,
 ): Promise<void> {
-  // Claw back a refunded/disputed web credit top-up so a refund can't
-  // leave the purchased credit sitting in the wallet. Only top-ups carry
-  // purpose=credit_topup on their PaymentIntent. Idempotent via the
-  // stripe_events guard in the webhook handler + the (user, ref) ledger
-  // index.
-  const piId =
-    typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
-  if (!piId) return;
-  const pi = await stripe.paymentIntents.retrieve(piId);
   const fundingReconciled = await reconcilePaidAllowanceFundingForCharge({
     stripe,
     chargeId: charge.id,
     providerEventId: event.id,
   });
-  if (!fundingReconciled && pi.metadata?.purpose === "credit_topup") {
-    const userId = pi.metadata.wireline_user_id;
-    if (!userId || !(charge.amount_refunded > 0)) return;
-    // Inline Charge refunds may be omitted or truncated. Exhaust the same
-    // authoritative inventory used for subscription refunds before posting
-    // any movements; a later-page outage must leave the event retryable.
-    const refunds = await listSucceededRefunds(charge.id);
-    if (!refunds.length) {
-      throw new Error(
-        `Stripe charge ${charge.id} reports refunded funds but no succeeded refund objects.`,
-      );
-    }
-    await tenantStore.run(userId, async () => {
-      for (const refund of refunds) {
-        await reverseCredit(userId, creditPortionUsd(refund.amount, pi), "web_topup_refund", {
-          type: "stripe_refund",
-          id: refund.id,
-          entryKind: "refund",
-          source: "stripe",
-          provider: "stripe",
-          providerEventId: event.id,
-          providerObjectId: refund.id,
-          customerReason: "Runtime Balance refund",
-          metadata: { payment_intent_id: piId, charge_id: charge.id },
-        });
-      }
-    });
-  } else {
+  if (fundingReconciled) return;
+  const topUpReconciled = await reconcileStripeTopUpRefunds({
+    stripe,
+    chargeId: charge.id,
+    providerEventId: event.id,
+    ...(event.type === "refund.updated" || event.type === "refund.failed"
+      ? { refundId: (event.data.object as Stripe.Refund).id }
+      : {}),
+  });
+  if (!topUpReconciled) {
     // Not a top-up — but a subscription invoice charge funds the Runtime
     // Allowance, which was granted on subscription sync and never came
     // back on a refund. Reverse it under the refund's own id.

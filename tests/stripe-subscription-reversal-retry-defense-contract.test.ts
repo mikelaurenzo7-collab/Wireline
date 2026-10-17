@@ -18,7 +18,7 @@ describe("Stripe subscription allowance reversal retry defense", () => {
     expect(helperEnd).toBeGreaterThan(helperStart);
     const helper = billing.slice(helperStart, helperEnd);
     expect(billing).not.toContain("async function reverseRuntimeAllowanceForCharge");
-    expect(helper).toContain("await listSucceededRefunds(charge.id)");
+    expect(helper).toContain("await reconcileStripeTopUpRefunds({");
     expect(helper).toContain("await reverseSubscriptionRuntimeAllowanceForChargeStrict(");
     expect(helper).not.toMatch(/\bcatch\s*\(/);
     expect(helper).not.toContain("Never fail the webhook on this path");

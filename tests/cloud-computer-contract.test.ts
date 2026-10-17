@@ -220,13 +220,28 @@ describe("cloud computer source contracts", () => {
   it("does not wait for owner input when the question was not saved", () => {
     const runner = read("src/lib/cloud-computer/task-runner.ts");
     const ownerWait = runner.slice(
-      runner.indexOf("askOwner: async"),
-      runner.indexOf("meter: async"),
+      runner.indexOf("export async function waitForComputerOwner("),
+      runner.indexOf("function terminalOutcome("),
     );
     expect(ownerWait).toContain("const checkpoint = await persist(task, {");
     expect(ownerWait).toContain('checkpoint !== "written"');
+    expect(ownerWait.indexOf("const reply = waitForOwner(task, waitMs)")).toBeLessThan(
+      ownerWait.indexOf("const checkpoint = await persist"),
+    );
+    const failedSave = ownerWait.slice(
+      ownerWait.indexOf('checkpoint !== "written"'),
+      ownerWait.indexOf("const ownerReply = await reply"),
+    );
+    expect(failedSave).toContain("task.reply?.(null)");
+    expect(failedSave).toContain("throw AppError.serviceUnavailable");
     expect(ownerWait.indexOf('checkpoint !== "written"')).toBeLessThan(
-      ownerWait.indexOf("new Promise<string | null>"),
+      ownerWait.indexOf("const ownerReply = await reply"),
+    );
+    expect(ownerWait.indexOf("task.handoffBusy = true")).toBeLessThan(
+      ownerWait.indexOf("const reply = waitForOwner"),
+    );
+    expect(ownerWait.indexOf("task.handoffBusy = false")).toBeGreaterThan(
+      ownerWait.indexOf('checkpoint !== "written"'),
     );
   });
 
@@ -266,7 +281,7 @@ describe("cloud computer source contracts", () => {
     expect(runner).toContain(
       "The model gets a fixed handoff signal, never the owner's typed values.",
     );
-    expect(runner).toContain('resume(\n    "The owner returned browser control. Inspect');
+    expect(runner).toMatch(/resume\(\s*"The owner returned browser control\. Inspect/);
     const browser = read("src/lib/cloud-computer/browser-session.ts");
     expect(browser).toContain("It is never returned as");
     expect(browser).toContain("activity or included in a model tool result.");

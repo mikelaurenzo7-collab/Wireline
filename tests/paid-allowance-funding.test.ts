@@ -139,6 +139,14 @@ function database() {
               }
               if (table === "wireline_subscriptions") return billing[user] ? [billing[user]] : [];
               if (table !== "wireline_credit_ledger") throw new Error(`Unexpected table ${table}`);
+              if (filter.sql.includes("->>'payment_intent'"))
+                return rows
+                  .filter(
+                    (row) =>
+                      row.refType === filter.params[0] &&
+                      row.metadata.payment_intent === filter.params[1],
+                  )
+                  .slice(0, limit);
               if (filter.sql.includes('"provider_object_id"'))
                 return rows
                   .filter(
@@ -671,38 +679,50 @@ describe("authoritative Stripe paid funding reconciliation", () => {
         });
     },
   );
-  it("releases standalone top-up return events to the existing billing owner", async () => {
-    await setup();
-    const p = provider();
-    p.refunds[0].status = "failed";
-    p.refunds[0].failure_balance_transaction = "txn_return";
-    vi.stubEnv("STRIPE_WEBHOOK_SECRET", "unit-only");
-    vi.spyOn(stripeHelpers, "stripeAvailable").mockReturnValue(true);
-    vi.spyOn(stripeHelpers, "stripeInvoiceIdForCharge").mockResolvedValue(null);
-    vi.spyOn(stripeHelpers.stripe.webhooks, "constructEvent").mockReturnValue({
-      id: "evt_topup_return",
-      type: "refund.failed",
-      data: { object: p.refunds[0] },
-    } as unknown as Stripe.Event);
-    vi.spyOn(stripeHelpers.stripe.charges, "retrieve").mockResolvedValue(p.charge);
-    vi.spyOn(stripeHelpers.stripe.paymentIntents, "retrieve").mockResolvedValue({
-      id: "pi_topup",
-      metadata: { purpose: "credit_topup", wireline_user_id: "tenant" },
-    } as never);
-    const json = vi.fn();
-    const next = vi.fn();
-    await stripeRuntimeAllowanceRetryPreflight(
-      {
-        method: "POST",
-        body: Buffer.from("{}"),
-        headers: { "stripe-signature": "unit-only" },
-      } as Request,
-      { json } as unknown as Response,
-      next,
-    );
-    expect(claims.release).toHaveBeenCalledOnce();
-    expect(claims.complete).not.toHaveBeenCalled();
-    expect(next).toHaveBeenCalledOnce();
-    expect(json).not.toHaveBeenCalled();
-  });
+  it.each([true, false])(
+    "releases standalone top-up returns to billing with current purpose metadata present=%s",
+    async (purposePresent) => {
+      const data = await setup();
+      const p = provider();
+      p.refunds[0].status = "failed";
+      p.refunds[0].failure_balance_transaction = "txn_return";
+      vi.stubEnv("STRIPE_WEBHOOK_SECRET", "unit-only");
+      vi.spyOn(stripeHelpers, "stripeAvailable").mockReturnValue(true);
+      vi.spyOn(stripeHelpers, "stripeInvoiceIdForCharge").mockResolvedValue(null);
+      vi.spyOn(stripeHelpers.stripe.webhooks, "constructEvent").mockReturnValue({
+        id: "evt_topup_return",
+        type: "refund.failed",
+        data: { object: p.refunds[0] },
+      } as unknown as Stripe.Event);
+      vi.spyOn(stripeHelpers.stripe.charges, "retrieve").mockResolvedValue(p.charge);
+      vi.spyOn(stripeHelpers.stripe.paymentIntents, "retrieve").mockResolvedValue({
+        id: "pi_paid",
+        metadata: purposePresent
+          ? { purpose: "credit_topup", wireline_user_id: "tenant" }
+          : { purpose: "changed", wireline_user_id: "wrong" },
+      } as never);
+      if (!purposePresent)
+        data.rows.push({
+          userId: "tenant",
+          refType: "stripe_session",
+          deltaUsd: "10",
+          metadata: { payment_intent: "pi_paid" },
+        });
+      const json = vi.fn();
+      const next = vi.fn();
+      await stripeRuntimeAllowanceRetryPreflight(
+        {
+          method: "POST",
+          body: Buffer.from("{}"),
+          headers: { "stripe-signature": "unit-only" },
+        } as Request,
+        { json } as unknown as Response,
+        next,
+      );
+      expect(claims.release).toHaveBeenCalledOnce();
+      expect(claims.complete).not.toHaveBeenCalled();
+      expect(next).toHaveBeenCalledOnce();
+      expect(json).not.toHaveBeenCalled();
+    },
+  );
 });

@@ -102,6 +102,23 @@ Do not change legal-entity, representative, bank, tax, address, or verification 
 4. Confirm exactly one `top_up` ledger row and an updated balance.
 5. Redeliver the event and confirm no duplicate credit.
 
+Standalone top-up refunds and disputes resolve the wallet owner and credit limit
+from the original posted Checkout ledger receipt, then verify its PaymentIntent,
+charge, customer, USD currency and live/test mode through the configured Stripe
+account. Mutable PaymentIntent metadata cannot select a different wallet or
+increase the credited principal. Missing or conflicting receipts require
+reconciliation before retry; do not mark the webhook complete or invent a grant.
+
+Refund reconciliation reads the complete charge refund inventory before changing
+the wallet. A failed or canceled refund restores only its exact previously posted
+debit after Stripe supplies returned-funds evidence. A return observed before the
+success callback leaves an idempotent zero-dollar receipt so a stale success
+snapshot cannot debit later. Restoration never resets usage or subscription
+allowances. Tax-inclusive partial refunds round the wallet share down per refund;
+split refunds can leave a customer-favor cent, but cannot debit more than the
+original wallet credit. Validate duplicate, reordered, failed and returned events
+in a dedicated Stripe test account before the first public paid pilot.
+
 ### 7. Insufficient balance blocks new paid work with a recovery path
 
 Paid plans consume included voice minutes first. Once included capacity is depleted, insufficient Runtime Balance blocks the next new paid action with actionable `402`; an active call is allowed to finish and any completion debt is recorded. There is no hidden postpaid overage.

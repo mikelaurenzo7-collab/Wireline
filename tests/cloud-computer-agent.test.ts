@@ -101,6 +101,199 @@ function client(responses: unknown[]) {
 const bot = { name: "Repair Desk", role: "front desk", facts: ["We serve Austin."], rules: [] };
 
 describe("OpenAI cloud computer agent loop", () => {
+  it("recognizes a public page opened by the owner from a blank paused task", async () => {
+    const { session } = fakeSession({}, "about:blank");
+    let controlRequested = true;
+    const { hooks: h } = hooks({
+      controlRequested: () => controlRequested,
+      askOwner: async () => {
+        await session.execute("navigate", { url: "https://example.com/" });
+        controlRequested = false;
+        return "Fixed handoff.";
+      },
+    });
+    const openai = client([
+      response([
+        functionCall("finish", "finish_task", {
+          outcome: "completed",
+          summary: "Reviewed the page.",
+          sources: ["https://example.com/"],
+        }),
+      ]),
+    ]);
+    const outcome = await runCloudComputerAgent({
+      client: openai.client,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Review the page.",
+      startUrl: null,
+      hooks: h,
+    });
+    expect(outcome).toMatchObject({ status: "completed", summary: "Reviewed the page." });
+    expect(openai.requests).toHaveLength(1);
+  });
+  it("pauses after an in-flight model turn and discards its unexecuted plan", async () => {
+    const { session, calls } = fakeSession({}, "https://example.com/");
+    let controlRequested = false;
+    const openai = client([
+      response([
+        computerCall("stale-plan", [{ type: "click", x: 10, y: 20 }]),
+        functionCall("stale-finish", "finish_task", {
+          outcome: "completed",
+          summary: "Stale report.",
+          sources: [],
+        }),
+      ]),
+      response([
+        functionCall("fresh-finish", "finish_task", {
+          outcome: "completed",
+          summary: "Reviewed the updated page.",
+          sources: [],
+        }),
+      ]),
+    ]);
+    const askOwner = vi.fn(
+      async (_question: string, _waitMs: number, options?: { takeControl: true }) => {
+        expect(options).toEqual({ takeControl: true });
+        controlRequested = false;
+        return "A fixed handoff signal; no typed credentials.";
+      },
+    );
+    let modelTurns = 0;
+    const { hooks: h } = hooks({
+      controlRequested: () => controlRequested,
+      askOwner,
+      meter: async ({ operation }) => {
+        const result = await operation();
+        if (++modelTurns === 1) controlRequested = true;
+        return result;
+      },
+    });
+    const outcome = await runCloudComputerAgent({
+      client: openai.client,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Review this page.",
+      startUrl: null,
+      hooks: h,
+    });
+    expect(outcome).toMatchObject({ status: "completed", summary: "Reviewed the updated page." });
+    expect(calls).toHaveLength(0);
+    expect(askOwner).toHaveBeenCalledOnce();
+    const resumed = JSON.stringify(openai.requests[1].input);
+    expect(resumed).toContain("Discard any unexecuted actions");
+    expect(resumed).toContain("data:image/jpeg;base64,");
+    expect(resumed).not.toContain("stale-plan");
+    expect(resumed).not.toContain("typed credentials");
+    expect(h.recordUsage).toHaveBeenCalledTimes(2);
+  });
+
+  it("pauses between batch actions, completes tool history, and re-plans without remaining actions", async () => {
+    const { session, calls } = fakeSession({}, "https://example.com/");
+    let controlRequested = false;
+    const execute = session.execute;
+    session.execute = vi.fn(async (...args: Parameters<CloudBrowserSession["execute"]>) => {
+      const result = await execute(...args);
+      controlRequested = true;
+      return result;
+    });
+    const openai = client([
+      response([
+        computerCall("batch-plan", [
+          { type: "click", x: 10, y: 20 },
+          { type: "click", x: 40, y: 60 },
+        ]),
+        openPublicUrlCall("stale-navigation", "https://example.net/"),
+      ]),
+      response([
+        functionCall("fresh-finish", "finish_task", {
+          outcome: "completed",
+          summary: "Reviewed the updated page.",
+          sources: [],
+        }),
+      ]),
+    ]);
+    const askOwner = vi.fn(async () => {
+      controlRequested = false;
+      return "Do not forward this owner input.";
+    });
+    const { hooks: h } = hooks({ controlRequested: () => controlRequested, askOwner });
+    const outcome = await runCloudComputerAgent({
+      client: openai.client,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Review this page.",
+      startUrl: null,
+      hooks: h,
+    });
+    expect(outcome.status).toBe("completed");
+    expect(calls).toEqual([
+      { member: "left_click", input: { target: { type: "coordinate", x: 10, y: 20 } } },
+    ]);
+    const resumedInput = openai.requests[1].input as Item[];
+    expect(resumedInput).toContainEqual(
+      expect.objectContaining({ type: "computer_call_output", call_id: "batch-plan" }),
+    );
+    expect(resumedInput).toContainEqual(
+      expect.objectContaining({
+        type: "function_call_output",
+        call_id: "stale-navigation",
+        output: expect.stringContaining("Not executed"),
+      }),
+    );
+    expect(JSON.stringify(resumedInput)).not.toContain("Do not forward this owner input");
+    expect(askOwner).toHaveBeenCalledOnce();
+  });
+
+  it("keeps Stop authoritative while an owner-requested pause is waiting", async () => {
+    const { session } = fakeSession({}, "https://example.com/");
+    let stopped = false;
+    const askOwner = vi.fn(async () => {
+      stopped = true;
+      return null;
+    });
+    const { hooks: h } = hooks({
+      controlRequested: () => true,
+      stopRequested: () => stopped,
+      askOwner,
+    });
+    const openai = client([]);
+    const outcome = await runCloudComputerAgent({
+      client: openai.client,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Review this page.",
+      startUrl: null,
+      hooks: h,
+    });
+    expect(outcome.status).toBe("stopped");
+    expect(openai.requests).toHaveLength(0);
+  });
+
+  it("ends a pause whose owner-control wait expires without another model request", async () => {
+    const { session } = fakeSession({}, "https://example.com/");
+    const { hooks: h } = hooks({ controlRequested: () => true, askOwner: async () => null });
+    const openai = client([]);
+    const outcome = await runCloudComputerAgent({
+      client: openai.client,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Review this page.",
+      startUrl: null,
+      hooks: h,
+    });
+    expect(outcome).toMatchObject({
+      status: "blocked",
+      summary: expect.stringContaining("not returned in time"),
+    });
+    expect(openai.requests).toHaveLength(0);
+  });
+
   it("keeps secret-bearing start URL paths out of the model prompt", () => {
     const message = buildTaskMessage(
       "Find the hours.",

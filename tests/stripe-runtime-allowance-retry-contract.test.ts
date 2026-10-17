@@ -106,11 +106,15 @@ describe("Stripe Runtime Balance movements fail closed", () => {
   it("never reverses a refund under the charge id, in either webhook owner", () => {
     const billing = read("src/routes/billing-routes.ts");
 
+    const topups = read("src/lib/stripe-topup-refund-reconciliation.ts");
+    expect(billing).toContain("await reconcileStripeTopUpRefunds({");
+    expect(topups).toContain("reports refunded principal without settled refund evidence.");
     for (const [name, source] of [
-      ["billing-routes", billing],
+      ["top-up-reconciliation", topups],
       ["allowance-retry", middleware],
     ] as const) {
-      expect(source, name).toContain("reports refunded funds but no succeeded refund objects.");
+      if (name === "allowance-retry")
+        expect(source, name).toContain("reports refunded funds but no succeeded refund objects.");
       // The reversal reference must never be the charge.
       expect(source, name).not.toMatch(/\bid:\s*charge\.id,/);
       expect(source, name).not.toMatch(/providerObjectId:\s*charge\.id,/);
@@ -138,7 +142,7 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     // Both events call the one extracted handler — no second copy of the
     // routing that could drift.
     const calls = billing.match(/await reverseSettledRefundsForCharge\(/g) || [];
-    expect(calls.length).toBe(2);
+    expect(calls.length).toBe(4);
     expect(billing).toContain("async function reverseSettledRefundsForCharge(");
   });
 

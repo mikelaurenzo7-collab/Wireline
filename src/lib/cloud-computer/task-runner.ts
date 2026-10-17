@@ -128,6 +128,8 @@ type LiveTask = {
   actions: number;
   reply: ((value: string | null) => void) | null;
   ownerControl: boolean;
+  controlRequested: boolean;
+  handoffBusy: boolean;
   preparingBrowser: boolean;
   handoffGoal: string | null;
   ownerInputBusy: boolean;
@@ -183,6 +185,7 @@ function requestStop(task: LiveTask) {
     task.stopAt = Date.now();
   }
   task.ownerControl = false;
+  task.controlRequested = false;
   task.agentPointer = null;
   task.session?.cancelCurrentInput();
   task.reply?.(null);
@@ -218,6 +221,8 @@ export type ComputerTaskView = {
   agentPointer?: { x: number; y: number; at: string } | null;
   /** True only while this process is holding an owner takeover at a Bot checkpoint. */
   ownerControl: boolean;
+  /** Waiting for the executor's next safe checkpoint, not owner input yet. */
+  controlRequested: boolean;
   ownerTabs: OwnerBrowserTab[];
   preparingBrowser: boolean;
   /** Stop was requested; the task ends at its executor's next checkpoint. */
@@ -269,6 +274,14 @@ function toView(row: TaskRow): ComputerTaskView {
       task.ownerControl &&
       task.userId === row.userId &&
       row.status === "needs_input",
+    ),
+    controlRequested: Boolean(
+      task &&
+      task.userId === row.userId &&
+      !task.finished &&
+      !task.stop &&
+      task.controlRequested &&
+      row.status === "running",
     ),
     ownerTabs:
       task && !task.finished && task.ownerControl && task.userId === row.userId
@@ -559,6 +572,8 @@ async function admitComputerTask(
     actions: 0,
     reply: null,
     ownerControl: false,
+    controlRequested: false,
+    handoffBusy: false,
     preparingBrowser: false,
     handoffGoal: null,
     ownerInputBusy: false,
@@ -623,6 +638,55 @@ async function persist(
   }
 }
 
+/** Publish a serialized owner checkpoint before accepting direct browser input. */
+export async function waitForComputerOwner(
+  task: LiveTask,
+  question: string,
+  waitMs: number,
+  options?: { takeControl: true },
+): Promise<string | null> {
+  if (task.stop || task.finished) return null;
+  task.handoffBusy = true;
+  task.agentPointer = null;
+  const takingControl = options?.takeControl || task.controlRequested;
+  task.controlRequested = false;
+  task.ownerControl = Boolean(takingControl);
+  // Register before publishing needs_input. The transition fence prevents a
+  // stale running-state request from re-arming a pause during the save.
+  const reply = waitForOwner(task, waitMs);
+  try {
+    const checkpoint = await persist(task, {
+      status: "needs_input",
+      question: cleanText(question, 300),
+    });
+    if (checkpoint !== "written") {
+      task.reply?.(null);
+      task.ownerControl = false;
+      if (task.stop || task.finished) return null;
+      throw AppError.serviceUnavailable(
+        "The cloud computer could not show your Bot's question. Try the task again.",
+      );
+    }
+    if (task.stop) {
+      task.reply?.(null);
+      return null;
+    }
+  } finally {
+    task.handoffBusy = false;
+  }
+  const ownerReply = await reply;
+  task.ownerControl = false;
+  if (task.stop || task.finished) return null;
+  const resumed = await persist(task, { status: "running", question: null });
+  if (resumed !== "written") {
+    if (task.stop || task.finished) return null;
+    throw AppError.serviceUnavailable(
+      "The cloud computer could not confirm that your Bot resumed. Start a new task.",
+    );
+  }
+  return ownerReply;
+}
+
 function terminalOutcome(outcome: CloudComputerOutcome): TerminalOutcome {
   return {
     status: outcome.status,
@@ -663,6 +727,7 @@ function finishTask(task: LiveTask, outcome: TerminalOutcome): boolean {
   task.finished = true;
   task.outcome = outcome;
   task.ownerControl = false;
+  task.controlRequested = false;
   task.agentPointer = null;
   task.currentUrl = null;
   task.reply?.(null);
@@ -942,38 +1007,9 @@ async function executeTaskWithBrowser(
             task.agentPointer = { ...point, at: Date.now() };
           },
           stopRequested: () => task.stop,
-          askOwner: async (question, waitMs) => {
-            // Stop pressed during the model call: do not park on a new question.
-            if (task.stop) return null;
-            task.agentPointer = null;
-            const checkpoint = await persist(task, {
-              status: "needs_input",
-              question: cleanText(question, 300),
-            });
-            // If the owner cannot see the question, waiting here leaves the Bot
-            // stuck until its timeout with no way for the owner to take control.
-            if (checkpoint !== "written") {
-              if (task.stop || task.finished) return null;
-              throw AppError.serviceUnavailable(
-                "The cloud computer could not show your Bot's question. Try the task again.",
-              );
-            }
-            if (task.stop) return null;
-            // waitMs is what remains of the task's owner-wait budget.
-            const reply = await new Promise<string | null>((resolve) => {
-              const timer = setTimeout(() => {
-                task.reply = null;
-                resolve(null);
-              }, waitMs);
-              task.reply = (value) => {
-                clearTimeout(timer);
-                task.reply = null;
-                resolve(value);
-              };
-            });
-            if (!task.finished) await persist(task, { status: "running", question: null });
-            return reply;
-          },
+          controlRequested: () => task.controlRequested,
+          askOwner: (question, waitMs, options) =>
+            waitForComputerOwner(task, question, waitMs, options),
           meter: async ({ reserveUsd, turn, operation }) => {
             task.turns = turn;
             // Each provider attempt is its own reservation: the SDK never retries
@@ -1407,6 +1443,9 @@ export async function replyToComputerTask(
   if (!task || task.userId !== userId || !task.reply) {
     throw new AppError(409, "COMPUTER_NOT_WAITING", "This task is not waiting for a reply.");
   }
+  if (task.handoffBusy) {
+    throw new AppError(409, "COMPUTER_INPUT_BUSY", "Wait for the browser handoff to finish.");
+  }
   if (task.ownerControl) {
     throw new AppError(
       409,
@@ -1424,29 +1463,49 @@ export async function takeComputerControl(
 ): Promise<ComputerTaskView> {
   const row = await ownedRow(userId, taskId);
   const task = live.get(taskId);
-  if (
-    row.status !== "needs_input" ||
-    !task ||
-    task.userId !== userId ||
-    task.finished ||
-    task.stop ||
-    !task.reply ||
-    !task.session
-  ) {
+  if (!task || task.userId !== userId || task.finished || task.stop || !task.session) {
     throw new AppError(
       409,
       "COMPUTER_NOT_WAITING",
       "Your Bot is not waiting at a live browser checkpoint.",
     );
   }
-  task.ownerFrameEpoch += 1;
-  task.ownerControl = true;
-  task.agentPointer = null;
-  if ((await persist(task, { status: "needs_input" })) !== "written") {
-    task.ownerControl = false;
-    throw new AppError(409, "COMPUTER_NOT_WAITING", "This browser task has ended.");
+  if (task.handoffBusy || task.ownerInputBusy) {
+    throw new AppError(409, "COMPUTER_INPUT_BUSY", "Wait for the browser action to finish.");
   }
-  return toView({ ...row, status: "needs_input", events: task.events });
+  if (task.session.isClosed) failExpiredBrowser(task);
+  if (row.status === "running") {
+    if (!task.controlRequested) {
+      task.controlRequested = true;
+      pushEvent(task, { kind: "note", text: "You requested browser control." });
+      if ((await persist(task, {})) !== "written") {
+        task.controlRequested = false;
+        throw new AppError(409, "COMPUTER_NOT_WAITING", "This browser task has ended.");
+      }
+    }
+    return toView(row);
+  }
+  if (row.status !== "needs_input" || !task.reply) {
+    throw new AppError(
+      409,
+      "COMPUTER_NOT_WAITING",
+      "Your Bot is not waiting at a live browser checkpoint.",
+    );
+  }
+  task.controlRequested = false;
+  task.handoffBusy = true;
+  try {
+    task.ownerFrameEpoch += 1;
+    task.ownerControl = true;
+    task.agentPointer = null;
+    if ((await persist(task, { status: "needs_input" })) !== "written") {
+      task.ownerControl = false;
+      throw new AppError(409, "COMPUTER_NOT_WAITING", "This browser task has ended.");
+    }
+    return toView({ ...row, status: "needs_input", events: task.events });
+  } finally {
+    task.handoffBusy = false;
+  }
 }
 
 export async function sendComputerOwnerInput(
@@ -1472,7 +1531,7 @@ export async function sendComputerOwnerInput(
       "Take control of the browser before interacting with it.",
     );
   }
-  if (task.ownerInputBusy) {
+  if (task.ownerInputBusy || task.handoffBusy) {
     throw new AppError(
       409,
       "COMPUTER_INPUT_BUSY",
@@ -1537,7 +1596,7 @@ export async function returnComputerControlToBot(
       "Your Bot is not waiting for you to return browser control.",
     );
   }
-  if (task.ownerInputBusy) {
+  if (task.ownerInputBusy || task.handoffBusy) {
     throw new AppError(
       409,
       "COMPUTER_INPUT_BUSY",
@@ -1545,87 +1604,93 @@ export async function returnComputerControlToBot(
     );
   }
 
-  const handoffGoal = task.preparingBrowser
-    ? parseGoal(body && typeof body === "object" ? (body as Record<string, unknown>).goal : null)
-    : null;
-
-  const resume = task.reply;
-  if (task.session.isClosed) failExpiredBrowser(task);
-  let frame: Buffer | null;
+  task.handoffBusy = true;
   try {
-    frame = await task.session.frame();
-  } catch {
-    frame = null;
-  }
-  if (!frame) {
+    const handoffGoal = task.preparingBrowser
+      ? parseGoal(body && typeof body === "object" ? (body as Record<string, unknown>).goal : null)
+      : null;
+
+    const resume = task.reply;
     if (task.session.isClosed) failExpiredBrowser(task);
-    throw new AppError(
-      409,
-      "COMPUTER_SCREEN_UNAVAILABLE",
-      "The browser could not confirm a safe screen. Keep control and try again after the page settles.",
+    let frame: Buffer | null;
+    try {
+      frame = await task.session.frame();
+    } catch {
+      frame = null;
+    }
+    if (!frame) {
+      if (task.session.isClosed) failExpiredBrowser(task);
+      throw new AppError(
+        409,
+        "COMPUTER_SCREEN_UNAVAILABLE",
+        "The browser could not confirm a safe screen. Keep control and try again after the page settles.",
+      );
+    }
+    if (task.session.isClosed) failExpiredBrowser(task);
+    if (
+      task.reply !== resume ||
+      task.finished ||
+      task.stop ||
+      !task.ownerControl ||
+      task.ownerInputBusy
+    ) {
+      throw new AppError(
+        409,
+        "COMPUTER_TASK_ENDED",
+        "This browser task is no longer waiting for you.",
+      );
+    }
+    task.frame = frame;
+    task.frameAt = Date.now();
+    task.frameUrl = displayUrl(task.session.activeUrl()) || null;
+    task.currentUrl = displayUrl(task.session.activeUrl()) || task.currentUrl;
+    task.ownerFrameEpoch += 1;
+    task.ownerControl = false;
+    const saved = await persist(task, {
+      status: "running",
+      question: null,
+      ...(handoffGoal ? { goal: handoffGoal } : {}),
+    });
+    if (saved !== "written") {
+      if (saved === "error" && !task.finished && !task.stop) task.ownerControl = true;
+      throw new AppError(
+        saved === "error" ? 503 : 409,
+        saved === "error" ? "COMPUTER_HANDOFF_FAILED" : "COMPUTER_TASK_ENDED",
+        saved === "error"
+          ? "BotBound could not return control to your Bot. Your browser session is still open. Try again."
+          : "This browser task has ended.",
+      );
+    }
+    if (task.stop || task.finished || task.reply !== resume) {
+      throw new AppError(
+        409,
+        "COMPUTER_TASK_ENDED",
+        "This browser task is no longer waiting for you.",
+      );
+    }
+    if (handoffGoal) {
+      task.handoffGoal = handoffGoal;
+      task.preparingBrowser = false;
+    }
+    pushEvent(task, { kind: "note", text: "You returned browser control to your Bot." });
+    // The model gets a fixed handoff signal, never the owner's typed values.
+    resume(
+      "The owner returned browser control. Inspect the current redacted screen before deciding whether the step succeeded. Ask the owner again if you still need help.",
     );
+    return toView({
+      ...row,
+      status: "running",
+      goal: handoffGoal ?? row.goal,
+      question: null,
+      events: task.events,
+    });
+  } finally {
+    task.handoffBusy = false;
   }
-  if (task.session.isClosed) failExpiredBrowser(task);
-  if (
-    task.reply !== resume ||
-    task.finished ||
-    task.stop ||
-    !task.ownerControl ||
-    task.ownerInputBusy
-  ) {
-    throw new AppError(
-      409,
-      "COMPUTER_TASK_ENDED",
-      "This browser task is no longer waiting for you.",
-    );
-  }
-  task.frame = frame;
-  task.frameAt = Date.now();
-  task.frameUrl = displayUrl(task.session.activeUrl()) || null;
-  task.currentUrl = displayUrl(task.session.activeUrl()) || task.currentUrl;
-  task.ownerFrameEpoch += 1;
-  task.ownerControl = false;
-  const saved = await persist(task, {
-    status: "running",
-    question: null,
-    ...(handoffGoal ? { goal: handoffGoal } : {}),
-  });
-  if (saved !== "written") {
-    if (saved === "error" && !task.finished && !task.stop) task.ownerControl = true;
-    throw new AppError(
-      saved === "error" ? 503 : 409,
-      saved === "error" ? "COMPUTER_HANDOFF_FAILED" : "COMPUTER_TASK_ENDED",
-      saved === "error"
-        ? "BotBound could not return control to your Bot. Your browser session is still open. Try again."
-        : "This browser task has ended.",
-    );
-  }
-  if (task.stop || task.finished || task.reply !== resume) {
-    throw new AppError(
-      409,
-      "COMPUTER_TASK_ENDED",
-      "This browser task is no longer waiting for you.",
-    );
-  }
-  if (handoffGoal) {
-    task.handoffGoal = handoffGoal;
-    task.preparingBrowser = false;
-  }
-  pushEvent(task, { kind: "note", text: "You returned browser control to your Bot." });
-  // The model gets a fixed handoff signal, never the owner's typed values.
-  resume(
-    "The owner returned browser control. Inspect the current redacted screen before deciding whether the step succeeded. Ask the owner again if you still need help.",
-  );
-  return toView({
-    ...row,
-    status: "running",
-    goal: handoffGoal ?? row.goal,
-    question: null,
-    events: task.events,
-  });
 }
 
 /** Test seam: clear in-process state between cases. */
-export function __resetCloudComputerRunnerForTests() {
+export function __resetCloudComputerRunnerForTests(fixtures: LiveTask[] = []) {
   live.clear();
+  for (const task of fixtures) live.set(task.taskId, task);
 }

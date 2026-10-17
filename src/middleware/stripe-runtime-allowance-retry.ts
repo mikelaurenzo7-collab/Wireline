@@ -32,6 +32,10 @@ import {
   type StripeEventClaimOwnership,
 } from "../lib/stripe-event-claim";
 import { reconcilePaidAllowanceFundingForCharge } from "../lib/stripe-paid-allowance-funding";
+import {
+  hasPostedStripeTopUpCredit,
+  resolveStripeTopUpCredit,
+} from "../lib/stripe-topup-refund-reconciliation";
 
 /**
  * Stripe can omit the expanded `charge.refunds` list from webhook payloads.
@@ -328,17 +332,27 @@ async function reverseTopUpDisputeStrict(
   withdrawnCents: number,
   providerEventId: string,
 ): Promise<boolean> {
-  const userId = String(paymentIntent.metadata?.wireline_user_id || "").trim();
-  const purchasedCreditUsd = Number(paymentIntent.metadata?.credit_usd);
-  if (!userId || !(purchasedCreditUsd > 0)) {
+  const chargeId = typeof dispute.charge === "string" ? dispute.charge : dispute.charge?.id;
+  const context = chargeId ? await resolveStripeTopUpCredit({ stripe, chargeId }) : null;
+  if (
+    !context ||
+    context.paymentIntent.id !== paymentIntent.id ||
+    context.charge.currency !== dispute.currency ||
+    (dispute.payment_intent &&
+      (typeof dispute.payment_intent === "string"
+        ? dispute.payment_intent
+        : dispute.payment_intent.id) !== paymentIntent.id)
+  ) {
     throw new Error(
-      `Stripe top-up dispute ${dispute.id} is missing BotBound owner or purchased-credit metadata.`,
+      `Stripe top-up dispute ${dispute.id} is missing verified original Checkout credit provenance.`,
     );
   }
+  const userId = context.original.userId;
+  const purchasedCreditUsd = context.grantCents / 100;
 
   const amountUsd = proportionalTopUpCreditUsd(
     withdrawnCents,
-    paymentIntent.amount || 0,
+    context.charge.amount,
     purchasedCreditUsd,
   );
   if (!(amountUsd > 0)) return false;
@@ -420,17 +434,27 @@ async function restoreTopUpDisputeStrict(
   reinstatedCents: number,
   providerEventId: string,
 ): Promise<boolean> {
-  const userId = String(paymentIntent.metadata?.wireline_user_id || "").trim();
-  const purchasedCreditUsd = Number(paymentIntent.metadata?.credit_usd);
-  if (!userId || !(purchasedCreditUsd > 0)) {
+  const chargeId = typeof dispute.charge === "string" ? dispute.charge : dispute.charge?.id;
+  const context = chargeId ? await resolveStripeTopUpCredit({ stripe, chargeId }) : null;
+  if (
+    !context ||
+    context.paymentIntent.id !== paymentIntent.id ||
+    context.charge.currency !== dispute.currency ||
+    (dispute.payment_intent &&
+      (typeof dispute.payment_intent === "string"
+        ? dispute.payment_intent
+        : dispute.payment_intent.id) !== paymentIntent.id)
+  ) {
     throw new Error(
-      `Stripe top-up dispute ${dispute.id} is missing BotBound owner or purchased-credit metadata.`,
+      `Stripe top-up dispute ${dispute.id} is missing verified original Checkout credit provenance.`,
     );
   }
+  const userId = context.original.userId;
+  const purchasedCreditUsd = context.grantCents / 100;
 
   const calculatedAmountUsd = proportionalTopUpCreditUsd(
     reinstatedCents,
-    paymentIntent.amount || 0,
+    context.charge.amount,
     purchasedCreditUsd,
   );
   if (!(calculatedAmountUsd > 0)) return false;
@@ -566,7 +590,11 @@ export async function stripeRuntimeAllowanceRetryPreflight(
         });
         // Canonical invoice ownership outranks mutable purpose metadata.
         // Standalone top-ups remain owned by the existing billing router.
-        if (!fundingReconciled && paymentIntent.metadata?.purpose === "credit_topup") {
+        if (
+          !fundingReconciled &&
+          (paymentIntent.metadata?.purpose === "credit_topup" ||
+            (await hasPostedStripeTopUpCredit(paymentIntentId)))
+        ) {
           await releaseStripeEventClaim(claim);
           return next();
         }
@@ -641,7 +669,11 @@ export async function stripeRuntimeAllowanceRetryPreflight(
           providerEventId: event.id,
           dispute,
         });
-        const topUp = !fundingReconciled && paymentIntent?.metadata?.purpose === "credit_topup";
+        const topUp =
+          !fundingReconciled &&
+          paymentIntent &&
+          (paymentIntent.metadata?.purpose === "credit_topup" ||
+            (await hasPostedStripeTopUpCredit(paymentIntent.id)));
 
         const mutated =
           direction === "withdrawn"

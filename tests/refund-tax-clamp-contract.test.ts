@@ -14,42 +14,40 @@ const read = (path: string) =>
  * handlers used to reverse the GROSS Stripe amount (refund.amount /
  * dispute.amount / amount_refunded), so with exclusive tax a fully-refunded
  * customer landed at a negative wallet and was blocked on completion-grace
- * debt they never spent. Refunds flow through creditPortionUsd; authoritative
+ * debt they never spent. Refunds use the immutable posted Checkout credit;
  * dispute balance movements flow through proportionalTopUpCreditUsd in the
- * strict preflight. Both scale gross → credited using the PaymentIntent's
- * credit_usd metadata and round down so partial reversals cannot exceed grant.
+ * strict preflight. Both scale gross → actual posted credit and round down
+ * so partial reversals cannot exceed the grant, even if metadata later changes.
  */
 describe("refund tax-clamp contract", () => {
   const billing = read("src/routes/billing-routes.ts");
   const fulfillment = read("src/lib/stripe-checkout-fulfillment.ts");
   const strictPreflight = read("src/middleware/stripe-runtime-allowance-retry.ts");
+  const topups = read("src/lib/stripe-topup-refund-reconciliation.ts");
 
-  it("defines the proportional clamp against PaymentIntent credit_usd metadata", () => {
-    expect(billing).toContain("function creditPortionUsd");
-    const fn = billing.slice(billing.indexOf("function creditPortionUsd"));
-    expect(fn.slice(0, 700)).toContain("pi.metadata?.credit_usd");
-    // Rounds DOWN so cumulative partials never exceed the granted credit.
-    expect(fn.slice(0, 700)).toContain("Math.floor");
-    expect(fn.slice(0, 700)).toContain("Math.min(creditUsd");
+  it("clamps refunds against original posted credit rather than mutable metadata", () => {
+    expect(topups).toContain("wholeCents(original.deltaUsd)");
+    expect(topups).toContain("BigInt(refund.amount) * BigInt(grantCents)");
+    expect(topups).toContain("/ BigInt(charge.amount)");
+    expect(topups).toContain("netDebitedCents > grantCents");
+    expect(topups).not.toContain("pi.metadata?.credit_usd");
   });
 
   it("every refund and dispute reversal flows through the clamp — no raw gross amounts", () => {
     // Both refund events use one shared handler and its local clamp. Dispute withdrawal/reinstatement
     // moved into the strict preflight so provider balance movements cannot be
     // acknowledged without authoritative, idempotent accounting.
-    const calls = billing.match(/creditPortionUsd\(/g) || [];
-    expect(calls).toHaveLength(2); // definition + shared settled-refund handler
+    expect(billing).not.toContain("function creditPortionUsd");
     expect(billing).toContain(
       "await reverseSettledRefundsForCharge(event.data.object as Stripe.Charge, event)",
     );
     expect(billing).toContain("await reverseSettledRefundsForCharge(charge, event, false)");
-    expect(billing).toContain(
-      'reverseCredit(userId, creditPortionUsd(refund.amount, pi), "web_topup_refund"',
-    );
+    expect(billing).toContain("await reconcileStripeTopUpRefunds({");
     expect(strictPreflight).toContain("proportionalTopUpCreditUsd(");
     expect(strictPreflight).toMatch(
-      /proportionalTopUpCreditUsd\(\s*withdrawnCents,\s*paymentIntent\.amount \|\| 0,\s*purchasedCreditUsd/,
+      /proportionalTopUpCreditUsd\(\s*withdrawnCents,\s*context\.charge\.amount,\s*purchasedCreditUsd/,
     );
+    expect(strictPreflight).toContain("const purchasedCreditUsd = context.grantCents / 100");
     // The old raw-gross patterns must be gone from reverseCredit call sites.
     expect(billing).not.toMatch(/reverseCredit\(userId,\s*\(refund\.amount \?\? 0\) \/ 100/);
     expect(billing).not.toMatch(

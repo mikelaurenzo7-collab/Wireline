@@ -59,11 +59,13 @@ beforeEach(() => {
     from: () => ({
       where: () => ({
         limit: async () =>
-          "reference" in fields
-            ? harness.grants
-            : "deltaUsd" in fields
-              ? [{ deltaUsd: "-1.23" }]
-              : [{ userId: "owner" }],
+          "id" in fields
+            ? []
+            : "reference" in fields
+              ? harness.grants
+              : "deltaUsd" in fields
+                ? [{ deltaUsd: "-1.23" }]
+                : [{ userId: "owner" }],
       }),
     }),
   }));

@@ -429,6 +429,102 @@ for (const conflictAt of ["save", "approve"] as const) {
   });
 }
 
+for (const changedField of ["payload", "agent"] as const) {
+  test(`Calendar approvals bind the reviewed ${changedField} and require fresh review after conflict`, async ({
+    page,
+  }) => {
+    const originalPayload = {
+      event_name: "Product demo",
+      customer_name: "Taylor",
+      date: "2026-10-19",
+      time: "14:00",
+      timezone: "America/Chicago",
+    };
+    let currentTask = {
+      id: "calendar-review",
+      task_type: "schedule_calendar",
+      status: "pending",
+      agent_id: "original-bot",
+      agent: { name: "Original Bot" },
+      priority: "medium",
+      payload: originalPayload,
+    };
+    const approvals: Array<Record<string, unknown>> = [];
+    let releaseRefresh!: () => void;
+    const refresh = new Promise<void>((resolve) => {
+      releaseRefresh = resolve;
+    });
+    await page.route("**/api/**", async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (path === "/api/Assistants/tasks") {
+        if (approvals.length) await refresh;
+        await route.fulfill({ json: { tasks: [currentTask] } });
+        return;
+      }
+      if (path === "/api/Assistants/tasks/calendar-review/approve") {
+        approvals.push(route.request().postDataJSON() as Record<string, unknown>);
+        if (approvals.length === 1) {
+          currentTask =
+            changedField === "payload"
+              ? { ...currentTask, payload: { ...originalPayload, time: "15:00" } }
+              : { ...currentTask, agent_id: "updated-bot", agent: { name: "Updated Bot" } };
+          await route.fulfill({
+            status: 409,
+            json: { code: "TASK_CONTENT_CHANGED", error: "Task changed" },
+          });
+        } else {
+          await route.fulfill({ json: { success: true } });
+        }
+        return;
+      }
+      const json =
+        path === "/api/auth/session"
+          ? { user: { id: "approvals-owner", email: "owner@example.test" } }
+          : path === "/api/triage"
+            ? {
+                hot_leads: [],
+                compliance: [],
+                pending_tasks: [],
+                knowledge_gaps: [],
+                escalations: [],
+              }
+            : { accounts: [], agents: [], numbers: [], data: [] };
+      await route.fulfill({ json });
+    });
+
+    await page.goto("/approvals");
+    const card = page.getByRole("article").filter({ hasText: "Schedule Calendar" });
+    await expect(card).toContainText("14:00");
+    await card.getByRole("button", { name: "Approve", exact: true }).click();
+    await expect(card.getByRole("alert")).toContainText("Review the refreshed details");
+    await expect(card.getByRole("button", { name: "Review changes", exact: true })).toBeDisabled();
+    expect(approvals).toEqual([
+      {
+        expected_payload: originalPayload,
+        expected_task_type: "schedule_calendar",
+        expected_agent_id: "original-bot",
+        expected_priority: "medium",
+      },
+    ]);
+
+    releaseRefresh();
+    await expect(card).toContainText(changedField === "payload" ? "15:00" : "Updated Bot");
+    const review = card.getByRole("button", { name: "Review changes", exact: true });
+    await expect(review).toBeEnabled();
+    await review.click();
+    expect(approvals).toHaveLength(1);
+    await card.getByRole("button", { name: "Approve", exact: true }).click();
+    await expect.poll(() => approvals.length).toBe(2);
+    expect(approvals[1]).toEqual({
+      expected_payload: currentTask.payload,
+      expected_task_type: "schedule_calendar",
+      expected_agent_id: currentTask.agent_id,
+      expected_priority: "medium",
+    });
+    await expect(card).toHaveCount(0);
+  });
+}
+
 test("a prepended approval keeps the twentieth card's open editor mounted", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-10-14T00:00:00Z") });
   const earlierTasks = Array.from({ length: 19 }, (_, index) => ({

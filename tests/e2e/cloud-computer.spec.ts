@@ -25,6 +25,7 @@ function task(overrides: Partial<MockTask> & { id: string; status: string }): Mo
     liveView: true,
     currentUrl: "https://austinplumbers.example/",
     ownerControl: false,
+    controlRequested: false,
     stopping: false,
     ...overrides,
   };
@@ -227,7 +228,13 @@ async function mockComputer(
     const controlMatch = /^\/api\/computer\/tasks\/([^/]+)\/control$/.exec(path);
     if (controlMatch) {
       takeovers.push(controlMatch[1]);
-      setTask(controlMatch[1], { ownerControl: true });
+      const current = tasks.find((item) => item.id === controlMatch[1]);
+      setTask(
+        controlMatch[1],
+        current?.status === "running"
+          ? { controlRequested: true, ownerControl: false }
+          : { controlRequested: false, ownerControl: true },
+      );
       return route.fulfill({ json: { task: tasks.find((item) => item.id === controlMatch[1]) } });
     }
     const taskMatch = /^\/api\/computer\/tasks\/([^/]+)$/.exec(path);
@@ -460,6 +467,42 @@ for (const width of [390, 1440]) {
     await expect(finished.getByRole("img")).toHaveCount(0);
   });
 }
+
+test("a running task requests control honestly and keeps Stop available while pausing", async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  const { takeovers, setTask, returns } = await mockComputer(page, {
+    status: READY,
+    frame: await fakeFrame(page),
+    tasks: [task({ id: "task-live", status: "running" })],
+  });
+  await page.goto("/computer");
+  const detail = page.getByRole("region", { name: /Find three plumbers/ });
+  await detail.getByRole("button", { name: "Take control", exact: true }).click();
+  await expect(detail.getByRole("button", { name: "Pausing…" })).toBeDisabled();
+  await expect(detail.getByRole("button", { name: "Stop", exact: true })).toBeEnabled();
+  await expect(
+    detail.getByText("Your Bot is finishing its current step, then the browser is yours."),
+  ).toBeVisible();
+  await expect(detail.getByText("You control the browser", { exact: true })).toHaveCount(0);
+  expect(takeovers).toEqual(["task-live"]);
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = "200%";
+  });
+  expect(await detail.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+  await capture(page, info, "computer-pausing-320-enlarged-text");
+  setTask("task-live", {
+    status: "needs_input",
+    controlRequested: false,
+    ownerControl: true,
+    question: "You paused your Bot. Browse, then return control when you’re ready.",
+  });
+  await expect(detail.getByText("You control the browser", { exact: true })).toBeVisible();
+  await detail.getByRole("button", { name: "Return control to Bot", exact: true }).click();
+  expect(returns).toEqual(["task-live"]);
+  await expect(detail.getByRole("button", { name: "Take control", exact: true })).toBeVisible();
+});
 
 test("a running task keeps updating while the owner reads an older result", async ({
   page,

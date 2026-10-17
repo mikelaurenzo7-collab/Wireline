@@ -94,6 +94,7 @@ Runtime execution reads the saved Bot profile, selected model/voice posture, con
 - Tenant-owned queries and writes are scoped to the authenticated user.
 - Provider credentials are environment variables or server-side secrets.
 - Owner-entered cloud-browser text is transmitted only to the currently open website through the isolated browser session; it is not written to BotBound logs, task history, or the model prompt. The owner explicitly starts and ends that control period.
+- Owners can request Computer control while a task is running. The executor finishes its in-flight step before publishing an owner checkpoint; Stop takes precedence. Returning control supplies a masked current screen and discards unexecuted actions from the earlier plan. The existing task deadline, owner-wait budget and metering still apply.
 - Billing, webhooks, account deletion, provider callbacks, and connected-tool writes are server-owned workflows.
 - Browser/mobile clients may initiate intent but must not own authorization decisions.
 - Outbound marketing dials run tenant DNC + federal DNC (when configured) + TCPA consent gates before PSTN spend.

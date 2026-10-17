@@ -41,7 +41,9 @@ describe("round-4 audit fix contracts", () => {
   it("refund list failures throw for a clean Stripe retry instead of double-reversing", () => {
     const billing = read("src/routes/billing-routes.ts");
     expect(billing).not.toContain("catch(() => [] as Stripe.Refund[])");
-    expect(billing).toContain("const refunds = await listSucceededRefunds(charge.id)");
+    expect(billing).toContain("await reconcileStripeTopUpRefunds({");
+    const topups = read("src/lib/stripe-topup-refund-reconciliation.ts");
+    expect(topups).toContain("const refunds = await refundInventory(stripe, chargeId)");
     const preflight = read("src/middleware/stripe-runtime-allowance-retry.ts");
     const loaderStart = preflight.indexOf("export async function listSucceededRefunds(");
     const loaderEnd = preflight.indexOf("type SubscriptionAllowanceContext", loaderStart);

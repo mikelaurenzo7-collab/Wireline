@@ -425,7 +425,12 @@ function ApprovalTaskCard({
   const hasSubject = rawTaskType(task).includes("email") || "subject" in savedPayload;
   const evidence = evidenceSnippet(savedTask, editing && canEditMessage, true);
   const preview = approvalPreview(savedTask, manualTask);
-  const keepDetailsOpen = ["schedule_calendar", "update_crm_lead"].includes(rawTaskType(task));
+  const keepDetailsOpen =
+    ["schedule_calendar", "update_crm_lead"].includes(rawTaskType(task)) ||
+    Boolean(reviewConflict && !canEditMessage);
+  const refreshedReviewReady = Boolean(
+    reviewConflict?.refreshed && reviewConflict.sourceTask !== task,
+  );
   const hasMoreDetails =
     !editing &&
     evidence &&
@@ -480,7 +485,7 @@ function ApprovalTaskCard({
   }
 
   async function approve() {
-    if (reviewConflict && canEditMessage) {
+    if (reviewConflict) {
       setError(reviewConflictMessage(editing));
       return;
     }
@@ -556,22 +561,21 @@ function ApprovalTaskCard({
       }
       const response = await authFetch(`/api/Assistants/tasks/${task.id}/approve`, {
         method: "POST",
-        ...(canEditMessage
-          ? {
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                expected_to: editing ? draftRef.current.expectedTo : recipient,
-                expected_payload: reviewedPayload,
-                expected_task_type: editing ? draftRef.current.expectedTaskType : rawTaskType(task),
-                expected_agent_id: editing
-                  ? draftRef.current.expectedAgentId
-                  : (task.agentId ?? task.agent_id ?? null),
-                expected_priority: editing
-                  ? draftRef.current.expectedPriority
-                  : (task.priority ?? null),
-              }),
-            }
-          : {}),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...(canEditMessage
+            ? { expected_to: editing ? draftRef.current.expectedTo : recipient }
+            : {}),
+          expected_payload: reviewedPayload,
+          expected_task_type:
+            canEditMessage && editing ? draftRef.current.expectedTaskType : rawTaskType(task),
+          expected_agent_id:
+            canEditMessage && editing
+              ? draftRef.current.expectedAgentId
+              : (task.agentId ?? task.agent_id ?? null),
+          expected_priority:
+            canEditMessage && editing ? draftRef.current.expectedPriority : (task.priority ?? null),
+        }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -755,8 +759,21 @@ function ApprovalTaskCard({
           <ShadButton
             type="button"
             size="sm"
-            disabled={busy || (Boolean(reviewConflict) && canEditMessage)}
-            onClick={() => void approve()}
+            disabled={
+              busy || (Boolean(reviewConflict) && (canEditMessage || !refreshedReviewReady))
+            }
+            onClick={() => {
+              if (reviewConflict) {
+                if (!canEditMessage && refreshedReviewReady) {
+                  // A fresh non-message action needs a separate review click;
+                  // returning from a conflict must never approve it implicitly.
+                  onReviewReset();
+                  setError(null);
+                }
+                return;
+              }
+              void approve();
+            }}
           >
             {busy ? (
               <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
@@ -765,7 +782,11 @@ function ApprovalTaskCard({
             ) : (
               <Check className="size-3.5" aria-hidden="true" />
             )}
-            {manualTask ? "I handled this" : "Approve"}
+            {reviewConflict && !canEditMessage
+              ? "Review changes"
+              : manualTask
+                ? "I handled this"
+                : "Approve"}
           </ShadButton>
           {canEditMessage ? (
             <ShadButton
@@ -1112,17 +1133,15 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
                 onResolved={() => resolveTask(task.id)}
                 onEditingChange={(editing) => setTaskEditing(task.id, editing)}
                 onConflict={() => {
-                  if (["send_email", "send_text_message"].includes(rawTaskType(task))) {
-                    const requiredLoadGeneration = loadGenerationRef.current + 1;
-                    setReviewConflicts((current) => ({
-                      ...current,
-                      [task.id]: {
-                        sourceTask: task,
-                        requiredLoadGeneration,
-                        refreshed: false,
-                      },
-                    }));
-                  }
+                  const requiredLoadGeneration = loadGenerationRef.current + 1;
+                  setReviewConflicts((current) => ({
+                    ...current,
+                    [task.id]: {
+                      sourceTask: task,
+                      requiredLoadGeneration,
+                      refreshed: false,
+                    },
+                  }));
                   void load(true, true);
                 }}
                 reviewConflict={reviewConflicts[task.id]}

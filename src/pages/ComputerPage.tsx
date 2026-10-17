@@ -73,6 +73,7 @@ type ComputerTask = {
   agentPointer?: { x: number; y: number; at: string } | null;
   currentUrl: string | null;
   ownerControl: boolean;
+  controlRequested?: boolean;
   ownerTabs?: Array<{ id: string; label: string; active: boolean }>;
   preparingBrowser?: boolean;
   stopping: boolean;
@@ -837,6 +838,23 @@ function TaskDetail({
             <PanelRightOpen aria-hidden="true" />
             Activity
           </Button>
+          {task.status === "running" && !task.stopping ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0 whitespace-nowrap"
+              onClick={() => void ownerAction("take")}
+              disabled={!task.liveView || busy !== null || task.controlRequested}
+              aria-busy={busy === "take" || task.controlRequested}
+            >
+              {busy === "take" || task.controlRequested ? (
+                <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+              ) : (
+                <MousePointer2 aria-hidden="true" />
+              )}
+              {busy === "take" || task.controlRequested ? "Pausing…" : "Take control"}
+            </Button>
+          ) : null}
           {active ? (
             // Stop lands at the Bot's next checkpoint, which can follow a long
             // thinking step: say so instead of looking like nothing happened.
@@ -858,6 +876,12 @@ function TaskDetail({
           ) : null}
         </div>
       </header>
+
+      {task.controlRequested && !task.stopping ? (
+        <p className="text-sm text-muted-foreground" role="status">
+          Your Bot is finishing its current step, then the browser is yours.
+        </p>
+      ) : null}
 
       {task.status === "needs_input" &&
       task.question &&
