@@ -9,6 +9,7 @@ const MAX_ZIP_TOTAL_BYTES = 20_000_000;
 const MAX_SHEETS = 200;
 const MAX_ROWS_PER_SHEET = 1_000;
 const MAX_DOCUMENT_TEXT_CHARS = 240_000;
+const WORKSHEET_PART_PATH = /^xl\/worksheets\/[^/\\]+\.xml$/;
 
 type ZipEntry = {
   name: string;
@@ -21,6 +22,13 @@ type ZipEntry = {
 
 function invalidDocument(): never {
   throw AppError.badRequest("The Office document is damaged or uses an unsupported format.");
+}
+
+function workbookTooLarge(): never {
+  throw AppError.fromHttpStatus(
+    413,
+    "The Excel workbook has too many rows or sheets. Split it into smaller files and try again.",
+  );
 }
 
 function zipDirectory(bytes: Buffer): Map<string, ZipEntry> {
@@ -87,7 +95,7 @@ function zipDirectory(bytes: Buffer): Map<string, ZipEntry> {
       name === "xl/workbook.xml" ||
       name === "xl/_rels/workbook.xml.rels" ||
       name === "xl/sharedStrings.xml" ||
-      /^xl\/worksheets\/sheet\d+\.xml$/.test(name);
+      WORKSHEET_PART_PATH.test(name);
     if (relevant) {
       if (entries.has(name) || (flags & 1) !== 0 || ![0, 8].includes(method)) {
         return invalidDocument();
@@ -120,7 +128,7 @@ class OfficeZipReader {
   }
 
   sheetNames(): string[] {
-    return [...this.entries.keys()].filter((name) => /^xl\/worksheets\/sheet\d+\.xml$/.test(name));
+    return [...this.entries.keys()].filter((name) => WORKSHEET_PART_PATH.test(name));
   }
 
   read(name: string): string | null {
@@ -315,7 +323,7 @@ function xmlStartTagAttributes(xml: string, accepts: (name: string) => boolean):
 }
 
 function xmlText(xml: string, tag: string): string {
-  return xmlElements(xml, (name) => name === tag)
+  return xmlElements(xml, localName(tag))
     .map((element) => decodeXml(element.body))
     .join("");
 }
@@ -378,11 +386,12 @@ function attribute(source: string, name: string): string | null {
 
 function sheetText(xml: string, sharedStrings: string[], sheetLabel: string): string[] {
   const lines = [`Sheet ${sheetLabel}`];
-  const rows = xmlElements(xml, (name) => name === "row", MAX_ROWS_PER_SHEET);
+  const rows = xmlElements(xml, localName("row"), MAX_ROWS_PER_SHEET + 1);
+  if (rows.length > MAX_ROWS_PER_SHEET) return workbookTooLarge();
   for (const [rowIndex, row] of rows.entries()) {
     const rowNumber = attribute(row.attrs, "r") || String(rowIndex + 1);
     const values: string[] = [];
-    for (const cell of xmlElements(row.body, (name) => name === "c")) {
+    for (const cell of xmlElements(row.body, localName("c"))) {
       const attrs = cell.attrs;
       const reference = attribute(attrs, "r") || "cell";
       const type = attribute(attrs, "t") || "n";
@@ -412,39 +421,45 @@ function visibleSheets(reader: OfficeZipReader): Array<{ path: string; label: st
   // A workbook without sheet metadata is only useful in minimal ZIP fixtures.
   // A real workbook declares each visible sheet and its relationship.
   if (sheetsXml === undefined) {
-    return reader
-      .sheetNames()
-      .sort(
-        (left, right) =>
-          Number(/sheet(\d+)/.exec(left)?.[1]) - Number(/sheet(\d+)/.exec(right)?.[1]),
-      )
-      .slice(0, MAX_SHEETS)
+    const names = reader.sheetNames();
+    if (names.length > MAX_SHEETS) return workbookTooLarge();
+    return names
+      .sort((left, right) => left.localeCompare(right, undefined, { numeric: true }))
       .map((path, index) => ({ path, label: String(index + 1) }));
   }
 
   const relationships = reader.read("xl/_rels/workbook.xml.rels");
   if (!relationships) return invalidDocument();
   const paths = new Map<string, string>();
+  const nonWorksheetIds = new Set<string>();
   for (const attrs of xmlStartTagAttributes(relationships, localName("Relationship"))) {
     const id = attribute(attrs, "Id");
     const target = attribute(attrs, "Target");
     const type = attribute(attrs, "Type");
-    if (!id || !target || !type?.endsWith("/worksheet")) continue;
+    if (!id || !type) continue;
+    if (attribute(attrs, "TargetMode") === "External") continue;
+    if (type.endsWith("/chartsheet") || type.endsWith("/dialogsheet")) {
+      nonWorksheetIds.add(id);
+      continue;
+    }
+    if (!target || !type.endsWith("/worksheet")) continue;
     const path = posix.normalize(target.startsWith("/") ? target.slice(1) : `xl/${target}`);
-    if (/^xl\/worksheets\/sheet\d+\.xml$/.test(path)) paths.set(id, path);
+    if (WORKSHEET_PART_PATH.test(path)) paths.set(id, path);
   }
 
   const visible: Array<{ path: string; label: string }> = [];
   for (const attrs of xmlStartTagAttributes(sheetsXml, localName("sheet"))) {
     if (["hidden", "veryHidden"].includes(attribute(attrs, "state") || "")) continue;
-    const path = paths.get(attribute(attrs, "r:id") || "");
+    const id = attribute(attrs, "r:id") || "";
+    if (nonWorksheetIds.has(id)) continue;
+    const path = paths.get(id);
     if (!path || !reader.has(path)) return invalidDocument();
     const label = decodeXml(attribute(attrs, "name") || "")
       .replace(/\s+/g, " ")
       .trim()
       .slice(0, 80);
     visible.push({ path, label: label || String(visible.length + 1) });
-    if (visible.length >= MAX_SHEETS) break;
+    if (visible.length > MAX_SHEETS) return workbookTooLarge();
   }
   return visible;
 }
@@ -452,7 +467,7 @@ function visibleSheets(reader: OfficeZipReader): Array<{ path: string; label: st
 function excelText(reader: OfficeZipReader): string {
   const sharedXml = reader.read("xl/sharedStrings.xml");
   const sharedStrings = sharedXml
-    ? xmlElements(sharedXml, (name) => name === "si").map((item) => xmlText(item.body, "t"))
+    ? xmlElements(sharedXml, localName("si")).map((item) => xmlText(item.body, "t"))
     : [];
   const lines: string[] = [];
   visibleSheets(reader).forEach(({ path, label }) => {
