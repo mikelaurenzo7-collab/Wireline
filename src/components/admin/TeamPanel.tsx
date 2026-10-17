@@ -93,9 +93,11 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
               <Globe className="w-3.5 h-3.5" /> Data Residency
             </div>
             <div className="flex items-baseline gap-2 mb-1">
-              <span className="text-2xl font-display text-foreground">US-East</span>
+              <span className="text-2xl font-display text-foreground">By provider</span>
             </div>
-            <p className="wl-micro-meta--muted">Tenant-scoped access controls enforced.</p>
+            <p className="wl-micro-meta--muted">
+              Confirm regional requirements before sharing data.
+            </p>
           </div>
         </div>
 

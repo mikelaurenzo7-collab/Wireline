@@ -77,7 +77,7 @@ export default function PrivacyPolicyPage() {
     <MarketingChrome stickyCta={false}>
       <PageMeta
         title="Privacy Policy"
-        description="Privacy for BotBound's Bot platform: account, conversation, voice settings, billing, and measurement data. Last updated September 25, 2026."
+        description={`Privacy for BotBound's Bot platform: account, conversation, voice settings, billing, and measurement data. Last updated ${LAST_UPDATED}.`}
         path="/privacy"
       />
 
@@ -198,6 +198,14 @@ export default function PrivacyPolicyPage() {
               public voice library.
             </p>
             <p>
+              <strong>Computer task data</strong>: We save task instructions, activity, questions,
+              replies, and results in your account. Live browser images are held temporarily in
+              application memory rather than stored in task history; screen context may be sent to
+              OpenAI to carry out your task. Browserless hosts the remote browser, and websites you
+              visit process session data and the information you enter, including login information
+              you choose to provide.
+            </p>
+            <p>
               <strong>Conversation data</strong>: Phone numbers, message addresses, recordings,
               transcripts, summaries, message content, and operational metadata needed to provide
               the calling, texting, and email service you configure.
@@ -279,6 +287,14 @@ export default function PrivacyPolicyPage() {
               </li>
               <li>
                 <strong>Render</strong>: Website and API hosting, and the persistent voice runtime
+              </li>
+              <li>
+                <strong>Browserless</strong>: Hosted browser sessions for Computer tasks, including
+                webpages, browser session data, and information entered in the remote browser
+              </li>
+              <li>
+                <strong>Sentry</strong>: Redacted server error reports and operational diagnostics
+                when configured
               </li>
               <li>
                 <strong>Vercel</strong>: Legacy hosting during migration

@@ -101,6 +101,7 @@ const h = vi.hoisted(() => {
     apolloReady: vi.fn(),
     searchLeads: vi.fn(),
     enqueue: vi.fn(),
+    info: vi.fn(),
   };
 });
 
@@ -140,7 +141,7 @@ vi.mock("../src/lib/server-context", () => ({
   drizzle: h.db,
   quotaTracker: {},
   tenantStore: {},
-  log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+  log: { info: h.info, warn: vi.fn(), error: vi.fn() },
 }));
 vi.mock("../src/lib/ai-brains", () => ({
   isBrainAvailable: h.brainAvailable,
@@ -267,6 +268,23 @@ describe("job handler tenant ownership", () => {
       ]);
     },
   );
+
+  it("logs adaptive completion without reproducing the caller-derived lesson", async () => {
+    const privateLesson = "Call Jane at +13125550123 about her private payment dispute.";
+    h.lesson.mockResolvedValue(privateLesson);
+
+    await handleJob(claimed("adaptive_optimization", adaptive));
+
+    // Knowledge remains available to the Bot; operational logs retain only shape.
+    expect(h.inserts[0].values.lesson).toBe(privateLesson);
+    expect(h.info).toHaveBeenCalledWith("Adaptive optimization: new lesson synthesized", {
+      jobId: "job-one",
+      agentId: "bot-one",
+      lessonLength: privateLesson.length,
+    });
+    expect(JSON.stringify(h.info.mock.calls)).not.toContain(privateLesson);
+    expect(JSON.stringify(h.info.mock.calls)).not.toContain("+13125550123");
+  });
 
   it.each([
     { payload: { ...adaptive, userId: other }, row: { userId: owner } },

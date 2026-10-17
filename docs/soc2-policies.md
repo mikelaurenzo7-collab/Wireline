@@ -8,35 +8,42 @@ the same honest story.
 ## Scope
 
 BotBound processes customer call metadata, transcripts, agent configuration,
-knowledge sources, OAuth connection records, billing metadata, DNC entries, and
-audit events. The current deployment model is a Vercel-hosted application with
+knowledge sources, OAuth connection records, billing metadata, DNC entries,
+Computer task activity, and audit events. The current deployment model uses Render for the web/API and persistent voice runtime, with
 Postgres on Supabase, Twilio for carrier/numbers/SMS, OpenAI Realtime for live
 voice and OpenAI TTS for approved campaign narration, the managed reasoning
-chain in `src/lib/ai-models.ts`, Stripe for billing, and Resend for transactional
-email. BotBound does not operate a separate voice-cloning provider.
+chain in `src/lib/ai-models.ts`, Stripe for billing, AgentMail for managed Bot
+mailboxes, Resend for transactional email, Browserless for hosted Computer
+sessions, and Sentry for configured error reporting. The public live-call voice
+roster remains OpenAI's built-in voices. Optional operator voice-preview pilots
+are separate, disabled until their own readiness and processing gates are met.
 
 ## Implemented controls
 
-| Area              | Current control                                                                                                                  | Evidence source                                                                                        |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Access control    | Role-based API middleware gates sensitive routes and fails closed when role lookup fails.                                        | `src/middleware/require-role.ts`                                                                       |
-| Authentication    | Passwords are hashed with scrypt; OAuth sign-in supports Google, Microsoft, and Yahoo; JWTs are signed by `INTERNAL_JWT_SECRET`. | `src/lib/auth-service.ts`, `src/routes/auth-oauth-routes.ts`                                           |
-| Audit logging     | Billing, security, access, and settings changes are written to an append-only audit log.                                         | `src/lib/audit-logger.ts`, `src/routes/soc2-routes.ts`                                                 |
-| Webhook integrity | OpenAI, Stripe, Twilio, Resend, and Meta webhooks use shared-secret or signature verification.                                  | `src/routes/*webhook*`, `src/routes/openai-sip-routes.ts`                                             |
-| Secrets at rest   | Webhook secrets are encrypted with AES-256-GCM via `WIRELINE_DATA_KEY`; plaintext fallback is not allowed.                       | `src/lib/secret-vault.ts`                                                                              |
-| Data deletion     | Account deletion queues and purges user-owned tables with a documented 30-day grace window.                                      | `src/lib/account-deletion.ts`                                                                          |
-| Spend controls    | Managed AI spend and outbound dialing paths have budget/rate gates and trial caps.                                               | `src/lib/spend-guards.ts`, `src/lib/trial-gate.ts`                                                     |
-| Public trust      | `/security`, `/trust`, `/changelog`, `security.txt`, and `humans.txt` publish BotBound's posture without requiring sign-in.      | `src/components/Security.tsx`, `src/components/PublicChangelog.tsx`, `public/.well-known/security.txt` |
+| Area              | Current control                                                                                                                              | Evidence source                                                                                        |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Access control    | Role-based API middleware gates sensitive routes and fails closed when role lookup fails.                                                    | `src/middleware/require-role.ts`                                                                       |
+| Authentication    | Passwords are hashed with scrypt; OAuth sign-in supports Google, Microsoft, and Yahoo; JWTs are signed by `INTERNAL_JWT_SECRET`.             | `src/lib/auth-service.ts`, `src/routes/auth-oauth-routes.ts`                                           |
+| Audit logging     | Billing, security, access, and settings events use a tenant-scoped audit ledger; financial settlement and erasure have explicit write paths. | `src/lib/audit-logger.ts`, `src/routes/soc2-routes.ts`                                                 |
+| Webhook integrity | OpenAI, Stripe, Twilio, Resend, and Meta webhooks use shared-secret or signature verification.                                               | `src/routes/*webhook*`, `src/routes/openai-sip-routes.ts`                                              |
+| Secrets at rest   | Webhook secrets are encrypted with AES-256-GCM via `WIRELINE_DATA_KEY`; plaintext fallback is not allowed.                                   | `src/lib/secret-vault.ts`                                                                              |
+| Data deletion     | Account deletion queues and purges user-owned tables with a documented 30-day grace window.                                                  | `src/lib/account-deletion.ts`                                                                          |
+| Spend controls    | Managed AI spend and outbound dialing paths have budget/rate gates and trial caps.                                                           | `src/lib/spend-guards.ts`, `src/lib/trial-gate.ts`                                                     |
+| Public trust      | `/security`, `/trust`, `/changelog`, `security.txt`, and `humans.txt` publish BotBound's posture without requiring sign-in.                  | `src/components/Security.tsx`, `src/components/PublicChangelog.tsx`, `public/.well-known/security.txt` |
 
 ## Supabase posture
 
-Supabase advisors currently show tables with RLS enabled but missing policies,
-tables visible through the GraphQL schema to `anon`/`authenticated`, and a
-public executable `SECURITY DEFINER` function. Until those are remediated,
-BotBound should describe tenant isolation as **application-enforced with RLS
-hardening in progress**, not as complete database-layer isolation.
+Application tenant access uses transaction-local `SET LOCAL ROLE wireline_server`
+and `app.current_user_id`; Supabase Auth is not the authentication authority.
+Committed migrations and passing source checks do not prove the current live
+catalog. Before making a broad isolation claim, retain a dated read-only review
+of table grants, RLS policies, exposed API schemas and privileged functions for
+the actual production database and source revision. See
+[DATABASE_OPERATIONS.md](./DATABASE_OPERATIONS.md).
 
-Remediation should follow Supabase's own linter guidance:
+When the current review identifies a corresponding issue, use Supabase's linter
+guidance and a reviewed append-only migration rather than assuming historic
+advisor output still describes production:
 
 - RLS policy coverage: https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy
 - GraphQL exposure: https://supabase.com/docs/guides/database/database-linter?lint=0026_pg_graphql_anon_table_exposed
@@ -44,40 +51,38 @@ Remediation should follow Supabase's own linter guidance:
 
 ## Not yet complete
 
-- ~~SOC 2 Type II external audit and observation window.~~ → observation window started (see below).
-- ~~Full Supabase RLS policy coverage for every tenant table.~~ → migration 0020 adds policies.
-- Removal of unintended GraphQL exposure for tenant-owned tables.
-- Hardware-key MFA for operators.
-- Paid public bug bounty.
-- EU data residency.
-- Enterprise SSO/SCIM.
+- External SOC 2 Type II attestation and a verified auditor engagement/observation window.
+- A retained, complete live review of tenant-table policies, grants, API exposure and privileged functions.
+- Operator hardware-key MFA and recovery procedures, confirmed with account-level evidence.
+- Organization-enforced enterprise SSO/SCIM; provider sign-in alone does not supply these controls.
+- Contract-specific residency commitments across the enabled providers and features.
+- A funded public bug bounty, if the business chooses to offer one.
 
-## Observation window
+## Audit engagement and observation evidence
 
-| Attribute          | Value                               |
-| ------------------ | ----------------------------------- |
-| Start date         | 2026-06-01                          |
-| End date           | 2026-11-30                          |
-| Duration           | 6 months                            |
-| Auditor            | TBD (engagement letter in progress) |
-| Target attestation | Q1 2027                             |
+No auditor engagement, observation start/end dates or attestation target is
+certified by this document. Before publishing those milestones, retain the
+signed engagement, agreed scope, observation dates and evidence collection
+requirements. A date range in the repository is not an audit observation window.
 
-**What's being monitored:**
+**Evidence to collect and review:**
 
-- Audit log completeness — every auth, billing, security, and data-access event captured.
+- Audit log completeness — sample auth, billing, security and data-access paths; retain receipts and investigate missing writes rather than claiming universal coverage.
 - Access control enforcement — role-based middleware, fail-closed JWT verification.
-- Change management — PR-gated deployments, CI enforcing lint/test/build before merge.
-- Incident response — on-call rotation, severity classification, postmortem cadence.
-- Data retention — nightly purge jobs respect configurable retention_days per tenant.
+- Change management — retain exact-source command results and review evidence, plus the matching Render web/worker/cron deployments. GitHub Actions is intentionally disabled; automatic CI enforcement is not claimed. Follow [DEPLOYMENT_RUNBOOK.md](./DEPLOYMENT_RUNBOOK.md).
+- Incident response — confirm the responsible contact, escalation coverage, severity decisions and completed incident records.
+- Data retention — verify scheduled purge jobs actually ran and respected each tenant's configured retention, including failed-job follow-up.
 
 **Evidence collection cadence:**
 
-- **Continuous (automated):** audit log writes, CI pass/fail, Render deployment/runtime logs, Stripe webhook receipts, rate-limit rejection counts.
-- **Monthly (manual):** access review of admin accounts, review of open security advisories, verification that DNC/purge jobs ran successfully, pull coverage ratchet thresholds forward.
+- **Runtime evidence:** audit log writes, Render deployment/runtime records, Stripe webhook receipts and rate-limit rejection counts. Confirm collection and alert delivery; configuration alone is not evidence of receipt.
+- **Per release:** exact-source verification logs, review approval, graceful voice drain and matching Render service revisions.
+- **Periodic operator review:** admin access, security advisories, restore/recovery drills, failed jobs, retention runs and applicable calling-compliance records. Record the actual review date, decision and owner.
 
 ## Operating rule
 
-Marketing, sales agents, and product UI must say **controls implemented / audit
-in progress** until attestation is complete. Do not claim SOC 2 certification,
-HIPAA certification, or blanket database-layer RLS isolation before those
-controls are externally verified.
+Marketing, sales agents, and product UI may describe specific implemented
+controls and readiness work. Say an external audit is in progress only when the
+engagement and actual work are documented. Do not claim SOC 2 certification,
+HIPAA certification, a completed observation window, or blanket provider-region
+or database-isolation guarantees without the matching evidence and agreements.

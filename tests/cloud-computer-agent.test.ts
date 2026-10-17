@@ -5,6 +5,7 @@ import { DefiniteProviderRejectionError } from "../src/lib/ai-client";
 import {
   buildTaskMessage,
   buildSystemPrompt,
+  CLOUD_COMPUTER_LIMITS,
   runCloudComputerAgent,
   turnReserveUsd,
   type CloudComputerHooks,
@@ -532,6 +533,228 @@ describe("OpenAI cloud computer agent loop", () => {
     expect(calls.map(({ member }) => member)).toEqual(["left_click"]);
     expect(events.map(({ kind }) => kind)).toEqual(["error"]);
     expect(outcome).toMatchObject({ status: "blocked", summary: "The click failed." });
+  });
+
+  it.each(["stop", "time"] as const)(
+    "honors %s between actions in one model batch",
+    async (interruption) => {
+      let stopped = false;
+      let clock = 0;
+      const { session, calls } = fakeSession();
+      const { client: openai, requests } = client([
+        response([
+          computerCall("c1", [
+            { type: "click", x: 42, y: 84 },
+            { type: "type", text: "must not run" },
+          ]),
+        ]),
+      ]);
+      const outcome = await runCloudComputerAgent({
+        client: openai,
+        model: OPENAI_MODELS.GPT_5_6_TERRA,
+        session,
+        bot,
+        goal: "Click safely.",
+        startUrl: null,
+        now: () => clock,
+        hooks: hooks({
+          stopRequested: () => stopped,
+          emit: async (event) => {
+            if (event.kind !== "action") return;
+            if (interruption === "stop") stopped = true;
+            else clock = CLOUD_COMPUTER_LIMITS.maxRunMs + 1;
+          },
+        }).hooks,
+      });
+
+      expect(calls.map(({ member }) => member)).toEqual(["left_click"]);
+      expect(requests).toHaveLength(1);
+      expect(outcome).toMatchObject(
+        interruption === "stop"
+          ? { status: "stopped", summary: "Stopped by the owner." }
+          : { status: "failed", code: "COMPUTER_TIME_LIMIT" },
+      );
+    },
+  );
+
+  it.each([
+    ["stop", "open_public_url"],
+    ["time", "open_public_url"],
+    ["stop", "inspect_visible_element"],
+    ["time", "inspect_visible_element"],
+    ["stop", "finish_task"],
+    ["time", "finish_task"],
+  ] as const)("honors %s before a returned %s tool runs", async (interruption, name) => {
+    let stopped = false;
+    let clock = 0;
+    const { session, calls } = fakeSession();
+    const { client: openai, requests } = client([
+      response([
+        functionCall("f1", name, {
+          url: "https://example.org",
+          x: 42,
+          y: 84,
+          outcome: "completed",
+          summary: "Must not report success.",
+          sources: [],
+        }),
+      ]),
+    ]);
+    const outcome = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Inspect the page.",
+      startUrl: null,
+      now: () => clock,
+      hooks: hooks({
+        stopRequested: () => stopped,
+        meter: async ({ operation }) => {
+          const result = await operation();
+          if (interruption === "stop") stopped = true;
+          else clock = CLOUD_COMPUTER_LIMITS.maxRunMs + 1;
+          return result;
+        },
+      }).hooks,
+    });
+
+    expect(calls).toHaveLength(0);
+    expect(requests).toHaveLength(1);
+    expect(outcome).toMatchObject(
+      interruption === "stop"
+        ? { status: "stopped", summary: "Stopped by the owner." }
+        : { status: "failed", code: "COMPUTER_TIME_LIMIT" },
+    );
+  });
+
+  it.each([
+    ["stop", "open_public_url"],
+    ["time", "open_public_url"],
+    ["stop", "inspect_visible_element"],
+    ["time", "inspect_visible_element"],
+  ] as const)("honors %s after one %s tool before another tool", async (interruption, name) => {
+    let stopped = false;
+    let clock = 0;
+    const { session, calls } = fakeSession();
+    const { client: openai, requests } = client([
+      response([
+        functionCall("f1", name, { url: "https://example.org", x: 42, y: 84 }),
+        openPublicUrlCall("f2", "https://must-not-open.example"),
+      ]),
+    ]);
+    const outcome = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Inspect the page.",
+      startUrl: null,
+      now: () => clock,
+      hooks: hooks({
+        stopRequested: () => stopped,
+        emit: async (event) => {
+          if (event.kind !== "action") return;
+          if (interruption === "stop") stopped = true;
+          else clock = CLOUD_COMPUTER_LIMITS.maxRunMs + 1;
+        },
+      }).hooks,
+    });
+
+    expect(calls.map(({ member }) => member)).toEqual([
+      name === "open_public_url" ? "navigate" : "inspect_visible_element",
+    ]);
+    expect(requests).toHaveLength(1);
+    expect(outcome).toMatchObject(
+      interruption === "stop"
+        ? { status: "stopped", summary: "Stopped by the owner." }
+        : { status: "failed", code: "COMPUTER_TIME_LIMIT" },
+    );
+  });
+
+  it.each(["stop", "time"] as const)(
+    "preserves %s when the final browser action finishes after interruption",
+    async (interruption) => {
+      let stopped = false;
+      let clock = 0;
+      const { session, calls } = fakeSession();
+      const execute = vi.mocked(session.execute).getMockImplementation()!;
+      vi.mocked(session.execute).mockImplementation(async (member, input) => {
+        const result = await execute(member, input);
+        if (interruption === "stop") stopped = true;
+        else clock = CLOUD_COMPUTER_LIMITS.maxRunMs + 1;
+        return result;
+      });
+      const { client: openai, requests } = client([
+        response([
+          computerCall("c1", [{ type: "click", x: 42, y: 84 }]),
+          functionCall("f1", "finish_task", {
+            outcome: "completed",
+            summary: "Must not report success.",
+            sources: [],
+          }),
+        ]),
+      ]);
+      const { hooks: h, events } = hooks({ stopRequested: () => stopped });
+      const outcome = await runCloudComputerAgent({
+        client: openai,
+        model: OPENAI_MODELS.GPT_5_6_TERRA,
+        session,
+        bot,
+        goal: "Inspect the page.",
+        startUrl: null,
+        now: () => clock,
+        hooks: h,
+      });
+
+      expect(calls.map(({ member }) => member)).toEqual(["left_click"]);
+      expect(requests).toHaveLength(1);
+      expect(events).toHaveLength(0);
+      expect(outcome).toMatchObject(
+        interruption === "stop"
+          ? { status: "stopped", summary: "Stopped by the owner." }
+          : { status: "failed", code: "COMPUTER_TIME_LIMIT" },
+      );
+    },
+  );
+
+  it("excludes owner waiting from the working-time guard", async () => {
+    let clock = 0;
+    const { session, calls } = fakeSession();
+    const { client: openai, requests } = client([
+      response([functionCall("q1", "ask_owner", { question: "Which page?" })]),
+      response([computerCall("c1", [{ type: "click", x: 42, y: 84 }])]),
+      response([
+        functionCall("f1", "finish_task", {
+          outcome: "completed",
+          summary: "Checked the page.",
+          sources: [],
+        }),
+      ]),
+    ]);
+    const outcome = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Inspect the page.",
+      startUrl: null,
+      now: () => clock,
+      hooks: hooks({
+        askOwner: async () => {
+          clock += CLOUD_COMPUTER_LIMITS.ownerReplyWaitMs;
+          return "Use this page.";
+        },
+        emit: async (event) => {
+          if (event.kind === "action") clock += 6 * 60_000;
+        },
+      }).hooks,
+    });
+
+    expect(clock).toBeGreaterThan(CLOUD_COMPUTER_LIMITS.maxRunMs);
+    expect(calls.map(({ member }) => member)).toEqual(["left_click"]);
+    expect(requests).toHaveLength(3);
+    expect(outcome).toMatchObject({ status: "completed", summary: "Checked the page." });
   });
 
   it("hands a blocked submit click to the owner without replaying the Bot action", async () => {

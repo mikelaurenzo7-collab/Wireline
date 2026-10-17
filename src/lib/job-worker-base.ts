@@ -417,7 +417,11 @@ export async function handleJob(job: JobRow): Promise<void> {
         .onConflictDoNothing({
           target: [schema.agentLessons.agentId, schema.agentLessons.lesson],
         });
-      log.info("Adaptive optimization: new lesson synthesized", { agentId: p.agentId, lesson });
+      log.info("Adaptive optimization: new lesson synthesized", {
+        jobId: job.id,
+        agentId: p.agentId,
+        lessonLength: lesson.length,
+      });
     }
   }
 

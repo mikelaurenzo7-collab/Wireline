@@ -25,13 +25,20 @@ describe("mobile outbound consent parity", () => {
   });
 });
 
-describe("browser handoff runtime grants", () => {
-  it("grants wireline_server when ensureBrowserHandoffSchema creates the table", () => {
+describe("browser handoff promoted grants", () => {
+  it("verifies storage read-only and leaves DDL to committed migrations", () => {
     const source = read("src/routes/browser-handoff-routes.ts");
-    expect(source).toContain("CREATE TABLE IF NOT EXISTS wireline_browser_handoffs");
-    expect(source).toContain(
-      "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.wireline_browser_handoffs TO wireline_server",
+    expect(source).not.toContain("CREATE TABLE IF NOT EXISTS wireline_browser_handoffs");
+    expect(source).not.toContain("ALTER TABLE public.wireline_browser_handoffs");
+    expect(source).toContain("has_table_privilege");
+    expect(source).toContain("browserHandoffStorageReady(snapshot)");
+    expect(source).toContain("BROWSER_HANDOFF_STORAGE_UNAVAILABLE");
+    expect(read("drizzle/migrations/0103_grant_wireline_server_browser_handoffs.sql")).toContain(
+      "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE wireline_browser_handoffs TO wireline_server",
     );
+    expect(
+      read("drizzle/migrations/0114_fix_rls_wireline_server_recap_and_handoffs.sql"),
+    ).toContain("CREATE POLICY tenant_isolation ON public.wireline_browser_handoffs");
   });
 });
 

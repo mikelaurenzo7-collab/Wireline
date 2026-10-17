@@ -99,7 +99,7 @@ const SECTIONS: SecurityTopic[] = [
     items: [
       "Right-to-erasure uses a server-owned deletion workflow for user-owned product data.",
       "Contact security@botbound.app for current privacy documentation and any contractual review.",
-      "Data residency is US-East today. Additional regions remain under evaluation and are not committed until confirmed in writing.",
+      "Processing locations vary by provider and feature. Confirm any specific data-residency requirement with BotBound in writing before sharing data.",
     ],
   },
   {
@@ -118,7 +118,7 @@ const SECTIONS: SecurityTopic[] = [
     title: "Database Posture",
     technical: true,
     items: [
-      "Postgres on Supabase (US-East). Tenant isolation uses SET LOCAL ROLE wireline_server with per-request app.current_user_id RLS policies on tenant tables.",
+      "Postgres on Supabase. Tenant isolation uses SET LOCAL ROLE wireline_server with per-request app.current_user_id RLS policies on tenant tables.",
       "Foreign-key and server-owned deletion paths remove user-owned downstream data.",
       "Backup and point-in-time recovery availability follow the active Supabase plan; recovery drills remain an operational responsibility.",
     ],
@@ -197,8 +197,10 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     items: [
       "Production voice: Twilio provides phone numbers, PSTN transport, SIP, and SMS. OpenAI Realtime runs every browser and phone conversation from the same 10-voice roster; OpenAI also provides the primary structured runtime. BotBound does not operate a separate voice-cloning provider.",
       "Payments: Stripe (PCI scope reduced, BotBound never stores card numbers).",
-      "Data plane: Supabase Postgres (US-East today). Rate limits: Upstash Redis.",
+      "Data plane: Supabase Postgres. Rate limits: Upstash Redis. Hosting: Render.",
       "Email: AgentMail for platform-managed Bot mailboxes and Bot email; Resend for transactional platform email.",
+      "Computer: Browserless hosts remote browser sessions. OpenAI processes screen context to carry out tasks.",
+      "Monitoring: Sentry receives redacted server error reports and operational diagnostics when configured.",
       "Provider credentials and routing stay server-side. BotBound owns the customer-facing experience while this Trust Center names key subprocessors for transparency.",
     ],
   },
@@ -264,7 +266,7 @@ export default function Security() {
               </div>
             </div>
             <p className="mt-4 text-eyebrow !text-[0.625rem]">
-              <span className="whitespace-nowrap">Last updated · August 17, 2026</span>
+              <span className="whitespace-nowrap">Last updated · October 17, 2026</span>
             </p>
           </motion.div>
 

@@ -623,10 +623,18 @@ export async function runCloudComputerAgent(input: {
     code: "COMPUTER_TIME_LIMIT",
     summary: "The task reached its 15-minute working limit. Try a narrower task.",
   };
+  // A model can return several tools, or a batch of browser actions, in one
+  // turn. Stop and the working-time limit apply between those actions too.
+  const interruptionOutcome = (): CloudComputerOutcome | null =>
+    input.hooks.stopRequested()
+      ? { status: "stopped", summary: "Stopped by the owner." }
+      : overTime()
+        ? timeLimit
+        : null;
 
   for (let turn = 1; turn <= CLOUD_COMPUTER_LIMITS.maxTurns; turn += 1) {
-    if (input.hooks.stopRequested()) return { status: "stopped", summary: "Stopped by the owner." };
-    if (overTime()) return timeLimit;
+    const turnInterruption = interruptionOutcome();
+    if (turnInterruption) return turnInterruption;
     const request = { ...requestBase, input: inputItems };
     const requestBytes = jsonBytes(request);
     if (requestBytes > CLOUD_COMPUTER_LIMITS.maxRequestBytes) return { ...CONTEXT_LIMIT_OUTCOME };
@@ -660,6 +668,8 @@ export async function runCloudComputerAgent(input: {
         return result;
       },
     });
+    const responseInterruption = interruptionOutcome();
+    if (responseInterruption) return responseInterruption;
     const record = response as unknown as Record<string, unknown>;
     const output = Array.isArray(record.output) ? record.output : [];
     if (record.status !== "completed") {
@@ -717,9 +727,13 @@ export async function runCloudComputerAgent(input: {
         ["computer_call", "function_call"].includes(String((item as Record<string, unknown>).type)),
       ),
     ) as Array<Record<string, unknown>>;
+    const messageInterruption = interruptionOutcome();
+    if (messageInterruption) return messageInterruption;
     if (!toolCalls.length) {
       const text = responseText(record);
       if (text) await input.hooks.emit({ kind: "note", text: clip(text, 400) });
+      const reportInterruption = interruptionOutcome();
+      if (reportInterruption) return reportInterruption;
       return {
         status: "failed",
         code: "COMPUTER_NO_FINAL_REPORT",
@@ -735,6 +749,8 @@ export async function runCloudComputerAgent(input: {
     let ownerCheckpointReply: string | null = null;
     let finishCall: { callId: string; args: Record<string, unknown> } | null = null;
     for (const call of toolCalls) {
+      const toolInterruption = interruptionOutcome();
+      if (toolInterruption) return toolInterruption;
       const callId = typeof call.call_id === "string" ? call.call_id : "";
       if (!callId) continue;
       if (call.type === "function_call") {
@@ -750,8 +766,6 @@ export async function runCloudComputerAgent(input: {
           continue;
         }
         if (name === "ask_owner") {
-          if (input.hooks.stopRequested())
-            return { status: "stopped", summary: "Stopped by the owner." };
           const question = clip(String(args.question ?? ""), 300) || "The Bot needs your input.";
           const waitMs = Math.min(
             CLOUD_COMPUTER_LIMITS.ownerReplyWaitMs,
@@ -771,9 +785,13 @@ export async function runCloudComputerAgent(input: {
           questions += 1;
           ownerAsked = true;
           await input.hooks.emit({ kind: "question", text: question });
+          const questionInterruption = interruptionOutcome();
+          if (questionInterruption) return questionInterruption;
           const waitStarted = now();
           const reply = await input.hooks.askOwner(question, waitMs);
           ownerWaitMs += now() - waitStarted;
+          const replyInterruption = interruptionOutcome();
+          if (replyInterruption) return replyInterruption;
           if (reply === null) {
             return input.hooks.stopRequested()
               ? { status: "stopped", summary: "Stopped by the owner." }
@@ -785,6 +803,8 @@ export async function runCloudComputerAgent(input: {
           }
           await input.hooks.emit({ kind: "reply", text: clip(reply, 400) });
           const currentScreen = await captureModelFrame(input);
+          const screenInterruption = interruptionOutcome();
+          if (screenInterruption) return screenInterruption;
           if (!currentScreen) {
             return {
               status: "failed",
@@ -824,6 +844,8 @@ export async function runCloudComputerAgent(input: {
             x: args.x,
             y: args.y,
           });
+          const inspectInterruption = interruptionOutcome();
+          if (inspectInterruption) return inspectInterruption;
           ranBrowser = true;
           if (result.ok && result.verifiedLinkUrl) {
             verifiedSources.add(result.verifiedLinkUrl);
@@ -852,6 +874,8 @@ export async function runCloudComputerAgent(input: {
           const result = await input.session.execute("navigate", {
             url: typeof args.url === "string" ? args.url : "",
           });
+          const navigationInterruption = interruptionOutcome();
+          if (navigationInterruption) return navigationInterruption;
           hasPublicPage = result.ok && /^https?:\/\//i.test(input.session.activeUrl());
           ranBrowser = true;
           const ownerFrame = await refreshOwnerFrame(input);
@@ -862,6 +886,8 @@ export async function runCloudComputerAgent(input: {
             ok: result.ok,
           });
           const screenshot = await captureModelFrame(input, ownerFrame);
+          const screenInterruption = interruptionOutcome();
+          if (screenInterruption) return screenInterruption;
           if (!screenshot) {
             return {
               status: "failed",
@@ -904,6 +930,8 @@ export async function runCloudComputerAgent(input: {
 
       if (deferred || halted) {
         const screenshot = await captureModelFrame(input);
+        const screenInterruption = interruptionOutcome();
+        if (screenInterruption) return screenInterruption;
         if (!screenshot)
           return {
             status: "failed",
@@ -926,12 +954,11 @@ export async function runCloudComputerAgent(input: {
         });
         continue;
       }
-      if (input.hooks.stopRequested())
-        return { status: "stopped", summary: "Stopped by the owner." };
-      if (overTime()) return timeLimit;
       const requestedActions = Array.isArray(call.actions) ? call.actions : [];
       let ownerFrame: Buffer | null = null;
       for (const rawAction of requestedActions) {
+        const actionInterruption = interruptionOutcome();
+        if (actionInterruption) return actionInterruption;
         if (!rawAction || typeof rawAction !== "object") {
           halted = true;
           break;
@@ -946,6 +973,8 @@ export async function runCloudComputerAgent(input: {
         actions += 1;
         const action = rawAction as Record<string, unknown>;
         const result = await executeComputerAction(input.session, action);
+        const resultInterruption = interruptionOutcome();
+        if (resultInterruption) return resultInterruption;
         ranBrowser = true;
         if (result.ownerCheckpoint) {
           const question =
@@ -965,9 +994,13 @@ export async function runCloudComputerAgent(input: {
           questions += 1;
           ownerAsked = true;
           await input.hooks.emit({ kind: "question", text: question });
+          const questionInterruption = interruptionOutcome();
+          if (questionInterruption) return questionInterruption;
           const waitStarted = now();
           const reply = await input.hooks.askOwner(question, waitMs);
           ownerWaitMs += now() - waitStarted;
+          const replyInterruption = interruptionOutcome();
+          if (replyInterruption) return replyInterruption;
           if (reply === null) {
             return input.hooks.stopRequested()
               ? { status: "stopped", summary: "Stopped by the owner." }
@@ -996,12 +1029,16 @@ export async function runCloudComputerAgent(input: {
           url: displayUrl(input.session.activeUrl()) || undefined,
           ok: result.ok,
         });
+        const publishedActionInterruption = interruptionOutcome();
+        if (publishedActionInterruption) return publishedActionInterruption;
         if (!result.ok) {
           halted = true;
           break;
         }
       }
       const screenshot = await captureModelFrame(input, ownerFrame);
+      const screenInterruption = interruptionOutcome();
+      if (screenInterruption) return screenInterruption;
       if (!screenshot)
         return {
           status: "failed",
@@ -1024,6 +1061,8 @@ export async function runCloudComputerAgent(input: {
       });
     }
 
+    const finishInterruption = interruptionOutcome();
+    if (finishInterruption) return finishInterruption;
     if (finishCall) {
       if (
         ranBrowser ||
