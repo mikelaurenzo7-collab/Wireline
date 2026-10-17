@@ -396,7 +396,7 @@ describe.skipIf(!databaseUrl)("Bot deletion against real foreign keys", () => {
     const during: Record<string, unknown> = {};
     const fake = fakeProviders({
       async releaseNumber(owner, phoneNumber) {
-        during.held = await hold.isBotBeingDeleted(owner, bot);
+        during.setup = await hold.beginBotIdentitySetup(owner, bot);
         during.claim = await placement.claimNativeOutboundPlacement({
           userId: owner,
           agentId: bot,
@@ -417,7 +417,7 @@ describe.skipIf(!databaseUrl)("Bot deletion against real foreign keys", () => {
 
     await service.deleteBot({ userId, agentId: bot }, fake.providers);
 
-    expect(during.held).toBe(true);
+    expect(during.setup).toBeNull();
     expect(during.claim).toEqual({ ok: false, status: 409, error: "This Bot is being deleted." });
     expect(during.second).toMatchObject({ status: 409, code: "BOT_DELETION_IN_PROGRESS" });
     expect(
@@ -428,6 +428,25 @@ describe.skipIf(!databaseUrl)("Bot deletion against real foreign keys", () => {
     ).toBe(0);
     expect(await count("wireline_agents", "id = $1", [bot])).toBe(0);
     expect(await holds(userId, bot)).toBe(0);
+  });
+
+  it("waits for identity setup started from the web, which has no job row", async () => {
+    const { userId, bot } = await seedAccount();
+    const fake = fakeProviders();
+    const setup = await hold.beginBotIdentitySetup(userId, bot);
+    expect(setup).toEqual(expect.any(String));
+
+    expect((await service.previewBotDeletion(userId, bot)).blockedBy).toBe("identity_setup");
+    await expect(service.deleteBot({ userId, agentId: bot }, fake.providers)).rejects.toMatchObject(
+      { status: 409, code: "BOT_BUSY", details: { blocked_by: "identity_setup" } },
+    );
+    expect(fake.released).toEqual([]);
+
+    await hold.endBotIdentitySetup(userId, setup!);
+    await expect(service.deleteBot({ userId, agentId: bot }, fake.providers)).resolves.toEqual({
+      phoneNumbersReleased: 1,
+      mailboxesReleased: 1,
+    });
   });
 
   it("lets the Bot place calls again when deletion stops", async () => {
@@ -442,7 +461,9 @@ describe.skipIf(!databaseUrl)("Bot deletion against real foreign keys", () => {
       { code: "NUMBER_RELEASE_FAILED" },
     );
     expect(await holds(userId, bot)).toBe(0);
-    expect(await hold.isBotBeingDeleted(userId, bot)).toBe(false);
+    const setup = await hold.beginBotIdentitySetup(userId, bot);
+    expect(setup).toEqual(expect.any(String));
+    await hold.endBotIdentitySetup(userId, setup!);
     const claim = await placement.claimNativeOutboundPlacement({
       userId,
       agentId: bot,

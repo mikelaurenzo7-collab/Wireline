@@ -18,7 +18,12 @@ import { and, eq, gt, inArray, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { AppError } from "./api-error";
-import { clearBotDeletionHold, lockBotAdmission, placeBotDeletionHold } from "./bot-deletion-hold";
+import {
+  botIdentitySetupActive,
+  clearBotDeletionHold,
+  lockBotAdmission,
+  placeBotDeletionHold,
+} from "./bot-deletion-hold";
 import { acquireCompanyIdentityMutationLock } from "./company-identity-mutation";
 import { CAMPAIGN_STATUS } from "./outbound-status";
 import { auditLogger, drizzle, log } from "./server-context";
@@ -247,7 +252,10 @@ export async function findBotDeletionBlock(
   const work = await findBotWorkBlock(db, userId, agentId);
   if (work) return work;
 
-  // A running setup can recreate the mailbox deletion releases.
+  // Setup that is running can recreate the number or mailbox deletion
+  // releases. Its marker covers setup started from the web; the job row covers
+  // a queued run between its claim and its marker.
+  if (await botIdentitySetupActive(db, userId, agentId)) return "identity_setup";
   const [setup] = await db
     .select({ id: schema.jobs.id })
     .from(schema.jobs)
@@ -410,8 +418,8 @@ export async function deleteBot(
       await acquireCompanyIdentityMutationLock(tx, userId);
 
       if (!(await ownedBot(tx, userId, agentId))) throw AppError.notFound("Bot not found");
-      // The hold stops calls this Bot places, not calls it receives: a caller
-      // can still reach the number until the carrier releases it.
+      // The hold stops new calls and setup. This catches work it doesn't
+      // fence, such as a computer task the owner started meanwhile.
       const busyNow = await findBotWorkBlock(tx, userId, agentId);
       if (busyNow) throw busyAfterRelease(busyNow, phoneNumbers, mailboxIds.length);
       if (await identityChangedSinceRelease(tx, userId, agentId, mailboxes)) {

@@ -32,6 +32,7 @@ const h = vi.hoisted(() => ({
   webhookUrl: vi.fn(),
   fence: vi.fn(),
   deleting: false,
+  setupEnded: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -124,7 +125,10 @@ vi.mock("../src/lib/account-environment-policy", () => ({
   assertLiveExternalActionAllowed: async () => {},
 }));
 vi.mock("../src/lib/agent-phone-lines", () => ({ findAgentPhoneLine: h.selectedLine }));
-vi.mock("../src/lib/bot-deletion-hold", () => ({ isBotBeingDeleted: async () => h.deleting }));
+vi.mock("../src/lib/bot-deletion-hold", () => ({
+  beginBotIdentitySetup: async () => (h.deleting ? null : "setup-marker"),
+  endBotIdentitySetup: (...args: unknown[]) => h.setupEnded(...args),
+}));
 vi.mock("../src/lib/tenant-provider-deletion-fence", () => ({
   runTenantProviderWorkWithDeletionFence: async ({
     perform,
@@ -216,6 +220,14 @@ describe("paid identity admission at queue and provider boundaries", () => {
     expect(h.fence).not.toHaveBeenCalled();
     expect(h.phoneProvision).not.toHaveBeenCalled();
     expect(h.createInbox).not.toHaveBeenCalled();
+  });
+
+  it("keeps its setup marker until setup returns, and clears it after a failure", async () => {
+    h.vaultConfigured.mockReturnValue(false);
+    h.planId = "voice-email-regular";
+    h.target = "oldest";
+    await expect(ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" })).rejects.toThrow();
+    expect(h.setupEnded).toHaveBeenCalledWith("tenant", "setup-marker");
   });
 
   it.each([

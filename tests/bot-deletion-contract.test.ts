@@ -81,11 +81,43 @@ describe("Bot deletion", () => {
     expect(claim.split("botDeletionHoldExists(tx, input.userId, input.agentId)")).toHaveLength(3);
     expect(claim).not.toContain("await drizzle\n      .insert(schema.outboundLeads)");
 
+    // Setup marks itself for as long as it runs, so deletion waits for it.
     const identity = read("src/lib/paid-bot-identity.ts");
-    const ensure = identity.slice(identity.indexOf("export async function ensurePaidBotIdentity("));
-    const held = ensure.indexOf("isBotBeingDeleted(input.userId, input.agentId)");
-    expect(held).toBeGreaterThan(-1);
-    expect(held).toBeLessThan(ensure.indexOf("runTenantProviderWorkWithDeletionFence("));
+    const ensure = identity.slice(
+      identity.indexOf("export async function ensurePaidBotIdentity("),
+      identity.indexOf("async function reconcilePaidBotIdentity("),
+    );
+    const begin = ensure.indexOf("await beginBotIdentitySetup(input.userId, input.agentId)");
+    expect(begin).toBeGreaterThan(-1);
+    expect(begin).toBeLessThan(ensure.indexOf("return await reconcilePaidBotIdentity(input);"));
+    expect(ensure).toMatch(/finally \{\n\s+await endBotIdentitySetup\(input\.userId, marker\);/);
+    expect(service).toContain(
+      'if (await botIdentitySetupActive(db, userId, agentId)) return "identity_setup";',
+    );
+  });
+
+  it("refuses new inbound calls while a deletion holds the Bot", () => {
+    const session = read("src/lib/voice/openai-sip-session.ts");
+    const claim = session.slice(session.indexOf('if (direction === "inbound") {'));
+    const lock = claim.indexOf('await lockBotAdmission(tx, input.agentId, "shared");');
+    const held = claim.indexOf("botDeletionHoldExists(tx, input.userId, input.agentId)");
+    expect(lock).toBeGreaterThan(-1);
+    expect(held).toBeGreaterThan(lock);
+    expect(held).toBeLessThan(claim.indexOf(".insert(schema.callLogs)"));
+    expect(claim).toContain('"BOT_BEING_DELETED"');
+
+    const fallback = read("src/lib/voice/twilio-fallback-store.ts");
+    const fallbackLock = fallback.indexOf('await lockBotAdmission(tx, input.agentId, "shared");');
+    expect(fallbackLock).toBeGreaterThan(-1);
+    expect(fallbackLock).toBeLessThan(fallback.indexOf(".insert(schema.callLogs)"));
+    expect(fallback).toContain(
+      "if (await botDeletionHoldExists(tx, input.userId, input.agentId)) return null;",
+    );
+
+    // The webhook answers a refused claim cleanly instead of with a 500.
+    const routes = read("src/routes/openai-sip-routes.ts");
+    expect(routes).toContain('"BOT_BEING_DELETED",');
+    expect(routes).toContain('"bot_being_deleted"');
   });
 
   it("waits for calls, outbound dialing, computer tasks, and identity setup", () => {

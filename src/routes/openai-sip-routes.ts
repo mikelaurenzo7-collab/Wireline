@@ -468,12 +468,18 @@ router.post(
             "VOICE_FUNDING_REQUIRED",
             "VOICE_PLAN_REQUIRED",
             "VOICE_FUNDING_SETTLED",
+            "BOT_BEING_DELETED",
           ].includes(error.code)
         ) {
           res.status(202).json({
             received: true,
             handled: false,
-            reason: error.code === "VOICE_CONCURRENCY_EXCEEDED" ? "concurrency" : "call_coverage",
+            reason:
+              error.code === "VOICE_CONCURRENCY_EXCEEDED"
+                ? "concurrency"
+                : error.code === "BOT_BEING_DELETED"
+                  ? "bot_being_deleted"
+                  : "call_coverage",
           });
           return;
         }

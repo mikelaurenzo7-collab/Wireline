@@ -22,7 +22,7 @@ import {
 import { assertLiveExternalActionAllowed } from "./account-environment-policy";
 import { findAgentPhoneLine } from "./agent-phone-lines";
 import { AppError } from "./api-error";
-import { isBotBeingDeleted } from "./bot-deletion-hold";
+import { beginBotIdentitySetup, endBotIdentitySetup } from "./bot-deletion-hold";
 import { planById } from "./plan-catalog";
 import { getTenantChannelEntitlements, requireTenantChannel } from "./channel-entitlements";
 import { getIncludedPhoneLineSlots } from "./phone-line-entitlements";
@@ -516,11 +516,22 @@ export async function ensurePaidBotIdentity(input: {
   userId: string;
   agentId: string;
 }): Promise<PaidBotIdentityResult> {
-  // Deletion is releasing this Bot's number and mailbox; setting them up now
-  // would recreate what it just released. A queued retry runs after deletion.
-  if (await isBotBeingDeleted(input.userId, input.agentId)) {
-    throw new AppError(409, "BOT_BEING_DELETED", "This Bot is being deleted.");
+  // Deletion releases this Bot's number and mailbox, and setup running beside
+  // it would recreate them. The marker makes deletion wait for this setup; a
+  // deletion already under way refuses it, and a queued retry runs afterwards.
+  const marker = await beginBotIdentitySetup(input.userId, input.agentId);
+  if (!marker) throw new AppError(409, "BOT_BEING_DELETED", "This Bot is being deleted.");
+  try {
+    return await reconcilePaidBotIdentity(input);
+  } finally {
+    await endBotIdentitySetup(input.userId, marker);
   }
+}
+
+async function reconcilePaidBotIdentity(input: {
+  userId: string;
+  agentId: string;
+}): Promise<PaidBotIdentityResult> {
   const [agent, plan] = await Promise.all([
     drizzle
       .select({ id: schema.agents.id, name: schema.agents.name })
