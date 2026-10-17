@@ -129,7 +129,43 @@ describe("code review hardening contracts", () => {
     const billing = read("src/routes/billing-routes.ts");
     expect(openai).toContain("tenantStore.run(line.userId");
     expect(session).toContain("return tenantStore.run(input.userId");
-    expect(billing).toContain("tenantStore.run(userId");
+    expect(billing).toContain(
+      'import { reconcileStripeTopUpRefunds } from "../lib/stripe-topup-refund-reconciliation"',
+    );
+    const refundStart = billing.indexOf("async function reverseSettledRefundsForCharge(");
+    expect(refundStart).toBeGreaterThan(-1);
+    const refundHandler = billing.slice(refundStart, billing.indexOf("\n}", refundStart) + 2);
+    expect(refundHandler).toMatch(
+      /await reconcileStripeTopUpRefunds\(\{\s*stripe,\s*chargeId: charge\.id,\s*providerEventId: event\.id,/,
+    );
+
+    // Identity discovery needs system scope. The moved writer must derive its
+    // tenant from the unique posted Checkout receipt, then scope the entire
+    // wallet transaction to that immutable owner rather than mutable metadata.
+    const topups = read("src/lib/stripe-topup-refund-reconciliation.ts");
+    const resolveStart = topups.indexOf("export async function resolveStripeTopUpCredit(");
+    const writerStart = topups.indexOf("export async function reconcileStripeTopUpRefunds(");
+    expect(resolveStart).toBeGreaterThan(-1);
+    expect(writerStart).toBeGreaterThan(resolveStart);
+    const resolver = topups.slice(resolveStart, writerStart);
+    expect(resolver).toContain('eq(schema.creditLedger.refType, "stripe_session")');
+    expect(resolver).toContain("if (candidates.length !== 1)");
+    expect(resolver).toContain("const original = candidates[0]");
+    expect(resolver).toContain("!original.userId");
+    const writer = topups.slice(writerStart);
+    expect(writer).toContain(
+      "const context = await resolveStripeTopUpCredit({ stripe, chargeId })",
+    );
+    const scopeStart = writer.indexOf("await tenantStore.run(original.userId");
+    expect(scopeStart).toBeGreaterThan(writer.indexOf("if (!context) return false"));
+    const tenantWrite = writer.slice(scopeStart);
+    expect(tenantWrite).toMatch(
+      /^await tenantStore\.run\(original\.userId, \(\) =>\s*drizzle\.transaction\(async \(tx\) =>/,
+    );
+    expect(tenantWrite).toContain("eq(schema.creditLedger.userId, original.userId)");
+    expect(tenantWrite).toMatch(
+      /\.insert\(schema\.creditLedger\)\s*\.values\(\{\s*userId: original\.userId,/,
+    );
   });
 
   it("compensates and rethrows OpenAI call-accept failures so the provider can retry", () => {
