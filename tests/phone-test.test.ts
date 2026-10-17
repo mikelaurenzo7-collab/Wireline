@@ -487,6 +487,89 @@ describe("same-carrier-call DTMF possession and consent", () => {
 });
 
 describe("authoritative carrier settlement and recovery", () => {
+  it.each([
+    ["busy", "reported the line as busy"],
+    ["no-answer", "did not answer"],
+    ["failed", "could not connect"],
+    ["canceled", "canceled the call"],
+  ])(
+    "reports terminal %s truthfully without blaming phone verification",
+    async (status, message) => {
+      await createPhoneTest(request);
+      await handlePhoneTestStatus(callback({ status, duration: "0", errorCode: "21211" }));
+      const result = await getPhoneTest(userId, agentId, requestKey);
+      expect(result).toMatchObject({ status: "failed" });
+      expect(result.error).toContain(message);
+      expect(result.error).toContain("Carrier code 21211");
+      expect(result.error).not.toMatch(/verif|code was confirmed/i);
+      expect(test()).toMatchObject({ carrier_status: status, carrier_error_code: "21211" });
+      expect(test().attempts).toBe(0);
+      expect(test().verified_at).toBeUndefined();
+      expect(
+        data.ledger.find((row) => row.refType === "voice_phone_test_terminal").metadata,
+      ).toMatchObject({ carrier_status: status, carrier_error_code: "21211", duration_seconds: 0 });
+      expect(data.rows.wireline_call_logs[0].summary).toContain(message);
+      expect(h.track).toHaveBeenCalledWith({ userId, vapiCallId: canonical, durationSeconds: 0 });
+      await handlePhoneTestStatus(callback({ status: "ringing" }));
+      expect((await getPhoneTest(userId, agentId, requestKey)).status).toBe("failed");
+    },
+  );
+  it("reads the accurate busy diagnosis for an older receipt without rewriting evidence", async () => {
+    await createPhoneTest(request);
+    await handlePhoneTestStatus(callback({ status: "busy", duration: "0" }));
+    delete test().carrier_status;
+    delete test().carrier_error_code;
+    test().error = "The test ended before the verification code was confirmed.";
+    const before = JSON.stringify(data.rows, (_key, value) =>
+      typeof value === "bigint" ? String(value) : value,
+    );
+    expect((await getPhoneTest(userId, agentId, requestKey)).error).toContain(
+      "reported the line as busy",
+    );
+    expect(
+      JSON.stringify(data.rows, (_key, value) =>
+        typeof value === "bigint" ? String(value) : value,
+      ),
+    ).toBe(before);
+    expect(h.fetch).not.toHaveBeenCalled();
+  });
+  it("does not claim success when verification completed but no SIP conversation connected", async () => {
+    const response = await createPhoneTest(request);
+    await handlePhoneTestAnswer(callback({ digits: response.verification_code, attempt: 1 }), true);
+    await handlePhoneTestStatus(callback({ status: "completed", duration: "20" }));
+    expect(await getPhoneTest(userId, agentId, requestKey)).toMatchObject({
+      status: "failed",
+      error: "Your phone was verified, but the bot could not connect. Try again.",
+    });
+    expect(h.track).toHaveBeenCalledWith({ userId, vapiCallId: canonical, durationSeconds: 20 });
+  });
+  it("keeps a verified SIP conversation completed when the carrier confirms completion", async () => {
+    const response = await createPhoneTest(request);
+    await handlePhoneTestAnswer(callback({ digits: response.verification_code, attempt: 1 }), true);
+    await adoptPhoneTestSipFunding(data.db, {
+      ...request,
+      callId: "owned-sip",
+      leadId: data.leads[0].id,
+      direction: "outbound",
+      phoneTest: true,
+      outboundPlacementId: requestKey,
+      callerNumber: phone,
+      calledNumber: from,
+    });
+    await handlePhoneTestStatus(callback({ status: "completed", duration: "40" }));
+    expect(await getPhoneTest(userId, agentId, requestKey)).toMatchObject({ status: "completed" });
+    expect(data.rows.wireline_call_logs).toHaveLength(0);
+  });
+  it("does not persist or expose malformed carrier error-code data", async () => {
+    await createPhoneTest(request);
+    const unsafe = "https://private.example/?token=secret&phone=13125550123";
+    await handlePhoneTestStatus(callback({ status: "failed", duration: "0", errorCode: unsafe }));
+    expect(test().carrier_error_code).toBeUndefined();
+    expect((await getPhoneTest(userId, agentId, requestKey)).error).not.toContain(unsafe);
+    expect(
+      data.ledger.find((row) => row.refType === "voice_phone_test_terminal").metadata,
+    ).not.toHaveProperty("carrier_error_code");
+  });
   it("settles verification and conversation against one canonical identity", async () => {
     await createPhoneTest(request);
     await handlePhoneTestStatus(callback({ status: "completed", duration: "70" }));

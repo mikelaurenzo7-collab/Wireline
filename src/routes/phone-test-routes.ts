@@ -9,6 +9,7 @@ import {
   handlePhoneTestAnswer,
   handlePhoneTestStatus,
   phoneTestHangupTwiml,
+  normalizePhoneTestCarrierErrorCode,
   type PhoneTestCarrierInput,
 } from "../lib/voice/phone-test";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
@@ -86,6 +87,7 @@ function carrierInput(req: Request): PhoneTestCarrierInput {
     duration: typeof req.body?.CallDuration === "string" ? req.body.CallDuration : undefined,
     digits: typeof req.body?.Digits === "string" ? req.body.Digits : undefined,
     attempt: req.query.attempt === "1" ? 1 : req.query.attempt === "2" ? 2 : undefined,
+    errorCode: normalizePhoneTestCarrierErrorCode(req.body?.ErrorCode),
   };
 }
 function phoneTestTwimlHandler(kind: "answer" | "gather" | "fallback") {

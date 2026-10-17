@@ -15,6 +15,8 @@ vi.mock("../src/lib/voice/phone-test", () => ({
   handlePhoneTestAnswer: h.answer,
   handlePhoneTestStatus: h.status,
   phoneTestHangupTwiml: () => "<Response><Hangup/></Response>",
+  normalizePhoneTestCarrierErrorCode: (value: unknown) =>
+    typeof value === "string" && /^[1-9]\d{3,5}$/.test(value) ? value : undefined,
 }));
 vi.mock("../src/lib/twilio-webhook-auth", () => ({ evaluateTwilioWebhookAuth: h.signature }));
 vi.mock("../src/middleware/auth", () => ({
@@ -147,6 +149,25 @@ describe("phone-test routes", () => {
       true,
     );
     expect(h.answer.mock.calls[0][0]).not.toHaveProperty("IgnoreMe");
+  });
+  it("passes only a validated numeric carrier ErrorCode, never raw provider error details", async () => {
+    await invoke("post", "/api/twilio-webhook/phone-test/status", {
+      body: {
+        CallStatus: "failed",
+        ErrorCode: "21211",
+        ErrorMessage: "private provider detail",
+        ErrorUrl: "https://private.example/?token=secret",
+      },
+    });
+    expect(h.status).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: "failed", errorCode: "21211" }),
+    );
+    expect(h.status.mock.calls[0][0]).not.toHaveProperty("ErrorMessage");
+    expect(h.status.mock.calls[0][0]).not.toHaveProperty("ErrorUrl");
+    await invoke("post", "/api/twilio-webhook/phone-test/status", {
+      body: { CallStatus: "failed", ErrorCode: "https://private.example/?token=secret" },
+    });
+    expect(h.status).toHaveBeenLastCalledWith(expect.objectContaining({ errorCode: undefined }));
   });
   it("preserves phone-test authority from generic lead deletion, cadence and reset", () => {
     const read = (file: string) => readFileSync(file, "utf8");

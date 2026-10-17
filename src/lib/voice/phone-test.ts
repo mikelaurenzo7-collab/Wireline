@@ -61,8 +61,28 @@ type Test = {
   provider_attempted_at?: string;
   verified_at?: string;
   cancel_requested?: boolean;
+  carrier_status?: string;
+  carrier_error_code?: string;
   error?: string;
 };
+/** Provider codes are short decimal diagnostics, never raw messages or URLs. */
+export function normalizePhoneTestCarrierErrorCode(value: unknown): string | undefined {
+  return typeof value === "string" && /^[1-9]\d{3,5}$/.test(value) ? value : undefined;
+}
+function carrierFailureMessage(status: unknown, rawErrorCode?: unknown): string | undefined {
+  const message =
+    status === "busy"
+      ? "The carrier reported the line as busy. Check Do Not Disturb or call blocking, then try again."
+      : status === "no-answer"
+        ? "Your phone did not answer the call. Check reception or call filtering, then try again."
+        : status === "failed"
+          ? "The carrier could not connect the call. Check your number and try again."
+          : status === "canceled"
+            ? "The carrier canceled the call before it connected."
+            : undefined;
+  const code = normalizePhoneTestCarrierErrorCode(rawErrorCode);
+  return message ? `${message}${code ? ` Carrier code ${code}.` : ""}` : undefined;
+}
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -124,8 +144,13 @@ export function phoneTestCode(input: {
 function codeMatches(actual: string, expected: string): boolean {
   return /^\d{6}$/.test(actual) && timingSafeEqual(Buffer.from(actual), Buffer.from(expected));
 }
-function receipt(lead: Lead): PhoneTestReceipt {
+function receipt(lead: Lead, terminal?: Record<string, unknown>): PhoneTestReceipt {
   const test = testOf(lead);
+  const error =
+    carrierFailureMessage(
+      terminal?.carrier_status ?? test.carrier_status,
+      terminal?.carrier_error_code ?? test.carrier_error_code,
+    ) ?? test.error;
   const state =
     !phoneTestIsTerminal(test.status) &&
     test.status !== "ending" &&
@@ -152,7 +177,7 @@ function receipt(lead: Lead): PhoneTestReceipt {
           }),
         }
       : {}),
-    ...(test.error ? { error: test.error } : {}),
+    ...(error ? { error } : {}),
   };
 }
 async function walletLock(tx: VoiceIdentityTransaction, userId: string) {
@@ -239,7 +264,16 @@ export async function getPhoneTest(
     throw AppError.notFound("Phone test not found. Keep this request open while it connects.");
   }
   if (lead.agentId !== agentId) throw AppError.notFound("Phone test not found.");
-  return receipt(lead);
+  // Legacy terminal receipts already contain the authoritative carrier status.
+  // Read it without rewriting historical evidence or touching the provider.
+  const terminal = phoneTestIsTerminal(testOf(lead).status)
+    ? await readVoiceIdentityReceipt(
+        drizzle,
+        userId,
+        `voice_phone_test_terminal:${phoneTestFundingId(requestKey)}`,
+      )
+    : undefined;
+  return receipt(lead, terminal ? record(terminal.metadata) : undefined);
 }
 export function phoneTestWebhookUrl(
   kind: "answer" | "gather" | "status" | "fallback",
@@ -669,6 +703,7 @@ export type PhoneTestCarrierInput = {
   duration?: string;
   digits?: string;
   attempt?: number;
+  errorCode?: string;
 };
 async function callbackLead(input: PhoneTestCarrierInput): Promise<Lead> {
   const verified = verifyOpenAIOutboundToken(input.token);
@@ -800,6 +835,7 @@ async function settlePhoneTest(
   lead: Lead,
   status: string,
   rawDuration: string | undefined,
+  rawErrorCode?: string,
 ): Promise<void> {
   if (!TERMINAL_CARRIER.has(status)) throw AppError.conflict("The carrier call is still active.");
   const seconds = status === "completed" ? Number(rawDuration) : 0;
@@ -812,6 +848,7 @@ async function settlePhoneTest(
     throw AppError.serviceUnavailable("The carrier's final duration is not yet available.");
   const requestKey = testOf(lead).request_id;
   const canonical = phoneTestFundingId(requestKey);
+  const errorCode = normalizePhoneTestCarrierErrorCode(rawErrorCode);
   await drizzle.transaction(async (tx) => {
     const row = await lockedTest(tx, lead.userId, requestKey);
     if (!row || row.callId !== lead.callId || !row.callId)
@@ -837,6 +874,7 @@ async function settlePhoneTest(
           call_sid: row.callId,
           carrier_status: status,
           duration_seconds: seconds,
+          ...(errorCode ? { carrier_error_code: errorCode } : {}),
         },
       });
     const state = testOf(row);
@@ -845,6 +883,14 @@ async function settlePhoneTest(
       row.userId,
       `voice_funding_phase:${canonical}:sip`,
     );
+    const terminalError =
+      carrierFailureMessage(status, errorCode ?? state.carrier_error_code) ??
+      (state.verified_at && status === "completed" && !sipPhase
+        ? "Your phone was verified, but the bot could not connect. Try again."
+        : (state.error ??
+          (!state.verified_at
+            ? "The test ended before the verification code was confirmed."
+            : undefined)));
     if (!sipPhase) {
       // A requested test that never reached SIP is still a real carrier attempt.
       // Keep it in Calls without inventing a recording, transcript or AI session.
@@ -857,13 +903,15 @@ async function settlePhoneTest(
           direction: "outbound",
           customerNumber: row.customerNumber,
           durationSeconds: seconds,
-          summary: state.cancel_requested
-            ? "Phone test ended at your request before a conversation connected."
-            : state.verified_at
-              ? "Phone test verified, but the bot conversation did not connect."
-              : status === "no-answer" || status === "busy"
-                ? "Phone test was not answered."
-                : "Phone test ended before the verification code was confirmed.",
+          summary:
+            carrierFailureMessage(status, errorCode) ??
+            (state.cancel_requested
+              ? "Phone test ended at your request before a conversation connected."
+              : state.verified_at
+                ? "Phone test verified, but the bot conversation did not connect."
+                : status === "no-answer" || status === "busy"
+                  ? "Phone test was not answered."
+                  : "Phone test ended before the verification code was confirmed."),
           endedReason: state.cancel_requested ? "phone-test-cancelled" : "phone-test-not-connected",
           outcomeTag: "unreachable",
           recordingUrl: null,
@@ -877,12 +925,12 @@ async function settlePhoneTest(
       {
         status: state.cancel_requested
           ? "cancelled"
-          : state.verified_at && status === "completed"
+          : state.verified_at && sipPhase && status === "completed"
             ? "completed"
             : "failed",
-        ...(!state.verified_at && !state.error
-          ? { error: "The test ended before the verification code was confirmed." }
-          : {}),
+        carrier_status: status,
+        ...(errorCode ? { carrier_error_code: errorCode } : {}),
+        ...(terminalError ? { error: terminalError } : {}),
       },
       { state: "completed" },
     );
@@ -909,7 +957,7 @@ export async function handlePhoneTestStatus(input: PhoneTestCarrierInput): Promi
       return bound;
     });
     if (TERMINAL_CARRIER.has(input.status || ""))
-      await settlePhoneTest(lead, input.status!, input.duration);
+      await settlePhoneTest(lead, input.status!, input.duration, input.errorCode);
   });
 }
 
