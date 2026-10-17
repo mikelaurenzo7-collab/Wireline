@@ -497,8 +497,8 @@ describe("same-carrier-call DTMF possession and consent", () => {
 
 describe("authoritative carrier settlement and recovery", () => {
   it.each([
-    ["busy", "reported the line as busy"],
-    ["no-answer", "did not answer"],
+    ["busy", "returned a busy signal"],
+    ["no-answer", "reported no answer"],
     ["failed", "could not connect"],
     ["canceled", "canceled the call"],
   ])(
@@ -701,7 +701,7 @@ describe("authoritative carrier settlement and recovery", () => {
       typeof value === "bigint" ? String(value) : value,
     );
     expect((await getPhoneTest(userId, agentId, requestKey)).error).toContain(
-      "reported the line as busy",
+      "returned a busy signal",
     );
     expect(
       JSON.stringify(data.rows, (_key, value) =>

@@ -75,9 +75,9 @@ export function normalizePhoneTestCarrierErrorCode(value: unknown): string | und
 function carrierFailureMessage(status: unknown, rawErrorCode?: unknown): string | undefined {
   const message =
     status === "busy"
-      ? "The carrier reported the line as busy. Check Do Not Disturb or call blocking, then try again."
+      ? "The carrier returned a busy signal before the test connected. If your phone never rang, contact support to trace the call."
       : status === "no-answer"
-        ? "Your phone did not answer the call. Check reception or call filtering, then try again."
+        ? "The carrier reported no answer before the test connected. If your phone never rang, contact support to trace the call."
         : status === "failed"
           ? "The carrier could not connect the call. Check your number and try again."
           : status === "canceled"
