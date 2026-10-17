@@ -12,12 +12,15 @@ import {
   WIRELINE_PLANS,
   WIRELINE_VOICE_STACK,
 } from "../data/wireline-knowledge";
+import { UNVERIFIED_LIVE_TOOL_NAMES } from "./unverified-live-tools";
+import type { AgentToolName } from "./agent-capabilities";
 export type ShowcaseKind = "cs" | "demo";
 
 export const SHOWCASE_TOOL_NAMES = [
   "send_signup_link",
   "send_payment_link",
   "schedule_callback",
+  "create_followup_task",
   "escalate_to_human",
   "book_appointment",
   "book_consultation",
@@ -29,13 +32,29 @@ export const SHOWCASE_TOOL_NAMES = [
 
 type ShowcaseToolName = (typeof SHOWCASE_TOOL_NAMES)[number];
 
+const LEGACY_CS_SEEDED_TOOLS = new Set([
+  "send_signup_link",
+  "send_payment_link",
+  "schedule_callback",
+  "escalate_to_human",
+]);
+
+/** Recognize the exact old creation default without altering customized lists. */
+export function isLegacyFounderShowcaseToolSelection(value: unknown): boolean {
+  if (!Array.isArray(value) || value.length !== LEGACY_CS_SEEDED_TOOLS.size) return false;
+  const tools = new Set<unknown>(value);
+  return (
+    tools.size === LEGACY_CS_SEEDED_TOOLS.size &&
+    [...tools].every((name) => LEGACY_CS_SEEDED_TOOLS.has(name as string))
+  );
+}
+
 /**
  * Tool exposure differs by agent kind:
  *
  * - "cs" (the real BotBound employee lines — Sarah, Liam): these ARE
- *   BotBound's front-line team, so they get the full toolset, including
- *   the owner-routing tools (schedule_callback, escalate_to_human) that
- *   land a task in the founder's (Mike's) triage inbox.
+ *   BotBound's front-line team, so they get the safe owner-routing tools
+ *   that land a task in the founder's (Mike's) triage inbox.
  *
  * - "demo" (the vertical role-play lines on the landing page): these are
  *   pure showcase demos. They must NEVER route a human follow-up to the
@@ -50,6 +69,7 @@ type ShowcaseToolName = (typeof SHOWCASE_TOOL_NAMES)[number];
  */
 const OWNER_ROUTING_TOOL_NAMES: ReadonlySet<ShowcaseToolName> = new Set([
   "schedule_callback",
+  "create_followup_task",
   "escalate_to_human",
 ]);
 
@@ -59,23 +79,24 @@ const OWNER_ROUTING_TOOL_NAMES: ReadonlySet<ShowcaseToolName> = new Set([
  * list (they are legacy/internal), but the handler still processes them —
  * so they must be blocked for demo agents.
  */
-const OWNER_ROUTING_EXTRA_TOOL_NAMES: ReadonlySet<string> = new Set([
-  "create_followup_task",
-  "capture_customer_profile",
-]);
+const OWNER_ROUTING_EXTRA_TOOL_NAMES: ReadonlySet<string> = new Set(["capture_customer_profile"]);
 
 const BOTBOUND_SPECIALIST_TOOL_NAMES: ReadonlySet<ShowcaseToolName> = new Set([
   "send_signup_link",
   "send_payment_link",
   "schedule_callback",
+  "create_followup_task",
   "escalate_to_human",
 ]);
 
 export function showcaseToolNamesForKind(kind: ShowcaseKind): ShowcaseToolName[] {
+  const eligible = SHOWCASE_TOOL_NAMES.filter(
+    (name) => !UNVERIFIED_LIVE_TOOL_NAMES.has(name as AgentToolName),
+  );
   if (kind === "demo") {
-    return SHOWCASE_TOOL_NAMES.filter((name) => !OWNER_ROUTING_TOOL_NAMES.has(name));
+    return eligible.filter((name) => !OWNER_ROUTING_TOOL_NAMES.has(name));
   }
-  return SHOWCASE_TOOL_NAMES.filter((name) => BOTBOUND_SPECIALIST_TOOL_NAMES.has(name));
+  return eligible.filter((name) => BOTBOUND_SPECIALIST_TOOL_NAMES.has(name));
 }
 
 /** True only for owner-routing tools that a demo agent must not be able to fire. */
@@ -199,7 +220,7 @@ const SHOWCASE_TOOL_DEFS: Record<ShowcaseToolName, ShowcaseToolDef> = {
   schedule_callback: {
     name: "schedule_callback",
     description:
-      "Record a requested callback time for human review. This does not reserve or confirm a calendar slot.",
+      "Unavailable on live calls until callback destinations can be verified. Use a follow-up task for human review.",
     parameters: {
       type: "object",
       properties: {
@@ -213,6 +234,26 @@ const SHOWCASE_TOOL_DEFS: Record<ShowcaseToolName, ShowcaseToolDef> = {
         },
       },
       required: ["callback_datetime", "notes"],
+    },
+  },
+  create_followup_task: {
+    name: "create_followup_task",
+    description:
+      "Record a caller request for BotBound's team to review. This does not schedule a callback or promise a response time.",
+    parameters: {
+      type: "object",
+      properties: {
+        description: {
+          type: "string",
+          description: "The caller's request and any callback preference they supplied.",
+        },
+        priority: {
+          type: "string",
+          enum: ["low", "medium", "high"],
+          description: "Urgency of the request.",
+        },
+      },
+      required: ["description", "priority"],
     },
   },
   escalate_to_human: {
@@ -634,7 +675,7 @@ function buildBotBoundEmployeePrompt(agent: ContactAgent): string {
     "TOOL RULES:",
     "- Use send_signup_link when they want Free Builder signup or product details by email.",
     "- Use send_payment_link when they are ready to buy.",
-    "- Use schedule_callback only to record a preferred callback time for review. Never say the time is scheduled or confirmed.",
+    "- Record callback requests with create_followup_task for human review. Never say a callback is scheduled or confirmed until the team verifies it.",
     "- Use escalate_to_human to record a review request when they ask for a person, emotions are high, or the issue is risky. Never promise when someone will respond.",
     "- For every email tool, ask for the email, read the full address back, and get an explicit yes before calling the tool.",
     "TRUTH RULES:",

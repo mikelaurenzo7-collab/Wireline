@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Live tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
 import { CRMService } from "../crm-service";
 import {
+  CALLER_LINKED_LIVE_WRITE_DENIAL,
+  PRIVATE_LIVE_READ_DENIAL,
+} from "../unverified-live-tools";
+import {
   assertExternalEntityActionAllowed,
   assertLiveExternalActionAllowed,
   type ExternalEntityTarget,
@@ -23,7 +27,7 @@ export async function handleEnrichmentToolCall(
   args: any,
   context: ToolCallContext,
 ): Promise<ToolCallResult | null> {
-  const { agent, message, payload, toolCallId } = context;
+  const { agent, toolCallId } = context;
 
   if (fn === "enrich_lead") {
     try {
@@ -84,89 +88,19 @@ export async function handleEnrichmentToolCall(
 
   // CRM Handlers
   if (fn === "crm_search_contacts") {
-    try {
-      // The person on the line can see only the CRM record for their own
-      // number; a free-text query let any caller read other contacts back.
-      const callerNumber =
-        (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-        (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
-      if (String(callerNumber || "").replace(/\D/g, "").length < 7) {
-        return {
-          toolCallId,
-          result:
-            "This call has no caller number, so I can't look up a CRM record. Take the caller's details instead.",
-        };
-      }
-      await assertTenantEnrichmentAction(agent?.user_id, "vapi_crm_contact_search");
-      const service = new CRMService(agent.user_id);
-      const { contacts } = await service.searchContacts(String(callerNumber));
-      return {
-        toolCallId,
-        result:
-          contacts && contacts.length > 0
-            ? `I found some records: ${contacts.map((c: any) => `${c.first_name || ""} ${c.last_name || ""} ${c.email || c.phone || ""}`.trim()).join(", ")}`
-            : "I don't see any matching records for that. Can you try a different name, email, or phone number?",
-      };
-    } catch {
-      return {
-        toolCallId,
-        result: "I wasn't able to search our records right now. Let me take your info instead.",
-      };
-    }
+    return { toolCallId, result: PRIVATE_LIVE_READ_DENIAL };
   }
 
   if (fn === "crm_log_call") {
-    try {
-      const { contact_id, subject, notes } = args || {};
-      const fallbackNumber =
-        (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-        (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
-      await assertTenantEnrichmentAction(agent?.user_id, "vapi_crm_call_log", {
-        phone: fallbackNumber,
-      });
-      const service = new CRMService(agent.user_id);
-      const success = await service.logCall({
-        crmType: "auto",
-        subject,
-        description: notes || "Call logged automatically by agent.",
-        to_number: fallbackNumber || "",
-        contact_id,
-      });
-      return {
-        toolCallId,
-        result: success
-          ? "Got it, I've logged our conversation."
-          : "I've noted the details of our call.",
-      };
-    } catch {
-      return { toolCallId, result: "I've noted the details of our call." };
-    }
+    return { toolCallId, result: CALLER_LINKED_LIVE_WRITE_DENIAL };
   }
 
   if (fn === "crm_create_opportunity") {
-    try {
-      const { name, contact_id, stage, amount } = args || {};
-      await assertTenantEnrichmentAction(agent?.user_id, "vapi_crm_opportunity_create");
-      const service = new CRMService(agent.user_id);
-      const success = await service.createOpportunity({
-        crmType: "auto",
-        name,
-        contact_id,
-        stage,
-        amount: amount ? Number(amount) : undefined,
-      });
-      return {
-        toolCallId,
-        result: success
-          ? "Great, I've added that to our pipeline."
-          : "I've noted your interest. Someone from our team will follow up.",
-      };
-    } catch {
-      return {
-        toolCallId,
-        result: "I've noted your interest. Someone from our team will follow up.",
-      };
-    }
+    return {
+      toolCallId,
+      result:
+        "I can't verify the CRM contact for a new opportunity during this call. No opportunity was created; offer a team follow-up.",
+    };
   }
 
   if (fn === "meta_submit_lead") {
@@ -220,18 +154,11 @@ export async function handleEnrichmentToolCall(
   }
 
   if (fn === "crm_update_deal_stage") {
-    try {
-      const { deal_id, stage } = args || {};
-      await assertTenantEnrichmentAction(agent?.user_id, "vapi_crm_deal_update");
-      const service = new CRMService(agent.user_id);
-      const ok = await service.updateDealStage({ crmType: "auto", deal_id, stage });
-      return {
-        toolCallId,
-        result: ok ? "Deal stage updated." : "I've noted the new deal stage.",
-      };
-    } catch {
-      return { toolCallId, result: "I've noted the new deal stage." };
-    }
+    return {
+      toolCallId,
+      result:
+        "I can't verify this deal during the call. No CRM stage was changed; offer a team follow-up.",
+    };
   }
 
   return null;

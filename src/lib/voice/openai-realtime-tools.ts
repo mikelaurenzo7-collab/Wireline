@@ -55,20 +55,6 @@ export const OPENAI_REALTIME_WIRELINE_TOOLS: OpenAIRealtimeToolDefinition[] = [
   },
   {
     type: "function",
-    name: "schedule_callback",
-    description: "Schedule a callback when the caller asks to be contacted later.",
-    parameters: {
-      type: "object",
-      properties: {
-        date_time: { type: "string", description: "Requested callback time." },
-        reason: { type: "string", description: "Reason for the callback." },
-      },
-      required: ["date_time", "reason"],
-      additionalProperties: false,
-    },
-  },
-  {
-    type: "function",
     name: "send_text_message",
     description:
       "Send a text message or WhatsApp follow-up only after the customer explicitly asks for it or consents during this conversation.",

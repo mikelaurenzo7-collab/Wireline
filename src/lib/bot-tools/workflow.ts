@@ -1,10 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Live tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import { NotificationService } from "../notifications";
 import { createMeeting as createZoomMeeting } from "../zoom-service";
 import { sanitizePhone } from "../agent-runtime-helpers";
+import {
+  CALLER_LINKED_LIVE_WRITE_DENIAL,
+  PRIVATE_LIVE_READ_DENIAL,
+} from "../unverified-live-tools";
 import { recordEscalationOutcome } from "../call-reliability-capture";
 import {
   externalEntityActionPolicyForUser,
@@ -124,106 +128,7 @@ export async function handleWorkflowToolCall(
   }
 
   if (fn === "schedule_callback") {
-    try {
-      const { callback_datetime, notes } = args || {};
-      const { parseCallbackDatetime, CALLBACK_REQUEST_MARKER } =
-        await import("../callback-engine");
-      const dueAt = parseCallbackDatetime(callback_datetime);
-      if (!dueAt) {
-        return {
-          toolCallId,
-          result:
-            "The callback was not scheduled because the requested date and time could not be verified. Ask the caller for an exact date, time, and timezone before trying again.",
-        };
-      }
-
-      const callerNumber = sanitizePhone(
-        (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-          (message.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-          "",
-      );
-
-      // Structured persistence is what makes the callback EXECUTE: the
-      // callback_tick engine dials due callback_scheduled_at rows. The
-      // follow_up_tasks row below is the human-visible mirror.
-      if (callerNumber) {
-        const [existingLead] = await drizzle
-          .select({ id: schema.outboundLeads.id, metadata: schema.outboundLeads.metadata })
-          .from(schema.outboundLeads)
-          .where(
-            and(
-              eq(schema.outboundLeads.userId, agent?.user_id),
-              eq(schema.outboundLeads.customerNumber, callerNumber),
-            ),
-          )
-          .orderBy(sql`${schema.outboundLeads.createdAt} DESC`)
-          .limit(1);
-
-        if (existingLead) {
-          await drizzle
-            .update(schema.outboundLeads)
-            .set({
-              callbackScheduledAt: dueAt,
-              status: "Callback-Scheduled",
-              agentId: webhookAgentId,
-              metadata: {
-                ...((existingLead.metadata as Record<string, unknown> | null) || {}),
-                callback_notes: notes || null,
-                [CALLBACK_REQUEST_MARKER]: "phone_call",
-                // Fresh request → reset the deferral counter so a prior run's
-                // stale count can't prematurely drop this new callback.
-                callback_deferrals: 0,
-              },
-            })
-            .where(eq(schema.outboundLeads.id, existingLead.id));
-        } else {
-          await drizzle.insert(schema.outboundLeads).values({
-            userId: agent?.user_id,
-            agentId: webhookAgentId,
-            customerNumber: callerNumber,
-            status: "Callback-Scheduled",
-            source: "callback",
-            context: notes || "Caller requested a callback during a phone call.",
-            callbackScheduledAt: dueAt,
-            metadata: {
-              callback_notes: notes || null,
-              [CALLBACK_REQUEST_MARKER]: "phone_call",
-            },
-          });
-        }
-      }
-
-      await drizzle.insert(schema.followUpTasks).values({
-        userId: agent?.user_id,
-        agentId: webhookAgentId,
-        taskType: "callback",
-        description: `Scheduled Callback: ${notes || "caller requested a return call"}`,
-        priority: "high",
-        status: callerNumber ? "scheduled" : "pending",
-        sourceType: "phone_call",
-        targetChannel: callerNumber ? "voice" : "manual",
-        dueDate: dueAt,
-        createdAt: new Date(),
-      });
-
-      if (!callerNumber) {
-        return {
-          toolCallId,
-          result:
-            "The callback request was saved for human review, but no destination number was available and no automatic callback was scheduled. Ask the caller for the best number before confirming a scheduled callback.",
-        };
-      }
-      return {
-        toolCallId,
-        result: `Callback scheduled for ${callback_datetime}.`,
-      };
-    } catch {
-      return {
-        toolCallId,
-        result:
-          "I've noted the callback request. Someone will follow up at the time you mentioned.",
-      };
-    }
+    return { toolCallId, result: CALLER_LINKED_LIVE_WRITE_DENIAL };
   }
 
   if (fn === "capture_customer_profile") {
@@ -434,49 +339,7 @@ export async function handleWorkflowToolCall(
   }
 
   if (fn === "view_recent_interactions") {
-    try {
-      const fallbackNumber =
-        (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-        (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
-      if (fallbackNumber && agent?.user_id) {
-        const safePhone = sanitizePhone(fallbackNumber);
-        const pastCalls = await drizzle
-          .select({
-            summary: schema.callLogs.summary,
-            intentLabel: schema.callLogs.intentLabel,
-            sentiment: schema.callLogs.sentiment,
-            createdAt: schema.callLogs.createdAt,
-          })
-          .from(schema.callLogs)
-          .where(
-            and(
-              eq(schema.callLogs.customerNumber, safePhone),
-              eq(schema.callLogs.userId, agent.user_id),
-            ),
-          )
-          .orderBy(sql`${schema.callLogs.createdAt} DESC`)
-          .limit(3);
-        if (pastCalls.length > 0) {
-          const summaries = pastCalls
-            .map((c: any) => `- ${c.createdAt?.toISOString()}: [${c.intentLabel}] ${c.summary}`)
-            .join("\n");
-          return {
-            toolCallId,
-            result: `Past 3 interactions:\n${summaries}`,
-          };
-        }
-        return {
-          toolCallId,
-          result: "No recent interactions found for this caller.",
-        };
-      }
-      return { toolCallId, result: "Could not identify caller number." };
-    } catch {
-      return {
-        toolCallId,
-        result: "I wasn't able to pull up past interactions right now. How can I help you today?",
-      };
-    }
+    return { toolCallId, result: PRIVATE_LIVE_READ_DENIAL };
   }
 
   return null;

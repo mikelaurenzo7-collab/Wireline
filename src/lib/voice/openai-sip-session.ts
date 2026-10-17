@@ -322,7 +322,7 @@ function buildOutboundInstructions(input: OpenAISipIncomingCall): string {
       ? "Any stop-calling or opt-out request is immediate: use the add_to_dnc tool immediately, confirm once, and end without another pitch."
       : "",
     voicemailProtocol,
-    "Before ending, use update_lead_status or schedule_callback when applicable and confirm the next step.",
+    "Before ending, capture the outcome and confirm the next step. Use create_followup_task for a requested callback or existing-record change; do not promise an automatic callback.",
   ]
     .filter(Boolean)
     .join("\n");

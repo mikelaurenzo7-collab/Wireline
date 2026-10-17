@@ -1,11 +1,10 @@
 /**
  * Callback engine — executes caller-requested callbacks.
  *
- * `schedule_callback` (agent tool) and the Outbound dispatcher write a
- * structured `outbound_leads.callback_scheduled_at`; this engine is the part
- * that actually returns the call. Before it existed the agent told callers
- * "Callback securely scheduled" while the row only fed a display pane — the
- * system never dialed anyone back.
+ * A due `outbound_leads.callback_scheduled_at` can cause this engine to place
+ * a call. The live `schedule_callback` tool is currently disabled pending
+ * stronger caller verification; existing due rows and system deferrals still
+ * require the dial gate below.
  *
  * Runs from the `callback_tick` job (enqueued by every /api/jobs/sweep tick,
  * same cluster-safe shape as cadence_tick). Every dial passes the shared
@@ -14,13 +13,9 @@
  * `isRequestedCallback` is READ from the lead, never assumed. It waives express
  * written consent and flips the dial to non-marketing (which drops the 47 CFR
  * 64.1200(b)(3) opt-out announcement), so it may only be claimed for a lead a
- * consumer actually asked to be called back on. Two other writers put a due
- * timestamp on `callback_scheduled_at` for leads nobody spoke to — the intake
- * quiet-hours deferral and the summary-inferred "followup" outcome — and this
- * engine selects purely on that timestamp. Hardcoding the flag laundered those
- * into consented callbacks: a cold marketing lead submitted at 22:30 got dialed
- * next morning with no consent check and no opt-out announcement, while the
- * identical lead submitted at 10:00 was hard-blocked.
+ * consumer actually asked to be called back on. System deferrals and legacy
+ * summary-inferred follow-ups can also leave due timestamps; the engine must
+ * classify each dial from its verified provenance rather than the timestamp.
  */
 import { and, asc, eq, isNotNull, lte, sql } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
@@ -54,10 +49,9 @@ const MAX_HORIZON_MS = 30 * 24 * 60 * 60 * 1000;
 
 /**
  * Provenance stamp proving a consumer asked for this callback on a live line.
- * Written only by the `schedule_callback` tool handler
- * (the runtime tool dispatcher) and stripped from
- * account-holder-supplied intake metadata, so it cannot be asserted from
- * outside a call.
+ * Previously written by the live `schedule_callback` handler, which is now
+ * disabled. Retained for outstanding legacy rows and stripped from imported
+ * metadata so callers cannot assert it from outside a call.
  */
 export const CALLBACK_REQUEST_MARKER = "callback_requested_via";
 
@@ -76,10 +70,9 @@ export function isConsumerRequestedCallback(metadata: Record<string, unknown>): 
  * terminal outcome (placed, blocked, dropped, failed) and preserved only
  * across deferrals, where the same request is still rolling forward to its
  * window. Leaving it behind would relaunder every later system-scheduled dial
- * on the lead — a summary-inferred "followup" lands 24h after the placed
- * callback, and a stale marker would send it out with consent waived and the
- * opt-out announcement dropped, on the strength of a request the consumer
- * made once, for a call they already received.
+ * on the lead — a later system-scheduled or legacy due row could otherwise
+ * reuse the stale marker with consent waived and the opt-out announcement
+ * dropped, on the strength of a request the consumer made once.
  *
  * Also the sanitizer for HTTP boundaries that store caller-supplied lead
  * metadata verbatim: the claim "a consumer asked us to call back" is only

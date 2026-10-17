@@ -1,10 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Live tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
-import { and, eq, ilike, inArray, not } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { superviseClientCommunication } from "../ai-supervisor";
 import * as schema from "../../db/schema";
 import { auditLogger, log as serverLog } from "../server-context";
 import { normalizeDncPhone } from "../compliance";
+import {
+  CALLER_LINKED_LIVE_WRITE_DENIAL,
+  PRIVATE_LIVE_READ_DENIAL,
+} from "../unverified-live-tools";
 import {
   CONSENT_RULE_VERSION,
   buildConsentLedgerRow,
@@ -12,7 +16,7 @@ import {
 } from "../tcpa-consent";
 import { IntegrationService } from "../integrations";
 import { lookupTenantPhoneNumber, sendTenantMessage } from "../twilio-service";
-import { PRESERVED_LEAD_STATUSES, sanitizePhone } from "../agent-runtime-helpers";
+import { sanitizePhone } from "../agent-runtime-helpers";
 import { handleSendPaymentLink, handleSendSignupLink } from "../agent-link-tool-handlers";
 import {
   excerptAroundMatch,
@@ -242,96 +246,11 @@ export async function handleCoreToolCall(
   }
 
   if (fn === "search_leads") {
-    try {
-      // The person on the line can see only their own record. A free-text
-      // query let any caller read back other leads' names and numbers.
-      const callerPhone = sanitizePhone(
-        (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-          (message.call as { customer?: { number?: string } } | undefined)?.customer?.number,
-      );
-      if (callerPhone.replace(/\D/g, "").length < 7) {
-        return {
-          toolCallId,
-          result:
-            "This call has no caller number, so I can't look up a record. Take the caller's details instead.",
-        };
-      }
-      const leads = await drizzle
-        .select({
-          name: schema.outboundLeads.customerName,
-          status: schema.outboundLeads.status,
-          customerNumber: schema.outboundLeads.customerNumber,
-          context: schema.outboundLeads.context,
-        })
-        .from(schema.outboundLeads)
-        .where(
-          and(
-            eq(schema.outboundLeads.userId, agent?.user_id),
-            ilike(schema.outboundLeads.customerNumber, `%${callerPhone}%`),
-          ),
-        )
-        .limit(3);
-
-      if (leads && leads.length > 0) {
-        const summaries = leads.map(
-          (l: any) => `${l.name} (${l.status}) | Phone: ${l.customerNumber || "N/A"}`,
-        );
-        return {
-          toolCallId,
-          result: `Found records:\n${summaries.join("\n")}`,
-        };
-      }
-
-      return { toolCallId, result: "No matching records found." };
-    } catch {
-      return {
-        toolCallId,
-        result:
-          "I wasn't able to pull that up right now. Let me take your info and have someone get back to you.",
-      };
-    }
+    return { toolCallId, result: PRIVATE_LIVE_READ_DENIAL };
   }
 
   if (fn === "update_lead_status") {
-    try {
-      const { status, notes } = args || {};
-      const customerPhone =
-        (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-        (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
-      if (!customerPhone) {
-        // Inbound SIP/web callers and blocked caller IDs have no number to
-        // match a lead on — say so instead of claiming a write that never ran.
-        return {
-          toolCallId,
-          result:
-            "I couldn't match this call to a lead record (no caller number), so the status wasn't updated.",
-        };
-      }
-      const safePhone = sanitizePhone(customerPhone);
-      const updated = await drizzle
-        .update(schema.outboundLeads)
-        .set({ status, context: notes || "", lastCalledAt: new Date() })
-        .where(
-          and(
-            eq(schema.outboundLeads.userId, agent?.user_id),
-            ilike(schema.outboundLeads.customerNumber, `%${safePhone}%`),
-            not(inArray(schema.outboundLeads.status, PRESERVED_LEAD_STATUSES)),
-          ),
-        )
-        .returning({ id: schema.outboundLeads.id });
-      return {
-        toolCallId,
-        result: updated.length
-          ? `Lead status updated to '${status}'.`
-          : "I couldn't find a matching lead record for this caller, so the status wasn't updated.",
-      };
-    } catch {
-      return {
-        toolCallId,
-        result:
-          "I wasn't able to update the lead status right now. I'll note it for the team to apply manually.",
-      };
-    }
+    return { toolCallId, result: CALLER_LINKED_LIVE_WRITE_DENIAL };
   }
 
   if (fn === "send_email") {

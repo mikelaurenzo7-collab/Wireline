@@ -4,14 +4,27 @@ import { describe, expect, it } from "vitest";
 
 import { buyerTierForIntegration } from "../src/lib/integrations-certification";
 import { validatePlaybookCoverage } from "../src/lib/integration-playbooks";
+import { UNVERIFIED_LIVE_TOOL_NAMES } from "../src/lib/unverified-live-tools";
 import {
   RUNTIME_INTEGRATIONS,
   getRuntimeCapabilities,
 } from "../src/lib/runtime-integrations-registry";
 
 describe("runtime integration operations", () => {
-  it("keeps playbook coverage complete without a customer-facing provider-status map", () => {
-    expect(validatePlaybookCoverage()).toEqual([]);
+  it("covers available integration tools without advertising private live reads or unavailable payments", () => {
+    const withheld = new Set([...UNVERIFIED_LIVE_TOOL_NAMES, "square_send_invoice"]);
+    const gaps = validatePlaybookCoverage();
+    expect(gaps.filter((name) => !withheld.has(name))).toEqual([]);
+    expect(new Set(gaps)).toEqual(
+      new Set([
+        "crm_search_contacts",
+        "crm_log_call",
+        "square_lookup_order",
+        "square_lookup_customer",
+        "square_create_payment_link",
+        "square_send_invoice",
+      ]),
+    );
   });
 
   it("keeps runtime vendor truth aligned with the actual platform", () => {

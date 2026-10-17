@@ -50,11 +50,13 @@ describe("outbound launch safety", () => {
     expect(gate).toContain("ne(schema.outboundLeads.id, BigInt(opts.leadId))");
     expect(gate).toContain("LEAD_STATUS.SKIPPED_DUPLICATE");
     expect(gate).toContain("LEAD_STATUS.CALLBACK_SCHEDULED");
+    expect(gate).toContain("LEAD_STATUS.BLOCKED_DNC");
+    expect(gate).toContain("LEAD_STATUS.BLOCKED_TCPA");
     expect(gate).toContain("self_within_24h");
     expect(gate).toContain("jsonSafeId(otherRecent.id)");
     const runtimeHelpers = read("src/lib/agent-runtime-helpers.ts");
-    expect(runtimeHelpers).toContain('"Skipped-Duplicate"');
-    expect(runtimeHelpers).toContain('"Blocked-TCPA"');
+    expect(runtimeHelpers).toContain("!UNVERIFIED_LIVE_TOOL_NAMES.has(name)");
+    expect(runtimeHelpers).toContain("Existing lead status changes require team verification");
   });
 
   it("reschedules campaign_dial when outside workspace call window", () => {

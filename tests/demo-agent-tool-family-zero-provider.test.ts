@@ -103,8 +103,11 @@ describe("demo/test agent-tool provider families", () => {
         handleDeviceToolCall("navigate_to", { destination: "Demo Street" }, context),
       ]);
 
-      expect(results.every((result) => result?.result.includes("disabled"))).toBe(true);
-      expect(environment.assertLiveExternalActionAllowed).toHaveBeenCalledTimes(4);
+      expect(
+        [results[0], results[2], results[3]].every((result) => result?.result.includes("disabled")),
+      ).toBe(true);
+      expect(results[1]?.result).toContain("No payment link was created");
+      expect(environment.assertLiveExternalActionAllowed).toHaveBeenCalledTimes(3);
       for (const provider of allProviderSpies()) expect(provider).not.toHaveBeenCalled();
     },
   );

@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "./server-utils";
@@ -79,29 +79,14 @@ export async function updateLeadStatusOnCallEnd(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let lead: any = null;
 
-    // First try by vapiCallId
+    // Only the provider call ID may bind a terminal outcome to an outbound
+    // lead. Caller ID can be shared or spoofed and is not a safe fallback.
     if (vapiCallId) {
       const [row] = await drizzle
         .select()
         .from(schema.outboundLeads)
         .where(
           and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.callId, vapiCallId)),
-        )
-        .limit(1);
-      lead = row;
-    }
-
-    // Fallback to customerNumber + active dialing status
-    if (!lead && customerNumber) {
-      const [row] = await drizzle
-        .select()
-        .from(schema.outboundLeads)
-        .where(
-          and(
-            eq(schema.outboundLeads.userId, userId),
-            eq(schema.outboundLeads.customerNumber, customerNumber),
-            inArray(schema.outboundLeads.status, ["Dialing", "Connected"]),
-          ),
         )
         .limit(1);
       lead = row;
@@ -185,7 +170,10 @@ export async function updateLeadStatusOnCallEnd(
         newStatus = LEAD_STATUS.MAX_ATTEMPTS;
       }
     } else if (outcomeTag === "followup") {
-      newStatus = LEAD_STATUS.CALLBACK_SCHEDULED;
+      // A summary can mention a follow-up without a verified request, date,
+      // or destination. Leave the completed call for human review rather than
+      // creating an executable callback from inferred prose.
+      newStatus = LEAD_STATUS.COMPLETED;
     } else {
       newStatus = LEAD_STATUS.COMPLETED;
     }
@@ -195,17 +183,10 @@ export async function updateLeadStatusOnCallEnd(
       .set({
         status: newStatus,
         attempts: currentAttempts,
-        // "followup" can be inferred from summary text alone ("call me back
-        // next week") with no schedule_callback tool call, so the lead enters
-        // the terminal Callback-Scheduled status with a NULL timestamp — a
-        // callback no engine will ever place and no UI pane shows. Default to
-        // tomorrow (COALESCE keeps a real in-call booking); the callback
-        // engine re-checks quiet hours at dial time.
-        ...(newStatus === LEAD_STATUS.CALLBACK_SCHEDULED
-          ? {
-              callbackScheduledAt: sql`COALESCE(${schema.outboundLeads.callbackScheduledAt}, ${new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()}::timestamptz)`,
-            }
-          : {}),
+        // Even a stale due time would make callback_tick dial this lead despite
+        // the completed status, so clear it when the outcome came only from a
+        // post-call follow-up classification.
+        ...(outcomeTag === "followup" ? { callbackScheduledAt: null } : {}),
       })
       .where(eq(schema.outboundLeads.id, lead.id));
 

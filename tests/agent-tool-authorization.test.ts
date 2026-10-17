@@ -19,6 +19,20 @@ import {
   ROLE_TOOL_SETS,
 } from "../src/lib/agent-capabilities";
 import { resolveCreateEnabledTools } from "../src/lib/agent-create-defaults";
+import {
+  CALLER_LINKED_LIVE_WRITE_TOOL_NAMES,
+  PRIVATE_LIVE_READ_TOOL_NAMES,
+  UNVERIFIED_LIVE_TOOL_NAMES,
+} from "../src/lib/unverified-live-tools";
+
+const privateLiveReads = [
+  "search_leads",
+  "crm_search_contacts",
+  "view_recent_interactions",
+  "square_lookup_order",
+  "square_lookup_customer",
+] as const;
+const callerLinkedLiveWrites = ["update_lead_status", "crm_log_call", "schedule_callback"] as const;
 
 /*
  * The tool name union, the UI/create-path catalog, and the per-role defaults
@@ -64,6 +78,64 @@ describe("agent tool lists stay in sync", () => {
 });
 
 describe("agent tool execution authorization", () => {
+  it("retains legacy private-read names for data compatibility but never authorizes them", () => {
+    const allConnected = Object.fromEntries(
+      Object.keys(NO_TENANT_INTEGRATIONS).map((key) => [key, true]),
+    ) as typeof NO_TENANT_INTEGRATIONS;
+    const selected = sanitizePersistedAgentToolSelection(privateLiveReads);
+
+    expect([...PRIVATE_LIVE_READ_TOOL_NAMES].sort()).toEqual([...privateLiveReads].sort());
+
+    for (const name of privateLiveReads) {
+      expect(CANONICAL_AGENT_TOOL_NAMES).toContain(name);
+      expect(selected).toContain(name);
+    }
+    expect(filterToolsByTenantConnections(privateLiveReads, allConnected)).toEqual([]);
+    expect(resolveAuthorizedAgentTools(selected, { channels: ["voice"] }, allConnected)).toEqual(
+      [],
+    );
+    const legacyActive = resolveAuthorizedAgentTools(null, { channels: ["voice"] }, allConnected);
+    for (const name of privateLiveReads) expect(legacyActive).not.toContain(name);
+  });
+
+  it("retains caller-linked write names for compatibility but never authorizes live execution", () => {
+    const allConnected = Object.fromEntries(
+      Object.keys(NO_TENANT_INTEGRATIONS).map((key) => [key, true]),
+    ) as typeof NO_TENANT_INTEGRATIONS;
+    const selected = sanitizePersistedAgentToolSelection(callerLinkedLiveWrites);
+
+    expect([...CALLER_LINKED_LIVE_WRITE_TOOL_NAMES].sort()).toEqual(
+      [...callerLinkedLiveWrites].sort(),
+    );
+    expect([...UNVERIFIED_LIVE_TOOL_NAMES].sort()).toEqual(
+      [...privateLiveReads, ...callerLinkedLiveWrites, "square_create_payment_link"].sort(),
+    );
+    for (const name of callerLinkedLiveWrites) {
+      expect(CANONICAL_AGENT_TOOL_NAMES).toContain(name);
+      expect(selected).toContain(name);
+    }
+    expect(filterToolsByTenantConnections(callerLinkedLiveWrites, allConnected)).toEqual([]);
+    expect(resolveAuthorizedAgentTools(selected, { channels: ["voice"] }, allConnected)).toEqual(
+      [],
+    );
+    const legacyActive = resolveAuthorizedAgentTools(null, { channels: ["voice"] }, allConnected);
+    for (const name of callerLinkedLiveWrites) expect(legacyActive).not.toContain(name);
+  });
+
+  it("keeps Square quick-pay canonical but denies its arbitrary live amount and title", () => {
+    const allConnected = { ...NO_TENANT_INTEGRATIONS, square: true };
+    const selected = sanitizePersistedAgentToolSelection(["square_create_payment_link"]);
+
+    expect(CANONICAL_AGENT_TOOL_NAMES).toContain("square_create_payment_link");
+    expect(selected).toContain("square_create_payment_link");
+    expect(filterToolsByTenantConnections(["square_create_payment_link"], allConnected)).toEqual(
+      [],
+    );
+    expect(resolveAuthorizedAgentTools(selected, { channels: ["voice"] }, allConnected)).toEqual(
+      [],
+    );
+  });
+
   it("preserves known selections while dropping stale legacy values", () => {
     expect(
       sanitizePersistedAgentToolSelection([

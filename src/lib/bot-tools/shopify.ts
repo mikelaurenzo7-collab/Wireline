@@ -1,36 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Live tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
 import {
-  addOrderNote as shopifyAddOrderNote,
-  cancelOrder as shopifyCancelOrder,
   createDraftOrder as shopifyCreateDraftOrder,
-  lookupCustomer as shopifyLookupCustomer,
   lookupOrder as shopifyLookupOrder,
-  orderChangeCallerVerified,
   searchProducts as shopifySearchProducts,
-  startReturn as shopifyStartReturn,
-  updateOrderShippingAddress as shopifyUpdateAddress,
 } from "../shopify-service";
 import { assertLiveExternalActionAllowed } from "../account-environment-policy";
 
 import type { ToolCallContext, ToolCallResult } from "../agent-tool-types";
 
-/** The caller ID of the live call, the only identity a stranger cannot simply claim. */
-function liveCallerNumber(context: ToolCallContext): string | null {
-  const call = (context.payload.call || context.message.call) as
-    { customer?: { number?: unknown } } | undefined;
-  const number = call?.customer?.number;
-  return typeof number === "string" && number.trim() ? number.trim() : null;
-}
-
-/** Order changes move goods or money, so they need the order's own phone on the line. */
+/** Existing-order writes need stronger verification than caller ID. */
 const ORDER_CHANGE_TOOLS = new Set([
   "shopify_start_return",
   "shopify_cancel_order",
   "shopify_update_address",
+  "shopify_add_order_note",
 ]);
 
 const ORDER_CHANGE_UNVERIFIED =
-  "This order isn't linked to the number the caller is calling from, so no change was made. Do not claim it changed. Offer to create a follow-up task so the team can verify the customer and make the change.";
+  "I can't verify this caller strongly enough to change the order during this call. No change was made. Offer to create a follow-up task so the team can verify the customer and handle the request.";
 
 const LIVE_SHOPIFY_TOOLS = new Set([
   "shopify_lookup_order",
@@ -69,35 +56,12 @@ export async function handleShopifyToolCall(
   }
 
   if (ORDER_CHANGE_TOOLS.has(fn)) {
-    const orderId = String(args?.order_id ?? "").trim();
-    if (!/^\d{1,20}$/.test(orderId)) {
-      return {
-        toolCallId,
-        result: "I need the order's numeric ID from an order lookup before changing it.",
-      };
-    }
-    try {
-      const verified = await orderChangeCallerVerified({
-        orderId,
-        callerNumber: liveCallerNumber(context),
-        userId: agent?.user_id,
-      });
-      if (verified === null) {
-        return { toolCallId, result: "I couldn't find that order in the store." };
-      }
-      if (!verified) return { toolCallId, result: ORDER_CHANGE_UNVERIFIED };
-    } catch {
-      return {
-        toolCallId,
-        result:
-          "I couldn't confirm that order right now, so no change was made. Offer to create a follow-up task for the team.",
-      };
-    }
+    return { toolCallId, result: ORDER_CHANGE_UNVERIFIED };
   }
 
   // ──────────────────────────────────────────────────────────────
-  //  Shopify e-commerce handlers — order/inventory/customer
-  //  lookups + return/cancel/address actions for online stores.
+  //  Shopify e-commerce handlers — order/inventory/customer lookups
+  //  and draft checkout for online stores.
   //  Each calls the matching shopify-service function; the service
   //  returns a graceful no-op when no Shopify store is connected,
   //  so these never throw on an un-connected tenant.
@@ -105,27 +69,23 @@ export async function handleShopifyToolCall(
   if (fn === "shopify_lookup_order") {
     try {
       const { order_number, email } = args || {};
+      if (!String(order_number || "").trim() || !String(email || "").trim()) {
+        return {
+          toolCallId,
+          result:
+            "Ask the caller for both the order number and the email on the order before looking it up.",
+        };
+      }
       const order = await shopifyLookupOrder({
         orderNumber: order_number,
         email,
-        callerNumber: liveCallerNumber(context),
         userId: agent?.user_id,
       });
       if (!order) {
         return {
           toolCallId,
           result:
-            "I couldn't find an order matching that. Double-check the order number or the email on the order.",
-        };
-      }
-      // An email alone is the search key, so it proves nothing; it counts only
-      // alongside the order number, like a store's own order-status check.
-      const verified =
-        order.verified_by === "phone" || (order.verified_by === "email" && Boolean(order_number));
-      if (!verified) {
-        return {
-          toolCallId,
-          result: `I found order ${order.name}, but I can share its details only after the caller confirms it: ask for both the order number and the email address on the order, then look it up again with both.`,
+            "I couldn't verify an order with that number and email. Ask the caller to check both or offer a team follow-up.",
         };
       }
       const trackingLine =
@@ -135,7 +95,7 @@ export async function handleShopifyToolCall(
       const itemList = order.line_items.map((li) => `${li.quantity}x ${li.title}`).join(", ");
       return {
         toolCallId,
-        result: `Order ${order.name}: ${order.fulfillment_status}, payment ${order.financial_status}, total ${order.total} ${order.currency}.${trackingLine} Items: ${itemList}. [data: ${JSON.stringify(order)}]`,
+        result: `Order ${order.name}: ${order.fulfillment_status}, payment ${order.financial_status}, total ${order.total} ${order.currency}.${trackingLine} Items: ${itemList}.`,
       };
     } catch {
       return {
@@ -185,136 +145,33 @@ export async function handleShopifyToolCall(
   }
 
   if (fn === "shopify_lookup_customer") {
-    try {
-      // A profile holds contact details and order history, so a caller sees
-      // only the one tied to the number they are calling from.
-      const callerNumber = liveCallerNumber(context);
-      if (!callerNumber) {
-        return {
-          toolCallId,
-          result:
-            "This call has no caller number, so I can't look up a customer profile. Offer to help with an order number instead.",
-        };
-      }
-      const customer = await shopifyLookupCustomer({
-        phone: callerNumber,
-        userId: agent?.user_id,
-      });
-      if (!customer) {
-        return {
-          toolCallId,
-          result: "I couldn't find a customer profile for the number this call is coming from.",
-        };
-      }
-      const recent = customer.recent_orders
-        .map((o) => `${o.name} (${o.financial_status}, ${o.total})`)
-        .join(", ");
-      return {
-        toolCallId,
-        result: `Customer ${customer.first_name} ${customer.last_name}: ${customer.orders_count} order(s), ${customer.total_spent} lifetime. Recent: ${recent || "none"}. [data: ${JSON.stringify(customer)}]`,
-      };
-    } catch {
-      return {
-        toolCallId,
-        result:
-          "I'm having trouble looking up your account right now. Can I get your name and I'll have someone call you back?",
-      };
-    }
-  }
-
-  if (fn === "shopify_start_return") {
-    try {
-      const { order_id, reason } = args || {};
-      if (!order_id) {
-        return {
-          toolCallId,
-          result: "I need the order ID to start a return. Look up the order first.",
-        };
-      }
-      const outcome = await shopifyStartReturn({
-        orderId: String(order_id),
-        reason: String(reason || "customer request"),
-        userId: agent?.user_id,
-      });
-      return { toolCallId, result: outcome.message };
-    } catch {
-      return {
-        toolCallId,
-        result:
-          "I ran into a hiccup starting that return. Let me note the details and have someone process it for you.",
-      };
-    }
-  }
-
-  if (fn === "shopify_cancel_order") {
-    try {
-      const { order_id } = args || {};
-      if (!order_id) {
-        return {
-          toolCallId,
-          result: "I need the order ID to cancel an order. Look up the order first.",
-        };
-      }
-      const outcome = await shopifyCancelOrder({
-        orderId: String(order_id),
-        userId: agent?.user_id,
-      });
-      return { toolCallId, result: outcome.message };
-    } catch {
-      return {
-        toolCallId,
-        result:
-          "I ran into a hiccup cancelling that order. Let me note it and have someone take care of it.",
-      };
-    }
-  }
-
-  if (fn === "shopify_update_address") {
-    try {
-      const handlerArgs = args || {};
-      if (!handlerArgs.order_id) {
-        return {
-          toolCallId,
-          result: "I need the order ID to update the shipping address.",
-        };
-      }
-      const outcome = await shopifyUpdateAddress({
-        orderId: String(handlerArgs.order_id),
-        address: {
-          address1: handlerArgs.address1,
-          address2: handlerArgs.address2,
-          city: handlerArgs.city,
-          province: handlerArgs.province,
-          zip: handlerArgs.zip,
-          country: handlerArgs.country,
-          name: handlerArgs.name,
-        },
-        userId: agent?.user_id,
-      });
-      return { toolCallId, result: outcome.message };
-    } catch {
-      return {
-        toolCallId,
-        result:
-          "I wasn't able to update the address right now. Let me note the new address and have someone update it.",
-      };
-    }
+    return {
+      toolCallId,
+      result:
+        "I can't verify a customer profile from caller ID alone, so no account details were shared. Offer to look up a specific order with its number and email, or create a team follow-up.",
+    };
   }
 
   if (fn === "shopify_create_draft_order") {
     try {
       const handlerArgs = args || {};
-      const qty = Number(handlerArgs.quantity) || 1;
+      const variantId = String(handlerArgs.variant_id ?? "").trim();
+      const qty = handlerArgs.quantity;
+      if (!/^[1-9]\d{0,15}$/.test(variantId) || !Number.isSafeInteger(Number(variantId))) {
+        return {
+          toolCallId,
+          result:
+            "I need a real catalog variant before creating a draft. Check inventory first; no draft was created.",
+        };
+      }
+      if (typeof qty !== "number" || !Number.isInteger(qty) || qty < 1 || qty > 20) {
+        return {
+          toolCallId,
+          result: "Choose a whole-number quantity from 1 to 20. No draft was created.",
+        };
+      }
       const outcome = await shopifyCreateDraftOrder({
-        lineItems: [
-          handlerArgs.variant_id
-            ? { variantId: String(handlerArgs.variant_id), quantity: qty }
-            : {
-                title: String(handlerArgs.product_title || "Phone order item"),
-                price: String(handlerArgs.price || "0.00"),
-                quantity: qty,
-              },
-        ],
+        lineItems: [{ variantId, quantity: qty }],
         customer: handlerArgs.customer_email
           ? {
               email: String(handlerArgs.customer_email),
@@ -331,26 +188,6 @@ export async function handleShopifyToolCall(
         toolCallId,
         result:
           "I wasn't able to create the order right now. Let me take your details and have someone process it.",
-      };
-    }
-  }
-
-  if (fn === "shopify_add_order_note") {
-    try {
-      const { order_id, note } = args || {};
-      if (!order_id) {
-        return { toolCallId, result: "I need the order ID to add a note." };
-      }
-      const outcome = await shopifyAddOrderNote({
-        orderId: String(order_id),
-        note: String(note || ""),
-        userId: agent?.user_id,
-      });
-      return { toolCallId, result: outcome.message };
-    } catch {
-      return {
-        toolCallId,
-        result: "I wasn't able to add that note right now, but I've noted the details.",
       };
     }
   }

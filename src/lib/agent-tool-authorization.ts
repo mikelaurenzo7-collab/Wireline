@@ -17,6 +17,7 @@ import type { ToolCallContext } from "./agent-tool-types";
 import { getTenantChannelEntitlements } from "./channel-entitlements";
 import { isAgentToolChannelAllowed } from "./agent-tool-channel-policy";
 import type { CommunicationChannel } from "./plan-catalog";
+import { UNVERIFIED_LIVE_TOOL_NAMES } from "./unverified-live-tools";
 
 /**
  * Safety-critical tools that remain callable even when an Account Holder has a
@@ -229,6 +230,7 @@ export async function isAgentToolExecutionAuthorized(
   const agentId = context.agent?.id;
   const userId = context.agent?.user_id;
   if (!isAgentToolName(name) || !agentId || !userId) return false;
+  if (UNVERIFIED_LIVE_TOOL_NAMES.has(name)) return false;
 
   // Compliance and durable fallback bypass the Account Holder's active-set
   // choice and all unrelated integration reads, but never the verified

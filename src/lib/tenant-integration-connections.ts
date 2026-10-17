@@ -8,6 +8,7 @@ import {
 } from "./platform-integration-flags";
 import { X_ENGAGEMENT_TOOL_NAMES } from "./x-service";
 import { getNativeCalendarConfiguration } from "./native-calendar";
+import { UNVERIFIED_LIVE_TOOL_NAMES } from "./unverified-live-tools";
 
 const CRM_TOOL_NAMES = new Set<AgentToolName>([
   "crm_search_contacts",
@@ -118,6 +119,7 @@ export function filterToolsByTenantConnections(
   platform: PlatformIntegrationFlags = loadPlatformIntegrationFlags(),
 ): AgentToolName[] {
   return toolNames.filter((name) => {
+    if (UNVERIFIED_LIVE_TOOL_NAMES.has(name)) return false;
     if (UNSCOPED_PLATFORM_LIVE_TOOL_NAMES.has(name)) return false;
     if (SHOPIFY_SET.has(name)) return conn.shopify;
     if (SQUARE_SET.has(name)) return conn.square;

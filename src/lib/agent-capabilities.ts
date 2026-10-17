@@ -100,7 +100,8 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "view_recent_interactions",
     label: "View recent interactions",
-    description: "Recent context.",
+    description:
+      "Private call history is unavailable during live calls until caller identity can be verified.",
     group: "core",
   },
   {
@@ -112,8 +113,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "route_to_business_unit",
     label: "Route to a team",
-    description:
-      "Transfers a caller to a specific internal team, department, or SLA queue.",
+    description: "Transfers a caller to a specific internal team, department, or SLA queue.",
     group: "core",
   },
   {
@@ -138,13 +138,13 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "search_leads",
     label: "Search leads",
-    description: "Searches the internal lead database for contact context.",
+    description: "Unavailable during live calls until caller identity can be verified.",
     group: "core",
   },
   {
     name: "update_lead_status",
     label: "Update lead status",
-    description: "Writes the outcome of the conversation back to CRM.",
+    description: "Existing lead changes require team verification; no live call write is made.",
     group: "core",
   },
   {
@@ -168,7 +168,8 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "schedule_callback",
     label: "Schedule callback",
-    description: "Schedules an automatic callback at the promised time.",
+    description:
+      "Automatic callbacks require verified destination review; record a follow-up task instead.",
     group: "core",
   },
   {
@@ -202,21 +203,24 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "crm_search_contacts",
     label: "Search CRM contacts",
-    description: "Queries connected Salesforce or HubSpot for matching contacts.",
+    description:
+      "Private CRM lookup is unavailable during live calls until caller identity can be verified.",
     group: "crm",
     integration: "crm",
   },
   {
     name: "crm_log_call",
     label: "Log call to CRM",
-    description: "Records the call outcome in Salesforce or HubSpot.",
+    description:
+      "CRM contact linkage requires team verification; the live call does not write to CRM.",
     group: "crm",
     integration: "crm",
   },
   {
     name: "crm_create_opportunity",
-    label: "Create deal/opportunity",
-    description: "Pushes a qualified lead into the CRM pipeline.",
+    label: "Request CRM opportunity",
+    description:
+      "Prompts a team follow-up to verify and create an opportunity. No CRM deal is created during the call.",
     group: "crm",
     integration: "crm",
   },
@@ -335,7 +339,8 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "shopify_lookup_order",
     label: "Look up Shopify order",
-    description: "Finds an order's status, tracking, and items by order number or customer email.",
+    description:
+      "Finds order status, tracking, and items using both order number and matching email.",
     group: "ecommerce",
     integration: "shopify",
   },
@@ -349,30 +354,33 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   },
   {
     name: "shopify_lookup_customer",
-    label: "Look up Shopify customer",
-    description: "Finds a customer by email or phone with their recent order history.",
+    label: "Request Shopify customer review",
+    description:
+      "Offers a team follow-up for customer profile requests; caller ID alone does not reveal details.",
     group: "ecommerce",
     integration: "shopify",
   },
   {
     name: "shopify_start_return",
-    label: "Start Shopify return",
+    label: "Request Shopify return",
     description:
-      "Opens a return request for an order. Does not issue a refund. That stays merchant-approved.",
+      "Prompts a team follow-up for a return request. No order change is made during the call.",
     group: "ecommerce",
     integration: "shopify",
   },
   {
     name: "shopify_cancel_order",
-    label: "Cancel Shopify order",
-    description: "Cancels an unshipped order at the customer's request.",
+    label: "Request Shopify cancellation",
+    description:
+      "Prompts a team follow-up for cancellation. No order change is made during the call.",
     group: "ecommerce",
     integration: "shopify",
   },
   {
     name: "shopify_update_address",
-    label: "Update Shopify shipping address",
-    description: "Corrects the shipping address on an order before it ships.",
+    label: "Request Shopify address change",
+    description:
+      "Prompts a team follow-up for an address change. No order change is made during the call.",
     group: "ecommerce",
     integration: "shopify",
   },
@@ -380,15 +388,15 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     name: "shopify_create_draft_order",
     label: "Create Shopify draft order",
     description:
-      "Builds a phone-order draft in Shopify and returns an invoice/payment link the customer can use to pay.",
+      "Builds an unpaid draft from a catalog variant and returns its invoice link. Prices come from Shopify.",
     group: "ecommerce",
     integration: "shopify",
   },
   {
     name: "shopify_add_order_note",
-    label: "Add Shopify order note",
+    label: "Request Shopify order note",
     description:
-      "Adds an internal note on an order for the merchant team (call summary, special instructions).",
+      "Prompts a team follow-up to verify the order before adding a note. No order change is made during the call.",
     group: "ecommerce",
     integration: "shopify",
   },
@@ -397,14 +405,15 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     name: "square_lookup_order",
     label: "Look up Square order",
     description:
-      "Finds a Square order by order ID or customer email. Returns status, items, and totals.",
+      "Private order lookup is unavailable during live calls until the customer can be verified.",
     group: "ecommerce",
     integration: "square",
   },
   {
     name: "square_lookup_customer",
     label: "Look up Square customer",
-    description: "Finds a Square customer by email or phone with their purchase history.",
+    description:
+      "Private customer lookup is unavailable during live calls until identity can be verified.",
     group: "ecommerce",
     integration: "square",
   },
@@ -419,7 +428,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     name: "square_create_payment_link",
     label: "Create Square payment link",
     description:
-      "Generates a Square checkout link for a product or service. Send via SMS or email after confirming with the caller.",
+      "Checkout links require a verified catalog price or approved quote; no live link is created.",
     group: "ecommerce",
     integration: "square",
   },
@@ -468,9 +477,9 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   },
   {
     name: "crm_update_deal_stage",
-    label: "Update deal stage",
+    label: "Request deal stage change",
     description:
-      "Moves an existing deal or opportunity to the next pipeline stage based on the call outcome.",
+      "Prompts a team follow-up to verify a deal before changing its stage. No CRM deal is changed during the call.",
     group: "crm",
     integration: "crm",
   },
@@ -479,7 +488,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     name: "shopify_apply_discount",
     label: "Apply Shopify discount",
     description:
-      "Not available on live calls yet. Do not promise a discount was applied. Collect details and offer human follow-up, or use draft-order / order-note tools.",
+      "No discount is applied during a live call. Collect details and offer team follow-up.",
     group: "ecommerce",
     integration: "shopify",
   },
@@ -488,7 +497,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
     name: "square_send_invoice",
     label: "Send Square invoice",
     description:
-      "Not available on live calls yet. Do not claim an invoice was sent. Prefer square_create_payment_link or record the request for the account holder.",
+      "Not available on live calls yet. Do not claim an invoice or payment link was sent. Record the request for the account holder.",
     group: "ecommerce",
     integration: "square",
   },

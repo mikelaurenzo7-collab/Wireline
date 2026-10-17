@@ -1,4 +1,5 @@
 import * as schema from "../db/schema";
+import { and, eq } from "drizzle-orm";
 import {
   WIRELINE_CONTACT_AGENTS,
   WIRELINE_DEMO_AGENTS,
@@ -7,6 +8,7 @@ import {
 import { drizzle } from "./server-context";
 import {
   buildShowcaseSystemPrompt,
+  isLegacyFounderShowcaseToolSelection,
   showcaseToolNamesForKind,
   type ShowcaseKind,
 } from "./showcase-assistant";
@@ -34,10 +36,9 @@ function managedRows(): Array<{ agent: ContactAgent; kind: ShowcaseKind }> {
 /**
  * Persist creation defaults for the founder's public Bot identities in BotBound.
  *
- * Existing rows are deliberately left alone. The founder dogfoods these Bots in
- * Studio, so auth bootstrap must never replace a saved voice, prompt, tone,
- * tool selection, or other training with seed data. Future managed refreshes
- * need an explicit, versioned migration instead of an unconditional upsert.
+ * Existing rows keep their saved voice, prompt, tone, tools, and training. The
+ * one exception below replaces the exact old CS seed tool list with its safe
+ * manual follow-up counterpart, leaving every customized list untouched.
  */
 export async function ensureFounderShowcaseBots(userId: string): Promise<void> {
   for (const { agent, kind } of managedRows()) {
@@ -67,5 +68,23 @@ export async function ensureFounderShowcaseBots(userId: string): Promise<void> {
       .insert(schema.agents)
       .values({ id, userId, ...creationDefaults })
       .onConflictDoNothing({ target: schema.agents.id });
+
+    if (kind !== "cs") continue;
+    const [existing] = await drizzle
+      .select({ enabledTools: schema.agents.enabledTools })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, id), eq(schema.agents.userId, userId)))
+      .limit(1);
+    if (!existing || !isLegacyFounderShowcaseToolSelection(existing.enabledTools)) continue;
+    await drizzle
+      .update(schema.agents)
+      .set({ enabledTools: showcaseToolNamesForKind("cs") })
+      .where(
+        and(
+          eq(schema.agents.id, id),
+          eq(schema.agents.userId, userId),
+          eq(schema.agents.enabledTools, existing.enabledTools),
+        ),
+      );
   }
 }

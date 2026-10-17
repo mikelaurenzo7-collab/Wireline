@@ -53,12 +53,13 @@ describe("agent runtime performance and action integrity", () => {
     expect(session).toContain('type: "function_call_output"');
   });
 
-  it("makes degraded message-taking durable and callbacks exact", () => {
+  it("makes degraded message-taking durable and refuses unverified automatic callbacks", () => {
     expect(route).toContain("applyInboundAdmission");
     expect(session).toContain('tool.name === "create_followup_task"');
     expect(session).toContain("promise follow-up only if the tool explicitly confirms creation");
     expect(session).toContain("message persistence is unavailable");
-    expect(workflow).toContain("if (!dueAt)");
+    expect(workflow).toContain('if (fn === "schedule_callback")');
+    expect(workflow).toContain("result: CALLER_LINKED_LIVE_WRITE_DENIAL");
     expect(workflow).not.toContain("Date.now() + 24 * 60 * 60 * 1000");
     expect(workflow).toContain("do not promise a response time");
   });

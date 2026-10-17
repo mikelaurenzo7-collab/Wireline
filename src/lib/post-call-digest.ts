@@ -21,9 +21,7 @@ import { and, asc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { BRAND } from "../constants/brand-colors";
 import * as schema from "../db/schema";
 import { withAccountDeletionFence } from "./account-deletion-fence";
-import { executeAction } from "./action-engine";
 import { BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
-import { CRMService } from "./crm-service";
 import { sendEmail } from "./email-service";
 import { type JobRow, writeTransactionConfig } from "./job-queue";
 import { isLaunchHardBlocked } from "./launch-readiness";
@@ -32,7 +30,6 @@ import {
   shouldGeneratePostCallArtifact,
   type PostCallOutputPreferences,
 } from "./post-call-output-preferences";
-import { requiresSalesApprovalForIntegration } from "./sales-integration-policy";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { maybePublishCallRecap } from "./shareable-artifact/publish-call-recap";
@@ -914,79 +911,11 @@ export async function runPostCallDigest(ctx: CallContext): Promise<PostCallDiges
   };
 }
 
-async function syncPostCallCrm(
-  ctx: CallContext,
-  outcomeTag: CallOutcomeTag,
-): Promise<{ logged: boolean; queuedForApproval: boolean }> {
-  try {
-    const [settings] = await drizzle
-      .select({
-        crmType: schema.settings.crmType,
-        autonomyLevel: schema.settings.autonomyLevel,
-      })
-      .from(schema.settings)
-      .where(eq(schema.settings.userId, ctx.userId))
-      .limit(1);
-
-    let agentRole: string | null = null;
-    if (ctx.agentId) {
-      const [agent] = await drizzle
-        .select({ role: schema.agents.role })
-        .from(schema.agents)
-        .where(and(eq(schema.agents.id, ctx.agentId), eq(schema.agents.userId, ctx.userId)))
-        .limit(1);
-      agentRole = agent?.role ?? null;
-    }
-
-    if (settings?.crmType !== "hubspot" && settings?.crmType !== "salesforce") {
-      return { logged: false, queuedForApproval: false };
-    }
-
-    const crmPayload = {
-      subject: `${ctx.direction === "outbound" ? "Outbound" : "Inbound"} call, ${outcomeTag}`,
-      description: ctx.summary || "(no summary)",
-      to_number: ctx.customerNumber || "",
-      duration_minutes: Math.round((ctx.durationSeconds || 0) / 60),
-      outcome: outcomeTag,
-      crm_type: settings.crmType,
-    };
-
-    if (
-      requiresSalesApprovalForIntegration({
-        agentRole,
-        autonomyLevel: settings.autonomyLevel,
-        actionType: "update_crm_lead",
-      })
-    ) {
-      const queued = await executeAction(
-        ctx.userId,
-        {
-          type: "update_crm_lead",
-          priority: "medium",
-          payload: crmPayload,
-          agentId: ctx.agentId || undefined,
-          reasoning: `Post-call CRM note for ${outcomeTag} outcome`,
-        },
-        { sourceId: String(ctx.callLogId), sourceType: "call_log" },
-        "draft",
-      );
-      return { logged: false, queuedForApproval: !!(queued.success && queued.queued) };
-    }
-
-    const crm = new CRMService(ctx.userId);
-    const logId = await crm.logCall({
-      crmType: settings.crmType,
-      subject: crmPayload.subject,
-      description: crmPayload.description,
-      to_number: crmPayload.to_number,
-      duration_minutes: crmPayload.duration_minutes,
-      outcome: outcomeTag,
-    });
-    return { logged: !!logId, queuedForApproval: false };
-  } catch (err: any) {
-    log.warn("post-call digest: CRM log failed", { error: err?.message });
-    return { logged: false, queuedForApproval: false };
-  }
+function syncPostCallCrm(): Promise<{ logged: boolean; queuedForApproval: boolean }> {
+  // A phone number or provider call ID proves which line was used, not who
+  // answered. Keep the call in BotBound for manual CRM review until a verified
+  // contact binding exists; never link its notes to a CRM record by ANI.
+  return Promise.resolve({ logged: false, queuedForApproval: false });
 }
 
 async function publishPostCallRecap(
@@ -1596,7 +1525,7 @@ async function handleActivePostCallDigestJob(job: JobRow): Promise<void> {
     progress,
     "crm",
     { logged: false, queuedForApproval: false },
-    () => syncPostCallCrm(ctx, coreBase.outcomeTag),
+    () => syncPostCallCrm(),
   );
   progress = crm.progress;
 
@@ -1733,7 +1662,7 @@ export async function pickAccountHolderEmail(userId: string): Promise<string | n
 function crmDigestStatusLine(crmLogged: boolean, crmQueuedForApproval: boolean): string {
   if (crmLogged) return "Logged to your CRM.";
   if (crmQueuedForApproval) return "CRM note queued for approval in your Approval Inbox.";
-  return "No CRM connected, connect HubSpot or Salesforce to auto-log.";
+  return "CRM not updated. Review this call in BotBound before adding it to a customer record.";
 }
 
 function escapeHtml(value: string): string {

@@ -1,27 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Live tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
-import {
-  squareCheckInventory,
-  squareCreatePaymentLink,
-  squareLookupCustomer,
-  squareLookupOrder,
-} from "../square-service";
+import { squareCheckInventory } from "../square-service";
 import { assertLiveExternalActionAllowed } from "../account-environment-policy";
+import { PRIVATE_LIVE_READ_DENIAL, SQUARE_PAYMENT_LINK_DENIAL } from "../unverified-live-tools";
 
 import type { ToolCallContext, ToolCallResult } from "../agent-tool-types";
 
-const LIVE_SQUARE_TOOLS = new Set([
-  "square_lookup_order",
-  "square_lookup_customer",
-  "square_check_inventory",
-  "square_create_payment_link",
-]);
+const LIVE_SQUARE_TOOLS = new Set(["square_check_inventory"]);
 
 export async function handleSquareToolCall(
   fn: string,
   args: any,
   context: ToolCallContext,
 ): Promise<ToolCallResult | null> {
-  const { agent, message, payload, toolCallId } = context;
+  const { agent, toolCallId } = context;
+
+  if (fn === "square_lookup_order" || fn === "square_lookup_customer") {
+    return { toolCallId, result: PRIVATE_LIVE_READ_DENIAL };
+  }
+  if (fn === "square_create_payment_link") {
+    return { toolCallId, result: SQUARE_PAYMENT_LINK_DENIAL };
+  }
 
   if (LIVE_SQUARE_TOOLS.has(fn)) {
     if (!agent?.user_id) {
@@ -42,70 +40,9 @@ export async function handleSquareToolCall(
   }
 
   // ──────────────────────────────────────────────────────────────
-  //  Square e-commerce handlers — order/customer/inventory lookups
-  //  and payment-link creation for Square merchants.
+  //  Square e-commerce handlers — public inventory lookup for Square
+  //  merchants. Private reads and unverified payment links stay denied.
   // ──────────────────────────────────────────────────────────────
-  if (fn === "square_lookup_order") {
-    try {
-      const { order_id, email } = args || {};
-      const order = await squareLookupOrder({
-        orderId: order_id,
-        email,
-        userId: agent?.user_id,
-      });
-      if (!order) {
-        return {
-          toolCallId,
-          result:
-            "I couldn't find a Square order matching that. Double-check the order ID or the email on the account.",
-        };
-      }
-      const itemList = order.lineItems
-        .map((lineItem) => `${lineItem.quantity}x ${lineItem.name}`)
-        .join(", ");
-      return {
-        toolCallId,
-        result: `Order ${order.displayId || order.id}: state ${order.state}, total ${order.total}. Items: ${itemList}. [data: ${JSON.stringify(order)}]`,
-      };
-    } catch {
-      return {
-        toolCallId,
-        result:
-          "I'm having trouble looking up that order right now. Can you double-check the order ID?",
-      };
-    }
-  }
-
-  if (fn === "square_lookup_customer") {
-    try {
-      const { email, phone } = args || {};
-      const fallbackNumber =
-        (payload.call as { customer?: { number?: string } } | undefined)?.customer?.number ||
-        (message.call as { customer?: { number?: string } } | undefined)?.customer?.number;
-      const customer = await squareLookupCustomer({
-        email,
-        phone: phone || fallbackNumber,
-        userId: agent?.user_id,
-      });
-      if (!customer) {
-        return {
-          toolCallId,
-          result: "I couldn't find a Square customer matching that email or phone number.",
-        };
-      }
-      return {
-        toolCallId,
-        result: `Customer ${customer.firstName} ${customer.lastName} (${customer.email ?? "no email"}): member since ${customer.createdAt.split("T")[0]}. [data: ${JSON.stringify(customer)}]`,
-      };
-    } catch {
-      return {
-        toolCallId,
-        result:
-          "I'm having trouble looking up your account right now. Can I get your name and have someone follow up?",
-      };
-    }
-  }
-
   if (fn === "square_check_inventory") {
     try {
       const { query } = args || {};
@@ -139,36 +76,6 @@ export async function handleSquareToolCall(
     }
   }
 
-  if (fn === "square_create_payment_link") {
-    try {
-      const { title, amount_dollars } = args || {};
-      if (!title || amount_dollars == null) {
-        return {
-          toolCallId,
-          result: "I need a title and amount to create a payment link.",
-        };
-      }
-      const link = await squareCreatePaymentLink({
-        title: String(title),
-        amountCents: Math.round(Number(amount_dollars) * 100),
-        userId: agent?.user_id,
-      });
-      if (!link.ok || !link.url) {
-        return { toolCallId, result: link.message };
-      }
-      return {
-        toolCallId,
-        result: `Payment link created: ${link.url}, $${amount_dollars} for ${title}. Share this with the customer to complete payment. [data: ${JSON.stringify(link)}]`,
-      };
-    } catch {
-      return {
-        toolCallId,
-        result:
-          "I wasn't able to create the payment link right now. I'll have someone send it to you directly.",
-      };
-    }
-  }
-
   if (fn === "square_send_invoice") {
     const { email, amount, description } = args || {};
     return {
@@ -178,7 +85,7 @@ export async function handleSquareToolCall(
         email ? `Invoice recipient requested: ${email}.` : null,
         amount != null ? `Amount requested: $${amount}.` : null,
         description ? `Description: ${description}.` : null,
-        "I can create a verified Square payment link now, or record this invoice request for the account holder to approve and send.",
+        "I can record this invoice request for the account holder to verify and send.",
       ]
         .filter(Boolean)
         .join(" "),

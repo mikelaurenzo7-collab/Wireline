@@ -44,10 +44,11 @@ describe("voice tool handlers tell the truth", () => {
     );
   });
 
-  it("update_lead_status reports a no-op instead of claiming success", () => {
+  it("update_lead_status refuses ANI-only writes before any lead mutation", () => {
     const handlers = read("src/lib/bot-tools/core.ts");
-    expect(handlers).toContain("so the status wasn't updated");
-    expect(handlers).toContain(".returning({ id: schema.outboundLeads.id })");
+    expect(handlers).toContain('if (fn === "update_lead_status")');
+    expect(handlers).toContain("result: CALLER_LINKED_LIVE_WRITE_DENIAL");
+    expect(handlers).not.toContain("Lead status updated to");
     expect(handlers).not.toContain(
       "I've noted that update. Someone from the team will confirm shortly.",
     );

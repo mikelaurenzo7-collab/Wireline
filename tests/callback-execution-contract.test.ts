@@ -12,19 +12,17 @@ import {
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 /**
- * schedule_callback used to be a broken promise: the agent said "Callback
- * securely scheduled" while the only write was a display-only task row with
- * the datetime buried in a description string — nothing ever dialed back.
- * This contract pins the full execution chain: structured persistence →
- * sweep-enqueued callback_tick → gated dial through the shared TCPA gate.
+ * Live voice cannot establish strong caller identity for an automatic callback.
+ * The old callback engine still handles historical structured requests, but
+ * a new tool call must not arm it from caller ID alone.
  */
-describe("caller-requested callbacks execute end-to-end", () => {
-  it("tool handler persists a structured, executable callback", () => {
+describe("live callback gate and historical callback execution", () => {
+  it("live voice tool refuses to schedule a callback from caller ID", () => {
     const handler = read("src/lib/bot-tools/workflow.ts");
-    expect(handler).toContain("parseCallbackDatetime");
-    expect(handler).toContain("callbackScheduledAt: dueAt");
-    expect(handler).toContain("dueDate: dueAt");
-    // The old fictional promise stays gone.
+    expect(handler).toContain('if (fn === "schedule_callback")');
+    expect(handler).toContain("result: CALLER_LINKED_LIVE_WRITE_DENIAL");
+    expect(handler).not.toContain("callbackScheduledAt: dueAt");
+    expect(handler).not.toContain("dueDate: dueAt");
     expect(handler).not.toContain("Callback securely scheduled");
   });
 
@@ -62,8 +60,8 @@ describe("caller-requested callbacks execute end-to-end", () => {
     expect(engine).toContain("isRequestedCallback: consumerRequested");
     expect(engine).toContain("isConsumerRequestedCallback(metadata)");
 
-    // Only a live call writes the marker.
-    expect(handler).toContain('[CALLBACK_REQUEST_MARKER]: "phone_call"');
+    // The disabled live voice tool can no longer set the trusted marker.
+    expect(handler).not.toContain('[CALLBACK_REQUEST_MARKER]: "phone_call"');
     // ...and intake preserves ordinary caller metadata, so the shared sanitizer
     // must remove this internal marker before persistence.
     expect(intake).toContain("sanitizeUntrustedOutboundMetadata");

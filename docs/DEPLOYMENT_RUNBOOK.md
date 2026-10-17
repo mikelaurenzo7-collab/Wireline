@@ -76,7 +76,9 @@ For a Render release or traffic cutover:
    compares saved rows, changes only the known sentence, and versions the data
    refresh. Custom text and other settings remain intact. Any unfamiliar old
    domain instruction blocks application for manual review. Auth bootstrap
-   continues to leave existing showcase rows unchanged.
+   preserves existing showcase rows except for the exact legacy BotBound
+   specialist tool selection, which replaces automatic callback scheduling
+   with a manual follow-up task. Customized tool selections remain untouched.
    The same explicit migration refreshes an exact `https://botbound.me` website
    default on founder-fleet Bots; custom website paths require manual review.
 3. Keep the new cron jobs disabled while the legacy scheduler runs. Stop the

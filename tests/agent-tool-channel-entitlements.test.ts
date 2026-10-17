@@ -22,6 +22,7 @@ vi.mock("../src/lib/tenant-integration-connections", () => ({
 }));
 
 import {
+  buildRoleToolDefs,
   buildRoleToolDefsForTenant,
   AGENT_TOOL_DEFS,
   ROLE_SPECIFIC_PROTOCOLS,
@@ -33,13 +34,32 @@ import {
 } from "../src/lib/agent-tool-authorization";
 
 const selected = ["send_email", "send_text_message", "search_knowledge_base"] as const;
+const privateLiveReads = [
+  "search_leads",
+  "crm_search_contacts",
+  "view_recent_interactions",
+  "square_lookup_order",
+  "square_lookup_customer",
+] as const;
+const callerLinkedLiveWrites = ["update_lead_status", "crm_log_call", "schedule_callback"] as const;
+const unverifiedLiveTools = [
+  ...privateLiveReads,
+  ...callerLinkedLiveWrites,
+  "square_create_payment_link",
+] as const;
+const legacyFounderCsTools = [
+  "send_signup_link",
+  "send_payment_link",
+  "schedule_callback",
+  "escalate_to_human",
+] as const;
 const flags = { twilioMessaging: true, twilioLookup: false };
 const names = (tools: object[]) => tools.map((tool) => (tool as { name: string }).name);
 
-function context() {
+function context(enabledTools: unknown = selected) {
   const row = {
     id: "agent-pilot",
-    enabledTools: selected,
+    enabledTools,
     twilioMessagingEnabled: true,
     twilioLookupEnabled: false,
     aiTier: "standard",
@@ -70,6 +90,69 @@ beforeEach(() => {
 });
 
 describe("live tool channel entitlements", () => {
+  it("gives the exact legacy founder specialist a manual follow-up tool before seed repair", async () => {
+    const local = names(buildRoleToolDefs("BotBound Specialist", legacyFounderCsTools));
+    const fresh = names(
+      await buildRoleToolDefsForTenant(
+        "BotBound Specialist",
+        legacyFounderCsTools,
+        "user-pilot",
+        "standard",
+        flags,
+      ),
+    );
+
+    expect(local).toContain("create_followup_task");
+    expect(fresh).toContain("create_followup_task");
+    expect(local).not.toContain("schedule_callback");
+    expect(fresh).not.toContain("schedule_callback");
+  });
+
+  it("adds manual follow-up to a stale cached founder specialist schema", async () => {
+    h.cached.mockResolvedValue(legacyFounderCsTools.map((name) => ({ name })));
+    const namesFromCache = names(
+      await buildRoleToolDefsForTenant(
+        "BotBound Specialist",
+        legacyFounderCsTools,
+        "user-pilot",
+        "standard",
+        flags,
+      ),
+    );
+
+    expect(namesFromCache).toContain("create_followup_task");
+    expect(namesFromCache).not.toContain("schedule_callback");
+  });
+
+  it("omits unverified private reads, writes, and quick pay from a newly built model schema", async () => {
+    const persisted = [...unverifiedLiveTools, "search_knowledge_base"];
+    expect(names(buildRoleToolDefs("front_desk", persisted))).toEqual(["search_knowledge_base"]);
+    expect(
+      names(
+        await buildRoleToolDefsForTenant("front_desk", persisted, "user-pilot", "standard", flags),
+      ),
+    ).toEqual(["search_knowledge_base"]);
+  });
+
+  it("strips stale cached unverified tools even when selected before the safety change", async () => {
+    const persisted = [...unverifiedLiveTools, "search_knowledge_base"];
+    h.cached.mockResolvedValue(persisted.map((name) => ({ name })));
+    expect(
+      names(
+        await buildRoleToolDefsForTenant("front_desk", persisted, "user-pilot", "standard", flags),
+      ),
+    ).toEqual(["search_knowledge_base"]);
+    expect(h.connections).not.toHaveBeenCalled();
+    expect(h.cacheWrite).not.toHaveBeenCalled();
+  });
+
+  it("denies submitted unverified tools despite their persisted selection", async () => {
+    const ctx = context(unverifiedLiveTools);
+    for (const name of unverifiedLiveTools) {
+      await expect(isAgentToolExecutionAuthorized(name, ctx)).resolves.toBe(false);
+    }
+  });
+
   it("requires explicit recipient confirmation in the customer email schema", () => {
     expect(AGENT_TOOL_DEFS.send_email.parameters.required).toContain("email_confirmed");
     expect(AGENT_TOOL_DEFS.send_email.parameters.properties.email_confirmed.type).toBe("boolean");

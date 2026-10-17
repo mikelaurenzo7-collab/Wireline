@@ -29,26 +29,28 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
   crm: {
     integration: "crm",
     label: "CRM",
-    headline: "Every call updates Salesforce or HubSpot, not a sticky note.",
-    orbitHint: "Search, log, create deals",
+    headline: "Capture caller details and route existing CRM records for verified follow-up.",
+    orbitHint: "Capture · verify · follow up",
     connectPath: "/connections",
     tasks: [
       {
         id: "crm-identify",
         callerMoment: '"Do you have my account?" / returning customer',
-        agentAction: "Pulls the matching contact and recent pipeline context before answering.",
-        tools: ["crm_search_contacts"],
+        agentAction:
+          "Takes the request and creates a team task; no private CRM record is disclosed during the call.",
+        tools: ["create_followup_task"],
       },
       {
         id: "crm-log",
         callerMoment: "Call ends: outcome, notes, disposition",
-        agentAction: "Writes the call summary and disposition to the CRM timeline.",
-        tools: ["crm_log_call", "update_lead_status"],
+        agentAction:
+          "Captures the outcome for the team to verify before linking notes to a CRM contact.",
+        tools: ["create_followup_task"],
       },
       {
         id: "crm-create",
         callerMoment: '"I\'m interested" / new lead with no record',
-        agentAction: "Creates the contact and opens an opportunity in the right pipeline stage.",
+        agentAction: "Creates a new contact and offers team follow-up to verify deal changes.",
         tools: ["crm_create_contact", "crm_create_opportunity", "crm_update_deal_stage"],
       },
     ],
@@ -164,14 +166,15 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
   shopify: {
     integration: "shopify",
     label: "Shopify",
-    headline: "Store support calls that actually change orders, not ticket promises.",
+    headline: "Store support calls with live order answers and clear team follow-up.",
     orbitHint: "Orders · returns · draft checkout",
     connectPath: "/connections",
     tasks: [
       {
         id: "shop-status",
         callerMoment: '"Where is my order?" / tracking',
-        agentAction: "Looks up order status, items, and tracking by order # or email.",
+        agentAction:
+          "Looks up order status, items, and tracking using the order number and matching email; offers follow-up for profile requests.",
         tools: ["shopify_lookup_order", "shopify_lookup_customer"],
       },
       {
@@ -183,14 +186,14 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
       {
         id: "shop-return",
         callerMoment: '"I need to return this" / cancel before ship',
-        agentAction: "Starts a return or cancels an unfulfilled order per your policy.",
+        agentAction: "Captures the request and offers team follow-up for verification.",
         tools: ["shopify_start_return", "shopify_cancel_order"],
       },
       {
         id: "shop-phone-order",
         callerMoment: '"I want to buy over the phone" / address fix',
         agentAction:
-          "Builds a draft order, applies a discount, updates shipping, adds internal notes.",
+          "Builds a draft order and offers team follow-up for discounts, shipping changes, and order notes.",
         tools: [
           "shopify_create_draft_order",
           "shopify_apply_discount",
@@ -203,15 +206,16 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
   square: {
     integration: "square",
     label: "Square",
-    headline: "Phone orders and invoices for Square sellers: same call, paid faster.",
-    orbitHint: "Orders · pay links · invoices",
+    headline: "Check Square inventory and route private order or payment requests for review.",
+    orbitHint: "Inventory · reviewed requests",
     connectPath: "/connections",
     tasks: [
       {
         id: "sq-lookup",
         callerMoment: '"What did I order?" / repeat customer',
-        agentAction: "Finds Square orders and customer purchase history.",
-        tools: ["square_lookup_order", "square_lookup_customer"],
+        agentAction:
+          "Records an order question for a team member to verify before sharing private details.",
+        tools: ["create_followup_task"],
       },
       {
         id: "sq-inventory",
@@ -222,8 +226,9 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
       {
         id: "sq-pay",
         callerMoment: '"Send me a link to pay" / invoice request',
-        agentAction: "Creates a payment link or emails a Square invoice.",
-        tools: ["square_create_payment_link", "square_send_invoice"],
+        agentAction:
+          "Records the requested item and price for a team member to verify before sending a link or invoice.",
+        tools: ["create_followup_task"],
       },
     ],
   },

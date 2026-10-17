@@ -5,6 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
+import { callerPhoneKey } from "./caller-phone-match";
 
 /**
  * Shopify Integration Service — real OAuth 2.0 authorization_code flow.
@@ -56,7 +57,6 @@ export interface ShopifyOrderResult {
   line_items: { title: string; quantity: number; sku: string | null }[];
   total: string;
   currency: string;
-  customer_email: string | null;
 }
 
 export interface ShopifyProductResult {
@@ -291,40 +291,6 @@ function shopifyHeaders(token: string): Record<string, string> {
 //  Storefront operations
 // ────────────────────────────────────────────────────────────────────
 
-/** Last ten digits, enough to compare national and E.164 forms of one number. */
-function phoneKey(value: unknown): string | null {
-  const digits = String(value || "").replace(/\D/g, "");
-  return digits.length >= 7 ? digits.slice(-10) : null;
-}
-
-export type OrderCallerVerification = "phone" | "email" | null;
-
-/**
- * How a live caller is tied to an order: their caller ID matches a phone on the
- * order, or the email they confirmed matches the order's email. A caller who
- * only knows an order number is neither, because order numbers are sequential.
- */
-export function orderCallerVerification(
-  order: any,
-  caller: { callerNumber?: string | null; email?: string | null },
-): OrderCallerVerification {
-  const callerKey = phoneKey(caller.callerNumber);
-  const orderPhones = [
-    order?.phone,
-    order?.customer?.phone,
-    order?.shipping_address?.phone,
-    order?.billing_address?.phone,
-  ].map(phoneKey);
-  if (callerKey && orderPhones.includes(callerKey)) return "phone";
-  const orderEmail = String(order?.email || order?.contact_email || order?.customer?.email || "")
-    .trim()
-    .toLowerCase();
-  const callerEmail = String(caller.email || "")
-    .trim()
-    .toLowerCase();
-  return orderEmail && callerEmail && orderEmail === callerEmail ? "email" : null;
-}
-
 function mapOrder(o: any): ShopifyOrderResult {
   const fulfillments: any[] = Array.isArray(o.fulfillments) ? o.fulfillments : [];
   const tracking = fulfillments.map((f: any) => ({
@@ -349,21 +315,25 @@ function mapOrder(o: any): ShopifyOrderResult {
     })),
     total: o.total_price || "0.00",
     currency: o.currency || "USD",
-    customer_email: o.email || o.contact_email || null,
   };
 }
 
 /**
- * Look up a single order by order number (e.g. "1001" or "#1001") or
- * by customer email. Returns the most recent matching order, or null
- * when nothing matches / Shopify isn't connected.
+ * Look up a single order by customer-facing name and the email on that order.
+ * Both are required, and Shopify's response is checked locally because query
+ * parameters are search hints rather than authorization.
  */
 export async function lookupOrder(params: {
   orderNumber?: string;
   email?: string;
-  callerNumber?: string | null;
   userId: string;
-}): Promise<(ShopifyOrderResult & { verified_by: OrderCallerVerification }) | null> {
+}): Promise<ShopifyOrderResult | null> {
+  const rawOrderNumber = String(params.orderNumber || "").trim();
+  const requestedEmail = String(params.email || "")
+    .trim()
+    .toLowerCase();
+  if (!rawOrderNumber || rawOrderNumber.length > 64 || !requestedEmail) return null;
+  const requestedName = rawOrderNumber.startsWith("#") ? rawOrderNumber : `#${rawOrderNumber}`;
   const client = await getStoreClient(params.userId);
   if (!client) {
     log.warn("Shopify not connected, skipping order lookup");
@@ -376,15 +346,7 @@ export async function lookupOrder(params: {
       limit: "5",
       order: "created_at desc",
     });
-    if (params.orderNumber) {
-      // Shopify's `name` filter matches the customer-facing order name.
-      // Accept both "1001" and "#1001" from the caller.
-      const name = params.orderNumber.startsWith("#")
-        ? params.orderNumber
-        : `#${params.orderNumber}`;
-      qs.set("name", name);
-    }
-    if (params.email) qs.set("email", params.email);
+    qs.set("name", requestedName);
 
     const res = await fetchWithTimeout(
       `${client.apiBase}/orders.json?${qs.toString()}`,
@@ -393,43 +355,27 @@ export async function lookupOrder(params: {
     );
     if (!res.ok) throw new Error(`Shopify orders error: ${res.status}`);
     const data = (await res.json()) as { orders?: any[] };
-    const orders = data.orders || [];
-    if (orders.length === 0) return null;
-    return {
-      ...mapOrder(orders[0]),
-      verified_by: orderCallerVerification(orders[0], {
-        callerNumber: params.callerNumber,
-        email: params.email,
-      }),
-    };
+    const orders = Array.isArray(data.orders) ? data.orders : [];
+    const matches = orders.filter((candidate) => {
+      const name = String(
+        candidate?.name || (candidate?.order_number != null ? `#${candidate.order_number}` : ""),
+      )
+        .trim()
+        .toLowerCase();
+      const orderEmail = String(
+        candidate?.email || candidate?.contact_email || candidate?.customer?.email || "",
+      )
+        .trim()
+        .toLowerCase();
+      return name === requestedName.toLowerCase() && orderEmail === requestedEmail;
+    });
+    if (matches.length !== 1) return null;
+    const order = matches[0];
+    return mapOrder(order);
   } catch (err) {
     log.error("Shopify order lookup failed", { error: getErrorMessage(err) });
     return null;
   }
-}
-
-/**
- * Whether the live caller may change this order. Only a caller-ID match counts:
- * an email can be known to someone else, and these changes move goods or money.
- * Returns null when the store is not connected or the order does not exist.
- */
-export async function orderChangeCallerVerified(params: {
-  orderId: string;
-  callerNumber?: string | null;
-  userId: string;
-}): Promise<boolean | null> {
-  const client = await getStoreClient(params.userId);
-  if (!client) return null;
-  const res = await fetchWithTimeout(
-    `${client.apiBase}/orders/${encodeURIComponent(params.orderId)}.json`,
-    { headers: shopifyHeaders(client.token) },
-    15_000,
-  );
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`Shopify order read error: ${res.status}`);
-  const data = (await res.json()) as { order?: any };
-  if (!data.order) return null;
-  return orderCallerVerification(data.order, { callerNumber: params.callerNumber }) === "phone";
 }
 
 /**
@@ -504,8 +450,22 @@ export async function lookupCustomer(params: {
     );
     if (!res.ok) throw new Error(`Shopify customer search error: ${res.status}`);
     const data = (await res.json()) as { customers?: any[] };
-    const customer = (data.customers || [])[0];
-    if (!customer) return null;
+    const requestedPhone = params.phone ? callerPhoneKey(params.phone) : null;
+    if (params.phone && !requestedPhone) return null;
+    const requestedEmail = String(params.email || "")
+      .trim()
+      .toLowerCase();
+    const matches = (Array.isArray(data.customers) ? data.customers : []).filter(
+      (candidate) =>
+        (!requestedPhone || callerPhoneKey(candidate?.phone) === requestedPhone) &&
+        (!requestedEmail ||
+          String(candidate?.email || "")
+            .trim()
+            .toLowerCase() === requestedEmail),
+    );
+    const ids = matches.map((candidate) => String(candidate?.id || "").trim());
+    if (ids.length === 0 || ids.some((id) => !id) || new Set(ids).size !== 1) return null;
+    const customer = matches[0];
 
     // Best-effort recent orders — failure here doesn't fail the lookup.
     let recent: ShopifyCustomerResult["recent_orders"] = [];
@@ -742,7 +702,7 @@ export async function updateOrderShippingAddress(params: {
  * collects payment. Returns the draft order's id + invoice URL.
  */
 export async function createDraftOrder(params: {
-  lineItems: { variantId?: string; title?: string; quantity: number; price?: string }[];
+  lineItems: { variantId: string; quantity: number }[];
   customer?: { email?: string; first_name?: string; last_name?: string };
   userId: string;
 }): Promise<{ ok: boolean; draftOrderId?: string; invoiceUrl?: string; message: string }> {
@@ -753,20 +713,31 @@ export async function createDraftOrder(params: {
   }
 
   try {
-    const lineItems = (params.lineItems || []).map((li) => {
-      if (li.variantId) {
-        return { variant_id: Number(li.variantId), quantity: li.quantity };
+    if (
+      !Array.isArray(params.lineItems) ||
+      params.lineItems.length === 0 ||
+      params.lineItems.length > 20
+    ) {
+      return { ok: false, message: "A catalog variant is required for the draft order." };
+    }
+    const lineItems: { variant_id: number; quantity: number }[] = [];
+    for (const item of params.lineItems) {
+      const variantId = String(item?.variantId ?? "").trim();
+      const quantity = item?.quantity;
+      if (
+        !/^[1-9]\d{0,15}$/.test(variantId) ||
+        !Number.isSafeInteger(Number(variantId)) ||
+        typeof quantity !== "number" ||
+        !Number.isInteger(quantity) ||
+        quantity < 1 ||
+        quantity > 20
+      ) {
+        return {
+          ok: false,
+          message: "Only catalog variants in quantities from 1 to 20 can be drafted.",
+        };
       }
-      // Custom line item — Shopify requires a title + price when there
-      // is no variant_id.
-      return {
-        title: li.title || "Custom item",
-        price: li.price || "0.00",
-        quantity: li.quantity,
-      };
-    });
-    if (lineItems.length === 0) {
-      return { ok: false, message: "No line items supplied for the draft order." };
+      lineItems.push({ variant_id: Number(variantId), quantity });
     }
 
     const draftOrder: Record<string, unknown> = { line_items: lineItems };

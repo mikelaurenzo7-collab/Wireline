@@ -77,10 +77,12 @@ describe("outbound engine hardening", () => {
     expect(engine).toContain("lastCalledAt: new Date()");
   });
 
-  it("text-inferred followup outcomes get a real callback schedule", () => {
+  it("text-inferred followup outcomes never schedule an automatic callback", () => {
     const tracking = read("src/lib/outbound-call-tracking.ts");
-    expect(tracking).toContain("newStatus === LEAD_STATUS.CALLBACK_SCHEDULED");
-    expect(tracking).toContain("COALESCE");
+    expect(tracking).toContain('outcomeTag === "followup"');
+    expect(tracking).toContain("newStatus = LEAD_STATUS.COMPLETED");
+    expect(tracking).toContain("{ callbackScheduledAt: null }");
+    expect(tracking).not.toContain("newStatus === LEAD_STATUS.CALLBACK_SCHEDULED");
   });
 
   it("intake auto-dial defers quiet-hours leads instead of retiring them", () => {

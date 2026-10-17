@@ -7,10 +7,7 @@ import * as salesforce from "./salesforce-service";
 import * as hubspot from "./hubspot-service";
 import { postMessage as slackPostMessage, getDefaultChannel } from "./slack-service";
 import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
-
-function normalizePhone(value: string | null | undefined): string {
-  return (value || "").replace(/\D/g, "");
-}
+import { callerPhoneKey } from "./caller-phone-match";
 
 async function getActiveCrm(userId: string): Promise<"salesforce" | "hubspot" | null> {
   try {
@@ -159,7 +156,8 @@ export class CRMService {
       const crm = params.crmType === "auto" ? await getActiveCrm(this.userId) : params.crmType;
       if (!crm) return null;
       providerStarted();
-      const contactId = params.contact_id || (await this.resolveContactId(crm, params.to_number));
+      const contactId = await this.resolveContactId(crm, params.to_number);
+      if (!contactId || (params.contact_id && params.contact_id !== contactId)) return null;
 
       if (crm === "salesforce") {
         return salesforce.logCall(
@@ -268,13 +266,13 @@ export class CRMService {
     status: string;
     notes?: string;
   }): Promise<boolean> {
-    const results = await salesforce.searchContacts(params.customerNumber, this.userId);
-    if (results.length === 0) return false;
+    const contactId = await this.resolveContactId("salesforce", params.customerNumber);
+    if (!contactId) return false;
     const id = await salesforce.logCall(
       {
         subject: `Status update: ${params.status}`,
         description: params.notes || `Lead status changed to ${params.status}`,
-        contact_id: results[0].sf_id,
+        contact_id: contactId,
       },
       this.userId,
     );
@@ -286,13 +284,13 @@ export class CRMService {
     status: string;
     notes?: string;
   }): Promise<boolean> {
-    const results = await hubspot.searchContacts(params.customerNumber, this.userId);
-    if (results.length === 0) return false;
+    const contactId = await this.resolveContactId("hubspot", params.customerNumber);
+    if (!contactId) return false;
     const id = await hubspot.logCall(
       {
         to_number: params.customerNumber,
         body: params.notes || `Lead status changed to ${params.status}`,
-        contact_id: results[0].hs_id,
+        contact_id: contactId,
         outcome: params.status,
       },
       this.userId,
@@ -394,16 +392,24 @@ export class CRMService {
   ): Promise<string | undefined> {
     if (!crmType || !toNumber) return undefined;
 
-    const target = normalizePhone(toNumber);
+    const target = callerPhoneKey(toNumber);
+    if (!target) return undefined;
     if (crmType === "salesforce") {
       const results = await salesforce.searchContacts(toNumber, this.userId);
-      const best =
-        results.find((contact) => normalizePhone(contact.phone) === target) || results[0];
-      return best?.sf_id;
+      const ids = new Set(
+        results
+          .filter((contact) => callerPhoneKey(contact.phone) === target)
+          .map((contact) => contact.sf_id),
+      );
+      return ids.size === 1 ? [...ids][0] : undefined;
     }
 
     const results = await hubspot.searchContacts(toNumber, this.userId);
-    const best = results.find((contact) => normalizePhone(contact.phone) === target) || results[0];
-    return best?.hs_id;
+    const ids = new Set(
+      results
+        .filter((contact) => callerPhoneKey(contact.phone) === target)
+        .map((contact) => contact.hs_id),
+    );
+    return ids.size === 1 ? [...ids][0] : undefined;
   }
 }
