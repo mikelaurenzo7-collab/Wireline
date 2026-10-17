@@ -729,7 +729,7 @@ function pushEvent(task: LiveTask, event: CloudComputerEvent) {
   if (task.events.length > MAX_EVENTS) task.events.splice(0, task.events.length - MAX_EVENTS);
 }
 
-function failureOutcome(error: unknown): CloudComputerOutcome {
+export function failureOutcome(error: unknown): CloudComputerOutcome {
   if (error instanceof AppError) {
     return { status: "failed", code: error.code || "COMPUTER_FAILED", summary: error.message };
   }
@@ -739,7 +739,10 @@ function failureOutcome(error: unknown): CloudComputerOutcome {
     return {
       status: "failed",
       code: "COMPUTER_MODEL_REJECTED",
-      summary: "The AI provider rejected this request. Try rephrasing the task.",
+      summary:
+        error.status === 400
+          ? "The browser task could not continue. Try again; if it repeats, contact support."
+          : "The AI provider rejected this request. Try rephrasing the task.",
     };
   }
   if (error instanceof RuntimeUnavailableError) {

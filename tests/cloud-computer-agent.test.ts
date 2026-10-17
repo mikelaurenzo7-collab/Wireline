@@ -314,7 +314,8 @@ describe("OpenAI cloud computer agent loop", () => {
       });
       expect(requests).toHaveLength(4);
       expect(calls.map(({ member }) => member)).toEqual(["navigate", "navigate"]);
-      expect(requests[3].tools).toEqual([expect.objectContaining({ name: "finish_task" })]);
+      expect(requests[3].tools).toEqual(requests[0].tools);
+      expect(requests[3].tool_choice).toEqual({ type: "function", name: "finish_task" });
       const correction = (requests[3].input as Item[]).find(
         (item) => item.type === "function_call_output" && item.call_id === "f1",
       );
@@ -325,6 +326,101 @@ describe("OpenAI cloud computer agent loop", () => {
       expect(repair).not.toHaveProperty("rejected_summary");
     },
   );
+
+  it("preserves historical computer items and encrypted reasoning while forcing only a final report correction", async () => {
+    const page = "https://botbound.app/features";
+    const { session, calls } = fakeSession(
+      {
+        inspect_visible_element: {
+          ok: true,
+          activity: "Inspected the visible heading",
+          content: [{ type: "text", text: "heading level 1: Voice bots that work for you" }],
+        },
+      },
+      page,
+    );
+    const firstReasoning = {
+      type: "reasoning",
+      id: "rs_first",
+      summary: [],
+      encrypted_content: "encrypted-first",
+    };
+    const lastReasoning = {
+      type: "reasoning",
+      id: "rs_report",
+      summary: [],
+      encrypted_content: "encrypted-report",
+    };
+    const browserCall = computerCall("computer_first", [{ type: "screenshot" }]);
+    const { client: openai, requests } = client([
+      response([firstReasoning, message("I will inspect the heading on this page."), browserCall]),
+      response([functionCall("inspect_first", "inspect_visible_element", { x: 100, y: 140 })]),
+      response([
+        lastReasoning,
+        functionCall("finish_first", "finish_task", {
+          outcome: "completed",
+          summary: "The heading is Voice bots that work for you.",
+          sources: [`${page}/`],
+        }),
+      ]),
+      response([
+        functionCall("finish_fixed", "finish_task", {
+          outcome: "completed",
+          summary: `The heading is Voice bots that work for you (${page}).`,
+          sources: [page],
+        }),
+      ]),
+    ]);
+    const meter = vi.fn(async ({ operation }: { operation: () => Promise<unknown> }) =>
+      operation(),
+    );
+    const outcome = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Report the main heading and current page URL as the only source.",
+      startUrl: page,
+      hooks: hooks({ meter: meter as CloudComputerHooks["meter"] }).hooks,
+    });
+    expect(outcome).toMatchObject({ status: "completed", sources: [page] });
+    expect(requests).toHaveLength(4);
+    expect(meter).toHaveBeenCalledTimes(4);
+    expect(requests[0]).not.toHaveProperty("tool_choice");
+    expect(requests[3]).toMatchObject({
+      store: false,
+      parallel_tool_calls: false,
+      tools: requests[0].tools,
+      tool_choice: { type: "function", name: "finish_task" },
+    });
+    expect(requests[3].tools).toEqual(
+      expect.arrayContaining([
+        { type: "computer" },
+        expect.objectContaining({ name: "inspect_visible_element" }),
+      ]),
+    );
+    const history = requests[3].input as Item[];
+    expect(history.filter((item) => item.type === "reasoning")).toEqual([
+      firstReasoning,
+      lastReasoning,
+    ]);
+    expect(history.find((item) => item.type === "computer_call")).toEqual(browserCall);
+    expect(history.find((item) => item.type === "computer_call_output")).toMatchObject({
+      call_id: "computer_first",
+      output: {
+        type: "computer_screenshot",
+        image_url: expect.stringContaining("data:image/jpeg;base64,"),
+      },
+    });
+    expect(calls.map((call) => call.member)).toEqual(["inspect_visible_element"]);
+    const repair = history.find(
+      (item) => item.type === "function_call_output" && item.call_id === "finish_first",
+    );
+    expect(JSON.parse(String(repair?.output))).toMatchObject({
+      status: "report_not_accepted",
+      verified_public_sources: [page],
+    });
+  });
 
   it("blocks a second ungrounded finish without retrying the repair", async () => {
     const verified = "https://example.com/observed";

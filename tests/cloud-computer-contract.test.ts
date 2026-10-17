@@ -13,9 +13,11 @@ import {
   computerHeartbeatDecision,
   hasPaidComputerPlan,
   refreshComputerOwnerFrame,
+  failureOutcome,
 } from "../src/lib/cloud-computer/task-runner";
 import { CLOUD_COMPUTER_LIMITS } from "../src/lib/cloud-computer/agent";
 import { OPENAI_MODELS } from "../src/lib/ai-models";
+import { DefiniteProviderRejectionError } from "../src/lib/ai-client";
 import { quotaTokenDelta } from "../src/lib/managed-ai-operation-spend";
 
 const read = (path: string) => readFileSync(path, "utf8");
@@ -415,8 +417,26 @@ describe("cloud computer source contracts", () => {
     );
     // A request too large for the API is the task's size, not a bad request.
     expect(runner).toContain("if (error.status === 413) return { ...CONTEXT_LIMIT_OUTCOME };");
+    expect(runner).toMatch(
+      /summary:\s*error\.status === 400\s*\? "The browser task could not continue\. Try again; if it repeats, contact support\."/,
+    );
     // A requested Stop is visible until the task actually ends.
     expect(runner).toMatch(/stopping: Boolean\(\s*task &&\s*!task\.finished &&\s*task\.stop &&/);
+  });
+
+  it("does not blame a valid browser task for an integration HTTP400", () => {
+    expect(failureOutcome(new DefiniteProviderRejectionError("OpenAI", 400))).toEqual({
+      status: "failed",
+      code: "COMPUTER_MODEL_REJECTED",
+      summary: "The browser task could not continue. Try again; if it repeats, contact support.",
+    });
+    expect(failureOutcome(new DefiniteProviderRejectionError("OpenAI", 413))).toMatchObject({
+      status: "failed",
+      code: "COMPUTER_CONTEXT_LIMIT",
+    });
+    expect(failureOutcome(new DefiniteProviderRejectionError("OpenAI", 403))).toMatchObject({
+      summary: "The AI provider rejected this request. Try rephrasing the task.",
+    });
   });
 
   it("ends stuck tasks and settles running tasks before the process exits", () => {

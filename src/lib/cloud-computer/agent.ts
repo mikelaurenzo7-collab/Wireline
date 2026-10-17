@@ -638,8 +638,15 @@ export async function runCloudComputerAgent(input: {
   for (let turn = 1; turn <= CLOUD_COMPUTER_LIMITS.maxTurns; turn += 1) {
     const turnInterruption = interruptionOutcome();
     if (turnInterruption) return turnInterruption;
-    const turnTools = rejectedReport ? [FINISH_TASK_TOOL] : TOOLS;
-    const request = { ...requestBase, tools: turnTools, input: inputItems };
+    // Tool declarations also describe historical tool items replayed below.
+    // Keep that schema stable; limit new repair output with tool_choice and the
+    // pre-execution guard rather than deleting computer from its own history.
+    const turnTools = TOOLS;
+    const request = {
+      ...requestBase,
+      ...(rejectedReport ? { tool_choice: { type: "function", name: "finish_task" } } : {}),
+      input: inputItems,
+    };
     const requestBytes = jsonBytes(request);
     if (requestBytes > CLOUD_COMPUTER_LIMITS.maxRequestBytes) return { ...CONTEXT_LIMIT_OUTCOME };
     const reserveUsd = turnReserveUsd(input.model, instructions, turnTools, inputItems);
