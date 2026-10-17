@@ -269,7 +269,7 @@ export default function VoiceCloneDialog({
       try {
         acceptAudio(bytes, file.name);
       } catch {
-        throw new Error("Choose a 6–20 second mono PCM 16-bit WAV recording (up to 2 MB).");
+        throw new Error("Choose a mono PCM 16-bit WAV recording, 6 to 20 seconds and up to 2 MB.");
       }
     } catch (reason) {
       if (currentGeneration === generation.current && currentOperation === operation.current)
@@ -361,7 +361,7 @@ export default function VoiceCloneDialog({
           </div>
           <div className="min-w-0 space-y-3 rounded-xl border border-border bg-secondary/40 p-4">
             <p className="text-sm text-muted-foreground">
-              Speak naturally for 6–20 seconds. Quiet room, one speaker.
+              Speak naturally for 6 to 20 seconds. Quiet room, one speaker.
             </p>
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <Button
