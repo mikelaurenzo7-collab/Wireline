@@ -9,6 +9,10 @@ import {
 import { disputeBalanceMovementCents } from "./stripe-dispute-accounting";
 import { drizzle, tenantStore } from "./server-context";
 import {
+  assertStripeRefundInventoryCaughtUp,
+  type StripeRefundLifecycleExpectation,
+} from "./stripe-refund-lifecycle";
+import {
   hasPaidChannelBaseInvoiceLine,
   stripeInvoiceIdForCharge,
   stripeSubscriptionIdForInvoice,
@@ -42,12 +46,14 @@ async function allRefunds(stripe: Stripe, chargeId: string): Promise<Stripe.Refu
  * tenant's replacement subscription. Every Stripe object is read through the
  * currently configured merchant client; unavailable/ambiguous linkage retries.
  */
-export async function reconcilePaidAllowanceFundingForCharge(input: {
-  stripe: Stripe;
-  chargeId: string;
-  providerEventId: string;
-  dispute?: Stripe.Dispute;
-}): Promise<boolean> {
+export async function reconcilePaidAllowanceFundingForCharge(
+  input: {
+    stripe: Stripe;
+    chargeId: string;
+    providerEventId: string;
+    dispute?: Stripe.Dispute;
+  } & StripeRefundLifecycleExpectation,
+): Promise<boolean> {
   const { stripe, chargeId, providerEventId, dispute } = input;
   const charge = await stripe.charges.retrieve(chargeId);
   if (charge.id !== chargeId)
@@ -138,7 +144,9 @@ export async function reconcilePaidAllowanceFundingForCharge(input: {
       payment_intent_id: paymentIntentId,
     });
   };
-  for (const refund of await allRefunds(stripe, charge.id)) {
+  const refunds = await allRefunds(stripe, charge.id);
+  assertStripeRefundInventoryCaughtUp(charge, refunds, input);
+  for (const refund of refunds) {
     if (idOf(refund.charge) !== charge.id || refund.currency !== charge.currency)
       throw new Error(`Stripe refund ${refund.id} does not belong to the funded charge.`);
     if (refund.status === "succeeded") movement("refund", refund.id, refund.amount);

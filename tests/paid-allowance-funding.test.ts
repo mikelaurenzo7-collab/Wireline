@@ -482,6 +482,7 @@ function provider(r = receipt()) {
     customer: r.customer_id,
     paid: true,
     amount: 1900,
+    amount_refunded: 1900,
     currency: "usd",
     livemode: false,
     payment_intent: "pi_paid",
@@ -500,17 +501,84 @@ function provider(r = receipt()) {
     charge,
     refunds,
     stripe,
-    run: (dispute?: any) =>
+    run: (dispute?: any, expectation: Record<string, unknown> = {}) =>
       reconcilePaidAllowanceFundingForCharge({
         stripe,
         chargeId: "ch_paid",
         providerEventId: "evt_refund",
         dispute,
+        ...expectation,
       }),
   };
 }
 
 describe("authoritative Stripe paid funding reconciliation", () => {
+  it.each(["succeeded", "failed"])(
+    "keeps signed %s refund events retryable while API inventory is pending",
+    async (status) => {
+      const data = await setup();
+      const p = provider();
+      const expectedRefund = {
+        ...p.refunds[0],
+        status,
+        ...(status === "failed" ? { failure_balance_transaction: "txn_return" } : {}),
+      };
+      p.refunds[0].status = "pending";
+      await expect(p.run(undefined, { expectedRefund })).rejects.toThrow("signed terminal event");
+      expect(data.rows).toHaveLength(2);
+      Object.assign(p.refunds[0], expectedRefund);
+      await p.run(undefined, { expectedRefund });
+      expect(data.rows).toHaveLength(3);
+    },
+  );
+  it("does not acknowledge returned funds while the list still shows succeeded or omits signed return proof", async () => {
+    const data = await setup();
+    const p = provider();
+    await p.run();
+    const expectedRefund = {
+      ...p.refunds[0],
+      status: "failed",
+      failure_balance_transaction: "txn_return",
+    };
+    await expect(p.run(undefined, { expectedRefund })).rejects.toThrow("signed terminal event");
+    p.refunds[0].status = "failed";
+    await expect(p.run(undefined, { expectedRefund })).rejects.toThrow("signed terminal event");
+    expect(data.rows).toHaveLength(3);
+    p.refunds[0].failure_balance_transaction = "txn_return";
+    await p.run(undefined, { expectedRefund });
+    await expect(resolveAllowanceWindow(data.db, "tenant", now)).resolves.toBeTruthy();
+  });
+  it("binds signed charge refund principal even when the reread charge and list are stale", async () => {
+    const data = await setup();
+    const p = provider();
+    const expectedCharge = structuredClone(p.charge);
+    p.charge.amount_refunded = 0;
+    p.refunds[0].status = "pending";
+    await expect(p.run(undefined, { expectedCharge })).rejects.toThrow("signed terminal event");
+    expect(data.rows).toHaveLength(2);
+    p.refunds[0].status = "failed";
+    p.refunds[0].failure_balance_transaction = "txn_return";
+    await expect(p.run(undefined, { expectedCharge })).rejects.toThrow("signed terminal event");
+    await p.run(undefined, {
+      expectedCharge: {
+        ...expectedCharge,
+        refunds: {
+          data: [{ ...p.refunds[0], status: "succeeded", failure_balance_transaction: undefined }],
+        },
+      },
+    });
+    await expect(resolveAllowanceWindow(data.db, "tenant", now)).resolves.toBeTruthy();
+  });
+  it("does not acknowledge a paid return event that still lacks return proof even when the signed event omitted it", async () => {
+    const data = await setup();
+    const p = provider();
+    await p.run();
+    p.refunds[0].status = "failed";
+    await expect(
+      p.run(undefined, { expectedRefund: structuredClone(p.refunds[0]) }),
+    ).rejects.toThrow("signed terminal event");
+    expect(data.rows).toHaveLength(3);
+  });
   it("a newer returned-fund snapshot overtakes an older succeeded read without reviving a hold", async () => {
     const data = await setup();
     const p = provider();
@@ -677,6 +745,49 @@ describe("authoritative Stripe paid funding reconciliation", () => {
         await expect(resolveAllowanceWindow(data.db, "tenant", now)).rejects.toMatchObject({
           code: "PAID_ALLOWANCE_FUNDING_REVERSED",
         });
+    },
+  );
+  it.each(["refund.updated", "charge.refunded"])(
+    "releases signed %s claim without acknowledging when API inventory is stale",
+    async (type) => {
+      const data = await setup();
+      const p = provider();
+      const signed = structuredClone(type === "charge.refunded" ? p.charge : p.refunds[0]);
+      p.charge.amount_refunded = 0;
+      p.refunds[0].status = "pending";
+      vi.stubEnv("STRIPE_WEBHOOK_SECRET", "unit-only");
+      vi.spyOn(stripeHelpers, "stripeAvailable").mockReturnValue(true);
+      vi.spyOn(stripeHelpers.stripe.webhooks, "constructEvent").mockReturnValue({
+        id: "evt_stale",
+        type,
+        data: { object: signed },
+      } as unknown as Stripe.Event);
+      vi.spyOn(stripeHelpers.stripe.charges, "retrieve").mockResolvedValue(p.charge);
+      vi.spyOn(stripeHelpers.stripe.invoices, "retrieve").mockResolvedValue(p.invoice);
+      vi.spyOn(stripeHelpers.stripe.refunds, "list").mockResolvedValue({
+        data: p.refunds,
+        has_more: false,
+      } as never);
+      vi.spyOn(stripeHelpers.stripe.paymentIntents, "retrieve").mockResolvedValue({
+        id: "pi_paid",
+        metadata: {},
+      } as never);
+      const json = vi.fn();
+      const next = vi.fn();
+      await stripeRuntimeAllowanceRetryPreflight(
+        {
+          method: "POST",
+          body: Buffer.from("{}"),
+          headers: { "stripe-signature": "unit-only" },
+        } as Request,
+        { json } as unknown as Response,
+        next,
+      );
+      expect(claims.release).toHaveBeenCalledOnce();
+      expect(claims.complete).not.toHaveBeenCalled();
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 500 }));
+      expect(json).not.toHaveBeenCalled();
+      expect(data.rows).toHaveLength(2);
     },
   );
   it.each([true, false])(

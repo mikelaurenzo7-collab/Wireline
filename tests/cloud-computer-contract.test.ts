@@ -245,6 +245,20 @@ describe("cloud computer source contracts", () => {
     );
   });
 
+  it("uses the fenced checkpoint publisher for the initial prepared-browser handoff", () => {
+    const runner = read("src/lib/cloud-computer/task-runner.ts");
+    const initialPrepare = runner.slice(
+      runner.indexOf("task.preparingBrowser = true"),
+      runner.indexOf(
+        "task.preparingBrowser = false",
+        runner.indexOf("task.preparingBrowser = true"),
+      ),
+    );
+    expect(initialPrepare).toContain("await waitForComputerOwner(");
+    expect(initialPrepare).toContain("{ takeControl: true }");
+    expect(initialPrepare).not.toContain("waitForOwner(");
+  });
+
   it("uses the Playwright transport required by browser request guards", () => {
     const browser = read("src/lib/cloud-computer/browser-session.ts");
     expect(browser).toContain("await chromium.connect(connection.wsEndpoint");

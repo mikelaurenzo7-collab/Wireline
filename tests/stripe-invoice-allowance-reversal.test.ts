@@ -32,6 +32,7 @@ import { STRIPE_PLANS } from "../src/lib/plan-catalog";
 import { stripe, stripeSubscriptionIdForInvoice } from "../src/lib/stripe-helpers";
 import * as stripeHelpers from "../src/lib/stripe-helpers";
 import {
+  listSucceededRefunds,
   reverseSubscriptionRuntimeAllowanceForChargeStrict,
   stripeRuntimeAllowanceRetryPreflight,
 } from "../src/middleware/stripe-runtime-allowance-retry";
@@ -165,6 +166,73 @@ describe("subscription Runtime Allowance reversals with current Stripe invoices"
         providerObjectId: "re_half",
       }),
     );
+  });
+  it("keeps a signed legacy refund retryable until pending inventory catches up, even if reread charge aggregate is zero", async () => {
+    configureInvoice();
+    const signed = {
+      id: "re_half",
+      charge: "ch_current",
+      amount: 950,
+      currency: "usd",
+      status: "succeeded",
+    } as Stripe.Refund;
+    const list = vi
+      .spyOn(stripe.refunds, "list")
+      .mockResolvedValue({ data: [{ ...signed, status: "pending" }], has_more: false } as never);
+    const staleCharge = { ...charge, amount_refunded: 0 };
+    await expect(
+      reverseSubscriptionRuntimeAllowanceForChargeStrict(
+        staleCharge,
+        "refund",
+        undefined,
+        undefined,
+        "evt_legacy",
+        { expectedRefund: signed },
+      ),
+    ).rejects.toThrow("signed terminal event");
+    expect(harness.reverseCredit).not.toHaveBeenCalled();
+    list.mockResolvedValue({ data: [signed], has_more: false } as never);
+    await expect(
+      reverseSubscriptionRuntimeAllowanceForChargeStrict(
+        staleCharge,
+        "refund",
+        undefined,
+        undefined,
+        "evt_legacy",
+        { expectedRefund: signed },
+      ),
+    ).resolves.toBe(true);
+    expect(harness.reverseCredit).toHaveBeenCalledExactlyOnceWith(
+      "owner",
+      0.5,
+      "subscription_runtime_allowance_reversal",
+      expect.objectContaining({ id: "re_half", providerEventId: "evt_legacy" }),
+    );
+  });
+  it("validates failed-return lifecycle before preserving the legacy no-write/succeeded-only behavior", async () => {
+    const signed = {
+      id: "re_half",
+      charge: "ch_current",
+      amount: 950,
+      currency: "usd",
+      status: "failed",
+      failure_balance_transaction: "txn_return",
+    } as Stripe.Refund;
+    const list = vi
+      .spyOn(stripe.refunds, "list")
+      .mockResolvedValue({
+        data: [{ ...signed, status: "succeeded", failure_balance_transaction: null }],
+        has_more: false,
+      } as never);
+    await expect(
+      listSucceededRefunds(charge.id, { charge, expectation: { expectedRefund: signed } }),
+    ).rejects.toThrow("signed terminal event");
+    list.mockResolvedValue({ data: [signed], has_more: false } as never);
+    await expect(
+      listSucceededRefunds(charge.id, { charge, expectation: { expectedRefund: signed } }),
+    ).resolves.toEqual([]);
+    expect(harness.reverseCredit).not.toHaveBeenCalled();
+    expect(harness.addCredit).not.toHaveBeenCalled();
   });
 
   it("reverses a dispute withdrawal from an expanded current subscription pointer", async () => {

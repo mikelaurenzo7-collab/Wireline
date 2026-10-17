@@ -186,7 +186,8 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     // billing-routes must refuse the subscription fallback for that event even
     // if mount order ever changed — defence in depth on a money path.
     expect(billing).toContain("allowSubscriptionFallback = true");
-    expect(billing).toContain("if (!allowSubscriptionFallback) return;");
+    expect(billing).toContain("if (!allowSubscriptionFallback) {");
+    expect(billing).toContain("await listSucceededRefunds(charge.id, { charge, expectation });");
     expect(billing).toContain("await reverseSettledRefundsForCharge(charge, event, false);");
   });
 

@@ -50,7 +50,7 @@ describe("Stripe subscription allowance reversal retry defense", () => {
     // Preserve exact argument ownership/provenance, independent of indentation
     // introduced by the conditional returned-refund branch.
     expect(strictPreflight).toMatch(
-      /reverseSubscriptionRuntimeAllowanceForChargeStrict\(\s*charge,\s*"refund",\s*undefined,\s*undefined,\s*event\.id,\s*\)/,
+      /reverseSubscriptionRuntimeAllowanceForChargeStrict\(\s*charge,\s*"refund",\s*undefined,\s*undefined,\s*event\.id,\s*expectation,\s*\)/,
     );
     expect(strictPreflight).toMatch(
       /reverseSubscriptionRuntimeAllowanceForChargeStrict\(\s*charge,\s*"dispute",\s*dispute\.id,\s*movementCents,\s*event\.id,\s*\)/,

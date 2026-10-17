@@ -37,6 +37,10 @@ import {
   hasPostedStripeTopUpCredit,
   resolveStripeTopUpCredit,
 } from "../lib/stripe-topup-refund-reconciliation";
+import {
+  assertStripeRefundInventoryCaughtUp,
+  type StripeRefundLifecycleExpectation,
+} from "../lib/stripe-refund-lifecycle";
 
 /**
  * Stripe can omit the expanded `charge.refunds` list from webhook payloads.
@@ -44,7 +48,10 @@ import {
  * reversed under its own stable id. Replaying the event is safe because the
  * credit ledger is idempotent on `(user, ref_type, ref_id)`.
  */
-export async function listSucceededRefunds(chargeId: string): Promise<Stripe.Refund[]> {
+export async function listSucceededRefunds(
+  chargeId: string,
+  lifecycle?: { charge: Stripe.Charge; expectation: StripeRefundLifecycleExpectation },
+): Promise<Stripe.Refund[]> {
   const refunds: Stripe.Refund[] = [];
   let startingAfter: string | undefined;
   let hasMore = true;
@@ -55,11 +62,7 @@ export async function listSucceededRefunds(chargeId: string): Promise<Stripe.Ref
       limit: 100,
       ...(startingAfter ? { starting_after: startingAfter } : {}),
     });
-    refunds.push(
-      ...page.data.filter(
-        (refund) => (!refund.status || refund.status === "succeeded") && refund.amount > 0,
-      ),
-    );
+    refunds.push(...page.data);
     hasMore = page.has_more;
     if (!hasMore) break;
     const last = page.data.at(-1);
@@ -67,7 +70,11 @@ export async function listSucceededRefunds(chargeId: string): Promise<Stripe.Ref
     startingAfter = last.id;
   }
 
-  return refunds;
+  if (lifecycle)
+    assertStripeRefundInventoryCaughtUp(lifecycle.charge, refunds, lifecycle.expectation);
+  return refunds.filter(
+    (refund) => (!refund.status || refund.status === "succeeded") && refund.amount > 0,
+  );
 }
 
 type SubscriptionAllowanceContext = {
@@ -269,6 +276,7 @@ export async function reverseSubscriptionRuntimeAllowanceForChargeStrict(
   explicitReference?: string,
   movementAmountCents?: number,
   providerEventId?: string,
+  expectation?: StripeRefundLifecycleExpectation,
 ): Promise<boolean> {
   const operation = reason === "refund" ? "refund" : "dispute_withdrawal";
   const context = await resolveSubscriptionAllowanceContext(charge, operation);
@@ -297,8 +305,11 @@ export async function reverseSubscriptionRuntimeAllowanceForChargeStrict(
     return true;
   }
 
-  if ((charge.amount_refunded || 0) <= 0) return false;
-  const refunds = await listSucceededRefunds(charge.id);
+  if (!expectation && (charge.amount_refunded || 0) <= 0) return false;
+  const refunds = await listSucceededRefunds(
+    charge.id,
+    expectation ? { charge, expectation } : undefined,
+  );
   if (refunds.length === 0) {
     throw new Error(
       `Stripe charge ${charge.id} reports refunded funds but no succeeded refund objects.`,
@@ -594,10 +605,15 @@ export async function stripeRuntimeAllowanceRetryPreflight(
       if (!claim) return;
 
       try {
+        const expectation =
+          event.type === "charge.refunded"
+            ? { expectedCharge: event.data.object as Stripe.Charge }
+            : { expectedRefund: event.data.object as Stripe.Refund };
         const fundingReconciled = await reconcilePaidAllowanceFundingForCharge({
           stripe,
           chargeId: charge.id,
           providerEventId: event.id,
+          ...expectation,
         });
         // Canonical invoice ownership outranks mutable purpose metadata.
         // Standalone top-ups remain owned by the existing billing router.
@@ -609,6 +625,8 @@ export async function stripeRuntimeAllowanceRetryPreflight(
           await releaseStripeEventClaim(claim);
           return next();
         }
+        if (returnedRefund && !fundingReconciled)
+          await listSucceededRefunds(charge.id, { charge, expectation });
         const reversed = returnedRefund
           ? false
           : await reverseSubscriptionRuntimeAllowanceForChargeStrict(
@@ -617,6 +635,7 @@ export async function stripeRuntimeAllowanceRetryPreflight(
               undefined,
               undefined,
               event.id,
+              expectation,
             );
         await completeStripeEventClaim(claim);
         res.json({

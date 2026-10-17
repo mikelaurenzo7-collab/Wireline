@@ -5,6 +5,7 @@ const h = vi.hoisted(() => ({
   writes: [] as Record<string, unknown>[],
   holdWrite: null as Promise<void> | null,
   failResumeWrite: false,
+  failControlWrite: false,
 }));
 
 vi.mock("../src/lib/server-context", async () => {
@@ -34,6 +35,8 @@ vi.mock("../src/lib/server-context", async () => {
             if (h.failResumeWrite && patch.status === "running")
               throw new Error("Database unavailable");
             if (h.holdWrite) await h.holdWrite;
+            if (h.failControlWrite && patch.status === undefined)
+              throw new Error("Control request persistence unavailable");
             h.row = { ...h.row, ...patch };
             return [{ id: h.row.id }];
           })
@@ -110,6 +113,7 @@ function fixture(status = "running") {
     reply: null,
     ownerControl: false,
     controlRequested: false,
+    controlRequestSaving: false,
     handoffBusy: false,
     preparingBrowser: false,
     handoffGoal: null,
@@ -126,6 +130,7 @@ beforeEach(() => {
   h.writes = [];
   h.holdWrite = null;
   h.failResumeWrite = false;
+  h.failControlWrite = false;
 });
 afterEach(() => {
   __resetCloudComputerRunnerForTests();
@@ -152,12 +157,19 @@ describe("owner-requested computer pause admission", () => {
     expect(h.writes).toHaveLength(1);
     expect(task).toMatchObject({ stop: true, ownerControl: false, controlRequested: false });
   });
-  it("coalesces concurrent requests without claiming that control is already available", async () => {
+  it("rejects an in-flight duplicate and acknowledges only an already-saved pause", async () => {
     const task = fixture();
-    const [first, second] = await Promise.all([
-      takeComputerControl(userId, id),
-      takeComputerControl(userId, id),
-    ]);
+    let release!: () => void;
+    h.holdWrite = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const pending = takeComputerControl(userId, id);
+    await vi.waitFor(() => expect(h.writes).toHaveLength(1));
+    await expect(takeComputerControl(userId, id)).rejects.toMatchObject({ status: 409 });
+    expect(task.controlRequested).toBe(false);
+    release();
+    const first = await pending;
+    const second = await takeComputerControl(userId, id);
     expect(first).toMatchObject({ status: "running", controlRequested: true, ownerControl: false });
     expect(second).toMatchObject({
       status: "running",
@@ -166,6 +178,29 @@ describe("owner-requested computer pause admission", () => {
     });
     expect(task.events).toHaveLength(1);
     expect(h.writes).toHaveLength(1);
+  });
+
+  it("does not acknowledge a concurrent request while the first request can still fail to save", async () => {
+    const task = fixture();
+    let release!: () => void;
+    h.holdWrite = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    h.failControlWrite = true;
+    const first = takeComputerControl(userId, id).then(
+      (value) => ({ value, error: null }),
+      (error: unknown) => ({ value: null, error }),
+    );
+    try {
+      await vi.waitFor(() => expect(h.writes).toHaveLength(1));
+      await expect(takeComputerControl(userId, id)).rejects.toMatchObject({ status: 409 });
+      expect(task.controlRequested).toBe(false);
+    } finally {
+      release();
+    }
+    expect((await first).error).toMatchObject({ status: 503 });
+    expect(task.controlRequested).toBe(false);
+    expect(h.row.status).toBe("running");
   });
 
   it("keeps Stop authoritative while the pause request is saving", async () => {
@@ -213,32 +248,46 @@ describe("owner-requested computer pause admission", () => {
     expect(JSON.stringify(task.events)).not.toContain("private-value");
   });
 
-  it("fences duplicate requests and owner input while publishing the pause checkpoint", async () => {
-    const task = fixture();
-    task.controlRequested = true;
-    let release!: () => void;
-    h.holdWrite = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    const waiting = waitForComputerOwner(task, "Browser paused.", 10_000, { takeControl: true });
-    await vi.waitFor(() => expect(h.writes).toHaveLength(1));
-    expect(task).toMatchObject({ handoffBusy: true, controlRequested: false, ownerControl: true });
-    await expect(takeComputerControl(userId, id)).rejects.toMatchObject({ status: 409 });
-    await expect(
-      sendComputerOwnerInput(userId, id, { kind: "type", text: "private-value" }),
-    ).rejects.toMatchObject({ status: 409 });
-    release();
-    await vi.waitFor(() => expect(task.handoffBusy).toBe(false));
-    const returned = await returnComputerControlToBot(userId, id);
-    expect(returned).toMatchObject({
-      status: "running",
-      controlRequested: false,
-      ownerControl: false,
-    });
-    expect(await waiting).toContain("current redacted screen");
-    expect(task.controlRequested).toBe(false);
-    expect(JSON.stringify(task.events)).not.toContain("private-value");
-  });
+  it.each([false, true])(
+    "fences duplicate requests while publishing a checkpoint (prepared browser: %s)",
+    async (prepared) => {
+      const task = fixture();
+      task.preparingBrowser = prepared;
+      task.controlRequested = true;
+      let release!: () => void;
+      h.holdWrite = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const waiting = waitForComputerOwner(task, "Browser paused.", 10_000, { takeControl: true });
+      await vi.waitFor(() => expect(h.writes).toHaveLength(1));
+      expect(task).toMatchObject({
+        handoffBusy: true,
+        controlRequested: false,
+        ownerControl: true,
+      });
+      await expect(takeComputerControl(userId, id)).rejects.toMatchObject({ status: 409 });
+      await expect(
+        sendComputerOwnerInput(userId, id, { kind: "type", text: "private-value" }),
+      ).rejects.toMatchObject({ status: 409 });
+      release();
+      await vi.waitFor(() => expect(task.handoffBusy).toBe(false));
+      const returned = await returnComputerControlToBot(
+        userId,
+        id,
+        prepared ? { goal: "Review the public page." } : undefined,
+      );
+      expect(returned).toMatchObject({
+        status: "running",
+        controlRequested: false,
+        ownerControl: false,
+      });
+      expect(await waiting).toContain("current redacted screen");
+      expect(task.controlRequested).toBe(false);
+      expect(task.controlRequestSaving).toBe(false);
+      if (prepared) expect(task.handoffGoal).toBe("Review the public page.");
+      expect(JSON.stringify(task.events)).not.toContain("private-value");
+    },
+  );
 
   it("serializes return control against stale take, reply and browser-input requests", async () => {
     const task = fixture("needs_input");

@@ -24,24 +24,30 @@ function setup() {
   const paid = vi.fn(async () => false);
   const topup = vi.fn(async () => true);
   const legacy = vi.fn(async () => false);
+  const inventory = vi.fn(async () => []);
   const stripe = {};
   const handler = new Function(
     "stripe",
     "reconcilePaidAllowanceFundingForCharge",
     "reconcileStripeTopUpRefunds",
     "reverseSubscriptionRuntimeAllowanceForChargeStrict",
+    "listSucceededRefunds",
     `${body}\nreturn reverseSettledRefundsForCharge;`,
-  )(stripe, paid, topup, legacy);
-  return { paid, topup, legacy, stripe, handler };
+  )(stripe, paid, topup, legacy, inventory);
+  return { paid, topup, legacy, inventory, stripe, handler };
 }
 
 describe("canonical refund router ownership", () => {
   it("lets paid-period funding own its charge without a second wallet movement", async () => {
     const p = setup();
     p.paid.mockResolvedValue(true);
-    await p.handler({ id: "ch_topup" }, { id: "evt_refund", type: "charge.refunded" });
+    await p.handler(
+      { id: "ch_topup" },
+      { id: "evt_refund", type: "charge.refunded", data: { object: { id: "ch_topup" } } },
+    );
     expect(p.topup).not.toHaveBeenCalled();
     expect(p.legacy).not.toHaveBeenCalled();
+    expect(p.inventory).not.toHaveBeenCalled();
   });
   it.each(["refund.updated", "refund.failed"])(
     "passes exact %s event/refund provenance to standalone reconciliation",
@@ -56,12 +62,13 @@ describe("canonical refund router ownership", () => {
         stripe: p.stripe,
         chargeId: "ch_topup",
         providerEventId: "evt_refund",
+        expectedRefund: { id: "re_topup" },
       });
       expect(p.topup).toHaveBeenCalledExactlyOnceWith({
         stripe: p.stripe,
         chargeId: "ch_topup",
         providerEventId: "evt_refund",
-        refundId: "re_topup",
+        expectedRefund: { id: "re_topup" },
       });
       expect(p.legacy).not.toHaveBeenCalled();
     },
@@ -70,7 +77,10 @@ describe("canonical refund router ownership", () => {
     const p = setup();
     p.topup.mockRejectedValue(new Error("later refund page failed"));
     await expect(
-      p.handler({ id: "ch_topup" }, { id: "evt_refund", type: "charge.refunded" }),
+      p.handler(
+        { id: "ch_topup" },
+        { id: "evt_refund", type: "charge.refunded", data: { object: { id: "ch_topup" } } },
+      ),
     ).rejects.toThrow("later refund page failed");
     expect(p.legacy).not.toHaveBeenCalled();
   });
@@ -83,13 +93,31 @@ describe("canonical refund router ownership", () => {
       false,
     );
     expect(p.legacy).not.toHaveBeenCalled();
-    await p.handler({ id: "ch_other" }, { id: "evt_charge", type: "charge.refunded" });
+    expect(p.inventory).toHaveBeenCalledExactlyOnceWith("ch_other", {
+      charge: { id: "ch_other" },
+      expectation: { expectedRefund: { id: "re_other" } },
+    });
+    await p.handler(
+      { id: "ch_other" },
+      {
+        id: "evt_charge",
+        type: "charge.refunded",
+        data: { object: { id: "ch_other", amount_refunded: 10 } },
+      },
+    );
+    expect(p.topup).toHaveBeenLastCalledWith({
+      stripe: p.stripe,
+      chargeId: "ch_other",
+      providerEventId: "evt_charge",
+      expectedCharge: { id: "ch_other", amount_refunded: 10 },
+    });
     expect(p.legacy).toHaveBeenCalledExactlyOnceWith(
       { id: "ch_other" },
       "refund",
       undefined,
       undefined,
       "evt_charge",
+      { expectedCharge: { id: "ch_other", amount_refunded: 10 } },
     );
   });
 });

@@ -2,6 +2,10 @@ import type Stripe from "stripe";
 import { and, eq, inArray, or, sql } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { drizzle, tenantStore } from "./server-context";
+import {
+  assertStripeRefundInventoryCaughtUp,
+  type StripeRefundLifecycleExpectation,
+} from "./stripe-refund-lifecycle";
 
 const idOf = (value: string | { id: string } | null | undefined) =>
   typeof value === "string" ? value : value?.id;
@@ -184,13 +188,14 @@ export async function assertStripeTopUpMovementOwnership(
   }
 }
 
-export async function reconcileStripeTopUpRefunds(input: {
-  stripe: Stripe;
-  chargeId: string;
-  providerEventId: string;
-  refundId?: string;
-}): Promise<boolean> {
-  const { stripe, chargeId, providerEventId, refundId } = input;
+export async function reconcileStripeTopUpRefunds(
+  input: {
+    stripe: Stripe;
+    chargeId: string;
+    providerEventId: string;
+  } & StripeRefundLifecycleExpectation,
+): Promise<boolean> {
+  const { stripe, chargeId, providerEventId } = input;
   const context = await resolveStripeTopUpCredit({ stripe, chargeId });
   if (!context) return false;
   const { original, grantCents, charge, customerId, paymentIntentId } = context;
@@ -198,8 +203,7 @@ export async function reconcileStripeTopUpRefunds(input: {
   // Exhaust and validate before locking/mutating. A failed later page must not
   // leave a partially debited wallet, and tax is never treated as wallet credit.
   const refunds = await refundInventory(stripe, chargeId);
-  if (refundId && !refunds.some((refund) => refund.id === refundId))
-    throw new Error("Stripe top-up lifecycle refund is missing from its charge inventory.");
+  assertStripeRefundInventoryCaughtUp(charge, refunds, input);
   let succeededCents = 0;
   const movements = refunds
     .flatMap((refund) => {

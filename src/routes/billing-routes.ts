@@ -21,7 +21,10 @@ import { planById, plansForClient, FOUNDER_CATALOG_VERSION } from "../lib/plan-c
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
 import { getTenantChannelEntitlements } from "../lib/channel-entitlements";
 import { getWorkspaceUsageSnapshot } from "../lib/workspace-usage-snapshot";
-import { reverseSubscriptionRuntimeAllowanceForChargeStrict } from "../middleware/stripe-runtime-allowance-retry";
+import {
+  listSucceededRefunds,
+  reverseSubscriptionRuntimeAllowanceForChargeStrict,
+} from "../middleware/stripe-runtime-allowance-retry";
 import Stripe from "stripe";
 import type { AuthenticatedRequest } from "../types/auth";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
@@ -562,31 +565,38 @@ async function reverseSettledRefundsForCharge(
    */
   allowSubscriptionFallback = true,
 ): Promise<void> {
+  const expectation =
+    event.type === "charge.refunded"
+      ? { expectedCharge: event.data.object as Stripe.Charge }
+      : { expectedRefund: event.data.object as Stripe.Refund };
   const fundingReconciled = await reconcilePaidAllowanceFundingForCharge({
     stripe,
     chargeId: charge.id,
     providerEventId: event.id,
+    ...expectation,
   });
   if (fundingReconciled) return;
   const topUpReconciled = await reconcileStripeTopUpRefunds({
     stripe,
     chargeId: charge.id,
     providerEventId: event.id,
-    ...(event.type === "refund.updated" || event.type === "refund.failed"
-      ? { refundId: (event.data.object as Stripe.Refund).id }
-      : {}),
+    ...expectation,
   });
   if (!topUpReconciled) {
     // Not a top-up — but a subscription invoice charge funds the Runtime
     // Allowance, which was granted on subscription sync and never came
     // back on a refund. Reverse it under the refund's own id.
-    if (!allowSubscriptionFallback) return;
+    if (!allowSubscriptionFallback) {
+      await listSucceededRefunds(charge.id, { charge, expectation });
+      return;
+    }
     await reverseSubscriptionRuntimeAllowanceForChargeStrict(
       charge,
       "refund",
       undefined,
       undefined,
       event.id,
+      expectation,
     );
   }
 }

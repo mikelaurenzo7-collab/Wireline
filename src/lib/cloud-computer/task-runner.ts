@@ -129,6 +129,7 @@ type LiveTask = {
   reply: ((value: string | null) => void) | null;
   ownerControl: boolean;
   controlRequested: boolean;
+  controlRequestSaving: boolean;
   handoffBusy: boolean;
   preparingBrowser: boolean;
   handoffGoal: string | null;
@@ -573,6 +574,7 @@ async function admitComputerTask(
     reply: null,
     ownerControl: false,
     controlRequested: false,
+    controlRequestSaving: false,
     handoffBusy: false,
     preparingBrowser: false,
     handoffGoal: null,
@@ -928,21 +930,14 @@ async function executeTaskWithBrowser(
       task.frame = firstFrame;
       task.frameAt = Date.now();
       task.frameUrl = displayUrl(session.activeUrl()) || null;
-      task.ownerControl = true;
       task.preparingBrowser = true;
       pushEvent(task, { kind: "note", text: "Browser ready for you to explore." });
-      // Register the handoff before exposing the checkpoint. Owner input and
-      // Return control both require this resolver, so there is no dead window.
-      const handoff = waitForOwner(task, CLOUD_COMPUTER_LIMITS.ownerReplyWaitMs);
-      const checkpoint = await persist(task, {
-        status: "needs_input",
-        question: "Browse the web, then tell your Bot what to do from this browser.",
-      });
-      if (checkpoint !== "written") {
-        task.reply?.(null);
-        throw AppError.serviceUnavailable("The browser could not be shown. Try again.");
-      }
-      await handoff;
+      await waitForComputerOwner(
+        task,
+        "Browse the web, then tell your Bot what to do from this browser.",
+        CLOUD_COMPUTER_LIMITS.ownerReplyWaitMs,
+        { takeControl: true },
+      );
       task.preparingBrowser = false;
       task.ownerControl = false;
       if (task.stop) {
@@ -1470,20 +1465,42 @@ export async function takeComputerControl(
       "Your Bot is not waiting at a live browser checkpoint.",
     );
   }
-  if (task.handoffBusy || task.ownerInputBusy) {
+  if (task.handoffBusy || task.ownerInputBusy || task.controlRequestSaving) {
     throw new AppError(409, "COMPUTER_INPUT_BUSY", "Wait for the browser action to finish.");
   }
   if (task.session.isClosed) failExpiredBrowser(task);
   if (row.status === "running") {
-    if (!task.controlRequested) {
-      task.controlRequested = true;
+    if (task.controlRequested) return toView(row);
+    task.controlRequestSaving = true;
+    try {
       pushEvent(task, { kind: "note", text: "You requested browser control." });
-      if ((await persist(task, {})) !== "written") {
-        task.controlRequested = false;
+      const saved = await persist(task, {});
+      if (saved === "error") {
+        throw AppError.serviceUnavailable(
+          "The browser control request could not be saved. Check the task and try again.",
+        );
+      }
+      if (saved !== "written") {
         throw new AppError(409, "COMPUTER_NOT_WAITING", "This browser task has ended.");
       }
+      // Stop or a newer owner transition may have won while the save awaited.
+      // Never publish a queued pause before its save, or re-arm an initial
+      // prepared-browser checkpoint as an immediate second pause.
+      if (task.stop || task.finished) return toView(await ownedRow(userId, taskId));
+      if (task.handoffBusy || task.ownerInputBusy) {
+        throw new AppError(409, "COMPUTER_INPUT_BUSY", "Wait for the browser handoff to finish.");
+      }
+      if (task.reply) {
+        task.ownerControl = true;
+        task.ownerFrameEpoch += 1;
+        task.agentPointer = null;
+      } else if (!task.preparingBrowser) {
+        task.controlRequested = true;
+      }
+      return toView(await ownedRow(userId, taskId));
+    } finally {
+      task.controlRequestSaving = false;
     }
-    return toView(row);
   }
   if (row.status !== "needs_input" || !task.reply) {
     throw new AppError(

@@ -110,7 +110,10 @@ increase the credited principal. Missing or conflicting receipts require
 reconciliation before retry; do not mark the webhook complete or invent a grant.
 
 Refund reconciliation reads the complete charge refund inventory before changing
-the wallet. A failed or canceled refund restores only its exact previously posted
+the wallet. Signed terminal refund events and charge refund aggregates must be
+visible with matching identity and settlement evidence before their webhook claim
+completes; stale API lists retry instead of acknowledging a no-op. A failed or
+canceled refund restores only its exact previously posted
 debit after Stripe supplies returned-funds evidence. A return observed before the
 success callback leaves an idempotent zero-dollar receipt so a stale success
 snapshot cannot debit later. Restoration never resets usage or subscription
@@ -118,6 +121,11 @@ allowances. Tax-inclusive partial refunds round the wallet share down per refund
 split refunds can leave a customer-favor cent, but cannot debit more than the
 original wallet credit. Validate duplicate, reordered, failed and returned events
 in a dedicated Stripe test account before the first public paid pilot.
+
+Before entering a top-up owner's tenant, reconciliation also checks prior matching
+refund/dispute references across the ledger. Conflicting historical ownership or
+provenance requires operator review; a retry must not debit a second wallet or
+silently rewrite the original movement.
 
 ### 7. Insufficient balance blocks new paid work with a recovery path
 

@@ -192,12 +192,14 @@ function setup() {
     checkout: { sessions: { retrieve: vi.fn(async () => session) } },
     refunds: { list: vi.fn(async () => ({ data: [refund()], has_more: false })) },
   };
-  const run = (refundId?: string) =>
+  const run = (expectation: Record<string, unknown> | string = {}) =>
     reconcileStripeTopUpRefunds({
       stripe,
       chargeId: charge.id,
       providerEventId: "evt_refund",
-      ...(refundId ? { refundId } : {}),
+      ...(typeof expectation === "string"
+        ? { expectedRefund: refund({ id: expectation }) as never }
+        : expectation),
     });
   const balance = () => rows.reduce((sum, row) => sum + Number(row.deltaUsd), 0);
   const inventory = (data: any[]) =>
@@ -529,7 +531,7 @@ describe("canonical standalone Runtime Balance refund reconciliation", () => {
   });
   it("rejects an event refund missing from current inventory", async () => {
     const p = setup();
-    await expect(p.run("re_wrong")).rejects.toThrow("missing");
+    await expect(p.run("re_wrong")).rejects.toThrow("signed terminal event");
     expect(p.rows).toHaveLength(1);
   });
   it("refuses mismatched historical refund provenance or debit amounts", async () => {
@@ -604,6 +606,51 @@ describe("canonical standalone Runtime Balance refund reconciliation", () => {
       "10",
       "-10",
     ]);
+  });
+  it.each(["succeeded", "failed"])(
+    "retries a signed %s event while the list still shows pending",
+    async (status) => {
+      const p = setup();
+      p.charge.amount_refunded = 0;
+      p.inventory([refund({ status: "pending" })]);
+      const expectedRefund = refund({
+        status,
+        ...(status === "failed" ? { failure_balance_transaction: "txn_return" } : {}),
+      });
+      await expect(p.run({ expectedRefund })).rejects.toThrow("signed terminal event");
+      expect(p.rows).toHaveLength(1);
+      expect(p.events).toHaveLength(0);
+      p.inventory([expectedRefund]);
+      await p.run({ expectedRefund });
+      expect(p.rows).toHaveLength(2);
+      expect(p.balance()).toBe(status === "succeeded" ? 0 : 10);
+    },
+  );
+  it("does not acknowledge failed-refund return until the list shows its exact signed balance transaction", async () => {
+    const p = setup();
+    await p.run();
+    const expectedRefund = refund({ status: "failed", failure_balance_transaction: "txn_return" });
+    await expect(p.run({ expectedRefund })).rejects.toThrow("signed terminal event");
+    p.inventory([refund({ status: "failed" })]);
+    await expect(p.run({ expectedRefund })).rejects.toThrow("signed terminal event");
+    expect(p.balance()).toBe(0);
+    expect(p.rows).toHaveLength(2);
+    p.inventory([expectedRefund]);
+    await p.run({ expectedRefund });
+    expect(p.balance()).toBe(10);
+  });
+  it("retries a signed charge refund when both reread charge and refund list lag behind", async () => {
+    const p = setup();
+    const expectedCharge = structuredClone(p.charge);
+    p.charge.amount_refunded = 0;
+    p.inventory([refund({ status: "pending" })]);
+    await expect(p.run({ expectedCharge })).rejects.toThrow("signed terminal event");
+    expect(p.rows).toHaveLength(1);
+    p.inventory([refund({ status: "failed", failure_balance_transaction: "txn_return" })]);
+    await expect(p.run({ expectedCharge })).rejects.toThrow("signed terminal event");
+    await p.run({ expectedCharge: { ...expectedCharge, refunds: { data: [refund()] } } });
+    expect(p.rows[1].deltaUsd).toBe("0");
+    expect(p.balance()).toBe(10);
   });
   it("discovers canonical routing independently of purpose metadata and leaves unrelated charges alone", async () => {
     const p = setup();
