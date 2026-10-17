@@ -47,9 +47,13 @@ describe("Stripe subscription allowance reversal retry defense", () => {
 
     expect(strictPreflight).toContain("{ providerEventId, providerObjectId: reference }");
     expect(strictPreflight).toContain("{ providerEventId, providerObjectId: refund.id }");
-    expect(strictPreflight).toContain("undefined,\n          undefined,\n          event.id,");
-    expect(strictPreflight).toContain(
-      "dispute.id,\n                  movementCents,\n                  event.id,",
+    // Preserve exact argument ownership/provenance, independent of indentation
+    // introduced by the conditional returned-refund branch.
+    expect(strictPreflight).toMatch(
+      /reverseSubscriptionRuntimeAllowanceForChargeStrict\(\s*charge,\s*"refund",\s*undefined,\s*undefined,\s*event\.id,\s*\)/,
+    );
+    expect(strictPreflight).toMatch(
+      /reverseSubscriptionRuntimeAllowanceForChargeStrict\(\s*charge,\s*"dispute",\s*dispute\.id,\s*movementCents,\s*event\.id,\s*\)/,
     );
   });
 });

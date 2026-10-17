@@ -23,7 +23,9 @@ describe("live research timeout is not a call-duration cap", () => {
     expect(source).toContain("completion debt pauses new calls and prepaid extras until paid");
     expect(source).not.toMatch(/never terminated for billing/i);
     expect(funding).toContain("fundedMinutes < 1");
-    expect(funding).toContain("(fundedMinutes + VOICE_COMPLETION_GRACE_MINUTES) * 60");
+    expect(funding).toContain(
+      "fundedMinutes + (opts.phoneTest ? 0 : VOICE_COMPLETION_GRACE_MINUTES)",
+    );
     expect(source).toMatch(/Runtime Balance/);
     expect(source).not.toMatch(/LIVE_RESEARCH_TIMEOUT/);
     expect(funding).not.toMatch(/LIVE_RESEARCH_TIMEOUT/);

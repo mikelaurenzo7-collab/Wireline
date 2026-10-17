@@ -175,7 +175,11 @@ async function findTest(
     .limit(1);
   return lead;
 }
-async function ownedAgent(reader: Pick<typeof drizzle, "select">, userId: string, agentId: string) {
+async function assertPhoneTestAgentOwned(
+  reader: Pick<typeof drizzle, "select">,
+  userId: string,
+  agentId: string,
+) {
   const [agent] = await reader
     .select({ id: schema.agents.id })
     .from(schema.agents)
@@ -264,7 +268,7 @@ export async function createPhoneTest(input: {
   }
   const cancelled = await cancelledReceipt(input.userId, input.agentId, requestKey);
   if (cancelled) return cancelled;
-  await ownedAgent(drizzle, input.userId, input.agentId);
+  await assertPhoneTestAgentOwned(drizzle, input.userId, input.agentId);
   await assertLiveExternalActionAllowed(input.userId, "phone_test_create");
   await assertExternalEntityActionAllowed(input.userId, "phone_test_create", { phone });
   const gate = await evaluateOutboundDialGate({
@@ -309,7 +313,7 @@ export async function createPhoneTest(input: {
             throw AppError.conflict("This phone test already belongs to another request.");
           return { lead: existing, created: false } as const;
         }
-        await ownedAgent(tx, input.userId, input.agentId);
+        await assertPhoneTestAgentOwned(tx, input.userId, input.agentId);
         const [count] = await tx
           .select({ count: sql<number>`count(*)::integer` })
           .from(schema.outboundLeads)
@@ -976,7 +980,7 @@ export async function endPhoneTest(
   requestKey: string,
 ): Promise<PhoneTestReceipt> {
   phoneTestFundingId(requestKey);
-  await ownedAgent(drizzle, userId, agentId);
+  await assertPhoneTestAgentOwned(drizzle, userId, agentId);
   const lead = await drizzle.transaction(async (tx) => {
     const row = await lockedTest(tx, userId, requestKey);
     if (row && row.agentId !== agentId) throw AppError.notFound("Phone test not found.");

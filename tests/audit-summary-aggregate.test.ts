@@ -157,7 +157,10 @@ describe("whole-period audit summary aggregates", () => {
     expect(query.sql).toContain("not coalesce(");
     expect(query.sql).toContain("\"action\" = 'voice.realtime.session'");
     expect(query.sql).toContain("\"provider\" = 'openai'");
-    expect(query.sql).toContain("\"metadata\"->>'surface' = 'openai_sip', false)");
+    expect(query.sql).toContain("\"metadata\"->>'surface' = 'openai_sip'");
+    expect(query.sql).toContain("\"action\" = 'voice.phone_test.carrier'");
+    expect(query.sql).toContain("\"provider\" = 'twilio'");
+    expect(query.sql).toContain("\"metadata\"->>'surface' = 'phone_test', false)");
     expect(query.sql).toContain("at time zone 'UTC'");
     expect(query.sql).toContain("percentile_disc(0.5)");
     expect(query.sql).toContain("percentile_disc(0.95)");
