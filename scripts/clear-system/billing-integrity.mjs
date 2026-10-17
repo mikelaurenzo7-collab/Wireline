@@ -13,6 +13,7 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   const billingRoutes = read("src/routes/billing-routes.ts");
   const stripeRuntimeAllowanceRetry = read("src/middleware/stripe-runtime-allowance-retry.ts");
   const checkoutFulfillment = read("src/lib/stripe-checkout-fulfillment.ts");
+  const topUpRefunds = read("src/lib/stripe-topup-refund-reconciliation.ts");
   const balanceMigration = read("drizzle/migrations/0074_harden_conversation_balance_ledger.sql");
   const wirelineKnowledge = read("src/data/wireline-knowledge.ts");
   const verticalWedges = read("src/data/vertical-wedges.ts");
@@ -123,9 +124,40 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/routes/billing-routes.ts",
     billingRoutes,
-    /entryKind:\s*"refund"[\s\S]*customerReason:\s*"Runtime Balance refund"/,
-    "Stripe refund webhook must write durable Runtime Balance metadata",
+    /await reconcileStripeTopUpRefunds\(\{[\s\S]*chargeId:\s*charge\.id,[\s\S]*providerEventId:\s*event\.id/,
+    "Stripe refund webhook must delegate exact charge and event provenance to canonical top-up accounting",
   );
+  for (const [pattern, message] of [
+    [
+      /const grantCents = wholeCents\(original\.deltaUsd\)/,
+      "Stripe top-up refunds must derive the credit cap from the posted original grant",
+    ],
+    [
+      /userId:\s*original\.userId/,
+      "Stripe top-up refunds must write to the original credited owner",
+    ],
+    [
+      /pg_advisory_xact_lock\(hashtext\(\$\{original\.userId\}\)\)/,
+      "Stripe top-up refunds must serialize with canonical owner wallet mutations",
+    ],
+    [
+      /entryKind:\s*returned \? "adjustment" : "refund"[\s\S]*customerReason:\s*returned[\s\S]*"Runtime Balance refund"/,
+      "Stripe top-up refunds and returns must write durable customer-visible movement metadata",
+    ],
+    [
+      /idempotencyKey:\s*`\$\{refType\}:\$\{refund\.id\}`[\s\S]*providerEventId,[\s\S]*providerObjectId:\s*refund\.id/,
+      "Stripe top-up refunds must retain refund-keyed idempotence and exact provider provenance",
+    ],
+    [
+      /original_credit_id:\s*original\.id[\s\S]*refund_cents:\s*refund\.amount[\s\S]*grant_cents:\s*grantCents/,
+      "Stripe top-up refund movements must retain original credit and amount evidence",
+    ],
+    [
+      /netDebitedCents < 0 \|\| netDebitedCents > grantCents/,
+      "Stripe top-up refunds must enforce the cumulative original-credit bound",
+    ],
+  ])
+    mustInclude("src/lib/stripe-topup-refund-reconciliation.ts", topUpRefunds, pattern, message);
   mustInclude(
     "src/middleware/stripe-runtime-allowance-retry.ts",
     stripeRuntimeAllowanceRetry,
