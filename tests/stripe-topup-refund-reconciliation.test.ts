@@ -17,6 +17,7 @@ vi.mock("../src/lib/server-context", () => ({
   },
 }));
 import {
+  assertStripeTopUpMovementOwnership,
   hasPostedStripeTopUpCredit,
   reconcileStripeTopUpRefunds,
   resolveStripeTopUpCredit,
@@ -108,6 +109,14 @@ function setup() {
                     .slice(0, limit);
                 if (query.sql.includes('"id" ='))
                   return rows.filter((row) => row.id === p[0] && row.userId === p[1]);
+                if (!query.sql.includes('"user_id" ='))
+                  return rows
+                    .filter(
+                      (row) =>
+                        [p[0], p[1]].includes(row.refType) &&
+                        (row.metadata.payment_intent_id === p[2] || p.slice(3).includes(row.refId)),
+                    )
+                    .slice(0, limit);
                 const own = rows.filter((row) => row.userId === p[0]);
                 if (selection?.balance)
                   return [
@@ -239,6 +248,7 @@ function disputeHandlers(p: ReturnType<typeof setup>) {
   const handlers = new Function(
     "stripe",
     "resolveStripeTopUpCredit",
+    "assertStripeTopUpMovementOwnership",
     "proportionalTopUpCreditUsd",
     "tenantStore",
     "reverseCredit",
@@ -248,6 +258,7 @@ function disputeHandlers(p: ReturnType<typeof setup>) {
   )(
     p.stripe,
     resolveStripeTopUpCredit,
+    assertStripeTopUpMovementOwnership,
     proportionalTopUpCreditUsd,
     {
       run: (user: string, work: () => unknown) => {
@@ -525,7 +536,7 @@ describe("canonical standalone Runtime Balance refund reconciliation", () => {
     const p = setup();
     await p.run();
     p.rows[1].metadata.charge_id = "ch_wrong";
-    await expect(p.run()).rejects.toThrow("conflicting provenance");
+    await expect(p.run()).rejects.toThrow("Operator reconciliation");
     const q = setup();
     await q.run();
     q.rows[1].deltaUsd = "-9";
@@ -539,6 +550,60 @@ describe("canonical standalone Runtime Balance refund reconciliation", () => {
     expect(p.balance()).toBe(0);
     expect(p.rows).toHaveLength(2);
     expect(p.events.filter((event) => event === "locked:owner")).toHaveLength(2);
+  });
+  it.each(["succeeded", "failed"])(
+    "refuses historical wrong-owner refund %s replay without a second debit or a gift",
+    async (status) => {
+      const p = setup();
+      p.rows.push({
+        userId: "victim",
+        deltaUsd: "-10",
+        refType: "stripe_refund",
+        refId: "re_topup",
+        metadata: { payment_intent_id: "pi_topup", charge_id: "ch_topup" },
+      });
+      if (status === "failed")
+        p.inventory([refund({ status, failure_balance_transaction: "txn_return" })]);
+      const snapshot = structuredClone(p.rows);
+      await expect(p.run()).rejects.toThrow("Operator reconciliation");
+      expect(p.rows).toEqual(snapshot);
+      expect(h.tenant).not.toHaveBeenCalled();
+      expect(p.events).toHaveLength(0);
+    },
+  );
+  it.each([
+    { payment_intent_id: "pi_wrong", charge_id: "ch_topup" },
+    { payment_intent_id: "pi_topup", charge_id: "ch_wrong" },
+  ])(
+    "rejects exact-refund historical provenance conflict %j even outside the PI-linked lookup",
+    async (metadata) => {
+      const p = setup();
+      p.rows.push({
+        userId: "owner",
+        deltaUsd: "-10",
+        refType: "stripe_refund",
+        refId: "re_topup",
+        metadata,
+      });
+      await expect(p.run()).rejects.toThrow("Operator reconciliation");
+      expect(p.rows).toHaveLength(2);
+      expect(h.tenant).not.toHaveBeenCalled();
+    },
+  );
+  it("does not match another tenant's unrelated payment or refund", async () => {
+    const p = setup();
+    p.rows.push({
+      userId: "other",
+      deltaUsd: "-10",
+      refType: "stripe_refund",
+      refId: "re_unrelated",
+      metadata: { payment_intent_id: "pi_unrelated", charge_id: "ch_unrelated" },
+    });
+    await p.run();
+    expect(p.rows.filter((row) => row.userId === "owner").map((row) => row.deltaUsd)).toEqual([
+      "10",
+      "-10",
+    ]);
   });
   it("discovers canonical routing independently of purpose metadata and leaves unrelated charges alone", async () => {
     const p = setup();
@@ -614,10 +679,78 @@ describe("standalone top-up disputes share immutable credit ownership", () => {
     });
     const d = disputeHandlers(p);
     await expect(d.restoreTopUpDisputeStrict(p.pi, dispute, 1000, "evt_return")).rejects.toThrow(
+      "Operator reconciliation",
+    );
+    expect(d.credit).not.toHaveBeenCalled();
+    expect(d.prior).not.toHaveBeenCalled();
+    p.rows.pop();
+    await expect(d.restoreTopUpDisputeStrict(p.pi, dispute, 1000, "evt_return")).rejects.toThrow(
       "before its top-up withdrawal",
     );
     expect(d.credit).not.toHaveBeenCalled();
-    expect(d.prior).toHaveBeenCalledWith("owner", "stripe_dispute", "dp_topup");
+  });
+  it("blocks a second canonical dispute debit when the original metadata-based debit used another owner", async () => {
+    const p = setup();
+    p.rows.push({
+      userId: "victim",
+      deltaUsd: "-10",
+      refType: "stripe_dispute",
+      refId: "dp_topup",
+      metadata: { payment_intent_id: "pi_topup", stripe_withdrawn_cents: 1000 },
+    });
+    const d = disputeHandlers(p);
+    await expect(d.reverseTopUpDisputeStrict(p.pi, dispute, 1000, "evt_retry")).rejects.toThrow(
+      "Operator reconciliation",
+    );
+    expect(d.debit).not.toHaveBeenCalled();
+    expect(p.rows).toHaveLength(2);
+    expect(h.tenant).not.toHaveBeenCalled();
+  });
+  it.each([
+    { payment_intent_id: "pi_wrong" },
+    { payment_intent_id: "pi_topup", charge_id: "ch_wrong" },
+  ])(
+    "rejects conflicting legacy dispute provenance %j without rejecting compatible rows",
+    async (metadata) => {
+      const p = setup();
+      p.rows.push({
+        userId: "owner",
+        deltaUsd: "-10",
+        refType: "stripe_dispute",
+        refId: "dp_topup",
+        metadata,
+      });
+      const d = disputeHandlers(p);
+      await expect(d.restoreTopUpDisputeStrict(p.pi, dispute, 1000, "evt_return")).rejects.toThrow(
+        "Operator reconciliation",
+      );
+      expect(d.credit).not.toHaveBeenCalled();
+    },
+  );
+  it("ignores another tenant's unrelated dispute while accepting a same-owner legacy debit without charge metadata", async () => {
+    const p = setup();
+    p.rows.push({
+      userId: "owner",
+      deltaUsd: "-10",
+      refType: "stripe_dispute",
+      refId: "dp_topup",
+      metadata: { payment_intent_id: "pi_topup", stripe_withdrawn_cents: 1000 },
+    });
+    p.rows.push({
+      userId: "other",
+      deltaUsd: "-10",
+      refType: "stripe_dispute",
+      refId: "dp_other",
+      metadata: { payment_intent_id: "pi_other" },
+    });
+    const d = disputeHandlers(p);
+    await d.restoreTopUpDisputeStrict(p.pi, dispute, 1000, "evt_return");
+    expect(d.credit).toHaveBeenCalledWith(
+      "owner",
+      10,
+      "web_topup_dispute_restored",
+      expect.objectContaining({ id: "dp_topup" }),
+    );
   });
   it("retries malformed original receipts and rejects a mismatched dispute intent", async () => {
     const p = setup();

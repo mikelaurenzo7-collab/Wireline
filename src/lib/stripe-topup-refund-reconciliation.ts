@@ -139,6 +139,51 @@ export async function resolveStripeTopUpCredit(input: { stripe: Stripe; chargeId
   return { original, grantCents, charge, paymentIntent: pi, session, customerId, paymentIntentId };
 }
 
+/**
+ * Run in webhook/system scope before entering the original owner's tenant.
+ * A historical metadata-based writer may have debited another wallet. Its
+ * per-user idempotency key must not turn a canonical retry into a second debit.
+ * Conflicts require reconciliation; this guard never changes old movements.
+ */
+export async function assertStripeTopUpMovementOwnership(
+  context: NonNullable<Awaited<ReturnType<typeof resolveStripeTopUpCredit>>>,
+  referenceTypes: string[],
+  referenceIds: string[],
+): Promise<void> {
+  const { original, paymentIntentId, charge } = context;
+  const rows = await drizzle
+    .select({
+      userId: schema.creditLedger.userId,
+      metadata: schema.creditLedger.metadata,
+    })
+    .from(schema.creditLedger)
+    .where(
+      and(
+        inArray(schema.creditLedger.refType, referenceTypes),
+        or(
+          sql`${schema.creditLedger.metadata}->>'payment_intent_id' = ${paymentIntentId}`,
+          inArray(schema.creditLedger.refId, referenceIds),
+        ),
+      ),
+    )
+    .limit(2001);
+  if (rows.length > 2000)
+    throw new Error("Stripe top-up movement inventory exceeds the reconciliation limit.");
+  for (const row of rows) {
+    const metadata = object(row.metadata);
+    if (
+      row.userId !== original.userId ||
+      metadata.payment_intent_id !== paymentIntentId ||
+      (metadata.charge_id && metadata.charge_id !== charge.id) ||
+      (metadata.checkout_session_id && metadata.checkout_session_id !== original.refId) ||
+      (metadata.original_credit_id && metadata.original_credit_id !== original.id)
+    )
+      throw new Error(
+        "Stripe top-up has conflicting historical movement ownership or provenance. Operator reconciliation is required before retrying.",
+      );
+  }
+}
+
 export async function reconcileStripeTopUpRefunds(input: {
   stripe: Stripe;
   chargeId: string;
@@ -190,6 +235,12 @@ export async function reconcileStripeTopUpRefunds(input: {
   )
     throw new Error("Stripe top-up reports refunded principal without settled refund evidence.");
   if (!movements.length) return true;
+
+  await assertStripeTopUpMovementOwnership(
+    context,
+    ["stripe_refund", "stripe_refund_return"],
+    movements.map(({ refund }) => refund.id),
+  );
 
   await tenantStore.run(original.userId, () =>
     drizzle.transaction(async (tx) => {

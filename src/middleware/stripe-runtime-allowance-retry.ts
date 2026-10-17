@@ -33,6 +33,7 @@ import {
 } from "../lib/stripe-event-claim";
 import { reconcilePaidAllowanceFundingForCharge } from "../lib/stripe-paid-allowance-funding";
 import {
+  assertStripeTopUpMovementOwnership,
   hasPostedStripeTopUpCredit,
   resolveStripeTopUpCredit,
 } from "../lib/stripe-topup-refund-reconciliation";
@@ -347,6 +348,11 @@ async function reverseTopUpDisputeStrict(
       `Stripe top-up dispute ${dispute.id} is missing verified original Checkout credit provenance.`,
     );
   }
+  await assertStripeTopUpMovementOwnership(
+    context,
+    ["stripe_dispute", "stripe_dispute_restoration"],
+    [dispute.id],
+  );
   const userId = context.original.userId;
   const purchasedCreditUsd = context.grantCents / 100;
 
@@ -449,6 +455,11 @@ async function restoreTopUpDisputeStrict(
       `Stripe top-up dispute ${dispute.id} is missing verified original Checkout credit provenance.`,
     );
   }
+  await assertStripeTopUpMovementOwnership(
+    context,
+    ["stripe_dispute", "stripe_dispute_restoration"],
+    [dispute.id],
+  );
   const userId = context.original.userId;
   const purchasedCreditUsd = context.grantCents / 100;
 
