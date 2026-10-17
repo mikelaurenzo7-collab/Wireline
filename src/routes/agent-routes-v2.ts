@@ -41,6 +41,7 @@ import {
   isAIGatewayConfigured,
 } from "../lib/ai-gateway";
 import { AgentBusinessProfileSchema } from "../lib/form-validators";
+import { humanHandoffProblem, normalizeHandoffPhone } from "../lib/human-handoff-settings";
 import { isOwnerEmail } from "../lib/auth-service";
 import {
   AGENT_CAPACITY_REACHED,
@@ -107,6 +108,7 @@ const BUSINESS_PROFILE_COLUMNS = {
   disallowedTopics: schema.agents.disallowedTopics,
   escalationKeywords: schema.agents.escalationKeywords,
   escalationPhone: schema.agents.escalationPhone,
+  transferPhone: schema.agents.transferPhone,
   escalationEmail: schema.agents.escalationEmail,
   escalationHandoffEnabled: schema.agents.escalationHandoffEnabled,
   businessVariables: schema.agents.businessVariables,
@@ -122,6 +124,7 @@ function businessProfileView(record: {
   disallowedTopics: string[] | null;
   escalationKeywords: string[] | null;
   escalationPhone: string | null;
+  transferPhone: string | null;
   escalationEmail: string | null;
   escalationHandoffEnabled: boolean | null;
   businessVariables: unknown;
@@ -136,6 +139,7 @@ function businessProfileView(record: {
     disallowed_topics: record.disallowedTopics || [],
     escalation_keywords: record.escalationKeywords || [],
     escalation_phone: record.escalationPhone || null,
+    transfer_phone: record.transferPhone || null,
     escalation_email: record.escalationEmail || null,
     escalation_handoff_enabled: record.escalationHandoffEnabled ?? false,
     business_variables: record.businessVariables || null,
@@ -1090,6 +1094,10 @@ router.patch(
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
     const parsed = req.body as z.infer<typeof AgentBusinessProfileSchema>;
+    const changesHandoff =
+      parsed.escalation_phone !== undefined ||
+      parsed.escalation_email !== undefined ||
+      parsed.escalation_handoff_enabled !== undefined;
     // A PATCH changes only the fields it sends. The hours editor sends three;
     // resetting the rest to defaults would turn off live transfer and
     // compliance settings the owner never touched.
@@ -1107,7 +1115,10 @@ router.patch(
       patch.escalationKeywords = parsed.escalation_keywords;
     }
     if (parsed.escalation_phone !== undefined) {
-      patch.escalationPhone = parsed.escalation_phone || null;
+      patch.escalationPhone = normalizeHandoffPhone(parsed.escalation_phone || "");
+      // The editor shows the effective legacy destination. Its explicit save
+      // owns that destination, so clearing it must also remove the old fallback.
+      patch.transferPhone = null;
     }
     if (parsed.escalation_email !== undefined) {
       patch.escalationEmail = parsed.escalation_email || null;
@@ -1127,11 +1138,56 @@ router.patch(
       throw AppError.fromHttpStatus(400, "Send at least one business profile field.");
     }
 
-    const [saved] = await drizzle
-      .update(schema.agents)
-      .set(patch)
-      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
-      .returning(BUSINESS_PROFILE_COLUMNS);
+    const [saved] = await drizzle.transaction(async (tx) => {
+      // Serialize destination reads and writes: a simultaneous clear and enable
+      // must not leave live transfer enabled without a destination.
+      await tx.execute(
+        sql`SELECT id FROM wireline_agents WHERE id = ${req.params.id} AND user_id = ${req.user.id} FOR UPDATE`,
+      );
+      if (changesHandoff) {
+        const [current] = await tx
+          .select({
+            phone: schema.agents.escalationPhone,
+            legacyPhone: schema.agents.transferPhone,
+            email: schema.agents.escalationEmail,
+            transfer: schema.agents.escalationHandoffEnabled,
+          })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+          .limit(1);
+        if (!current) throw AppError.fromHttpStatus(404, "Agent not found");
+        const lines = await tx
+          .select({ phone: schema.phoneNumbers.phoneNumber })
+          .from(schema.phoneNumbers)
+          .where(
+            and(
+              eq(schema.phoneNumbers.agentId, req.params.id),
+              eq(schema.phoneNumbers.userId, req.user.id),
+            ),
+          );
+        const problem = humanHandoffProblem(
+          {
+            phone:
+              parsed.escalation_phone !== undefined
+                ? parsed.escalation_phone || ""
+                : current.phone || current.legacyPhone || "",
+            email:
+              parsed.escalation_email !== undefined
+                ? parsed.escalation_email || ""
+                : current.email || "",
+            transfer: parsed.escalation_handoff_enabled ?? current.transfer ?? false,
+            keywords: "",
+          },
+          lines.map((line) => line.phone),
+        );
+        if (problem) throw AppError.fromHttpStatus(400, problem);
+      }
+      return tx
+        .update(schema.agents)
+        .set(patch)
+        .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+        .returning(BUSINESS_PROFILE_COLUMNS);
+    });
     if (!saved) throw AppError.fromHttpStatus(404, "Agent not found");
 
     res.json({ success: true, businessProfile: businessProfileView(saved) });

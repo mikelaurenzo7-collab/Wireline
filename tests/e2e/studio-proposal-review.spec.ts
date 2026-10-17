@@ -310,6 +310,7 @@ test("Set Up and Rehearse drafts survive leaving Studio without mixing their con
   });
   await buildInput.fill("Keep this unsent Build instruction.");
   await page.getByRole("button", { name: "Rehearse", exact: true }).click();
+  await page.getByRole("button", { name: "Text", exact: true }).click();
   await testInput.fill("Keep this unsent customer scenario.");
   await page.screenshot({
     path: testInfo.outputPath("studio-rehearse-desktop.png"),
@@ -329,6 +330,11 @@ test("Set Up and Rehearse drafts survive leaving Studio without mixing their con
   await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
   await expect(review).toBeVisible();
   await page.getByRole("button", { name: "Rehearse", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Voice", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await page.getByRole("button", { name: "Text", exact: true }).click();
   await expect(testInput).toHaveValue("Keep this unsent customer scenario.");
   await page.setViewportSize({ width: 390, height: 844 });
   await expect
@@ -343,9 +349,12 @@ test("Set Up and Rehearse drafts survive leaving Studio without mixing their con
 });
 
 for (const section of ["Setup", "Review"] as const) {
-  test(`${section} testing preserves and focuses an existing customer draft`, async ({ page }) => {
+  test(`${section} rehearsal focuses voice and preserves an existing customer draft`, async ({
+    page,
+  }) => {
     await mockWorkspace(page);
     await page.goto(`/studio?agent=${bots[0].id}&workroom=test`);
+    await page.getByRole("button", { name: "Text", exact: true }).click();
     const input = page.getByRole("textbox", {
       name: "Customer message for Front Desk",
       exact: true,
@@ -355,17 +364,18 @@ for (const section of ["Setup", "Review"] as const) {
     await page.getByRole("tab", { name: section, exact: true }).click();
     await page
       .getByRole("button", {
-        name: section === "Setup" ? "Rehearse Bot" : "Rehearse Conversation",
+        name: "Rehearse Bot",
         exact: true,
       })
       .click();
-    await expect(input).toBeFocused();
+    await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeFocused();
+    await page.getByRole("button", { name: "Text", exact: true }).click();
     await expect(input).toHaveValue("Can you handle this specific customer request?");
     await expect(input).toHaveCSS("resize", "none");
   });
 }
 
-test("setup seeds an empty Rehearse composer without replacing the Set Up draft or setup resize", async ({
+test("setup focuses voice without seeding a customer message or replacing the Set Up draft", async ({
   page,
 }) => {
   await mockWorkspace(page);
@@ -384,10 +394,9 @@ test("setup seeds an empty Rehearse composer without replacing the Set Up draft 
     name: "Customer message for Front Desk",
     exact: true,
   });
-  await expect(testInput).toBeFocused();
-  await expect(testInput).toHaveValue(
-    "Hi, can you explain what you can do and help me take the next step?",
-  );
+  await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeFocused();
+  await page.getByRole("button", { name: "Text", exact: true }).click();
+  await expect(testInput).toHaveValue("");
   await page.getByRole("button", { name: "Set Up", exact: true }).click();
   await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
 });
@@ -398,6 +407,7 @@ test("Set Up proposals survive rehearsal and Bot switches without appearing on a
   const writes = await mockWorkspace(page);
   const review = await requestProposal(page);
   await page.getByRole("button", { name: "Rehearse", exact: true }).click();
+  await page.getByRole("button", { name: "Text", exact: true }).click();
   await expect(
     page.getByRole("textbox", { name: "Customer message for Front Desk" }),
   ).toBeVisible();
@@ -480,6 +490,7 @@ test("Rehearsal replies cannot surface or apply a configuration or communication
     }),
   );
   await page.goto(`/studio?agent=${bots[0].id}&workroom=test`);
+  await page.getByRole("button", { name: "Text", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Customer message for Front Desk" })
     .fill("I would like an appointment.");

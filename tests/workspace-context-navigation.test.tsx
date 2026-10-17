@@ -592,6 +592,40 @@ describe("phone mutations refresh the shared roster", () => {
 });
 
 describe("Workroom setup and rehearsal flow", () => {
+  it("opens Voice with a retained customer draft and restores it only when Text is chosen", () => {
+    const workroom = () =>
+      render(() =>
+        (
+          StudioWorkroom as unknown as {
+            render: (props: object, ref: null) => ReactNode;
+          }
+        ).render(
+          {
+            agentId: "bot-b",
+            agentName: "Bravo",
+            mode: "test",
+            initialDraft: {
+              text: "Keep this customer scenario.",
+              command: null,
+              commandNonce: null,
+            },
+          },
+          null,
+        ),
+      );
+    const initial = elements(workroom());
+    expect(
+      initial.find((node) => node.type === "button" && text(node) === "Voice")?.props[
+        "aria-pressed"
+      ],
+    ).toBe(true);
+    expect(initial.some((node) => node.props.id === "studio-workroom-message")).toBe(false);
+    initial.find((node) => node.type === "button" && text(node) === "Text")!.props.onClick!();
+    expect(
+      elements(workroom()).find((node) => node.props.id === "studio-workroom-message")?.props.value,
+    ).toBe("Keep this customer scenario.");
+  });
+
   it.each([
     { draft: "Keep this customer scenario.", expected: "Keep this customer scenario." },
     { draft: "", expected: "Suggested customer question" },

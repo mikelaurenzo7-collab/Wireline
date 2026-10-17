@@ -3,9 +3,24 @@ import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
 async function mockWorkspace(page: Page) {
+  let businessProfile = {
+    business_hours: null,
+    timezone: "America/Chicago",
+    out_of_hours_message: null,
+    escalation_phone: "+13125550123",
+    transfer_phone: null,
+    escalation_email: "team@example.test",
+    escalation_handoff_enabled: false,
+    escalation_keywords: ["manager"],
+  };
   // Isolated UI fixtures: no live account, database, billing, or provider calls.
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
+    if (path === "/api/agent-config/design-bot/business") {
+      businessProfile = { ...businessProfile, ...route.request().postDataJSON() };
+      await route.fulfill({ json: { success: true, businessProfile } });
+      return;
+    }
     if (path === "/api/billing/status") {
       await route.fulfill({
         json: {
@@ -34,7 +49,7 @@ async function mockWorkspace(page: Page) {
               ],
             }
           : path === "/api/agent-config/design-bot"
-            ? { personality: "Clear", directives: [], mark_key: "spark-rose" }
+            ? { personality: "Clear", directives: [], mark_key: "spark-rose", businessProfile }
             : { accounts: [], data: [], numbers: [], integrations: [], messages: [], threads: [] };
     await route.fulfill({ json });
   });
@@ -187,20 +202,53 @@ test("Studio settings and navigation reflow at 320px with enlarged text", async 
     .toBe("32px");
   await expect(page.getByRole("heading", { name: "Tone & Knowledge" })).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
-  const overflows = await page.evaluate(() =>
-    [
-      ...document.querySelectorAll<HTMLElement>(
-        '#workspace-main, #studio-inspector, #studio-inspector header, #studio-inspector section, #studio-inspector fieldset, #studio-inspector [role="tablist"], #studio-inspector button, #studio-inspector a, .wl-studio-context-row, .wl-shell-dock, .wl-shell-dock-item > span',
-      ),
-    ]
-      .filter((element) => element.clientWidth > 0 && element.scrollWidth > element.clientWidth + 1)
-      .map((element) => ({
-        tag: element.tagName,
-        width: element.clientWidth,
-        scroll: element.scrollWidth,
-      })),
+  const inspectorOverflows = () =>
+    page.evaluate(() =>
+      [
+        ...document.querySelectorAll<HTMLElement>(
+          '#workspace-main, #studio-inspector, #studio-inspector header, #studio-inspector section, #studio-inspector fieldset, #studio-inspector [role="tablist"], #studio-inspector button, #studio-inspector a, .wl-studio-context-row, .wl-shell-dock, .wl-shell-dock-item > span',
+        ),
+      ]
+        .filter(
+          (element) => element.clientWidth > 0 && element.scrollWidth > element.clientWidth + 1,
+        )
+        .map((element) => ({
+          tag: element.tagName,
+          width: element.clientWidth,
+          scroll: element.scrollWidth,
+        })),
+    );
+  expect(await inspectorOverflows()).toEqual([]);
+  const handoff = page.getByRole("button", { name: /Human Handoff/ });
+  await handoff.click();
+  await expect(page.getByLabel("Notification email", { exact: true })).toHaveValue(
+    "team@example.test",
   );
-  expect(overflows).toEqual([]);
+  await expect(handoff).toContainText("Notify & review");
+  expect(await inspectorOverflows()).toEqual([]);
+  await page.getByRole("switch", { name: "Transfer live calls", exact: true }).click();
+  await page.getByLabel(/Escalate when callers mention/).fill("manager\nurgent complaint");
+  await page.getByRole("button", { name: "Save Handoff", exact: true }).click();
+  await expect(
+    page.getByText("Live transfers are on. Test your connected phone before sharing it.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  expect(await inspectorOverflows()).toEqual([]);
+  expect(
+    await page.locator("#human-handoff-settings").evaluate((element) =>
+      [element, ...element.querySelectorAll("form, label, p, div, fieldset, button")]
+        .filter((item) => item.clientWidth > 0 && item.scrollWidth > item.clientWidth + 1)
+        .map((item) => ({
+          tag: item.tagName,
+          width: item.clientWidth,
+          scroll: item.scrollWidth,
+        })),
+    ),
+  ).toEqual([]);
+  await handoff.click();
+  await expect(handoff).toContainText("Live transfer");
+  expect(await inspectorOverflows()).toEqual([]);
   await page.getByRole("button", { name: "Energetic", exact: true }).click();
   await expect(page.getByRole("button", { name: "Energetic", exact: true })).toHaveAttribute(
     "aria-pressed",

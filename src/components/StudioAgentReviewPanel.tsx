@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, ChevronDown, MessageCircle, PhoneCall, Settings2 } from "lucide-react";
+import { CheckCircle2, ChevronDown, Mic, PhoneCall, Settings2 } from "lucide-react";
 import { Link } from "react-router";
 
 import { Button, Skeleton } from "./atoms";
@@ -262,8 +262,8 @@ export default function StudioAgentReviewPanel({
                 onClick={onRehearse}
                 className="justify-center"
               >
-                <MessageCircle className="size-4" aria-hidden="true" />
-                Rehearse Conversation
+                <Mic className="size-4" aria-hidden="true" />
+                Rehearse Bot
               </Button>
             </div>
           </div>

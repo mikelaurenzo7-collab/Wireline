@@ -11,6 +11,12 @@ Public marketing leads with capabilities, outcomes, and a clear signup action. I
 
 **Studio / Operations** brings calls, texts, follow-up, approvals, handoffs, and logged outcomes together. Conversation review and later refinements remain available after launch; they are not another setup step.
 
+Studio rehearsal opens with Voice and starts the microphone only after an explicit
+Start action. Text rehearsal remains available with its drafts preserved. A connected
+phone has a separate real-call test; enabled live actions can run there. Human Handoff
+in Bot settings lets owners save notification contacts, escalation triggers, and an
+optional live-transfer destination without using setup chat.
+
 ## Product surface
 
 - **Web/API - core product:** canonical Create, Training, Wire, Studio, billing, provider, and account runtime. Availability and pilot admission depend on the release gates in `docs/DEPLOYMENT_RUNBOOK.md`.

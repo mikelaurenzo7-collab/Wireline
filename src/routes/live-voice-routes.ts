@@ -18,6 +18,7 @@ import {
 } from "../lib/voice/openai-live-agent-service";
 import { getEffectiveSubscriptionPlanId, subscriptionPlanToTier } from "../lib/plan-entitlements";
 import { OPENAI_FREE_REHEARSAL_SECONDS } from "../lib/voice/openai-realtime-pricing";
+import { stopOpenAILiveVoiceCall } from "../lib/voice/live-voice-cleanup";
 import type { AuthenticatedRequest } from "../types/auth";
 import liveProfileRouter from "./live-voice-profile-routes";
 
@@ -38,10 +39,16 @@ const statusLimiter = createRateLimiter({
   windowMs: 60_000,
   max: 30,
 });
+const stopLimiter = createRateLimiter({
+  bucket: "api:live-voice-stop",
+  windowMs: 60_000,
+  max: 60,
+});
 const sessionSchema = z.object({
   agentId: z.string().min(1).max(200),
   sdp: z.string().min(100).max(60_000),
 });
+const stopSchema = z.object({ cleanupToken: z.string().min(1).max(2_048) }).strict();
 const toolSchema = z.object({
   agentId: z.string().min(1).max(200),
   name: z.string().max(80),
@@ -99,6 +106,23 @@ router.post(
       await releaseRealtimeSessionSpendAfterFailure(req, reservation, error);
       throw error;
     }
+  },
+);
+
+router.post(
+  "/api/voice/live/session/stop",
+  authenticateUser,
+  // Stopping a rehearsal must remain possible after its allowance is used or
+  // voice admissions close. There are no spend or admission gates here.
+  stopLimiter,
+  validateBody(stopSchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    const result = await stopOpenAILiveVoiceCall({
+      userId: req.user.id,
+      cleanupToken: req.body.cleanupToken,
+    });
+    res.setHeader("Cache-Control", "no-store");
+    res.json(result);
   },
 );
 

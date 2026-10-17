@@ -73,6 +73,27 @@ BotBound does not operate a separate voice-cloning provider or accept customer
 voice uploads. Historical presenter/video records retain an explicit OpenAI
 phone fallback, and Studio uses that same fallback for a consistent preview.
 
+Studio opens private rehearsal in Voice. Entering the view or selecting Voice never
+requests a microphone or creates a provider call; the owner must choose Start.
+Text remains a separate rehearsal view and retains unsent drafts. The connected
+phone action is a real call with enabled live tools, whereas private browser
+rehearsal allows only approved knowledge lookup.
+
+Each Studio session response includes an encrypted cleanup ticket bound to its owner,
+Bot, provider call, and creating-key fingerprint. The authenticated
+`POST /api/voice/live/session/stop` route uses that ticket to end the exact call
+when the owner stops, leaves Voice, changes Bots, or receives a late signaling
+answer after teardown. It has no spend or new-session admission gate. Microphone
+and peer teardown happen immediately; the durable server deadline remains the
+fallback if the stop request cannot authenticate or reach OpenAI. Tickets expose
+no provider credential or internal call metadata and never replace normal account authentication.
+
+Human Handoff in Studio writes the existing business-profile escalation settings.
+Notification contacts are separate from the optional live-transfer switch. A
+live-transfer destination must be a complete phone number and cannot be the
+Bot's own assigned line. Explicit clearing also clears the legacy transfer
+destination, and routing validation and writes share a Bot-row lock.
+
 ## Security and reliability invariants
 
 - Verify Twilio signatures before returning TwiML.

@@ -1,4 +1,5 @@
 import { defaultBotMarkKey, type BotMarkKey } from "./bot-mark";
+import { sameHumanHandoff, type HumanHandoffDraft } from "./human-handoff-settings";
 
 export type StudioSetupValues = {
   tone: string;
@@ -20,6 +21,7 @@ type Entry = {
 export function createStudioSetupDrafts(ownerId: string | null) {
   const entries = new Map<string, Entry>();
   const listeners = new Map<string, Set<() => void>>();
+  const handoffDrafts = new Map<string, HumanHandoffDraft>();
   let revision = 0;
 
   const entryFor = (agentId: string): Entry => {
@@ -53,15 +55,25 @@ export function createStudioSetupDrafts(ownerId: string | null) {
 
   return {
     ownerId,
+    handoffDrafts,
     isRetained(agentId: string) {
       const entry = entries.get(agentId);
       return Boolean(
-        entry?.snapshot.dirty || entry?.snapshot.saving || listeners.get(agentId)?.size,
+        entry?.snapshot.dirty ||
+        entry?.snapshot.saving ||
+        listeners.get(agentId)?.size ||
+        handoffDrafts.get(agentId)?.saving ||
+        (handoffDrafts.get(agentId)?.values &&
+          !sameHumanHandoff(
+            handoffDrafts.get(agentId)?.saved ?? null,
+            handoffDrafts.get(agentId)?.values ?? null,
+          )),
       );
     },
     forget(agentId: string) {
       entries.delete(agentId);
       listeners.delete(agentId);
+      handoffDrafts.delete(agentId);
     },
     revision: () => revision,
     read: (agentId: string) => entryFor(agentId).snapshot,

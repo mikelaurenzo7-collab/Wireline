@@ -23,6 +23,7 @@ import {
   hangupOpenAIRealtimeCall,
 } from "./openai-realtime-call-control";
 import { OPENAI_REALTIME_COST_TRUNCATION } from "./openai-realtime-pricing";
+import { createLiveVoiceCleanupIssuer } from "./live-voice-cleanup-token";
 import {
   RUNTIME_ACTION_SAFETY_BLOCK,
   RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK,
@@ -359,6 +360,14 @@ export async function createOpenAILiveVoiceCall(input: {
   if (reviewRequired) {
     throw new AppError(409, "RUNTIME_REVIEW_REQUIRED", RUNTIME_REVIEW_REQUIRED_RESPONSE);
   }
+  // Fail before minting a provider call if its owner-bound cleanup ticket
+  // cannot be encrypted. The existing durable deadline remains the final backstop.
+  let issueCleanup: ReturnType<typeof createLiveVoiceCleanupIssuer>;
+  try {
+    issueCleanup = createLiveVoiceCleanupIssuer();
+  } catch {
+    throw AppError.serviceUnavailable("Voice rehearsal cleanup is temporarily unavailable.");
+  }
   const session = {
     type: "realtime",
     model: OPENAI_REALTIME_DEFAULT_MODEL,
@@ -413,8 +422,16 @@ export async function createOpenAILiveVoiceCall(input: {
     callId: call.callId,
     maxDurationSeconds: call.maxDurationSeconds,
   });
+  const cleanupToken = issueCleanup({
+    userId: input.userId,
+    agentId: runtime.agent.id,
+    callId: call.callId,
+    keyFingerprint: call.keyFingerprint,
+    maxDurationSeconds: call.maxDurationSeconds,
+  });
   return {
     sdp: call.sdp,
+    cleanupToken,
     maxDurationSeconds: call.maxDurationSeconds,
     model: OPENAI_REALTIME_DEFAULT_MODEL,
     voice,

@@ -23,6 +23,7 @@ import { StatusNotice } from "./molecules";
 import SimpleVoicePicker from "./voice/SimpleVoicePicker";
 import AgentToolPermissions from "./AgentToolPermissions";
 import BusinessHoursEditor from "./BusinessHoursEditor";
+import HumanHandoffEditor from "./HumanHandoffEditor";
 
 const PERSONALITIES = ["Clear", "Warm", "Polished", "Energetic"] as const;
 
@@ -500,6 +501,15 @@ export default function StudioAgentWorkspacePanel({
         </section>
 
         <BusinessHoursEditor agentId={agentId} compact={compact} />
+
+        <HumanHandoffEditor
+          key={`${setupDrafts.ownerId}:${agentId}`}
+          agentId={agentId}
+          ownerId={setupDrafts.ownerId}
+          botPhone={agents.find((agent) => agent.id === agentId)?.phone_number}
+          drafts={setupDrafts.handoffDrafts}
+          compact={compact}
+        />
 
         <AgentToolPermissions
           agentId={agentId}

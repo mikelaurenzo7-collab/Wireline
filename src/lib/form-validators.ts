@@ -135,18 +135,17 @@ export const AgentBusinessProfileSchema = z
       .optional(),
     /**
      * Per-agent escalation routing — overrides the tenant-wide
-     * Manager Alert Number. Both optional. Empty string normalised to
-     * undefined upstream so the handler's fallback logic fires cleanly.
-     * Strict E.164 enforcement happens at the dial site; here we just
-     * keep formats permissive enough for paste-from-CRM friendliness.
+     * Manager Alert Number. Null explicitly clears a contact. Complete phone
+     * normalization and transfer-loop checks also run in the route handler.
      */
     escalation_phone: z
       .string()
       .trim()
       .min(7, "Phone too short")
       .max(32, "Phone too long")
+      .nullable()
       .optional(),
-    escalation_email: z.string().trim().email("Enter a valid email").max(254).optional(),
+    escalation_email: z.string().trim().email("Enter a valid email").max(254).nullable().optional(),
     escalation_handoff_enabled: z.boolean().optional(),
     business_variables: BusinessVariablesSchema.optional(),
     out_of_hours_message: z

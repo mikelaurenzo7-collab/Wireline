@@ -94,7 +94,7 @@ function render() {
     h.stateCursor = h.refCursor = h.effectCursor = 0;
     tree = StudioWorkspaceV2();
     const workroom = elements(tree).find((node) => node.type === "workroom");
-    if (workroom?.props.ref) workroom.props.ref.current = { focusComposer: h.focus };
+    if (workroom?.props.ref) workroom.props.ref.current = { focusVoiceRehearsal: h.focus };
     h.effects.splice(0).forEach((effect) => effect());
     if (++passes > 10) throw new Error("Workspace did not settle");
   } while (h.dirty);
@@ -123,15 +123,13 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Studio settings-to-Test handoff", () => {
-  it.each(["setup", "review"])("focuses the committed Test composer from %s", (section) => {
+  it.each(["setup", "review"])("focuses the committed voice Start control from %s", (section) => {
     h.params.set("section", section);
     requestTest();
     const workroom = render().find((node) => node.type === "workroom")!;
     expect(workroom.props.mode).toBe("test");
     expect(h.params.has("section")).toBe(false);
-    expect(h.focus).toHaveBeenCalledExactlyOnceWith(
-      "Hi, can you explain what you can do and help me take the next step?",
-    );
+    expect(h.focus).toHaveBeenCalledExactlyOnceWith();
     expect(h.setTimer).not.toHaveBeenCalled();
     render();
     expect(h.focus).toHaveBeenCalledOnce();

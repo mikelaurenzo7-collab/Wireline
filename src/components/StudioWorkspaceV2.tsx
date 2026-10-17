@@ -255,11 +255,9 @@ export default function StudioWorkspaceV2() {
       return;
     }
     if (loading || inspectorOpen) return;
-    // The matching rehearsal composer is now committed. Its focus handle preserves
-    // a retained draft; no delayed callback can seed a different Bot or account.
-    workroomRef.current?.focusComposer(
-      "Hi, can you explain what you can do and help me take the next step?",
-    );
+    // Focusing is separate from starting: only the account holder's explicit
+    // Start click may request a microphone or create a voice session.
+    workroomRef.current?.focusVoiceRehearsal();
     setRehearsalFocusRequest(null);
   }, [active?.id, inspectorOpen, loading, rehearsalFocusRequest, user?.id, workroomMode]);
 
@@ -346,6 +344,8 @@ export default function StudioWorkspaceV2() {
       mode={workroomMode}
       onModeChange={setWorkroomMode}
       allowOutbound={Boolean(active.phone_number)}
+      phoneNumber={active.phone_number}
+      voiceVisible={splitWorkspace || !inspectorOpen}
     />
   );
 

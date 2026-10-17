@@ -258,6 +258,7 @@ test("switching from Build to Test isolates an unfinished configuration response
       page.getByRole("button", { name: "Clear conversation", exact: true }),
     ).toBeDisabled();
     await page.getByRole("button", { name: "Rehearse", exact: true }).click();
+    await page.getByRole("button", { name: "Text", exact: true }).click();
     await expect(
       page.getByRole("textbox", { name: "Customer message for Front Desk" }),
     ).toBeEnabled();
@@ -277,11 +278,13 @@ test("Studio preserves independent unsent drafts when switching modes and Bots",
     .getByRole("textbox", { name: "Message Front Desk", exact: true })
     .fill("Front desk setup draft");
   await page.getByRole("button", { name: "Rehearse", exact: true }).click();
+  await page.getByRole("button", { name: "Text", exact: true }).click();
   const frontTest = page.getByRole("textbox", { name: "Customer message for Front Desk" });
   await expect(frontTest).toHaveValue("");
   await frontTest.fill("Front desk customer draft");
 
   await page.getByRole("combobox", { name: "Switch Bot" }).selectOption("bot-sales");
+  await page.getByRole("button", { name: "Text", exact: true }).click();
   const salesTest = page.getByRole("textbox", { name: "Customer message for Sales Bot" });
   await expect(salesTest).toHaveValue("");
   await salesTest.fill("Sales customer draft");
@@ -295,8 +298,10 @@ test("Studio preserves independent unsent drafts when switching modes and Bots",
     "Front desk setup draft",
   );
   await page.getByRole("button", { name: "Rehearse", exact: true }).click();
+  await page.getByRole("button", { name: "Text", exact: true }).click();
   await expect(frontTest).toHaveValue("Front desk customer draft");
   await page.getByRole("combobox", { name: "Switch Bot" }).selectOption("bot-sales");
+  await page.getByRole("button", { name: "Text", exact: true }).click();
   await expect(salesTest).toHaveValue("Sales customer draft");
   await page.getByRole("button", { name: "Set Up", exact: true }).click();
   await expect(salesBuild).toHaveValue("Sales setup draft");
@@ -312,5 +317,6 @@ test("Studio restores edits to a route-injected command after a mode switch", as
   await customerMessage.fill("Customer edited the original question");
   await page.getByRole("button", { name: "Set Up", exact: true }).click();
   await page.getByRole("button", { name: "Rehearse", exact: true }).click();
+  await page.getByRole("button", { name: "Text", exact: true }).click();
   await expect(customerMessage).toHaveValue("Customer edited the original question");
 });

@@ -9,11 +9,21 @@ import {
   useSyncExternalStore,
 } from "react";
 import { Link } from "react-router";
-import { ArrowLeft, ArrowUp, Loader2, MessageCircle, Monitor, Phone, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowUp,
+  Loader2,
+  MessageCircle,
+  Mic,
+  Monitor,
+  Phone,
+  Trash2,
+} from "lucide-react";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import OutboundDialDialog from "./OutboundDialDialog";
+import StudioVoiceRehearsal, { studioVoiceStartId } from "./StudioVoiceRehearsal";
 import StudioProposalReview, {
   type StudioProposals,
   type StudioProposalOperation,
@@ -66,6 +76,7 @@ function MessageSkeletons() {
 
 export type StudioWorkroomHandle = {
   focusComposer: (text?: string) => void;
+  focusVoiceRehearsal: () => void;
 };
 
 export type StudioWorkroomDraft = {
@@ -142,11 +153,14 @@ const StudioWorkroom = forwardRef<
     mode?: WorkroomMode;
     onModeChange?: (mode: WorkroomMode) => void;
     allowOutbound?: boolean;
+    phoneNumber?: string | null;
+    voiceVisible?: boolean;
   }
 >(function StudioWorkroom(
   {
     agentId,
     agentName,
+    markKey,
     initialCommand,
     commandNonce,
     initialDraft,
@@ -156,6 +170,8 @@ const StudioWorkroom = forwardRef<
     mode = "configure",
     onModeChange,
     allowOutbound = false,
+    phoneNumber,
+    voiceVisible = true,
   },
   ref,
 ) {
@@ -239,6 +255,10 @@ const StudioWorkroom = forwardRef<
   const [loading, setLoading] = useState(mode === "configure" && !session.loaded);
   const [sending, setSending] = useState(false);
   const [showOutboundDial, setShowOutboundDial] = useState(false);
+  const [rehearsalView, setRehearsalView] = useState<"voice" | "text">(() =>
+    initialCommand?.trim() ? "text" : "voice",
+  );
+  const [voiceStartFocusRequested, setVoiceStartFocusRequested] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const injectedCommandRef = useRef<string | null>(initialCommand?.trim() || null);
@@ -251,12 +271,28 @@ const StudioWorkroom = forwardRef<
     ref,
     () => ({
       focusComposer(text?: string) {
+        setRehearsalView("text");
         if (text) setDraft((current) => (current.trim() ? current : text));
         requestAnimationFrame(() => inputRef.current?.focus());
+      },
+      focusVoiceRehearsal() {
+        setRehearsalView("voice");
+        setVoiceStartFocusRequested(true);
       },
     }),
     [],
   );
+
+  useEffect(() => {
+    if (!voiceStartFocusRequested || mode !== "test" || rehearsalView !== "voice" || !voiceVisible)
+      return;
+    // A frame scheduled before setRehearsalView commits can run while the Text
+    // view is still mounted. Focus only after the matching Voice DOM exists.
+    const startButton = document.getElementById(studioVoiceStartId(agentId));
+    if (!startButton) return;
+    startButton.focus();
+    setVoiceStartFocusRequested(false);
+  }, [agentId, mode, rehearsalView, voiceStartFocusRequested, voiceVisible]);
 
   const endpoint = useMemo(
     () =>
@@ -360,6 +396,7 @@ const StudioWorkroom = forwardRef<
       );
     }
     if (nextInjectedCommand) {
+      setRehearsalView("text");
       requestAnimationFrame(() => inputRef.current?.focus());
     }
   }, [initialCommand, commandNonce]);
@@ -375,7 +412,7 @@ const StudioWorkroom = forwardRef<
   useEffect(() => {
     if (!scrollRef.current) return;
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, streamState.phase, split]);
+  }, [messages, streamState.phase, split, rehearsalView]);
 
   useEffect(() => {
     const textarea = inputRef.current;
@@ -398,7 +435,7 @@ const StudioWorkroom = forwardRef<
     });
     observer.observe(textarea);
     return () => observer.disconnect();
-  }, [draft]);
+  }, [draft, mode, rehearsalView]);
 
   const submit = useCallback(() => {
     const text = draft.trim();
@@ -529,7 +566,7 @@ const StudioWorkroom = forwardRef<
                     </>
                   ) : (
                     <>
-                      <MessageCircle aria-hidden="true" />
+                      <Mic aria-hidden="true" />
                       Rehearse
                     </>
                   )}
@@ -560,160 +597,211 @@ const StudioWorkroom = forwardRef<
                 <span className="hidden sm:inline">Real call</span>
               </Button>
             ) : null}
-            {clearButton}
+            {mode !== "test" || rehearsalView === "text" ? clearButton : null}
           </div>
         </div>
       </header>
 
-      <div className="flex min-h-[24rem] flex-1 flex-col sm:min-h-0">
-        {error || clearError || interrupted ? (
-          <div className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-3xl">
-            <StatusNotice
-              tone="destructive"
-              title="Conversation Issue"
-              action={
-                (interrupted || error) &&
-                messages.some((message) => message.role === "Account Holder") ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => {
-                      const lastQuestion = [...messages]
-                        .reverse()
-                        .find((message) => message.role === "Account Holder");
-                      if (lastQuestion)
-                        setDraft((current) => (current.trim() ? current : lastQuestion.content));
-                      requestAnimationFrame(() => inputRef.current?.focus());
-                    }}
-                  >
-                    Edit and Retry
-                  </Button>
-                ) : undefined
-              }
+      {mode === "test" ? (
+        <div className="shrink-0 px-3 pb-1 sm:px-5">
+          <div
+            className="mx-auto flex max-w-3xl flex-wrap items-center gap-1"
+            role="group"
+            aria-label="Rehearsal channel"
+          >
+            <Button
+              type="button"
+              size="sm"
+              variant={rehearsalView === "voice" ? "secondary" : "ghost"}
+              aria-pressed={rehearsalView === "voice"}
+              className="shrink-0"
+              onClick={() => setRehearsalView("voice")}
             >
-              {error || clearError || "The reply was interrupted when you left this conversation."}
-            </StatusNotice>
+              <Mic className="size-4" aria-hidden="true" />
+              Voice
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={rehearsalView === "text" ? "secondary" : "ghost"}
+              aria-pressed={rehearsalView === "text"}
+              className="shrink-0"
+              onClick={() => setRehearsalView("text")}
+            >
+              <MessageCircle className="size-4" aria-hidden="true" />
+              Text
+            </Button>
           </div>
-        ) : null}
+        </div>
+      ) : null}
 
-        <section
-          ref={scrollRef}
-          className="min-h-0 flex-1 overflow-y-auto px-4 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:px-6"
-          role="log"
-          aria-label="Conversation"
-          aria-live="polite"
-          aria-relevant="additions text"
-          tabIndex={0}
-        >
-          <div className="mx-auto h-full w-full max-w-3xl">
-            {loading ? (
-              <MessageSkeletons />
-            ) : messages.length ? (
-              <div className="flex flex-col gap-5">
-                {messages.map((message) => (
-                  <MessageBubble
-                    key={message.id}
-                    message={message}
-                    agentName={agentName}
-                    mode={mode}
-                    agentId={agentId}
-                    operations={session.operations}
-                  />
-                ))}
-                {sending ? (
-                  <div className="max-w-[92%]" role="status">
-                    <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-[13px] text-sm text-muted-foreground">
-                      <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
-                      {workingLabel}…
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            ) : (
-              <div className="mx-auto flex h-full min-h-52 max-w-md flex-col items-center justify-center gap-3 py-8 text-center">
-                <h2 className="text-2xl font-semibold text-foreground">
-                  {mode === "test" ? "Try a Customer Question" : "What Should We Change?"}
-                </h2>
-              </div>
-            )}
-          </div>
-        </section>
-
-        <div className="shrink-0 border-t border-border/70 bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
-          <div className="mx-auto max-w-3xl">
-            {showStarterPrompts ? (
-              <div
-                className="-mx-3 mb-3 flex gap-2 overflow-x-auto px-3 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0"
-                aria-label="Starter prompts"
+      {mode === "test" && rehearsalView === "voice" ? (
+        <div className="shrink-0">
+          {voiceVisible ? (
+            <StudioVoiceRehearsal
+              key={agentId}
+              agentId={agentId}
+              agentName={agentName}
+              markKey={markKey}
+              phoneNumber={phoneNumber}
+            />
+          ) : null}
+        </div>
+      ) : (
+        <div className="flex min-h-[24rem] flex-1 flex-col sm:min-h-0">
+          {error || clearError || interrupted ? (
+            <div className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-3xl">
+              <StatusNotice
+                tone="destructive"
+                title="Conversation Issue"
+                action={
+                  (interrupted || error) &&
+                  messages.some((message) => message.role === "Account Holder") ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        const lastQuestion = [...messages]
+                          .reverse()
+                          .find((message) => message.role === "Account Holder");
+                        if (lastQuestion)
+                          setDraft((current) => (current.trim() ? current : lastQuestion.content));
+                        requestAnimationFrame(() => inputRef.current?.focus());
+                      }}
+                    >
+                      Edit and Retry
+                    </Button>
+                  ) : undefined
+                }
               >
-                {quickPrompts.slice(0, 3).map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    onClick={() => {
-                      setDraft(prompt);
-                      requestAnimationFrame(() => inputRef.current?.focus());
-                    }}
-                    className={`${WL_COMPOSER_CLASSES.starterChip} shrink-0 whitespace-nowrap`}
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            <div className={WL_COMPOSER_CLASSES.composerDock}>
-              <label className="sr-only" htmlFor="studio-workroom-message">
-                {mode === "test" ? `Customer message for ${agentName}` : `Message ${agentName}`}
-              </label>
-              <textarea
-                id="studio-workroom-message"
-                data-resize="none"
-                ref={inputRef}
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                onKeyDown={(event) => {
-                  if (
-                    event.nativeEvent.isComposing ||
-                    event.key !== "Enter" ||
-                    event.shiftKey ||
-                    sending
-                  )
-                    return;
-                  const finePointer = window.matchMedia("(pointer: fine)").matches;
-                  if (!finePointer && !event.metaKey && !event.ctrlKey) return;
-                  event.preventDefault();
-                  submit();
-                }}
-                rows={1}
-                disabled={sending}
-                placeholder={mode === "test" ? "Ask as a customer…" : "Describe what should change"}
-                className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
-              />
-              <div className="wl-composer-dock__toolbar">
-                <div className="ml-auto flex shrink-0 items-center gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={!draft.trim() || sending || loading || clearing}
-                    onClick={submit}
-                    className="size-10 shrink-0 rounded-full p-0"
-                    aria-busy={sending}
-                    aria-label={sending ? "Sending" : "Send"}
-                    title={sending ? "Sending" : "Send"}
-                  >
-                    {sending ? (
-                      <Loader2 className="animate-spin" size={16} aria-hidden="true" />
-                    ) : (
-                      <ArrowUp size={18} aria-hidden="true" />
-                    )}
-                  </Button>
+                {error ||
+                  clearError ||
+                  "The reply was interrupted when you left this conversation."}
+              </StatusNotice>
+            </div>
+          ) : null}
+
+          <section
+            ref={scrollRef}
+            className="min-h-0 flex-1 overflow-y-auto px-4 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:px-6"
+            role="log"
+            aria-label="Conversation"
+            aria-live="polite"
+            aria-relevant="additions text"
+            tabIndex={0}
+          >
+            <div className="mx-auto h-full w-full max-w-3xl">
+              {loading ? (
+                <MessageSkeletons />
+              ) : messages.length ? (
+                <div className="flex flex-col gap-5">
+                  {messages.map((message) => (
+                    <MessageBubble
+                      key={message.id}
+                      message={message}
+                      agentName={agentName}
+                      mode={mode}
+                      agentId={agentId}
+                      operations={session.operations}
+                    />
+                  ))}
+                  {sending ? (
+                    <div className="max-w-[92%]" role="status">
+                      <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-[13px] text-sm text-muted-foreground">
+                        <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
+                        {workingLabel}…
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="mx-auto flex h-full min-h-52 max-w-md flex-col items-center justify-center gap-3 py-8 text-center">
+                  <h2 className="text-2xl font-semibold text-foreground">
+                    {mode === "test" ? "Try a Customer Question" : "What Should We Change?"}
+                  </h2>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <div className="shrink-0 border-t border-border/70 bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
+            <div className="mx-auto max-w-3xl">
+              {showStarterPrompts ? (
+                <div
+                  className="-mx-3 mb-3 flex gap-2 overflow-x-auto px-3 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0"
+                  aria-label="Starter prompts"
+                >
+                  {quickPrompts.slice(0, 3).map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => {
+                        setDraft(prompt);
+                        requestAnimationFrame(() => inputRef.current?.focus());
+                      }}
+                      className={`${WL_COMPOSER_CLASSES.starterChip} shrink-0 whitespace-nowrap`}
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              <div className={WL_COMPOSER_CLASSES.composerDock}>
+                <label className="sr-only" htmlFor="studio-workroom-message">
+                  {mode === "test" ? `Customer message for ${agentName}` : `Message ${agentName}`}
+                </label>
+                <textarea
+                  id="studio-workroom-message"
+                  data-resize="none"
+                  ref={inputRef}
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (
+                      event.nativeEvent.isComposing ||
+                      event.key !== "Enter" ||
+                      event.shiftKey ||
+                      sending
+                    )
+                      return;
+                    const finePointer = window.matchMedia("(pointer: fine)").matches;
+                    if (!finePointer && !event.metaKey && !event.ctrlKey) return;
+                    event.preventDefault();
+                    submit();
+                  }}
+                  rows={1}
+                  disabled={sending}
+                  placeholder={
+                    mode === "test" ? "Ask as a customer…" : "Describe what should change"
+                  }
+                  className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
+                />
+                <div className="wl-composer-dock__toolbar">
+                  <div className="ml-auto flex shrink-0 items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={!draft.trim() || sending || loading || clearing}
+                      onClick={submit}
+                      className="size-10 shrink-0 rounded-full p-0"
+                      aria-busy={sending}
+                      aria-label={sending ? "Sending" : "Send"}
+                      title={sending ? "Sending" : "Send"}
+                    >
+                      {sending ? (
+                        <Loader2 className="animate-spin" size={16} aria-hidden="true" />
+                      ) : (
+                        <ArrowUp size={18} aria-hidden="true" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       <OutboundDialDialog
         open={showOutboundDial}

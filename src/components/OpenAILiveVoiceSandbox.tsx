@@ -7,6 +7,7 @@ import { ConversationActivity, ConversationMessage, StatusNotice } from "./molec
 
 type SignalResponse = {
   sdp: string;
+  cleanupToken?: string;
   greeting?: string;
   maxDurationSeconds?: number;
 };
@@ -14,6 +15,17 @@ type Line = { id: string; role: "You" | "Bot"; text: string };
 type VoiceState = "idle" | "connecting" | "listening" | "speaking" | "thinking" | "error";
 
 const RATE = 24_000;
+
+// Signature and tenant checks belong to the server; the browser only requires
+// a usable opaque capability before attaching an accepted provider session.
+function responseCleanupToken(value: unknown): string | null {
+  return typeof value === "string" &&
+    value.length > 0 &&
+    value.length <= 2_048 &&
+    value.trim() === value
+    ? value
+    : null;
+}
 
 function floatToBase64Pcm(input: Float32Array): string {
   const pcm = new Int16Array(input.length);
@@ -84,6 +96,8 @@ function voiceActivity(state: VoiceState) {
 export default function OpenAILiveVoiceSandbox({
   agentId,
   agentName,
+  compact = false,
+  startButtonId,
   onAgentAudioDelta,
   onAgentAudioEnd,
   onTestStarted,
@@ -92,6 +106,8 @@ export default function OpenAILiveVoiceSandbox({
   agentId: string;
   agentName: string;
   markKey?: BotMarkKey | null;
+  compact?: boolean;
+  startButtonId?: string;
   onAgentAudioDelta?: (base64Pcm: string) => void;
   onAgentAudioEnd?: () => void;
   onTestStarted?: () => void;
@@ -114,6 +130,20 @@ export default function OpenAILiveVoiceSandbox({
   const reportedCompleted = useRef(false);
   const generation = useRef(0);
   const deadlineTimer = useRef<number | null>(null);
+  const cleanupToken = useRef<string | null>(null);
+
+  const releaseServerCall = useCallback((token: string | null | undefined) => {
+    if (!token) return;
+    // Peer and microphone teardown is immediate. The encrypted, account-bound
+    // capability also closes an accepted provider call if signaling completed
+    // after this view was left; its durable deadline remains the fallback.
+    void authFetch("/api/voice/live/session/stop", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cleanupToken: token }),
+      keepalive: true,
+    }).catch(() => undefined);
+  }, []);
 
   const upsertLine = (id: string, role: Line["role"], text: string, replace = false) => {
     if (!text) return;
@@ -145,6 +175,9 @@ export default function OpenAILiveVoiceSandbox({
   };
 
   const release = useCallback(() => {
+    const token = cleanupToken.current;
+    cleanupToken.current = null;
+    releaseServerCall(token);
     if (deadlineTimer.current !== null) window.clearTimeout(deadlineTimer.current);
     deadlineTimer.current = null;
     channel.current?.close();
@@ -168,7 +201,7 @@ export default function OpenAILiveVoiceSandbox({
     remoteAudio.current = null;
     assistantLineId.current = null;
     userLineId.current = null;
-  }, []);
+  }, [releaseServerCall]);
 
   const stop = useCallback(() => {
     generation.current += 1;
@@ -320,13 +353,16 @@ export default function OpenAILiveVoiceSandbox({
         mic.getTracks().forEach((track) => track.stop());
         return;
       }
-      const connection = new RTCPeerConnection();
-      const events = connection.createDataChannel("oai-events");
+      // Retain each acquired resource before the next browser operation can
+      // throw, so fail() can always stop a microphone or partially built peer.
       microphone.current = mic;
+      const connection = new RTCPeerConnection();
       peer.current = connection;
+      const events = connection.createDataChannel("oai-events");
       channel.current = events;
       mic.getTracks().forEach((track) => connection.addTrack(track, mic));
       connection.ontrack = (event) => {
+        if (currentGeneration !== generation.current) return;
         const remoteStream = event.streams[0] || new MediaStream([event.track]);
         attachRemoteAudio(remoteStream);
       };
@@ -357,8 +393,11 @@ export default function OpenAILiveVoiceSandbox({
       };
 
       const offer = await connection.createOffer();
+      if (currentGeneration !== generation.current) return;
       await connection.setLocalDescription(offer);
+      if (currentGeneration !== generation.current) return;
       await waitForIceGathering(connection);
+      if (currentGeneration !== generation.current) return;
       const sdp = connection.localDescription?.sdp || offer.sdp || "";
       const response = await authFetch("/api/voice/live/session", {
         method: "POST",
@@ -366,7 +405,13 @@ export default function OpenAILiveVoiceSandbox({
         body: JSON.stringify({ agentId, sdp }),
       });
       const session = (await response.json().catch(() => null)) as SignalResponse | null;
-      if (!response.ok || !session?.sdp) {
+      const acceptedCleanupToken = responseCleanupToken(session?.cleanupToken);
+      if (currentGeneration !== generation.current) {
+        releaseServerCall(acceptedCleanupToken);
+        return;
+      }
+      cleanupToken.current = acceptedCleanupToken;
+      if (!response.ok || typeof session?.sdp !== "string" || !session.sdp.startsWith("v=")) {
         const sessionError = (session as { error?: unknown } | null)?.error;
         throw new Error(
           typeof sessionError === "string"
@@ -374,7 +419,11 @@ export default function OpenAILiveVoiceSandbox({
             : "Live voice is unavailable for this agent.",
         );
       }
+      if (!acceptedCleanupToken) {
+        throw new Error("Voice rehearsal could not be controlled safely. Try again.");
+      }
       await connection.setRemoteDescription({ type: "answer", sdp: session.sdp });
+      if (currentGeneration !== generation.current) return;
       const maxDurationSeconds = Math.max(15, Math.min(300, session.maxDurationSeconds || 300));
       deadlineTimer.current = window.setTimeout(() => {
         if (currentGeneration !== generation.current) return;
@@ -385,7 +434,7 @@ export default function OpenAILiveVoiceSandbox({
       const greeting = session.greeting?.trim();
       if (greeting) {
         const sendGreeting = () => {
-          if (events.readyState !== "open") return;
+          if (currentGeneration !== generation.current || events.readyState !== "open") return;
           events.send(
             JSON.stringify({
               type: "response.create",
@@ -411,20 +460,31 @@ export default function OpenAILiveVoiceSandbox({
   const activity = voiceActivity(state);
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+    <section
+      className={`rounded-xl border border-border bg-card shadow-sm ${compact ? "p-4 sm:p-5" : "p-5"}`}
+    >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-3">
           <div className="min-w-0">
-            <p className="wl-stitch-label">Voice rehearsal</p>
-            <h3 className="mt-1 font-display text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.02em] text-foreground">
+            {!compact ? <p className="wl-stitch-label">Voice rehearsal</p> : null}
+            <h3
+              className={
+                compact
+                  ? "break-words text-lg font-semibold tracking-tight text-foreground [overflow-wrap:anywhere]"
+                  : "mt-1 font-display text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.02em] text-foreground"
+              }
+            >
               Speak with <span className="wl-preserve-case">{agentName}</span>
             </h3>
             <p className="mt-1 max-w-2xl text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-              Rehearse this Bot's rules, facts, and voice in a private browser session.
+              {compact
+                ? "Private browser mic. External actions stay off."
+                : "Rehearse this Bot's rules, facts, and voice in a private browser session."}
             </p>
           </div>
         </div>
         <button
+          id={startButtonId}
           type="button"
           onClick={active ? stop : () => void start()}
           className={active ? "studio-secondary-button" : "studio-primary-button"}

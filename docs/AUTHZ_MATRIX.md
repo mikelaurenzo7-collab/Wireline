@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 405
-**Protected:** 328
+**Routes scanned:** 406
+**Protected:** 329
 **Public (allowlisted):** 77
 **Violations:** 0
 
@@ -314,6 +314,7 @@
 | live-voice-profile-routes.ts | GET | `/api/voice/live/profile` | inline | — | — | Protected |
 | live-voice-profile-routes.ts | PATCH | `/api/voice/live/profile` | inline | — | — | Protected |
 | live-voice-routes.ts | POST | `/api/voice/live/session` | inline | — | — | Protected |
+| live-voice-routes.ts | POST | `/api/voice/live/session/stop` | inline | — | — | Protected |
 | live-voice-routes.ts | GET | `/api/voice/live/status` | inline | — | — | Protected |
 | live-voice-routes.ts | POST | `/api/voice/live/tool` | inline | — | — | Protected |
 | marketing-runtime-routes.ts | GET | `/api/public/assistant/:agentName` | — | — | yes | Public (allowlisted) |
