@@ -267,6 +267,10 @@ async function noNestedOverflow(root: Locator) {
             return (
               item.clientWidth > 1 &&
               item.getBoundingClientRect().height > 1 &&
+              // A native single-line text field scrolls its value by design.
+              // Check its box separately; do not mistake its editable content
+              // for overflowing layout at enlarged text sizes.
+              !(item instanceof HTMLInputElement && item.type === "text") &&
               style.overflowX !== "auto" &&
               style.overflowX !== "scroll" &&
               style.textOverflow !== "ellipsis"
@@ -280,6 +284,20 @@ async function noNestedOverflow(root: Locator) {
             scroll: item.scrollWidth,
           })),
       ),
+    )
+    .toEqual([]);
+  await expect
+    .poll(() =>
+      root.evaluate((element) => {
+        const bounds = element.getBoundingClientRect();
+        return [...element.querySelectorAll<HTMLInputElement>("input")]
+          .filter((input) => input.type === "text" && input.getBoundingClientRect().height > 1)
+          .filter((input) => {
+            const field = input.getBoundingClientRect();
+            return field.left < bounds.left - 1 || field.right > bounds.right + 1;
+          })
+          .map((input) => input.id);
+      }),
     )
     .toEqual([]);
 }
@@ -407,7 +425,23 @@ for (const enlarged of [false, true]) {
     await add.click();
     const dialog = page.getByRole("dialog", { name: "Create your voice", exact: true });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByRole("textbox", { name: "Voice name", exact: true })).toBeFocused();
+    const title = dialog.getByRole("heading", { name: "Create your voice", exact: true });
+    expect(
+      await title.evaluate((element) => {
+        const text = element.firstChild;
+        if (!text || text.nodeType !== Node.TEXT_NODE) return false;
+        return [...(text.textContent ?? "").matchAll(/\S+/g)].every((word) => {
+          const range = document.createRange();
+          range.setStart(text, word.index!);
+          range.setEnd(text, word.index! + word[0].length);
+          return range.getClientRects().length === 1;
+        });
+      }),
+    ).toBe(true);
+    const voiceName = dialog.getByRole("textbox", { name: "Voice name", exact: true });
+    await expect(voiceName).toBeFocused();
+    await voiceName.fill("My voice");
+    await expect(voiceName).toHaveValue("My voice");
     await noNestedOverflow(dialog);
     await capture(page, info, `voice-clone-320${enlarged ? "-200pct" : ""}-dark-dialog-top`);
     await dialog

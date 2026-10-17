@@ -319,7 +319,7 @@ export default function VoiceCloneDialog({
       <DialogContent
         showClose={!saving}
         aria-busy={saving}
-        className="min-w-0 max-w-lg overflow-x-hidden"
+        className="min-w-0 max-w-lg overflow-x-hidden pt-16 sm:pt-6"
         onOpenAutoFocus={() => {
           opener.current =
             document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -343,7 +343,7 @@ export default function VoiceCloneDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>Create your voice</DialogTitle>
+          <DialogTitle className="pr-0 sm:pr-14">Create your voice</DialogTitle>
           <DialogDescription>Record your own voice for a private preview.</DialogDescription>
         </DialogHeader>
         <div className="min-w-0 space-y-4">
@@ -443,10 +443,12 @@ export default function VoiceCloneDialog({
                   type="button"
                   disabled={busy}
                   onClick={clearRecording}
-                  className="inline-flex min-h-11 items-center gap-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="inline-flex min-h-11 min-w-0 max-w-full items-center gap-2 whitespace-normal rounded-md text-sm font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <RotateCcw aria-hidden="true" className="size-4" />
-                  Remove recording
+                  <RotateCcw aria-hidden="true" className="size-4 shrink-0" />
+                  <span className="min-w-0 break-words text-left [overflow-wrap:anywhere]">
+                    Remove recording
+                  </span>
                 </button>
               </div>
             ) : null}
