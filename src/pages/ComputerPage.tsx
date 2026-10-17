@@ -1026,9 +1026,6 @@ function TaskDetail({
                   rows={3}
                   maxLength={2000}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Give your Bot a task within 10 minutes.
-                </p>
               </div>
             ) : null}
             <Button

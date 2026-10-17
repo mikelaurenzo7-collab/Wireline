@@ -70,7 +70,7 @@ describe("launch truth contract", () => {
     expect(changelog).not.toContain("botbound.app/status");
     expect(changelog).not.toContain("trywireline.com/status");
 
-    expect(security).toContain("Last updated · August 17, 2026");
+    expect(security).toContain("Last updated · October 17, 2026");
     expect(security).toContain("Twilio provides phone numbers, PSTN transport, SIP, and SMS");
     expect(security).toContain("OpenAI Realtime runs every browser and phone conversation");
     expect(security).toContain("OpenAI also provides the primary structured runtime");

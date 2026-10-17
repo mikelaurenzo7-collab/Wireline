@@ -622,6 +622,8 @@ test("expanded browser keeps controls below the screen and Activity on one line"
   });
   await page.goto("/computer");
   const detail = page.getByRole("region", { name: "Your browser is ready" });
+  // The application's owner wait does not guarantee the provider's browser lease.
+  await expect(detail.getByText(/within 10 minutes/i)).toHaveCount(0);
   const activity = detail.getByRole("button", { name: "Open task activity" });
   await expect(activity).toBeVisible();
   await expect(activity).toHaveCSS("white-space", "nowrap");
