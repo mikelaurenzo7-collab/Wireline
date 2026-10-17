@@ -458,7 +458,9 @@ for (const changedField of ["payload", "agent"] as const) {
       const path = new URL(route.request().url()).pathname;
       if (path === "/api/Assistants/tasks") {
         if (approvals.length) await refresh;
-        await route.fulfill({ json: { tasks: [currentTask] } });
+        await route.fulfill({
+          json: { tasks: currentTask.status === "completed" ? [] : [currentTask] },
+        });
         return;
       }
       if (path === "/api/Assistants/tasks/calendar-review/approve") {
@@ -473,6 +475,7 @@ for (const changedField of ["payload", "agent"] as const) {
             json: { code: "TASK_CONTENT_CHANGED", error: "Task changed" },
           });
         } else {
+          currentTask = { ...currentTask, status: "completed" };
           await route.fulfill({ json: { success: true } });
         }
         return;
