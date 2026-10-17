@@ -101,7 +101,8 @@ export default function UsageMeter({
   const isWarn = !hasExtraUsage && pct >= 80;
   const credit = snap.credit_balance_usd ?? 0;
   const completionDue = snap.completion_grace_due_usd ?? Math.max(0, -credit);
-  const isBlocked = snap.live_voice_blocked || completionDue > 0;
+  const fundingBlocked = snap.paid_allowance_funding_blocked === true;
+  const isBlocked = snap.live_voice_blocked || completionDue > 0 || fundingBlocked;
   const usageState = isBlocked ? "over" : hasExtraUsage || isWarn ? "warn" : "ok";
   const resetDate = new Date(snap.reset_at);
   const resetLabel = resetDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -109,11 +110,13 @@ export default function UsageMeter({
   const aiUsed = Number.isFinite(snap.ai_spend_usd) ? Math.max(0, snap.ai_spend_usd) : 0;
   const aiLimit = snap.ai_spend_limit_usd;
   const aiPct = aiLimit > 0 ? Math.min(100, Math.round((aiUsed / aiLimit) * 100)) : 0;
-  const compactTitle = isBlocked
-    ? completionDue > 0
-      ? `New live calls paused. Review Billing to clear $${completionDue.toFixed(2)} in completion credit.`
-      : `New live calls paused. Review your plan and ${BALANCE_TITLE} in Billing.`
-    : `${used} of ${included} included voice minutes used, current allowance through ${resetLabel}`;
+  const compactTitle = fundingBlocked
+    ? "Included work is paused after a payment reversal. Review Billing or contact support."
+    : isBlocked
+      ? completionDue > 0
+        ? `New live calls paused. Review Billing to clear $${completionDue.toFixed(2)} in completion credit.`
+        : `New live calls paused. Review your plan and ${BALANCE_TITLE} in Billing.`
+      : `${used} of ${included} included voice minutes used, current allowance through ${resetLabel}`;
   const compactUsageTitle =
     aiLimit > 0
       ? `${compactTitle}. Managed AI: ${formatAiSpendUsd(aiUsed)} of ${formatAiSpendUsd(aiLimit)} used.`
@@ -208,7 +211,29 @@ export default function UsageMeter({
         </div>
       ) : null}
 
-      {isBlocked && (
+      {fundingBlocked && (
+        <div
+          className="flex items-start gap-2.5 rounded-md border border-rose-500/25 bg-rose-500/8 p-3.5"
+          role="status"
+        >
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" aria-hidden="true" />
+          <div className="space-y-1 text-sm">
+            <p className="font-semibold text-foreground">Payment needs attention</p>
+            <p className="text-muted-foreground">
+              Included work is paused after a payment reversal. Review Billing or{" "}
+              <a
+                href="mailto:support@botbound.app?subject=Payment%20needs%20attention"
+                className="underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                contact support
+              </a>
+              .
+            </p>
+          </div>
+        </div>
+      )}
+
+      {isBlocked && !fundingBlocked && (
         <div className="flex items-start gap-2.5 p-3.5 rounded-md shadow-lg bg-rose-500/8 border border-rose-500/25 shadow-rose-500/5">
           <AlertTriangle className="w-4 h-4 mt-0.5 text-rose-500 shrink-0" />
           <div className="text-[length:var(--wireline-typography-overline-size)] leading-relaxed">

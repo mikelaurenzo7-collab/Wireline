@@ -47,6 +47,7 @@ import {
 import { buildOpenAIRealtimeAgentRuntime } from "./openai-phone-agent-runtime";
 import { OpenAISipTurnTiming } from "./openai-sip-turn-timing";
 import { enforceFundedCarrierCallLimit, readTerminalCarrierDuration } from "./funded-carrier-call";
+import { adoptPhoneTestSipFunding } from "./phone-test-funding";
 import {
   OPENAI_REALTIME_CALLS_URL,
   buildOpenAISipRealtimeUrl,
@@ -104,6 +105,8 @@ export type OpenAISipIncomingCall = {
   admission?: NativeInboundAdmission;
   funding?: VoiceCallFunding;
   recoveredSession?: boolean;
+  /** Derived from the signed outbound lead and independently verified at claim. */
+  phoneTest?: true;
 };
 
 export type OpenAISipCallClaim = {
@@ -492,6 +495,10 @@ export async function referOpenAISipCall(
     });
     await assertLiveExternalActionAllowed(userId, "openai_sip_call_refer");
     const funding = await getVoiceCallFunding(userId, providerCallId(callId));
+    if (funding?.phoneTest)
+      throw AppError.conflict(
+        "Phone tests stay on your verified phone. Test transfers on your connected business line.",
+      );
     if (funding) await enforceFundedCarrierCallLimit(userId, providerCallId(callId), funding);
     await openaiCallControl(callId, "refer", { target_uri: targetUri });
     // Publish only confirmed REFER success. The worker may be another process;
@@ -665,11 +672,13 @@ async function claimCall(input: OpenAISipIncomingCall) {
         existing.leaseExpiresAt instanceof Date &&
         existing.leaseExpired === true;
       if (!resumable) return existing.phase === "claimed" ? ("retry" as const) : null;
-      const funding = await reserveVoiceCallFunding(tx, {
-        userId: input.userId,
-        providerCallId: id,
-        maxSeconds: resolveOpenAISipSessionMaxSeconds(),
-      });
+      const funding =
+        (await adoptPhoneTestSipFunding(tx, input)) ??
+        (await reserveVoiceCallFunding(tx, {
+          userId: input.userId,
+          providerCallId: id,
+          maxSeconds: resolveOpenAISipSessionMaxSeconds(),
+        }));
       const [reclaimed] = await tx
         .update(schema.callLogs)
         .set({
@@ -737,11 +746,13 @@ async function claimCall(input: OpenAISipIncomingCall) {
         : input.admission?.mode === "recovery_notice"
           ? 20
           : resolveOpenAISipSessionMaxSeconds();
-    const funding = await reserveVoiceCallFunding(tx, {
-      userId: input.userId,
-      providerCallId: id,
-      maxSeconds: admissionMaxSeconds,
-    });
+    const funding =
+      (await adoptPhoneTestSipFunding(tx, input)) ??
+      (await reserveVoiceCallFunding(tx, {
+        userId: input.userId,
+        providerCallId: id,
+        maxSeconds: admissionMaxSeconds,
+      }));
 
     const [created] = await tx
       .insert(schema.callLogs)

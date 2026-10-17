@@ -77,6 +77,15 @@ describe("spend guard integrity", () => {
     expect(route).not.toContain("hard_cap: false,");
   });
 
+  it("keeps spend recovery reporting separate from funded admission", () => {
+    const route = read("src/routes/spend-control-routes.ts");
+    const reporting = route.slice(route.indexOf('"/api/spend/status"'));
+    expect(reporting).toContain("getBudgetSnapshot(req.user.id, true, true)");
+    expect(reporting).toContain("resolveHardSpendCapStatus(snap)");
+    expect(reporting).toContain("paid_allowance_funding_blocked: snap.funding_blocked === true");
+    expect(reporting).not.toContain("isHardSpendCapExceeded");
+  });
+
   it("funds explicit, independently reserved AI allowances for every tier", () => {
     expect(FREE_BUILDER_SIMULATION_ALLOWANCE_USD).toBe(1.5);
     expect(defaultAiSpendBudgetUsdForTier("free")).toBe(1.5);

@@ -148,6 +148,13 @@ export async function claimNativeOutboundPlacement(input: {
       )
       .limit(1);
     if (!lead) return { ok: false as const, status: 404, error: "Outbound lead not found." };
+    if (lead.source === "phone_test")
+      return {
+        ok: false as const,
+        status: 409,
+        error:
+          "Phone tests cannot be redialed as outbound leads. Start a new phone test in Studio.",
+      };
     if (lead.agentId && lead.agentId !== input.agentId) {
       return { ok: false as const, status: 409, error: "This lead belongs to another agent." };
     }

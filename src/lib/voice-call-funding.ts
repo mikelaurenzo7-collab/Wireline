@@ -6,6 +6,11 @@ import { isOwnerEmail } from "./platform-owner-emails";
 import { drizzle } from "./server-context";
 import { VOICE_COMPLETION_GRACE_MINUTES } from "./voice-funding-policy";
 import { resolveAllowanceWindow } from "./paid-allowance-period";
+import {
+  readVoiceIdentityReceipt,
+  resolveVoiceFundingId,
+  voicePhoneFingerprint,
+} from "./voice-call-identity";
 
 export { VOICE_COMPLETION_GRACE_MINUTES } from "./voice-funding-policy";
 
@@ -24,6 +29,8 @@ export type VoiceCallFunding = {
   periodKey: string;
   /** Confirmed non-delivery permanently closes customer liability. */
   released?: boolean;
+  /** Immutable scope: admission covers only the owner's verified phone test. */
+  phoneTest?: boolean;
 };
 export type VoiceFundingReleaseDisposition =
   "definite_preaccept" | "confirmed_startup_failure" | "confirmed_unanswered";
@@ -99,6 +106,7 @@ function savedFunding(row: FundingReceipt): VoiceCallFunding {
     rateUsd,
     planId,
     periodKey,
+    ...(metadata.phone_test_version === 1 ? { phoneTest: true } : {}),
   };
 }
 
@@ -114,6 +122,7 @@ export async function getVoiceCallFundingInTransaction(
   reader: FundingReader,
   { userId, providerCallId }: { userId: string; providerCallId: string },
 ): Promise<VoiceCallFunding | null> {
+  providerCallId = await resolveVoiceFundingId(reader, userId, providerCallId);
   const row = await receipt(reader, userId, admissionKey(providerCallId));
   return row
     ? {
@@ -137,6 +146,8 @@ export async function reserveVoiceCallFunding(
     userId: string;
     providerCallId: string;
     maxSeconds: number;
+    /** Server-owned self-phone admission; never derived from client lead metadata. */
+    phoneTest?: { agentId: string; phone: string; from: string };
   },
 ): Promise<VoiceCallFunding | null> {
   if (
@@ -149,6 +160,8 @@ export async function reserveVoiceCallFunding(
     throw AppError.badRequest("A valid call and duration are required for funding.");
   }
   await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${opts.userId}))`);
+  const canonical = await resolveVoiceFundingId(tx, opts.userId, opts.providerCallId);
+  if (canonical !== opts.providerCallId) opts = { ...opts, providerCallId: canonical };
   const existing = await receipt(tx, opts.userId, admissionKey(opts.providerCallId));
   if (existing) {
     if (
@@ -174,7 +187,7 @@ export async function reserveVoiceCallFunding(
     .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.users.id))
     .where(eq(schema.users.id, opts.userId))
     .limit(1);
-  if (billing && isOwnerEmail(billing.email)) return null;
+  if (!opts.phoneTest && billing && isOwnerEmail(billing.email)) return null;
   const plan = planById(billing?.plan);
   if (
     !plan ||
@@ -183,7 +196,15 @@ export async function reserveVoiceCallFunding(
   ) {
     throw new AppError(402, "VOICE_PLAN_REQUIRED", "An active Calls plan is required.");
   }
-  if (plan.catalogFamily !== "channels") return null;
+  if (plan.catalogFamily !== "channels") {
+    if (opts.phoneTest)
+      throw new AppError(
+        402,
+        "VOICE_PLAN_REQUIRED",
+        "An active Calls package is required for phone tests.",
+      );
+    return null;
+  }
 
   // Also covers outbound claims and an earlier call awaiting metering. Unlike
   // presence, a financial hold must never age out before definitive settlement.
@@ -244,7 +265,7 @@ export async function reserveVoiceCallFunding(
   }
   const maxSeconds = Math.min(
     opts.maxSeconds,
-    (fundedMinutes + VOICE_COMPLETION_GRACE_MINUTES) * 60,
+    (fundedMinutes + (opts.phoneTest ? 0 : VOICE_COMPLETION_GRACE_MINUTES)) * 60,
   );
   const admittedMinutes = Math.ceil(maxSeconds / 60);
   const heldMinutes = Math.max(0, Math.min(admittedMinutes, fundedMinutes) - includedRemaining);
@@ -275,6 +296,14 @@ export async function reserveVoiceCallFunding(
       rate_usd: rate,
       started_at_ms: startedAtMs,
       deadline_at_ms: deadlineAtMs,
+      ...(opts.phoneTest
+        ? {
+            phone_test_version: 1,
+            agent_id: opts.phoneTest.agentId,
+            phone_fingerprint: voicePhoneFingerprint(opts.phoneTest.phone),
+            from_fingerprint: voicePhoneFingerprint(opts.phoneTest.from),
+          }
+        : {}),
     },
   });
   return {
@@ -287,6 +316,7 @@ export async function reserveVoiceCallFunding(
     rateUsd: rate,
     planId: plan.id,
     periodKey,
+    ...(opts.phoneTest ? { phoneTest: true } : {}),
   };
 }
 
@@ -314,11 +344,19 @@ export async function releaseVoiceCallFundingInTransaction(
   },
 ): Promise<void> {
   await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${userId}))`);
+  providerCallId = await resolveVoiceFundingId(tx, userId, providerCallId);
   const admission = await receipt(tx, userId, admissionKey(providerCallId));
   if (
     !admission ||
     (await receipt(tx, userId, `voice_completion:${providerCallId}`)) ||
     (await receipt(tx, userId, `voice_admission_release:${providerCallId}`))
+  )
+    return;
+  // The parent verification call already incurs carrier usage. SIP startup
+  // failure must not refund its shared hold; its terminal carrier receipt settles it.
+  if (
+    (admission.metadata as Record<string, unknown>)?.phone_test_version === 1 &&
+    (await readVoiceIdentityReceipt(tx, userId, `voice_funding_phase:${providerCallId}:carrier`))
   )
     return;
   // Completion claimed its usage under the same wallet lock. Its durable
@@ -364,6 +402,10 @@ export async function settleVoiceCallFunding(opts: {
     throw new Error("Invalid completed voice cost");
   return drizzle.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${opts.userId}))`);
+    opts = {
+      ...opts,
+      providerCallId: await resolveVoiceFundingId(tx, opts.userId, opts.providerCallId),
+    };
     const admission = await receipt(tx, opts.userId, admissionKey(opts.providerCallId));
     if (!admission) return null;
     const balance = await balanceUsd(tx, opts.userId);

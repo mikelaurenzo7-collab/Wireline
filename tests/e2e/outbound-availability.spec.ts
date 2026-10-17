@@ -1,9 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 for (const width of [320, 1280]) {
-  test(`outbound explains missing consent capability before a futile dial at ${width}px`, async ({
-    page,
-  }) => {
+  test(`outbound opens a usable self-phone test at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 740 });
     const dialRequests: string[] = [];
     await page.route("**/api/**", async (route) => {
@@ -50,22 +48,18 @@ for (const width of [320, 1280]) {
     });
 
     await page.goto("/phone?tab=outbound");
-    const opener = page.getByRole("button", { name: "Dial now", exact: true });
+    const opener = page.getByRole("button", { name: "Call my phone", exact: true });
     await opener.click();
-    const dialog = page.getByRole("dialog", { name: "New Outbound Call", exact: true });
+    const dialog = page.getByRole("dialog", { name: "Phone test", exact: true });
     await expect(dialog).toBeVisible();
-    await expect(dialog).toContainText(
-      "Direct calls need BotBound verification before this workspace can place them. Rehearse in Studio while we complete setup.",
-    );
-    await expect(dialog.locator("input, textarea, select")).toHaveCount(0);
-    await expect(dialog.getByRole("button", { name: "Place call", exact: true })).toHaveCount(0);
-    const studio = dialog.getByRole("link", { name: "Rehearse in Studio", exact: true });
-    await expect(studio).toHaveAttribute("href", "/studio?workroom=test");
+    await expect(dialog).toContainText("Receive a real call from Front Desk.");
+    await expect(dialog).not.toContainText("BotBound verification");
     await expect(
-      dialog.getByRole("link", { name: "Review Compliance", exact: true }),
-    ).toHaveAttribute("href", "/settings/compliance");
+      dialog.getByRole("textbox", { name: "Your phone number", exact: true }),
+    ).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Place call", exact: true })).toHaveCount(0);
     for (const control of [
-      studio,
+      dialog.getByRole("textbox", { name: "Your phone number", exact: true }),
       dialog.getByRole("button", { name: "Close", exact: true }).last(),
     ]) {
       const box = await control.boundingBox();

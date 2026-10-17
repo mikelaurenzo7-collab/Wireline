@@ -31,6 +31,7 @@ import {
   releaseStripeEventClaim,
   type StripeEventClaimOwnership,
 } from "../lib/stripe-event-claim";
+import { reconcilePaidAllowanceFundingForCharge } from "../lib/stripe-paid-allowance-funding";
 
 /**
  * Stripe can omit the expanded `charge.refunds` list from webhook payloads.
@@ -527,15 +528,21 @@ export async function stripeRuntimeAllowanceRetryPreflight(
      * per-refund.id reversal. The billing router's fallback also delegates
      * here so no alternate mount can reintroduce charge-id accounting.
      */
-    if (event.type === "charge.refunded" || event.type === "refund.updated") {
+    if (
+      event.type === "charge.refunded" ||
+      event.type === "refund.updated" ||
+      event.type === "refund.failed"
+    ) {
       let charge: Stripe.Charge;
+      let returnedRefund = false;
       if (event.type === "charge.refunded") {
         charge = event.data.object as Stripe.Charge;
       } else {
         const refund = event.data.object as Stripe.Refund;
-        // Only a transition to succeeded moves money; pending/failed updates
-        // would re-enter the strict path and throw on an empty list.
-        if (refund.status !== "succeeded") return next();
+        // Failed/canceled refunds can return previously succeeded funds.
+        // Pending/inquiry states must never revoke paid-period admission.
+        if (!["succeeded", "failed", "canceled"].includes(refund.status ?? "")) return next();
+        returnedRefund = refund.status !== "succeeded";
         const refundChargeId =
           typeof refund.charge === "string" ? refund.charge : refund.charge?.id;
         if (!refundChargeId) return next();
@@ -548,20 +555,36 @@ export async function stripeRuntimeAllowanceRetryPreflight(
       if (!paymentIntentId) return next();
 
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-      if (paymentIntent.metadata?.purpose === "credit_topup") return next();
       const claim = await claimOrRespondDuplicate(event, res, next);
       if (!claim) return;
 
       try {
-        const reversed = await reverseSubscriptionRuntimeAllowanceForChargeStrict(
-          charge,
-          "refund",
-          undefined,
-          undefined,
-          event.id,
-        );
+        const fundingReconciled = await reconcilePaidAllowanceFundingForCharge({
+          stripe,
+          chargeId: charge.id,
+          providerEventId: event.id,
+        });
+        // Canonical invoice ownership outranks mutable purpose metadata.
+        // Standalone top-ups remain owned by the existing billing router.
+        if (!fundingReconciled && paymentIntent.metadata?.purpose === "credit_topup") {
+          await releaseStripeEventClaim(claim);
+          return next();
+        }
+        const reversed = returnedRefund
+          ? false
+          : await reverseSubscriptionRuntimeAllowanceForChargeStrict(
+              charge,
+              "refund",
+              undefined,
+              undefined,
+              event.id,
+            );
         await completeStripeEventClaim(claim);
-        res.json({ received: true, runtime_allowance_reversal: reversed });
+        res.json({
+          received: true,
+          runtime_allowance_reversal: reversed,
+          ...(fundingReconciled ? { paid_allowance_funding_reconciled: true } : {}),
+        });
       } catch (error) {
         await releaseStripeEventClaim(claim);
         throw error;
@@ -612,7 +635,13 @@ export async function stripeRuntimeAllowanceRetryPreflight(
           typeof dispute.charge === "string" ? dispute.charge : dispute.charge.id,
         );
         const paymentIntent = await resolvePaymentIntent(dispute, charge);
-        const topUp = paymentIntent?.metadata?.purpose === "credit_topup";
+        const fundingReconciled = await reconcilePaidAllowanceFundingForCharge({
+          stripe,
+          chargeId: charge.id,
+          providerEventId: event.id,
+          dispute,
+        });
+        const topUp = !fundingReconciled && paymentIntent?.metadata?.purpose === "credit_topup";
 
         const mutated =
           direction === "withdrawn"
@@ -639,6 +668,7 @@ export async function stripeRuntimeAllowanceRetryPreflight(
           received: true,
           dispute_financial_movement: direction,
           runtime_balance_mutated: mutated,
+          ...(fundingReconciled ? { paid_allowance_funding_reconciled: true } : {}),
         });
       } catch (error) {
         await releaseStripeEventClaim(claim);

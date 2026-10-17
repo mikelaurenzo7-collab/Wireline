@@ -3,8 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ClientToolbar from "../src/components/layout/ClientToolbar";
 import DncManager from "../src/components/DncManager";
 import OutboundDialDialog from "../src/components/OutboundDialDialog";
-import { dialogContentVariants } from "../src/components/atoms/Dialog";
-import { cn } from "../src/lib/utils";
+import PhoneTestDialog from "../src/components/PhoneTestDialog";
 
 const hooks = vi.hoisted(() => ({
   states: [] as unknown[],
@@ -260,37 +259,20 @@ describe("mobile dialog handoff", () => {
   });
 });
 
-describe("outbound dialog viewport ownership", () => {
-  it("explains unavailable dialing before collecting a futile form, with reachable recovery links", () => {
-    const component = () => OutboundDialDialog({ open: true, onClose: vi.fn() });
-    const nodes = render(component);
-    const content = nodes.find((node) => node.type === "dialog-content")!;
-    const classes = cn(dialogContentVariants(), content.props.className).split(" ");
-    expect(classes).toContain("flex");
-    expect(classes).toContain("flex-col");
-    expect(classes).not.toContain("grid");
-    expect(classes).toContain("max-h-[calc(100dvh-2rem)]");
-    const body = nodes.find((node) => node.props.className?.includes("overflow-y-auto"))!;
-    expect(body.props.className).toContain("min-h-0");
-    expect(
-      descendants(body).some((node) => ["input", "textarea", "select"].includes(String(node.type))),
-    ).toBe(false);
-    expect(descendants(body).some((node) => node.type === "a")).toBe(true);
-    expect(descendants(body).some((node) => node.type === "dialog-footer")).toBe(false);
-    expect(nodes.find((node) => node.type === "dialog-footer")!.props.className).toContain(
-      "shrink-0",
-    );
-    expect(nodes.find((node) => node.type === "dialog-header")!.props.className).toContain(
-      "shrink-0",
-    );
-    expect(
-      nodes.some((node) => node.type === "button" && node.props.children === "Place call"),
-    ).toBe(false);
-    expect(
-      nodes.some((node) => node.type === "a" && node.props.children === "Rehearse in Studio"),
-    ).toBe(true);
+describe("outbound phone testing", () => {
+  it("routes the connected Bot to the actual self-phone journey", () => {
+    const close = vi.fn();
+    const nodes = render(() => OutboundDialDialog({ open: true, onClose: close }));
+    const dialog = nodes.find((node) => node.type === PhoneTestDialog)!;
+    expect(dialog).toBeDefined();
+    expect(dialog.props).toMatchObject({
+      open: true,
+      agentId: "bot-1",
+      agentName: "Front Desk",
+      onClose: close,
+    });
     expect(
       nodes.some((node) => node.type === "a" && node.props.children === "Review Compliance"),
-    ).toBe(true);
+    ).toBe(false);
   });
 });

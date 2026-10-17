@@ -278,7 +278,7 @@ describe("cloud computer source contracts", () => {
     expect(runner).toMatch(/task\.stop\s*\? task\.expiredBrowser\s*\? EXPIRED_BROWSER_OUTCOME/);
   });
 
-  it("ends a disconnected owner handoff before its reply timeout without overriding Stop", () => {
+  it("ends a disconnected browser in owner or model waits without overriding Stop", () => {
     const now = Date.now();
     const elapsed = 2 * 60_000;
     expect(elapsed).toBeLessThan(CLOUD_COMPUTER_LIMITS.ownerReplyWaitMs);
@@ -296,7 +296,28 @@ describe("cloud computer source contracts", () => {
     expect(computerHeartbeatDecision({ ...pending, stopRequested: true, stopAt: now })).toBe(
       "continue",
     );
-    expect(computerHeartbeatDecision({ ...pending, waitingForOwner: false })).toBe("continue");
+    expect(computerHeartbeatDecision({ ...pending, waitingForOwner: false })).toBe(
+      "expired_browser",
+    );
+    expect(
+      computerHeartbeatDecision({
+        ...pending,
+        waitingForOwner: false,
+        stopRequested: true,
+        stopAt: now,
+      }),
+    ).toBe("continue");
+    expect(
+      computerHeartbeatDecision({
+        ...pending,
+        waitingForOwner: false,
+        stopRequested: true,
+        stopAt: now - 61_000,
+      }),
+    ).toBe("timeout");
+    expect(
+      computerHeartbeatDecision({ ...pending, waitingForOwner: false, browserClosed: false }),
+    ).toBe("continue");
     expect(computerHeartbeatDecision({ ...pending, finished: true })).toBe("finished");
     const watchdog = read("src/lib/cloud-computer/task-runner.ts").split(
       "async function heartbeatTick",

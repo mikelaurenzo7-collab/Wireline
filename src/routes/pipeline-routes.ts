@@ -47,7 +47,12 @@ router.get("/api/pipeline", authenticateUser, async (req: AuthenticatedRequest, 
       createdAt: schema.outboundLeads.createdAt,
     })
     .from(schema.outboundLeads)
-    .where(eq(schema.outboundLeads.userId, req.user.id))
+    .where(
+      and(
+        eq(schema.outboundLeads.userId, req.user.id),
+        sql`${schema.outboundLeads.source} IS DISTINCT FROM 'phone_test'`,
+      ),
+    )
     .orderBy(desc(schema.outboundLeads.lastCalledAt))
     .limit(500);
 
@@ -87,7 +92,13 @@ router.patch(
     const [row] = await drizzle
       .update(schema.outboundLeads)
       .set({ pipelineStage: targetStage })
-      .where(and(eq(schema.outboundLeads.id, leadId), eq(schema.outboundLeads.userId, req.user.id)))
+      .where(
+        and(
+          eq(schema.outboundLeads.id, leadId),
+          eq(schema.outboundLeads.userId, req.user.id),
+          sql`${schema.outboundLeads.source} IS DISTINCT FROM 'phone_test'`,
+        ),
+      )
       .returning({
         id: schema.outboundLeads.id,
         pipelineStage: schema.outboundLeads.pipelineStage,

@@ -36,6 +36,7 @@ interface BudgetSnapshot {
   period: string;
   reset_at: string;
   start_at: string;
+  funding_blocked?: boolean;
 }
 
 interface BudgetCacheEntry {
@@ -45,6 +46,7 @@ interface BudgetCacheEntry {
   period: string;
   reset_at: string;
   start_at: string;
+  funding_blocked?: boolean;
 }
 
 const budgetCache = new Map<string, BudgetCacheEntry>();
@@ -57,14 +59,21 @@ export function clearBudgetCache(userId: string) {
 export async function getBudgetSnapshot(
   userId: string,
   bypassCache: boolean = false,
+  reportingOnly: boolean = false,
 ): Promise<BudgetSnapshot> {
-  const window = await resolveAllowanceWindow(drizzle, userId);
+  const window = await resolveAllowanceWindow(
+    drizzle,
+    userId,
+    new Date(),
+    reportingOnly ? { reportingOnly: true } : {},
+  );
   const period = window.key;
   const cached = budgetCache.get(userId);
   if (
     !bypassCache &&
     cached &&
     cached.period === period &&
+    !!cached.funding_blocked === !!window.fundingReversed &&
     Date.now() - cached.fetchedAt < BUDGET_CACHE_TTL_MS
   ) {
     return cached;
@@ -114,6 +123,7 @@ export async function getBudgetSnapshot(
     period,
     reset_at: window.end.toISOString(),
     start_at: window.start.toISOString(),
+    funding_blocked: window.fundingReversed === true,
   };
   budgetCache.set(userId, entry);
   return entry;
@@ -259,7 +269,10 @@ async function enforcePersistedSpendCap(
       hard_cap: true,
     });
   } catch (err) {
-    if (err instanceof AppError && err.code === "PAID_ALLOWANCE_SYNC_REQUIRED") {
+    if (
+      err instanceof AppError &&
+      ["PAID_ALLOWANCE_SYNC_REQUIRED", "PAID_ALLOWANCE_FUNDING_REVERSED"].includes(err.code)
+    ) {
       return res
         .status(err.status)
         .json({ code: err.code, error: err.message, recovery_path: "/settings/billing" });

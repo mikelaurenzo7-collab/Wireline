@@ -4,9 +4,13 @@ import * as schema from "../db/schema";
 import { AppError } from "./api-error";
 import { planById, type StripePlan } from "./plan-catalog";
 import { drizzle } from "./server-context";
+import {
+  paidAllowanceFundingIsReversed,
+  paidAllowanceFundingReversed,
+} from "./paid-allowance-funding-ledger";
 
 type Reader = Pick<typeof drizzle, "select">;
-export type AllowanceWindow = { key: string; start: Date; end: Date };
+export type AllowanceWindow = { key: string; start: Date; end: Date; fundingReversed?: boolean };
 export type PaidAllowanceReceipt = {
   version: 1;
   subscription_id: string;
@@ -187,7 +191,7 @@ export async function recordPaidAllowanceReceipt(
           ),
         )
         .limit(1);
-      const saved = parseReceipt(existing?.metadata);
+      const saved = parsePaidAllowanceReceipt(existing?.metadata);
       if (
         !saved ||
         Number(existing?.deltaUsd) !== 0 ||
@@ -211,7 +215,7 @@ export function allowanceSyncRequired(): AppError {
   );
 }
 
-function parseReceipt(value: unknown): PaidAllowanceReceipt | null {
+export function parsePaidAllowanceReceipt(value: unknown): PaidAllowanceReceipt | null {
   if (!value || typeof value !== "object") return null;
   const row = value as PaidAllowanceReceipt;
   if (
@@ -237,6 +241,7 @@ export async function resolveAllowanceWindow(
   reader: Reader,
   userId: string,
   now = new Date(),
+  options: { reportingOnly?: true } = {},
 ): Promise<AllowanceWindow> {
   const [billing] = await reader
     .select({
@@ -265,7 +270,7 @@ export async function resolveAllowanceWindow(
       ),
     );
   const valid = rows
-    .map((row) => parseReceipt(row.metadata))
+    .map((row) => parsePaidAllowanceReceipt(row.metadata))
     .filter(
       (row): row is PaidAllowanceReceipt =>
         !!row &&
@@ -275,7 +280,11 @@ export async function resolveAllowanceWindow(
     );
   for (const receipt of valid) {
     const window = paidAllowanceWindow(receipt, now);
-    if (window) return window;
+    if (window) {
+      const fundingReversed = await paidAllowanceFundingIsReversed(reader, userId, receipt);
+      if (fundingReversed && !options.reportingOnly) throw paidAllowanceFundingReversed();
+      return options.reportingOnly ? { ...window, fundingReversed } : window;
+    }
   }
   throw allowanceSyncRequired();
 }

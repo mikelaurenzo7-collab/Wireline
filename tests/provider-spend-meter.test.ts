@@ -44,6 +44,31 @@ describe("managed AI versus live phone accounting", () => {
     expect(query.sql).toContain("not coalesce(");
     expect(query.sql).toContain('"wireline_audit_log"."action" = \'voice.realtime.session\'');
     expect(query.sql).toContain('"wireline_audit_log"."provider" = \'openai\'');
-    expect(query.sql).toContain("->>'surface' = 'openai_sip', false)");
+    expect(query.sql).toContain("->>'surface' = 'openai_sip'");
+    expect(query.sql).toContain('"wireline_audit_log"."action" = \'voice.phone_test.carrier\'');
+    expect(query.sql).toContain("->>'surface' = 'phone_test', false)");
+  });
+  it("keeps only the funded server-owned phone-test carrier receipt on voice", () => {
+    expect(
+      providerSpendMeter({
+        action: "voice.phone_test.carrier",
+        provider: "twilio",
+        metadata: { surface: "phone_test" },
+      }),
+    ).toBe("live_voice");
+    expect(
+      providerSpendMeter({
+        action: "voice.phone_test.carrier",
+        provider: "openai",
+        metadata: { surface: "phone_test" },
+      }),
+    ).toBe("managed_ai");
+    expect(
+      providerSpendMeter({
+        action: "untrusted",
+        provider: "twilio",
+        metadata: { surface: "phone_test" },
+      }),
+    ).toBe("managed_ai");
   });
 });

@@ -131,7 +131,10 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     const billing = read("src/routes/billing-routes.ts");
 
     expect(billing).toContain('case "refund.updated": {');
-    expect(billing).toContain('if (refund.status !== "succeeded") break;');
+    expect(billing).toContain('if (refund.status !== "succeeded") {');
+    expect(billing).toContain('refund.status === "failed" || refund.status === "canceled"');
+    expect(billing).toContain('case "refund.failed": {');
+    expect(billing).toContain("await reconcilePaidAllowanceFundingForCharge({");
     // Both events call the one extracted handler — no second copy of the
     // routing that could drift.
     const calls = billing.match(/await reverseSettledRefundsForCharge\(/g) || [];
@@ -153,9 +156,9 @@ describe("Stripe Runtime Balance movements fail closed", () => {
   it("keeps subscription refund reversals in one owner, keyed on refund.id", () => {
     const billing = read("src/routes/billing-routes.ts");
 
-    // The preflight claims BOTH refund events for non-top-up charges.
+    // The preflight owns settled refunds and authoritative returned-fund signals.
     expect(middleware).toMatch(
-      /event\.type === "charge\.refunded" \|\| event\.type === "refund\.updated"/,
+      /event\.type === "charge\.refunded"\s*\|\|\s*event\.type === "refund\.updated"\s*\|\|\s*event\.type === "refund\.failed"/,
     );
     /*
      * The event name is load-bearing and easy to get wrong. Stripe documents
@@ -168,9 +171,13 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     for (const source of [middleware, billing]) {
       expect(source).not.toMatch(/(?:event\.type ===|case)\s*"charge\.refund\.updated"/);
     }
-    // ...and only acts on a real settle, so a pending/failed update cannot
-    // re-enter the strict path and throw on an empty refund list.
-    expect(middleware).toContain('if (refund.status !== "succeeded") return next();');
+    // Pending updates cannot enter the strict wallet reversal path. Failed or
+    // canceled refunds may reconcile returned funds, but never debit a wallet.
+    expect(middleware).toContain(
+      'if (!["succeeded", "failed", "canceled"].includes(refund.status ?? "")) return next();',
+    );
+    expect(middleware).toContain('returnedRefund = refund.status !== "succeeded";');
+    expect(middleware).toContain("const reversed = returnedRefund");
 
     // billing-routes must refuse the subscription fallback for that event even
     // if mount order ever changed — defence in depth on a money path.

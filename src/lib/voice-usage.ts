@@ -25,6 +25,7 @@ import { drizzle, log } from "./server-context";
 import { dailyPeriodKey } from "./tenant-quotas";
 import * as schema from "../db/schema";
 import { resolveAllowanceWindow } from "./paid-allowance-period";
+import { readVoiceIdentityReceipt, resolveVoiceFundingId } from "./voice-call-identity";
 
 const DIMENSION = "voice_minutes_monthly";
 
@@ -308,7 +309,9 @@ export async function trackVoiceMinutes(opts: {
   durationSeconds: number;
   vapiCallId: string;
 }): Promise<void> {
-  const { userId, durationSeconds, vapiCallId } = opts;
+  const { userId } = opts;
+  let { durationSeconds } = opts;
+  let { vapiCallId } = opts;
   if (!userId) return;
   // "unknown" is the call-log fallback id, not a provider call id. Metering on
   // it would collapse every id-less call for a tenant onto one checkpoint row
@@ -322,12 +325,27 @@ export async function trackVoiceMinutes(opts: {
     return;
   }
 
-  const minutes = billableVoiceMinutes(durationSeconds);
   const now = new Date();
   const periodKey = monthlyPeriodKey(now);
   const dailyKey = dailyPeriodKey(now);
 
   try {
+    // Carrier verification and SIP are phases of one prepaid attempt, not two calls.
+    vapiCallId = await resolveVoiceFundingId(drizzle, userId, vapiCallId);
+    if (vapiCallId.startsWith("outbound:")) {
+      // Only the bound carrier parent's terminal duration covers verification
+      // plus conversation. A faster SIP finalizer cannot undercount that phase.
+      const terminal = await readVoiceIdentityReceipt(
+        drizzle,
+        userId,
+        `voice_phone_test_terminal:${vapiCallId}`,
+      );
+      const seconds = (terminal?.metadata as Record<string, unknown> | undefined)?.duration_seconds;
+      if (!terminal || !Number.isSafeInteger(seconds) || Number(seconds) < 0)
+        throw new Error("Phone test carrier settlement is awaiting terminal confirmation.");
+      durationSeconds = Number(seconds);
+    }
+    const minutes = billableVoiceMinutes(durationSeconds);
     const prepared = await prepareVoiceUsage({
       userId,
       providerCallId: vapiCallId,
@@ -384,7 +402,7 @@ export async function trackVoiceMinutes(opts: {
 }
 
 export async function getVoiceUsageSnapshot(userId: string): Promise<VoiceUsageSnapshot> {
-  const window = await resolveAllowanceWindow(drizzle, userId);
+  const window = await resolveAllowanceWindow(drizzle, userId, new Date(), { reportingOnly: true });
   const periodKey = window.key;
 
   const [[usageRow], [billing]] = await Promise.all([

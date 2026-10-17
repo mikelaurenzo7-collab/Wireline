@@ -20,6 +20,7 @@ import elevenLabsVoiceRouter from "../routes/elevenlabs-voice-routes";
 import openAIRealtimeRouter from "../routes/openai-realtime-routes";
 import openAISipRouter from "../routes/openai-sip-routes";
 import openAIOutboundRouter from "../routes/openai-outbound-routes";
+import phoneTestRouter from "../routes/phone-test-routes";
 import openAIInboundTwilioRouter from "../routes/openai-inbound-twilio-routes";
 import billingRouter from "../routes/billing-routes";
 import extraAgentBillingAtomicRouter from "../routes/extra-agent-billing-atomic-routes";
@@ -114,6 +115,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(openAIRealtimeRouter);
   app.use(openAISipRouter);
   app.use(openAIOutboundRouter);
+  app.use(phoneTestRouter);
   app.use(openAIInboundTwilioRouter);
 
   app.use("/api/auth", protectAuthResponseFromCaching);

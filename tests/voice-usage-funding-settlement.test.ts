@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getTableName } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
 
 const h = vi.hoisted(() => ({
   db: null as any,
@@ -18,19 +19,24 @@ vi.mock("../src/lib/voice-call-funding", () => ({ getVoiceCallFundingInTransacti
 vi.mock("../src/lib/tenant-quotas", () => ({ dailyPeriodKey: () => "2026-09-27" }));
 import { trackVoiceMinutes } from "../src/lib/voice-usage";
 
-function database() {
+function database(ledger: any[] = []) {
   let event: any = null;
   let monthlyUsed = 0;
   let billingReads = 0;
+  const dialect = new PgDialect();
   const query = (operation: string, table?: string) => {
     let value: any;
+    let predicate: any;
     const q: any = {
       from: (source: any) => {
         table = getTableName(source);
         return q;
       },
       leftJoin: () => q,
-      where: () => q,
+      where: (input: any) => {
+        predicate = dialect.sqlToQuery(input);
+        return q;
+      },
       limit: () => q,
       onConflictDoNothing: () => q,
       onConflictDoUpdate: () => q,
@@ -64,6 +70,11 @@ function database() {
               return [{ plan: "voice", extraAgents: 0 }];
             }
             if (table === "wireline_voice_usage_events") return [event];
+            if (table === "wireline_credit_ledger")
+              return ledger.filter(
+                (row) =>
+                  row.userId === predicate.params[0] && row.idempotencyKey === predicate.params[1],
+              );
             throw new Error(`Unexpected ${operation} ${table}`);
           })
           .then(resolve, reject),
@@ -95,6 +106,55 @@ beforeEach(() => {
   vi.clearAllMocks();
   h.settle.mockResolvedValue({ used_completion_grace: false, balance_usd: 2.2 });
   h.funding.mockResolvedValue(null);
+});
+
+describe("self-phone-test parent duration accounting", () => {
+  const canonical = "outbound:12345678-1234-4234-8234-123456789012";
+  const sid = `twilio:CA${"1".repeat(32)}`;
+  const alias = (id: string) => ({
+    userId: "user",
+    deltaUsd: "0",
+    refType: "voice_funding_alias",
+    idempotencyKey: `voice_funding_alias:${id}`,
+    metadata: { canonical_call_id: canonical, provider_call_id: id },
+  });
+  it("counts carrier verification and SIP as one call using terminal parent duration", async () => {
+    const db = database([
+      alias("openai:self-test"),
+      alias(sid),
+      {
+        userId: "user",
+        idempotencyKey: `voice_phone_test_terminal:${canonical}`,
+        metadata: { duration_seconds: 70 },
+      },
+    ]);
+    h.funding.mockResolvedValue({
+      maxSeconds: 120,
+      periodKey: "2026-09",
+      planId: "voice",
+      includedMinutes: 2,
+      rateUsd: 0.22,
+    });
+    await trackVoiceMinutes({
+      userId: "user",
+      vapiCallId: "openai:self-test",
+      durationSeconds: 10,
+    });
+    await trackVoiceMinutes({ userId: "user", vapiCallId: sid, durationSeconds: 70 });
+    expect(db.event).toMatchObject({ providerCallId: canonical, billableMinutes: 2 });
+    expect(db.monthlyUsed).toBe(2);
+    expect(h.settle).toHaveBeenCalledOnce();
+    expect(h.settle).toHaveBeenCalledWith(expect.objectContaining({ providerCallId: canonical }));
+  });
+  it("waits for parent termination instead of prematurely settling the shorter SIP phase", async () => {
+    const db = database([alias("openai:self-test")]);
+    await expect(
+      trackVoiceMinutes({ userId: "user", vapiCallId: "openai:self-test", durationSeconds: 10 }),
+    ).rejects.toThrow("awaiting terminal confirmation");
+    expect(db.event).toBeNull();
+    expect(db.monthlyUsed).toBe(0);
+    expect(h.settle).not.toHaveBeenCalled();
+  });
 });
 
 describe("included-only voice completion", () => {

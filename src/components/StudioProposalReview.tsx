@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { Check, Loader2 } from "lucide-react";
 import { Button } from "./atoms";
 import OutboundDialDialog from "./OutboundDialDialog";
+import { DIRECT_OUTBOUND_AVAILABILITY } from "../lib/outbound-call-purpose";
 import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
 
@@ -245,7 +246,7 @@ export default function StudioProposalReview({
               className="mt-3"
               onClick={() => setCall(action)}
             >
-              Review Call Availability
+              {DIRECT_OUTBOUND_AVAILABILITY.available ? "Review call" : "Try Bot on my phone"}
             </Button>
           ) : (
             <Link

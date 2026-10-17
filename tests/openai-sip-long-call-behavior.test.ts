@@ -872,6 +872,19 @@ function heldResult<T>() {
 }
 
 describe("cross-process SIP transfers", () => {
+  it("keeps a bounded self-phone test on its verified recipient", async () => {
+    const remote = await remoteCallControl();
+    h.funding.mockResolvedValue({
+      phoneTest: true,
+      maxSeconds: 120,
+      deadlineAtMs: Date.now() + 120000,
+    });
+    await expect(
+      remote.referOpenAISipCall(call.userId, call.callId, "+12025550103"),
+    ).rejects.toThrow("verified phone");
+    expect(h.provider).not.toHaveBeenCalled();
+    expect(h.writes.some((value) => value.status === "transferred")).toBe(false);
+  });
   it("keeps funded remote REFER capacity until the entire carrier call settles", async () => {
     const remote = await remoteCallControl();
     const funding = {

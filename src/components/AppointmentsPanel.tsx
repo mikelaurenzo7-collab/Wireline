@@ -185,9 +185,11 @@ export function AppointmentRow({
 export default function AppointmentsPanel({
   calendarConfigured = null,
   onConfigure,
+  reloadKey = 0,
 }: {
   calendarConfigured?: boolean | null;
   onConfigure?: () => void;
+  reloadKey?: number;
 } = {}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -261,7 +263,7 @@ export default function AppointmentsPanel({
       requestRef.current?.abort();
       requestRef.current = null;
     };
-  }, [loadAppointments]);
+  }, [loadAppointments, reloadKey]);
 
   async function changeStatus(appointment: Appointment, status: "Confirmed" | "Cancelled") {
     if (mutationRef.current) return;

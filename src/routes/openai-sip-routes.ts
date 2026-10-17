@@ -237,6 +237,7 @@ async function resolveOutboundContext(
         callPurpose: outboundPurpose(nativeVoice.call_purpose),
         businessName: agentContext.businessName,
         complianceMode: agentContext.complianceMode,
+        ...(lead.source === "phone_test" ? { phoneTest: true as const } : {}),
       },
     };
   });

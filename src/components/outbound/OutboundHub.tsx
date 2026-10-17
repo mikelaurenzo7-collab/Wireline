@@ -1,3 +1,4 @@
+import { DIRECT_OUTBOUND_AVAILABILITY } from "../../lib/outbound-call-purpose";
 import { useState } from "react";
 import { ChevronDown, Phone, Zap } from "lucide-react";
 import OutboundDialDialog from "../OutboundDialDialog";
@@ -57,10 +58,10 @@ export default function OutboundHub({
             size="sm"
             className="shrink-0"
             onClick={() => setShowDial(true)}
-            aria-label="Dial now"
+            aria-label={DIRECT_OUTBOUND_AVAILABILITY.available ? "Dial now" : "Call my phone"}
           >
             <Phone className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Dial</span>
+            <span>{DIRECT_OUTBOUND_AVAILABILITY.available ? "Dial" : "Call my phone"}</span>
           </Button>
         ) : null}
       </div>

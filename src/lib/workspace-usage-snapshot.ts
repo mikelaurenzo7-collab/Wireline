@@ -31,6 +31,8 @@ export interface WorkspaceUsageSnapshot {
   credit_balance_usd: number;
   completion_grace_due_usd: number;
   live_voice_blocked: boolean;
+  /** Reversed invoice funding: reporting stays available; new included work does not. */
+  paid_allowance_funding_blocked?: boolean;
   current_call_policy: VoiceCallPolicy;
   completion_grace_minutes: number | null;
   extra_usage_funding: "conversation_balance";
@@ -56,7 +58,7 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
   // These reads are independent — fetch them together to save round-trips.
   const [voice, snap, { profile }, tokenUsed, creditBalanceUsd] = await Promise.all([
     getVoiceUsageSnapshot(userId),
-    getBudgetSnapshot(userId),
+    getBudgetSnapshot(userId, false, true),
     quotaTracker.getProfile(userId),
     quotaTracker.getUsage(userId, INTERNAL_AI_TOKEN_DIMENSION),
     getCreditBalanceUsd(userId),
@@ -87,7 +89,11 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
   const activeSubscription =
     voice.subscription_status === "active" || voice.subscription_status === "trialing";
   const liveVoiceBlocked =
-    !activeSubscription || !hasVoice || completionGraceDueUsd > 0 || insufficientForNextAttempt;
+    !activeSubscription ||
+    !hasVoice ||
+    completionGraceDueUsd > 0 ||
+    insufficientForNextAttempt ||
+    snap.funding_blocked === true;
 
   return {
     plan_id: voice.plan_id,
@@ -105,6 +111,7 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
     credit_balance_usd: creditBalanceRounded,
     completion_grace_due_usd: completionGraceDueUsd,
     live_voice_blocked: liveVoiceBlocked,
+    paid_allowance_funding_blocked: snap.funding_blocked === true,
     current_call_policy:
       plan?.catalogFamily === "channels" ? "bounded_completion_grace" : "finish_current_block_next",
     completion_grace_minutes: !hasVoice

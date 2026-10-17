@@ -1,3 +1,4 @@
+import { DIRECT_OUTBOUND_AVAILABILITY } from "../lib/outbound-call-purpose";
 import { useEffect, useRef, useState } from "react";
 import { CalendarCheck2, Inbox, Phone, Plus, ShieldCheck, Sparkles } from "lucide-react";
 import { Link } from "react-router";
@@ -212,7 +213,7 @@ export default function OverviewPage() {
                   onClick={() => setShowOutboundDial(true)}
                 >
                   <Phone size={15} aria-hidden="true" />
-                  Start a Call
+                  {DIRECT_OUTBOUND_AVAILABILITY.available ? "Start a Call" : "Call my phone"}
                 </Button>
               ) : (
                 <Button asChild className="justify-center">

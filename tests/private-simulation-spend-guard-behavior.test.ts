@@ -38,10 +38,13 @@ vi.mock("../src/lib/sentry-events", () => ({
 }));
 
 import { AppError } from "../src/lib/api-error";
+import { resolveAllowanceWindow } from "../src/lib/paid-allowance-period";
 import {
   clearBudgetCache,
+  enforceSpendCap,
   enforcePrivateTextSimulationSpendCap,
   enforcePrivateVoiceSimulationSpendCap,
+  getBudgetSnapshot,
 } from "../src/lib/spend-guards";
 
 function queryResult(rows: Array<Record<string, unknown>>) {
@@ -82,6 +85,48 @@ beforeEach(() => {
 });
 
 describe("private simulation spend guard", () => {
+  it.each([
+    ["live", enforceSpendCap],
+    ["private text", enforcePrivateTextSimulationSpendCap],
+    ["private voice", enforcePrivateVoiceSimulationSpendCap],
+  ])("preserves a payment reversal's actionable 402 for %s admission", async (_label, guard) => {
+    vi.mocked(resolveAllowanceWindow).mockRejectedValueOnce(
+      new AppError(402, "PAID_ALLOWANCE_FUNDING_REVERSED", "Payment needs attention."),
+    );
+    const json = vi.fn();
+    const status = vi.fn(() => ({ json }));
+    const next = vi.fn();
+    await guard({ user: { id: "demo-user" } } as never, { status } as never, next);
+    expect(status).toHaveBeenCalledWith(402);
+    expect(json).toHaveBeenCalledWith({
+      code: "PAID_ALLOWANCE_FUNDING_REVERSED",
+      error: "Payment needs attention.",
+      recovery_path: "/settings/billing",
+    });
+    expect(next).not.toHaveBeenCalled();
+    expect(mocks.select).not.toHaveBeenCalled();
+  });
+
+  it("returns reporting figures and a funding flag without admitting new work", async () => {
+    installWithinLimitBudget();
+    const actual = await vi.importActual<typeof import("../src/lib/paid-allowance-period")>(
+      "../src/lib/paid-allowance-period",
+    );
+    vi.mocked(resolveAllowanceWindow).mockResolvedValueOnce({
+      ...actual.calendarAllowanceWindow(),
+      fundingReversed: true,
+    });
+    await expect(getBudgetSnapshot("demo-user", true, true)).resolves.toMatchObject({
+      mtdCost: 0.25,
+      funding_blocked: true,
+    });
+    expect(resolveAllowanceWindow).toHaveBeenLastCalledWith(
+      expect.anything(),
+      "demo-user",
+      expect.any(Date),
+      { reportingOnly: true },
+    );
+  });
   it("admits a classified demo workspace through its persisted cap without the live guard", async () => {
     installWithinLimitBudget();
     const next = vi.fn();

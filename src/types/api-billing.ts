@@ -113,6 +113,8 @@ export interface WorkspaceUsageResponse {
   credit_balance_usd: number;
   completion_grace_due_usd: number;
   live_voice_blocked: boolean;
+  /** Included work is held after its exact invoice funding was fully reversed. */
+  paid_allowance_funding_blocked?: boolean;
   current_call_policy: VoiceCallPolicy;
   completion_grace_minutes?: number | null;
   extra_usage_funding: "conversation_balance";

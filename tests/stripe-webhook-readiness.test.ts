@@ -25,6 +25,19 @@ const inventory = (data = [endpoint()], hasMore: boolean | undefined = false) =>
 });
 
 describe("Stripe webhook readiness agrees with runtime and provider alignment", () => {
+  it("requires failed-refund return notifications alongside succeeded-refund events", () => {
+    const events = getHandledStripeWebhookEvents();
+    expect(events).toEqual(
+      expect.arrayContaining(["charge.refunded", "refund.updated", "refund.failed"]),
+    );
+    const result = evaluateStripeWebhookReadiness(
+      inventory([
+        endpoint({ enabled_events: events.filter((event) => event !== "refund.failed") }),
+      ]),
+    );
+    expect(result.ready).toBe(false);
+    expect(result.missingEvents).toEqual(["refund.failed"]);
+  });
   it("reads the one runtime API pin and accepts an exactly aligned live endpoint", () => {
     expect(getPinnedStripeApiVersion()).toBe(STRIPE_API_VERSION);
     expect(evaluateStripeWebhookReadiness(inventory())).toMatchObject({

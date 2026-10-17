@@ -575,7 +575,11 @@ export async function reservePlatformCostRecord(opts: {
     clearBudgetCache(opts.userId);
     return decision;
   } catch (error) {
-    if (error instanceof AppError && error.code === "PAID_ALLOWANCE_SYNC_REQUIRED") throw error;
+    if (
+      error instanceof AppError &&
+      ["PAID_ALLOWANCE_SYNC_REQUIRED", "PAID_ALLOWANCE_FUNDING_REVERSED"].includes(error.code)
+    )
+      throw error;
     log.error("Platform cost reservation failed closed", {
       userId: opts.userId,
       action: opts.action,

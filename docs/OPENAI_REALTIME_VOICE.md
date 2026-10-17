@@ -37,6 +37,36 @@ opens the server-side sideband WebSocket using the OpenAI call id. Tool calls,
 knowledge lookup, transfer, hangup, compliance state, and post-call persistence
 remain on the server.
 
+## Requested tests on the owner's phone
+
+Studio's **Call my phone** uses the connected Bot line and the account's actual
+paid Calls allowance. It is a short non-marketing test, separate from campaign
+or general outbound admission. Marketing still requires its existing compliance
+and funding controls.
+
+1. The signed-in owner enters a supported US phone number they control and
+   explicitly requests the AI test.
+2. BotBound commits one funded intent, an immutable request key and a durable
+   recovery job before contacting Twilio. Repeated requests never redial that key.
+3. Twilio announces the AI conversation and transcription, then asks the recipient
+   to enter the six-digit code shown in Studio. The code is never stored or logged.
+   Only the exact signed, To/From/CallSid-bound confirmation can bridge to OpenAI.
+4. The test lasts up to two minutes including verification. The carrier parent
+   also has a 90-second connected-call limit, and a persisted two-minute deadline
+   rejects late verification/SIP admission and schedules carrier termination.
+5. **End call** keeps an unconfirmed stop pending until carrier evidence confirms
+   termination. Closing the dialog does not redial or silently claim a call ended.
+
+Verification and AI conversation share one canonical funding and usage identity.
+The existing minimum-one-minute rule applies to accepted attempts; the carrier's
+terminal parent duration owns settlement, including verification time. A test that
+never reaches SIP still gets a Calls entry without a fabricated transcript or
+recording. Normal SIP calls retain their transcript and ordinary call history.
+Phone tests cannot transfer to another recipient, be enrolled as leads, or be
+redialed through campaign tools. A carrier-create timeout with no confirmed SID
+remains **uncertain**, retains its funding and never automatically redials; failed
+reconciliation requires operator review rather than a guessed refund or new call.
+
 ## Required production configuration
 
 - `OPENAI_API_KEY`: scoped to the BotBound OpenAI API project.

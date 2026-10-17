@@ -40,6 +40,7 @@ export type JobType =
   | "scheduled_report"
   | "twilio_message_reconciliation"
   | "twilio_fallback_reconcile"
+  | "phone_test_reconcile"
   | "openai_realtime_hangup"
   | "paid_bot_identity_reconcile"
   | "account_deletion_billing_reconciliation";

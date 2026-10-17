@@ -26,6 +26,7 @@ import {
   type OutboundCallPurpose,
 } from "../lib/outbound-call-purpose";
 import { emitProductEvent } from "../lib/product-event-client";
+import PhoneTestDialog from "./PhoneTestDialog";
 
 type OutboundDialDialogProps = {
   open: boolean;
@@ -35,7 +36,61 @@ type OutboundDialDialogProps = {
   initialContext?: string;
 };
 
-export default function OutboundDialDialog({
+export default function OutboundDialDialog(props: OutboundDialDialogProps) {
+  const { agents, loading, degraded, phoneLookupDegraded } = useAgents();
+  const [selectedId, setSelectedId] = useState(props.initialAgentId || "");
+  useEffect(() => {
+    if (props.open) setSelectedId(props.initialAgentId || "");
+  }, [props.open, props.initialAgentId]);
+  const voiceAgents = agents.filter(
+    (agent) =>
+      agent.phone_number &&
+      (agent.channel === "voice" || agent.channel === "omnichannel" || !agent.channel),
+  );
+  const selected = voiceAgents.find((agent) => agent.id === selectedId) || voiceAgents[0];
+  if (DIRECT_OUTBOUND_AVAILABILITY.available) return <DirectOutboundDialDialog {...props} />;
+  if (selected && !loading && !degraded && !phoneLookupDegraded)
+    return (
+      <PhoneTestDialog
+        open={props.open}
+        onClose={props.onClose}
+        agentId={selected.id}
+        agentName={selected.name}
+        agents={voiceAgents}
+        onAgentChange={setSelectedId}
+      />
+    );
+  return (
+    <Dialog
+      open={props.open}
+      onOpenChange={(open) => {
+        if (!open) props.onClose();
+      }}
+    >
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Phone test</DialogTitle>
+          <DialogDescription>
+            {loading
+              ? "Loading your Bots…"
+              : degraded || phoneLookupDegraded
+                ? "Could not load your phone lines. Close this window and try again."
+                : "Connect a phone number to try your Bot on your own phone."}
+          </DialogDescription>
+        </DialogHeader>
+        {!loading && !degraded && !phoneLookupDegraded ? (
+          <Button asChild>
+            <Link to="/phone?tab=setup" onClick={props.onClose}>
+              Connect a number
+            </Link>
+          </Button>
+        ) : null}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DirectOutboundDialDialog({
   open,
   onClose,
   initialAgentId = "",
@@ -97,7 +152,6 @@ export default function OutboundDialDialog({
   }, [open, agentId, initialAgentId, voiceAgents]);
 
   const canPlace =
-    DIRECT_OUTBOUND_AVAILABILITY.available &&
     !placing &&
     !!agentId &&
     number.trim().length > 0 &&
@@ -205,32 +259,12 @@ export default function OutboundDialDialog({
             New Outbound Call
           </DialogTitle>
           <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
-            {DIRECT_OUTBOUND_AVAILABILITY.available
-              ? "Pick a Bot with a phone number, enter the number to call, and classify the call before dialing."
-              : DIRECT_OUTBOUND_AVAILABILITY.message}
+            Pick a Bot with a phone number and choose who to call.
           </DialogDescription>
         </DialogHeader>
 
         <div className="min-h-0 overflow-y-auto overscroll-contain">
-          {!DIRECT_OUTBOUND_AVAILABILITY.available ? (
-            <div className="px-6 py-5">
-              <div className="flex flex-wrap gap-2">
-                <Button asChild>
-                  <Link
-                    to={`/studio?workroom=test${initialAgentId ? `&agent=${encodeURIComponent(initialAgentId)}` : ""}`}
-                    onClick={closeForNavigation}
-                  >
-                    Rehearse in Studio
-                  </Link>
-                </Button>
-                <Button variant="secondary" asChild>
-                  <Link to="/settings/compliance" onClick={closeForNavigation}>
-                    Review Compliance
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          ) : loading ? (
+          {loading ? (
             <div className="flex items-center gap-2 px-6 py-8 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
               Loading Bots…
@@ -344,20 +378,18 @@ export default function OutboundDialDialog({
 
         <DialogFooter className="shrink-0 gap-2 border-t border-border bg-[var(--wireline-color-surface-default)] px-6 py-4 sm:gap-0">
           <Button type="button" variant="secondary" onClick={onClose} disabled={placing}>
-            {DIRECT_OUTBOUND_AVAILABILITY.available ? "Cancel" : "Close"}
+            Cancel
           </Button>
-          {DIRECT_OUTBOUND_AVAILABILITY.available ? (
-            <Button type="button" onClick={() => void placeCall()} disabled={!canPlace}>
-              {placing ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  Placing…
-                </>
-              ) : (
-                "Place call"
-              )}
-            </Button>
-          ) : null}
+          <Button type="button" onClick={() => void placeCall()} disabled={!canPlace}>
+            {placing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                Placing…
+              </>
+            ) : (
+              "Place call"
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

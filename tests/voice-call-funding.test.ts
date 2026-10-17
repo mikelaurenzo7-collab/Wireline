@@ -18,6 +18,7 @@ import {
   settleVoiceCallFunding,
 } from "../src/lib/voice-call-funding";
 import { chargeCompletedVoiceUsage } from "../src/lib/voice-completion-grace";
+import { bindVoiceFundingAlias, phoneTestFundingId } from "../src/lib/voice-call-identity";
 
 const userId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const call = (providerCallId = "openai:first", maxSeconds = 3600) => ({
@@ -188,6 +189,112 @@ function database(
 }
 
 afterEach(() => vi.useRealTimers());
+
+describe("self-phone-test canonical funding", () => {
+  const id = "12345678-1234-4234-8234-123456789012";
+  const canonical = phoneTestFundingId(id);
+  const phoneTest = { agentId: "agent-owned", phone: "+13125550123", from: "+13125550124" };
+  const reserveTest = (data: ReturnType<typeof database>) =>
+    data.db.transaction((tx) =>
+      reserveVoiceCallFunding(tx, {
+        userId,
+        providerCallId: canonical,
+        maxSeconds: 120,
+        phoneTest,
+      }),
+    );
+  it("requires paid coverage for owner identities too", async () => {
+    const data = database({ email: "owner@example.test", used: 50 });
+    await expect(reserveTest(data)).rejects.toMatchObject({ code: "VOICE_FUNDING_REQUIRED" });
+    expect(data.rows).toHaveLength(0);
+  });
+  it("uses no completion grace to manufacture a two-minute phone test", async () => {
+    const data = database({ used: 49 });
+    expect(await reserveTest(data)).toMatchObject({
+      maxSeconds: 60,
+      graceMinutes: 0,
+      includedMinutes: 1,
+    });
+  });
+  it("binds carrier and SIP to one funding hold and one settlement", async () => {
+    const data = database({ used: 50, balance: 0.44 });
+    await reserveTest(data);
+    const carrier = `twilio:CA${"1".repeat(32)}`;
+    await data.db.transaction(async (tx) => {
+      await bindVoiceFundingAlias(tx, {
+        userId,
+        canonicalCallId: canonical,
+        providerCallId: carrier,
+        phase: "carrier",
+      });
+      await bindVoiceFundingAlias(tx, {
+        userId,
+        canonicalCallId: canonical,
+        providerCallId: "openai:self-test",
+        phase: "sip",
+      });
+      expect(await reserveVoiceCallFunding(tx, call("openai:self-test", 3600))).toMatchObject({
+        maxSeconds: 120,
+        prepaidHoldUsd: 0.44,
+      });
+    });
+    expect(data.rows.filter((row) => row.refType === "voice_admission")).toHaveLength(1);
+    await settleVoiceCallFunding({
+      userId,
+      providerCallId: carrier,
+      costUsd: 0.22,
+      billableMinutes: 1,
+      rateUsd: 0.22,
+    });
+    await settleVoiceCallFunding({
+      userId,
+      providerCallId: "openai:self-test",
+      costUsd: 0.22,
+      billableMinutes: 1,
+      rateUsd: 0.22,
+    });
+    expect(data.rows.filter((row) => row.refType === "voice_completion")).toHaveLength(1);
+    expect(data.balance()).toBeCloseTo(0.22);
+  });
+  it("refuses a second carrier or SIP adoption", async () => {
+    const data = database({ used: 0 });
+    await reserveTest(data);
+    await data.db.transaction((tx) =>
+      bindVoiceFundingAlias(tx, {
+        userId,
+        canonicalCallId: canonical,
+        providerCallId: "openai:first",
+        phase: "sip",
+      }),
+    );
+    await expect(
+      data.db.transaction((tx) =>
+        bindVoiceFundingAlias(tx, {
+          userId,
+          canonicalCallId: canonical,
+          providerCallId: "openai:second",
+          phase: "sip",
+        }),
+      ),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(data.rows.filter((row) => row.refType === "voice_funding_alias")).toHaveLength(1);
+  });
+  it("does not refund the carrier phase when SIP startup fails", async () => {
+    const data = database({ balance: 0.44 });
+    await reserveTest(data);
+    await data.db.transaction((tx) =>
+      bindVoiceFundingAlias(tx, {
+        userId,
+        canonicalCallId: canonical,
+        providerCallId: `twilio:CA${"1".repeat(32)}`,
+        phase: "carrier",
+      }),
+    );
+    await releaseVoiceCallFunding(userId, canonical, "confirmed_startup_failure");
+    expect(data.balance()).toBeCloseTo(0);
+    expect(data.rows.some((row) => row.refType === "voice_admission_release")).toBe(false);
+  });
+});
 
 describe("paid channel call periods", () => {
   it("does not refill a 500-minute plan on Oct 1 after one Sep 30 payment", async () => {

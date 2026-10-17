@@ -16,8 +16,6 @@ export const OUTBOUND_CONSENT_VERSION = "tcpa-v1";
 export const DIRECT_OUTBOUND_AVAILABILITY = Object.freeze({
   available: false,
   code: "AUDITABLE_RECIPIENT_CONSENT",
-  message:
-    "Direct calls need BotBound verification before this workspace can place them. Rehearse in Studio while we complete setup.",
 });
 
 export function isOutboundCallPurpose(value: unknown): value is OutboundCallPurpose {

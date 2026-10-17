@@ -267,6 +267,309 @@ describe("OpenAI cloud computer agent loop", () => {
     expect(session.execute).toHaveBeenCalledWith("inspect_visible_element", { x: 120, y: 100 });
   });
 
+  it.each(["inline link", "extra source"] as const)(
+    "repairs one ungrounded %s using only previously verified public evidence",
+    async (mismatch) => {
+      const pricing = "https://botbound.app/pricing";
+      const security = "https://botbound.app/security";
+      const unseen = "https://botbound.app/unvisited";
+      const { session, calls } = fakeSession({}, "https://botbound.app/features");
+      const { client: openai, requests } = client([
+        response([openPublicUrlCall("p1", pricing)]),
+        response([openPublicUrlCall("s1", security)]),
+        response([
+          functionCall("f1", "finish_task", {
+            outcome: "completed",
+            summary:
+              mismatch === "inline link"
+                ? `Read Pricing and Security. Extra reference: ${unseen}.`
+                : "Read Pricing and Security.",
+            sources:
+              mismatch === "extra source" ? [pricing, security, unseen] : [pricing, security],
+          }),
+        ]),
+        response([
+          functionCall("f2", "finish_task", {
+            outcome: "completed",
+            summary: "Read the Pricing and Security headings.",
+            sources: [pricing, security],
+          }),
+        ]),
+      ]);
+
+      const result = await runCloudComputerAgent({
+        client: openai,
+        model: OPENAI_MODELS.GPT_5_6_TERRA,
+        session,
+        bot,
+        goal: "Read the headings on Features, Pricing, and Security.",
+        startUrl: "https://botbound.app/features",
+        hooks: hooks().hooks,
+      });
+
+      expect(result).toEqual({
+        status: "completed",
+        summary: "Read the Pricing and Security headings.",
+        sources: [pricing, security],
+      });
+      expect(requests).toHaveLength(4);
+      expect(calls.map(({ member }) => member)).toEqual(["navigate", "navigate"]);
+      expect(requests[3].tools).toEqual([expect.objectContaining({ name: "finish_task" })]);
+      const correction = (requests[3].input as Item[]).find(
+        (item) => item.type === "function_call_output" && item.call_id === "f1",
+      );
+      expect(correction).toBeDefined();
+      const repair = JSON.parse(String(correction?.output)) as Record<string, unknown>;
+      expect(repair.verified_public_sources).toEqual(expect.arrayContaining([pricing, security]));
+      expect(JSON.stringify(repair)).not.toContain(unseen);
+      expect(repair).not.toHaveProperty("rejected_summary");
+    },
+  );
+
+  it("blocks a second ungrounded finish without retrying the repair", async () => {
+    const verified = "https://example.com/observed";
+    const unseen = "https://example.com/not-observed";
+    const badFinish = (id: string) =>
+      response([
+        functionCall(id, "finish_task", {
+          outcome: "completed",
+          summary: `See ${unseen}.`,
+          sources: [verified, unseen],
+        }),
+      ]);
+    const { session, calls } = fakeSession({}, verified);
+    const { client: openai, requests } = client([badFinish("f1"), badFinish("f2")]);
+    const { hooks: h } = hooks();
+
+    const outcome = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Read the heading.",
+      startUrl: verified,
+      hooks: h,
+    });
+
+    expect(outcome).toMatchObject({ status: "blocked", sources: [verified] });
+    expect(JSON.stringify(outcome)).not.toContain(unseen);
+    expect(requests).toHaveLength(2);
+    expect(h.recordUsage).toHaveBeenCalledTimes(2);
+    expect(calls).toHaveLength(0);
+  });
+
+  it.each(["open_public_url", "inspect_visible_element", "ask_owner", "computer_call"])(
+    "refuses %s during the report-only correction",
+    async (name) => {
+      const verified = "https://example.com/observed";
+      const unseen = "https://example.com/not-observed";
+      const { session, calls } = fakeSession({}, verified);
+      const { client: openai, requests } = client([
+        response([
+          functionCall("f1", "finish_task", {
+            outcome: "completed",
+            summary: "Read the heading.",
+            sources: [verified, unseen],
+          }),
+        ]),
+        response([
+          message("This unvalidated repair message must not be published."),
+          name === "computer_call"
+            ? computerCall("c1", [{ type: "click", x: 20, y: 20 }])
+            : functionCall("unexpected", name, { url: unseen, x: 20, y: 20, question: "Wait?" }),
+        ]),
+      ]);
+      const askOwner = vi.fn(async () => "No.");
+      const { hooks: h, events } = hooks({ askOwner });
+
+      const outcome = await runCloudComputerAgent({
+        client: openai,
+        model: OPENAI_MODELS.GPT_5_6_TERRA,
+        session,
+        bot,
+        goal: "Read the heading.",
+        startUrl: verified,
+        hooks: h,
+      });
+
+      expect(outcome).toMatchObject({ status: "blocked", sources: [verified] });
+      expect(calls).toHaveLength(0);
+      expect(askOwner).not.toHaveBeenCalled();
+      expect(events).toHaveLength(0);
+      expect(requests).toHaveLength(2);
+    },
+  );
+
+  it("keeps private and token-bearing URLs out of repair diagnostics", async () => {
+    const verified = "https://example.com/observed";
+    const privateUrl = "http://127.0.0.1/private";
+    const tokenUrl = "https://example.com/magic/private-login-code?token=secret";
+    const { session } = fakeSession({}, verified);
+    const { client: openai, requests } = client([
+      response([
+        functionCall("f1", "finish_task", {
+          outcome: "completed",
+          summary: `See ${privateUrl} and ${tokenUrl}.`,
+          sources: [verified, privateUrl, tokenUrl],
+        }),
+      ]),
+      response([
+        functionCall("f2", "finish_task", {
+          outcome: "completed",
+          summary: "Read the heading on the observed page.",
+          sources: [verified],
+        }),
+      ]),
+    ]);
+
+    const outcome = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Read the heading.",
+      startUrl: verified,
+      hooks: hooks().hooks,
+    });
+
+    const correction = (requests[1].input as Item[]).find(
+      (item) => item.type === "function_call_output" && item.call_id === "f1",
+    );
+    const diagnostic = String(correction?.output);
+    expect(JSON.parse(diagnostic).verified_public_sources).toEqual([verified]);
+    expect(diagnostic).not.toContain("127.0.0.1");
+    expect(diagnostic).not.toContain("private-login-code");
+    expect(diagnostic).not.toContain("token=secret");
+    expect(outcome).toMatchObject({ status: "completed", sources: [verified] });
+  });
+
+  it.each(["stop", "time"] as const)(
+    "honors %s during the metered repair response",
+    async (interruption) => {
+      let clock = 0;
+      let stopped = false;
+      let attempts = 0;
+      const verified = "https://example.com/observed";
+      const { session, calls } = fakeSession({}, verified);
+      const { client: openai, requests } = client([
+        response([
+          functionCall("f1", "finish_task", {
+            outcome: "completed",
+            summary: "Read the heading.",
+            sources: [verified, "https://example.com/not-observed"],
+          }),
+        ]),
+        response([
+          functionCall("f2", "finish_task", {
+            outcome: "completed",
+            summary: "Read the heading.",
+            sources: [verified],
+          }),
+        ]),
+      ]);
+      const { hooks: h } = hooks({
+        stopRequested: () => stopped,
+        meter: async ({ operation }) => {
+          attempts += 1;
+          const result = await operation();
+          if (attempts === 2) {
+            if (interruption === "stop") stopped = true;
+            else clock = CLOUD_COMPUTER_LIMITS.maxRunMs + 1;
+          }
+          return result;
+        },
+      });
+
+      const outcome = await runCloudComputerAgent({
+        client: openai,
+        model: OPENAI_MODELS.GPT_5_6_TERRA,
+        session,
+        bot,
+        goal: "Read the heading.",
+        startUrl: verified,
+        now: () => clock,
+        hooks: h,
+      });
+
+      expect(outcome).toMatchObject(
+        interruption === "stop"
+          ? { status: "stopped" }
+          : { status: "failed", code: "COMPUTER_TIME_LIMIT" },
+      );
+      expect(requests).toHaveLength(2);
+      expect(h.recordUsage).toHaveBeenCalledTimes(2);
+      expect(calls).toHaveLength(0);
+    },
+  );
+
+  it("does not call the repair model when its managed allowance check rejects", async () => {
+    const verified = "https://example.com/observed";
+    const { session } = fakeSession({}, verified);
+    const { client: openai, requests } = client([
+      response([
+        functionCall("f1", "finish_task", {
+          outcome: "completed",
+          summary: "Read the heading.",
+          sources: [verified, "https://example.com/not-observed"],
+        }),
+      ]),
+    ]);
+    const allowanceError = new Error("SPEND_CAP_REACHED");
+    let attempts = 0;
+    const { hooks: h } = hooks({
+      meter: async ({ operation }) => {
+        attempts += 1;
+        if (attempts === 2) throw allowanceError;
+        return operation();
+      },
+    });
+
+    await expect(
+      runCloudComputerAgent({
+        client: openai,
+        model: OPENAI_MODELS.GPT_5_6_TERRA,
+        session,
+        bot,
+        goal: "Read the heading.",
+        startUrl: verified,
+        hooks: h,
+      }),
+    ).rejects.toBe(allowanceError);
+    expect(requests).toHaveLength(1);
+    expect(h.recordUsage).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not add a repair beyond the existing maximum turn count", async () => {
+    const verified = "https://example.com/observed";
+    const { session, calls } = fakeSession({}, verified);
+    const { client: openai, requests } = client([
+      ...Array.from({ length: CLOUD_COMPUTER_LIMITS.maxTurns - 1 }, (_, index) =>
+        response([functionCall(`unknown-${index}`, "unknown_tool", {})]),
+      ),
+      response([
+        functionCall("f1", "finish_task", {
+          outcome: "completed",
+          summary: "Read the heading.",
+          sources: [verified, "https://example.com/not-observed"],
+        }),
+      ]),
+    ]);
+
+    const outcome = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Read the heading.",
+      startUrl: verified,
+      hooks: hooks().hooks,
+    });
+
+    expect(outcome).toMatchObject({ status: "blocked", sources: [verified] });
+    expect(requests).toHaveLength(CLOUD_COMPUTER_LIMITS.maxTurns);
+    expect(calls).toHaveLength(0);
+  });
+
   it("executes browser actions in order, returns a fresh screenshot, and meters each turn", async () => {
     const { session, calls } = fakeSession();
     const frameOrder: string[] = [];

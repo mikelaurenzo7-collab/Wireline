@@ -238,7 +238,11 @@ router.post(
         .select({ id: schema.outboundLeads.id })
         .from(schema.outboundLeads)
         .where(
-          and(eq(schema.outboundLeads.id, leadIdBig), eq(schema.outboundLeads.userId, req.user.id)),
+          and(
+            eq(schema.outboundLeads.id, leadIdBig),
+            eq(schema.outboundLeads.userId, req.user.id),
+            sql`${schema.outboundLeads.source} IS DISTINCT FROM 'phone_test'`,
+          ),
         )
         .limit(1);
       if (!lead) {

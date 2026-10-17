@@ -41,6 +41,52 @@ beforeEach(() => {
 });
 
 describe("voice allowance boundary copy", () => {
+  it("shows a concise payment-reversal hold without hiding independent balance or billing management", () => {
+    h.snapshot.paid_allowance_funding_blocked = true;
+    h.snapshot.live_voice_blocked = true;
+    const meter = UsageMeter({ onUpgrade: vi.fn() });
+    const content = text(meter);
+    expect(content).toContain("Payment needs attention");
+    expect(content).toContain(
+      "Included work is paused after a payment reversal. Review Billing or contact support.",
+    );
+    expect(content).toContain("$24.50");
+    expect(content).toContain("Manage Billing");
+    expect(content).not.toContain("New calls paused");
+    expect(content).not.toContain("refresh");
+    const findSupport = (node: ReactNode): any => {
+      if (Array.isArray(node)) return node.map(findSupport).find(Boolean);
+      if (!isValidElement<{ children?: ReactNode; href?: string }>(node)) return null;
+      return node.type === "a" ? node : findSupport(node.props.children);
+    };
+    expect(findSupport(meter)?.props.href).toBe(
+      "mailto:support@botbound.app?subject=Payment%20needs%20attention",
+    );
+  });
+
+  it("describes reversed Email funding without claiming every account or credit is blocked", () => {
+    h.snapshot.plan_id = "email-light";
+    h.snapshot.voice_minutes_used = 0;
+    h.snapshot.voice_minutes_included = 0;
+    h.snapshot.paid_allowance_funding_blocked = true;
+    const content = text(UsageMeter({}));
+    expect(content).toContain("Included work is paused after a payment reversal");
+    expect(content).not.toContain("New calls paused");
+    expect(content).toContain("$24.50");
+  });
+
+  it("does not infer a reversal when the optional compatibility flag is absent", () => {
+    expect(text(UsageMeter({}))).not.toContain("Payment needs attention");
+  });
+
+  it("keeps the compact funding explanation actionable without promising refresh fixes it", () => {
+    h.snapshot.paid_allowance_funding_blocked = true;
+    const meter = UsageMeter({ compact: true });
+    expect(meter?.props.title).toContain(
+      "Included work is paused after a payment reversal. Review Billing or contact support.",
+    );
+    expect(meter?.props.title).not.toContain("refresh");
+  });
   it("shows managed AI usage and its cap separately from voice and Runtime Balance", () => {
     const content = text(UsageMeter({ showBalance: false }));
     expect(content).toContain("Managed AI");

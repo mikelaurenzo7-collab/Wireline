@@ -3,7 +3,8 @@ import { and, eq } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { validateBody, spendBudgetSchema } from "../lib/api-validation";
 import { BOTBOUND_BRAND_NAME, LEGACY_WIRELINE_NAME } from "../lib/brand";
-import { clearBudgetCache, getBudgetSnapshot, isHardSpendCapExceeded } from "../lib/spend-guards";
+import { clearBudgetCache, getBudgetSnapshot } from "../lib/spend-guards";
+import { resolveHardSpendCapStatus } from "../lib/spend-budget-policy";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { authenticateUser } from "../middleware/auth";
@@ -199,7 +200,8 @@ router.get(
     try {
       const context = await ensurePersistedSpendBudget(req.user.id, req.user.email);
       const { maximumLimitUsd, planId, planName, liveProviderWorkEnabled, guardScope } = context;
-      const snap = await getBudgetSnapshot(req.user.id, true);
+      // Reporting remains available when an invoice funding hold blocks new work.
+      const snap = await getBudgetSnapshot(req.user.id, true, true);
       const alerts = await drizzle
         .select({
           thresholdPct: schema.spendAlerts.thresholdPct,
@@ -216,7 +218,10 @@ router.get(
 
       const limit = snap.budget?.monthly_limit_usd ? Number(snap.budget.monthly_limit_usd) : 0;
       const percentUsed = limit > 0 ? (snap.mtdCost / limit) * 100 : 0;
-      const hardCappedNow = await isHardSpendCapExceeded(req.user.id);
+      const hardCapStatus = resolveHardSpendCapStatus(snap);
+      if (hardCapStatus === "unavailable")
+        throw AppError.fromHttpStatus(503, "Spend guard is temporarily unavailable.");
+      const hardCappedNow = hardCapStatus === "exceeded";
       // Free Builder sees how many voice tests its allowance still covers.
       const freeAllowance = guardScope === "free_simulation_allowance";
       const voiceReserveUsd = realtimeReserveForWindowUsd(
@@ -240,6 +245,7 @@ router.get(
         enabled: snap.budget?.enabled ?? true,
         warn_threshold_pct: snap.budget?.warn_threshold_pct ?? 80,
         hard_capped_now: hardCappedNow,
+        paid_allowance_funding_blocked: snap.funding_blocked === true,
         alerts_fired: alerts,
         plan_id: planId,
         plan_name: planName,

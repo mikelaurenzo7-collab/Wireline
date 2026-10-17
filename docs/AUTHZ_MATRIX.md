@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 413
-**Protected:** 336
-**Public (allowlisted):** 77
+**Routes scanned:** 420
+**Protected:** 339
+**Public (allowlisted):** 81
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -76,6 +76,10 @@
 | `POST /api/twilio-webhook/openai-outbound-status` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/webhooks/openai/realtime` | OpenAI Standard Webhooks HMAC + replay defense; Realtime SIP admission |
 | `GET /api/openapi.json` | Public OpenAPI spec; rate-limited + CDN cached |
+| `POST /api/twilio-webhook/phone-test/answer` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/twilio-webhook/phone-test/fallback` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/twilio-webhook/phone-test/gather` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/twilio-webhook/phone-test/status` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `GET /api/quotas/plans` | Public plan limits comparison table |
 | `POST /api/webhooks/resend` | Resend/Svix timestamped HMAC-SHA256 signature + replay window |
 | `GET /recap/:slug` | Signed shareable call/weekly recap; opaque slug + bearer token verified against stored SHA-256 hash, timing-safe; per-IP + per-slug rate limits |
@@ -430,6 +434,13 @@
 | outbound-routes.ts | POST | `/api/outbound/dial` | inline | — | — | Protected |
 | overview-operating-metrics-routes.ts | GET | `/api/overview/operating-metrics` | inline | — | — | Protected |
 | overview-operating-metrics-routes.ts | GET | `/api/overview/recent-conversations` | inline | — | — | Protected |
+| phone-test-routes.ts | POST | `/api/agents/:agentId/phone-test` | inline | — | — | Protected |
+| phone-test-routes.ts | GET | `/api/agents/:agentId/phone-test/:requestKey` | inline | — | — | Protected |
+| phone-test-routes.ts | DELETE | `/api/agents/:agentId/phone-test/:requestKey` | inline | — | — | Protected |
+| phone-test-routes.ts | POST | `/api/twilio-webhook/phone-test/answer` | — | — | yes | Public (allowlisted) |
+| phone-test-routes.ts | POST | `/api/twilio-webhook/phone-test/fallback` | — | — | yes | Public (allowlisted) |
+| phone-test-routes.ts | POST | `/api/twilio-webhook/phone-test/gather` | — | — | yes | Public (allowlisted) |
+| phone-test-routes.ts | POST | `/api/twilio-webhook/phone-test/status` | — | — | yes | Public (allowlisted) |
 | pipeline-routes.ts | GET | `/api/insights/campaign-attribution` | inline | — | — | Protected |
 | pipeline-routes.ts | GET | `/api/pipeline` | inline | — | — | Protected |
 | pipeline-routes.ts | PATCH | `/api/pipeline/lead/:id` | inline | — | — | Protected |

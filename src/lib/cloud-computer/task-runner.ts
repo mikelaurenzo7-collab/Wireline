@@ -1062,7 +1062,7 @@ async function executeTaskWithBrowser(
   if (finishTask(task, terminalOutcome(outcome))) await persistTerminal(task);
 }
 
-/** Decide before the owner-wait timeout whether a paused browser has disconnected. */
+/** End a disconnected browser even while the executor is waiting on a model response. */
 export function computerHeartbeatDecision(input: {
   finished: boolean;
   expiredBrowser: boolean;
@@ -1074,10 +1074,10 @@ export function computerHeartbeatDecision(input: {
   now: number;
 }): "finished" | "expired_browser" | "continue" | "timeout" {
   if (input.finished) return "finished";
-  if (
-    input.expiredBrowser ||
-    (!input.stopRequested && input.waitingForOwner && input.browserClosed)
-  )
+  // A hosted browser can expire during any task phase. Waiting for a model
+  // response does not make the disconnected session usable. A prior owner Stop
+  // still wins when closing the browser was part of stopping that task.
+  if (input.expiredBrowser || (!input.stopRequested && input.browserClosed))
     return "expired_browser";
   const stopIgnored = input.stopAt !== null && input.now - input.stopAt > STOP_GRACE_MS;
   return !stopIgnored && input.now - input.startedAt <= MAX_TASK_LIFETIME_MS
@@ -1087,7 +1087,7 @@ export function computerHeartbeatDecision(input: {
 
 /**
  * One heartbeat: keep the row fresh so other processes see the task alive,
- * or end a disconnected owner handoff or an executor stuck past its limits.
+ * or end a disconnected browser or an executor stuck past its limits.
  */
 async function heartbeatTick(task: LiveTask, heartbeat: ReturnType<typeof setInterval>) {
   const decision = computerHeartbeatDecision({

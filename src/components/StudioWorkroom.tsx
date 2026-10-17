@@ -22,7 +22,7 @@ import {
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
-import OutboundDialDialog from "./OutboundDialDialog";
+import PhoneTestDialog from "./PhoneTestDialog";
 import StudioVoiceRehearsal, { studioVoiceStartId } from "./StudioVoiceRehearsal";
 import StudioProposalReview, {
   type StudioProposals,
@@ -254,7 +254,7 @@ const StudioWorkroom = forwardRef<
   });
   const [loading, setLoading] = useState(mode === "configure" && !session.loaded);
   const [sending, setSending] = useState(false);
-  const [showOutboundDial, setShowOutboundDial] = useState(false);
+  const [showPhoneTest, setShowPhoneTest] = useState(false);
   const [rehearsalView, setRehearsalView] = useState<"voice" | "text">(() =>
     initialCommand?.trim() ? "text" : "voice",
   );
@@ -590,11 +590,11 @@ const StudioWorkroom = forwardRef<
                 type="button"
                 size="sm"
                 variant="secondary"
-                onClick={() => setShowOutboundDial(true)}
-                aria-label="Start a real call"
+                onClick={() => setShowPhoneTest(true)}
+                aria-label="Call my phone"
               >
                 <Phone className="size-3.5" aria-hidden="true" />
-                <span className="hidden sm:inline">Real call</span>
+                <span className="hidden sm:inline">Call my phone</span>
               </Button>
             ) : null}
             {mode !== "test" || rehearsalView === "text" ? clearButton : null}
@@ -803,10 +803,11 @@ const StudioWorkroom = forwardRef<
         </div>
       )}
 
-      <OutboundDialDialog
-        open={showOutboundDial}
-        onClose={() => setShowOutboundDial(false)}
-        initialAgentId={agentId}
+      <PhoneTestDialog
+        open={showPhoneTest}
+        onClose={() => setShowPhoneTest(false)}
+        agentId={agentId}
+        agentName={agentName}
       />
     </section>
   );

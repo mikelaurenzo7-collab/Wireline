@@ -617,6 +617,9 @@ export async function runCloudComputerAgent(input: {
   let actions = 0;
   let questions = 0;
   let ownerWaitMs = 0;
+  // One metered report-only repair can correct citation mistakes after useful
+  // browser work. It never grants another browser action or bypasses evidence.
+  let rejectedReport: { status: "blocked"; summary: string; sources: string[] } | null = null;
   const overTime = () => now() - startedAt - ownerWaitMs > CLOUD_COMPUTER_LIMITS.maxRunMs;
   const timeLimit: CloudComputerOutcome = {
     status: "failed",
@@ -635,10 +638,11 @@ export async function runCloudComputerAgent(input: {
   for (let turn = 1; turn <= CLOUD_COMPUTER_LIMITS.maxTurns; turn += 1) {
     const turnInterruption = interruptionOutcome();
     if (turnInterruption) return turnInterruption;
-    const request = { ...requestBase, input: inputItems };
+    const turnTools = rejectedReport ? [FINISH_TASK_TOOL] : TOOLS;
+    const request = { ...requestBase, tools: turnTools, input: inputItems };
     const requestBytes = jsonBytes(request);
     if (requestBytes > CLOUD_COMPUTER_LIMITS.maxRequestBytes) return { ...CONTEXT_LIMIT_OUTCOME };
-    const reserveUsd = turnReserveUsd(input.model, instructions, TOOLS, inputItems);
+    const reserveUsd = turnReserveUsd(input.model, instructions, turnTools, inputItems);
     if (!Number.isFinite(reserveUsd)) return { ...CONTEXT_LIMIT_OUTCOME };
 
     const response = await input.hooks.meter({
@@ -704,16 +708,19 @@ export async function runCloudComputerAgent(input: {
     if (output.length) {
       for (const item of output) append(item);
     }
-    for (const item of output) {
-      if (!item || typeof item !== "object") continue;
-      const recordItem = item as Record<string, unknown>;
-      if (recordItem.type === "message") {
-        const content = Array.isArray(recordItem.content) ? recordItem.content : [];
-        for (const part of content) {
-          if (part && typeof part === "object") {
-            const text = (part as Record<string, unknown>).text;
-            if (typeof text === "string" && text.trim()) {
-              await input.hooks.emit({ kind: "note", text: clip(text, 400) });
+    // A repair's only customer-facing output is its validated final report.
+    if (!rejectedReport) {
+      for (const item of output) {
+        if (!item || typeof item !== "object") continue;
+        const recordItem = item as Record<string, unknown>;
+        if (recordItem.type === "message") {
+          const content = Array.isArray(recordItem.content) ? recordItem.content : [];
+          for (const part of content) {
+            if (part && typeof part === "object") {
+              const text = (part as Record<string, unknown>).text;
+              if (typeof text === "string" && text.trim()) {
+                await input.hooks.emit({ kind: "note", text: clip(text, 400) });
+              }
             }
           }
         }
@@ -729,6 +736,15 @@ export async function runCloudComputerAgent(input: {
     ) as Array<Record<string, unknown>>;
     const messageInterruption = interruptionOutcome();
     if (messageInterruption) return messageInterruption;
+    if (
+      rejectedReport &&
+      (toolCalls.length !== 1 ||
+        toolCalls[0].type !== "function_call" ||
+        toolCalls[0].name !== "finish_task" ||
+        typeof toolCalls[0].call_id !== "string" ||
+        !toolCalls[0].call_id.trim())
+    )
+      return rejectedReport;
     if (!toolCalls.length) {
       const text = responseText(record);
       if (text) await input.hooks.emit({ kind: "note", text: clip(text, 400) });
@@ -1101,15 +1117,39 @@ export async function runCloudComputerAgent(input: {
             sources.length !== proposedSources.length ||
             missingExactLinkEvidence)
         ) {
-          return {
+          const blocked = {
             status: "blocked",
             summary: missingExactLinkEvidence
               ? "The Bot could not verify the exact link destination on screen. Check the browser and try a narrower task before relying on that destination."
               : "The Bot reported a link it did not open or inspect. Check the browser and try a narrower task before relying on that destination.",
             sources,
+          } as const;
+          // A missing exact-link inspection requires new evidence, which a
+          // report-only repair cannot supply. All other repairs get one turn.
+          if (rejectedReport || missingExactLinkEvidence || turn >= CLOUD_COMPUTER_LIMITS.maxTurns)
+            return blocked;
+          const index = toolOutputs.findIndex((item) =>
+            Boolean(
+              item &&
+              typeof item === "object" &&
+              (item as Record<string, unknown>).call_id === finishCall?.callId,
+            ),
+          );
+          if (index < 0) return blocked;
+          rejectedReport = blocked;
+          toolOutputs[index] = {
+            type: "function_call_output",
+            call_id: finishCall.callId,
+            output: JSON.stringify({
+              status: "report_not_accepted",
+              verified_public_sources: [...new Set([...sources, ...verifiedSources])].slice(0, 8),
+              instruction:
+                "Correct the final report using only these already verified public URLs and the evidence already seen. Remove unverified link claims; do not guess URL variants or infer new facts. No browser actions or owner questions are allowed during this one report-only correction. Call finish_task with outcome blocked if the existing evidence cannot support the requested report.",
+            }),
           };
+        } else {
+          return { status: outcome, summary: report.summary, sources };
         }
-        return { status: outcome, summary: report.summary, sources };
       }
     }
 

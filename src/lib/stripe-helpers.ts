@@ -272,10 +272,23 @@ function basePlanFromInvoiceLine(line: Stripe.InvoiceLineItem): StripePlan | nul
     : basePlanByStripePrice(candidate);
 }
 
+/** A channel paid-period receipt is distinct from a Runtime Balance grant. */
+export function hasPaidChannelBaseInvoiceLine(invoice: Stripe.Invoice): boolean {
+  return (invoice.lines?.data ?? []).some((line) => {
+    const legacy = line as Stripe.InvoiceLineItem & { proration?: boolean };
+    return (
+      line.amount > 0 &&
+      basePlanFromInvoiceLine(line)?.catalogFamily === "channels" &&
+      !line.parent?.subscription_item_details?.proration &&
+      !legacy.proration
+    );
+  });
+}
+
 /**
  * Period receipts funded by full base-plan lines, never add-ons or prorations.
- * A plan without Runtime Allowance (Calls and Email channel plans) never posts a
- * period grant, so its invoices fund no receipt a refund or dispute could reverse.
+ * Calls/Email channel plans post no Runtime Balance grant. Their separate
+ * zero-dollar paid-period funding receipts are reconciled independently.
  */
 export function runtimeAllowanceReferencesForInvoice(
   invoice: Stripe.Invoice,

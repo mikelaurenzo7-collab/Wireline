@@ -50,6 +50,7 @@ import {
   releaseStripeEventClaim,
   type StripeEventClaimOwnership,
 } from "../lib/stripe-event-claim";
+import { reconcilePaidAllowanceFundingForCharge } from "../lib/stripe-paid-allowance-funding";
 
 const router = express.Router();
 const LIVE_VIDEO_CHECKOUT_TTL_MS = 24 * 60 * 60_000;
@@ -247,14 +248,34 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
         // succeeded moves money; the shared routing no-ops anything already
         // reversed and throws on inconsistency, same as charge.refunded.
         const refund = event.data.object as Stripe.Refund;
-        if (refund.status !== "succeeded") break;
         const chargeId = typeof refund.charge === "string" ? refund.charge : refund.charge?.id;
         if (!chargeId) break;
+        if (refund.status !== "succeeded") {
+          if (refund.status === "failed" || refund.status === "canceled")
+            await reconcilePaidAllowanceFundingForCharge({
+              stripe,
+              chargeId,
+              providerEventId: event.id,
+            });
+          break;
+        }
         const charge = await stripe.charges.retrieve(chargeId);
         // Top-ups only. Subscription allowance for this event is owned by the
         // strict preflight, which keys on refund.id; the legacy fallback below
         // keys on charge.id and would double-debit the same refund.
         await reverseSettledRefundsForCharge(charge, event, false);
+        break;
+      }
+      case "refund.failed": {
+        // Fallback mounts still reconcile the canonical paid-period return.
+        const refund = event.data.object as Stripe.Refund;
+        const chargeId = typeof refund.charge === "string" ? refund.charge : refund.charge?.id;
+        if (chargeId)
+          await reconcilePaidAllowanceFundingForCharge({
+            stripe,
+            chargeId,
+            providerEventId: event.id,
+          });
         break;
       }
       case "charge.dispute.created": {
@@ -580,7 +601,12 @@ async function reverseSettledRefundsForCharge(
     typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
   if (!piId) return;
   const pi = await stripe.paymentIntents.retrieve(piId);
-  if (pi.metadata?.purpose === "credit_topup") {
+  const fundingReconciled = await reconcilePaidAllowanceFundingForCharge({
+    stripe,
+    chargeId: charge.id,
+    providerEventId: event.id,
+  });
+  if (!fundingReconciled && pi.metadata?.purpose === "credit_topup") {
     const userId = pi.metadata.wireline_user_id;
     if (!userId || !(charge.amount_refunded > 0)) return;
     // Inline Charge refunds may be omitted or truncated. Exhaust the same

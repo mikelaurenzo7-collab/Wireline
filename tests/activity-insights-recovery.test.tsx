@@ -161,6 +161,31 @@ beforeEach(() => {
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 
 describe("Activity budget recovery", () => {
+  it("shows actionable payment recovery without hiding spend history or inventing a cap breach", async () => {
+    mountBudget();
+    h.fetch.mockImplementation(async (url: string) =>
+      url === "/api/spend/status"
+        ? response({ ...status, paid_allowance_funding_blocked: true, hard_capped_now: false })
+        : response({ budget }),
+    );
+    await settle();
+    expect(errors()).toHaveLength(0);
+    expect(text(tree)).toContain("Payment needs attention");
+    expect(text(tree)).toContain(
+      "Included work is paused after a payment reversal. Review Billing or contact support.",
+    );
+    expect(text(tree)).toContain("$5.00");
+    expect(text(tree)).not.toContain("Live usage limit reached");
+    expect(saveButton()).toBeDefined();
+    expect(h.fetch).toHaveBeenCalledTimes(2);
+    const links = elements(tree).filter((node) => node.type === "a") as ReactElement<{
+      href?: string;
+    }>[];
+    expect(links.map((node) => node.props.href)).toEqual([
+      "/settings/billing",
+      "mailto:support@botbound.app?subject=Payment%20needs%20attention",
+    ]);
+  });
   it("shows the paid allowance end without promising renewal or exposing its internal key", async () => {
     mountBudget();
     h.fetch.mockImplementation(async (url: string) =>

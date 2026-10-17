@@ -317,13 +317,23 @@ router.get("/api/outbound", authenticateUser, async (req: AuthenticatedRequest, 
     const [countResult] = await drizzle
       .select({ count: sql`count(*)` })
       .from(schema.outboundLeads)
-      .where(eq(schema.outboundLeads.userId, req.user.id));
+      .where(
+        and(
+          eq(schema.outboundLeads.userId, req.user.id),
+          sql`${schema.outboundLeads.source} IS DISTINCT FROM 'phone_test'`,
+        ),
+      );
     const count = Number(countResult.count);
 
     const data = await drizzle
       .select()
       .from(schema.outboundLeads)
-      .where(eq(schema.outboundLeads.userId, req.user.id))
+      .where(
+        and(
+          eq(schema.outboundLeads.userId, req.user.id),
+          sql`${schema.outboundLeads.source} IS DISTINCT FROM 'phone_test'`,
+        ),
+      )
       .orderBy(desc(schema.outboundLeads.createdAt))
       .limit(limit)
       .offset(offset);
@@ -376,16 +386,20 @@ router.delete(
       if (!/^\d+$/.test(id)) {
         return res.status(404).json({ code: "NOT_FOUND", error: "Lead not found." });
       }
-      await drizzle
+      const removed = await drizzle
         .delete(schema.outboundLeads)
         .where(
           and(
             eq(schema.outboundLeads.id, BigInt(id)),
             eq(schema.outboundLeads.userId, req.user.id),
+            sql`${schema.outboundLeads.source} IS DISTINCT FROM 'phone_test'`,
           ),
-        );
+        )
+        .returning({ id: schema.outboundLeads.id });
+      if (!removed.length) throw AppError.notFound("Lead not found.");
       res.json({ success: true });
     } catch (error: any) {
+      if (error instanceof AppError) throw error;
       log.error("Failed to delete lead", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to delete lead.");
     }

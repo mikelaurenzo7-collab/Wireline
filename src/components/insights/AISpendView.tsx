@@ -35,6 +35,7 @@ type SpendStatus = {
   enabled?: boolean;
   warn_threshold_pct?: number;
   hard_capped_now?: boolean;
+  paid_allowance_funding_blocked?: boolean;
   alerts_fired?: Array<{ thresholdPct: number; firedAt?: string }>;
   guard_scope?: SpendGuardScope;
   plan_name?: string;
@@ -235,6 +236,28 @@ function SpendBudgetCard() {
           error={`${loadError} Showing the last confirmed limits.`}
           onRetry={() => void refresh()}
         />
+      )}
+      {status?.paid_allowance_funding_blocked && (
+        <div
+          role="status"
+          className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-sm"
+        >
+          <p className="font-medium text-foreground">Payment needs attention</p>
+          <p className="mt-1 text-muted-foreground">
+            Included work is paused after a payment reversal. Review{" "}
+            <a href="/settings/billing" className="underline underline-offset-2">
+              Billing
+            </a>{" "}
+            or contact{" "}
+            <a
+              href="mailto:support@botbound.app?subject=Payment%20needs%20attention"
+              className="underline underline-offset-2"
+            >
+              support
+            </a>
+            .
+          </p>
+        </div>
       )}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">

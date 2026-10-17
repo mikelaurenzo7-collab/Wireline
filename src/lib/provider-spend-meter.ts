@@ -10,12 +10,18 @@ export function providerSpendMeter(receipt: {
   metadata?: unknown;
 }): ProviderSpendMeter {
   const metadata = receipt.metadata;
-  return receipt.action === "voice.realtime.session" &&
+  return (receipt.action === "voice.realtime.session" &&
     receipt.provider === "openai" &&
     metadata !== null &&
     typeof metadata === "object" &&
     !Array.isArray(metadata) &&
-    (metadata as Record<string, unknown>).surface === "openai_sip"
+    (metadata as Record<string, unknown>).surface === "openai_sip") ||
+    (receipt.action === "voice.phone_test.carrier" &&
+      receipt.provider === "twilio" &&
+      metadata !== null &&
+      typeof metadata === "object" &&
+      !Array.isArray(metadata) &&
+      (metadata as Record<string, unknown>).surface === "phone_test")
     ? "live_voice"
     : "managed_ai";
 }
@@ -25,5 +31,8 @@ export function managedAiSpendPredicate() {
   return sql`not coalesce(
     ${auditLog.action} = 'voice.realtime.session'
     and ${auditLog.provider} = 'openai'
-    and ${auditLog.metadata}->>'surface' = 'openai_sip', false)`;
+    and ${auditLog.metadata}->>'surface' = 'openai_sip'
+    or ${auditLog.action} = 'voice.phone_test.carrier'
+    and ${auditLog.provider} = 'twilio'
+    and ${auditLog.metadata}->>'surface' = 'phone_test', false)`;
 }

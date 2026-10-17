@@ -11,6 +11,7 @@ import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 import AppointmentsPanel from "../components/AppointmentsPanel";
 import CalendarAvailabilityPanel from "../components/CalendarAvailabilityPanel";
+import AppointmentDialog from "../components/AppointmentDialog";
 import WorkspaceControlBand from "../components/layout/WorkspaceControlBand";
 import { WorkspaceOperateIntro, WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
@@ -24,9 +25,14 @@ export default function CalendarPage() {
   const [params, setParams] = useSearchParams();
   const tab = params.get("tab") === "availability" ? "availability" : "agenda";
   const [settings, setSettings] = useState<CalendarSettings | null>(null);
+  const [savedSettings, setSavedSettings] = useState<CalendarSettings | null>(null);
   const [configured, setConfigured] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
+  const [appointmentOpen, setAppointmentOpen] = useState(false);
+  const [bookingRecovery, setBookingRecovery] = useState(false);
+  const [agendaReload, setAgendaReload] = useState(0);
+  const [bookingNotice, setBookingNotice] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -45,6 +51,7 @@ export default function CalendarPage() {
         if (!parsed || typeof body?.configured !== "boolean")
           throw new Error("Could not load availability. Try again.");
         setConfigured(body.configured);
+        setSavedSettings(parsed);
         setSettings(initialCalendarSettings(parsed, body.configured));
       } catch (reason) {
         if (!controller.signal.aborted)
@@ -92,6 +99,24 @@ export default function CalendarPage() {
                   className="mb-0 min-w-0 flex-1 border-b-0 pb-0"
                 />
               }
+              secondary={
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={configured === null}
+                  onClick={() => {
+                    if (bookingRecovery || (configured && savedSettings?.enabled))
+                      setAppointmentOpen(true);
+                    else selectTab("availability");
+                  }}
+                >
+                  {bookingRecovery
+                    ? "Check booking"
+                    : configured && savedSettings?.enabled
+                      ? "New appointment"
+                      : "Set availability"}
+                </Button>
+              }
             />
           }
         />
@@ -100,10 +125,16 @@ export default function CalendarPage() {
           data-visual-qa-state={tab}
         >
           {tab === "agenda" ? (
-            <AppointmentsPanel
-              calendarConfigured={configured}
-              onConfigure={() => selectTab("availability")}
-            />
+            <>
+              {bookingNotice ? (
+                <StatusNotice tone="info" title={bookingNotice} className="mx-4 mt-4 sm:mx-6" />
+              ) : null}
+              <AppointmentsPanel
+                calendarConfigured={configured}
+                onConfigure={() => selectTab("availability")}
+                reloadKey={agendaReload}
+              />
+            </>
           ) : null}
           {/* Keep the form's pending save and retry state alive across tab changes. */}
           <div hidden={tab !== "availability"} className="min-w-0">
@@ -131,6 +162,7 @@ export default function CalendarPage() {
                 onChange={setSettings}
                 onSaved={(confirmed) => {
                   setSettings(confirmed);
+                  setSavedSettings(confirmed);
                   setConfigured(true);
                 }}
               />
@@ -146,6 +178,25 @@ export default function CalendarPage() {
             )}
           </div>
         </div>
+        {savedSettings ? (
+          <AppointmentDialog
+            open={appointmentOpen}
+            settings={savedSettings}
+            onOpenChange={setAppointmentOpen}
+            onRecoveryChange={setBookingRecovery}
+            onCreated={(receipt) => {
+              setBookingNotice(
+                receipt.status === "Requested"
+                  ? "Appointment requested. Confirm it in Calendar."
+                  : receipt.status === "Cancelled" || receipt.status === "Completed"
+                    ? `Existing appointment is ${receipt.status.toLowerCase()}.`
+                    : "Appointment saved.",
+              );
+              setAgendaReload((current) => current + 1);
+              selectTab("agenda");
+            }}
+          />
+        ) : null}
       </WorkspacePageFrame>
     </WorkspaceShell>
   );
