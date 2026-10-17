@@ -37,6 +37,7 @@ async function mockRehearsal(
       events = {
         readyState: "connecting",
         onopen: null as (() => void) | null,
+        onmessage: null as ((message: { data: string }) => void) | null,
         send: () => undefined,
         close: () => {
           this.events.readyState = "closed";
@@ -45,6 +46,10 @@ async function mockRehearsal(
       };
       createDataChannel() {
         if (failure === "data-channel") throw new Error("Synthetic data channel failure.");
+        Object.assign(window, {
+          sendRehearsalEvent: (event: Record<string, unknown>) =>
+            this.events.onmessage?.({ data: JSON.stringify(event) }),
+        });
         return this.events;
       }
       addTrack() {}
@@ -144,6 +149,8 @@ for (const width of [1440, 390]) {
     );
     expect((await microphoneCount(page)).microphones).toBe(0);
     expect(sessions).toEqual([]);
+    await expect(page.locator('[aria-label="Voice rehearsal transcript"]')).toHaveCount(0);
+    await expect(page.getByText("Ready for a Voice Rehearsal", { exact: true })).toHaveCount(0);
     await expect(
       page.getByRole("link", { name: "Call connected line +13125550123" }),
     ).toHaveAttribute("href", "tel:+13125550123");
@@ -176,6 +183,39 @@ for (const width of [1440, 390]) {
     await expect(input).toHaveValue("Please keep this unsent customer scenario.");
   });
 }
+
+test("compact voice reveals real transcript lines and keeps them after ending rehearsal", async ({
+  page,
+}) => {
+  await mockRehearsal(page);
+  await page.goto("/studio?agent=bot-front-desk&workroom=test");
+  const transcript = page.locator('[aria-label="Voice rehearsal transcript"]');
+  await expect(transcript).toHaveCount(0);
+  await page.getByRole("button", { name: "Start rehearsal", exact: true }).click();
+  await expect(page.getByText("Listening", { exact: true })).toBeVisible();
+  await expect(transcript).toHaveCount(0);
+  await page.evaluate(() => {
+    const events = window as unknown as {
+      sendRehearsalEvent: (event: Record<string, unknown>) => void;
+    };
+    events.sendRehearsalEvent({
+      type: "conversation.item.input_audio_transcription.completed",
+      item_id: "customer-one",
+      transcript: "What time do you open?",
+    });
+    events.sendRehearsalEvent({
+      type: "response.output_audio_transcript.delta",
+      delta: "We open at nine.",
+    });
+    events.sendRehearsalEvent({ type: "response.done" });
+  });
+  await expect(transcript.getByText("What time do you open?", { exact: true })).toBeVisible();
+  await expect(transcript.getByText("We open at nine.", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "End rehearsal", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+  await expect(transcript.getByText("What time do you open?", { exact: true })).toBeVisible();
+  await expect(transcript.getByText("We open at nine.", { exact: true })).toBeVisible();
+});
 
 test("idle voice rehearsal fits 320px with enlarged text without starting a microphone", async ({
   page,

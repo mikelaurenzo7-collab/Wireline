@@ -458,6 +458,8 @@ export default function OpenAILiveVoiceSandbox({
   useEffect(() => () => stop(), [stop]);
   const active = ["connecting", "listening", "speaking", "thinking"].includes(state);
   const activity = voiceActivity(state);
+  const showActivity = !compact || state !== "idle" || lines.length > 0;
+  const showTranscript = !compact || lines.length > 0;
 
   return (
     <section
@@ -500,39 +502,43 @@ export default function OpenAILiveVoiceSandbox({
         </button>
       </div>
 
-      <ConversationActivity
-        className="mt-4"
-        state={activity.state}
-        title={activity.title}
-        detail={activity.detail}
-        icon={<AudioLines aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />}
-      />
+      {showActivity ? (
+        <ConversationActivity
+          className="mt-4"
+          state={activity.state}
+          title={activity.title}
+          detail={activity.detail}
+          icon={<AudioLines aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />}
+        />
+      ) : null}
 
-      <div
-        className="mt-4 min-h-[130px] space-y-3 rounded-lg border border-border bg-secondary p-4"
-        aria-live="polite"
-        aria-label="Voice rehearsal transcript"
-      >
-        {lines.length ? (
-          lines.map((line) => (
-            <ConversationMessage
-              key={line.id}
-              author={line.role === "You" ? "customer" : "assistant"}
-              channel="voice"
-              label={line.role === "You" ? "You" : agentName}
-            >
-              {line.text}
-            </ConversationMessage>
-          ))
-        ) : (
-          <div className="grid min-h-[96px] place-items-center text-center">
-            <p className="max-w-md text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-              Ask a real question and interrupt naturally. This private rehearsal can search
-              approved Training facts but cannot perform external actions.
-            </p>
-          </div>
-        )}
-      </div>
+      {showTranscript ? (
+        <div
+          className="mt-4 min-h-[130px] space-y-3 rounded-lg border border-border bg-secondary p-4"
+          aria-live="polite"
+          aria-label="Voice rehearsal transcript"
+        >
+          {lines.length ? (
+            lines.map((line) => (
+              <ConversationMessage
+                key={line.id}
+                author={line.role === "You" ? "customer" : "assistant"}
+                channel="voice"
+                label={line.role === "You" ? "You" : agentName}
+              >
+                {line.text}
+              </ConversationMessage>
+            ))
+          ) : (
+            <div className="grid min-h-[96px] place-items-center text-center">
+              <p className="max-w-md text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
+                Ask a real question and interrupt naturally. This private rehearsal can search
+                approved Training facts but cannot perform external actions.
+              </p>
+            </div>
+          )}
+        </div>
+      ) : null}
 
       {error ? (
         <StatusNotice
