@@ -920,6 +920,14 @@ export async function reconcilePhoneTest(
   if (!lead || lead.agentId !== agentId) throw AppError.notFound("Phone test not found.");
   const test = testOf(lead);
   if (!lead.callId) {
+    if (phoneTestIsTerminal(test.status)) {
+      const release = await readVoiceIdentityReceipt(
+        drizzle,
+        userId,
+        `voice_admission_release:${phoneTestFundingId(requestKey)}`,
+      );
+      if (record(release?.metadata).disposition === "definite_preaccept") return;
+    }
     if (!test.provider_attempted_at) {
       if (!phoneTestIsTerminal(test.status))
         await failBeforeCarrier(lead, "The phone test ended before a carrier call was placed.");

@@ -253,6 +253,13 @@ beforeEach(() => {
     return { maxSeconds: input.maxSeconds, deadlineAtMs: Date.now() + 120_000 };
   });
   h.create.mockResolvedValue({ sid });
+  h.release.mockImplementation(async (_tx: any, input: any) => {
+    data.ledger.push({
+      userId,
+      idempotencyKey: `voice_admission_release:${input.providerCallId}`,
+      metadata: { disposition: "definite_preaccept" },
+    });
+  });
   h.fetch.mockResolvedValue({
     sid,
     accountSid: "ACunit",
@@ -328,6 +335,10 @@ describe("real self-phone test admission", () => {
     expect(await createPhoneTest(request)).toMatchObject({ status: "failed" });
     expect(h.release).toHaveBeenCalledOnce();
     expect(h.releaseSpend).toHaveBeenCalledOnce();
+    vi.advanceTimersByTime(125_000);
+    await expect(reconcilePhoneTest(userId, agentId, requestKey)).resolves.toBeUndefined();
+    expect(await getPhoneTest(userId, agentId, requestKey)).toMatchObject({ status: "failed" });
+    expect(h.fetch).not.toHaveBeenCalled();
   });
   it("keeps a known accepted carrier funded when post-accept accounting fails", async () => {
     h.commitSpend.mockRejectedValueOnce({ status: 400 });
