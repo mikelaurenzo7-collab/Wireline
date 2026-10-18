@@ -392,11 +392,14 @@ export function applyInboundAdmission(
   };
 }
 
+/** Whether call control changed a live call or found it already terminal. */
+type OpenAICallControlOutcome = "completed" | "already_ended";
+
 async function openaiCallControl(
   callId: string,
   action: "refer" | "hangup",
   body?: Record<string, unknown>,
-): Promise<void> {
+): Promise<OpenAICallControlOutcome> {
   const apiKey = String(process.env.OPENAI_API_KEY || "").trim();
   if (!apiKey) throw new Error("OpenAI_API_KEY is missing during call control.");
   const response = await fetchWithTimeout(
@@ -415,9 +418,12 @@ async function openaiCallControl(
     // Hangup is a desired-state operation. A provider-side missing or already
     // terminal call is equivalent to success, which keeps deletion cleanup and
     // watchdog retries idempotent. REFER remains strict for the same statuses.
-    if (action === "hangup" && (response.status === 404 || response.status === 409)) return;
+    if (action === "hangup" && (response.status === 404 || response.status === 409)) {
+      return "already_ended";
+    }
     throw new Error(`OpenAI ${action} returned HTTP ${response.status}.`);
   }
+  return "completed";
 }
 
 // The shared worker pool has five connections. Provider control is bounded
@@ -553,7 +559,7 @@ export async function referOpenAISipCall(
   });
 }
 
-export function hangupOpenAISipCall(callId: string): Promise<void> {
+export function hangupOpenAISipCall(callId: string): Promise<OpenAICallControlOutcome> {
   return openaiCallControl(callId, "hangup");
 }
 
@@ -1796,6 +1802,8 @@ async function runRealtimeSession(
   let assistantTurn = "";
   let endedReason = "provider-disconnected";
   let pipelineError: string | null = null;
+  // Set only when an opened sideband's transport is the sole failure signal.
+  let sidebandLostAfterOpen = false;
   let connectedAt: number | null = null;
   let endedAt: number | null = null;
   let toolCallsTotal = 0;
@@ -1867,20 +1875,20 @@ async function runRealtimeSession(
       ws.close(1000, "BotBound transferred");
     }
   };
-  const confirmOwnedProviderHangup = async () => {
+  const confirmOwnedProviderHangup = async (): Promise<OpenAICallControlOutcome | undefined> => {
     if (!ownsSession() || endedReason === "transferred" || endedReason === "caller-dnc") return;
     providerHangupRequired = true;
-    await withOpenAISipControlLock(input.userId, input.callId, async (tx) => {
-      if (!ownsSession()) return;
+    return withOpenAISipControlLock(input.userId, input.callId, async (tx) => {
+      if (!ownsSession()) return undefined;
       if ((await readOpenAISipTransferStatus(tx, input.userId, input.callId)) === "transferred") {
         notifyTransferred();
         providerHangupRequired = false;
-        return;
+        return undefined;
       }
-      if (ownsSession()) {
-        await hangupOpenAISipCall(input.callId);
-        providerHangupRequired = false;
-      }
+      if (!ownsSession()) return undefined;
+      const outcome = await hangupOpenAISipCall(input.callId);
+      providerHangupRequired = false;
+      return outcome;
     });
   };
   const sessionHandle = { notifyTransferred };
@@ -2486,7 +2494,10 @@ async function runRealtimeSession(
         void eventChain.catch(rejectOnce);
       });
       ws.on("error", (error) => {
-        if (!pipelineError) pipelineError = "connection";
+        if (!pipelineError) {
+          pipelineError = "connection";
+          sidebandLostAfterOpen = connectedAt !== null;
+        }
         rejectOnce(error);
       });
       ws.on("close", (code, reason) => {
@@ -2508,7 +2519,10 @@ async function runRealtimeSession(
         void eventChain
           .then(async () => {
             if (code !== 1000 && ownsSession()) {
-              if (!pipelineError) pipelineError = "connection";
+              if (!pipelineError) {
+                pipelineError = "connection";
+                sidebandLostAfterOpen = connectedAt !== null;
+              }
               rejectOnce(new Error("OPENAI_SIP_SIDEBAND_CLOSED"));
               return;
             }
@@ -2525,20 +2539,43 @@ async function runRealtimeSession(
   } catch (error) {
     if (!pipelineError) pipelineError = "connection";
     if (endedReason === "provider-disconnected") endedReason = "runtime-error";
-    log.error("OpenAI SIP session failed", {
-      userId: input.userId,
-      agentId: input.agentId,
-      callId: providerCallId(input.callId),
-      failure: pipelineError,
-      errorClass: error instanceof Error ? error.name : typeof error,
-    });
+    let hangupOutcome: OpenAICallControlOutcome | undefined;
+    let hangupConfirmed = true;
     try {
-      await confirmOwnedProviderHangup();
+      hangupOutcome = await confirmOwnedProviderHangup();
     } catch {
-      log.error("OpenAI SIP provider hangup requires durable recovery", {
-        userId: input.userId,
+      hangupConfirmed = false;
+    }
+    if (
+      sidebandLostAfterOpen &&
+      pipelineError === "connection" &&
+      hangupOutcome === "already_ended" &&
+      (endedReason === "runtime-error" || endedReason.startsWith("provider-close-"))
+    ) {
+      // OpenAI can drop an opened sideband without a close frame (1006) as its
+      // SIP call ends. A provider that already reports the call as terminal
+      // establishes an ordinary ending; only a live call we had to end is a
+      // lost connection.
+      log.info("OpenAI SIP sideband ended with its call", {
         callId: providerCallId(input.callId),
+        closeReason: endedReason,
       });
+      pipelineError = null;
+      endedReason = "provider-disconnected";
+    } else {
+      log.error("OpenAI SIP session failed", {
+        userId: input.userId,
+        agentId: input.agentId,
+        callId: providerCallId(input.callId),
+        failure: pipelineError,
+        errorClass: error instanceof Error ? error.name : typeof error,
+      });
+      if (!hangupConfirmed) {
+        log.error("OpenAI SIP provider hangup requires durable recovery", {
+          userId: input.userId,
+          callId: providerCallId(input.callId),
+        });
+      }
     }
   } finally {
     endedAt ??= Date.now();

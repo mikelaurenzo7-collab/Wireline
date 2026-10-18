@@ -1096,6 +1096,49 @@ describe("long business-call lifecycle", () => {
     },
   );
 
+  it.each([404, 409])(
+    "records an abnormal sideband close as an ordinary ending once the provider reports the call over (HTTP %s)",
+    async (status) => {
+      const session = start();
+      await vi.advanceTimersByTimeAsync(1_000);
+      h.provider.mockResolvedValueOnce({ ok: false, status });
+      h.sockets[0].readyState = 3;
+      h.sockets[0].emit("close", 1006, Buffer.alloc(0));
+      await session;
+      expect(h.provider).toHaveBeenCalledOnce();
+      expect(h.provider.mock.calls[0][0]).toContain("/hangup");
+      const recorded = h.digest.mock.calls.at(-1)![0];
+      expect(recorded).toMatchObject({ endedReason: "provider-disconnected", pipelineError: null });
+      expect(recorded.finalization.providerHangupRequired).toBeFalsy();
+      expect(h.usage).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("keeps a lost connection when the provider call was still live at the abnormal close", async () => {
+    const session = start();
+    await vi.advanceTimersByTimeAsync(1_000);
+    h.sockets[0].readyState = 3;
+    h.sockets[0].emit("close", 1006, Buffer.alloc(0));
+    await session;
+    expect(h.provider).toHaveBeenCalledOnce();
+    expect(h.digest.mock.calls.at(-1)![0]).toMatchObject({
+      endedReason: "provider-close-1006",
+      pipelineError: "connection",
+    });
+  });
+
+  it("does not treat a sideband that never opened as an ordinary ending", async () => {
+    h.openFails = true;
+    h.provider.mockResolvedValue({ ok: false, status: 404 });
+    const session = start();
+    await vi.advanceTimersByTimeAsync(1);
+    await session;
+    expect(h.digest.mock.calls.at(-1)![0]).toMatchObject({
+      endedReason: "runtime-error",
+      pipelineError: "connection",
+    });
+  });
+
   it("keeps tools, transcript, ownership leases and rolling spend alive for a full hour, then finalizes once", async () => {
     const session = start();
     await vi.advanceTimersByTimeAsync(0);
