@@ -21,6 +21,7 @@ const fake = vi.hoisted(() => ({
   noReceipt: false,
   failDnc: false,
   end: vi.fn(),
+  enqueue: vi.fn(),
   lockHook: undefined as undefined | ((ordinal: number) => Promise<void>),
 }));
 
@@ -30,6 +31,7 @@ vi.mock("../src/lib/dnc-failsafe", () => ({
 vi.mock("../src/lib/voice/outbound-placement-funding", () => ({
   endOutboundPlacementsForPermission: fake.end,
 }));
+vi.mock("../src/lib/job-queue", () => ({ enqueue: fake.enqueue }));
 vi.mock("../src/lib/server-context", async () => {
   const { tenantStore: context } = await import("../src/lib/tenant-context-store");
   const db = {
@@ -58,7 +60,15 @@ vi.mock("../src/lib/server-context", async () => {
       fake.statements.push(query);
       await fake.lockHook?.(fake.statements.length);
     }),
-    transaction: async <T>(operation: (tx: unknown) => Promise<T>): Promise<T> => operation(db),
+    transaction: async <T>(operation: (tx: unknown) => Promise<T>): Promise<T> => {
+      const initialWrites = fake.inserted.length;
+      try {
+        return await operation(db);
+      } catch (error) {
+        fake.inserted.length = initialWrites;
+        throw error;
+      }
+    },
   };
   return { drizzle: db, log: { warn: vi.fn() } };
 });
@@ -73,6 +83,7 @@ import {
   recipientVoicePermissionLink,
   revokePublicRecipientVoicePermission,
   revokeRecipientVoicePermission,
+  handleVoicePermissionRevocationCleanupJob,
 } from "../src/lib/recipient-voice-permission-store";
 
 const userId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -83,7 +94,7 @@ const now = Date.parse("2026-10-17T15:00:00Z");
 const sellerName = "Example LLC";
 const address = "123 Example Street, Chicago IL 60601";
 const phone = "+13125550100";
-const identityHash = voicePermissionHash({ sellerName, address });
+const identityHash = voicePermissionHash({ sellerName, address, botName: "Front Desk" });
 
 function identityRows() {
   return [
@@ -167,6 +178,7 @@ beforeEach(() => {
   fake.noReceipt = false;
   fake.failDnc = false;
   fake.end.mockReset();
+  fake.enqueue.mockReset().mockResolvedValue({ ok: true, jobId: "cleanup-one" });
   fake.lockHook = undefined;
 });
 afterEach(() => {
@@ -358,6 +370,15 @@ describe("canonical recipient permission storage", () => {
     fake.reads.push([row(request)], [row(grant)], []);
     fake.end.mockImplementation(async () => {
       expect(tenantStore.getStore()).toBe(userId);
+      expect(fake.enqueue).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          userId,
+          type: "voice_permission_revocation_cleanup",
+          payload: { artifactId },
+          maxAttempts: 12,
+        }),
+      );
       expect(fake.inserted[0].event).toBe(VOICE_PERMISSION_EVENTS.revoked);
       expect(fake.inserted[1].phone).toBe("13125550100");
       throw new Error("temporary carrier outage");
@@ -380,6 +401,85 @@ describe("canonical recipient permission storage", () => {
     expect(fake.scopes[0]).toBe("");
     expect(fake.scopes.slice(1).every((scope) => scope === userId)).toBe(true);
   });
+
+  it("rolls back withdrawal and suppression if durable immediate cleanup cannot be saved", async () => {
+    const { request, grant } = fixtures();
+    fake.reads.push([row(request)], [row(grant)], []);
+    fake.enqueue.mockResolvedValue({ ok: false, error: "queue unavailable" });
+    await expect(revokeRecipientVoicePermission({ userId, artifactId })).rejects.toMatchObject({
+      status: 503,
+    });
+    expect(fake.inserted).toHaveLength(0);
+    expect(fake.end).not.toHaveBeenCalled();
+  });
+
+  it("retries failed durable cleanup with the signed request phone, never a payload target", async () => {
+    const { request } = fixtures();
+    const revoked: VoicePermissionRevocation = {
+      kind: "revocation",
+      version: VOICE_PERMISSION_VERSION,
+      artifactId,
+      userId,
+      revokedAt: new Date(now).toISOString(),
+      actor: "recipient",
+    };
+    fake.reads.push([row(request)], [row(revoked)]);
+    fake.end.mockImplementation(async () => {
+      expect(tenantStore.getStore()).toBe(userId);
+      throw new Error("carrier offline");
+    });
+    await expect(
+      handleVoicePermissionRevocationCleanupJob({
+        userId,
+        payload: { artifactId, phone: "+13125550199" },
+      }),
+    ).rejects.toThrow("carrier offline");
+    expect(fake.end).toHaveBeenCalledExactlyOnceWith(userId, artifactId, phone);
+    fake.reads.push([row(request)], [row(revoked)]);
+    fake.end.mockResolvedValue(undefined);
+    await handleVoicePermissionRevocationCleanupJob({ user_id: userId, payload: { artifactId } });
+    expect(fake.end).toHaveBeenCalledTimes(2);
+    expect(fake.inserted).toHaveLength(0);
+  });
+
+  it("does not run cleanup for unrevoked or mismatched owner evidence", async () => {
+    const { request } = fixtures();
+    fake.reads.push([row(request)], []);
+    await expect(
+      handleVoicePermissionRevocationCleanupJob({ userId, payload: { artifactId } }),
+    ).rejects.toMatchObject({ status: 409 });
+    await expect(
+      handleVoicePermissionRevocationCleanupJob({
+        userId,
+        user_id: requestKey,
+        payload: { artifactId },
+      }),
+    ).rejects.toThrow("consistent tenant owner");
+    expect(fake.end).not.toHaveBeenCalled();
+  });
+
+  it("invalidates link retrieval and recipient signature capture after a Bot rename", async () => {
+    const { request, token } = fixtures();
+    const renamedIdentity = identityRows();
+    renamedIdentity[2] = [{ id: "bot-one", name: "Renamed Bot" }];
+    fake.reads.push([row(request)], [], ...renamedIdentity);
+    await expect(recipientVoicePermissionLink(userId, artifactId)).rejects.toMatchObject({
+      status: 409,
+    });
+    fake.reads.push([row(request)], [row(request)], [], ...renamedIdentity);
+    await expect(
+      grantRecipientVoicePermission({
+        token,
+        signerName: "Taylor Example",
+        phone,
+        accepted: true,
+        disclosureHash: voicePermissionHash(request.disclosure),
+        recipientState: "IL",
+        timeZone: "America/Chicago",
+      }),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(fake.inserted).toHaveLength(0);
+  });
 });
 
 describe("fresh dispatch permission receipt", () => {
@@ -399,6 +499,88 @@ describe("fresh dispatch permission receipt", () => {
     artifactId,
     attemptId,
   };
+
+  const automatic = { ...dispatch, leadId: "1", artifactId: undefined };
+  const lead = {
+    id: 1n,
+    userId,
+    agentId: "bot-one",
+    customerNumber: phone,
+    source: "lead_import",
+    metadata: { hasExpressWrittenConsent: true },
+  };
+
+  it("resolves an automatic owned lead only from the newest exact signed grant without consuming it", async () => {
+    const { request, grant } = fixtures();
+    fake.reads.push([lead], ...identityRows(), [row(request)], [row(grant)], [], []);
+    expect(await inspectOutboundRecipientPermission(automatic)).toMatchObject({
+      artifactId,
+      grantHash: voicePermissionHash(grant),
+    });
+    expect(fake.inserted).toHaveLength(0);
+  });
+
+  it("never treats lead-import consent flags as a signed permission or truncates the scan open", async () => {
+    fake.reads.push([lead], ...identityRows(), []);
+    await expect(inspectOutboundRecipientPermission(automatic)).rejects.toMatchObject({
+      code: "RECIPIENT_PERMISSION_REQUIRED",
+    });
+    const { request } = fixtures();
+    fake.reads.push(
+      [lead],
+      ...identityRows(),
+      Array.from({ length: 101 }, () => row(request)),
+    );
+    await expect(inspectOutboundRecipientPermission(automatic)).rejects.toMatchObject({
+      status: 503,
+    });
+    expect(fake.inserted).toHaveLength(0);
+  });
+
+  it("skips pending, revoked, mismatched and already-used grants for an automatic lead", async () => {
+    const { request, grant } = fixtures();
+    const revoked: VoicePermissionRevocation = {
+      kind: "revocation",
+      version: VOICE_PERMISSION_VERSION,
+      artifactId,
+      userId,
+      actor: "recipient",
+      revokedAt: new Date(now).toISOString(),
+    };
+    const claim: VoicePermissionClaim = {
+      kind: "claim",
+      version: VOICE_PERMISSION_VERSION,
+      artifactId,
+      userId,
+      attemptId: requestKey,
+      receiptId: requestKey,
+      phone,
+      agentId: "bot-one",
+      purpose: "callback",
+      grantHash: voicePermissionHash(grant),
+      claimedAt: new Date(now).toISOString(),
+    };
+    for (const history of [[], [row(grant), row(revoked)], [row(grant), row(claim)]]) {
+      fake.reads.push([lead], ...identityRows(), [row(request)], history);
+      await expect(inspectOutboundRecipientPermission(automatic)).rejects.toMatchObject({
+        code: "RECIPIENT_PERMISSION_REQUIRED",
+      });
+    }
+    const otherRequest = { ...request, agentId: "other-bot" };
+    const otherGrant = { ...grant, requestHash: voicePermissionHash(otherRequest) };
+    fake.reads.push([lead], ...identityRows(), [row(otherRequest)], [row(otherGrant)]);
+    await expect(inspectOutboundRecipientPermission(automatic)).rejects.toMatchObject({
+      code: "RECIPIENT_PERMISSION_REQUIRED",
+    });
+    expect(fake.inserted).toHaveLength(0);
+  });
+
+  it("still requires an explicit artifact for direct callers without an owned lead", async () => {
+    await expect(
+      inspectOutboundRecipientPermission({ ...dispatch, artifactId: undefined }),
+    ).rejects.toMatchObject({ code: "RECIPIENT_PERMISSION_REQUIRED" });
+    expect(fake.reads).toHaveLength(0);
+  });
 
   it("does not consume a callback during preflight before funding and policy admission", async () => {
     const { request, grant } = fixtures();
@@ -520,6 +702,19 @@ describe("fresh dispatch permission receipt", () => {
     await expect(assertOutboundRecipientPermission(dispatch)).rejects.toMatchObject({
       code: "VOICE_PERMISSION_SCOPE_MISMATCH",
     });
+    expect(fake.inserted).toHaveLength(0);
+  });
+
+  it("rejects a Bot renamed after signature before dispatch or preflight", async () => {
+    const { request, grant } = fixtures();
+    const renamedIdentity = identityRows();
+    renamedIdentity[2] = [{ id: "bot-one", name: "Renamed Bot" }];
+    for (const admit of [inspectOutboundRecipientPermission, assertOutboundRecipientPermission]) {
+      fake.reads.push([row(request)], [row(grant)], ...renamedIdentity);
+      await expect(admit(dispatch)).rejects.toMatchObject({
+        code: "VOICE_PERMISSION_SCOPE_MISMATCH",
+      });
+    }
     expect(fake.inserted).toHaveLength(0);
   });
 

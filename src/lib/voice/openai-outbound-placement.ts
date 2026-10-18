@@ -591,6 +591,17 @@ export async function markNativeOutboundPlacementAccepted(input: {
     if (lead.callId && lead.callId !== input.callSid) {
       return { accepted: false, callId: lead.callId };
     }
+    if (
+      await readVoiceIdentityReceipt(
+        tx,
+        input.userId,
+        `voice_outbound_terminal:${phoneTestFundingId(input.placementId)}`,
+      )
+    ) {
+      // An authoritative callback can finish before Calls.create returns.
+      // Its terminal/retry policy must not be reset to Dialing by this late ack.
+      return { accepted: true, callId: input.callSid };
+    }
 
     const state = String(nativeVoice.state || "");
     const progressed = ["bridging", "customer_answered", "connected"].includes(state);

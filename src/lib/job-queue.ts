@@ -42,6 +42,7 @@ export type JobType =
   | "twilio_fallback_reconcile"
   | "phone_test_reconcile"
   | "outbound_placement_reconcile"
+  | "voice_permission_revocation_cleanup"
   | "openai_realtime_hangup"
   | "paid_bot_identity_reconcile"
   | "account_deletion_billing_reconciliation";
@@ -79,11 +80,12 @@ const CLAIMABLE_STATUSES = ["pending", "failed"] as const;
 const retryBudgetRemaining = sql`coalesce(${schema.jobs.attempts}, 0) < coalesce(${schema.jobs.maxAttempts}, ${base.DEFAULT_MAX_ATTEMPTS})`;
 const runAtDue = (claimTime: Date) =>
   sql`coalesce(${schema.jobs.runAt}, ${claimTime}) <= ${claimTime}`;
-// A due Realtime hangup is a provider-spend safety deadline, not ordinary
+// A due Realtime hangup or withdrawn-permission cleanup is a safety deadline, not ordinary
 // background work. Claim it ahead of an older general backlog; keep daily
 // retention fan-out last so bounded serverless sweeps stay responsive.
 const claimPriority = sql`case
   when ${schema.jobs.type} = 'openai_realtime_hangup' then 0
+  when ${schema.jobs.type} = 'voice_permission_revocation_cleanup' then 0
   when ${schema.jobs.type} = 'purge_old_data' then 2
   else 1
 end`;

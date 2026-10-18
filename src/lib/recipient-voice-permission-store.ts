@@ -5,6 +5,8 @@ import { AppError } from "./api-error";
 import { readCompanyIdentityPreferences } from "./company-identity";
 import { dncPhoneCandidates, normalizeDncPhone } from "./compliance";
 import { isDncFailsafeBlocked } from "./dnc-failsafe";
+import { enqueue } from "./job-queue";
+import { assertJobPayloadOwner } from "./job-owner";
 import type { OutboundCallPurpose } from "./outbound-call-purpose";
 import { drizzle, log } from "./server-context";
 import { tenantStore } from "./tenant-context-store";
@@ -38,6 +40,7 @@ import {
 } from "./recipient-voice-permission";
 
 type PermissionDb = Pick<typeof drizzle, "select" | "insert" | "execute">;
+type PermissionTransaction = Parameters<Parameters<typeof drizzle.transaction>[0]>[0];
 type ConsentRow = typeof schema.consentLog.$inferSelect;
 type PermissionState = {
   request: VoicePermissionRequest;
@@ -97,10 +100,11 @@ async function sellerIdentity(db: PermissionDb, userId: string, agentId: string)
       { settings_path: "/phone?tab=setup#company-identity" },
     );
   }
+  const botName = agent.name?.trim() || "Bot";
   return {
     sellerName,
-    botName: agent.name || "Bot",
-    sellerIdentityHash: voicePermissionHash({ sellerName, address }),
+    botName,
+    sellerIdentityHash: voicePermissionHash({ sellerName, address, botName }),
   };
 }
 
@@ -417,7 +421,7 @@ async function requestForToken(token: string): Promise<VoicePermissionRequest> {
 
 async function withPublicPermission<T>(
   token: string,
-  operation: (tx: PermissionDb, state: PermissionState) => Promise<T>,
+  operation: (tx: PermissionTransaction, state: PermissionState) => Promise<T>,
 ): Promise<T> {
   const located = await requestForToken(token);
   return tenantStore.run(located.userId, () =>
@@ -515,7 +519,7 @@ export async function grantRecipientVoicePermission(input: {
 }
 
 async function revoke(
-  tx: PermissionDb,
+  tx: PermissionTransaction,
   state: PermissionState,
   actor: "owner" | "recipient",
 ): Promise<VoicePermissionSummary> {
@@ -551,7 +555,45 @@ async function revoke(
       reason: "Recipient voice permission withdrawn",
       source: "voice_permission_revocation",
     });
+  // Recovery is committed atomically with withdrawal. Do not acknowledge an
+  // opt-out whose immediate carrier cleanup would otherwise be log-only.
+  const cleanup = await enqueue(tx, {
+    userId: state.request.userId,
+    type: "voice_permission_revocation_cleanup",
+    payload: { artifactId: state.request.artifactId },
+    runAt: new Date(),
+    maxAttempts: 12,
+  });
+  if (!cleanup.ok)
+    throw AppError.serviceUnavailable(
+      "Permission withdrawal could not be safely queued. Please retry.",
+    );
   return summary(state);
+}
+
+/** Durable cleanup derives the target only from the signed tenant-owned request. */
+export async function handleVoicePermissionRevocationCleanupJob(job: {
+  userId?: string;
+  user_id?: string;
+  payload: Record<string, unknown>;
+}): Promise<void> {
+  const userId = assertJobPayloadOwner(job, job.payload);
+  const artifactId = job.payload.artifactId;
+  if (typeof artifactId !== "string" || !VOICE_PERMISSION_UUID.test(artifactId))
+    throw AppError.badRequest("Invalid permission cleanup identity.");
+  const phone = await tenantStore.run(userId, () =>
+    drizzle.transaction(async (tx) => {
+      const request = await readRequest(tx, userId, artifactId);
+      await lockRecipient(tx, userId, request.phone);
+      const state = await readState(tx, request);
+      if (!state.revoked) throw AppError.conflict("Permission has not been withdrawn.");
+      return request.phone;
+    }),
+  );
+  const { endOutboundPlacementsForPermission } = await import("./voice/outbound-placement-funding");
+  await tenantStore.run(userId, () =>
+    endOutboundPlacementsForPermission(userId, artifactId, phone),
+  );
 }
 
 export async function revokeRecipientVoicePermission(input: {
@@ -728,6 +770,8 @@ async function resolvePermissionForDispatch(
     sql`SELECT pg_advisory_xact_lock(hashtext('voice-permission-attempt'), hashtext(${`${input.userId}:${input.attemptId}`}))`,
   );
   let artifactId = input.artifactId;
+  let selectedState: PermissionState | undefined;
+  let currentIdentity: Awaited<ReturnType<typeof sellerIdentity>> | undefined;
   if (input.leadId != null) {
     if (!/^\d+$/.test(String(input.leadId))) throw AppError.badRequest("Invalid outbound lead.");
     const [lead] = await tx
@@ -754,21 +798,34 @@ async function resolvePermissionForDispatch(
       typeof asRecord(lead.metadata).voice_permission_id === "string"
         ? String(asRecord(lead.metadata).voice_permission_id)
         : null;
+    if (!artifactId) {
+      // Automatic lead callers can resolve only persisted, signed recipient
+      // grants. An owner/import checkbox never creates this authority.
+      await lockRecipient(tx, input.userId, phone);
+      currentIdentity = await sellerIdentity(tx, input.userId, input.agentId);
+      selectedState = await selectLeadRecipientPermission(
+        tx,
+        input,
+        phone,
+        currentIdentity.sellerIdentityHash,
+      );
+      artifactId = selectedState.request.artifactId;
+    }
   }
   if (!artifactId)
     throw permissionError(
       "RECIPIENT_PERMISSION_REQUIRED",
       "Select a recipient-signed permission record before calling.",
     );
-  const request = await readRequest(tx, input.userId, artifactId);
-  await lockRecipient(tx, input.userId, phone);
-  const state = await readState(tx, request);
+  const request = selectedState?.request ?? (await readRequest(tx, input.userId, artifactId));
+  if (!selectedState) await lockRecipient(tx, input.userId, phone);
+  const state = selectedState ?? (await readState(tx, request));
   if (!state.grant)
     throw permissionError(
       "RECIPIENT_PERMISSION_REQUIRED",
       "The recipient has not signed this permission.",
     );
-  const identity = await sellerIdentity(tx, input.userId, input.agentId);
+  const identity = currentIdentity ?? (await sellerIdentity(tx, input.userId, input.agentId));
   assertVoicePermissionScope({
     request,
     grant: state.grant,
@@ -840,4 +897,78 @@ async function resolvePermissionForDispatch(
       );
   }
   return { request, grant: state.grant, priorClaim, phone };
+}
+
+/** Called only after owned-lead validation and the recipient lock. Newest exact
+ * grant wins; reaching the bounded scan limit requires review, never fallback.
+ */
+async function selectLeadRecipientPermission(
+  tx: PermissionDb,
+  input: OutboundRecipientPermissionInput,
+  phone: string,
+  sellerIdentityHash: string,
+): Promise<PermissionState> {
+  const rows = await tx
+    .select()
+    .from(schema.consentLog)
+    .where(
+      and(
+        eq(schema.consentLog.userId, input.userId),
+        eq(schema.consentLog.event, VOICE_PERMISSION_EVENTS.requested),
+        eq(schema.consentLog.customerNumber, phone),
+        sql`${schema.consentLog.metadata}->'record'->>'agentId' = ${input.agentId}`,
+        sql`${schema.consentLog.metadata}->'record'->>'purpose' = ${input.callPurpose}`,
+        sql`${schema.consentLog.metadata}->'record'->>'expiresAt' > ${new Date().toISOString()}`,
+      ),
+    )
+    .orderBy(desc(schema.consentLog.id))
+    .limit(101);
+  if (rows.length > 100)
+    throw AppError.serviceUnavailable(
+      "Recipient permission history needs review before automatic calling.",
+    );
+  for (const row of rows) {
+    const request = recordOf(row, "request") as VoicePermissionRequest | null;
+    if (!request || row.customerNumber !== request.phone)
+      throw AppError.serviceUnavailable("Recipient permission history cannot be evidenced.");
+    const state = await readState(tx, request);
+    if (!state.grant || state.revoked) continue;
+    try {
+      assertVoicePermissionScope({
+        request,
+        grant: state.grant,
+        userId: input.userId,
+        agentId: input.agentId,
+        phone,
+        purpose: input.callPurpose,
+        sellerIdentityHash,
+        revoked: state.revoked,
+      });
+    } catch (error) {
+      if (
+        error instanceof AppError &&
+        ["VOICE_PERMISSION_SCOPE_MISMATCH", "VOICE_PERMISSION_EXPIRED"].includes(error.code)
+      )
+        continue;
+      throw error;
+    }
+    if (
+      request.purpose === "callback" &&
+      state.claims.length &&
+      !state.claims.some(
+        (claim) =>
+          claim.attemptId === input.attemptId &&
+          claim.phone === phone &&
+          claim.agentId === input.agentId &&
+          claim.purpose === input.callPurpose &&
+          claim.grantHash === voicePermissionHash(state.grant),
+      )
+    )
+      continue;
+    return state;
+  }
+  throw permissionError(
+    "RECIPIENT_PERMISSION_REQUIRED",
+    "No current recipient-signed permission matches this lead. Request permission before calling.",
+  );
 }

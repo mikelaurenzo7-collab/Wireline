@@ -31,10 +31,20 @@ describe("production voice runtime policy", () => {
     expect(catalog).not.toMatch(/vapi|xai|grok/i);
   });
 
-  it("keeps the retired alternate voice provider out of policy and runtime", () => {
+  it("keeps disabled operator diagnostics separate from selectable voices and live runtime", () => {
     const policy = read("docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md");
     const runtime = read("src/lib/voice/openai-phone-agent-runtime.ts");
-    expect(policy).not.toMatch(/elevenlabs|11labs/i);
+    const catalog = read("src/lib/voice-catalog.ts");
+    expect(policy).toContain(
+      "BotBound has no customer-selectable external voice catalog or live-call cloning",
+    );
+    expect(policy).toContain(
+      "The disabled platform-admin private-preview foundation and ElevenLabs",
+    );
+    expect(policy).toContain("read-only operator diagnostics");
+    expect(policy).toContain("neither changes a saved");
+    expect(policy).toContain("OpenAI voice or authorizes customer enrollment");
+    expect(catalog).not.toMatch(/elevenlabs|11labs/i);
     expect(runtime).not.toMatch(/elevenlabs|11labs/i);
   });
 });

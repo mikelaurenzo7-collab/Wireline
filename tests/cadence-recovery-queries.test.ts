@@ -42,7 +42,8 @@ vi.mock("../src/lib/server-context", async () => {
         ],
       };
     }
-    if (sql.startsWith('select "id" from "wireline_outbound_leads"')) return { rows: [["1"]] };
+    if (sql.startsWith('select "id", "metadata" from "wireline_outbound_leads"'))
+      return { rows: [["1", null]] };
     if (sql.startsWith("select") && sql.includes('from "wireline_cadence_runs"') && h.runStatus) {
       return {
         rows: [
@@ -201,8 +202,21 @@ describe("sequence recovery persistence boundaries", () => {
 
   it("serializes enrollment with resume and responds only after commit", async () => {
     const res = await invoke("post", "/api/cadences/:id/enroll", { leadId: "1" });
-    expect(h.queries[0].sql).toContain("for update");
-    expect(h.queries[0].params).toEqual(["sequence", "tenant", 1]);
+    expect(h.queries[0].sql).toContain("pg_advisory_xact_lock");
+    expect(h.queries[0].params).toEqual(["tenant"]);
+    expect(h.queries[1].sql).toContain("pg_advisory_xact_lock");
+    expect(h.queries[1].params).toEqual(["openai-outbound:1"]);
+    const cadence = h.queries.find(
+      (query) => query.sql.startsWith("select") && query.sql.includes('from "wireline_cadences"'),
+    )!;
+    expect(h.queries.indexOf(cadence)).toBeGreaterThan(1);
+    expect(cadence.sql).toContain("for update");
+    expect(cadence.params).toEqual(["sequence", "tenant", 1]);
+    const lead = h.queries.find((query) =>
+      query.sql.startsWith('select "id", "metadata" from "wireline_outbound_leads"'),
+    )!;
+    expect(lead.params).toEqual([1n, "tenant", 1]);
+    expect(lead.sql).toContain("IS DISTINCT FROM 'phone_test'");
     expect(h.queries.some((q) => q.sql.startsWith('insert into "wireline_cadence_runs"'))).toBe(
       true,
     );

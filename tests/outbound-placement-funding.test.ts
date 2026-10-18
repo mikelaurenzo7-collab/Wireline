@@ -61,6 +61,7 @@ import {
   readNativeOutboundRequestReplay,
   readNativeOutboundRequestStatus,
   cancelMissingNativeOutboundRequest,
+  markNativeOutboundPlacementAccepted,
 } from "../src/lib/voice/openai-outbound-placement";
 
 const userId = "tenant-a",
@@ -76,6 +77,7 @@ function database() {
   const rows: Record<string, any[]> = {
     wireline_credit_ledger: [],
     wireline_call_logs: [],
+    wireline_outbound_campaigns: [],
     wireline_outbound_leads: [
       {
         id: leadId,
@@ -473,10 +475,127 @@ describe("durable ordinary outbound carrier admission", () => {
         transcript: null,
         recordingUrl: null,
       });
+      expect(db.lead.status).toBe("Retrying");
+      expect(db.lead.metadata.native_voice).toMatchObject({
+        state: "carrier_failed",
+        do_not_retry: false,
+      });
       await handleFundedOutboundCarrierEvent(event(status, "0"));
       expect(db.ledger.filter((r) => r.refType === "voice_outbound_terminal")).toHaveLength(1);
     },
   );
+  it("honors campaign attempt exhaustion for a definite terminal carrier outcome", async () => {
+    const db = database();
+    db.lead.campaignId = "campaign-a";
+    db.lead.attempts = 2;
+    db.rows.wireline_outbound_campaigns.push({ id: "campaign-a", userId, maxAttempts: 2 });
+    await admitted(db);
+    await handleFundedOutboundCarrierEvent(event("no-answer", "0"));
+    expect(db.lead.status).toBe("Max-Attempts");
+    expect(db.lead.metadata.native_voice.do_not_retry).toBe(true);
+  });
+  it("keeps completed-before-bridge retryable without treating answered carrier time as free", async () => {
+    const db = database();
+    await admitted(db);
+    await handleFundedOutboundCarrierEvent(event("completed", "7"));
+    expect(db.lead.status).toBe("Retrying");
+    expect(db.lead.metadata.native_voice.state).toBe(
+      "carrier_completed_without_openai_confirmation",
+    );
+    expect(h.release).not.toHaveBeenCalled();
+    expect(h.track).toHaveBeenLastCalledWith({ userId, vapiCallId: canonical, durationSeconds: 7 });
+    await markNativeOutboundPlacementAccepted({
+      userId,
+      leadId,
+      placementId,
+      agentId,
+      callPurpose: "service_or_requested",
+      callSid: sid,
+    });
+    expect(db.lead.status).toBe("Retrying");
+    expect(db.lead.metadata.native_voice.state).toBe(
+      "carrier_completed_without_openai_confirmation",
+    );
+  });
+  it("preserves AMD fax/drop decisions and an in-flight SIP bridge instead of queueing duplicates", async () => {
+    const db = database();
+    await admitted(db);
+    db.lead.status = "Failed";
+    Object.assign(db.lead.metadata.native_voice, { amd_action: "drop", state: "amd_no_message" });
+    await handleFundedOutboundCarrierEvent(event("completed", "3"));
+    expect(db.lead.status).toBe("Failed");
+    expect(db.lead.metadata.native_voice.state).toBe("amd_no_message");
+
+    const next = database();
+    await admitted(next);
+    Object.assign(next.lead.metadata.native_voice, {
+      state: "bridging",
+      bridge_served_at: new Date().toISOString(),
+    });
+    await handleFundedOutboundCarrierEvent(event("completed", "4"));
+    expect(next.lead.status).toBe("Error");
+    expect(next.lead.metadata.native_voice.do_not_retry).toBe(true);
+  });
+  it.each([null, ""])(
+    "normalizes authoritative REST unanswered duration %s after exact call matching",
+    async (duration) => {
+      const db = database();
+      await admitted(db);
+      await bindOutboundCarrierCall(event("ringing"));
+      h.fetch.mockResolvedValueOnce({
+        sid,
+        accountSid: "ACowned",
+        to: phone,
+        from,
+        direction: "outbound-api",
+        status: "no-answer",
+        duration,
+      });
+      await reconcileOutboundPlacementJob({ userId, payload: { placementId, leadId: "7" } });
+      expect(
+        db.ledger.find((row) => row.refType === "voice_outbound_terminal").metadata,
+      ).toMatchObject({
+        carrier_status: "no-answer",
+        duration_seconds: 0,
+        unanswered_confirmed: true,
+      });
+      expect(h.release).toHaveBeenCalledWith(db.db, {
+        userId,
+        providerCallId: canonical,
+        disposition: "confirmed_unanswered",
+      });
+    },
+  );
+  it("does not normalize a missing completed REST duration or an unmatched call identity", async () => {
+    const db = database();
+    await admitted(db);
+    await bindOutboundCarrierCall(event("ringing"));
+    h.fetch.mockResolvedValueOnce({
+      sid,
+      accountSid: "ACowned",
+      to: phone,
+      from,
+      direction: "outbound-api",
+      status: "completed",
+      duration: null,
+    });
+    await expect(
+      reconcileOutboundPlacementJob({ userId, payload: { placementId, leadId: "7" } }),
+    ).rejects.toThrow(/duration/);
+    h.fetch.mockResolvedValueOnce({
+      sid,
+      accountSid: "ACother",
+      to: phone,
+      from,
+      direction: "outbound-api",
+      status: "no-answer",
+      duration: null,
+    });
+    await expect(
+      reconcileOutboundPlacementJob({ userId, payload: { placementId, leadId: "7" } }),
+    ).rejects.toThrow(/identity/);
+    expect(h.release).not.toHaveBeenCalled();
+  });
   it("never releases missing duration, AMD-answer, SIP-answer or conflicting carrier evidence", async () => {
     const db = database();
     await admitted(db);
@@ -590,7 +709,7 @@ describe("durable ordinary outbound carrier admission", () => {
         from,
         direction: "outbound-api",
         status: "busy",
-        duration: "0",
+        duration: null,
       });
     await expect(
       reconcileOutboundPlacementJob({ userId, payload: { placementId, leadId: "7" } }),

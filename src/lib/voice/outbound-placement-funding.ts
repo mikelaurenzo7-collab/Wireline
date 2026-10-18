@@ -4,6 +4,11 @@ import { AppError } from "../api-error";
 import { enqueue } from "../job-queue";
 import type { OutboundCallPurpose } from "../outbound-call-purpose";
 import {
+  DEFAULT_LEAD_MAX_ATTEMPTS,
+  LEAD_STATUS,
+  resolveRetryableLeadStatus,
+} from "../outbound-status";
+import {
   assertOutboundRecipientPermission,
   assertOutboundRecipientPermissionInTransaction,
 } from "../recipient-voice-permission-store";
@@ -507,17 +512,64 @@ export async function handleFundedOutboundCarrierEvent(input: {
             : "The carrier call ended before a bot conversation connected.",
         })
         .onConflictDoNothing({ target: schema.callLogs.vapiCallId });
+    const voice = native(lead);
+    const hasConversation = Boolean(sipPhase || voice.openai_call_id);
+    const bridgePending = Boolean(
+      voice.bridge_served_at ||
+      ["bridging", "connected", "transferred"].includes(String(voice.state)) ||
+      ["bridge", "voicemail"].includes(String(voice.amd_action)),
+    );
+    let nextStatus = lead.status;
+    let nextState = voice.state;
+    if (!hasConversation) {
+      if (voice.amd_action === "drop") {
+        // The AMD branch already applied its retry budget or terminal fax status.
+      } else if (!bridgePending) {
+        let maxAttempts = DEFAULT_LEAD_MAX_ATTEMPTS;
+        if (lead.campaignId) {
+          const [campaign] = await tx
+            .select({ maxAttempts: schema.outboundCampaigns.maxAttempts })
+            .from(schema.outboundCampaigns)
+            .where(
+              and(
+                eq(schema.outboundCampaigns.userId, input.userId),
+                eq(schema.outboundCampaigns.id, lead.campaignId),
+              ),
+            )
+            .limit(1);
+          if (
+            typeof campaign?.maxAttempts === "number" &&
+            Number.isInteger(campaign.maxAttempts) &&
+            campaign.maxAttempts > 0
+          )
+            maxAttempts = campaign.maxAttempts;
+        }
+        nextStatus = resolveRetryableLeadStatus(lead.attempts, maxAttempts);
+        nextState =
+          input.status === "completed"
+            ? "carrier_completed_without_openai_confirmation"
+            : "carrier_failed";
+      } else {
+        // TwiML may already be in flight to OpenAI. A late SIP attachment owns
+        // that conversation; do not queue a replacement call beside it.
+        nextStatus = LEAD_STATUS.ERROR;
+        nextState = "carrier_completed_without_openai_confirmation";
+      }
+    }
     await tx
       .update(schema.outboundLeads)
       .set({
-        ...(native(lead).openai_call_id ? {} : { status: "Error" }),
+        ...(hasConversation ? {} : { status: nextStatus }),
         metadata: {
           ...record(lead.metadata),
           native_voice: {
-            ...native(lead),
+            ...voice,
+            state: nextState,
             carrier_status: input.status,
             carrier_completed_at: new Date().toISOString(),
-            do_not_retry: true,
+            // A new attempt still requires fresh permission/funding. Only an
+            // authoritative terminal result can restore the existing dialer policy.
+            do_not_retry: hasConversation || nextStatus !== LEAD_STATUS.RETRYING,
           },
         },
       })
@@ -842,7 +894,13 @@ export async function reconcileOutboundPlacementJob(job: {
       to: call.to,
       from: call.from,
       status: call.status,
-      duration: call.duration,
+      // Twilio REST commonly omits duration for calls that never answered.
+      // This is an exact account/SID/To/From-matched terminal lookup, not an
+      // incomplete webhook. Sticky answer/SIP evidence still rejects a refund.
+      duration:
+        call.status !== "completed" && (call.duration === null || call.duration === "")
+          ? "0"
+          : call.duration,
     });
   });
 }

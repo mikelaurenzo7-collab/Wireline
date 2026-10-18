@@ -76,6 +76,9 @@ vi.mock("../src/contexts/AgentsContext", () => ({
     loading: false,
   }),
 }));
+vi.mock("../src/contexts/AuthContext", () => ({
+  useAuth: () => ({ user: { id: "owner-1", email: "owner@example.test" } }),
+}));
 vi.mock("../src/contexts/ToastContext", () => ({
   useToast: () => ({ toast: vi.fn(), success: vi.fn(), error: vi.fn() }),
 }));

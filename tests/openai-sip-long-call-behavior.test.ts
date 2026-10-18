@@ -17,6 +17,7 @@ const h = vi.hoisted(() => ({
   provider: vi.fn(),
   environment: vi.fn(),
   funding: vi.fn(),
+  canonicalFundingId: vi.fn(),
   refundFunding: vi.fn(),
   carrierDuration: vi.fn(),
   presenceStatus: "connected" as string | undefined,
@@ -28,6 +29,8 @@ const h = vi.hoisted(() => ({
   openFails: false,
   failNextToolOutput: false,
   callUser: "tenant",
+  callDirection: "inbound" as string | null,
+  callSource: "twilio:CA11111111111111111111111111111111" as string | null,
   callOwner: "owner",
   callPhase: "terminal",
   callReason: "provider-heartbeat-timeout",
@@ -153,6 +156,8 @@ vi.mock("../src/lib/server-context", () => {
                   id: 1n,
                   status: "connected",
                   providerCallId: "openai:rtc_test",
+                  direction: h.callDirection,
+                  sourceId: h.callSource,
                   phase: h.callPhase,
                   endedReason: h.callReason,
                 },
@@ -221,6 +226,10 @@ vi.mock("../src/lib/voice-call-funding", () => ({
   getVoiceCallFunding: h.funding,
   releaseVoiceCallFunding: h.refundFunding,
   releaseVoiceCallFundingInTransaction: h.refundFunding,
+}));
+vi.mock("../src/lib/voice-call-identity", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/lib/voice-call-identity")>()),
+  resolveVoiceFundingId: h.canonicalFundingId,
 }));
 vi.mock("../src/lib/voice/funded-carrier-call", () => ({
   enforceFundedCarrierCallLimit: vi.fn(),
@@ -318,6 +327,11 @@ beforeEach(() => {
   h.provider.mockReset().mockResolvedValue({ ok: true, status: 200 });
   h.environment.mockReset().mockResolvedValue(undefined);
   h.funding.mockReset().mockResolvedValue(null);
+  h.canonicalFundingId
+    .mockReset()
+    .mockImplementation(
+      async (_reader: unknown, _userId: string, providerId: string) => providerId,
+    );
   h.refundFunding.mockReset().mockResolvedValue(undefined);
   h.carrierDuration.mockReset().mockResolvedValue({ durationSeconds: 120, unanswered: false });
   h.presenceStatus = "connected";
@@ -329,6 +343,8 @@ beforeEach(() => {
   h.openFails = false;
   h.failNextToolOutput = false;
   h.callUser = "tenant";
+  h.callDirection = "inbound";
+  h.callSource = "twilio:CA11111111111111111111111111111111";
   h.callOwner = "owner";
   h.callPhase = "terminal";
   h.callReason = "provider-heartbeat-timeout";
@@ -1167,6 +1183,64 @@ function heldResult<T>() {
 }
 
 describe("cross-process SIP transfers", () => {
+  it.each(["+12025550103", "sip:other@example.org"])(
+    "blocks a funded ordinary outbound REFER to %s",
+    async (destination) => {
+      const remote = await remoteCallControl();
+      h.funding.mockResolvedValue({
+        outboundPlacement: true,
+        maxSeconds: 120,
+        deadlineAtMs: Date.now() + 120000,
+      });
+      await expect(
+        remote.referOpenAISipCall(call.userId, call.callId, destination),
+      ).rejects.toMatchObject({ status: 409, code: "OUTBOUND_TRANSFER_UNSUPPORTED" });
+      expect(h.provider).not.toHaveBeenCalled();
+      expect(h.presenceStatus).toBe("connected");
+      expect(h.writes.some((value) => value.status === "transferred")).toBe(false);
+    },
+  );
+  it.each(["direction", "signed source", "canonical alias"])(
+    "blocks a legacy funding-null outbound call proven by its %s",
+    async (evidence) => {
+      const remote = await remoteCallControl();
+      const canonical = "outbound:11111111-1111-4111-8111-111111111111";
+      if (evidence === "direction") h.callDirection = "outbound";
+      if (evidence === "signed source") h.callSource = canonical;
+      if (evidence === "canonical alias") h.canonicalFundingId.mockResolvedValue(canonical);
+      await expect(
+        remote.referOpenAISipCall(call.userId, call.callId, "+12025550103"),
+      ).rejects.toMatchObject({ status: 409, code: "OUTBOUND_TRANSFER_UNSUPPORTED" });
+      expect(h.provider).not.toHaveBeenCalled();
+      expect(h.writes.some((value) => value.status === "transferred")).toBe(false);
+    },
+  );
+  it.each(["missing direction", "missing signed source", "foreign call"])(
+    "does not REFER with an unverified inbound binding: %s",
+    async (evidence) => {
+      const remote = await remoteCallControl();
+      if (evidence === "missing direction") h.callDirection = null;
+      if (evidence === "missing signed source") h.callSource = null;
+      if (evidence === "foreign call") h.callUser = "other-tenant";
+      await expect(
+        remote.referOpenAISipCall(call.userId, call.callId, "+12025550103"),
+      ).rejects.toThrow("inbound source could not be verified");
+      expect(h.provider).not.toHaveBeenCalled();
+      expect(h.presenceStatus).toBe("connected");
+    },
+  );
+  it("retains a verified inbound transfer without channel funding", async () => {
+    const remote = await remoteCallControl();
+    await remote.referOpenAISipCall(call.userId, call.callId, "+12025550103");
+    expect(h.provider).toHaveBeenCalledOnce();
+    expect(h.provider.mock.calls[0][0]).toContain("/refer");
+    expect(h.presenceStatus).toBe("transferred");
+    expect(h.canonicalFundingId).toHaveBeenCalledWith(
+      expect.anything(),
+      call.userId,
+      "openai:rtc_test",
+    );
+  });
   it("keeps a bounded self-phone test on its verified recipient", async () => {
     const remote = await remoteCallControl();
     h.funding.mockResolvedValue({

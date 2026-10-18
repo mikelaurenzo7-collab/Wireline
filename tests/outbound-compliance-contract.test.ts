@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { getOpenApiSpec } from "../src/lib/openapi-spec";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -14,7 +15,6 @@ describe("outbound compliance contract", () => {
       expect(source).toContain("callPurpose: z.enum(OUTBOUND_CALL_PURPOSES)");
       expect(source).not.toContain("callPurpose: z.enum(OUTBOUND_CALL_PURPOSES).optional()");
       expect(source).not.toContain('default("marketing_or_sales")');
-      expect(source).toContain("classifyUntrustedDirectDial({ callPurpose })");
       expect(source).toContain("callPurpose: effectiveCallPurpose");
       expect(source).toContain("requestedCallPurpose: callPurpose");
       expect(source).toContain("evaluateOutboundDialGate({");
@@ -23,6 +23,10 @@ describe("outbound compliance contract", () => {
       expect(source).toContain("DUPLICATE_DIAL_SUPPRESSED");
       expect(source).toContain("OUTSIDE_PERMITTED_CALLING_HOURS");
     }
+
+    expect(web).toContain("await inspectOutboundRecipientPermission({");
+    expect(web).toContain("const effectiveCallPurpose = permission.effectiveCallPurpose");
+    expect(mobile).toContain("classifyUntrustedDirectDial({ callPurpose })");
 
     expect(mobile).toContain("lastCalledAt: new Date()");
     expect(read("src/lib/voice/openai-outbound-placement.ts")).toContain("lastCalledAt:");
@@ -97,6 +101,24 @@ describe("outbound compliance contract", () => {
     const openapi = read("src/lib/openapi-spec.ts");
 
     expect(openapi).toContain('required: ["agentId", "customerNumber", "callPurpose"]');
+    const spec = getOpenApiSpec();
+    expect(spec.components.schemas.OutboundDialRequest.required).toEqual([
+      "agentId",
+      "customerNumber",
+      "callPurpose",
+      "requestKey",
+      "consentArtifactId",
+    ]);
+    expect(spec.components.schemas.LegacyMobileOutboundDialRequest.required).toEqual([
+      "agentId",
+      "customerNumber",
+      "callPurpose",
+    ]);
+    expect(spec.paths["/api/outbound/dial"].post?.responses["202"]).toBeDefined();
+    expect(spec.paths["/api/outbound/dial"].post?.responses["503"]).toBeDefined();
+    expect(openapi).toContain('"/api/outbound/dial/{requestKey}"');
+    expect(openapi).toContain('"/api/outbound/dial/{requestKey}/cancel-missing"');
+    expect(openapi).toContain('schema: ref("LegacyMobileOutboundDialRequest")');
     expect(openapi).toContain('"/api/outbound/dial"');
     expect(openapi).toContain('"/api/mobile/calls/outbound"');
     expect(openapi).toContain("DNC or TCPA consent gate blocked the call.");

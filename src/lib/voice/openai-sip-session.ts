@@ -27,6 +27,7 @@ import {
 } from "../tcpa-consent";
 import { persistTranscriptDncSuppression } from "../call-dnc-suppression";
 import { trackVoiceMinutes } from "../voice-usage";
+import { resolveVoiceFundingId } from "../voice-call-identity";
 import {
   reserveVoiceCallFunding,
   releaseVoiceCallFundingInTransaction,
@@ -502,6 +503,39 @@ export async function referOpenAISipCall(
     if (funding?.phoneTest)
       throw AppError.conflict(
         "Phone tests stay on your verified phone. Test transfers on your connected business line.",
+      );
+    const canonical = await resolveVoiceFundingId(tx, userId, providerCallId(callId));
+    const [source] = await tx
+      .select({
+        direction: schema.callLogs.direction,
+        sourceId: schema.callLogs.openaiSipSourceId,
+      })
+      .from(schema.callLogs)
+      .where(
+        and(
+          eq(schema.callLogs.userId, userId),
+          eq(schema.callLogs.vapiCallId, providerCallId(callId)),
+        ),
+      )
+      .limit(1);
+    // A REFER reaches a new recipient whose permission and carrier costs are
+    // outside this placement's original admission. Legacy outbound calls may
+    // have no channel funding, so the signed source and canonical alias remain
+    // authoritative even without the new funding marker.
+    if (
+      funding?.outboundPlacement ||
+      canonical.startsWith("outbound:") ||
+      source?.direction === "outbound" ||
+      source?.sourceId?.startsWith("outbound:")
+    )
+      throw new AppError(
+        409,
+        "OUTBOUND_TRANSFER_UNSUPPORTED",
+        "Transfers are not available on outbound calls. This call's permission and funding cover only its original recipient.",
+      );
+    if (source?.direction !== "inbound" || !/^twilio:CA[a-f0-9]{32}$/i.test(source.sourceId || ""))
+      throw AppError.serviceUnavailable(
+        "This call's inbound source could not be verified for transfer.",
       );
     if (funding) await enforceFundedCarrierCallLimit(userId, providerCallId(callId), funding);
     await openaiCallControl(callId, "refer", { target_uri: targetUri });

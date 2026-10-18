@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { resolveProfile } from "../src/lib/tenant-quotas";
 import { voiceMinutesDailyQuotaForTier } from "../src/lib/plan-entitlements";
+import { billableVoiceMinutes } from "../src/lib/voice-usage";
 
 vi.mock("../src/lib/server-context", () => ({ log: { warn: vi.fn() } }));
 
@@ -31,8 +32,27 @@ describe("round-7 voice usage integrity", () => {
     const control = read("src/lib/voice-spend-control.ts");
     expect(control).toContain('"voice_minutes_daily"');
 
-    // Guard the regression: settlement still derives from billable minutes.
-    expect(usage).toContain("const minutes = billableVoiceMinutes(durationSeconds)");
+    // Only exact ordinary-parent terminal evidence can exempt an unanswered
+    // attempt. Answered and legacy attempts retain normal minute rounding.
+    expect(usage).toContain("`voice_outbound_attempt:${vapiCallId}`");
+    expect(usage).toContain("terminal.refType !== terminalType");
+    expect(usage).toContain(
+      "(terminal.metadata as Record<string, unknown>)?.unanswered_confirmed === true",
+    );
+    expect(usage).toContain("seconds === 0");
+    expect(usage).toContain(
+      "const minutes = confirmedUnanswered ? 0 : billableVoiceMinutes(durationSeconds)",
+    );
+    expect(usage).toMatch(/minutes,\s+periodKey,\s+dailyKey,/);
+  });
+
+  it.each([
+    [0, 1],
+    [1, 1],
+    [60, 1],
+    [61, 2],
+  ])("keeps ordinary rounding for a %s-second answered call", (seconds, expected) => {
+    expect(billableVoiceMinutes(seconds)).toBe(expected);
   });
 
   it("keeps the daily voice quota dimension wired to the tier table", () => {

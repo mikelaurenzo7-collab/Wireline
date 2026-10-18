@@ -160,7 +160,15 @@ describe("whole-period audit summary aggregates", () => {
     expect(query.sql).toContain("\"metadata\"->>'surface' = 'openai_sip'");
     expect(query.sql).toContain("\"action\" = 'voice.phone_test.carrier'");
     expect(query.sql).toContain("\"provider\" = 'twilio'");
-    expect(query.sql).toContain("\"metadata\"->>'surface' = 'phone_test', false)");
+    expect(query.sql).toContain("\"metadata\"->>'surface' = 'phone_test'");
+    expect(query.sql).toContain("\"action\" = 'voice.outbound.carrier'");
+    expect(query.sql).toContain("\"metadata\"->>'surface' = 'native_outbound', false)");
+    const nativeCarrierBranch = query.sql.slice(
+      query.sql.indexOf("\"action\" = 'voice.outbound.carrier'"),
+      query.sql.indexOf("\"metadata\"->>'surface' = 'native_outbound', false)") +
+        "\"metadata\"->>'surface' = 'native_outbound', false)".length,
+    );
+    expect(nativeCarrierBranch).toContain("\"provider\" = 'twilio'");
     expect(query.sql).toContain("at time zone 'UTC'");
     expect(query.sql).toContain("percentile_disc(0.5)");
     expect(query.sql).toContain("percentile_disc(0.95)");

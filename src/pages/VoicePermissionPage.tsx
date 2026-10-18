@@ -3,6 +3,7 @@ import { Loader2, ShieldCheck } from "lucide-react";
 import MarketingChrome from "../components/marketing/MarketingChrome";
 import { WirelineLockup } from "../components/brand/WirelineBrand";
 import { Button, Input } from "../components/atoms";
+import { Checkbox } from "../components/ui/shadcn/Checkbox";
 import { PageMeta } from "../lib/page-meta";
 import type { VoicePermissionPublicView } from "../lib/recipient-voice-permission-contract";
 
@@ -250,9 +251,8 @@ export default function VoicePermissionPage() {
                     />
                   </div>
                   <label className="flex items-start gap-3 text-sm">
-                    <input
-                      type="checkbox"
-                      className="mt-1 size-4 shrink-0 accent-primary"
+                    <Checkbox
+                      className="mt-1"
                       checked={accepted}
                       onChange={(event) => setAccepted(event.target.checked)}
                       disabled={busy || uncertain}
@@ -262,9 +262,8 @@ export default function VoicePermissionPage() {
                     <span>I agree to the permission above and sign electronically.</span>
                   </label>
                   <label className="flex items-start gap-3 text-sm">
-                    <input
-                      type="checkbox"
-                      className="mt-1 size-4 shrink-0 accent-primary"
+                    <Checkbox
+                      className="mt-1"
                       checked={locationAccepted}
                       onChange={(event) => setLocationAccepted(event.target.checked)}
                       disabled={busy || uncertain}

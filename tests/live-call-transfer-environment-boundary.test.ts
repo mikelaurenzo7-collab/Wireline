@@ -45,6 +45,24 @@ describe("live-call transfer environment boundary", () => {
     expect(referBoundary.slice(environment, provider)).toContain(
       "await enforceFundedCarrierCallLimit",
     );
+    expect(referBoundary.slice(environment, provider)).toContain("await resolveVoiceFundingId");
+    expect(referBoundary.slice(environment, provider)).toContain("funding?.outboundPlacement");
+    expect(referBoundary.slice(environment, provider)).toContain(
+      'canonical.startsWith("outbound:")',
+    );
+    expect(referBoundary.slice(environment, provider)).toContain(
+      'source?.direction === "outbound"',
+    );
+    expect(referBoundary.slice(environment, provider)).toContain(
+      'source?.sourceId?.startsWith("outbound:")',
+    );
+    expect(referBoundary.slice(environment, provider)).toContain('"OUTBOUND_TRANSFER_UNSUPPORTED"');
+    expect(referBoundary.slice(environment, provider)).toContain(
+      "eq(schema.callLogs.userId, userId)",
+    );
+    expect(referBoundary.slice(environment, provider)).toContain(
+      "eq(schema.callLogs.vapiCallId, providerCallId(callId))",
+    );
 
     expect(session).toContain(
       "referOpenAISipCall(input.userId, input.callId, result.destination.number)",

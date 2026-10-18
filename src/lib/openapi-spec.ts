@@ -308,7 +308,7 @@ const OutboundCallPurpose: JsonSchema = {
     "`marketing_or_sales` requires express written consent. `service_or_requested` and `callback` must not fake marketing consent.",
 };
 
-const OutboundDialRequest: JsonSchema = {
+const LegacyMobileOutboundDialRequest: JsonSchema = {
   type: "object",
   required: ["agentId", "customerNumber", "callPurpose"],
   properties: {
@@ -327,7 +327,7 @@ const OutboundDialRequest: JsonSchema = {
       type: "boolean",
       default: false,
       description:
-        "Only honored for `marketing_or_sales`; ignored for callbacks and requested calls.",
+        "Legacy caller assertion only. It does not authorize a call or create recipient permission.",
     },
   },
   additionalProperties: false,
@@ -339,6 +339,51 @@ const OutboundDialRequest: JsonSchema = {
     callPurpose: "callback",
     hasExpressWrittenConsent: false,
   },
+};
+
+const OutboundDialRequest: JsonSchema = {
+  ...LegacyMobileOutboundDialRequest,
+  required: ["agentId", "customerNumber", "callPurpose", "requestKey", "consentArtifactId"],
+  properties: {
+    ...LegacyMobileOutboundDialRequest.properties,
+    requestKey: {
+      type: "string",
+      format: "uuid",
+      description:
+        "Stable UUIDv4 for this exact tenant-owned request. Reuse after a lost response; never mint a new key to retry an unresolved call. Changed payload with the same key conflicts.",
+    },
+    consentArtifactId: {
+      type: "string",
+      format: "uuid",
+      description:
+        "Recipient-signed permission matching the seller, Bot, number and purpose. A client checkbox or imported lead label is not permission evidence.",
+    },
+  },
+  example: {
+    agentId: "agt_123",
+    customerNumber: "+13125550123",
+    callPurpose: "callback",
+    requestKey: "2b920aa5-72e1-4523-8c75-d650b1952500",
+    consentArtifactId: "b0f73ec5-135b-492f-b1ed-c077bf2d1fb3",
+  },
+};
+
+const OutboundRequestStatus: JsonSchema = {
+  type: "object",
+  required: ["requestKey", "status", "terminal"],
+  properties: {
+    requestKey: { type: "string", format: "uuid" },
+    status: { type: "string", enum: ["preparing", "accepted", "uncertain", "completed", "failed"] },
+    terminal: {
+      type: "boolean",
+      description:
+        "True only for an evidenced terminal carrier result or a durable no-dispatch/cancellation receipt. A missing request is not proof of no call.",
+    },
+    agentId: { type: "string" },
+    callId: { type: "string" },
+    leadId: { type: "string" },
+  },
+  additionalProperties: false,
 };
 
 const OutboundDialResponse: JsonSchema = {
@@ -563,6 +608,8 @@ const COMPONENT_SCHEMAS: Record<string, JsonSchema> = {
   IntakeLeadsBulkRequest,
   OutboundCallPurpose,
   OutboundDialRequest,
+  LegacyMobileOutboundDialRequest,
+  OutboundRequestStatus,
   OutboundDialResponse,
   DailyBrief,
   QuotaUsage,
@@ -817,7 +864,7 @@ const PATHS: Record<string, PathItem> = {
     post: {
       summary: "Place a tenant-scoped outbound call",
       description:
-        "Authenticated manual dial. `callPurpose` records the caller's requested context but is not consent evidence. Until BotBound resolves a server-owned consumer-request or non-marketing artifact, direct calls fail closed to the marketing class and require verified written consent. All calls pass DNC/TCPA gates before dispatch.",
+        "Staged authenticated manual dial. Production execution requires operator enablement after carrier and paid acceptance. Requires a stable request UUID and a matching recipient-signed permission; the server rechecks purpose, scope, revocation, jurisdiction and funding before dispatch. Initial permission scope is Illinois/Central and supported carrier routes are restricted separately. Marketing retains required Federal DNC screening. Bearer-link/typed-signature evidence is not verified identity or phone possession.",
       operationId: "postOutboundDial",
       tags: ["Outbound"],
       security: auth.bearer,
@@ -830,11 +877,76 @@ const PATHS: Record<string, PathItem> = {
           description: "Call dispatched.",
           content: { "application/json": { schema: ref("OutboundDialResponse") } },
         },
+        "202": {
+          description:
+            "Request outcome is being reconciled. Keep the same requestKey; do not redial with a new key.",
+        },
         "400": COMMON_ERROR_RESPONSES["400"],
         "401": COMMON_ERROR_RESPONSES["401"],
         "402": errorResponse("Trial, quota, spend, or billing gate blocked outbound dialing."),
         "403": errorResponse("DNC or TCPA consent gate blocked the call."),
+        "409": errorResponse("Request identity conflicts or another call is active or unresolved."),
+        "422": errorResponse("Destination is outside the supported carrier tariff scope."),
         "429": COMMON_ERROR_RESPONSES["429"],
+        "503": errorResponse(
+          "Outbound is disabled, temporarily unavailable, or the provider outcome is uncertain. Inspect doNotRetry and retain the requestKey.",
+        ),
+      },
+    },
+  },
+  "/api/outbound/dial/{requestKey}": {
+    get: {
+      summary: "Read the caller's original outbound request status",
+      description:
+        "Read-only recovery; never dispatches a call. An accepted SID is not a completed business conversation. Unknown or missing evidence must not be treated as a safe redial.",
+      operationId: "getOutboundRequestStatus",
+      tags: ["Outbound"],
+      security: auth.bearer,
+      parameters: [
+        {
+          name: "requestKey",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        "200": {
+          description: "Minimal tenant-owned request recovery state.",
+          content: { "application/json": { schema: ref("OutboundRequestStatus") } },
+        },
+        "401": COMMON_ERROR_RESPONSES["401"],
+        "404": errorResponse(
+          "No confirmed request receipt was found; this does not prove no dispatch.",
+        ),
+        "503": errorResponse("Request evidence requires reconciliation."),
+      },
+    },
+  },
+  "/api/outbound/dial/{requestKey}/cancel-missing": {
+    post: {
+      summary: "Fence a request that provably has not been admitted",
+      description:
+        "Creates a durable cancellation tombstone only when the tenant's request is absent, serialized against a late original POST. It does not cancel or redial an existing carrier call. Keep recovery pending unless the exact terminal receipt is returned.",
+      operationId: "cancelMissingOutboundRequest",
+      tags: ["Outbound"],
+      security: auth.bearer,
+      parameters: [
+        {
+          name: "requestKey",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        "200": {
+          description: "Exact no-dispatch cancellation receipt.",
+          content: { "application/json": { schema: ref("OutboundRequestStatus") } },
+        },
+        "401": COMMON_ERROR_RESPONSES["401"],
+        "404": errorResponse("Invalid request identity."),
+        "409": errorResponse("A request already exists. Reconcile its actual status instead."),
       },
     },
   },
@@ -842,13 +954,13 @@ const PATHS: Record<string, PathItem> = {
     post: {
       summary: "Place an outbound call from a native client",
       description:
-        "Native equivalent of `/api/outbound/dial`. The mobile client must send an explicit `callPurpose`, but that label is audit context only and cannot mint a non-marketing or consent exemption.",
+        "Legacy native boundary. The mobile client must send an explicit `callPurpose`, but that label is audit context only and cannot mint a non-marketing or consent exemption. Native recipient-permission enrollment is not implemented; caller-supplied consent remains fail-closed and this is not a live outbound launch path.",
       operationId: "postMobileOutboundCall",
       tags: ["Outbound"],
       security: auth.bearer,
       requestBody: {
         required: true,
-        content: { "application/json": { schema: ref("OutboundDialRequest") } },
+        content: { "application/json": { schema: ref("LegacyMobileOutboundDialRequest") } },
       },
       responses: {
         "200": {
