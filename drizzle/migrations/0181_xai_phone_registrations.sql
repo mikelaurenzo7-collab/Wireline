@@ -36,6 +36,13 @@ ALTER TABLE public.wireline_xai_phone_registrations ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
 REVOKE ALL ON TABLE public.wireline_xai_phone_registrations FROM PUBLIC;
 REVOKE ALL ON TABLE public.wireline_xai_phone_registrations FROM anon, authenticated, service_role;
+-- Default privileges may grant the tenant-scoped server role on new tables.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'wireline_server') THEN
+    REVOKE ALL ON TABLE public.wireline_xai_phone_registrations FROM wireline_server;
+  END IF;
+END $$;
 
 DO $$
 BEGIN
