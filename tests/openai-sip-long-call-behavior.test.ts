@@ -20,6 +20,7 @@ const h = vi.hoisted(() => ({
   canonicalFundingId: vi.fn(),
   refundFunding: vi.fn(),
   carrierDuration: vi.fn(),
+  reportError: vi.fn(),
   presenceStatus: "connected" as string | undefined,
   presenceUser: "tenant",
   presenceScopes: [] as unknown[],
@@ -212,7 +213,7 @@ vi.mock("../src/lib/mobile-push", () => ({
 vi.mock("../src/lib/outbound-call-purpose", () => ({ isMarketingCallPurpose: () => false }));
 vi.mock("../src/lib/outbound-status", () => ({ LEAD_STATUS: {} }));
 vi.mock("../src/lib/post-call-digest", () => ({ enqueuePostCallDigest: h.digest }));
-vi.mock("../src/lib/error-reporter", () => ({ reportError: vi.fn() }));
+vi.mock("../src/lib/error-reporter", () => ({ reportError: h.reportError }));
 vi.mock("../src/lib/tcpa-consent", () => ({
   buildConsentLedgerRow: vi.fn(),
   CONSENT_RULE_VERSION: "test",
@@ -334,6 +335,7 @@ beforeEach(() => {
     );
   h.refundFunding.mockReset().mockResolvedValue(undefined);
   h.carrierDuration.mockReset().mockResolvedValue({ durationSeconds: 120, unanswered: false });
+  h.reportError.mockReset();
   h.presenceStatus = "connected";
   h.presenceUser = "tenant";
   h.presenceScopes = [];
@@ -1096,23 +1098,51 @@ describe("long business-call lifecycle", () => {
     },
   );
 
-  it.each([404, 409])(
-    "records an abnormal sideband close as an ordinary ending once the provider reports the call over (HTTP %s)",
-    async (status) => {
-      const session = start();
-      await vi.advanceTimersByTimeAsync(1_000);
-      h.provider.mockResolvedValueOnce({ ok: false, status });
-      h.sockets[0].readyState = 3;
-      h.sockets[0].emit("close", 1006, Buffer.alloc(0));
-      await session;
-      expect(h.provider).toHaveBeenCalledOnce();
-      expect(h.provider.mock.calls[0][0]).toContain("/hangup");
-      const recorded = h.digest.mock.calls.at(-1)![0];
-      expect(recorded).toMatchObject({ endedReason: "provider-disconnected", pipelineError: null });
-      expect(recorded.finalization.providerHangupRequired).toBeFalsy();
-      expect(h.usage).toHaveBeenCalledOnce();
-    },
-  );
+  it("records an abnormal sideband close as an ordinary ending once the provider reports the call gone", async () => {
+    const session = start();
+    await vi.advanceTimersByTimeAsync(1_000);
+    h.provider.mockResolvedValueOnce({ ok: false, status: 404 });
+    h.sockets[0].readyState = 3;
+    h.sockets[0].emit("close", 1006, Buffer.alloc(0));
+    await session;
+    expect(h.provider).toHaveBeenCalledOnce();
+    expect(h.provider.mock.calls[0][0]).toContain("/hangup");
+    const recorded = h.digest.mock.calls.at(-1)![0];
+    expect(recorded).toMatchObject({ endedReason: "provider-disconnected", pipelineError: null });
+    expect(recorded.finalization.providerHangupRequired).toBeFalsy();
+    expect(h.usage).toHaveBeenCalledOnce();
+    expect(h.carrierDuration).not.toHaveBeenCalled();
+    expect(h.reportError).not.toHaveBeenCalled();
+  });
+
+  it("accepts a hangup conflict as an ordinary ending only when the carrier confirms the call ended", async () => {
+    const session = start();
+    await vi.advanceTimersByTimeAsync(1_000);
+    h.provider.mockResolvedValueOnce({ ok: false, status: 409 });
+    h.carrierDuration.mockResolvedValueOnce({ durationSeconds: 1, unanswered: false });
+    h.sockets[0].readyState = 3;
+    h.sockets[0].emit("close", 1006, Buffer.alloc(0));
+    await session;
+    expect(h.carrierDuration).toHaveBeenCalledWith("tenant", "openai:rtc_test");
+    const recorded = h.digest.mock.calls.at(-1)![0];
+    expect(recorded).toMatchObject({ endedReason: "provider-disconnected", pipelineError: null });
+    expect(recorded.finalization.providerHangupRequired).toBeFalsy();
+  });
+
+  it("keeps a lost connection when a hangup conflict cannot be confirmed as terminal", async () => {
+    const session = start();
+    await vi.advanceTimersByTimeAsync(1_000);
+    h.provider.mockResolvedValueOnce({ ok: false, status: 409 });
+    h.carrierDuration.mockRejectedValueOnce(new Error("carrier still active"));
+    h.sockets[0].readyState = 3;
+    h.sockets[0].emit("close", 1006, Buffer.alloc(0));
+    await session;
+    expect(h.carrierDuration).toHaveBeenCalledOnce();
+    expect(h.digest.mock.calls.at(-1)![0]).toMatchObject({
+      endedReason: "provider-close-1006",
+      pipelineError: "connection",
+    });
+  });
 
   it("keeps a lost connection when the provider call was still live at the abnormal close", async () => {
     const session = start();
@@ -1125,6 +1155,15 @@ describe("long business-call lifecycle", () => {
       endedReason: "provider-close-1006",
       pipelineError: "connection",
     });
+    // A dropped live call must alert, not only log.
+    expect(h.reportError).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({
+        callId: "openai:rtc_test",
+        endedReason: "provider-close-1006",
+        tags: { surface: "sip-session", failure: "connection" },
+      }),
+    );
   });
 
   it("does not treat a sideband that never opened as an ordinary ending", async () => {

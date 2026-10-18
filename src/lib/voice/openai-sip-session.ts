@@ -392,8 +392,12 @@ export function applyInboundAdmission(
   };
 }
 
-/** Whether call control changed a live call or found it already terminal. */
-type OpenAICallControlOutcome = "completed" | "already_ended";
+/**
+ * Whether call control changed a live call, found it gone (404), or was refused
+ * with a conflict (409). A conflict is idempotent for hangup but is not proof
+ * that the call ended: it can also mean concurrent control on a live call.
+ */
+type OpenAICallControlOutcome = "completed" | "already_ended" | "conflict";
 
 async function openaiCallControl(
   callId: string,
@@ -418,9 +422,8 @@ async function openaiCallControl(
     // Hangup is a desired-state operation. A provider-side missing or already
     // terminal call is equivalent to success, which keeps deletion cleanup and
     // watchdog retries idempotent. REFER remains strict for the same statuses.
-    if (action === "hangup" && (response.status === 404 || response.status === 409)) {
-      return "already_ended";
-    }
+    if (action === "hangup" && response.status === 404) return "already_ended";
+    if (action === "hangup" && response.status === 409) return "conflict";
     throw new Error(`OpenAI ${action} returned HTTP ${response.status}.`);
   }
   return "completed";
@@ -2546,16 +2549,23 @@ async function runRealtimeSession(
     } catch {
       hangupConfirmed = false;
     }
-    if (
+    const sidebandEndedWithCall =
       sidebandLostAfterOpen &&
       pipelineError === "connection" &&
-      hangupOutcome === "already_ended" &&
-      (endedReason === "runtime-error" || endedReason.startsWith("provider-close-"))
-    ) {
+      (endedReason === "runtime-error" || endedReason.startsWith("provider-close-")) &&
+      (hangupOutcome === "already_ended" ||
+        // A 409 alone can be a transient or concurrent-control conflict on a
+        // live call, so it counts only once the carrier confirms termination.
+        (hangupOutcome === "conflict" &&
+          (await readTerminalCarrierDuration(input.userId, providerCallId(input.callId)).then(
+            () => true,
+            () => false,
+          ))));
+    if (sidebandEndedWithCall) {
       // OpenAI can drop an opened sideband without a close frame (1006) as its
-      // SIP call ends. A provider that already reports the call as terminal
-      // establishes an ordinary ending; only a live call we had to end is a
-      // lost connection.
+      // SIP call ends. A provider that reports the call gone, or a conflict the
+      // carrier confirms as terminal, establishes an ordinary ending; a live
+      // call we had to end, or an unverified conflict, is a lost connection.
       log.info("OpenAI SIP sideband ended with its call", {
         callId: providerCallId(input.callId),
         closeReason: endedReason,
@@ -2569,6 +2579,15 @@ async function runRealtimeSession(
         callId: providerCallId(input.callId),
         failure: pipelineError,
         errorClass: error instanceof Error ? error.name : typeof error,
+      });
+      // A failed live call is a customer-facing outage; alert on it, not only log it.
+      reportError(error, {
+        userId: input.userId,
+        agentId: input.agentId,
+        callId: providerCallId(input.callId),
+        endedReason,
+        hangupConfirmed,
+        tags: { surface: "sip-session", failure: pipelineError },
       });
       if (!hangupConfirmed) {
         log.error("OpenAI SIP provider hangup requires durable recovery", {
