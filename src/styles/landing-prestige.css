@@ -272,6 +272,16 @@
   flex-shrink: 0;
 }
 
+.landing-prestige__direction-status {
+  padding: 0.1rem 0.4rem;
+  border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
+  border-radius: 999px;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.85em;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
 .landing-prestige__direction strong {
   font-family: var(--wireline-font-family-display);
   font-size: clamp(1rem, 1.3vw, 1.15rem);

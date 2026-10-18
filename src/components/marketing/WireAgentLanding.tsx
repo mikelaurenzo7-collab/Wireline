@@ -128,11 +128,12 @@ export default function WireAgentLanding() {
               <Link
                 className="landing-prestige__direction is-outbound"
                 to={signupHrefForPlan("personal", { template: "sales-rep" })}
-                aria-label="Outbound: Call. Book. Create an Outbound Bot"
+                aria-label="Outbound, early access: Call. Book. Create an Outbound Bot"
                 onClick={() => trackSignupIntent("hero_direction", "Outbound Sales Rep")}
               >
                 <span className="landing-prestige__direction-label">
                   <PhoneOutgoing aria-hidden="true" /> Outbound
+                  <span className="landing-prestige__direction-status">Early access</span>
                 </span>
                 <strong>Call. Book.</strong>
                 <span className="landing-prestige__direction-action">
