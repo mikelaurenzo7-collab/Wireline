@@ -61,7 +61,7 @@ describe("BotBound brand migration", () => {
     expect(identity).toContain('technicalNamespace: "wireline"');
     expect(shell).toContain('WORKSPACE_RAIL_STORAGE_KEY = "wireline:workspace-rail:v1"');
     expect(shell).not.toContain("WirelineNative");
-    expect(shell).toContain('aria-label="BotBound Studio"');
+    expect(shell).toContain('aria-label="BotBound Workspace"');
     expect(shell).toContain("<BotBoundMark");
     expect(shell).toContain("<BotBoundWordmark");
   });

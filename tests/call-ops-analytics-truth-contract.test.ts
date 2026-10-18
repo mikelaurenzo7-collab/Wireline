@@ -7,6 +7,8 @@ const analytics = readFileSync("src/components/CallOpsAnalytics.tsx", "utf8");
 const overview = readFileSync("src/components/CallOpsOverview.tsx", "utf8");
 const callOps = readFileSync("src/components/CallLogsClaude.tsx", "utf8");
 const phonePage = readFileSync("src/pages/PhonePage.tsx", "utf8");
+const insightsView = readFileSync("src/components/insights/InsightsView.tsx", "utf8");
+const opsDesign = readFileSync("src/lib/wireline-ops-design.ts", "utf8");
 
 describe("Call Ops analytics truth", () => {
   it("computes exact tenant aggregates without selecting transcript-bearing rows", () => {
@@ -47,10 +49,13 @@ describe("Call Ops analytics truth", () => {
     expect(analytics).toContain("analytics.weekdayCounts");
     expect(overview).toContain('import CallOpsAnalytics from "./CallOpsAnalytics";');
     expect(overview).toContain("<CallOpsAnalytics />");
-    expect(phonePage).toContain('import CallOpsOverview from "../components/CallOpsOverview";');
-    expect(phonePage).toContain('{ id: "analytics", label: "Analytics" }');
-    expect(phonePage).toContain('data-visual-qa-state="primary-analytics"');
-    expect(phonePage).toContain("<CallOpsOverview />");
+    // Call analytics lives in Insights beside every other channel; Calls keeps
+    // the log, outbound work, and lines, and forwards old Analytics bookmarks.
+    expect(insightsView).toContain('import CallOpsOverview from "../CallOpsOverview";');
+    expect(insightsView).toContain('calls: wrap("Call analytics", <CallOpsOverview />)');
+    expect(opsDesign).toContain('tabs: ["funnel", "calls", "goals", "heatmap", "leaderboard"]');
+    expect(phonePage).not.toContain('{ id: "analytics", label: "Analytics" }');
+    expect(phonePage).toContain('<Navigate to="/insights?tab=performance&view=calls" replace />');
     expect(callOps).toContain("const CALL_PAGE_SIZE = 100;");
     expect(callOps).toContain("offset: String(calls.length)");
     expect(callOps).toContain("Load More Calls");

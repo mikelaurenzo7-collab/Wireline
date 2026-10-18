@@ -28,6 +28,8 @@ type WorkspaceResizablePanelProps = {
   defaultCollapsed?: boolean;
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
+  /** Take all remaining width (an expanded panel). The drag handle hides and the saved width returns on exit. */
+  fill?: boolean;
   className?: string;
   resizeHandleLabel: string;
   children: (state: WorkspaceResizablePanelRenderState) => ReactNode;
@@ -72,6 +74,7 @@ export default function WorkspaceResizablePanel({
   defaultCollapsed = false,
   collapsed: controlledCollapsed,
   onCollapsedChange,
+  fill = false,
   className,
   resizeHandleLabel,
   children,
@@ -196,7 +199,8 @@ export default function WorkspaceResizablePanel({
     [maxSize, minSize, resizeBy, setCollapsed, side],
   );
 
-  const renderedSize = collapsed ? collapsedSize : size;
+  // A narrower window can lower maxSize below a saved width; render within bounds.
+  const renderedSize = collapsed ? collapsedSize : clamp(size, minSize, maxSize);
   const edgeClass = side === "left" ? "right-0 translate-x-1/2" : "left-0 -translate-x-1/2";
 
   return (
@@ -204,11 +208,12 @@ export default function WorkspaceResizablePanel({
       data-wireline-resizable-panel={side}
       data-collapsed={collapsed ? "true" : "false"}
       data-resizing={resizing ? "true" : undefined}
-      className={cn("relative h-full min-h-0 shrink-0", className)}
-      style={{ width: renderedSize }}
+      data-fill={fill ? "true" : undefined}
+      className={cn("relative h-full min-h-0", fill ? "min-w-0 flex-1" : "shrink-0", className)}
+      style={fill ? undefined : { width: renderedSize }}
     >
       {children({ collapsed, size, toggleCollapsed, resetSize })}
-      {!collapsed ? (
+      {!collapsed && !fill ? (
         <div
           role="separator"
           aria-label={resizeHandleLabel}

@@ -142,7 +142,7 @@ describe("agent capacity integrity", () => {
     // people actually see — and it read "up to 1 agents" while the rest of the
     // product pluralises counts.
     expect(agentCapMessage(1)).toBe(
-      "Your plan includes 1 Bot. Edit your current Bot in Studio to change what it does.",
+      "Your plan includes 1 Bot. Change your current Bot in its Workspace to give it a new job.",
     );
     expect(agentCapMessage(0)).toContain("0 Bots");
     expect(agentCapMessage(2)).toContain("2 Bots");

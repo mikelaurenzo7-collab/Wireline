@@ -1,8 +1,9 @@
-import { ChevronDown, Plus, Settings2 } from "lucide-react";
+import { ChevronDown, Plus, SlidersHorizontal } from "lucide-react";
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router";
 
 import { Button } from "../atoms/Button";
+import WorkspaceSectionNav from "../layout/WorkspaceSectionNav";
 import { useStudioActiveAgentId } from "../../hooks/useStudioActiveAgentId";
 import { buildAgentOptionLabels } from "../../lib/agent-option-labels";
 import { agentLineStatus, agentReadinessLabel } from "../../lib/agent-readiness";
@@ -41,7 +42,7 @@ export default function StudioContextChrome() {
       aria-label={`${language.singular} context`}
     >
       <div className="wl-studio-context-row flex min-h-[56px] flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-5">
-        <div className="flex min-w-0 flex-[1_1_10rem] items-center gap-2.5">
+        <div className="flex min-w-0 flex-[1_1_10rem] items-center gap-2.5 md:max-w-[18rem] md:flex-none">
           {activeAgent ? null : (
             <span className="inline-flex shrink-0 font-[var(--wireline-font-mono)] text-[10px] uppercase tracking-[0.16em] text-primary">
               {language.navLabel}
@@ -83,6 +84,12 @@ export default function StudioContextChrome() {
           )}
         </div>
 
+        {activeAgent ? (
+          <div className="order-3 w-full min-w-0 md:order-none md:w-auto md:flex-1">
+            <WorkspaceSectionNav />
+          </div>
+        ) : null}
+
         <div className="flex max-w-full flex-wrap items-center gap-1">
           {activeAgent ? (
             <Button
@@ -91,7 +98,7 @@ export default function StudioContextChrome() {
               variant={inspectorOpen ? "secondary" : "ghost"}
               size="sm"
               className="min-h-[44px] px-2.5"
-              aria-label="Bot settings"
+              aria-label="Bot details"
               aria-expanded={inspectorOpen}
               aria-controls={inspectorOpen ? "studio-inspector" : undefined}
               onClick={() =>
@@ -104,8 +111,8 @@ export default function StudioContextChrome() {
                 )
               }
             >
-              <Settings2 className="size-4" aria-hidden="true" />
-              Settings
+              <SlidersHorizontal className="size-4" aria-hidden="true" />
+              Details
             </Button>
           ) : null}
           {readyLabel ? (

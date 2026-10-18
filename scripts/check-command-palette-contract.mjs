@@ -101,8 +101,8 @@ forbidPattern(
 requirePattern(
   "src/components/CommandBar.tsx",
   commandBar,
-  /label: "Bot Studio"[\s\S]*href: "\/studio"/,
-  "must expose Bot Studio as the workspace home",
+  /label: "Workspace"[\s\S]*href: "\/studio"/,
+  "must expose the Workspace as home",
 );
 requirePattern(
   "src/components/CommandBar.tsx",

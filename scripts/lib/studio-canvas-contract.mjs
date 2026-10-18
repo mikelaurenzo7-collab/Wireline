@@ -84,7 +84,8 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "double-click-reset", pattern: /onDoubleClick=\{resetSize\}/ },
   ],
   navigation: [
-    { id: "studio-label", pattern: /label: "Bot Studio"/ },
+    { id: "studio-label", pattern: /label: "Workspace"/ },
+    { id: "workspace-sections", pattern: /WORKSPACE_SECTIONS/ },
     { id: "studio-active-state", pattern: /target === "\/studio"/ },
     {
       id: "daily-work-order",
@@ -103,26 +104,34 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "settings-expanded-state", pattern: /aria-expanded=\{inspectorOpen\}/ },
   ],
   canvas: [
-    { id: "single-workroom", pattern: /onModeChange=\{setWorkroomMode\}/ },
-    { id: "inspector-toggle", pattern: /\["setup", "review"\] as const/ },
-    { id: "inspector-body", pattern: /inspectorSection === "review" \? reviewPanel : setupPanel/ },
+    // Beside an open Try It panel the conversation only edits the Bot.
+    { id: "single-workroom", pattern: /onModeChange=\{panelOpen \? undefined : setWorkroomMode\}/ },
+    { id: "panel-tabs", pattern: /\{ id: "try", label: "Try It" \}/ },
+    { id: "computer-panel", pattern: /\{ id: "computer", label: "Computer" \}/ },
+    {
+      id: "inspector-body",
+      pattern: /activePanelSection === "review"\s*\? reviewPanel\s*: setupPanel/,
+    },
+    { id: "try-it-beside", pattern: /mode="test"/ },
     { id: "deep-editor", pattern: /StudioAgentWorkspacePanel/ },
     { id: "chat-workroom", pattern: /<StudioWorkroom/ },
     { id: "review-panel", pattern: /StudioAgentReviewPanel/ },
     // Request lifetimes are isolated by account, Bot and mode; drafts live above them.
-    { id: "workroom-key", pattern: /<StudioWorkroom[\s\S]*key=\{`\$\{user\?\.id\}:\$\{workroomKey\}`\}/ },
+    { id: "workroom-key", pattern: /<StudioWorkroom[\s\S]*key=\{`\$\{user\?\.id\}:\$\{main\.key\}`\}/ },
     {
       id: "workroom-mode-isolation",
-      pattern: /const workroomKey = `\$\{active\.id\}:\$\{workroomMode\}`/,
+      pattern: /const key = `\$\{active\.id\}:\$\{mode\}`/,
     },
     {
       id: "workroom-draft-preservation",
-      pattern: /initialDraft=\{workroomDrafts\.get\(workroomKey\)\}/,
+      pattern: /initialDraft=\{workroomDrafts\.get\(main\.key\)\}/,
     },
     { id: "legacy-mode-cleanup", pattern: /next\.delete\("mode"\)/ },
     { id: "create-first-empty-state", pattern: /Create Your Bot/i },
     { id: "command-nonce", pattern: /commandNonce/ },
-    { id: "progressive-inspector", pattern: /collapsed=\{!inspectorOpen\}/ },
+    { id: "progressive-inspector", pattern: /collapsed=\{!panelOpen\}/ },
+    // The conversation hides only when the owner chooses Full width.
+    { id: "full-width-panel", pattern: /fill=\{panelFill\}/ },
   ],
   workroom: [
     { id: "composer-dock", pattern: /wl-composer-dock/ },

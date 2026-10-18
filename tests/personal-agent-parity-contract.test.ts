@@ -45,7 +45,7 @@ describe("unified Bot workspace compatibility", () => {
     expect(customerAgentLanguage("personal")).toMatchObject({
       singular: "Bot",
       plural: "Bots",
-      navLabel: "Bot Studio",
+      navLabel: "Workspace",
       createCta: "Create Bot",
     });
     expect(BOT_WORKSPACE_PROMISE.title).toBe("Your Bot. Already Moving");

@@ -59,7 +59,7 @@ export default function WorkspaceBrandEditor({
     <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
       <div className="mb-5">
         <h2 className="font-[var(--wireline-font-family-display)] text-xl tracking-[-0.02em] text-foreground">
-          Workspace Brand
+          Brand
         </h2>
       </div>
 
@@ -67,12 +67,12 @@ export default function WorkspaceBrandEditor({
         <fieldset disabled={isSaving || isLoading} className="min-w-0 space-y-4">
           <div>
             <label htmlFor={nameId} className="app-field-label">
-              Workspace name
+              Brand name
             </label>
             <Input
               id={nameId}
               type="text"
-              placeholder="Your workspace name"
+              placeholder="Your business name"
               className="app-input-soft h-auto py-3"
               value={settings.brand_name}
               onChange={(event) => onUpdate({ ...settings, brand_name: event.target.value })}

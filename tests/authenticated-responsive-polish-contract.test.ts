@@ -26,7 +26,13 @@ describe("authenticated responsive polish contract", () => {
     expect(chrome).toContain("min-w-0 flex-1 truncate !whitespace-nowrap");
     expect(chrome).toContain("sm:max-w-[18rem] sm:flex-none");
     // A content-sized basis lets the controls wrap instead of starving the title.
-    expect(chrome).toContain('className="flex min-w-0 flex-[1_1_10rem] items-center gap-2.5"');
+    expect(chrome).toContain(
+      'className="flex min-w-0 flex-[1_1_10rem] items-center gap-2.5 md:max-w-[18rem] md:flex-none"',
+    );
+    // The Workspace section strip takes its own full-width row on phones.
+    expect(chrome).toContain(
+      'className="order-3 w-full min-w-0 md:order-none md:w-auto md:flex-1"',
+    );
     // The redundant kicker and separator stay for the no-agent state only, so
     // the selected agent name owns the row on every width.
     expect(chrome).toContain("{activeAgent ? null : (");

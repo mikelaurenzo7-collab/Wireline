@@ -8,17 +8,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { Link } from "react-router";
-import {
-  ArrowLeft,
-  ArrowUp,
-  Loader2,
-  MessageCircle,
-  Mic,
-  Monitor,
-  Phone,
-  Trash2,
-} from "lucide-react";
+import { ArrowUp, Loader2, MessageCircle, Mic, Phone, Trash2 } from "lucide-react";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
@@ -264,6 +254,8 @@ const StudioWorkroom = forwardRef<
   const injectedCommandRef = useRef<string | null>(initialCommand?.trim() || null);
   const injectedCommandNonceRef = useRef<string | null>(commandNonce || null);
   const split = layout === "split";
+  // Change and Try It can be on screen together, so each composer owns its id.
+  const composerId = mode === "test" ? "studio-workroom-test-message" : "studio-workroom-message";
   const quickPrompts = mode === "test" ? TEST_PROMPTS : CONFIGURE_PROMPTS;
   const showStarterPrompts = !loading && !sending && messages.length === 0 && !draft.trim();
 
@@ -517,12 +509,13 @@ const StudioWorkroom = forwardRef<
           ? "Replying"
           : "Working";
 
-  const modeActionId = `studio-workroom-${agentId}-mode-action`;
+  const modeActionId = (option: WorkroomMode) => `studio-workroom-${agentId}-mode-${option}`;
   const selectMode = (option: WorkroomMode) => {
+    if (option === mode) return;
     onModeChange?.(option);
     // The workspace remounts the conversation when its mode changes. Keep
     // keyboard focus on the same in-context action after the remount.
-    requestAnimationFrame(() => document.getElementById(modeActionId)?.focus());
+    requestAnimationFrame(() => document.getElementById(modeActionId(option))?.focus());
   };
 
   const clearButton = (
@@ -547,40 +540,37 @@ const StudioWorkroom = forwardRef<
         <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-2 sm:gap-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             {onModeChange ? (
-              <>
-                <span className="text-sm font-semibold text-foreground">
-                  {mode === "test" ? "Private Rehearsal" : "Set Up"}
-                </span>
-                <Button
-                  id={modeActionId}
-                  type="button"
-                  size="sm"
-                  variant={mode === "test" ? "outline" : "secondary"}
-                  className="min-h-11"
-                  onClick={() => selectMode(mode === "test" ? "configure" : "test")}
-                >
-                  {mode === "test" ? (
-                    <>
-                      <ArrowLeft aria-hidden="true" />
-                      Set Up
-                    </>
-                  ) : (
-                    <>
-                      <Mic aria-hidden="true" />
-                      Rehearse
-                    </>
-                  )}
-                </Button>
-                <Button asChild size="sm" variant="outline" className="min-h-11">
-                  <Link to={`/computer?agent=${encodeURIComponent(agentId)}`}>
-                    <Monitor aria-hidden="true" />
-                    Computer
-                  </Link>
-                </Button>
-              </>
+              // Changing the Bot and trying it are one Set Up job, so they are
+              // two views of the same place rather than separate destinations.
+              <div
+                role="group"
+                aria-label="Set Up view"
+                className="inline-flex items-center gap-0.5 rounded-lg bg-muted/40 p-0.5"
+              >
+                {(
+                  [
+                    { id: "configure", label: "Change", Icon: MessageCircle },
+                    { id: "test", label: "Try It", Icon: Mic },
+                  ] as const
+                ).map(({ id, label, Icon }) => (
+                  <Button
+                    key={id}
+                    id={modeActionId(id)}
+                    type="button"
+                    size="sm"
+                    variant={mode === id ? "secondary" : "ghost"}
+                    aria-pressed={mode === id}
+                    className="min-h-11"
+                    onClick={() => selectMode(id)}
+                  >
+                    <Icon aria-hidden="true" />
+                    {label}
+                  </Button>
+                ))}
+              </div>
             ) : (
-              <span className="text-sm text-muted-foreground">
-                {mode === "test" ? "Private Rehearsal" : "Set Up"}
+              <span className="text-sm font-semibold text-foreground">
+                {mode === "test" ? "Private Rehearsal" : "Change Your Bot"}
               </span>
             )}
           </div>
@@ -748,11 +738,11 @@ const StudioWorkroom = forwardRef<
                 </div>
               ) : null}
               <div className={WL_COMPOSER_CLASSES.composerDock}>
-                <label className="sr-only" htmlFor="studio-workroom-message">
+                <label className="sr-only" htmlFor={composerId}>
                   {mode === "test" ? `Customer message for ${agentName}` : `Message ${agentName}`}
                 </label>
                 <textarea
-                  id="studio-workroom-message"
+                  id={composerId}
                   data-resize="none"
                   ref={inputRef}
                   value={draft}

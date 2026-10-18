@@ -37,22 +37,26 @@ describe("authenticated surfaces", () => {
   it("defines navigation groups and mobile dock IA", () => {
     expect(AUTHENTICATED_SURFACE_CONTRACT.navigation.groups).toEqual(["Work", "Manage"]);
     expect(AUTHENTICATED_SURFACE_CONTRACT.navigation.mobilePrimary).toEqual([
-      "Studio",
+      "Workspace",
       "Inbox",
       "Calls",
+      "Insights",
       "More",
     ]);
     expect(AUTHENTICATED_SURFACE_CONTRACT.navigation.mobileMore).toEqual([
+      "Calendar",
       "Connections",
-      "Knowledge",
-      "Approvals",
-      "Activity",
       "Settings",
+    ]);
+    expect(AUTHENTICATED_SURFACE_CONTRACT.navigation.workspaceSections).toEqual([
+      "Set Up",
+      "Knowledge",
+      "Computer",
     ]);
     expect(AUTHENTICATED_SURFACE_CONTRACT.navigation.sourceOfTruth).toBe(
       "src/constants/navigation.ts",
     );
-    expect(AUTHENTICATED_SURFACE_CONTRACT.navigation.doctrine).toContain("Studio is home");
+    expect(AUTHENTICATED_SURFACE_CONTRACT.navigation.doctrine).toContain("The Workspace is home");
   });
 
   it("defines page chrome modes for authenticated surfaces", () => {
@@ -68,15 +72,16 @@ describe("authenticated surfaces", () => {
     expect(AUTHENTICATED_SURFACE_CONTRACT.statePrimitives.error).toMatch(/StatusNotice/);
   });
 
-  it("uses Studio as the canonical home and redirects retired competing roster/dashboard routes", () => {
+  it("uses the Workspace as the canonical home and redirects retired competing roster/dashboard routes", () => {
     expect(AUTHENTICATED_SURFACE_CONTRACT.hierarchy.studio).toMatch(
       /canonical home|Bot workspace|create|configure|test/i,
     );
     expect(AUTHENTICATED_SURFACE_CONTRACT.hierarchy.overviewRoute).toMatch(
-      /compatibility redirect to Studio/i,
+      /compatibility redirect to the Workspace/i,
     );
     expect(AUTHENTICATED_SURFACE_CONTRACT.hierarchy.agentsRoute).toMatch(
-      /compatibility redirect to Studio/i,
+      /compatibility redirect to the Workspace/i,
     );
+    expect(AUTHENTICATED_SURFACE_CONTRACT.hierarchy.workspaceRoute).toMatch(/stays \/studio/);
   });
 });

@@ -30,7 +30,7 @@ export const BRAND_SYSTEM = {
     "Keep deliberate uppercase styling limited to compact overlines, operational labels, buttons, tabs, and navigation; a control style must not change a title.",
     "Render the BotBound brand name in canonical mixed case everywhere it is customer-visible, including prose, metadata, and legal copy.",
     "Keep technical wireline identifiers, URLs, domains, email addresses, API names, event keys, and persisted values in their native casing.",
-    "Never use Wire as a customer-facing setup step, nav label, or CTA. Keep Set Up and private Rehearse in one Studio workspace before Launch.",
+    "Never use Wire as a customer-facing setup step, nav label, or CTA. Keep changing the Bot and trying it privately together in the Workspace's Set Up before Launch.",
     "Keep explanatory body copy, supporting descriptions, and status messages in sentence case. Preserve customer-authored text exactly, including its casing.",
     "Preserve proper names and acronyms in titles. Keep short articles, conjunctions, and prepositions lowercase unless they begin or end a title.",
     "Do not end a title with a period; retain a question mark when the title is a question.",
@@ -50,8 +50,8 @@ const BOT_LANGUAGE = {
   singular: "Bot",
   indefiniteSingular: "a Bot",
   plural: "Bots",
-  navLabel: "Bot Studio",
-  navShort: "Studio",
+  navLabel: "Workspace",
+  navShort: "Workspace",
   createCta: "Create Bot",
   createCtaShort: "Create Bot",
   setupLabel: "Set Up Your Bot",
@@ -141,7 +141,7 @@ export const MARKETING_VOICE = {
   subline: BOT_BRAND.promise,
   channelProof: ["Call", "Text", "Email"],
   extensionLead:
-    "Send this page into Studio. Your Bot can prepare a call, draft a text, or follow up without leaving the tab.",
+    "Send this page to your Workspace. Your Bot can prepare a call, draft a text, or follow up without leaving the tab.",
   differentiator: OUTBOUND_WEDGE.differentiator,
   buyingNoun: BRAND_SYSTEM.buyingNoun,
 } as const;

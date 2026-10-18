@@ -18,14 +18,14 @@ const clientSurfaces = [
   {
     icon: MonitorDown,
     title: "BotBound Command",
-    blurb: "Bring a page into Studio.",
+    blurb: "Bring a page into your Workspace.",
     action: "Install Guide",
     href: "/settings/apps/command",
   },
   {
     icon: MessageSquareText,
     title: "ChatGPT",
-    blurb: "Set up and rehearse privately.",
+    blurb: "Change and try your Bot privately.",
     action: "Set Up",
     href: "/settings/apps#chatgpt-mcp",
   },
@@ -155,8 +155,8 @@ export default function ClientAppsPage() {
               {copied ? "MCP URL copied." : ""}
             </p>
             <p className="text-sm text-muted-foreground">
-              Set up and rehearse privately; manage live calls, messages, numbers, and billing in
-              Studio.
+              Set up and try your Bot privately; manage live calls, messages, numbers, and billing
+              in your Workspace.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild variant="outline" size="sm">

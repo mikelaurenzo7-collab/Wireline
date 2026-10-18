@@ -150,8 +150,8 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     title: "BotBound Command (Browser Extension)",
     technical: true,
     items: [
-      "Early access handoff only. Install from Apps in Studio; store listings are not GA.",
-      "Page context is sent only when you explicitly click Send to Studio. No background harvesting.",
+      "Early access handoff only. Install from Settings, Apps; store listings are not GA.",
+      "Page context is sent only when you explicitly send it to BotBound. No background harvesting.",
       "No broad host permissions, no silent browsing collection, and no auth tokens stored in the extension.",
     ],
   },

@@ -125,13 +125,22 @@ describe("authenticated workspace design architecture", () => {
     const review = read("src/components/StudioAgentReviewPanel.tsx");
 
     expect(studio).toContain('useMediaQuery("(min-width: 1180px)")');
-    expect(studio).toContain("wireline:studio-inspector:v1");
+    expect(studio).toContain("wireline:studio-panel:v2");
     expect(studio).toContain('side="right"');
-    expect(studio).toContain("defaultSize={372}");
-    expect(studio).toContain("minSize={312}");
-    expect(studio).toContain("maxSize={520}");
+    expect(studio).toContain("defaultSize={PANEL_DEFAULT_WIDTH}");
+    expect(studio).toContain("minSize={PANEL_MIN_WIDTH}");
+    expect(studio).toContain("maxSize={panelMaxSize}");
+    expect(studio).toContain("const CONVERSATION_MIN_WIDTH = 420;");
     expect(studio).toContain("collapsedSize={0}");
-    expect(studio).toContain("collapsed={!inspectorOpen}");
+    expect(studio).toContain("collapsed={!panelOpen}");
+    // Claude-style panel: drag to resize, Full width to take the Workspace, close.
+    expect(studio).toContain("fill={panelFill}");
+    expect(studio).toContain('aria-label="Full width"');
+    expect(studio).toContain("aria-pressed={panelExpanded}");
+    expect(studio).toContain('{ id: "computer", label: "Computer" }');
+    expect(studio).toContain(
+      '<ComputerWorkbench key={active.id} agentId={active.id} layout="panel" />',
+    );
     expect(studio.match(/compact=\{splitWorkspace\}/g)).toHaveLength(2);
     expect(studio).toContain('layout={splitWorkspace ? "split" : "standalone"}');
     expect(setup).toContain('data-wireline-studio-setup-density={compact ? "inspector" : "page"}');
@@ -208,7 +217,7 @@ describe("authenticated workspace design architecture", () => {
   it("flattens Activity to one category strip plus one compact subview control", () => {
     const activity = read("src/pages/InsightsPage.tsx");
     expect(activity).toContain("WorkspaceControlBand");
-    expect(activity).toContain('aria-label="Activity view"');
+    expect(activity).toContain('aria-label="Insights view"');
     expect(activity).toContain("chrome.secondary.tabs.map");
     expect(activity).not.toContain("AppChromeSubTabs");
   });

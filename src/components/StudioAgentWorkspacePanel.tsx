@@ -43,7 +43,18 @@ type AgentSetupResponse = {
   openingGreeting?: string | null;
   firstMessage?: string | null;
   directives?: Array<{ content?: string }>;
+  knowledge?: unknown[];
 };
+
+/** What the Bot already knows, so the add box never reads as an empty Bot. */
+function knowledgeSummaryLabel(summary: { facts: number; rules: number }) {
+  if (summary.facts === 0 && summary.rules === 0) {
+    return "Your Bot has no saved facts or rules yet. Anything you add here becomes its first.";
+  }
+  const facts = `${summary.facts} ${summary.facts === 1 ? "fact" : "facts"}`;
+  const rules = `${summary.rules} ${summary.rules === 1 ? "rule" : "rules"}`;
+  return `Your Bot uses ${facts} and ${rules}. Anything you add here joins them.`;
+}
 
 function inferPersonality(value: string | undefined) {
   const normalized = readSetupDeliveryTone(value).toLowerCase();
@@ -125,6 +136,10 @@ export default function StudioAgentWorkspacePanel({
   const [setupLoadError, setSetupLoadError] = useState<string | null>(null);
   const [setupError, setSetupError] = useState<string | null>(null);
   const [setupNotice, setSetupNotice] = useState<string | null>(null);
+  const [knowledgeSummary, setKnowledgeSummary] = useState<{
+    facts: number;
+    rules: number;
+  } | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const activeAgentIdRef = useRef(agentId);
 
@@ -163,6 +178,10 @@ export default function StudioAgentWorkspacePanel({
       })
       .then((data) => {
         if (cancelled) return;
+        setKnowledgeSummary({
+          facts: Array.isArray(data.knowledge) ? data.knowledge.length : 0,
+          rules: Array.isArray(data.directives) ? data.directives.length : 0,
+        });
         const personality = typeof data.personality === "string" ? data.personality : "";
         setupDrafts.load(
           agentId,
@@ -291,7 +310,7 @@ export default function StudioAgentWorkspacePanel({
           );
           return;
         }
-        setSetupNotice("Saved. Rehearse the updated Bot before sending live traffic.");
+        setSetupNotice("Saved. Try the updated Bot before sending live traffic.");
       }
     } catch (reason) {
       if (isCurrentAgent()) {
@@ -408,16 +427,21 @@ export default function StudioAgentWorkspacePanel({
                     className="text-sm font-semibold text-foreground"
                     htmlFor="setup-knowledge"
                   >
-                    Knowledge and rules{" "}
+                    Add facts or rules{" "}
                     <span className="font-normal text-muted-foreground">(optional)</span>
                   </label>
                   <Link
                     to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
                     className="shrink-0 text-xs font-medium text-primary hover:underline"
                   >
-                    Knowledge & Rules
+                    Manage Knowledge
                   </Link>
                 </div>
+                {knowledgeSummary ? (
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    {knowledgeSummaryLabel(knowledgeSummary)}
+                  </p>
+                ) : null}
                 <textarea
                   id="setup-knowledge"
                   disabled={applyingSetup}
@@ -526,7 +550,7 @@ export default function StudioAgentWorkspacePanel({
             onClick={onRehearseVoiceInChat}
             className="h-auto justify-center whitespace-normal"
           >
-            Rehearse Bot
+            Try It
           </Button>
           <Button
             asChild

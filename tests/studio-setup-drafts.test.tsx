@@ -211,7 +211,7 @@ describe("Studio inspector draft lifecycle", () => {
   it("names the saved Knowledge and rules destination and preserves the active Bot", async () => {
     await mount();
     const link = elements(render()).find(
-      (element) => element.type === "a" && text(element) === "Knowledge & Rules",
+      (element) => element.type === "a" && text(element) === "Manage Knowledge",
     );
     expect(link?.props.to).toBe(`/knowledge?agent=${h.botId}`);
   });

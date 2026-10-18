@@ -941,7 +941,7 @@ router.patch(
     const content = cleanText(req.body?.content, 12000);
     if (!content) throw AppError.badRequest("Rule content is required");
     if (content.startsWith(OPENING_GREETING_PREFIX)) {
-      throw AppError.badRequest("Edit the opening greeting in Studio setup.");
+      throw AppError.badRequest("Edit the opening greeting in Set Up, Details.");
     }
     // Greetings have a separate atomic save that also updates firstMessage.
     // Keep this update scoped to one ordinary rule, preserving its ID/priority.
@@ -962,7 +962,7 @@ router.patch(
         priority: schema.directives.priority,
       });
     if (!directive)
-      throw AppError.notFound("Rule not found. Edit opening greetings in Studio setup.");
+      throw AppError.notFound("Rule not found. Edit opening greetings in Set Up, Details.");
     res.json({ success: true, directive: { ...directive, id: String(directive.id) } });
   },
 );

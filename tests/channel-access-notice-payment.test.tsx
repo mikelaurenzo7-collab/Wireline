@@ -44,6 +44,6 @@ describe("channel access notice", () => {
       access: access("pending_activation", null),
       channel: "voice",
     })!;
-    expect(notice.props.title).toBe("Calls isn't included");
+    expect(notice.props.title).toBe("Calls Aren't in Your Plan");
   });
 });

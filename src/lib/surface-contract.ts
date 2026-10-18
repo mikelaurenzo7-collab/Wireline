@@ -4,14 +4,9 @@ const SETTINGS_TABS = ["Account", "Billing", "Team", "Appearance", "Apps", "Comp
 
 const PAGE_CHROME_MODES = ["standard", "narrow", "operate", "studio"] as const;
 const NAV_GROUPS = ["Work", "Manage"] as const;
-const MOBILE_PRIMARY_LABELS = ["Studio", "Inbox", "Calls", "More"] as const;
-const MOBILE_MORE_LABELS = [
-  "Connections",
-  "Knowledge",
-  "Approvals",
-  "Activity",
-  "Settings",
-] as const;
+const WORKSPACE_SECTION_LABELS = ["Set Up", "Knowledge", "Computer"] as const;
+const MOBILE_PRIMARY_LABELS = ["Workspace", "Inbox", "Calls", "Insights", "More"] as const;
+const MOBILE_MORE_LABELS = ["Calendar", "Connections", "Settings"] as const;
 
 export const AUTHENTICATED_SURFACE_CONTRACT = {
   brand: {
@@ -36,12 +31,13 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
   },
   navigation: {
     groups: NAV_GROUPS,
-    primaryWork: ["Studio", "Inbox", "Calls"],
+    primaryWork: ["Workspace", "Inbox", "Calls", "Calendar"],
+    workspaceSections: WORKSPACE_SECTION_LABELS,
     mobilePrimary: MOBILE_PRIMARY_LABELS,
     mobileMore: MOBILE_MORE_LABELS,
     sourceOfTruth: "src/constants/navigation.ts",
     doctrine:
-      "There is no separate Home dashboard. Studio is home. Inbox owns written conversations; Calls owns voice; More owns lower-frequency management surfaces.",
+      "There is no separate Home dashboard. The Workspace is home: everything about one Bot (Set Up with Try It beside it, Knowledge, Computer). Inbox owns written conversations; Calls owns voice history and lines; Insights owns performance across channels; More owns lower-frequency management surfaces.",
   },
   pageChrome: {
     modes: PAGE_CHROME_MODES,
@@ -58,12 +54,13 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
     operate: {
       fullBleed: true,
       header: "thin operate title bar with tabs",
-      surfaces: ["Calls", "Activity"],
+      surfaces: ["Calls", "Insights"],
     },
     studio: {
       fullBleed: true,
-      header: "Bot context plus workroom; setup/review becomes an inspector on wide screens",
-      surfaces: ["Studio"],
+      header:
+        "Bot context with Workspace sections; Try It, Details, and Summary share a side panel on wide screens",
+      surfaces: ["Workspace"],
     },
   },
   statePrimitives: {
@@ -103,12 +100,14 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
     tabs: KNOWLEDGE_TABS,
   },
   hierarchy: {
-    studio: "canonical home and Bot workspace: create, select, configure, rehearse, and improve",
+    studio:
+      "canonical home and Bot Workspace: create, select, change, try, ground in knowledge, and assign computer work",
     inbox:
       "email and text conversations, globally or scoped to one Bot; providers are filters, not navigation",
-    calls:
-      "voice operations, lines, history, outbound work, and reports, globally or scoped to one Bot",
-    overviewRoute: "compatibility redirect to Studio; never a competing dashboard",
-    agentsRoute: "compatibility redirect to Studio for old roster bookmarks",
+    calls: "voice history, outbound work, and lines, globally or scoped to one Bot",
+    insights: "performance, reliability, quality, and revenue across every channel",
+    overviewRoute: "compatibility redirect to the Workspace; never a competing dashboard",
+    agentsRoute: "compatibility redirect to the Workspace for old roster bookmarks",
+    workspaceRoute: "readable alias for the Workspace, whose canonical route stays /studio",
   },
 } as const;

@@ -75,12 +75,12 @@ export const OPS_CHANNEL_EMPTY = {
     title: "No Active Callers",
     actions: [
       { label: "View Call History", to: "/phone?tab=logs" },
-      { label: "Open Studio", to: "/studio", primary: true },
+      { label: "Open Workspace", to: "/studio", primary: true },
     ],
   },
   fleetRail: {
     title: "No Bots Yet",
-    actions: [{ label: "Open Studio", to: "/studio", primary: true }],
+    actions: [{ label: "Open Workspace", to: "/studio", primary: true }],
   },
   fleetAgents: {
     title: "No Roster Yet",
@@ -112,7 +112,7 @@ export const OPS_CHANNEL_EMPTY = {
     title: "No Threads Yet",
     actions: [
       { label: "Connect Email", to: "/connections", primary: true },
-      { label: "Open Studio", to: "/studio" },
+      { label: "Open Workspace", to: "/studio" },
     ],
   },
   inboxDetail: {
@@ -127,7 +127,7 @@ export const OPS_CHANNEL_EMPTY = {
   },
   training: {
     title: "No Bots to Train Yet",
-    actions: [{ label: "Open Studio", to: "/studio", primary: true }],
+    actions: [{ label: "Open Workspace", to: "/studio", primary: true }],
   },
   integrations: {
     title: "No Carriers Linked",
@@ -146,7 +146,7 @@ export const OPS_CHANNEL_EMPTY = {
     title: "All Clear",
     actions: [
       { label: "Open Activity", to: "/insights", primary: true },
-      { label: "Open Studio", to: "/studio" },
+      { label: "Open Workspace", to: "/studio" },
     ],
   },
   sentiment: {
@@ -292,7 +292,7 @@ export const OPS_TRAINING_ASSISTS = [
 ] as const;
 
 export const OPS_TRAINING_ASSISTS_COPY = {
-  hint: "Runs in Studio chat",
+  hint: "Runs in the Workspace chat",
 } as const;
 
 /**
@@ -329,7 +329,7 @@ export const OPS_STUDIO_ASSISTS = [
 ] as const;
 
 export const OPS_STUDIO_ASSISTS_COPY = {
-  hint: "Opens Studio scoped to this agent",
+  hint: "Opens the Workspace for this Bot",
 } as const;
 
 /** Deep-link into Studio with an agent focused and the workroom composer prefilled. */
@@ -349,9 +349,9 @@ export const OPS_HELP = {
   stat: (live: number, demos: number) =>
     `${live} live line${live === 1 ? "" : "s"} -+ ${demos} demo${demos === 1 ? "" : "s"}`,
   quickLinks: [
-    { label: "Studio", to: "/studio", hint: "Open your Bot workspace" },
+    { label: "Workspace", to: "/studio", hint: "Open your Bot workspace" },
     { label: "Connections", to: "/connections", hint: "Numbers, email, and integrations" },
-    { label: "Training", to: "/studio?section=setup", hint: "Job, greeting, facts, and voice" },
+    { label: "Details", to: "/studio?section=setup", hint: "Job, greeting, facts, and voice" },
     { label: "Support", to: "/support", hint: "Get help with your BotBound workspace" },
   ],
 } as const;
@@ -399,7 +399,7 @@ export const OPS_CHANNEL_TOOLBAR = {
     export: "Export CSV",
   },
   training: {
-    loading: "Loading Studio",
+    loading: "Loading Workspace",
     stat: (n: number) => `${n} agent${n === 1 ? "" : "s"}`,
   },
   appointments: {
@@ -554,7 +554,7 @@ export const OPS_INSIGHTS_GROUPS = [
   {
     id: "performance",
     label: "Performance",
-    tabs: ["funnel", "goals", "heatmap", "leaderboard"] as const,
+    tabs: ["funnel", "calls", "goals", "heatmap", "leaderboard"] as const,
   },
   {
     id: "reliability",
@@ -597,7 +597,7 @@ export const OPS_INSIGHTS_EMPTY = {
     title: "No Funnel Data",
     actions: [
       { label: "Start Outbound", to: "/phone?tab=outbound", primary: true },
-      { label: "Bot Studio", to: "/studio" },
+      { label: "Workspace", to: "/studio" },
     ],
   },
   leaderboard: {
@@ -610,21 +610,21 @@ export const OPS_INSIGHTS_EMPTY = {
   latency: {
     title: "No Latency Samples",
     actions: [
-      { label: "Bot Studio", to: "/studio", primary: true },
+      { label: "Workspace", to: "/studio", primary: true },
       { label: "Call History", to: "/phone?tab=logs" },
     ],
   },
   reliability: {
     title: "No Reliability Samples",
     actions: [
-      { label: "Bot Studio", to: "/studio", primary: true },
+      { label: "Workspace", to: "/studio", primary: true },
       { label: "Call History", to: "/phone?tab=logs" },
     ],
   },
   spend: {
     title: "No AI Usage",
     actions: [
-      { label: "Studio", to: "/studio", primary: true },
+      { label: "Workspace", to: "/studio", primary: true },
       { label: "Calls", to: "/phone" },
     ],
   },
@@ -639,21 +639,21 @@ export const OPS_INSIGHTS_EMPTY = {
     title: "No QA Scores",
     actions: [
       { label: "Call History", to: "/phone?tab=logs" },
-      { label: "Bot Studio", to: "/studio" },
+      { label: "Workspace", to: "/studio" },
     ],
   },
   heatmap: {
     title: "No Call Activity",
     actions: [
       { label: "Call History", to: "/phone?tab=logs", primary: true },
-      { label: "Bot Studio", to: "/studio" },
+      { label: "Workspace", to: "/studio" },
     ],
   },
   topics: {
     title: "Not Enough Calls",
     actions: [
       { label: "Call History", to: "/phone?tab=logs", primary: true },
-      { label: "Studio", to: "/studio" },
+      { label: "Workspace", to: "/studio" },
     ],
   },
   failureModesOk: {

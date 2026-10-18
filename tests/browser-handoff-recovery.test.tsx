@@ -63,10 +63,10 @@ describe("handoff recovery and transition status", () => {
     expect(rendered.some((node) => node.props.className?.includes("animate-spin"))).toBe(false);
   });
 
-  it("provides a usable Studio exit without a spinner when browser context is missing", () => {
+  it("provides a usable Workspace exit without a spinner when browser context is missing", () => {
     const loading = BrowserHandoffBridge();
     expect(loading.props.title).toBe("Securing Browser Context");
-    expect(loading.props.busyLabel).toBe("Preparing Studio");
+    expect(loading.props.busyLabel).toBe("Preparing Workspace");
 
     for (const effect of harness.effects.splice(0)) effect();
 
@@ -79,7 +79,9 @@ describe("handoff recovery and transition status", () => {
     const rendered = elements(TransitionSurface(failed.props));
     expect(rendered.some((node) => node.props.role === "status")).toBe(false);
     expect(
-      rendered.some((node) => node.props.to === "/studio" && node.props.children === "Open Studio"),
+      rendered.some(
+        (node) => node.props.to === "/studio" && node.props.children === "Open Workspace",
+      ),
     ).toBe(true);
   });
 });

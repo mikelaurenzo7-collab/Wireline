@@ -72,7 +72,7 @@ describe("E2E design and BotBound brand polish", () => {
     expect(shell).toContain("aria-label={`Current Bot: ${agent.name}`}");
     expect(shell).toContain('import BotBoundMark from "./brand/BotBoundMark"');
     expect(shell).toContain('import { BotBoundWordmark } from "./brand/BotBoundBrand"');
-    expect(shell).toContain('aria-label="BotBound Studio"');
+    expect(shell).toContain('aria-label="BotBound Workspace"');
     expect(shell).toContain("data-wireline-bot-selected");
     expect(selectedRule).not.toBe("");
     expect(selectedRule).toContain("--wireline-color-action-primary-default");

@@ -88,7 +88,7 @@ export default function UnifiedInbox({
               title="No Conversations Yet"
               action={
                 <Button asChild size="sm">
-                  <Link to="/studio">Rehearse a Bot</Link>
+                  <Link to="/studio?workroom=test">Try Your Bot</Link>
                 </Button>
               }
             />

@@ -62,7 +62,7 @@ test("home offers outbound and inbound account paths without a public audio cont
 
   const directions = page.getByRole("navigation", { name: "Choose Bot direction" });
   const outbound = directions.getByRole("link", {
-    name: /Outbound: Call\. Book\. Create an Outbound Bot/i,
+    name: /Outbound, early access: Call\. Book\. Create an Outbound Bot/i,
   });
   const inbound = directions.getByRole("link", {
     name: /Inbound: Answer\. Act\. Create an Inbound Bot/i,

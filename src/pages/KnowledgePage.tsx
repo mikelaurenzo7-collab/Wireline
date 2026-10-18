@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { BookOpen, MessageCircle } from "lucide-react";
+import { BookOpen, Mic } from "lucide-react";
 
 import { Button, EmptyState, NativeSelect } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceControlBand from "../components/layout/WorkspaceControlBand";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
+import WorkspaceSectionNav from "../components/layout/WorkspaceSectionNav";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import WorkspaceShell from "../components/WorkspaceShell";
 import WorkspaceRecovery from "../components/WorkspaceRecovery";
@@ -128,9 +129,9 @@ export default function KnowledgePage() {
     <>
       {agentId ? (
         <Button asChild variant="secondary" size="sm" className="min-h-11 shrink-0 justify-center">
-          <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=test`}>
-            <MessageCircle size={15} aria-hidden="true" />
-            Rehearse in Studio
+          <Link to={`/studio?agent=${encodeURIComponent(agentId)}&workroom=test`}>
+            <Mic size={15} aria-hidden="true" />
+            Try It
           </Link>
         </Button>
       ) : null}
@@ -176,6 +177,7 @@ export default function KnowledgePage() {
       ) : (
         <WorkspacePageFrame mode="standard">
           <WorkspacePageIntro title="Knowledge" titleHidden />
+          <WorkspaceSectionNav />
           <WorkspaceControlBand
             ariaLabel="Knowledge controls"
             primary={

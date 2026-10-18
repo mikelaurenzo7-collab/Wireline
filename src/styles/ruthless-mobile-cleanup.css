@@ -257,12 +257,15 @@
    * Authenticated Studio: directive surfaces should feel calm and operational.
    * --------------------------------------------------------------------- */
   main:has(#studio-brief):not([data-wireline-full-bleed="true"]),
-  main:has(#studio-workroom-message):not([data-wireline-full-bleed="true"]) {
+  main:has(#studio-workroom-message, #studio-workroom-test-message):not(
+      [data-wireline-full-bleed="true"]
+    ) {
     padding-inline: 1rem;
   }
 
   main:has(#studio-brief) :is(p, span, button, a, textarea, input, label),
-  main:has(#studio-workroom-message) :is(p, span, button, a, textarea, input, label),
+  main:has(#studio-workroom-message, #studio-workroom-test-message)
+    :is(p, span, button, a, textarea, input, label),
   main[data-wireline-route^="/settings"]
     :is(p, span, button, a, input, label, h1, h2, h3):not(.wl-eyebrow):not(.wl-overline):not(
       .text-eyebrow
@@ -274,7 +277,7 @@
 
   main:has(#studio-brief) h1,
   main:has(#studio-brief) h2,
-  main:has(#studio-workroom-message) h1,
+  main:has(#studio-workroom-message, #studio-workroom-test-message) h1,
   main[data-wireline-route^="/settings"] h1,
   main[data-wireline-route^="/settings"] h2,
   form[aria-labelledby="create-agent-title"] h2 {
@@ -287,7 +290,7 @@
   }
 
   main:has(#studio-brief) h2,
-  main:has(#studio-workroom-message) h1 {
+  main:has(#studio-workroom-message, #studio-workroom-test-message) h1 {
     font-size: clamp(1.32rem, 5.8vw, 1.75rem);
     letter-spacing: var(--wireline-typography-h2-letterSpacing);
   }
@@ -303,16 +306,16 @@
   }
 
   main:has(#studio-brief) .studio-card button,
-  main:has(#studio-workroom-message) section button {
+  main:has(#studio-workroom-message, #studio-workroom-test-message) section button {
     font-size: 0.8125rem;
     line-height: 1.25;
   }
 
-  main:has(#studio-workroom-message) section {
+  main:has(#studio-workroom-message, #studio-workroom-test-message) section {
     padding-block: 0.75rem;
   }
 
-  main:has(#studio-workroom-message) textarea {
+  main:has(#studio-workroom-message, #studio-workroom-test-message) textarea {
     min-height: 5rem;
   }
 

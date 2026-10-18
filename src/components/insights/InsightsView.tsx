@@ -7,6 +7,7 @@
 import { Suspense, lazy, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { TrendingUp } from "lucide-react";
+import CallOpsOverview from "../CallOpsOverview";
 import CsvExportButton from "../CsvExportButton";
 import GoalsView from "../GoalsView";
 import WidgetBoundary from "../WidgetBoundary";
@@ -79,6 +80,7 @@ export default function InsightsView() {
   const viewContent = useMemo(() => {
     const views: Record<string, React.ReactNode> = {
       funnel: wrap("Activity totals", <FunnelView days={days} />),
+      calls: wrap("Call analytics", <CallOpsOverview />),
       goals: wrap("Goals", <GoalsView />),
       attribution: wrap("Attribution", <AttributionView days={days} />),
       topics: wrap("Topics", <TopicsView />),

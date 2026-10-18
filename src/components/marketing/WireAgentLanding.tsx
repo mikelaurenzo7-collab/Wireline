@@ -273,7 +273,7 @@ export default function WireAgentLanding() {
             </div>
             <div className="landing-prestige__pricing-more">
               <Link to="/pricing">
-                Compare all channels &amp; usage
+                Compare all channels and usage
                 <ArrowRight aria-hidden="true" />
               </Link>
             </div>

@@ -279,7 +279,7 @@ export function wirelinePlanFacts(): string[] {
 
 const KNOWLEDGE_SNIPPETS: Record<string, string[]> = {
   default: [
-    "Operators configure Bots via Create, Training, Connections, and Studio.",
+    "Operators configure Bots via Create, Knowledge, Connections, and the Workspace.",
     "Escalations route to the configured phone/email; use escalate_to_human when risk is high.",
     "BotBound Bots work across voice, text, and email under one identity, memory, and outcome record.",
   ],
@@ -323,7 +323,7 @@ const LESSON_SNIPPETS: string[] = [
   "When price objections arise, acknowledge first then reframe around ROI and cost of inaction.",
   "For scheduling, always read back date, time, timezone, and contact method before closing.",
   "In chat, offer to turn a business plan outline into config changes (greeting, tone, tools) when relevant.",
-  "Logo requests in agent chat -> outline concepts here; send the operator to Studio for brand artifacts.",
+  "Logo requests in agent chat -> outline concepts here; send the operator to the Workspace for brand artifacts.",
 ];
 
 /** Pod for each internal compatibility persona. */

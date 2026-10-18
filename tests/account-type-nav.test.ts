@@ -26,13 +26,12 @@ describe("legacy account-type navigation compatibility", () => {
     const groups = accountNavGroups("personal");
     expect(groups).toEqual(accountNavGroups("business"));
     expect(groups.map((group) => group.label)).toEqual(["Work", "Manage"]);
+    // Knowledge and Computer are Workspace sections, reached from /studio.
     expect(groups.find((group) => group.label === "Work")?.items.map((item) => item.path)).toEqual([
       "/studio",
-      "/knowledge",
       "/inbox",
       "/phone",
       "/calendar",
-      "/computer",
     ]);
     expect(
       groups.find((group) => group.label === "Manage")?.items.map((item) => item.path),
@@ -43,7 +42,14 @@ describe("legacy account-type navigation compatibility", () => {
     const paths = accountSidebarItems("personal").map((item) => item.path);
     expect(paths).not.toContain("/approvals");
     expect(paths).not.toContain("/apps");
-    expect(MOBILE_MORE_NAV.map((item) => item.href)).toContain("/approvals");
+    expect(paths).not.toContain("/knowledge");
+    expect(paths).not.toContain("/computer");
+    // Approvals is an Inbox tab, so More carries only calendar and system routes.
+    expect(MOBILE_MORE_NAV.map((item) => item.href)).toEqual([
+      "/calendar",
+      "/connections",
+      "/settings",
+    ]);
   });
 
   it("does not branch route availability by a legacy account value", () => {

@@ -19,18 +19,21 @@ describe("authenticated Bot navigation contract", () => {
   const copy = read("src/lib/product-copy.ts");
 
   it("keeps daily IA small and moves management destinations below it", () => {
-    expect(navigation).toMatch(/href: "\/studio"[\s\S]*label: "Bot Studio"/);
+    expect(navigation).toMatch(/href: "\/studio"[\s\S]*label: "Workspace"/);
     expect(navigation).toMatch(/href: "\/inbox", label: "Inbox"/);
     expect(navigation).toMatch(/href: "\/phone", label: "Calls"/);
-    expect(navigation).toMatch(/href: "\/insights", label: "Activity"/);
+    expect(navigation).toMatch(/href: "\/insights", label: "Insights"/);
     expect(navigation).toMatch(/href: "\/connections"[\s\S]*label: "Connections"/);
     expect(navigation).toContain('route: "/templates", parentHref: "/studio"');
-    expect(WORKSPACE_NAV.slice(0, 2).map((item) => item.href)).toEqual(["/studio", "/knowledge"]);
-    expect(desktopNavParentHref("/knowledge")).toBeNull();
+    expect(navigation).toContain('route: "/knowledge", parentHref: "/studio"');
+    expect(navigation).toContain('route: "/computer", parentHref: "/studio"');
+    expect(WORKSPACE_NAV.slice(0, 2).map((item) => item.href)).toEqual(["/studio", "/inbox"]);
+    expect(desktopNavParentHref("/knowledge")).toBe("/studio");
+    expect(desktopNavParentHref("/computer")).toBe("/studio");
     expect(navigation).toContain('route: "/approvals", parentHref: "/inbox"');
     expect(navigation).toContain('route: "/apps", parentHref: "/settings"');
     expect(shell).toContain("desktopNavParentHref(pathname)");
-    expect(shell).toContain('navLabel: "Bot Studio"');
+    expect(shell).toContain('navLabel: "Workspace"');
     expect(shell).toContain("MobileNavMoreSheet");
     expect(shell).toContain("WorkspaceResizablePanel");
   });
@@ -64,16 +67,18 @@ describe("authenticated Bot navigation contract", () => {
     expect(shell).not.toContain("orderedAgents");
   });
 
-  it("keeps Studio as one setup workspace with private rehearsal as an action", () => {
+  it("keeps Set Up as one workspace with Try It beside the conversation", () => {
     expect(studio).toContain('type InspectorSection = "setup" | "review"');
     expect(studio).toContain('type WorkroomMode = "configure" | "test"');
-    expect(studio).toContain('id === "setup" ? "Setup" : "Review"');
+    expect(studio).toContain('{ id: "try", label: "Try It" }');
+    expect(studio).toContain('{ id: "setup", label: "Details" }');
+    expect(studio).toContain('{ id: "review", label: "Summary" }');
     expect(studio).toContain("StudioAgentWorkspacePanel");
     expect(studio).toContain("StudioWorkroom");
     expect(studio).toContain("StudioAgentReviewPanel");
     expect(studio).toContain("WorkspaceResizablePanel");
-    expect(workroom).toContain('mode === "test" ? "Private Rehearsal" : "Set Up"');
-    expect(workroom).toContain("Rehearse");
+    expect(workroom).toContain('mode === "test" ? "Private Rehearsal" : "Change Your Bot"');
+    expect(workroom).toContain('{ id: "test", label: "Try It", Icon: Mic }');
     expect(workroom).not.toContain('role="tablist"');
     expect(studio).not.toContain("StudioAgentCanvas");
     expect(studio).not.toContain("posture=");

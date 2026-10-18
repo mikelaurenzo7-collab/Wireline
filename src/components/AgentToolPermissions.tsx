@@ -208,7 +208,7 @@ export default function AgentToolPermissions({
       if (loadedAgentRef.current !== savedFor) return;
       // Trust the server's normalized set so the UI cannot drift from storage.
       if (Array.isArray(body.enabledTools)) setEnabled(body.enabledTools);
-      setNotice("Rehearse the updated actions before the next live call.");
+      setNotice("Try the updated actions before the next live call.");
     } catch (reason) {
       if (loadedAgentRef.current !== savedFor) return;
       setSaveError(reason instanceof Error ? reason.message : "Actions could not be saved.");

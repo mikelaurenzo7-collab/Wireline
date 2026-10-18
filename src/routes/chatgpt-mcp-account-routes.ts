@@ -586,7 +586,7 @@ function toolDefinitions() {
       name: "get_wireline_agent_status",
       title: "Get BotBound agent status",
       description:
-        "Returns one connected user’s agent: whether it is on the phone network, the next BotBound step, and deep links into Studio, Training, and Connections. It never returns phone numbers, customer identities, transcripts, or message bodies.",
+        "Returns one connected user’s agent: whether it is on the phone network, the next BotBound step, and deep links into the Workspace, Knowledge, and Connections. It never returns phone numbers, customer identities, transcripts, or message bodies.",
       inputSchema: {
         type: "object",
         properties: { agent_id: { type: "string" } },
@@ -1195,7 +1195,7 @@ router.post("/mcp", async (req, res) => {
           channel: agent.channel || "voice",
           on_phone_network: onPhoneNetwork,
           next_step: onPhoneNetwork
-            ? "This agent is on the phone network. Open BotBound Studio to operate live work. You can still run a private rehearsal from this client."
+            ? "This agent is on the phone network. Open its BotBound Workspace to operate live work. You can still run a private rehearsal from this client."
             : "This agent is still a private draft. Open BotBound Connections to attach a number and launch. You can privately rehearse it from this client.",
           open_in_wireline_url: `${origin}/studio?agent=${encoded}`,
           training_url: `${origin}/knowledge?agent=${encoded}`,

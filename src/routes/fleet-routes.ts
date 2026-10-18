@@ -54,7 +54,7 @@ router.post(
     return res.status(410).json({
       code: "FLEET_SEED_RETIRED",
       error:
-        "Bulk Assistants seed is retired. Create agents from Studio, or use the founder admin seed when operating as owner.",
+        "Bulk Assistants seed is retired. Create agents from the Workspace, or use the founder admin seed when operating as owner.",
     });
   },
 );

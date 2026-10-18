@@ -7,22 +7,27 @@ import {
   OPERATE_NAV,
   PAGE_TITLES,
   WORKSPACE_NAV,
+  WORKSPACE_SECTIONS,
   desktopNavParentHref,
   isMobileMoreActive,
   isMobilePrimaryActive,
   isNavActive,
   workspacePageTitle,
+  workspaceSectionForPath,
 } from "../src/constants/navigation";
 
 describe("BotBound workspace information architecture", () => {
   it("keeps daily desktop work focused and ordered", () => {
     expect(WORKSPACE_NAV.map((item) => item.href)).toEqual([
       "/studio",
-      "/knowledge",
       "/inbox",
       "/phone",
       "/calendar",
-      "/computer",
+    ]);
+    expect(WORKSPACE_SECTIONS.map((section) => [section.href, section.label])).toEqual([
+      ["/studio", "Set Up"],
+      ["/knowledge", "Knowledge"],
+      ["/computer", "Computer"],
     ]);
     expect(OPERATE_NAV.map((item) => item.href)).toEqual([
       "/insights",
@@ -61,10 +66,18 @@ describe("BotBound workspace information architecture", () => {
   });
 
   it("keeps contextual children under their natural parent", () => {
-    expect(desktopNavParentHref("/knowledge")).toBeNull();
-    expect(
-      WORKSPACE_NAV.filter((item) => isNavActive("/knowledge", item.href)).map((item) => item.href),
-    ).toEqual(["/knowledge"]);
+    for (const section of ["/knowledge", "/computer"]) {
+      expect(desktopNavParentHref(section), section).toBe("/studio");
+      expect(
+        WORKSPACE_NAV.filter((item) => isNavActive(section, item.href)).map((item) => item.href),
+        section,
+      ).toEqual(["/studio"]);
+    }
+    expect(workspaceSectionForPath("/studio")).toBe("setup");
+    expect(workspaceSectionForPath("/templates")).toBe("setup");
+    expect(workspaceSectionForPath("/knowledge")).toBe("knowledge");
+    expect(workspaceSectionForPath("/computer/task-1")).toBe("computer");
+    expect(workspaceSectionForPath("/inbox")).toBeNull();
     expect(desktopNavParentHref("/templates")).toBe("/studio");
     expect(desktopNavParentHref("/approvals")).toBe("/inbox");
     expect(desktopNavParentHref("/apps")).toBe("/settings");
@@ -72,31 +85,32 @@ describe("BotBound workspace information architecture", () => {
   });
 
   it("makes More exclusive for configuration and governance routes", () => {
-    expect(isMobileMoreActive("/knowledge")).toBe(true);
-    expect(isMobileMoreActive("/approvals")).toBe(true);
     expect(isMobileMoreActive("/calendar")).toBe(true);
-    expect(isMobileMoreActive("/computer")).toBe(true);
     expect(isMobileMoreActive("/connections")).toBe(true);
     expect(isMobileMoreActive("/settings/team")).toBe(true);
     expect(isMobileMoreActive("/apps")).toBe(true);
 
-    expect(isMobileMoreActive("/templates")).toBe(false);
-    expect(isMobilePrimaryActive("/templates", "/studio")).toBe(true);
-    expect(isMobilePrimaryActive("/knowledge", "/studio")).toBe(false);
+    // Workspace sections and Inbox tabs stay with their dock owner.
+    for (const pathname of ["/templates", "/knowledge", "/computer"]) {
+      expect(isMobileMoreActive(pathname), pathname).toBe(false);
+      expect(isMobilePrimaryActive(pathname, "/studio"), pathname).toBe(true);
+    }
+    expect(isMobileMoreActive("/approvals")).toBe(false);
+    expect(isMobilePrimaryActive("/approvals", "/inbox")).toBe(true);
   });
 
   it("groups the More sheet by task instead of exposing a flat admin list", () => {
-    expect(MOBILE_MORE_GROUPS.map((group) => group.label)).toEqual(["Build", "Operate", "System"]);
+    expect(MOBILE_MORE_GROUPS.map((group) => group.label)).toEqual(["Operate", "System"]);
     expect(MOBILE_MORE_GROUPS.map((group) => group.items.map((item) => item.href))).toEqual([
-      ["/knowledge"],
-      ["/calendar", "/computer", "/approvals"],
+      ["/calendar"],
       ["/connections", "/settings"],
     ]);
   });
 
   it("keeps deep page titles and intuitive keyboard ownership", () => {
-    expect(PAGE_TITLES["/overview"]).toBe("Bot Studio");
-    expect(PAGE_TITLES["/agents"]).toBe("Bot Studio");
+    expect(PAGE_TITLES["/overview"]).toBe("Workspace");
+    expect(PAGE_TITLES["/agents"]).toBe("Workspace");
+    expect(PAGE_TITLES["/workspace"]).toBe("Workspace");
     expect(workspacePageTitle("/studio/handoff/session-1")).toBe("Browser Handoff");
     expect(workspacePageTitle("/settings/billing/invoices")).toBe("Billing Settings");
     expect(workspacePageTitle("/connections/salesforce/setup")).toBe("Salesforce Connection");

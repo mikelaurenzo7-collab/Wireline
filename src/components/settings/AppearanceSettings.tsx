@@ -24,12 +24,12 @@ export default function AppearanceSettings() {
   return (
     <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
       <h2 className="font-[var(--wireline-font-family-display)] text-xl tracking-[-0.02em] text-foreground">
-        Workspace Theme
+        Theme
       </h2>
       <div
         className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(min(100%,4.5rem),1fr))] gap-2"
         role="group"
-        aria-label="Workspace theme"
+        aria-label="Theme"
         aria-describedby={helpId}
       >
         {OPTIONS.map(({ id, label }) => {

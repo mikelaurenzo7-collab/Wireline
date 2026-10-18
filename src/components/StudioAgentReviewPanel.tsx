@@ -13,6 +13,7 @@ import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
 import { useChannelEntitlements } from "../hooks/useChannelEntitlements";
 import ChannelAccessNotice from "./ChannelAccessNotice";
 import { activationBillingHref, getStoredSignupIntent } from "../lib/signup-intent";
+import { formatPhone } from "../lib/safe-number";
 
 type AgentConfigResponse = {
   role?: string | null;
@@ -193,8 +194,8 @@ export default function StudioAgentReviewPanel({
             title={hasPhone ? "Phone connected" : "No phone connected"}
           >
             {hasPhone
-              ? `Call ${phoneNumber} to hear ${agentName} before sharing the number.`
-              : "Rehearse in Studio, then connect a phone when you're ready."}
+              ? `Call ${formatPhone(phoneNumber)} to hear ${agentName} before sharing the number.`
+              : "Try your Bot here first, then connect a phone when you're ready."}
           </StatusNotice>
         ) : access.status !== "ready" ? (
           <ChannelAccessNotice access={access} channel="voice" />
@@ -253,7 +254,7 @@ export default function StudioAgentReviewPanel({
                 className="justify-center"
               >
                 <Settings2 className="size-4" aria-hidden="true" />
-                Edit Setup
+                Edit Details
               </Button>
               <Button
                 type="button"
@@ -263,7 +264,7 @@ export default function StudioAgentReviewPanel({
                 className="justify-center"
               >
                 <Mic className="size-4" aria-hidden="true" />
-                Rehearse Bot
+                Try It
               </Button>
             </div>
           </div>

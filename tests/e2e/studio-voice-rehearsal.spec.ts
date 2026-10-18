@@ -341,7 +341,7 @@ test("opening mobile settings stops the hidden microphone rehearsal", async ({ p
   await page.goto("/studio?agent=bot-front-desk&workroom=test");
   await page.getByRole("button", { name: "Start rehearsal", exact: true }).click();
   await expect(page.getByText("Listening", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Bot settings", exact: true }).click();
+  await page.getByRole("button", { name: "Bot details", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Opening greeting", exact: true })).toBeVisible();
   await expect.poll(() => stops).toEqual(["token-1"]);
   expect(await microphoneCount(page)).toEqual({ microphones: 1, tracksStopped: 1, peersClosed: 1 });

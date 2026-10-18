@@ -33,7 +33,13 @@ export default function ChannelAccessNotice({
         Your saved conversations are unchanged.
       </StatusNotice>
     );
-  const label = channel === "voice" ? "Calls" : channel === "email" ? "Email" : "SMS";
+  // Match the tab names owners see: Calls, Email, and Text.
+  const notIncludedTitle =
+    channel === "voice"
+      ? "Calls Aren't in Your Plan"
+      : channel === "email"
+        ? "Email Isn't in Your Plan"
+        : "Texting Isn't in Your Plan";
   // A failed renewal suspends every channel. That is a payment to fix, not a
   // package the owner never bought.
   if (
@@ -64,7 +70,7 @@ export default function ChannelAccessNotice({
   return (
     <StatusNotice
       tone="info"
-      title={`${label} isn't included`}
+      title={notIncludedTitle}
       className="my-3"
       action={
         <Button asChild size="sm" variant="secondary">
@@ -76,7 +82,7 @@ export default function ChannelAccessNotice({
     >
       {active
         ? "Your plan covers your selected channels. Saved conversations remain available."
-        : "Choose a package to connect this channel. Private rehearsal remains available."}
+        : "Choose a package to connect this channel. Trying your Bot privately stays available."}
     </StatusNotice>
   );
 }

@@ -1,11 +1,10 @@
-import { useSearchParams } from "react-router";
+import { Navigate, useSearchParams } from "react-router";
 import { Loader2 } from "lucide-react";
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 import PhoneSetupPanel from "../components/PhoneSetupPanel";
 import PhoneCallHistoryPanel from "../components/PhoneCallHistoryPanel";
-import CallOpsOverview from "../components/CallOpsOverview";
 import OutboundHub from "../components/outbound/OutboundHub";
 import WorkspaceControlBand from "../components/layout/WorkspaceControlBand";
 import { WorkspaceOperateIntro, WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
@@ -19,12 +18,16 @@ import {
   resolveAppPageSubTabId,
 } from "../lib/page-sub-tabs";
 
+// Call performance lives in Insights with every other channel; Calls owns the
+// call log, outbound work, and the lines themselves.
 const PHONE_TABS = [
   { id: "logs", label: "History" },
-  { id: "analytics", label: "Analytics" },
   { id: "outbound", label: "Outbound" },
   { id: "setup", label: "Lines" },
 ] as const;
+
+/** Readable ?tab= values from links and emails. */
+const PHONE_TAB_ALIASES: Record<string, string> = { lines: "setup", history: "logs" };
 
 export default function PhonePage() {
   const access = useChannelEntitlements();
@@ -35,7 +38,8 @@ export default function PhonePage() {
     degraded: agentsDegraded,
     refresh: refreshAgents,
   } = useAgents();
-  const tabParam = searchParams.get("tab");
+  const rawTabParam = searchParams.get("tab");
+  const tabParam = (rawTabParam && PHONE_TAB_ALIASES[rawTabParam.toLowerCase()]) || rawTabParam;
   const legacyOutboundView = OUTBOUND_VIEW_TABS.some((tab) => tab.id === tabParam)
     ? tabParam
     : null;
@@ -101,6 +105,11 @@ export default function PhonePage() {
 
   const showAgentScope =
     (primaryTab === "logs" && (agents.length > 1 || activeAgentId)) || scopeBlocked;
+
+  // Bookmarks to the retired Calls › Analytics tab open the same view in Insights.
+  if (rawTabParam === "analytics") {
+    return <Navigate to="/insights?tab=performance&view=calls" replace />;
+  }
   const agentScope = showAgentScope ? (
     <select
       value={activeAgentId}
@@ -180,11 +189,6 @@ export default function PhonePage() {
           {primaryTab === "logs" && !scopeBlocked && (
             <div className="contents" data-visual-qa-state="primary-logs">
               <PhoneCallHistoryPanel agentId={activeAgentId || null} />
-            </div>
-          )}
-          {primaryTab === "analytics" && (
-            <div className="contents" data-visual-qa-state="primary-analytics">
-              <CallOpsOverview />
             </div>
           )}
           {primaryTab === "outbound" && (

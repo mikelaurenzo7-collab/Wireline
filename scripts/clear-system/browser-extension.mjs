@@ -12,7 +12,7 @@ export function checkBrowserExtension({ read, mustInclude, mustExclude }) {
   mustInclude("apps/browser-extension/background/service-worker.js", worker, /action === "text"/, "extension must support text commands");
   mustInclude("apps/browser-extension/scripts/build.mjs", build, /hostPermissions\.length/, "extension must keep persistent host permissions out");
   mustInclude("apps/browser-extension/panel/index.html", panel, /Call[\s\S]*Text[\s\S]*Email[\s\S]*Bot task/, "panel must expose Bot-native commands");
-  mustInclude("apps/browser-extension/panel/index.html", panel, /Bots[\s\S]*Connections[\s\S]*Phone[\s\S]*Inbox[\s\S]*Knowledge[\s\S]*Studio/, "panel must mirror product IA");
+  mustInclude("apps/browser-extension/panel/index.html", panel, /Bots[\s\S]*Connections[\s\S]*Phone[\s\S]*Inbox[\s\S]*Knowledge[\s\S]*Workspace/, "panel must mirror product IA");
   mustInclude("apps/browser-extension/panel/index.html", panel, /What should BotBound do\?/, "prompt must use BotBound");
   mustExclude("apps/browser-extension/panel/index.html", panel, />Agent task<|>Agents<|>Wire<|>Training/, "visible extension navigation must not revive legacy labels");
   mustInclude("apps/browser-extension/panel/panel.js", panelJs, /actionPrompts[\s\S]*call[\s\S]*text[\s\S]*followup/, "panel must wire quick commands");

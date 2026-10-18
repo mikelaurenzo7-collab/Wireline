@@ -85,21 +85,21 @@ export default function BrowserHandoffBridge() {
   if (error) {
     return (
       <TransitionSurface
-        eyebrow="Studio"
+        eyebrow="Workspace"
         title="Handoff Unavailable"
         description={error}
         busyLabel=""
-        actions={[{ href: "/studio", label: "Open Studio" }]}
+        actions={[{ href: "/studio", label: "Open Workspace" }]}
       />
     );
   }
 
   return (
     <TransitionSurface
-      eyebrow="Studio"
+      eyebrow="Workspace"
       title="Securing Browser Context"
-      description="Signing your page capture before opening Studio…"
-      busyLabel="Preparing Studio"
+      description="Signing your page capture before opening your Workspace…"
+      busyLabel="Preparing Workspace"
     />
   );
 }

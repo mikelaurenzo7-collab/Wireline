@@ -16,7 +16,7 @@ export default function InsightsPage() {
   const controls = hasActivityTabs ? (
     <WorkspaceControlBand
       embedded
-      ariaLabel="Activity controls"
+      ariaLabel="Insights controls"
       primary={
         <WorkspaceTabStrip
           ariaLabel={chrome.ariaLabel}
@@ -36,7 +36,7 @@ export default function InsightsPage() {
             <select
               value={chrome.secondary.activeId}
               onChange={(event) => chrome.secondary?.setActiveId(event.target.value)}
-              aria-label="Activity view"
+              aria-label="Insights view"
               className="h-11 max-w-[12rem] rounded-lg border border-border bg-card px-2 text-xs font-semibold sm:h-9 text-foreground outline-none focus:border-primary/50"
             >
               {chrome.secondary.tabs.map((tab) => (
@@ -57,7 +57,7 @@ export default function InsightsPage() {
         mode="operate"
         className="flex min-h-0 flex-1 flex-col gap-0 pb-5 lg:pb-6"
       >
-        <WorkspaceOperateIntro title="Activity" titleHidden tabs={controls} />
+        <WorkspaceOperateIntro title="Insights" titleHidden tabs={controls} />
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
           <InsightsView />
         </div>
