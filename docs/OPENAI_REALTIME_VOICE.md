@@ -45,6 +45,19 @@ consumed by a response are not repeated. A reserved continuation prevents duplic
 requests before the provider acknowledges them. This does not change the model,
 saved voice, turn-detection settings or fatal-error handling.
 
+Phone sessions apply OpenAI `near_field` input noise reduction before semantic
+turn detection, so line and room noise is not treated as a caller turn that
+interrupts the Bot. Browser rehearsals keep the browser's own capture processing.
+
+An opened sideband can close without a WebSocket close frame (1006) as its SIP
+call ends. BotBound then requests the provider hangup it already owes the call:
+a provider that reports the call gone (404) records an ordinary ending. A 409
+conflict records an ordinary ending only when Twilio confirms the carrier call
+is terminal, because a conflict can also come from concurrent control on a live
+call. A call that was still live and had to be ended, or an unconfirmed
+conflict, remains a `connection` failure. A sideband that never opened always remains a startup
+failure.
+
 ## Requested tests on the owner's phone
 
 Studio's **Call my phone** uses the connected Bot line and the account's actual

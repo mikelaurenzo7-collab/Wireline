@@ -524,6 +524,11 @@ export async function buildOpenAIRealtimeAgentRuntime(input: {
           interrupt_response: true,
           eagerness: "auto",
         },
+        // Callers speak into a handset or headset. Filtering line and room
+        // noise before turn detection keeps it from interrupting the Bot or
+        // reaching the transcript as caller speech. Browser rehearsal audio
+        // is already processed by the browser's own capture pipeline.
+        ...(input.surface === "phone" ? { noise_reduction: { type: "near_field" as const } } : {}),
         ...(input.surface === "browser_test"
           ? { format: { type: "audio/pcm", rate: 24_000 } }
           : {}),

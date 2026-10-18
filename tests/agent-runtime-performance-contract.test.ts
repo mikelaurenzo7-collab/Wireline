@@ -26,6 +26,10 @@ describe("agent runtime performance and action integrity", () => {
     expect(factory).toContain("clampRuntimePromptPreservingTail");
     expect(factory).toContain('type: "semantic_vad"');
     expect(factory).toContain("interrupt_response: true");
+    // Telephone noise must not register as caller turns; browser capture keeps its own processing.
+    expect(factory).toContain(
+      'input.surface === "phone" ? { noise_reduction: { type: "near_field" as const } } : {}',
+    );
     expect(factory).toContain("RUNTIME_ACTION_SAFETY_BLOCK");
     expect(factory).toContain("RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK");
   });
