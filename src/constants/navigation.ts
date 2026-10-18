@@ -132,6 +132,9 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     href: "/studio",
     title: "Workspace",
     label: "Workspace",
+    // The phone dock fits five tabs at 320px with enlarged text; the Bot icon
+    // and "Bot" name the same place ("Bot, Workspace" to assistive tech).
+    shortLabel: "Bot",
     eyebrow: "Build",
     description: "Set up your Bot, try it, and give it work.",
     icon: "Bot",
