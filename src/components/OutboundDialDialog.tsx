@@ -360,6 +360,7 @@ function DirectOutboundDialDialog({
         if (response.status >= 500 || response.status === 408) return;
         clearPendingOutboundDial(userId, requestRef.current.key, sessionStorage);
         pendingRef.current = null;
+        requestRef.current = null;
         setUncertain(false);
         toast({
           type: "error",
