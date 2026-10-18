@@ -30,6 +30,7 @@ const PILLARS: readonly Pillar[] = [
     label: "Phone Number",
     title: "Answers and Makes Calls",
     body: "Give your Bot a local number and a clear playbook for inbound calls and outbound follow-up. It qualifies conversations, books next steps, and records outcomes.",
+    note: "Outbound calling is in early access.",
   },
   {
     icon: MonitorSmartphone,
