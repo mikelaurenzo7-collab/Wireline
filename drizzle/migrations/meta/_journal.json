@@ -547,6 +547,13 @@
       "when": 1792249828808,
       "tag": "0179_inhouse_voice_assets",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1792339200000,
+      "tag": "0180_dnc_seller_registration",
+      "breakpoints": true
     }
   ]
 }

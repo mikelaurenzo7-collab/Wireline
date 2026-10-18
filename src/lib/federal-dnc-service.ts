@@ -37,11 +37,19 @@ export function normalizeUsPhone10(phone: string): string | null {
   return null;
 }
 
-function buildDncScrubRequestUrl(apiUrl: string, phone10: string): string {
+/**
+ * Screen with a seller's own subscription. DNCScrub attaches a seller's SAN to
+ * a project; without a project the account's default project is used, which is
+ * only valid for non-marketing checks.
+ */
+export type FederalDncLookupOptions = { vendorProjectId?: string };
+
+function buildDncScrubRequestUrl(apiUrl: string, phone10: string, projectId?: string): string {
   const url = new URL(apiUrl);
   url.searchParams.set("phoneList", phone10);
   url.searchParams.set("version", "5");
   url.searchParams.set("output", "json");
+  if (projectId) url.searchParams.set("projId", projectId);
   return url.toString();
 }
 
@@ -50,6 +58,7 @@ async function lookupFederalDncDncScrub(
   apiKey: string,
   phone: string,
   checked_at: string,
+  projectId?: string,
 ): Promise<FederalDncLookupResult> {
   const phone10 = normalizeUsPhone10(phone);
   if (!phone10) {
@@ -59,7 +68,7 @@ async function lookupFederalDncDncScrub(
     return { listed: true, source: "error", checked_at };
   }
 
-  const scrubUrl = buildDncScrubRequestUrl(apiUrl, phone10);
+  const scrubUrl = buildDncScrubRequestUrl(apiUrl, phone10, projectId);
   const response = await fetch(scrubUrl, {
     method: "GET",
     headers: {
@@ -87,6 +96,7 @@ async function lookupFederalDncGenericPost(
   apiKey: string,
   phone: string,
   checked_at: string,
+  projectId?: string,
 ): Promise<FederalDncLookupResult> {
   const response = await fetch(apiUrl, {
     method: "POST",
@@ -95,7 +105,7 @@ async function lookupFederalDncGenericPost(
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: JSON.stringify({ phone }),
+    body: JSON.stringify(projectId ? { phone, project_id: projectId } : { phone }),
     signal: AbortSignal.timeout(8_000),
   });
   if (!response.ok) {
@@ -135,8 +145,12 @@ export function assertFederalDncForMarketing(): FederalDncMarketingGate {
   };
 }
 
-export async function lookupFederalDnc(phone: string): Promise<FederalDncLookupResult> {
+export async function lookupFederalDnc(
+  phone: string,
+  options: FederalDncLookupOptions = {},
+): Promise<FederalDncLookupResult> {
   const checked_at = new Date().toISOString();
+  const projectId = options.vendorProjectId;
   const vendorConfigured = isFederalDncVendorConfigured();
   const apiKey = process.env.FEDERAL_DNC_API_KEY?.trim();
   const apiUrl = process.env.FEDERAL_DNC_API_URL?.trim();
@@ -146,15 +160,18 @@ export async function lookupFederalDnc(phone: string): Promise<FederalDncLookupR
 
   try {
     if (isDncScrubProvider(apiUrl)) {
-      return await lookupFederalDncDncScrub(apiUrl, apiKey, phone, checked_at);
+      return await lookupFederalDncDncScrub(apiUrl, apiKey, phone, checked_at, projectId);
     }
-    return await lookupFederalDncGenericPost(apiUrl, apiKey, phone, checked_at);
+    return await lookupFederalDncGenericPost(apiUrl, apiKey, phone, checked_at, projectId);
   } catch (error) {
     log.warn("federal DNC lookup failed", { error: String(error) });
     return { listed: true, source: "error", checked_at };
   }
 }
 
-export async function isFederalDncListed(phone: string): Promise<boolean> {
-  return (await lookupFederalDnc(phone)).listed;
+export async function isFederalDncListed(
+  phone: string,
+  options: FederalDncLookupOptions = {},
+): Promise<boolean> {
+  return (await lookupFederalDnc(phone, options)).listed;
 }

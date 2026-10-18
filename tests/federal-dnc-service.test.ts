@@ -96,6 +96,23 @@ describe("federal-dnc-service", () => {
     }
   });
 
+  it("screens with the seller's own DNCScrub project when one is given", async () => {
+    process.env.FEDERAL_DNC_API_URL = "https://www.dncscrub.com/app/main/rpc/scrub";
+    process.env.FEDERAL_DNC_API_KEY = "scrub-login-id";
+    process.env.FEDERAL_DNC_PROVIDER = "dncscrub";
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [{ Phone: "5551234567", ResultCode: "C" }],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await lookupFederalDnc("+15551234567", { vendorProjectId: "proj-acme" });
+    expect(fetchMock.mock.calls[0][0]).toContain("projId=proj-acme");
+
+    await lookupFederalDnc("+15551234567");
+    expect(fetchMock.mock.calls[1][0]).not.toContain("projId");
+  });
+
   it("treats misplaced Vercel tokens as unconfigured", () => {
     process.env.FEDERAL_DNC_API_URL = "https://www.dncscrub.com/app/main/rpc/scrub";
     process.env.FEDERAL_DNC_API_KEY = "vcp_notARealDncKey";

@@ -21,6 +21,21 @@ import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 import { isFederalDncVendorConfigured } from "../lib/federal-dnc-service";
 import { phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
+import { requirePlatformAdmin } from "../middleware/platform-admin";
+import {
+  clearDncSellerRegistration,
+  linkDncSellerVendorProject,
+  listDncSellerRegistrations,
+  readDncSellerRegistration,
+  saveDncSellerRegistration,
+} from "../lib/dnc-seller-registration";
+import {
+  DNC_REGISTRY_URL,
+  dncSellerRegistrationState,
+  isValidVendorProjectId,
+  parseDncSellerRegistrationInput,
+  type DncSellerRegistration,
+} from "../lib/dnc-seller-registration-rules";
 
 const router = Router();
 
@@ -164,6 +179,115 @@ router.delete(
       log.error("DNC delete failed", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Failed to remove DNC entry.");
     }
+  },
+);
+
+// ==========================================
+// SELLER NATIONAL DNC REGISTRATION
+// ==========================================
+
+/** Owner view: the vendor project id is operator configuration and stays private. */
+function sellerRegistrationResponse(registration: DncSellerRegistration | null) {
+  return {
+    state: dncSellerRegistrationState(registration),
+    registry_url: DNC_REGISTRY_URL,
+    registration: registration
+      ? {
+          san: registration.san,
+          seller_name: registration.seller_name,
+          area_codes: registration.area_codes,
+          expires_on: registration.expires_on,
+          attested_at: registration.attested_at,
+          screening_connected: Boolean(registration.vendor_project_id),
+        }
+      : null,
+  };
+}
+
+router.get(
+  "/api/compliance/dnc-registration",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    res.json(sellerRegistrationResponse(await readDncSellerRegistration(req.user.id)));
+  },
+);
+
+router.put(
+  "/api/compliance/dnc-registration",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const parsed = parseDncSellerRegistrationInput(req.body ?? {});
+    if (!parsed.ok) throw AppError.fromHttpStatus(400, parsed.error);
+    const registration = await saveDncSellerRegistration({
+      userId: req.user.id,
+      value: parsed.value,
+    });
+    void auditLogger
+      .logSettings("updated", {
+        userId: req.user.id,
+        changes: {
+          dnc_seller_registration: {
+            area_codes: registration.area_codes,
+            expires_on: registration.expires_on,
+            screening_connected: Boolean(registration.vendor_project_id),
+          },
+        },
+        ip: req.ip,
+      })
+      .catch((err) =>
+        log.warn("audit seller DNC registration failed", { error: getErrorMessage(err) }),
+      );
+    res.json(sellerRegistrationResponse(registration));
+  },
+);
+
+router.delete(
+  "/api/compliance/dnc-registration",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    await clearDncSellerRegistration(req.user.id);
+    void auditLogger
+      .logSettings("updated", {
+        userId: req.user.id,
+        changes: { dnc_seller_registration: null },
+        ip: req.ip,
+      })
+      .catch((err) =>
+        log.warn("audit seller DNC registration failed", { error: getErrorMessage(err) }),
+      );
+    res.json(sellerRegistrationResponse(null));
+  },
+);
+
+/** Platform admin: registrations to link with their screening vendor project. */
+router.get(
+  "/api/admin/dnc-registrations",
+  authenticateUser,
+  requirePlatformAdmin,
+  async (_req: AuthenticatedRequest, res: Response) => {
+    res.json({ registrations: await listDncSellerRegistrations() });
+  },
+);
+
+router.put(
+  "/api/admin/dnc-registrations/:userId/vendor-project",
+  authenticateUser,
+  requirePlatformAdmin,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const userId = String(req.params.userId || "");
+    if (!/^[0-9a-f-]{36}$/i.test(userId)) throw AppError.fromHttpStatus(400, "Invalid account id.");
+    const { vendor_project_id: vendorProjectId, san } = (req.body ?? {}) as Record<string, unknown>;
+    if (!isValidVendorProjectId(vendorProjectId))
+      throw AppError.fromHttpStatus(400, "vendor_project_id is required.");
+    if (typeof san !== "string" || !san.trim())
+      throw AppError.fromHttpStatus(400, "san must match the SAN the vendor project uses.");
+    const registration = await linkDncSellerVendorProject({
+      userId,
+      expectedSan: san.trim().toUpperCase(),
+      vendorProjectId,
+    });
+    log.info("DNC seller registration linked to vendor project", { userId });
+    res.json({ state: dncSellerRegistrationState(registration) });
   },
 );
 

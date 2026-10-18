@@ -2,6 +2,7 @@ import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, gte, ne } from "drizzle-orm";
 import { assertFederalDncForMarketing, isFederalDncListed } from "./federal-dnc-service";
+import { evaluateSellerDncForMarketing } from "./dnc-seller-registration";
 import { isDncBlocked } from "./compliance";
 import { evaluateOutboundConsent, type ConsentDecision } from "./tcpa-consent";
 import { resolveCallingHoursForPhone } from "./tcpa-calling-hours";
@@ -87,6 +88,8 @@ export async function evaluateOutboundDialGate(opts: {
   // intake/callback jobs that read records created before input sanitization.
   const hasExpressWrittenConsent = opts.hasExpressWrittenConsent === true || isRequestedCallback;
 
+  // The seller's own registry subscription selects the vendor project to screen with.
+  let sellerVendorProjectId: string | undefined;
   if (requiresFederalDncScreening) {
     const federalGate = assertFederalDncForMarketing();
     if (!federalGate.allowed) {
@@ -99,6 +102,20 @@ export async function evaluateOutboundDialGate(opts: {
         federalDncMessage: federalGate.message,
       };
     }
+    // The FTC requires the seller's own subscription for every area code it
+    // calls; screening with a platform-wide subscription is not permitted.
+    const sellerGate = await evaluateSellerDncForMarketing(opts.userId, opts.phone);
+    if (!sellerGate.allowed) {
+      return {
+        allowed: false,
+        status: "AutoDialFailed",
+        reason: "federal_dnc_unconfigured",
+        metadataPatch: { seller_dnc_registration: sellerGate.code },
+        federalDncCode: sellerGate.code,
+        federalDncMessage: sellerGate.message,
+      };
+    }
+    sellerVendorProjectId = sellerGate.vendorProjectId;
   }
 
   // TCPA quiet hours first: local computation and the cheapest fail-closed check.
@@ -174,7 +191,9 @@ export async function evaluateOutboundDialGate(opts: {
     };
   }
 
-  const isFederalDnc = await isFederalDncListed(opts.phone);
+  const isFederalDnc = sellerVendorProjectId
+    ? await isFederalDncListed(opts.phone, { vendorProjectId: sellerVendorProjectId })
+    : await isFederalDncListed(opts.phone);
 
   // Requested callbacks are non-marketing for express-consent purposes, but a
   // configured federal provider's listed/error result still blocks explicitly.

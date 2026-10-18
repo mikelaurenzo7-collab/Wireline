@@ -179,6 +179,7 @@ export const settings = pgTable("wireline_settings", {
   /** Tenant-wide operating hours (JSON) for template {{operatingHours}} substitution. */
   businessHours: jsonb("business_hours"),
   nativeCalendar: jsonb("native_calendar"),
+  dncSellerRegistration: jsonb("dnc_seller_registration"),
   crmType: text("crm_type"),
   twilioMessagingEnabled: boolean("twilio_messaging_enabled").default(false),
   twilioLookupEnabled: boolean("twilio_lookup_enabled").default(false),

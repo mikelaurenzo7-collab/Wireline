@@ -210,7 +210,9 @@ describe("private in-house voice asset source schema", () => {
 
   it("journals the new migration and changes only its new table in the linked snapshot", () => {
     const journal = JSON.parse(read("drizzle/migrations/meta/_journal.json"));
-    expect(journal.entries.at(-1)).toMatchObject({
+    expect(
+      journal.entries.find((entry: { tag: string }) => entry.tag === "0179_inhouse_voice_assets"),
+    ).toMatchObject({
       idx: 77,
       tag: "0179_inhouse_voice_assets",
       version: "7",
