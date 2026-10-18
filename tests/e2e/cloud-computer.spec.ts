@@ -3,6 +3,10 @@ import { join } from "node:path";
 
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 
+// Computer is its own page below 1180px. Wider screens open it beside the Set Up
+// conversation instead (workspace-panel.spec.ts), sharing this same workbench.
+test.use({ viewport: { width: 1024, height: 800 } });
+
 type MockTask = Record<string, unknown> & { id: string; status: string };
 
 const NOW = new Date().toISOString();
@@ -307,7 +311,7 @@ async function capture(page: Page, info: TestInfo, name: string) {
 
 const READY = { available: true, reason: "ready", limits: { maxMinutes: 15, maxSteps: 120 } };
 
-for (const width of [390, 1440]) {
+for (const width of [390, 1024]) {
   test(`a finished task opens on its result and keeps a new task one click away at ${width}px`, async ({
     page,
   }, info) => {
@@ -390,7 +394,7 @@ test("owner can switch back from a login popup on a narrow screen", async ({ pag
   await expectNoHorizontalOverflow(page);
 });
 
-for (const width of [390, 1440]) {
+for (const width of [390, 1024]) {
   test(`a Bot that needs the owner shows its screen, question, and reply at ${width}px`, async ({
     page,
   }, info) => {
@@ -507,7 +511,7 @@ test("a running task requests control honestly and keeps Stop available while pa
 test("a running task keeps updating while the owner reads an older result", async ({
   page,
 }, info) => {
-  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.setViewportSize({ width: 1024, height: 900 });
   const { stops, setTask } = await mockComputer(page, {
     status: READY,
     frame: await fakeFrame(page),
@@ -649,7 +653,7 @@ test("an idle visible Computer page discovers a new task on its next light refre
 test("expanded browser keeps controls below the screen and Activity on one line", async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.setViewportSize({ width: 1024, height: 900 });
   await mockComputer(page, {
     status: READY,
     frame: await fakeFrame(page),
@@ -692,7 +696,7 @@ test("expanded browser keeps controls below the screen and Activity on one line"
   ).toBe(true);
 });
 
-for (const width of [390, 1440]) {
+for (const width of [390, 1024]) {
   test(`the owner can take over, interact with the live browser, and return control at ${width}px`, async ({
     page,
   }, info) => {
@@ -846,7 +850,7 @@ for (const width of [390, 1440]) {
   });
 }
 
-for (const width of [390, 1440]) {
+for (const width of [390, 1024]) {
   test(`the owner can open a browser before entering a URL or goal at ${width}px`, async ({
     page,
   }, info) => {
@@ -898,7 +902,7 @@ for (const width of [390, 1440]) {
   });
 }
 
-for (const width of [390, 1440]) {
+for (const width of [390, 1024]) {
   test(`an address in the idle browser opens that site before owner control at ${width}px`, async ({
     page,
   }) => {
@@ -1023,7 +1027,7 @@ test("a lost frame clears the old screen instead of looking live", async ({ page
 });
 
 test("a page that did not load offers a retry instead of a dead form", async ({ page }, info) => {
-  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.setViewportSize({ width: 1024, height: 900 });
   const { recoverLoad } = await mockComputer(page, {
     status: READY,
     tasks: [],
@@ -1053,7 +1057,7 @@ test("a page that did not load offers a retry instead of a dead form", async ({ 
 });
 
 test("an account without a paid plan sees one clear upgrade path", async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.setViewportSize({ width: 1024, height: 900 });
   await mockComputer(page, {
     status: {
       available: false,

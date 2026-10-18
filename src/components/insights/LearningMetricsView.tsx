@@ -123,7 +123,7 @@ export default function LearningMetricsView() {
       <EmptyState
         title="No Bots"
         icon={BrainCircuit}
-        actions={[{ label: "Studio", to: "/studio", primary: true }]}
+        actions={[{ label: "Open Workspace", to: "/studio", primary: true }]}
       />
     );
   }

@@ -160,6 +160,8 @@ export default function AppRoutes() {
         <Route path="/studio" element={<AgentStudioHome />} />
         <Route path="/studio/*" element={<AgentStudioHome />} />
         <Route path="/agents" element={<ToStudioRedirect />} />
+        {/* The Workspace's canonical route stays /studio so saved links keep working. */}
+        <Route path="/workspace" element={<ToStudioRedirect />} />
         <Route path="/templates" element={<TemplatesPage />} />
         <Route path="/knowledge" element={<KnowledgePage />} />
 

@@ -10,6 +10,7 @@ import {
   History,
   Layers,
   Megaphone,
+  Phone,
   PhoneOutgoing,
   Receipt,
   Repeat,
@@ -150,6 +151,7 @@ export type AppPageSecondaryTabRoute = {
 
 export const INSIGHTS_VIEW_TABS: Record<string, AppPageSubTab> = {
   funnel: { id: "funnel", label: "Totals", icon: TrendingUp },
+  calls: { id: "calls", label: "Calls", icon: Phone },
   goals: { id: "goals", label: "Goals", icon: Target },
   heatmap: {
     id: "heatmap",

@@ -20,6 +20,7 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock("react-router", () => ({
+  Navigate: "navigate",
   useSearchParams: () => [
     h.params,
     (update: (current: URLSearchParams) => URLSearchParams) => {
@@ -38,7 +39,6 @@ vi.mock("../src/contexts/AgentsContext", () => ({
 vi.mock("../src/components/WorkspaceShell", () => ({ default: "workspace-shell" }));
 vi.mock("../src/components/PhoneSetupPanel", () => ({ default: "phone-setup" }));
 vi.mock("../src/components/PhoneCallHistoryPanel", () => ({ default: "call-history" }));
-vi.mock("../src/components/CallOpsOverview", () => ({ default: "call-analytics" }));
 vi.mock("../src/components/outbound/OutboundHub", () => ({ default: "outbound-hub" }));
 vi.mock("../src/components/AppointmentsPanel", () => ({ default: "appointments" }));
 vi.mock("../src/components/layout/WorkspaceControlBand", () => ({ default: "control-band" }));
@@ -154,10 +154,14 @@ describe("explicit Calls Bot scope", () => {
     );
   });
 
-  it("leaves account-wide Analytics accessible while a saved Bot scope is unavailable", () => {
+  it("forwards the retired Analytics tab to account-wide call analytics in Insights", () => {
     h.params.set("tab", "analytics");
     h.degraded = true;
-    expect(render().some((node) => node.type === "call-analytics")).toBe(true);
+    const redirect = render().find((node) => node.type === "navigate");
+    expect(redirect?.props).toMatchObject({
+      to: "/insights?tab=performance&view=calls",
+      replace: true,
+    });
   });
 });
 

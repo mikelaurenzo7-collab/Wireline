@@ -87,7 +87,7 @@ for (const sessionFailure of ["unavailable", "offline"] as const) {
     await expect(knowledge).toHaveValue(brief);
     await page.getByRole("button", { name: "Save Changes", exact: true }).click();
     await expect(
-      page.getByText("Saved. Rehearse the updated Bot before sending live traffic.", {
+      page.getByText("Saved. Try the updated Bot before sending live traffic.", {
         exact: true,
       }),
     ).toBeVisible();
@@ -96,10 +96,10 @@ for (const sessionFailure of ["unavailable", "offline"] as const) {
     expect(trainingMessages[1]).toBe(brief);
     expect(createCount).toBe(1);
 
-    await page.getByRole("tab", { name: "Review", exact: true }).click();
+    await page.getByRole("tab", { name: "Summary", exact: true }).click();
     await expect(page.getByText("Warm and natural", { exact: true })).toBeVisible();
     expect(configReadsAfterSave).toBeGreaterThan(0);
-    await page.getByRole("tab", { name: "Setup", exact: true }).click();
+    await page.getByRole("tab", { name: "Details", exact: true }).click();
     await page.reload();
     await expect(knowledge).toBeVisible({ timeout: 15_000 });
     await expect(knowledge).toHaveValue("");

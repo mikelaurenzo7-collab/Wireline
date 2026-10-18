@@ -59,7 +59,7 @@ function proposalReviewRef(body: Record<string, unknown>): ProposalReviewRef {
   if (rawId == null && rawKey == null) {
     throw AppError.fromHttpStatus(
       409,
-      "This Studio draft is out of date. Refresh Studio and ask your Bot to draft it again.",
+      "This draft is out of date. Refresh the page and ask your Bot to draft it again.",
     );
   }
   if (
@@ -69,7 +69,7 @@ function proposalReviewRef(body: Record<string, unknown>): ProposalReviewRef {
     typeof rawKey !== "string" ||
     !/^(?:change|tool)-(?:0|[1-9]\d*)$/.test(rawKey)
   ) {
-    throw AppError.badRequest("Choose a valid Studio review card.");
+    throw AppError.badRequest("Choose a valid review card.");
   }
   return { messageId: BigInt(rawId), key: rawKey };
 }
@@ -102,7 +102,7 @@ async function lockProposalReview(
     !metadata ||
     !proposalMatchesReview(metadata.proposals, ref.key, expected)
   ) {
-    throw AppError.fromHttpStatus(409, "This Studio review card is no longer valid.");
+    throw AppError.fromHttpStatus(409, "This review card is no longer valid.");
   }
   return { ref, metadata, userId, agentId };
 }

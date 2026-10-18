@@ -81,16 +81,47 @@ export const MOBILE_MORE_HREF = "__more__" as const;
  * the derived runtime data below and may be removed when those checks import
  * the registry directly.
  *
+ * { href: "/studio", label: "Workspace" }
  * { href: "/inbox", label: "Inbox" }
  * { href: "/phone", label: "Calls" }
- * { href: "/insights", label: "Activity" }
+ * { href: "/insights", label: "Insights" }
  * { href: "/connections", label: "Connections" }
  * { route: "/templates", parentHref: "/studio" }
+ * { route: "/knowledge", parentHref: "/studio" }
+ * { route: "/computer", parentHref: "/studio" }
  * { route: "/approvals", parentHref: "/inbox" }
  * { route: "/apps", parentHref: "/settings" }
  * { "/apps": "Apps" }
  * target === "/studio"
  */
+
+/**
+ * The Workspace is everything about one Bot: how it is set up and tried
+ * (Set Up), what it knows (Knowledge), and the live work it does on its own
+ * computer (Computer). Those three share one rail destination and a section
+ * strip instead of competing for top-level positions.
+ */
+export const WORKSPACE_SECTIONS = [
+  { id: "setup", href: "/studio", label: "Set Up" },
+  { id: "knowledge", href: "/knowledge", label: "Knowledge" },
+  { id: "computer", href: "/computer", label: "Computer" },
+] as const;
+
+export type WorkspaceSectionId = (typeof WORKSPACE_SECTIONS)[number]["id"];
+
+export function workspaceSectionForPath(pathname: string): WorkspaceSectionId | null {
+  const current = pathname.replace(/\/+$/, "") || "/";
+  if (current === "/knowledge" || current.startsWith("/knowledge/")) return "knowledge";
+  if (current === "/computer" || current.startsWith("/computer/")) return "computer";
+  if (
+    current === "/studio" ||
+    current.startsWith("/studio/") ||
+    current === "/templates" ||
+    current.startsWith("/templates/")
+  )
+    return "setup";
+  return null;
+}
 
 /**
  * One registry owns the workspace IA. Contextual children deliberately remain
@@ -99,13 +130,12 @@ export const MOBILE_MORE_HREF = "__more__" as const;
 export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
   {
     href: "/studio",
-    title: "Bot Studio",
-    label: "Bot Studio",
-    shortLabel: "Studio",
+    title: "Workspace",
+    label: "Workspace",
     eyebrow: "Build",
-    description: "Shape how your Bot speaks, acts, and hands off.",
+    description: "Set up your Bot, try it, and give it work.",
     icon: "Bot",
-    matches: ["/agents", "/overview"],
+    matches: ["/agents", "/overview", "/workspace"],
     desktop: { group: "work", order: 10 },
     mobile: { placement: "primary", order: 10 },
     shortcut: { key: "S", hint: "g s", aliases: ["A"] },
@@ -150,16 +180,15 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     eyebrow: "Operate",
     description: "Give your Bot web tasks on its own secure cloud computer.",
     icon: "Monitor",
-    desktop: { group: "work", order: 45 },
-    mobile: { placement: "more", group: "Operate", order: 18 },
+    parentHref: "/studio",
     shortcut: { key: "M", hint: "g m" },
   },
   {
     href: "/insights",
-    title: "Activity",
-    label: "Activity",
+    title: "Insights",
+    label: "Insights",
     eyebrow: "Operate",
-    description: "See conversations, outcomes, and exceptions over time.",
+    description: "See how your Bot performs across calls, messages, and outcomes.",
     icon: "BarChart3",
     desktop: { group: "manage", order: 10 },
     mobile: { placement: "primary", order: 40 },
@@ -168,12 +197,10 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     href: "/knowledge",
     title: "Knowledge",
     label: "Knowledge",
-    shortLabel: "Train",
     eyebrow: "Build",
     description: "Ground your Bot in trusted business information.",
     icon: "GraduationCap",
-    desktop: { group: "work", order: 15 },
-    mobile: { placement: "more", group: "Build", order: 10 },
+    parentHref: "/studio",
     shortcut: { key: "T", hint: "g t" },
   },
   {
@@ -191,8 +218,8 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     eyebrow: "Operate",
     description: "Review actions that need a human decision.",
     icon: "CheckSquare",
+    // Approvals is an Inbox tab; a second More entry would split one queue.
     parentHref: "/inbox",
-    mobile: { placement: "more", group: "Operate", order: 20 },
   },
   {
     href: "/connections",
@@ -211,7 +238,7 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     title: "Account Settings",
     label: "Settings",
     eyebrow: "System",
-    description: "Manage workspace, billing, team, compliance, and appearance.",
+    description: "Manage your account, billing, team, compliance, and appearance.",
     icon: "Settings",
     desktop: { group: "manage", order: 30 },
     mobile: { placement: "more", group: "System", order: 40 },
@@ -225,7 +252,7 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
   },
   {
     href: "/studio/live-video",
-    title: "Bot Studio",
+    title: "Workspace",
     eyebrow: "Build",
     parentHref: "/studio",
   },
@@ -316,17 +343,17 @@ function byMobilePlacement(placement: MobileNavPlacement) {
     .map(shellItem);
 }
 
-/** Daily work and the knowledge behind it share the primary rail. */
+/** The Bot's Workspace and the channels it works in share the primary rail. */
 export const WORKSPACE_NAV: ShellNavItem[] = byDesktopOrder("work");
-/* Derived order: href: "/studio"; href: "/knowledge"; href: "/inbox"; href: "/phone"; href: "/calendar"; href: "/computer". */
+/* Derived order: href: "/studio"; href: "/inbox"; href: "/phone"; href: "/calendar". */
 
 /** Lower-frequency visibility and setup destinations stay secondary. */
 export const OPERATE_NAV: ShellNavItem[] = byDesktopOrder("manage");
 
 /**
- * Mobile exposes four task destinations plus one More owner. Activity earns a
- * dock position because it answers the recurring “what happened?” question;
- * configuration and governance remain grouped in More.
+ * Mobile exposes four task destinations plus one More owner. Insights earns a
+ * dock position because it answers the recurring “how is my Bot doing?”
+ * question; the calendar, connections, and settings remain grouped in More.
  */
 export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
   // Canonical primary owner begins with href: "/studio".
@@ -334,7 +361,7 @@ export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
   {
     href: MOBILE_MORE_HREF,
     label: "More",
-    description: "Calendar, computer, knowledge, approvals, connections, and settings.",
+    description: "Calendar, connections, and settings.",
     icon: "MoreHorizontal",
     section: "System",
   },

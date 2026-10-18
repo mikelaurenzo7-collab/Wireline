@@ -108,7 +108,7 @@ describe("BotBound product voice", () => {
       "Keep technical wireline identifiers, URLs, domains, email addresses, API names, event keys, and persisted values in their native casing.",
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
-      "Never use Wire as a customer-facing setup step, nav label, or CTA. Keep Set Up and private Rehearse in one Studio workspace before Launch.",
+      "Never use Wire as a customer-facing setup step, nav label, or CTA. Keep changing the Bot and trying it privately together in the Workspace's Set Up before Launch.",
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
       "Do not stack BotBound with Phone Bot or Voice Bot as a compound noun. The brand already contains Bot. Say BotBound, or say Phone Bot, not both.",
@@ -134,7 +134,7 @@ describe("BotBound product voice", () => {
     expect(personal).toMatchObject({
       singular: "Bot",
       plural: "Bots",
-      navLabel: "Bot Studio",
+      navLabel: "Workspace",
       createCta: "Create Bot",
       setupPrompt: "What Should Your Bot Do?",
     });

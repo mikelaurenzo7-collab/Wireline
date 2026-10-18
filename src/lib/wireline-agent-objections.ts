@@ -214,9 +214,9 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
       "messes up",
     ],
     response_template:
-      "Honest answer: mistakes can happen. BotBound can route to a configured human destination, and Studio shows transcripts or recordings only when the enabled workflow produced them.",
+      "Honest answer: mistakes can happen. BotBound can route to a configured human destination, and Calls shows transcripts or recordings only when the enabled workflow produced them.",
     follow_up_question:
-      "Want me to show you the configured handoff and call-review controls in Studio?",
+      "Want me to show you the configured handoff and call-review controls in BotBound?",
     rationale:
       "Lead with humility, then describe escalation and call artifacts conditionally so the Bot never invents a transfer target, transcript, or recording.",
   },

@@ -32,7 +32,7 @@ import { WiredEyebrow } from "./ui/WiredEyebrow";
 // visible BotBound rebrand so existing installs and saved UI state do not reset.
 const WORKSPACE_RAIL_STORAGE_KEY = "wireline:workspace-rail:v1";
 
-// Customer-language contract: singular: "Bot"; navLabel: "Bot Studio".
+// Customer-language contract: singular: "Bot"; navLabel: "Workspace".
 
 function userInitial(name?: string | null, email?: string | null) {
   const source = (name || email || "B").trim();
@@ -186,7 +186,7 @@ function DesktopRail({
       className="wl-shell-rail hidden h-full w-full min-w-0 flex-col lg:flex"
     >
       <div className="wl-shell-brand-row">
-        <Link to="/studio" aria-label="BotBound Studio" className="wl-shell-brand-link">
+        <Link to="/studio" aria-label="BotBound Workspace" className="wl-shell-brand-link">
           <span className="wl-shell-brand-mark">
             <BotBoundMark className="size-8" />
           </span>

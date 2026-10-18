@@ -521,7 +521,7 @@ export async function claimNativeOutboundPlacement(input: {
         ok: false as const,
         status: 409,
         error:
-          "Phone tests cannot be redialed as outbound leads. Start a new phone test in Studio.",
+          "Phone tests cannot be redialed as outbound leads. Start a new phone test from Set Up.",
       };
     if (lead.agentId && lead.agentId !== input.agentId) {
       return { ok: false as const, status: 409, error: "This lead belongs to another agent." };

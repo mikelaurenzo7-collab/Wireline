@@ -21,7 +21,7 @@ describe("demand-driven authenticated experience", () => {
     expect(routes).toContain('<Route path="/" element={<Navigate to="/studio" replace />} />');
     expect(routes).toContain('path="/overview" element={<ToStudioRedirect />}');
     expect(navigation).toMatch(/href: "\/studio"[\s\S]*href: "\/inbox"[\s\S]*href: "\/phone"/);
-    expect(navigation).toContain('href: "/insights", label: "Activity"');
+    expect(navigation).toContain('href: "/insights", label: "Insights"');
     expect(navigation.indexOf('href: "/connections"')).toBeGreaterThan(
       navigation.indexOf('href: "/phone"'),
     );
@@ -45,12 +45,12 @@ describe("demand-driven authenticated experience", () => {
     expect(review).toContain("Connect Phone");
   });
 
-  it("keeps Inbox and Activity as independent canonical read surfaces", () => {
+  it("keeps Inbox and Insights as independent canonical read surfaces", () => {
     expect(inbox).toContain('label: "Email"');
     expect(inbox).toContain('label: "Text"');
     expect(inbox).toContain("WorkspaceControlBand");
     expect(activity).toContain("WorkspaceControlBand");
-    expect(activity).toContain('aria-label="Activity view"');
+    expect(activity).toContain('aria-label="Insights view"');
     expect(activity).not.toContain("AppChromeSubTabs");
   });
 
@@ -67,17 +67,17 @@ describe("demand-driven authenticated experience", () => {
     expect(activation).not.toContain("Test conversation completed");
   });
 
-  it("keeps Studio as one workroom with a Setup/Review inspector and progressive disclosure", () => {
+  it("keeps Set Up as one workroom with a Try It / Details / Summary panel and progressive disclosure", () => {
     expect(studio).toContain('"setup" | "review"');
     expect(studio).toContain('"configure" | "test"');
-    expect(studio).toContain('id === "setup" ? "Setup" : "Review"');
+    expect(studio).toContain('{ id: "setup", label: "Details" }');
     expect(studio).toContain("StudioAgentReviewPanel");
     expect(studio).not.toContain("StudioAgentCanvas");
     expect(setup).not.toMatch(/AgentPresenceLivePreview|VoiceGallery/);
     expect(setup).toContain("<details");
     expect(setup).toContain("AgentToolPermissions");
     expect(workroom).toContain("/test/stream");
-    expect(workroom).toContain("Rehearse");
+    expect(workroom).toContain("Private Rehearsal");
     expect(workroom).not.toContain('role="tablist"');
     expect(review).toContain('aria-label="Next actions"');
   });

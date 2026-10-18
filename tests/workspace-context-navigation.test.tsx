@@ -303,9 +303,9 @@ describe("Bot context across workspace pages", () => {
         expect(editorNodes.find((node) => node.type === type)?.props.agentId).toBe(expected);
       }
       expect(nodes.find((node) => node.type === "select")?.props.value).toBe(expected);
-      expect(
-        nodes.find((node) => text(node) === "Rehearse in Studio" && node.type === "a")?.props.to,
-      ).toBe(`/studio?agent=${expected}&section=test`);
+      expect(nodes.find((node) => text(node) === "Try It" && node.type === "a")?.props.to).toBe(
+        `/studio?agent=${expected}&workroom=test`,
+      );
     },
   );
 
@@ -455,7 +455,7 @@ describe("Bot context across workspace pages", () => {
     await vi.waitFor(() => expect(text(phone())).toContain("Live activation is paused"));
     const tree = phone();
     expect(text(tree)).toContain("Live activation is paused");
-    expect(text(tree)).toContain("Use Studio to rehearse privately.");
+    expect(text(tree)).toContain("Use Set Up to try your Bot privately.");
     expect(
       elements(tree).some((node) => node.type === "button" && text(node) === "Activate Line"),
     ).toBe(false);
@@ -619,10 +619,12 @@ describe("Workroom setup and rehearsal flow", () => {
         "aria-pressed"
       ],
     ).toBe(true);
-    expect(initial.some((node) => node.props.id === "studio-workroom-message")).toBe(false);
+    // Try It's composer has its own id so it can sit beside the Change conversation.
+    expect(initial.some((node) => node.props.id === "studio-workroom-test-message")).toBe(false);
     initial.find((node) => node.type === "button" && text(node) === "Text")!.props.onClick!();
     expect(
-      elements(workroom()).find((node) => node.props.id === "studio-workroom-message")?.props.value,
+      elements(workroom()).find((node) => node.props.id === "studio-workroom-test-message")?.props
+        .value,
     ).toBe("Keep this customer scenario.");
   });
 
@@ -653,7 +655,7 @@ describe("Workroom setup and rehearsal flow", () => {
     workroom();
     handle.current!.focusComposer("Suggested customer question");
     const composer = elements(workroom()).find(
-      (node) => node.props.id === "studio-workroom-message",
+      (node) => node.props.id === "studio-workroom-test-message",
     )!;
     expect(composer.props.value).toBe(expected);
     expect((composer.props as Props & { "data-resize": string })["data-resize"]).toBe("none");
@@ -672,7 +674,6 @@ describe("Workroom setup and rehearsal flow", () => {
     const changed = vi.fn((next: "configure" | "test") => {
       mode = next;
     });
-    const modeActionId = "studio-workroom-bot-b-mode-action";
     const workroom = () =>
       render(() =>
         (
@@ -684,27 +685,29 @@ describe("Workroom setup and rehearsal flow", () => {
           null,
         ),
       );
+    const all = () => elements(workroom());
     const action = (label: string) =>
-      elements(workroom()).find((node) => node.type === "button" && text(node) === label)!;
+      all().find((node) => node.type === "button" && text(node) === label)!;
 
-    expect(elements(workroom()).some((node) => node.props.role === "tablist")).toBe(false);
-    expect(text(workroom())).toContain("Set Up");
-    const focus = vi.fn();
-    focused.set(modeActionId, focus);
-    const rehearsalAction = action("Rehearse");
-    expect(rehearsalAction.props.id).toBe(modeActionId);
-    rehearsalAction.props.onClick!();
+    // Change and Try It are two views of one Set Up job, not tabs to separate pages.
+    expect(all().some((node) => node.props.role === "tablist")).toBe(false);
+    expect(all().find((node) => node.props.role === "group")?.props["aria-label"]).toBe(
+      "Set Up view",
+    );
+    expect(action("Change").props["aria-pressed"]).toBe(true);
+    const tryFocus = vi.fn();
+    focused.set("studio-workroom-bot-b-mode-test", tryFocus);
+    action("Try It").props.onClick!();
     frames.splice(0).forEach((frame) => frame());
     expect(changed).toHaveBeenLastCalledWith("test");
-    expect(focus).toHaveBeenCalledOnce();
-    focus.mockClear();
-    expect(text(workroom())).toContain("Private Rehearsal");
+    expect(tryFocus).toHaveBeenCalledOnce();
+    expect(action("Try It").props["aria-pressed"]).toBe(true);
 
-    const returnAction = action("Set Up");
-    expect(returnAction.props.id).toBe(modeActionId);
-    returnAction.props.onClick!();
+    const changeFocus = vi.fn();
+    focused.set("studio-workroom-bot-b-mode-configure", changeFocus);
+    action("Change").props.onClick!();
     frames.splice(0).forEach((frame) => frame());
     expect(changed).toHaveBeenLastCalledWith("configure");
-    expect(focus).toHaveBeenCalledOnce();
+    expect(changeFocus).toHaveBeenCalledOnce();
   });
 });

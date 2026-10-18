@@ -247,7 +247,7 @@ export function buildAgentIdentityPreview(input: {
       status: "not_configured",
       headline: "Agent identity badge",
       description:
-        "Stable in-app avatar for recognition in Studio, training, analytics, and call logs. Not a video presenter.",
+        "Stable in-app avatar for recognition in the Workspace, knowledge, insights, and call logs. Not a video presenter.",
       consentRequired: provider.consentRequired,
       fallback: provider.fallback,
     },

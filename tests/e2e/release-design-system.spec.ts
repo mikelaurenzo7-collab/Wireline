@@ -157,10 +157,10 @@ test("Activity keeps its document heading without repeating the selected navigat
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     if (width === 390) await page.goto("/insights");
-    const heading = page.getByRole("heading", { level: 1, name: "Activity", exact: true });
+    const heading = page.getByRole("heading", { level: 1, name: "Insights", exact: true });
     await expect(heading).toHaveCount(1);
     expect((await heading.boundingBox())?.height).toBeLessThanOrEqual(1);
-    await expect(page.getByRole("combobox", { name: "Activity view" })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Insights view" })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     await testInfo.attach(`activity-${width}`, {
       path: await page
@@ -332,8 +332,8 @@ test("Studio retains a draft and exposes the final action after text enlargement
   const greeting = page.getByRole("textbox", { name: "Opening greeting", exact: true });
   const draft = "Welcome to the repair desk. How can I help?";
   await greeting.fill(draft);
-  await page.getByRole("tab", { name: "Review", exact: true }).click();
-  await page.getByRole("tab", { name: "Setup", exact: true }).click();
+  await page.getByRole("tab", { name: "Summary", exact: true }).click();
+  await page.getByRole("tab", { name: "Details", exact: true }).click();
   await expect(greeting).toHaveValue(draft);
   await page.setViewportSize({ width: 320, height: 800 });
   await enlargeText(page);
@@ -371,7 +371,7 @@ test("Studio retains a draft and exposes the final action after text enlargement
     });
     throw error;
   }
-  await page.getByRole("button", { name: "Close Bot settings", exact: true }).click();
+  await page.getByRole("button", { name: "Close panel", exact: true }).click();
   await expect(page.getByRole("heading", { name: "What Should We Change?" })).toBeVisible();
   await page.getByRole("button", { name: "Add a rule", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Message Front Desk" })).toBeFocused();

@@ -88,8 +88,8 @@ export function agentCapHit(agentCount: number, entitlement: AgentEntitlement): 
  */
 export function agentCapMessage(cap: number): string {
   return cap === 1
-    ? "Your plan includes 1 Bot. Edit your current Bot in Studio to change what it does."
-    : `Your plan includes up to ${cap} Bots. Edit an existing Bot in Studio to change what it does.`;
+    ? "Your plan includes 1 Bot. Change your current Bot in its Workspace to give it a new job."
+    : `Your plan includes up to ${cap} Bots. Change an existing Bot in its Workspace to give it a new job.`;
 }
 
 /** Code for the Bot cap. No plan sold today adds Bots, so it is not a payment prompt. */

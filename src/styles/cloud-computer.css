@@ -2,11 +2,42 @@
  * Surfaces reuse the workspace paper treatment; this file owns layout and the
  * few elements that have no shared primitive (the browser frame and the log). */
 
+/* The layout is a size container, so the compact rules at the end follow the
+ * space the computer actually has: a phone, or the Workspace side panel. */
 .wl-computer-layout {
+  container: computer / inline-size;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--wireline-space-150);
   align-items: start;
+}
+
+/* Beside the Workspace conversation (Set Up › Computer). */
+.wl-computer-panel {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  gap: var(--wireline-space-125);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--wireline-space-125);
+  scrollbar-gutter: stable;
+}
+
+/* Full width keeps a comfortable measure instead of stretching edge to edge. */
+.wl-computer-panel > * {
+  width: 100%;
+  max-width: 76rem;
+  margin-inline: auto;
+}
+
+.wl-computer-panel__toolbar {
+  display: flex;
+  min-height: 2.25rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wireline-space-100);
 }
 
 .wl-computer-main {
@@ -986,7 +1017,7 @@
   font-size: 0.74rem;
 }
 
-@media (max-width: 639px) {
+@container computer (max-width: 639px) {
   .wl-computer-composer,
   .wl-computer-detail {
     padding: var(--wireline-space-125);
@@ -1004,24 +1035,26 @@
     grid-template-columns: 3.75rem minmax(0, 1fr);
   }
 
-  .wl-computer-screen__steps {
+  /* A full-screen view has the whole display, so it keeps the full browser bar. */
+  .wl-computer-screen:not(:fullscreen) .wl-computer-screen__steps {
     display: none;
   }
 
-  .wl-computer-screen__dots {
+  .wl-computer-screen:not(:fullscreen) .wl-computer-screen__dots,
+  .wl-computer-launch-browser .wl-computer-screen__dots {
     display: none;
   }
-  .wl-computer-screen__live {
+  .wl-computer-screen:not(:fullscreen) .wl-computer-screen__live {
     display: none;
   }
-  .wl-computer-screen__bar {
+  .wl-computer-screen:not(:fullscreen) .wl-computer-screen__bar {
     flex-wrap: wrap;
     gap: 0.25rem;
   }
-  .wl-computer-screen__navigation {
+  .wl-computer-screen:not(:fullscreen) .wl-computer-screen__navigation {
     margin-right: auto;
   }
-  .wl-computer-screen__address-form {
+  .wl-computer-screen:not(:fullscreen) .wl-computer-screen__address-form {
     order: 2;
     flex-basis: 100%;
   }
@@ -1048,7 +1081,7 @@
   }
 }
 
-@media (max-width: 400px) {
+@container computer (max-width: 400px) {
   .wl-computer-screen__pan-hint {
     display: none;
   }

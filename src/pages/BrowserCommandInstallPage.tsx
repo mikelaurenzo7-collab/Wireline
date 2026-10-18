@@ -48,7 +48,7 @@ export default function BrowserCommandInstallPage() {
         </Button>
         <WorkspacePageIntro
           title="Install BotBound Command"
-          description="Send page details, selected text, and phone links to Studio."
+          description="Send page details, selected text, and phone links to your Workspace."
           action={
             <div>
               <Badge variant="info">{CLIENT_SURFACE_POSTURE.browser.status}</Badge>

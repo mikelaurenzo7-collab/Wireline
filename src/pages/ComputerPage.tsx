@@ -7,7 +7,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, Navigate, useSearchParams } from "react-router";
 import {
   ArrowLeft,
   ArrowRight,
@@ -33,11 +33,13 @@ import {
 import { authFetch, readApiJson } from "../lib/api";
 import { cn } from "../lib/utils";
 import { useAgents } from "../contexts/AgentsContext";
+import { useMediaQuery } from "../hooks/useMediaQuery";
 import { Badge, Button, Input, NativeSelect, Skeleton, Textarea } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceRecovery from "../components/WorkspaceRecovery";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
+import WorkspaceSectionNav from "../components/layout/WorkspaceSectionNav";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../components/ui/shadcn/Sheet";
 
 type TaskStatus =
@@ -1149,11 +1151,27 @@ function TaskDetail({
   );
 }
 
-export default function ComputerPage() {
+type ComputerWorkbenchProps = {
+  /** Pins the composer to one Bot, as the Workspace panel does for its active Bot. */
+  agentId?: string;
+  /** "panel" renders beside the Workspace conversation without page chrome. */
+  layout?: "page" | "panel";
+};
+
+/**
+ * The Bot's computer: start a task or open a browser, watch it live, take
+ * control, answer its questions, and review history. One component serves the
+ * full Computer page and the Workspace side panel so both behave identically.
+ */
+export function ComputerWorkbench({
+  agentId: pinnedAgentId,
+  layout = "page",
+}: ComputerWorkbenchProps) {
   const { agents, loading: agentsLoading, degraded, refresh } = useAgents();
   const [searchParams, setSearchParams] = useSearchParams();
-  const hasScopedAgent = searchParams.has("agent");
-  const requestedAgentId = searchParams.get("agent")?.trim() || "";
+  const pinned = pinnedAgentId !== undefined;
+  const hasScopedAgent = pinned || searchParams.has("agent");
+  const requestedAgentId = (pinned ? pinnedAgentId : searchParams.get("agent"))?.trim() || "";
   const [agentId, setAgentId] = useState<string>(requestedAgentId);
   const [status, setStatus] = useState<ComputerStatus | null>(null);
   const [statusFailed, setStatusFailed] = useState(false);
@@ -1419,291 +1437,335 @@ export default function ComputerPage() {
     />
   ) : null;
 
+  const actions = (
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      {!anyActive && selected ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => setShowComposer((current) => !current)}
+        >
+          {showComposer ? "Back to task" : "New task"}
+        </Button>
+      ) : null}
+      <Button type="button" variant="outline" size="sm" onClick={() => setHistoryOpen(true)}>
+        <PanelRightOpen aria-hidden="true" />
+        History
+      </Button>
+    </div>
+  );
+
+  const workbench = (
+    <>
+      {status && !status.available ? <UnavailableNotice status={status} /> : null}
+      {!status && statusFailed ? (
+        <StatusNotice
+          tone="warning"
+          title="Your Bot's Computer Did Not Load"
+          action={
+            <Button size="sm" variant="outline" onClick={() => void loadStatus()}>
+              Retry
+            </Button>
+          }
+        >
+          Check your connection, then try again.
+        </StatusNotice>
+      ) : null}
+      <p className="sr-only" aria-live="polite" aria-atomic="true">
+        {announcement}
+      </p>
+
+      {/* An unreachable roster is not an empty one: never invite a duplicate Bot. */}
+      {degraded ? (
+        <WorkspaceRecovery onRetry={refresh} />
+      ) : !agentsLoading && !agents.length ? (
+        <StatusNotice
+          tone="info"
+          title="Create a Bot First"
+          action={
+            <Button asChild size="sm">
+              <Link to="/studio?create=1">Create a Bot</Link>
+            </Button>
+          }
+        >
+          Your Bot's computer belongs to a Bot. Build one, then give it work here.
+        </StatusNotice>
+      ) : null}
+      {scopedAgentUnavailable ? (
+        <StatusNotice
+          tone="warning"
+          title="Bot Unavailable"
+          action={
+            <Button asChild size="sm" variant="secondary">
+              <Link to="/computer">Choose Bot</Link>
+            </Button>
+          }
+        >
+          The Bot in this link is no longer available. Choose a Bot to use its computer.
+        </StatusNotice>
+      ) : null}
+
+      <div className={cn("wl-computer-layout", anyActive && "is-active")}>
+        <div className="wl-computer-main">
+          {activeTask && selected?.id !== activeTask.id ? (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                size="sm"
+                variant={activeTask.status === "needs_input" ? "default" : "outline"}
+                onClick={() => {
+                  setSelectedId(activeTask.id);
+                  setShowComposer(false);
+                }}
+              >
+                {activeTask.status === "needs_input"
+                  ? "Respond to active task"
+                  : "View active task"}
+              </Button>
+            </div>
+          ) : null}
+          {anyActive ? taskDetail : null}
+          {!anyActive && selected && !showComposer ? taskDetail : null}
+          {!anyActive && (!selected || showComposer) && !scopedAgentUnavailable ? (
+            <form
+              className="wl-computer-composer"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (canStart) void start(false);
+              }}
+            >
+              {/* In the Workspace panel the Bot is the one being set up beside it. */}
+              {agents.length > 1 && !pinned ? (
+                <div className="wl-computer-field">
+                  <label htmlFor="computer-agent">Bot</label>
+                  <NativeSelect
+                    id="computer-agent"
+                    value={composerAgentId}
+                    onChange={(event) => {
+                      const nextAgentId = event.target.value;
+                      if (hasScopedAgent) {
+                        setSearchParams(
+                          (current) => {
+                            const next = new URLSearchParams(current);
+                            next.set("agent", nextAgentId);
+                            return next;
+                          },
+                          { replace: true },
+                        );
+                      } else {
+                        setAgentId(nextAgentId);
+                      }
+                    }}
+                  >
+                    {agents.map((agent) => (
+                      <option key={agent.id} value={agent.id}>
+                        {agent.name}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </div>
+              ) : null}
+              <div className="wl-computer-launch-browser" aria-label="New browser">
+                <div className="wl-computer-launch-browser__bar">
+                  <span className="wl-computer-screen__dots" aria-hidden="true">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                  <Globe className="size-4 shrink-0" aria-hidden="true" />
+                  <label className="sr-only" htmlFor="computer-start-url">
+                    Web address
+                  </label>
+                  <Input
+                    id="computer-start-url"
+                    value={startUrl}
+                    onChange={(event) => setStartUrl(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        if (canOpenBrowser) void start(true);
+                      }
+                    }}
+                    placeholder="Enter a web address"
+                    inputMode="url"
+                    autoComplete="off"
+                    maxLength={2048}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => void start(true)}
+                    disabled={!canOpenBrowser}
+                    aria-busy={startingMode === "browser"}
+                  >
+                    {startingMode === "browser" ? "Opening…" : "Open browser"}
+                  </Button>
+                </div>
+                <div className="wl-computer-launch-browser__canvas">
+                  <Globe className="size-8" aria-hidden="true" />
+                  <span>New tab</span>
+                </div>
+              </div>
+              <div className="wl-computer-field">
+                <label htmlFor="computer-goal">What should your Bot do?</label>
+                <Textarea
+                  id="computer-goal"
+                  value={goal}
+                  onChange={(event) => setGoal(event.target.value)}
+                  placeholder="Describe the job, like comparing supplier prices or checking a listing."
+                  rows={3}
+                  maxLength={2000}
+                />
+                {goal.trim() ? null : (
+                  <div className="wl-computer-examples" role="group" aria-label="Example tasks">
+                    {EXAMPLES.map((example) => (
+                      <button
+                        key={example.label}
+                        type="button"
+                        title={example.goal}
+                        onClick={() => setGoal(example.goal)}
+                      >
+                        {example.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="wl-computer-composer__footer">
+                <p>
+                  <ShieldCheck className="size-4" aria-hidden="true" />
+                  Take control for passwords, payments, and submissions.
+                </p>
+                <Button
+                  type="submit"
+                  disabled={!canStart || startingMode !== null}
+                  aria-busy={startingMode === "task"}
+                >
+                  {startingMode === "task" ? "Starting task…" : "Start Task"}
+                </Button>
+              </div>
+              {error ? (
+                <StatusNotice tone="destructive" title="The Task Did Not Start">
+                  {error}
+                </StatusNotice>
+              ) : null}
+            </form>
+          ) : null}
+        </div>
+
+        <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
+          <SheetContent side="right" className="wl-computer-history-panel">
+            <SheetHeader>
+              <SheetTitle>Recent tasks</SheetTitle>
+            </SheetHeader>
+            <aside className="wl-computer-history" aria-label="Recent tasks">
+              {tasks === null && listFailed ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Recent tasks did not load.</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setListFailed(false);
+                      void loadTasks();
+                    }}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              ) : tasks === null ? (
+                <div className="space-y-2" aria-busy="true" aria-label="Loading tasks">
+                  <Skeleton className="h-14 w-full" />
+                  <Skeleton className="h-14 w-full" />
+                </div>
+              ) : tasks.length ? (
+                <ul>
+                  {tasks.map((task) => {
+                    const copy = STATUS_COPY[task.status];
+                    return (
+                      <li key={task.id}>
+                        <button
+                          type="button"
+                          aria-current={task.id === selectedId ? "true" : undefined}
+                          onClick={() => {
+                            setSelectedId(task.id);
+                            setShowComposer(false);
+                            setHistoryOpen(false);
+                          }}
+                        >
+                          <span className="wl-computer-history__goal">{task.goal}</span>
+                          <span className="wl-computer-history__meta">
+                            <Badge variant={copy.variant}>{copy.label}</Badge>
+                            <span>
+                              {botName(task.agentId) ? `${botName(task.agentId)} · ` : null}
+                              {timeAgo(task.startedAt)}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">No tasks yet.</p>
+              )}
+            </aside>
+          </SheetContent>
+        </Sheet>
+      </div>
+    </>
+  );
+
+  if (layout === "panel") {
+    // At a glance from beside the conversation: is the computer free, busy, or waiting on me?
+    const panelState = !status
+      ? null
+      : !status.available
+        ? { label: "Unavailable", variant: "default" as const }
+        : activeTask
+          ? STATUS_COPY[activeTask.status]
+          : { label: "Ready", variant: "success" as const };
+    return (
+      <div className="wl-computer-panel">
+        <div className="wl-computer-panel__toolbar">
+          <span aria-live="polite">
+            {panelState ? <Badge variant={panelState.variant}>{panelState.label}</Badge> : null}
+          </span>
+          {actions}
+        </div>
+        {workbench}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <WorkspacePageIntro title="Computer" titleHidden action={actions} />
+      {workbench}
+    </>
+  );
+}
+
+/** The width where Set Up shows its panel beside the conversation. */
+const SIDE_BY_SIDE_QUERY = "(min-width: 1180px)";
+
+export default function ComputerPage() {
+  const sideBySide = useMediaQuery(SIDE_BY_SIDE_QUERY);
+  const [searchParams] = useSearchParams();
+  // With room for both, the computer opens beside the conversation, which stays
+  // visible unless the owner chooses Full width. Smaller screens get this page.
+  if (sideBySide) {
+    const next = new URLSearchParams({ panel: "computer" });
+    const agent = searchParams.get("agent")?.trim();
+    if (agent) next.set("agent", agent);
+    return <Navigate to={`/studio?${next.toString()}`} replace />;
+  }
   return (
     <WorkspaceShell contentClassName="pt-1 pb-6">
       <WorkspacePageFrame mode="standard" className="max-w-[1400px]">
-        <WorkspacePageIntro
-          title="Computer"
-          action={
-            <div className="flex items-center justify-end gap-2">
-              {!anyActive && selected ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowComposer((current) => !current)}
-                >
-                  {showComposer ? "Back to task" : "New task"}
-                </Button>
-              ) : null}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setHistoryOpen(true)}
-              >
-                <PanelRightOpen aria-hidden="true" />
-                History
-              </Button>
-            </div>
-          }
-        />
-
-        {status && !status.available ? <UnavailableNotice status={status} /> : null}
-        {!status && statusFailed ? (
-          <StatusNotice
-            tone="warning"
-            title="Your Bot's Computer Did Not Load"
-            action={
-              <Button size="sm" variant="outline" onClick={() => void loadStatus()}>
-                Retry
-              </Button>
-            }
-          >
-            Check your connection, then try again.
-          </StatusNotice>
-        ) : null}
-        <p className="sr-only" aria-live="polite" aria-atomic="true">
-          {announcement}
-        </p>
-
-        {/* An unreachable roster is not an empty one: never invite a duplicate Bot. */}
-        {degraded ? (
-          <WorkspaceRecovery onRetry={refresh} />
-        ) : !agentsLoading && !agents.length ? (
-          <StatusNotice
-            tone="info"
-            title="Create a Bot First"
-            action={
-              <Button asChild size="sm">
-                <Link to="/studio?create=1">Create a Bot</Link>
-              </Button>
-            }
-          >
-            Your Bot's computer belongs to a Bot. Build one, then give it work here.
-          </StatusNotice>
-        ) : null}
-        {scopedAgentUnavailable ? (
-          <StatusNotice
-            tone="warning"
-            title="Bot Unavailable"
-            action={
-              <Button asChild size="sm" variant="secondary">
-                <Link to="/computer">Choose Bot</Link>
-              </Button>
-            }
-          >
-            The Bot in this link is no longer available. Choose a Bot to use its computer.
-          </StatusNotice>
-        ) : null}
-
-        <div className={cn("wl-computer-layout", anyActive && "is-active")}>
-          <div className="wl-computer-main">
-            {activeTask && selected?.id !== activeTask.id ? (
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={activeTask.status === "needs_input" ? "default" : "outline"}
-                  onClick={() => {
-                    setSelectedId(activeTask.id);
-                    setShowComposer(false);
-                  }}
-                >
-                  {activeTask.status === "needs_input"
-                    ? "Respond to active task"
-                    : "View active task"}
-                </Button>
-              </div>
-            ) : null}
-            {anyActive ? taskDetail : null}
-            {!anyActive && selected && !showComposer ? taskDetail : null}
-            {!anyActive && (!selected || showComposer) && !scopedAgentUnavailable ? (
-              <form
-                className="wl-computer-composer"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (canStart) void start(false);
-                }}
-              >
-                {agents.length > 1 ? (
-                  <div className="wl-computer-field">
-                    <label htmlFor="computer-agent">Bot</label>
-                    <NativeSelect
-                      id="computer-agent"
-                      value={composerAgentId}
-                      onChange={(event) => {
-                        const nextAgentId = event.target.value;
-                        if (hasScopedAgent) {
-                          setSearchParams(
-                            (current) => {
-                              const next = new URLSearchParams(current);
-                              next.set("agent", nextAgentId);
-                              return next;
-                            },
-                            { replace: true },
-                          );
-                        } else {
-                          setAgentId(nextAgentId);
-                        }
-                      }}
-                    >
-                      {agents.map((agent) => (
-                        <option key={agent.id} value={agent.id}>
-                          {agent.name}
-                        </option>
-                      ))}
-                    </NativeSelect>
-                  </div>
-                ) : null}
-                <div className="wl-computer-launch-browser" aria-label="New browser">
-                  <div className="wl-computer-launch-browser__bar">
-                    <span className="wl-computer-screen__dots" aria-hidden="true">
-                      <i />
-                      <i />
-                      <i />
-                    </span>
-                    <Globe className="size-4 shrink-0" aria-hidden="true" />
-                    <label className="sr-only" htmlFor="computer-start-url">
-                      Web address
-                    </label>
-                    <Input
-                      id="computer-start-url"
-                      value={startUrl}
-                      onChange={(event) => setStartUrl(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.preventDefault();
-                          if (canOpenBrowser) void start(true);
-                        }
-                      }}
-                      placeholder="Enter a web address"
-                      inputMode="url"
-                      autoComplete="off"
-                      maxLength={2048}
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => void start(true)}
-                      disabled={!canOpenBrowser}
-                      aria-busy={startingMode === "browser"}
-                    >
-                      {startingMode === "browser" ? "Opening…" : "Open browser"}
-                    </Button>
-                  </div>
-                  <div className="wl-computer-launch-browser__canvas">
-                    <Globe className="size-8" aria-hidden="true" />
-                    <span>New tab</span>
-                  </div>
-                </div>
-                <div className="wl-computer-field">
-                  <label htmlFor="computer-goal">What should your Bot do?</label>
-                  <Textarea
-                    id="computer-goal"
-                    value={goal}
-                    onChange={(event) => setGoal(event.target.value)}
-                    placeholder="Describe the job, like comparing supplier prices or checking a listing."
-                    rows={3}
-                    maxLength={2000}
-                  />
-                  {goal.trim() ? null : (
-                    <div className="wl-computer-examples" role="group" aria-label="Example tasks">
-                      {EXAMPLES.map((example) => (
-                        <button
-                          key={example.label}
-                          type="button"
-                          title={example.goal}
-                          onClick={() => setGoal(example.goal)}
-                        >
-                          {example.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="wl-computer-composer__footer">
-                  <p>
-                    <ShieldCheck className="size-4" aria-hidden="true" />
-                    Take control for passwords, payments, and submissions.
-                  </p>
-                  <Button
-                    type="submit"
-                    disabled={!canStart || startingMode !== null}
-                    aria-busy={startingMode === "task"}
-                  >
-                    {startingMode === "task" ? "Starting task…" : "Start Task"}
-                  </Button>
-                </div>
-                {error ? (
-                  <StatusNotice tone="destructive" title="The Task Did Not Start">
-                    {error}
-                  </StatusNotice>
-                ) : null}
-              </form>
-            ) : null}
-          </div>
-
-          <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
-            <SheetContent side="right" className="wl-computer-history-panel">
-              <SheetHeader>
-                <SheetTitle>Recent tasks</SheetTitle>
-              </SheetHeader>
-              <aside className="wl-computer-history" aria-label="Recent tasks">
-                {tasks === null && listFailed ? (
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Recent tasks did not load.</p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setListFailed(false);
-                        void loadTasks();
-                      }}
-                    >
-                      Retry
-                    </Button>
-                  </div>
-                ) : tasks === null ? (
-                  <div className="space-y-2" aria-busy="true" aria-label="Loading tasks">
-                    <Skeleton className="h-14 w-full" />
-                    <Skeleton className="h-14 w-full" />
-                  </div>
-                ) : tasks.length ? (
-                  <ul>
-                    {tasks.map((task) => {
-                      const copy = STATUS_COPY[task.status];
-                      return (
-                        <li key={task.id}>
-                          <button
-                            type="button"
-                            aria-current={task.id === selectedId ? "true" : undefined}
-                            onClick={() => {
-                              setSelectedId(task.id);
-                              setShowComposer(false);
-                              setHistoryOpen(false);
-                            }}
-                          >
-                            <span className="wl-computer-history__goal">{task.goal}</span>
-                            <span className="wl-computer-history__meta">
-                              <Badge variant={copy.variant}>{copy.label}</Badge>
-                              <span>
-                                {botName(task.agentId) ? `${botName(task.agentId)} · ` : null}
-                                {timeAgo(task.startedAt)}
-                              </span>
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No tasks yet.</p>
-                )}
-              </aside>
-            </SheetContent>
-          </Sheet>
-        </div>
+        <WorkspaceSectionNav />
+        <ComputerWorkbench />
       </WorkspacePageFrame>
     </WorkspaceShell>
   );

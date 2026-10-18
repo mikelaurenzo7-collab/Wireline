@@ -436,7 +436,7 @@ export default function TrialGateModal() {
               {detail.code === "AGENT_CAPACITY_REACHED" && (
                 <ShadButton asChild disableAnimations className="h-11 rounded-md px-5">
                   <Link to="/studio" onClick={closeModal}>
-                    Open Studio
+                    Open Workspace
                   </Link>
                 </ShadButton>
               )}

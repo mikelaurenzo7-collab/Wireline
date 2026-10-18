@@ -221,17 +221,17 @@ export default function OutcomeLedger({
         withHalo={false}
         icon={<ClipboardList aria-hidden="true" />}
         title="No Call Outcomes Yet"
-        description="Rehearse privately in Studio, or complete a live call to populate the ledger."
+        description="Try your Bot privately in Set Up, or complete a live call to fill the ledger."
         action={
           <Button asChild size="sm">
             <Link
               to={
                 agentId
-                  ? `/studio?agent=${encodeURIComponent(agentId)}&section=test`
+                  ? `/studio?agent=${encodeURIComponent(agentId)}&workroom=test`
                   : "/studio?create=1"
               }
             >
-              {agentId ? "Rehearse a Call" : "Create a Bot"}
+              {agentId ? "Try It" : "Create a Bot"}
             </Link>
           </Button>
         }

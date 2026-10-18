@@ -97,13 +97,14 @@ describe("activation path contract", () => {
     expect(wizard).toContain('result: "assistant_response_completed"');
     expect(wizard).not.toContain("Finish without a test");
     expect(copy).toContain('label: "Train"');
-    expect(copy).toContain('label: "Rehearse"');
+    expect(copy).toContain('label: "Try It"');
     expect(copy).toContain('label: "Launch"');
     expect(copy).not.toContain('label: "Wire"');
     expect(copy).not.toContain('label: "Number"');
-    expect(copy).toContain("Continue to rehearsal");
+    expect(copy).not.toContain('label: "Rehearse"');
+    expect(copy).toContain("Continue to Try It");
     expect(copy).toContain("Continue to launch");
-    expect(copy).toContain("Skip rehearsal");
+    expect(copy).toContain("Skip for now");
     expect(copy).toContain("Put It on the Line");
     expect(billing).toContain("shouldResumePostCreateLaunch(");
     expect(billing).toContain("Boolean(readPostCreateWizard())");

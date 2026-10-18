@@ -53,8 +53,8 @@ const COMMAND_CATEGORIES: readonly CommandCategory[] = ["Workspace", "Create", "
 const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "agents",
-    label: "Bot Studio",
-    keywords: "studio bots agents voice manage live home",
+    label: "Workspace",
+    keywords: "workspace studio set up try rehearse bots agents voice manage live home",
     icon: Bot,
     href: "/studio",
     category: "Workspace",
@@ -119,8 +119,8 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   },
   {
     id: "insights",
-    label: "Activity",
-    keywords: "insights performance quality revenue",
+    label: "Insights",
+    keywords: "activity analytics performance reliability quality revenue reports",
     icon: BarChart3,
     href: "/insights",
     category: "Workspace",

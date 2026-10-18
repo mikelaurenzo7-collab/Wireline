@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "BotBound Command",
   "version": "0.1.3",
-  "description": "Send the current page into BotBound Studio as reference context for calls, texts, follow-up, and tasks. Explicit action only. No background browsing.",
+  "description": "Send the current page to your BotBound Workspace as reference for calls, texts, follow-ups, and tasks. Only when you click.",
   "homepage_url": "https://botbound.app",
   "action": {
     "default_title": "Open BotBound Command",
@@ -26,7 +26,7 @@
   "commands": {
     "capture-current-page": {
       "suggested_key": { "default": "Ctrl+Shift+Y", "mac": "Command+Shift+Y" },
-      "description": "Send the current page to BotBound Studio"
+      "description": "Send the current page to your BotBound Workspace"
     }
   }
 }

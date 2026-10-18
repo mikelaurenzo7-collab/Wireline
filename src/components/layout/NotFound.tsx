@@ -118,15 +118,15 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               <NotFoundCard
                 to="/studio"
                 icon={LayoutGrid}
-                label="Bot Studio"
-                hint="Create, run & approve"
+                label="Workspace"
+                hint="Set up, try & assign work"
                 accent={BRAND.colors.primary}
               />
               <NotFoundCard
                 to="/phone"
                 icon={Phone}
                 label="Calls"
-                hint="Calls, campaigns, logs"
+                hint="History, outbound, lines"
                 accent={BRAND.colors.primary}
               />
               <NotFoundCard
@@ -140,7 +140,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
                 to="/settings"
                 icon={Settings}
                 label="Settings"
-                hint="Account and workspace"
+                hint="Account, billing, and team"
                 accent={BRAND.colors.primary}
               />
             </>

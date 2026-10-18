@@ -481,7 +481,7 @@ export default function OpenAILiveVoiceSandbox({
             <p className="mt-1 max-w-2xl text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
               {compact
                 ? "Private browser mic. External actions stay off."
-                : "Rehearse this Bot's rules, facts, and voice in a private browser session."}
+                : "Try this Bot's rules, facts, and voice in a private browser session."}
             </p>
           </div>
         </div>

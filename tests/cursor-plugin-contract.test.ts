@@ -93,7 +93,7 @@ describe("Cursor Directory plugin contract", () => {
     expect(publicDocs).toContain("not a repo voice SDK");
     expect(apps).toContain("Build your Bot from your editor.");
     expect(apps.replace(/\s+/g, " ")).toContain(
-      "manage live calls, messages, numbers, and billing in Studio",
+      "manage live calls, messages, numbers, and billing in your Workspace",
     );
     expect(apps).toContain("/cursor-plugin.html");
     expect(apps).toContain("BOTBOUND_PRODUCTION_ORIGIN");

@@ -3,8 +3,10 @@ import { workspacePageTitle } from "../src/constants/navigation";
 
 describe("workspacePageTitle", () => {
   it("uses the most specific workspace route label", () => {
-    expect(workspacePageTitle("/studio")).toBe("Bot Studio");
-    expect(workspacePageTitle("/studio/agent/123")).toBe("Bot Studio");
+    expect(workspacePageTitle("/studio")).toBe("Workspace");
+    expect(workspacePageTitle("/studio/agent/123")).toBe("Workspace");
+    expect(workspacePageTitle("/knowledge")).toBe("Knowledge");
+    expect(workspacePageTitle("/computer")).toBe("Computer");
     expect(workspacePageTitle("/settings/compliance")).toBe("Compliance Center");
     expect(workspacePageTitle("/connections/salesforce/")).toBe("Salesforce Connection");
   });

@@ -1,4 +1,10 @@
+/**
+ * Set Up's side panel: Try It (private rehearsal), Details (the setup form),
+ * and Summary (the setup review). Only Details and Summary are route-owned;
+ * Try It is the panel's resting state on wide screens.
+ */
 export type StudioInspectorSection = "setup" | "review";
+export type StudioPanelSection = "try" | StudioInspectorSection;
 export type StudioWorkroomMode = "configure" | "test";
 
 export type StudioRouteStateInput = {
