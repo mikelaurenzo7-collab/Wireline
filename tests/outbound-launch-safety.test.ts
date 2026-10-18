@@ -87,14 +87,22 @@ describe("outbound launch safety", () => {
     expect(gate).toContain("isMarketingCall?: boolean");
   });
 
-  it("routes manual web and mobile dials through the shared duplicate/compliance gate", () => {
+  it("gates web dials and keeps native outbound independently closed without side effects", () => {
     const web = read("src/routes/outbound-routes.ts");
     const mobile = read("src/routes/mobile-routes.ts");
-    for (const source of [web, mobile]) {
-      expect(source).toContain("evaluateOutboundDialGate({");
-      expect(source).toMatch(/evaluateOutboundDialGate[\s\S]*placeOutboundCall/s);
-      expect(source).toContain("DUPLICATE_DIAL_SUPPRESSED");
-    }
+    expect(web).toContain("evaluateOutboundDialGate({");
+    expect(web).toMatch(/evaluateOutboundDialGate[\s\S]*placeOutboundCall/s);
+    expect(web).toContain("DUPLICATE_DIAL_SUPPRESSED");
+    const native = mobile.slice(
+      mobile.indexOf('"/api/mobile/calls/outbound"'),
+      mobile.indexOf('// ── GET /api/mobile/calls/active'),
+    );
+    expect(native).toMatch(/authenticateUser,\s*mobileSensitiveRateLimiter,/);
+    expect(native).toContain("res.status(503).json(NATIVE_OUTBOUND_UNAVAILABLE)");
+    expect(native).not.toMatch(
+      /BOTBOUND_GENERAL_OUTBOUND_ENABLED|outboundVoiceGuard|\.insert\(|\.update\(|\.delete\(/,
+    );
+    expect(mobile).not.toMatch(/placeOutboundCall|outboundDialReservations/);
   });
 
   it("charges bulk intake rate limit once with batch cost", () => {
