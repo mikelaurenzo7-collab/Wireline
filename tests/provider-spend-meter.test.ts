@@ -46,7 +46,9 @@ describe("managed AI versus live phone accounting", () => {
     expect(query.sql).toContain('"wireline_audit_log"."provider" = \'openai\'');
     expect(query.sql).toContain("->>'surface' = 'openai_sip'");
     expect(query.sql).toContain('"wireline_audit_log"."action" = \'voice.phone_test.carrier\'');
-    expect(query.sql).toContain("->>'surface' = 'phone_test', false)");
+    expect(query.sql).toContain("->>'surface' = 'phone_test'");
+    expect(query.sql).toContain('"wireline_audit_log"."action" = \'voice.outbound.carrier\'');
+    expect(query.sql).toContain("->>'surface' = 'native_outbound', false)");
   });
   it("keeps only the funded server-owned phone-test carrier receipt on voice", () => {
     expect(
@@ -66,6 +68,29 @@ describe("managed AI versus live phone accounting", () => {
     expect(
       providerSpendMeter({
         action: "untrusted",
+        provider: "twilio",
+        metadata: { surface: "phone_test" },
+      }),
+    ).toBe("managed_ai");
+  });
+  it("exempts only the trusted funded ordinary carrier action/provider/surface tuple", () => {
+    expect(
+      providerSpendMeter({
+        action: "voice.outbound.carrier",
+        provider: "twilio",
+        metadata: { surface: "native_outbound" },
+      }),
+    ).toBe("live_voice");
+    expect(
+      providerSpendMeter({
+        action: "voice.outbound.carrier",
+        provider: "openai",
+        metadata: { surface: "native_outbound" },
+      }),
+    ).toBe("managed_ai");
+    expect(
+      providerSpendMeter({
+        action: "voice.outbound.carrier",
         provider: "twilio",
         metadata: { surface: "phone_test" },
       }),

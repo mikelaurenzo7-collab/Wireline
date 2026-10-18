@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { Loader2, Phone } from "lucide-react";
 
@@ -13,6 +13,7 @@ import {
 import { Button } from "./atoms";
 import { Checkbox } from "./ui/shadcn/Checkbox";
 import { useAgents } from "../contexts/AgentsContext";
+import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { authFetch } from "../lib/api";
 import {
@@ -27,6 +28,15 @@ import {
 } from "../lib/outbound-call-purpose";
 import { emitProductEvent } from "../lib/product-event-client";
 import PhoneTestDialog from "./PhoneTestDialog";
+import { listVoicePermissions } from "../lib/voice-permission-client";
+import type { VoicePermissionSummary } from "../lib/recipient-voice-permission-contract";
+import {
+  clearPendingOutboundDial,
+  isConfirmedTerminalDial,
+  readPendingOutboundDial,
+  savePendingOutboundDial,
+  type PendingOutboundDial,
+} from "../lib/outbound-dial-recovery";
 
 type OutboundDialDialogProps = {
   open: boolean;
@@ -38,6 +48,7 @@ type OutboundDialDialogProps = {
 
 export default function OutboundDialDialog(props: OutboundDialDialogProps) {
   const { agents, loading, degraded, phoneLookupDegraded } = useAgents();
+  const { user } = useAuth();
   const [selectedId, setSelectedId] = useState(props.initialAgentId || "");
   useEffect(() => {
     if (props.open) setSelectedId(props.initialAgentId || "");
@@ -48,7 +59,8 @@ export default function OutboundDialDialog(props: OutboundDialDialogProps) {
       (agent.channel === "voice" || agent.channel === "omnichannel" || !agent.channel),
   );
   const selected = voiceAgents.find((agent) => agent.id === selectedId) || voiceAgents[0];
-  if (DIRECT_OUTBOUND_AVAILABILITY.available) return <DirectOutboundDialDialog {...props} />;
+  if (DIRECT_OUTBOUND_AVAILABILITY.available && user)
+    return <DirectOutboundDialDialog key={user.id} {...props} userId={user.id} />;
   if (selected && !loading && !degraded && !phoneLookupDegraded)
     return (
       <PhoneTestDialog
@@ -96,7 +108,8 @@ function DirectOutboundDialDialog({
   initialAgentId = "",
   initialNumber = "",
   initialContext = "",
-}: OutboundDialDialogProps) {
+  userId,
+}: OutboundDialDialogProps & { userId: string }) {
   const { agents, loading, degraded, phoneLookupDegraded } = useAgents();
   const { toast } = useToast();
   const voiceAgents = useMemo(
@@ -115,6 +128,28 @@ function DirectOutboundDialDialog({
   const [callPurpose, setCallPurpose] = useState<OutboundCallPurpose>("service_or_requested");
   const [consentConfirmed, setConsentConfirmed] = useState(false);
   const [placing, setPlacing] = useState(false);
+  const [permissions, setPermissions] = useState<VoicePermissionSummary[]>([]);
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
+  const [permissionsError, setPermissionsError] = useState("");
+  const [consentArtifactId, setConsentArtifactId] = useState("");
+  const [savedRecovery] = useState(() => {
+    try {
+      return { pending: readPendingOutboundDial(userId, sessionStorage), error: "" };
+    } catch {
+      return {
+        pending: null,
+        error: "Saved call status could not be read. Check call history before another request.",
+      };
+    }
+  });
+  const [uncertain, setUncertain] = useState(!!savedRecovery.pending);
+  const [recoveryError, setRecoveryError] = useState(savedRecovery.error);
+  const [reconciling, setReconciling] = useState(false);
+  const [missingRequest, setMissingRequest] = useState(false);
+  const pendingRef = useRef<PendingOutboundDial | null>(savedRecovery.pending);
+  const reconcilingRef = useRef(false);
+  const placingRef = useRef(false);
+  const requestRef = useRef<{ fingerprint: string; key: string } | null>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   const openingUrlRef = useRef("");
   const closingForNavigationRef = useRef(false);
@@ -129,62 +164,213 @@ function DirectOutboundDialDialog({
   // the deps here wiped whatever the user had typed the moment AgentsContext
   // refetched (or finished its initial load) while the dialog was open.
   useEffect(() => {
-    if (!open) return;
+    if (!open || placingRef.current || pendingRef.current) return;
     setAgentId(initialAgentId);
     setNumber(initialNumber);
     setContext(initialContext);
     setCallPurpose("service_or_requested");
     setConsentConfirmed(false);
+    setConsentArtifactId("");
+    setUncertain(false);
+    requestRef.current = null;
   }, [open, initialAgentId, initialNumber, initialContext]);
+
+  const refreshCallStatus = useCallback(
+    async (signal?: AbortSignal) => {
+      const pending = pendingRef.current;
+      if (!pending || reconcilingRef.current) return;
+      reconcilingRef.current = true;
+      setReconciling(true);
+      try {
+        const response = await authFetch(
+          `/api/outbound/dial/${encodeURIComponent(pending.requestKey)}`,
+          { signal },
+        );
+        const body: unknown = await response.json();
+        if (signal?.aborted) return;
+        setMissingRequest(response.status === 404);
+        if (!response.ok)
+          throw new Error(
+            "Call status is not confirmed yet. Check History before another request.",
+          );
+        if (isConfirmedTerminalDial(body, pending.requestKey)) {
+          clearPendingOutboundDial(userId, pending.requestKey, sessionStorage);
+          pendingRef.current = null;
+          requestRef.current = null;
+          setUncertain(false);
+          setRecoveryError("");
+          setMissingRequest(false);
+        }
+      } catch (error) {
+        if (!signal?.aborted)
+          setRecoveryError(
+            error instanceof Error ? error.message : "Call status is not confirmed yet.",
+          );
+      } finally {
+        reconcilingRef.current = false;
+        setReconciling(false);
+      }
+    },
+    [userId],
+  );
+
+  const cancelMissingRequest = async () => {
+    const pending = pendingRef.current;
+    if (!pending || placingRef.current || reconcilingRef.current || !missingRequest) return;
+    reconcilingRef.current = true;
+    setReconciling(true);
+    try {
+      const response = await authFetch(
+        `/api/outbound/dial/${encodeURIComponent(pending.requestKey)}/cancel-missing`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        },
+      );
+      const body: unknown = await response.json();
+      if (!response.ok || !isConfirmedTerminalDial(body, pending.requestKey)) {
+        throw new Error(
+          "The request could not be canceled. Refresh call status before another request.",
+        );
+      }
+      clearPendingOutboundDial(userId, pending.requestKey, sessionStorage);
+      pendingRef.current = null;
+      requestRef.current = null;
+      setUncertain(false);
+      setMissingRequest(false);
+      setRecoveryError("");
+    } catch (error) {
+      setRecoveryError(error instanceof Error ? error.message : "Cancellation is not confirmed.");
+    } finally {
+      reconcilingRef.current = false;
+      setReconciling(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!open || !pendingRef.current) return;
+    const controller = new AbortController();
+    void refreshCallStatus(controller.signal);
+    return () => controller.abort();
+  }, [open, refreshCallStatus]);
+
+  useEffect(() => {
+    if (!open) return;
+    const controller = new AbortController();
+    setPermissionsLoading(true);
+    setPermissionsError("");
+    setPermissions([]);
+    void listVoicePermissions(controller.signal)
+      .then((rows) => {
+        if (!controller.signal.aborted) setPermissions(rows);
+      })
+      .catch((failure) => {
+        if (!controller.signal.aborted) {
+          setPermissionsError(
+            failure instanceof Error ? failure.message : "Could not load permissions.",
+          );
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setPermissionsLoading(false);
+      });
+    return () => controller.abort();
+  }, [open]);
+
+  useEffect(() => {
+    setConsentArtifactId("");
+  }, [agentId, callPurpose, number]);
 
   // Keep the selected agent valid without disturbing typed fields: seed a
   // fallback when nothing is chosen yet, and drop a selection that no longer
   // exists in the roster (agent deleted or lost its phone line on a background
   // refresh) so placeCall can't submit a stale id the <select> no longer shows.
   useEffect(() => {
-    if (!open || voiceAgents.length === 0) return;
+    if (!open || placing || uncertain || voiceAgents.length === 0) return;
     if (agentId && voiceAgents.some((agent) => agent.id === agentId)) return;
     const fallback =
       (initialAgentId && voiceAgents.some((agent) => agent.id === initialAgentId)
         ? initialAgentId
         : voiceAgents[0]?.id) || "";
     if (fallback && fallback !== agentId) setAgentId(fallback);
-  }, [open, agentId, initialAgentId, voiceAgents]);
+  }, [open, agentId, initialAgentId, voiceAgents, placing, uncertain]);
 
+  const availablePermissions = permissions.filter(
+    (permission) =>
+      permission.status === "granted" &&
+      permission.agent_id === agentId &&
+      permission.purpose === callPurpose,
+  );
   const canPlace =
     !placing &&
+    !uncertain &&
+    !recoveryError &&
+    !permissionsLoading &&
+    !permissionsError &&
     !!agentId &&
+    availablePermissions.some((permission) => permission.id === consentArtifactId) &&
     number.trim().length > 0 &&
     (callPurpose !== "marketing_or_sales" || consentConfirmed) &&
     voiceAgents.length > 0;
 
   const placeCall = async () => {
-    if (!canPlace) return;
+    if (!canPlace || placingRef.current) return;
+    placingRef.current = true;
     setPlacing(true);
     try {
+      const digits = number.replace(/\D/g, "");
+      const payload = {
+        agentId,
+        customerNumber: `+${digits.length === 10 ? `1${digits}` : digits}`,
+        customerName: "",
+        context: context.trim() || undefined,
+        callPurpose,
+        consentArtifactId,
+      };
+      const fingerprint = JSON.stringify(payload);
+      if (requestRef.current?.fingerprint !== fingerprint) {
+        requestRef.current = { fingerprint, key: crypto.randomUUID() };
+      }
+      // Persist the operation before dispatch so close/reopen/reload cannot silently redial.
+      // No recipient or instruction data is stored in the browser.
+      savePendingOutboundDial(userId, requestRef.current.key, sessionStorage);
+      pendingRef.current = { requestKey: requestRef.current.key };
+      setUncertain(true);
       const response = await authFetch("/api/outbound/dial", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          agentId,
-          customerNumber: number.trim(),
-          customerName: "",
-          context: context.trim() || undefined,
-          callPurpose,
-          hasExpressWrittenConsent: callPurpose === "marketing_or_sales" && consentConfirmed,
-          ...(callPurpose === "marketing_or_sales" && consentConfirmed
-            ? { consentSource: "manual_attestation" as const }
-            : {}),
+          ...payload,
+          requestKey: requestRef.current.key,
         }),
       });
-      const body = (await response.json()) as { error?: string; code?: string };
+      const body = (await response.json()) as {
+        error?: string;
+        code?: string;
+        callId?: string;
+        doNotRetry?: boolean;
+        providerOutcomeAmbiguous?: boolean;
+      };
+      if (response.status === 202 || body.doNotRetry || body.providerOutcomeAmbiguous) {
+        setUncertain(true);
+        return;
+      }
       if (!response.ok) {
+        if (response.status >= 500 || response.status === 408) return;
+        clearPendingOutboundDial(userId, requestRef.current.key, sessionStorage);
+        pendingRef.current = null;
+        setUncertain(false);
         toast({
           type: "error",
           title: "Call Not Placed",
           message: body.error || "Outbound dial was blocked.",
           duration: 10_000,
         });
+        return;
+      }
+      if (typeof body.callId !== "string" || !body.callId) {
+        setUncertain(true);
         return;
       }
       toast({
@@ -199,12 +385,18 @@ function DirectOutboundDialDialog({
       });
       onClose();
     } catch {
+      setUncertain(!!pendingRef.current);
+      if (!pendingRef.current)
+        setRecoveryError("Could not retain call status. The call was not requested.");
       toast({
         type: "error",
-        title: "Call Not Placed",
-        message: "Something went wrong. Try again in a moment.",
+        title: pendingRef.current ? "Call status unknown" : "Call not requested",
+        message: pendingRef.current
+          ? "Check call history before starting another request."
+          : "Could not retain call status. Check browser storage and try again.",
       });
     } finally {
+      placingRef.current = false;
       setPlacing(false);
     }
   };
@@ -298,6 +490,7 @@ function DirectOutboundDialDialog({
                 <select
                   className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                   value={agentId}
+                  disabled={placing || uncertain}
                   onChange={(event) => setAgentId(event.target.value)}
                 >
                   {voiceAgents.map((agent) => (
@@ -317,6 +510,7 @@ function DirectOutboundDialDialog({
                   placeholder="+1 (415) 555-0142"
                   className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                   value={number}
+                  disabled={placing || uncertain}
                   onChange={(event) => setNumber(event.target.value)}
                 />
               </label>
@@ -329,6 +523,7 @@ function DirectOutboundDialDialog({
                   rows={3}
                   className="min-h-[88px] w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                   value={context}
+                  disabled={placing || uncertain}
                   onChange={(event) => setContext(event.target.value)}
                   placeholder="What should the Bot accomplish on this call?"
                 />
@@ -339,6 +534,7 @@ function DirectOutboundDialDialog({
                 <select
                   className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                   value={callPurpose}
+                  disabled={placing || uncertain}
                   onChange={(event) => {
                     setCallPurpose(event.target.value as OutboundCallPurpose);
                     setConsentConfirmed(false);
@@ -350,11 +546,75 @@ function DirectOutboundDialDialog({
                 </select>
               </label>
 
+              <label className="block space-y-1.5">
+                <span className="block text-sm font-semibold text-foreground">
+                  Recipient permission
+                </span>
+                <select
+                  className="min-h-11 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm wl-focus-ring-halo"
+                  value={consentArtifactId}
+                  onChange={(event) => setConsentArtifactId(event.target.value)}
+                  disabled={permissionsLoading || !!permissionsError || placing || uncertain}
+                >
+                  <option value="">
+                    {permissionsLoading ? "Loading permissions…" : "Choose a granted permission"}
+                  </option>
+                  {availablePermissions.map((permission) => (
+                    <option key={permission.id} value={permission.id}>
+                      {permission.recipient_phone_masked}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {permissionsError ? (
+                <p role="alert" className="text-sm text-destructive">
+                  {permissionsError}
+                </p>
+              ) : null}
+              <Link
+                to="/phone?tab=outbound"
+                onClick={closeForNavigation}
+                className="text-sm text-brand underline underline-offset-2"
+              >
+                Manage recipient permissions
+              </Link>
+              {uncertain ? (
+                <p role="status" className="text-sm text-foreground">
+                  Call status is being reconciled. Check History before starting another call.
+                </p>
+              ) : null}
+              {recoveryError ? (
+                <p role="alert" className="text-sm text-destructive">
+                  {recoveryError}
+                </p>
+              ) : null}
+              {uncertain && missingRequest ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={placing || reconciling}
+                  onClick={() => void cancelMissingRequest()}
+                >
+                  Cancel pending request
+                </Button>
+              ) : null}
+              {uncertain ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={placing || reconciling}
+                  onClick={() => void refreshCallStatus()}
+                >
+                  {reconciling ? "Checking status…" : "Refresh call status"}
+                </Button>
+              ) : null}
+
               {callPurpose === "marketing_or_sales" ? (
                 <label className="flex items-start gap-3 rounded-md border border-input/80 bg-muted/30 p-3">
                   <Checkbox
                     className="mt-1"
                     checked={consentConfirmed}
+                    disabled={placing || uncertain}
                     onChange={(event) => setConsentConfirmed(event.target.checked)}
                   />
                   <span className="space-y-1 text-sm">
@@ -378,8 +638,15 @@ function DirectOutboundDialDialog({
 
         <DialogFooter className="shrink-0 gap-2 border-t border-border bg-[var(--wireline-color-surface-default)] px-6 py-4 sm:gap-0">
           <Button type="button" variant="secondary" onClick={onClose} disabled={placing}>
-            Cancel
+            {uncertain ? "Close" : "Cancel"}
           </Button>
+          {uncertain ? (
+            <Button asChild variant="secondary">
+              <Link to="/phone?tab=logs" onClick={closeForNavigation}>
+                Check call history
+              </Link>
+            </Button>
+          ) : null}
           <Button type="button" onClick={() => void placeCall()} disabled={!canPlace}>
             {placing ? (
               <>

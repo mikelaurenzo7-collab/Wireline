@@ -9,6 +9,16 @@
 
   function noop() {}
 
+  // This private capability form must never load third-party analytics or
+  // forward its fragment token, signature, or recipient details.
+  if (/^\/voice-permission\/?$/.test(window.location.pathname)) {
+    window.plausible = noop;
+    window.fbq = noop;
+    window._fbq = noop;
+    window.dataLayer = { push: noop };
+    return;
+  }
+
   function isProductionHost() {
     // Keep the retired hostname only as an explicit measurement bridge while
     // redirects and older campaign links finish moving to botbound.app. All

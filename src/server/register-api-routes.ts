@@ -85,6 +85,7 @@ import outboundRouter from "../routes/outbound-routes";
 import cadenceRouter from "../routes/cadence-routes";
 import campaignRouter from "../routes/campaign-routes";
 import complianceRouter from "../routes/compliance-routes";
+import recipientVoicePermissionRouter from "../routes/recipient-voice-permission-routes";
 import knowledgeRouter from "../routes/knowledge-routes";
 import learningRouter from "../routes/learning-routes";
 import openapiRouter from "../routes/openapi-routes";
@@ -213,6 +214,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(cadenceRouter);
   app.use(campaignRouter);
   app.use(complianceRouter);
+  app.use(recipientVoicePermissionRouter);
   app.use(knowledgeRouter);
   app.use(learningRouter);
   app.use("/api", openapiRouter);

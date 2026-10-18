@@ -7,6 +7,8 @@ const h = vi.hoisted(() => ({
   fetch: vi.fn(),
   update: vi.fn(),
   calls: vi.fn(),
+  canonical: null as string | null,
+  receipts: {} as Record<string, unknown>,
 }));
 vi.mock("../src/lib/server-context", () => ({
   drizzle: {
@@ -24,6 +26,10 @@ vi.mock("../src/lib/server-context", () => ({
   },
 }));
 vi.mock("../src/lib/twilio-service", () => ({ getTwilioClient: () => ({ calls: h.calls }) }));
+vi.mock("../src/lib/voice-call-identity", () => ({
+  resolveVoiceFundingId: async (_db: unknown, _user: string, id: string) => h.canonical ?? id,
+  readVoiceIdentityReceipt: async (_db: unknown, _user: string, key: string) => h.receipts[key],
+}));
 import {
   enforceFundedCarrierCallLimit,
   readTerminalCarrierDuration,
@@ -33,6 +39,8 @@ const sid = `CA${"1".repeat(32)}`;
 const providerId = "openai:rtc-test";
 const limit = () => ({ maxSeconds: 2400, deadlineAtMs: Date.now() + 10000 });
 beforeEach(() => {
+  h.canonical = null;
+  h.receipts = {};
   h.rows = [[{ sourceId: `twilio:${sid}`, agentId: "bot" }]];
   h.queries = [];
   h.fetch.mockReset().mockResolvedValue({ sid, status: "in-progress", duration: null });
@@ -41,6 +49,28 @@ beforeEach(() => {
 });
 
 describe("funded carrier limits and recovery", () => {
+  it("never raises the original pre-SIP cap during acceptance, REFER or a replay", async () => {
+    const canonical = "outbound:12345678-1234-4234-8234-123456789012";
+    h.canonical = canonical;
+    h.receipts[`voice_funding_phase:${canonical}:carrier`] = {
+      metadata: { provider_call_id: `twilio:${sid}` },
+    };
+    h.receipts[`voice_outbound_dispatched:${canonical}`] = {
+      metadata: { carrier_max_seconds: 80 },
+    };
+    h.rows.push([{ sourceId: `twilio:${sid}`, agentId: "bot" }]);
+    await enforceFundedCarrierCallLimit("tenant", providerId, limit());
+    await enforceFundedCarrierCallLimit("tenant", providerId, limit());
+    expect(h.update.mock.calls).toEqual([[{ timeLimit: 80 }], [{ timeLimit: 80 }]]);
+  });
+  it("keeps the self-phone parent within its existing 90-second cap", async () => {
+    await enforceFundedCarrierCallLimit("tenant", providerId, {
+      maxSeconds: 120,
+      deadlineAtMs: Date.now() + 10000,
+      phoneTest: true,
+    });
+    expect(h.update).toHaveBeenCalledWith({ timeLimit: 90 });
+  });
   it("updates the original tenant-bound parent with the same total limit on retry", async () => {
     h.rows.push([{ sourceId: `twilio:${sid}`, agentId: "bot" }]);
     await enforceFundedCarrierCallLimit("tenant", providerId, limit());

@@ -125,6 +125,7 @@ describe("self-phone-test parent duration accounting", () => {
       {
         userId: "user",
         idempotencyKey: `voice_phone_test_terminal:${canonical}`,
+        refType: "voice_phone_test_terminal",
         metadata: { duration_seconds: 70 },
       },
     ]);
@@ -155,6 +156,34 @@ describe("self-phone-test parent duration accounting", () => {
     expect(db.monthlyUsed).toBe(0);
     expect(h.settle).not.toHaveBeenCalled();
   });
+  it.each([true, false])(
+    "ordinary carrier unanswered=%s uses parent proof without a phone-test receipt",
+    async (unanswered) => {
+      const db = database([
+        alias("openai:ordinary"),
+        alias(sid),
+        {
+          userId: "user",
+          idempotencyKey: `voice_outbound_attempt:${canonical}`,
+          refType: "voice_outbound_attempt",
+          metadata: { version: 1 },
+        },
+        {
+          userId: "user",
+          idempotencyKey: `voice_outbound_terminal:${canonical}`,
+          refType: "voice_outbound_terminal",
+          metadata: { duration_seconds: 0, ...(unanswered ? { unanswered_confirmed: true } : {}) },
+        },
+      ]);
+      await trackVoiceMinutes({
+        userId: "user",
+        vapiCallId: "openai:ordinary",
+        durationSeconds: 200,
+      });
+      expect(db.event.billableMinutes).toBe(unanswered ? 0 : 1);
+      expect(db.monthlyUsed).toBe(unanswered ? 0 : 1);
+    },
+  );
 });
 
 describe("included-only voice completion", () => {

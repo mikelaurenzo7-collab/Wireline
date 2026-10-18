@@ -49,12 +49,20 @@ export function isAuthPortalPath(pathname: string): boolean {
   );
 }
 
+/** Opaque recipient capabilities are public without being marketing pages. */
+export function isPublicCapabilityPath(pathname: string): boolean {
+  return pathname === "/voice-permission" || pathname === "/voice-permission/";
+}
+
 /**
  * Routes that must not wait on `/api/auth/session` hydration.
  * Keeps marketing and auth usable when the session API is slow or down.
  */
 export function isSessionOptionalPublicPath(pathname: string): boolean {
   return (
-    isMarketingHomePath(pathname) || isAuthPortalPath(pathname) || isMarketingPublicPath(pathname)
+    isMarketingHomePath(pathname) ||
+    isAuthPortalPath(pathname) ||
+    isMarketingPublicPath(pathname) ||
+    isPublicCapabilityPath(pathname)
   );
 }

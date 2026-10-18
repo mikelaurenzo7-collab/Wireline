@@ -156,4 +156,22 @@ describe("reclassified-account signed callback fences", () => {
     expect(status).toContain("carrier_status_last_seen");
     expect(status).toContain(".update(schema.outboundLeads)");
   });
+
+  it("enters the resolved tenant scope before funded carrier mutations", () => {
+    const source = read("src/routes/openai-outbound-routes.ts");
+    const callback = source.slice(
+      source.indexOf("async function fundedCallback"),
+      source.indexOf("function neverBridgedNativeVoice"),
+    );
+    const token = callback.indexOf("verifyOpenAIOutboundToken(tokenFromRequest(req))");
+    const lookup = callback.indexOf(".select(");
+    const placement = callback.indexOf("openAIOutboundPlacementMatches(");
+    const scope = callback.indexOf("tenantStore.run(lead.userId");
+    const mutation = callback.indexOf("handleFundedOutboundCarrierEvent(");
+    expect(token).toBeGreaterThanOrEqual(0);
+    expect(lookup).toBeGreaterThan(token);
+    expect(placement).toBeGreaterThan(lookup);
+    expect(scope).toBeGreaterThan(placement);
+    expect(mutation).toBeGreaterThan(scope);
+  });
 });

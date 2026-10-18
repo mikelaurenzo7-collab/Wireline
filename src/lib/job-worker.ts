@@ -86,6 +86,7 @@ const TERMINAL_DELETION_CLEANUP_JOB_TYPES = new Set<JobRow["type"]>([
   "twilio_message_reconciliation",
   "twilio_fallback_reconcile",
   "phone_test_reconcile",
+  "outbound_placement_reconcile",
 ]);
 
 function attemptNumber(job: JobRow): number {
@@ -510,6 +511,11 @@ async function dispatchJobInProviderContext(job: JobRow): Promise<void> {
   if (job.type === "phone_test_reconcile") {
     const { reconcilePhoneTestJob } = await import("./voice/phone-test");
     await reconcilePhoneTestJob(job);
+    return;
+  }
+  if (job.type === "outbound_placement_reconcile") {
+    const { reconcileOutboundPlacementJob } = await import("./voice/outbound-placement-funding");
+    await reconcileOutboundPlacementJob(job);
     return;
   }
   if (job.type === POST_CALL_FINALIZATION_RECOVERY_TYPE) {

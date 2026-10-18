@@ -10,6 +10,7 @@ import { WorkspaceTabStrip } from "../layout/WorkspaceTabStrip";
 import { OUTBOUND_VIEW_TABS } from "../../lib/page-sub-tabs";
 import { Button } from "../atoms";
 import { EmptyState } from "../ui/EmptyState";
+import RecipientVoicePermissions from "./RecipientVoicePermissions";
 
 type OutboundView = (typeof OUTBOUND_VIEW_TABS)[number]["id"];
 
@@ -21,6 +22,7 @@ export default function OutboundHub({
   onViewChange: (id: OutboundView) => void;
 }) {
   const [showDial, setShowDial] = useState(false);
+  const [showPermissions, setShowPermissions] = useState(false);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -87,6 +89,21 @@ export default function OutboundHub({
               />
             </div>
             <div className="px-3 pb-4 sm:px-6">
+              <details
+                className="group mb-3 rounded-xl border border-border bg-card"
+                onToggle={(event) => setShowPermissions(event.currentTarget.open)}
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-foreground">
+                  Recipient permissions
+                  <ChevronDown
+                    className="size-4 text-muted-foreground transition-transform group-open:rotate-180"
+                    aria-hidden="true"
+                  />
+                </summary>
+                <div className="border-t border-border p-3 sm:p-4">
+                  {showPermissions ? <RecipientVoicePermissions /> : null}
+                </div>
+              </details>
               <details className="group rounded-xl border border-border bg-card">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-foreground">
                   Lead Intake

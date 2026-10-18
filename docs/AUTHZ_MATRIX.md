@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 420
-**Protected:** 339
-**Public (allowlisted):** 81
+**Routes scanned:** 433
+**Protected:** 348
+**Public (allowlisted):** 85
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -81,6 +81,10 @@
 | `POST /api/twilio-webhook/phone-test/gather` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/phone-test/status` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `GET /api/quotas/plans` | Public plan limits comparison table |
+| `POST /api/voice-permissions/recipient/confirm` | Opaque signed recipient capability; exact saved scope + fail-closed IP rate limit |
+| `POST /api/voice-permissions/recipient/preview` | Opaque signed recipient capability; exact saved scope + fail-closed IP rate limit |
+| `POST /api/voice-permissions/recipient/revoke` | Opaque signed recipient capability; exact saved scope + fail-closed IP rate limit |
+| `GET /voice-permission` | Public recipient capability shell; no-referrer, no-store, noindex; no tenant data |
 | `POST /api/webhooks/resend` | Resend/Svix timestamped HMAC-SHA256 signature + replay window |
 | `GET /recap/:slug` | Signed shareable call/weekly recap; opaque slug + bearer token verified against stored SHA-256 hash, timing-safe; per-IP + per-slug rate limits |
 | `POST /api/support/ticket` | Public support/contact form; strict validation + 5/15min IP rate limit |
@@ -247,6 +251,7 @@
 | dashboard-routes.ts | GET | `/api/export/:type.csv` | inline | — | — | Protected |
 | dashboard-routes.ts | GET | `/api/nav-counts` | inline | — | — | Protected |
 | elevenlabs-voice-routes.ts | GET | `/api/voice/elevenlabs/status` | inline | platform_admin | — | Protected |
+| elevenlabs-voice-routes.ts | POST | `/api/voice/elevenlabs/verify` | inline | platform_admin | — | Protected |
 | email-outcome-routes.ts | PATCH | `/api/emails/threads/:id/outcome` | inline | — | — | Protected |
 | email-outcome-routes.ts | GET | `/api/emails/threads/:id/outcome` | inline | — | — | Protected |
 | email-routes.ts | GET | `/api/emails/accounts` | inline | — | — | Protected |
@@ -424,6 +429,8 @@
 | operator-task-routes.ts | POST | `/api/Assistants/tasks/:id/approve` | inline | — | — | Protected |
 | operator-task-routes.ts | POST | `/api/Assistants/tasks/:id/dismiss-handoff` | inline | — | — | Protected |
 | outbound-dial-atomic-routes.ts | POST | `/api/outbound/dial` | inline | — | — | Protected |
+| outbound-dial-atomic-routes.ts | GET | `/api/outbound/dial/:requestKey` | inline | — | — | Protected |
+| outbound-dial-atomic-routes.ts | POST | `/api/outbound/dial/:requestKey/cancel-missing` | inline | — | — | Protected |
 | outbound-routes.ts | GET | `/api/callbacks` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/lead-hunt/approve` | inline | — | — | Protected |
 | outbound-routes.ts | GET | `/api/lead-hunt/leads` | inline | — | — | Protected |
@@ -432,6 +439,8 @@
 | outbound-routes.ts | DELETE | `/api/outbound/:id` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/outbound/bulk` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/outbound/dial` | inline | — | — | Protected |
+| outbound-routes.ts | GET | `/api/outbound/dial/:requestKey` | inline | — | — | Protected |
+| outbound-routes.ts | POST | `/api/outbound/dial/:requestKey/cancel-missing` | inline | — | — | Protected |
 | overview-operating-metrics-routes.ts | GET | `/api/overview/operating-metrics` | inline | — | — | Protected |
 | overview-operating-metrics-routes.ts | GET | `/api/overview/recent-conversations` | inline | — | — | Protected |
 | phone-test-routes.ts | POST | `/api/agents/:agentId/phone-test` | inline | — | — | Protected |
@@ -454,6 +463,14 @@
 | quota-routes.ts | GET | `/api/quotas` | inline | — | — | Protected |
 | quota-routes.ts | PUT | `/api/quotas/override` | inline | platform_admin | — | Protected |
 | quota-routes.ts | GET | `/api/quotas/plans` | — | — | yes | Public (allowlisted) |
+| recipient-voice-permission-routes.ts | GET | `/api/voice-permissions` | inline | — | — | Protected |
+| recipient-voice-permission-routes.ts | POST | `/api/voice-permissions` | inline | — | — | Protected |
+| recipient-voice-permission-routes.ts | POST | `/api/voice-permissions/:id/link` | inline | — | — | Protected |
+| recipient-voice-permission-routes.ts | POST | `/api/voice-permissions/:id/revoke` | inline | — | — | Protected |
+| recipient-voice-permission-routes.ts | POST | `/api/voice-permissions/recipient/confirm` | — | — | yes | Public (allowlisted) |
+| recipient-voice-permission-routes.ts | POST | `/api/voice-permissions/recipient/preview` | — | — | yes | Public (allowlisted) |
+| recipient-voice-permission-routes.ts | POST | `/api/voice-permissions/recipient/revoke` | — | — | yes | Public (allowlisted) |
+| recipient-voice-permission-routes.ts | GET | `/voice-permission` | — | — | yes | Public (allowlisted) |
 | resend-webhook-routes.ts | POST | `/api/webhooks/resend` | — | — | yes | Public (allowlisted) |
 | settings-routes.ts | POST | `/api/account/cancel-deletion` | inline | — | — | Protected |
 | settings-routes.ts | POST | `/api/account/export` | inline | — | — | Protected |

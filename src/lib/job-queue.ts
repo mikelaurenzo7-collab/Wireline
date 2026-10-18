@@ -41,6 +41,7 @@ export type JobType =
   | "twilio_message_reconciliation"
   | "twilio_fallback_reconcile"
   | "phone_test_reconcile"
+  | "outbound_placement_reconcile"
   | "openai_realtime_hangup"
   | "paid_bot_identity_reconcile"
   | "account_deletion_billing_reconciliation";

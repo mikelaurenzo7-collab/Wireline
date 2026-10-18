@@ -97,8 +97,11 @@ and $0.16 burst pricing, and low-latency TTS at $0.04 per 1,000 characters. Thos
 are different products and billing units. Speech Engine costs do not by themselves
 represent BotBound's full call cost: telephony, OpenAI reasoning, tools, minimums,
 failed attempts and support must also be accounted for. A creator subscription
-does not by itself establish OEM rights. The authorized licensing/plan question
-was sent to ElevenLabs Support; a response is still required.
+does not by itself establish OEM rights. The October 17 automated support reply
+did not interpret BotBound's customer-SaaS rights. The authorized human
+clarification follow-up is in that same thread; a written applicability answer
+is still required. Do not buy Creator on the assumption that it resolves OEM
+permission.
 
 The current source catalog's $0.128 blended voice reserve is for the existing
 OpenAI call path. It is not a measured cloned-call rate. No Stripe products,
@@ -120,10 +123,47 @@ need a bounded multipart route rather than increasing the global JSON limit.
 
 The operator-only `GET /api/voice/elevenlabs/status` checks configuration without
 provider I/O while `BOTBOUND_ELEVENLABS_VOICE_ENABLED` is absent or false. An
-explicitly enabled check can read a bounded account snapshot. Successful account
-access does not establish mutation scopes, funded usage or commercial rights;
-enrollment and live-call readiness remain false. The optional expected workspace
-must match the documented API-key workspace before any future asset binding.
+explicitly enabled check can read a bounded account snapshot. The separate
+operator action `POST /api/voice/elevenlabs/verify` performs those read-only checks
+without changing that flag and records a redacted audit receipt. It is not a
+customer voice feature. Both routes require authenticated platform-admin access
+and share a fail-closed three-checks-per-minute rate limit.
+
+#### Operator verification, before any enrollment
+
+1. Keep the integration and private-preview flags disabled. Use the existing
+   dedicated staged `BOTBOUND_ELEVENLABS_VOICE_API_KEY` in Render; do not copy it
+   into local development, a browser body or a report. Read provider workspace
+   identity in the authorized provider context and pin
+   `BOTBOUND_ELEVENLABS_WORKSPACE_ID` deliberately. Never automatically adopt an
+   unexpected workspace.
+2. From the authenticated operator context on the intended exact release, send
+   `POST /api/voice/elevenlabs/verify` with no credentials or override values in
+   its body. The service uses only production configuration. An explicit check
+   may read the staged key while the feature remains disabled; passive GET status
+   retains its no-provider-I/O off-switch behavior.
+3. Require `accountCheck=succeeded` and `workspaceBinding=matched`. Only after an
+   exact workspace match does the service issue one bounded `/v2/voices` GET.
+   Require `voicesReadCheck=succeeded`; no voice IDs, names or pagination tokens
+   are returned or retained. A successful list proves read permission, not
+   ownership, consent, clone/delete permission or speech-generation access.
+4. Record the returned receipt ID, checked time and exact source commit. The
+   existing tenant-scoped audit log stores only allowlisted diagnostic statuses,
+   plan/capability labels and remaining workspace capacity. Missing receipt
+   storage returns an actionable error; do not claim a completed verification.
+   A null source commit is unknown/local provenance, not production-release proof.
+   Missing or mismatched configuration stays an explicit blocker.
+5. Review workspace credits, voice slots and optional add/edit headroom as
+   workspace counters, not the restricted key's own remaining allowance. Unknown
+   limits stay unknown. Optional overages are not prepaid headroom. Verify the
+   key's credit cap/scopes separately in the provider console; do not expand
+   permissions or buy credits merely to make diagnostics green.
+
+The diagnostic always leaves mutation-scope, USD-funding, customer-SaaS-rights,
+enrollment and live-call readiness unverified/false. It never uploads recordings,
+creates or deletes provider assets, renders speech, changes a selected OpenAI
+voice, or applies migration 0179. A new failed check does not revoke or rewrite
+an earlier receipt; retain dated evidence and recheck after configuration changes.
 Never adopt a provider voice by its display name.
 
 On October 17, the founder's Starter dashboard showed 30,000 credits with none
@@ -179,6 +219,10 @@ ElevenLabs upload or a cloned-call setting.
 - [OpenAI Realtime conversations](https://developers.openai.com/api/docs/guides/realtime-conversations)
 - [OpenAI custom voices](https://developers.openai.com/api/docs/guides/custom-voices)
 - [ElevenLabs API pricing](https://elevenlabs.io/pricing/api)
+- [ElevenLabs account/workspace response](https://elevenlabs.io/docs/api-reference/user/get)
+- [ElevenLabs bounded voice search](https://elevenlabs.io/docs/api-reference/voices/search)
+- [ElevenLabs API security](https://elevenlabs.io/docs/eleven-api/guides/how-to/best-practices/security)
+- [ElevenLabs Customer Applications terms](https://elevenlabs.io/elevenapi-terms)
 - [ElevenLabs OEM terms](https://elevenlabs.io/oem-terms)
 - [Illinois BIPA definitions](https://my.ilga.gov/legislation/ilcs/fulltext?DocName=074000140K10)
 - [Illinois BIPA retention and release requirements](https://www.ilga.gov/legislation/ilcs/fulltext?DocName=074000140K15)

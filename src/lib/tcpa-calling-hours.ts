@@ -12,6 +12,10 @@ import { inferStateFromPhone } from "./tcpa-consent";
 export const TCPA_CALLING_HOUR_START = 8;
 export const TCPA_CALLING_HOUR_END = 21; // exclusive of 21:00+ (last legal hour is 20:xx)
 
+// Illinois' Automatic Telephone Dialers Act starts at 9am (815 ILCS 305/15).
+// Keep the stricter window for automated calling even when the federal floor is 8am.
+const STATE_CALLING_HOUR_START: Readonly<Record<string, number>> = { IL: 9 };
+
 /** Primary IANA zone per USPS state for TCPA local-time checks. */
 const STATE_PRIMARY_TIMEZONE: Record<string, string> = {
   AL: "America/Chicago",
@@ -127,6 +131,7 @@ export function resolveCallingHoursForPhone(
   now: Date = new Date(),
 ): CallingHoursDecision {
   const state = inferStateFromPhone(phone);
+  const stateStartHour = (state && STATE_CALLING_HOUR_START[state]) || TCPA_CALLING_HOUR_START;
 
   // Split-timezone states: the call must be within permitted hours in every
   // zone the state spans (fail-safe intersection). Report the binding zone —
@@ -140,7 +145,7 @@ export function resolveCallingHoursForPhone(
       const hour = localHourInZone(now, zone);
       bindingZone = zone;
       bindingHour = hour;
-      if (!(hour >= TCPA_CALLING_HOUR_START && hour < TCPA_CALLING_HOUR_END)) {
+      if (!(hour >= stateStartHour && hour < TCPA_CALLING_HOUR_END)) {
         allowed = false;
         break;
       }
@@ -150,7 +155,7 @@ export function resolveCallingHoursForPhone(
       state,
       timeZone: bindingZone,
       localHour: bindingHour,
-      startHour: TCPA_CALLING_HOUR_START,
+      startHour: stateStartHour,
       endHour: TCPA_CALLING_HOUR_END,
       inferred: true,
     };
@@ -159,7 +164,7 @@ export function resolveCallingHoursForPhone(
   const inferredZone = state ? STATE_PRIMARY_TIMEZONE[state] : null;
   const inferred = Boolean(inferredZone);
   const timeZone = inferredZone || UNKNOWN_DESTINATION_TIMEZONE;
-  const startHour = inferred ? TCPA_CALLING_HOUR_START : UNKNOWN_DESTINATION_START_HOUR;
+  const startHour = inferred ? stateStartHour : UNKNOWN_DESTINATION_START_HOUR;
   const endHour = inferred ? TCPA_CALLING_HOUR_END : UNKNOWN_DESTINATION_END_HOUR;
   const localHour = localHourInZone(now, timeZone);
   const allowed = localHour >= startHour && localHour < endHour;
@@ -172,6 +177,30 @@ export function resolveCallingHoursForPhone(
     startHour,
     endHour,
     inferred,
+  };
+}
+
+/** Explicit recipient location for the initial Illinois-only permission flow.
+ * A phone area code is never substituted for the location the recipient signs.
+ * Unsupported jurisdictions fail closed until their policy has been reviewed.
+ */
+export function resolvePermissionCallingHours(
+  jurisdiction: { callerState: string; recipientState: string; timeZone: string },
+  now: Date = new Date(),
+): CallingHoursDecision {
+  const supported =
+    jurisdiction.callerState === "IL" &&
+    jurisdiction.recipientState === "IL" &&
+    jurisdiction.timeZone === "America/Chicago";
+  const localHour = supported ? localHourInZone(now, jurisdiction.timeZone) : -1;
+  return {
+    allowed: supported && localHour >= 9 && localHour < 21,
+    state: supported ? "IL" : null,
+    timeZone: supported ? "America/Chicago" : "unknown",
+    localHour,
+    startHour: 9,
+    endHour: 21,
+    inferred: false,
   };
 }
 

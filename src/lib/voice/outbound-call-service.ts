@@ -11,7 +11,23 @@ import { drizzle, log } from "../server-context";
 import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import { getTwilioClient } from "../twilio-service";
 import { requireTenantChannel } from "../channel-entitlements";
-import { planById } from "../plan-catalog";
+import { AppError } from "../api-error";
+import { inferStateFromPhone } from "../tcpa-consent";
+import { inspectOutboundRecipientPermission } from "../recipient-voice-permission-store";
+import {
+  commitPlatformCostReservation,
+  markPlatformCostReservationAmbiguous,
+  releasePlatformCostReservation,
+  reservePlatformCostRecord,
+  type PlatformCostReservation,
+} from "../../middleware/audit-middleware";
+import {
+  bindOutboundCarrierCall,
+  failOutboundBeforeAcceptance,
+  markOutboundProviderAttempted,
+  prepareOutboundPlacementFunding,
+  endCancelledOutboundPlacement,
+} from "./outbound-placement-funding";
 import { nativeOutboundAmdParams } from "./native-outbound-amd";
 import {
   claimNativeOutboundPlacement,
@@ -29,6 +45,18 @@ import {
 
 export const OUTBOUND_CALL_OUTCOME_UNCERTAIN =
   "Voice carrier unavailable after retries: outbound call outcome is uncertain.";
+
+const STANDARD_US_CARRIER_STATES = new Set(
+  "AL AZ AR CA CO CT DE DC FL GA ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY".split(
+    " ",
+  ),
+);
+/** Tariff scope only. An area code never proves the recipient's jurisdiction. */
+export function isSupportedOutboundCarrierDestination(phone: string): boolean {
+  return (
+    /^\+1\d{10}$/.test(phone) && STANDARD_US_CARRIER_STATES.has(inferStateFromPhone(phone) ?? "")
+  );
+}
 
 export type PlaceCallResult = {
   ok: boolean;
@@ -52,6 +80,8 @@ export type PlaceOutboundCallInput = {
   leadId?: bigint | string | null;
   /** Optional server-owned consent/source metadata for a newly-created lead. */
   leadMetadata?: Record<string, unknown> | null;
+  requestKey?: string;
+  consentArtifactId?: string;
 };
 
 type TwilioFailure = {
@@ -91,21 +121,25 @@ function ambiguousResult(leadId: bigint): PlaceCallResult {
 async function placeOutboundCallAfterDeletionFence(
   input: PlaceOutboundCallInput,
 ): Promise<PlaceCallResult> {
+  if (process.env.BOTBOUND_GENERAL_OUTBOUND_ENABLED !== "true")
+    return {
+      ok: false,
+      status: 503,
+      code: "OUTBOUND_UNAVAILABLE",
+      error: "Calling is temporarily unavailable. Please try again later.",
+    };
   const customerNumber = normalizeOpenAIPhoneNumber(input.customerNumber);
   if (!customerNumber) {
     return { ok: false, status: 400, error: "Invalid phone number. Use E.164 format." };
   }
-  const entitlement = await requireTenantChannel(input.userId, "voice");
-  if (planById(entitlement.planId)?.catalogFamily === "channels") {
-    // Ringing, no-answer and AMD can incur cost before a SIP session exists.
-    // Keep these packages closed until that placement has atomic funding too.
+  if (!isSupportedOutboundCarrierDestination(customerNumber))
     return {
       ok: false,
-      status: 503,
-      code: "OUTBOUND_FUNDING_NOT_READY",
-      error: "Outbound calling is not available for this package yet.",
+      status: 422,
+      code: "OUTBOUND_DESTINATION_UNSUPPORTED",
+      error: "Calling to this destination is not supported.",
     };
-  }
+  await requireTenantChannel(input.userId, "voice");
   if (!openAIOutboundTokenReady() || !openAISipConfigured()) {
     return { ok: false, status: 503, error: "BotBound calling is temporarily unavailable." };
   }
@@ -166,11 +200,74 @@ async function placeOutboundCallAfterDeletionFence(
   });
   if (!claim.ok) return claim;
   const { lead, created, placementId } = claim;
+  if (claim.replayed) {
+    if (lead.callId) return { ok: true, status: 200, callId: lead.callId, leadId: String(lead.id) };
+    const state = (lead.metadata as { native_voice?: { state?: string } } | null)?.native_voice
+      ?.state;
+    return state === "rejected"
+      ? {
+          ok: false,
+          status: 409,
+          error: "This outbound request was not placed. Start a new request.",
+          leadId: String(lead.id),
+          doNotRetry: true,
+        }
+      : ambiguousResult(lead.id);
+  }
   const { token } = issueOpenAIOutboundToken({ leadId: lead.id, placementId });
   const telemarketing = isMarketingCallPurpose(input.callPurpose);
   const amd = nativeOutboundAmdParams(input.callPurpose);
 
+  let acceptedCallSid: string | null = null;
+  let providerAttempted = false;
+  let spend: PlatformCostReservation | undefined;
   try {
+    const permission = await inspectOutboundRecipientPermission({
+      userId: input.userId,
+      agentId: input.agentId,
+      phone: customerNumber,
+      callPurpose: input.callPurpose,
+      leadId: lead.id,
+      artifactId: input.consentArtifactId,
+      attemptId: input.requestKey ?? placementId,
+    });
+    const admission = await prepareOutboundPlacementFunding({
+      userId: input.userId,
+      agentId: input.agentId,
+      leadId: lead.id,
+      placementId,
+      phone: customerNumber,
+      from: fromNumber,
+      callPurpose: input.callPurpose,
+      permission,
+      permissionAttemptId: input.requestKey ?? placementId,
+    });
+    if (permission.effectiveCallPurpose !== input.callPurpose)
+      throw AppError.conflict("The permission purpose does not match this outbound request.");
+    // Separate committed reservation: do not invert spend-budget and wallet locks.
+    const reserved = await reservePlatformCostRecord({
+      userId: input.userId,
+      action: "voice.outbound.carrier",
+      provider: "twilio",
+      model: "bounded_us_outbound",
+      costUsd: Math.ceil(admission.maxSeconds / 60) * 0.05,
+      idempotencyKey: `outbound-carrier:${placementId}`,
+      requestMeta: {
+        surface: "native_outbound",
+        funding_id: admission.canonicalCallId,
+        maximum_seconds: admission.maxSeconds,
+        estimate_only: true,
+      },
+    });
+    if (!reserved.reserved) throw new Error("Outbound carrier budget could not be reserved.");
+    spend = reserved.reservation;
+    const remainingSeconds = Math.floor((admission.deadlineAtMs - Date.now()) / 1000);
+    // The parent, not just the later SIP leg, owns the admitted duration. Reserve
+    // ringing time separately so a late answer cannot restart the funding clock.
+    if (remainingSeconds <= 36)
+      throw new Error("Outbound admission expired before carrier dispatch.");
+    await markOutboundProviderAttempted(input.userId, lead.id, placementId, remainingSeconds - 36);
+    providerAttempted = true;
     const call = await twilio.calls.create({
       to: customerNumber,
       from: fromNumber,
@@ -182,11 +279,13 @@ async function placeOutboundCallAfterDeletionFence(
       statusCallbackMethod: "POST",
       statusCallbackEvent: ["initiated", "ringing", "answered", "completed"],
       timeout: 30,
+      timeLimit: remainingSeconds - 36,
       machineDetection: amd.machineDetection,
       machineDetectionTimeout: amd.machineDetectionTimeout,
     });
     const callSid = String(call.sid || "").trim();
     if (!/^CA[a-f0-9]{32}$/i.test(callSid)) {
+      await markPlatformCostReservationAmbiguous(spend);
       const reconciliation = await markNativeOutboundPlacementFailure({
         userId: input.userId,
         leadId: lead.id,
@@ -204,6 +303,10 @@ async function placeOutboundCallAfterDeletionFence(
       }
       return ambiguousResult(lead.id);
     }
+    acceptedCallSid = callSid;
+    await bindOutboundCarrierCall({ userId: input.userId, leadId: lead.id, placementId, callSid });
+    await commitPlatformCostReservation(spend);
+    await endCancelledOutboundPlacement(input.userId, lead.id, placementId);
 
     const accepted = await markNativeOutboundPlacementAccepted({
       userId: input.userId,
@@ -234,7 +337,15 @@ async function placeOutboundCallAfterDeletionFence(
     });
     return { ok: true, status: 200, callId: callSid, leadId: String(lead.id) };
   } catch (error) {
-    const ambiguous = isAmbiguousTwilioCallCreateError(error);
+    let ambiguous =
+      Boolean(acceptedCallSid) || (providerAttempted && isAmbiguousTwilioCallCreateError(error));
+    if (acceptedCallSid)
+      await bindOutboundCarrierCall({
+        userId: input.userId,
+        leadId: lead.id,
+        placementId,
+        callSid: acceptedCallSid,
+      });
     const reconciliation = await markNativeOutboundPlacementFailure({
       userId: input.userId,
       leadId: lead.id,
@@ -242,6 +353,11 @@ async function placeOutboundCallAfterDeletionFence(
       created,
       ambiguous,
     });
+    ambiguous ||= reconciliation.accepted;
+    if (spend) {
+      if (ambiguous) await markPlatformCostReservationAmbiguous(spend);
+      else await releasePlatformCostReservation(spend);
+    }
     if (reconciliation.accepted && reconciliation.callId) {
       log.warn("Recovered accepted outbound call after ambiguous carrier response", {
         userId: input.userId,
@@ -256,6 +372,7 @@ async function placeOutboundCallAfterDeletionFence(
         leadId: String(lead.id),
       };
     }
+    if (!ambiguous) await failOutboundBeforeAcceptance(input.userId, lead.id, placementId);
 
     log.error("OpenAI outbound call creation failed", {
       userId: input.userId,
@@ -269,8 +386,11 @@ async function placeOutboundCallAfterDeletionFence(
       ? ambiguousResult(lead.id)
       : {
           ok: false,
-          status: twilioStatus(error) || 502,
-          error: "The carrier rejected the outbound call request.",
+          status: error instanceof AppError ? error.status : twilioStatus(error) || 502,
+          error:
+            error instanceof AppError
+              ? error.message
+              : "The carrier rejected the outbound call request.",
           leadId: String(lead.id),
         };
   }

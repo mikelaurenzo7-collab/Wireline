@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../src/middleware/platform-admin", () => ({ isPlatformAdmin: vi.fn() }));
+vi.mock("../src/lib/voice/elevenlabs-readiness-receipt", () => ({
+  recordElevenLabsReadinessReceipt: vi.fn(),
+}));
 
 import {
   createElevenLabsReadinessService,
@@ -40,12 +43,20 @@ function account(): ElevenLabsAccountCapabilities {
 }
 function setup() {
   const read = vi.fn().mockResolvedValue(account());
+  const voices = vi.fn().mockResolvedValue({ voices: [], hasMore: false, nextPageToken: null });
+  const receipt = vi.fn().mockResolvedValue({
+    id: "read-only-check",
+    checkedAt: "2026-10-17T23:59:00.000Z",
+    sourceCommit: "2".repeat(40),
+    stored: true,
+  });
   const deps: ElevenLabsReadinessDependencies = {
     isAdmin: vi.fn().mockResolvedValue(true),
     configuration: vi.fn(() => ({ enabled: true, apiKey: KEY })),
-    client: vi.fn(() => ({ getAccountCapabilities: read })),
+    client: vi.fn(() => ({ getAccountCapabilities: read, listVoices: voices })),
+    receipt,
   };
-  return { deps, read, service: createElevenLabsReadinessService(deps) };
+  return { deps, read, voices, receipt, service: createElevenLabsReadinessService(deps) };
 }
 function expectIndependentGatesClosed(value: unknown) {
   expect(value).toMatchObject({
@@ -53,6 +64,7 @@ function expectIndependentGatesClosed(value: unknown) {
     liveCallsReady: false,
     endpointScopesVerified: false,
     usdFundingVerified: false,
+    customerSaasRightsVerified: false,
   });
 }
 
@@ -329,5 +341,177 @@ describe("operator ElevenLabs account readiness", () => {
       workspaceBinding: "unconfigured",
     });
     expect(read).toHaveBeenCalledOnce();
+  });
+
+  it("verifies the staged key explicitly without changing the disabled voice flag", async () => {
+    const { service, deps, read, voices, receipt } = setup();
+    vi.mocked(deps.configuration).mockReturnValue({
+      enabled: false,
+      apiKey: KEY,
+      expectedWorkspaceId: WORKSPACE,
+    });
+    voices.mockResolvedValue({
+      voices: [{ voiceId: "private_voice", name: "private_name" }],
+      hasMore: false,
+      nextPageToken: null,
+    });
+    const controller = new AbortController();
+    const result = await service.verify(actor, controller.signal);
+    expect(result).toMatchObject({
+      enabled: false,
+      accountCheck: "succeeded",
+      workspaceBinding: "matched",
+      voicesReadCheck: "succeeded",
+      voicesReadFailure: null,
+      capacity: {
+        workspaceCreditsRemaining: 29_877,
+        workspaceVoiceSlotsRemaining: 8,
+        workspaceVoiceAddEditsRemaining: null,
+        restrictedKeyCreditsRemaining: null,
+      },
+      receipt: { id: "read-only-check", stored: true },
+    });
+    expectIndependentGatesClosed(result);
+    expect(read).toHaveBeenCalledExactlyOnceWith({ signal: controller.signal });
+    expect(voices).toHaveBeenCalledExactlyOnceWith({ pageSize: 1 }, { signal: controller.signal });
+    expect(receipt).toHaveBeenCalledExactlyOnceWith(
+      actor.id,
+      expect.objectContaining({ enabled: false }),
+    );
+    expect(JSON.stringify(result)).not.toMatch(
+      /private_voice|private_name|private_workspace|private-test/,
+    );
+    expect(JSON.stringify(receipt.mock.calls)).not.toMatch(
+      /private_voice|private_name|private_workspace|private-test/,
+    );
+    expect(result.blockers).toEqual(
+      expect.arrayContaining([
+        "restricted_key_cap_unverified",
+        "mutation_scopes_unverified",
+        "customer_saas_rights_unverified",
+        "enrollment_not_ready",
+        "live_calls_not_ready",
+      ]),
+    );
+  });
+
+  it.each([undefined, "different_workspace"])(
+    "does not list voices without an exact explicit workspace match: %s",
+    async (expectedWorkspaceId) => {
+      const { service, deps, voices, receipt } = setup();
+      vi.mocked(deps.configuration).mockReturnValue({
+        enabled: false,
+        apiKey: KEY,
+        expectedWorkspaceId,
+      });
+      const result = await service.verify(actor);
+      expect(result.accountCheck).toBe("succeeded");
+      expect(result.voicesReadCheck).toBe("not_run");
+      expect(voices).not.toHaveBeenCalled();
+      expect(receipt).toHaveBeenCalledOnce();
+      expectIndependentGatesClosed(result);
+    },
+  );
+
+  it("reports denied voices-read scope separately from successful account access", async () => {
+    const { service, deps, voices } = setup();
+    vi.mocked(deps.configuration).mockReturnValue({
+      enabled: true,
+      apiKey: KEY,
+      expectedWorkspaceId: WORKSPACE,
+    });
+    voices.mockRejectedValue(new ElevenLabsVoiceError("PROVIDER_REJECTED", "list", false, 403));
+    const result = await service.verify(actor);
+    expect(result).toMatchObject({
+      accountCheck: "succeeded",
+      workspaceBinding: "matched",
+      voicesReadCheck: "failed",
+      voicesReadFailure: "provider_rejected",
+    });
+    expect(result.blockers).toContain("voices_read_unverified");
+    expectIndependentGatesClosed(result);
+    expect(voices).toHaveBeenCalledOnce();
+  });
+
+  it("clamps exhausted workspace counters and does not count optional overages as funding", async () => {
+    const { service, read } = setup();
+    const value = account();
+    Object.assign(value.subscription, {
+      status: "past_due",
+      characterCount: 30_010,
+      voiceSlotsUsed: 11,
+      voiceAddEditCounter: 8,
+      maxVoiceAddEdits: 5,
+      canUseInstantVoiceCloning: false,
+      canExtendCharacterLimit: true,
+      maxCreditLimitExtension: "unlimited",
+    });
+    read.mockResolvedValue(value);
+    const result = await service.verify(actor);
+    expect(result.capacity).toEqual({
+      workspaceCreditsRemaining: 0,
+      workspaceVoiceSlotsRemaining: 0,
+      workspaceVoiceAddEditsRemaining: 0,
+      restrictedKeyCreditsRemaining: null,
+    });
+    expect(result.blockers).toEqual(
+      expect.arrayContaining([
+        "subscription_not_active",
+        "instant_cloning_unavailable",
+        "workspace_credits_exhausted",
+        "workspace_voice_slots_exhausted",
+        "workspace_voice_edits_exhausted",
+      ]),
+    );
+    expectIndependentGatesClosed(result);
+  });
+
+  it("does not record a receipt or reach the provider for a non-admin explicit check", async () => {
+    const { service, deps, read, voices, receipt } = setup();
+    vi.mocked(deps.isAdmin).mockResolvedValue(false);
+    await expect(service.verify(actor)).rejects.toMatchObject({ status: 403 });
+    expect(read).not.toHaveBeenCalled();
+    expect(voices).not.toHaveBeenCalled();
+    expect(receipt).not.toHaveBeenCalled();
+  });
+
+  it("does not call a provider without a key and records the precise missing configuration", async () => {
+    const { service, deps, read, voices, receipt } = setup();
+    vi.mocked(deps.configuration).mockReturnValue({ enabled: false });
+    const result = await service.verify(actor);
+    expect(result).toMatchObject({ configured: false, accountCheck: "not_run", capacity: null });
+    expect(result.blockers).toContain("credential_missing");
+    expect(read).not.toHaveBeenCalled();
+    expect(voices).not.toHaveBeenCalled();
+    expect(receipt).toHaveBeenCalledOnce();
+  });
+
+  it("requires a durable receipt and sanitizes storage failures", async () => {
+    const { service, receipt } = setup();
+    receipt.mockRejectedValue(new Error(`private SQL ${KEY}`));
+    await expect(service.verify(actor)).rejects.toMatchObject({
+      status: 503,
+      message: "The provider check receipt could not be saved. Try again.",
+    });
+    expect(receipt).toHaveBeenCalledOnce();
+  });
+
+  it("never saves a completed check after cancellation during the voice read", async () => {
+    const { service, deps, voices, receipt } = setup();
+    vi.mocked(deps.configuration).mockReturnValue({
+      enabled: false,
+      apiKey: KEY,
+      expectedWorkspaceId: WORKSPACE,
+    });
+    const controller = new AbortController();
+    voices.mockImplementation(async () => {
+      controller.abort();
+      return { voices: [], hasMore: false, nextPageToken: null };
+    });
+    await expect(service.verify(actor, controller.signal)).rejects.toMatchObject({
+      status: 503,
+      message: "The provider check was interrupted.",
+    });
+    expect(receipt).not.toHaveBeenCalled();
   });
 });

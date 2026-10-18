@@ -518,6 +518,51 @@ describe("durable call funding admission", () => {
 });
 
 describe("call funding settlement and release", () => {
+  it("ordinary pre-SIP funding has no owner bypass and cannot refund an accepted parent as startup failure", async () => {
+    const data = database({ balance: 1.1, email: "owner@example.test" });
+    const canonical = phoneTestFundingId("12345678-1234-4234-8234-123456789012");
+    const scope = { agentId: "bot", leadId: "7", phone: "+13125550101", from: "+13125550102" };
+    const funding = await data.db.transaction((tx: any) =>
+      reserveVoiceCallFunding(tx, { ...call(canonical, 120), outboundPlacement: scope }),
+    );
+    expect(funding).toMatchObject({ outboundPlacement: true });
+    data.rows.push({
+      userId,
+      deltaUsd: "0",
+      refType: "voice_outbound_attempt",
+      idempotencyKey: `voice_outbound_attempt:${canonical}`,
+      metadata: { version: 1, canonical_call_id: canonical },
+    });
+    const carrierId = `twilio:CA${"1".repeat(32)}`;
+    await data.db.transaction((tx: any) =>
+      bindVoiceFundingAlias(tx, {
+        userId,
+        canonicalCallId: canonical,
+        providerCallId: carrierId,
+        phase: "carrier",
+      }),
+    );
+    await releaseVoiceCallFunding(userId, carrierId, "confirmed_startup_failure");
+    expect(data.rows.some((row) => row.refType === "voice_admission_release")).toBe(false);
+    await expect(
+      releaseVoiceCallFunding(userId, carrierId, "confirmed_unanswered"),
+    ).rejects.toThrow(/proof/);
+    data.rows.push({
+      userId,
+      deltaUsd: "0",
+      refType: "voice_outbound_terminal",
+      idempotencyKey: `voice_outbound_terminal:${canonical}`,
+      metadata: {
+        version: 1,
+        call_sid: carrierId.slice(7),
+        carrier_status: "busy",
+        duration_seconds: 0,
+        unanswered_confirmed: true,
+      },
+    });
+    await releaseVoiceCallFunding(userId, carrierId, "confirmed_unanswered");
+    expect(data.rows.filter((row) => row.refType === "voice_admission_release")).toHaveLength(1);
+  });
   const settle = (costUsd: number, providerCallId = "openai:first") =>
     settleVoiceCallFunding({
       userId,

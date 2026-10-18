@@ -39,6 +39,14 @@ const AUTH_MIDDLEWARE = [
 
 const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
   {
+    pattern: /^\/voice-permission$/,
+    reason: "Public recipient capability shell; no-referrer, no-store, noindex; no tenant data",
+  },
+  {
+    pattern: /^\/api\/voice-permissions\/recipient\/(?:preview|confirm|revoke)$/,
+    reason: "Opaque signed recipient capability; exact saved scope + fail-closed IP rate limit",
+  },
+  {
     pattern: /^\/(?:api\/)?stripe-webhook$/,
     reason: "Stripe signature verification + idempotency",
   },

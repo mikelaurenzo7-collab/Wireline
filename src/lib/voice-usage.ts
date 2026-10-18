@@ -3,8 +3,8 @@
  * Monthly live-voice accounting for founder early access.
  *
  * Commercial rules:
- * - Every completed live-call attempt consumes at least one minute, including
- *   rejected, busy, voicemail, and zero-second outbound attempts.
+ * - Answered calls consume at least one minute. Newly admitted ordinary outbound
+ *   attempts with exact confirmed-unanswered proof consume no customer minutes.
  * - Paid plans consume their monthly included pool first.
  * - Paid extra-agent add-ons increase both agent capacity and included minutes.
  * - Usage beyond the included pool is finalized against Runtime Balance.
@@ -332,20 +332,37 @@ export async function trackVoiceMinutes(opts: {
   try {
     // Carrier verification and SIP are phases of one prepaid attempt, not two calls.
     vapiCallId = await resolveVoiceFundingId(drizzle, userId, vapiCallId);
+    let confirmedUnanswered = false;
     if (vapiCallId.startsWith("outbound:")) {
       // Only the bound carrier parent's terminal duration covers verification
       // plus conversation. A faster SIP finalizer cannot undercount that phase.
+      const ordinary = await readVoiceIdentityReceipt(
+        drizzle,
+        userId,
+        `voice_outbound_attempt:${vapiCallId}`,
+      );
+      const terminalType = ordinary ? "voice_outbound_terminal" : "voice_phone_test_terminal";
       const terminal = await readVoiceIdentityReceipt(
         drizzle,
         userId,
-        `voice_phone_test_terminal:${vapiCallId}`,
+        `${terminalType}:${vapiCallId}`,
       );
       const seconds = (terminal?.metadata as Record<string, unknown> | undefined)?.duration_seconds;
-      if (!terminal || !Number.isSafeInteger(seconds) || Number(seconds) < 0)
-        throw new Error("Phone test carrier settlement is awaiting terminal confirmation.");
+      if (
+        !terminal ||
+        terminal.refType !== terminalType ||
+        !Number.isSafeInteger(seconds) ||
+        Number(seconds) < 0
+      )
+        throw new Error("Outbound carrier settlement is awaiting terminal confirmation.");
       durationSeconds = Number(seconds);
+      confirmedUnanswered =
+        ordinary !== undefined &&
+        Boolean(ordinary) &&
+        (terminal.metadata as Record<string, unknown>)?.unanswered_confirmed === true &&
+        seconds === 0;
     }
-    const minutes = billableVoiceMinutes(durationSeconds);
+    const minutes = confirmedUnanswered ? 0 : billableVoiceMinutes(durationSeconds);
     const prepared = await prepareVoiceUsage({
       userId,
       providerCallId: vapiCallId,

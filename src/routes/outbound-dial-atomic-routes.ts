@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { Router, type Response } from "express";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -11,17 +10,20 @@ import { normalizeOutboundNumber } from "../lib/dialer-compliance";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import {
   OUTBOUND_CALL_PURPOSES,
-  classifyUntrustedDirectDial,
-  hasAuditableExpressConsentArtifact,
-  normalizedExpressConsent,
+  isMarketingCallPurpose,
   outboundConsentMetadata,
-  requiresFederalDncScreeningForDirectDial,
 } from "../lib/outbound-call-purpose";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { SentryEvents } from "../lib/sentry-events";
 import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { placeOutboundCall } from "../lib/voice/outbound-call-service";
+import {
+  readNativeOutboundRequestReplay,
+  readNativeOutboundRequestStatus,
+  cancelMissingNativeOutboundRequest,
+} from "../lib/voice/openai-outbound-placement";
+import { inspectOutboundRecipientPermission } from "../lib/recipient-voice-permission-store";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -41,12 +43,15 @@ const dialSchema = z.object({
   customerName: z.string().max(200).optional(),
   context: z.string().max(2000).optional(),
   callPurpose: z.enum(OUTBOUND_CALL_PURPOSES),
+  requestKey: z.string().uuid(),
+  consentArtifactId: z.string().uuid().optional(),
   hasExpressWrittenConsent: z.boolean().optional().default(false),
   consentSource: z.enum(["web_form", "lead_import", "crm", "manual_attestation"]).optional(),
   consentLeadId: z.string().max(200).optional(),
 });
 
 async function markReservation(
+  userId: string,
   operationKey: string,
   values: {
     status: "dialing" | "completed" | "failed" | "expired";
@@ -62,7 +67,12 @@ async function markReservation(
       ...(values.failureCode !== undefined ? { failureCode: values.failureCode } : {}),
       updatedAt: new Date(),
     })
-    .where(eq(outboundDialReservations.operationKey, operationKey));
+    .where(
+      and(
+        eq(outboundDialReservations.operationKey, operationKey),
+        eq(outboundDialReservations.userId, userId),
+      ),
+    );
 }
 
 function gateResponse(res: Response, gate: DeniedOutboundDialGate) {
@@ -114,6 +124,21 @@ function isAmbiguousProviderResult(result: Awaited<ReturnType<typeof placeOutbou
   );
 }
 
+router.get(
+  "/api/outbound/dial/:requestKey",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    res.json(await readNativeOutboundRequestStatus(req.user.id, req.params.requestKey));
+  },
+);
+router.post(
+  "/api/outbound/dial/:requestKey/cancel-missing",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    res.json(await cancelMissingNativeOutboundRequest(req.user.id, req.params.requestKey));
+  },
+);
+
 router.post(
   "/api/outbound/dial",
   authenticateUser,
@@ -126,31 +151,11 @@ router.post(
       customerNumber,
       context,
       callPurpose,
-      hasExpressWrittenConsent,
       consentSource,
       consentLeadId,
+      requestKey,
+      consentArtifactId,
     } = req.body;
-    const purpose = classifyUntrustedDirectDial({ callPurpose });
-    const effectiveCallPurpose = purpose.effectiveCallPurpose;
-    const claimedExpressConsent = normalizedExpressConsent({
-      callPurpose: effectiveCallPurpose,
-      hasExpressWrittenConsent,
-    });
-    const hasAuditableConsentArtifact = hasAuditableExpressConsentArtifact({
-      consentSource,
-      consentLeadId,
-    });
-    const expressConsent = claimedExpressConsent && hasAuditableConsentArtifact;
-    const marketing = purpose.isMarketingCall;
-
-    if (marketing && claimedExpressConsent && !hasAuditableConsentArtifact) {
-      return res.status(400).json({
-        code: "CONSENT_ARTIFACT_REQUIRED",
-        error:
-          "Direct marketing calls require a server-verified written-consent record; client-supplied source or lead references are not accepted as proof.",
-      });
-    }
-
     const normalized = normalizeOutboundNumber(customerNumber);
     const digits = normalized.replace(/\D/g, "");
     const phoneE164 = normalized.startsWith("+") ? normalized : `+${digits}`;
@@ -161,7 +166,29 @@ router.post(
       });
     }
 
-    const operationKey = randomUUID();
+    const replay = await readNativeOutboundRequestReplay({
+      userId: req.user.id,
+      requestKey,
+      agentId,
+      customerNumber: phoneE164,
+      customerName,
+      context,
+      callPurpose,
+      consentArtifactId,
+    });
+    if (replay) return res.status(replay.status).json({ ...replay, operationId: requestKey });
+    const permission = await inspectOutboundRecipientPermission({
+      userId: req.user.id,
+      agentId,
+      phone: phoneE164,
+      callPurpose,
+      artifactId: consentArtifactId,
+      attemptId: requestKey,
+    });
+    const effectiveCallPurpose = permission.effectiveCallPurpose;
+    const marketing = isMarketingCallPurpose(effectiveCallPurpose);
+    const expressConsent = marketing;
+    const operationKey = requestKey.toLowerCase();
     let providerCallId: string | null = null;
     let nativeLeadId: string | null = null;
     try {
@@ -191,6 +218,7 @@ router.post(
       if (!reservation) {
         return res.status(409).json({
           code: "DIAL_ALREADY_IN_PROGRESS",
+          doNotRetry: true,
           error:
             "A call to this number is already being prepared. Check Phone before trying again.",
         });
@@ -200,19 +228,19 @@ router.post(
         userId: req.user.id,
         phone: phoneE164,
         isMarketingCall: marketing,
-        requireFederalDncScreening: requiresFederalDncScreeningForDirectDial(),
+        requireFederalDncScreening: marketing,
         hasExpressWrittenConsent: expressConsent,
         metadata: { has_express_written_consent: expressConsent },
       });
       if (!gate.allowed) {
-        await markReservation(operationKey, {
+        await markReservation(req.user.id, operationKey, {
           status: "failed",
           failureCode: gate.reason || "dial_gate_rejected",
         });
         return gateResponse(res, gate);
       }
 
-      await markReservation(operationKey, { status: "dialing", failureCode: null });
+      await markReservation(req.user.id, operationKey, { status: "dialing", failureCode: null });
       const result = await placeOutboundCall({
         userId: req.user.id,
         agentId,
@@ -220,6 +248,8 @@ router.post(
         customerNumber: phoneE164,
         context,
         callPurpose: effectiveCallPurpose,
+        requestKey,
+        consentArtifactId,
         leadMetadata: {
           ...outboundConsentMetadata({
             callPurpose: effectiveCallPurpose,
@@ -235,7 +265,7 @@ router.post(
       nativeLeadId = result.leadId || null;
       if (!result.ok || !result.callId) {
         if (isAmbiguousProviderResult(result)) {
-          await markReservation(operationKey, {
+          await markReservation(req.user.id, operationKey, {
             status: "dialing",
             failureCode: "provider_outcome_ambiguous",
           });
@@ -245,10 +275,11 @@ router.post(
             error:
               "The carrier response was interrupted. BotBound is holding this number to prevent a duplicate call; check Phone before trying again.",
             operationId: operationKey,
+            doNotRetry: true,
             leadId: nativeLeadId,
           });
         }
-        await markReservation(operationKey, {
+        await markReservation(req.user.id, operationKey, {
           status: "failed",
           failureCode: `provider_${result.status || 500}`,
         });
@@ -260,7 +291,7 @@ router.post(
       }
 
       providerCallId = result.callId;
-      await markReservation(operationKey, {
+      await markReservation(req.user.id, operationKey, {
         status: "completed",
         callId: providerCallId,
         failureCode: null,
@@ -292,7 +323,7 @@ router.post(
       });
     } catch (error) {
       if (providerCallId || nativeLeadId) {
-        await markReservation(operationKey, {
+        await markReservation(req.user.id, operationKey, {
           status: "dialing",
           callId: providerCallId,
           failureCode: "post_provider_persistence_failed",
@@ -309,15 +340,17 @@ router.post(
           callId: providerCallId,
           leadId: nativeLeadId,
           operationId: operationKey,
+          doNotRetry: true,
           warning:
             "The call is being reconciled. BotBound is holding this number; do not retry it.",
         });
       }
 
-      await markReservation(operationKey, {
+      await markReservation(req.user.id, operationKey, {
         status: "failed",
         failureCode: "internal_error",
       }).catch(() => {});
+      if (error instanceof AppError) throw error;
       log.error("Atomic outbound call failed", {
         operationKey,
         error: getErrorMessage(error),

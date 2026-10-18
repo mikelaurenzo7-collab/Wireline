@@ -19,6 +19,7 @@
 import { Router, Response } from "express";
 import { AppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
+import { assertOutboundPlacementResolved } from "../lib/voice/outbound-placement-funding";
 import * as schema from "../db/schema";
 import { eq, and, desc, getTableColumns, inArray, or, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
@@ -220,6 +221,10 @@ router.post(
     }
 
     const enrolled = await drizzle.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${String(leadIdBig)}`}))`,
+      );
       const [cadence] = await tx
         .select()
         .from(schema.cadences)
@@ -235,7 +240,7 @@ router.post(
       // an attacker could enroll any tenant's lead in their own cadence —
       // cross-tenant data linkage + workflow manipulation.
       const [lead] = await tx
-        .select({ id: schema.outboundLeads.id })
+        .select({ id: schema.outboundLeads.id, metadata: schema.outboundLeads.metadata })
         .from(schema.outboundLeads)
         .where(
           and(
@@ -249,6 +254,12 @@ router.post(
         // Generic 404 so attackers can't enumerate other tenants' lead ids.
         throw AppError.fromHttpStatus(404, "Lead not found");
       }
+      await assertOutboundPlacementResolved(
+        tx,
+        req.user.id,
+        (lead.metadata as { native_voice?: { placement_id?: unknown } } | null)?.native_voice
+          ?.placement_id,
+      );
 
       const steps = cadence.steps as CadenceStep[];
       const firstDelay = steps[0]?.delayHours ?? 0;

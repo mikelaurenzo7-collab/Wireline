@@ -1,4 +1,4 @@
-import { Router, type RequestHandler } from "express";
+import { Router, type RequestHandler, type Response } from "express";
 
 import { authenticateUser } from "../middleware/auth";
 import { requirePlatformAdmin } from "../middleware/platform-admin";
@@ -18,13 +18,8 @@ const accountChecks = createRateLimiter({
   failClosedOnError: true,
 });
 
-router.get(
-  "/api/voice/elevenlabs/status",
-  preventStatusCaching,
-  authenticateUser,
-  requirePlatformAdmin,
-  accountChecks,
-  async (req: AuthenticatedRequest, res) => {
+function handleCheck(action: "status" | "verify") {
+  return async (req: AuthenticatedRequest, res: Response) => {
     const controller = new AbortController();
     const abort = () => controller.abort();
     const close = () => {
@@ -34,13 +29,31 @@ router.get(
     res.once("close", close);
     if (req.aborted || res.destroyed) abort();
     try {
-      const status = await elevenLabsReadinessService.status(req.user, controller.signal);
+      // No request body or query value selects a key, workspace, tenant or operation.
+      const status = await elevenLabsReadinessService[action](req.user, controller.signal);
       if (!controller.signal.aborted && !res.destroyed && !res.writableEnded) res.json(status);
     } finally {
       req.off("aborted", abort);
       res.off("close", close);
     }
-  },
+  };
+}
+
+router.get(
+  "/api/voice/elevenlabs/status",
+  preventStatusCaching,
+  authenticateUser,
+  requirePlatformAdmin,
+  accountChecks,
+  handleCheck("status"),
+);
+router.post(
+  "/api/voice/elevenlabs/verify",
+  preventStatusCaching,
+  authenticateUser,
+  requirePlatformAdmin,
+  accountChecks,
+  handleCheck("verify"),
 );
 
 export default router;

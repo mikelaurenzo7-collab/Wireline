@@ -11,11 +11,8 @@ import { parseFormData, OutboundBulkSchema } from "../lib/form-validators";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import {
   OUTBOUND_CALL_PURPOSES,
-  classifyUntrustedDirectDial,
-  hasAuditableExpressConsentArtifact,
-  normalizedExpressConsent,
+  isMarketingCallPurpose,
   outboundConsentMetadata,
-  requiresFederalDncScreeningForDirectDial,
   sanitizeUntrustedOutboundMetadata,
 } from "../lib/outbound-call-purpose";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
@@ -23,6 +20,13 @@ import { SentryEvents } from "../lib/sentry-events";
 import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage, mapObjectToSnake, parseBigIntId, toJsonbSafe } from "../lib/server-utils";
 import { placeOutboundCall } from "../lib/voice/outbound-call-service";
+import { assertOutboundPlacementResolved } from "../lib/voice/outbound-placement-funding";
+import {
+  readNativeOutboundRequestReplay,
+  readNativeOutboundRequestStatus,
+  cancelMissingNativeOutboundRequest,
+} from "../lib/voice/openai-outbound-placement";
+import { inspectOutboundRecipientPermission } from "../lib/recipient-voice-permission-store";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { LEAD_STATUS } from "../lib/outbound-status";
 import { campaignWriteRateLimit } from "../middleware/api-rate-limits";
@@ -125,18 +129,37 @@ router.delete(
     }
 
     try {
-      const removed = await drizzle
-        .delete(schema.outboundLeads)
-        .where(
-          and(
-            eq(schema.outboundLeads.id, BigInt(parsedId.data)),
-            eq(schema.outboundLeads.userId, req.user.id),
-            eq(schema.outboundLeads.source, "apollo"),
-            isNull(schema.outboundLeads.campaignId),
-            inArray(schema.outboundLeads.status, [LEAD_STATUS.PENDING, "New"]),
-          ),
-        )
-        .returning({ id: schema.outboundLeads.id });
+      const removed = await drizzle.transaction(async (tx) => {
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
+        await tx.execute(
+          sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${parsedId.data}`}))`,
+        );
+        const [lead] = await tx
+          .select()
+          .from(schema.outboundLeads)
+          .where(
+            and(
+              eq(schema.outboundLeads.id, BigInt(parsedId.data)),
+              eq(schema.outboundLeads.userId, req.user.id),
+            ),
+          )
+          .limit(1);
+        const voice = (lead?.metadata as { native_voice?: { placement_id?: unknown } } | null)
+          ?.native_voice;
+        await assertOutboundPlacementResolved(tx, req.user.id, voice?.placement_id);
+        return tx
+          .delete(schema.outboundLeads)
+          .where(
+            and(
+              eq(schema.outboundLeads.id, BigInt(parsedId.data)),
+              eq(schema.outboundLeads.userId, req.user.id),
+              eq(schema.outboundLeads.source, "apollo"),
+              isNull(schema.outboundLeads.campaignId),
+              inArray(schema.outboundLeads.status, [LEAD_STATUS.PENDING, "New"]),
+            ),
+          )
+          .returning({ id: schema.outboundLeads.id });
+      });
 
       if (removed.length !== 1) {
         return res.status(409).json({
@@ -386,16 +409,36 @@ router.delete(
       if (!/^\d+$/.test(id)) {
         return res.status(404).json({ code: "NOT_FOUND", error: "Lead not found." });
       }
-      const removed = await drizzle
-        .delete(schema.outboundLeads)
-        .where(
-          and(
-            eq(schema.outboundLeads.id, BigInt(id)),
-            eq(schema.outboundLeads.userId, req.user.id),
-            sql`${schema.outboundLeads.source} IS DISTINCT FROM 'phone_test'`,
-          ),
-        )
-        .returning({ id: schema.outboundLeads.id });
+      const removed = await drizzle.transaction(async (tx) => {
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${id}`}))`);
+        const [lead] = await tx
+          .select()
+          .from(schema.outboundLeads)
+          .where(
+            and(
+              eq(schema.outboundLeads.id, BigInt(id)),
+              eq(schema.outboundLeads.userId, req.user.id),
+            ),
+          )
+          .limit(1);
+        await assertOutboundPlacementResolved(
+          tx,
+          req.user.id,
+          (lead?.metadata as { native_voice?: { placement_id?: unknown } } | null)?.native_voice
+            ?.placement_id,
+        );
+        return tx
+          .delete(schema.outboundLeads)
+          .where(
+            and(
+              eq(schema.outboundLeads.id, BigInt(id)),
+              eq(schema.outboundLeads.userId, req.user.id),
+              sql`${schema.outboundLeads.source} IS DISTINCT FROM 'phone_test'`,
+            ),
+          )
+          .returning({ id: schema.outboundLeads.id });
+      });
       if (!removed.length) throw AppError.notFound("Lead not found.");
       res.json({ success: true });
     } catch (error: any) {
@@ -415,10 +458,27 @@ const dialSchema = z.object({
   customerName: z.string().max(200).optional(),
   context: z.string().max(2000).optional(),
   callPurpose: z.enum(OUTBOUND_CALL_PURPOSES),
+  requestKey: z.string().uuid(),
+  consentArtifactId: z.string().uuid().optional(),
   hasExpressWrittenConsent: z.boolean().optional().default(false),
   consentSource: z.enum(["web_form", "lead_import", "crm", "manual_attestation"]).optional(),
   consentLeadId: z.string().max(200).optional(),
 });
+
+router.get(
+  "/api/outbound/dial/:requestKey",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    res.json(await readNativeOutboundRequestStatus(req.user.id, req.params.requestKey));
+  },
+);
+router.post(
+  "/api/outbound/dial/:requestKey/cancel-missing",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    res.json(await cancelMissingNativeOutboundRequest(req.user.id, req.params.requestKey));
+  },
+);
 
 router.post(
   "/api/outbound/dial",
@@ -433,36 +493,39 @@ router.post(
         customerNumber,
         context,
         callPurpose,
-        hasExpressWrittenConsent,
         consentSource,
         consentLeadId,
+        requestKey,
+        consentArtifactId,
       } = req.body;
-      const purpose = classifyUntrustedDirectDial({ callPurpose });
-      const effectiveCallPurpose = purpose.effectiveCallPurpose;
-      const claimedExpressConsent = normalizedExpressConsent({
-        callPurpose: effectiveCallPurpose,
-        hasExpressWrittenConsent,
+      const replay = await readNativeOutboundRequestReplay({
+        userId: req.user.id,
+        requestKey,
+        agentId,
+        customerNumber,
+        customerName,
+        context,
+        callPurpose,
+        consentArtifactId,
       });
-      const hasAuditableConsentArtifact = hasAuditableExpressConsentArtifact({
-        consentSource,
-        consentLeadId,
+      if (replay) return res.status(replay.status).json(replay);
+      const permission = await inspectOutboundRecipientPermission({
+        userId: req.user.id,
+        agentId,
+        phone: customerNumber,
+        callPurpose,
+        artifactId: consentArtifactId,
+        attemptId: requestKey,
       });
-      const expressConsent = claimedExpressConsent && hasAuditableConsentArtifact;
-      const marketing = purpose.isMarketingCall;
-
-      if (marketing && claimedExpressConsent && !hasAuditableConsentArtifact) {
-        return res.status(400).json({
-          code: "CONSENT_ARTIFACT_REQUIRED",
-          error:
-            "Direct marketing calls require a server-verified written-consent record; client-supplied source or lead references are not accepted as proof.",
-        });
-      }
+      const effectiveCallPurpose = permission.effectiveCallPurpose;
+      const marketing = isMarketingCallPurpose(effectiveCallPurpose);
+      const expressConsent = marketing;
 
       const gate = await evaluateOutboundDialGate({
         userId: req.user.id,
         phone: customerNumber,
         isMarketingCall: marketing,
-        requireFederalDncScreening: requiresFederalDncScreeningForDirectDial(),
+        requireFederalDncScreening: marketing,
         hasExpressWrittenConsent: expressConsent,
         metadata: { has_express_written_consent: expressConsent },
       });
@@ -532,6 +595,8 @@ router.post(
         context,
         callPurpose: effectiveCallPurpose,
         leadMetadata: consentMetadata,
+        requestKey,
+        consentArtifactId,
       });
       if (!result.ok) {
         return res.status(result.status).json({

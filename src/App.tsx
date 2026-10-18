@@ -80,6 +80,7 @@ const AuthPortalRoute = lazy(() =>
 const OAuthComplete = lazy(() => import("./pages/OAuthComplete"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const AcceptInvite = lazy(() => import("./pages/AcceptInvite"));
+const VoicePermissionPage = lazy(() => import("./pages/VoicePermissionPage"));
 const SolutionsPage = lazy(() =>
   import("./pages/SolutionsPage").then((module) =>
     withVisualQaPage(module, "solutions", (location) =>
@@ -222,6 +223,7 @@ function AppRouter() {
         <Route path="/reset" element={<PreservingRedirect to="/signin" />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/accept-invite" element={<AcceptInvite />} />
+        <Route path="/voice-permission" element={<VoicePermissionPage />} />
         <Route path="/auth/oauth-complete" element={<OAuthComplete />} />
         <Route path="/oauth-complete" element={<OAuthComplete />} />
         <Route path="/onboarding" element={<OnboardingFlow />} />

@@ -11,6 +11,7 @@ import {
   resolveRetryableLeadStatus,
 } from "../lib/outbound-status";
 import { drizzle, log } from "../lib/server-context";
+import { tenantStore } from "../lib/tenant-context-store";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import {
   nativeCallPurposeFromMetadata,
@@ -30,6 +31,12 @@ import {
   resolveOpenAIOutboundTwiMLReplay,
 } from "../lib/voice/openai-outbound-twiml-replay";
 import { trackVoiceMinutes } from "../lib/voice-usage";
+import { readVoiceIdentityReceipt, resolveVoiceFundingId } from "../lib/voice-call-identity";
+import {
+  handleFundedOutboundCarrierEvent,
+  outboundPlacementRemainingSeconds,
+  assertOutboundBridgePermission,
+} from "../lib/voice/outbound-placement-funding";
 
 const router = Router();
 const ACTIVE_LEAD_STATUSES = [
@@ -74,8 +81,12 @@ function emptyTwiml(): string {
   return '<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>';
 }
 
-function bridgeTwiml(input: { callerId: string; sipUri: string }): string {
-  const timeLimit = resolveOpenAISipSessionMaxSeconds();
+function bridgeTwiml(input: {
+  callerId: string;
+  sipUri: string;
+  maxSeconds?: number | null;
+}): string {
+  const timeLimit = input.maxSeconds ?? resolveOpenAISipSessionMaxSeconds();
   return (
     '<?xml version="1.0" encoding="UTF-8"?>' +
     '<Response><Dial answerOnBridge="true" timeout="30" timeLimit="' +
@@ -122,11 +133,58 @@ function shouldMeterUnansweredNativeVoice(nativeVoice: Record<string, unknown>):
 
 async function meterNativeCarrierAttempt(userId: string, callSid: string): Promise<void> {
   if (!userId || !callSid) return;
+  const canonical = await resolveVoiceFundingId(drizzle, userId, `twilio:${callSid}`);
+  // New admitted parents settle only from exact terminal duration, never from
+  // an AMD/drop callback's fabricated zero-second elapsed time.
+  if (
+    canonical.startsWith("outbound:") &&
+    (await readVoiceIdentityReceipt(drizzle, userId, `voice_outbound_attempt:${canonical}`))
+  )
+    return;
   await trackVoiceMinutes({
     userId,
     durationSeconds: 0,
     vapiCallId: `twilio:${callSid}`,
   });
+}
+
+/** Signature/token are checked by each caller before this correlation read. */
+async function fundedCallback(
+  req: Request,
+  status: string,
+): Promise<{ handled: boolean; userId: string | null; placementId: string | null }> {
+  const verification = verifyOpenAIOutboundToken(tokenFromRequest(req));
+  if (!verification.ok) throw AppError.unauthorized("Invalid outbound callback token.");
+  const leadId = BigInt(verification.claims.leadId);
+  const [lead] = await drizzle
+    .select({ userId: schema.outboundLeads.userId, metadata: schema.outboundLeads.metadata })
+    .from(schema.outboundLeads)
+    .where(eq(schema.outboundLeads.id, leadId))
+    .limit(1);
+  const placementId = asRecord(asRecord(lead?.metadata).native_voice).placement_id;
+  if (
+    !lead ||
+    typeof placementId !== "string" ||
+    !openAIOutboundPlacementMatches(
+      asRecord(asRecord(lead.metadata).native_voice),
+      verification.claims,
+    )
+  )
+    return { handled: false, userId: null, placementId: null };
+  const handled = await tenantStore.run(lead.userId, () =>
+    handleFundedOutboundCarrierEvent({
+      userId: lead.userId,
+      leadId,
+      placementId,
+      callSid: callSidFromRequest(req),
+      to: String(req.body?.To || "").trim(),
+      from: String(req.body?.From || "").trim(),
+      status,
+      duration: typeof req.body?.CallDuration === "string" ? req.body.CallDuration : undefined,
+      answeredBy: answeredByFromRequest(req) || undefined,
+    }),
+  );
+  return { handled, userId: lead.userId, placementId };
 }
 
 function neverBridgedNativeVoice(nativeVoice: Record<string, unknown>): boolean {
@@ -368,6 +426,20 @@ router.post(
     }
 
     try {
+      const funded = await fundedCallback(req, "answered");
+      if (funded.handled && funded.userId && funded.placementId) {
+        const verified = verifyOpenAIOutboundToken(token);
+        if (!verified.ok) throw AppError.unauthorized("Invalid outbound bridge token.");
+        await assertOutboundBridgePermission(
+          funded.userId,
+          BigInt(verified.claims.leadId),
+          funded.placementId,
+        );
+      }
+      const maxSeconds =
+        funded.handled && funded.userId && funded.placementId
+          ? await outboundPlacementRemainingSeconds(funded.userId, funded.placementId)
+          : null;
       const decision = await resolveBridgeContext(token, callSid, answeredBy);
       if (decision.kind === "hangup") {
         // Twilio has already accepted this carrier attempt even though a
@@ -391,7 +463,9 @@ router.post(
         res.status(200).send(emptyTwiml());
         return;
       }
-      res.status(200).send(bridgeTwiml({ callerId: decision.callerId, sipUri: decision.sipUri }));
+      res
+        .status(200)
+        .send(bridgeTwiml({ callerId: decision.callerId, sipUri: decision.sipUri, maxSeconds }));
     } catch (error) {
       const verification = verifyOpenAIOutboundToken(token);
       if (verification.ok && error instanceof AppError && error.status === 409) {
@@ -463,6 +537,11 @@ router.post(
     const carrierStatus = String(req.body?.CallStatus || "unknown")
       .trim()
       .toLowerCase();
+    const funded = await fundedCallback(req, carrierStatus);
+    if (funded.handled) {
+      res.status(204).end();
+      return;
+    }
     const meter = await drizzle.transaction(async (tx) => {
       await tx.execute(
         sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${String(leadId)}`}))`,

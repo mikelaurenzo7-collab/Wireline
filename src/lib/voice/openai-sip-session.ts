@@ -48,6 +48,7 @@ import { buildOpenAIRealtimeAgentRuntime } from "./openai-phone-agent-runtime";
 import { OpenAISipTurnTiming } from "./openai-sip-turn-timing";
 import { enforceFundedCarrierCallLimit, readTerminalCarrierDuration } from "./funded-carrier-call";
 import { adoptPhoneTestSipFunding } from "./phone-test-funding";
+import { adoptOutboundPlacementSipFunding } from "./outbound-placement-funding";
 import {
   OPENAI_REALTIME_CALLS_URL,
   buildOpenAISipRealtimeUrl,
@@ -320,6 +321,9 @@ function buildOutboundInstructions(input: OpenAISipIncomingCall): string {
     callbackRule,
     input.customerName ? `Contact: ${input.customerName}.` : "",
     `Call purpose: ${purpose}.`,
+    !telemarketing
+      ? "This permission covers only the recipient-requested callback or service work. Do not introduce sales, upsells, promotions, or another marketing purpose, even if the objective or saved Bot instructions request it."
+      : "",
     `Objective: ${objective}`,
     "Do not repeat the opening or read the objective like a script. Ask one question at a time and respect surprise, resistance, or a bad time.",
     telemarketing
@@ -674,6 +678,7 @@ async function claimCall(input: OpenAISipIncomingCall) {
       if (!resumable) return existing.phase === "claimed" ? ("retry" as const) : null;
       const funding =
         (await adoptPhoneTestSipFunding(tx, input)) ??
+        (await adoptOutboundPlacementSipFunding(tx, input)) ??
         (await reserveVoiceCallFunding(tx, {
           userId: input.userId,
           providerCallId: id,
@@ -748,6 +753,7 @@ async function claimCall(input: OpenAISipIncomingCall) {
           : resolveOpenAISipSessionMaxSeconds();
     const funding =
       (await adoptPhoneTestSipFunding(tx, input)) ??
+      (await adoptOutboundPlacementSipFunding(tx, input)) ??
       (await reserveVoiceCallFunding(tx, {
         userId: input.userId,
         providerCallId: id,
@@ -1305,7 +1311,13 @@ async function persistFinishedCall(input: {
   const direction = callDirection(input.call);
   let endedReason = input.endedReason;
   let carrierDurationRequired = Boolean(
-    input.call.funding && (input.call.recoveredSession || endedReason === "transferred"),
+    (input.call.direction === "outbound" &&
+      input.call.outboundPlacementId &&
+      !input.call.phoneTest) ||
+    (input.call.funding &&
+      (input.call.funding.outboundPlacement ||
+        input.call.recoveredSession ||
+        endedReason === "transferred")),
   );
 
   // The terminal call row and its unique post-call job commit together. The

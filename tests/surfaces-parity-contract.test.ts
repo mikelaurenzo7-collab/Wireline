@@ -5,23 +5,20 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
-describe("mobile outbound consent parity", () => {
-  it("requires the same marketing consent artifact as web dial", () => {
+describe("outbound consent admission", () => {
+  it("uses signed permissions on web while legacy mobile attestation stays closed", () => {
     const mobile = read("src/routes/mobile-routes.ts");
     const web = read("src/routes/outbound-routes.ts");
 
-    expect(web).toContain("CONSENT_ARTIFACT_REQUIRED");
+    expect(web).toContain("await inspectOutboundRecipientPermission({");
+    expect(web).toContain("const effectiveCallPurpose = permission.effectiveCallPurpose");
     expect(mobile).toContain("CONSENT_ARTIFACT_REQUIRED");
     expect(mobile).toContain(
       'consentSource: z.enum(["web_form", "lead_import", "crm", "manual_attestation"])',
     );
     expect(mobile).toContain("consentLeadId");
-    for (const surface of [web, mobile]) {
-      expect(surface).toContain("hasAuditableExpressConsentArtifact({");
-      expect(surface).toContain(
-        "marketing && claimedExpressConsent && !hasAuditableConsentArtifact",
-      );
-    }
+    expect(mobile).toContain("hasAuditableExpressConsentArtifact({");
+    expect(mobile).toContain("marketing && claimedExpressConsent && !hasAuditableConsentArtifact");
   });
 });
 
@@ -43,11 +40,14 @@ describe("browser handoff promoted grants", () => {
 });
 
 describe("dial consent artifact on clients", () => {
-  it("sends manual_attestation consentSource from web and native dial clients", () => {
+  it("sends signed permission and stable request identity from web while native stays legacy-closed", () => {
     const web = read("src/components/OutboundDialDialog.tsx");
     const android = read("android/app/src/main/java/com/wireline/app/data/WirelineApi.kt");
     const ios = read("ios/Wireline/Networking/WirelineAPI.swift");
-    expect(web).toContain('consentSource: "manual_attestation"');
+    expect(web).toContain("consentArtifactId,");
+    expect(web).toContain("requestKey: requestRef.current.key");
+    expect(web).toContain("savePendingOutboundDial");
+    expect(web).not.toContain('consentSource: "manual_attestation"');
     expect(android).toContain('body.put("consentSource", "manual_attestation")');
     expect(ios).toContain('consentSource: hasExpressWrittenConsent ? "manual_attestation" : nil');
   });

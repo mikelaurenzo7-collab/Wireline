@@ -31,6 +31,8 @@ export type VoiceCallFunding = {
   released?: boolean;
   /** Immutable scope: admission covers only the owner's verified phone test. */
   phoneTest?: boolean;
+  /** Parent carrier admission includes ringing/AMD before the SIP phase. */
+  outboundPlacement?: boolean;
 };
 export type VoiceFundingReleaseDisposition =
   "definite_preaccept" | "confirmed_startup_failure" | "confirmed_unanswered";
@@ -107,6 +109,7 @@ function savedFunding(row: FundingReceipt): VoiceCallFunding {
     planId,
     periodKey,
     ...(metadata.phone_test_version === 1 ? { phoneTest: true } : {}),
+    ...(metadata.outbound_placement_version === 1 ? { outboundPlacement: true } : {}),
   };
 }
 
@@ -148,6 +151,7 @@ export async function reserveVoiceCallFunding(
     maxSeconds: number;
     /** Server-owned self-phone admission; never derived from client lead metadata. */
     phoneTest?: { agentId: string; phone: string; from: string };
+    outboundPlacement?: { agentId: string; leadId: string; phone: string; from: string };
   },
 ): Promise<VoiceCallFunding | null> {
   if (
@@ -187,7 +191,8 @@ export async function reserveVoiceCallFunding(
     .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.users.id))
     .where(eq(schema.users.id, opts.userId))
     .limit(1);
-  if (!opts.phoneTest && billing && isOwnerEmail(billing.email)) return null;
+  if (!opts.phoneTest && !opts.outboundPlacement && billing && isOwnerEmail(billing.email))
+    return null;
   const plan = planById(billing?.plan);
   if (
     !plan ||
@@ -304,6 +309,15 @@ export async function reserveVoiceCallFunding(
             from_fingerprint: voicePhoneFingerprint(opts.phoneTest.from),
           }
         : {}),
+      ...(opts.outboundPlacement
+        ? {
+            outbound_placement_version: 1,
+            agent_id: opts.outboundPlacement.agentId,
+            lead_id: opts.outboundPlacement.leadId,
+            phone_fingerprint: voicePhoneFingerprint(opts.outboundPlacement.phone),
+            from_fingerprint: voicePhoneFingerprint(opts.outboundPlacement.from),
+          }
+        : {}),
     },
   });
   return {
@@ -317,6 +331,7 @@ export async function reserveVoiceCallFunding(
     planId: plan.id,
     periodKey,
     ...(opts.phoneTest ? { phoneTest: true } : {}),
+    ...(opts.outboundPlacement ? { outboundPlacement: true } : {}),
   };
 }
 
@@ -355,7 +370,10 @@ export async function releaseVoiceCallFundingInTransaction(
   // SIP startup failure cannot refund an answered verification parent. The
   // one exception is exact, durable proof that this self-phone carrier never
   // answered; only its serialized terminal owner may record that evidence.
-  if ((admission.metadata as Record<string, unknown>)?.phone_test_version === 1) {
+  const scope = admission.metadata as Record<string, unknown>;
+  if (scope?.phone_test_version === 1 || scope?.outbound_placement_version === 1) {
+    const terminalType =
+      scope.phone_test_version === 1 ? "voice_phone_test_terminal" : "voice_outbound_terminal";
     const carrier = await readVoiceIdentityReceipt(
       tx,
       userId,
@@ -366,7 +384,7 @@ export async function releaseVoiceCallFundingInTransaction(
       const terminal = await readVoiceIdentityReceipt(
         tx,
         userId,
-        `voice_phone_test_terminal:${providerCallId}`,
+        `${terminalType}:${providerCallId}`,
       );
       const proof = terminal?.metadata as Record<string, unknown> | undefined;
       if (
@@ -374,7 +392,7 @@ export async function releaseVoiceCallFundingInTransaction(
         Number(carrier.deltaUsd) !== 0 ||
         (carrier.metadata as Record<string, unknown>)?.canonical_call_id !== providerCallId ||
         (carrier.metadata as Record<string, unknown>)?.phase !== "carrier" ||
-        terminal?.refType !== "voice_phone_test_terminal" ||
+        terminal?.refType !== terminalType ||
         Number(terminal.deltaUsd) !== 0 ||
         proof?.unanswered_confirmed !== true ||
         proof.version !== 1 ||

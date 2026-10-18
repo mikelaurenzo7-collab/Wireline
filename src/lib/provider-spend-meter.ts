@@ -21,7 +21,13 @@ export function providerSpendMeter(receipt: {
       metadata !== null &&
       typeof metadata === "object" &&
       !Array.isArray(metadata) &&
-      (metadata as Record<string, unknown>).surface === "phone_test")
+      (metadata as Record<string, unknown>).surface === "phone_test") ||
+    (receipt.action === "voice.outbound.carrier" &&
+      receipt.provider === "twilio" &&
+      metadata !== null &&
+      typeof metadata === "object" &&
+      !Array.isArray(metadata) &&
+      (metadata as Record<string, unknown>).surface === "native_outbound")
     ? "live_voice"
     : "managed_ai";
 }
@@ -34,5 +40,8 @@ export function managedAiSpendPredicate() {
     and ${auditLog.metadata}->>'surface' = 'openai_sip'
     or ${auditLog.action} = 'voice.phone_test.carrier'
     and ${auditLog.provider} = 'twilio'
-    and ${auditLog.metadata}->>'surface' = 'phone_test', false)`;
+    and ${auditLog.metadata}->>'surface' = 'phone_test'
+    or ${auditLog.action} = 'voice.outbound.carrier'
+    and ${auditLog.provider} = 'twilio'
+    and ${auditLog.metadata}->>'surface' = 'native_outbound', false)`;
 }

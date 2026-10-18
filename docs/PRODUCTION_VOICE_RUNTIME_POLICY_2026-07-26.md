@@ -8,13 +8,13 @@ stable policy path used by release checklists.
 
 ## Runtime boundary
 
-| Surface | Production path | Policy |
-| --- | --- | --- |
-| Phone calls | Twilio carrier/PSTN → BotBound signed TwiML → OpenAI project SIP | OpenAI Realtime `gpt-realtime-2.1`; no alternate runtime or provider fallback |
+| Surface              | Production path                                                          | Policy                                                                                                             |
+| -------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Phone calls          | Twilio carrier/PSTN → BotBound signed TwiML → OpenAI project SIP         | OpenAI Realtime `gpt-realtime-2.1`; no alternate runtime or provider fallback                                      |
 | Browser/mobile voice | Authenticated same-origin BotBound SDP exchange → OpenAI Realtime WebRTC | Private Studio rehearsals and authenticated ChatGPT simulation only; public and guest audio/call demos are retired |
-| SMS | Twilio signed webhooks and Messaging Service/number | Twilio owns sender and carrier delivery only |
-| Presenter/video | Retired live-video compatibility surface | Presenter identity never becomes the phone voice; phone fallback is OpenAI |
-| Studio speech | OpenAI Realtime WebRTC | Same saved 10-voice catalog as phone calls |
+| SMS                  | Twilio signed webhooks and Messaging Service/number                      | Twilio owns sender and carrier delivery only                                                                       |
+| Presenter/video      | Retired live-video compatibility surface                                 | Presenter identity never becomes the phone voice; phone fallback is OpenAI                                         |
+| Studio speech        | OpenAI Realtime WebRTC                                                   | Same saved 10-voice catalog as phone calls                                                                         |
 
 ## Available phone voices
 
@@ -26,11 +26,15 @@ normalize at the application and database boundaries.
 
 ## OpenAI-only speech boundary
 
-BotBound has no external voice catalog, cloning provider, or customer
-voice-upload path. Historical voice-provider rows are removed by the release
-migration after a fail-closed empty-table assertion. Reintroducing custom voices
-would be a separate product decision requiring an approved provider capability,
-explicit consent policy, privacy review, and a new release review.
+BotBound has no customer-selectable external voice catalog or live-call cloning
+path. The disabled platform-admin private-preview foundation and ElevenLabs
+read-only operator diagnostics are documented in
+[`VOICE_CLONING_PILOT.md`](./VOICE_CLONING_PILOT.md); neither changes a saved
+OpenAI voice or authorizes customer enrollment. Historical voice-provider rows
+are removed by the release migration after a fail-closed empty-table assertion.
+Customer custom voices remain a separate product decision requiring confirmed
+provider rights/capability, explicit consent policy, privacy review, funded
+usage, measured live quality and a new release review.
 
 ## Launch acceptance
 

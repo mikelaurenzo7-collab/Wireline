@@ -9,10 +9,12 @@ const mock = vi.hoisted(() => ({
   limiter: vi.fn(),
   rateHandler: vi.fn(),
   status: vi.fn(),
+  verify: vi.fn(),
 }));
 vi.mock("express", () => ({
   Router: () => ({
     get: (path: string, ...handlers: Handler[]) => mock.routes.set(`get ${path}`, handlers),
+    post: (path: string, ...handlers: Handler[]) => mock.routes.set(`post ${path}`, handlers),
   }),
 }));
 vi.mock("../src/middleware/auth", () => ({ authenticateUser: mock.auth }));
@@ -24,14 +26,15 @@ vi.mock("../src/middleware/api-rate-limits", () => ({
   },
 }));
 vi.mock("../src/lib/voice/elevenlabs-readiness", () => ({
-  elevenLabsReadinessService: { status: mock.status },
+  elevenLabsReadinessService: { status: mock.status, verify: mock.verify },
 }));
 import "../src/routes/elevenlabs-voice-routes";
 
-function request() {
+function request(action: "status" | "verify" = "status") {
   const req = Object.assign(new EventEmitter(), {
     user: { id: "operator", email: "operator@example.org" },
     aborted: false,
+    body: { apiKey: "untrusted_key", workspaceId: "untrusted_workspace", userId: "another_user" },
   });
   const res = Object.assign(new EventEmitter(), {
     writableEnded: false,
@@ -39,7 +42,9 @@ function request() {
     setHeader: vi.fn(),
     json: vi.fn(),
   });
-  const handlers = mock.routes.get("get /api/voice/elevenlabs/status")!;
+  const handlers = mock.routes.get(
+    action === "status" ? "get /api/voice/elevenlabs/status" : "post /api/voice/elevenlabs/verify",
+  )!;
   return { req, res, handlers, run: () => handlers.at(-1)!(req, res, vi.fn()) };
 }
 beforeEach(() => {
@@ -50,6 +55,13 @@ beforeEach(() => {
     enrollmentReady: false,
     liveCallsReady: false,
   });
+  mock.verify.mockReset().mockResolvedValue({
+    enabled: false,
+    accountCheck: "succeeded",
+    enrollmentReady: false,
+    liveCallsReady: false,
+    receipt: { stored: true, id: "check-receipt" },
+  });
   mock.auth.mockReset();
   mock.admin.mockReset();
   mock.rateHandler.mockReset();
@@ -58,7 +70,7 @@ beforeEach(() => {
 describe("operator ElevenLabs status route", () => {
   it("sets no-store before authentication and gates every provider check behind admin and the limiter", () => {
     const { req, res, handlers } = request();
-    expect(mock.routes.size).toBe(1);
+    expect(mock.routes.size).toBe(2);
     const next = vi.fn();
     handlers[0](req, res, next);
     expect(res.setHeader).toHaveBeenCalledExactlyOnceWith("Cache-Control", "no-store");
@@ -155,5 +167,64 @@ describe("operator ElevenLabs status route", () => {
     expect(req.listenerCount("aborted")).toBe(0);
     expect(res.listenerCount("close")).toBe(0);
     expect(res.json).not.toHaveBeenCalled();
+  });
+
+  it("uses the same authorization, no-store and fail-closed rate limiter for explicit verification", () => {
+    const { req, res, handlers } = request("verify");
+    const next = vi.fn();
+    handlers[0](req, res, next);
+    expect(res.setHeader).toHaveBeenCalledExactlyOnceWith("Cache-Control", "no-store");
+    expect(handlers.slice(1, -1)).toEqual([mock.auth, mock.admin, mock.rateHandler]);
+    expect(mock.verify).not.toHaveBeenCalled();
+  });
+
+  it.each(["authentication", "admin", "rate limit"])(
+    "does not reach explicit verification after denied %s middleware",
+    async (denial) => {
+      const { req, res, handlers } = request("verify");
+      const gates = [mock.auth, mock.admin, mock.rateHandler];
+      for (const gate of gates) gate.mockImplementation((_req, _res, next) => next());
+      gates[["authentication", "admin", "rate limit"].indexOf(denial)].mockImplementation(() => {});
+      let index = 0;
+      const advance = async (): Promise<void> => {
+        const handler = handlers[index++];
+        if (!handler) return;
+        let next: Promise<void> | undefined;
+        await handler(req, res, () => {
+          next = advance();
+        });
+        await next;
+      };
+      await advance();
+      expect(mock.verify).not.toHaveBeenCalled();
+      expect(res.json).not.toHaveBeenCalled();
+    },
+  );
+
+  it("ignores body-controlled credentials, workspace and user when recording verification", async () => {
+    const { req, res, run } = request("verify");
+    await run();
+    expect(mock.verify).toHaveBeenCalledExactlyOnceWith(req.user, expect.any(AbortSignal));
+    expect(mock.status).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ receipt: { stored: true, id: "check-receipt" } }),
+    );
+    expect(req.listenerCount("aborted")).toBe(0);
+    expect(res.listenerCount("close")).toBe(0);
+  });
+
+  it("cancels explicit verification and suppresses output after disconnect", async () => {
+    const { req, res, run } = request("verify");
+    let signal: AbortSignal | undefined;
+    mock.verify.mockImplementation(async (_actor, received) => {
+      signal = received;
+      req.emit("aborted");
+      return { receipt: { stored: true } };
+    });
+    await run();
+    expect(signal?.aborted).toBe(true);
+    expect(res.json).not.toHaveBeenCalled();
+    expect(req.listenerCount("aborted")).toBe(0);
+    expect(res.listenerCount("close")).toBe(0);
   });
 });

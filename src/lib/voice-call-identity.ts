@@ -107,8 +107,22 @@ export async function bindVoiceFundingAlias(
     input.userId,
     `voice_admission:${canonical}`,
   );
-  if (!admission || (admission.metadata as Record<string, unknown>)?.phone_test_version !== 1)
-    throw AppError.conflict("This phone test has no funding receipt.");
+  const scope = admission?.metadata as Record<string, unknown> | undefined;
+  const outbound = await readVoiceIdentityReceipt(
+    tx,
+    input.userId,
+    `voice_outbound_attempt:${canonical}`,
+  );
+  if (
+    scope?.phone_test_version !== 1 &&
+    !(
+      outbound?.refType === "voice_outbound_attempt" &&
+      Number(outbound.deltaUsd) === 0 &&
+      (outbound.metadata as Record<string, unknown>)?.version === 1 &&
+      (outbound.metadata as Record<string, unknown>)?.canonical_call_id === canonical
+    )
+  )
+    throw AppError.conflict("This carrier attempt has no admission receipt.");
   const phaseKey = `voice_funding_phase:${canonical}:${input.phase}`;
   const prior = await readVoiceIdentityReceipt(tx, input.userId, phaseKey);
   const aliasKey = `voice_funding_alias:${input.providerCallId}`;

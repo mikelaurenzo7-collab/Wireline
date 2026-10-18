@@ -78,6 +78,48 @@ redialed through campaign tools. A carrier-create timeout with no confirmed SID
 remains **uncertain**, retains its funding and never automatically redials; failed
 reconciliation requires operator review rather than a guessed refund or new call.
 
+## Staged general outbound
+
+General outbound is staged independently of the owner-phone test. The central
+service requires `BOTBOUND_GENERAL_OUTBOUND_ENABLED=true`; the production default
+is false until carrier delivery and the complete paid journey are accepted.
+Changing a client label, receiving DNC paperwork or creating a permission link
+does not enable this server gate. The shared direct-dial UI remains unavailable
+until its separate release decision. Do not enable either merely to pass a test.
+
+The staged implementation uses these controls across ordinary outbound placement:
+
+- A recipient signs an exact seller/Bot/number/purpose disclosure through an
+  opaque capability link. The link is in a URL fragment, excluded from analytics
+  and removed from the address bar. Only an audited bearer-link and typed-signature
+  record is claimed; this does not verify identity or phone possession.
+- The initial scope is an Illinois seller and an explicitly declared Illinois
+  recipient in `America/Chicago`, 9 a.m. to 9 p.m. local. This is an engineering
+  restriction, not nationwide legal clearance. Marketing still needs applicable
+  Federal DNC screening. Saved caller identity and recipient withdrawal are
+  checked again immediately before dispatch.
+- The callback permission is consumed only at dispatch, not by a failed gate or
+  funding preflight. A withdrawn grant remains withdrawn even if someone removes
+  its resulting internal suppression entry. Same-recipient withdrawal fences
+  outstanding ordinary outbound calls without targeting inbound conversations.
+- One immutable server placement owns its pre-carrier funding, accepted carrier
+  SID and later SIP alias. The parent carrier has a bounded time limit; accepting
+  SIP or transferring the call cannot increase that original limit. Durable jobs
+  reconcile exact identities and never search by destination and guess a call.
+- A terminal carrier receipt settles the original allowance period and rate.
+  Proven unanswered zero-second calls release unused funding without consuming
+  Calls minutes. Answered calls retain the existing rounding. Conflicting,
+  missing or uncertain evidence remains unresolved rather than receiving a
+  guessed charge, refund or automatic redial.
+- The direct client retains only the request UUID, scoped to the signed-in user,
+  across close/reopen/reload. Status recovery requires a confirmed server terminal
+  receipt before another request. Neither phone numbers nor instructions nor
+  permission links are saved in that recovery record.
+
+No new schema is required for this slice. It uses existing tenant-isolated
+consent, ledger, lead and job storage. Release still requires exact-source checks,
+independent review, controlled deployment and real consented carrier acceptance.
+
 ## Required production configuration
 
 - `OPENAI_API_KEY`: scoped to the BotBound OpenAI API project.
