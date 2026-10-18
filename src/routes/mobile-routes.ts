@@ -16,7 +16,7 @@
  */
 import { Router, Response } from "express";
 import { randomUUID } from "node:crypto";
-import { eq, and, or, ne, sql, desc, inArray } from "drizzle-orm";
+import { eq, and, or, ne, sql, desc } from "drizzle-orm";
 import { z } from "zod";
 import { AppError } from "../lib/api-error";
 import {
@@ -33,19 +33,7 @@ import { isOwnerEmail } from "../lib/auth-service";
 import { planById } from "../lib/plan-catalog";
 import { resolveAccountType } from "../lib/account-type";
 import { ensureDefaultAccount } from "../lib/account-service";
-import { outboundVoiceGuard } from "../lib/voice-spend-control";
-import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
-import { normalizeOutboundNumber } from "../lib/dialer-compliance";
-import { outboundDialReservations } from "../db/security-schema";
-import {
-  OUTBOUND_CALL_PURPOSES,
-  classifyUntrustedDirectDial,
-  hasAuditableExpressConsentArtifact,
-  normalizedExpressConsent,
-  outboundConsentMetadata,
-  requiresFederalDncScreeningForDirectDial,
-} from "../lib/outbound-call-purpose";
-import { placeOutboundCall } from "../lib/voice/outbound-call-service";
+import { NATIVE_OUTBOUND_UNAVAILABLE } from "../lib/native-outbound-availability";
 import {
   notifyOpenAISipCallTransferred,
   referOpenAISipCall,
@@ -53,7 +41,6 @@ import {
 import { getCreditBalanceUsd, getRecentLedger } from "../lib/credit-wallet";
 import { getErrorMessage } from "../lib/server-utils";
 import { removesRegulatedTemplateProvenance } from "../lib/runtime-template-personality";
-import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { pickRotatedVoiceId } from "../data/voice-roster";
 import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/liveavatar-service";
 import {
@@ -725,237 +712,17 @@ router.delete(
   },
 );
 
-// ── POST /api/mobile/calls/outbound — "call the doctor, I'll be 5 min late" ─
-// Mirrors POST /api/outbound/dial exactly: same spend/trial guard, the same DNC
-// + TCPA gates, and the same native `placeOutboundCall` entrypoint (Twilio +
-// OpenAI Realtime SIP). The app sends only the target + a free-text context; no prompt
-// logic on device.
-const mobileDialSchema = z.object({
-  agentId: z.string().min(1, "agentId is required"),
-  customerNumber: z
-    .string()
-    .min(1, "customerNumber is required")
-    .regex(/^\+?[1-9]\d{6,14}$/, "Invalid phone number format, expected E.164 (e.g. +15551234567)"),
-  customerName: z.string().max(200).optional(),
-  context: z.string().max(2000).optional(),
-  callPurpose: z.enum(OUTBOUND_CALL_PURPOSES),
-  hasExpressWrittenConsent: z.boolean().optional().default(false),
-  // Same audit fields as POST /api/outbound/dial — marketing + express consent
-  // requires a source/lead artifact so native/Siri cannot attest without a trail.
-  consentSource: z.enum(["web_form", "lead_import", "crm", "manual_attestation"]).optional(),
-  consentLeadId: z.string().max(200).optional(),
-});
-
+// Native outbound is a separate conditional surface. Enabling reviewed web
+// outbound must never activate clients without signed-permission selection,
+// stable request identity, uncertain-outcome recovery and device acceptance.
 router.post(
   "/api/mobile/calls/outbound",
   authenticateUser,
   mobileSensitiveRateLimiter,
-  outboundVoiceGuard("manual"),
-  validate({ body: mobileDialSchema }),
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const {
-        agentId,
-        customerName,
-        customerNumber,
-        context,
-        callPurpose,
-        hasExpressWrittenConsent,
-        consentSource,
-        consentLeadId,
-      } = req.body;
-      const purpose = classifyUntrustedDirectDial({ callPurpose });
-      const effectiveCallPurpose = purpose.effectiveCallPurpose;
-      const claimedExpressConsent = normalizedExpressConsent({
-        callPurpose: effectiveCallPurpose,
-        hasExpressWrittenConsent,
-      });
-      const hasAuditableConsentArtifact = hasAuditableExpressConsentArtifact({
-        consentSource,
-        consentLeadId,
-      });
-      const expressConsent = claimedExpressConsent && hasAuditableConsentArtifact;
-      const marketing = purpose.isMarketingCall;
-
-      if (marketing && claimedExpressConsent && !hasAuditableConsentArtifact) {
-        return res.status(400).json({
-          code: "CONSENT_ARTIFACT_REQUIRED",
-          error:
-            "Direct marketing calls require a server-verified written-consent record; client-supplied source or lead references are not accepted as proof.",
-        });
-      }
-
-      const gate = await evaluateOutboundDialGate({
-        userId: req.user.id,
-        phone: customerNumber,
-        isMarketingCall: marketing,
-        requireFederalDncScreening: requiresFederalDncScreeningForDirectDial(),
-        hasExpressWrittenConsent: expressConsent,
-        metadata: { has_express_written_consent: expressConsent },
-      });
-      if (!gate.allowed) {
-        if (gate.reason === "federal_dnc_unconfigured") {
-          return res.status(503).json({
-            code: gate.federalDncCode || "FEDERAL_DNC_UNCONFIGURED",
-            error: gate.federalDncMessage || "Federal DNC is not configured for marketing dials.",
-          });
-        }
-        if (gate.reason === "blocked_internal_dnc") {
-          log.warn("Mobile outbound dial blocked by DNC list", { customerNumber });
-          return res.status(403).json({
-            code: "FORBIDDEN",
-            error: "This number is on the Do Not Call list and cannot be dialed.",
-            dncBlocked: true,
-          });
-        }
-        if (gate.reason === "blocked_tcpa") {
-          const tcpa = gate.tcpaDecision;
-          log.warn("Mobile outbound dial blocked by TCPA consent gate", {
-            customerNumber,
-            abort_reason: tcpa?.abort_reason,
-          });
-          return res.status(403).json({
-            code: "FORBIDDEN",
-            error: tcpa?.disclosure_script || "Call blocked by TCPA consent rules.",
-            tcpaBlocked: true,
-            tcpa,
-          });
-        }
-        if (gate.reason === "outside_permitted_calling_hours") {
-          return res.status(403).json({
-            code: "OUTSIDE_PERMITTED_CALLING_HOURS",
-            error:
-              "This number cannot be dialed outside permitted calling hours (8am to 9pm local).",
-            reason: gate.reason,
-            calling_hours: gate.metadataPatch?.calling_hours,
-          });
-        }
-        log.warn("Mobile outbound dial blocked by duplicate guard", {
-          customerNumber,
-          reason: gate.reason,
-        });
-        return res.status(409).json({
-          code: "DUPLICATE_DIAL_SUPPRESSED",
-          error:
-            "This number was already dialed in the last 24 hours. Wait before dialing again, or schedule a callback.",
-          reason: gate.reason,
-          status: gate.status,
-        });
-      }
-
-      // Same double-dial reservation the web dial route takes: without it two
-      // rapid taps (or a mobile+web race on a brand-new number) both pass the
-      // gate — no lead row exists yet for the 24h window — and place two
-      // simultaneous calls. The partial unique index on active reservations
-      // arbitrates; the loser gets a 409 instead of a second call.
-      const normalizedNumber = normalizeOutboundNumber(customerNumber);
-      const phoneE164 = normalizedNumber.startsWith("+")
-        ? normalizedNumber
-        : `+${normalizedNumber.replace(/\D/g, "")}`;
-      if (!/^\+[1-9]\d{6,14}$/.test(phoneE164)) {
-        return res.status(400).json({
-          code: "VALIDATION_ERROR",
-          error: "Invalid phone number. Use E.164 format like +14155551234.",
-        });
-      }
-
-      await drizzle
-        .update(outboundDialReservations)
-        .set({ status: "expired", updatedAt: new Date() })
-        .where(
-          and(
-            eq(outboundDialReservations.userId, req.user.id),
-            inArray(outboundDialReservations.status, ["reserved", "dialing"]),
-            sql`${outboundDialReservations.expiresAt} < clock_timestamp()`,
-          ),
-        );
-
-      const operationKey = randomUUID();
-      const [reservation] = await drizzle
-        .insert(outboundDialReservations)
-        .values({
-          userId: req.user.id,
-          phoneE164,
-          operationKey,
-          status: "dialing",
-          expiresAt: new Date(Date.now() + 30 * 60_000),
-        })
-        .onConflictDoNothing()
-        .returning({ id: outboundDialReservations.id });
-      if (!reservation) {
-        return res.status(409).json({
-          code: "DIAL_ALREADY_IN_PROGRESS",
-          error:
-            "A call to this number is already being prepared. Check Phone before trying again.",
-        });
-      }
-
-      const result = await placeOutboundCall({
-        userId: req.user.id,
-        agentId,
-        customerName,
-        customerNumber: phoneE164,
-        context,
-        callPurpose: effectiveCallPurpose,
-      });
-      if (!result.ok) {
-        await drizzle
-          .update(outboundDialReservations)
-          .set({
-            status: "failed",
-            failureCode: `provider_${result.status || 500}`,
-            updatedAt: new Date(),
-          })
-          .where(eq(outboundDialReservations.operationKey, operationKey));
-        return res.status(result.status).json({ code: "ERROR", error: result.error });
-      }
-
-      await drizzle.insert(schema.outboundLeads).values({
-        userId: req.user.id,
-        agentId,
-        customerName,
-        customerNumber: phoneE164,
-        context,
-        callId: result.callId,
-        status: "Dialing",
-        attempts: 1,
-        lastCalledAt: new Date(),
-        metadata: {
-          ...outboundConsentMetadata({
-            callPurpose: effectiveCallPurpose,
-            requestedCallPurpose: callPurpose,
-            hasExpressWrittenConsent: expressConsent,
-            source: "mobile",
-            consentSource,
-            consentLeadId,
-          }),
-          wireline_dial_operation_id: operationKey,
-        },
-      });
-
-      await drizzle
-        .update(outboundDialReservations)
-        .set({ status: "completed", callId: result.callId, updatedAt: new Date() })
-        .where(eq(outboundDialReservations.operationKey, operationKey));
-
-      if (consentSource) {
-        emitServerProductEventOnce({
-          event: "consent_source_captured",
-          userId: req.user.id,
-          agentId,
-          audience: "sales",
-          metadata: { consent_source: consentSource, consent_lead_id: consentLeadId ?? null },
-        });
-      }
-
-      res.json({ success: true, callId: result.callId });
-    } catch (err) {
-      log.error("Mobile outbound call failed", { error: getErrorMessage(err) });
-      throw AppError.fromHttpStatus(500, "Failed to dispatch call.");
-    }
+  (_req: AuthenticatedRequest, res: Response) => {
+    res.status(503).json(NATIVE_OUTBOUND_UNAVAILABLE);
   },
 );
-
 // ── GET /api/mobile/calls/active — poll fallback when a push is missed ─────
 router.get(
   "/api/mobile/calls/active",

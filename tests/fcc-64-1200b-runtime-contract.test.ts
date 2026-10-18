@@ -47,14 +47,13 @@ describe("64.1200(b) runtime wiring", () => {
         "src/routes/outbound-dial-atomic-routes.ts",
         /placeOutboundCall\(\{[\s\S]{0,700}callPurpose: effectiveCallPurpose/,
       ],
-      [
-        "src/routes/mobile-routes.ts",
-        /placeOutboundCall\(\{[\s\S]{0,700}callPurpose: effectiveCallPurpose/,
-      ],
     ];
     for (const [file, pattern] of sites) {
       expect(read(file), `${file} must state a call purpose`).toMatch(pattern);
     }
+    const mobile = read("src/routes/mobile-routes.ts");
+    expect(mobile).toContain("res.status(503).json(NATIVE_OUTBOUND_UNAVAILABLE)");
+    expect(mobile).not.toContain("placeOutboundCall");
   });
 
   it("(b)(3) the telemarketing flag reaches the spoken opening disclosure", () => {

@@ -689,7 +689,7 @@ export async function inspectOutboundRecipientPermission(
     );
   return tenantStore.run(input.userId, () =>
     drizzle.transaction(async (tx) => {
-      const { request, grant } = await resolvePermissionForDispatch(tx, input);
+      const { request, grant } = await resolvePermissionForDispatch(tx, input, true);
       return {
         artifactId: request.artifactId,
         grantHash: voicePermissionHash(grant),
@@ -755,6 +755,7 @@ export async function assertOutboundRecipientPermissionInTransaction(
 async function resolvePermissionForDispatch(
   tx: PermissionDb,
   input: OutboundRecipientPermissionInput,
+  allowUnassignedLeadForInspection = false,
 ): Promise<{
   request: VoicePermissionRequest;
   grant: VoicePermissionGrant;
@@ -787,7 +788,8 @@ async function resolvePermissionForDispatch(
     if (
       !lead ||
       lead.source === "phone_test" ||
-      lead.agentId !== input.agentId ||
+      (lead.agentId !== input.agentId &&
+        (!allowUnassignedLeadForInspection || lead.agentId != null)) ||
       normalizeVoicePermissionPhone(lead.customerNumber || lead.phoneNumber || "") !== phone
     )
       throw permissionError(

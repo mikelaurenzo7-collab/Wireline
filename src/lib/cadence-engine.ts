@@ -6,6 +6,7 @@
  * settlement state remain attached to one authoritative record.
  */
 import { and, asc, eq, inArray, lte, sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 
 import * as schema from "../db/schema";
 import {
@@ -21,6 +22,8 @@ import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deleti
 import { sendTenantMessage } from "./twilio-service";
 import { placeOutboundCall } from "./voice/outbound-call-service";
 import { assertOutboundVoiceAllowed } from "./voice-spend-control";
+import { inspectOutboundRecipientPermission } from "./recipient-voice-permission-store";
+import { AppError } from "./api-error";
 
 interface CadenceStep {
   type: "call" | "sms" | "email";
@@ -151,6 +154,26 @@ export async function executeStep(
   }
 
   const agentId = step.agentId || cadence.agentId || lead.agentId;
+  let voicePermissionId: string | undefined;
+  if (step.type === "call" && lead.customerNumber && agentId) {
+    try {
+      const permission = await inspectOutboundRecipientPermission({
+        userId: cadence.userId,
+        agentId,
+        leadId: lead.id,
+        phone: lead.customerNumber,
+        callPurpose: "marketing_or_sales",
+        attemptId: randomUUID(),
+      });
+      if (permission.effectiveCallPurpose !== "marketing_or_sales")
+        throw new Error("A matching marketing voice permission is required.");
+      voicePermissionId = permission.artifactId;
+    } catch (error) {
+      if (error instanceof AppError && error.code === "OUTSIDE_PERMITTED_CALLING_HOURS")
+        return { ok: false, result: "outside permitted calling hours", defer: true };
+      return { ok: false, result: "voice permission could not be verified", retryable: true };
+    }
+  }
 
   if ((step.type === "call" || step.type === "sms") && lead.customerNumber) {
     try {
@@ -160,6 +183,7 @@ export async function executeStep(
         leadId: lead.id,
         lastCalledAt: lead.lastCalledAt,
         metadata: lead.metadata || {},
+        hasExpressWrittenConsent: step.type === "call" && Boolean(voicePermissionId),
       });
       if (!gate.allowed) {
         const temporal =
@@ -207,33 +231,24 @@ export async function executeStep(
       context: `Cadence "${cadence.name}", step type call`,
       callPurpose: "marketing_or_sales",
       leadId: lead.id,
+      consentArtifactId: voicePermissionId,
     });
     if (result.ok) {
       try {
-        await Promise.all([
-          drizzle
-            .update(schema.outboundLeads)
-            .set({
-              lastCalledAt: new Date(),
-              attempts: sql`${schema.outboundLeads.attempts} + 1`,
-              callId: result.callId,
-            })
-            .where(eq(schema.outboundLeads.id, lead.id)),
-          drizzle.insert(schema.consentLog).values({
-            userId: cadence.userId,
-            customerNumber: lead.customerNumber,
-            callId: result.callId,
-            event: "outbound_call_placed",
-            state: "initiated",
-            metadata: toJsonbSafe({
-              leadId: jsonSafeId(lead.id),
-              cadenceId: cadence.id,
-              call_purpose: "marketing_or_sales",
-              consent_version: OUTBOUND_CONSENT_VERSION,
-              source: "cadence",
-            }),
+        await drizzle.insert(schema.consentLog).values({
+          userId: cadence.userId,
+          customerNumber: lead.customerNumber,
+          callId: result.callId,
+          event: "outbound_call_placed",
+          state: "initiated",
+          metadata: toJsonbSafe({
+            leadId: jsonSafeId(lead.id),
+            cadenceId: cadence.id,
+            call_purpose: "marketing_or_sales",
+            consent_version: OUTBOUND_CONSENT_VERSION,
+            source: "cadence",
           }),
-        ]);
+        });
       } catch (recordError: any) {
         log.error("cadence call placed but dial evidence write failed", {
           leadId: jsonSafeId(lead.id),

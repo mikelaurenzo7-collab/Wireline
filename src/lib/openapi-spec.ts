@@ -952,26 +952,32 @@ const PATHS: Record<string, PathItem> = {
   },
   "/api/mobile/calls/outbound": {
     post: {
-      summary: "Place an outbound call from a native client",
+      summary: "Native outbound is unavailable; use the web workspace",
       description:
-        "Legacy native boundary. The mobile client must send an explicit `callPurpose`, but that label is audit context only and cannot mint a non-marketing or consent exemption. Native recipient-permission enrollment is not implemented; caller-supplied consent remains fail-closed and this is not a live outbound launch path.",
+        "Authenticated unavailable boundary. It always returns NATIVE_OUTBOUND_UNAVAILABLE before reservation, lead, billing or provider work, independently of general web outbound activation. Use the canonical web Outbound URL returned in web_url. Native outbound requires a separately accepted signed-permission, stable-request and uncertain-outcome recovery client update plus device testing. Client consent assertions cannot authorize calls.",
       operationId: "postMobileOutboundCall",
       tags: ["Outbound"],
       security: auth.bearer,
-      requestBody: {
-        required: true,
-        content: { "application/json": { schema: ref("LegacyMobileOutboundDialRequest") } },
-      },
       responses: {
-        "200": {
-          description: "Call dispatched.",
-          content: { "application/json": { schema: ref("OutboundDialResponse") } },
-        },
-        "400": COMMON_ERROR_RESPONSES["400"],
         "401": COMMON_ERROR_RESPONSES["401"],
-        "402": errorResponse("Trial, quota, spend, or billing gate blocked outbound dialing."),
-        "403": errorResponse("DNC or TCPA consent gate blocked the call."),
         "429": COMMON_ERROR_RESPONSES["429"],
+        "503": {
+          description: "Native outbound is independently disabled; no call is requested.",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["code", "error", "web_url"],
+                additionalProperties: false,
+                properties: {
+                  code: { type: "string", enum: ["NATIVE_OUTBOUND_UNAVAILABLE"] },
+                  error: { type: "string" },
+                  web_url: { type: "string", format: "uri" },
+                },
+              },
+            },
+          },
+        },
       },
     },
   },

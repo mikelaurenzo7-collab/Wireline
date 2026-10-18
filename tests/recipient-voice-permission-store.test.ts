@@ -520,6 +520,33 @@ describe("fresh dispatch permission receipt", () => {
     expect(fake.inserted).toHaveLength(0);
   });
 
+  it("inspects an unassigned owned lead with an independently owned Bot but requires assignment before dispatch", async () => {
+    const { request, grant } = fixtures();
+    fake.reads.push(
+      [{ ...lead, agentId: null }],
+      ...identityRows(),
+      [row(request)],
+      [row(grant)],
+      [],
+      [],
+    );
+    expect(await inspectOutboundRecipientPermission(automatic)).toMatchObject({ artifactId });
+    expect(fake.inserted).toHaveLength(0);
+    fake.reads.push([{ ...lead, agentId: null }]);
+    await expect(assertOutboundRecipientPermission(automatic)).rejects.toMatchObject({
+      code: "VOICE_PERMISSION_SCOPE_MISMATCH",
+    });
+    fake.reads.push([{ ...lead, agentId: "other-bot" }]);
+    await expect(inspectOutboundRecipientPermission(automatic)).rejects.toMatchObject({
+      code: "VOICE_PERMISSION_SCOPE_MISMATCH",
+    });
+    fake.reads.push([{ ...lead, agentId: null }], identityRows()[0], identityRows()[1], []);
+    await expect(inspectOutboundRecipientPermission(automatic)).rejects.toMatchObject({
+      status: 404,
+    });
+    expect(fake.inserted).toHaveLength(0);
+  });
+
   it("never treats lead-import consent flags as a signed permission or truncates the scan open", async () => {
     fake.reads.push([lead], ...identityRows(), []);
     await expect(inspectOutboundRecipientPermission(automatic)).rejects.toMatchObject({

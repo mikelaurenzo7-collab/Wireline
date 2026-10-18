@@ -51,14 +51,14 @@ Wireline uses App Intents and App Shortcuts as explicit entry points:
 
 | Entry point | Behavior |
 | --- | --- |
-| Siri | Ask Wireline, place a bounded call, summarize the last call, or surface attention items. |
+| Siri | Ask Wireline, summarize the last call, or surface attention items. Native outbound calling remains unavailable. |
 | Shortcuts app | User-configured automations built from small, explicit intents. |
 | Action button | User assigns an Ask Wireline shortcut in Settings. The app cannot claim the hardware button. |
 | Back Tap | User assigns a shortcut through Accessibility settings. |
 | Home / Lock Screen widget | Deep-links into Ask Wireline, Calls, or a supported detail surface. |
 | Control Center | User-added shortcut or control that reuses the same deep-link contract. |
 | Spotlight | App Shortcut discovery and standard app re-entry. |
-| CarPlay | Communication-only callbacks, live handoff, and agent-line visibility after entitlement approval. |
+| CarPlay | Live inbound handoff and agent-line visibility require separate device acceptance; outbound callbacks remain unavailable. |
 
 ### Shortcut guardrails
 
@@ -72,7 +72,7 @@ Wireline uses App Intents and App Shortcuts as explicit entry points:
 
 **Inbound:** a caller reaches a Wireline number, the backend receives the provider webhook, `src/lib/apns-push.ts` emits a VoIP push, and `CallManager` immediately reports the call through CallKit. iOS owns native presentation; the backend owns call identity and authorization.
 
-**Outbound:** an App Intent or in-app action calls `POST /api/mobile/calls/outbound`. The backend builds the selected agent's instructions, verifies purpose and consent, applies DNC, entitlement, and spend controls, then dials through the approved production voice path. The app never receives provider credentials or prompt text.
+**Outbound:** native iOS, Siri and CarPlay outbound calling is unavailable. `POST /api/mobile/calls/outbound` returns authenticated `503 NATIVE_OUTBOUND_UNAVAILABLE` with the web Outbound URL before any call, lead or billing mutation. Enabling reviewed web outbound does not enable native outbound. Use BotBound in the mobile browser for the initial launch. A separate native release must add signed-recipient-permission selection, persistent request identity and uncertain-outcome recovery, then pass device acceptance. Existing inbound and rehearsal surfaces are separate.
 
 ## Widgets
 

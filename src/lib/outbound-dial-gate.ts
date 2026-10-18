@@ -111,7 +111,7 @@ export async function evaluateOutboundDialGate(opts: {
         status: "AutoDialFailed",
         reason: "outside_permitted_calling_hours",
         metadataPatch: {
-          auto_dial_error: "Outside TCPA permitted calling hours (8am to 9pm local).",
+          auto_dial_error: "Outside permitted calling hours for this recipient.",
           calling_hours: callingHours,
         },
       };

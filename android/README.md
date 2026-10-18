@@ -56,9 +56,9 @@ The Google Services Gradle plugin is applied only when `google-services.json` ex
 
 ## Consent and outbound calling
 
-`POST /api/mobile/calls/outbound` requires the purpose and evidence expected by the shared server gate. Marketing or promotional calls require explicit confirmation plus `consentSource` or `consentLeadId`; the native client currently sends `consentSource=manual_attestation` when the checkbox is confirmed. Service and callback calls do not invent a marketing artifact.
+Native Android outbound calling is unavailable. `POST /api/mobile/calls/outbound` returns authenticated `503 NATIVE_OUTBOUND_UNAVAILABLE` with the web Outbound URL before any reservation, lead, billing or provider mutation. This closure is independent of general web outbound activation; a native consent checkbox cannot authorize a call. Use BotBound in the mobile browser for the initial launch.
 
-The backend remains authoritative for tenant DNC, federal DNC, TCPA hours and consent, entitlement, agent capacity, and spend controls. No Android path may bypass the shared outbound gate.
+A separate native release must implement signed-recipient-permission selection, persistent request identity and uncertain-outcome recovery, then pass device acceptance. The backend remains authoritative for consent, DNC, permitted hours, entitlements and spending. Existing inbound and rehearsal surfaces are separate.
 
 ## Call integration
 

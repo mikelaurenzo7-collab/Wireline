@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   entityPolicy: vi.fn(),
   federalDncLookup: vi.fn(),
   outboundGate: vi.fn(),
+  permissionInspection: vi.fn(),
   placeOutboundCall: vi.fn(),
   sendTenantMessage: vi.fn(),
   sendEmail: vi.fn(),
@@ -37,6 +38,9 @@ vi.mock("../src/lib/outbound-dial-gate", () => ({
 
 vi.mock("../src/lib/voice/outbound-call-service", () => ({
   placeOutboundCall: mocks.placeOutboundCall,
+}));
+vi.mock("../src/lib/recipient-voice-permission-store", () => ({
+  inspectOutboundRecipientPermission: mocks.permissionInspection,
 }));
 
 vi.mock("../src/lib/twilio-service", () => ({
@@ -145,6 +149,7 @@ const cadenceLead = {
 function expectNoExternalFanout(): void {
   expect(mocks.federalDncLookup).not.toHaveBeenCalled();
   expect(mocks.outboundGate).not.toHaveBeenCalled();
+  expect(mocks.permissionInspection).not.toHaveBeenCalled();
   expect(mocks.placeOutboundCall).not.toHaveBeenCalled();
   expect(mocks.sendTenantMessage).not.toHaveBeenCalled();
   expect(mocks.sendEmail).not.toHaveBeenCalled();
@@ -159,6 +164,10 @@ describe("system scheduled fan-out account environment boundary", () => {
     mocks.callbackWrites.length = 0;
     mocks.environmentPolicy.mockResolvedValue(productionPolicy);
     mocks.entityPolicy.mockResolvedValue({ allowed: true });
+    mocks.permissionInspection.mockImplementation(async (input: { callPurpose: string }) => ({
+      artifactId: "11111111-1111-4111-8111-111111111111",
+      effectiveCallPurpose: input.callPurpose,
+    }));
     mocks.federalDncLookup.mockReturnValue({ allowed: true });
     mocks.outboundGate.mockImplementation(async () => {
       mocks.federalDncLookup();
@@ -243,7 +252,7 @@ describe("system scheduled fan-out account environment boundary", () => {
     expectNoExternalFanout();
   });
 
-  it("preserves the production cadence order: environment, entity, Federal DNC, provider", async () => {
+  it("preserves the production cadence order: environment, entity, signed permission, Federal DNC, provider", async () => {
     const events: string[] = [];
     mocks.environmentPolicy.mockImplementation(async () => {
       events.push("environment");
@@ -252,6 +261,13 @@ describe("system scheduled fan-out account environment boundary", () => {
     mocks.entityPolicy.mockImplementation(async () => {
       events.push("entity");
       return { allowed: true };
+    });
+    mocks.permissionInspection.mockImplementation(async () => {
+      events.push("signed-permission");
+      return {
+        artifactId: "11111111-1111-4111-8111-111111111111",
+        effectiveCallPurpose: "marketing_or_sales",
+      };
     });
     mocks.outboundGate.mockImplementation(async () => {
       events.push("federal-dnc");
@@ -265,7 +281,13 @@ describe("system scheduled fan-out account environment boundary", () => {
 
     await executeCadenceStep({ type: "call", delayHours: 0 }, cadence, cadenceLead);
 
-    expect(events).toEqual(["environment", "entity", "federal-dnc", "provider"]);
+    expect(events).toEqual([
+      "environment",
+      "entity",
+      "signed-permission",
+      "federal-dnc",
+      "provider",
+    ]);
     expect(mocks.federalDncLookup).toHaveBeenCalledOnce();
   });
 
@@ -352,7 +374,7 @@ describe("system scheduled fan-out account environment boundary", () => {
     expectNoExternalFanout();
   });
 
-  it("preserves the production callback order: environment, entity, Federal DNC, provider", async () => {
+  it("preserves the production callback order: environment, entity, signed permission, Federal DNC, provider", async () => {
     const events: string[] = [];
     mocks.dueCallbacks.push({
       id: 1n,
@@ -372,6 +394,13 @@ describe("system scheduled fan-out account environment boundary", () => {
       events.push("entity");
       return { allowed: true };
     });
+    mocks.permissionInspection.mockImplementation(async () => {
+      events.push("signed-permission");
+      return {
+        artifactId: "11111111-1111-4111-8111-111111111111",
+        effectiveCallPurpose: "callback",
+      };
+    });
     mocks.outboundGate.mockImplementation(async () => {
       events.push("federal-dnc");
       mocks.federalDncLookup();
@@ -384,7 +413,13 @@ describe("system scheduled fan-out account environment boundary", () => {
 
     await tickDueCallbacks();
 
-    expect(events).toEqual(["environment", "entity", "federal-dnc", "provider"]);
+    expect(events).toEqual([
+      "environment",
+      "entity",
+      "signed-permission",
+      "federal-dnc",
+      "provider",
+    ]);
     expect(mocks.federalDncLookup).toHaveBeenCalledOnce();
   });
 });

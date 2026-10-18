@@ -7,6 +7,7 @@ import {
 } from "../account-environment-policy";
 import { isDncBlocked } from "../compliance";
 import { isMarketingCallPurpose, type OutboundCallPurpose } from "../outbound-call-purpose";
+import type { LEAD_PROCESSABLE_STATUSES } from "../outbound-status";
 import { drizzle, log } from "../server-context";
 import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import { getTwilioClient } from "../twilio-service";
@@ -82,6 +83,8 @@ export type PlaceOutboundCallInput = {
   leadMetadata?: Record<string, unknown> | null;
   requestKey?: string;
   consentArtifactId?: string;
+  /** Server campaign's prior queue state; HTTP routes must never supply this field. */
+  priorLeadStatus?: (typeof LEAD_PROCESSABLE_STATUSES)[number];
 };
 
 type TwilioFailure = {

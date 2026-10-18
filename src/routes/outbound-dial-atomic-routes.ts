@@ -100,7 +100,7 @@ function gateResponse(res: Response, gate: DeniedOutboundDialGate) {
   if (gate.reason === "outside_permitted_calling_hours") {
     return res.status(403).json({
       code: "OUTSIDE_PERMITTED_CALLING_HOURS",
-      error: "This number cannot be dialed outside permitted calling hours (8am to 9pm local).",
+      error: "This number cannot be dialed outside permitted calling hours.",
       reason: gate.reason,
       calling_hours: gate.metadataPatch?.calling_hours,
     });
@@ -230,6 +230,7 @@ router.post(
         isMarketingCall: marketing,
         requireFederalDncScreening: marketing,
         hasExpressWrittenConsent: expressConsent,
+        isRequestedCallback: effectiveCallPurpose === "callback",
         metadata: { has_express_written_consent: expressConsent },
       });
       if (!gate.allowed) {

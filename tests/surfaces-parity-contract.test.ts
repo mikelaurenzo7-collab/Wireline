@@ -12,13 +12,9 @@ describe("outbound consent admission", () => {
 
     expect(web).toContain("await inspectOutboundRecipientPermission({");
     expect(web).toContain("const effectiveCallPurpose = permission.effectiveCallPurpose");
-    expect(mobile).toContain("CONSENT_ARTIFACT_REQUIRED");
-    expect(mobile).toContain(
-      'consentSource: z.enum(["web_form", "lead_import", "crm", "manual_attestation"])',
-    );
-    expect(mobile).toContain("consentLeadId");
-    expect(mobile).toContain("hasAuditableExpressConsentArtifact({");
-    expect(mobile).toContain("marketing && claimedExpressConsent && !hasAuditableConsentArtifact");
+    expect(mobile).toContain("res.status(503).json(NATIVE_OUTBOUND_UNAVAILABLE)");
+    expect(mobile).not.toContain("hasAuditableExpressConsentArtifact");
+    expect(mobile).not.toContain("placeOutboundCall");
   });
 });
 

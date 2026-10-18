@@ -32,12 +32,22 @@ describe("outbound engine hardening", () => {
     expect(dial).toContain("status: LEAD_STATUS.DIALING");
     expect(dial).toContain("LEAD_PROCESSABLE_STATUSES");
     expect(dial).toContain("if (claimed.length === 0)");
-    // Whitespace-tolerant: prettier wraps the ternary across lines.
-    expect(dial).toMatch(/LEAD_STATUS\.MAX_ATTEMPTS\s*:\s*LEAD_STATUS\.RETRYING/);
+    // The shared placement owns counts and retry policy. Campaign cleanup may
+    // restore only its unchanged pre-claim, never an accepted/newer outcome.
+    const failure = dialer.slice(
+      dialer.indexOf("async function updateLeadAfterPlacementFailure"),
+      dialer.indexOf("export class"),
+    );
+    expect(failure).toContain("current.status === LEAD_STATUS.DIALING");
+    expect(failure).toContain("nativeVoice.placement_id === input.previousPlacementId");
+    expect(failure).toContain("if (!restorePreClaim) return;");
+    expect(failure).toMatch(/input\.doNotRetry\s*\?\s*LEAD_STATUS\.ERROR\s*:\s*input\.priorStatus/);
+    const placement = read("src/lib/voice/openai-outbound-placement.ts");
+    expect(placement).toContain("resolveRetryableLeadStatus(lead.attempts, maxAttempts)");
+    expect(placement).toContain("voice_outbound_dispatched:");
     expect(dial).toContain(
       "result.doNotRetry === true || result.providerOutcomeAmbiguous === true",
     );
-    expect(dial).toContain("? LEAD_STATUS.ERROR");
     // A failed placement must not stamp lastCalledAt (no call happened) —
     // the 24h window would otherwise suppress the retry for a day. After the
     // provider accepts, catch must not retire the lead on a later blip.
@@ -58,9 +68,16 @@ describe("outbound engine hardening", () => {
     expect(engine).toContain("if (stepResult.defer)");
     expect(engine).toContain("CADENCE_TEMPORAL_DEFER_MS");
     expect(engine).toContain("STEP_EXCEPTION_RETRY_PREFIX");
-    // Cadence dials stamp the lead and write consent-ledger evidence like the
-    // campaign dialer, so the shared 24h duplicate window sees them.
-    expect(engine).toContain("lastCalledAt: new Date()");
+    // Shared accepted placement stamps history. A caller's late setter must
+    // never overwrite a fast terminal callback with stale Dialing state.
+    expect(engine).not.toContain("lastCalledAt: new Date()");
+    expect(engine).toContain("consentArtifactId: voicePermissionId");
+    expect(read("src/lib/voice/openai-outbound-placement.ts")).toContain(
+      "lastCalledAt: lead.lastCalledAt || now",
+    );
+    expect(read("src/lib/voice/outbound-placement-funding.ts")).toContain(
+      ".set({ attempts: attempts + 1, lastCalledAt: new Date() })",
+    );
     expect(engine).toContain('event: "outbound_call_placed"');
     expect(engine).toContain('source: "cadence"');
   });
@@ -74,7 +91,8 @@ describe("outbound engine hardening", () => {
     // a deferred cold lead goes out as marketing_or_sales and must say so.
     expect(engine).toContain("call_purpose: callPurpose");
     expect(engine).toContain("consumer_requested: consumerRequested");
-    expect(engine).toContain("lastCalledAt: new Date()");
+    expect(engine).toContain("consentArtifactId: permission.artifactId");
+    expect(engine).not.toContain("lastCalledAt: new Date()");
   });
 
   it("text-inferred followup outcomes never schedule an automatic callback", () => {
@@ -91,11 +109,11 @@ describe("outbound engine hardening", () => {
     expect(intake).toContain("deferred_quiet_hours");
   });
 
-  it("mobile dial takes the same double-dial reservation as web", () => {
+  it("native outbound cannot create reservations or duplicate leads", () => {
     const mobile = read("src/routes/mobile-routes.ts");
-    expect(mobile).toContain("outboundDialReservations");
-    expect(mobile).toContain("DIAL_ALREADY_IN_PROGRESS");
-    expect(mobile).toContain("normalizeOutboundNumber");
+    expect(mobile).toContain("res.status(503).json(NATIVE_OUTBOUND_UNAVAILABLE)");
+    expect(mobile).not.toContain("outboundDialReservations");
+    expect(mobile).not.toContain("placeOutboundCall");
   });
 
   it("cadence re-enrollment is only blocked while a run is active", () => {

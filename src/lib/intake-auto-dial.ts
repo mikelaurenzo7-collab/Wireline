@@ -1,4 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 
 import * as schema from "../db/schema";
 import { evaluateOutboundDialGate, mergeLeadMetadata } from "./outbound-dial-gate";
@@ -7,6 +8,7 @@ import { drizzle, log } from "./server-context";
 import { getErrorMessage, toJsonbSafe } from "./server-utils";
 import { placeOutboundCall } from "./voice/outbound-call-service";
 import { assertOutboundVoiceAllowed } from "./voice-spend-control";
+import { inspectOutboundRecipientPermission } from "./recipient-voice-permission-store";
 
 export const INTAKE_AUTO_DIAL_JOB_TYPE = "intake_auto_dial" as const;
 
@@ -111,7 +113,7 @@ async function writeAutoDialFailure(input: {
       sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${String(input.leadId)}`}))`,
     );
     const [lead] = await tx
-      .select({ metadata: schema.outboundLeads.metadata })
+      .select({ metadata: schema.outboundLeads.metadata, callId: schema.outboundLeads.callId })
       .from(schema.outboundLeads)
       .where(
         and(
@@ -122,6 +124,15 @@ async function writeAutoDialFailure(input: {
       .limit(1);
     const metadata = record(lead?.metadata);
     const nativeVoice = record(metadata.native_voice);
+    // The shared placement/callback boundary owns accepted and terminal state.
+    // A late worker failure must not replace that evidence with AutoDialFailed.
+    if (
+      lead?.callId ||
+      nativeVoice.twilio_call_sid ||
+      nativeVoice.openai_call_id ||
+      nativeVoice.bridge_served_at
+    )
+      return;
     await tx
       .update(schema.outboundLeads)
       .set({
@@ -226,11 +237,22 @@ export async function processIntakeAutoDialJob(
   }
 
   try {
+    const permission = await inspectOutboundRecipientPermission({
+      userId: payload.userId,
+      agentId: lead.agentId,
+      phone: lead.customerNumber,
+      callPurpose: "marketing_or_sales",
+      leadId,
+      attemptId: randomUUID(),
+    });
     const gate = await evaluateOutboundDialGate({
       userId: payload.userId,
       phone: lead.customerNumber,
       leadId,
       metadata,
+      isMarketingCall: true,
+      requireFederalDncScreening: true,
+      hasExpressWrittenConsent: permission.effectiveCallPurpose === "marketing_or_sales",
     });
     if (!gate.allowed) {
       if (gate.reason === "outside_permitted_calling_hours") {
@@ -299,14 +321,11 @@ export async function processIntakeAutoDialJob(
       context: lead.context || `Inbound lead via ${payload.intakeKeyName}`,
       callPurpose: "marketing_or_sales",
       leadId,
+      consentArtifactId: permission.artifactId,
     });
     if (result.ok && result.callId) {
-      await drizzle
-        .update(schema.outboundLeads)
-        .set({ callId: result.callId, status: "Dialing", lastCalledAt: new Date() })
-        .where(
-          and(eq(schema.outboundLeads.id, leadId), eq(schema.outboundLeads.userId, payload.userId)),
-        );
+      // Calls.create may return after the exact terminal callback. The shared
+      // placement owns status, attempt count and call identity in either order.
       return { outcome: "dialing", callId: result.callId };
     }
 

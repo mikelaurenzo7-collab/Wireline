@@ -51,15 +51,18 @@ describe("mobile TCPA consent contract", () => {
     expect(view).toContain("agentRoles");
   });
 
-  it("server mobile outbound schema requires explicit purpose and accepts consent flag", () => {
+  it("keeps native outbound independently closed before any mutation", () => {
     const mobile = read("src/routes/mobile-routes.ts");
-    expect(mobile).toContain("hasExpressWrittenConsent");
-    expect(mobile).toContain("callPurpose: z.enum(OUTBOUND_CALL_PURPOSES)");
-    expect(mobile).not.toContain("callPurpose: z.enum(OUTBOUND_CALL_PURPOSES).optional()");
-    expect(mobile).not.toContain('default("marketing_or_sales")');
-    expect(mobile).toContain("classifyUntrustedDirectDial");
-    expect(mobile).toContain("callPurpose: effectiveCallPurpose");
-    expect(mobile).toContain("outboundConsentMetadata");
-    expect(mobile).toContain("evaluateOutboundDialGate");
+    const route = mobile.slice(
+      mobile.indexOf('"/api/mobile/calls/outbound"'),
+      mobile.indexOf("// ── GET /api/mobile/calls/active"),
+    );
+    expect(route).toContain("authenticateUser");
+    expect(route).toContain("mobileSensitiveRateLimiter");
+    expect(route).toContain("res.status(503).json(NATIVE_OUTBOUND_UNAVAILABLE)");
+    expect(mobile).not.toMatch(
+      /placeOutboundCall|outboundDialReservations|hasExpressWrittenConsent/,
+    );
+    expect(route).not.toMatch(/BOTBOUND_GENERAL_OUTBOUND_ENABLED|\.insert\(|\.update\(|\.delete\(/);
   });
 });

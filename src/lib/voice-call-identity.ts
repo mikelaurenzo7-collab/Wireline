@@ -3,6 +3,7 @@ import { and, eq, sql } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { AppError } from "./api-error";
 import { drizzle } from "./server-context";
+import { LEAD_PROCESSABLE_STATUSES } from "./outbound-status";
 
 export type VoiceIdentityTransaction = Parameters<Parameters<typeof drizzle.transaction>[0]>[0];
 type Reader = Pick<typeof drizzle, "select">;
@@ -22,6 +23,36 @@ export async function readVoiceIdentityReceipt(reader: Reader, userId: string, k
     .where(and(eq(schema.creditLedger.userId, userId), eq(schema.creditLedger.idempotencyKey, key)))
     .limit(1);
   return row;
+}
+
+/** Only the immutable exact-placement claim can restore pre-admission queue state. */
+export async function readOutboundPlacementPriorStatus(
+  reader: Reader,
+  userId: string,
+  leadId: bigint,
+  placementId: string,
+): Promise<string | null> {
+  const canonical = phoneTestFundingId(placementId);
+  const receipt = await readVoiceIdentityReceipt(
+    reader,
+    userId,
+    `voice_outbound_claim:${canonical}`,
+  );
+  if (!receipt) return null;
+  const scope = receipt.metadata as Record<string, unknown> | null;
+  if (
+    receipt.refType !== "voice_outbound_claim" ||
+    Number(receipt.deltaUsd) !== 0 ||
+    scope?.version !== 1 ||
+    scope.placement_id !== placementId ||
+    scope.lead_id !== String(leadId)
+  )
+    throw AppError.conflict("The outbound claim recovery identity changed.");
+  const prior = scope.previous_status;
+  return typeof prior === "string" &&
+    (LEAD_PROCESSABLE_STATUSES as readonly string[]).includes(prior)
+    ? prior
+    : null;
 }
 
 /** One immutable hop only. Provider IDs can never alias another provider ID. */

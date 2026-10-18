@@ -63,16 +63,18 @@ describe("direct-dial compliance contract", () => {
       expect(source).toContain("const marketing = isMarketingCallPurpose(effectiveCallPurpose)");
       expect(source).not.toContain("isMarketingCallPurpose(callPurpose)");
       expect(source).toContain("requireFederalDncScreening: marketing");
+      const inspection = source.indexOf("await inspectOutboundRecipientPermission({");
+      const callbackException = source.indexOf(
+        'isRequestedCallback: effectiveCallPurpose === "callback"',
+      );
+      expect(callbackException).toBeGreaterThan(inspection);
       expect(source).toContain("hasExpressWrittenConsent: expressConsent");
       expect(source).toContain("consentArtifactId");
       expect(source).toContain("readNativeOutboundRequestReplay");
     }
     const mobile = read("src/routes/mobile-routes.ts");
-    expect(mobile).toContain("hasAuditableExpressConsentArtifact({");
-    expect(mobile).toContain("classifyUntrustedDirectDial({ callPurpose })");
-    expect(mobile).toContain(
-      "requireFederalDncScreening: requiresFederalDncScreeningForDirectDial()",
-    );
+    expect(mobile).toContain("res.status(503).json(NATIVE_OUTBOUND_UNAVAILABLE)");
+    expect(mobile).not.toContain("placeOutboundCall");
     const service = read("src/lib/voice/outbound-call-service.ts");
     expect(service.indexOf("await inspectOutboundRecipientPermission({")).toBeLessThan(
       service.indexOf("await twilio.calls.create({"),

@@ -6,12 +6,12 @@ import { getOpenApiSpec } from "../src/lib/openapi-spec";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("outbound compliance contract", () => {
-  it("requires explicit callPurpose on web and mobile direct dial APIs", () => {
+  it("requires explicit purpose on web and independently closes native outbound", () => {
     const web = read("src/routes/outbound-routes.ts");
     const mobile = read("src/routes/mobile-routes.ts");
     const gate = read("src/lib/outbound-dial-gate.ts");
 
-    for (const source of [web, mobile]) {
+    for (const source of [web]) {
       expect(source).toContain("callPurpose: z.enum(OUTBOUND_CALL_PURPOSES)");
       expect(source).not.toContain("callPurpose: z.enum(OUTBOUND_CALL_PURPOSES).optional()");
       expect(source).not.toContain('default("marketing_or_sales")');
@@ -26,9 +26,8 @@ describe("outbound compliance contract", () => {
 
     expect(web).toContain("await inspectOutboundRecipientPermission({");
     expect(web).toContain("const effectiveCallPurpose = permission.effectiveCallPurpose");
-    expect(mobile).toContain("classifyUntrustedDirectDial({ callPurpose })");
-
-    expect(mobile).toContain("lastCalledAt: new Date()");
+    expect(mobile).toContain("res.status(503).json(NATIVE_OUTBOUND_UNAVAILABLE)");
+    expect(mobile).not.toContain("placeOutboundCall");
     expect(read("src/lib/voice/openai-outbound-placement.ts")).toContain("lastCalledAt:");
 
     expect(gate).toContain("isDncBlocked(opts.userId, opts.phone)");
@@ -57,6 +56,17 @@ describe("outbound compliance contract", () => {
     expect(readiness).toContain("FEDERAL_DNC_API_URL+FEDERAL_DNC_API_KEY");
   });
 
+  it("keeps direct deny diagnostics masked and permitted-hour copy jurisdiction-neutral", () => {
+    const web = read("src/routes/outbound-routes.ts");
+    expect(web.match(/phoneSuffixForLog\(customerNumber\)/g)).toHaveLength(3);
+    for (const path of [
+      "src/routes/outbound-routes.ts",
+      "src/routes/outbound-dial-atomic-routes.ts",
+      "src/lib/outbound-dial-gate.ts",
+    ])
+      expect(read(path)).not.toContain("8am to 9pm");
+  });
+
   it("keeps consent metadata durable and source-specific", () => {
     const purpose = read("src/lib/outbound-call-purpose.ts");
     const web = read("src/routes/outbound-routes.ts");
@@ -70,7 +80,8 @@ describe("outbound compliance contract", () => {
     expect(purpose).toContain("source: input.source");
     expect(purpose).not.toContain("normalizeOutboundCallPurpose");
     expect(web).toContain('source: "web"');
-    expect(mobile).toContain('source: "mobile"');
+    expect(mobile).toContain("NATIVE_OUTBOUND_UNAVAILABLE");
+    expect(mobile).not.toContain("outboundConsentMetadata");
   });
 
   it("keeps bulk and campaign dialing explicitly marketing-only", () => {
@@ -118,11 +129,17 @@ describe("outbound compliance contract", () => {
     expect(spec.paths["/api/outbound/dial"].post?.responses["503"]).toBeDefined();
     expect(openapi).toContain('"/api/outbound/dial/{requestKey}"');
     expect(openapi).toContain('"/api/outbound/dial/{requestKey}/cancel-missing"');
-    expect(openapi).toContain('schema: ref("LegacyMobileOutboundDialRequest")');
+    const native = spec.paths["/api/mobile/calls/outbound"].post!;
+    expect(native.requestBody).toBeUndefined();
+    expect(native.responses["200"]).toBeUndefined();
+    expect(native.responses["503"]).toBeDefined();
+    expect(native.description).toContain("independently of general web outbound activation");
     expect(openapi).toContain('"/api/outbound/dial"');
     expect(openapi).toContain('"/api/mobile/calls/outbound"');
     expect(openapi).toContain("DNC or TCPA consent gate blocked the call.");
-    expect(openapi).toContain("audit context only");
-    expect(openapi).toContain("cannot mint a non-marketing or consent exemption");
+    expect(native.description).toContain("Client consent assertions cannot authorize calls");
+    expect(native.description).toContain(
+      "signed-permission, stable-request and uncertain-outcome recovery",
+    );
   });
 });

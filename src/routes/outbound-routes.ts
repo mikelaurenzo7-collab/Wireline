@@ -30,6 +30,7 @@ import { inspectOutboundRecipientPermission } from "../lib/recipient-voice-permi
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { LEAD_STATUS } from "../lib/outbound-status";
 import { campaignWriteRateLimit } from "../middleware/api-rate-limits";
+import { phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -527,6 +528,7 @@ router.post(
         isMarketingCall: marketing,
         requireFederalDncScreening: marketing,
         hasExpressWrittenConsent: expressConsent,
+        isRequestedCallback: effectiveCallPurpose === "callback",
         metadata: { has_express_written_consent: expressConsent },
       });
       if (!gate.allowed) {
@@ -537,7 +539,9 @@ router.post(
           });
         }
         if (gate.reason === "blocked_internal_dnc") {
-          log.warn("Outbound dial blocked by DNC list", { customerNumber });
+          log.warn("Outbound dial blocked by DNC list", {
+            phone: phoneSuffixForLog(customerNumber),
+          });
           return res.status(403).json({
             code: "FORBIDDEN",
             error: "This number is on the Do Not Call list and cannot be dialed.",
@@ -547,7 +551,7 @@ router.post(
         if (gate.reason === "blocked_tcpa") {
           const tcpa = gate.tcpaDecision;
           log.warn("Outbound dial blocked by TCPA consent gate", {
-            customerNumber,
+            phone: phoneSuffixForLog(customerNumber),
             abort_reason: tcpa?.abort_reason,
           });
           return res.status(403).json({
@@ -560,14 +564,13 @@ router.post(
         if (gate.reason === "outside_permitted_calling_hours") {
           return res.status(403).json({
             code: "OUTSIDE_PERMITTED_CALLING_HOURS",
-            error:
-              "This number cannot be dialed outside permitted calling hours (8am to 9pm local).",
+            error: "This number cannot be dialed outside permitted calling hours.",
             reason: gate.reason,
             calling_hours: gate.metadataPatch?.calling_hours,
           });
         }
         log.warn("Outbound dial blocked by duplicate guard", {
-          customerNumber,
+          phone: phoneSuffixForLog(customerNumber),
           reason: gate.reason,
         });
         return res.status(409).json({

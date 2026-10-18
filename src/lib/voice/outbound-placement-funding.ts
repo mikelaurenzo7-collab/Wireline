@@ -26,6 +26,7 @@ import {
   PHONE_TEST_ID,
   phoneTestFundingId,
   readVoiceIdentityReceipt,
+  readOutboundPlacementPriorStatus,
   voicePhoneFingerprint,
   type VoiceIdentityTransaction,
 } from "../voice-call-identity";
@@ -239,6 +240,13 @@ export async function markOutboundProviderAttempted(
         permission.effectiveCallPurpose !== attempt.call_purpose
       )
         throw AppError.conflict("The outbound permission receipt changed before dispatch.");
+      const attempts = Number(lead.attempts ?? 0);
+      if (!Number.isSafeInteger(attempts) || attempts < 0 || attempts >= 2_147_483_647)
+        throw AppError.conflict("The outbound attempt count could not be verified.");
+      await tx
+        .update(schema.outboundLeads)
+        .set({ attempts: attempts + 1, lastCalledAt: new Date() })
+        .where(and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.id, leadId)));
       await appendVoiceIdentityReceipt(tx, {
         userId,
         key: `voice_outbound_permission:${canonical}`,
@@ -261,6 +269,7 @@ export async function markOutboundProviderAttempted(
           version: 1,
           attempted_at: new Date().toISOString(),
           carrier_max_seconds: carrierMaxSeconds,
+          attempt_number: attempts + 1,
         },
       });
     }),
@@ -800,7 +809,9 @@ export async function reconcileOutboundPlacementJob(job: {
           await tx
             .update(schema.outboundLeads)
             .set({
-              status: "Error",
+              status:
+                (await readOutboundPlacementPriorStatus(tx, userId, BigInt(leadId), placementId)) ??
+                LEAD_STATUS.ERROR,
               metadata: {
                 ...record(lead.metadata),
                 native_voice: { ...native(lead), state: "rejected", do_not_retry: false },

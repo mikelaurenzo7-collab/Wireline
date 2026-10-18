@@ -10,20 +10,21 @@
  * same cluster-safe shape as cadence_tick). Every dial passes the shared
  * evaluateOutboundDialGate and the outbound voice spend controls.
  *
- * `isRequestedCallback` is READ from the lead, never assumed. It waives express
- * written consent and flips the dial to non-marketing (which drops the 47 CFR
- * 64.1200(b)(3) opt-out announcement), so it may only be claimed for a lead a
- * consumer actually asked to be called back on. System deferrals and legacy
- * summary-inferred follow-ups can also leave due timestamps; the engine must
- * classify each dial from its verified provenance rather than the timestamp.
+ * `isRequestedCallback` is read from the lead, never assumed, and is usable
+ * only after a current recipient-signed callback grant is verified. System
+ * deferrals and legacy summary-inferred follow-ups remain marketing and require
+ * a matching signed marketing grant; a due timestamp or legacy marker alone
+ * never authorizes carrier work.
  */
 import { and, asc, eq, isNotNull, lte, sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { evaluateOutboundDialGate } from "./outbound-dial-gate";
 import { assertOutboundVoiceAllowed } from "./voice-spend-control";
 import { placeOutboundCall } from "./voice/outbound-call-service";
-import { OUTBOUND_CONSENT_VERSION } from "./outbound-call-purpose";
+import { OUTBOUND_CONSENT_VERSION, isMarketingCallPurpose } from "./outbound-call-purpose";
+import { inspectOutboundRecipientPermission } from "./recipient-voice-permission-store";
 import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
 import {
   externalEntityActionPolicyForUser,
@@ -330,12 +331,27 @@ export async function tickDueCallbacks({
           }
 
           const consumerRequested = isConsumerRequestedCallback(metadata);
+          const callPurpose = consumerRequested ? "callback" : "marketing_or_sales";
+          // A legacy schedule marker selects the requested purpose; only a
+          // current recipient-signed grant can authorize the actual call.
+          const permission = await inspectOutboundRecipientPermission({
+            userId: lead.userId,
+            agentId,
+            phone: lead.customerNumber,
+            callPurpose,
+            leadId: lead.id,
+            attemptId: randomUUID(),
+          });
+          const marketing = isMarketingCallPurpose(permission.effectiveCallPurpose);
           const gate = await evaluateOutboundDialGate({
             userId: lead.userId,
             phone: lead.customerNumber,
             leadId: lead.id,
             lastCalledAt: lead.lastCalledAt,
             metadata,
+            isMarketingCall: marketing,
+            requireFederalDncScreening: marketing,
+            hasExpressWrittenConsent: marketing,
             isRequestedCallback: consumerRequested,
           });
 
@@ -375,7 +391,6 @@ export async function tickDueCallbacks({
           }
 
           const requestedFor = lead.callbackScheduledAt?.toISOString() || "the requested time";
-          const callPurpose = consumerRequested ? "callback" : "marketing_or_sales";
           const res = await placeOutboundCall({
             userId: lead.userId,
             agentId,
@@ -386,6 +401,7 @@ export async function tickDueCallbacks({
               : `Scheduled outbound follow-up for this contact (queued for ${requestedFor}). They did not request this call. Introduce yourself and state why you are calling.`,
             callPurpose,
             leadId: lead.id,
+            consentArtifactId: permission.artifactId,
           });
 
           if (!res.ok) {
@@ -403,10 +419,8 @@ export async function tickDueCallbacks({
             return "skipped";
           }
 
-          await drizzle
-            .update(schema.outboundLeads)
-            .set({ lastCalledAt: new Date(), callId: res.callId })
-            .where(eq(schema.outboundLeads.id, lead.id));
+          // Shared placement already persisted the exact identity and call
+          // status; an early terminal callback must survive this late return.
           await drizzle.insert(schema.consentLog).values({
             userId: lead.userId,
             customerNumber: lead.customerNumber,

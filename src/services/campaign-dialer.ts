@@ -1,20 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- external integration data shape varies by provider. */
 import { and, eq, inArray, lt, sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 
 import * as schema from "../db/schema";
 import { assertFederalDncForMarketing } from "../lib/federal-dnc-service";
 import { enqueue } from "../lib/job-queue";
 import { evaluateOutboundDialGate, mergeLeadMetadata } from "../lib/outbound-dial-gate";
 import { OUTBOUND_CONSENT_VERSION } from "../lib/outbound-call-purpose";
-import {
-  CAMPAIGN_STATUS,
-  LEAD_PROCESSABLE_STATUSES,
-  LEAD_STATUS,
-} from "../lib/outbound-status";
+import { CAMPAIGN_STATUS, LEAD_PROCESSABLE_STATUSES, LEAD_STATUS } from "../lib/outbound-status";
 import { drizzle, log } from "../lib/server-context";
 import { jsonSafeId, toJsonbSafe } from "../lib/server-utils";
 import { placeOutboundCall } from "../lib/voice/outbound-call-service";
 import { assertOutboundVoiceAllowed } from "../lib/voice-spend-control";
+import { inspectOutboundRecipientPermission } from "../lib/recipient-voice-permission-store";
 
 export function isWithinCallWindow(start: string, end: string, now: string): boolean {
   if (start <= end) return now >= start && now <= end;
@@ -56,8 +54,8 @@ function record(value: unknown): Record<string, unknown> {
 async function updateLeadAfterPlacementFailure(input: {
   leadId: bigint;
   userId: string;
-  status: string;
-  attempts: number;
+  priorStatus: (typeof LEAD_PROCESSABLE_STATUSES)[number];
+  previousPlacementId: unknown;
   error: string;
   doNotRetry: boolean;
 }) {
@@ -66,7 +64,7 @@ async function updateLeadAfterPlacementFailure(input: {
       sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${String(input.leadId)}`}))`,
     );
     const [current] = await tx
-      .select({ metadata: schema.outboundLeads.metadata })
+      .select()
       .from(schema.outboundLeads)
       .where(
         and(
@@ -77,11 +75,17 @@ async function updateLeadAfterPlacementFailure(input: {
       .limit(1);
     const metadata = record(current?.metadata);
     const nativeVoice = record(metadata.native_voice);
+    if (!current) return;
+    // The shared placement owns every newer claim/outcome. Only release this
+    // caller's pre-claim if no new placement was established at all.
+    const restorePreClaim =
+      current.status === LEAD_STATUS.DIALING &&
+      nativeVoice.placement_id === input.previousPlacementId;
+    if (!restorePreClaim) return;
     await tx
       .update(schema.outboundLeads)
       .set({
-        status: input.status,
-        attempts: input.attempts,
+        status: input.doNotRetry ? LEAD_STATUS.ERROR : input.priorStatus,
         metadata: toJsonbSafe({
           ...metadata,
           native_voice: {
@@ -96,6 +100,8 @@ async function updateLeadAfterPlacementFailure(input: {
         and(
           eq(schema.outboundLeads.id, input.leadId),
           eq(schema.outboundLeads.userId, input.userId),
+          eq(schema.outboundLeads.status, LEAD_STATUS.DIALING),
+          sql`${schema.outboundLeads.metadata}->'native_voice'->>'placement_id' IS NOT DISTINCT FROM ${typeof nativeVoice.placement_id === "string" ? nativeVoice.placement_id : null}`,
         ),
       );
   });
@@ -290,6 +296,8 @@ export class CampaignDialerService {
 
   private async dialLead(lead: any, campaign: any) {
     const leadIdString = jsonSafeId(lead.id);
+    const priorStatus = lead.status as (typeof LEAD_PROCESSABLE_STATUSES)[number];
+    const previousPlacementId = record(record(lead.metadata).native_voice).placement_id;
     let providerAccepted = false;
     try {
       if (!lead.customerNumber) return;
@@ -311,7 +319,6 @@ export class CampaignDialerService {
         });
         return;
       }
-      const priorStatus = lead.status as string;
       // Existing lead metadata can predate the server-owned consent boundary.
       // Campaigns are marketing-only, so a stored/client boolean is never legal
       // authority; keep it false until a verified per-recipient artifact exists.
@@ -319,12 +326,23 @@ export class CampaignDialerService {
         ...record(lead.metadata),
         has_express_written_consent: false,
       };
+      const permission = await inspectOutboundRecipientPermission({
+        userId: lead.userId!,
+        agentId: campaign.agentId!,
+        leadId: lead.id,
+        phone: lead.customerNumber,
+        callPurpose: "marketing_or_sales",
+        attemptId: randomUUID(),
+      });
+      if (permission.effectiveCallPurpose !== "marketing_or_sales")
+        throw new Error("A matching marketing voice permission is required.");
       const gate = await evaluateOutboundDialGate({
         userId: lead.userId!,
         phone: lead.customerNumber,
         leadId: lead.id,
         lastCalledAt: lead.lastCalledAt,
         metadata,
+        hasExpressWrittenConsent: true,
       });
 
       if (!gate.allowed) {
@@ -398,49 +416,35 @@ export class CampaignDialerService {
         context: lead.context || campaign.goal,
         callPurpose: "marketing_or_sales",
         leadId: lead.id,
+        priorLeadStatus: priorStatus,
+        consentArtifactId: permission.artifactId,
       });
 
       if (result.ok) {
         providerAccepted = true;
-        await Promise.all([
-          drizzle
-            .update(schema.outboundLeads)
-            .set({
-              attempts: (lead.attempts || 0) + 1,
-              lastCalledAt: new Date(),
-              callId: result.callId,
-            })
-            .where(eq(schema.outboundLeads.id, lead.id)),
-          drizzle.insert(schema.consentLog).values({
-            userId: lead.userId!,
-            customerNumber: lead.customerNumber,
-            callId: result.callId,
-            event: "outbound_call_placed",
-            state: "initiated",
-            metadata: toJsonbSafe({
-              leadId: leadIdString,
-              campaignId: campaign.id,
-              call_purpose: "marketing_or_sales",
-              consent_version: OUTBOUND_CONSENT_VERSION,
-              source: "campaign",
-            }),
+        await drizzle.insert(schema.consentLog).values({
+          userId: lead.userId!,
+          customerNumber: lead.customerNumber,
+          callId: result.callId,
+          event: "outbound_call_placed",
+          state: "initiated",
+          metadata: toJsonbSafe({
+            leadId: leadIdString,
+            campaignId: campaign.id,
+            call_purpose: "marketing_or_sales",
+            consent_version: OUTBOUND_CONSENT_VERSION,
+            source: "campaign",
           }),
-        ]);
+        });
         return;
       }
 
-      const attempts = (lead.attempts || 0) + 1;
       const doNotRetry = result.doNotRetry === true || result.providerOutcomeAmbiguous === true;
-      const nextStatus = doNotRetry
-        ? LEAD_STATUS.ERROR
-        : attempts >= (campaign.maxAttempts || 3)
-          ? LEAD_STATUS.MAX_ATTEMPTS
-          : LEAD_STATUS.RETRYING;
       await updateLeadAfterPlacementFailure({
         leadId: lead.id,
         userId: lead.userId!,
-        status: nextStatus,
-        attempts,
+        priorStatus,
+        previousPlacementId,
         error: result.error || "dial rejected",
         doNotRetry,
       });
@@ -454,15 +458,11 @@ export class CampaignDialerService {
       log.error(`Failed to dial lead ${leadIdString}`, { error: error.message });
       if (providerAccepted) return;
       try {
-        const attempts = (lead.attempts || 0) + 1;
         await updateLeadAfterPlacementFailure({
           leadId: lead.id,
           userId: lead.userId!,
-          status:
-            attempts >= (campaign.maxAttempts || 3)
-              ? LEAD_STATUS.MAX_ATTEMPTS
-              : LEAD_STATUS.RETRYING,
-          attempts,
+          priorStatus,
+          previousPlacementId,
           error: error?.message || "dial exception",
           doNotRetry: false,
         });

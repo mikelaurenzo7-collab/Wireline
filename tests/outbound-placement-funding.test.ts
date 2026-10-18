@@ -62,6 +62,7 @@ import {
   readNativeOutboundRequestStatus,
   cancelMissingNativeOutboundRequest,
   markNativeOutboundPlacementAccepted,
+  markNativeOutboundPlacementFailure,
 } from "../src/lib/voice/openai-outbound-placement";
 
 const userId = "tenant-a",
@@ -257,6 +258,137 @@ beforeEach(() => {
 });
 
 describe("durable ordinary outbound carrier admission", () => {
+  it.each(["Pending", "Queued", "Retrying"])(
+    "restores an existing %s lead after definite pre-dispatch rejection without consuming an attempt",
+    async (status) => {
+      const db = database();
+      db.lead.status = status;
+      db.lead.attempts = 2;
+      const claim = await claimNativeOutboundPlacement({
+        userId,
+        agentId,
+        leadId,
+        customerNumber: phone,
+        outboundLineNumber: from,
+        callPurpose: "service_or_requested",
+      });
+      if (!claim.ok) throw new Error("Expected owned claim.");
+      expect(db.lead.status).toBe("Dialing");
+      await markNativeOutboundPlacementFailure({
+        userId,
+        leadId,
+        placementId: claim.placementId,
+        created: false,
+        ambiguous: false,
+      });
+      expect(db.lead.status).toBe(status);
+      expect(db.lead.attempts).toBe(2);
+      expect(db.lead.metadata.native_voice).toMatchObject({
+        state: "rejected",
+        do_not_retry: false,
+      });
+    },
+  );
+  it("uses the trusted campaign prior-state snapshot, while stale placement failures cannot restore a newer claim", async () => {
+    const db = database();
+    db.lead.attempts = 1;
+    const claim = await claimNativeOutboundPlacement({
+      userId,
+      agentId,
+      leadId,
+      priorLeadStatus: "Queued",
+      customerNumber: phone,
+      outboundLineNumber: from,
+      callPurpose: "service_or_requested",
+    });
+    if (!claim.ok) throw new Error("Expected owned claim.");
+    await markNativeOutboundPlacementFailure({
+      userId,
+      leadId,
+      placementId: claim.placementId,
+      created: false,
+      ambiguous: true,
+    });
+    expect(db.lead.status).toBe("Error");
+    expect(db.lead.attempts).toBe(1);
+    db.lead.status = "Dialing";
+    db.lead.metadata.native_voice.placement_id = "87654321-1234-4234-8234-123456789012";
+    await markNativeOutboundPlacementFailure({
+      userId,
+      leadId,
+      placementId: claim.placementId,
+      created: false,
+      ambiguous: false,
+    });
+    expect(db.lead.status).toBe("Dialing");
+  });
+  it("counts the current attempt atomically before an early terminal callback and never counts it again on late acceptance", async () => {
+    const db = database();
+    db.lead.attempts = 0;
+    db.lead.campaignId = "campaign-a";
+    db.rows.wireline_outbound_campaigns.push({ id: "campaign-a", userId, maxAttempts: 1 });
+    await admitted(db);
+    expect(db.lead.attempts).toBe(1);
+    const dispatchedAt = db.lead.lastCalledAt;
+    expect(dispatchedAt).toBeInstanceOf(Date);
+    expect(
+      db.ledger.find((row) => row.refType === "voice_outbound_dispatched").metadata.attempt_number,
+    ).toBe(1);
+    await handleFundedOutboundCarrierEvent(event("busy", "0"));
+    expect(db.lead.status).toBe("Max-Attempts");
+    await markNativeOutboundPlacementAccepted({
+      userId,
+      leadId,
+      placementId,
+      agentId,
+      callPurpose: "service_or_requested",
+      callSid: sid,
+    });
+    expect(db.lead.status).toBe("Max-Attempts");
+    expect(db.lead.attempts).toBe(1);
+    expect(db.lead.lastCalledAt).toBe(dispatchedAt);
+    await expect(markOutboundProviderAttempted(userId, leadId, placementId, 80)).rejects.toThrow(
+      /again/,
+    );
+    expect(db.lead.attempts).toBe(1);
+  });
+  it("keeps an actually marked attempt after definite provider rejection and applies its exhausted budget", async () => {
+    const db = database();
+    db.lead.status = "Pending";
+    db.lead.attempts = 0;
+    db.lead.campaignId = "campaign-a";
+    db.rows.wireline_outbound_campaigns.push({ id: "campaign-a", userId, maxAttempts: 1 });
+    const claim = await claimNativeOutboundPlacement({
+      userId,
+      agentId,
+      leadId,
+      customerNumber: phone,
+      outboundLineNumber: from,
+      callPurpose: "service_or_requested",
+    });
+    if (!claim.ok) throw new Error("Expected owned claim.");
+    await prepareOutboundPlacementFunding({
+      userId,
+      agentId,
+      leadId,
+      placementId: claim.placementId,
+      phone,
+      from,
+      callPurpose: "service_or_requested",
+      permission,
+      permissionAttemptId: claim.placementId,
+    });
+    await markOutboundProviderAttempted(userId, leadId, claim.placementId, 80);
+    await markNativeOutboundPlacementFailure({
+      userId,
+      leadId,
+      placementId: claim.placementId,
+      created: false,
+      ambiguous: false,
+    });
+    expect(db.lead.attempts).toBe(1);
+    expect(db.lead.status).toBe("Max-Attempts");
+  });
   it("durably cancels an absent request so a late POST can never dial", async () => {
     database();
     await expect(readNativeOutboundRequestStatus(userId, placementId)).rejects.toMatchObject({

@@ -3,7 +3,12 @@ import { and, eq, sql } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import type { OutboundCallPurpose } from "../outbound-call-purpose";
-import { LEAD_STATUS } from "../outbound-status";
+import {
+  DEFAULT_LEAD_MAX_ATTEMPTS,
+  LEAD_PROCESSABLE_STATUSES,
+  LEAD_STATUS,
+  resolveRetryableLeadStatus,
+} from "../outbound-status";
 import { drizzle } from "../server-context";
 import { normalizeOpenAIPhoneNumber, resolveOpenAISipSessionMaxSeconds } from "./openai-sip-config";
 import {
@@ -11,6 +16,7 @@ import {
   PHONE_TEST_ID,
   phoneTestFundingId,
   readVoiceIdentityReceipt,
+  readOutboundPlacementPriorStatus,
 } from "../voice-call-identity";
 import { assertOutboundPlacementResolved } from "./outbound-placement-funding";
 import { AppError } from "../api-error";
@@ -355,6 +361,8 @@ export async function claimNativeOutboundPlacement(input: {
   leadMetadata?: Record<string, unknown> | null;
   requestKey?: string;
   consentArtifactId?: string;
+  /** Trusted campaign pre-claim snapshot only; never accepted from an HTTP body. */
+  priorLeadStatus?: (typeof LEAD_PROCESSABLE_STATUSES)[number];
 }): Promise<NativeOutboundPlacementClaim | NativeOutboundPlacementFailure> {
   const requestedId = numericLeadId(input.leadId);
   if (input.leadId != null && requestedId === null) {
@@ -446,7 +454,7 @@ export async function claimNativeOutboundPlacement(input: {
           customerNumber: input.customerNumber,
           context: input.context?.trim() || null,
           status: LEAD_STATUS.DIALING,
-          attempts: 1,
+          attempts: 0,
           idempotencyKey,
           metadata,
         })
@@ -454,6 +462,18 @@ export async function claimNativeOutboundPlacement(input: {
       if (!lead) {
         return { ok: false, status: 500, error: "Outbound lead could not be created." };
       }
+      await appendVoiceIdentityReceipt(tx, {
+        userId: input.userId,
+        key: `voice_outbound_claim:${phoneTestFundingId(placementId)}`,
+        type: "voice_outbound_claim",
+        refId: phoneTestFundingId(placementId),
+        metadata: {
+          version: 1,
+          placement_id: placementId,
+          lead_id: String(lead.id),
+          previous_status: null,
+        },
+      });
       await appendVoiceIdentityReceipt(tx, {
         userId: input.userId,
         key: requestReceiptKey,
@@ -522,6 +542,12 @@ export async function claimNativeOutboundPlacement(input: {
         error: "This lead already has a native voice call in progress.",
       };
     }
+    const priorStatus = (LEAD_PROCESSABLE_STATUSES as readonly string[]).includes(lead.status || "")
+      ? lead.status
+      : lead.status === LEAD_STATUS.DIALING &&
+          (LEAD_PROCESSABLE_STATUSES as readonly unknown[]).includes(input.priorLeadStatus)
+        ? input.priorLeadStatus
+        : null;
 
     const [claimed] = await tx
       .update(schema.outboundLeads)
@@ -546,6 +572,18 @@ export async function claimNativeOutboundPlacement(input: {
     if (!claimed) {
       return { ok: false as const, status: 409, error: "Outbound lead claim was replaced." };
     }
+    await appendVoiceIdentityReceipt(tx, {
+      userId: input.userId,
+      key: `voice_outbound_claim:${phoneTestFundingId(placementId)}`,
+      type: "voice_outbound_claim",
+      refId: phoneTestFundingId(placementId),
+      metadata: {
+        version: 1,
+        placement_id: placementId,
+        lead_id: String(lead.id),
+        previous_status: priorStatus,
+      },
+    });
     const cleanup = await enqueue(tx, {
       userId: input.userId,
       type: "outbound_placement_reconcile",
@@ -644,6 +682,7 @@ export async function markNativeOutboundPlacementFailure(input: {
   ambiguous: boolean;
 }): Promise<NativeOutboundPlacementResult> {
   return drizzle.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${input.userId}))`);
     await tx.execute(
       sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${String(input.leadId)}`}))`,
     );
@@ -674,12 +713,47 @@ export async function markNativeOutboundPlacementFailure(input: {
     if (correlatedCallId || nativeVoice.openai_call_id || nativeVoice.bridge_served_at) {
       return { accepted: true, callId: correlatedCallId };
     }
+    const priorStatus =
+      !input.created && !input.ambiguous
+        ? await readOutboundPlacementPriorStatus(tx, input.userId, input.leadId, input.placementId)
+        : null;
+    let failureStatus = priorStatus ?? LEAD_STATUS.ERROR;
+    if (
+      priorStatus &&
+      (await readVoiceIdentityReceipt(
+        tx,
+        input.userId,
+        `voice_outbound_dispatched:${phoneTestFundingId(input.placementId)}`,
+      ))
+    ) {
+      let maxAttempts = DEFAULT_LEAD_MAX_ATTEMPTS;
+      if (lead.campaignId) {
+        const [campaign] = await tx
+          .select({ maxAttempts: schema.outboundCampaigns.maxAttempts })
+          .from(schema.outboundCampaigns)
+          .where(
+            and(
+              eq(schema.outboundCampaigns.userId, input.userId),
+              eq(schema.outboundCampaigns.id, lead.campaignId),
+            ),
+          )
+          .limit(1);
+        if (
+          typeof campaign?.maxAttempts === "number" &&
+          Number.isInteger(campaign.maxAttempts) &&
+          campaign.maxAttempts > 0
+        )
+          maxAttempts = campaign.maxAttempts;
+      }
+      // A definitely rejected provider request still consumed its marked attempt.
+      failureStatus = resolveRetryableLeadStatus(lead.attempts, maxAttempts);
+    }
 
     const now = new Date();
     await tx
       .update(schema.outboundLeads)
       .set({
-        ...(input.created || input.ambiguous ? { status: LEAD_STATUS.ERROR } : {}),
+        status: failureStatus,
         ...(input.ambiguous ? { lastCalledAt: now } : {}),
         metadata: {
           ...metadata,
