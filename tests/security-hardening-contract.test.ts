@@ -46,19 +46,28 @@ describe("security hardening contract", () => {
     expect(routes).toContain("userId: line.userId");
     expect(routes).toContain("agentId: line.agentId");
     expect(session).toContain("return tenantStore.run(input.userId");
-    const incoming = routes.slice(
-      routes.indexOf('"/api/webhooks/openai/realtime"'),
-      routes.indexOf("export default router"),
+    // Tenant routing lives only in the shared admission step, which each
+    // provider's webhook reaches strictly after its signature verifies.
+    const admission = routes.slice(
+      routes.indexOf("async function admitRealtimeCall("),
+      routes.indexOf('router.post(\n  "/api/webhooks/openai/realtime"'),
     );
-    const verification = incoming.indexOf("verifyStandardWebhook({");
-    const unauthorized = incoming.indexOf("if (!verification.ok)", verification);
-    const context = incoming.indexOf("await resolveInboundContext", unauthorized);
-    expect(verification).toBeGreaterThan(-1);
-    expect(unauthorized).toBeGreaterThan(verification);
-    expect(incoming.slice(unauthorized, context)).toContain(
-      'throw AppError.unauthorized("Invalid OpenAI webhook signature.")',
-    );
-    expect(context).toBeGreaterThan(unauthorized);
+    expect(admission).toContain("await resolveInboundContext");
+    for (const [path, rejection] of [
+      ['"/api/webhooks/openai/realtime"', "Invalid OpenAI webhook signature."],
+      ['"/api/webhooks/xai/realtime"', "Invalid xAI webhook signature."],
+    ]) {
+      const incoming = routes.slice(routes.indexOf(path), routes.indexOf("export default router"));
+      const verification = incoming.indexOf("verifyStandardWebhook({");
+      const unauthorized = incoming.indexOf("if (!verification.ok)", verification);
+      const admit = incoming.indexOf("await admitRealtimeCall(", unauthorized);
+      expect(verification, path).toBeGreaterThan(-1);
+      expect(unauthorized, path).toBeGreaterThan(verification);
+      expect(incoming.slice(unauthorized, admit), path).toContain(
+        `throw AppError.unauthorized("${rejection}")`,
+      );
+      expect(admit, path).toBeGreaterThan(unauthorized);
+    }
     // The signed provider event may carry a called number, but never accepts
     // a tenant or Bot identity from a request body field.
     expect(routes).not.toMatch(/req\.(?:body|query)\.(?:userId|agentId)/);

@@ -91,6 +91,9 @@ async function loadRouter(
     normalizeOpenAIPhoneNumber: vi.fn((value: unknown) =>
       typeof value === "string" && /^\+[1-9]\d{7,14}$/.test(value.trim()) ? value.trim() : null,
     ),
+    OPENAI_INBOUND_SIP_TOKEN_HEADER: "X-BB-Inbound",
+    OPENAI_OUTBOUND_SIP_TOKEN_HEADER: "X-BotBound-Token",
+    buildOpenAIOutboundSipUri: vi.fn(),
     openAISipConfigured: vi.fn(() => input.configured ?? true),
     resolveOpenAISipSessionMaxSeconds: vi.fn(() => 300),
     buildOpenAIInboundSipUri: vi.fn(() => {

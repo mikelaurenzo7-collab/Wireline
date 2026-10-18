@@ -30,6 +30,11 @@ import {
   persistOpenAIOutboundTwiMLReplay,
   resolveOpenAIOutboundTwiMLReplay,
 } from "../lib/voice/openai-outbound-twiml-replay";
+import {
+  renderSipNoun,
+  resolveOutboundSipTarget,
+  type RealtimeSipTarget,
+} from "../lib/voice/realtime-sip-target";
 import { trackVoiceMinutes } from "../lib/voice-usage";
 import { readVoiceIdentityReceipt, resolveVoiceFundingId } from "../lib/voice-call-identity";
 import {
@@ -83,7 +88,7 @@ function emptyTwiml(): string {
 
 function bridgeTwiml(input: {
   callerId: string;
-  sipUri: string;
+  sip: RealtimeSipTarget;
   maxSeconds?: number | null;
 }): string {
   const timeLimit = input.maxSeconds ?? resolveOpenAISipSessionMaxSeconds();
@@ -93,9 +98,9 @@ function bridgeTwiml(input: {
     String(timeLimit) +
     '" callerId="' +
     escapeXml(input.callerId) +
-    '"><Sip>' +
-    escapeXml(input.sipUri) +
-    "</Sip></Dial><Hangup/></Response>"
+    '">' +
+    renderSipNoun(input.sip) +
+    "</Dial><Hangup/></Response>"
   );
 }
 
@@ -463,9 +468,10 @@ router.post(
         res.status(200).send(emptyTwiml());
         return;
       }
-      res
-        .status(200)
-        .send(bridgeTwiml({ callerId: decision.callerId, sipUri: decision.sipUri, maxSeconds }));
+      // The Bot answers on its own line: xAI when that number is registered
+      // there, otherwise the OpenAI project URI the decision already carries.
+      const sip = await resolveOutboundSipTarget({ callerId: decision.callerId, token });
+      res.status(200).send(bridgeTwiml({ callerId: decision.callerId, sip, maxSeconds }));
     } catch (error) {
       const verification = verifyOpenAIOutboundToken(token);
       if (verification.ok && error instanceof AppError && error.status === 409) {

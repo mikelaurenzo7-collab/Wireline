@@ -60,6 +60,10 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     reason: "OpenAI Standard Webhooks HMAC + replay defense; Realtime SIP admission",
   },
   {
+    pattern: /^\/api\/webhooks\/xai\/realtime$/,
+    reason: "xAI Standard Webhooks HMAC with a per-number secret + replay defense; SIP admission",
+  },
+  {
     pattern: /^\/api\/webhooks\/resend$/,
     reason: "Resend/Svix timestamped HMAC-SHA256 signature + replay window",
   },

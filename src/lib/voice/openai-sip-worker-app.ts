@@ -6,6 +6,7 @@ import {
   verifyVoiceWorkerServiceAuth,
 } from "./openai-sip-worker-dispatch";
 import { OPENAI_SIP_WEBHOOK_PATH, resolveOpenAISipSessionMaxSeconds } from "./openai-sip-config";
+import { XAI_SIP_WEBHOOK_PATH } from "./xai-sip-config";
 import {
   voiceWorkerSourceRevision,
   type VoiceWorkerReadiness,
@@ -99,7 +100,8 @@ export function createVoiceWorkerApp(
     res.setHeader("Cache-Control", "no-store");
     res.json(drainState());
   });
-  app.post(OPENAI_SIP_WEBHOOK_PATH, (_req, res, next) => {
+  // Both live voice providers deliver incoming calls through the same admission gate.
+  app.post([OPENAI_SIP_WEBHOOK_PATH, XAI_SIP_WEBHOOK_PATH], (_req, res, next) => {
     const identity = getDeploymentIdentity();
     const renderAdmissionBlocked =
       (identity.provider === "render" || identity.provider === "conflict") &&

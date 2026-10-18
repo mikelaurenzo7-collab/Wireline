@@ -388,6 +388,7 @@ describe("AI cost-protection contract", () => {
     expect(session).toContain('admissionMode === "take_message"');
     expect(session).toContain("? 300_000");
     expect(session).toContain("dispatchAgentToolCall(");
-    expect(session).not.toMatch(/Vapi|xAI|Grok/);
+    // xAI Grok Voice is a supported phone runtime again; Vapi stays retired.
+    expect(session).not.toMatch(/Vapi/);
   });
 });

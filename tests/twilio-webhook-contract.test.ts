@@ -33,7 +33,7 @@ describe("Twilio webhook XML contract", () => {
     expect(route).not.toContain("/sounds/wireline-jingle.mp3");
     expect(route).not.toContain("/sounds/botbound-jingle.mp3");
     expect(route).not.toContain("BOTBOUND_JINGLE_ASSET_APPROVED");
-    expect(inboundRoute).toContain("<Sip>${escapeXml(sipUri)}</Sip>");
+    expect(inboundRoute).toContain("${renderSipNoun(target)}</Dial><Hangup/>");
     expect(inboundRoute).not.toContain("<Play>");
     expect(read(".env.example")).not.toContain("BOTBOUND_JINGLE_ASSET_APPROVED");
     expect(packageJson).toContain("node scripts/quarantine-retired-public-assets.mjs");

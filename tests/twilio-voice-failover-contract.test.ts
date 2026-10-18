@@ -99,7 +99,7 @@ describe("Twilio voice failover contract", () => {
       /if \(!calledNumber\) \{[\s\S]*?res\.status\(200\)\.send\(hangupTwiml\(\)\)/,
     );
     expect(inboundRoutes).toMatch(
-      /if \(!openAISipConfigured\(\)\) \{[\s\S]*?res\.status\(503\)\.send\(hangupTwiml\(\)\)/,
+      /if \(!phoneVoiceRuntimeConfigured\(\)\) \{[\s\S]*?res\.status\(503\)\.send\(hangupTwiml\(\)\)/,
     );
     expect(inboundRoutes).toMatch(
       /if \(!userId\) \{[\s\S]*?res\.status\(200\)\.send\(hangupTwiml\(\)\)/,
@@ -136,7 +136,11 @@ describe("Twilio voice failover contract", () => {
     expect(routes).toContain("function validE164");
     expect(routes).toMatch(/\^\\\+\[1-9\]\\d\{7,14\}\$/);
     expect(routes).toContain("escapeTwimlValue(receipt.fallbackNumber)");
-    expect(inboundRoutes).toContain("escapeXml(sipUri)");
+    // The SIP noun (URI and any digest credentials) is escaped in one place.
+    expect(inboundRoutes).toContain("renderSipNoun(target)");
+    expect(read("src/lib/voice/realtime-sip-target.ts")).toContain(
+      "return `<Sip${auth}>${escapeXml(target.uri)}</Sip>`",
+    );
   });
 
   it("persists voicemail idempotently before acknowledging the callback", () => {

@@ -425,7 +425,20 @@ Repository branch protection and required checks should be enabled as soon as th
 
 ### OpenAI and Twilio
 
-OpenAI Realtime is the managed browser and telephone voice runtime. Twilio owns customer numbers, PSTN transport, and SMS. Vapi and xAI SIP are retired from the production runtime.
+OpenAI Realtime is the managed browser voice runtime and the default telephone runtime. Twilio owns customer numbers, PSTN transport, and SMS. Vapi is retired.
+
+### xAI Grok Voice phone calls
+
+Phone calls can run on xAI Grok Voice (`grok-voice-3.0`) instead of OpenAI Realtime. The provider travels with each call: xAI call ids are stored as `xai:<id>`, so hangup, transfer, and recovery always reach the provider that owns the call.
+
+Cutover, on the release commit:
+
+1. Set `XAI_API_KEY` on botbound-api and botbound-voice. `WIRELINE_DATA_KEY` and the persistent voice worker must already be configured.
+2. Set `WIRELINE_PHONE_VOICE_PROVIDER=xai` on both services and deploy all four services together.
+3. As a platform admin, `POST /api/voice/xai/registrations/sync`. Each assigned number is registered with xAI (`origin: byo_trunk`) with generated SIP digest credentials. Its one-time webhook secret is stored as a secret-vault envelope in `wireline_xai_phone_registrations`, which only root (non-tenant) database access can read. `GET /api/voice/xai/status` lists registered phone suffixes.
+4. Place one inbound and one approved outbound call and confirm disclosure playback, transcript, tool use, and hangup.
+
+A number that is not registered keeps answering on OpenAI, so the cutover never strands a line. New lines register automatically when xAI is on, and released lines are deregistered. To roll back, unset `WIRELINE_PHONE_VOICE_PROVIDER` and redeploy; calls already running on xAI finish there.
 
 The persistent worker is required for production SIP admission. Full business calls default to 60 minutes; private rehearsals and message-taking retain their documented shorter limits. Check both deployed duration settings and an actual long call before advertising the longer runtime as available.
 

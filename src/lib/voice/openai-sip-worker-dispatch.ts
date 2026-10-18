@@ -22,15 +22,22 @@ export function verifyVoiceWorkerServiceAuth(
   }
 }
 
-export function voiceWorkerEndpoint(env: NodeJS.ProcessEnv = process.env): string {
-  return new URL(OPENAI_SIP_WEBHOOK_PATH, voiceWorkerOrigin(env)).toString();
+export function voiceWorkerEndpoint(
+  env: NodeJS.ProcessEnv = process.env,
+  path: string = OPENAI_SIP_WEBHOOK_PATH,
+): string {
+  return new URL(path, voiceWorkerOrigin(env)).toString();
 }
 
-/** Forward only after OpenAI signature verification, before tenant/provider work. */
+/**
+ * Forward only after provider signature verification, before tenant/provider
+ * work. Each provider's webhook is forwarded to the same path on the worker.
+ */
 export async function forwardOpenAISipWebhook(
   req: Request,
   res: Response,
   raw: Buffer,
+  path: string = OPENAI_SIP_WEBHOOK_PATH,
 ): Promise<boolean> {
   const worker = process.env.WIRELINE_VOICE_WORKER === "true";
   if (worker) {
@@ -54,7 +61,7 @@ export async function forwardOpenAISipWebhook(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), VOICE_WORKER_DISPATCH_TIMEOUT_MS);
   try {
-    const response = await fetch(voiceWorkerEndpoint(), {
+    const response = await fetch(voiceWorkerEndpoint(process.env, path), {
       method: "POST",
       redirect: "error",
       headers: {

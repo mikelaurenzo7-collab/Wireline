@@ -10,38 +10,40 @@ import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import { phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
 import { issueOpenAIInboundToken } from "../lib/voice/openai-inbound-token";
 import {
-  buildOpenAIInboundSipUri,
   normalizeOpenAIPhoneNumber,
   openAISipConfigured,
   resolveOpenAISipSessionMaxSeconds,
 } from "../lib/voice/openai-sip-config";
+import { configuredPhoneVoiceProvider } from "../lib/voice/realtime-provider";
+import {
+  renderSipNoun,
+  resolveInboundSipTarget,
+  type RealtimeSipTarget,
+} from "../lib/voice/realtime-sip-target";
+import { xaiSipConfigured } from "../lib/voice/xai-sip-config";
 import { handleTwilioVoiceFallback } from "./twilio-webhook-base";
 
 const router = Router();
 const INBOUND_DIAL_CONTINUITY_STATUSES = new Set(["failed", "busy", "no-answer"]);
 
-function escapeXml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
-
 function hangupTwiml(): string {
   return '<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>';
 }
 
-function inboundBridgeTwiml(sipUri: string): string {
+function inboundBridgeTwiml(target: RealtimeSipTarget): string {
   // Answer the parent before dialing SIP: Twilio rejects the funded REST
   // timeLimit update on an unanswered parent (21220). The worker must still
   // confirm that total carrier limit before reserving AI spend or accepting.
   return (
     '<?xml version="1.0" encoding="UTF-8"?>' +
     `<Response><Dial answerOnBridge="false" timeout="30" action="/api/twilio-webhook/openai-inbound-dial-complete" method="POST" timeLimit="${resolveOpenAISipSessionMaxSeconds()}">` +
-    `<Sip>${escapeXml(sipUri)}</Sip></Dial><Hangup/></Response>`
+    `${renderSipNoun(target)}</Dial><Hangup/></Response>`
   );
+}
+
+/** Either live voice provider can answer; xAI needs its own configuration. */
+function phoneVoiceRuntimeConfigured(): boolean {
+  return openAISipConfigured() || (configuredPhoneVoiceProvider() === "xai" && xaiSipConfigured());
 }
 
 async function resolveInboundOwner(phoneNumber: string): Promise<string | null> {
@@ -72,7 +74,7 @@ router.post(
       res.status(200).send(hangupTwiml());
       return;
     }
-    if (!openAISipConfigured()) {
+    if (!phoneVoiceRuntimeConfigured()) {
       log.error("Twilio inbound OpenAI bridge is temporarily unavailable", {
         calledSuffix: phoneSuffixForLog(calledNumber),
         reason: "openai_not_configured",
@@ -114,8 +116,8 @@ router.post(
         calledNumber,
         callerNumber,
       });
-      const sipUri = buildOpenAIInboundSipUri(token);
-      res.status(200).send(inboundBridgeTwiml(sipUri));
+      const target = await resolveInboundSipTarget({ calledNumber, token });
+      res.status(200).send(inboundBridgeTwiml(target));
     } catch (error) {
       log.error("Twilio inbound OpenAI bridge failed closed", {
         calledSuffix: phoneSuffixForLog(calledNumber),

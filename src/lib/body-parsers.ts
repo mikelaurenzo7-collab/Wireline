@@ -44,6 +44,13 @@ export function installWebhookBodyParsers(app: ExpressApp): void {
     express.raw({ type: "application/json", limit: OPENAI_REALTIME_WEBHOOK_LIMIT }),
   );
 
+  // xAI Grok Voice SIP incoming-call events use the same Standard Webhooks
+  // envelope, signed with each registered number's own secret.
+  app.use(
+    "/api/webhooks/xai/realtime",
+    express.raw({ type: "application/json", limit: OPENAI_REALTIME_WEBHOOK_LIMIT }),
+  );
+
   // AgentMail / Svix — signed raw JSON. AgentMail documents a 1 MB payload
   // ceiling and omits oversized body fields at that boundary, so accepting
   // less here would reject otherwise-valid provider deliveries.
@@ -67,5 +74,4 @@ export function installWebhookBodyParsers(app: ExpressApp): void {
       parameterLimit: 128,
     }),
   );
-
 }
