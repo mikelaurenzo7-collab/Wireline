@@ -7,22 +7,23 @@ import { describe, expect, it } from "vitest";
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
-describe("BotBound public iPhone prestige contract", () => {
-  it("makes Phone Bot the public wedge without repeating the channel promise in the hero", () => {
+describe("BotBound public mobile and visual contract", () => {
+  it("leads with Voice Bots and business numbers without repeating channel lists", () => {
     const product = read("src/lib/bot-product.ts");
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
 
     expect(product).toContain('name: "BotBound"');
-    expect(product).toContain('slogan: "Your Next Hire Is a Bot"');
-    expect(product).toContain('supportingLine: "CALL · TEXT · EMAIL"');
+    expect(product).toContain('slogan: "Voice Bots. Business Numbers."');
+    expect(product).toContain('supportingLine: "VOICE BOTS · BUSINESS NUMBERS"');
     expect(product).toMatch(
       /key:\s*"voice"[\s\S]*?label:\s*"Call"[\s\S]*?key:\s*"text"[\s\S]*?label:\s*"Text"[\s\S]*?key:\s*"email"[\s\S]*?label:\s*"Email"/,
     );
 
     expect(landing).toMatch(
-      /<h1[^>]*>[\s\S]*?<span>Hire a Voice Bot\.<\/span>[\s\S]*?<span>With Its Own Number\.<\/span>[\s\S]*?<\/h1>/,
+      /<h1[^>]*>[\s\S]*?Voice Bots\.[\s\S]*?Business Numbers\.[\s\S]*?<\/h1>/,
     );
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
+    expect(landing).toContain("branded BotBound email inbox");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).not.toContain("HERO_CHANNELS.map");
     expect(landing).not.toContain('aria-label="BotBound channels"');
@@ -33,27 +34,16 @@ describe("BotBound public iPhone prestige contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const css = read("src/styles/landing-prestige.css");
 
-    expect(landing).toContain(
-      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
-    );
-    expect(landing).not.toContain("PrecisionPublicHeader");
+    expect(landing).toContain("<PrecisionPublicHeader />");
+    expect(landing).not.toContain("<AuthAccessPanel embedded");
     expect(css).toMatch(
-      /\.landing-prestige__entrance\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 1fr\)/,
-    );
-    expect(css).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__entrance\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*auto/,
+      /\.landing-prestige__hero\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1\.04fr\) minmax\(20rem, 0\.96fr\)/,
     );
     expect(css).toMatch(
       /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?display:\s*grid/,
     );
     expect(css).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*block/,
-    );
-    expect(css).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__auth\s*\{[\s\S]*?min-height:\s*auto/,
-    );
-    expect(css).toMatch(
-      /@media \(max-width: 640px\)[\s\S]*?\.landing-prestige__role-grid,[\s\S]*?\.landing-prestige__price-grid\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/,
+      /@media \(max-width: 600px\)[\s\S]*?\.landing-prestige__role-grid,[\s\S]*?\.landing-prestige__price-grid\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/,
     );
     expect(css).not.toMatch(
       /\.landing-prestige__hero,[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*none/,
@@ -94,7 +84,9 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(accessStyles).toContain(
       ".wl-access-panel__heading:has(+ .wl-access-panel__tabs) :is(h1, h2)",
     );
-    expect(mobileStyles).toContain(".landing-prestige__auth .wl-access-panel__heading :is(h1, h2)");
+    expect(mobileStyles).not.toContain(
+      ".landing-prestige__auth .wl-access-panel__heading :is(h1, h2)",
+    );
     expect(accessStyles).not.toContain(
       ".wl-access-panel__heading:has(+ .wl-access-panel__tabs) h1",
     );
@@ -119,9 +111,11 @@ describe("BotBound public iPhone prestige contract", () => {
     const component = read("src/components/BotMark.tsx");
     const generator = read("src/lib/bot-mark.ts");
 
-    expect(landing).toContain("landing-prestige__directions");
-    expect(landing).toContain("Find. Call. Book.");
-    expect(landing).toContain("Answer. Qualify. Route.");
+    expect(landing).toContain("Voice Bots.");
+    expect(landing).toContain("Business Numbers.");
+    expect(landing).toContain("landing-prestige__hero-actions");
+    expect(landing).toContain("branded BotBound email inbox");
+    expect(landing).not.toContain("landing-prestige__directions");
     expect(landing).not.toContain("markKey");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
     expect(component).not.toMatch(/monogram|mark\.initial|showMicroMonogram/i);
@@ -153,10 +147,11 @@ describe("BotBound public iPhone prestige contract", () => {
 
   it("flattens mobile public reading surfaces instead of stacking decorative cards", () => {
     const mobile = read("src/styles/public-mobile-refinement.css");
+    const auth = read("src/styles/auth-access-panel.css");
     const indexCss = read("src/index.css");
 
-    expect(mobile).toMatch(
-      /\.landing-prestige__auth \.wl-access-panel__card\s*\{[\s\S]*?border:\s*0;[\s\S]*?background:\s*transparent;[\s\S]*?box-shadow:\s*none;/,
+    expect(auth).toMatch(
+      /@media \(max-width: 640px\)[\s\S]*?\.wl-access-panel__card\s*\{[\s\S]*?padding:[^}]+box-shadow:\s*none;/,
     );
     expect(mobile).toContain('[aria-label="Privacy Policy summary"]');
     expect(mobile).toContain("#privacy-choices");

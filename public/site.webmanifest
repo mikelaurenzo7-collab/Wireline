@@ -1,7 +1,7 @@
 {
-  "name": "BotBound | Your Next Hire Is a Bot",
+  "name": "BotBound | Voice Bots",
   "short_name": "BotBound",
-  "description": "Your Bot for calls, texts, and email.",
+  "description": "Voice Bots for business calls. Calls plans include a local number; Email plans add a branded BotBound inbox.",
   "id": "/",
   "start_url": "/studio",
   "scope": "/",
@@ -18,9 +18,9 @@
     { "src": "/botbound-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ],
   "shortcuts": [
-    { "name": "BOT STUDIO", "short_name": "STUDIO", "description": "Build and configure a Bot in BotBound.", "url": "/studio" },
-    { "name": "INBOX", "short_name": "INBOX", "description": "Review texts and email by Bot.", "url": "/inbox" },
-    { "name": "CALLS", "short_name": "CALLS", "description": "Manage lines and review call history.", "url": "/phone" }
+    { "name": "Bot Studio", "short_name": "Studio", "description": "Build and configure a Bot in BotBound.", "url": "/studio" },
+    { "name": "Inbox", "short_name": "Inbox", "description": "Review texts and email by Bot.", "url": "/inbox" },
+    { "name": "Calls", "short_name": "Calls", "description": "Manage lines and review call history.", "url": "/phone" }
   ],
   "prefer_related_applications": false
 }

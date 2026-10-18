@@ -44,14 +44,16 @@ describe("BotBound brand migration", () => {
       shortcuts: Array<{ name: string; url: string }>;
     };
     expect(product).toContain('name: "BotBound"');
-    expect(product).toContain('slogan: "Your Next Hire Is a Bot"');
-    expect(product).toContain('supportingLine: "CALL · TEXT · EMAIL"');
-    expect(product).toContain('promise: "Your Bot for calls, texts, and email."');
+    expect(product).toContain('slogan: "Voice Bots. Business Numbers."');
+    expect(product).toContain('supportingLine: "VOICE BOTS · BUSINESS NUMBERS"');
+    expect(product).toContain(
+      "Calls plans include a local number; Email plans add a branded BotBound inbox",
+    );
     expect(manifest.name).toContain("BotBound");
     expect(manifest.short_name).toBe("BotBound");
     expect(manifest.start_url).toBe("/studio");
     expect(manifest.icons[0]?.src).toBe("/botbound-icon-192.png");
-    expect(manifest.shortcuts.find((shortcut) => shortcut.name === "CALLS")?.url).toBe("/phone");
+    expect(manifest.shortcuts.find((shortcut) => shortcut.name === "Calls")?.url).toBe("/phone");
   });
 
   it("keeps the legacy technical namespace deliberately separate from customer identity", () => {

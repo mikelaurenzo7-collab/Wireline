@@ -103,13 +103,13 @@ describe("marketing copy punctuation and retired-positioning contract", () => {
   });
 
   it("keeps the R3 brand spine and Phone Bot wedge explicit while preserving precise compounds", () => {
-    expect(HOME_TITLE).toBe("BotBound | Hire a Voice Bot");
+    expect(HOME_TITLE).toBe("BotBound | Voice Bots and Business Numbers");
     expect(HOME_DESCRIPTION).toBe(
-      "A voice Bot with its own business number. Add a dedicated email inbox and SMS with your choice of channels. Build and test free.",
+      "Build a Voice Bot for business calls. Calls plans include a local number; Email plans add a branded BotBound inbox for follow-up. Start for free.",
     );
     expect(read("src/lib/bot-product.ts")).toContain('name: "Phone Bot"');
-    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain("Hire a Voice Bot.");
-    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain("With Its Own Number.");
+    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain("Voice Bots.");
+    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain("Business Numbers.");
     expect(read("src/pages/Compare.tsx")).toContain("feature-for-feature");
   });
 });

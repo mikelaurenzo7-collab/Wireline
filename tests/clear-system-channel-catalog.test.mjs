@@ -27,7 +27,7 @@ describe("Clear System channel catalog guard", () => {
   it.each([
     [
       "src/components/marketing/WireAgentLanding.tsx",
-      (source) => source.replace("Hire a Voice Bot.", "Your Next Hire"),
+      (source) => source.replace("Voice Bots.", "Your Next Hire."),
       "voice Bot and phone number",
     ],
     [

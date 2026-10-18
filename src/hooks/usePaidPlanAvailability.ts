@@ -61,12 +61,12 @@ export function usePaidPlanAvailability({
       );
   const notice =
     status === "loading"
-      ? "Checking activation availability…"
+      ? "Checking live activation availability."
       : status === "unavailable"
-        ? "Activation status unavailable. Build free and check back."
+        ? "Live activation availability could not be confirmed."
         : available
-          ? "Build free. Activate when ready."
-          : "Build free. Paid activation is currently unavailable.";
+          ? "Live activation is available for eligible plans."
+          : "Live activation is paused.";
 
   return { canActivate, notice };
 }

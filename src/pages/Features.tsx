@@ -23,7 +23,7 @@ export default function Features() {
     >
       <PageMeta
         title="Features | BotBound"
-        description="Build and train a Bot that calls, texts, emails, books, follows up, and logs outcomes under shared rules and memory."
+        description="See how a BotBound Voice Bot answers business calls, follows your playbook, schedules next steps, and routes complex requests. Calls plans include a local number; Email plans add a branded BotBound inbox."
         path="/features"
       />
 
@@ -32,8 +32,12 @@ export default function Features() {
           <header className="wl-features-intro text-left">
             <p className="wl-eyebrow text-primary">Features</p>
             <h1 className="marketing-hero-title mt-4 text-[clamp(1.9rem,3.4vw,2.9rem)]">
-              Inbound &amp; Outbound Bots
+              Voice Bots for Business Calls
             </h1>
+            <p className="marketing-hero-lead mt-4 max-w-3xl">
+              Answer, qualify, and route with a Bot built around your playbook. Calls plans include
+              one local number. Email plans add a branded BotBound inbox.
+            </p>
             <div className="marketing-hero__actions">
               <Link
                 to={signupHrefForPlan("personal")}

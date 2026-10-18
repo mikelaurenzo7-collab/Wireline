@@ -1,4 +1,9 @@
 import { Composition } from "remotion";
+import {
+  CinematicCallCampaign,
+  CinematicCallDoubleFeature,
+} from "./campaign-call/CinematicCallCampaign";
+import { BotBoundLogoCall } from "./logo-call/BotBoundLogoCall";
 import { OutboundFirstMoveFilm } from "./outbound/OutboundFirstMoveFilm";
 import { SecondRingFilm } from "./SecondRingFilm";
 
@@ -85,6 +90,87 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1920}
         defaultProps={{ variant: "vertical6" }}
+      />
+      <Composition
+        id="BotBound-LogoCall-8s-Square"
+        component={BotBoundLogoCall}
+        durationInFrames={240}
+        fps={30}
+        width={1080}
+        height={1080}
+        defaultProps={{ variant: "square" }}
+      />
+      <Composition
+        id="BotBound-LogoCall-8s-Vertical"
+        component={BotBoundLogoCall}
+        durationInFrames={240}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={{ variant: "vertical" }}
+      />
+      <Composition
+        id="BotBound-Cinematic-Inbound-12s-Horizontal"
+        component={CinematicCallCampaign}
+        durationInFrames={360}
+        fps={30}
+        width={1920}
+        height={1080}
+        defaultProps={{ direction: "inbound", format: "horizontal" }}
+      />
+      <Composition
+        id="BotBound-Cinematic-Inbound-12s-Vertical"
+        component={CinematicCallCampaign}
+        durationInFrames={360}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={{ direction: "inbound", format: "vertical" }}
+      />
+      <Composition
+        id="BotBound-Cinematic-Inbound-12s-Square"
+        component={CinematicCallCampaign}
+        durationInFrames={360}
+        fps={30}
+        width={1080}
+        height={1080}
+        defaultProps={{ direction: "inbound", format: "square" }}
+      />
+      <Composition
+        id="BotBound-Cinematic-Outbound-12s-Horizontal"
+        component={CinematicCallCampaign}
+        durationInFrames={360}
+        fps={30}
+        width={1920}
+        height={1080}
+        defaultProps={{ direction: "outbound", format: "horizontal" }}
+      />
+      <Composition
+        id="BotBound-Cinematic-Outbound-12s-Vertical"
+        component={CinematicCallCampaign}
+        durationInFrames={360}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={{ direction: "outbound", format: "vertical" }}
+      />
+      <Composition
+        id="BotBound-Cinematic-Outbound-12s-Square"
+        component={CinematicCallCampaign}
+        durationInFrames={360}
+        fps={30}
+        width={1080}
+        height={1080}
+        defaultProps={{ direction: "outbound", format: "square" }}
+      />
+      <Composition
+        id="BotBound-Cinematic-DoubleFeature-24s-Horizontal"
+        component={CinematicCallDoubleFeature}
+        durationInFrames={720}
+        fps={30}
+        width={1920}
+        height={1080}
+        defaultProps={{ format: "horizontal" }}
       />
     </>
   );

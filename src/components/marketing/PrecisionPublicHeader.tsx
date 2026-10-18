@@ -22,7 +22,7 @@ export default function PrecisionPublicHeader() {
       className="wl-public-header fixed inset-x-0 top-0 z-[80] border-b border-border bg-[color:color-mix(in_srgb,var(--wireline-page)_96%,transparent)] backdrop-blur-xl"
     >
       <SkipToContentLink href="#main-content" />
-      <div className="wl-measure mx-auto flex min-h-16 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 sm:gap-x-5 sm:px-6 lg:px-8">
+      <div className="wl-measure mx-auto flex min-h-16 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 max-[380px]:gap-x-2 max-[380px]:px-2 sm:gap-x-5 sm:px-6 lg:px-8">
         <Link
           to="/"
           className="max-w-full shrink-0 rounded-[var(--radius-md)] text-foreground wl-focus-ring-halo"
@@ -63,9 +63,7 @@ export default function PrecisionPublicHeader() {
             aria-label="Start Free"
             className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold shrink-0 whitespace-nowrap max-[430px]:px-3"
           >
-            <span>
-              Start<span className="max-[430px]:hidden"> Free</span>
-            </span>
+            <span>Start Free</span>
           </Link>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

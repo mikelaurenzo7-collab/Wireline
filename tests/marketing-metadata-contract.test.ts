@@ -14,11 +14,13 @@ describe("marketing metadata contract", () => {
     const staticHead = read("index.html");
     const runtimeMeta = read("src/lib/page-meta.tsx");
 
-    expect(staticHead).toContain("BotBound | Hire a Voice Bot");
-    expect(runtimeMeta).toContain('const DEFAULT_TITLE = "BotBound | Hire a Voice Bot"');
+    expect(staticHead).toContain("BotBound | Voice Bots and Business Numbers");
+    expect(runtimeMeta).toContain(
+      'const DEFAULT_TITLE = "BotBound | Voice Bots and Business Numbers"',
+    );
     for (const source of [staticHead, runtimeMeta]) {
-      expect(source).toContain("A voice Bot with its own business number.");
-      expect(source).toContain("Add a dedicated email inbox and SMS with your choice of channels.");
+      expect(source).toContain("Calls plans include a local number;");
+      expect(source).toContain("Email plans add a branded BotBound inbox");
       expect(source).not.toContain("WIRE YOUR PHONE BOT");
       expect(source).not.toContain("VOICE-FIRST");
       expect(source).not.toContain("—");

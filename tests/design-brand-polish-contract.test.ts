@@ -195,9 +195,9 @@ describe("E2E design and BotBound brand polish", () => {
 
   it("keeps status foregrounds accessible while public entry paths remain text-labeled", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain('aria-label="Choose Bot direction"');
-    expect(landing).toContain("Find. Call. Book.");
-    expect(landing).toContain("Answer. Qualify. Route.");
+    expect(landing).toContain('aria-label="Get started with BotBound"');
+    expect(landing).toContain("Voice Bots.");
+    expect(landing).toContain("Business Numbers.");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
     const badge = read("src/components/atoms/Badge.tsx");
     expect(badge).toContain("text-[var(--wireline-color-status-success)]");
@@ -207,16 +207,14 @@ describe("E2E design and BotBound brand polish", () => {
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
     const prestige = withoutComments(read("src/styles/landing-prestige.css"));
     const auth = read("src/styles/auth-access-panel.css");
-    expect(landing).toContain(
-      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
-    );
+    expect(landing).toContain("<PrecisionPublicHeader />");
     expect(landing).toMatch(
-      /<span>Hire a Voice Bot\.<\/span>[\s\S]*<span>With Its Own Number\.<\/span>/,
+      /<span className="landing-prestige__title-line">Voice Bots\.<\/span>[\s\S]*<span className="landing-prestige__title-line landing-prestige__title-accent">\s*Business Numbers\./,
     );
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
-    expect(landing).toContain("BotBoundLockup");
-    expect(landing).toContain('className="landing-prestige__hero-lockup"');
-    expect(landing).toContain("landing-prestige__directions");
+    expect(landing).toContain("landing-prestige__hero-actions");
+    expect(landing).toContain("landing-prestige__trust-message");
+    expect(landing).not.toContain("<AuthAccessPanel embedded");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).toContain("FEATURED_TEMPLATE_KEYS");
     expect(landing).toContain("FEATURED_TEMPLATES.map");
@@ -224,25 +222,17 @@ describe("E2E design and BotBound brand polish", () => {
     expect(landing).toContain('id="pricing"');
     expect(landing).toContain("landing-prestige__trust");
     expect(landing).toContain("<LandingFooter />");
-    expect(landing).not.toContain("<PrecisionPublicHeader");
     expect(landing).not.toContain("ONE WORKSPACE");
     expect(landing).not.toContain("Runtime Balance");
     expect(landing).not.toContain("WIRE YOUR PHONE BOT");
-    expect(prestige).toContain("grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)");
-    expect(prestige).toContain("--bb-lockup-wordmark-size: clamp(3.25rem, 4.8vw, 4.25rem)");
-    expect(prestige).toContain("--bb-lockup-mark: clamp(5.75rem, 7.5vw, 6.75rem)");
-    expect(prestige).toContain("--bb-lockup-overlap: clamp(0.28rem, 0.55vw, 0.5rem)");
+    expect(prestige).toContain("grid-template-columns: minmax(0, 1.04fr) minmax(20rem, 0.96fr)");
+    expect(prestige).toContain("font-size: clamp(3rem, 5.25vw, 4.5rem)");
+    expect(prestige).toContain("white-space: nowrap");
     expect(prestige).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__entrance\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*auto/,
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/,
     );
     expect(prestige).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?display:\s*grid/,
-    );
-    expect(prestige).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*block/,
-    );
-    expect(prestige).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__auth\s*\{[\s\S]*?min-height:\s*auto/,
+      /@media \(max-width: 600px\)[\s\S]*?\.landing-prestige__hero-actions\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/,
     );
     expect(prestige).not.toMatch(
       /\.landing-prestige__hero,[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*none/,

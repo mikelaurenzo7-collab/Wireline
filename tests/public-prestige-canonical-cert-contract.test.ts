@@ -13,13 +13,14 @@ describe("canonical BotBound public prestige certification", () => {
     const landingCss = read("src/styles/landing-prestige.css");
 
     expect(product).toContain('name: "BotBound"');
-    expect(product).toContain('slogan: "Your Next Hire Is a Bot"');
-    expect(product).toContain('supportingLine: "CALL · TEXT · EMAIL"');
+    expect(product).toContain('slogan: "Voice Bots. Business Numbers."');
+    expect(product).toContain('supportingLine: "VOICE BOTS · BUSINESS NUMBERS"');
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
-    expect(landing).toContain(
-      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
-    );
+    expect(landing).toContain("<PrecisionPublicHeader />");
+    expect(landing).toContain("Voice Bots.");
+    expect(landing).toContain("Business Numbers.");
+    expect(landing).not.toContain("<AuthAccessPanel embedded");
     expect(landing).not.toContain("template.category");
     expect(landing).not.toContain("ONE WORKSPACE");
 
@@ -27,16 +28,7 @@ describe("canonical BotBound public prestige certification", () => {
     expect(botMark).toContain("MOTIF_ICONS");
 
     expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__entrance\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*auto/,
-    );
-    expect(landingCss).toMatch(
       /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?display:\s*grid/,
-    );
-    expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*block/,
-    );
-    expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__auth\s*\{[\s\S]*?min-height:\s*auto/,
     );
     expect(landingCss).not.toMatch(
       /\.landing-prestige__hero,[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*none/,

@@ -50,15 +50,9 @@ async function publicMetrics(page: Page) {
     const flow = document.querySelector<HTMLElement>(".marketing-flow");
     const surface = document.querySelector<HTMLElement>(".marketing-surface");
     const header = document.querySelector<HTMLElement>(".marketing-surface > header");
-    const accountNav = document.querySelector<HTMLElement>('nav[aria-label="Account"]');
     const prestigeMain = document.querySelector<HTMLElement>(".landing-prestige__main");
     const prestigeEntrance = document.querySelector<HTMLElement>(".landing-prestige__entrance");
     const prestigeHero = document.querySelector<HTMLElement>(".landing-prestige__hero");
-    const prestigeAuth = document.querySelector<HTMLElement>(".landing-prestige__auth");
-    const prestigeDirections = document.querySelector<HTMLElement>(".landing-prestige__directions");
-    const prestigeMobileLinks = document.querySelector<HTMLElement>(
-      ".landing-prestige__mobile-links",
-    );
     const startFree = Array.from(document.querySelectorAll<HTMLAnchorElement>("a")).find(
       (link) => link.textContent?.trim() === "Start Free",
     );
@@ -67,13 +61,10 @@ async function publicMetrics(page: Page) {
     const bodyRect = rect(body);
     const surfaceRect = rect(surface);
     const headerRect = rect(header);
-    const accountRect = rect(accountNav);
     const startRect = rect(startFree);
     const prestigeMainRect = rect(prestigeMain);
     const prestigeEntranceRect = rect(prestigeEntrance);
     const prestigeHeroRect = rect(prestigeHero);
-    const prestigeAuthRect = rect(prestigeAuth);
-    const prestigeDirectionsRect = rect(prestigeDirections);
 
     return {
       rootHorizontalOverflow: root.scrollWidth - root.clientWidth,
@@ -89,8 +80,6 @@ async function publicMetrics(page: Page) {
       surfaceRight: surfaceRect?.right ?? 0,
       headerLeft: headerRect?.left ?? 0,
       headerRight: headerRect?.right ?? 0,
-      accountLeft: accountRect?.left ?? 0,
-      accountRight: accountRect?.right ?? 0,
       startLeft: startRect?.left ?? 0,
       startRight: startRect?.right ?? 0,
       prestigeMainLeft: prestigeMainRect?.left ?? 0,
@@ -99,15 +88,8 @@ async function publicMetrics(page: Page) {
       prestigeEntranceRight: prestigeEntranceRect?.right ?? 0,
       prestigeHeroWidth: prestigeHeroRect?.width ?? 0,
       prestigeHeroHeight: prestigeHeroRect?.height ?? 0,
-      prestigeAuthWidth: prestigeAuthRect?.width ?? 0,
-      prestigeAuthHeight: prestigeAuthRect?.height ?? 0,
-      prestigeDirectionsWidth: prestigeDirectionsRect?.width ?? 0,
-      prestigeDirectionsHeight: prestigeDirectionsRect?.height ?? 0,
       prestigeEntranceDisplay: prestigeEntrance ? getComputedStyle(prestigeEntrance).display : "",
       prestigeHeroDisplay: prestigeHero ? getComputedStyle(prestigeHero).display : "",
-      prestigeMobileLinksDisplay: prestigeMobileLinks
-        ? getComputedStyle(prestigeMobileLinks).display
-        : "",
       viewportHeight: window.innerHeight,
       viewportWidth: window.innerWidth,
     };
@@ -146,13 +128,12 @@ for (const { path, name } of PUBLIC_ROUTES) {
     expect(metrics.viewportMode).toBe("document");
     if (path === "/") {
       expectDocumentInsideViewport(metrics, name);
-      expect(metrics.prestigeEntranceDisplay).toBe("grid");
+      expect(metrics.prestigeEntranceDisplay).toBe("block");
       expect(metrics.prestigeMainLeft).toBeGreaterThanOrEqual(-2);
       expect(metrics.prestigeMainRight).toBeLessThanOrEqual(metrics.viewportWidth + 2);
       expect(metrics.prestigeEntranceLeft).toBeGreaterThanOrEqual(-2);
       expect(metrics.prestigeEntranceRight).toBeLessThanOrEqual(metrics.viewportWidth + 2);
       expect(metrics.prestigeHeroWidth).toBeGreaterThan(540);
-      expect(metrics.prestigeAuthWidth).toBeGreaterThan(540);
     } else {
       expect(metrics.flowOverflowY).toBe("visible");
       expect(metrics.surfaceOverflow).toBe("visible");
@@ -228,24 +209,20 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
     page.locator(".landing-prestige__getting-started, .landing-prestige__steps"),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("heading", { name: "Hire a Voice Bot. With Its Own Number." }),
+    page.getByRole("heading", { name: "Voice Bots. Business Numbers.", exact: true }),
   ).toBeVisible();
-  const directions = page.getByRole("navigation", { name: "Choose Bot direction" });
-  await expect(directions.getByText("Find. Call. Book.", { exact: true })).toBeVisible();
-  await expect(directions.getByText("Answer. Qualify. Route.", { exact: true })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Account access" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Pick the Work. Put a Bot on It" }),
-  ).toBeAttached();
+  const heroActions = page.getByRole("navigation", { name: "Get started with BotBound" });
+  await expect(heroActions.getByRole("link", { name: "Start Free" })).toBeVisible();
+  await expect(heroActions.getByRole("link", { name: "See What It Can Do" })).toBeVisible();
+  const account = page.getByRole("navigation", { name: "Account" });
+  await expect(account.getByRole("link", { name: "Sign In", exact: true })).toBeVisible();
+  await expect(account.getByRole("link", { name: "Start Free", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bots Built Around Real Work" })).toBeAttached();
 
   const metrics = await publicMetrics(page);
   expectDocumentInsideViewport(metrics, "desktop home");
   expect(metrics.prestigeHeroWidth).toBeGreaterThan(540);
-  expect(metrics.prestigeHeroHeight).toBeGreaterThanOrEqual(900);
-  expect(metrics.prestigeAuthWidth).toBeGreaterThan(540);
-  expect(metrics.prestigeAuthHeight).toBeGreaterThanOrEqual(900);
-  expect(metrics.prestigeDirectionsHeight).toBeGreaterThanOrEqual(44);
+  expect(metrics.prestigeHeroHeight).toBeGreaterThan(700);
 });
 
 test("home remains usable on a short laptop", async ({ page }) => {
@@ -255,10 +232,7 @@ test("home remains usable on a short laptop", async ({ page }) => {
 
   expectDocumentInsideViewport(metrics, "short-laptop home");
   expect(metrics.prestigeHeroWidth).toBeGreaterThan(500);
-  expect(metrics.prestigeHeroHeight).toBeGreaterThanOrEqual(800);
-  expect(metrics.prestigeAuthWidth).toBeGreaterThan(500);
-  expect(metrics.prestigeDirectionsHeight).toBeGreaterThanOrEqual(44);
-  expect(metrics.prestigeDirectionsWidth).toBeGreaterThan(240);
+  expect(metrics.prestigeHeroHeight).toBeGreaterThan(650);
 });
 
 test("home keeps the BotBound promise and account path in one mobile flow", async ({ page }) => {
@@ -269,48 +243,47 @@ test("home keeps the BotBound promise and account path in one mobile flow", asyn
   await expect(
     page.locator(".landing-prestige__getting-started, .landing-prestige__steps"),
   ).toHaveCount(0);
-  await expect(page.locator(".landing-prestige__desktop-only").first()).toBeVisible();
-  await expect(page.getByRole("region", { name: "Account access" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
   await expect(
-    page
-      .getByRole("group", { name: "Account access mode" })
-      .getByRole("button", { name: "Create Account", exact: true }),
+    page.getByRole("heading", { name: "Voice Bots. Business Numbers.", exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Public information" })).toBeVisible();
+  await expect(page.locator(".landing-prestige__hero-art img")).toBeVisible();
+  const account = page.getByRole("navigation", { name: "Account" });
+  await expect(account.getByRole("link", { name: "Start Free", exact: true })).toBeVisible();
+  await account.getByRole("button", { name: "Open navigation" }).click();
+  await expect(page.getByRole("menuitem", { name: "Sign In", exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
 
   const metrics = await publicMetrics(page);
   expectDocumentInsideViewport(metrics, "phone home");
-  expect(metrics.prestigeEntranceDisplay).toBe("flex");
+  expect(metrics.prestigeEntranceDisplay).toBe("block");
   expect(metrics.prestigeHeroDisplay).toBe("grid");
   expect(metrics.prestigeHeroWidth).toBeGreaterThan(320);
-  expect(metrics.prestigeAuthWidth).toBeGreaterThan(320);
-  expect(metrics.prestigeAuthWidth).toBeLessThanOrEqual(metrics.viewportWidth);
-  expect(metrics.prestigeMobileLinksDisplay).toBe("flex");
 });
 
-test("home direction choices fit the narrowest supported width", async ({ page }) => {
+test("home headline lines fit the narrowest supported width", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await openPublicRoute(page, "/");
 
   const geometry = await page.evaluate(() => {
-    const choices = Array.from(
-      document.querySelectorAll<HTMLElement>(".landing-prestige__direction"),
+    const headline = document.querySelector<HTMLElement>(".landing-prestige__hero-copy h1");
+    const lines = Array.from(
+      document.querySelectorAll<HTMLElement>(".landing-prestige__title-line"),
     ).map((element) => element.getBoundingClientRect());
-    const group = document
-      .querySelector<HTMLElement>(".landing-prestige__directions")
-      ?.getBoundingClientRect();
-    return { group, choices, width: window.innerWidth };
+    return {
+      headline: headline?.getBoundingClientRect(),
+      lines,
+      width: window.innerWidth,
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
   });
 
-  expect(geometry.group).toBeTruthy();
-  expect(geometry.choices).toHaveLength(2);
-  expect(geometry.group!.left).toBeGreaterThanOrEqual(-1);
-  expect(geometry.group!.right).toBeLessThanOrEqual(geometry.width + 1);
-  for (const choice of geometry.choices) {
-    expect(choice.left).toBeGreaterThanOrEqual(geometry.group!.left - 1);
-    expect(choice.right).toBeLessThanOrEqual(geometry.group!.right + 1);
-    expect(choice.width).toBeGreaterThan(100);
+  expect(geometry.headline).toBeTruthy();
+  expect(geometry.lines).toHaveLength(2);
+  expect(geometry.overflow).toBeLessThanOrEqual(2);
+  for (const line of geometry.lines) {
+    expect(line.left).toBeGreaterThanOrEqual(-1);
+    expect(line.right).toBeLessThanOrEqual(geometry.width + 1);
+    expect(line.width).toBeGreaterThan(100);
   }
 });
 
@@ -322,8 +295,6 @@ test("home remains composed on a short wide desktop", async ({ page }) => {
   expectDocumentInsideViewport(metrics, "short-wide home");
   expect(metrics.prestigeHeroWidth).toBeGreaterThan(580);
   expect(metrics.prestigeHeroHeight).toBeGreaterThanOrEqual(720);
-  expect(metrics.prestigeAuthWidth).toBeGreaterThan(580);
-  expect(metrics.prestigeDirectionsHeight).toBeGreaterThanOrEqual(44);
 });
 
 test("features and pricing remain scrollable without horizontal clipping", async ({ page }) => {

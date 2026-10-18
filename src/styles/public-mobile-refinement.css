@@ -1,105 +1,6 @@
-/* BotBound public mobile refinement ----------------------------------------
- * Public phone surfaces prioritize entry and reading. Remove decorative card
- * weight while preserving contrast, focus, touch targets, and the single
- * BotBound visual language.
- */
+/* Public mobile document refinement ---------------------------------------- */
 
 @media (max-width: 820px) {
-  .landing-prestige__auth {
-    align-items: stretch;
-    justify-content: center;
-    padding-left: 1.15rem;
-    padding-right: 1.15rem;
-  }
-
-  .landing-prestige__auth .wl-access-panel.is-embedded {
-    width: min(100%, 26.5rem);
-    margin-inline: auto;
-  }
-
-  .landing-prestige__auth .wl-access-panel__brand {
-    margin-bottom: clamp(1.35rem, 4.5vh, 2.1rem);
-  }
-
-  .landing-prestige__auth .wl-access-panel__brand .bb-lockup {
-    --bb-lockup-mark: 2.75rem;
-    --bb-lockup-wordmark-size: 1.18rem;
-    --bb-lockup-gap: 0.16rem;
-    --bb-lockup-overlap: 0.08rem;
-  }
-
-  .landing-prestige__auth .wl-access-panel__card {
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-
-  .landing-prestige__auth .wl-access-panel__heading :is(h1, h2) {
-    font-size: clamp(1.8rem, 8vw, 2.2rem);
-    letter-spacing: -0.05em;
-  }
-
-  .landing-prestige__auth .wl-access-panel__tabs {
-    margin-top: 1.4rem;
-    background: color-mix(in srgb, var(--wireline-color-surface-subtle) 58%, transparent);
-  }
-
-  .landing-prestige__auth .wl-access-panel__tabs button {
-    min-height: 2.75rem;
-  }
-
-  .landing-prestige__auth .wl-access-panel__oauth {
-    gap: 0.45rem;
-    margin-top: 1.05rem;
-  }
-
-  .landing-prestige__auth .wl-access-panel__oauth button {
-    min-width: 0;
-    min-height: 2.9rem;
-    padding-inline: 0.45rem;
-    background: color-mix(in srgb, var(--wireline-color-surface-default) 72%, transparent);
-    font-size: 0.74rem;
-  }
-
-  .landing-prestige__auth .wl-access-panel__divider {
-    margin-block: 1.1rem;
-  }
-
-  .landing-prestige__auth .wl-access-panel__field {
-    min-height: 3.1rem;
-    border-color: color-mix(
-      in srgb,
-      var(--wireline-color-border-strong) 58%,
-      var(--wireline-color-border-default)
-    );
-    background: color-mix(
-      in srgb,
-      var(--wireline-color-surface-default) 64%,
-      var(--wireline-color-canvas-default)
-    );
-  }
-
-  .landing-prestige__auth .wl-access-panel__field input {
-    height: 3.1rem;
-    font-size: 1rem;
-  }
-
-  .landing-prestige__auth .wl-access-panel__submit {
-    min-height: 3.2rem;
-    margin-top: 0.25rem;
-    font-size: 0.9rem;
-  }
-
-  .landing-prestige__auth .wl-access-panel__terms {
-    background: color-mix(in srgb, var(--wireline-color-surface-subtle) 42%, transparent);
-  }
-
-  .landing-prestige__mobile-links {
-    margin-top: clamp(1.3rem, 4vh, 2rem);
-  }
-
   /* Privacy is a document, not a card gallery. Keep the summary scannable
    * without forcing four decorative panels ahead of the legal text. */
   [aria-label="Privacy Policy summary"] {
@@ -132,13 +33,5 @@
 
   #privacy-choices > div > div:first-child {
     display: none;
-  }
-}
-
-@media (max-width: 380px) {
-  .landing-prestige__auth .wl-access-panel__oauth button {
-    gap: 0.3rem;
-    padding-inline: 0.25rem;
-    font-size: 0.69rem;
   }
 }

@@ -102,6 +102,7 @@ playwright-report/
 visual-qa/
 /.codex-temp/
 /output/
+/tmp/
 
 # Prebuild-generated image assets rendered from source SVG files
 /public/og-image.png
@@ -164,6 +165,13 @@ wireline-*-assets*.zip
 /brand-work/launch-2026-09-outbound/SHA256SUMS.txt
 /brand-work/PROMOTIONAL-ASSET-INVENTORY-*.json
 /brand-work/PROMOTIONAL-ASSET-INVENTORY-*.csv
+
+# Campaign and logo-motion delivery renders are reproducible from the checked-in
+# Remotion source. Keep only the human-authored logo-motion release notes here;
+# full-resolution masters and QA frames belong in the private Drive archive.
+/brand-work/cinematic-call-campaign-2026-09/
+/brand-work/logo-motion-2026-09/*
+!/brand-work/logo-motion-2026-09/README.md
 
 # The root workspace is npm-managed. Stray pnpm bootstrap state is local noise.
 /pnpm-lock.yaml

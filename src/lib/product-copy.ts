@@ -19,7 +19,7 @@ export const BRAND_SYSTEM = {
   productTypes: BOT_PRODUCT_TYPES,
   toneRules: [
     "Lead with the job, leverage, or outcome before AI mechanics.",
-    "Use Phone Bot as the public acquisition wedge; Call, Text, and Email are the compact channel proof.",
+    "Lead public acquisition with Voice Bots for business calls. Calls plans include a local number; Email plans add a branded BotBound inbox.",
     "Do not stack BotBound with Phone Bot or Voice Bot as a compound noun. The brand already contains Bot. Say BotBound, or say Phone Bot, not both.",
     "Treat workspace architecture as product proof, never as a marketing headline.",
     "Use Bot as the customer-facing object while keeping agent as the technical domain.",

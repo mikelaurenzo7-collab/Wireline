@@ -47,7 +47,7 @@ const FAQ = [
   ],
   [
     "How Is Email Usage Covered?",
-    "Email packages include a Bot mailbox and the allowance shown in the selected package. AI and message processing consume allowance; no unlimited message count is promised. Connected Gmail, Outlook, and iCloud accounts remain optional inputs.",
+    "Email packages include a branded BotBound inbox and the allowance shown in the selected package. AI and message processing consume allowance; no unlimited message count is promised. Connected Gmail, Outlook, and iCloud accounts remain optional inputs.",
   ],
   [
     "Can I Cancel or Get a Refund?",
@@ -116,7 +116,7 @@ export default function Pricing() {
     <MarketingPageFrame className="wl-pricing-page" stickyCta>
       <PageMeta
         title="Pricing | Email from $9, Calls from $19 | BotBound"
-        description="Build a Bot free. Choose Email from $9/month, Calls from $19/month, or combine channels. SMS activation is pending. Check live availability and included usage."
+        description="Build a Voice Bot for free. Calls plans include a local number; Email plans add a branded BotBound inbox. Check live availability and included usage."
         path="/pricing"
       />
       <script
@@ -128,10 +128,10 @@ export default function Pricing() {
           <div className="mx-auto mb-6 max-w-3xl text-center">
             <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
             <h1 className="marketing-hero-title mx-auto mt-4 min-w-0 max-w-full text-[clamp(1.9rem,3.4vw,2.9rem)] [overflow-wrap:anywhere]">
-              Only the Channels You Need
+              Choose Your Voice Bot Plan
             </h1>
             <p className="marketing-hero-lead mx-auto mt-4">
-              One Bot. Your channels. The capacity you need.
+              Calls plans include one local number. Add Email for a branded BotBound inbox.
             </p>
           </div>
           <div className="mx-auto max-w-2xl">

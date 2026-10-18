@@ -9,10 +9,11 @@ describe("BotBound static marketing metadata", () => {
   it("keeps the HTML shell aligned with the BotBound promise", () => {
     const index = read("index.html");
 
-    expect(index).toContain("BotBound | Hire a Voice Bot");
-    expect(index).toContain("A voice Bot with its own business number.");
+    expect(index).toContain("BotBound | Voice Bots and Business Numbers");
+    expect(index).toContain("Calls plans include a local number;");
+    expect(index).toContain("Email plans add a branded BotBound inbox");
     expect(index).toContain('"name":"BotBound"');
-    expect(index).toContain('"slogan":"Your Next Hire Is a Bot"');
+    expect(index).toContain('"slogan":"Voice Bots. Business Numbers."');
     expect(index).toContain('"logo":"https://botbound.app/botbound-icon-512.png"');
     expect(index).toContain('<link rel="canonical" href="https://botbound.app/" />');
     expect(index).toContain('<meta property="og:url" content="https://botbound.app/" />');
@@ -66,21 +67,23 @@ describe("BotBound static marketing metadata", () => {
     expect(landing).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(landing).not.toContain("LEGACY_PRODUCTION_ORIGIN");
     expect(landing).not.toContain("VITE_PUBLIC_SITE_URL");
-    expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | Hire a Voice Bot"');
-    expect(pageMeta).toMatch(/DEFAULT_DESCRIPTION =\s*"A voice Bot with its own business number\./);
+    expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | Voice Bots and Business Numbers"');
+    expect(pageMeta).toMatch(/DEFAULT_DESCRIPTION =\s*"Build a Voice Bot for business calls\./);
     expect(pageMeta).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(pageMeta).not.toContain("VITE_PUBLIC_SITE_URL");
     expect(pageMeta).not.toContain('DEFAULT_TITLE = "WIRELINE');
   });
 
-  it("keeps the OG image aligned with the outbound-first, inbound-capable story", () => {
+  it("keeps the OG image aligned with the Voice Bot, number, and email story", () => {
     const ogImage = read("public/og-image.svg");
 
     expect(ogImage).toContain("BotBound");
-    expect(ogImage).toContain("Find. Call. Book");
-    expect(ogImage).toContain("Outbound sales. Inbound calls.");
+    expect(ogImage).toContain("Voice Bots.");
+    expect(ogImage).toContain("Business Numbers.");
+    expect(ogImage).toContain("Calls plans include one local number.");
+    expect(ogImage).toContain("Add a branded BotBound email inbox.");
     expect(ogImage).not.toContain("ONE BOT");
-    expect(ogImage).toContain("GET YOUR SALES BOT");
+    expect(ogImage).not.toContain("GET YOUR SALES BOT");
     expect(ogImage).toMatch(/phone|Phone/);
     expect(ogImage).toContain("#8B5CF6");
     expect(ogImage).not.toContain("PUT YOUR BOT ON THE LINE");
@@ -92,7 +95,7 @@ describe("BotBound static marketing metadata", () => {
 
     expect(sizes.length).toBeGreaterThanOrEqual(3);
     expect(Math.min(...sizes)).toBeGreaterThanOrEqual(20);
-    expect(Math.max(...sizes)).toBeGreaterThanOrEqual(80);
+    expect(Math.max(...sizes)).toBeGreaterThanOrEqual(72);
   });
 
   it("keeps the installable app Studio-first and BotBound-branded", () => {
@@ -105,15 +108,16 @@ describe("BotBound static marketing metadata", () => {
       shortcuts: Array<{ name: string; description: string; url: string }>;
     };
 
-    expect(manifest.name).toBe("BotBound | Your Next Hire Is a Bot");
+    expect(manifest.name).toBe("BotBound | Voice Bots");
     expect(manifest.short_name).toBe("BotBound");
-    expect(manifest.description).toBe("Your Bot for calls, texts, and email.");
+    expect(manifest.description).toContain("Calls plans include a local number");
+    expect(manifest.description).toContain("branded BotBound inbox");
     expect(manifest.start_url).toBe("/studio");
     expect(manifest.icons[0]?.src).toBe("/botbound-icon-192.png");
     expect(manifest.shortcuts.map((shortcut) => shortcut.name)).toEqual([
-      "BOT STUDIO",
-      "INBOX",
-      "CALLS",
+      "Bot Studio",
+      "Inbox",
+      "Calls",
     ]);
     expect(manifest.shortcuts.find((shortcut) => shortcut.name === "INBOX")?.description).toContain(
       "texts and email",

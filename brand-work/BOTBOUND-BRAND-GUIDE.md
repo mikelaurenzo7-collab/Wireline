@@ -2,21 +2,21 @@
 
 Production identity approved 2026-08-20.
 
-Homepage headline revised September 24, 2026. Existing campaign images, videos and historical proof retain their original copy until separately refreshed; this source update does not recertify those assets.
+Homepage positioning revised October 6, 2026. Existing campaign images, videos and historical proof retain their original copy until separately refreshed; this source update does not recertify those assets.
 
 ## The Idea
 
-BotBound gives businesses Bots for calls, texts, and email while their people stay with the work. The identity makes that promise literal: a calm, friendly robot visibly grips a classic phone receiver to its ear. The hand is essential. It turns a generic support-bot silhouette into a specific, ownable operator.
+BotBound leads with Voice Bots for business calls. Calls plans include a local number; Email plans add a branded BotBound inbox for follow-up. The identity makes the voice promise literal: a calm, friendly robot visibly grips a classic phone receiver to its ear. The hand is essential. It turns a generic support-bot silhouette into a specific, ownable operator.
 
 The brand line is:
 
-> Your Next Hire Is a Bot.
+> Voice Bots. Business Numbers.
 
 The product promise is:
 
-> Bots for calls, texts, and email.
+> Build a Voice Bot for business calls. Calls plans include a local number; Email plans add a branded BotBound inbox for follow-up.
 
-The general product category is **Inbound & Outbound Bots**. The current refresh leads with **Stay in the Work.** and **Small Team. Bigger Reach.** The September Drive **Your Next Sales Hire** and **Give Sales a Hand** campaigns remain sales variants; “sales hire” describes software, not an employment service. See [the current copy kit](gtm/BOTBOUND-LAUNCH-COPY-KIT.md).
+The public acquisition story leads with **Voice Bots for Business Calls** and a local number on Calls plans. A branded BotBound email inbox is a supporting benefit. SMS and outbound availability must always match their live readiness status. Existing September sales campaigns remain separate variants; “sales hire” describes software, not an employment service.
 
 ## Primary Identity
 

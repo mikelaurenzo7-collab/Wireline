@@ -19,8 +19,23 @@ rendered, inspected, checksummed, and approved.
 | `BotBound-FirstMove-15s-Vertical` | 15s | 1080×1920 | Outbound Reels / Shorts / TikTok |
 | `BotBound-FirstMove-10s-Square` | 10s | 1080×1080 | Outbound LinkedIn / Meta feed |
 | `BotBound-FirstMove-6s-Vertical` | 6s | 1080×1920 | Outbound story / bumper |
+| `BotBound-LogoCall-8s-Square` | 8s | 1080×1080 | Illustrative brand sting |
+| `BotBound-LogoCall-8s-Vertical` | 8s | 1080×1920 | Illustrative brand sting |
+| `BotBound-Cinematic-Inbound-12s-Horizontal` | 12s | 1920×1080 | Inbound cinematic exploration |
+| `BotBound-Cinematic-Inbound-12s-Vertical` | 12s | 1080×1920 | Inbound cinematic exploration |
+| `BotBound-Cinematic-Inbound-12s-Square` | 12s | 1080×1080 | Registered cinematic exploration |
+| `BotBound-Cinematic-Outbound-12s-Horizontal` | 12s | 1920×1080 | Outbound cinematic exploration |
+| `BotBound-Cinematic-Outbound-12s-Vertical` | 12s | 1080×1920 | Outbound cinematic exploration |
+| `BotBound-Cinematic-Outbound-12s-Square` | 12s | 1080×1080 | Registered cinematic exploration |
+| `BotBound-Cinematic-DoubleFeature-24s-Horizontal` | 24s | 1920×1080 | Registered two-direction exploration |
 
-All compositions run at 30 fps and use frame-driven Remotion animation only. The editorial source photograph, robot mark, repository-optimized app icon, self-hosted fonts, original deterministic score, phone-ring effect, and approved transfer chime are local to this package. Drive deliveries are release copies, not proof that the current working tree or future commit has passed its release gate; use `VERIFICATION.md` for revision-scoped evidence.
+All 18 compositions run at 30 fps. Animation is frame-driven; the cinematic compositions also embed local video and voice tracks from `public/campaign-call/`. The editorial source art, robot mark, app icon, fonts, score, ring, and transfer chime are local inputs. `ASSET_MANIFEST.md` records the original campaign inputs; it does not yet cover the cinematic video/voice sources or certify all 18 compositions. Drive deliveries do not establish current-source approval; use `VERIFICATION.md` for revision-scoped evidence.
+
+## Local review inventory
+
+Source review, 2026-09-19: the inbound and outbound campaign folders each contain three social MP4s (6s vertical, 10s square, 15s vertical). `brand-work/logo-motion-2026-09/` contains two 8s MP4s and posters; `brand-work/cinematic-call-campaign-2026-09/` contains four 12s MP4s (inbound/outbound, horizontal/vertical). These paths are relative to the repository root. No cinematic square or 24s double-feature MP4, or original horizontal/4K MP4 in `out/`, was present at this review. A composition registration is not a rendered deliverable.
+
+The logo and cinematic call displays are illustrative campaign animation. Their LIVE, ANSWERED, CONNECTED, and BOOKED labels, timers, and waveforms do not establish a real customer call, available public demo, or successful integration. The cinematic source needs a visible example label, reviewed claims, documented voice provenance, and transcript/caption coverage before publication. The logo sting uses score, rings, and tones; it is not a spoken product-voice sample. Preserve these working explorations and their source copies when refreshing the original campaign.
 
 ## Setup and preview
 
@@ -87,7 +102,7 @@ sequence and accessibility notes live in
 
 ## Accessibility caption sidecars
 
-The `public/captions/` directory includes caption data for the 30s, 15s, 10s,
+The `public/captions/` directory includes **Second Ring** caption data for the 30s, 15s, 10s,
 and 6s cuts in three deterministic formats:
 
 - Remotion `Caption[]` JSON, type-checked through `src/captions.ts`.
@@ -95,6 +110,8 @@ and 6s cuts in three deterministic formats:
 - WebVTT for web players.
 
 The sidecars contain only exact on-screen copy and audible ring/chime cues. They do not add voiceover or dialogue that is not visible in the film. The 15s asset applies to both 15s canvases; the 10s asset applies to the square cut; the 6s asset applies to both 6s canvases. Regenerate the SRT and WebVTT derivatives with `npm run captions:export` after editing JSON timing or copy.
+
+These sidecars do not cover the cinematic voice tracks. The four local cinematic MP4s currently have no accompanying transcript or caption sidecars. Caption timing must follow each final mix, including its voice start offset and any double-feature edit.
 
 ## ProRes broadcast candidate
 

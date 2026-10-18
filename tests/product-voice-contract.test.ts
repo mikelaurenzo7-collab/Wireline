@@ -81,9 +81,10 @@ describe("BotBound product voice", () => {
   it("uses BotBound + Bot customer language while retaining agent as the technical domain", () => {
     expect(BOT_BRAND).toMatchObject({
       name: "BotBound",
-      slogan: "Your Next Hire Is a Bot",
-      supportingLine: "CALL · TEXT · EMAIL",
-      promise: "Your Bot for calls, texts, and email.",
+      slogan: "Voice Bots. Business Numbers.",
+      supportingLine: "VOICE BOTS · BUSINESS NUMBERS",
+      promise:
+        "Build a Voice Bot for business calls. Calls plans include a local number; Email plans add a branded BotBound inbox for follow-up.",
     });
     expect(BRAND_SYSTEM).toMatchObject({
       northStar: BOT_BRAND.promise,
@@ -153,10 +154,10 @@ describe("BotBound product voice", () => {
     }
   });
 
-  it("makes all three communication channels explicit in one consistent order", () => {
+  it("leads with Voice Bots, business numbers, and branded email while retaining channel labels", () => {
     expect(BOT_CHANNELS.map((channel) => channel.label)).toEqual(["Call", "Text", "Email"]);
     expect(MARKETING_VOICE.channelProof).toEqual(["Call", "Text", "Email"]);
-    expect(BOT_MARKETING_VOICE.spine).toEqual(["Call", "Text", "Email"]);
+    expect(BOT_MARKETING_VOICE.spine).toEqual(["Voice Bot", "Business Number", "Branded Email"]);
     expect(WORKSPACE_VOICE.emptyCue).toContain("calls, text, email");
     expect(AGENT_NUMBER_PROMISE).toContain("Every paid Bot");
     expect(AGENT_NUMBER_PROMISE).toContain("BotBound number");
@@ -221,7 +222,7 @@ describe("BotBound product voice", () => {
     expect(OUTBOUND_WEDGE.headline).toBe("A Bot That Moves Growth Work Forward");
   });
 
-  it("keeps the public entrance concise, auth-forward, and tied to shared constants", () => {
+  it("keeps the public entrance concise and tied to shared Voice Bot messaging", () => {
     for (const path of CORE_BUYING_SURFACES) {
       const source = read(path);
       expect(source, path).not.toContain("—");
@@ -229,24 +230,24 @@ describe("BotBound product voice", () => {
       expect(source, path).not.toMatch(/guaranteed profit|profit guarantee/i);
     }
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
-    expect(landing).toContain("<AuthAccessPanel embedded");
-    expect(landing).toContain("Hire a Voice Bot.");
-    expect(landing).toContain("With Its Own Number.");
+    expect(landing).toContain("<PrecisionPublicHeader />");
+    expect(landing).toContain("Voice Bots.");
+    expect(landing).toContain("Business Numbers.");
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
-    expect(landing).toContain("landing-prestige__directions");
+    expect(landing).toContain("landing-prestige__hero-actions");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).not.toContain("HERO_CHANNELS.map");
     expect(landing).toContain("FEATURED_TEMPLATES.map");
     expect(landing).toContain("template.moves.map");
     expect(landing).toContain("STRIPE_PLANS");
     expect(landing).toContain("LandingFooter");
-    expect(landing).not.toContain("PrecisionPublicHeader");
+    expect(landing).not.toContain("<AuthAccessPanel embedded");
     expect(landing).not.toContain("Runtime Balance");
   });
 
   it("keeps shared marketing voice aligned to BotBound", () => {
     expect(MARKETING_VOICE.headline).toBe(BOT_BRAND.slogan);
-    expect(MARKETING_VOICE.eyebrow).toBe("CALL · TEXT · EMAIL");
+    expect(MARKETING_VOICE.eyebrow).toBe("VOICE BOTS · BUSINESS NUMBERS");
     expect(MARKETING_VOICE.primaryCta).toBe("Start Free");
     expect(MARKETING_VOICE.subline).toBe(BOT_BRAND.promise);
     expect(BOT_MARKETING_VOICE.headline).toBe(BOT_BRAND.slogan);

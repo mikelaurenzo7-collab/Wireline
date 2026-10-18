@@ -118,7 +118,7 @@ describe("safe-area spacing ownership", () => {
     expect(authPortal).toContain("wl-auth-form-panel flex min-h-full");
     expect(authPortal).toContain("w-full max-w-[520px]");
     expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*\.landing-prestige__auth \{[\s\S]*min-height:\s*auto/,
+      /@media \(max-width: 600px\)[\s\S]*\.landing-prestige__hero-actions \{[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\)/,
     );
     expect(ownership).toMatch(
       /\.marketing-surface \{[\s\S]*padding-left: env\(safe-area-inset-left[\s\S]*padding-right: env\(safe-area-inset-right/,

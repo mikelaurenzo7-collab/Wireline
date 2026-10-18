@@ -5,9 +5,10 @@ export type BotProductTypeKey = "voice" | "conversation" | "human";
 
 export const BOT_BRAND = {
   name: "BotBound",
-  slogan: "Your Next Hire Is a Bot",
-  supportingLine: "CALL · TEXT · EMAIL",
-  promise: "Your Bot for calls, texts, and email.",
+  slogan: "Voice Bots. Business Numbers.",
+  supportingLine: "VOICE BOTS · BUSINESS NUMBERS",
+  promise:
+    "Build a Voice Bot for business calls. Calls plans include a local number; Email plans add a branded BotBound inbox for follow-up.",
 } as const;
 
 export const BOT_PRODUCT_TYPES = [
@@ -197,9 +198,9 @@ export const BOT_MARKETING_VOICE = {
   eyebrow: BOT_BRAND.supportingLine,
   headline: BOT_BRAND.slogan,
   subline: BOT_BRAND.promise,
-  activationLine: "Answers calls, books appointments, and takes messages for your business.",
+  activationLine: "Private testing is free. No card is required.",
   primaryCta: "Start Free",
-  spine: ["Call", "Text", "Email"],
+  spine: ["Voice Bot", "Business Number", "Branded Email"],
 } as const;
 
 export const BOT_WORKSPACE_PROMISE = {

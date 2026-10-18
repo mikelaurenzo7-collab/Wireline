@@ -22,31 +22,31 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "index.html",
     indexHtml,
-    /<title>BotBound \| Hire a Voice Bot<\/title>/,
-    "static metadata must make the voice Bot offer explicit",
+    /<title>BotBound \| Voice Bots and Business Numbers<\/title>/,
+    "static metadata must make the Voice Bot and business number offer explicit",
   );
   mustInclude(
     "index.html",
     indexHtml,
-    /A voice Bot with its own business number\./,
-    "static metadata must explain the included phone identity",
+    /Calls plans include a local number; Email plans add a branded BotBound inbox/,
+    "static metadata must explain plan-specific phone and inbox identities",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_TITLE = "BotBound \| Hire a Voice Bot"/,
-    "runtime metadata must use the BotBound hero",
+    /DEFAULT_TITLE = "BotBound \| Voice Bots and Business Numbers"/,
+    "runtime metadata must use the Voice Bot positioning",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_DESCRIPTION =\s*"A voice Bot with its own business number\./,
-    "runtime metadata must carry the voice Bot offer",
+    /DEFAULT_DESCRIPTION =\s*"Build a Voice Bot for business calls\./,
+    "runtime metadata must carry the plan-specific number and inbox offer",
   );
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /"name"\s*:\s*"BotBound \| Your Next Hire Is a Bot"/,
+    /"name"\s*:\s*"BotBound \| Voice Bots"/,
     "install metadata must use BotBound",
   );
   mustExclude(
@@ -65,14 +65,14 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
-    /slogan:\s*"Your Next Hire Is a Bot"/,
-    "shared model must preserve the BotBound brand slogan",
+    /slogan:\s*"Voice Bots\. Business Numbers\."/,
+    "shared model must lead with Voice Bots and business numbers",
   );
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
-    /supportingLine:\s*"CALL · TEXT · EMAIL"/,
-    "shared model must keep customer channels explicit in canonical order",
+    /supportingLine:\s*"VOICE BOTS · BUSINESS NUMBERS"/,
+    "shared model must keep Voice Bots and business numbers explicit",
   );
   for (const productType of ["Phone Bot", "Conversation Bot", "Human Bot"])
     mustInclude(
@@ -116,14 +116,14 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /<AuthAccessPanel embedded initialMode="signup" showBrand=\{false\}\s*\/>/,
-    "landing must embed concise account creation",
+    /<PrecisionPublicHeader\s*\/>/,
+    "landing must provide separate account entry through the public header",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /<span>Hire a Voice Bot\.<\/span>[\s\S]*<span>With Its Own Number\.<\/span>/,
-    "landing must render the voice Bot and phone number hero",
+    /landing-prestige__title-line">Voice Bots\.<\/span>[\s\S]*landing-prestige__title-accent">\s*Business Numbers\./,
+    "landing must render the balanced Voice Bot and number headline",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",

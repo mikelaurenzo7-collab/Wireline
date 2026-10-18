@@ -9,15 +9,14 @@ describe("public voice-preview retirement contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const botProduct = read("src/lib/bot-product.ts");
 
-    expect(landing).toContain("Hire a Voice Bot.");
-    expect(landing).toContain("With Its Own Number.");
+    expect(landing).toContain("Voice Bots.");
+    expect(landing).toContain("Business Numbers.");
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
-    expect(landing).toContain("landing-prestige__directions");
-    expect(landing).toContain("Find. Call. Book.");
-    expect(landing).toContain("Answer. Qualify. Route.");
+    expect(landing).toContain("landing-prestige__hero-actions");
+    expect(landing).toContain("branded BotBound email inbox");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo|\/api\/public\/demo-/);
-    expect(botProduct).toContain('slogan: "Your Next Hire Is a Bot"');
-    expect(botProduct).toContain('supportingLine: "CALL · TEXT · EMAIL"');
+    expect(botProduct).toContain('slogan: "Voice Bots. Business Numbers."');
+    expect(botProduct).toContain('supportingLine: "VOICE BOTS · BUSINESS NUMBERS"');
     expect(botProduct).toContain(
       'activationLine: "Answers calls, books appointments, and takes messages for your business."',
     );

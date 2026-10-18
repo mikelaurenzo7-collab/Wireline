@@ -16,24 +16,20 @@ describe("home landing launch clarity", () => {
     expect(landing).not.toContain('variant="stage"');
     expect(landing).not.toContain("Illustrative Workflow");
     expect(landing).not.toContain("Booked and logged");
-    expect(landing).toContain(
-      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
-    );
-    expect(landing).toContain("Hire a Voice Bot.");
-    expect(landing).toContain("With Its Own Number.");
+    expect(landing).toContain("<PrecisionPublicHeader />");
+    expect(landing).toContain("Voice Bots.");
+    expect(landing).toContain("Business Numbers.");
     expect(css).toContain(".landing-prestige__entrance");
-    expect(css).toContain(".landing-prestige__desktop-only");
+    expect(css).toContain(".landing-prestige__hero-art");
     expect(landing).not.toContain("00:42");
   });
 
   it("keeps free and paid capacity distinct without crowding the hero", () => {
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
-    expect(product).toContain(
-      'activationLine: "Answers calls, books appointments, and takes messages for your business."',
-    );
-    expect(landing).toContain("landing-prestige__directions");
-    expect(landing).toContain("Find. Call. Book.");
-    expect(landing).toContain("Answer. Qualify. Route.");
+    expect(product).toContain('activationLine: "Private testing is free. No card is required."');
+    expect(landing).toContain("landing-prestige__hero-actions");
+    expect(landing).toContain("Voice Bots.");
+    expect(landing).toContain("Business Numbers.");
     expect(landing).not.toContain("Build free. Put it on a number when it is ready.");
     expect(landing).toContain(
       'const PUBLIC_PLAN_IDS = ["personal", "email", "voice-regular", "voice-email-regular"]',
@@ -56,12 +52,9 @@ describe("home landing launch clarity", () => {
     expect(landing).toContain("plan.price_usd_monthly");
     expect(landing).toContain('id === "email"');
     expect(landing).toContain("canActivate(id)");
-    expect(landing).toContain("Add its own email inbox and SMS.");
-    expect(landing).toContain("Build and test free. No card required.");
+    expect(landing).toContain("branded BotBound email inbox");
+    expect(landing).toContain("Private testing is free. No card is required.");
     expect(landing).not.toMatch(/coming soon/i);
-    expect(landing.indexOf('className="landing-prestige__direction is-inbound"')).toBeLessThan(
-      landing.indexOf('className="landing-prestige__direction is-outbound"'),
-    );
     expect(landing).toContain("Private simulation");
     expect(landing).toContain("Upgrade for live work");
   });

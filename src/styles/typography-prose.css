@@ -61,6 +61,22 @@
   letter-spacing: var(--wireline-typography-h1-letterSpacing);
 }
 
+/* Keep page copy from leaving a single word stranded at the edge of a line. */
+main :is(h1, h2, h3, h4) {
+  text-wrap: balance;
+}
+
+main p {
+  text-wrap: pretty;
+}
+
+/* Route changes temporarily focus page headings for assistive technology.
+   They are reading targets, not controls, so do not draw the control ring. */
+main :is(h1, h2, h3, h4)[tabindex="-1"]:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 .wl-section-title {
   font-size: clamp(1.35rem, 3vw + 0.6rem, 2rem);
 }
