@@ -23,6 +23,7 @@ export * from "./voice-usage-schema";
 export * from "./resend-webhook-schema";
 export * from "./computer-task-schema";
 export * from "./voice-asset-schema";
+export * from "./xai-phone-registration-schema";
 
 import {
   bigint,

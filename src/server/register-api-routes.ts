@@ -19,6 +19,7 @@ import voiceAssetRouter from "../routes/voice-asset-routes";
 import elevenLabsVoiceRouter from "../routes/elevenlabs-voice-routes";
 import openAIRealtimeRouter from "../routes/openai-realtime-routes";
 import openAISipRouter from "../routes/openai-sip-routes";
+import xaiVoiceAdminRouter from "../routes/xai-voice-admin-routes";
 import openAIOutboundRouter from "../routes/openai-outbound-routes";
 import phoneTestRouter from "../routes/phone-test-routes";
 import openAIInboundTwilioRouter from "../routes/openai-inbound-twilio-routes";
@@ -115,6 +116,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(elevenLabsVoiceRouter);
   app.use(openAIRealtimeRouter);
   app.use(openAISipRouter);
+  app.use(xaiVoiceAdminRouter);
   app.use(openAIOutboundRouter);
   app.use(phoneTestRouter);
   app.use(openAIInboundTwilioRouter);

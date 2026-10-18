@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 438
-**Protected:** 353
-**Public (allowlisted):** 85
+**Routes scanned:** 441
+**Protected:** 355
+**Public (allowlisted):** 86
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -75,6 +75,7 @@
 | `POST /api/twilio-webhook/openai-outbound-fallback` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/openai-outbound-status` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/webhooks/openai/realtime` | OpenAI Standard Webhooks HMAC + replay defense; Realtime SIP admission |
+| `POST /api/webhooks/xai/realtime` | xAI Standard Webhooks HMAC with a per-number secret + replay defense; SIP admission |
 | `GET /api/openapi.json` | Public OpenAPI spec; rate-limited + CDN cached |
 | `POST /api/twilio-webhook/phone-test/answer` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/phone-test/fallback` | Twilio signature validation; valid provider retries are never IP-throttled |
@@ -429,6 +430,7 @@
 | openai-realtime-routes.ts | POST | `/api/voice/openai/session` | inline | — | — | Protected |
 | openai-realtime-routes.ts | GET | `/api/voice/openai/status` | inline | — | — | Protected |
 | openai-sip-routes.ts | POST | `/api/webhooks/openai/realtime` | — | — | yes | Public (allowlisted) |
+| openai-sip-routes.ts | POST | `/api/webhooks/xai/realtime` | — | — | yes | Public (allowlisted) |
 | openapi-routes.ts | GET | `/api/openapi.json` | — | — | yes | Public (allowlisted) |
 | operator-task-routes.ts | GET | `/api/Assistants/tasks` | inline | — | — | Protected |
 | operator-task-routes.ts | POST | `/api/Assistants/tasks/:id/approve` | inline | — | — | Protected |
@@ -541,3 +543,5 @@
 | webhook-test-routes.ts | POST | `/api/webhooks/:id/test` | inline | permission | — | Protected |
 | website-knowledge-routes.ts | POST | `/api/agent-config/:id/website` | inline | — | — | Protected |
 | workspace-knowledge-routes.ts | POST | `/api/workspace-knowledge/google-drive` | inline | — | — | Protected |
+| xai-voice-admin-routes.ts | POST | `/api/voice/xai/registrations/sync` | inline | platform_admin | — | Protected |
+| xai-voice-admin-routes.ts | GET | `/api/voice/xai/status` | inline | platform_admin | — | Protected |

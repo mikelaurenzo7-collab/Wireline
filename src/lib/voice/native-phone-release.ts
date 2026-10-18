@@ -10,6 +10,7 @@ import { getErrorMessage } from "../server-utils";
 import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import { getTwilioClient } from "../twilio-service";
 import { resolveOwnedTwilioNumberSid } from "./native-phone-carrier";
+import { deregisterXAIPhoneNumber } from "./xai-phone-registration";
 
 type ReclamationGuard = {
   canceledBefore: Date;
@@ -241,6 +242,21 @@ export async function releaseNativeTenantNumber(
   options: { terminalCleanup?: boolean; reclaimCanceledBefore?: Date } = {},
 ): Promise<{ ok: boolean; skipped?: boolean; error?: string }> {
   const release = async () => {
+    const result = await releaseWithBillingFence();
+    // A released number must not keep an xAI registration that could route a
+    // future owner's calls with this account's secrets. Best effort: a stale
+    // registration is replaced the next time the number is registered.
+    if (result.ok) {
+      await deregisterXAIPhoneNumber(phoneNumber).catch((error: unknown) =>
+        log.warn("Released number's xAI registration could not be removed", {
+          phoneSuffix: phoneNumber.slice(-4),
+          error: getErrorMessage(error),
+        }),
+      );
+    }
+    return result;
+  };
+  const releaseWithBillingFence = async () => {
     if (!options.reclaimCanceledBefore)
       return releaseNativeTenantNumberUnfenced(userId, phoneNumber);
     const [billing] = await drizzle

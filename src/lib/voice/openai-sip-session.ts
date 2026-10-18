@@ -50,12 +50,15 @@ import { OpenAISipTurnTiming } from "./openai-sip-turn-timing";
 import { enforceFundedCarrierCallLimit, readTerminalCarrierDuration } from "./funded-carrier-call";
 import { adoptPhoneTestSipFunding } from "./phone-test-funding";
 import { adoptOutboundPlacementSipFunding } from "./outbound-placement-funding";
+import { normalizeOpenAIPhoneNumber, resolveOpenAISipSessionMaxSeconds } from "./openai-sip-config";
 import {
-  OPENAI_REALTIME_CALLS_URL,
-  buildOpenAISipRealtimeUrl,
-  normalizeOpenAIPhoneNumber,
-  resolveOpenAISipSessionMaxSeconds,
-} from "./openai-sip-config";
+  buildRealtimeSipSocketUrl,
+  realtimeApiKey,
+  realtimeCallControlUrl,
+  realtimeProviderForCallId,
+  realtimeProviderLabel,
+} from "./realtime-provider";
+import { toXAIRealtimeSession, xaiForceMessage } from "./xai-voice-config";
 import {
   AI_DISCLOSURE_EVENTS,
   classifyAiDisclosureEvidence,
@@ -404,10 +407,13 @@ async function openaiCallControl(
   action: "refer" | "hangup",
   body?: Record<string, unknown>,
 ): Promise<OpenAICallControlOutcome> {
-  const apiKey = String(process.env.OPENAI_API_KEY || "").trim();
-  if (!apiKey) throw new Error("OpenAI_API_KEY is missing during call control.");
+  // The call id says which provider owns the call (xAI ids carry `xai:`).
+  const provider = realtimeProviderForCallId(callId);
+  const apiKey = realtimeApiKey(provider);
+  if (!apiKey)
+    throw new Error(`${realtimeProviderLabel(provider)} key is missing during call control.`);
   const response = await fetchWithTimeout(
-    `${OPENAI_REALTIME_CALLS_URL}/${encodeURIComponent(callId)}/${action}`,
+    realtimeCallControlUrl(callId, action),
     {
       method: "POST",
       headers: {
@@ -1796,8 +1802,13 @@ async function runRealtimeSession(
   accountElapsed?: (seconds: number) => Promise<void>,
   observeUsage?: (event: Record<string, unknown>) => void,
 ): Promise<RealtimeSessionOutcome> {
-  const apiKey = String(process.env.OPENAI_API_KEY || "").trim();
-  if (!apiKey) throw new Error("OpenAI_API_KEY is missing during SIP session startup.");
+  const provider = realtimeProviderForCallId(input.callId);
+  const apiKey = realtimeApiKey(provider);
+  if (!apiKey) {
+    throw new Error(
+      `${realtimeProviderLabel(provider)} key is missing during SIP session startup.`,
+    );
+  }
 
   const callerTranscriptIndexes = new Map<string, number>();
   const transcriptLines: OpenAITranscriptLine[] = [];
@@ -1815,6 +1826,8 @@ async function runRealtimeSession(
   let escalationSucceeded = false;
   let openingPlaybackConfirmed = false;
   let actualOpeningTranscript = "";
+  /** xAI speaks the opening verbatim via force_message; set only on that path. */
+  let xaiForcedOpening = "";
   let anonymousSipPlaybackActive = false;
   const playbackResponseIds = new Set<string>();
   const activeResponseIds = new Set<string>();
@@ -1841,7 +1854,7 @@ async function runRealtimeSession(
   let providerHangupRequired = false;
   const turnTiming = new OpenAISipTurnTiming();
 
-  const ws = new WebSocket(buildOpenAISipRealtimeUrl(input.callId), {
+  const ws = new WebSocket(buildRealtimeSipSocketUrl(input.callId), {
     headers: { Authorization: `Bearer ${apiKey}` },
     handshakeTimeout: WS_OPEN_TIMEOUT_MS,
   });
@@ -1909,6 +1922,7 @@ async function runRealtimeSession(
     awaitingExactOpeningPlayback = false;
     capturingOpeningTranscript = false;
     openingPlaybackConfirmed = delivered;
+    if (delivered && xaiForcedOpening) actualOpeningTranscript = xaiForcedOpening;
     if (!hangupAfterOpening || ws.readyState !== WebSocket.OPEN) return true;
     hangupAfterOpening = false;
     endedReason = "line-suspended";
@@ -2272,6 +2286,15 @@ async function runRealtimeSession(
       }
       return;
     }
+    // On xAI the forced opening is already recorded verbatim; ignore its echo.
+    const xaiOpeningEcho = provider === "xai" && awaitingExactOpeningPlayback;
+    if (
+      xaiOpeningEcho &&
+      (type === "response.output_audio_transcript.delta" ||
+        type === "response.output_audio_transcript.done")
+    ) {
+      return;
+    }
     if (type === "response.output_audio_transcript.delta" && typeof event.delta === "string") {
       assistantTurn += event.delta;
       if (capturingOpeningTranscript) actualOpeningTranscript += event.delta;
@@ -2352,24 +2375,45 @@ async function runRealtimeSession(
           ? `${runtime.session.instructions}\n\n${buildOutboundInstructions(input)}`
           : runtime.session.instructions;
 
-        sendJson(ws, {
-          type: "session.update",
-          session: { ...runtime.session, instructions },
-        });
-        if (opening) {
-          // Keep the compliance opening isolated from the conversational turn.
-          // A constrained response instruction owns the first playback.
-          awaitingExactOpeningPlayback = true;
-          capturingOpeningTranscript = true;
+        if (provider === "xai") {
           sendJson(ws, {
-            type: "response.create",
-            response: {
-              instructions: `Use the configured voice with a warm, natural speaking style. Say exactly these words and nothing else: ${opening}`,
-              output_modalities: ["audio"],
-            },
+            type: "session.update",
+            session: toXAIRealtimeSession(runtime.session as Record<string, unknown>, {
+              instructions,
+              keyterms: [runtime.agentName, input.businessName ?? ""],
+            }),
           });
+          if (opening) {
+            // force_message speaks the compliance opening verbatim and owns its
+            // playback; no model turn starts until that audio drains. It becomes
+            // disclosure evidence only once that playback is confirmed.
+            awaitingExactOpeningPlayback = true;
+            xaiForcedOpening = opening;
+            assistantTurn = opening;
+            sendJson(ws, xaiForceMessage(opening));
+          } else {
+            sendJson(ws, { type: "response.create" });
+          }
         } else {
-          sendJson(ws, { type: "response.create" });
+          sendJson(ws, {
+            type: "session.update",
+            session: { ...runtime.session, instructions },
+          });
+          if (opening) {
+            // Keep the compliance opening isolated from the conversational turn.
+            // A constrained response instruction owns the first playback.
+            awaitingExactOpeningPlayback = true;
+            capturingOpeningTranscript = true;
+            sendJson(ws, {
+              type: "response.create",
+              response: {
+                instructions: `Use the configured voice with a warm, natural speaking style. Say exactly these words and nothing else: ${opening}`,
+                output_modalities: ["audio"],
+              },
+            });
+          } else {
+            sendJson(ws, { type: "response.create" });
+          }
         }
 
         const admissionMode = inboundAdmissionMode(input);
@@ -2402,7 +2446,8 @@ async function runRealtimeSession(
             sendJson(ws, {
               type: "session.update",
               session: {
-                type: "realtime",
+                // xAI's session.update has no session type field.
+                ...(provider === "openai" ? { type: "realtime" } : {}),
                 instructions:
                   instructions +
                   "\n\nThis call reaches its session limit in one minute. Briefly tell the caller, summarize the agreed next step, and offer an approved callback or human transfer if more time is needed. Do not promise automatic continuation.",
@@ -2791,13 +2836,16 @@ export async function runOpenAISipCallSession(
             }
           }
         : undefined;
-      const providerUsage = spendReservation
-        ? createRealtimeUsageRecorder(
-            spendReservation,
-            input.callId,
-            runtime.session.audio?.input?.transcription?.model || "",
-          )
-        : undefined;
+      // Token receipts are OpenAI's billing model. xAI bills a flat per-minute
+      // rate, which the duration reservation above already accounts for.
+      const providerUsage =
+        spendReservation && realtimeProviderForCallId(input.callId) === "openai"
+          ? createRealtimeUsageRecorder(
+              spendReservation,
+              input.callId,
+              runtime.session.audio?.input?.transcription?.model || "",
+            )
+          : undefined;
       try {
         outcome = await runRealtimeSession(
           input,

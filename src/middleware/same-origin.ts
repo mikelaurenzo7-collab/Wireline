@@ -11,6 +11,7 @@ const ORIGIN_CHECK_SKIP_PREFIXES = [
   // each provider's own signature verifier.
   "/api/webhooks/resend",
   "/api/webhooks/openai/realtime",
+  "/api/webhooks/xai/realtime",
   "/api/webhooks/agentmail",
   "/api/webhooks/meta/",
   "/api/twilio-webhook",

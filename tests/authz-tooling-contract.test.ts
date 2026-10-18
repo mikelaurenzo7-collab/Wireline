@@ -81,6 +81,12 @@ describe("authz tooling covers factory handlers, commented declarations, and sub
     expect(matrix).toMatch(
       /\| openai-outbound-routes\.ts \| POST \| `\/api\/twilio-webhook\/openai-outbound-bridge` \|.*\| Public \(allowlisted\) \|/,
     );
+    expect(matrix).toMatch(
+      /\| openai-sip-routes\.ts \| POST \| `\/api\/webhooks\/xai\/realtime` \|.*\| Public \(allowlisted\) \|/,
+    );
+    expect(matrix).toContain(
+      "xAI Standard Webhooks HMAC with a per-number secret + replay defense; SIP admission",
+    );
     expect(matrix).toContain("`POST /api/public/demo-call`");
     expect(matrix).not.toContain("`POST /api/public/demo-vapi/call/web`");
   });

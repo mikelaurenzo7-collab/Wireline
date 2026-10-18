@@ -554,6 +554,13 @@
       "when": 1792339200000,
       "tag": "0180_dnc_seller_registration",
       "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1792425600000,
+      "tag": "0181_xai_phone_registrations",
+      "breakpoints": true
     }
   ]
 }

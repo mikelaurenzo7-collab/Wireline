@@ -24,6 +24,8 @@ import {
   type PurchasedNativeNumber,
 } from "./native-phone-carrier";
 import { openAISipConfigured } from "./openai-sip-config";
+import { configuredPhoneVoiceProvider } from "./realtime-provider";
+import { registerXAIPhoneNumber } from "./xai-phone-registration";
 
 const NATIVE_ACTIVATION_PENDING =
   "The number is reserved in your workspace, but live-call routing could not be confirmed. Retry activation from Phone; do not purchase another line.";
@@ -104,6 +106,29 @@ async function persistPurchasedNumber(input: {
   });
 }
 
+/**
+ * With xAI voice on, a newly routed line is registered there too. Best effort:
+ * until registration succeeds the line keeps answering on OpenAI, and the
+ * platform registration sync can retry it.
+ */
+async function registerLineWithXAIIfEnabled(phoneNumber: string): Promise<void> {
+  if (configuredPhoneVoiceProvider() !== "xai") return;
+  try {
+    const result = await registerXAIPhoneNumber(phoneNumber);
+    if (result.status === "failed") {
+      log.warn("New line could not be registered with xAI; it answers on OpenAI", {
+        phoneSuffix: phoneNumber.slice(-4),
+        reason: result.reason,
+      });
+    }
+  } catch (error) {
+    log.warn("New line could not be registered with xAI; it answers on OpenAI", {
+      phoneSuffix: phoneNumber.slice(-4),
+      error: getErrorMessage(error),
+    });
+  }
+}
+
 async function activateLine(input: {
   userId: string;
   agentId: string;
@@ -129,6 +154,7 @@ async function activateLine(input: {
           ),
         );
     }
+    await registerLineWithXAIIfEnabled(input.phoneNumber);
     return {
       ok: true,
       phoneNumber: input.phoneNumber,

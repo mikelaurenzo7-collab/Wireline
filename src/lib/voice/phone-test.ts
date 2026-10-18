@@ -46,6 +46,11 @@ import {
   verifyOpenAIOutboundToken,
 } from "./openai-outbound-token";
 import { buildOpenAIOutboundSipUri, openAISipConfigured } from "./openai-sip-config";
+import {
+  renderSipNoun,
+  resolveOutboundSipTarget,
+  type RealtimeSipTarget,
+} from "./realtime-sip-target";
 
 export const PHONE_TEST_MAX_SECONDS = 120;
 const TERMINAL_CARRIER = new Set(["completed", "busy", "failed", "no-answer", "canceled"]);
@@ -685,17 +690,20 @@ export function phoneTestBridgeTwiml(input: {
   token: string;
   from: string;
   remainingSeconds: number;
+  /** Where the Bot answers; defaults to the OpenAI project URI for this token. */
+  sip?: RealtimeSipTarget;
 }): string {
   const seconds = Math.floor(input.remainingSeconds);
   if (seconds < 1 || seconds > PHONE_TEST_MAX_SECONDS) return phoneTestHangupTwiml();
+  const sip = input.sip ?? { provider: "openai", uri: buildOpenAIOutboundSipUri(input.token) };
   return (
     '<?xml version="1.0" encoding="UTF-8"?><Response><Dial answerOnBridge="true" timeout="10" timeLimit="' +
     String(seconds) +
     '" callerId="' +
     xml(input.from) +
-    '"><Sip>' +
-    xml(buildOpenAIOutboundSipUri(input.token)) +
-    "</Sip></Dial><Hangup/></Response>"
+    '">' +
+    renderSipNoun(sip) +
+    "</Dial><Hangup/></Response>"
   );
 }
 export type PhoneTestCarrierInput = {
@@ -752,6 +760,9 @@ export async function handlePhoneTestAnswer(
     } catch {
       return phoneTestHangupTwiml();
     }
+    // Resolved before the lock: the Bot answers on its own line, on xAI when
+    // that number is registered there.
+    const sip = await resolveOutboundSipTarget({ callerId: input.from, token: input.token });
     return drizzle.transaction(async (tx) => {
       const row = await lockedTest(tx, found.userId, testOf(found).request_id);
       if (!row) return phoneTestHangupTwiml();
@@ -769,6 +780,7 @@ export async function handlePhoneTestAnswer(
           token: input.token,
           from: input.from,
           remainingSeconds: Math.floor((Date.parse(test.expires_at) - Date.now()) / 1000),
+          sip,
         });
       }
       if (!gather) {
@@ -843,6 +855,7 @@ export async function handlePhoneTestAnswer(
         token: input.token,
         from: input.from,
         remainingSeconds: Math.floor((Date.parse(test.expires_at) - Date.now()) / 1000),
+        sip,
       });
     });
   });
