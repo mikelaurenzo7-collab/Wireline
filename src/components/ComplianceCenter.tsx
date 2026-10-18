@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { ChevronRight, Download, ExternalLink, Loader2, Shield } from "lucide-react";
 
 import DncManager from "./DncManager";
+import DncRegistrationCard from "./DncRegistrationCard";
 import { authFetch } from "../lib/api";
 import type { ConsentLedgerEvent } from "../lib/tcpa-consent";
 import { Button, Skeleton } from "./atoms";
@@ -182,6 +183,8 @@ export default function ComplianceCenter() {
       </section>
 
       <div className="grid gap-4">
+        <DncRegistrationCard />
+
         {summary ? (
           <section className="wl-paper wl-paper-elevated p-4 sm:p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">

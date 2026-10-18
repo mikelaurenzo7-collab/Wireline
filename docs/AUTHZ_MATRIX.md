@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 433
-**Protected:** 348
+**Routes scanned:** 438
+**Protected:** 353
 **Public (allowlisted):** 85
 **Violations:** 0
 
@@ -218,8 +218,13 @@
 | company-identity-routes.ts | GET | `/api/company-identity` | inline | — | — | Protected |
 | company-identity-routes.ts | POST | `/api/company-identity` | inline | — | — | Protected |
 | company-identity-routes.ts | POST | `/api/company-identity/review-request` | inline | — | — | Protected |
+| compliance-routes.ts | GET | `/api/admin/dnc-registrations` | inline | platform_admin | — | Protected |
+| compliance-routes.ts | PUT | `/api/admin/dnc-registrations/:userId/vendor-project` | inline | platform_admin | — | Protected |
 | compliance-routes.ts | GET | `/api/compliance/center` | inline | — | — | Protected |
 | compliance-routes.ts | GET | `/api/compliance/consent-log` | inline | — | — | Protected |
+| compliance-routes.ts | GET | `/api/compliance/dnc-registration` | inline | — | — | Protected |
+| compliance-routes.ts | PUT | `/api/compliance/dnc-registration` | inline | — | — | Protected |
+| compliance-routes.ts | DELETE | `/api/compliance/dnc-registration` | inline | — | — | Protected |
 | compliance-routes.ts | GET | `/api/dnc` | inline | — | — | Protected |
 | compliance-routes.ts | POST | `/api/dnc` | inline | — | — | Protected |
 | compliance-routes.ts | DELETE | `/api/dnc/:id` | inline | — | — | Protected |

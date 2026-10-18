@@ -72,6 +72,83 @@ describe("outbound dial gate runtime", () => {
     vi.clearAllMocks();
     delete process.env.NODE_ENV;
     delete process.env.VERCEL;
+    // Seller registry subscription is covered by its own tests below.
+    vi.doMock("../src/lib/dnc-seller-registration", () => ({
+      evaluateSellerDncForMarketing: async () => ({
+        allowed: true,
+        vendorProjectId: "proj-seller",
+      }),
+    }));
+  });
+
+  it("fails marketing outbound closed without the seller's own registry subscription", async () => {
+    const isFederalDncListed = vi.fn(async () => false);
+    const isDncBlocked = vi.fn(async () => false);
+    const evaluateSellerDncForMarketing = vi.fn(async () => ({
+      allowed: false as const,
+      code: "SELLER_DNC_REGISTRATION_REQUIRED" as const,
+      message: "Add your National Do Not Call Registry subscription in Compliance.",
+    }));
+    vi.doMock("../src/lib/server-context", () => ({
+      drizzle: { select: vi.fn() },
+      log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    }));
+    vi.doMock("../src/lib/federal-dnc-service", () => ({
+      assertFederalDncForMarketing: () => ({ allowed: true, configured: true }),
+      isFederalDncListed,
+    }));
+    vi.doMock("../src/lib/dnc-seller-registration", () => ({ evaluateSellerDncForMarketing }));
+    vi.doMock("../src/lib/compliance", () => ({ isDncBlocked }));
+
+    const { evaluateOutboundDialGate } = await import("../src/lib/outbound-dial-gate");
+    const result = await evaluateOutboundDialGate({
+      userId: "tenant-user",
+      phone: "+13125551234",
+      isMarketingCall: true,
+      hasExpressWrittenConsent: true,
+    });
+
+    expect(result).toMatchObject({
+      allowed: false,
+      status: "AutoDialFailed",
+      reason: "federal_dnc_unconfigured",
+      federalDncCode: "SELLER_DNC_REGISTRATION_REQUIRED",
+      metadataPatch: { seller_dnc_registration: "SELLER_DNC_REGISTRATION_REQUIRED" },
+    });
+    expect(evaluateSellerDncForMarketing).toHaveBeenCalledWith("tenant-user", "+13125551234");
+    expect(isFederalDncListed).not.toHaveBeenCalled();
+    expect(isDncBlocked).not.toHaveBeenCalled();
+  });
+
+  it("screens marketing calls with the seller's own vendor project", async () => {
+    const isFederalDncListed = vi.fn(async () => false);
+    vi.doMock("../src/lib/server-context", () => ({
+      drizzle: {
+        select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) }),
+      },
+      log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    }));
+    vi.doMock("../src/lib/tcpa-calling-hours", () => ({
+      resolveCallingHoursForPhone: () => ({ allowed: true }),
+    }));
+    vi.doMock("../src/lib/federal-dnc-service", () => ({
+      assertFederalDncForMarketing: () => ({ allowed: true, configured: true }),
+      isFederalDncListed,
+    }));
+    vi.doMock("../src/lib/compliance", () => ({ isDncBlocked: async () => false }));
+
+    const { evaluateOutboundDialGate } = await import("../src/lib/outbound-dial-gate");
+    const result = await evaluateOutboundDialGate({
+      userId: "tenant-user",
+      phone: "+13125551234",
+      isMarketingCall: true,
+      hasExpressWrittenConsent: true,
+    });
+
+    expect(result.allowed).toBe(true);
+    expect(isFederalDncListed).toHaveBeenCalledWith("+13125551234", {
+      vendorProjectId: "proj-seller",
+    });
   });
 
   it("fails marketing outbound closed before dialing when Federal DNC is unconfigured", async () => {
