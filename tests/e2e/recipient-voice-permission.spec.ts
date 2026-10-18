@@ -37,6 +37,44 @@ async function setup(
   });
 }
 
+async function expectPendingFormToFit(page: Page) {
+  // Measure the pending form, not only the shorter success receipt that
+  // replaces it. Document overflow alone misses clipped inner flex children.
+  const pendingFit = await page.evaluate(() => {
+    const form = document.querySelector("form")!;
+    const heading = document.querySelector("h1")!;
+    const content = [heading, ...form.querySelectorAll("p, label, span, button")];
+    const controls = Array.from(form.querySelectorAll("input, button"));
+    const describe = (element: Element) => `${element.tagName}.${element.className}`;
+    const outside = (element: Element) => {
+      const rect = element.getBoundingClientRect();
+      return rect.left < -1 || rect.right > window.innerWidth + 1;
+    };
+    const clippedText = content.filter((element) => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      const bounds = element.getBoundingClientRect();
+      return Array.from(range.getClientRects()).some(
+        (rect) => rect.width > 0 && (rect.left < bounds.left - 1 || rect.right > bounds.right + 1),
+      );
+    });
+    return {
+      documentOverflow: document.documentElement.scrollWidth > window.innerWidth,
+      innerOverflow: content
+        .filter((element) => element.scrollWidth > element.clientWidth + 1)
+        .map(describe),
+      outsideViewport: [...content, ...controls].filter(outside).map(describe),
+      clippedText: clippedText.map(describe),
+    };
+  });
+  expect(pendingFit).toEqual({
+    documentOverflow: false,
+    innerOverflow: [],
+    outsideViewport: [],
+    clippedText: [],
+  });
+}
+
 test("a recipient can sign while session hydration hangs, without loading third-party marketing analytics", async ({
   page,
 }) => {
@@ -56,6 +94,7 @@ test("a recipient can sign while session hydration hangs, without loading third-
   await expect(page.getByRole("heading", { name: "Call permission", exact: true })).toBeVisible();
   await page.getByLabel("Your phone number", { exact: true }).fill("3125550100");
   await page.getByLabel("Your full name", { exact: true }).fill("Taylor Example");
+  await expectPendingFormToFit(page);
   await page.screenshot({
     path: "output/launch-completion-2026-10-17/permission-recipient-desktop.png",
     fullPage: true,
@@ -91,6 +130,7 @@ test("recipient confirmation preserves its exact unknown-result draft at 320px a
   });
   await page.getByLabel("Your phone number", { exact: true }).fill("3125550100");
   await page.getByLabel("Your full name", { exact: true }).fill("Taylor Example");
+  await expectPendingFormToFit(page);
   await page.screenshot({
     path: "output/launch-completion-2026-10-17/permission-recipient-320-zoom.png",
     fullPage: true,

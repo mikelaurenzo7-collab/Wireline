@@ -89,6 +89,7 @@ async function setup(page: Page, recovery = false, malformedLink = false) {
                     plan_id: "voice-light",
                     subscription_status: "active",
                     channels: ["voice"],
+                    is_owner: false,
                   },
                 }
               : { data: [], numbers: [], keys: [], campaigns: [], messages: [], integrations: [] },
@@ -104,9 +105,9 @@ async function setup(page: Page, recovery = false, malformedLink = false) {
 test("a malformed capture link retains the original request and form", async ({ page }) => {
   const { panel, creates } = await setup(page, false, true);
   await panel.getByRole("button", { name: "New permission", exact: true }).click();
-  await panel.getByLabel("Bot", { exact: true }).selectOption("permission-bot");
+  await panel.getByRole("combobox", { name: "Bot", exact: true }).selectOption("permission-bot");
   await panel.getByRole("textbox", { name: "Recipient phone", exact: true }).fill("+13125550123");
-  await panel.getByLabel("Recipient location", { exact: true }).selectOption("IL");
+  await panel.getByRole("combobox", { name: "Recipient location", exact: true }).selectOption("IL");
   await panel.getByRole("button", { name: "Create link", exact: true }).click();
   await expect(panel.getByRole("alert")).toBeVisible();
   await expect(panel.getByRole("textbox", { name: "Recipient phone", exact: true })).toHaveValue(
@@ -126,9 +127,9 @@ for (const width of [320, 1280]) {
     await page.setViewportSize({ width, height: 800 });
     const { panel, creates, externalActions } = await setup(page);
     await panel.getByRole("button", { name: "New permission", exact: true }).click();
-    await panel.getByLabel("Bot", { exact: true }).selectOption("permission-bot");
+    await panel.getByRole("combobox", { name: "Bot", exact: true }).selectOption("permission-bot");
     await panel.getByRole("textbox", { name: "Recipient phone", exact: true }).fill("+13125550123");
-    await panel.getByLabel("Recipient location", { exact: true }).selectOption("IL");
+    await panel.getByRole("combobox", { name: "Recipient location", exact: true }).selectOption("IL");
     await panel.getByRole("button", { name: "Create link", exact: true }).click();
     await expect(panel.getByRole("alert")).toBeVisible();
     await expect(panel.getByRole("textbox", { name: "Recipient phone", exact: true })).toHaveValue(

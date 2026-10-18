@@ -196,14 +196,16 @@ export default function VoicePermissionPage() {
   return (
     <MarketingChrome authCanvas footer={false}>
       <PageMeta title="Call permission" path="/voice-permission" noIndex />
-      <section className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center px-4 py-10 sm:px-6">
+      <section className="mx-auto flex w-full min-w-0 max-w-xl flex-1 flex-col justify-center px-[12px] py-10 sm:px-6">
         <div className="mb-6 flex justify-center">
           <WirelineLockup />
         </div>
-        <div className="min-w-0 rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-8">
-          <div className="mb-4 flex items-center gap-2">
-            <ShieldCheck className="size-5 text-primary" aria-hidden="true" />
-            <h1 className="text-2xl font-semibold tracking-tight">Call permission</h1>
+        <div className="min-w-0 rounded-2xl border border-border bg-card p-[16px] shadow-sm sm:p-8">
+          <div className="mb-4 flex min-w-0 items-center gap-2">
+            <ShieldCheck className="size-5 shrink-0 text-primary" aria-hidden="true" />
+            <h1 className="min-w-0 text-xl font-semibold tracking-tight [overflow-wrap:anywhere] sm:text-2xl">
+              Call permission
+            </h1>
           </div>
           {loading ? (
             <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -213,12 +215,15 @@ export default function VoicePermissionPage() {
           ) : null}
           {!loading && view ? (
             <>
-              <p className="text-sm">
+              <p className="text-sm [overflow-wrap:anywhere]">
                 <strong>{view.seller_name}</strong> · {view.permission.recipient_phone_masked}
               </p>
               {status === "pending" ? (
-                <form onSubmit={confirm} className="mt-5 space-y-4">
-                  <p id="permission-disclosure" className="text-sm leading-relaxed">
+                <form onSubmit={confirm} className="mt-5 min-w-0 space-y-4">
+                  <p
+                    id="permission-disclosure"
+                    className="text-sm leading-relaxed [overflow-wrap:anywhere]"
+                  >
                     {view.disclosure}
                   </p>
                   <div className="space-y-1.5">
@@ -227,6 +232,7 @@ export default function VoicePermissionPage() {
                     </label>
                     <Input
                       id="permission-phone"
+                      className="min-w-0"
                       type="tel"
                       autoComplete="tel"
                       value={phone}
@@ -241,6 +247,7 @@ export default function VoicePermissionPage() {
                     </label>
                     <Input
                       id="permission-name"
+                      className="min-w-0"
                       autoComplete="name"
                       value={name}
                       onChange={(event) => setName(event.target.value)}
@@ -250,7 +257,7 @@ export default function VoicePermissionPage() {
                       disabled={busy || uncertain}
                     />
                   </div>
-                  <label className="flex items-start gap-3 text-sm">
+                  <label className="flex min-w-0 items-start gap-3 text-sm">
                     <Checkbox
                       className="mt-1"
                       checked={accepted}
@@ -259,9 +266,11 @@ export default function VoicePermissionPage() {
                       required
                       aria-describedby="permission-disclosure"
                     />
-                    <span>I agree to the permission above and sign electronically.</span>
+                    <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
+                      I agree to the permission above and sign electronically.
+                    </span>
                   </label>
-                  <label className="flex items-start gap-3 text-sm">
+                  <label className="flex min-w-0 items-start gap-3 text-sm">
                     <Checkbox
                       className="mt-1"
                       checked={locationAccepted}
@@ -269,7 +278,7 @@ export default function VoicePermissionPage() {
                       disabled={busy || uncertain}
                       required
                     />
-                    <span>
+                    <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
                       These calls will reach me in Illinois (America/Chicago). I’ll tell the
                       business if that changes.
                     </span>
