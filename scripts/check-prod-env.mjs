@@ -175,7 +175,14 @@ const recommended = [
     "DNCScrub loginId — deferred checklist until business registration; never paste a Vercel vcp_ token here",
   ],
   ["OPENAI_API_KEY_CHATKIT", "Scoped ChatGPT app realtime voice key for spend isolation"],
-  ["GEMINI_API_KEY", "Gemini continuity fallback when direct OpenAI is unavailable"],
+  [
+    "XAI_API_KEY",
+    "Primary structured reasoning, voice samples, built-in web search and xAI phone calls; without it structured work silently runs on OpenAI",
+  ],
+  [
+    "XAI_MANAGEMENT_API_KEY",
+    "xAI Management API key that builds each Bot's meaning-based knowledge index",
+  ],
   ["AI_GATEWAY_API_KEY", "Vercel AI Gateway governed final fallback and centralized budgets"],
   ["CORS_ORIGINS", "Production CORS allowlist"],
   [

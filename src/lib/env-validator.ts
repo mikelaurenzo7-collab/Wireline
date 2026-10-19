@@ -149,6 +149,29 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     validate: nonEmpty,
   },
   {
+    name: "XAI_API_KEY",
+    group: "ai",
+    required: false,
+    description:
+      "Primary structured reasoning, instant voice samples, built-in live web search, and xAI phone calls",
+    validate: nonEmpty,
+  },
+  {
+    name: "XAI_MANAGEMENT_API_KEY",
+    group: "ai",
+    required: false,
+    description: "xAI Management API key that builds each Bot's meaning-based knowledge index",
+    validate: nonEmpty,
+  },
+  {
+    name: "WIRELINE_PHONE_VOICE_PROVIDER",
+    group: "voice",
+    required: false,
+    description: "Provider for new phone calls; unset keeps OpenAI Realtime",
+    validate: (value) => ["xai", "openai"].includes(value.trim().toLowerCase()),
+    formatHint: "xai or openai",
+  },
+  {
     name: "OPENAI_API_KEY",
     group: "ai",
     required: false,
@@ -835,6 +858,25 @@ export function validateEnv(): EnvValidationResult {
     });
   } else {
     byGroup.voice.valid++;
+  }
+
+  // Both lanes still answer without the xAI keys, so these are warnings: the
+  // product keeps working, but on the backup provider or without the index,
+  // and nobody notices from inside the product.
+  if (isProd && !process.env.XAI_API_KEY?.trim()) {
+    result.warnings.push({
+      var: "XAI_API_KEY",
+      group: "ai",
+      message:
+        "Structured reasoning is running on the OpenAI backup lane and voice samples are unavailable; set XAI_API_KEY for the managed primary",
+    });
+  } else if (isProd && !process.env.XAI_MANAGEMENT_API_KEY?.trim()) {
+    result.warnings.push({
+      var: "XAI_MANAGEMENT_API_KEY",
+      group: "ai",
+      message:
+        "Meaning-based knowledge search is inactive; set XAI_MANAGEMENT_API_KEY so each Bot's knowledge index can build",
+    });
   }
 
   const managedRuntime = process.env.OPENAI_API_KEY?.trim();

@@ -13,6 +13,8 @@ describe("vendor readiness contract", () => {
       "voice_worker",
       "upstash",
       "openai",
+      "xai",
+      "xai_knowledge_index",
       "ai_gateway",
       "twilio_voice_sms",
       "stripe",
@@ -28,7 +30,13 @@ describe("vendor readiness contract", () => {
     expect(probe).toContain('present("OPENAI_WEBHOOK_SECRET")');
     expect(probe).toContain("/IncomingPhoneNumbers.json?PageSize=50");
     expect(probe).toContain("this probe uses read-only GET requests only");
-    expect(probe).not.toMatch(/api\.vapi\.ai|api\.x\.ai|VAPI_|XAI_|grok/i);
+    // xAI is probed through read-only catalog and collection lists only: the
+    // API key against /v1/models and the Management key against /v1/collections.
+    expect(probe).toContain('readJson("https://api.x.ai/v1/models"');
+    expect(probe).toContain('readJson("https://management-api.x.ai/v1/collections"');
+    expect(probe).not.toMatch(/api\.x\.ai\/v1\/(responses|chat|tts|files|documents)/);
+    expect(probe).not.toMatch(/api\.vapi\.ai|VAPI_|XAI_API_KEY_CHATKIT|XAI_SIP_ALLOWED_ADDRESSES/);
+    expect(probe).not.toMatch(/generativelanguage|GEMINI_API_KEY/);
     expect(probe).not.toMatch(/elevenlabs|11labs/i);
     expect(probe).not.toContain('/call"');
     expect(probe).not.toContain("/Messages.json");

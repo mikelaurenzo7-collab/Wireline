@@ -307,7 +307,11 @@ describe("production environment launch policy", () => {
     expect(recommendedStart).toBeGreaterThanOrEqual(0);
     expect(optionalStart).toBeGreaterThan(recommendedStart);
     expect(recommendedBlock).not.toContain('"LIVEAVATAR_API_KEY"');
-    expect(recommendedBlock).not.toContain('"XAI_API_KEY"');
+    // The live xAI keys are recommended (structured primary, knowledge index);
+    // only the retired xAI leftovers stay out.
+    expect(recommendedBlock).toContain('"XAI_API_KEY"');
+    expect(recommendedBlock).toContain('"XAI_MANAGEMENT_API_KEY"');
+    expect(recommendedBlock).not.toMatch(/XAI_API_KEY_CHATKIT|XAI_SIP_ALLOWED_ADDRESSES|GEMINI/);
     const requiredBlock = prodCheck.slice(
       prodCheck.indexOf("const required = ["),
       recommendedStart,
@@ -315,6 +319,8 @@ describe("production environment launch policy", () => {
     expect(requiredBlock).toContain('"OPENAI_API_KEY"');
     expect(requiredBlock).toContain('"OPENAI_PROJECT_ID"');
     expect(requiredBlock).toContain('"OPENAI_WEBHOOK_SECRET"');
+    // Production still boots and answers on OpenAI without xAI, so xAI is never
+    // a hard requirement here; the voice validator enforces it per provider flag.
     expect(requiredBlock).not.toMatch(/XAI|VAPI|GROK/);
     expect(optionalBlock).not.toContain('"LIVEAVATAR_API_KEY"');
     expect(optionalBlock).not.toContain('"LIVEAVATAR_DEFAULT_AVATAR_ID"');

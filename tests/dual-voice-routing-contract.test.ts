@@ -192,12 +192,17 @@ describe("ChatGPT private voice simulation routing", () => {
     expect(chatkitIndex).toBeGreaterThan(openaiIndex);
   });
 
-  it("documents only OpenAI for managed live voice", () => {
+  it("documents OpenAI Realtime plus the explicit xAI phone cutover for live voice", () => {
     const envExample = read(".env.example");
     expect(envExample).toContain("OPENAI_PROJECT_ID=");
     expect(envExample).toContain("OPENAI_WEBHOOK_SECRET=");
     expect(envExample).toContain("OPENAI_SIP_MAX_CALL_SECONDS=");
-    expect(envExample).not.toMatch(/XAI_API_KEY|VAPI_PRIVATE_KEY|GROK/i);
+    // Phone calls move to xAI only through this flag; it never defaults on.
+    expect(envExample).toContain("\nWIRELINE_PHONE_VOICE_PROVIDER=\n");
+    expect(envExample).toContain("\nXAI_API_KEY=\n");
+    expect(envExample).not.toMatch(
+      /VAPI_PRIVATE_KEY|XAI_API_KEY_CHATKIT|XAI_SIP_ALLOWED_ADDRESSES/,
+    );
   });
 
   it("signals account MCP WebRTC through the authenticated server", () => {

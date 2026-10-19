@@ -33,7 +33,26 @@ describe("structured and voice runtime policy", () => {
     expect(prod).toContain('"OPENAI_WEBHOOK_SECRET"');
     expect(example).toContain("OPENAI_PROJECT_ID=");
     expect(example).toContain("OPENAI_WEBHOOK_SECRET=");
-    expect(example).not.toMatch(/VAPI_|XAI_|grok/i);
+    // Only the retired xAI leftovers stay out of the inventory; the live keys
+    // are documented below.
+    expect(example).not.toMatch(
+      /VAPI_|XAI_API_KEY_CHATKIT|XAI_SIP_ALLOWED_ADDRESSES|WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK|GEMINI_API_KEY/,
+    );
+  });
+
+  it("documents the xAI keys the primary lane and knowledge index depend on", () => {
+    const example = read(".env.example");
+    const prod = read("scripts/check-prod-env.mjs");
+    const validator = read("src/lib/env-validator.ts");
+    for (const key of ["XAI_API_KEY", "XAI_MANAGEMENT_API_KEY"]) {
+      expect(example).toContain(`\n${key}=`);
+      expect(prod).toContain(`"${key}"`);
+      expect(validator).toContain(`name: "${key}"`);
+    }
+    // xAI leads the inventory the way it leads the runtime chain.
+    expect(example.indexOf("\nXAI_API_KEY=")).toBeLessThan(example.indexOf("\nOPENAI_API_KEY="));
+    expect(prod).not.toContain('"GEMINI_API_KEY"');
+    expect(validator).not.toContain('name: "GEMINI_API_KEY"');
   });
 
   it("removes retired provider modules and public claims", () => {

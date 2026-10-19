@@ -71,7 +71,9 @@ describe("runtime integration operations", () => {
       "utf8",
     );
 
-    expect(envValidator).not.toContain('name: "XAI_API_KEY"');
+    expect(envValidator).toContain('name: "XAI_API_KEY"');
+    expect(envValidator).toContain('name: "XAI_MANAGEMENT_API_KEY"');
+    expect(envValidator).toContain('name: "WIRELINE_PHONE_VOICE_PROVIDER"');
     expect(envValidator).toContain('name: "OPENAI_API_KEY"');
     expect(envValidator).toContain('name: "AI_GATEWAY_API_KEY"');
     expect(envValidator).not.toContain('name: "ELEVENLABS_API_KEY"');

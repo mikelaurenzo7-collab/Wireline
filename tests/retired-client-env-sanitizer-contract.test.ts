@@ -44,9 +44,7 @@ describe("retired client environment sanitizer", () => {
     expect(deployment).toContain(
       'run(process.execPath, ["scripts/smoke-public-health-bundle.mjs"]);',
     );
-    expect(envExample).toContain(
-      "OpenAI Realtime owns every browser and phone voice",
-    );
+    expect(envExample).toContain("OpenAI Realtime owns browser voice rehearsals");
     expect(envExample).not.toContain("\nVITE_VAPI_PUBLIC_KEY=");
   });
 

@@ -188,7 +188,8 @@ const agentmailHeaders = agentmailCredential
 
 const [
   openai,
-  gemini,
+  xaiModels,
+  xaiCollections,
   gateway,
   twilioAccount,
   twilioBalance,
@@ -211,10 +212,17 @@ const [
         headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
       })
     : null,
-  present("GEMINI_API_KEY")
-    ? readJson(
-        `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(process.env.GEMINI_API_KEY)}`,
-      )
+  // Both xAI probes are read-only catalog/list requests: no inference, no
+  // index writes, no uploads.
+  present("XAI_API_KEY")
+    ? readJson("https://api.x.ai/v1/models", {
+        headers: { Authorization: `Bearer ${process.env.XAI_API_KEY}` },
+      })
+    : null,
+  present("XAI_MANAGEMENT_API_KEY")
+    ? readJson("https://management-api.x.ai/v1/collections", {
+        headers: { Authorization: `Bearer ${process.env.XAI_MANAGEMENT_API_KEY}` },
+      })
     : null,
   gatewayCredential
     ? readJson("https://ai-gateway.vercel.sh/v1/models", {
@@ -349,12 +357,53 @@ record(
     signed_webhook_configured: present("OPENAI_WEBHOOK_SECRET"),
   },
 );
+// xAI leads structured reasoning and, when WIRELINE_PHONE_VOICE_PROVIDER=xai,
+// carries phone calls; then a missing or rejected key is launch-blocking rather
+// than a quiet fall-through to the OpenAI backup.
+const xaiPhoneCalls =
+  String(process.env.WIRELINE_PHONE_VOICE_PROVIDER || "")
+    .trim()
+    .toLowerCase() === "xai";
+const xaiModelIds = new Set(
+  arrayAt(xaiModels?.body, "data")
+    .map((model) => String(model?.id || ""))
+    .filter(Boolean),
+);
+const xaiStructuredModelReady = Boolean(xaiModels?.ok) && xaiModelIds.has("grok-4.7");
+const xaiKeyDetail = !present("XAI_API_KEY")
+  ? "XAI_API_KEY missing: structured reasoning runs on the OpenAI backup, voice samples are off, and xAI phone calls cannot connect."
+  : !xaiModels?.ok
+    ? `XAI_API_KEY rejected (HTTP ${xaiModels?.status || 0}): structured reasoning falls through to OpenAI and xAI phone calls fail.`
+    : xaiStructuredModelReady
+      ? "xAI key accepted and the primary structured model is available."
+      : "xAI key accepted, but the pinned primary structured model is not listed for this key.";
 record(
-  "gemini",
+  "xai",
+  xaiPhoneCalls,
+  xaiModels?.ok ? "ready" : xaiPhoneCalls ? "blocked" : "degraded",
+  xaiKeyDetail,
+  "Keep prepaid credits or auto top-up and usage alerts enabled on the xAI team.",
+  {
+    structured_model: "grok-4.7",
+    structured_model_available: xaiStructuredModelReady,
+    phone_calls_on_xai: xaiPhoneCalls,
+  },
+);
+// The management key is a separate credential and failure mode: when it is
+// rejected, the knowledge-index sweep pauses and Bots answer from keyword
+// matches only, while every other xAI feature keeps working.
+record(
+  "xai_knowledge_index",
   false,
-  gemini?.ok ? "ready" : "degraded",
-  gemini?.ok ? "Gemini continuity fallback key accepted." : "Gemini fallback unavailable.",
-  "Attach Google Cloud billing only if free or committed quota is insufficient.",
+  xaiCollections?.ok ? "ready" : "degraded",
+  !present("XAI_MANAGEMENT_API_KEY")
+    ? "XAI_MANAGEMENT_API_KEY missing: meaning-based knowledge search stays inactive."
+    : !present("XAI_API_KEY")
+      ? "XAI_MANAGEMENT_API_KEY is set, but the index also needs XAI_API_KEY to upload and search documents."
+      : xaiCollections?.ok
+        ? "xAI Management key accepted; Bot knowledge indexes can build."
+        : `xAI Management key rejected (HTTP ${xaiCollections?.status || 0}): the knowledge-index sweep pauses and Bots answer from keyword matches only. Regenerate the Management API key with collections access and update XAI_MANAGEMENT_API_KEY.`,
+  "Management API keys are issued per team in the xAI console; no separate funding.",
 );
 record(
   "ai_gateway",
