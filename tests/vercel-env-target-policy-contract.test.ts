@@ -53,7 +53,7 @@ describe("Vercel env target policy stays mutually satisfiable", () => {
     for (const retired of [
       "VAPI_PRIVATE_KEY",
       "VAPI_WEBHOOK_SECRET",
-      "XAI_API_KEY",
+      "XAI_API_KEY_CHATKIT",
       "XAI_SIP_ALLOWED_ADDRESSES",
     ]) {
       expect(health).toContain(`"${retired}"`);

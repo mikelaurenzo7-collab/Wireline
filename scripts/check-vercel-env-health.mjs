@@ -50,25 +50,18 @@ const required = [
 
 const gateway = ["AI_GATEWAY_API_KEY", "WIRELINE_GATEWAY_STRUCTURED_MODEL"];
 
-const recommended = [
-  "CORS_ORIGINS",
-  "SENTRY_DSN",
-];
+const recommended = ["CORS_ORIGINS", "SENTRY_DSN"];
 
 // Voice is independently fail-closed at request time. The SIP project and
 // signed webhook belong in core production coverage; these pins are optional
 // because the runtime already defaults to gpt-realtime-2.1 / gpt-4o-mini-transcribe.
-const voice = [
-  "OPENAI_REALTIME_MODEL",
-  "OPENAI_REALTIME_TRANSCRIBER",
-];
+const voice = ["OPENAI_REALTIME_MODEL", "OPENAI_REALTIME_TRANSCRIBER"];
 const retired = [
   "ELEVENLABS_API_KEY",
   "VITE_VAPI_PUBLIC_KEY",
   "VAPI_PRIVATE_KEY",
   "VAPI_WEBHOOK_SECRET",
   "VAPI_WEBHOOK_CREDENTIAL_ID",
-  "XAI_API_KEY",
   "XAI_API_KEY_CHATKIT",
   "XAI_SIP_ALLOWED_ADDRESSES",
   "WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK",

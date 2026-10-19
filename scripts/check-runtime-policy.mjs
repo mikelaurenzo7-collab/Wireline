@@ -44,12 +44,7 @@ requireText(
   'voiceProvider: text("voice_provider").default("openai")',
   "New Bots do not default to OpenAI voices.",
 );
-for (const retiredKey of [
-  "VAPI_PRIVATE_KEY",
-  "VAPI_WEBHOOK_SECRET",
-  "XAI_API_KEY",
-  "XAI_SIP_ALLOWED_ADDRESSES",
-]) {
+for (const retiredKey of ["VAPI_PRIVATE_KEY", "VAPI_WEBHOOK_SECRET", "XAI_SIP_ALLOWED_ADDRESSES"]) {
   requireText(
     envValidator,
     `"${retiredKey}"`,
