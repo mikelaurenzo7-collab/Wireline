@@ -22,6 +22,7 @@ import { drizzle, fetchWithTimeout, log, tenantStore } from "../server-context";
 import {
   buildConsentLedgerRow,
   CONSENT_RULE_VERSION,
+  detectAiDisclosure,
   detectOptOut,
   getConsentRuleForPhone,
 } from "../tcpa-consent";
@@ -264,6 +265,11 @@ export function deterministicSummary(transcript: string): string {
 }
 
 function buildInboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRuntime): string {
+  // A saved greeting that already declares the AI ("I'm an AI assistant")
+  // gives an inbound caller that identity; prefixing the generic disclosure as
+  // well makes them hear it twice. Only declarative agent phrasing counts.
+  // Outbound calls always keep the full prefix (on-behalf-of, opt-out notice).
+  if (detectAiDisclosure(runtime.greeting).found) return runtime.greeting.trim();
   const disclosure = complianceFirstMessagePrefix(
     input.complianceMode,
     input.businessName || runtime.agentName,

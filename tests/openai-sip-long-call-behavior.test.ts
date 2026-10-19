@@ -217,6 +217,7 @@ vi.mock("../src/lib/error-reporter", () => ({ reportError: h.reportError }));
 vi.mock("../src/lib/tcpa-consent", () => ({
   buildConsentLedgerRow: vi.fn(),
   CONSENT_RULE_VERSION: "test",
+  detectAiDisclosure: () => ({ found: false }),
   detectOptOut: () => ({ kind: "none" }),
   getConsentRuleForPhone: vi.fn(),
 }));

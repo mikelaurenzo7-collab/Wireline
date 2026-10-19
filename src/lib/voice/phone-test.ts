@@ -669,6 +669,8 @@ async function placePhoneTest(
   }
 }
 
+const PHONE_TEST_CODE_NOT_CONFIRMED = "The verification code was not confirmed.";
+
 export const phoneTestHangupTwiml = () =>
   '<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>';
 const xml = (value: string) =>
@@ -678,12 +680,23 @@ const xml = (value: string) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
+// The gate is BotBound speaking, not the Bot: it says so, waits a beat so it
+// does not talk over the owner's "hello", and keeps the transcription consent.
+const PHONE_TEST_GATE_PROMPT: Record<1 | 2, string> = {
+  1: "Hi, this is BotBound. Your AI bot joins after you enter the six digit code shown on your screen. Entering it means this test call can be transcribed. If you didn't request this call, just hang up.",
+  2: "That code didn't match. Enter the six digit code shown on your screen, or hang up to cancel.",
+};
 export function phoneTestGatherTwiml(token: string, attempt = 1): string {
   const action = phoneTestWebhookUrl("gather", token).replace("#", `&attempt=${attempt}#`);
+  const prompt = PHONE_TEST_GATE_PROMPT[attempt >= 2 ? 2 : 1];
   return (
     '<?xml version="1.0" encoding="UTF-8"?><Response><Gather input="dtmf" numDigits="6" timeout="12" actionOnEmptyResult="true" method="POST" action="' +
     xml(action) +
-    '"><Say>This is the BotBound phone test you requested. To speak with your AI bot and allow this test conversation to be transcribed, enter the six digit code shown in BotBound. If you did not request this call, hang up.</Say></Gather><Hangup/></Response>'
+    '">' +
+    (attempt >= 2 ? "" : '<Pause length="1"/>') +
+    '<Say voice="Polly.Joanna-Neural">' +
+    xml(prompt) +
+    "</Say></Gather><Hangup/></Response>"
   );
 }
 export function phoneTestBridgeTwiml(input: {
@@ -806,7 +819,7 @@ export async function handlePhoneTestAnswer(
           attempts,
           status: attempts >= 2 ? "ending" : "verifying",
           ...(attempts >= 2
-            ? { cancel_requested: true, error: "The verification code was not confirmed." }
+            ? { cancel_requested: true, error: PHONE_TEST_CODE_NOT_CONFIRMED }
             : {}),
         });
         return attempts >= 2
@@ -963,7 +976,9 @@ async function settlePhoneTest(
           summary:
             carrierFailureMessage(status, errorCode) ??
             (state.cancel_requested
-              ? "Phone test ended at your request before a conversation connected."
+              ? state.error === PHONE_TEST_CODE_NOT_CONFIRMED
+                ? "You answered, but the six-digit code wasn't entered, so your Bot didn't join the call."
+                : "Phone test ended at your request before a conversation connected."
               : state.verified_at
                 ? "Phone test verified, but the bot conversation did not connect."
                 : status === "no-answer" || status === "busy"
