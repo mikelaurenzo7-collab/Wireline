@@ -135,7 +135,19 @@ projects:
                 sync: false
               - key: OPENAI_API_KEY_CHATKIT_PREVIOUS
                 sync: false
-              - key: GEMINI_API_KEY
+              # xAI: primary structured reasoning, voice samples, built-in web
+              # search, and phone calls once WIRELINE_PHONE_VOICE_PROVIDER=xai.
+              # Values stay in the Dashboard; sync: false is not re-prompted
+              # on Blueprint updates (docs/DEPLOYMENT_RUNBOOK.md, xAI cutover).
+              - key: XAI_API_KEY
+                sync: false
+              # Management API key for the per-Bot knowledge index. Only the
+              # API runs the index sweep, so the worker does not mirror it.
+              - key: XAI_MANAGEMENT_API_KEY
+                sync: false
+              # Phone-call provider flag; unset keeps OpenAI Realtime. The
+              # worker mirrors it so both services always agree.
+              - key: WIRELINE_PHONE_VOICE_PROVIDER
                 sync: false
               - key: PERPLEXITY_API_KEY
                 sync: false
@@ -403,11 +415,16 @@ projects:
                   name: botbound-api
                   type: web
                   envVarKey: OPENAI_API_KEY_CHATKIT_PREVIOUS
-              - key: GEMINI_API_KEY
+              - key: XAI_API_KEY
                 fromService:
                   name: botbound-api
                   type: web
-                  envVarKey: GEMINI_API_KEY
+                  envVarKey: XAI_API_KEY
+              - key: WIRELINE_PHONE_VOICE_PROVIDER
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: WIRELINE_PHONE_VOICE_PROVIDER
               - key: PERPLEXITY_API_KEY
                 fromService:
                   name: botbound-api

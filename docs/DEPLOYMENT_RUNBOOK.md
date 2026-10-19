@@ -433,7 +433,7 @@ Phone calls can run on xAI Grok Voice (`grok-voice-3.0`) instead of OpenAI Realt
 
 Cutover, on the release commit:
 
-1. Set `XAI_API_KEY` on botbound-api and botbound-voice. `WIRELINE_DATA_KEY` and the persistent voice worker must already be configured.
+1. Set `XAI_API_KEY` on botbound-api and botbound-voice. `WIRELINE_DATA_KEY` and the persistent voice worker must already be configured. `render.yaml` declares `XAI_API_KEY`, `XAI_MANAGEMENT_API_KEY` and `WIRELINE_PHONE_VOICE_PROVIDER` on botbound-api as `sync: false` and mirrors the first and last onto botbound-voice with `fromService`; the values live only in the Render Dashboard. `XAI_MANAGEMENT_API_KEY` (a Management API key with collections access) is API-only and drives each Bot's knowledge index; when xAI rejects it, the index sweep pauses for 30 minutes and logs `Knowledge index paused`, and `npm run vendor:readiness` reports `xai_knowledge_index` degraded.
 2. Set `WIRELINE_PHONE_VOICE_PROVIDER=xai` on both services and deploy all four services together.
 3. As a platform admin, `POST /api/voice/xai/registrations/sync`. Each assigned number is registered with xAI (`origin: byo_trunk`) with generated SIP digest credentials. Its one-time webhook secret is stored as a secret-vault envelope in `wireline_xai_phone_registrations`, which only root (non-tenant) database access can read. `GET /api/voice/xai/status` lists registered phone suffixes.
 4. Place one inbound and one approved outbound call and confirm disclosure playback, transcript, tool use, and hangup.
