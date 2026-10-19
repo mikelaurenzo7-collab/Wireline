@@ -97,8 +97,20 @@ export function toXAIRealtimeSession(
 }
 
 /**
+ * xAI reports no playback-drain event (no output_audio_buffer.* on its
+ * Voice Agent API), so a forced line's playback is inferred: a deliberately
+ * slow speaking rate plus TTS and SIP latency margin, timed from when the
+ * line was sent. The estimate errs late, never early.
+ */
+export function xaiForcedMessagePlaybackMs(text: string): number {
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  return Math.ceil((words / 2.2) * 1000) + 1500;
+}
+
+/**
  * An exact, non-interruptible line (the compliance opening). xAI speaks it
- * verbatim; no model turn starts until its playback drains.
+ * verbatim, drops caller audio while it plays, and starts no model turn until
+ * its playback drains.
  */
 export function xaiForceMessage(text: string): Record<string, unknown> {
   return {

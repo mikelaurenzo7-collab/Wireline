@@ -58,7 +58,11 @@ import {
   realtimeProviderForCallId,
   realtimeProviderLabel,
 } from "./realtime-provider";
-import { toXAIRealtimeSession, xaiForceMessage } from "./xai-voice-config";
+import {
+  toXAIRealtimeSession,
+  xaiForcedMessagePlaybackMs,
+  xaiForceMessage,
+} from "./xai-voice-config";
 import {
   AI_DISCLOSURE_EVENTS,
   classifyAiDisclosureEvidence,
@@ -1828,6 +1832,9 @@ async function runRealtimeSession(
   let actualOpeningTranscript = "";
   /** xAI speaks the opening verbatim via force_message; set only on that path. */
   let xaiForcedOpening = "";
+  /** Response id xAI gives the forced opening's injected response lifecycle. */
+  let xaiOpeningResponseId = "";
+  let xaiOpeningPlaybackTimer: ReturnType<typeof setTimeout> | null = null;
   let anonymousSipPlaybackActive = false;
   const playbackResponseIds = new Set<string>();
   const activeResponseIds = new Set<string>();
@@ -1917,6 +1924,8 @@ async function runRealtimeSession(
   };
 
   const finishExactOpeningIfNeeded = (delivered: boolean) => {
+    if (xaiOpeningPlaybackTimer) clearTimeout(xaiOpeningPlaybackTimer);
+    xaiOpeningPlaybackTimer = null;
     if (!ownsSession()) return false;
     if (!awaitingExactOpeningPlayback) return false;
     awaitingExactOpeningPlayback = false;
@@ -2268,8 +2277,17 @@ async function runRealtimeSession(
       requestToolContinuationWhenReady();
       return;
     }
+    if (provider === "xai" && awaitingExactOpeningPlayback && type === "response.created") {
+      // xAI starts no model turn until a non-interruptible line has played, so
+      // the first response after the opening's own proves it was heard.
+      const responseId = String(asRecord(event.response).id || "");
+      if (!xaiOpeningResponseId) xaiOpeningResponseId = responseId || "opening";
+      else if (responseId !== xaiOpeningResponseId && finishExactOpeningIfNeeded(true)) return;
+    }
     if (type === "input_audio_buffer.speech_started" || type === "input_audio_buffer.committed") {
-      if (!hangupAfterOpening) awaitingExactOpeningPlayback = false;
+      // xAI drops caller audio while the opening plays, so speech cannot cut
+      // it short there; its playback confirmation stays pending.
+      if (!hangupAfterOpening && provider !== "xai") awaitingExactOpeningPlayback = false;
       return;
     }
     if (
@@ -2391,6 +2409,12 @@ async function runRealtimeSession(
             xaiForcedOpening = opening;
             assistantTurn = opening;
             sendJson(ws, xaiForceMessage(opening));
+            // A silent caller produces no later turn; confirm on the slow
+            // playback estimate instead (a suspended line hangs up then).
+            xaiOpeningPlaybackTimer = setTimeout(() => {
+              xaiOpeningPlaybackTimer = null;
+              finishExactOpeningIfNeeded(true);
+            }, xaiForcedMessagePlaybackMs(opening));
           } else {
             sendJson(ws, { type: "response.create" });
           }
@@ -2649,6 +2673,7 @@ async function runRealtimeSession(
     }
     if (maxDurationTimer) clearTimeout(maxDurationTimer);
     if (durationWarningTimer) clearTimeout(durationWarningTimer);
+    if (xaiOpeningPlaybackTimer) clearTimeout(xaiOpeningPlaybackTimer);
     if (accountingTimer) clearInterval(accountingTimer);
     if (heartbeat) clearInterval(heartbeat);
     if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
