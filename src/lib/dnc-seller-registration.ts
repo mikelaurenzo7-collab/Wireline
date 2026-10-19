@@ -106,14 +106,15 @@ export type DncSellerRegistrationSummary = {
 /** Platform admin: every recorded registration, so pending links can be configured. */
 export async function listDncSellerRegistrations(): Promise<DncSellerRegistrationSummary[]> {
   // Read across tenants with the server role; each row carries its owner id.
-  const rows = await tenantStore.exit(() =>
-    drizzle
-      .select({
-        userId: schema.settings.userId,
-        registration: schema.settings.dncSellerRegistration,
-      })
-      .from(schema.settings)
-      .where(isNotNull(schema.settings.dncSellerRegistration)),
+  const rows = await tenantStore.exit(
+    async () =>
+      await drizzle
+        .select({
+          userId: schema.settings.userId,
+          registration: schema.settings.dncSellerRegistration,
+        })
+        .from(schema.settings)
+        .where(isNotNull(schema.settings.dncSellerRegistration)),
   );
   const summaries: DncSellerRegistrationSummary[] = [];
   for (const row of rows) {

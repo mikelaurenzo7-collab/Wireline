@@ -289,21 +289,22 @@ async function persistAmbiguousTwilioProviderOutcome(input: {
   // Exit a possibly failed request transaction so the incident gets an
   // independent durable write. Message content and the full destination are
   // deliberately excluded from both the row and its metadata.
-  await tenantStore.exit(() =>
-    drizzle.insert(schema.auditLog).values({
-      userId: input.userId,
-      action: "twilio.message_provider_outcome_ambiguous",
-      eventType: "provider.reconciliation",
-      severity: "critical",
-      provider: "twilio",
-      resourceType: "twilio_message_reservation",
-      resourceId: input.reservationReference,
-      metadata: {
-        reservation_reference: input.reservationReference,
-        destination_suffix: input.destinationSuffix,
-        provider_status: input.providerStatus,
-      },
-    }),
+  await tenantStore.exit(
+    async () =>
+      await drizzle.insert(schema.auditLog).values({
+        userId: input.userId,
+        action: "twilio.message_provider_outcome_ambiguous",
+        eventType: "provider.reconciliation",
+        severity: "critical",
+        provider: "twilio",
+        resourceType: "twilio_message_reservation",
+        resourceId: input.reservationReference,
+        metadata: {
+          reservation_reference: input.reservationReference,
+          destination_suffix: input.destinationSuffix,
+          provider_status: input.providerStatus,
+        },
+      }),
   );
 }
 
