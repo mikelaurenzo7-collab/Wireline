@@ -24,7 +24,6 @@ export function requireCertifiedSharedWorkspaces(
 
   res.status(503).json({
     code: "SHARED_WORKSPACES_NOT_CERTIFIED",
-    error:
-      "Team invitations aren't available yet. Your workspace keeps working as usual.",
+    error: "Team invitations aren't available yet. Your workspace keeps working as usual.",
   });
 }
