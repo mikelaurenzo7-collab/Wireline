@@ -2,6 +2,7 @@ import { log } from "./server-context";
 import { isPostgresConnectionString } from "./database-connection";
 import { isProductionDeployment } from "./deployment-environment";
 import { BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
+import { configuredPhoneVoiceProvider } from "./voice/realtime-provider";
 import {
   isSafeOpenAIRealtimeSessionReserve,
   OPENAI_REALTIME_PRICING_MODEL,
@@ -812,7 +813,6 @@ export function validateEnv(): EnvValidationResult {
     "VAPI_PRIVATE_KEY",
     "VAPI_WEBHOOK_SECRET",
     "VAPI_WEBHOOK_CREDENTIAL_ID",
-    "XAI_API_KEY",
     "XAI_API_KEY_CHATKIT",
     "XAI_SIP_ALLOWED_ADDRESSES",
     "WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK",
@@ -826,8 +826,23 @@ export function validateEnv(): EnvValidationResult {
       var: variable,
       group: "voice",
       message:
-        "Retired provider configuration must be removed; BotBound voice uses OpenAI Realtime with Twilio transport",
+        "Retired provider configuration must be removed; BotBound voice uses OpenAI Realtime or xAI Grok Voice with Twilio transport",
     });
+  }
+
+  // xAI Grok Voice carries phone calls only when explicitly selected, and then
+  // its key is required: registration and every bridged call depend on it.
+  byGroup.voice.total++;
+  if (configuredPhoneVoiceProvider() === "xai" && !process.env.XAI_API_KEY?.trim()) {
+    result.valid = false;
+    byGroup.voice.invalid++;
+    result.errors.push({
+      var: "XAI_API_KEY",
+      group: "voice",
+      message: "WIRELINE_PHONE_VOICE_PROVIDER=xai requires XAI_API_KEY for xAI Grok Voice calls",
+    });
+  } else {
+    byGroup.voice.valid++;
   }
 
   const managedRuntime = process.env.OPENAI_API_KEY?.trim();
