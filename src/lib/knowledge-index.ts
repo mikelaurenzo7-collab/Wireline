@@ -51,7 +51,11 @@ async function call(
   });
   const text = await response.text().catch(() => "");
   if (!response.ok) {
-    throw new Error(`Knowledge index request failed (HTTP ${response.status}).`);
+    const which = url.startsWith(MANAGEMENT_URL) ? "management key" : "API key";
+    throw Object.assign(
+      new Error(`Knowledge index request failed (HTTP ${response.status}, ${which}).`),
+      { status: response.status },
+    );
   }
   try {
     const parsed = text ? JSON.parse(text) : {};
@@ -277,12 +281,19 @@ async function findStaleBots(limit: number): Promise<StaleBot[]> {
 /** A Bot whose rebuild failed waits before it is tried again, so it cannot block others. */
 const RETRY_BACKOFF_MS = 30 * 60_000;
 const retryAfter = new Map<string, number>();
+/** A rejected key fails every Bot the same way, so the whole sweep pauses instead. */
+let pausedUntil = 0;
+
+function isAuthRejection(error: unknown): boolean {
+  const status = (error as { status?: unknown } | null)?.status;
+  return status === 401 || status === 403;
+}
 
 /** One sweep tick: rebuild up to SYNC_BATCH changed Bots. Never throws. */
 export async function syncStaleKnowledgeIndexes(
   withinBudget: () => boolean = () => true,
 ): Promise<{ synced: number; failed: number }> {
-  if (!isKnowledgeIndexConfigured()) return { synced: 0, failed: 0 };
+  if (!isKnowledgeIndexConfigured() || Date.now() < pausedUntil) return { synced: 0, failed: 0 };
   let synced = 0;
   let failed = 0;
   let stale: StaleBot[] = [];
@@ -305,6 +316,13 @@ export async function syncStaleKnowledgeIndexes(
       synced++;
     } catch (error) {
       failed++;
+      if (isAuthRejection(error)) {
+        pausedUntil = Date.now() + RETRY_BACKOFF_MS;
+        log.error("Knowledge index paused: the provider rejected a key", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        break;
+      }
       retryAfter.set(bot.agentId, Date.now() + RETRY_BACKOFF_MS);
       log.warn("Knowledge index sync failed", {
         agentId: bot.agentId,
