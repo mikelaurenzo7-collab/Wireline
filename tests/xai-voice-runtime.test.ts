@@ -181,6 +181,9 @@ describe("xAI Grok Voice phone runtime", () => {
     const migration = read("drizzle/migrations/0181_xai_phone_registrations.sql");
     expect(migration).toContain("ENABLE ROW LEVEL SECURITY");
     expect(migration).toContain("FROM anon, authenticated, service_role");
-    expect(migration).not.toContain("TO wireline_server");
+    // The server role sees rows only when no tenant is in scope.
+    expect(migration).toContain(
+      "TO wireline_server USING ((SELECT public.wireline_current_user_id()) IS NULL)",
+    );
   });
 });
