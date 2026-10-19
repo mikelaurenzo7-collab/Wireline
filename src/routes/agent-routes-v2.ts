@@ -11,6 +11,7 @@ import { agentMutationRateLimit } from "../middleware/api-rate-limits";
 import { recordAmbiguousProviderAttempt, recordUsage } from "../lib/ai-audit";
 import { drizzle, log } from "../lib/server-context";
 import { phoneCallVoiceFor } from "../lib/voice/xai-voice-config";
+import { isVoiceSampleAvailable, synthesizeVoiceSample } from "../lib/voice/voice-sample";
 import {
   isPlaybookEmpty,
   parseAgentPlaybook,
@@ -1046,6 +1047,40 @@ router.patch(
       neverSay: parsed.value.neverSay.length,
     });
     res.json({ success: true, playbook: parsed.value });
+  },
+);
+
+// A few seconds of the voice phone callers hear, spoken as this Bot. Samples
+// are cached per voice and Bot name, so replaying one costs nothing.
+router.get(
+  "/api/agent-config/:id/voice/sample",
+  authenticateUser,
+  agentMutationRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const [agent] = await drizzle
+      .select({ id: schema.agents.id, name: schema.agents.name })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+      .limit(1);
+    if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
+    const voiceId = normalizeManagedOpenAIVoiceId(
+      cleanText(typeof req.query.voice === "string" ? req.query.voice : "", 40),
+    );
+    if (!voiceId) throw AppError.fromHttpStatus(400, "Choose one of the built-in voices.");
+    const phoneCall = phoneCallVoiceFor(voiceId);
+    if (!phoneCall || !isVoiceSampleAvailable()) {
+      throw AppError.fromHttpStatus(409, "Voice samples are not available right now.");
+    }
+    let audio: Buffer;
+    try {
+      audio = await synthesizeVoiceSample(phoneCall.voice, agent.name);
+    } catch (error) {
+      log.warn("Voice sample failed", { error: getErrorMessage(error) });
+      throw AppError.fromHttpStatus(503, "That sample could not play. Try again in a moment.");
+    }
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Cache-Control", "private, max-age=86400");
+    res.send(audio);
   },
 );
 

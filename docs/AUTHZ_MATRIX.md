@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 442
-**Protected:** 356
+**Routes scanned:** 443
+**Protected:** 357
 **Public (allowlisted):** 86
 **Violations:** 0
 
@@ -125,6 +125,7 @@
 | agent-routes-v2.ts | PATCH | `/api/agent-config/:id/playbook` | inline | — | — | Protected |
 | agent-routes-v2.ts | PATCH | `/api/agent-config/:id/runtime` | inline | — | — | Protected |
 | agent-routes-v2.ts | PATCH | `/api/agent-config/:id/voice` | inline | — | — | Protected |
+| agent-routes-v2.ts | GET | `/api/agent-config/:id/voice/sample` | inline | — | — | Protected |
 | agent-routes-v2.ts | GET | `/api/agents` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/agents` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/agents/:id/import` | inline | — | — | Protected |

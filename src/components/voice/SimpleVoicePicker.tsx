@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, Loader2, Volume2 } from "lucide-react";
+import { Check, ChevronDown, Loader2, Play, Square, Volume2 } from "lucide-react";
 
 import { authFetch } from "../../lib/api";
 import { useAuth } from "../../contexts/AuthContext";
@@ -48,6 +48,11 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
   const [previewOpen, setPreviewOpen] = useState(false);
   const [choicesOpen, setChoicesOpen] = useState(false);
   const [phoneCall, setPhoneCall] = useState<PhoneCallVoice>(null);
+  const [sampleVoiceId, setSampleVoiceId] = useState<string | null>(null);
+  const [sampleLoading, setSampleLoading] = useState(false);
+  const sampleAudioRef = useRef<HTMLAudioElement | null>(null);
+  const sampleUrlRef = useRef<string | null>(null);
+  const sampleRequestRef = useRef(0);
   const activeAgentIdRef = useRef(agentId);
   const activeOwnerIdRef = useRef(ownerId);
   const saveOperationRef = useRef(0);
@@ -112,6 +117,66 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
       cancelled = true;
     };
   }, [agentId, ownerId]);
+
+  function stopSample() {
+    sampleRequestRef.current += 1;
+    sampleAudioRef.current?.pause();
+    sampleAudioRef.current = null;
+    if (sampleUrlRef.current) URL.revokeObjectURL(sampleUrlRef.current);
+    sampleUrlRef.current = null;
+    setSampleVoiceId(null);
+    setSampleLoading(false);
+  }
+
+  // A sample never keeps playing after the owner switches Bots or leaves.
+  useEffect(
+    () => () => {
+      sampleRequestRef.current += 1;
+      sampleAudioRef.current?.pause();
+      sampleAudioRef.current = null;
+      if (sampleUrlRef.current) URL.revokeObjectURL(sampleUrlRef.current);
+      sampleUrlRef.current = null;
+      setSampleVoiceId(null);
+      setSampleLoading(false);
+    },
+    [agentId, ownerId],
+  );
+
+  async function playSample(voice: VoiceOption) {
+    if (sampleVoiceId === voice.id) {
+      stopSample();
+      return;
+    }
+    stopSample();
+    const request = ++sampleRequestRef.current;
+    setSampleVoiceId(voice.id);
+    setSampleLoading(true);
+    setError(null);
+    try {
+      const response = await authFetch(
+        `/api/agent-config/${encodeURIComponent(agentId)}/voice/sample?voice=${encodeURIComponent(voice.id)}`,
+      );
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error || "That sample could not play.");
+      }
+      const blob = await response.blob();
+      if (request !== sampleRequestRef.current) return;
+      const url = URL.createObjectURL(blob);
+      sampleUrlRef.current = url;
+      const audio = new Audio(url);
+      sampleAudioRef.current = audio;
+      audio.onended = () => {
+        if (request === sampleRequestRef.current) stopSample();
+      };
+      setSampleLoading(false);
+      await audio.play();
+    } catch (reason) {
+      if (request !== sampleRequestRef.current) return;
+      stopSample();
+      setError(reason instanceof Error ? reason.message : "That sample could not play.");
+    }
+  }
 
   async function selectVoice(voice: VoiceOption) {
     if (!agentId || !ownerId || savingVoiceId) return;
@@ -210,6 +275,23 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
             </span>
           </span>
         </button>
+        {phoneCall ? (
+          <button
+            type="button"
+            onClick={() => void playSample(voice)}
+            aria-label={`${sampleVoiceId === voice.id ? "Stop" : "Play"} ${voice.name.split("·")[0].trim()} sample`}
+            aria-pressed={sampleVoiceId === voice.id}
+            className="grid size-11 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo"
+          >
+            {sampleVoiceId === voice.id && sampleLoading ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            ) : sampleVoiceId === voice.id ? (
+              <Square className="size-3.5 fill-current" aria-hidden="true" />
+            ) : (
+              <Play className="size-4" aria-hidden="true" />
+            )}
+          </button>
+        ) : null}
       </div>
     );
   }
@@ -268,7 +350,10 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
           </summary>
           <div className="min-w-0 space-y-3 border-t border-border p-2 sm:p-3">
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
-              <span>{includedVoices.length} built-in voices</span>
+              <span>
+                {includedVoices.length} built-in voices
+                {phoneCall ? ". Tap play to hear one as callers will." : ""}
+              </span>
               <span>Saves automatically</span>
             </div>
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-2">
