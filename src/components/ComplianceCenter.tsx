@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
-import { ChevronRight, Download, ExternalLink, Loader2, Shield } from "lucide-react";
+import { Download, ExternalLink, Loader2, Shield } from "lucide-react";
 
 import DncManager from "./DncManager";
-import DncRegistrationCard from "./DncRegistrationCard";
+import DncRegistrationCard, { DNC_REGISTRATION_STATE_LABEL } from "./DncRegistrationCard";
 import { authFetch } from "../lib/api";
+import type { DncSellerRegistrationState } from "../lib/dnc-seller-registration-rules";
 import type { ConsentLedgerEvent } from "../lib/tcpa-consent";
 import { Button, Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";
@@ -63,6 +64,7 @@ export default function ComplianceCenter() {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [registryState, setRegistryState] = useState<DncSellerRegistrationState | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -132,9 +134,11 @@ export default function ComplianceCenter() {
           <div className="mt-4 space-y-3">
             <dl className="grid gap-3 border-y border-border py-4 sm:grid-cols-3 sm:gap-4">
               <div className="flex items-baseline justify-between gap-4 sm:block">
-                <dt className="shrink-0 text-xs font-medium text-muted-foreground">Federal DNC</dt>
+                <dt className="shrink-0 text-xs font-medium text-muted-foreground">
+                  Do Not Call Registry
+                </dt>
                 <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">
-                  {summary.federal_dnc_configured ? "Configured" : "Screening setup needed"}
+                  {registryState ? DNC_REGISTRATION_STATE_LABEL[registryState] : "Checking"}
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-4 sm:block">
@@ -183,7 +187,7 @@ export default function ComplianceCenter() {
       </section>
 
       <div className="grid gap-4">
-        <DncRegistrationCard />
+        <DncRegistrationCard onStateChange={setRegistryState} />
 
         {summary ? (
           <section className="wl-paper wl-paper-elevated p-4 sm:p-5">
@@ -227,22 +231,11 @@ export default function ComplianceCenter() {
                     <p className="mt-1 truncate text-xs text-muted-foreground">
                       {entry.customer_number || "Unknown number"}
                       {entry.state ? ` · ${entry.state}` : ""}
-                      {entry.call_id ? ` · call ${entry.call_id}` : ""}
                     </p>
                   </div>
                 ))
               )}
             </div>
-            <details className="group mt-3 text-xs text-muted-foreground">
-              <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 py-2 wl-focus-ring-halo [&::-webkit-details-marker]:hidden">
-                <ChevronRight
-                  className="size-3.5 transition-transform group-open:rotate-90 motion-reduce:transition-none"
-                  aria-hidden="true"
-                />
-                Details
-              </summary>
-              <p className="pb-1">Rule version {summary.consent_rule_version || "N/A"}</p>
-            </details>
           </section>
         ) : null}
 

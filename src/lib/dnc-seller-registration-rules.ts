@@ -199,6 +199,56 @@ export function usAreaCode(phone: string): string | null {
   return AREA_CODE_RE.test(area) ? area : null;
 }
 
+export type DncAreaCodeSuggestion = {
+  code: string;
+  /** Outbound contacts in this area code. */
+  contacts: number;
+  /** One of the owner's own BotBound lines uses this area code. */
+  ownLine: boolean;
+};
+
+/**
+ * Area codes worth subscribing to, so the owner does not have to work them
+ * out: the area codes of their outbound contacts (most contacts first), then
+ * their own lines' area codes, where local calling usually starts.
+ */
+export function suggestDncAreaCodes(
+  input: { lineNumbers: readonly string[]; contactNumbers: readonly string[] },
+  limit = 25,
+): DncAreaCodeSuggestion[] {
+  const byCode = new Map<string, DncAreaCodeSuggestion>();
+  const entry = (code: string) => {
+    const existing = byCode.get(code);
+    if (existing) return existing;
+    const created = { code, contacts: 0, ownLine: false };
+    byCode.set(code, created);
+    return created;
+  };
+  for (const number of input.lineNumbers) {
+    const code = usAreaCode(number);
+    if (code) entry(code).ownLine = true;
+  }
+  for (const number of input.contactNumbers) {
+    const code = usAreaCode(number);
+    if (code) entry(code).contacts += 1;
+  }
+  return [...byCode.values()]
+    .sort(
+      (a, b) =>
+        b.contacts - a.contacts ||
+        Number(b.ownLine) - Number(a.ownLine) ||
+        a.code.localeCompare(b.code),
+    )
+    .slice(0, limit);
+}
+
+/** A new subscription runs 12 months: the day before the purchase date's anniversary. */
+export function defaultDncExpiresOn(now = new Date()): string {
+  const next = new Date(Date.UTC(now.getUTCFullYear() + 1, now.getUTCMonth(), now.getUTCDate()));
+  next.setUTCDate(next.getUTCDate() - 1);
+  return next.toISOString().slice(0, 10);
+}
+
 /** Marketing calls need an active seller subscription that covers the number's area code. */
 export function evaluateDncSellerRegistration(
   registration: DncSellerRegistration | null,

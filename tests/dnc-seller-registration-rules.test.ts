@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  defaultDncExpiresOn,
   dncSellerRegistrationState,
+  suggestDncAreaCodes,
   evaluateDncSellerRegistration,
   parseAreaCodes,
   parseDncSellerRegistrationInput,
@@ -123,5 +125,31 @@ describe("seller DNC registration state and gate", () => {
     expect(usAreaCode("3125551234")).toBe("312");
     expect(usAreaCode("+1 212 555 1234")).toBe("212");
     expect(usAreaCode("+44 20 7123 4567")).toBeNull();
+  });
+
+  it("prefills the area codes and term an owner needs to subscribe to", () => {
+    expect(
+      suggestDncAreaCodes({
+        lineNumbers: ["+13125845703"],
+        contactNumbers: ["+15617270142", "561-555-0100", "+13125550101", "+442071234567", ""],
+      }),
+    ).toEqual([
+      { code: "561", contacts: 2, ownLine: false },
+      { code: "312", contacts: 1, ownLine: true },
+    ]);
+    expect(defaultDncExpiresOn(NOW)).toBe("2027-10-17");
+    // The prefilled term passes the same validation the owner's save does.
+    expect(
+      parseDncSellerRegistrationInput(
+        {
+          san: "ABC123456",
+          seller_name: "Acme Plumbing LLC",
+          area_codes: "561, 312",
+          expires_on: defaultDncExpiresOn(NOW),
+          attest: true,
+        },
+        NOW,
+      ).ok,
+    ).toBe(true);
   });
 });
