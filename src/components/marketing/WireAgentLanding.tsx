@@ -21,6 +21,7 @@ import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { signupHrefForPlan } from "../../lib/signup-intent";
 import { usePaidPlanAvailability } from "../../hooks/usePaidPlanAvailability";
+import { useAuth } from "../../contexts/AuthContext";
 
 const FEATURED_TEMPLATE_KEYS = [
   "sales-rep",
@@ -63,6 +64,7 @@ const PUBLIC_PLANS = PUBLIC_PLAN_IDS.map((id) => {
 
 export default function WireAgentLanding() {
   const { available, canActivate, needsEmailSetupReview, notice } = usePaidPlanAvailability();
+  const signedIn = Boolean(useAuth().user);
   useEffect(() => {
     emitProductEventOnce({
       event: "landing_viewed",
@@ -98,18 +100,26 @@ export default function WireAgentLanding() {
             </h1>
             <p className="landing-prestige__promise">{BOT_MARKETING_VOICE.activationLine}</p>
             <div className="landing-prestige__actions">
-              <Link
-                to={signupHrefForPlan("personal")}
-                className="landing-prestige__cta is-primary"
-                onClick={() => trackSignupIntent("hero_primary", "Start Free")}
-              >
-                Start Free <ArrowRight aria-hidden="true" />
-              </Link>
-              <Link to="/signin" className="landing-prestige__cta">
-                Sign In
-              </Link>
+              {signedIn ? (
+                <Link to="/studio" className="landing-prestige__cta is-primary">
+                  Open Workspace <ArrowRight aria-hidden="true" />
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    to={signupHrefForPlan("personal")}
+                    className="landing-prestige__cta is-primary"
+                    onClick={() => trackSignupIntent("hero_primary", "Start Free")}
+                  >
+                    Start Free <ArrowRight aria-hidden="true" />
+                  </Link>
+                  <Link to="/signin" className="landing-prestige__cta">
+                    Sign In
+                  </Link>
+                </>
+              )}
             </div>
-            <p className="landing-prestige__reassurance">No card required.</p>
+            {signedIn ? null : <p className="landing-prestige__reassurance">No card required.</p>}
             <nav className="landing-prestige__directions" aria-label="Choose Bot direction">
               <Link
                 className="landing-prestige__direction is-inbound"
@@ -290,13 +300,19 @@ export default function WireAgentLanding() {
               your terms.
             </p>
             <div className="landing-prestige__actions">
-              <Link
-                to={signupHrefForPlan("personal")}
-                className="landing-prestige__cta is-primary"
-                onClick={() => trackSignupIntent("closing_primary", "Start Free")}
-              >
-                Start Free <ArrowRight aria-hidden="true" />
-              </Link>
+              {signedIn ? (
+                <Link to="/studio" className="landing-prestige__cta is-primary">
+                  Open Workspace <ArrowRight aria-hidden="true" />
+                </Link>
+              ) : (
+                <Link
+                  to={signupHrefForPlan("personal")}
+                  className="landing-prestige__cta is-primary"
+                  onClick={() => trackSignupIntent("closing_primary", "Start Free")}
+                >
+                  Start Free <ArrowRight aria-hidden="true" />
+                </Link>
+              )}
               <Link to="/features" className="landing-prestige__cta">
                 How It Works
               </Link>

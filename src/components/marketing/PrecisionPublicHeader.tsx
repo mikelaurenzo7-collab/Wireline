@@ -12,9 +12,11 @@ import { BotBoundWordmark } from "../brand/BotBoundBrand";
 import SkipToContentLink from "../layout/SkipToContentLink";
 import { signupHrefForPlan } from "../../lib/signup-intent";
 import { useChromeHeight } from "../../hooks/useChromeHeight";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function PrecisionPublicHeader() {
   const headerRef = useChromeHeight(".marketing-surface", "--wl-marketing-chrome-top");
+  const signedIn = Boolean(useAuth().user);
 
   return (
     <header
@@ -52,21 +54,36 @@ export default function PrecisionPublicHeader() {
           className="ml-auto flex min-w-0 shrink-0 items-center gap-1 md:ml-0 md:gap-3"
           aria-label="Account"
         >
-          <Link
-            to="/signin"
-            className="hidden min-h-11 shrink-0 items-center whitespace-nowrap rounded-[var(--radius-md)] px-3 text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:inline-flex"
-          >
-            Sign In
-          </Link>
-          <Link
-            to={signupHrefForPlan("personal")}
-            aria-label="Start Free"
-            className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold shrink-0 whitespace-nowrap max-[430px]:px-3"
-          >
-            <span>
-              Start<span className="max-[430px]:hidden"> Free</span>
-            </span>
-          </Link>
+          {signedIn ? (
+            // A signed-in visitor goes back to work, not through sign-in again.
+            <Link
+              to="/studio"
+              aria-label="Open Workspace"
+              className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold shrink-0 whitespace-nowrap max-[430px]:px-3"
+            >
+              <span>
+                Open<span className="max-[430px]:hidden"> Workspace</span>
+              </span>
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/signin"
+                className="hidden min-h-11 shrink-0 items-center whitespace-nowrap rounded-[var(--radius-md)] px-3 text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:inline-flex"
+              >
+                Sign In
+              </Link>
+              <Link
+                to={signupHrefForPlan("personal")}
+                aria-label="Start Free"
+                className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold shrink-0 whitespace-nowrap max-[430px]:px-3"
+              >
+                <span>
+                  Start<span className="max-[430px]:hidden"> Free</span>
+                </span>
+              </Link>
+            </>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -87,7 +104,11 @@ export default function PrecisionPublicHeader() {
                 <NavLink to="/pricing">Pricing</NavLink>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="min-h-11 px-3">
-                <Link to="/signin">Sign In</Link>
+                {signedIn ? (
+                  <Link to="/studio">Open Workspace</Link>
+                ) : (
+                  <Link to="/signin">Sign In</Link>
+                )}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

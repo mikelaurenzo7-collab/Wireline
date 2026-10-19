@@ -35,7 +35,9 @@ describe("public navigation contract", () => {
     const destinations = new Set(
       Array.from(header.matchAll(/\bto(?:=|:\s*)["']([^"']+)["']/g), (match) => match[1]),
     );
-    expect(destinations).toEqual(new Set(["/", "/features", "/pricing", "/signin"]));
+    // Signed-in visitors get one way back to work instead of Sign In / Start Free.
+    expect(destinations).toEqual(new Set(["/", "/features", "/pricing", "/signin", "/studio"]));
+    expect(header).toContain("Open Workspace");
     expect(header).not.toContain('label: "Demos"');
     expect(header).not.toContain('label: "Trust"');
   });

@@ -54,7 +54,7 @@ for (const retiredKey of ["VAPI_PRIVATE_KEY", "VAPI_WEBHOOK_SECRET", "XAI_SIP_AL
 forbidText(packageJson, "@vapi-ai/web", "Retired browser SDK remains installed.");
 requireText(
   privacy,
-  "OpenAI Realtime over Twilio PSTN and SIP",
+  "through xAI Grok Voice, with OpenAI Realtime as a fallback,",
   "Privacy disclosure does not describe the production voice path.",
 );
 

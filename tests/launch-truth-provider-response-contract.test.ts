@@ -76,8 +76,8 @@ describe("launch-truth provider and response-time contracts", () => {
     expect(privacy).toContain("const LAST_UPDATED = ACCOUNT_PRIVACY_LAST_UPDATED");
     expect(privacy).toContain("description={ACCOUNT_PRIVACY_DESCRIPTION}");
     expect(consent).toContain("Last updated ${ACCOUNT_PRIVACY_LAST_UPDATED}.");
-    expect(consent).toContain('ACCOUNT_PRIVACY_LAST_UPDATED = "October 17, 2026"');
-    expect(security).toContain("Last updated · October 17, 2026");
+    expect(consent).toContain('ACCOUNT_PRIVACY_LAST_UPDATED = "October 19, 2026"');
+    expect(security).toContain("Last updated · October 19, 2026");
     expect(privacy).not.toContain("Last updated September 25, 2026");
     expect(security).not.toContain("Last updated · August 17, 2026");
   });

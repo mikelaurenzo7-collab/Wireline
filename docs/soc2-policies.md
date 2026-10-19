@@ -10,12 +10,13 @@ the same honest story.
 BotBound processes customer call metadata, transcripts, agent configuration,
 knowledge sources, OAuth connection records, billing metadata, DNC entries,
 Computer task activity, and audit events. The current deployment model uses Render for the web/API and persistent voice runtime, with
-Postgres on Supabase, Twilio for carrier/numbers/SMS, OpenAI Realtime for live
-voice and OpenAI TTS for approved campaign narration, the managed reasoning
+Postgres on Supabase, Twilio for carrier/numbers/SMS, xAI Grok Voice for live
+phone calls (OpenAI Realtime as the fallback and for browser rehearsals), OpenAI
+TTS for approved campaign narration, the managed reasoning
 chain in `src/lib/ai-models.ts`, Stripe for billing, AgentMail for managed Bot
 mailboxes, Resend for transactional email, Browserless for hosted Computer
-sessions, and Sentry for configured error reporting. The public live-call voice
-roster remains OpenAI's built-in voices. Optional operator voice-preview pilots
+sessions, and Sentry for configured error reporting. Live phone calls use xAI's
+built-in Grok voices; browser rehearsals use OpenAI's. Optional operator voice-preview pilots
 are separate, disabled until their own readiness and processing gates are met.
 
 ## Implemented controls
