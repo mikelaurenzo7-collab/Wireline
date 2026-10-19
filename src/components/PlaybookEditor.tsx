@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { ChevronDown, Loader2, Plus, Save, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { ChevronDown, Loader2, Plus, RefreshCw, Save, X } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import {
@@ -95,6 +95,10 @@ export default function PlaybookEditor({ agentId, compact }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // A failed load is its own state: the header must not read "Not set" when
+  // the truth is unknown, and a save must not be offered over an empty draft.
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const [saved, setSaved] = useState<AgentPlaybook>(EMPTY_PLAYBOOK);
   const [draft, setDraft] = useState<AgentPlaybook>(EMPTY_PLAYBOOK);
@@ -102,9 +106,12 @@ export default function PlaybookEditor({ agentId, compact }: Props) {
   const [alwaysText, setAlwaysText] = useState("");
   const [neverText, setNeverText] = useState("");
 
+  const retryLoad = useCallback(() => setLoadAttempt((attempt) => attempt + 1), []);
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setLoadError(null);
     void authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`)
       .then(async (response) => {
         const body = (await response.json().catch(() => null)) as { playbook?: unknown } | null;
@@ -118,7 +125,9 @@ export default function PlaybookEditor({ agentId, compact }: Props) {
       })
       .catch((reason: unknown) => {
         if (!cancelled)
-          setError(reason instanceof Error ? reason.message : "Your Playbook could not be loaded.");
+          setLoadError(
+            reason instanceof Error ? reason.message : "Your Playbook could not be loaded.",
+          );
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -126,7 +135,7 @@ export default function PlaybookEditor({ agentId, compact }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [agentId]);
+  }, [agentId, loadAttempt]);
 
   const current = useMemo<AgentPlaybook>(
     () => ({ ...draft, alwaysMention: textToList(alwaysText), neverSay: textToList(neverText) }),
@@ -181,7 +190,7 @@ export default function PlaybookEditor({ agentId, compact }: Props) {
 
   async function save(event: FormEvent) {
     event.preventDefault();
-    if (saving || loading) return;
+    if (saving || loading || loadError) return;
     setSaving(true);
     touch();
     try {
@@ -243,7 +252,7 @@ export default function PlaybookEditor({ agentId, compact }: Props) {
           </span>
         </span>
         <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-          {loading ? "Loading…" : summary(saved)}
+          {loading ? "Loading…" : loadError ? "Couldn't load" : summary(saved)}
           <ChevronDown
             className={`size-4 transition-transform ${open ? "rotate-180" : ""}`}
             aria-hidden="true"
@@ -258,6 +267,20 @@ export default function PlaybookEditor({ agentId, compact }: Props) {
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
               Loading Playbook…
             </p>
+          ) : loadError ? (
+            <StatusNotice tone="destructive" title="Playbook Not Loaded">
+              <span className="block">{loadError}</span>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="mt-3"
+                onClick={retryLoad}
+              >
+                <RefreshCw className="size-3.5" aria-hidden="true" />
+                Try Again
+              </Button>
+            </StatusNotice>
           ) : (
             <fieldset disabled={saving} aria-busy={saving} className="min-w-0 space-y-6">
               <div className="space-y-3">
@@ -464,7 +487,7 @@ export default function PlaybookEditor({ agentId, compact }: Props) {
             <Button
               type="submit"
               size={compact ? "sm" : undefined}
-              disabled={saving || loading || !dirty}
+              disabled={saving || loading || Boolean(loadError) || !dirty}
             >
               {saving ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />
