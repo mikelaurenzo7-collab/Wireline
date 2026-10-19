@@ -12,6 +12,7 @@ import {
 import {
   resolveXAIGrokVoiceModel,
   toXAIRealtimeSession,
+  xaiForcedMessagePlaybackMs,
   xaiForceMessage,
   xaiVoiceForSavedVoice,
 } from "../src/lib/voice/xai-voice-config";
@@ -113,6 +114,8 @@ describe("xAI Grok Voice phone runtime", () => {
         content: [{ type: "output_text", text: "This call may be recorded." }],
       },
     });
+    // xAI has no playback-drain event: five words at a slow 2.2 words/s plus margin.
+    expect(xaiForcedMessagePlaybackMs("This call may be recorded.")).toBe(3773);
   });
 
   it("bridges Twilio to the registered number with digest credentials", () => {
