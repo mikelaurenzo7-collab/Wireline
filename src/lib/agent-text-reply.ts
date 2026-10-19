@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { DIRECTIVE_PROMPT_ORDER, loadPromptKnowledge } from "./agent-knowledge-search";
+import { playbookPromptBlock } from "./agent-playbook";
 import { runStructured } from "./ai-structured";
 import { drizzle, serialQueryBatch } from "./server-context";
 import { STRUCTURED_RUNTIME_MODELS } from "./structured-runtime-models";
@@ -159,6 +160,7 @@ export async function generateAgentTextReply(input: {
           escalationKeywords: schema.agents.escalationKeywords,
           escalationPhone: schema.agents.escalationPhone,
           escalationEmail: schema.agents.escalationEmail,
+          playbook: schema.agents.playbook,
         })
         .from(schema.agents)
         .where(and(eq(schema.agents.id, input.agentId), eq(schema.agents.userId, input.userId)))
@@ -243,6 +245,8 @@ export async function generateAgentTextReply(input: {
     agent.firstMessage
       ? `Preferred opening: ${agent.firstMessage.replace(/\s+/g, " ").trim().slice(0, 500)}`
       : "",
+    // Same owner wording as calls; voice-only moments simply never come up in text.
+    playbookPromptBlock(agent.playbook),
     directiveLines.length ? `Operating rules:\n- ${directiveLines.join("\n- ")}` : "",
     knowledgeLines.length ? `Approved knowledge:\n- ${knowledgeLines.join("\n- ")}` : "",
     businessProfile ? `Workspace profile: ${businessProfile}` : "",

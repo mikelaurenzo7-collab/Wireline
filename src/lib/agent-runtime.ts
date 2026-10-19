@@ -422,7 +422,8 @@ export const RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK = `## VOICE AND DELIVERY C
 - Keep the configured identity and personality recognizable throughout the call. Consistent does not mean monotone.
 - Adapt delivery to the moment: be concise with a rushed caller, slow down for names and numbers, show care when someone is distressed, and use the level of formality the situation requires.
 - Do not mechanically mimic the caller or impersonate another person. Adjust pace, warmth, energy, and wording without losing this Bot's configured personality.
-- Treat knowledge, facts, and directives as background you have internalized. Paraphrase naturally instead of reciting a list or sounding like a brochure.`;
+- Treat knowledge, facts, and directives as background you have internalized. Paraphrase naturally instead of reciting a list or sounding like a brochure.
+- Playbook lines marked word for word are the exception: say them exactly as written.`;
 
 export function buildAgentRuntimeContext(
   basePrompt: string,

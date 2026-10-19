@@ -1,4 +1,5 @@
 import { resolveAgentGreeting } from "../agent-greeting";
+import { playbookPromptBlock } from "../agent-playbook";
 import {
   DIRECTIVE_PROMPT_ORDER,
   excerptAroundMatch,
@@ -116,6 +117,8 @@ export type OpenAILiveInstructionAgent = {
   voiceProvider?: string | null;
   voiceId?: string | null;
   phoneVoiceId?: string | null;
+  /** The owner's Playbook (src/lib/agent-playbook.ts). */
+  playbook?: unknown;
 };
 
 function trimLine(value: unknown, max = MAX_PROMPT_LINE_LENGTH): string {
@@ -270,6 +273,9 @@ export function composeOpenAILiveInstructions(
       tone ? `\nTONE:\n${tone}` : "",
       templateGuidance ? `\n${templateGuidance}` : "",
       !runtimeReviewRequired && compliance ? `\nGUARDRAILS:\n${compliance}` : "",
+      runtimeReviewRequired || !playbookPromptBlock(agent.playbook)
+        ? ""
+        : `\n${playbookPromptBlock(agent.playbook)}`,
       runtimeReviewRequired ? "" : listBlock("OPERATING RULES", directives, 24),
       runtimeReviewRequired
         ? ""
@@ -307,6 +313,7 @@ async function loadAgentRuntime(agentId: string, userId: string) {
           voiceProvider: schema.agents.voiceProvider,
           voiceId: schema.agents.voiceId,
           phoneVoiceId: schema.agents.phoneVoiceId,
+          playbook: schema.agents.playbook,
         })
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))

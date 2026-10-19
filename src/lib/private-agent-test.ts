@@ -1,4 +1,5 @@
 import { resolveAgentGreeting } from "./agent-greeting";
+import { playbookPromptBlock } from "./agent-playbook";
 import { nativeCalendarRehearsalContext } from "./native-calendar-rehearsal";
 import { and, eq } from "drizzle-orm";
 
@@ -104,6 +105,7 @@ export async function loadPrivateAgentTestContext(
           escalationPhone: schema.agents.escalationPhone,
           escalationEmail: schema.agents.escalationEmail,
           enabledTools: schema.agents.enabledTools,
+          playbook: schema.agents.playbook,
         })
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
@@ -163,6 +165,7 @@ export async function loadPrivateAgentTestContext(
     calendarContext,
     savedPersonality ? `Tone: ${savedPersonality}` : "Tone: clear and professional.",
     `Preferred opening: ${resolveAgentGreeting(agent, directives)}`,
+    playbookPromptBlock(agent.playbook),
     directiveLines.length ? `Operating rules:\n- ${directiveLines.join("\n- ")}` : "",
     knowledgeLines.length ? `Knowledge facts:\n- ${knowledgeLines.join("\n- ")}` : "",
     businessProfile ? `Workspace profile: ${businessProfile}` : "",

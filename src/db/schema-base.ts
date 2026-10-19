@@ -480,6 +480,8 @@ export const agents = pgTable(
     escalationHandoffEnabled: boolean("escalation_handoff_enabled").default(false),
     businessVariables: jsonb("business_variables"),
     flowConfig: jsonb("flow_config"),
+    /** The owner's Playbook (exact lines, situations, always/never say). Migration 0182. */
+    playbook: jsonb("playbook"),
     outOfHoursMessage: text("out_of_hours_message"),
     kpiFocus: text("kpi_focus"),
     isBusinessAgent: boolean("is_business_agent").default(false).notNull(),

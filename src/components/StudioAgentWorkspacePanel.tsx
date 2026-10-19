@@ -24,6 +24,7 @@ import SimpleVoicePicker from "./voice/SimpleVoicePicker";
 import AgentToolPermissions from "./AgentToolPermissions";
 import BusinessHoursEditor from "./BusinessHoursEditor";
 import HumanHandoffEditor from "./HumanHandoffEditor";
+import PlaybookEditor from "./PlaybookEditor";
 
 const PERSONALITIES = ["Clear", "Warm", "Polished", "Energetic"] as const;
 
@@ -513,6 +514,12 @@ export default function StudioAgentWorkspacePanel({
             </div>
           )}
         </section>
+
+        <PlaybookEditor
+          key={`${setupDrafts.ownerId}:${agentId}`}
+          agentId={agentId}
+          compact={compact}
+        />
 
         <section className={sectionClass} aria-labelledby="voice-heading">
           <h3
