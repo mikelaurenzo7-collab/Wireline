@@ -1,4 +1,5 @@
 import { resolveAgentGreeting } from "../lib/agent-greeting";
+import { playbookPromptBlock } from "../lib/agent-playbook";
 import { nativeCalendarRehearsalContext } from "../lib/native-calendar-rehearsal";
 import { Router, type Response } from "express";
 import { and, eq } from "drizzle-orm";
@@ -80,6 +81,7 @@ router.post(
               escalationPhone: schema.agents.escalationPhone,
               escalationEmail: schema.agents.escalationEmail,
               enabledTools: schema.agents.enabledTools,
+              playbook: schema.agents.playbook,
             })
             .from(schema.agents)
             .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
@@ -159,6 +161,7 @@ router.post(
         calendarContext,
         savedPersonality ? `Tone: ${savedPersonality}` : "Tone: clear and professional.",
         `Preferred opening: ${resolveAgentGreeting(agent, directives)}`,
+        playbookPromptBlock(agent.playbook),
         directiveLines.length ? `Operating rules:\n- ${directiveLines.join("\n- ")}` : "",
         knowledgeLines.length ? `Knowledge facts:\n- ${knowledgeLines.join("\n- ")}` : "",
         businessProfile ? `Workspace profile: ${businessProfile}` : "",

@@ -1,4 +1,5 @@
 import { resolveAgentGreeting } from "../agent-greeting";
+import { playbookPromptBlock } from "../agent-playbook";
 import { DIRECTIVE_PROMPT_ORDER } from "../agent-knowledge-search";
 import { and, desc, eq } from "drizzle-orm";
 
@@ -156,6 +157,8 @@ export type OpenAIRealtimeInstructionAgent = {
   voiceProvider: string | null;
   voiceId: string | null;
   phoneVoiceId: string | null;
+  /** The owner's Playbook (src/lib/agent-playbook.ts); optional for older callers. */
+  playbook?: unknown;
 };
 
 export type OpenAIRealtimeTenantSettings = {
@@ -175,6 +178,11 @@ type ProviderTool = {
 
 function trimLine(value: unknown, max = MAX_PROMPT_LINE_LENGTH): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
+}
+
+function playbookBlock(playbook: unknown): string {
+  const block = playbookPromptBlock(playbook);
+  return block ? `\n${block}` : "";
 }
 
 function listBlock(title: string, values: Array<{ content?: string | null }>, maxItems: number) {
@@ -349,6 +357,7 @@ export function composeOpenAIRealtimeInstructions(input: {
         ? `\nPRIMARY OUTCOME:\n${trimLine(input.agent.kpiFocus, 600)}`
         : "",
       !runtimeReviewRequired && compliance ? `\nGUARDRAILS:\n${compliance}` : "",
+      runtimeReviewRequired ? "" : playbookBlock(input.agent.playbook),
       runtimeReviewRequired ? "" : listBlock("OPERATING RULES", input.directives, 24),
       runtimeReviewRequired
         ? ""
@@ -389,6 +398,7 @@ async function loadRuntime(agentId: string, userId: string) {
           voiceProvider: schema.agents.voiceProvider,
           voiceId: schema.agents.voiceId,
           phoneVoiceId: schema.agents.phoneVoiceId,
+          playbook: schema.agents.playbook,
         })
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))

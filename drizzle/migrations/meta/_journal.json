@@ -561,6 +561,13 @@
       "when": 1792425600000,
       "tag": "0181_xai_phone_registrations",
       "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1792512000000,
+      "tag": "0182_agent_playbook",
+      "breakpoints": true
     }
   ]
 }

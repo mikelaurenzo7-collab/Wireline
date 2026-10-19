@@ -11,6 +11,11 @@ import { agentMutationRateLimit } from "../middleware/api-rate-limits";
 import { recordAmbiguousProviderAttempt, recordUsage } from "../lib/ai-audit";
 import { drizzle, log } from "../lib/server-context";
 import { phoneCallVoiceFor } from "../lib/voice/xai-voice-config";
+import {
+  isPlaybookEmpty,
+  parseAgentPlaybook,
+  readStoredAgentPlaybook,
+} from "../lib/agent-playbook";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import { listAgentsForUser } from "../lib/agents-store";
@@ -722,6 +727,7 @@ router.get(
             role: schema.agents.role,
             archetype: schema.agents.archetype,
             flowConfig: schema.agents.flowConfig,
+            playbook: schema.agents.playbook,
             enabledTools: schema.agents.enabledTools,
             llmProvider: schema.agents.llmProvider,
             llmModel: schema.agents.llmModel,
@@ -791,6 +797,7 @@ router.get(
       role: record?.role || "customer_service",
       archetype: record?.archetype || "Assistant",
       flowConfig: record?.flowConfig || null,
+      playbook: readStoredAgentPlaybook(record?.playbook),
       enabledTools: normalizeEnabledTools(record?.enabledTools),
       runtime: {
         provider: record?.llmProvider || null,
@@ -1012,6 +1019,32 @@ router.patch(
         temperature,
       },
     });
+  },
+);
+
+router.patch(
+  "/api/agent-config/:id/playbook",
+  authenticateUser,
+  agentMutationRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const agent = await owned(req.params.id, req.user.id);
+    if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
+    const parsed = parseAgentPlaybook(req.body?.playbook);
+    if (!parsed.ok) throw AppError.fromHttpStatus(400, parsed.error);
+    // An empty Playbook clears the column so the runtime adds no block at all.
+    const value = isPlaybookEmpty(parsed.value) ? null : parsed.value;
+    await drizzle
+      .update(schema.agents)
+      .set({ playbook: value })
+      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
+    log.info("Bot Playbook saved", {
+      agentId: req.params.id,
+      exactLines: Object.keys(parsed.value.exactLines).length,
+      situations: parsed.value.situations.length,
+      alwaysMention: parsed.value.alwaysMention.length,
+      neverSay: parsed.value.neverSay.length,
+    });
+    res.json({ success: true, playbook: parsed.value });
   },
 );
 
