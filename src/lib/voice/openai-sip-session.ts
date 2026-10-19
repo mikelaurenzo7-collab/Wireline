@@ -1835,6 +1835,14 @@ async function runRealtimeSession(
   /** Response id xAI gives the forced opening's injected response lifecycle. */
   let xaiOpeningResponseId = "";
   let xaiOpeningPlaybackTimer: ReturnType<typeof setTimeout> | null = null;
+  // Event-type counts only (no content) so one close log shows whether the
+  // provider heard the caller, transcribed them, and answered.
+  const providerEventCounts = new Map<string, number>();
+  const countProviderEvent = (event: Record<string, unknown>) => {
+    const type = typeof event.type === "string" ? event.type.slice(0, 80) : "unknown";
+    if (!providerEventCounts.has(type) && providerEventCounts.size >= 40) return;
+    providerEventCounts.set(type, (providerEventCounts.get(type) ?? 0) + 1);
+  };
   let anonymousSipPlaybackActive = false;
   const playbackResponseIds = new Set<string>();
   const activeResponseIds = new Set<string>();
@@ -2356,6 +2364,14 @@ async function runRealtimeSession(
     }
     if (type === "error") {
       pipelineError = "openai_realtime";
+      const detail = asRecord(event.error);
+      log.warn("Realtime provider reported an error", {
+        callId: providerCallId(input.callId),
+        provider,
+        errorType: String(detail.type || "").slice(0, 80),
+        errorCode: String(detail.code || "").slice(0, 80),
+        message: String(detail.message || "").slice(0, 300),
+      });
       throw new Error("OPENAI_REALTIME_EVENT_ERROR");
     }
   };
@@ -2561,6 +2577,7 @@ async function runRealtimeSession(
         const receivedAtMs = Date.now();
         const event = safeJsonParse(data.toString());
         if (!event) return;
+        countProviderEvent(event);
         observeControlEvent(event);
         eventChain = eventChain.then(() => handleEvent(event, receivedAtMs));
         void eventChain.catch(rejectOnce);
@@ -2581,8 +2598,11 @@ async function runRealtimeSession(
         const logClosed = () =>
           log.info("OpenAI SIP WebSocket closed", {
             callId: providerCallId(input.callId),
+            provider,
             code,
             reasonLength: reason.length,
+            openingPlaybackConfirmed,
+            providerEvents: Object.fromEntries(providerEventCounts),
             ...turnTiming.summary(),
           });
         // Wait for already-received sideband events without adding another log
