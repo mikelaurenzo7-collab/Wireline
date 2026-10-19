@@ -4,6 +4,7 @@ import { Check, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { authFetch, readApiJson } from "../lib/api";
 import {
   DNC_REGISTRY_URL,
+  parseAreaCodes,
   type DncAreaCodeSuggestion,
   type DncSellerRegistrationState,
 } from "../lib/dnc-seller-registration-rules";
@@ -49,6 +50,15 @@ const STATE_DETAIL: Record<DncSellerRegistrationState, string> = {
 
 /** Registry subscriptions include five area codes at no cost. */
 const FREE_AREA_CODES = 5;
+
+/** The owner's typed list, token by token, so a toggle never discards their edits. */
+function areaCodeTokens(value: string): string[] {
+  if (value.trim().toLowerCase() === "all") return [];
+  return value
+    .split(/[\s,;]+/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+}
 
 function suggestionNote(suggestion: DncAreaCodeSuggestion): string {
   const parts: string[] = [];
@@ -167,8 +177,19 @@ export default function DncRegistrationCard({
   const state = data?.state ?? "missing";
   const reg = data?.registration ?? null;
   const suggestions = data?.setup?.suggested_area_codes ?? [];
-  const suggestedCodes = suggestions.map((item) => item.code).join(", ");
   const showForm = editing || state === "missing";
+  // The form field is the one list: it is what the owner subscribes to at the
+  // registry and what BotBound screens against, so chips and Copy both use it.
+  const nationwide = parseAreaCodes(areaCodes) === "all";
+  const chosenCodes = areaCodeTokens(areaCodes);
+  const chosen = new Set(chosenCodes);
+
+  function toggleAreaCode(code: string) {
+    const next = chosen.has(code)
+      ? chosenCodes.filter((token) => token !== code)
+      : [...chosenCodes, code];
+    setAreaCodes(next.join(", "));
+  }
 
   return (
     <section
@@ -244,34 +265,51 @@ export default function DncRegistrationCard({
                   {suggestions.length ? (
                     <>
                       <p className="leading-6 text-muted-foreground">
-                        Based on your lines and contacts, subscribe to these:
+                        Based on your lines and contacts. Tap to add or remove; the selected list is
+                        what you subscribe to at the registry and what BotBound screens.
                       </p>
                       <ul className="flex flex-wrap gap-2" aria-label="Suggested area codes">
-                        {suggestions.map((item) => (
-                          <li
-                            key={item.code}
-                            className="rounded-lg border border-border bg-card px-2.5 py-1.5"
-                          >
-                            <span className="font-semibold text-foreground">{item.code}</span>
-                            <span className="ml-1.5 text-xs text-muted-foreground">
-                              {suggestionNote(item)}
-                            </span>
-                          </li>
-                        ))}
+                        {suggestions.map((item) => {
+                          const selected = nationwide || chosen.has(item.code);
+                          return (
+                            <li key={item.code}>
+                              <button
+                                type="button"
+                                aria-pressed={selected}
+                                disabled={nationwide}
+                                onClick={() => toggleAreaCode(item.code)}
+                                className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-left transition-colors wl-focus-ring-halo disabled:cursor-default ${
+                                  selected
+                                    ? "border-brand bg-brand/10 text-foreground"
+                                    : "border-border bg-card text-foreground hover:bg-muted"
+                                }`}
+                              >
+                                {selected ? (
+                                  <Check className="size-3.5 text-brand" aria-hidden="true" />
+                                ) : null}
+                                <span className="font-semibold">{item.code}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {suggestionNote(item)}
+                                </span>
+                              </button>
+                            </li>
+                          );
+                        })}
                       </ul>
                       <div>
                         <Button
                           type="button"
                           size="sm"
                           variant="secondary"
-                          onClick={() => void copyAreaCodes(suggestedCodes)}
+                          disabled={nationwide || chosenCodes.length === 0}
+                          onClick={() => void copyAreaCodes(chosenCodes.join(", "))}
                         >
                           {copied ? (
                             <Check className="size-3.5" aria-hidden="true" />
                           ) : (
                             <Copy className="size-3.5" aria-hidden="true" />
                           )}
-                          {copied ? "Copied" : "Copy Area Codes"}
+                          {copied ? "Copied" : "Copy Selected Area Codes"}
                         </Button>
                       </div>
                     </>
@@ -282,10 +320,9 @@ export default function DncRegistrationCard({
                     </p>
                   )}
                   <p className="text-xs leading-5 text-muted-foreground">
-                    The first {FREE_AREA_CODES} are free; each extra area code has an annual fee.
-                    {suggestions.length > FREE_AREA_CODES
-                      ? ` Start with the top ${FREE_AREA_CODES} if you want to stay free.`
-                      : ""}
+                    {nationwide
+                      ? "The nationwide list covers every area code at the registry's full annual fee."
+                      : `${chosenCodes.length} selected. The first ${FREE_AREA_CODES} are free; each extra area code has an annual fee.`}
                   </p>
                 </li>
 
