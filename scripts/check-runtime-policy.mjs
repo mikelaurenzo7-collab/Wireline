@@ -23,9 +23,10 @@ const privacy = read("src/components/PrivacyPolicyPage.tsx");
 
 requireText(
   providerPolicy,
-  '"openai",\n  "gateway",\n  "gemini"',
-  "Structured runtime order must remain OpenAI, AI Gateway, then Gemini.",
+  '"xai",\n  "openai",\n  "gateway"',
+  "Structured runtime order must remain xAI, OpenAI, then the AI Gateway.",
 );
+forbidText(providerPolicy, '"gemini",', "Gemini is retired from the structured runtime order.");
 requireText(
   runtimePolicy,
   'runtime: "openai_realtime"',

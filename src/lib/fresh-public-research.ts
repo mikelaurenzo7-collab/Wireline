@@ -1,12 +1,8 @@
-import { groundedSearch } from "./gemini-brain";
+import { liveWebResearch } from "./live-web-research";
 import { researchPerplexity, type PerplexitySource } from "./perplexity-platform";
 
 export type FreshResearchMode =
-  | "perplexity_live"
-  | "perplexity_agent"
-  | "gemini_grounded"
-  | "gemini_flash_fallback"
-  | "unavailable";
+  "perplexity_live" | "perplexity_agent" | "web_search" | "unavailable";
 
 export interface FreshResearchResult {
   answer: string;
@@ -58,15 +54,6 @@ export async function freshPublicResearch(
     };
   }
 
-  const gemini = await groundedSearch(query);
-  return {
-    answer: cleanVoiceAnswer(gemini.answer),
-    sources: gemini.sources,
-    mode:
-      gemini.groundingMode === "pro_grounded"
-        ? "gemini_grounded"
-        : gemini.groundingMode === "flash_fallback"
-          ? "gemini_flash_fallback"
-          : "unavailable",
-  };
+  const web = await liveWebResearch(query);
+  return { answer: cleanVoiceAnswer(web.answer), sources: web.sources, mode: web.mode };
 }

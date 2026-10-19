@@ -90,10 +90,12 @@ describe("AI Gateway structured runtime", () => {
     });
   });
 
-  it("keeps the governed Gateway continuity route on the OpenAI-first model policy", async () => {
+  it("keeps the legacy Gateway continuity route on OpenAI models", async () => {
+    // Only the Gateway lane is configured; a grok primary must not leak into it.
     vi.stubEnv("AI_GATEWAY_API_KEY", "gateway-test-key");
     vi.stubEnv("VERCEL_OIDC_TOKEN", "");
-    vi.stubEnv("XAI_API_KEY", "xai-test-key");
+    vi.stubEnv("XAI_API_KEY", "");
+    vi.stubEnv("OPENAI_API_KEY", "");
     const fetchMock = vi.fn(async () => response("gateway"));
     vi.stubGlobal("fetch", fetchMock);
 

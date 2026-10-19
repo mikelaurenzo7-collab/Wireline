@@ -9,14 +9,17 @@ const source = readFileSync(
 const compactSource = source.replace(/\s+/g, " ");
 
 describe("runtime integrations registry launch policy", () => {
-  it("presents OpenAI as the required structured and live voice runtime", () => {
+  it("presents xAI as the primary runtime with OpenAI as the required backup", () => {
+    expect(source).toContain('"xai",\n    "xAI",');
+    expect(source).toContain(
+      "Primary structured runtime, phone voice, and built-in live web search.",
+    );
     expect(source).toContain('"openai",\n    "OpenAI",');
     expect(source).toContain(
-      "Managed structured runtime and OpenAI Realtime for every browser and PSTN voice session.",
+      "Structured backup, browser voice rehearsals, and phone-call fallback.",
     );
-    expect(source).toContain("OpenAI Realtime");
     expect(compactSource).toMatch(/item\(\s*"openai".{0,500}?, true,/);
-    expect(source).not.toMatch(/api\.x\.ai|api\.vapi\.ai/i);
+    expect(source).not.toMatch(/"gemini"|Google Gemini|api\.vapi\.ai/i);
   });
 
   it("marks the monetized communications control plane as required", () => {

@@ -13,42 +13,44 @@ import {
 } from "../src/lib/reasoning-provider-policy";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
-const ALL: ReasoningProviderId[] = ["openai", "gateway", "gemini"];
+const ALL: ReasoningProviderId[] = ["xai", "openai", "gateway"];
 
 describe("structured runtime provider chain policy", () => {
-  it("keeps OpenAI first with only governed continuity lanes", () => {
-    expect(DEFAULT_REASONING_PROVIDER).toBe("openai");
+  it("keeps xAI first with OpenAI as the backup", () => {
+    expect(DEFAULT_REASONING_PROVIDER).toBe("xai");
     expect([...REASONING_PROVIDER_ORDER]).toEqual(ALL);
     expect(orderReasoningProviders(ALL)).toEqual(ALL);
-    expect(resolveReasoningPreference({} as NodeJS.ProcessEnv)).toBe("openai");
+    expect(resolveReasoningPreference({} as NodeJS.ProcessEnv)).toBe("xai");
   });
 
   it("accepts current aliases and rejects retired providers", () => {
-    expect(normalizeReasoningProvider("google")).toBe("gemini");
+    expect(normalizeReasoningProvider("grok")).toBe("xai");
     expect(normalizeReasoningProvider("ai-gateway")).toBe("gateway");
     expect(normalizeReasoningProvider("vercel")).toBe("gateway");
-    expect(normalizeReasoningProvider("xai")).toBeNull();
-    expect(normalizeReasoningProvider("grok")).toBeNull();
+    expect(normalizeReasoningProvider("gemini")).toBeNull();
+    expect(normalizeReasoningProvider("google")).toBeNull();
     expect(normalizeReasoningProvider("vapi")).toBeNull();
   });
 
   it("promotes an available operator preference without losing continuity", () => {
-    expect(orderReasoningProviders(ALL, "gemini")).toEqual(["gemini", "openai", "gateway"]);
-    expect(orderReasoningProviders(["openai", "gemini"], "gateway")).toEqual(["openai", "gemini"]);
+    expect(orderReasoningProviders(ALL, "openai")).toEqual(["openai", "xai", "gateway"]);
+    // A missing primary key skips that lane rather than failing the request.
+    expect(orderReasoningProviders(["openai", "gateway"])).toEqual(["openai", "gateway"]);
   });
 
-  it("normalizes stale Grok Gateway ids before generic provider ids", () => {
+  it("keeps the legacy Gateway on OpenAI models", () => {
     expect(gatewayModelId("xai/grok-4.6")).toMatch(/^openai\//);
     expect(gatewayModelId("grok-4.6")).toMatch(/^openai\//);
-    expect(gatewayModelId("google/gemini-3.6-flash")).toBe("google/gemini-3.6-flash");
   });
 });
 
 describe("structured runtime transport", () => {
-  it("contains no native xAI or Vapi transport", () => {
+  it("calls xAI first, falls back to OpenAI, and never reaches Gemini", () => {
     const client = read("src/lib/ai-client.ts");
-    const models = read("src/lib/ai-models.ts");
+    expect(client).toContain('endpoint: "https://api.x.ai/v1/responses"');
     expect(client).toContain('endpoint: "https://api.openai.com/v1/responses"');
+    // xAI stores responses for 30 days unless told not to.
+    expect(client.slice(client.indexOf("async function callXAI"))).toContain("store: false");
     expect(client).toContain("gatewayModels: models");
     expect(client).toContain("provider request failed; trying fallback");
     const abortedAttempt = client.slice(
@@ -60,7 +62,6 @@ describe("structured runtime transport", () => {
     expect(abortedAttempt.indexOf("recordAmbiguousProviderAttempt()")).toBeLessThan(
       abortedAttempt.indexOf("throw error"),
     );
-    expect(client).not.toMatch(/api\.x\.ai|XAI_API_KEY|callXAI|grok/i);
-    expect(models).not.toMatch(/XAI_|GROK_/);
+    expect(client).not.toMatch(/gemini|generativelanguage|@google\/generative-ai/i);
   });
 });

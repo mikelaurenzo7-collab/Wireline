@@ -14,7 +14,7 @@ import { evaluatePlatformOperationalSlos } from "../lib/platform-operational-slo
 import {
   OPENAI_STRUCTURED_PRIMARY_MODEL,
   STRUCTURED_PRIMARY_MODEL,
-  GEMINI_STRUCTURED_FALLBACK_MODEL,
+  XAI_STRUCTURED_PRIMARY_MODEL,
 } from "../lib/ai-models";
 import { OPENAI_REALTIME_DEFAULT_MODEL } from "../lib/voice/openai-realtime-config";
 import { getHealthModelTiering } from "../lib/health-model-policy";
@@ -358,11 +358,12 @@ router.get("/models", healthRateLimiter, requireMonitorTokenOrPlatformAdmin, asy
     probes: {
       voice_runtime: voice,
       reasoning,
-      reasoning_fallback: {
-        ok: !!process.env.GEMINI_API_KEY,
+      // The primary structured lane. Configuration only; no paid probe.
+      reasoning_primary: {
+        ok: !!process.env.XAI_API_KEY?.trim(),
         latency_ms: 0,
-        model: GEMINI_STRUCTURED_FALLBACK_MODEL,
-        ...(process.env.GEMINI_API_KEY ? {} : { error: "GEMINI_API_KEY not configured" }),
+        model: XAI_STRUCTURED_PRIMARY_MODEL,
+        ...(process.env.XAI_API_KEY?.trim() ? {} : { error: "XAI_API_KEY not configured" }),
       },
     },
   });

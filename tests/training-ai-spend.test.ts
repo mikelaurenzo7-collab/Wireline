@@ -12,7 +12,7 @@ vi.mock("../src/lib/ai-structured", () => ({ runStructured: h.structured }));
 
 beforeEach(() => {
   vi.stubEnv("OPENAI_API_KEY", "test-openai");
-  vi.stubEnv("GEMINI_API_KEY", "");
+  vi.stubEnv("XAI_API_KEY", "");
   vi.stubEnv("AI_GATEWAY_API_KEY", "");
   vi.stubEnv("VERCEL_OIDC_TOKEN", "");
   h.reserve.mockReset().mockImplementation(({ operation }) => operation());
@@ -22,13 +22,12 @@ afterEach(() => vi.unstubAllEnvs());
 
 describe("request-shaped training spend bounds", () => {
   it("reserves every configured fallback attempt, including duplicate models on different paid transports", () => {
-    vi.stubEnv("GEMINI_API_KEY", "test-gemini");
+    vi.stubEnv("XAI_API_KEY", "test-xai");
     vi.stubEnv("AI_GATEWAY_API_KEY", "test-gateway");
     expect(trainingAttemptModels("gpt-5.6-terra")).toEqual([
+      "grok-4.7",
       "gpt-5.6-terra",
       "openai/gpt-5.6-terra",
-      "google/gemini-3.6-flash",
-      "gemini-3.6-flash",
     ]);
     const args = { text: "€".repeat(100), maxOutputTokens: 1200 };
     const one = boundedTrainingReserveUsd({ ...args, models: ["gpt-5.6-terra"] });
@@ -72,7 +71,7 @@ describe("request-shaped training spend bounds", () => {
   });
 
   it("keeps ordinary short training usable within the $1.50 allowance and passes exact input to the provider after reservation", async () => {
-    vi.stubEnv("GEMINI_API_KEY", "test-gemini");
+    vi.stubEnv("XAI_API_KEY", "test-xai");
     const options = {
       system: "Extract facts.",
       user: "Open Monday through Friday, 9 to 5.",
@@ -117,7 +116,7 @@ describe("request-shaped training spend bounds", () => {
   });
 
   it("reserves the full Unicode website request above the old flat hold and preserves provider cancellation", async () => {
-    vi.stubEnv("GEMINI_API_KEY", "test-gemini");
+    vi.stubEnv("XAI_API_KEY", "test-xai");
     await runTrainingStructured({
       userId: "tenant",
       source: "website",

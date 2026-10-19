@@ -5,14 +5,14 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("structured and voice runtime policy", () => {
-  it("keeps structured reasoning OpenAI-first", () => {
+  it("keeps structured reasoning xAI-first with OpenAI as the backup", () => {
     const models = read("src/lib/structured-runtime-models.ts");
     const aiModels = read("src/lib/ai-models.ts");
     const policy = read("src/lib/reasoning-provider-policy.ts");
     expect(models).toContain("STRUCTURED_PRIMARY_MODEL");
-    expect(aiModels).toContain("STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL");
-    expect(policy).toContain('"openai",\n  "gateway",\n  "gemini"');
-    expect(`${models}\n${aiModels}\n${policy}`).not.toMatch(/XAI_|GROK_|api\.x\.ai/);
+    expect(aiModels).toContain("STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL");
+    expect(policy).toContain('"xai",\n  "openai",\n  "gateway"');
+    expect(policy).not.toMatch(/"gemini"/);
   });
 
   it("makes OpenAI Realtime the database and application voice default", () => {

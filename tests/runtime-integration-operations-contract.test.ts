@@ -33,8 +33,8 @@ describe("runtime integration operations", () => {
     expect(ids).toEqual(
       expect.arrayContaining([
         "drizzle",
+        "xai",
         "openai",
-        "gemini",
         "ai-gateway",
         "twilio",
         "stripe",
@@ -61,9 +61,10 @@ describe("runtime integration operations", () => {
       ["AI_GATEWAY_API_KEY", "VERCEL_OIDC_TOKEN"],
     ]);
     expect(RUNTIME_INTEGRATIONS.find((entry) => entry.id === "elevenlabs")).toBeUndefined();
+    expect(RUNTIME_INTEGRATIONS.find((entry) => entry.id === "gemini")).toBeUndefined();
   });
 
-  it("keeps environment and launch gates aligned with the OpenAI-first funded runtime", () => {
+  it("keeps environment and launch gates aligned with the funded xAI-first runtime", () => {
     const envValidator = readFileSync(resolve(process.cwd(), "src/lib/env-validator.ts"), "utf8");
     const launchReadiness = readFileSync(
       resolve(process.cwd(), "src/lib/launch-readiness.ts"),
@@ -78,7 +79,8 @@ describe("runtime integration operations", () => {
     expect(envValidator).toContain('"ELEVENLABS_API_KEY",');
     expect(envValidator).toContain("const managedRuntime");
     expect(envValidator).toContain("Managed structured reasoning and OpenAI Realtime credential");
-    expect(envValidator).toContain("managed OpenAI GPT-5.6 Terra default");
+    expect(envValidator).toContain("Unset keeps the managed xAI default");
+    expect(envValidator).not.toContain('name: "GEMINI_API_KEY"');
     expect(envValidator).toContain('name: "WIRELINE_STRUCTURED_PRIMARY_PROVIDER"');
     expect(envValidator).not.toContain("const directRuntime");
     expect(launchReadiness).toContain("TWILIO_ACCOUNT_SID+TWILIO_AUTH_TOKEN");

@@ -39,7 +39,7 @@ import {
 } from "../lib/template-launch-policy";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import { AI_TOOLS } from "../lib/ai-tools";
-import { isGeminiModelId, isOpenAIModelId } from "../lib/ai-models";
+import { isOpenAIModelId, isXAIModelId } from "../lib/ai-models";
 import {
   AI_GATEWAY_BASE_URL,
   gatewayHeaders,
@@ -996,12 +996,13 @@ router.patch(
     )
       throw AppError.fromHttpStatus(400, "Temperature must be between 0 and 1");
     if (provider || model) {
-      if (provider === "openai" && !isOpenAIModelId(model))
-        throw AppError.fromHttpStatus(400, "Choose a valid OpenAI model");
-      if (provider === "google" && !isGeminiModelId(model))
-        throw AppError.fromHttpStatus(400, "Choose a valid Gemini model");
-      if (!(["openai", "google"] as string[]).includes(provider))
+      if (!(["xai", "openai"] as string[]).includes(provider))
         throw AppError.fromHttpStatus(400, "Invalid runtime provider");
+      if (
+        (provider === "xai" && !isXAIModelId(model)) ||
+        (provider === "openai" && !isOpenAIModelId(model))
+      )
+        throw AppError.fromHttpStatus(400, "Choose a valid model");
     }
     await drizzle
       .update(schema.agents)

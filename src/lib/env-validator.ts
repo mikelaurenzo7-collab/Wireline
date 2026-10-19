@@ -286,13 +286,6 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     formatHint: "positive USD amount per compute minute",
   },
   {
-    name: "GEMINI_API_KEY",
-    group: "ai",
-    required: false,
-    description: "Gemini continuity fallback and grounded search",
-    validate: nonEmpty,
-  },
-  {
     name: "CLOUD_COMPUTER_BROWSER_WS_URL",
     group: "ai",
     required: false,
@@ -306,14 +299,14 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     group: "ai",
     required: false,
     description:
-      "Operator override for the first structured reasoning lane. Unset keeps the managed OpenAI GPT-5.6 Terra default; the remaining lanes stay as continuity",
+      "Operator override for the first structured reasoning lane. Unset keeps the managed xAI default; the remaining lanes stay as continuity",
     // Same acceptance as normalizeReasoningProvider, including the vendor
     // aliases operators actually type — a working config must not be flagged.
     validate: (value) =>
-      ["openai", "gemini", "gateway", "google", "ai-gateway", "vercel"].includes(
+      ["xai", "openai", "gateway", "grok", "ai-gateway", "vercel"].includes(
         value.trim().toLowerCase(),
       ),
-    formatHint: "openai, gemini, or gateway (aliases: google, ai-gateway, vercel)",
+    formatHint: "xai, openai, or gateway (aliases: grok, ai-gateway, vercel)",
   },
   {
     name: "PERPLEXITY_API_KEY",
@@ -333,8 +326,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "LIVE_RESEARCH_TIMEOUT_MS",
     group: "ai",
     required: false,
-    description:
-      "HTTP timeout for mid-call public web research (Perplexity/Gemini), not PSTN call length",
+    description: "HTTP timeout for mid-call public web research, not PSTN call length",
     validate: isPositiveNumber,
     formatHint: "milliseconds, e.g. 8000",
   },

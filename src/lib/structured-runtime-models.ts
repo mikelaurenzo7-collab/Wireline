@@ -2,8 +2,8 @@ import { STRUCTURED_PRIMARY_MODEL } from "./ai-models";
 
 /**
  * Structured planning model policy.
- * BotBound-owned structured turns run through the managed OpenAI-first runtime,
- * with the Vercel AI Gateway and Gemini as ordered continuity.
+ * BotBound-owned structured turns run through the managed xAI-first runtime,
+ * with OpenAI and the legacy Vercel AI Gateway as ordered continuity.
  */
 export const STRUCTURED_RUNTIME_MODELS = {
   STANDARD: STRUCTURED_PRIMARY_MODEL,

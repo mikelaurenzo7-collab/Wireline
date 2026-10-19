@@ -116,6 +116,7 @@ describe("health surfaces contract", () => {
 
   it("derives authenticated model/provider health from canonical runtime policy", () => {
     const tiering = getHealthModelTiering();
+    // Without the xAI phone switch, calls stay on OpenAI Realtime with no second lane.
     expect(tiering.voice_runtime).toMatchObject({
       provider: "openai_realtime",
       model: OPENAI_REALTIME_DEFAULT_MODEL,
@@ -125,13 +126,10 @@ describe("health surfaces contract", () => {
       model: null,
     });
     expect(tiering.reasoning_layer).toMatchObject({
-      provider: "openai",
+      provider: "xai",
       model: STRUCTURED_PRIMARY_MODEL,
     });
-    expect(tiering.reasoning_fallback).toMatchObject({
-      provider: "gateway",
-      model: STRUCTURED_PRIMARY_MODEL,
-    });
+    expect(tiering.reasoning_fallback).toMatchObject({ provider: "openai" });
 
     const routeSource = read("src/routes/health-routes.ts");
     expect(routeSource).toContain("llm_tiering: getHealthModelTiering()");

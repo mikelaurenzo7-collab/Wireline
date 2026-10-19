@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Check, Copy, MessageSquareText, MonitorDown, Terminal } from "lucide-react";
+import {
+  ArrowUpRight,
+  Check,
+  Copy,
+  MessageSquareText,
+  MonitorDown,
+  Sparkles,
+  Terminal,
+} from "lucide-react";
 import { Link, useLocation } from "react-router";
 
 import { Badge, Button } from "../components/atoms";
@@ -11,6 +19,7 @@ import SettingsTabs from "../components/settings/SettingsTabs";
 import { CLIENT_SURFACE_POSTURE } from "../lib/product-copy";
 
 const MCP_SERVER_URL = BOTBOUND_PRODUCTION_ORIGIN + "/mcp";
+const CLAUDE_CONNECTORS_URL = "https://claude.ai/settings/connectors";
 const CURSOR_MCP_INSTALL_URL =
   "cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLmFwcC9tY3AifQ==";
 
@@ -26,6 +35,13 @@ const clientSurfaces = [
     icon: MessageSquareText,
     title: "ChatGPT",
     blurb: "Change and try your Bot privately.",
+    action: "Set Up",
+    href: "/settings/apps#chatgpt-mcp",
+  },
+  {
+    icon: Sparkles,
+    title: "Claude",
+    blurb: "Build and try your Bot from Claude or Claude Code.",
     action: "Set Up",
     href: "/settings/apps#chatgpt-mcp",
   },
@@ -155,6 +171,14 @@ export default function ClientAppsPage() {
               {copied ? "MCP URL copied." : ""}
             </p>
             <p className="text-sm text-muted-foreground">
+              In Claude, open Settings, then Connectors, and add a custom connector with this URL.
+              In Claude Code, run{" "}
+              <code className="break-all text-foreground">
+                claude mcp add --transport http botbound {MCP_SERVER_URL}
+              </code>
+              .
+            </p>
+            <p className="text-sm text-muted-foreground">
               Set up and try your Bot privately; manage live calls, messages, numbers, and billing
               in your Workspace.
             </p>
@@ -162,6 +186,12 @@ export default function ClientAppsPage() {
               <Button asChild variant="outline" size="sm">
                 <a href="https://chatgpt.com/" target="_blank" rel="noreferrer">
                   Open ChatGPT
+                  <ArrowUpRight size={14} />
+                </a>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <a href={CLAUDE_CONNECTORS_URL} target="_blank" rel="noreferrer">
+                  Open Claude
                   <ArrowUpRight size={14} />
                 </a>
               </Button>
