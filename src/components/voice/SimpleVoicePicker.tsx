@@ -284,7 +284,7 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
 
       <p className="text-xs leading-5 text-muted-foreground">
         {phoneCallVoiceName(phoneCall)
-          ? `Used for browser rehearsals. On phone calls, callers hear ${phoneCallVoiceName(phoneCall)}, the closest Grok voice. Preview starts a private voice rehearsal.`
+          ? `Used for browser rehearsals. On phone calls, callers hear ${phoneCallVoiceName(phoneCall)}, the closest phone voice. Preview starts a private voice rehearsal.`
           : "Used for phone calls and browser rehearsals. Preview starts a private voice rehearsal."}
       </p>
       <button

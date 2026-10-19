@@ -1062,7 +1062,7 @@ router.patch(
     }
     const voiceId = normalizeManagedOpenAIVoiceId(requestedVoiceId);
     if (!voiceId) {
-      throw AppError.fromHttpStatus(400, "Choose an OpenAI Realtime voice.");
+      throw AppError.fromHttpStatus(400, "Choose one of the built-in voices.");
     }
 
     // Legacy presenter rows remain readable by the response/runtime paths, but
@@ -1083,7 +1083,7 @@ router.patch(
     }
     const normalizedPhoneVoiceId = normalizeManagedOpenAIVoiceId(requestedPhoneVoiceId);
     if (hasPhoneVoiceId && requestedPhoneVoiceId && !normalizedPhoneVoiceId) {
-      throw AppError.fromHttpStatus(400, "Choose an OpenAI Realtime phone voice.");
+      throw AppError.fromHttpStatus(400, "Choose one of the built-in phone voices.");
     }
     const patch: {
       voiceId: string;

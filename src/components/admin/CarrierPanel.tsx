@@ -169,9 +169,9 @@ export function CarrierPanel({
 
           <dl className="grid gap-2 sm:grid-cols-2">
             {[
-              ["Phone runtime", "OpenAI Realtime"],
+              ["Phone runtime", "BotBound Voice"],
               ["PSTN + numbers", "Twilio"],
-              ["Phone voices", "OpenAI built-in"],
+              ["Phone voices", "BotBound built-in"],
               ["SMS", "Twilio"],
             ].map(([label, value]) => (
               <div key={label} className="rounded-lg border border-border bg-background p-3">

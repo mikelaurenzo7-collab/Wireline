@@ -50,8 +50,8 @@ const ENTRIES: ChangelogEntry[] = [
   {
     date: "Oct 19, 2026",
     tag: "feature",
-    title: "Workspace, Grok Voice Phone Calls, and Guided Do Not Call Setup",
-    body: "Studio is now the Workspace: Set Up, Knowledge, and Computer sit beside the chat, with Try It to rehearse by voice, text, or a call to your phone. Phone calls run on xAI Grok Voice, and voice settings name the voice callers hear. Compliance walks owners through their Do Not Call Registry subscription with area codes, business name, and term filled in.",
+    title: "Workspace, a More Natural Phone Voice, and Guided Do Not Call Setup",
+    body: "Studio is now the Workspace: Set Up, Knowledge, and Computer sit beside the chat, with Try It to rehearse by voice, text, or a call to your phone. Phone calls run on a new, more natural voice engine, and voice settings name the voice callers hear. Compliance walks owners through their Do Not Call Registry subscription with area codes, business name, and term filled in.",
   },
   {
     date: "Oct 10, 2026",

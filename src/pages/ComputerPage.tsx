@@ -1071,7 +1071,7 @@ function TaskDetail({
               <summary>Privacy and browser input</summary>
               <p>
                 Your clicks and text go to the hosted browser and open site. When you return
-                control, form fields and entered text are masked in the screen sent to OpenAI.
+                control, form fields and entered text are masked in the screen your Bot sees.
               </p>
             </details>
           </div>

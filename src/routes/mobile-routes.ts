@@ -888,7 +888,7 @@ router.post(
       if (!providerCallId) {
         return res.status(409).json({
           code: "HANDOFF_UNAVAILABLE",
-          error: "This call does not have an active OpenAI transfer session.",
+          error: "This call can't be transferred right now.",
         });
       }
       // REFER persists its successful transfer signal for the remote worker.

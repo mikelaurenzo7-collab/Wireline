@@ -125,11 +125,9 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     expect(apps).toContain("Build your Bot from your editor.");
     expect(apps).not.toContain("first voice agent");
     expect(privacy).toMatch(/operates a Bot platform for calls,\s+texts, and email/);
-    expect(privacy).toContain("primarily through <strong>OpenAI</strong>");
-    expect(privacy).toContain("<strong>OpenAI</strong>: Primary managed structured inference");
-    expect(privacy).not.toContain(
-      "process managed AI requests primarily\n              through xAI",
-    );
+    // BotBound is the product: AI vendors are a disclosed category, never named.
+    expect(privacy).toContain("<strong>AI model providers</strong>");
+    expect(privacy).not.toMatch(/<strong>(OpenAI|xAI|Google Gemini|Perplexity)<\/strong>/);
     expect(productCopy).toContain(
       "Technical routes, schemas, events, and APIs retain `agent` for compatibility",
     );

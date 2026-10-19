@@ -56,7 +56,7 @@ function autoProvisioningEnabled(): boolean {
 
 function assertNativeActivationConfigured(): void {
   if (!openAISipConfigured()) {
-    throw AppError.serviceUnavailable("OpenAI Realtime SIP is not configured.");
+    throw AppError.serviceUnavailable("Phone calling isn't available right now.");
   }
 }
 

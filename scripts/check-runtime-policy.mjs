@@ -53,10 +53,24 @@ for (const retiredKey of ["VAPI_PRIVATE_KEY", "VAPI_WEBHOOK_SECRET", "XAI_SIP_AL
 }
 forbidText(packageJson, "@vapi-ai/web", "Retired browser SDK remains installed.");
 requireText(
-  privacy,
-  "through xAI Grok Voice, with OpenAI Realtime as a fallback,",
+  privacy.replace(/\s+/g, " "),
+  "live phone conversations, and browser voice rehearsals through our AI model providers",
   "Privacy disclosure does not describe the production voice path.",
 );
+// BotBound is the product: customer-facing pages never name the voice vendor.
+for (const [path, source] of [
+  ["src/components/PrivacyPolicyPage.tsx", privacy],
+  ["src/components/LegalPage.tsx", read("src/components/LegalPage.tsx")],
+  ["src/components/Security.tsx", read("src/components/Security.tsx")],
+  ["src/components/PublicChangelog.tsx", read("src/components/PublicChangelog.tsx")],
+  [
+    "src/components/voice/SimpleVoicePicker.tsx",
+    read("src/components/voice/SimpleVoicePicker.tsx"),
+  ],
+]) {
+  forbidText(source, "Grok", `${path} names the voice vendor (Grok).`);
+  forbidText(source, "xAI", `${path} names the voice vendor (xAI).`);
+}
 
 for (const retiredPath of [
   "src/routes/vapi-v2.ts",

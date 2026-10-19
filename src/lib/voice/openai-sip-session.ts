@@ -654,7 +654,7 @@ async function claimOutboundLeadInTransaction(
   const providerId = providerCallId(input.callId);
   const currentCallId = String(nativeVoice.openai_call_id || "").trim();
   if (currentCallId && currentCallId !== providerId) {
-    throw AppError.conflict("Another OpenAI call already owns this outbound lead.");
+    throw AppError.conflict("Another call is already in progress for this lead.");
   }
 
   const now = new Date();

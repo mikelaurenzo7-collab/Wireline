@@ -38,7 +38,7 @@ describe("launch-truth provider and response-time contracts", () => {
     expect(privacy).toContain("task instructions, activity, questions,");
     expect(privacy).toContain("application memory rather than stored in task history");
     expect(privacy).toContain("screen context may be sent to");
-    expect(privacy).toContain("including login information");
+    expect(privacy.replace(/\s+/g, " ")).toContain("including login information");
     expect(privacy).toContain("<strong>Browserless</strong>");
     expect(privacy).toContain("<strong>Sentry</strong>");
     expect(security).toContain("Computer: Browserless hosts remote browser sessions.");

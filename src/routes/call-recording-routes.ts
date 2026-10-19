@@ -171,7 +171,7 @@ router.get(
 
       return res.status(404).json({
         code: "RECORDING_UNAVAILABLE",
-        error: "OpenAI Realtime calls are transcript-only.",
+        error: "This call has a transcript but no audio recording.",
       });
     } catch (error) {
       log.warn("Recording retrieval failed", {

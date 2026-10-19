@@ -195,11 +195,11 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     icon: Database,
     title: "Subprocessors & Vendors",
     items: [
-      "Production voice: Twilio provides phone numbers, PSTN transport, SIP, and SMS. xAI Grok Voice runs phone conversations, including speech recognition and transcription. OpenAI Realtime runs browser voice rehearsals and is the phone fallback; OpenAI also provides the primary structured runtime. BotBound does not operate a separate voice-cloning provider.",
+      "Production voice: Twilio provides phone numbers, PSTN transport, SIP, and SMS. BotBound runs phone conversations, speech recognition, and transcription on contracted AI model providers, with a backup provider for continuity. A current subprocessor list is available on request.",
       "Payments: Stripe (PCI scope reduced, BotBound never stores card numbers).",
       "Data plane: Supabase Postgres. Rate limits: Upstash Redis. Hosting: Render.",
       "Email: AgentMail for platform-managed Bot mailboxes and Bot email; Resend for transactional platform email.",
-      "Computer: Browserless hosts remote browser sessions. OpenAI processes screen context to carry out tasks.",
+      "Computer: Browserless hosts remote browser sessions. An AI model provider processes screen context to carry out tasks.",
       "Monitoring: Sentry receives redacted server error reports and operational diagnostics when configured.",
       "Provider credentials and routing stay server-side. BotBound owns the customer-facing experience while this Trust Center names key subprocessors for transparency.",
     ],
