@@ -97,7 +97,7 @@ export default function PrivacyPolicyPage() {
           {[
             "We do not sell personal information.",
             "Optional advertising measurement stays off unless you allow it.",
-            "Phone calls use xAI's built-in Grok voices. Private voice previews require separate speaker permission.",
+            "Phone calls use BotBound's built-in voices. Private voice previews require separate speaker permission.",
           ].map((item) => (
             <div
               key={item}
@@ -186,7 +186,7 @@ export default function PrivacyPolicyPage() {
               <strong>Optional private voice previews</strong>: In the private operator pilot, you
               may explicitly submit a recording of your own voice. We encrypt the saved recording
               and retain its permission, review, and processing metadata. A separate speech service
-              processes the recording to generate a private preview; it does not replace OpenAI's
+              processes the recording to generate a private preview; it does not replace your Bot's
               live-call voice. Delete the saved voice to revoke future use and remove its active
               encrypted recording. Generated previews are temporary and are not saved in the voice
               library. Backup copies follow our account-data retention practices. We do not use
@@ -197,9 +197,9 @@ export default function PrivacyPolicyPage() {
               <strong>Computer task data</strong>: We save task instructions, activity, questions,
               replies, and results in your account. Live browser images are held temporarily in
               application memory rather than stored in task history; screen context may be sent to
-              OpenAI to carry out your task. Browserless hosts the remote browser, and websites you
-              visit process session data and the information you enter, including login information
-              you choose to provide.
+              our AI model providers to carry out your task. Browserless hosts the remote browser,
+              and websites you visit process session data and the information you enter, including
+              login information you choose to provide.
             </p>
             <p>
               <strong>Conversation data</strong>: Phone numbers, message addresses, recordings,
@@ -228,13 +228,11 @@ export default function PrivacyPolicyPage() {
 
           <Section title="3. How We Use Data">
             <p>
-              We use data to provide and secure BotBound; process managed structured AI requests
-              primarily through <strong>OpenAI</strong>, with <strong>Google Gemini</strong> and, on
-              legacy deployments, Vercel AI Gateway as governed structured continuity routes; run
-              live phone conversations through xAI Grok Voice, with OpenAI Realtime as a fallback,
-              over Twilio PSTN and SIP; run browser voice rehearsals through OpenAI Realtime; route
-              calls and messages; execute connected workflows; provide support; prevent fraud and
-              abuse; bill through Stripe; and understand aggregate product performance.
+              We use data to provide and secure BotBound; process AI requests, live phone
+              conversations, and browser voice rehearsals through our AI model providers, with a
+              backup provider for continuity; carry calls over Twilio PSTN and SIP; route calls and
+              messages; execute connected workflows; provide support; prevent fraud and abuse; bill
+              through Stripe; and understand aggregate product performance.
             </p>
             <p>
               Optional Meta measurement is used only after your explicit choice to attribute
@@ -259,22 +257,9 @@ export default function PrivacyPolicyPage() {
                 <strong>Twilio</strong>: PSTN calls, phone numbers, and SMS
               </li>
               <li>
-                <strong>xAI</strong>: Grok Voice phone conversations, including speech recognition
-                and transcription
-              </li>
-              <li>
-                <strong>OpenAI</strong>: Primary managed structured inference, Realtime browser
-                voice rehearsals, and fallback phone conversations
-              </li>
-              <li>
-                <strong>Google Gemini</strong>: Managed continuity inference and grounded search
-              </li>
-              <li>
-                <strong>Perplexity</strong>: Optional live public research
-              </li>
-              <li>
-                <strong>Vercel AI Gateway</strong>: Governed multi-model continuity, budgets, and
-                inference observability on legacy deployments
+                <strong>AI model providers</strong>: Speech recognition, transcription, voice, and
+                language processing for calls, rehearsals, messages, Computer tasks, and live public
+                research. A current list is available on request at security@botbound.app.
               </li>
               <li>
                 <strong>Stripe</strong>: Payment processing, billing, and tax calculation

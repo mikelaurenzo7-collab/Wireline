@@ -72,11 +72,12 @@ describe("launch truth contract", () => {
 
     expect(security).toContain("Last updated · October 19, 2026");
     expect(security).toContain("Twilio provides phone numbers, PSTN transport, SIP, and SMS");
-    // Phone calls run on xAI Grok Voice; the Trust Center must name it.
-    expect(security).toContain("xAI Grok Voice runs phone conversations");
-    expect(security).toContain("OpenAI Realtime runs browser voice rehearsals");
-    expect(security).toContain("OpenAI also provides the primary structured runtime");
-    expect(security).not.toMatch(/ElevenLabs|11labs|Vapi/);
+    // AI processing is described as BotBound's, on contracted providers, unnamed.
+    expect(security).toContain(
+      "BotBound runs phone conversations, speech recognition, and transcription on contracted AI model providers",
+    );
+    expect(security).toContain("A current subprocessor list is available on request.");
+    expect(security).not.toMatch(/ElevenLabs|11labs|Vapi|Grok|xAI|OpenAI|Gemini/);
     expect(security).toContain("names key subprocessors for transparency");
     expect(security).not.toContain("vendor names stay in operator configuration, not buyer UI");
   });

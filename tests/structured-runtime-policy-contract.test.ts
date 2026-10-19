@@ -48,9 +48,11 @@ describe("structured and voice runtime policy", () => {
     }
     const privacy = read("src/components/PrivacyPolicyPage.tsx");
     const logos = read("src/components/layout/IntegrationLogos.tsx");
-    // Phone calls run on xAI Grok Voice, so xAI must be a disclosed subprocessor.
-    expect(privacy).toContain("through xAI Grok Voice, with OpenAI Realtime as a fallback,");
-    expect(privacy).toContain("<strong>xAI</strong>: Grok Voice phone conversations");
+    // Voice and language processing is disclosed as a category, with no vendor branding.
+    expect(privacy.replace(/\s+/g, " ")).toContain(
+      "process AI requests, live phone conversations, and browser voice rehearsals through our AI model providers",
+    );
+    expect(privacy).not.toMatch(/Grok|xAI/);
     expect(`${privacy}\n${logos}`).not.toMatch(/>Vapi<|ALL_LOGOS\.vapi/i);
   });
 

@@ -84,7 +84,7 @@ function voiceActivity(state: VoiceState) {
     return {
       state: "complete" as const,
       title: "Listening",
-      detail: "Microphone audio streams to OpenAI for this private rehearsal.",
+      detail: "Microphone audio is processed only for this private rehearsal.",
     };
   return {
     state: "pending" as const,
