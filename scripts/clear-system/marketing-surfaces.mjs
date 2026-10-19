@@ -58,7 +58,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
     "supporting public headers keep navigation limited to product, pricing, and account entry",
   );
   for (const destination of executable(publicHeader).matchAll(/\bto(?:=|:\s*)["']([^"']+)["']/g)) {
-    if (!["/", "/features", "/pricing", "/signin"].includes(destination[1])) {
+    // "/studio" is the signed-in visitor's single way back to work.
+    if (!["/", "/features", "/pricing", "/signin", "/studio"].includes(destination[1])) {
       failures.push(
         `src/components/marketing/PrecisionPublicHeader.tsx: unexpected header destination ${destination[1]}`,
       );
