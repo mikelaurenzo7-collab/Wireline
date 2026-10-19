@@ -7,8 +7,8 @@
 -- as secret-vault envelopes.
 --
 -- Platform-owned and read only outside tenant context (tenantStore.exit): row
--- level security is on with no policy for any request role, and no request
--- role is granted access.
+-- level security denies public API roles and admits the server role only when
+-- no tenant is in scope.
 SET lock_timeout = '5s';
 
 CREATE TABLE IF NOT EXISTS public.wireline_xai_phone_registrations (
@@ -36,12 +36,15 @@ ALTER TABLE public.wireline_xai_phone_registrations ENABLE ROW LEVEL SECURITY;
 --> statement-breakpoint
 REVOKE ALL ON TABLE public.wireline_xai_phone_registrations FROM PUBLIC;
 REVOKE ALL ON TABLE public.wireline_xai_phone_registrations FROM anon, authenticated, service_role;
--- Default privileges may grant the tenant-scoped server role on new tables.
+-- The server role reaches this table only outside tenant scope (no
+-- app.current_user_id), which is how tenantStore.exit runs platform work.
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'wireline_server') THEN
-    REVOKE ALL ON TABLE public.wireline_xai_phone_registrations FROM wireline_server;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.wireline_xai_phone_registrations TO wireline_server;
+    EXECUTE 'CREATE POLICY platform_scope_only ON public.wireline_xai_phone_registrations FOR ALL TO wireline_server USING ((SELECT public.wireline_current_user_id()) IS NULL) WITH CHECK ((SELECT public.wireline_current_user_id()) IS NULL)';
   END IF;
+EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 DO $$

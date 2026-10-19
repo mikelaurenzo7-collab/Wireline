@@ -188,10 +188,32 @@ export async function registerXAIPhoneNumber(
     }
   }
   if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    log.error("xAI phone registration was refused", {
+      phoneSuffix: phoneNumber.slice(-4),
+      status: response.status,
+      detail: detail.slice(0, 300),
+    });
     return { phoneNumber, status: "failed", reason: `xai_http_${response.status}` };
   }
 
-  const registration = parseXAIPhoneRegistration(await response.json());
+  const payload: unknown = await response.json();
+  let registration: ReturnType<typeof parseXAIPhoneRegistration>;
+  try {
+    registration = parseXAIPhoneRegistration(payload);
+  } catch (error) {
+    // Field names only, never values: the payload carries a one-time secret.
+    const body = asRecord(payload);
+    log.error("xAI registration response did not match the documented shape", {
+      phoneSuffix: phoneNumber.slice(-4),
+      topLevelKeys: Object.keys(body),
+      phoneNumberKeys: Object.keys(asRecord(body.phone_number)),
+      webhookKeys: Object.keys(asRecord(body.webhook)),
+    });
+    const listed = (await listXAIPhoneNumbers()).find((row) => row.phoneNumber === phoneNumber);
+    if (listed) await deleteXAIPhoneNumber(listed.id).catch(() => undefined);
+    throw error;
+  }
   try {
     await outsideTenant(() =>
       drizzle.insert(schema.xaiPhoneRegistrations).values({
@@ -242,10 +264,16 @@ export async function syncXAIPhoneRegistrations(): Promise<{
     try {
       results.push(await registerXAIPhoneNumber(line.phoneNumber));
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      log.error("xAI phone registration failed", {
+        phoneSuffix: line.phoneNumber.slice(-4),
+        error: message.slice(0, 300),
+      });
       results.push({
         phoneNumber: line.phoneNumber,
         status: "failed",
-        reason: error instanceof Error ? error.name : "unknown",
+        // Only BotBound's own messages are returned; provider/database text stays in logs.
+        reason: /^(xAI |XAI_API_KEY)/.test(message) ? message.slice(0, 200) : "see_server_logs",
       });
     }
   }
