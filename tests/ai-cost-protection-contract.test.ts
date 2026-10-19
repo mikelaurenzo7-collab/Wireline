@@ -328,32 +328,22 @@ describe("AI cost-protection contract", () => {
     expect(finishHandler).not.toContain("void persistRuntimeAuditRecords");
   });
 
-  it("meters Gemini reasoning and cached tokens at their billed rates", async () => {
-    // Thinking models (gemini-2.5/3.x) report reasoning tokens in
-    // thoughtsTokenCount — billed at the output rate but excluded from
-    // candidatesTokenCount — and cache reads inside promptTokenCount. Dropping
-    // either under-meters every Gemini fallback call, exactly when an OpenAI
-    // incident routes the whole fleet through Gemini.
-    const { recordGeminiUsage } = await import("../src/lib/ai-audit");
-    const record = recordGeminiUsage(
-      "gemini-3.6-flash",
-      {
-        promptTokenCount: 1_000,
-        candidatesTokenCount: 200,
-        thoughtsTokenCount: 300,
-        cachedContentTokenCount: 400,
-      },
-      10,
-    );
-    expect(record.output_tokens).toBe(500);
-    expect(record.input_tokens).toBe(600);
-    expect(record.cache_read_tokens).toBe(400);
-
-    // The direct ai-client Gemini path builds its usage from the same metadata
-    // and must fold both buckets in as well.
-    const client = read("src/lib/ai-client.ts");
-    expect(client).toContain("thoughtsTokenCount");
-    expect(client).toContain("cachedContentTokenCount");
+  it("records the primary provider's exact reported charge when it is present", async () => {
+    // xAI reports each response's charge in USD ticks (1e10 per dollar),
+    // including server-side tool fees a token-rate estimate would miss.
+    const { resolveResponsesEvidence } = await import("../src/lib/ai-client");
+    expect(
+      resolveResponsesEvidence(
+        { model: "grok-4.7", usage: { cost_in_usd_ticks: 25_000_000 } },
+        "grok-4.7",
+        "xAI",
+      ),
+    ).toEqual({ model: "grok-4.7", inferenceProvider: "xai", actualCostUsd: 0.0025 });
+    // Without a reported charge, token pricing applies as for any provider.
+    expect(resolveResponsesEvidence({ model: "grok-4.7", usage: {} }, "grok-4.7", "xAI")).toEqual({
+      model: "grok-4.7",
+      inferenceProvider: "xai",
+    });
   });
 
   it("refuses new unfunded inbound AI while keeping covered after-hours message-taking bounded", () => {

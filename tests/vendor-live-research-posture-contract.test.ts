@@ -5,8 +5,9 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("vendor live-research and voice posture", () => {
-  it("keeps PSTN live research on Perplexity→Gemini without inventing extra search vendors", () => {
+  it("keeps PSTN live research on Perplexity then built-in web search, with no extra vendors", () => {
     const research = read("src/lib/fresh-public-research.ts");
+    const web = read("src/lib/live-web-research.ts");
     const perplexity = read("src/lib/perplexity-platform.ts");
     const flags = read("src/lib/platform-integration-flags.ts");
     const tools = read("src/lib/agent-runtime-helpers.ts");
@@ -18,9 +19,12 @@ describe("vendor live-research and voice posture", () => {
     expect(perplexity).toContain('route: "sonar"');
     expect(research).toContain("perplexity_agent");
     expect(research).toContain("researchPerplexity");
-    expect(research).not.toMatch(/tavily|serper|bing/i);
+    expect(research).toContain("liveWebResearch(query)");
+    expect(`${research}\n${web}`).not.toMatch(/tavily|serper|bing|gemini/i);
+    expect(web).toContain('tools: [{ type: "web_search" }]');
+    expect(web).toContain("store: false");
     expect(flags).toContain("perplexityRuntimeAvailable");
-    expect(flags).toContain("liveResearch: gemini || perplexity");
+    expect(flags).toContain("liveResearch: webSearch || perplexity");
     expect(tools).toContain("gemini_ground");
     expect(tools).toMatch(/Perplexity when configured/i);
   });

@@ -1,10 +1,15 @@
 /**
  * BotBound model policy.
  *
- * Structured reasoning uses OpenAI first, then the governed AI Gateway and
- * Gemini continuity lane. Every browser and PSTN voice session uses OpenAI
- * Realtime; Twilio is the carrier, number, and SMS provider.
+ * Structured reasoning uses xAI first, then OpenAI, then the legacy AI Gateway
+ * when configured. Gemini is retired; its ids and rates remain only to price
+ * historical audit rows. Twilio is the carrier, number, and SMS provider.
  */
+export const XAI_MODELS = {
+  GROK_4_7: "grok-4.7",
+  GROK_4_3: "grok-4.3",
+} as const;
+
 export const OPENAI_MODELS = {
   GPT_5_6_TERRA: "gpt-5.6-terra",
   GPT_5_6_LUNA: "gpt-5.6-luna",
@@ -41,18 +46,25 @@ export const GEMINI_MODELS = {
   PRO_3_1: "gemini-3.1-pro-preview",
 } as const;
 
-/** Managed structured default through the direct OpenAI Responses API. */
+/** Managed structured primary through the direct xAI Responses API. */
+export const XAI_STRUCTURED_PRIMARY_MODEL = /^grok-[a-z0-9._-]+$/i.test(
+  process.env.WIRELINE_XAI_STRUCTURED_MODEL?.trim() || "",
+)
+  ? process.env.WIRELINE_XAI_STRUCTURED_MODEL!.trim()
+  : XAI_MODELS.GROK_4_7;
+/** Structured backup through the direct OpenAI Responses API. */
 export const OPENAI_STRUCTURED_PRIMARY_MODEL =
   process.env.WIRELINE_OPENAI_STRUCTURED_MODEL?.trim() || OPENAI_MODELS.GPT_5_6_TERRA;
-/** Final direct-vendor continuity fallback. */
-export const GEMINI_STRUCTURED_FALLBACK_MODEL =
-  process.env.WIRELINE_GEMINI_STRUCTURED_FALLBACK_MODEL?.trim() || GEMINI_MODELS.FLASH_3_6;
 
 /** The managed structured default the runtime asks for first. */
-export const STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL;
+export const STRUCTURED_PRIMARY_MODEL = XAI_STRUCTURED_PRIMARY_MODEL;
 
 export const LIVE_VOICE_PROVIDER = "openai" as const;
 export const LIVE_VOICE_MODEL = "gpt-realtime-2.1" as const;
+
+export function isXAIModelId(value: unknown): value is string {
+  return typeof value === "string" && /^grok-[a-z0-9._-]+$/i.test(value.trim());
+}
 
 export function isOpenAIModelId(value: unknown): value is string {
   return typeof value === "string" && /^gpt-[a-z0-9._-]+$/i.test(value.trim());
@@ -86,6 +98,10 @@ export const OPENAI_TEXT_PRICING_EFFECTIVE_DATE = "2026-07-30" as const;
 export const OPENAI_SOL_PROMOTIONAL_PRICING_REVIEW_DATE = "2026-11-21" as const;
 
 export const MODEL_PRICING = {
+  // xAI first-party rates, verified 2026-10-19 (docs.x.ai models). xAI does not
+  // bill cache writes separately.
+  [XAI_MODELS.GROK_4_7]: { input: 2, output: 6, cacheRead: 0.5, cacheWrite: 0 },
+  [XAI_MODELS.GROK_4_3]: { input: 1.25, output: 2.5, cacheRead: 0.2, cacheWrite: 0 },
   [OPENAI_MODELS.GPT_5_6_TERRA]: {
     input: 2,
     output: 12,
@@ -180,6 +196,17 @@ type LongContextRule = {
 export const MODEL_LONG_CONTEXT_PRICING: Partial<
   Record<keyof typeof MODEL_PRICING, LongContextRule>
 > = {
+  // xAI's higher tier applies to the whole request at or above 200k prompt tokens.
+  [XAI_MODELS.GROK_4_7]: {
+    thresholdTokens: 200_000,
+    inclusive: true,
+    rates: { input: 4, output: 12, cacheRead: 1, cacheWrite: 0 },
+  },
+  [XAI_MODELS.GROK_4_3]: {
+    thresholdTokens: 200_000,
+    inclusive: true,
+    rates: { input: 2.5, output: 5, cacheRead: 0.4, cacheWrite: 0 },
+  },
   [OPENAI_MODELS.GPT_5_6_TERRA]: {
     thresholdTokens: 272_000,
     inclusive: false,
@@ -226,20 +253,21 @@ export function pricingForModel(model: string, totalInputTokens = 0): ModelPrici
 export const DEFAULT_MODEL = STRUCTURED_PRIMARY_MODEL;
 /**
  * Complexity remains product metadata for prompts and budgets. Every workload
- * starts with the governed OpenAI structured default; provider continuity is
- * applied by `reasoning-provider-policy.ts`.
+ * starts with the governed structured default; provider continuity is applied
+ * by `reasoning-provider-policy.ts`.
  */
 export function selectModelForTask(_complexity: TaskComplexity): string {
   return STRUCTURED_PRIMARY_MODEL;
 }
 
 export function modelLabel(model: string): string {
+  if (/^grok-/i.test(model.trim())) return "BotBound Standard";
   if (model === OPENAI_MODELS.GPT_5_6_TERRA) return "GPT-5.6 Terra";
   if (model === OPENAI_MODELS.GPT_5_6_LUNA) return "GPT-5.6 Luna";
   if (model === OPENAI_MODELS.GPT_5_6_SOL) return "GPT-5.6 Sol";
   if (model === OPENAI_MODELS.GPT_5) return "GPT-5";
   if (model === OPENAI_MODELS.GPT_4O) return "GPT-4o";
-  if (model.toLowerCase().includes("gemini")) return "Gemini";
+  if (model.toLowerCase().includes("gemini")) return "BotBound Legacy";
   return model;
 }
 export type AdaptiveEffort = "low" | "medium" | "high";

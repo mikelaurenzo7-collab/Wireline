@@ -63,11 +63,11 @@ describe("Render provider boundaries", () => {
       vi.stubEnv("AI_GATEWAY_API_KEY", "inherited-key");
       vi.stubEnv("VERCEL_OIDC_TOKEN", "inherited-oidc");
       vi.stubEnv("OPENAI_API_KEY", "direct-openai");
-      vi.stubEnv("GEMINI_API_KEY", "direct-gemini");
+      vi.stubEnv("XAI_API_KEY", "direct-xai");
       expect(gatewayCredential()).toBe("");
       expect(isGatewayCredentialAvailable()).toBe(false);
       expect(gatewayAuthorizationHeaders).toThrow("AI Gateway is not configured");
-      expect(loadPlatformIntegrationFlags().gemini).toBe(true);
+      expect(loadPlatformIntegrationFlags().webSearch).toBe(true);
       expect(process.env.OPENAI_API_KEY).toBe("direct-openai");
     },
   );

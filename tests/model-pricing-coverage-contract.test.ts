@@ -102,10 +102,13 @@ describe("model pricing coverage contract", () => {
     expect(pricingForModel(GEMINI_MODELS.PRO_3_1, 200_001).output).toBe(18);
   });
 
-  it("keeps workload complexity on the OpenAI primary model and prices cache writes accurately", () => {
-    expect(selectModelForTask("simple")).toBe(OPENAI_MODELS.GPT_5_6_TERRA);
-    expect(selectModelForTask("medium")).toBe(OPENAI_MODELS.GPT_5_6_TERRA);
-    expect(selectModelForTask("complex")).toBe(OPENAI_MODELS.GPT_5_6_TERRA);
+  it("keeps workload complexity on the xAI primary model and prices cache writes accurately", () => {
+    expect(selectModelForTask("simple")).toBe("grok-4.7");
+    expect(selectModelForTask("medium")).toBe("grok-4.7");
+    expect(selectModelForTask("complex")).toBe("grok-4.7");
+    // The primary's long-context tier applies at 200k prompt tokens inclusive.
+    expect(pricingForModel("grok-4.7", 199_999).output).toBe(6);
+    expect(pricingForModel("grok-4.7", 200_000).output).toBe(12);
 
     const cost = estimateCostDetailed(
       {

@@ -35,9 +35,9 @@ describe("annual billing purchase path", () => {
 });
 
 describe("structured model routing", () => {
-  it("keeps all workload complexity on the OpenAI managed primary model", () => {
-    expect(selectModelForTask("simple")).toBe("gpt-5.6-terra");
-    expect(selectModelForTask("medium")).toBe("gpt-5.6-terra");
-    expect(selectModelForTask("complex")).toBe("gpt-5.6-terra");
+  it("keeps all workload complexity on the managed xAI primary model", () => {
+    expect(selectModelForTask("simple")).toBe("grok-4.7");
+    expect(selectModelForTask("medium")).toBe("grok-4.7");
+    expect(selectModelForTask("complex")).toBe("grok-4.7");
   });
 });

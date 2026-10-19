@@ -42,18 +42,18 @@ describe("round-11 review fixes", () => {
     expect(upperBounds).toBeGreaterThanOrEqual(2);
   });
 
-  it("prices gateway-prefixed and unknown models against the OpenAI-first table", () => {
+  it("prices gateway-prefixed, xAI, and unknown models at their own rates", () => {
     // Gateway-served ids ("openai/gpt-5.6-terra") must normalize to the bare model.
     expect(inputRateForModel("openai/gpt-5.6-terra")).toBe(2);
     expect(inputRateForModel("gpt-5")).toBe(1.25);
-    expect(inputRateForModel("xai/grok-4.5")).toBe(2);
-    expect(inputRateForModel("grok-4.3")).toBe(2);
+    expect(inputRateForModel("grok-4.7")).toBe(2);
+    expect(inputRateForModel("grok-4.3")).toBe(1.25);
     // Unknown models conservatively fall back to the current Terra input rate.
     expect(inputRateForModel("unknown")).toBe(2);
     const audit = read("src/lib/ai-audit.ts");
     expect(audit).toContain("pricingForModel");
     const structured = read("src/lib/ai-structured.ts");
-    expect(structured).toContain('provider: "openai" | "gemini"');
+    expect(structured).toContain('provider: "xai" | "openai"');
   });
 
   it("guards the WhatsApp sender identity against cross-tenant adoption", () => {

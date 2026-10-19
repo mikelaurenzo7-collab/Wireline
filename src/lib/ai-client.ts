@@ -1,10 +1,10 @@
-/* Provider-neutral structured runtime adapter. OpenAI is the managed
- * structured default, the Vercel AI Gateway is the governed continuity route,
- * Gemini is the final structured fallback. Live voice uses OpenAI Realtime
- * and is deliberately separate. Eligibility and ordering are owned
- * by `reasoning-provider-policy.ts`; this module owns transport only. */
+/* Provider-neutral structured runtime adapter. xAI is the managed structured
+ * default, OpenAI is the backup, and the Vercel AI Gateway remains a legacy
+ * continuity route where configured. Live voice is deliberately separate.
+ * Eligibility and ordering are owned by `reasoning-provider-policy.ts`; this
+ * module owns transport only. */
 import { log } from "./server-logger";
-import { GEMINI_STRUCTURED_FALLBACK_MODEL, OPENAI_STRUCTURED_PRIMARY_MODEL } from "./ai-models";
+import { OPENAI_STRUCTURED_PRIMARY_MODEL, XAI_STRUCTURED_PRIMARY_MODEL } from "./ai-models";
 import {
   orderReasoningProviders,
   resolveReasoningPreference,
@@ -16,12 +16,7 @@ import {
   gatewayModelId,
   isAIGatewayConfigured,
 } from "./ai-gateway";
-import {
-  normalizeResponsesUsage,
-  normalizeUsageTokenCount,
-  POSTGRES_INT32_MAX,
-  saturatingUsageTokenSum,
-} from "./ai-usage";
+import { normalizeResponsesUsage, POSTGRES_INT32_MAX } from "./ai-usage";
 import { recordAmbiguousProviderAttempt, recordUsage } from "./ai-audit";
 import { normalizeProviderReportedCostUsd } from "./ai-provider-cost";
 import { currentProviderSafetyIdentifier } from "./provider-identity-context";
@@ -93,7 +88,7 @@ export type RuntimeClient = {
   };
 };
 
-export type RuntimeProviderName = "OpenAI" | "Gemini" | "AI Gateway" | "Anthropic";
+export type RuntimeProviderName = "xAI" | "OpenAI" | "AI Gateway" | "Anthropic";
 
 /**
  * An explicit provider HTTP 4xx means the request was rejected rather than
@@ -228,15 +223,6 @@ export function responsesInputContent(value: unknown) {
   ];
 }
 
-export function geminiInputParts(value: unknown): import("@google/generative-ai").Part[] {
-  return [
-    { text: extractText(value) },
-    ...imageInputs(value).map((image) => ({
-      inlineData: { mimeType: image.mimeType, data: image.data },
-    })),
-  ];
-}
-
 const structuredOutputTool = (
   body: RuntimeRequest,
 ): Required<Pick<RuntimeTool, "name" | "input_schema">> | null => {
@@ -329,6 +315,24 @@ export function resolveResponsesEvidence(
   transport: RuntimeProviderName,
 ): ResponsesEvidence {
   const topLevelModel = validResponseModel(payload.model, requestedModel);
+  if (transport === "xAI") {
+    // xAI reports the exact charge in USD ticks (1e10 ticks = $1). Prefer it
+    // to a token-rate estimate whenever it is present.
+    const usage =
+      payload.usage && typeof payload.usage === "object"
+        ? (payload.usage as Record<string, unknown>)
+        : {};
+    const ticks = usage.cost_in_usd_ticks;
+    const actualCostUsd =
+      typeof ticks === "number" && Number.isFinite(ticks) && ticks >= 0
+        ? normalizeProviderReportedCostUsd(ticks / 1e10)
+        : undefined;
+    return {
+      model: topLevelModel,
+      inferenceProvider: "xai",
+      ...(actualCostUsd !== undefined ? { actualCostUsd } : {}),
+    };
+  }
   if (transport !== "AI Gateway") {
     return {
       model: topLevelModel,
@@ -674,10 +678,6 @@ async function callGateway(
       process.env.WIRELINE_GATEWAY_OPENAI_MODEL?.trim() ||
         `openai/${OPENAI_STRUCTURED_PRIMARY_MODEL}`,
     ),
-    gatewayModelId(
-      process.env.WIRELINE_GATEWAY_GEMINI_MODEL?.trim() ||
-        `google/${GEMINI_STRUCTURED_FALLBACK_MODEL}`,
-    ),
   ].filter((model, index, entries) => model && entries.indexOf(model) === index);
   return callResponsesEndpoint({
     endpoint: `${AI_GATEWAY_BASE_URL}/responses`,
@@ -693,6 +693,27 @@ async function callGateway(
 
 function openAISafetyIdentifier(): string | undefined {
   return currentProviderSafetyIdentifier();
+}
+
+async function callXAI(
+  body: RuntimeRequest,
+  options?: RuntimeRequestOptions,
+): Promise<RuntimeMessage> {
+  const apiKey = process.env.XAI_API_KEY?.trim();
+  if (!apiKey) throw new Error("XAI_API_KEY not configured");
+  const requested = String(body.model || "").trim();
+  const model = /^grok-/i.test(requested) ? requested : XAI_STRUCTURED_PRIMARY_MODEL;
+  return callResponsesEndpoint({
+    endpoint: "https://api.x.ai/v1/responses",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    model,
+    body,
+    options,
+    provider: "xAI",
+    // xAI keeps responses for 30 days unless told not to.
+    store: false,
+    safetyIdentifier: openAISafetyIdentifier(),
+  });
 }
 
 async function callOpenAI(
@@ -713,123 +734,6 @@ async function callOpenAI(
     store: false,
     safetyIdentifier: openAISafetyIdentifier(),
   });
-}
-
-async function callGemini(
-  body: RuntimeRequest,
-  options?: RuntimeRequestOptions,
-): Promise<RuntimeMessage> {
-  assertNotAborted(options?.signal);
-  const { GoogleGenerativeAI } = await import("@google/generative-ai");
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
-  const modelId = GEMINI_STRUCTURED_FALLBACK_MODEL;
-  const tool = structuredOutputTool(body);
-  const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({
-    model: modelId,
-    systemInstruction: extractText(body.system) || undefined,
-  });
-  const contents = body.messages.map((item) => ({
-    role: item.role === "assistant" ? ("model" as const) : ("user" as const),
-    parts: geminiInputParts(item.content),
-  }));
-  // Gemini's output cap includes thinking tokens. Carry the same requested
-  // bound as Responses so a fallback cannot exceed a setup spend reservation.
-  const requestedOutputTokens = body.max_tokens;
-  const generationConfig: { responseMimeType?: string; maxOutputTokens: number } = {
-    maxOutputTokens:
-      typeof requestedOutputTokens === "number" &&
-      Number.isFinite(requestedOutputTokens) &&
-      requestedOutputTokens > 0
-        ? Math.max(1, Math.floor(requestedOutputTokens))
-        : 4096,
-  };
-  if (tool) {
-    generationConfig.responseMimeType = "application/json";
-    if (contents.length)
-      contents[contents.length - 1].parts.push({
-        text: `\nReturn one JSON object matching this schema:\n${JSON.stringify(tool.input_schema, null, 2)}`,
-      });
-  }
-  // Google SDK does not forward AbortSignal; race the promise against a timer
-  // so a stalled Gemini call cannot hold the request open past the ceiling.
-  const timer = withRequestTimeout(options?.signal);
-  let result: Awaited<ReturnType<typeof model.generateContent>>;
-  try {
-    result = await new Promise((resolve, reject) => {
-      const onAbort = () => {
-        const reason =
-          timer.signal.reason instanceof Error
-            ? timer.signal.reason
-            : new Error(
-                timer.timedOut()
-                  ? `Gemini request timed out after ${RUNTIME_REQUEST_TIMEOUT_MS}ms`
-                  : "Gemini request aborted",
-              );
-        reject(reason);
-      };
-      if (timer.signal.aborted) return onAbort();
-      timer.signal.addEventListener("abort", onAbort, { once: true });
-      model.generateContent({ contents, generationConfig }).then(resolve, reject);
-    });
-  } finally {
-    timer.dispose();
-  }
-  assertNotAborted(options?.signal);
-  const text = result.response.text();
-  const usageMetadata = result.response.usageMetadata as
-    import("./ai-audit").GeminiUsageMetadata | undefined;
-  // Thinking models report reasoning tokens in thoughtsTokenCount, billed at
-  // the output rate but excluded from candidatesTokenCount; context-cache reads
-  // sit inside promptTokenCount at the cache-read rate. Fold both in or every
-  // Gemini fallback call is under-metered by its full reasoning budget.
-  const promptTokens = normalizeUsageTokenCount(usageMetadata?.promptTokenCount);
-  const cacheReadTokens = Math.min(
-    promptTokens,
-    normalizeUsageTokenCount(usageMetadata?.cachedContentTokenCount),
-  );
-  const inputTokens = promptTokens - cacheReadTokens;
-  const outputTokens = saturatingUsageTokenSum(
-    usageMetadata?.candidatesTokenCount,
-    usageMetadata?.thoughtsTokenCount,
-  );
-  const response = tool
-    ? message({
-        model: modelId,
-        content: [
-          {
-            type: "tool_use",
-            id: `call_${Math.random().toString(36).slice(2)}`,
-            caller: { type: "direct" },
-            name: tool.name,
-            input: parseStructuredJson(text),
-          },
-        ],
-        stopReason: "tool_use",
-        inputTokens,
-        outputTokens,
-        cacheReadTokens,
-      })
-    : message({
-        model: modelId,
-        content: [{ type: "text", text, citations: null }],
-        stopReason: "end_turn",
-        inputTokens,
-        outputTokens,
-        cacheReadTokens,
-      });
-  if (
-    !knownTokenCount(usageMetadata?.promptTokenCount) ||
-    !knownTokenCount(usageMetadata?.candidatesTokenCount) ||
-    (usageMetadata?.thoughtsTokenCount !== undefined &&
-      !knownTokenCount(usageMetadata.thoughtsTokenCount)) ||
-    (usageMetadata?.cachedContentTokenCount !== undefined &&
-      (!knownTokenCount(usageMetadata.cachedContentTokenCount) ||
-        usageMetadata.cachedContentTokenCount > promptTokens))
-  ) {
-    recordAmbiguousProviderAttempt();
-  }
-  return response;
 }
 
 class RuntimeCircuitBreaker {
@@ -882,7 +786,7 @@ class RuntimeCircuitBreaker {
 
 const gatewayCircuitBreaker = new RuntimeCircuitBreaker("AI Gateway");
 const openAICircuitBreaker = new RuntimeCircuitBreaker("OpenAI");
-const geminiCircuitBreaker = new RuntimeCircuitBreaker("Gemini");
+const xaiCircuitBreaker = new RuntimeCircuitBreaker("xAI");
 
 /**
  * Transport registry keyed by policy id. The policy module decides which of
@@ -893,13 +797,13 @@ const RUNTIME_PROVIDER_REGISTRY: Record<
   ReasoningProviderId,
   { provider: RuntimeProvider; available: () => boolean }
 > = {
+  xai: {
+    provider: { name: "xAI", call: callXAI, breaker: xaiCircuitBreaker },
+    available: () => Boolean(process.env.XAI_API_KEY?.trim()),
+  },
   openai: {
     provider: { name: "OpenAI", call: callOpenAI, breaker: openAICircuitBreaker },
     available: () => Boolean(process.env.OPENAI_API_KEY),
-  },
-  gemini: {
-    provider: { name: "Gemini", call: callGemini, breaker: geminiCircuitBreaker },
-    available: () => Boolean(process.env.GEMINI_API_KEY),
   },
   gateway: {
     provider: { name: "AI Gateway", call: callGateway, breaker: gatewayCircuitBreaker },
@@ -926,7 +830,7 @@ function nextAvailableProvider(
 export class RuntimeUnavailableError extends Error {
   status = 503;
   constructor() {
-    super("AI runtime is unavailable. Configure OpenAI, Gemini, or the AI Gateway.");
+    super("AI runtime is unavailable. Configure xAI, OpenAI, or the AI Gateway.");
     this.name = "RuntimeUnavailableError";
   }
 }
@@ -968,8 +872,8 @@ async function createWithFallbacks(
       const providerError = definiteRejection ?? error;
       if (!definiteRejection && !(error instanceof AccountedProviderOutputError)) {
         // The request crossed a provider boundary, but no usage response came
-        // back. It may still be billable (notably Gemini's non-cancelable SDK
-        // timeout), so cost wrappers must retain their conservative hold.
+        // back. It may still be billable, so cost wrappers must retain their
+        // conservative hold.
         recordAmbiguousProviderAttempt();
       }
       provider.breaker?.recordFailure(providerError);

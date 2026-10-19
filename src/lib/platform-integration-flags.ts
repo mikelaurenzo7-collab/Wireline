@@ -4,7 +4,8 @@ import { requiresPreviewProviderIsolation } from "./preview-spend-policy";
 export interface PlatformIntegrationFlags {
   apollo: boolean;
   docusign: boolean;
-  gemini: boolean;
+  /** Built-in web search on the managed structured provider. */
+  webSearch: boolean;
   perplexity: boolean;
   liveResearch: boolean;
 }
@@ -24,15 +25,15 @@ export function perplexityRuntimeAvailable(): boolean {
 
 export function loadPlatformIntegrationFlags(): PlatformIntegrationFlags {
   const apolloOAuth = envPresent("APOLLO_CLIENT_ID") && envPresent("APOLLO_CLIENT_SECRET");
-  const gemini = envPresent("GEMINI_API_KEY");
+  const webSearch = envPresent("XAI_API_KEY");
   const perplexity = perplexityRuntimeAvailable();
   return {
     apollo: envPresent("APOLLO_API_KEY") || apolloOAuth,
     docusign:
       envPresent("DOCUSIGN_ACCOUNT_ID") &&
       (envPresent("DOCUSIGN_JWT_TOKEN") || envPresent("DOCUSIGN_ACCESS_TOKEN")),
-    gemini,
+    webSearch,
     perplexity,
-    liveResearch: gemini || perplexity,
+    liveResearch: webSearch || perplexity,
   };
 }

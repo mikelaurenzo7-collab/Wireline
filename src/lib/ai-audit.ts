@@ -2,7 +2,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { DEFAULT_MODEL, pricingForModel } from "./ai-models";
 import { normalizeProviderReportedCostUsd } from "./ai-provider-cost";
-import { normalizeUsageTokenCount, saturatingUsageTokenSum } from "./ai-usage";
+import { normalizeUsageTokenCount } from "./ai-usage";
 
 export interface RuntimeCallMeta {
   model: string;
@@ -16,19 +16,6 @@ export interface RuntimeCallMeta {
   cache_read_tokens: number;
   cache_create_tokens: number;
   latency_ms: number;
-}
-export interface GeminiUsageMetadata {
-  promptTokenCount?: number;
-  candidatesTokenCount?: number;
-  /**
-   * Reasoning tokens on thinking models (gemini-2.5/3.x). Google bills them at
-   * the output rate but reports them OUTSIDE candidatesTokenCount — omitting
-   * them under-meters every thinking-model call by the full reasoning budget.
-   */
-  thoughtsTokenCount?: number;
-  /** Context-cache reads, billed at the cache-read rate. */
-  cachedContentTokenCount?: number;
-  totalTokenCount?: number;
 }
 export interface AuditContext {
   records: RuntimeCallMeta[];
@@ -218,30 +205,4 @@ export function recordUsage(
     cache_create_tokens: normalizeUsageTokenCount(response.usage?.cache_creation_input_tokens),
     latency_ms: latencyMs,
   });
-}
-export function recordGeminiUsage(
-  model: string,
-  usage: GeminiUsageMetadata | undefined,
-  latencyMs: number,
-): RuntimeCallMeta {
-  // promptTokenCount INCLUDES cachedContentTokenCount, so subtract the cached
-  // share out of the full-price input bucket rather than double-counting it.
-  const promptTokens = normalizeUsageTokenCount(usage?.promptTokenCount);
-  const cachedTokens = Math.min(
-    promptTokens,
-    normalizeUsageTokenCount(usage?.cachedContentTokenCount),
-  );
-  const candidatesTokens = normalizeUsageTokenCount(usage?.candidatesTokenCount);
-  const thoughtsTokens = normalizeUsageTokenCount(usage?.thoughtsTokenCount);
-  const record = {
-    model,
-    provider: "google" as const,
-    input_tokens: Math.max(0, promptTokens - cachedTokens),
-    output_tokens: saturatingUsageTokenSum(candidatesTokens, thoughtsTokens),
-    cache_read_tokens: cachedTokens,
-    cache_create_tokens: 0,
-    latency_ms: latencyMs,
-  };
-  push(record);
-  return record;
 }

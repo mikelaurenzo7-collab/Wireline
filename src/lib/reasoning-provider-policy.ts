@@ -2,9 +2,9 @@
  * Governed structured-reasoning provider policy.
  *
  * BotBound runs one managed structured runtime with an ordered continuity
- * chain. OpenAI is the product default whenever `OPENAI_API_KEY` is configured.
- * This module owns two decisions that used to be scattered through
- * `ai-client.ts`:
+ * chain. xAI is the product default whenever `XAI_API_KEY` is configured, and
+ * OpenAI is the backup. This module owns two decisions that used to be
+ * scattered through `ai-client.ts`:
  *
  * 1. **Which providers are eligible** for a given process, based on configured
  *    credentials plus explicit operator opt-outs.
@@ -16,18 +16,16 @@
  * testable without network access, and a provider's position is a reviewable
  * policy statement rather than the order someone happened to write `if` blocks.
  *
- * ## OpenAI
+ * ## Order
  *
- * OpenAI is the managed primary. A configured key earns OpenAI the front of the
- * chain. When the key is absent, eligibility skips OpenAI and the governed
- * Gateway becomes first. Reaching a working continuity provider is strictly
- * better than returning 503.
- *
- * xAI and Grok are deliberately absent here and are never contacted by the
- * structured or live-voice runtime.
+ * xAI first, then OpenAI, then the legacy AI Gateway on deployments that still
+ * configure it. A missing key skips that lane; reaching a working continuity
+ * provider is strictly better than returning 503. Gemini is retired and is
+ * never contacted. Vendor names are operator-facing only and never rendered to
+ * tenants.
  */
 
-export type ReasoningProviderId = "openai" | "gemini" | "gateway";
+export type ReasoningProviderId = "xai" | "openai" | "gateway";
 
 export type ReasoningProviderOption = {
   id: ReasoningProviderId;
@@ -43,31 +41,31 @@ export type ReasoningProviderOption = {
  * reached only when the providers before it have failed for this request.
  */
 export const REASONING_PROVIDER_ORDER: readonly ReasoningProviderId[] = [
+  "xai",
   "openai",
   "gateway",
-  "gemini",
 ] as const;
 
-export const DEFAULT_REASONING_PROVIDER: ReasoningProviderId = "openai";
+export const DEFAULT_REASONING_PROVIDER: ReasoningProviderId = "xai";
 
 export const REASONING_PROVIDER_CATALOG: readonly ReasoningProviderOption[] = [
+  {
+    id: "xai",
+    label: "xAI",
+    envKeys: ["XAI_API_KEY"],
+    note: "BotBound default for structured reasoning.",
+  },
   {
     id: "openai",
     label: "OpenAI",
     envKeys: ["OPENAI_API_KEY"],
-    note: "BotBound default for structured reasoning. Live calls use OpenAI Realtime.",
+    note: "Structured backup when the primary lane fails.",
   },
   {
     id: "gateway",
     label: "AI Gateway",
     envKeys: ["AI_GATEWAY_API_KEY", "VERCEL_OIDC_TOKEN"],
-    note: "Governed continuity route across approved model providers.",
-  },
-  {
-    id: "gemini",
-    label: "Gemini",
-    envKeys: ["GEMINI_API_KEY"],
-    note: "Final automatic structured continuity fallback.",
+    note: "Legacy governed continuity route on deployments that still configure it.",
   },
 ] as const;
 
@@ -76,11 +74,11 @@ export function normalizeReasoningProvider(value: unknown): ReasoningProviderId 
   if (!candidate) return null;
   // Accept the vendor-flavored aliases operators actually type.
   const alias =
-    candidate === "google"
-        ? "gemini"
-        : candidate === "ai-gateway" || candidate === "vercel"
-          ? "gateway"
-          : candidate;
+    candidate === "grok"
+      ? "xai"
+      : candidate === "ai-gateway" || candidate === "vercel"
+        ? "gateway"
+        : candidate;
   return REASONING_PROVIDER_ORDER.includes(alias as ReasoningProviderId)
     ? (alias as ReasoningProviderId)
     : null;
@@ -88,8 +86,8 @@ export function normalizeReasoningProvider(value: unknown): ReasoningProviderId 
 
 /**
  * The operator-selected primary lane. Invalid or unset values resolve to the
- * managed OpenAI default, so a typo can never silently move production traffic
- * onto a different vendor.
+ * managed default, so a typo can never silently move production traffic onto a
+ * different vendor.
  */
 export function resolveReasoningPreference(
   env: NodeJS.ProcessEnv = process.env,

@@ -67,6 +67,34 @@ const KNOWN_ACTION_LABELS = new Map([
   ["agent_tool.send_text_message", "Send text"],
 ]);
 
+/**
+ * Customers see BotBound's own model tiers, never vendor model ids. Rows that
+ * share a tier are merged so spend still adds up.
+ */
+function botboundModelTiers(
+  rows: Array<{ model: string; calls: number; cost: number }>,
+): Array<{ model: string; calls: number; cost: number }> {
+  const tiers = new Map<string, { model: string; calls: number; cost: number }>();
+  for (const row of rows) {
+    const id = String(row.model || "")
+      .trim()
+      .toLowerCase();
+    const tier =
+      !id || id === "unknown"
+        ? "No model recorded"
+        : id.includes("realtime")
+          ? "BotBound Voice"
+          : id.includes("grok")
+            ? "BotBound Standard"
+            : "BotBound Backup";
+    const current = tiers.get(tier) ?? { model: tier, calls: 0, cost: 0 };
+    current.calls += Number(row.calls) || 0;
+    current.cost += Number(row.cost) || 0;
+    tiers.set(tier, current);
+  }
+  return [...tiers.values()].sort((a, b) => b.cost - a.cost);
+}
+
 function actionLabel(action: string): string {
   const knownLabel = KNOWN_ACTION_LABELS.get(action);
   if (knownLabel) return knownLabel;
@@ -590,15 +618,13 @@ export default function AISpendView({ days }: { days: number }) {
             <div className={cn(WL_APP_CLASSES.insightStatCard, "p-5 space-y-3")}>
               <div className="wl-insight-label text-brand/70">Spend by Model</div>
               <div className="space-y-3">
-                {by_model.map((m) => (
+                {botboundModelTiers(by_model).map((m) => (
                   <div
                     key={m.model}
                     className="flex items-baseline justify-between border-b border-border pb-3 last:border-0 last:pb-0"
                   >
                     <div>
-                      <div className="text-sm font-mono text-foreground/90">
-                        {m.model === "unknown" ? "No model recorded" : m.model}
-                      </div>
+                      <div className="text-sm text-foreground/90">{m.model}</div>
                       <div className="wl-insight-label mt-1">{m.calls} events</div>
                     </div>
                     <div className="font-display text-2xl text-brand-display">

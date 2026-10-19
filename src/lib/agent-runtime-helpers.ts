@@ -813,7 +813,7 @@ export const AGENT_TOOL_DEFS = {
   gemini_ground: {
     name: "gemini_ground",
     description:
-      "Looks up fresh public information via live web research (Perplexity when configured, otherwise grounded search). Use ONLY when the caller asks something that isn't in your knowledge base AND requires current public info, competitor pricing, news headlines, today's weather, business hours, regulatory updates. Returns a concise answer with citations. Do NOT use for internal customer data; offer a team follow-up when private account details are needed.",
+      "Looks up fresh public information via live web research (Perplexity when configured, otherwise built-in web search). Use ONLY when the caller asks something that isn't in your knowledge base AND requires current public info, competitor pricing, news headlines, today's weather, business hours, regulatory updates. Returns a concise answer with citations. Do NOT use for internal customer data; offer a team follow-up when private account details are needed.",
     parameters: {
       type: "object",
       properties: {

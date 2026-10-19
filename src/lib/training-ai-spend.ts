@@ -2,12 +2,12 @@ import { gatewayModelId, isAIGatewayConfigured } from "./ai-gateway";
 import {
   bareModelId,
   DEFAULT_MODEL,
-  GEMINI_STRUCTURED_FALLBACK_MODEL,
   MODEL_PRICING,
   OPENAI_MODELS,
   OPENAI_STRUCTURED_PRIMARY_MODEL,
   pricingForModel,
   selectModelForTask,
+  XAI_STRUCTURED_PRIMARY_MODEL,
 } from "./ai-models";
 import { RuntimeUnavailableError } from "./ai-client";
 import { runStructured, type StructuredOptions } from "./ai-structured";
@@ -16,13 +16,17 @@ import { runWithManagedAiSpend } from "./managed-ai-operation-spend";
 import { runWithWebsiteKnowledgeExtractionTimeout } from "./website-knowledge-timeout";
 
 // One token per UTF-8 byte bounds the rendered text conservatively. Include the
-// pretty-printed schema that Gemini appends and 2,048 tokens for the adapters'
-// fixed message/schema framing. Never estimate customer text using chars / 4.
+// pretty-printed schema and 2,048 tokens for the adapters' fixed message/schema
+// framing. Never estimate customer text using chars / 4.
 const ADAPTER_FRAMING_TOKENS = 2048;
 const LEDGER_PRECISION = 1_000_000;
 
 export function trainingAttemptModels(requestedModel: string): string[] {
   const models: string[] = [];
+  // Mirror the runtime chain: xAI first, then OpenAI, then the legacy Gateway.
+  if (process.env.XAI_API_KEY?.trim()) {
+    models.push(/^grok-/i.test(requestedModel) ? requestedModel : XAI_STRUCTURED_PRIMARY_MODEL);
+  }
   if (process.env.OPENAI_API_KEY) {
     models.push(
       requestedModel.startsWith("gpt-") ? requestedModel : OPENAI_STRUCTURED_PRIMARY_MODEL,
@@ -42,14 +46,9 @@ export function trainingAttemptModels(requestedModel: string): string[] {
           process.env.WIRELINE_GATEWAY_OPENAI_MODEL?.trim() ||
             `openai/${OPENAI_STRUCTURED_PRIMARY_MODEL}`,
         ),
-        gatewayModelId(
-          process.env.WIRELINE_GATEWAY_GEMINI_MODEL?.trim() ||
-            `google/${GEMINI_STRUCTURED_FALLBACK_MODEL}`,
-        ),
       ]),
     );
   }
-  if (process.env.GEMINI_API_KEY) models.push(GEMINI_STRUCTURED_FALLBACK_MODEL);
   if (!models.length) throw new RuntimeUnavailableError();
   return models;
 }
