@@ -188,23 +188,24 @@ async function persistReconciliationIncident(
   steps: TwilioMessageReconciliationStep[],
   queueError: unknown,
 ): Promise<void> {
-  await tenantStore.exit(() =>
-    drizzle.insert(schema.auditLog).values({
-      userId: input.userId,
-      action: "twilio.message_reconciliation_enqueue_failed",
-      eventType: "provider.reconciliation",
-      severity: "critical",
-      provider: "twilio",
-      resourceType: "twilio_message",
-      resourceId: input.sid,
-      metadata: {
-        carrier_accepted: true,
-        reconciliation_steps: steps,
-        reservation_reference: input.reservationReference,
-        destination_suffix: input.customerNumber.slice(-4),
-        queue_error: getErrorMessage(queueError),
-      },
-    }),
+  await tenantStore.exit(
+    async () =>
+      await drizzle.insert(schema.auditLog).values({
+        userId: input.userId,
+        action: "twilio.message_reconciliation_enqueue_failed",
+        eventType: "provider.reconciliation",
+        severity: "critical",
+        provider: "twilio",
+        resourceType: "twilio_message",
+        resourceId: input.sid,
+        metadata: {
+          carrier_accepted: true,
+          reconciliation_steps: steps,
+          reservation_reference: input.reservationReference,
+          destination_suffix: input.customerNumber.slice(-4),
+          queue_error: getErrorMessage(queueError),
+        },
+      }),
   );
 }
 

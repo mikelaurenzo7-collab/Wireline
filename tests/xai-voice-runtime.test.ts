@@ -173,9 +173,39 @@ describe("xAI Grok Voice phone runtime", () => {
     );
   });
 
+  it("runs platform queries outside tenant scope by awaiting them inside it", async () => {
+    // Drizzle builders are lazy: returning one from tenantStore.exit runs the
+    // query after the tenant scope is restored, silently under that tenant.
+    // drizzle.transaction() and an explicit .execute() start eagerly, so they
+    // are safe to return.
+    const { readdirSync, statSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const offenders: string[] = [];
+    const walk = (dir: string) => {
+      for (const name of readdirSync(dir)) {
+        const path = join(dir, name);
+        if (statSync(path).isDirectory()) {
+          walk(path);
+          continue;
+        }
+        if (!/\.tsx?$/.test(name)) continue;
+        const source = read(path);
+        for (const match of source.matchAll(
+          /tenantStore\.exit\(\(\) =>\s*drizzle(?!\.transaction\()/g,
+        )) {
+          const rest = source.slice(match.index);
+          const call = rest.slice(0, rest.search(/\n\s*\);/));
+          if (!call.includes(".execute()")) offenders.push(path);
+        }
+      }
+    };
+    walk("src");
+    expect(offenders).toEqual([]);
+  });
+
   it("keeps registration secrets out of tenant database scope", () => {
     const service = read("src/lib/voice/xai-phone-registration.ts");
-    expect(service).toContain("tenantStore.exit(operation)");
+    expect(service).toContain("tenantStore.exit(async () => await operation())");
     expect(service).toContain("encryptSecret(registration.signingSecret)");
     expect(service).toContain("encryptSecret(credentials.password)");
     const migration = read("drizzle/migrations/0181_xai_phone_registrations.sql");

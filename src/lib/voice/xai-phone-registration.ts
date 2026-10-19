@@ -31,9 +31,14 @@ function asRecord(value: unknown): Record<string, unknown> {
     : {};
 }
 
-/** Registrations are platform secrets: never read inside a tenant's database scope. */
-function outsideTenant<T>(operation: () => Promise<T>): Promise<T> {
-  return tenantStore.exit(operation);
+/**
+ * Registrations are platform secrets: never read inside a tenant's database
+ * scope. Drizzle queries are lazy thenables, so the query must be awaited
+ * inside the exit scope; returning the builder would run it after the tenant
+ * scope is restored.
+ */
+function outsideTenant<T>(operation: () => PromiseLike<T>): Promise<T> {
+  return tenantStore.exit(async () => await operation());
 }
 
 async function findRegistration(phoneNumber: string) {
