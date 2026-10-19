@@ -47,7 +47,7 @@ import {
   type NativeInboundAdmissionMode,
 } from "./native-inbound-admission";
 import { buildOpenAIRealtimeAgentRuntime } from "./openai-phone-agent-runtime";
-import { OpenAISipTurnTiming } from "./openai-sip-turn-timing";
+import { OpenAISipTurnTiming, XAI_TURN_AUDIO_START_EVENTS } from "./openai-sip-turn-timing";
 import { enforceFundedCarrierCallLimit, readTerminalCarrierDuration } from "./funded-carrier-call";
 import { adoptPhoneTestSipFunding } from "./phone-test-funding";
 import { adoptOutboundPlacementSipFunding } from "./outbound-placement-funding";
@@ -1873,7 +1873,10 @@ async function runRealtimeSession(
   let heartbeat: ReturnType<typeof setInterval> | null = null;
   let missedPongs = 0;
   let providerHangupRequired = false;
-  const turnTiming = new OpenAISipTurnTiming();
+  // xAI never emits output_audio_buffer.*; its first audio chunk marks playback.
+  const turnTiming = new OpenAISipTurnTiming(
+    provider === "xai" ? { audioStartEvents: XAI_TURN_AUDIO_START_EVENTS } : {},
+  );
 
   const ws = new WebSocket(buildRealtimeSipSocketUrl(input.callId), {
     headers: { Authorization: `Bearer ${apiKey}` },

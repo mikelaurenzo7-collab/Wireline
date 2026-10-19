@@ -23,13 +23,33 @@ function eventId(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
+/** OpenAI's SIP sideband announces playback of a response's audio explicitly. */
+export const OPENAI_TURN_AUDIO_START_EVENTS = ["output_audio_buffer.started"] as const;
 /**
- * Measures the server-side interval after OpenAI declares the caller's turn
- * finished. The earlier semantic-VAD wait is not observable on a SIP sideband.
- * Only bounded numeric samples are retained; no audio or transcript is stored.
+ * xAI's Voice Agent API emits no output_audio_buffer.* events, so the first
+ * audio chunk of the response is the earliest proof the caller started hearing
+ * an answer. Without it, every xAI call reported turnsWithAudio 0 and no
+ * stopped-to-audio latency, which is exactly the pacing a caller notices.
+ */
+export const XAI_TURN_AUDIO_START_EVENTS = [
+  "response.output_audio.delta",
+  "response.audio.delta",
+] as const;
+
+export type TurnTimingOptions = {
+  /** Event types that mark the first assistant audio for a caller turn. */
+  audioStartEvents?: readonly string[];
+};
+
+/**
+ * Measures the server-side interval after the provider declares the caller's
+ * turn finished. The earlier semantic-VAD wait is not observable on a SIP
+ * sideband. Only bounded numeric samples are retained; no audio or transcript
+ * is stored.
  */
 export class OpenAISipTurnTiming {
   private pending: PendingTurn | null = null;
+  private readonly audioStartEvents: ReadonlySet<string>;
   private readonly stoppedToResponseMs: number[] = [];
   private readonly stoppedToAudioMs: number[] = [];
   private readonly toolConfirmationMs: number[] = [];
@@ -37,6 +57,10 @@ export class OpenAISipTurnTiming {
   private turnsWithAudio = 0;
   private toolConfirmations = 0;
   private toolTimeouts = 0;
+
+  constructor(options: TurnTimingOptions = {}) {
+    this.audioStartEvents = new Set(options.audioStartEvents ?? OPENAI_TURN_AUDIO_START_EVENTS);
+  }
 
   observe(event: Record<string, unknown>, nowMs = Date.now()): void {
     const type = eventId(event.type);
@@ -65,14 +89,23 @@ export class OpenAISipTurnTiming {
       }
       return;
     }
-    if (
-      type === "output_audio_buffer.started" &&
-      this.pending?.responseIds.has(eventId(event.response_id))
-    ) {
+    if (this.audioStartEvents.has(type) && this.pending && this.belongsToPending(event)) {
       addSample(this.stoppedToAudioMs, nowMs - this.pending.stoppedAtMs);
       this.turnsWithAudio += 1;
       this.pending = null;
     }
+  }
+
+  /**
+   * Audio belongs to the pending turn when its response id is one the turn
+   * produced. A chunk without any response id counts only once the turn has
+   * a response at all, so the forced opening line, which plays before the
+   * caller's first turn, can never be mistaken for an answer.
+   */
+  private belongsToPending(event: Record<string, unknown>): boolean {
+    const responseId = eventId(event.response_id);
+    if (responseId) return this.pending!.responseIds.has(responseId);
+    return this.pending!.responseObserved;
   }
 
   observeToolConfirmation(durationMs: number, timedOut: boolean): void {
