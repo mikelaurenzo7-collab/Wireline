@@ -6,7 +6,7 @@
 // period. All normal callers should use POST /api/account/delete instead.
 
 import { createHash } from "node:crypto";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { drizzle, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "./server-utils";
@@ -807,6 +807,25 @@ async function releaseExternalResourcesOutsideTenantContext(
     }
   } catch (err) {
     log.warn("purge oauth revoke failed, continuing with local erasure", {
+      userId,
+      error: getErrorMessage(err),
+    });
+  }
+
+  // Each Bot's knowledge index holds a copy of what the Bot was taught. Delete
+  // it before the Bot rows (and so the index ids) are erased.
+  try {
+    const indexed = await db
+      .select({ index: schema.agents.knowledgeIndex })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.userId, userId), isNotNull(schema.agents.knowledgeIndex)));
+    if (indexed.length) {
+      const { deleteKnowledgeIndex } = await import("./knowledge-index");
+      const { parseKnowledgeIndexState } = await import("./knowledge-index-search");
+      for (const row of indexed) await deleteKnowledgeIndex(parseKnowledgeIndexState(row.index));
+    }
+  } catch (err) {
+    log.warn("purge knowledge index cleanup failed, continuing with local erasure", {
       userId,
       error: getErrorMessage(err),
     });

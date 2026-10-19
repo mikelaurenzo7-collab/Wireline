@@ -286,6 +286,7 @@ const previewSpendAuthorityKeys = [
   "VOICE_ENGINE_SERVICE_TOKEN",
   "XAI_API_KEY",
   "XAI_API_KEY_CHATKIT",
+  "XAI_MANAGEMENT_API_KEY",
 ];
 const reviewedIsolatedPreviewDatabaseKeys = new Set([
   "INTERNAL_JWT_SECRET",

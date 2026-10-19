@@ -603,6 +603,13 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
       }
     }
 
+    // Rebuild knowledge indexes for Bots whose rules or facts changed. Bounded
+    // to a few Bots per tick and inert until both index keys are configured.
+    if (withinSweepBudget() && (req._sweepMode === "cron" || !req._sweepMode)) {
+      const { syncStaleKnowledgeIndexes } = await import("../lib/knowledge-index");
+      await syncStaleKnowledgeIndexes(withinSweepBudget);
+    }
+
     const mode = req._sweepMode || "cron";
     res.json({ processed, recovered, mode, trials_expired: trialsExpired });
     if (processed > 0) {
