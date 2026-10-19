@@ -482,6 +482,8 @@ export const agents = pgTable(
     flowConfig: jsonb("flow_config"),
     /** The owner's Playbook (exact lines, situations, always/never say). Migration 0182. */
     playbook: jsonb("playbook"),
+    /** Meaning-based knowledge index for this Bot (see src/lib/knowledge-index.ts). */
+    knowledgeIndex: jsonb("knowledge_index"),
     outOfHoursMessage: text("out_of_hours_message"),
     kpiFocus: text("kpi_focus"),
     isBusinessAgent: boolean("is_business_agent").default(false).notNull(),

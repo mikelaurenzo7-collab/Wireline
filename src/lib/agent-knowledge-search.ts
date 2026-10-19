@@ -2,6 +2,7 @@ import { and, desc, eq, ilike, or, sql, type AnyColumn } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { OPENING_GREETING_PREFIX } from "./agent-greeting";
+import { semanticKnowledgeMatches } from "./knowledge-index-search";
 import type { drizzle as serverDrizzle } from "./server-context";
 
 /**
@@ -52,6 +53,8 @@ const MAX_QUERY_WORDS = 12;
 /** Rows Postgres returns per table before the exact-phrase bonus reorders them. */
 const CANDIDATES_PER_TABLE = 40;
 const EXACT_PHRASE_BONUS = 8;
+/** Meaning-based matches kept per search, beside keyword matches. */
+const SEMANTIC_RESERVE = 3;
 
 /** Distinct words of three or more letters or digits, in any language, without stop words. */
 export function knowledgeSearchWords(text: string): string[] {
@@ -194,18 +197,44 @@ export async function searchAgentKnowledge(
 ): Promise<KnowledgeSnippet[]> {
   const words = knowledgeSearchWords(input.query);
   if (!input.userId || !input.agentId || !words.length) return [];
-  const [rules, facts] = await Promise.all([
+  const [rules, facts, meaning] = await Promise.all([
     matchingRules(db, input, words),
     matchingFacts(db, input, words),
+    semanticKnowledgeMatches(db, { ...input, limit: SEMANTIC_RESERVE }),
   ]);
-  return ranked(
+  const keyword = ranked(
     [
       ...rules.map((row) => ({ source: "rule" as const, content: row.content })),
       ...facts.map((row) => ({ source: "knowledge" as const, content: row.content })),
     ],
     words,
     input.query,
-  ).slice(0, input.limit);
+  );
+  return mergeMeaningMatches(keyword, meaning, input.limit);
+}
+
+/** Index results that a keyword match already holds add nothing. */
+function alreadyCovered(chunk: string, keyword: readonly KnowledgeSnippet[]): boolean {
+  const probe = normalizedPhrase(chunk).slice(0, 160);
+  return keyword.some((match) => normalizedPhrase(match.content).includes(probe));
+}
+
+/**
+ * Keyword matches stay first: they hold the caller's own words. Up to
+ * SEMANTIC_RESERVE meaning matches follow, so a reworded question still
+ * reaches its answer even when keyword matches would fill every slot.
+ */
+export function mergeMeaningMatches(
+  keyword: readonly KnowledgeSnippet[],
+  meaning: readonly string[],
+  limit: number,
+): KnowledgeSnippet[] {
+  const extra = meaning
+    .filter((chunk) => !alreadyCovered(chunk, keyword))
+    .slice(0, SEMANTIC_RESERVE)
+    .map((content) => ({ source: "knowledge" as const, content, score: 0 }));
+  const keep = Math.max(0, limit - extra.length);
+  return [...keyword.slice(0, keep), ...extra, ...keyword.slice(keep)].slice(0, limit);
 }
 
 /**
