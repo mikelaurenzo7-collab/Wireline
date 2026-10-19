@@ -10,6 +10,7 @@ import { authenticateUser } from "../middleware/auth";
 import { agentMutationRateLimit } from "../middleware/api-rate-limits";
 import { recordAmbiguousProviderAttempt, recordUsage } from "../lib/ai-audit";
 import { drizzle, log } from "../lib/server-context";
+import { phoneCallVoiceFor } from "../lib/voice/xai-voice-config";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import { listAgentsForUser } from "../lib/agents-store";
@@ -801,6 +802,9 @@ router.get(
         provider: record?.voiceProvider || null,
         phoneVoiceId: record?.phoneVoiceId || null,
         phoneVoiceProvider: record?.phoneVoiceProvider || null,
+        phoneCall: phoneCallVoiceFor(
+          record?.voiceProvider === "presenter" ? record?.phoneVoiceId : record?.voiceId,
+        ),
       },
       personality: personalities[0]?.content || "",
       directives,
@@ -1076,6 +1080,7 @@ router.patch(
         provider: savedVoice?.provider ?? "openai",
         phoneVoiceId: savedVoice?.phoneVoiceId ?? null,
         phoneVoiceProvider: savedVoice?.phoneVoiceProvider ?? null,
+        phoneCall: phoneCallVoiceFor(savedVoice?.voiceId ?? voiceId),
       },
     });
   },

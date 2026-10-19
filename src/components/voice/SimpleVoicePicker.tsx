@@ -15,14 +15,23 @@ type SimpleVoicePickerProps = {
   markKey?: BotMarkKey | null;
 };
 
+/** The voice callers actually hear when phone calls run on another provider. */
+type PhoneCallVoice = { provider: string; voice: string } | null;
+
 type AgentVoiceResponse = {
   voice?: {
     voiceId?: string | null;
     provider?: string | null;
     phoneVoiceId?: string | null;
     phoneVoiceProvider?: string | null;
+    phoneCall?: PhoneCallVoice;
   };
 };
+
+function phoneCallVoiceName(phoneCall: PhoneCallVoice): string | null {
+  if (!phoneCall?.voice) return null;
+  return phoneCall.voice.charAt(0).toUpperCase() + phoneCall.voice.slice(1);
+}
 
 export default function SimpleVoicePicker({ agentId, agentName, markKey }: SimpleVoicePickerProps) {
   const { user } = useAuth();
@@ -38,6 +47,7 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
   const [error, setError] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [choicesOpen, setChoicesOpen] = useState(false);
+  const [phoneCall, setPhoneCall] = useState<PhoneCallVoice>(null);
   const activeAgentIdRef = useRef(agentId);
   const activeOwnerIdRef = useRef(ownerId);
   const saveOperationRef = useRef(0);
@@ -54,6 +64,7 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
     setSelectedProvider(null);
     setNotice(null);
     setChoicesOpen(false);
+    setPhoneCall(null);
     if (!agentId || !ownerId) {
       setLoading(false);
       return;
@@ -82,6 +93,7 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
           (voice) => voice.id.toLowerCase() === storedVoiceId?.toLowerCase(),
         );
         setSelectedVoiceId(managedVoice?.id ?? storedVoiceId);
+        setPhoneCall(agentData.voice?.phoneCall ?? null);
         setSelectedProvider(
           managedVoice && (!storedProvider || storedProvider === "openai")
             ? "openai"
@@ -129,10 +141,12 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
           provider?: string | null;
           phoneVoiceId?: string | null;
           phoneVoiceProvider?: string | null;
+          phoneCall?: PhoneCallVoice;
         };
       } | null;
       if (!response.ok) throw new Error(body?.error || "Voice could not be saved.");
       if (!isCurrentSave()) return;
+      setPhoneCall(body?.voice?.phoneCall ?? null);
       const savedPrimaryProvider = body?.voice?.provider?.trim().toLowerCase() || null;
       const savedPrimaryVoiceId = body?.voice?.voiceId?.trim() || null;
       const savedWithPhoneFallback = savedPrimaryProvider === "presenter";
@@ -269,7 +283,9 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
       ) : null}
 
       <p className="text-xs leading-5 text-muted-foreground">
-        Used for phone calls and browser rehearsals. Preview starts a private voice rehearsal.
+        {phoneCallVoiceName(phoneCall)
+          ? `Used for browser rehearsals. On phone calls, callers hear ${phoneCallVoiceName(phoneCall)}, the closest Grok voice. Preview starts a private voice rehearsal.`
+          : "Used for phone calls and browser rehearsals. Preview starts a private voice rehearsal."}
       </p>
       <button
         type="button"
