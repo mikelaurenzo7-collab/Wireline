@@ -1,4 +1,5 @@
 import type { OpenAIRealtimeVoiceId } from "../voice-catalog";
+import { configuredPhoneVoiceProvider } from "./realtime-provider";
 
 /**
  * xAI Grok Voice speech-to-speech settings for live phone calls.
@@ -42,6 +43,20 @@ export function xaiVoiceForSavedVoice(voice: unknown): XAIGrokVoice {
   const id = typeof voice === "string" ? voice.trim().toLowerCase() : "";
   if ((XAI_GROK_VOICES as readonly string[]).includes(id)) return id as XAIGrokVoice;
   return OPENAI_TO_XAI_VOICE[id as OpenAIRealtimeVoiceId] ?? "eve";
+}
+
+/**
+ * The voice phone callers actually hear for a saved choice, so owner-facing
+ * labels stay truthful while phone calls run on xAI. Null means the saved
+ * OpenAI voice itself is used.
+ */
+export function phoneCallVoiceFor(
+  savedVoice: unknown,
+  env: NodeJS.ProcessEnv = process.env,
+): { provider: "xai"; voice: XAIGrokVoice } | null {
+  return configuredPhoneVoiceProvider(env) === "xai"
+    ? { provider: "xai", voice: xaiVoiceForSavedVoice(savedVoice) }
+    : null;
 }
 
 /** "high" (xAI's default) reasons before replying; "none" trades depth for speed. */

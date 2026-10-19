@@ -1,6 +1,6 @@
 /**
  * Canonical application schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0180_dnc_seller_registration.sql`.
+ * Latest committed migration: `drizzle/migrations/0181_xai_phone_registrations.sql`.
  * Runtime voice defaults remain defined by
  * `drizzle/migrations/0168_openai_realtime_voice_runtime.sql`; migrations 0169
  * and 0172 remove empty retired provider ledgers.

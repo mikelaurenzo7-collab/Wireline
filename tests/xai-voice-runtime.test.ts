@@ -10,6 +10,7 @@ import {
   xaiCallId,
 } from "../src/lib/voice/realtime-provider";
 import {
+  phoneCallVoiceFor,
   resolveXAIGrokVoiceModel,
   toXAIRealtimeSession,
   xaiForcedMessagePlaybackMs,
@@ -63,6 +64,12 @@ describe("xAI Grok Voice phone runtime", () => {
     expect(xaiVoiceForSavedVoice("cedar")).toBe("rex");
     expect(xaiVoiceForSavedVoice("ara")).toBe("ara");
     expect(xaiVoiceForSavedVoice("unknown")).toBe("eve");
+    // Owner-facing labels name the voice callers actually hear.
+    expect(phoneCallVoiceFor("cedar", { WIRELINE_PHONE_VOICE_PROVIDER: "xai" })).toEqual({
+      provider: "xai",
+      voice: "rex",
+    });
+    expect(phoneCallVoiceFor("cedar", {})).toBeNull();
   });
 
   it("sends xAI only the session fields it documents", () => {

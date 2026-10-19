@@ -18,6 +18,7 @@ import {
 } from "../lib/dnc-import-limits";
 import { normalizeDncPhone } from "../lib/compliance";
 import { getErrorMessage } from "../lib/server-utils";
+import { reportError } from "../lib/error-reporter";
 import type { AuthenticatedRequest } from "../types/auth";
 import { isFederalDncVendorConfigured } from "../lib/federal-dnc-service";
 import { phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
@@ -278,6 +279,14 @@ router.put(
       .catch((err) =>
         log.warn("audit seller DNC registration failed", { error: getErrorMessage(err) }),
       );
+    // The owner's marketing calls stay paused until a platform admin links
+    // screening to this SAN, so make sure someone is told to do it.
+    if (dncSellerRegistrationState(registration) === "pending_link") {
+      reportError(new Error("DNC registration awaiting screening link"), {
+        userId: req.user.id,
+        tags: { ops: "dnc_registration_pending_link" },
+      });
+    }
     res.json(sellerRegistrationResponse(registration));
   },
 );
