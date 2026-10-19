@@ -97,7 +97,7 @@ export default function PrivacyPolicyPage() {
           {[
             "We do not sell personal information.",
             "Optional advertising measurement stays off unless you allow it.",
-            "Live calls use OpenAI's built-in voices. Private voice previews require separate speaker permission.",
+            "Phone calls use xAI's built-in Grok voices. Private voice previews require separate speaker permission.",
           ].map((item) => (
             <div
               key={item}
@@ -231,9 +231,10 @@ export default function PrivacyPolicyPage() {
               We use data to provide and secure BotBound; process managed structured AI requests
               primarily through <strong>OpenAI</strong>, with <strong>Google Gemini</strong> and, on
               legacy deployments, Vercel AI Gateway as governed structured continuity routes; run
-              live phone conversations through OpenAI Realtime over Twilio PSTN and SIP; route calls
-              and messages; execute connected workflows; provide support; prevent fraud and abuse;
-              bill through Stripe; and understand aggregate product performance.
+              live phone conversations through xAI Grok Voice, with OpenAI Realtime as a fallback,
+              over Twilio PSTN and SIP; run browser voice rehearsals through OpenAI Realtime; route
+              calls and messages; execute connected workflows; provide support; prevent fraud and
+              abuse; bill through Stripe; and understand aggregate product performance.
             </p>
             <p>
               Optional Meta measurement is used only after your explicit choice to attribute
@@ -258,8 +259,12 @@ export default function PrivacyPolicyPage() {
                 <strong>Twilio</strong>: PSTN calls, phone numbers, and SMS
               </li>
               <li>
-                <strong>OpenAI</strong>: Primary managed structured inference and Realtime browser
-                and phone conversations
+                <strong>xAI</strong>: Grok Voice phone conversations, including speech recognition
+                and transcription
+              </li>
+              <li>
+                <strong>OpenAI</strong>: Primary managed structured inference, Realtime browser
+                voice rehearsals, and fallback phone conversations
               </li>
               <li>
                 <strong>Google Gemini</strong>: Managed continuity inference and grounded search

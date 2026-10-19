@@ -48,6 +48,12 @@ const TAG_META: Record<EntryTag, { label: string; tone: string; icon: typeof Spa
 
 const ENTRIES: ChangelogEntry[] = [
   {
+    date: "Oct 19, 2026",
+    tag: "feature",
+    title: "Workspace, Grok Voice Phone Calls, and Guided Do Not Call Setup",
+    body: "Studio is now the Workspace: Set Up, Knowledge, and Computer sit beside the chat, with Try It to rehearse by voice, text, or a call to your phone. Phone calls run on xAI Grok Voice, and voice settings name the voice callers hear. Compliance walks owners through their Do Not Call Registry subscription with area codes, business name, and term filled in.",
+  },
+  {
     date: "Oct 10, 2026",
     tag: "feature",
     title: "Cloud Computer, More Knowledge Formats, and Inbox Replies",

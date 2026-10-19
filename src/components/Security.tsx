@@ -195,7 +195,7 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     icon: Database,
     title: "Subprocessors & Vendors",
     items: [
-      "Production voice: Twilio provides phone numbers, PSTN transport, SIP, and SMS. OpenAI Realtime runs every browser and phone conversation from the same 10-voice roster; OpenAI also provides the primary structured runtime. BotBound does not operate a separate voice-cloning provider.",
+      "Production voice: Twilio provides phone numbers, PSTN transport, SIP, and SMS. xAI Grok Voice runs phone conversations, including speech recognition and transcription. OpenAI Realtime runs browser voice rehearsals and is the phone fallback; OpenAI also provides the primary structured runtime. BotBound does not operate a separate voice-cloning provider.",
       "Payments: Stripe (PCI scope reduced, BotBound never stores card numbers).",
       "Data plane: Supabase Postgres. Rate limits: Upstash Redis. Hosting: Render.",
       "Email: AgentMail for platform-managed Bot mailboxes and Bot email; Resend for transactional platform email.",
@@ -266,7 +266,7 @@ export default function Security() {
               </div>
             </div>
             <p className="mt-4 text-eyebrow !text-[0.625rem]">
-              <span className="whitespace-nowrap">Last updated · October 17, 2026</span>
+              <span className="whitespace-nowrap">Last updated · October 19, 2026</span>
             </p>
           </motion.div>
 

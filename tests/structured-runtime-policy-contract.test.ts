@@ -48,8 +48,10 @@ describe("structured and voice runtime policy", () => {
     }
     const privacy = read("src/components/PrivacyPolicyPage.tsx");
     const logos = read("src/components/layout/IntegrationLogos.tsx");
-    expect(privacy).toContain("OpenAI Realtime over Twilio PSTN and SIP");
-    expect(`${privacy}\n${logos}`).not.toMatch(/>xAI<|>Vapi<|ALL_LOGOS\.(?:xai|vapi)/i);
+    // Phone calls run on xAI Grok Voice, so xAI must be a disclosed subprocessor.
+    expect(privacy).toContain("through xAI Grok Voice, with OpenAI Realtime as a fallback,");
+    expect(privacy).toContain("<strong>xAI</strong>: Grok Voice phone conversations");
+    expect(`${privacy}\n${logos}`).not.toMatch(/>Vapi<|ALL_LOGOS\.vapi/i);
   });
 
   it("keeps direct OpenAI structured calls stateless", () => {

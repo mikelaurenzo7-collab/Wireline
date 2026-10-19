@@ -13,8 +13,9 @@ describe("retired private-voice provider contract", () => {
   const picker = read("src/components/voice/SimpleVoicePicker.tsx");
   const catalog = read("src/lib/voice-catalog.ts");
   const runtime = read("src/lib/managed-voice-runtime.ts");
-  const terms = read("src/components/LegalPage.tsx");
-  const privacy = read("src/components/PrivacyPolicyPage.tsx");
+  // Legal JSX text is re-wrapped by the formatter; compare the words, not line breaks.
+  const terms = read("src/components/LegalPage.tsx").replace(/\s+/g, " ");
+  const privacy = read("src/components/PrivacyPolicyPage.tsx").replace(/\s+/g, " ");
 
   it("ships no ElevenLabs credential, route, client, or cloning studio", () => {
     for (const path of [
@@ -58,7 +59,7 @@ describe("retired private-voice provider contract", () => {
   it("separates existing live-call voices from explicitly consented private previews", () => {
     expect(terms).toContain("does not enable it");
     expect(terms).toContain("separate, explicit permission");
-    expect(terms).toContain("built-in artificial voices from its managed OpenAI voice roster");
+    expect(terms).toContain("built-in artificial voices from its managed voice roster");
     expect(privacy).toContain("Private voice previews require separate speaker permission");
     expect(privacy).toContain("Delete the saved voice to revoke future use");
     expect(`${terms}\n${privacy}`).not.toMatch(/ElevenLabs receives|source sample.*provider/i);

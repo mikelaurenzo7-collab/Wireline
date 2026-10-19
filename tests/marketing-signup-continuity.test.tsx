@@ -25,6 +25,7 @@ vi.mock("react-router", () => ({
   useParams: () => ({ wedge: harness.wedge }),
 }));
 vi.mock("../src/components/marketing/PrecisionPublicHeader", () => ({ default: "header" }));
+vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: null }) }));
 vi.mock("../src/components/marketing/MarketingChromeBar", () => ({ default: "footer" }));
 vi.mock("../src/lib/page-meta", () => ({ PageMeta: "page-meta" }));
 vi.mock("../src/lib/product-event-client", () => ({
