@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { ShieldCheck, Download, ExternalLink } from "lucide-react";
+import { ShieldCheck, ExternalLink } from "lucide-react";
 import { Link } from "react-router";
 import { authFetch } from "../../lib/api";
-import { ShadButton } from "../ui/shadcn/ShadButton";
 import { cn } from "../../lib/utils";
 import { getIntegrationChecklistStatus } from "./compliance-checklist-status";
 
@@ -14,30 +13,20 @@ type ChecklistItem = {
   href?: string;
 };
 
+// Only what the business owner controls or relies on. Platform engineering
+// controls (database isolation, audit logging) belong on /security, not here.
 const BASE_ITEMS: ChecklistItem[] = [
-  { id: "rls", label: "Row-level security on tenant tables", done: true },
-  { id: "audit", label: "Security audit log enabled", done: true },
+  { id: "ai_disclosure", label: "Every call opens with an AI disclosure", done: true },
+  { id: "opt_outs", label: "Opt-out requests are blocked automatically", done: true },
   {
-    id: "dnc",
-    label: "DNC list configured",
+    id: "dnc_registry",
+    label: "Do Not Call Registry subscription added",
     done: false,
     href: "/settings/compliance",
   },
   {
-    id: "retention",
-    label: "Data retention policy reviewed",
-    done: false,
-    href: "/security",
-  },
-  {
-    id: "team",
-    label: "Team roles assigned (least privilege)",
-    done: false,
-    href: "/settings/team",
-  },
-  {
     id: "integrations",
-    label: "OAuth integrations re-authorized",
+    label: "Connected apps working",
     done: false,
     href: "/connections",
   },
@@ -45,24 +34,29 @@ const BASE_ITEMS: ChecklistItem[] = [
 
 export default function ComplianceChecklist() {
   const [items, setItems] = useState<ChecklistItem[]>(BASE_ITEMS);
-  const [dncCount, setDncCount] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [dncRes, intRes] = await Promise.all([
-          authFetch("/api/dnc").then((r) => (r.ok ? r.json() : null)),
+        const [registryRes, intRes] = await Promise.all([
+          authFetch("/api/compliance/dnc-registration").then((r) => (r.ok ? r.json() : null)),
           authFetch("/api/oauth/integration-health").then((r) => (r.ok ? r.json() : null)),
         ]);
         if (cancelled) return;
-        const dncLen = Array.isArray(dncRes?.entries) ? dncRes.entries.length : 0;
-        setDncCount(dncRes ? dncLen : null);
+        // The owner's part is done once the subscription is added; BotBound
+        // then connects screening ("Connecting") on its side.
+        const registryState = typeof registryRes?.state === "string" ? registryRes.state : null;
         // Empty or failed health responses cannot prove a connection is healthy.
         const integrationStatus = getIntegrationChecklistStatus(intRes);
         setItems((prev) =>
           prev.map((item) => {
-            if (item.id === "dnc") return { ...item, done: dncRes != null && dncLen > 0 };
+            if (item.id === "dnc_registry") {
+              return {
+                ...item,
+                done: registryState === "active" || registryState === "pending_link",
+              };
+            }
             if (item.id === "integrations") {
               return {
                 ...item,
@@ -87,34 +81,17 @@ export default function ComplianceChecklist() {
 
   return (
     <div className="wl-panel border border-border rounded-md p-4 space-y-4">
-      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
-        <div>
-          <p className="app-section-title flex items-center gap-2 mb-1">
-            <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-brand" />
-            Compliance Checklist
-          </p>
-          <p className="text-[length:var(--wireline-typography-caption-size)] text-muted leading-relaxed max-w-xl">
-            Account Holder-facing controls for regulated buyers. {doneCount}/
-            {applicableItems.length} complete
-            {dncCount != null ? ` · ${dncCount} DNC ${dncCount === 1 ? "entry" : "entries"}` : ""}.
-          </p>
-        </div>
-        <ShadButton
-          type="button"
-          variant="outline"
-          size="sm"
-          className="shrink-0"
-          onClick={() => {
-            // Live SOC2 evidence pack mounted by soc2Router (auth + audit.read).
-            window.open("/api/soc2/evidence-pack", "_blank", "noopener,noreferrer");
-          }}
-        >
-          <Download className="w-3.5 h-3.5 mr-1.5" />
-          SOC 2 index
-        </ShadButton>
+      <div>
+        <p className="app-section-title flex items-center gap-2 mb-1">
+          <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-brand" />
+          Compliance Checklist
+        </p>
+        <p className="text-[length:var(--wireline-typography-caption-size)] text-muted leading-relaxed max-w-xl">
+          What keeps your calls and texts compliant. {doneCount}/{applicableItems.length} complete.
+        </p>
       </div>
       <ul className="space-y-2">
-        {items.map((item) => (
+        {applicableItems.map((item) => (
           <li
             key={item.id}
             className={cn(
@@ -122,16 +99,13 @@ export default function ComplianceChecklist() {
               item.done ? "border-brand/20 bg-brand/5" : "border-border bg-surface/40",
             )}
           >
-            <span className={item.done ? "text-foreground" : "text-muted"}>
-              {item.label}
-              {item.applicable === false ? " · Not applicable" : ""}
-            </span>
-            {item.href ? (
+            <span className={item.done ? "text-foreground" : "text-muted"}>{item.label}</span>
+            {item.href && !item.done ? (
               <Link
                 to={item.href}
                 className="wl-label text-brand inline-flex items-center gap-1 hover:underline shrink-0"
               >
-                Review
+                Set Up
                 <ExternalLink className="w-3 h-3" />
               </Link>
             ) : (
@@ -143,7 +117,7 @@ export default function ComplianceChecklist() {
         ))}
       </ul>
       <p className="text-[length:var(--wireline-typography-overline-size)] text-muted">
-        Vertical trust packs:{" "}
+        Industry guides:{" "}
         <Link to="/trust/medical" className="text-brand hover:underline">
           Healthcare
         </Link>

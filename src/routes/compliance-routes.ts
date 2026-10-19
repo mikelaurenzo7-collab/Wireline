@@ -31,9 +31,11 @@ import {
 } from "../lib/dnc-seller-registration";
 import {
   DNC_REGISTRY_URL,
+  defaultDncExpiresOn,
   dncSellerRegistrationState,
   isValidVendorProjectId,
   parseDncSellerRegistrationInput,
+  suggestDncAreaCodes,
   type DncSellerRegistration,
 } from "../lib/dnc-seller-registration-rules";
 
@@ -204,11 +206,50 @@ function sellerRegistrationResponse(registration: DncSellerRegistration | null) 
   };
 }
 
+/**
+ * Prefill for the guided setup so the owner only has to do the one step the
+ * registry requires of them in person: their business name, the area codes
+ * their lines and outbound contacts actually use, and a 12-month expiry.
+ */
+async function sellerRegistrationSetupHints(userId: string) {
+  const lines = await drizzle
+    .select({ phoneNumber: schema.phoneNumbers.phoneNumber })
+    .from(schema.phoneNumbers)
+    .where(eq(schema.phoneNumbers.userId, userId));
+  const contacts = await drizzle
+    .select({
+      customerNumber: schema.outboundLeads.customerNumber,
+      phoneNumber: schema.outboundLeads.phoneNumber,
+    })
+    .from(schema.outboundLeads)
+    .where(eq(schema.outboundLeads.userId, userId))
+    .orderBy(desc(schema.outboundLeads.id))
+    .limit(5000);
+  const [settingsRow] = await drizzle
+    .select({ businessName: schema.settings.businessName })
+    .from(schema.settings)
+    .where(eq(schema.settings.userId, userId))
+    .limit(1);
+  return {
+    suggested_seller_name: settingsRow?.businessName?.trim() || null,
+    suggested_area_codes: suggestDncAreaCodes({
+      lineNumbers: lines.map((line) => line.phoneNumber),
+      contactNumbers: contacts.map((lead) => lead.customerNumber || lead.phoneNumber || ""),
+    }),
+    suggested_expires_on: defaultDncExpiresOn(),
+    outbound_contact_count: contacts.length,
+  };
+}
+
 router.get(
   "/api/compliance/dnc-registration",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    res.json(sellerRegistrationResponse(await readDncSellerRegistration(req.user.id)));
+    const registration = await readDncSellerRegistration(req.user.id);
+    res.json({
+      ...sellerRegistrationResponse(registration),
+      setup: await sellerRegistrationSetupHints(req.user.id),
+    });
   },
 );
 

@@ -25,6 +25,6 @@ export function requireCertifiedSharedWorkspaces(
   res.status(503).json({
     code: "SHARED_WORKSPACES_NOT_CERTIFIED",
     error:
-      "Shared workspaces are not available yet. BotBound is completing the tenant data-plane and permission certification before enabling invitations.",
+      "Team invitations aren't available yet. Your workspace keeps working as usual.",
   });
 }

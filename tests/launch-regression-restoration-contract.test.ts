@@ -197,14 +197,19 @@ describe("restored launch regression guards", () => {
     expect(kb).toContain("document type that does not match its extension");
     expect(kb).toContain("Knowledge could not be loaded.");
     expect(checklist).toContain("getIntegrationChecklistStatus(intRes)");
-    expect(checklist).toContain("dncRes != null && dncLen > 0");
+    // The owner's checklist tracks their own registry subscription, never
+    // platform engineering controls.
+    expect(checklist).toContain('registryState === "active" || registryState === "pending_link"');
+    expect(checklist).not.toMatch(/Row-level security|audit log enabled|SOC 2/i);
     expect(security).toMatch(
       /Outbound call policy accounts for recipient consent and Do Not Call screening before a call can start/i,
     );
     expect(security).not.toContain("Live outbound dialing is gated");
     expect(security).not.toContain("DNCScrub");
     expect(security).not.toContain("FEDERAL_DNC_API_KEY");
-    expect(compliance).toContain("Screening setup needed");
+    // Shows the owner's own registry status, not BotBound's vendor configuration.
+    expect(compliance).toContain("DNC_REGISTRATION_STATE_LABEL[registryState]");
+    expect(compliance).not.toContain("Screening setup needed");
     expect(compliance).not.toContain("DNCScrub");
   });
 
