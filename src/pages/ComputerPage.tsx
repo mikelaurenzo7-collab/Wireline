@@ -33,6 +33,8 @@ import {
 import { authFetch, readApiJson } from "../lib/api";
 import { cn } from "../lib/utils";
 import { useAgents } from "../contexts/AgentsContext";
+import { useStudioSessionState } from "../contexts/StudioSessionContext";
+import type { ComputerComposerDraft } from "../lib/studio-session-state";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { Badge, Button, Input, NativeSelect, Skeleton, Textarea } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
@@ -1158,6 +1160,12 @@ type ComputerWorkbenchProps = {
   layout?: "page" | "panel";
 };
 
+const EMPTY_COMPUTER_DRAFT: ComputerComposerDraft = {
+  goal: "",
+  startUrl: "",
+  showComposer: false,
+};
+
 /**
  * The Bot's computer: start a task or open a browser, watch it live, take
  * control, answer its questions, and review history. One component serves the
@@ -1168,20 +1176,47 @@ export function ComputerWorkbench({
   layout = "page",
 }: ComputerWorkbenchProps) {
   const { agents, loading: agentsLoading, degraded, refresh } = useAgents();
+  const { computerDrafts } = useStudioSessionState();
   const [searchParams, setSearchParams] = useSearchParams();
   const pinned = pinnedAgentId !== undefined;
   const hasScopedAgent = pinned || searchParams.has("agent");
   const requestedAgentId = (pinned ? pinnedAgentId : searchParams.get("agent"))?.trim() || "";
   const [agentId, setAgentId] = useState<string>(requestedAgentId);
+  const composerAgentId = hasScopedAgent ? requestedAgentId : agentId;
+  // The authenticated session outlives panel tabs, responsive layouts and routes.
+  // Read by Bot on every render so a different Bot or account never inherits input.
+  const { goal, startUrl, showComposer } =
+    computerDrafts.get(composerAgentId) ?? EMPTY_COMPUTER_DRAFT;
+  const [, refreshDraft] = useState(0);
+  const updateComposerDraft = useCallback(
+    (
+      update:
+        | Partial<ComputerComposerDraft>
+        | ((current: ComputerComposerDraft) => Partial<ComputerComposerDraft>),
+    ) => {
+      if (!composerAgentId) return;
+      const current = computerDrafts.get(composerAgentId) ?? EMPTY_COMPUTER_DRAFT;
+      computerDrafts.set(composerAgentId, {
+        ...current,
+        ...(typeof update === "function" ? update(current) : update),
+      });
+      refreshDraft((revision) => revision + 1);
+    },
+    [computerDrafts, composerAgentId],
+  );
+  const setShowComposer = useCallback(
+    (value: boolean | ((current: boolean) => boolean)) =>
+      updateComposerDraft((current) => ({
+        showComposer: typeof value === "function" ? value(current.showComposer) : value,
+      })),
+    [updateComposerDraft],
+  );
   const [status, setStatus] = useState<ComputerStatus | null>(null);
   const [statusFailed, setStatusFailed] = useState(false);
   const [tasks, setTasks] = useState<ComputerTask[] | null>(null);
   const [listFailed, setListFailed] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showComposer, setShowComposer] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [goal, setGoal] = useState("");
-  const [startUrl, setStartUrl] = useState("");
   const [startingMode, setStartingMode] = useState<"browser" | "task" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
@@ -1261,28 +1296,30 @@ export function ComputerWorkbench({
     return () => controller.abort();
   }, [loadTasks]);
 
-  const applyTask = useCallback((next: ComputerTask, announce: boolean) => {
-    if (announce) {
-      const previous = tasksRef.current?.find((task) => task.id === next.id);
-      const message = announcementFor(previous, next);
-      if (message) setAnnouncement(message);
-      if (previous?.status !== next.status && next.status === "needs_input") {
-        setSelectedId(next.id);
-        setShowComposer(false);
+  const applyTask = useCallback(
+    (next: ComputerTask, announce: boolean) => {
+      if (announce) {
+        const previous = tasksRef.current?.find((task) => task.id === next.id);
+        const message = announcementFor(previous, next);
+        if (message) setAnnouncement(message);
+        if (previous?.status !== next.status && next.status === "needs_input") {
+          setSelectedId(next.id);
+          setShowComposer(false);
+        }
+      } else if (next.status === "running") {
+        // A new owner handoff supersedes an earlier completion or checkpoint.
+        setAnnouncement("");
       }
-    } else if (next.status === "running") {
-      // A new owner handoff supersedes an earlier completion or checkpoint.
-      setAnnouncement("");
-    }
-    setTasks((current) =>
-      current ? current.map((task) => (task.id === next.id ? next : task)) : current,
-    );
-  }, []);
+      setTasks((current) =>
+        current ? current.map((task) => (task.id === next.id ? next : task)) : current,
+      );
+    },
+    [setShowComposer],
+  );
 
   const selected = tasks?.find((task) => task.id === selectedId) ?? null;
   // An explicit Bot link is authoritative. Never fall back to another Bot if
   // the linked one is gone, or keep an earlier Bot when the URL changes.
-  const composerAgentId = hasScopedAgent ? requestedAgentId : agentId;
   const composerBot = degraded ? undefined : agents.find((agent) => agent.id === composerAgentId);
   const scopedAgentUnavailable =
     hasScopedAgent && !agentsLoading && !degraded && agents.length > 0 && !composerBot;
@@ -1402,8 +1439,11 @@ export function ComputerWorkbench({
         throw new Error(result.error);
       }
       if (!prepareBrowser) {
-        setGoal("");
-        setStartUrl("");
+        // A late start confirmation must not erase a newer draft.
+        updateComposerDraft((current) => ({
+          goal: current.goal === goal ? "" : current.goal,
+          startUrl: current.startUrl === startUrl ? "" : current.startUrl,
+        }));
       }
       listEpochRef.current += 1;
       setTasks((current) => [result.data.task, ...(current ?? [])]);
@@ -1580,7 +1620,7 @@ export function ComputerWorkbench({
                   <Input
                     id="computer-start-url"
                     value={startUrl}
-                    onChange={(event) => setStartUrl(event.target.value)}
+                    onChange={(event) => updateComposerDraft({ startUrl: event.target.value })}
                     onKeyDown={(event) => {
                       if (event.key === "Enter") {
                         event.preventDefault();
@@ -1612,7 +1652,7 @@ export function ComputerWorkbench({
                 <Textarea
                   id="computer-goal"
                   value={goal}
-                  onChange={(event) => setGoal(event.target.value)}
+                  onChange={(event) => updateComposerDraft({ goal: event.target.value })}
                   placeholder="Describe the job, like comparing supplier prices or checking a listing."
                   rows={3}
                   maxLength={2000}
@@ -1624,7 +1664,7 @@ export function ComputerWorkbench({
                         key={example.label}
                         type="button"
                         title={example.goal}
-                        onClick={() => setGoal(example.goal)}
+                        onClick={() => updateComposerDraft({ goal: example.goal })}
                       >
                         {example.label}
                       </button>

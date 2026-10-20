@@ -286,7 +286,7 @@ export async function handleCoreToolCall(
       emailPayload = { to: to_email, subject: reviewed.subject || subject, body: reviewed.body };
       const service = new IntegrationService(agent?.user_id);
       sendAttempted = true;
-      const success = await service.sendEmail(emailPayload);
+      const success = await service.sendEmail({ ...emailPayload, agentId: agent.id });
       if (success) {
         return {
           toolCallId,

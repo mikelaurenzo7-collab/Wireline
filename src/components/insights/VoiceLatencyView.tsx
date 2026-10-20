@@ -143,7 +143,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
 
           {voiceTrends.length > 1 && (
             <div className="mt-4">
-              <p className="wl-insight-label mb-1">{days}-Day TTFT Trend</p>
+              <p className="wl-insight-label mb-1">TTFT trend over {days} days</p>
               <p className="mb-3 text-xs text-muted">Average TTFT · Milliseconds</p>
               <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-2">
                 <div className="flex h-20 flex-col justify-between text-right text-xs tabular-nums text-muted">
@@ -186,10 +186,10 @@ export default function VoiceLatencyView({ days }: { days: number }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
-          { label: "p50 Latency", value: `${latency.p50_ms}ms` },
-          { label: "p95 Latency", value: `${latency.p95_ms}ms` },
+          { label: "Median action time", value: `${latency.p50_ms}ms` },
+          { label: "95th percentile action time", value: `${latency.p95_ms}ms` },
           {
-            label: "Average Latency",
+            label: "Average action time",
             value: `${actionData?.totals?.avg_latency ?? 0}ms`,
           },
         ].map((tile) => (
@@ -199,7 +199,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
           >
             <p className="wl-insight-label mb-2">{tile.label}</p>
             <p className="metric-value font-display text-3xl text-foreground">{tile.value}</p>
-            {tile.label === "Average Latency" && (
+            {tile.label === "Average action time" && (
               <p className="wl-insight-label mt-2 tabular-nums">{latency.sample_count} samples</p>
             )}
           </div>

@@ -484,7 +484,7 @@ export default function GoalsView() {
               : `${onPace} of ${activeGoals} ${activeGoals === 1 ? "Goal" : "Goals"} on Pace`}
           </h2>
           <p className="mt-1 text-caption max-w-md leading-relaxed">
-            Goals measure live Bot activity against an even daily run-rate for the current calendar
+            Goals measure live Bot activity against an even daily pace for the current calendar
             month.
           </p>
         </div>

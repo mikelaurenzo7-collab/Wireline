@@ -23,7 +23,7 @@ import { AccountsPanel } from "./admin/AccountsPanel";
 import { BrandingPanel } from "./admin/BrandingPanel";
 import { CarrierPanel } from "./admin/CarrierPanel";
 import { SubscriptionPanel } from "./admin/SubscriptionPanel";
-import { GrowthPanel } from "./admin/GrowthPanel";
+import { EmptyState } from "./ui/EmptyState";
 import ComplianceChecklist from "./admin/ComplianceChecklist";
 import { PanelSkeleton } from "./atoms/skeleton-presets";
 import { isLegacyAdminTabRedirect } from "../lib/admin-access";
@@ -393,8 +393,8 @@ function AdminSettingsContent() {
             onSelect={(id) => navigate(id === "team" ? "/settings/team" : `/admin?tab=${id}`)}
             density="compact"
             wrap="always"
-            mobileSelect
-            tabs={VALID_TABS.map((tab) => ({
+            mobileSelect={activeTab !== "flywheel"}
+            tabs={VALID_TABS.filter((tab) => tab !== "flywheel").map((tab) => ({
               id: tab,
               label: OPS_ADMIN.tabLabels[tab as OpsAdminTab] ?? tab,
             }))}
@@ -508,11 +508,12 @@ function AdminSettingsContent() {
                       animate={{ opacity: 1, y: 0 }}
                       className="h-full"
                     >
-                      <GrowthPanel
-                        settings={settings}
-                        setSettings={setSettings}
-                        onSave={saveSettings}
-                        isSaving={isSaving}
+                      <EmptyState
+                        icon={Settings}
+                        title="Business outbound is coming soon"
+                        framed
+                        density="compact"
+                        withHalo={false}
                       />
                     </motion.div>
                   )}

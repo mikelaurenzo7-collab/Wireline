@@ -16,6 +16,9 @@ export class KnowledgeIngestionUnavailableError extends Error {
   }
 }
 
+const CALL_FACTUAL_EVIDENCE_GUIDANCE =
+  "Separate communication quality from factual accuracy. The transcript and summary report what was said; they do not verify it. Do not describe product, pricing, policy, or feature claims as accurate, correct, or verified without an independent trusted reference supplied for this review. When that reference is absent, leave factual accuracy unverified and identify consequential claims that need confirmation. Flag contradictions supported by the supplied evidence. Do not invent product availability or derive business facts, policies, or capabilities solely from caller or agent assertions. Never recommend promising delivery, completion, or a deadline before the required capability and action are confirmed. Recommend checking capability first, then stating an honest limitation or handing off when unavailable.";
+
 const ROLE_ANALYSIS_GUIDANCE: Record<string, string> = {
   lead_qualifier:
     "This agent qualifies leads (BANT). Score higher when Budget, Authority, Need, and Timeline were all established. Score low if any pillar is missing. Note which BANT pillars were confirmed or absent.",
@@ -248,6 +251,7 @@ export async function postCallAnalysis(
 - list every concrete follow-up the agent promised or the customer asked for.
 - flag compliance issues (recording consent, TCPA, GDPR, refund-policy mismatch, etc.).
 - list topics the agent couldn't answer authoritatively (knowledge gaps).
+${CALL_FACTUAL_EVIDENCE_GUIDANCE}
 ${roleGuidance ? `\nRole-specific scoring lens: ${roleGuidance}` : ""}
 Use plain English. No jargon, no ALL CAPS, no emoji.`;
 
@@ -315,7 +319,8 @@ const QA_ROLE_GUIDANCE: Record<string, string> = {
 export async function qaScore(input: QaScoreInput): Promise<QaScoreResult> {
   const roleGuidance = input.agentRole ? (QA_ROLE_GUIDANCE[input.agentRole] ?? "") : "";
 
-  const system = `You are a call quality auditor for an enterprise voice AI platform. Evaluate calls objectively and with specificity. Cite concrete moments from the transcript when scoring.${roleGuidance ? `\n\n${roleGuidance}` : ""}`;
+  const system = `You are a call quality auditor for an enterprise voice AI platform. Evaluate calls objectively and with specificity. Cite concrete moments from the transcript when scoring.
+${CALL_FACTUAL_EVIDENCE_GUIDANCE}${roleGuidance ? `\n\n${roleGuidance}` : ""}`;
 
   const user = `Score this ${input.direction} call against the 5-dimension QA rubric.
 
@@ -374,8 +379,7 @@ export async function synthesizeLesson(params: {
   breakdown: unknown;
 }): Promise<string> {
   const { text } = await runCompletion({
-    system:
-      "You are the BotBound Agent Coach. Synthesize ONE tactical lesson for the agent based on their failure. ≤30 words.",
+    system: `You are the BotBound Agent Coach. Synthesize ONE tactical lesson for the agent based on their failure. ≤30 words.\n${CALL_FACTUAL_EVIDENCE_GUIDANCE}`,
     user: `Score: ${params.score}\nBreakdown: ${JSON.stringify(params.breakdown)}\nTranscript: ${params.transcript}`,
     cacheSystem: true,
     complexity: "medium",

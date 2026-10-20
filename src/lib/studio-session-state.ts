@@ -8,6 +8,12 @@ import { createStudioSetupDrafts } from "./studio-setup-drafts";
 export const STUDIO_RECENT_BOT_LIMIT = 32;
 export const STUDIO_CONVERSATION_MESSAGE_LIMIT = 80;
 
+export type ComputerComposerDraft = {
+  goal: string;
+  startUrl: string;
+  showComposer: boolean;
+};
+
 /** Keep unsaved reviews visible in the current session as older turns roll out of view. */
 function reviewableMessageIds(session: StudioConversationSession, messages: StudioMessage[]) {
   const retained = new Set(
@@ -44,6 +50,7 @@ function reviewableMessageIds(session: StudioConversationSession, messages: Stud
 export function createStudioSessionState(ownerId: string | null) {
   const setupDrafts = createStudioSetupDrafts(ownerId);
   const drafts = new Map<string, StudioWorkroomDraft>();
+  const computerDrafts = new Map<string, ComputerComposerDraft>();
   const conversations = new Map<string, StudioConversationSession>();
   const recentBots = new Set<string>();
 
@@ -51,6 +58,7 @@ export function createStudioSessionState(ownerId: string | null) {
     ownerId,
     setupDrafts,
     drafts,
+    computerDrafts,
     conversations,
     visitBot(agentId: string) {
       recentBots.delete(agentId);
@@ -58,6 +66,13 @@ export function createStudioSessionState(ownerId: string | null) {
       for (const candidate of recentBots) {
         if (recentBots.size <= STUDIO_RECENT_BOT_LIMIT) break;
         if (candidate === agentId || setupDrafts.isRetained(candidate)) continue;
+        const computerDraft = computerDrafts.get(candidate);
+        if (
+          computerDraft?.goal.trim() ||
+          computerDraft?.startUrl.trim() ||
+          computerDraft?.showComposer
+        )
+          continue;
         const keys = [`${candidate}:configure`, `${candidate}:test`];
         if (
           keys.some((key) => {
@@ -76,6 +91,7 @@ export function createStudioSessionState(ownerId: string | null) {
         // on navigation after they settle instead of silently discarding work.
         recentBots.delete(candidate);
         setupDrafts.forget(candidate);
+        computerDrafts.delete(candidate);
         keys.forEach((key) => {
           drafts.delete(key);
           conversations.delete(key);

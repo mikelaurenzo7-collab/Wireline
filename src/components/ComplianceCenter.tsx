@@ -142,9 +142,7 @@ export default function ComplianceCenter() {
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-4 sm:block">
-                <dt className="shrink-0 text-xs font-medium text-muted-foreground">
-                  Federal DNC
-                </dt>
+                <dt className="shrink-0 text-xs font-medium text-muted-foreground">Federal DNC</dt>
                 <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">
                   {summary.federal_dnc_configured
                     ? "Platform screening is configured"
@@ -197,7 +195,17 @@ export default function ComplianceCenter() {
       </section>
 
       <div className="grid gap-4">
-        <DncRegistrationCard onStateChange={setRegistryState} />
+        <details>
+          <summary className="wl-paper wl-paper-elevated wl-focus-ring-halo min-h-11 cursor-pointer p-4 text-sm font-semibold text-foreground">
+            DNC registration
+            <span className="mt-1 block text-xs font-normal text-muted-foreground">
+              Business outbound is coming soon.
+            </span>
+          </summary>
+          <div className="mt-3">
+            <DncRegistrationCard onStateChange={setRegistryState} />
+          </div>
+        </details>
 
         {summary ? (
           <section className="wl-paper wl-paper-elevated p-4 sm:p-5">

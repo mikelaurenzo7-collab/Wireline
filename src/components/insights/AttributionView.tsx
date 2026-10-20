@@ -139,9 +139,8 @@ export default function AttributionView({ days }: { days: number }) {
         </table>
         {rows.some((row) => row.source === "(untagged)") ? (
           <p className="border-t border-border px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
-            Calls without a campaign tag roll into{" "}
-            <span className="font-medium text-foreground/80">(untagged)</span>. Tag outbound work in
-            Studio to split attribution.
+            Calls without a campaign tag appear as{" "}
+            <span className="font-medium text-foreground/80">(untagged)</span>.
           </p>
         ) : null}
       </div>

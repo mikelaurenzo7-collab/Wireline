@@ -524,6 +524,8 @@ export class IntegrationService {
     to: string;
     subject: string;
     body: string;
+    /** Bot-originated mail must leave from a mailbox bound to this Bot. */
+    agentId?: string;
     /**
      * True for recurring/unsolicited commercial mail (cadence email steps).
      * Marketing sends honor a sender-scoped suppression list and carry the
@@ -558,8 +560,28 @@ export class IntegrationService {
           if (!/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(params.to)) return false;
 
           const accounts = await this.getAccounts("mail");
-          // Fallback: If no mail account, try calendar accounts (many have mail too)
-          const mailAccounts = accounts.length > 0 ? accounts : await this.getAccounts("calendar");
+          const scopedAgentId = params.agentId?.trim();
+          const agentScoped = params.agentId !== undefined;
+          // A Bot's customer messages must retain its assigned sender identity.
+          // Only intentional tenant-wide work may use another connected mailbox
+          // or the platform fallback below.
+          const mailAccounts = agentScoped
+            ? accounts.filter(
+                (account) =>
+                  scopedAgentId &&
+                  account.__accountTable === "mail" &&
+                  account.agentId === scopedAgentId,
+              )
+            : accounts.length > 0
+              ? accounts
+              : await this.getAccounts("calendar");
+          if (agentScoped && mailAccounts.length === 0) {
+            log.warn("Bot email skipped, no mailbox is assigned to the originating Bot", {
+              userId: this.userId,
+              agentId: scopedAgentId || null,
+            });
+            return false;
+          }
 
           if (mailAccounts.length > 0) {
             // Marketing compliance for the tenant's OWN mailbox transports.

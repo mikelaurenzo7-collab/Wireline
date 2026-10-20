@@ -345,6 +345,7 @@ async function executeAutonomousAction(
         to: action.payload.to,
         subject: reviewed.subject || action.payload.subject,
         body: reviewed.body,
+        ...(action.agentId ? { agentId: action.agentId } : {}),
       });
       return { success: emailOk };
     }

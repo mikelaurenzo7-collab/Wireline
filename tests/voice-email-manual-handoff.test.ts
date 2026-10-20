@@ -87,6 +87,7 @@ describe("live email delivery and manual handoff", () => {
       to: args.to_email,
       subject: "Reviewed pricing",
       body: "Reviewed details.",
+      agentId: "agent-owned",
     });
     expect(h.saveTask).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({

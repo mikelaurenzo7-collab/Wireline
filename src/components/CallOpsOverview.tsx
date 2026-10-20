@@ -123,7 +123,7 @@ export default function CallOpsOverview() {
       <section aria-labelledby="call-ops-all-time-title" className="space-y-3">
         <div>
           <h2 id="call-ops-all-time-title" className="text-base font-semibold text-foreground">
-            All-Time Performance
+            All Time Performance
           </h2>
         </div>
         <CallOpsAnalytics />

@@ -587,7 +587,9 @@ test("a Bot link never starts a task on another Bot, and changing Bot updates th
   await page.goto("/computer?agent=design-bot");
   await page.getByRole("combobox", { name: "Bot" }).selectOption("sales-bot");
   await expect(page).toHaveURL(/\/computer\?agent=sales-bot$/);
+  await expect(page.getByRole("combobox", { name: "Bot" })).toHaveValue("sales-bot");
   await page.getByRole("textbox", { name: "What should your Bot do?" }).fill("Check our listing.");
+  await expect(page.getByRole("combobox", { name: "Bot" })).toHaveValue("sales-bot");
   await page.getByRole("button", { name: "Start Task" }).click();
   expect(starts).toEqual([expect.objectContaining({ agentId: "sales-bot" })]);
 });

@@ -112,6 +112,43 @@ describe("customer email admission and funded transport", () => {
     );
     expect(h.agentmail).toHaveBeenCalledWith("bot@example.com", "test-only", message);
   });
+  it("uses the originating Bot's mailbox when another Bot's mailbox is listed first", async () => {
+    h.accounts = [
+      {
+        id: "mailbox-other",
+        agentId: "bot-other",
+        provider: "agentmail",
+        accessToken: "other-credential",
+        emailAddress: "other@example.com",
+      },
+      {
+        id: "mailbox-front-desk",
+        agentId: "bot-front-desk",
+        provider: "agentmail",
+        accessToken: "front-desk-credential",
+        emailAddress: "front-desk@example.com",
+      },
+    ];
+    const scopedMessage = { ...message, agentId: "bot-front-desk" };
+    expect(await new IntegrationService("tenant-a").sendEmail(scopedMessage)).toBe(true);
+    expect(h.agentmail).toHaveBeenCalledExactlyOnceWith(
+      "front-desk@example.com",
+      "front-desk-credential",
+      scopedMessage,
+    );
+    expect(h.platform).not.toHaveBeenCalled();
+  });
+  it("refuses a Bot send without its own mailbox instead of using another sender or fallback", async () => {
+    h.accounts[0].agentId = "bot-other";
+    expect(
+      await new IntegrationService("tenant-a").sendEmail({ ...message, agentId: "bot-front-desk" }),
+    ).toBe(false);
+    expect(h.select).toHaveBeenCalledTimes(1);
+    expect(h.reserve).not.toHaveBeenCalled();
+    expect(h.agentmail).not.toHaveBeenCalled();
+    expect(h.icloud).not.toHaveBeenCalled();
+    expect(h.platform).not.toHaveBeenCalled();
+  });
   it("stops SMTP when its allowance refuses the reservation", async () => {
     h.reserve.mockResolvedValue(false);
     expect(await new IntegrationService("tenant-a").sendEmail(message)).toBe(false);

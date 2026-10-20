@@ -80,8 +80,10 @@ vi.mock("../src/components/AgentToolPermissions", () => ({ default: "tool-permis
 type Props = {
   id?: string;
   to?: string;
+  title?: string;
   value?: string;
   children?: ReactNode;
+  action?: ReactNode;
   disabled?: boolean;
   markKey?: string;
   onChange?: (event: { target: { value: string } }) => void;
@@ -92,7 +94,7 @@ type Element = ReactElement<Props>;
 function elements(node: ReactNode): Element[] {
   if (Array.isArray(node)) return node.flatMap(elements);
   if (!isValidElement<Props>(node)) return [];
-  return [node, ...elements(node.props.children)];
+  return [node, ...elements(node.props.children), ...elements(node.props.action)];
 }
 function text(node: ReactNode): string {
   if (Array.isArray(node)) return node.map(text).join("");
@@ -192,6 +194,7 @@ beforeEach(() => {
   });
   h.fetch.mockReset().mockImplementation(async (path: string, options?: RequestInit) => {
     const body = options?.body ? JSON.parse(String(options.body)) : null;
+    if (path === "/api/emails/accounts") return json({ accounts: [] });
     if (!options?.method) return json(h.config);
     if (path.endsWith("/mark")) h.config.mark_key = body.mark_key;
     if (path.endsWith("/manual") && body.type === "personality")
@@ -239,6 +242,118 @@ describe("Studio inspector draft lifecycle", () => {
     await vi.waitFor(() => expect(text(render())).toContain("New approved greeting"));
     expect(text(render())).toContain("Warm and natural");
     expect(text(render())).not.toContain("Clear support policy");
+  });
+
+  it("keeps mailbox read failures distinct from missing setup and ignores setup completion after switching Bots", async () => {
+    h.surface = "review";
+    const setup = deferred();
+    let readFailed = true;
+    h.fetch.mockImplementation(async (path: string, options?: RequestInit) => {
+      if (path === "/api/emails/accounts") {
+        if (readFailed) return json({ error: "Unavailable" }, 503);
+        return json({
+          accounts:
+            h.botId === "bot-b"
+              ? [
+                  {
+                    id: "mailbox-b",
+                    provider: "agentmail",
+                    agentId: "bot-b",
+                    emailAddress: "bravo@botbound.app",
+                  },
+                ]
+              : [],
+        });
+      }
+      if (options?.method === "POST") return setup.promise;
+      return json(h.config);
+    });
+    await mount(false);
+    await vi.waitFor(() =>
+      expect(
+        elements(render()).some((element) => element.props.title === "Email Status Unavailable"),
+      ).toBe(true),
+    );
+    expect(button("Set up email")).toBeUndefined();
+    expect(h.fetch.mock.calls.some(([, options]) => options?.method === "POST")).toBe(false);
+
+    readFailed = false;
+    button("Retry").props.onClick!();
+    await vi.waitFor(() => expect(button("Set up email")).toBeDefined());
+    button("Set up email").props.onClick!();
+    await vi.waitFor(() =>
+      expect(h.fetch).toHaveBeenCalledWith(
+        "/api/agents/bot-a/managed-mailbox",
+        expect.objectContaining({ method: "POST" }),
+      ),
+    );
+
+    h.botId = "bot-b";
+    render();
+    await vi.waitFor(() => expect(text(render())).toContain("bravo@botbound.app"));
+    const lateResponse = json({ ok: true, email: "alpha@botbound.app" });
+    setup.resolve(lateResponse);
+    await vi.waitFor(() => expect(lateResponse.bodyUsed).toBe(true));
+    expect(text(render())).toContain("bravo@botbound.app");
+    expect(text(render())).not.toContain("alpha@botbound.app");
+    const inbox = elements(render()).find(
+      (element) => element.type === "a" && text(element) === "Open Inbox",
+    );
+    expect(inbox?.props.to).toBe("/inbox?tab=email&agent=bot-b");
+  });
+
+  it("reconciles a reserved mailbox after a failed setup and remount", async () => {
+    h.surface = "review";
+    let reserved = false;
+    let setupAttempts = 0;
+    h.fetch.mockImplementation(async (path: string, options?: RequestInit) => {
+      if (path === "/api/emails/accounts") {
+        return json({
+          accounts: reserved
+            ? [
+                {
+                  id: "mailbox-a",
+                  provider: "agentmail",
+                  agentId: "bot-a",
+                  emailAddress: "alpha@botbound.app",
+                },
+              ]
+            : [],
+        });
+      }
+      if (path === "/api/agents/bot-a/managed-mailbox" && options?.method === "POST") {
+        reserved = true;
+        setupAttempts += 1;
+        return setupAttempts === 1
+          ? json({ error: "Managed email is temporarily unavailable." }, 503)
+          : json({ ok: true, email: "alpha@botbound.app", reused: true });
+      }
+      return json(h.config);
+    });
+    await mount(false);
+    await vi.waitFor(() => expect(button("Set up email")).toBeDefined());
+    button("Set up email").props.onClick!();
+    await vi.waitFor(() =>
+      expect(
+        elements(render()).some((element) => element.props.title === "Email Setup Not Finished"),
+      ).toBe(true),
+    );
+
+    await mount(false);
+    await vi.waitFor(() => expect(text(render())).toContain("alpha@botbound.app"));
+    expect(button("Check setup")).toBeDefined();
+    expect(setupAttempts).toBe(1);
+    button("Check setup").props.onClick!();
+    await vi.waitFor(() => expect(button("Check setup")?.props.disabled).toBe(false));
+    expect(setupAttempts).toBe(2);
+    expect(text(render())).toContain("alpha@botbound.app");
+    expect(elements(render()).some((element) => element.props.title === "Email address")).toBe(
+      true,
+    );
+    const inbox = elements(render()).find(
+      (element) => element.type === "a" && text(element) === "Open Inbox",
+    );
+    expect(inbox?.props.to).toBe("/inbox?tab=email&agent=bot-a");
   });
 
   it("shows the resolved runtime greeting and prioritizes the saved delivery tone", async () => {

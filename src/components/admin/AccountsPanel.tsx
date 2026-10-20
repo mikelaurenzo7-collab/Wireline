@@ -57,7 +57,7 @@ function AccountCard({
           )}
         </div>
         <p className="mt-1 max-w-2xl break-words text-xs leading-5 text-muted-foreground">
-          A saved workspace profile for creation defaults. Bots and billing remain account-wide.
+          Saved creation defaults.
         </p>
       </div>
     </button>
@@ -109,8 +109,8 @@ export function AccountsPanel() {
       <header className="max-w-2xl">
         <h2 className="text-base font-semibold tracking-tight text-foreground">Your Workspaces</h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Switch creation defaults without changing the product. Bots, training, settings, and
-          billing currently remain account-wide.
+          Choose a workspace profile for new Bots. Bots, training, settings, and billing are shared
+          across profiles.
         </p>
       </header>
 
@@ -129,8 +129,7 @@ export function AccountsPanel() {
         <section className="rounded-2xl border border-border bg-card/60 p-4 sm:p-5">
           <h3 className="text-sm font-semibold text-foreground">Add Another Workspace</h3>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Add another profile when you want different creation defaults. Existing Bots and billing
-            stay account-wide.
+            Use another profile for different creation defaults.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <button

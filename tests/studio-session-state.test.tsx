@@ -58,6 +58,16 @@ describe("Studio account session", () => {
     before.drafts.set("bot-a:configure", draft("Build draft"));
     before.drafts.set("bot-a:test", draft("Test draft"));
     before.drafts.set("bot-b:configure", draft("Other Bot"));
+    before.computerDrafts.set("bot-a", {
+      goal: "Read the public price.",
+      startUrl: "https://botbound.app/pricing",
+      showComposer: true,
+    });
+    before.computerDrafts.set("bot-b", {
+      goal: "Read opening hours.",
+      startUrl: "",
+      showComposer: false,
+    });
     const session = conversation();
     const operation = {
       snapshot: { pending: true, saved: false, error: null },
@@ -74,6 +84,12 @@ describe("Studio account session", () => {
     expect(after.drafts.get("bot-a:configure")?.text).toBe("Build draft");
     expect(after.drafts.get("bot-a:test")?.text).toBe("Test draft");
     expect(after.drafts.get("bot-b:configure")?.text).toBe("Other Bot");
+    expect(after.computerDrafts.get("bot-a")).toEqual({
+      goal: "Read the public price.",
+      startUrl: "https://botbound.app/pricing",
+      showComposer: true,
+    });
+    expect(after.computerDrafts.get("bot-b")?.goal).toBe("Read opening hours.");
     expect(
       after.conversations.get("bot-a:configure")?.operations.get("proposal:change-0")?.snapshot
         .saved,
@@ -85,10 +101,16 @@ describe("Studio account session", () => {
     const original = renderProvider("/studio");
     original.drafts.set("bot-a:test", draft("Private content"));
     original.setupDrafts.edit("bot-a", "greeting", "Private greeting");
+    original.computerDrafts.set("bot-a", {
+      goal: "Private computer draft",
+      startUrl: "https://example.test/private",
+      showComposer: true,
+    });
     h.owner = "owner-b";
     const next = renderProvider("/studio");
     expect(next.ownerId).toBe("owner-b");
     expect(next.drafts.size).toBe(0);
+    expect(next.computerDrafts.size).toBe(0);
     expect(next.setupDrafts.read("bot-a").values.greeting).toBe("");
     original.conversations.set("bot-a:configure", conversation());
     expect(next.conversations.size).toBe(0);
@@ -98,6 +120,7 @@ describe("Studio account session", () => {
     const returning = renderProvider("/studio");
     expect(returning).not.toBe(original);
     expect(returning.drafts.size).toBe(0);
+    expect(returning.computerDrafts.size).toBe(0);
     expect(returning.conversations.size).toBe(0);
   });
 
@@ -120,12 +143,17 @@ describe("Studio account session", () => {
 
   it("bounds clean recent Bots without evicting drafts, mounted sessions or outstanding writes", () => {
     const state = createStudioSessionState("owner-a");
-    for (const id of ["clean", "setup", "draft", "save", "clear", "mounted"]) {
+    for (const id of ["clean", "setup", "draft", "computer", "save", "clear", "mounted"]) {
       state.visitBot(id);
       state.conversations.set(`${id}:configure`, conversation());
     }
     state.setupDrafts.edit("setup", "greeting", "Unsaved");
     state.drafts.set("draft:test", draft("Unsent"));
+    state.computerDrafts.set("computer", {
+      goal: "Unsent task",
+      startUrl: "",
+      showComposer: true,
+    });
     state.conversations.get("save:configure")!.operations.set("old:change-0", {
       snapshot: { pending: true, saved: false, error: null },
       listeners: new Set(),
@@ -138,7 +166,7 @@ describe("Studio account session", () => {
     }
     expect(state.conversations.size).toBe(STUDIO_RECENT_BOT_LIMIT);
     expect(state.conversations.has("clean:configure")).toBe(false);
-    for (const id of ["setup", "draft", "save", "clear", "mounted"]) {
+    for (const id of ["setup", "draft", "computer", "save", "clear", "mounted"]) {
       expect(state.conversations.has(`${id}:configure`)).toBe(true);
     }
   });

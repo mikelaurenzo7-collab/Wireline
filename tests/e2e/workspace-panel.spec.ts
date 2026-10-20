@@ -13,7 +13,7 @@ const bots = [
   { id: "bot-sales", name: "Sales Bot", role: "sales" },
 ];
 
-async function mockWorkspace(page: Page) {
+async function mockWorkspace(page: Page, tasks: Array<Record<string, unknown>> = []) {
   // Every endpoint stays mocked: no account, database, browser, or provider traffic runs.
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -42,7 +42,7 @@ async function mockWorkspace(page: Page) {
               : path === "/api/computer/status"
                 ? { available: true, reason: "ready", limits: { maxMinutes: 15, maxSteps: 60 } }
                 : path === "/api/computer/tasks"
-                  ? { tasks: [] }
+                  ? { tasks }
                   : { accounts: [], data: [], numbers: [], integrations: [], messages: [] },
     });
   });
@@ -173,6 +173,70 @@ test.describe("wide screens", () => {
 
     await page.keyboard.press("Home");
     await expect.poll(async () => (await panel.boundingBox())!.width).toBeLessThan(before);
+  });
+
+  test("Computer drafts survive panel and responsive remounts without crossing Bots", async ({
+    page,
+  }) => {
+    await mockWorkspace(page, [
+      {
+        id: "completed-task",
+        agentId: bots[0].id,
+        goal: "Read the previous page.",
+        startUrl: null,
+        status: "completed",
+        summary: "The previous task is complete.",
+        question: null,
+        sources: [],
+        events: [],
+        turnCount: 1,
+        actionCount: 1,
+        startedAt: "2026-10-20T10:00:00Z",
+        finishedAt: "2026-10-20T10:01:00Z",
+        updatedAt: "2026-10-20T10:01:00Z",
+        liveView: false,
+      },
+    ]);
+    let taskStarts = 0;
+    page.on("request", (request) => {
+      if (new URL(request.url()).pathname === "/api/computer/tasks" && request.method() === "POST")
+        taskStarts += 1;
+    });
+    await page.goto(`/studio?agent=${bots[0].id}`);
+    await panelTab(page, "Computer").click();
+    await page.getByRole("button", { name: "New task", exact: true }).click();
+    const goal = page.getByLabel("What should your Bot do?", { exact: true });
+    const url = page.getByLabel("Web address", { exact: true });
+    await goal.fill("Read the public Calls Regular monthly price.");
+    await url.fill("https://botbound.app/pricing");
+
+    await panelTab(page, "Summary").click();
+    await panelTab(page, "Computer").click();
+    await expect(goal).toHaveValue("Read the public Calls Regular monthly price.");
+    await expect(url).toHaveValue("https://botbound.app/pricing");
+    await expect(page.getByRole("button", { name: "Back to task", exact: true })).toBeVisible();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page
+      .getByRole("navigation", { name: "Workspace sections" })
+      .getByRole("link", { name: "Computer", exact: true })
+      .click();
+    await expect(page).toHaveURL(new RegExp(`/computer\\?agent=${bots[0].id}$`));
+    await expect(goal).toHaveValue("Read the public Calls Regular monthly price.");
+    await expect(url).toHaveValue("https://botbound.app/pricing");
+    await page.getByLabel("Bot", { exact: true }).selectOption(bots[1].id);
+    await page.getByRole("button", { name: "New task", exact: true }).click();
+    await expect(goal).toHaveValue("");
+    await expect(url).toHaveValue("");
+    await page.getByLabel("Bot", { exact: true }).selectOption(bots[0].id);
+    await expect(goal).toHaveValue("Read the public Calls Regular monthly price.");
+    await expect(url).toHaveValue("https://botbound.app/pricing");
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(panelTab(page, "Computer")).toHaveAttribute("aria-selected", "true");
+    await expect(goal).toHaveValue("Read the public Calls Regular monthly price.");
+    await expect(url).toHaveValue("https://botbound.app/pricing");
+    expect(taskStarts).toBe(0);
   });
 
   test("the Computer section opens beside the conversation, which stays visible", async ({

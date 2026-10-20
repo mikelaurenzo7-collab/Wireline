@@ -94,6 +94,9 @@ describe("email approval supervision", () => {
         autonomy === "auto" ? { success: true } : { success: true, queued: true },
       );
       expect(h.sendEmail).toHaveBeenCalledTimes(autonomy === "auto" ? 1 : 0);
+      if (autonomy === "auto") {
+        expect(h.sendEmail).toHaveBeenCalledWith(expect.objectContaining({ agentId: "email-bot" }));
+      }
       expect(h.insert).toHaveBeenCalledTimes(autonomy === "draft" ? 1 : 0);
     },
   );

@@ -10,6 +10,9 @@ const h = vi.hoisted(() => ({
   navigate: vi.fn(),
   fetch: vi.fn(),
   error: vi.fn(),
+  channelAccess: {
+    data: { plan_id: "voice", is_owner: false },
+  },
 }));
 vi.mock("react", async (original) => ({
   ...(await original<typeof import("react")>()),
@@ -29,6 +32,9 @@ vi.mock("../src/contexts/AccountContext", () => ({
   }),
 }));
 vi.mock("../src/contexts/ToastContext", () => ({ useToast: () => ({ error: h.error }) }));
+vi.mock("../src/hooks/useChannelEntitlements", () => ({
+  useChannelEntitlements: () => h.channelAccess,
+}));
 vi.mock("../src/lib/api", () => ({ authFetch: h.fetch }));
 vi.mock("../src/components/WebhooksManager", () => ({ default: "webhooks" }));
 vi.mock("../src/components/IntakeKeysManager", () => ({ default: "intake-keys" }));
@@ -68,6 +74,7 @@ beforeEach(() => {
   h.navigate.mockReset();
   h.fetch.mockReset();
   h.error.mockReset();
+  h.channelAccess.data = { plan_id: "voice", is_owner: false };
 });
 
 describe("workspace creation recovery", () => {
@@ -93,11 +100,11 @@ describe("workspace creation recovery", () => {
   );
 });
 
-function campaignEditor(number: { id: string; phone_number: string; campaign_label: string }) {
-  const view = CarrierPanel({
+function renderCarrier(overrides: Partial<ComponentProps<typeof CarrierPanel>> = {}) {
+  return CarrierPanel({
     settings: {} as ComponentProps<typeof CarrierPanel>["settings"],
     agents: [],
-    phoneNumbers: [number],
+    phoneNumbers: [],
     carrierNumbers: [],
     isSaving: false,
     isSyncing: false,
@@ -107,11 +114,47 @@ function campaignEditor(number: { id: string; phone_number: string; campaign_lab
     onAddNumber: vi.fn(),
     onDeleteNumber: vi.fn(),
     onUpdateNumberAgent: vi.fn(),
+    ...overrides,
   });
+}
+
+function campaignEditor(number: { id: string; phone_number: string; campaign_label: string }) {
+  const view = renderCarrier({ phoneNumbers: [number] });
   return elements(view).find(
     (node) => node.props["aria-label"] === `Campaign label for ${number.phone_number}`,
   )!;
 }
+
+describe("launch SMS settings visibility", () => {
+  it.each([
+    { plan_id: "voice", is_owner: false },
+    { plan_id: "enterprise", is_owner: true },
+  ])("does not offer new SMS setup for $plan_id owner=$is_owner", (data) => {
+    h.channelAccess.data = data;
+    const text = textOf(renderCarrier());
+    expect(text).toContain("SMS is coming soon.");
+    expect(text).not.toContain("Customer texts");
+  });
+
+  it("preserves controls for an existing SMS package", () => {
+    h.channelAccess.data = { plan_id: "sms", is_owner: false };
+    const text = textOf(renderCarrier());
+    expect(text).toContain("Customer texts");
+    expect(text).not.toContain("SMS is coming soon.");
+  });
+
+  it("preserves saved SMS settings even without a current SMS package", () => {
+    const text = textOf(
+      renderCarrier({
+        settings: {
+          twilio_sms_from_number: "+15550100100",
+        } as ComponentProps<typeof CarrierPanel>["settings"],
+      }),
+    );
+    expect(text).toContain("Customer texts");
+    expect(text).not.toContain("SMS is coming soon.");
+  });
+});
 
 describe("campaign label persistence", () => {
   it.each(["HTTP failure", "network failure"])(

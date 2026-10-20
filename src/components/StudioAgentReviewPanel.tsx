@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, ChevronDown, Mic, PhoneCall, Settings2 } from "lucide-react";
 import { Link } from "react-router";
 
@@ -40,6 +40,14 @@ type StudioAgentReviewPanelProps = {
   compact?: boolean;
 };
 
+type MailboxScope = { agentId: string; emailIncluded: boolean };
+type MailboxState = {
+  scope: MailboxScope;
+  status: "loading" | "ready" | "error" | "setting_up" | "setup_error";
+  email: string | null;
+  error?: string;
+};
+
 function toneLabel(personality?: string | null) {
   const value = readSetupDeliveryTone(personality);
   if (!value) return "Clear and professional";
@@ -79,6 +87,132 @@ export default function StudioAgentReviewPanel({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const emailIncluded = access.includes("email");
+  const mailboxScope = useRef<MailboxScope>({ agentId, emailIncluded });
+  if (
+    mailboxScope.current.agentId !== agentId ||
+    mailboxScope.current.emailIncluded !== emailIncluded
+  ) {
+    mailboxScope.current = { agentId, emailIncluded };
+  }
+  const currentMailboxScope = mailboxScope.current;
+  const [mailbox, setMailbox] = useState<MailboxState>({
+    scope: currentMailboxScope,
+    status: "loading",
+    email: null,
+  });
+  const [mailboxReloadKey, setMailboxReloadKey] = useState(0);
+  const setupRequest = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const isCurrent = () =>
+      !controller.signal.aborted && mailboxScope.current === currentMailboxScope;
+    if (!emailIncluded) return () => controller.abort();
+    setMailbox({ scope: currentMailboxScope, status: "loading", email: null });
+    void authFetch("/api/emails/accounts", { signal: controller.signal })
+      .then(async (response) => {
+        const body: unknown = await response.json();
+        const accounts =
+          body && typeof body === "object" && "accounts" in body ? body.accounts : null;
+        if (!response.ok || !Array.isArray(accounts)) throw new Error("Email status unavailable.");
+        if (
+          !accounts.every(
+            (account) =>
+              account &&
+              typeof account === "object" &&
+              typeof account.emailAddress === "string" &&
+              typeof account.provider === "string" &&
+              (account.agentId == null || typeof account.agentId === "string"),
+          )
+        ) {
+          throw new Error("Email status unavailable.");
+        }
+        const ownedMailbox = accounts.find(
+          (account) => account.agentId === agentId && account.provider === "agentmail",
+        );
+        if (ownedMailbox && !ownedMailbox.emailAddress.trim()) {
+          throw new Error("Email status unavailable.");
+        }
+        if (isCurrent()) {
+          setMailbox({
+            scope: currentMailboxScope,
+            status: "ready",
+            email: ownedMailbox?.emailAddress ?? null,
+          });
+        }
+      })
+      .catch(() => {
+        if (isCurrent()) {
+          setMailbox({ scope: currentMailboxScope, status: "error", email: null });
+        }
+      });
+    return () => controller.abort();
+  }, [agentId, emailIncluded, currentMailboxScope, mailboxReloadKey, reloadKey]);
+
+  useEffect(
+    () => () => {
+      setupRequest.current?.abort();
+    },
+    [currentMailboxScope],
+  );
+
+  async function setUpEmail() {
+    if (
+      !emailIncluded ||
+      mailbox.scope !== currentMailboxScope ||
+      !["ready", "setup_error"].includes(mailbox.status) ||
+      (setupRequest.current && !setupRequest.current.signal.aborted)
+    ) {
+      return;
+    }
+    const controller = new AbortController();
+    setupRequest.current = controller;
+    const isCurrent = () =>
+      !controller.signal.aborted && mailboxScope.current === currentMailboxScope;
+    setMailbox({ scope: currentMailboxScope, status: "setting_up", email: mailbox.email });
+    try {
+      const response = await authFetch(
+        `/api/agents/${encodeURIComponent(agentId)}/managed-mailbox`,
+        {
+          method: "POST",
+          signal: controller.signal,
+        },
+      );
+      const body = (await response.json()) as {
+        ok?: boolean;
+        email?: string;
+        error?: string;
+      };
+      if (
+        !response.ok ||
+        body?.ok !== true ||
+        typeof body.email !== "string" ||
+        !body.email.trim()
+      ) {
+        throw new Error(
+          typeof body?.error === "string" ? body.error : "Email setup could not be completed.",
+        );
+      }
+      if (isCurrent()) {
+        setMailbox({ scope: currentMailboxScope, status: "ready", email: body.email });
+      }
+    } catch (reason) {
+      if (isCurrent()) {
+        setMailbox({
+          scope: currentMailboxScope,
+          status: "setup_error",
+          email: mailbox.email,
+          error: reason instanceof Error ? reason.message : "Email setup could not be completed.",
+        });
+      }
+    } finally {
+      if (setupRequest.current === controller) setupRequest.current = null;
+    }
+  }
+
+  const visibleMailbox =
+    mailbox.scope === currentMailboxScope ? mailbox : { status: "loading" as const, email: null };
 
   useEffect(() => {
     const reload = () => setReloadKey((current) => current + 1);
@@ -213,6 +347,82 @@ export default function StudioAgentReviewPanel({
           </StatusNotice>
         ) : null}
 
+        {emailIncluded ? (
+          <StatusNotice
+            tone={
+              visibleMailbox.status === "error" || visibleMailbox.status === "setup_error"
+                ? "warning"
+                : "info"
+            }
+            title={
+              visibleMailbox.status === "error"
+                ? "Email Status Unavailable"
+                : visibleMailbox.status === "setup_error"
+                  ? "Email Setup Not Finished"
+                  : visibleMailbox.status === "loading"
+                    ? "Loading email"
+                    : visibleMailbox.status === "setting_up"
+                      ? visibleMailbox.email
+                        ? "Checking email setup"
+                        : "Setting up email"
+                      : visibleMailbox.email
+                        ? "Email address"
+                        : "Set up your Bot's email"
+            }
+            action={
+              visibleMailbox.status === "error" ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setMailboxReloadKey((value) => value + 1)}
+                >
+                  Retry
+                </Button>
+              ) : visibleMailbox.email ? (
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild size="sm" variant="secondary">
+                    <Link to={`/inbox?tab=email&agent=${encodeURIComponent(agentId)}`}>
+                      Open Inbox
+                    </Link>
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    disabled={visibleMailbox.status === "setting_up"}
+                    onClick={() => void setUpEmail()}
+                  >
+                    Check setup
+                  </Button>
+                </div>
+              ) : visibleMailbox.status === "ready" || visibleMailbox.status === "setup_error" ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => void setUpEmail()}
+                >
+                  Set up email
+                </Button>
+              ) : null
+            }
+          >
+            {visibleMailbox.email ? (
+              <>
+                <span className="wl-preserve-case break-all">{visibleMailbox.email}</span>
+                {visibleMailbox.status === "setup_error" ? (
+                  <span className="mt-1 block">{visibleMailbox.error}</span>
+                ) : null}
+              </>
+            ) : visibleMailbox.status === "error" ? (
+              "Try again to check this Bot's email."
+            ) : visibleMailbox.status === "setup_error" ? (
+              visibleMailbox.error
+            ) : null}
+          </StatusNotice>
+        ) : null}
+
         <section className={sectionClass} aria-label="Next actions">
           <div className="flex flex-col gap-2.5">
             {access.includes("voice") ? (
@@ -232,17 +442,13 @@ export default function StudioAgentReviewPanel({
                   {hasPhone ? "Review Outcomes" : "Connect Phone"}
                 </Link>
               </Button>
-            ) : access.includes("email") || access.includes("sms") ? (
+            ) : !emailIncluded && access.includes("sms") ? (
               <Button
                 asChild
                 size={compact ? "sm" : undefined}
                 className="w-full justify-center sm:w-auto sm:self-start"
               >
-                <Link
-                  to={`/inbox?tab=${access.includes("email") ? "email" : "sms"}&agent=${encodeURIComponent(agentId)}`}
-                >
-                  Open Inbox
-                </Link>
+                <Link to={`/inbox?tab=sms&agent=${encodeURIComponent(agentId)}`}>Open Inbox</Link>
               </Button>
             ) : null}
             <div className="flex flex-wrap gap-2">
