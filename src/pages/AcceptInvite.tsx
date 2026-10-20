@@ -105,7 +105,7 @@ export default function AcceptInvite() {
         setMessage("Sign in, then reopen this invitation link. This browser cannot save it.");
         return;
       }
-      navigate(`/signup?redirect=${encodeURIComponent("/accept-invite")}`, { replace: true });
+      navigate(`/signin?redirect=${encodeURIComponent("/accept-invite")}`, { replace: true });
       return;
     }
 

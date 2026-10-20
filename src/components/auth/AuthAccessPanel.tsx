@@ -241,6 +241,16 @@ export default function AuthAccessPanel({
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const notice = sessionStorage.getItem("wireline_auth_notice");
+      if (!notice) return;
+      sessionStorage.removeItem("wireline_auth_notice");
+      setMessage(notice);
+    } catch {
+      // The sign-in form still works when storage is blocked.
+    }
+  }, []);
   const [invalidField, setInvalidField] = useState<AuthField | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);

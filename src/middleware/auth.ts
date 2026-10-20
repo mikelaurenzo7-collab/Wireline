@@ -49,7 +49,7 @@ export function accountDeletionBlocksAuthentication(
   );
 }
 
-async function hasTerminalAccountDeletion(userId: string): Promise<boolean> {
+export async function hasTerminalAccountDeletion(userId: string): Promise<boolean> {
   const states = await tenantStore.run(userId, () =>
     drizzle
       .select({
