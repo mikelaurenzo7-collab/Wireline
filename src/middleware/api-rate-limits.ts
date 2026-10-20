@@ -478,6 +478,13 @@ export const calendarRateLimit = createRateLimiter({
 });
 
 /** Cloud computer status and task state reads. */
+/** Prepared-call and outbound status reads; each runs several receipt queries. */
+export const outboundStatusRateLimit = createRateLimiter({
+  bucket: "api:outbound-status",
+  windowMs: 60 * 1000,
+  max: 60,
+});
+
 export const computerReadRateLimit = createRateLimiter({
   bucket: "api:computer-read",
   windowMs: 60 * 1000,

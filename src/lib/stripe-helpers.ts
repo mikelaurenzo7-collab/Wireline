@@ -966,7 +966,13 @@ async function syncSubscriptionFromStripeUnderLease(
           ? "subscription_created"
           : "subscription_updated";
 
-    if (stripeStatus === "active" && plan?.id && plan.id === providerPlanId) {
+    // Trialing paid plans are admitted to voice, so they need the same included
+    // allowance for metered runtime features while the customer evaluates.
+    if (
+      (stripeStatus === "active" || stripeStatus === "trialing") &&
+      plan?.id &&
+      plan.id === providerPlanId
+    ) {
       const interval = subscriptionBillingInterval(sub);
       const periodReference = subscriptionPeriodReference(sub);
       // Must succeed — swallowing here marks the webhook processed with no

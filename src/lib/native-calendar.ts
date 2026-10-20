@@ -391,6 +391,8 @@ export async function updateCalendarAppointment(
         .where(and(eq(schema.appointments.userId, userId), eq(schema.appointments.id, id)))
         .limit(1);
       if (!prior) throw AppError.notFound("Appointment not found.");
+      if (input.expected_status !== undefined && prior.status !== input.expected_status)
+        throw AppError.conflict("This appointment changed. Refresh before updating it.");
       const updates: Partial<typeof schema.appointments.$inferInsert> = {};
       if (input.status !== undefined) {
         if (typeof input.status !== "string" || !APPOINTMENT_STATUSES.includes(input.status))
@@ -483,19 +485,41 @@ export async function updateCalendarAppointment(
   return result;
 }
 
-/** Unconfirmed requests keep their slot for one day, then release it. */
-export const APPOINTMENT_REQUEST_HOLD_MS = 24 * 60 * 60 * 1000;
+/** Stale requests released per sweep tick, so one tick stays short. */
+const STALE_REQUEST_BATCH = 50;
 
+/**
+ * An unconfirmed request holds its slot until the slot itself has started.
+ * Owners may take days to approve a request for next week, so a request is
+ * released only once it can no longer be confirmed (confirmation refuses a
+ * past start). Each release goes through the owner-scoped cancel path so the
+ * audit trail and dashboard stay in step with the appointment.
+ */
 export async function releaseExpiredAppointmentHolds(now = new Date()): Promise<number> {
-  const cutoff = new Date(now.getTime() - APPOINTMENT_REQUEST_HOLD_MS);
-  const released = await drizzle
-    .update(schema.appointments)
-    .set({ status: "Cancelled" })
-    .where(
-      and(eq(schema.appointments.status, "Requested"), lt(schema.appointments.createdAt, cutoff)),
-    )
-    .returning({ id: schema.appointments.id });
-  return released.length;
+  const stale = await tenantStore.exit(
+    async () =>
+      await drizzle
+        .select({ id: schema.appointments.id, userId: schema.appointments.userId })
+        .from(schema.appointments)
+        .where(
+          and(eq(schema.appointments.status, "Requested"), lt(schema.appointments.startAt, now)),
+        )
+        .limit(STALE_REQUEST_BATCH),
+  );
+  let released = 0;
+  for (const row of stale) {
+    if (!row.userId) continue;
+    try {
+      await updateCalendarAppointment(row.userId, row.id, {
+        status: "Cancelled",
+        expected_status: "Requested",
+      });
+      released++;
+    } catch {
+      // A request the owner just confirmed or cancelled is no longer stale.
+    }
+  }
+  return released;
 }
 
 /** Preserve native retry receipts: cancellation frees the slot without deleting its identity. */
