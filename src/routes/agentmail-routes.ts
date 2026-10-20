@@ -7,6 +7,7 @@ import {
   AGENTMAIL_API_BASE,
   AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL,
   AgentMailConnectError,
+  agentMailManagedInboxClientId,
   agentmailLocalPart,
   agentmailGrantedScopes,
   deleteAgentMailWebhooksForAccount,
@@ -160,7 +161,7 @@ async function createManagedInboxAttempt(input: {
   agentId: string;
   agentName: string;
 }): Promise<{ inboxId: string; email: string }> {
-  const clientId = `botbound-agent:${input.agentId}:${input.domain}`;
+  const clientId = agentMailManagedInboxClientId(input.agentId, input.domain);
   const response = await fetchWithTimeout(`${AGENTMAIL_API_BASE}/inboxes`, {
     method: "POST",
     headers: {

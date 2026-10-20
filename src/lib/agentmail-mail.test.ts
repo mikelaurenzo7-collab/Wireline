@@ -44,6 +44,7 @@ import {
   AGENTMAIL_SMTP_HOST,
   AGENTMAIL_WEBHOOK_EVENT_TYPES,
   AgentMailConnectError,
+  agentMailManagedInboxClientId,
   agentMailWebhookClientId,
   agentmailLocalPart,
   createAgentMailInbox,
@@ -153,16 +154,40 @@ describe("agentmail-mail", () => {
     );
   });
 
-  it("creates inboxes with a stable Wireline client id", async () => {
-    mockFetchWithTimeout.mockResolvedValueOnce(
-      jsonResponse(201, { inbox_id: "trywireline@agentmail.to" }),
-    );
+  it("creates inboxes with provider-valid stable IDs without collapsing Bot or domain identity", async () => {
+    const created = new Map<string, string>();
+    mockFetchWithTimeout.mockImplementation(async (_url: string, options: RequestInit) => {
+      const body = JSON.parse(String(options.body));
+      if (!/^[A-Za-z0-9._~-]+$/.test(body.client_id)) {
+        return jsonResponse(400, { message: "client_id invalid_format" });
+      }
+      const address = `${body.username}@${body.domain || "agentmail.to"}`;
+      if (!created.has(body.client_id)) created.set(body.client_id, address);
+      return jsonResponse(201, { inbox_id: created.get(body.client_id) });
+    });
     await createAgentMailInbox("am_test", "trywireline", "Aisha");
     expect(JSON.parse(mockFetchWithTimeout.mock.calls[0][1].body)).toMatchObject({
       username: "trywireline",
       display_name: "Aisha",
       client_id: "wireline-mailbox",
     });
+    for (const [agentId, domain, username] of [
+      ["agent:one", "bots.botbound.app", "one"],
+      ["agent-one", "bots.botbound.app", "two"],
+      ["agent:one", "other.botbound.app", "three"],
+    ]) {
+      const clientId = agentMailManagedInboxClientId(agentId, domain);
+      await expect(
+        createAgentMailInbox("am_test", username, "Front Desk", { domain, clientId }),
+      ).resolves.toMatchObject({ email: `${username}@${domain}` });
+      await expect(
+        createAgentMailInbox("am_test", username, "Renamed Bot", {
+          domain,
+          clientId: agentMailManagedInboxClientId(agentId, ` ${domain.toUpperCase()} `),
+        }),
+      ).resolves.toMatchObject({ email: `${username}@${domain}` });
+    }
+    expect(created.size).toBe(4);
   });
 
   it("registers a public inbox delivery subscription from the mailbox row", async () => {
@@ -173,13 +198,17 @@ describe("agentmail-mail", () => {
     );
     mockFetchWithTimeout
       .mockResolvedValueOnce(jsonResponse(200, { webhooks: [] }))
-      .mockResolvedValueOnce(
-        jsonResponse(201, {
+      .mockImplementationOnce(async (_url: string, options: RequestInit) => {
+        const body = JSON.parse(String(options.body));
+        if (!/^[A-Za-z0-9._~-]+$/.test(body.client_id)) {
+          return jsonResponse(400, { message: "client_id invalid_format" });
+        }
+        return jsonResponse(201, {
           webhook_id: "wh_1",
           url: `https://trywireline.com/api/webhooks/agentmail/${accountId}`,
           secret: "whsec_test",
-        }),
-      );
+        });
+      });
     await expect(
       ensureAgentMailWebhook({
         apiKey: "am_test",
@@ -425,13 +454,24 @@ describe("agentmail-mail", () => {
               url: "https://example.com/hooks",
               client_id: "other-app",
             },
+            {
+              webhook_id: "wh_lookalike",
+              url: "https://example.com/other",
+              client_id: "wireline-mailbox-webhook-other-app",
+            },
+            {
+              webhook_id: "wh_current_key",
+              url: "https://old.example/hooks",
+              client_id: agentMailWebhookClientId("mailbox", "https://old.example/hooks"),
+            },
           ],
         }),
       )
-      .mockResolvedValueOnce(jsonResponse(204, {}));
+      .mockResolvedValue(jsonResponse(204, {}));
     await deleteWirelineAgentMailWebhooks("am_test");
     expect(mockFetchWithTimeout.mock.calls[1][0]).toContain("/webhooks/wh_legacy");
-    expect(mockFetchWithTimeout.mock.calls).toHaveLength(2);
+    expect(mockFetchWithTimeout.mock.calls[2][0]).toContain("/webhooks/wh_current_key");
+    expect(mockFetchWithTimeout.mock.calls).toHaveLength(3);
   });
 
   it("preserves old hooks until the caller can durably store the current signing secret", async () => {

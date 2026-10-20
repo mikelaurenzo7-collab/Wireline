@@ -33,13 +33,23 @@ export const AGENTMAIL_WEBHOOK_EVENT_TYPES = [
   "message.rejected",
 ] as const;
 
+function agentMailClientIdHash(identity: readonly string[]): string {
+  return createHash("sha256").update(JSON.stringify(identity)).digest("hex").slice(0, 32);
+}
+
+export function agentMailManagedInboxClientId(agentId: string, domain: string): string {
+  // Hash structured identity rather than sanitizing it: distinct Bots and
+  // domains must never share a provider idempotency key.
+  return `botbound-agent-${agentMailClientIdHash([agentId, domain.trim().toLowerCase()])}`;
+}
+
 export function agentMailWebhookClientId(accountId: string, webhookUrl?: string): string {
-  const accountKey = `${AGENTMAIL_WEBHOOK_CLIENT_ID}:${accountId}`;
+  const accountKey = `${AGENTMAIL_WEBHOOK_CLIENT_ID}-${agentMailClientIdHash([accountId])}`;
   if (!webhookUrl) return accountKey;
   // AgentMail treats client_id as an idempotency key. A destination change
   // must create a replacement without reusing or deleting the old hook.
   const destination = canonicalAgentMailWebhookUrl(webhookUrl) ?? webhookUrl;
-  return `${accountKey}:${createHash("sha256").update(destination).digest("hex").slice(0, 24)}`;
+  return `${accountKey}-${agentMailClientIdHash([destination])}`;
 }
 
 export class AgentMailConnectError extends Error {
@@ -679,7 +689,13 @@ function webhookOwnedByAccount(
 ): boolean {
   if (webhookUrlsMatch(webhook.url, url)) return true;
   const accountKey = agentMailWebhookClientId(accountId);
-  if (webhook.clientId === accountKey || webhook.clientId?.startsWith(`${accountKey}:`))
+  const legacyAccountKey = `${AGENTMAIL_WEBHOOK_CLIENT_ID}:${accountId}`;
+  if (
+    webhook.clientId === accountKey ||
+    webhook.clientId?.startsWith(`${accountKey}-`) ||
+    webhook.clientId === legacyAccountKey ||
+    webhook.clientId?.startsWith(`${legacyAccountKey}:`)
+  )
     return true;
   if (webhook.clientId !== AGENTMAIL_WEBHOOK_CLIENT_ID) return false;
   try {
@@ -1014,6 +1030,7 @@ export async function deleteWirelineAgentMailWebhooks(apiKey: string): Promise<v
     if (
       clientId === AGENTMAIL_WEBHOOK_CLIENT_ID ||
       clientId.startsWith(`${AGENTMAIL_WEBHOOK_CLIENT_ID}:`) ||
+      /^wireline-mailbox-webhook-[a-f0-9]{32}(?:-[a-f0-9]{32})?$/.test(clientId) ||
       /\/api\/webhooks\/agentmail\//.test(webhook.url)
     ) {
       await deleteAgentMailWebhook(apiKey, webhook.webhookId);

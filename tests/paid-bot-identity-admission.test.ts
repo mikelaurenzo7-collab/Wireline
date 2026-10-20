@@ -154,19 +154,23 @@ vi.mock("../src/lib/owned-email-account", () => ({
   EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE: "ownership conflict",
   upsertOwnedEmailAccount: h.provider,
 }));
-vi.mock("../src/lib/agentmail-mail", () => ({
-  AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL: "managed",
-  AGENTMAIL_MANAGED_SCOPE_MARKER: "managed",
-  agentmailGrantedScopes: h.provider,
-  createAgentMailInbox: h.createInbox,
-  ensureAgentMailWebhook: h.provider,
-  getAgentMailWebhook: h.provider,
-  hasExactAgentMailManagedScope: (scopes: string) => scopes === "managed",
-  listAgentMailInboxes: h.inboxesRead,
-  publicAgentMailWebhookUrl: h.webhookUrl,
-  verifyAgentMailCredentials: h.provider,
-  verifyManagedAgentMailDomainIdentity: h.domainIdentity,
-}));
+vi.mock("../src/lib/agentmail-mail", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/lib/agentmail-mail")>();
+  return {
+    AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL: "managed",
+    AGENTMAIL_MANAGED_SCOPE_MARKER: "managed",
+    agentMailManagedInboxClientId: actual.agentMailManagedInboxClientId,
+    agentmailGrantedScopes: h.provider,
+    createAgentMailInbox: h.createInbox,
+    ensureAgentMailWebhook: h.provider,
+    getAgentMailWebhook: h.provider,
+    hasExactAgentMailManagedScope: (scopes: string) => scopes === "managed",
+    listAgentMailInboxes: h.inboxesRead,
+    publicAgentMailWebhookUrl: h.webhookUrl,
+    verifyAgentMailCredentials: h.provider,
+    verifyManagedAgentMailDomainIdentity: h.domainIdentity,
+  };
+});
 
 import {
   enqueuePaidBotIdentityReconciliation,
@@ -307,6 +311,44 @@ describe("paid identity admission at queue and provider boundaries", () => {
     expect(h.phoneProvision).not.toHaveBeenCalled();
     expect(h.ownedNumbers).not.toHaveBeenCalled();
     expect(h.selectedLine).not.toHaveBeenCalled();
+  });
+
+  it("repairs a reserved paid mailbox using a provider-valid ID stable across retries", async () => {
+    h.planId = "email";
+    h.target = "oldest";
+    h.accounts = [
+      {
+        id: "mailbox",
+        agentId: "oldest",
+        emailAddress: "reserved@botbound.app",
+        oauthGrantedScopes: "managed",
+        refreshToken: "stored-secret",
+      },
+    ];
+    const acceptedIds = new Set<string>();
+    h.createInbox.mockImplementation(
+      async (
+        _key: string,
+        username: string,
+        _name: string,
+        options: { domain: string; clientId: string },
+      ) => {
+        if (!/^[A-Za-z0-9._~-]+$/.test(options.clientId)) {
+          throw new Error("client_id invalid_format");
+        }
+        acceptedIds.add(options.clientId);
+        return { inboxId: "reserved-inbox", email: `${username}@${options.domain}` };
+      },
+    );
+    h.provider.mockReturnValue({ webhookId: "existing-webhook", secret: null });
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await expect(
+        ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" }),
+      ).resolves.toMatchObject({ email: "reserved@botbound.app" });
+    }
+    expect(acceptedIds.size).toBe(1);
+    expect(h.createInbox).toHaveBeenCalledTimes(2);
+    expect(h.phoneProvision).not.toHaveBeenCalled();
   });
 
   it("returns to selection if the owned line disappears before phone repair", async () => {

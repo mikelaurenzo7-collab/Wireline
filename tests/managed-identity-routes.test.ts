@@ -98,22 +98,26 @@ vi.mock("../src/lib/paid-bot-identity", () => ({
   assertTwilioOwnedNumber: h.phoneOwned,
 }));
 vi.mock("../src/lib/channel-entitlements", () => ({ requireTenantChannel: h.channel }));
-vi.mock("../src/lib/agentmail-mail", () => ({
-  AGENTMAIL_API_BASE: "https://api.example.test",
-  AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL: "managed",
-  AgentMailConnectError: class extends Error {},
-  agentmailLocalPart: (email: string) => email.split("@")[0],
-  agentmailGrantedScopes: h.mutate,
-  deleteAgentMailWebhooksForAccount: h.mutate,
-  ensureAgentMailWebhook: h.ensureWebhook,
-  getAgentMailWebhook: h.getWebhook,
-  hasExactAgentMailManagedScope: (scopes: string) => scopes === "managed",
-  listAgentMailInboxes: h.inboxes,
-  normalizeAgentMailInbox: h.mutate,
-  resolveAgentMailInbox: h.mutate,
-  verifyAgentMailCredentials: h.verifyCredentials,
-  verifyManagedAgentMailDomainIdentity: h.domain,
-}));
+vi.mock("../src/lib/agentmail-mail", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/lib/agentmail-mail")>();
+  return {
+    AGENTMAIL_API_BASE: "https://api.example.test",
+    AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL: "managed",
+    AgentMailConnectError: class extends Error {},
+    agentMailManagedInboxClientId: actual.agentMailManagedInboxClientId,
+    agentmailLocalPart: (email: string) => email.split("@")[0],
+    agentmailGrantedScopes: h.mutate,
+    deleteAgentMailWebhooksForAccount: h.mutate,
+    ensureAgentMailWebhook: h.ensureWebhook,
+    getAgentMailWebhook: h.getWebhook,
+    hasExactAgentMailManagedScope: (scopes: string) => scopes === "managed",
+    listAgentMailInboxes: h.inboxes,
+    normalizeAgentMailInbox: actual.normalizeAgentMailInbox,
+    resolveAgentMailInbox: h.mutate,
+    verifyAgentMailCredentials: h.verifyCredentials,
+    verifyManagedAgentMailDomainIdentity: h.domain,
+  };
+});
 vi.mock("../src/lib/owned-email-account", () => ({
   EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE: "ownership conflict",
   upsertOwnedEmailAccount: h.mutate,
@@ -278,6 +282,44 @@ describe("shared web identity reconciliation", () => {
 });
 
 describe("compatibility mailbox admission", () => {
+  it("retries a reserved mailbox with a provider-valid ID and then reuses its exact address", async () => {
+    h.accounts = [
+      {
+        id: "mailbox",
+        emailAddress: "reserved@botbound.app",
+        oauthGrantedScopes: "managed",
+        refreshToken: "stored-secret",
+      },
+    ];
+    h.mutate.mockImplementation(async (_url: string, options: RequestInit) => {
+      const body = JSON.parse(String(options.body));
+      const valid = /^[A-Za-z0-9._~-]+$/.test(body.client_id);
+      return {
+        ok: valid,
+        status: valid ? 201 : 400,
+        text: async () =>
+          JSON.stringify(
+            valid
+              ? { inbox_id: `${body.username}@${body.domain}` }
+              : { message: "client_id invalid_format" },
+          ),
+      };
+    });
+    const res = await invoke("managed-mailbox");
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "reserved@botbound.app",
+      }),
+    );
+    expect(h.mutate).toHaveBeenCalledOnce();
+    expect(h.verifyCredentials).toHaveBeenCalledWith("reserved@botbound.app", "test-only-key");
+    h.inboxes.mockResolvedValue([
+      { inboxId: "reserved@botbound.app", email: "reserved@botbound.app" },
+    ]);
+    await invoke("managed-mailbox");
+    expect(h.mutate).toHaveBeenCalledOnce();
+  });
   it.each(["bots.botbound.app", "bots.botbound.me"])(
     "reconciles a legacy mailbox while provisioning uses %s",
     async (configuredDomain) => {

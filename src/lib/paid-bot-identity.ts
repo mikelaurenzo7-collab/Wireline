@@ -4,6 +4,7 @@ import * as schema from "../db/schema";
 import {
   AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL,
   AGENTMAIL_MANAGED_SCOPE_MARKER,
+  agentMailManagedInboxClientId,
   agentmailGrantedScopes,
   createAgentMailInbox,
   deleteAgentMailWebhooksForAccount,
@@ -320,7 +321,7 @@ async function resolveManagedInbox(input: {
 
   const inbox = await createAgentMailInbox(input.apiKey, username, input.agentName, {
     domain,
-    clientId: `botbound-agent:${input.agentId}:${domain}`,
+    clientId: agentMailManagedInboxClientId(input.agentId, domain),
     metadata: {
       platform: "BotBound",
       agent_id: input.agentId,
