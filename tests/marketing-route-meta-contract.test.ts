@@ -189,6 +189,7 @@ describe("route meta prerendering", () => {
 
   it("emits noindex before hydration for account, transition, and not-found routes", () => {
     const guardedRoutes = [
+      "/sms-consent",
       "/signin",
       "/signup",
       "/get-started",

@@ -83,7 +83,7 @@ describe("BotBound product voice", () => {
       name: "BotBound",
       slogan: "For You. For Your Business.",
       supportingLine: "CALL · EMAIL · COMPUTER",
-      promise: "Your Bot for calls, email, and computer tasks.",
+      promise: "Your Bot for incoming calls, email, and computer tasks.",
     });
     expect(BRAND_SYSTEM).toMatchObject({
       northStar: BOT_BRAND.promise,
@@ -161,11 +161,10 @@ describe("BotBound product voice", () => {
     expect(MARKETING_VOICE.channelProof).toEqual(["Call", "Email", "Computer"]);
     expect(BOT_MARKETING_VOICE.spine).toEqual(["Call", "Email", "Computer"]);
     expect(WORKSPACE_VOICE.emptyCue).toContain("calls, email, knowledge, and computer tasks");
-    expect(AGENT_NUMBER_PROMISE).toContain("Plans with calls");
+    expect(AGENT_NUMBER_PROMISE).toContain("Calls plans");
     expect(AGENT_NUMBER_PROMISE).toContain("BotBound number");
-    expect(AGENT_NUMBER_PROMISE).toContain("Answer incoming calls");
-    expect(AGENT_NUMBER_PROMISE).toContain("personal plans with recipient permission");
-    expect(AGENT_NUMBER_PROMISE).toContain("SMS is coming soon");
+    expect(AGENT_NUMBER_PROMISE).toContain("answering incoming calls");
+    expect(AGENT_NUMBER_PROMISE).not.toMatch(/personal plans|SMS|coming soon/i);
   });
 
   it("keeps Phone Bot, Conversation Bot, and Human Bot as configuration lenses", () => {
@@ -223,11 +222,12 @@ describe("BotBound product voice", () => {
     expect(AGENT_DIRECTION_MODES.outbound.label).toBe("Personal Assistant");
     expect(AGENT_DIRECTION_MODES.inbound.label).toBe("Receptionist");
     expect(AGENT_DIRECTION_MODES.hybrid.label).toBe("Flexible Assistant");
-    expect(AGENT_DIRECTION_MODES.outbound.loop).toEqual(["Research", "Review", "Call", "Log"]);
+    expect(AGENT_DIRECTION_MODES.outbound.loop).toEqual(["Research", "Prepare", "Review", "Log"]);
     expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Understand", "Help", "Log"]);
     expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual(["Answer", "Research", "Reply", "Log"]);
     expect(OUTBOUND_WEDGE.headline).toBe("A Bot That Helps With Everyday Plans");
-    expect(OUTBOUND_WEDGE.subline).toContain("Business outbound is coming soon.");
+    expect(OUTBOUND_WEDGE.subline).toContain("incoming questions");
+    expect(OUTBOUND_WEDGE.subline).not.toMatch(/outbound|coming soon/i);
   });
 
   it("keeps the public entrance concise, auth-forward, and tied to shared constants", () => {

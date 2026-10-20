@@ -211,7 +211,7 @@ describe("public pricing activation availability", () => {
         plans: [{ id: "sms", configured: false, annual_configured: false, contact_sales: true }],
       }),
     );
-    expect(text(render())).toContain("SMS is coming soon.");
+    expect(text(render())).not.toContain("SMS is coming soon.");
     expect(planLink("sms")).toBeUndefined();
     expect(planLink("voice-regular")?.props.to).toBe("/signup?plan=voice-regular&interval=month");
     const contact = links().find((element) => element.props.to === "/contact?topic=sms");

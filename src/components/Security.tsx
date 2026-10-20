@@ -167,17 +167,17 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
   },
   {
     icon: HeartPulse,
-    title: "Call Compliance (TCPA / DNC)",
+    title: "Call Permissions and Disclosures",
     items: [
-      "Eligible personal calls require the applicable recipient permission and Do Not Call checks before they can start. Business outbound calling is coming soon.",
-      "Account Do Not Call lists remain enforced before eligible outgoing calls are placed.",
+      "Your configured disclosures and recording choices apply to calls. Enable recording only with the permissions your use requires.",
+      "Recipient permission and account Do Not Call checks remain enforced before eligible outgoing calls are placed.",
     ],
   },
   {
     icon: CreditCard,
     title: "Billing & Spend Controls",
     items: [
-      "Runtime Balance is a prepaid ledger. Paid plans draw overflow voice from funded balance after included minutes. SMS is coming soon for new customers; existing SMS service retains its billing and verification requirements. Free Builder cannot run live voice until a paid plan is active.",
+      "Runtime Balance is a prepaid ledger. Paid plans draw overflow voice from funded balance after included minutes. Existing services retain their billing and verification requirements. Free Builder cannot run live voice until a paid plan is active.",
       "Paid plans include a managed AI allowance for AI, research, and enrichment funded by the platform. Calls can use up to 10 minutes of paid completion credit within their session limit. Any amount due pauses new calls and prepaid extras until topped up.",
       "Daily spend totals and cost alerts help the platform owner catch margin leaks early.",
     ],

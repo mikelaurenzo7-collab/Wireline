@@ -29,7 +29,7 @@ const PILLARS: readonly Pillar[] = [
     icon: Phone,
     label: "Phone Number",
     title: "Ready When the Phone Rings",
-    body: "Your Bot answers calls, handles questions, takes requests, and books available times. Every conversation leaves a clear record.",
+    body: "Your Bot answers calls, handles questions, and takes requests. With a configured calendar, it can book available times.",
   },
   {
     icon: MonitorSmartphone,
@@ -42,7 +42,7 @@ const PILLARS: readonly Pillar[] = [
     icon: Mail,
     label: "Email Address",
     title: "Follows Up in Writing",
-    body: "A managed inbox for your Bot, or your own domain with guided setup. It sends recaps, answers replies, and keeps each conversation together.",
+    body: "A managed inbox for your Bot, or your own domain with guided setup. It reads incoming messages, drafts replies, and sends approved email.",
     note: "Email activation requires a setup review.",
   },
 ];
@@ -52,11 +52,6 @@ const CAPABILITIES: readonly { icon: LucideIcon; title: string; body: string }[]
     icon: Sparkles,
     title: "Made Yours",
     body: "Your knowledge, preferences, voice, and rules shape how your Bot works.",
-  },
-  {
-    icon: Phone,
-    title: "Personal Calls",
-    body: "Prepare appointment and service calls for yourself. Review each call before placing it. Recipient permission is required, with Illinois callers and recipients currently supported.",
   },
   {
     icon: CalendarCheck,
@@ -76,7 +71,7 @@ const CAPABILITIES: readonly { icon: LucideIcon; title: string; body: string }[]
   {
     icon: ClipboardCheck,
     title: "Clear Outcomes",
-    body: "Every call, message, and task is logged with what happened and what comes next.",
+    body: "Review call records, approvals, and computer task results from your workspace.",
   },
   {
     icon: ShieldCheck,

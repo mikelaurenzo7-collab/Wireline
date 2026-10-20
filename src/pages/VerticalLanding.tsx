@@ -172,9 +172,7 @@ export default function VerticalLanding({
       <section className="marketing-section mx-auto max-w-4xl">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="wl-stitch-display text-balance">
-            {isEverydayCalls
-              ? "Questions Before You Hand Off a Call"
-              : "Questions Before You Go Live"}
+            {isEverydayCalls ? "Questions Before You Start" : "Questions Before You Go Live"}
           </h2>
         </div>
         <div className="mt-8 space-y-3">
@@ -204,7 +202,7 @@ export default function VerticalLanding({
               <div className="max-w-2xl">
                 <h2 className="text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
                   {isEverydayCalls
-                    ? "Start with the Call You Keep Putting Off"
+                    ? "Start with One Everyday Task"
                     : "Start with the Workflow Your Team Needs Covered"}
                 </h2>
               </div>

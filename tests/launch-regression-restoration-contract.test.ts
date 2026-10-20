@@ -204,7 +204,7 @@ describe("restored launch regression guards", () => {
     expect(checklist).toContain('registryState === "active" || registryState === "pending_link"');
     expect(checklist).not.toMatch(/Row-level security|audit log enabled|SOC 2/i);
     expect(security).toMatch(
-      /Eligible personal calls require the applicable recipient permission and Do Not Call checks before they can start\. Business outbound calling is coming soon/i,
+      /Recipient permission and account Do Not Call checks remain enforced before eligible outgoing calls are placed\./i,
     );
     expect(security).not.toContain("Live outbound dialing is gated");
     expect(security).not.toContain("DNCScrub");

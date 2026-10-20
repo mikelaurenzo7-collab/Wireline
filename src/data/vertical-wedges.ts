@@ -87,14 +87,14 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
         body: "Choose which questions your Bot can answer and when it should bring in a person.",
       },
     ],
-    scriptPreview: `"Hey, this is Sarah from [Your Company]. Sounds like you have water coming through the ceiling. Let me get you on the schedule right now. Are you home in the next 90 minutes or would after 5 work better?"`,
+    scriptPreview: `"Thanks for calling [Your Company]. I'm Sarah, an AI assistant. I can take the details for our team or help you find an available appointment. What do you need help with today?"`,
     statValue: "24 / 7",
     statLabel:
       "Built for the after hours calls, urgent requests, and quote inquiries your team chooses to route.",
     primaryCta: { label: "Create Home Services Bot", href: signupHrefForWedge("home-services") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
-      "Uses your configured company identity. Final caller ID display depends on carrier, network, device, and completed identity review.",
+      "Your greeting, approved answers, and handoff rules guide every incoming conversation.",
     faqs: [
       {
         q: "Will Customers Know They Are Talking to a Bot?",
@@ -102,7 +102,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "What Happens If the Bot Does Not Know the Answer?",
-        a: "The Bot says it does not have that detail handy and offers to follow up by email, or transfer to you live. Configure the escalation number per shift in Settings. It is designed to decline uncertain details, follow your escalation rules, and leave a reviewable record.",
+        a: "The Bot says it does not have that detail handy and offers an approved next step, such as email or a live transfer to your configured handoff destination. It is designed to decline uncertain details, follow your escalation rules, and leave a reviewable record.",
       },
       {
         q: "Can the Bot Actually Dispatch Me on an Emergency?",
@@ -151,7 +151,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     primaryCta: { label: "Create Medical Bot", href: signupHrefForWedge("medical") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
-      "Uses your configured practice identity, subject to carrier display support. Do not use BotBound for PHI unless a signed BAA and approved configuration are confirmed in writing.",
+      "Use your practice greeting and approved general information. Do not use BotBound for PHI unless a signed BAA and approved configuration are confirmed in writing.",
     faqs: [
       {
         q: "Is BotBound HIPAA Compliant?",
@@ -167,7 +167,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Will Patients Accept a Phone Bot?",
-        a: "The practical win is no hold time: a clear Bot that uses your practice name and resolves routine scheduling quickly can be better than waiting on the line. Disclosure choices and consent language should match your practice policy and applicable rules.",
+        a: "Your Bot can answer routine questions using approved practice information and help with available appointments. Its greeting, disclosures, and recording choices should match your practice policy and applicable rules.",
       },
     ],
   },
@@ -265,11 +265,11 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     primaryCta: { label: "Create Real Estate Bot", href: signupHrefForWedge("real-estate") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
-      "Buyers hear the brokerage identity you configure, subject to carrier display behavior. Your team can review outcomes and next steps in BotBound.",
+      "Callers hear your configured brokerage greeting. Your team can review outcomes and next steps in BotBound.",
     faqs: [
       {
         q: "Will the Bot Know My Listings?",
-        a: "Yes. Add listing URLs or details to the Bot's knowledge, and it can answer price, beds, baths, square footage, and neighborhood basics from that source, then pivot to scheduling a showing when the caller shows interest. Direct MLS feed sync remains on the roadmap.",
+        a: "Yes. Add listing URLs or details to the Bot's knowledge, and it can answer price, beds, baths, square footage, and neighborhood basics from that source, then offer available showing times. Keep those details current in Training.",
       },
       {
         q: "Does It Work for a Single Professional or a Full Brokerage?",
@@ -288,21 +288,21 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   personal: {
     slug: "personal",
-    metaTitle: "BotBound for You | Calls, Plans, and Everyday Tasks",
+    metaTitle: "BotBound for You | Calls, Email, and Everyday Tasks",
     metaDescription:
-      "Create a Bot to coordinate appointments, handle calls, and work online for you. Set its knowledge and limits, then rehearse before it acts.",
+      "Create a Bot to answer incoming calls, organize email, and research everyday tasks online. Set its knowledge and limits, then rehearse before going live.",
     eyebrow: "For You",
     headline: "Put the Everyday Work on Your Bot",
     pains: [
       {
         icon: "Clock",
-        title: "Calls and Messages",
+        title: "A Bot to Answer",
         body: "Answer calls on your own Bot line, take messages, and keep the next steps together.",
       },
       {
-        icon: "Calendar",
-        title: "Appointments",
-        body: "Choose the office and a time window, then give your Bot the questions to ask and the details to confirm.",
+        icon: "MailCheck",
+        title: "Your Bot's Inbox",
+        body: "Give your Bot a managed email address to receive messages, draft replies, and send approved email.",
       },
       {
         icon: "DollarSign",
@@ -316,7 +316,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
     ],
     scriptPreview:
-      "Hi, this is Alex, an AI assistant calling for [Your Name] about the appointment you agreed to discuss. Is Thursday afternoon available, and is there anything they should bring?",
+      "Thanks for calling. I'm Alex, an AI assistant for [Your Name]. I can take a message or help with the information they've shared. What would help today?",
     statValue: "Yours",
     statLabel:
       "Set the brief, boundaries, and next step. Your Bot follows the instructions you approve.",
@@ -326,24 +326,24 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Your Bot follows the brief and limits you provide. Call outcomes are logged; recording is optional and off by default. You can stop active work or change the instructions at any time.",
     faqs: [
       {
-        q: "How Do I Prepare a Call?",
-        a: "Choose your Bot, enter the number and call instructions, and select the recipient's saved permission. Review the details before placing the call. Outbound service calls currently support Illinois callers and recipients. Marketing calls remain unavailable.",
+        q: "How Does My Bot Answer Calls?",
+        a: "Create your Bot, add the information it can share, and rehearse its greeting and answers. Activate a Calls plan and choose a number for people to reach it. Review the conversation and captured requests in your workspace.",
       },
       {
         q: "Can I Use the Same Bot for My Business?",
         a: "Yes. The same plans and workspace support personal tasks and business work. Set the knowledge, permissions, and tools for each job.",
       },
       {
-        q: "Can It Handle Phone Menus and Hold Time?",
-        a: "You can rehearse menu choices, hold instructions, voicemail wording, and retry limits as part of the call brief.",
+        q: "What Can Its Computer Do?",
+        a: "Give it a task such as comparing services, finding opening hours, or summarizing a webpage. Your Bot can research online and return a useful result. Tasks use your plan's AI allowance, and actions that need approval wait for your review.",
       },
       {
-        q: "Why Not Ask a Friend?",
-        a: "Your Bot keeps the instructions and boundaries together, so you can refine the call before deciding how to proceed. Recording is optional and should be enabled only where lawful.",
+        q: "Can I Start with Calls and Add Email Later?",
+        a: "Yes. Start with the channels you need. Email activation includes a setup review, then you can set up your Bot's managed mailbox from its setup page.",
       },
       {
         q: "What Can't It Do?",
-        a: "Calls requiring identity verification beyond what you authorize, anything illegal or fraudulent, emergency calls, or work that legally requires appearing in person. Your Bot will tell you when a request is outside the supported scope.",
+        a: "Your Bot cannot act as an emergency service, make decisions that require a licensed professional, or access private accounts without permission. Set its instructions and approvals around the work you want it to handle.",
       },
     ],
   },
@@ -383,7 +383,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     primaryCta: { label: "Create Insurance Bot", href: signupHrefForWedge("insurance") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
-      "Callers hear the agency identity you configure, subject to carrier behavior. Transcripts follow tenant retention; recording is optional and off by default.",
+      "Callers hear your configured agency greeting. Transcripts follow tenant retention; recording is optional and off by default.",
     faqs: [
       {
         q: "Will the Bot Actually Bind a Policy?",
@@ -433,7 +433,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
         body: "Captures party size, date, dietary needs, budget range, and contact details. It can route a structured request and offer approved tasting windows when those actions are configured.",
       },
     ],
-    scriptPreview: `"Hi, thanks for calling [Your Restaurant]! Were you hoping to make a reservation, place an order to pick up, or ask about a private event? I can help with all three."`,
+    scriptPreview: `"Hi, thanks for calling [Your Restaurant]! I can help with a reservation, take a pickup request for our staff, or collect details about a private event. What can I help you with?"`,
     statValue: "Saturday 7pm",
     statLabel:
       "Built for the rush hour calls your host cannot reach: reservations, structured takeout requests, and event inquiries.",

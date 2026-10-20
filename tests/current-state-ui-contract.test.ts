@@ -64,7 +64,7 @@ describe("current-state UI contract", () => {
     expect(developers).toContain("https://botbound.app");
     expect(developers).toContain("Add to Cursor");
     expect(developers.replace(/\s+/g, " ")).toContain(
-      "Connected apps can prepare personal service or coordination calls for your review; placing a call happens in BotBound.",
+      "Training writes require the Apps toggle and your confirmation. Continue in BotBound for live phone numbers, email, and cloud computer tasks on eligible paid plans.",
     );
     expect(developers).not.toContain("wl_YOUR_API_KEY");
     expect(developers).not.toContain("https://trywireline.com");

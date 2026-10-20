@@ -10,6 +10,7 @@ export default function SmsConsentPage() {
         title="SMS Consent | BotBound"
         description="BotBound customer care SMS: permission script, message examples, and instructions to stop messages."
         path="/sms-consent"
+        noIndex
       />
       <article className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-6 sm:py-14">
         <p className="mb-3 text-sm font-medium text-brand">BotBound Customer Care</p>

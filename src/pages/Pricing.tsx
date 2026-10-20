@@ -35,10 +35,6 @@ const FAQ = [
     "Yes. Choose Calls, Email, or both. They share your Bot's knowledge and rules. Every paid plan also includes a cloud computer for web tasks.",
   ],
   [
-    "Is Texting Available?",
-    "SMS is coming soon. Start with calls, email, and computer tasks today.",
-  ],
-  [
     "When Does Included Usage Reset?",
     "Call minutes and managed AI allowances renew on your monthly subscription anniversary, including annual plans. Billing shows your next reset date. Unused included usage does not roll over.",
   ],
@@ -186,7 +182,7 @@ export default function Pricing() {
                 <>
                   {" "}
                   Extra minutes cost {TOPUP_RATE}, using Runtime Balance or completion credit. Bots
-                  answer calls on their own number. Personal calls require recipient permission.
+                  answer calls on their own number.
                 </>
               ) : null}
             </p>

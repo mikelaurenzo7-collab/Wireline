@@ -140,7 +140,6 @@ for (const width of [320, 390, 1440]) {
     const features = page.getByRole("list", { name: "Built Around You" });
     await expect(features.getByRole("heading", { level: 3 })).toHaveText([
       "Made Yours",
-      "Personal Calls",
       "Native Calendar Booking",
       "Approvals and Handoffs",
       "One Workspace",

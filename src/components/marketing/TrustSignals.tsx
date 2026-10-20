@@ -7,14 +7,8 @@ const TRUST_POINTS = [
     detail: "Create and train your Bot, then rehearse privately before any customer conversation.",
   },
   {
-    // The enforced compliance stack (TCPA calling hours, DNC checks before
-    // marketing dials, instant opt-out honoring; see tcpa-calling-hours.ts,
-    // outbound-dial-gate.ts, dnc-failsafe.ts) is a real differentiator that
-    // was hidden a click deep in /trust. The spend story this tile replaced
-    // is already told by the plan cards on the same page.
-    title: "Compliance Controls",
-    detail:
-      "Configure calling hours, suppression checks, attempt caps, disclosures, and opt-outs around each workflow.",
+    title: "Clear Boundaries",
+    detail: "Set approved answers, handoff rules, and recording preferences for each Bot.",
   },
   {
     title: "Controlled Handoff",
@@ -22,7 +16,7 @@ const TRUST_POINTS = [
   },
   {
     title: "Outcome Record",
-    detail: "Calls, email, tasks, approvals, and next steps stay in one auditable history.",
+    detail: "Review call records, approvals, and computer task results from your workspace.",
   },
 ] as const;
 

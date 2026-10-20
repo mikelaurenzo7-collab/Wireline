@@ -34,9 +34,9 @@ const PACKS: Record<string, TrustPack> = {
           "Audio capture requires an explicit tenant choice; transcript and recording retention are configurable.",
       },
       {
-        title: "Consent and Calling Controls",
+        title: "Consent and Disclosures",
         detail:
-          "Business outbound calling is coming soon. Existing permission and Do Not Call safeguards remain in place.",
+          "Your team sets the approved disclosures and required permissions for each workflow. Existing calling safeguards remain in place.",
       },
       {
         title: "Auditable Operations",
@@ -111,9 +111,9 @@ const PACKS: Record<string, TrustPack> = {
           "Call outcomes, transcripts, and workflow events are retained according to the tenant's configured policy.",
       },
       {
-        title: "Consent and Calling Controls",
+        title: "Consent and Disclosures",
         detail:
-          "Business outbound calling is coming soon. Existing permission and Do Not Call safeguards remain in place.",
+          "Your team sets the approved disclosures and required permissions for each workflow. Existing calling safeguards remain in place.",
       },
       {
         title: "Licensed Human Handoff",

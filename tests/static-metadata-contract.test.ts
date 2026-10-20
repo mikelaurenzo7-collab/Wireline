@@ -1,6 +1,7 @@
 // Exact-head public-brand cutover release contract.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { Resvg } from "@resvg/resvg-js";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
@@ -82,12 +83,13 @@ describe("BotBound static marketing metadata", () => {
     expect(pageMeta).not.toContain('DEFAULT_TITLE = "WIRELINE');
   });
 
-  it("keeps the OG source aligned with the incoming calls and personal assistance story", () => {
+  it("keeps the OG source aligned with incoming calls, email, and computer tasks", () => {
     const ogImage = read("public/og-image.svg");
 
     expect(ogImage).toContain("BotBound");
     expect(ogImage).toContain("Give Your Bot a Goal");
-    expect(ogImage).toContain("Incoming calls, personal calling, email, and computer tasks.");
+    expect(ogImage).toContain("Incoming calls, email, and computer tasks.");
+    expect(ogImage).toContain("Answer calls. Handle email. Work online.");
     expect(ogImage).not.toContain("ONE BOT");
     expect(ogImage).not.toContain("Find. Call. Book");
     expect(ogImage).toMatch(/phone|Phone/);
@@ -96,19 +98,14 @@ describe("BotBound static marketing metadata", () => {
   });
 
   it("ships the reviewed wide creative as the 1200 by 630 OG raster", () => {
-    const encodedImage = read("public/og-image.svg").match(
-      /href="data:image\/png;base64,([^"]+)"/,
-    )?.[1];
-    const campaignImage = readFileSync(
-      resolve(
-        process.cwd(),
-        "brand-work/launch-2026-10-goal/exports/botbound-goal-wide-1200x630.png",
-      ),
+    const source = read("public/og-image.svg");
+    const encodedImage = source.match(/href="data:image\/png;base64,([^"]+)"/)?.[1];
+    const canonicalImage = readFileSync(
+      resolve(process.cwd(), "public/brand/botbound-current-offer-og.png"),
     );
     expect(encodedImage).toBeTruthy();
-    const ogImage = Buffer.from(encodedImage!, "base64");
-
-    expect(ogImage.equals(campaignImage)).toBe(true);
+    expect(Buffer.from(encodedImage!, "base64").equals(canonicalImage)).toBe(true);
+    const ogImage = new Resvg(source, { fitTo: { mode: "width", value: 1200 } }).render().asPng();
     expect(ogImage.readUInt32BE(16)).toBe(1200);
     expect(ogImage.readUInt32BE(20)).toBe(630);
   });

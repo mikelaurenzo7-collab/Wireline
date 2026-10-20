@@ -18,9 +18,9 @@ export const BRAND_SYSTEM = {
     "Use Bot as the customer-facing object while keeping agent as the technical domain.",
     "Use Phone Bot, Conversation Bot, and Human Bot as configuration lenses, never separate products or workspaces.",
     "Treat employee roles as starting templates, not product categories or permanent limits.",
-    "Show incoming business calls, email, computer tasks, and personal calling as the launch uses. SMS and business outbound are coming soon.",
+    "Promote incoming calls, email, and computer tasks for personal and business use. Keep deferred capabilities out of launch marketing.",
     "Let customers train the playbook, channels, knowledge, tools, guardrails, approvals, and handoffs.",
-    "Only promise a number for launch plans that include Calls, and an inbox for plans that include Email. Preserve existing SMS access without promoting new SMS setup.",
+    "Only promise a number for launch plans that include Calls, and an inbox for plans that include Email. Preserve existing channel access without promoting unavailable setup.",
     "Treat additional Bots as optional expansion for concurrency or genuinely separate roles.",
     "Show logged proof after calls, emails, computer tasks, and handoffs when proof helps the decision.",
     "Never present Personal or Business as a customer-facing product, workspace, signup, or pricing classification.",
@@ -90,9 +90,9 @@ export const AGENT_DIRECTION_MODES = {
   outbound: {
     label: "Personal Assistant",
     eyebrow: "Bot for everyday coordination",
-    loop: ["Research", "Review", "Call", "Log"],
+    loop: ["Research", "Prepare", "Review", "Log"],
     promise:
-      "Researches the task and helps coordinate personal plans through calls you review. Business outbound is coming soon.",
+      "Researches everyday tasks, organizes useful details, and prepares email for your review.",
   },
   inbound: {
     label: "Receptionist",
@@ -110,13 +110,13 @@ export const AGENT_DIRECTION_MODES = {
 } as const;
 
 export const AGENT_NUMBER_PROMISE =
-  "Plans with calls include a BotBound number at no extra line fee. Answer incoming calls or coordinate personal plans with recipient permission. SMS is coming soon." as const;
+  "Calls plans include a BotBound number at no extra line fee for answering incoming calls." as const;
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
   headline: "A Bot That Helps With Everyday Plans",
   subline:
-    "Research options, prepare email, and review personal calls for appointments and service requests. Business outbound is coming soon.",
+    "Research options, organize plans, and prepare email while your Bot handles incoming questions.",
   lanes: [
     "Appointment requests",
     "Service coordination",
@@ -126,7 +126,7 @@ export const OUTBOUND_WEDGE = {
     "Incoming questions",
   ],
   loop: AGENT_DIRECTION_MODES.outbound.loop,
-  proof: ["Researches", "Prepares", "Calls", "Emails", "Coordinates", "Reports"],
+  proof: ["Researches", "Prepares", "Answers", "Emails", "Coordinates", "Reports"],
   differentiator:
     "Your Bot answers calls, works with email, and uses a computer to help with the next step.",
   beforeStrip:
@@ -140,7 +140,7 @@ export const MARKETING_VOICE = {
   subline: BOT_BRAND.promise,
   channelProof: ["Call", "Email", "Computer"],
   extensionLead:
-    "Send this page to your Workspace to research it, draft an email, or prepare a personal call for review.",
+    "Send this page to your Workspace to research it, draft an email, or plan the next step.",
   differentiator: OUTBOUND_WEDGE.differentiator,
   buyingNoun: BRAND_SYSTEM.buyingNoun,
 } as const;
@@ -219,7 +219,7 @@ export function formatAgentRoleLabel(role?: string | null): string {
 
 /** Canonical trust posture for sales and regulated verticals. Policy driven, not stealth. */
 export const TRUST_DISCLOSURE_FAQ =
-  "BotBound Bots follow your disclosure policy, consent rules, and conversation purpose. When disclosure is required or enabled, BotBound logs it automatically. Personal calling still requires recipient permission." as const;
+  "BotBound Bots follow your disclosure policy, consent rules, and conversation purpose. When disclosure is required or enabled, BotBound logs it automatically. Required permissions and recording rules still apply." as const;
 
 export function rosterSummary(personalCount: number, businessCount: number): string {
   const total = personalCount + businessCount;

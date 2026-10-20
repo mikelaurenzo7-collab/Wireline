@@ -62,15 +62,30 @@
      border, light text, and any nested controls resolve against a dark canvas
      even when the page renders in light mode. Dark mode is byte-identical:
      these are its own generated values. */
-  --wireline-color-canvas-default: #0A0A0E;
+  --wireline-color-canvas-default: #0a0a0e;
   --wireline-color-surface-default: #141319;
-  --wireline-color-text-primary: #F5F4F8;
-  --wireline-color-text-secondary: #B6B1C6;
-  --wireline-color-text-tertiary: #908CA5;
+  --wireline-color-surface-raised: #201e29;
+  --wireline-color-surface-subtle: #100f15;
+  --wireline-color-text-onAction: #0e0b16;
+  --wireline-color-text-primary: #f5f4f8;
+  --wireline-color-text-secondary: #b6b1c6;
+  --wireline-color-text-tertiary: #908ca5;
   --wireline-color-border-default: #262430;
-  --wireline-color-action-primary-default: #A78BFA;
-  border-color: color-mix(in srgb, var(--wireline-color-action-primary-default) 42%, var(--wireline-color-border-default));
-  background: color-mix(in srgb, #0A0A0E 62%, #000);
+  --wireline-color-border-strong: #3a3745;
+  --wireline-color-action-primary-default: #a78bfa;
+  --wireline-color-action-primary-hover: #c4b5fd;
+  --wireline-color-action-primary-pressed: #8b5cf6;
+  --wireline-cta-bg: var(--wireline-color-action-primary-default);
+  --wireline-cta-fg: var(--wireline-color-text-onAction);
+  --wireline-cta-subtle-bg: var(--wireline-color-surface-default);
+  --wireline-cta-subtle-fg: var(--wireline-color-text-primary);
+  --wireline-cta-hover: var(--wireline-color-action-primary-pressed);
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 42%,
+    var(--wireline-color-border-default)
+  );
+  background: color-mix(in srgb, #0a0a0e 62%, #000);
   color: var(--wireline-color-text-primary);
 }
 
@@ -82,7 +97,11 @@
 /* Motion is opt-in. Static information should remain still. */
 .wl-stitch-card-hover,
 .wl-card-action {
-  transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out, background-color 0.2s ease-out, transform 0.2s ease-out;
+  transition:
+    border-color 0.2s ease-out,
+    box-shadow 0.2s ease-out,
+    background-color 0.2s ease-out,
+    transform 0.2s ease-out;
 }
 
 .wl-stitch-card-hover:hover,
@@ -131,7 +150,10 @@
   font-size: var(--wireline-typography-body-size);
   font-weight: 500;
   color: var(--wireline-color-text-primary);
-  transition: background-color 0.2s ease-out, border-color 0.2s ease-out, transform 0.2s ease-out;
+  transition:
+    background-color 0.2s ease-out,
+    border-color 0.2s ease-out,
+    transform 0.2s ease-out;
 }
 
 .wl-stitch-oauth-btn:hover:not(:disabled) {

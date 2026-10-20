@@ -50,7 +50,7 @@ export function mcpServerCard(req?: Parameters<typeof mcpIssuer>[0]) {
     title: MCP_SERVER_TITLE,
     version: MCP_SERVER_VERSION,
     description:
-      "Build and rehearse your Bot from Cursor, ChatGPT, or Claude. Prepare non-marketing calls for review, place them in BotBound, and check their status from the same client. Numbers and launch stay in BotBound.",
+      "Build and privately rehearse your Bot from Cursor, ChatGPT, or Claude. Review its knowledge, save confirmed Training with permission, and continue in BotBound for live channels and computer tasks.",
     websiteUrl: issuer,
     repository: { url: "https://github.com/mikelaurenzo7-collab/Wireline", source: "github" },
     icons: [{ src: MCP_ICON_URL, mimeType: "image/png" }],

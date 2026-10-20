@@ -50,20 +50,20 @@ const ENTRIES: ChangelogEntry[] = [
   {
     date: "Oct 19, 2026",
     tag: "feature",
-    title: "Workspace, a More Natural Phone Voice, and Guided Do Not Call Setup",
-    body: "Studio is now the Workspace: Set Up, Knowledge, and Computer sit beside the chat, with Try It to rehearse by voice, text, or a call to your phone. Phone calls run on a new, more natural voice engine, and voice settings name the voice callers hear. Compliance walks owners through their Do Not Call Registry subscription with area codes, business name, and term filled in.",
+    title: "Workspace and a More Natural Phone Voice",
+    body: "Your Bot's workspace brings its conversation, setup, knowledge, and computer together. Try It supports private voice and text rehearsals. Phone calls use the updated voice engine, and voice settings identify the voice callers hear.",
   },
   {
     date: "Oct 10, 2026",
     tag: "feature",
     title: "Cloud Computer, More Knowledge Formats, and Inbox Replies",
-    body: "Bots can use a cloud browser for guided tasks, with owner take-control when a sign-in or decision needs a person. Knowledge accepts PDF, Word, and Excel uploads, and configured inboxes support replies within an email thread. Public and Studio pages received a visual consistency pass. Paid email activation still requires a setup review.",
+    body: "Bots can use a cloud browser for guided tasks. Owners can take control when a sign in or decision needs a person. Knowledge accepts PDF, Word, and Excel uploads, and configured inboxes support replies within an email thread. Public and Studio pages received a visual consistency pass. Paid email activation still requires a setup review.",
   },
   {
     date: "Aug 17, 2026",
     tag: "infra",
-    title: "Production Phone Calls Use a Dedicated Carrier-Grade Path",
-    body: "Live inbound and outbound calls run through BotBound's managed calling stack. Marketing answering machines hang up without a message, unreachable campaign dials retry until the attempt budget, and a spoken stop-calling request ends the call immediately. Rollback paths remain isolated from customer traffic.",
+    title: "Production Phone Calls Use a Dedicated Calling Path",
+    body: "Incoming calls run through BotBound's managed calling stack, with dedicated routing and health checks. Private rehearsals remain separate from customer traffic.",
   },
   {
     date: "Aug 11, 2026",
@@ -75,19 +75,19 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jul 25, 2026",
     tag: "infra",
     title: "One Managed Reasoning Policy Across Demos and Studio",
-    body: "Structured reasoning and every live-voice demo surface (Studio, private simulation, guest previews) now run on a single managed policy with governed continuity layers behind it, so behavior is consistent everywhere you try a Bot. Production phone calling keeps its own dedicated, carrier-grade runtime. Demo surfaces never take over customer calls.",
+    body: "Structured reasoning and private rehearsals use a managed policy with continuity paths. Production phone calls keep their dedicated calling runtime. Private rehearsals do not take over customer calls.",
   },
   {
     date: "Jul 13, 2026",
     tag: "feature",
     title: "Fast Start Turns a Blank Workspace into a First Working Bot",
-    body: "New workspaces now open directly into a focused two-step setup with a recommended voice already selected. After creation, BotBound guides the owner through review, number connection, and one real phone call instead of dropping them into an empty workspace.",
+    body: "Create a Bot, add knowledge, and rehearse privately in the workspace. Activate the channels in your plan when you are ready to use a number or mailbox.",
   },
   {
     date: "Jul 13, 2026",
     tag: "security",
-    title: "Launch-Integrity Pass Across Exports, Messaging, and Voice",
-    body: "Account exports now include tenant-scoped historical training records without exposing them to browser roles. Inbound text retries are idempotent, internal database helpers are no longer public RPCs, and voice previews use the exact supported voice with clear recovery when a sample is unavailable.",
+    title: "Safer Exports and Voice Previews",
+    body: "Account exports include historical training records scoped to the account without exposing them to browser roles. Internal database helpers are no longer public RPCs, and voice previews use the supported voice with clear recovery when a sample is unavailable.",
   },
   {
     date: "Jun 4, 2026",
@@ -116,14 +116,14 @@ const ENTRIES: ChangelogEntry[] = [
   {
     date: "Jan 28, 2026",
     tag: "feature",
-    title: "Warm-Transfer Escalation",
-    body: "Every Bot can now warm-transfer a live caller to a human mid-call when it escalates. Configure immediate-escalation triggers in Bot Studio. The Bot speaks a brief handoff line, then transfers the call to the configured phone. Off by default. Explicit opt-in.",
+    title: "Warm Transfer Escalation",
+    body: "When enabled and configured, a Bot can transfer a live caller to a human. Set the handoff destination and escalation rules in the Bot's configuration. The Bot gives a brief handoff before requesting the transfer. This feature is off by default.",
   },
   {
     date: "Jan 28, 2026",
     tag: "feature",
-    title: "Per-Agent Escalation Routing",
-    body: "Sales Bots can now route their escalations to the sales lead; support Bots to the support lead. Bot-level escalation phone and email settings override the workspace default when set. Email alerts are opt-in and BotBound branded.",
+    title: "Escalation Routing for Each Bot",
+    body: "Each Bot can route escalations to its designated person. Its phone and email settings override the workspace default when set. Email alerts require an explicit choice and identify BotBound.",
   },
   {
     date: "Jan 27, 2026",
@@ -134,8 +134,8 @@ const ENTRIES: ChangelogEntry[] = [
   {
     date: "Jan 27, 2026",
     tag: "polish",
-    title: "Marketing Surface + Mobile-First Public Pages",
-    body: "Unified navigation, typography, and conversion rails across landing, pricing, demos, and trust pages. The live Bot directory supports tap-to-dial rows on mobile. Pricing tools remain on /pricing only.",
+    title: "Public Pages Across Screen Sizes",
+    body: "Landing, pricing, and trust pages share navigation and typography across screen sizes. Public product pages lead to account creation and private rehearsal. Pricing tools remain on /pricing.",
   },
   {
     date: "Jan 27, 2026",

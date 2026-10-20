@@ -72,7 +72,7 @@ describe("sales trust copy contract", () => {
     expect(JSON.stringify(sales)).not.toMatch(/call prospects|outbound|lead list/i);
     expect(sales.primaryCta.href).toContain("wedge=support");
     expect(security).toContain(
-      "Eligible personal calls require the applicable recipient permission and Do Not Call checks before they can start. Business outbound calling is coming soon.",
+      "Recipient permission and account Do Not Call checks remain enforced before eligible outgoing calls are placed.",
     );
     expect(security).not.toContain("Live outbound dialing is gated");
     expect(product).toContain('name: "Sales Rep"');

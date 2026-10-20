@@ -145,7 +145,7 @@ describe("Claude Connector Directory contract", () => {
 
   it("publishes public docs and privacy pages required by the portal", () => {
     expect(publicDocs).toContain("https://botbound.app/mcp");
-    expect(publicDocs).toContain("build their first Bot in Claude");
+    expect(publicDocs).toContain("Build, rehearse, and review your Bot from Claude.");
     expect(publicDocs).not.toMatch(/\bvoice agents?\b/i);
     expect(publicDocs).not.toContain("https://trywireline.com/mcp");
     expect(publicDocs).toContain('href="/contact">contact BotBound</a>');

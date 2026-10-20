@@ -33,11 +33,6 @@ const MCP_BOUNDARIES = [
     description: "Private agent runtime rehearsal for a Bot, not a live customer call.",
   },
   {
-    path: "prepare_call / get_call_status",
-    description:
-      "Prepare a personal service or coordination call from ChatGPT, Claude, or Cursor. Review and place it in BotBound, then check its status from the same connected app.",
-  },
-  {
     path: "/api/openapi.json",
     description:
       "Machine readable map of the session authenticated product API used by the web app, not a public API key product.",
@@ -197,11 +192,9 @@ export default function Developers() {
                   : ""}
             </p>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Build and coach your Bot from ChatGPT, Claude, or Cursor. Connected apps can prepare
-              personal service or coordination calls for your review; placing a call happens in
-              BotBound. Business outbound calling and SMS are coming soon. Existing connections need
-              the new call permissions before those tools become available. Training writes require
-              the Apps toggle and your confirmation.
+              Build, privately rehearse, and review your Bot from ChatGPT, Claude, or Cursor.
+              Training writes require the Apps toggle and your confirmation. Continue in BotBound
+              for live phone numbers, email, and cloud computer tasks on eligible paid plans.
             </p>
           </div>
 

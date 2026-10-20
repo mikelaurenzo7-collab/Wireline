@@ -7,7 +7,7 @@ export const BOT_BRAND = {
   name: "BotBound",
   slogan: "For You. For Your Business.",
   supportingLine: "CALL · EMAIL · COMPUTER",
-  promise: "Your Bot for calls, email, and computer tasks.",
+  promise: "Your Bot for incoming calls, email, and computer tasks.",
 } as const;
 
 export const BOT_PRODUCT_TYPES = [
@@ -15,7 +15,7 @@ export const BOT_PRODUCT_TYPES = [
     key: "voice" as const,
     name: "Phone Bot",
     label: "PHONE BOT",
-    description: "Answer incoming calls, capture requests, and coordinate personal plans.",
+    description: "Answer incoming calls, share useful information, and capture requests.",
   },
   {
     key: "conversation" as const,
@@ -41,8 +41,7 @@ export const BOT_CHANNELS = [
   {
     key: "voice" as const,
     label: "Call",
-    description:
-      "Answer incoming calls, capture requests, route callers, and coordinate personal plans.",
+    description: "Answer incoming calls, capture requests, and route callers to the right person.",
   },
   {
     key: "text" as const,
@@ -154,22 +153,18 @@ export const BOT_ROLE_TEMPLATES = [
     name: "Personal Assistant",
     category: "Everyday" as const,
     direction: "hybrid" as const,
-    summary: "Handle calls, coordinate plans, and research the things on your list.",
-    outcomes: ["Manage Schedule", "Research & Follow Up", "Coordinate Tasks"],
-    moves: ["Appointments + planning", "Research + concise briefs", "Calls + email coordination"],
+    summary: "Answer calls, organize email, and research the things on your list.",
+    outcomes: ["Organize Plans", "Research Options", "Coordinate Tasks"],
+    moves: ["Incoming calls + messages", "Research + concise briefs", "Email + next steps"],
   },
   {
     key: "family-concierge",
     name: "Family Concierge",
     category: "Everyday" as const,
     direction: "hybrid" as const,
-    summary: "Handle the household logistics that usually live in someone’s memory.",
-    outcomes: ["Coordinate Plans", "Book Services", "Track Household Tasks"],
-    moves: [
-      "Appointments + reservations",
-      "Household requests + owner review",
-      "Service calls + next steps",
-    ],
+    summary: "Keep household requests, plans, and useful information together.",
+    outcomes: ["Coordinate Plans", "Research Services", "Track Household Tasks"],
+    moves: ["Plans + shared details", "Household requests + owner review", "Email + next steps"],
   },
   {
     key: "custom",

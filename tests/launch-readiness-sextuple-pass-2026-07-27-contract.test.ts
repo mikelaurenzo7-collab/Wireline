@@ -31,7 +31,7 @@ describe("launch readiness cross-surface contract", () => {
     );
     expect(kb).toContain("document type that does not match its extension");
     expect(security).toMatch(
-      /Eligible personal calls require the applicable recipient permission and Do Not Call checks before they can start\. Business outbound calling is coming soon/i,
+      /Recipient permission and account Do Not Call checks remain enforced before eligible outgoing calls are placed\./i,
     );
     expect(security).not.toContain("Live outbound dialing is gated");
     expect(security).not.toContain("FEDERAL_DNC_API_KEY");

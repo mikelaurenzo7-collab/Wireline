@@ -197,7 +197,8 @@ body {
   border-color: var(--wl-prestige-hairline);
 }
 
-.marketing-surface :where(article.wl-paper, .wl-stitch-card) {
+.marketing-surface
+  :where(article.wl-paper:not(.wl-stitch-card-brand), .wl-stitch-card:not(.wl-stitch-card-brand)) {
   border-color: var(--wl-prestige-hairline);
   background: var(--wl-prestige-surface);
   box-shadow: var(--wl-prestige-shadow);

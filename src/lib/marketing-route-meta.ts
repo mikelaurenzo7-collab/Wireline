@@ -136,6 +136,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
     title: "SMS Consent | BotBound",
     description:
       "BotBound customer care SMS: permission script, message examples, and instructions to stop messages.",
+    noIndex: true,
   },
   "/solutions/sales": {
     title: "Give Every Sales Inquiry a Clear Next Step | BotBound",

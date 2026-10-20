@@ -81,8 +81,8 @@ function writeOgSource(ogImage) {
   const embeddedImage = ogImage.toString("base64");
   const source = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
   <title id="title">BotBound | Give Your Bot a Goal</title>
-  <desc id="description">The approved BotBound robot holds a violet phone beside the words Give Your Bot a Goal. Answer calls. Make calls. Work online.</desc>
-  <metadata>BotBound | Incoming calls, personal calling, email, and computer tasks.</metadata>
+  <desc id="description">The BotBound robot holds a violet phone beside the words Give Your Bot a Goal. For You. For Your Business. Answer calls. Handle email. Work online.</desc>
+  <metadata>BotBound | Incoming calls, email, and computer tasks. Canonical source /brand/botbound-current-offer-og.png.</metadata>
   <rect width="1200" height="630" fill="#0A0A0E"/>
   <image href="data:image/png;base64,${embeddedImage}" width="1200" height="630"/>
 </svg>\n`;
@@ -90,10 +90,16 @@ function writeOgSource(ogImage) {
   return source;
 }
 
+const ogImage = readFileSync(resolve(root, "public/brand/botbound-current-offer-og.png"));
+const ogImageSource = writeOgSource(ogImage);
+if (process.argv.includes("--og-only")) {
+  const png = new Resvg(ogImageSource, { fitTo: { mode: "width", value: 1200 } }).render().asPng();
+  writeFileSync(resolve(publicDir, "og-image.png"), png);
+  console.log(`✔ rendered public/og-image.png (${png.length} bytes)`);
+  process.exit(0);
+}
+
 const appIcon = readFileSync(resolve(root, "public/brand/botbound-app-icon.png"));
-const ogImage = readFileSync(
-  resolve(root, "brand-work/launch-2026-10-goal/exports/botbound-goal-wide-1200x630.png"),
-);
 const appIconSource = rasterSvg(
   appIcon,
   "BotBound",
@@ -102,11 +108,10 @@ const appIconSource = rasterSvg(
 
 writeCompatibilitySvgSources();
 const stripeLogoSource = writeStripeLogoSource(appIcon);
-writeOgSource(ogImage);
 
 const targets = [
   { source: appIconSource, out: "public/favicon.png", width: 64 },
-  { copy: ogImage, out: "public/og-image.png", width: 1200 },
+  { source: ogImageSource, out: "public/og-image.png", width: 1200 },
   { source: appIconSource, out: "public/apple-touch-icon.png", width: 180 },
   { source: appIconSource, out: "public/botbound-icon-192.png", width: 192 },
   { source: appIconSource, out: "public/botbound-icon-512.png", width: 512 },
