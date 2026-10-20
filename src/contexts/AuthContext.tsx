@@ -275,34 +275,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(newSession.user);
   }, []);
 
-  const signOut = useCallback(async (_options: SignOutOptions = {}) => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), SESSION_PROBE_MS);
+  const signOut = useCallback(async (options: SignOutOptions = {}) => {
+    const requireServerConfirmation = options.requireServerConfirmation === true;
+    if (!requireServerConfirmation) {
+      authRevisionRef.current += 1;
+      setCreateBriefRecoveryOwner(null);
+    }
+    const controller = requireServerConfirmation ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), SESSION_PROBE_MS) : null;
     try {
       const response = await fetch("/api/auth/signout", {
         method: "POST",
         credentials: "include",
-        signal: controller.signal,
+        ...(controller ? { signal: controller.signal } : {}),
       });
-      const payload = (await response.json().catch(() => null)) as {
-        success?: unknown;
-        error?: unknown;
-      } | null;
-      if (!response.ok || payload?.success !== true) {
-        throw new Error(
-          typeof payload?.error === "string"
-            ? payload.error
-            : "Sign-out could not be confirmed. Try again.",
-        );
+      if (requireServerConfirmation) {
+        const payload = (await response.json().catch(() => null)) as { success?: unknown } | null;
+        if (!response.ok || payload?.success !== true) {
+          throw new Error("Sign-out could not be confirmed. Try again.");
+        }
       }
+    } catch {
+      if (requireServerConfirmation) {
+        throw new Error("Sign-out could not be confirmed. Try again.");
+      }
+      // Ordinary sign-out still leaves the screen. Account switching waits
+      // until the server confirms the cookie is gone.
     } finally {
-      clearTimeout(timeoutId);
+      if (timeoutId !== null) clearTimeout(timeoutId);
     }
-    // Keep the local session when revocation fails. Clearing it made the app
-    // look signed out while the cookie was still valid, and the sign-in page
-    // then hydrated that cookie and returned the customer to the workspace.
-    authRevisionRef.current += 1;
-    setCreateBriefRecoveryOwner(null);
+    if (requireServerConfirmation) {
+      authRevisionRef.current += 1;
+      setCreateBriefRecoveryOwner(null);
+    }
     removeStoredToken(LEGACY_STORAGE_KEY);
     clearStudioLastAgentId();
     setSessionUnavailable(false);

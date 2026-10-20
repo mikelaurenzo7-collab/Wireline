@@ -208,7 +208,11 @@ async function resolveSubscriptionAllowanceContext(
       !metadata.plan_id ||
       (metadata.billing_interval !== "month" && metadata.billing_interval !== "year")
     ) {
-      throw new Error(`Stripe invoice ${invoiceId} has an invalid posted Runtime Allowance grant.`);
+      throw new Error(
+        grants.length === 1
+          ? `Stripe invoice ${invoiceId} has an invalid posted Runtime Allowance grant.`
+          : `Stripe invoice ${invoiceId} has no unambiguous posted Runtime Allowance grant.`,
+      );
     }
     if (planId && (planId !== metadata.plan_id || interval !== metadata.billing_interval)) {
       throw new Error(

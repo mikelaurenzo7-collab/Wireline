@@ -79,7 +79,7 @@ export function usePaidPlanAvailability({
         : available
           ? "Create a Bot for free. Rehearse privately, then activate when ready."
           : emailSetupReview
-            ? "Email checkout is not open yet. Create a Bot for free and rehearse privately, then ask us about activation."
+            ? "Email activation requires a setup review. Create a Bot for free, rehearse privately, then ask us about activation."
             : "Paid activation is unavailable. Create a Bot for free and rehearse privately.";
 
   return { available, canActivate, emailSetupReview, needsEmailSetupReview, notice };

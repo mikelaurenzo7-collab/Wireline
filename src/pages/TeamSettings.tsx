@@ -76,7 +76,6 @@ export default function TeamSettings() {
   });
 
   const displayMembers = useMemo(() => {
-    if (teamAccess !== "ok") return [];
     if (members.length > 0) return members;
     if (!user?.email) return [];
     return [
@@ -86,7 +85,7 @@ export default function TeamSettings() {
         role: null,
       },
     ];
-  }, [members, teamAccess, user?.email, user?.id]);
+  }, [members, user?.email, user?.id]);
 
   async function loadTeam() {
     setLoading(true);

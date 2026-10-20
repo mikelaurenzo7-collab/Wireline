@@ -2,7 +2,7 @@
  * Unified workspace usage for billing UI + Director composer indicator.
  */
 import { eq } from "drizzle-orm";
-import { drizzle, log } from "./server-context";
+import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { getBudgetSnapshot, clearBudgetCache } from "./spend-guards";
 import { planById, planIncludesChannel } from "./plan-catalog";
@@ -58,11 +58,8 @@ function pct(used: number, limit: number): number {
 export async function getWorkspaceUsageSnapshot(userId: string): Promise<WorkspaceUsageSnapshot> {
   try {
     await ensureCurrentRuntimeAllowance(userId);
-  } catch (error) {
-    log.warn("runtime allowance slice could not be posted for usage", {
-      userId,
-      error: error instanceof Error ? error.message : String(error),
-    });
+  } catch {
+    // Usage still renders from the ledger that already exists.
   }
   // These reads are independent — fetch them together to save round-trips.
   const [voice, snap, { profile }, tokenUsed, creditBalanceUsd] = await Promise.all([

@@ -306,8 +306,19 @@ fun AskWirelineScreen(
                             Button(
                                 onClick = {
                                     selectedAgent?.let { bot ->
-                                        answer =
-                                            "Calling from the Android app is not available yet. Open BotBound in the browser to have ${bot.name} place this call."
+                                        val destination = number
+                                        model.placeCall(
+                                            bot.id,
+                                            destination,
+                                            context,
+                                            purpose,
+                                            requiresConsent && consent,
+                                        )
+                                        answer = "Call requested with ${bot.name} for $destination."
+                                        number = ""
+                                        context = ""
+                                        purpose = "service_or_requested"
+                                        consent = false
                                         showCall = false
                                     }
                                 },
