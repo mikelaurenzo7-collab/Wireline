@@ -136,6 +136,15 @@ function readComputerStatus(value: unknown): ComputerStatus | null {
 
 const ACTIVE: TaskStatus[] = ["running", "needs_input"];
 
+const EVENT_KIND_LABEL: Record<TaskEvent["kind"], string> = {
+  action: "Step",
+  note: "Note",
+  question: "Needs you",
+  reply: "Your reply",
+  result: "Result",
+  error: "Could not finish",
+};
+
 const STATUS_COPY: Record<
   TaskStatus,
   { label: string; variant: "info" | "warning" | "success" | "destructive" | "default" }
@@ -1132,12 +1141,19 @@ function TaskDetail({
             {events.length ? (
               <ol>
                 {events.map((event, index) => (
-                  <li key={`${event.at}-${index}`} data-kind={event.kind}>
+                  <li
+                    key={`${event.at}-${index}`}
+                    className="wl-computer-action"
+                    data-kind={event.kind}
+                  >
                     <time dateTime={event.at}>{clockTime(event.at)}</time>
-                    <span>
-                      {event.text}
-                      {event.url ? <em> · {hostOf(event.url)}</em> : null}
-                    </span>
+                    <div className="wl-computer-action__body">
+                      <span className="wl-computer-action__kind">{EVENT_KIND_LABEL[event.kind]}</span>
+                      <span>
+                        {event.text}
+                        {event.url ? <em> · {hostOf(event.url)}</em> : null}
+                      </span>
+                    </div>
                   </li>
                 ))}
               </ol>

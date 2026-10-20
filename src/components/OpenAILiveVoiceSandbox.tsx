@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AudioLines, Loader2, Mic, PhoneOff, RotateCcw } from "lucide-react";
+import { AudioLines, Loader2, Mic, MicOff, PhoneOff, RotateCcw } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import type { BotMarkKey } from "../lib/bot-mark";
@@ -114,6 +114,7 @@ export default function OpenAILiveVoiceSandbox({
   onTestCompleted?: () => void;
 }) {
   const [state, setState] = useState<VoiceState>("idle");
+  const [muted, setMuted] = useState(false);
   const [error, setError] = useState("");
   const [lines, setLines] = useState<Line[]>([]);
   const peer = useRef<RTCPeerConnection | null>(null);
@@ -206,6 +207,7 @@ export default function OpenAILiveVoiceSandbox({
   const stop = useCallback(() => {
     generation.current += 1;
     release();
+    setMuted(false);
     setState("idle");
   }, [release]);
 
@@ -213,6 +215,7 @@ export default function OpenAILiveVoiceSandbox({
     (message: string) => {
       generation.current += 1;
       release();
+      setMuted(false);
       setError(message);
       setState("error");
     },
@@ -495,6 +498,34 @@ export default function OpenAILiveVoiceSandbox({
           )}
           {active ? "End rehearsal" : "Start rehearsal"}
         </button>
+      </div>
+
+      <div className="wl-voice-bar" data-state={state} role="status" aria-live="polite">
+        <span className="wl-voice-bar__meter" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+        </span>
+        <span className="wl-voice-bar__label">{activity.title}</span>
+        {active ? (
+          <button
+            type="button"
+            className="studio-secondary-button wl-voice-bar__mute"
+            aria-pressed={muted}
+            onClick={() => {
+              const next = !muted;
+              microphone.current?.getAudioTracks().forEach((track) => {
+                track.enabled = !next;
+              });
+              setMuted(next);
+            }}
+          >
+            {muted ? <MicOff size={14} aria-hidden="true" /> : <Mic size={14} aria-hidden="true" />}
+            {muted ? "Unmute" : "Mute"}
+          </button>
+        ) : null}
       </div>
 
       {showActivity ? (
