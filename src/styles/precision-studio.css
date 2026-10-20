@@ -173,7 +173,8 @@
 .wl-voice-bar[data-state="listening"] .wl-voice-bar__meter span,
 .wl-voice-bar[data-state="speaking"] .wl-voice-bar__meter span,
 .wl-voice-bar[data-state="thinking"] .wl-voice-bar__meter span {
-  animation: wl-voice-bar-level 900ms ease-in-out infinite;
+  animation: wl-voice-bar-level var(--wireline-motion-duration-standard)
+    var(--wireline-motion-easing-standard) infinite;
 }
 
 .wl-voice-bar__meter span:nth-child(2) {
