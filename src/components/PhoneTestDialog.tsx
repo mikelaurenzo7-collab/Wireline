@@ -21,6 +21,7 @@ import {
   requestPhoneTest,
 } from "../lib/phone-test-client";
 import { phoneTestIsTerminal, type PhoneTestReceipt } from "../lib/phone-test-contract";
+import { connectedCallPresence } from "../lib/voice-presence";
 
 type Props = {
   open: boolean;
@@ -292,6 +293,9 @@ function OwnedPhoneTestDialog({
               </p>
               {receipt?.phone_last4 ? (
                 <p className="text-sm text-muted-foreground">Ending in {receipt.phone_last4}</p>
+              ) : null}
+              {receipt?.status === "connected" ? (
+                <p className="text-sm text-muted-foreground">{connectedCallPresence()}</p>
               ) : null}
             </div>
             {receipt?.verification_code ? (

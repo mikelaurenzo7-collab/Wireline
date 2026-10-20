@@ -975,6 +975,17 @@
   );
 }
 
+.wl-computer-screen__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--wireline-space-075);
+  padding: var(--wireline-space-075);
+  border-top: 1px solid var(--wireline-color-border-default);
+  background: var(--wireline-color-surface-default);
+}
+
 .wl-computer-recovery p {
   margin: 0;
   color: var(--wireline-color-text-primary);

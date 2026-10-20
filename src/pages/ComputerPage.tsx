@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
   type WheelEvent as ReactWheelEvent,
 } from "react";
 import { Link, Navigate, useSearchParams } from "react-router";
@@ -270,6 +271,7 @@ function LiveScreen({
   ownerUrl,
   onOwnerUrlChange,
   ownerBusy = false,
+  controls = null,
 }: {
   task: ComputerTask;
   ownerControl?: boolean;
@@ -277,13 +279,15 @@ function LiveScreen({
   ownerUrl?: string;
   onOwnerUrlChange?: (url: string) => void;
   ownerBusy?: boolean;
+  /** Pause, takeover, and stop stay on the viewport. Activity stays outside it. */
+  controls?: ReactNode;
 }) {
   const [src, setSrc] = useState<string | null>(null);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [zoomed, setZoomed] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const screenRef = useRef<HTMLElement | null>(null);
-  const active = ACTIVE.includes(task.status);
+  const active = ACTIVE.includes(task.status) || task.liveView;
   const latest = useRef<string | null>(null);
   const misses = useRef(0);
   const pointerStart = useRef<{ id: number; x: number; y: number; pointerType: string } | null>(
@@ -701,6 +705,7 @@ function LiveScreen({
           </div>
         ) : null}
       </div>
+      {controls ? <div className="wl-computer-screen__controls">{controls}</div> : null}
     </figure>
   );
 }
@@ -756,6 +761,8 @@ function TaskDetail({
   const error = failure?.status === task.status ? failure.message : null;
   const status = STATUS_COPY[task.status];
   const active = ACTIVE.includes(task.status);
+  const viewportOwnsControls = active && !task.ownerControl;
+  const browserStillOpen = !active && task.liveView;
   const events = useMemo(() => [...task.events].reverse(), [task.events]);
 
   const act = async (kind: "stop" | "reply") => {
@@ -868,7 +875,7 @@ function TaskDetail({
             <PanelRightOpen aria-hidden="true" />
             Activity
           </Button>
-          {task.status === "running" && !task.stopping ? (
+          {!viewportOwnsControls && task.status === "running" && !task.stopping ? (
             <Button
               variant="outline"
               size="sm"
@@ -885,7 +892,7 @@ function TaskDetail({
               {busy === "take" || task.controlRequested ? "Pausing…" : "Take control"}
             </Button>
           ) : null}
-          {active ? (
+          {!viewportOwnsControls && active ? (
             // Stop lands at the Bot's next checkpoint, which can follow a long
             // thinking step: say so instead of looking like nothing happened.
             <Button
@@ -1104,8 +1111,48 @@ function TaskDetail({
             </details>
           </div>
         </div>
-      ) : active ? (
-        <LiveScreen task={task} />
+      ) : active || browserStillOpen ? (
+        <LiveScreen
+          task={task}
+          controls={
+            viewportOwnsControls ? (
+              <>
+                {task.status === "running" && !task.stopping ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 whitespace-nowrap"
+                    onClick={() => void ownerAction("take")}
+                    disabled={!task.liveView || busy !== null || task.controlRequested}
+                    aria-busy={busy === "take" || task.controlRequested}
+                  >
+                    {busy === "take" || task.controlRequested ? (
+                      <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                    ) : (
+                      <MousePointer2 aria-hidden="true" />
+                    )}
+                    {busy === "take" || task.controlRequested ? "Pausing…" : "Take control"}
+                  </Button>
+                ) : null}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => void act("stop")}
+                  aria-busy={busy === "stop" || task.stopping}
+                  disabled={busy === "stop" || task.stopping}
+                >
+                  {task.stopping ? (
+                    <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                  ) : (
+                    <Square aria-hidden="true" />
+                  )}
+                  {task.stopping ? "Stopping…" : "Stop"}
+                </Button>
+              </>
+            ) : null
+          }
+        />
       ) : (
         <p className="wl-computer-screen-cleared">
           <MonitorSmartphone className="size-4 shrink-0" aria-hidden="true" />
@@ -1117,15 +1164,28 @@ function TaskDetail({
       (task.status === "failed" || task.status === "blocked" || task.status === "interrupted") ? (
         <div className="wl-computer-recovery" role="status">
           <p>
-            {task.status === "blocked"
-              ? "Finish the remaining step yourself, or start a new task with a clearer goal."
-              : "This task stopped before it finished. Review the steps, then start a new task."}
+            {browserStillOpen
+              ? "The browser is still open. Take control to finish this step, or start a new task."
+              : "This task stopped before it finished. The browser was cleared. Start a new task."}
           </p>
-          {onStartAnother ? (
-            <Button type="button" size="sm" onClick={onStartAnother}>
-              New task
-            </Button>
-          ) : null}
+          <div className="flex flex-wrap gap-2">
+            {browserStillOpen ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => void ownerAction("take")}
+                disabled={busy !== null || task.controlRequested}
+                aria-busy={busy === "take" || task.controlRequested}
+              >
+                {busy === "take" || task.controlRequested ? "Pausing…" : "Take control"}
+              </Button>
+            ) : null}
+            {onStartAnother ? (
+              <Button type="button" size="sm" variant="outline" onClick={onStartAnother}>
+                New task
+              </Button>
+            ) : null}
+          </div>
         </div>
       ) : null}
 

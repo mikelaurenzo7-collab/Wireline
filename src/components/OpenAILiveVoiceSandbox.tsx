@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AudioLines, Loader2, Mic, MicOff, PhoneOff, RotateCcw } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import { VOICE_PRESENCE } from "../lib/voice-presence";
 import type { BotMarkKey } from "../lib/bot-mark";
 import { ConversationActivity, ConversationMessage, StatusNotice } from "./molecules";
 
@@ -71,19 +72,19 @@ function voiceActivity(state: VoiceState) {
   if (state === "thinking")
     return {
       state: "active" as const,
-      title: "Checking Approved Knowledge",
+      title: VOICE_PRESENCE.thinking,
       detail: "BotBound is using only the agent's approved Training context.",
     };
   if (state === "speaking")
     return {
       state: "active" as const,
-      title: "Bot Speaking",
+      title: VOICE_PRESENCE.speaking,
       detail: "You can interrupt naturally at any time.",
     };
   if (state === "listening")
     return {
       state: "complete" as const,
-      title: "Listening",
+      title: VOICE_PRESENCE.listening,
       detail: "Microphone audio is processed only for this private rehearsal.",
     };
   return {

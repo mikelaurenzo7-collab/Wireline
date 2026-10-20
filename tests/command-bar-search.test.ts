@@ -18,6 +18,9 @@ describe("workspace command discovery", () => {
 
   it("keeps Calls discoverable without claiming appointment ownership", () => {
     expect(searchWorkspaceCommands("calls").map((command) => command.href)).toEqual(["/phone"]);
+    expect(searchWorkspaceCommands("sms")).toEqual([]);
+    expect(searchWorkspaceCommands("campaign")).toEqual([]);
+    expect(searchWorkspaceCommands("lead hunt")).toEqual([]);
     expect(searchWorkspaceCommands("appointments").map((command) => command.href)).not.toContain(
       "/phone",
     );

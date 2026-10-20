@@ -9,12 +9,16 @@ describe("live voice trust surface", () => {
   it("renders lifecycle state through the canonical activity molecule", () => {
     const voice = source("src/components/LiveVoiceSandbox.tsx");
     const openai = source("src/components/OpenAILiveVoiceSandbox.tsx");
+    const presence = source("src/lib/voice-presence.ts");
 
     expect(voice).toContain('export { default } from "./OpenAILiveVoiceSandbox"');
     expect(openai).toContain("function voiceActivity(state: VoiceState)");
     expect(openai).toContain("Connecting Live Voice");
-    expect(openai).toContain("Checking Approved Knowledge");
-    expect(openai).toContain("Bot Speaking");
+    expect(presence).toContain('thinking: "Checking Approved Knowledge"');
+    expect(presence).toContain('speaking: "Bot Speaking"');
+    expect(presence).toContain('listening: "Listening"');
+    expect(openai).toContain("VOICE_PRESENCE.thinking");
+    expect(openai).toContain("VOICE_PRESENCE.speaking");
     expect(openai).toContain("Live Voice Needs Attention");
     expect(openai).toContain("<ConversationActivity");
   });
