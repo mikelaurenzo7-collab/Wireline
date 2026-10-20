@@ -220,7 +220,7 @@ function AppRouter() {
         <Route path="/get-started" element={<AuthPortalRoute />} />
         <Route path="/auth" element={<AuthPortalRoute />} />
         <Route path="/login" element={<PreservingRedirect to="/signin" />} />
-        <Route path="/reset" element={<PreservingRedirect to="/signin" />} />
+        <Route path="/reset" element={<PreservingRedirect to="/reset-password" />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/voice-permission" element={<VoicePermissionPage />} />

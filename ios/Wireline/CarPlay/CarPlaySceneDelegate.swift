@@ -128,13 +128,18 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     private func callBack(number: String, agentId: String?) async {
         guard let agentId else { return }
-        _ = try? await WirelineAPI.shared.placeCall(
-            agentId: agentId,
-            to: number,
-            context: nil,
-            callPurpose: "callback",
-            hasExpressWrittenConsent: false
-        )
+        do {
+            _ = try await WirelineAPI.shared.placeCall(
+                agentId: agentId,
+                to: number,
+                context: nil,
+                callPurpose: "callback",
+                hasExpressWrittenConsent: false
+            )
+        } catch {
+            // Native outbound is unavailable until the signed-permission client ships.
+            // Swallowing the error used to look like a successful callback.
+        }
     }
 
     private func symbol(_ name: String) -> UIImage {

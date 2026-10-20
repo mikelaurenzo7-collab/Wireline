@@ -130,7 +130,9 @@ export default function CalendarPage() {
                 <StatusNotice tone="info" title={bookingNotice} className="mx-4 mt-4 sm:mx-6" />
               ) : null}
               <AppointmentsPanel
-                calendarConfigured={configured}
+                calendarConfigured={
+                  configured === null ? null : Boolean(configured && savedSettings?.enabled)
+                }
                 onConfigure={() => selectTab("availability")}
                 reloadKey={agendaReload}
               />

@@ -289,7 +289,14 @@ export function dispatchAuthSessionExpired(detail: AuthSessionExpiredDetail): vo
 }
 
 async function maybeDispatchAuthSessionExpired(response: Response, source: string): Promise<void> {
-  if (!isAuthHttpStatus(response.status)) return;
+  const deletion =
+    response.status === 410 &&
+    (await response
+      .clone()
+      .json()
+      .then((body: { code?: string } | null) => body?.code === "ACCOUNT_DELETION_IN_PROGRESS")
+      .catch(() => false));
+  if (!isAuthHttpStatus(response.status) && !deletion) return;
   if (typeof window === "undefined") return;
   try {
     const cloned = response.clone();

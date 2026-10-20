@@ -966,11 +966,7 @@ async function syncSubscriptionFromStripeUnderLease(
           ? "subscription_created"
           : "subscription_updated";
 
-    if (
-      (stripeStatus === "active" || stripeStatus === "trialing") &&
-      plan?.id &&
-      plan.id === providerPlanId
-    ) {
+    if (stripeStatus === "active" && plan?.id && plan.id === providerPlanId) {
       const interval = subscriptionBillingInterval(sub);
       const periodReference = subscriptionPeriodReference(sub);
       // Must succeed — swallowing here marks the webhook processed with no

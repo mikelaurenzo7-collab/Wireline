@@ -40,6 +40,9 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  /** The session probe failed. The cookie may still be valid, so this is not anonymous. */
+  sessionUnavailable: boolean;
+  retrySessionProbe: () => void;
   signOut: (options?: SignOutOptions) => Promise<void>;
   signIn: (session: Session) => void;
 }
@@ -48,6 +51,8 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: true,
+  sessionUnavailable: false,
+  retrySessionProbe: () => {},
   signOut: async () => {},
   signIn: () => {},
 });
@@ -59,7 +64,15 @@ const SESSION_PROBE_MS = 8_000;
 const SESSION_REFRESH_INTERVAL_MS = 25 * 60_000;
 const SESSION_REFRESH_THROTTLE_MS = 5 * 60_000;
 
-async function fetchSessionUser(): Promise<User | null | undefined> {
+const ACCOUNT_DELETION_NOTICE_KEY = "wireline_auth_notice";
+
+type SessionProbe =
+  | { status: "user"; user: User }
+  | { status: "anonymous" }
+  | { status: "unavailable" }
+  | { status: "deleted" };
+
+async function fetchSessionUser(): Promise<SessionProbe> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), SESSION_PROBE_MS);
   try {
@@ -67,13 +80,22 @@ async function fetchSessionUser(): Promise<User | null | undefined> {
       credentials: "include",
       signal: controller.signal,
     });
-    if (res.status === 401 || res.status === 403) return null;
-    if (!res.ok) return undefined;
-    const data = (await res.json()) as { user?: User | null } | null;
-    if (data?.user === null) return null;
-    return typeof data?.user?.id === "string" && data.user.id ? data.user : undefined;
+    if (res.status === 401 || res.status === 403) return { status: "anonymous" };
+    const data = (await res.json().catch(() => null)) as {
+      user?: User | null;
+      code?: string;
+      error?: string;
+    } | null;
+    if (res.status === 410 && data?.code === "ACCOUNT_DELETION_IN_PROGRESS") {
+      return { status: "deleted" };
+    }
+    if (!res.ok) return { status: "unavailable" };
+    if (data?.user === null) return { status: "anonymous" };
+    return typeof data?.user?.id === "string" && data.user.id
+      ? { status: "user", user: data.user }
+      : { status: "unavailable" };
   } catch {
-    return undefined;
+    return { status: "unavailable" };
   } finally {
     clearTimeout(timeoutId);
   }
@@ -128,6 +150,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionUnavailable, setSessionUnavailable] = useState(false);
+  const [probeAttempt, setProbeAttempt] = useState(0);
   // Legacy token migration is a one-way, best-effort POST with no durable
   // result to observe. Run it at most once per mounted session so navigating
   // between auth-portal routes does not re-issue it.
@@ -176,13 +200,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         const hydrated = await fetchSessionUser();
         if (!cancelled && authRevisionRef.current === authRevision) {
-          if (hydrated !== undefined) setCreateBriefRecoveryOwner(hydrated?.id ?? null);
-          if (hydrated) {
-            setUser(hydrated);
-            setSession({ user: hydrated });
-          } else {
+          if (hydrated.status === "user") {
+            setCreateBriefRecoveryOwner(hydrated.user.id);
+            setUser(hydrated.user);
+            setSession({ user: hydrated.user });
+            setSessionUnavailable(false);
+          } else if (hydrated.status === "anonymous" || hydrated.status === "deleted") {
+            if (hydrated.status === "deleted") {
+              try {
+                sessionStorage.setItem(
+                  ACCOUNT_DELETION_NOTICE_KEY,
+                  "Account deletion is in progress. This session can no longer be used.",
+                );
+              } catch {
+                // The sign-in screen still loads without the stored notice.
+              }
+            }
+            setCreateBriefRecoveryOwner(null);
             setUser(null);
             setSession(null);
+            setSessionUnavailable(false);
+          } else {
+            setSessionUnavailable(true);
           }
         }
       } finally {
@@ -192,7 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       cancelled = true;
     };
-  }, [needsAuthProbe, session, user]);
+  }, [needsAuthProbe, probeAttempt, session, user]);
 
   useEffect(() => {
     const onSessionExpired = (_event: Event) => {
@@ -260,25 +299,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (requireServerConfirmation) {
         throw new Error("Sign-out could not be confirmed. Try again.");
       }
-      /* Ordinary sign-out still clears local state when the server is unavailable. */
+      // Ordinary sign-out still leaves the screen. Account switching waits
+      // until the server confirms the cookie is gone.
     } finally {
       if (timeoutId !== null) clearTimeout(timeoutId);
     }
     if (requireServerConfirmation) {
-      // Account switching must not clear the local session or private drafts
-      // until the server confirms that the existing cookie has been cleared.
       authRevisionRef.current += 1;
       setCreateBriefRecoveryOwner(null);
     }
     removeStoredToken(LEGACY_STORAGE_KEY);
     clearStudioLastAgentId();
+    setSessionUnavailable(false);
     setSession(null);
     setUser(null);
   }, []);
 
+  const retrySessionProbe = useCallback(() => {
+    setSessionUnavailable(false);
+    setLoading(true);
+    setProbeAttempt((attempt) => attempt + 1);
+  }, []);
+
   const value = useMemo(
-    () => ({ user, session, loading, signOut, signIn }),
-    [user, session, loading, signOut, signIn],
+    () => ({ user, session, loading, sessionUnavailable, retrySessionProbe, signOut, signIn }),
+    [user, session, loading, sessionUnavailable, retrySessionProbe, signOut, signIn],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

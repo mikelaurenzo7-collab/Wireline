@@ -97,6 +97,8 @@ struct OutboundCallView: View {
                 hasExpressWrittenConsent: requiresMarketingConsent && consentConfirmed
             )
             dismiss()
+        } catch let WirelineAPI.APIError.http(status, _) where status == 503 {
+            errorMessage = "Calling from the iPhone app is not available yet. Open BotBound in the browser to place this call."
         } catch {
             errorMessage = error.localizedDescription
         }

@@ -131,13 +131,24 @@ export default function TeamSettings() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
       });
+      const payload = (await response.json().catch(() => null)) as
+        | (TeamErrorPayload & { email_sent?: boolean })
+        | null;
       if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as TeamErrorPayload | null;
         if (payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED") {
           setTeamAccess("certifying");
           throw new Error(TEAM_INVITES_UNAVAILABLE);
         }
         throw new Error(payload?.error || payload?.message || "Invite could not be sent.");
+      }
+      if (payload?.email_sent === false) {
+        setInviteError(
+          `The invitation for ${inviteEmail} is saved, but the email was not delivered. Send it again.`,
+        );
+        setIsInviteOpen(false);
+        setInviteEmail("");
+        await loadTeam();
+        return;
       }
       setInviteSuccess(`Invitation sent to ${inviteEmail}.`);
       setIsInviteOpen(false);
@@ -150,6 +161,18 @@ export default function TeamSettings() {
       setInviting(false);
     }
   };
+
+  async function removeMember(member: TeamMemberRecord) {
+    if (!member.id || member.email === user?.email) return;
+    setInviteError(null);
+    const response = await authFetch(`/api/team/${member.id}`, { method: "DELETE" });
+    const payload = (await response.json().catch(() => null)) as TeamErrorPayload | null;
+    if (!response.ok) {
+      setInviteError(payload?.error || payload?.message || "Could not remove this teammate.");
+      return;
+    }
+    await loadTeam();
+  }
 
   const canInvite = teamAccess === "ok";
 
@@ -237,6 +260,16 @@ export default function TeamSettings() {
                       </p>
                     </div>
                   </div>
+                  {member.email && member.email !== user?.email ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => void removeMember(member)}
+                    >
+                      Remove
+                    </Button>
+                  ) : null}
                 </div>
               ))}
             </div>

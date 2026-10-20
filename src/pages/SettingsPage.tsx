@@ -20,6 +20,7 @@ function DangerZone() {
   const [renewalStopNeedsAttention, setRenewalStopNeedsAttention] = useState(false);
   const [deletionScheduled, setDeletionScheduled] = useState(false);
   const [deletionStatusLoading, setDeletionStatusLoading] = useState(true);
+  const [deletionStatusKnown, setDeletionStatusKnown] = useState(false);
   const [cancelWorking, setCancelWorking] = useState(false);
 
   useEffect(() => {
@@ -36,7 +37,9 @@ function DangerZone() {
         if (!response.ok) {
           throw new Error(data?.error || `Couldn't load deletion status (${response.status}).`);
         }
-        if (!active || !data?.pending) return;
+        if (!active) return;
+        setDeletionStatusKnown(true);
+        if (!data?.pending) return;
 
         const when = data.scheduled_purge_at
           ? new Date(data.scheduled_purge_at).toLocaleDateString()
@@ -169,6 +172,10 @@ function DangerZone() {
         {deletionStatusLoading ? (
           <p className="mt-5 text-sm text-muted-foreground" role="status">
             Checking deletion status…
+          </p>
+        ) : !deletionStatusKnown ? (
+          <p className="mt-5 text-sm text-muted-foreground">
+            Deletion stays closed until the current deletion status can be loaded.
           </p>
         ) : !deletionScheduled ? (
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end">

@@ -97,6 +97,18 @@ export default function InsightsView() {
   }, [activeView, days]);
 
   // Account spend and budget remain available before creation or after deleting every Bot.
+  if (agentsDegraded && agents.length === 0 && activeView !== "spend") {
+    return (
+      <ClientRouteViewport>
+        <InsightEmpty
+          configKey="funnel"
+          icon={TrendingUp}
+          titleOverride="Bot Status Could Not Be Loaded"
+        />
+      </ClientRouteViewport>
+    );
+  }
+
   if (firstRun && activeView !== "spend") {
     return (
       <ClientRouteViewport>

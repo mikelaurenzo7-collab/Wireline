@@ -201,8 +201,12 @@ export default function StudioWorkspaceV2() {
   const panelSection: PanelSection = inspectorOpen ? inspectorSection : restingSection;
   const panelOpen = splitWorkspace && (inspectorOpen || !panelCollapsed);
   const panelFill = panelOpen && panelExpanded;
-  // With Try It beside it, the main conversation always edits the Bot.
-  const mainMode: WorkroomMode = panelOpen ? "configure" : workroomMode;
+  // With Try It beside it, the main conversation edits the Bot. A rehearsal
+  // command still has to land somewhere when Details or Summary is the open
+  // panel, so that command keeps the main conversation in Try It.
+  const injectedRehearsal = Boolean(commandParam || commandNonceParam);
+  const mainMode: WorkroomMode =
+    panelOpen && !(injectedRehearsal && panelSection !== "try") ? "configure" : workroomMode;
   const panelMaxSize =
     workspaceWidth > 0
       ? Math.min(PANEL_MAX_CAP, Math.max(PANEL_MAX_FLOOR, workspaceWidth - CONVERSATION_MIN_WIDTH))

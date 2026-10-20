@@ -11,7 +11,7 @@ import {
 } from "../lib/session-cookie";
 import { generateToken, isOwnerEmail } from "../lib/auth-service";
 import { sharedWorkspacesEnabled } from "../lib/shared-workspace-readiness";
-import { authenticateUser } from "../middleware/auth";
+import { authenticateUser, hasTerminalAccountDeletion } from "../middleware/auth";
 import { migrateSessionRateLimiter } from "../middleware/rate-limit-middleware";
 import { sessionUsers, secureTeamMembers } from "../db/security-schema";
 import * as schema from "../db/schema";
@@ -98,6 +98,13 @@ router.get("/api/auth/session", async (req: Request, res: Response) => {
   if (!user) {
     clearSessionCookie(res);
     return res.json({ user: null });
+  }
+  if (await hasTerminalAccountDeletion(user.id)) {
+    clearSessionCookie(res);
+    return res.status(410).json({
+      error: "Account deletion is in progress. This session can no longer be used.",
+      code: "ACCOUNT_DELETION_IN_PROGRESS",
+    });
   }
 
   const tenantId = await validatedTenantId(payload, user.id);

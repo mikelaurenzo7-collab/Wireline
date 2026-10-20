@@ -349,11 +349,29 @@ export class CampaignDialerService {
         if (gate.reason === "federal_dnc_unconfigured") {
           await drizzle
             .update(schema.outboundLeads)
-            .set({ status: priorStatus })
+            .set({
+              status: priorStatus,
+              metadata: toJsonbSafe(
+                mergeLeadMetadata(metadata, {
+                  ...gate.metadataPatch,
+                  federal_dnc_message: gate.federalDncMessage,
+                }),
+              ) as any,
+            })
             .where(eq(schema.outboundLeads.id, lead.id));
-          log.warn("Skipping dial, federal DNC vendor not configured", {
+          await drizzle
+            .update(schema.outboundCampaigns)
+            .set({ status: CAMPAIGN_STATUS.PAUSED, updatedAt: new Date() })
+            .where(
+              and(
+                eq(schema.outboundCampaigns.id, campaign.id),
+                eq(schema.outboundCampaigns.status, CAMPAIGN_STATUS.RUNNING),
+              ),
+            );
+          log.warn("Paused campaign, federal or seller DNC is not ready", {
             leadId: leadIdString,
             campaignId: campaign.id,
+            code: gate.federalDncCode,
           });
           return;
         }

@@ -263,6 +263,11 @@ export async function handleCalendarToolCall(
             agentId: agent.id,
             error: persistError instanceof Error ? persistError.message : String(persistError),
           });
+          return {
+            toolCallId,
+            result:
+              "The connected calendar may already contain this appointment, but BotBound could not save it. Do not tell the caller it is confirmed, and do not book it again until the owner checks the calendar.",
+          };
         }
 
         notifyBookedAppointment(context, {

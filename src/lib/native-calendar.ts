@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, eq, inArray, or, sql } from "drizzle-orm";
+import { and, eq, inArray, lt, or, sql } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { drizzle, tenantStore } from "./server-context";
 import { AppError } from "./api-error";
@@ -481,6 +481,21 @@ export async function updateCalendarAppointment(
   );
   invalidateDashboard(userId);
   return result;
+}
+
+/** Unconfirmed requests keep their slot for one day, then release it. */
+export const APPOINTMENT_REQUEST_HOLD_MS = 24 * 60 * 60 * 1000;
+
+export async function releaseExpiredAppointmentHolds(now = new Date()): Promise<number> {
+  const cutoff = new Date(now.getTime() - APPOINTMENT_REQUEST_HOLD_MS);
+  const released = await drizzle
+    .update(schema.appointments)
+    .set({ status: "Cancelled" })
+    .where(
+      and(eq(schema.appointments.status, "Requested"), lt(schema.appointments.createdAt, cutoff)),
+    )
+    .returning({ id: schema.appointments.id });
+  return released.length;
 }
 
 /** Preserve native retry receipts: cancellation frees the slot without deleting its identity. */

@@ -16,6 +16,7 @@ import { touchNavCounts } from "../lib/nav-counts-invalidate";
 import { CAMPAIGN_STATUS, LEAD_STATUS } from "../lib/outbound-status";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { assertFederalDncForMarketing } from "../lib/federal-dnc-service";
+import { evaluateSellerDncForMarketing } from "../lib/dnc-seller-registration";
 import { enqueue } from "../lib/job-queue";
 
 const router = Router();
@@ -399,6 +400,16 @@ router.post(
           code: federalGate.code,
           error: federalGate.message,
         });
+      }
+      for (const lead of queued) {
+        if (!lead.customerNumber) continue;
+        const sellerGate = await evaluateSellerDncForMarketing(req.user.id, lead.customerNumber);
+        if (!sellerGate.allowed) {
+          return res.status(403).json({
+            code: sellerGate.code,
+            error: sellerGate.message,
+          });
+        }
       }
 
       const previousStatus = campaign.status;

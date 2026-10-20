@@ -51,7 +51,10 @@ import { mcpVoiceSimulationMeta } from "../lib/mcp-voice-simulation-meta";
 import { runPrivateAgentTestTurn } from "../lib/private-agent-test";
 import { isHardSpendCapExceeded } from "../lib/spend-guards";
 import { shouldRetainRealtimeReservation } from "../lib/realtime-provider-outcome";
-import { assertLiveExternalActionAllowed } from "../lib/account-environment-policy";
+import {
+  assertLiveExternalActionAllowed,
+  assertPrivateTextSimulationAllowed,
+} from "../lib/account-environment-policy";
 import { BOT_MARK_IDENTITY_CAPACITY } from "../lib/bot-mark";
 import * as schema from "../db/schema";
 
@@ -1271,6 +1274,7 @@ router.post("/mcp", async (req, res) => {
           "The plan-funded rehearsal allowance is used for this period. Continue from BotBound billing.",
         );
       }
+      await assertPrivateTextSimulationAllowed(authed.userId, "chatgpt_private_text_rehearsal");
       const turn = await tenantStore.run(authed.userId, () =>
         runPrivateAgentTestTurn({
           userId: authed.userId,
