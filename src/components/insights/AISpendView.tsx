@@ -82,11 +82,13 @@ function botboundModelTiers(
     const tier =
       !id || id === "unknown"
         ? "No model recorded"
-        : id.includes("realtime")
+        : id.includes("realtime") || id.includes("grok-voice")
           ? "BotBound Voice"
           : id.includes("grok")
             ? "BotBound Standard"
-            : "BotBound Backup";
+            : id.includes("gemini")
+              ? "BotBound Legacy"
+              : "BotBound Backup";
     const current = tiers.get(tier) ?? { model: tier, calls: 0, cost: 0 };
     current.calls += Number(row.calls) || 0;
     current.cost += Number(row.cost) || 0;
