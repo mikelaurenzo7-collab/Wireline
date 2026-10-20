@@ -1,5 +1,5 @@
 import { Maximize2, Minimize2, Plus, Sparkles, Users, X } from "lucide-react";
-import { Link, useSearchParams } from "react-router";
+import { Link, Navigate, useSearchParams } from "react-router";
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 
 import { Button, Skeleton } from "../components/atoms";
@@ -198,9 +198,14 @@ export default function StudioWorkspaceV2() {
   // Details are requested explicitly, including links from creation and review.
   // The route owns visibility so a saved desktop collapse cannot hide a deep link.
   const inspectorOpen = sectionParam === "setup" || sectionParam === "review";
-  const panelSection: PanelSection = inspectorOpen ? inspectorSection : restingSection;
-  const panelOpen = splitWorkspace && (inspectorOpen || !panelCollapsed);
-  const panelFill = panelOpen && panelExpanded;
+  const computerFocused = params.get("focus") === "computer" && !inspectorOpen;
+  const panelSection: PanelSection = inspectorOpen
+    ? inspectorSection
+    : computerFocused
+      ? "computer"
+      : restingSection;
+  const panelOpen = splitWorkspace && (inspectorOpen || computerFocused || !panelCollapsed);
+  const panelFill = panelOpen && (panelExpanded || computerFocused);
   // With Try It beside it, the main conversation edits the Bot. A rehearsal
   // command still has to land somewhere when Details or Summary is the open
   // panel, so that command keeps the main conversation in Try It.
@@ -330,9 +335,14 @@ export default function StudioWorkspaceV2() {
   const openInspector = useCallback(
     (section: InspectorSection) => {
       setInspectorSection(section);
-      setParams((current) => setStudioInspectorSectionParams(current, section), {
-        replace: true,
-      });
+      setParams(
+        (current) => {
+          const next = setStudioInspectorSectionParams(current, section);
+          next.delete("focus");
+          return next;
+        },
+        { replace: true },
+      );
     },
     [setParams],
   );
@@ -342,7 +352,14 @@ export default function StudioWorkspaceV2() {
       if (section === "try" || section === "computer") {
         setRestingSection(section);
         setPanelCollapsed(false);
-        setParams((current) => clearStudioInspectorSectionParams(current), { replace: true });
+        setParams(
+          (current) => {
+            const next = clearStudioInspectorSectionParams(current);
+            if (section !== "computer") next.delete("focus");
+            return next;
+          },
+          { replace: true },
+        );
         return;
       }
       openInspector(section);
@@ -351,7 +368,7 @@ export default function StudioWorkspaceV2() {
   );
 
   useEffect(() => {
-    // "Beside chat" on the full Computer page lands here with ?panel=computer.
+    // The Computer destination and the optional side panel share one workbench.
     if (panelParam !== "computer") return;
     if (splitWorkspace) openPanelSection("computer");
     setParams(
@@ -370,12 +387,25 @@ export default function StudioWorkspaceV2() {
       // Closing the wide-screen panel also returns the conversation to editing.
       setPanelCollapsed(true);
       setParams(
-        (current) =>
-          setStudioWorkroomModeParams(clearStudioInspectorSectionParams(current), "configure"),
+        (current) => {
+          const next = setStudioWorkroomModeParams(
+            clearStudioInspectorSectionParams(current),
+            "configure",
+          );
+          next.delete("focus");
+          return next;
+        },
         { replace: true },
       );
     } else {
-      setParams((current) => clearStudioInspectorSectionParams(current), { replace: true });
+      setParams(
+        (current) => {
+          const next = clearStudioInspectorSectionParams(current);
+          next.delete("focus");
+          return next;
+        },
+        { replace: true },
+      );
     }
     requestAnimationFrame(() => document.getElementById("studio-settings-toggle")?.focus());
   }, [setPanelCollapsed, setParams, splitWorkspace]);
@@ -384,7 +414,13 @@ export default function StudioWorkspaceV2() {
     (mode: WorkroomMode) => {
       setWorkroomModeState(mode);
       setParams(
-        (current) => clearStudioInspectorSectionParams(setStudioWorkroomModeParams(current, mode)),
+        (current) => {
+          const next = clearStudioInspectorSectionParams(
+            setStudioWorkroomModeParams(current, mode),
+          );
+          next.delete("focus");
+          return next;
+        },
         { replace: true },
       );
     },
@@ -445,6 +481,10 @@ export default function StudioWorkspaceV2() {
         }
       />
     );
+  }
+
+  if (computerFocused && !splitWorkspace) {
+    return <Navigate to={`/computer?agent=${encodeURIComponent(active.id)}`} replace />;
   }
 
   const setupPanel = (
@@ -625,13 +665,26 @@ export default function StudioWorkspaceV2() {
         {splitWorkspace ? (
           <button
             type="button"
-            onClick={() => setPanelExpanded((expanded) => !expanded)}
+            onClick={() => {
+              if (computerFocused) {
+                setPanelExpanded(false);
+                setRestingSection("computer");
+                setParams(
+                  (current) => {
+                    const next = new URLSearchParams(current);
+                    next.delete("focus");
+                    return next;
+                  },
+                  { replace: true },
+                );
+              } else setPanelExpanded((expanded) => !expanded);
+            }}
             className="grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo"
             aria-label="Full width"
-            aria-pressed={panelExpanded}
-            title={panelExpanded ? "Show the conversation" : "Full width"}
+            aria-pressed={panelFill}
+            title={panelFill ? "Show the conversation" : "Full width"}
           >
-            {panelExpanded ? (
+            {panelFill ? (
               <Minimize2 className="size-4" aria-hidden="true" />
             ) : (
               <Maximize2 className="size-4" aria-hidden="true" />

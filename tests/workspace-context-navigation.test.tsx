@@ -592,7 +592,7 @@ describe("phone mutations refresh the shared roster", () => {
 });
 
 describe("Workroom setup and rehearsal flow", () => {
-  it("opens Voice with a retained customer draft and restores it only when Text is chosen", () => {
+  it("opens Voice with a retained customer draft and restores it only when Typed is chosen", () => {
     const workroom = () =>
       render(() =>
         (
@@ -619,9 +619,9 @@ describe("Workroom setup and rehearsal flow", () => {
         "aria-pressed"
       ],
     ).toBe(true);
-    // Try It's composer has its own id so it can sit beside the Change conversation.
+    // Try It's composer has its own id so it can sit beside the Instructions conversation.
     expect(initial.some((node) => node.props.id === "studio-workroom-test-message")).toBe(false);
-    initial.find((node) => node.type === "button" && text(node) === "Text")!.props.onClick!();
+    initial.find((node) => node.type === "button" && text(node) === "Typed")!.props.onClick!();
     expect(
       elements(workroom()).find((node) => node.props.id === "studio-workroom-test-message")?.props
         .value,
@@ -689,12 +689,12 @@ describe("Workroom setup and rehearsal flow", () => {
     const action = (label: string) =>
       all().find((node) => node.type === "button" && text(node) === label)!;
 
-    // Change and Try It are two views of one Set Up job, not tabs to separate pages.
+    // Instructions and Try It are two views of one Set Up job, not tabs to separate pages.
     expect(all().some((node) => node.props.role === "tablist")).toBe(false);
     expect(all().find((node) => node.props.role === "group")?.props["aria-label"]).toBe(
       "Set Up view",
     );
-    expect(action("Change").props["aria-pressed"]).toBe(true);
+    expect(action("Instructions").props["aria-pressed"]).toBe(true);
     const tryFocus = vi.fn();
     focused.set("studio-workroom-bot-b-mode-test", tryFocus);
     action("Try It").props.onClick!();
@@ -705,7 +705,7 @@ describe("Workroom setup and rehearsal flow", () => {
 
     const changeFocus = vi.fn();
     focused.set("studio-workroom-bot-b-mode-configure", changeFocus);
-    action("Change").props.onClick!();
+    action("Instructions").props.onClick!();
     frames.splice(0).forEach((frame) => frame());
     expect(changed).toHaveBeenLastCalledWith("configure");
     expect(changeFocus).toHaveBeenCalledOnce();

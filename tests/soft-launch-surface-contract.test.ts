@@ -13,14 +13,21 @@ describe("soft launch surfaces", () => {
     expect(computer).toContain("viewportOwnsControls");
     expect(computer).toContain("wl-computer-screen__controls");
     expect(computer).toContain("const browserStillOpen = !active && task.liveView");
-    expect(computer).toContain("The browser is still open. Take control to finish this step");
-    expect(computer).toContain("The browser was cleared. Start a new task.");
+    expect(computer).toContain("The browser screen was cleared after this task ended.");
+    const recovery = computer.slice(
+      computer.indexOf('className="wl-computer-recovery"'),
+      computer.indexOf("!active && task.summary"),
+    );
+    expect(recovery).toContain("onClick={onStartAnother}");
+    expect(recovery).not.toContain('ownerAction("take")');
     expect(css).toContain(".wl-computer-screen__controls");
   });
 
   it("keeps the command palette on calls, email, and computer without sms or campaigns", () => {
     const commands = searchWorkspaceCommands(" ").map((command) => command.label);
-    expect(commands).toEqual(expect.arrayContaining(["Calls", "Inbox", "Computer", "Create a Bot"]));
+    expect(commands).toEqual(
+      expect.arrayContaining(["Calls", "Inbox", "Computer", "Create a Bot"]),
+    );
     expect(commands.join(" ")).not.toMatch(/SMS|Campaign|Lead Hunt|Sequence/);
     expect(searchWorkspaceCommands("sms")).toEqual([]);
     expect(searchWorkspaceCommands("campaign")).toEqual([]);
@@ -45,7 +52,7 @@ describe("soft launch surfaces", () => {
     expect(phoneTest).toContain("connectedCallPresence()");
     expect(connectedCallPresence()).toContain(VOICE_PRESENCE.listening);
     expect(connectedCallPresence()).toContain(VOICE_PRESENCE.speaking);
-    expect(meter).toContain("var(--wireline-motion-duration-standard)");
-    expect(meter).not.toContain("900ms");
+    expect(meter).toContain(".wl-voice-bar__icon");
+    expect(meter).not.toContain("wl-voice-bar-level");
   });
 });

@@ -36,6 +36,7 @@ import { Button, EmptyState, Input } from "./atoms";
 import { ScrollArea } from "./ui/shadcn/ScrollArea";
 import { APP_KEYBOARD_SHORTCUTS } from "../constants/navigation";
 import { customerAgentLanguage } from "../lib/product-copy";
+import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 
 type CommandCategory = "Workspace" | "Create" | "Manage";
 
@@ -212,12 +213,19 @@ export function searchWorkspaceCommands(query: string): readonly CommandItem[] {
   );
 }
 
+/** Workspace destinations retain the Bot already selected by the owner. */
+export function workspaceCommandHref(href: string, agentId: string | null): string {
+  if (!agentId || !["/studio", "/knowledge", "/computer"].includes(href)) return href;
+  return `${href}?agent=${encodeURIComponent(agentId)}`;
+}
+
 export default function CommandBar() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
+  const { resolvedId: activeAgentId } = useStudioActiveAgentId();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const dialogRef = useRef<HTMLDivElement | null>(null);
@@ -237,10 +245,10 @@ export default function CommandBar() {
 
   const execute = useCallback(
     (command: CommandItem) => {
-      navigate(command.href);
+      navigate(workspaceCommandHref(command.href, activeAgentId));
       close();
     },
-    [close, navigate],
+    [activeAgentId, close, navigate],
   );
 
   useEffect(() => {
@@ -282,7 +290,7 @@ export default function CommandBar() {
         clearGoPending();
         if (href) {
           event.preventDefault();
-          navigate(href);
+          navigate(workspaceCommandHref(href, activeAgentId));
         }
       }
     };
@@ -295,7 +303,7 @@ export default function CommandBar() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("wireline:open-command-bar", handleOpen);
     };
-  }, [close, isOpen, navigate]);
+  }, [activeAgentId, close, isOpen, navigate]);
 
   useEffect(() => {
     if (isOpen) setSelectedIndex(0);

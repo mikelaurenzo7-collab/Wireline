@@ -372,7 +372,7 @@ test("Studio retains a draft and exposes the final action after text enlargement
     throw error;
   }
   await page.getByRole("button", { name: "Close panel", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "What Should We Change?" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Message Front Desk" })).toBeVisible();
   await page.getByRole("button", { name: "Add a rule", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Message Front Desk" })).toBeFocused();
   await expect(page.getByRole("textbox", { name: "Message Front Desk" })).not.toHaveValue("");

@@ -136,7 +136,12 @@ describe("authenticated workspace design architecture", () => {
     // Claude-style panel: drag to resize, Full width to take the Workspace, close.
     expect(studio).toContain("fill={panelFill}");
     expect(studio).toContain('aria-label="Full width"');
-    expect(studio).toContain("aria-pressed={panelExpanded}");
+    expect(studio).toContain("const [panelExpanded, setPanelExpanded] = useState(false);");
+    expect(studio).toContain(
+      'const computerFocused = params.get("focus") === "computer" && !inspectorOpen;',
+    );
+    expect(studio).toContain("const panelFill = panelOpen && (panelExpanded || computerFocused);");
+    expect(studio).toContain("aria-pressed={panelFill}");
     expect(studio).toContain('{ id: "computer", label: "Computer" }');
     expect(studio).toContain(
       '<ComputerWorkbench key={active.id} agentId={active.id} layout="panel" />',

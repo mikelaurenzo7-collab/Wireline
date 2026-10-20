@@ -1127,7 +1127,10 @@ function TaskDetail({
                     aria-busy={busy === "take" || task.controlRequested}
                   >
                     {busy === "take" || task.controlRequested ? (
-                      <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                      <Loader2
+                        className="animate-spin motion-reduce:animate-none"
+                        aria-hidden="true"
+                      />
                     ) : (
                       <MousePointer2 aria-hidden="true" />
                     )}
@@ -1143,7 +1146,10 @@ function TaskDetail({
                   disabled={busy === "stop" || task.stopping}
                 >
                   {task.stopping ? (
-                    <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                    <Loader2
+                      className="animate-spin motion-reduce:animate-none"
+                      aria-hidden="true"
+                    />
                   ) : (
                     <Square aria-hidden="true" />
                   )}
@@ -1163,23 +1169,8 @@ function TaskDetail({
       {!active &&
       (task.status === "failed" || task.status === "blocked" || task.status === "interrupted") ? (
         <div className="wl-computer-recovery" role="status">
-          <p>
-            {browserStillOpen
-              ? "The browser is still open. Take control to finish this step, or start a new task."
-              : "This task stopped before it finished. The browser was cleared. Start a new task."}
-          </p>
+          <p>This task stopped before it finished.</p>
           <div className="flex flex-wrap gap-2">
-            {browserStillOpen ? (
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => void ownerAction("take")}
-                disabled={busy !== null || task.controlRequested}
-                aria-busy={busy === "take" || task.controlRequested}
-              >
-                {busy === "take" || task.controlRequested ? "Pausing…" : "Take control"}
-              </Button>
-            ) : null}
             {onStartAnother ? (
               <Button type="button" size="sm" variant="outline" onClick={onStartAnother}>
                 New task
@@ -1243,9 +1234,12 @@ function TaskDetail({
                   </ol>
                 ) : null}
                 {events.some((event) => event.kind === "note") ? (
-                  <details className="wl-computer-plan" open={!events.some((event) => event.kind !== "note")}>
+                  <details
+                    className="wl-computer-plan"
+                    open={!events.some((event) => event.kind !== "note")}
+                  >
                     <summary>
-                      Planning
+                      Notes
                       <span>{events.filter((event) => event.kind === "note").length}</span>
                     </summary>
                     <ol>
@@ -1790,6 +1784,28 @@ export function ComputerWorkbench({
                   </div>
                 )}
               </div>
+              {tasks === null && listFailed ? (
+                <StatusNotice
+                  tone="warning"
+                  title="Tasks Could Not Load"
+                  action={
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      aria-label="Retry tasks"
+                      onClick={() => {
+                        setListFailed(false);
+                        void loadTasks();
+                      }}
+                    >
+                      Retry
+                    </Button>
+                  }
+                >
+                  Retry to check whether a task is already running.
+                </StatusNotice>
+              ) : null}
               <div className="wl-computer-composer__footer">
                 <p>
                   <ShieldCheck className="size-4" aria-hidden="true" />
@@ -1911,10 +1927,10 @@ const SIDE_BY_SIDE_QUERY = "(min-width: 1180px)";
 export default function ComputerPage() {
   const sideBySide = useMediaQuery(SIDE_BY_SIDE_QUERY);
   const [searchParams] = useSearchParams();
-  // With room for both, the computer opens beside the conversation, which stays
-  // visible unless the owner chooses Full width. Smaller screens get this page.
+  // Explicit navigation focuses the computer. The setup conversation stays
+  // mounted behind the full width panel. Smaller screens get this page.
   if (sideBySide) {
-    const next = new URLSearchParams({ panel: "computer" });
+    const next = new URLSearchParams({ panel: "computer", focus: "computer" });
     const agent = searchParams.get("agent")?.trim();
     if (agent) next.set("agent", agent);
     return <Navigate to={`/studio?${next.toString()}`} replace />;

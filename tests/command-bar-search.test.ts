@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { searchWorkspaceCommands } from "../src/components/CommandBar";
+import { searchWorkspaceCommands, workspaceCommandHref } from "../src/components/CommandBar";
 
 describe("workspace command discovery", () => {
+  it("preserves the selected Bot for workspace navigation without scoping account actions", () => {
+    expect(workspaceCommandHref("/computer", "bot/a")).toBe("/computer?agent=bot%2Fa");
+    expect(workspaceCommandHref("/knowledge", "bot-b")).toBe("/knowledge?agent=bot-b");
+    expect(workspaceCommandHref("/studio", "bot-b")).toBe("/studio?agent=bot-b");
+    expect(workspaceCommandHref("/computer", null)).toBe("/computer");
+    expect(workspaceCommandHref("/studio?create=1", "bot-b")).toBe("/studio?create=1");
+    expect(workspaceCommandHref("/settings/billing", "bot-b")).toBe("/settings/billing");
+  });
+
   it.each(["knowledge", "rules", "memory", "training"])(
     "finds editable knowledge for %s",
     (query) => {

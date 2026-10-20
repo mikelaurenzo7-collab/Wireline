@@ -6,7 +6,7 @@ const root = process.cwd();
 const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("live voice trust surface", () => {
-  it("renders lifecycle state through the canonical activity molecule", () => {
+  it("renders one honest lifecycle indicator without a simulated audio meter", () => {
     const voice = source("src/components/LiveVoiceSandbox.tsx");
     const openai = source("src/components/OpenAILiveVoiceSandbox.tsx");
     const presence = source("src/lib/voice-presence.ts");
@@ -20,7 +20,11 @@ describe("live voice trust surface", () => {
     expect(openai).toContain("VOICE_PRESENCE.thinking");
     expect(openai).toContain("VOICE_PRESENCE.speaking");
     expect(openai).toContain("Live Voice Needs Attention");
-    expect(openai).toContain("<ConversationActivity");
+    expect(openai).toContain('role="status"');
+    expect(openai).toContain('className="wl-voice-bar__label"');
+    expect(openai).toContain("Microphone muted");
+    expect(openai).not.toContain("<ConversationActivity");
+    expect(openai).not.toContain("wl-voice-bar__meter");
   });
 
   it("preserves voice transcript provenance using conversation messages", () => {

@@ -1,10 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AudioLines, Loader2, Mic, MicOff, PhoneOff, RotateCcw } from "lucide-react";
+import {
+  CircleAlert,
+  Loader2,
+  Mic,
+  MicOff,
+  PhoneOff,
+  RotateCcw,
+  Search,
+  Volume2,
+} from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import { VOICE_PRESENCE } from "../lib/voice-presence";
 import type { BotMarkKey } from "../lib/bot-mark";
-import { ConversationActivity, ConversationMessage, StatusNotice } from "./molecules";
+import { ConversationMessage, StatusNotice } from "./molecules";
 
 type SignalResponse = {
   sdp: string;
@@ -59,38 +68,32 @@ function waitForIceGathering(peer: RTCPeerConnection): Promise<void> {
 function voiceActivity(state: VoiceState) {
   if (state === "error")
     return {
-      state: "failed" as const,
       title: "Live Voice Needs Attention",
-      detail: "The rehearsal stopped before the conversation could continue.",
+      icon: CircleAlert,
     };
   if (state === "connecting")
     return {
-      state: "pending" as const,
       title: "Connecting Live Voice",
-      detail: "Setting up a private browser session for this agent.",
+      icon: Loader2,
     };
   if (state === "thinking")
     return {
-      state: "active" as const,
       title: VOICE_PRESENCE.thinking,
-      detail: "BotBound is using only the agent's approved Training context.",
+      icon: Search,
     };
   if (state === "speaking")
     return {
-      state: "active" as const,
       title: VOICE_PRESENCE.speaking,
-      detail: "You can interrupt naturally at any time.",
+      icon: Volume2,
     };
   if (state === "listening")
     return {
-      state: "complete" as const,
       title: VOICE_PRESENCE.listening,
-      detail: "Microphone audio is processed only for this private rehearsal.",
+      icon: Mic,
     };
   return {
-    state: "pending" as const,
     title: "Ready for a Voice Rehearsal",
-    detail: "Start a rehearsal to speak with this Bot using its rules and Training facts.",
+    icon: Mic,
   };
 }
 
@@ -116,12 +119,17 @@ export default function OpenAILiveVoiceSandbox({
 }) {
   const [state, setState] = useState<VoiceState>("idle");
   const [muted, setMuted] = useState(false);
+  // Mute can be chosen while browser permission is pending. Apply the latest
+  // intent before attaching a newly acquired microphone to the connection.
+  const desiredMuted = useRef(false);
   const [error, setError] = useState("");
   const [lines, setLines] = useState<Line[]>([]);
   const peer = useRef<RTCPeerConnection | null>(null);
   const channel = useRef<RTCDataChannel | null>(null);
   const microphone = useRef<MediaStream | null>(null);
   const remoteAudio = useRef<HTMLAudioElement | null>(null);
+  const audioPlaying = useRef(false);
+  const knowledgeChecks = useRef(0);
   const analysisContext = useRef<AudioContext | null>(null);
   const analysisSource = useRef<MediaStreamAudioSourceNode | null>(null);
   const analysisProcessor = useRef<ScriptProcessorNode | null>(null);
@@ -201,6 +209,8 @@ export default function OpenAILiveVoiceSandbox({
     analysisSink.current = null;
     analysisContext.current = null;
     remoteAudio.current = null;
+    audioPlaying.current = false;
+    knowledgeChecks.current = 0;
     assistantLineId.current = null;
     userLineId.current = null;
   }, [releaseServerCall]);
@@ -208,6 +218,7 @@ export default function OpenAILiveVoiceSandbox({
   const stop = useCallback(() => {
     generation.current += 1;
     release();
+    desiredMuted.current = false;
     setMuted(false);
     setState("idle");
   }, [release]);
@@ -216,6 +227,7 @@ export default function OpenAILiveVoiceSandbox({
     (message: string) => {
       generation.current += 1;
       release();
+      desiredMuted.current = false;
       setMuted(false);
       setError(message);
       setState("error");
@@ -264,6 +276,10 @@ export default function OpenAILiveVoiceSandbox({
 
   const handleEvent = async (event: Record<string, unknown>, currentGeneration: number) => {
     if (currentGeneration !== generation.current) return;
+    const updateActivity = () =>
+      setState(
+        audioPlaying.current ? "speaking" : knowledgeChecks.current > 0 ? "thinking" : "listening",
+      );
     const type = String(event.type || "");
     if (
       (type === "response.output_audio_transcript.delta" ||
@@ -271,7 +287,6 @@ export default function OpenAILiveVoiceSandbox({
       typeof event.delta === "string"
     ) {
       appendAssistant(event.delta);
-      setState("speaking");
     }
     if (
       type === "conversation.item.input_audio_transcription.completed" ||
@@ -285,9 +300,15 @@ export default function OpenAILiveVoiceSandbox({
             : "",
         event.item_id,
       );
-    if (type === "input_audio_buffer.speech_started") setState("listening");
-    if (type === "output_audio_buffer.started") setState("speaking");
-    if (type === "output_audio_buffer.stopped") setState("listening");
+    if (type === "input_audio_buffer.speech_started") updateActivity();
+    if (type === "output_audio_buffer.started") {
+      audioPlaying.current = true;
+      updateActivity();
+    }
+    if (type === "output_audio_buffer.stopped" || type === "output_audio_buffer.cleared") {
+      audioPlaying.current = false;
+      updateActivity();
+    }
     if (type === "response.done") {
       assistantLineId.current = null;
       userLineId.current = null;
@@ -296,13 +317,14 @@ export default function OpenAILiveVoiceSandbox({
         reportedCompleted.current = true;
         onTestCompleted?.();
       }
-      setState("listening");
+      updateActivity();
     }
     if (type === "response.function_call_arguments.done") {
       const name = typeof event.name === "string" ? event.name : "";
       const callId = typeof event.call_id === "string" ? event.call_id : "";
       if (!name || !callId) return;
-      setState("thinking");
+      knowledgeChecks.current += 1;
+      updateActivity();
       let result: unknown;
       try {
         result = await runTool(
@@ -312,6 +334,9 @@ export default function OpenAILiveVoiceSandbox({
       } catch (reason) {
         result = { error: reason instanceof Error ? reason.message : "Tool unavailable." };
       }
+      if (currentGeneration !== generation.current) return;
+      knowledgeChecks.current = Math.max(0, knowledgeChecks.current - 1);
+      updateActivity();
       const dataChannel = channel.current;
       if (dataChannel?.readyState === "open" && currentGeneration === generation.current) {
         dataChannel.send(
@@ -360,6 +385,9 @@ export default function OpenAILiveVoiceSandbox({
       // Retain each acquired resource before the next browser operation can
       // throw, so fail() can always stop a microphone or partially built peer.
       microphone.current = mic;
+      mic.getAudioTracks().forEach((track) => {
+        track.enabled = !desiredMuted.current;
+      });
       const connection = new RTCPeerConnection();
       peer.current = connection;
       const events = connection.createDataChannel("oai-events");
@@ -393,7 +421,7 @@ export default function OpenAILiveVoiceSandbox({
       };
       events.onerror = () => {
         if (currentGeneration === generation.current)
-          setError("The live voice event channel was interrupted.");
+          fail("The live voice event channel was interrupted.");
       };
 
       const offer = await connection.createOffer();
@@ -431,9 +459,7 @@ export default function OpenAILiveVoiceSandbox({
       const maxDurationSeconds = Math.max(15, Math.min(300, session.maxDurationSeconds || 300));
       deadlineTimer.current = window.setTimeout(() => {
         if (currentGeneration !== generation.current) return;
-        generation.current += 1;
-        release();
-        setState("idle");
+        stop();
       }, maxDurationSeconds * 1_000);
       const greeting = session.greeting?.trim();
       if (greeting) {
@@ -463,6 +489,8 @@ export default function OpenAILiveVoiceSandbox({
   const active = ["connecting", "listening", "speaking", "thinking"].includes(state);
   const activity = voiceActivity(state);
   const showActivity = !compact || state !== "idle" || lines.length > 0;
+  const mutedListening = muted && state === "listening";
+  const StateIcon = mutedListening ? MicOff : activity.icon;
   const showTranscript = !compact || lines.length > 0;
 
   return (
@@ -501,42 +529,41 @@ export default function OpenAILiveVoiceSandbox({
         </button>
       </div>
 
-      <div className="wl-voice-bar" data-state={state} role="status" aria-live="polite">
-        <span className="wl-voice-bar__meter" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-          <span />
-          <span />
-        </span>
-        <span className="wl-voice-bar__label">{activity.title}</span>
-        {active ? (
-          <button
-            type="button"
-            className="studio-secondary-button wl-voice-bar__mute"
-            aria-pressed={muted}
-            onClick={() => {
-              const next = !muted;
-              microphone.current?.getAudioTracks().forEach((track) => {
-                track.enabled = !next;
-              });
-              setMuted(next);
-            }}
-          >
-            {muted ? <MicOff size={14} aria-hidden="true" /> : <Mic size={14} aria-hidden="true" />}
-            {muted ? "Unmute" : "Mute"}
-          </button>
-        ) : null}
-      </div>
-
-      {state !== "idle" && showActivity ? (
-        <ConversationActivity
-          className="mt-4"
-          state={activity.state}
-          title={activity.title}
-          detail={activity.detail}
-          icon={<AudioLines aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />}
-        />
+      {showActivity ? (
+        <div className="wl-voice-bar" data-state={state}>
+          <StateIcon
+            className={`wl-voice-bar__icon${state === "connecting" ? " animate-spin motion-reduce:animate-none" : ""}`}
+            aria-hidden="true"
+          />
+          <span className="wl-voice-bar__label" role="status" aria-live="polite">
+            <span>{mutedListening ? "Microphone muted" : activity.title}</span>
+            {muted && !mutedListening ? (
+              <span className="wl-voice-bar__muted">Microphone muted</span>
+            ) : null}
+          </span>
+          {active ? (
+            <button
+              type="button"
+              className="studio-secondary-button wl-voice-bar__mute"
+              aria-pressed={muted}
+              onClick={() => {
+                const next = !desiredMuted.current;
+                desiredMuted.current = next;
+                microphone.current?.getAudioTracks().forEach((track) => {
+                  track.enabled = !next;
+                });
+                setMuted(next);
+              }}
+            >
+              {muted ? (
+                <MicOff size={14} aria-hidden="true" />
+              ) : (
+                <Mic size={14} aria-hidden="true" />
+              )}
+              {muted ? "Unmute" : "Mute"}
+            </button>
+          ) : null}
+        </div>
       ) : null}
 
       {showTranscript ? (
@@ -576,8 +603,8 @@ export default function OpenAILiveVoiceSandbox({
             <button
               type="button"
               onClick={() => {
+                stop();
                 setError("");
-                setState("idle");
               }}
               aria-label="Reset live voice"
               className="grid h-11 w-11 place-items-center rounded-md hover:bg-secondary"

@@ -66,7 +66,7 @@ function formatTime(value: string | null | undefined): string {
   }).format(date);
 }
 
-function humanize(value: string | null | undefined, fallback = "Completed") {
+function humanize(value: string | null | undefined, fallback = "Unclassified") {
   const text = value?.trim();
   if (!text || /^(unknown|other)$/i.test(text)) return fallback;
   return text
@@ -392,14 +392,14 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
             ["Outcome", humanize(selected.outcome_tag)],
             ["Intent", humanize(analysisFailed ? null : selected.intent_label, "Unclassified")],
             [
-              "Lead",
+              "Lead score",
               !analysisFailed && typeof selected.lead_score === "number"
-                ? String(selected.lead_score)
+                ? `${selected.lead_score}/100`
                 : "Not scored",
             ],
             [
-              "Quality",
-              typeof selected.qa_score === "number" ? String(selected.qa_score) : "Not scored",
+              "Quality score",
+              typeof selected.qa_score === "number" ? `${selected.qa_score}/100` : "Not scored",
             ],
           ].map(([label, value]) => (
             <div key={label} className="rounded-xl border border-border bg-card p-3">

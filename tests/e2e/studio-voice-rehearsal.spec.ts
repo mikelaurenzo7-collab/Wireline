@@ -14,14 +14,15 @@ async function mockRehearsal(
       value: {
         getUserMedia: async () => {
           activity.microphones += 1;
+          const track = {
+            enabled: true,
+            stop: () => {
+              activity.tracksStopped += 1;
+            },
+          };
           return {
-            getTracks: () => [
-              {
-                stop: () => {
-                  activity.tracksStopped += 1;
-                },
-              },
-            ],
+            getTracks: () => [track],
+            getAudioTracks: () => [track],
           };
         },
       },
@@ -159,7 +160,7 @@ for (const width of [1440, 390]) {
     await page.getByRole("button", { name: "Start rehearsal", exact: true }).click();
     await expect(page.getByText("Listening", { exact: true })).toBeVisible();
     expect(sessions).toEqual(["bot-front-desk"]);
-    await page.getByRole("button", { name: "Text", exact: true }).click();
+    await page.getByRole("button", { name: "Typed", exact: true }).click();
     await expect.poll(() => stops).toEqual(["token-1"]);
     expect(await microphoneCount(page)).toEqual({
       microphones: 1,
@@ -178,7 +179,7 @@ for (const width of [1440, 390]) {
       path: testInfo.outputPath(`studio-voice-${width}.png`),
       fullPage: true,
     });
-    await page.getByRole("button", { name: "Text", exact: true }).click();
+    await page.getByRole("button", { name: "Typed", exact: true }).click();
     await expect(input).toHaveValue("Please keep this unsent customer scenario.");
   });
 }
@@ -293,7 +294,7 @@ test("leaving while a voice session is accepted closes its late provider session
   await page.goto("/studio?agent=bot-front-desk&workroom=test");
   await page.getByRole("button", { name: "Start rehearsal", exact: true }).click();
   await accepted;
-  await page.getByRole("button", { name: "Text", exact: true }).click();
+  await page.getByRole("button", { name: "Typed", exact: true }).click();
   releaseAnswer();
   await expect.poll(() => stops).toEqual(["late-accepted-call"]);
   expect(await microphoneCount(page)).toEqual({ microphones: 1, tracksStopped: 1, peersClosed: 1 });
@@ -326,7 +327,7 @@ test("direct customer commands open Text without microphone access", async ({ pa
   await expect(page.getByRole("textbox", { name: "Customer message for Front Desk" })).toHaveValue(
     "Can I book tomorrow?",
   );
-  await expect(page.getByRole("button", { name: "Text", exact: true })).toHaveAttribute(
+  await expect(page.getByRole("button", { name: "Typed", exact: true })).toHaveAttribute(
     "aria-pressed",
     "true",
   );

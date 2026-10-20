@@ -143,6 +143,29 @@ beforeEach(() => {
 });
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 describe("call history request ordering", () => {
+  it("does not present an unclassified call as completed and names score scales", async () => {
+    h.fetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          calls: [{ id: "one", outcome_tag: "other", lead_score: 30, qa_score: 69 }],
+          total: 1,
+          hasMore: false,
+        }),
+      ),
+    );
+    await settle();
+    expect(text(tree)).toContain("Unclassified");
+    expect(text(tree)).not.toContain("Completed");
+    const call = elements(tree).find(
+      (node) => node.type === "button" && text(node).includes("Unclassified"),
+    );
+    call!.props.onClick!();
+    await settle();
+    expect(text(tree)).toContain("OutcomeUnclassified");
+    expect(text(tree)).toContain("Lead score30/100");
+    expect(text(tree)).toContain("Quality score69/100");
+  });
+
   it("blocks overlapping refresh and duplicate pagination, then retains all loaded calls", async () => {
     const page = deferred();
     h.fetch

@@ -14,6 +14,7 @@ const h = vi.hoisted(() => ({
   dirty: false,
   ownerId: "owner-a",
   botId: "bot-a",
+  wide: false,
   params: new URLSearchParams(),
   session: null as unknown,
   focus: vi.fn(),
@@ -49,6 +50,7 @@ vi.mock("react", async (original) => ({
 }));
 vi.mock("react-router", () => ({
   Link: "a",
+  Navigate: "navigate",
   useSearchParams: () => [
     h.params,
     (update: (current: URLSearchParams) => URLSearchParams) => {
@@ -65,7 +67,7 @@ vi.mock("../src/contexts/StudioSessionContext", () => ({ useStudioSessionState: 
 vi.mock("../src/hooks/useStudioActiveAgentId", () => ({
   useStudioActiveAgentId: () => ({ requestedId: h.botId, resolvedId: h.botId, agents: h.agents }),
 }));
-vi.mock("../src/hooks/useMediaQuery", () => ({ useMediaQuery: () => false }));
+vi.mock("../src/hooks/useMediaQuery", () => ({ useMediaQuery: () => h.wide }));
 vi.mock("../src/lib/studio-agent-preference", () => ({ writeStudioLastAgentId: vi.fn() }));
 vi.mock("../src/components/StudioWorkroom", () => ({ default: "workroom" }));
 vi.mock("../src/components/StudioAgentWorkspacePanel", () => ({ default: "setup-panel" }));
@@ -75,8 +77,14 @@ vi.mock("../src/components/WorkspaceRecovery", () => ({ default: "recovery" }));
 
 type Props = {
   children?: ReactNode;
+  id?: string;
   ref?: { current: unknown };
   mode?: string;
+  fill?: boolean;
+  to?: string;
+  "aria-label"?: string;
+  "aria-selected"?: boolean;
+  onClick?: () => void;
   onTest?: () => void;
   onRehearseVoiceInChat?: () => void;
   onModeChange?: (mode: "configure" | "test") => void;
@@ -114,6 +122,7 @@ beforeEach(() => {
   h.effects = [];
   h.ownerId = "owner-a";
   h.botId = "bot-a";
+  h.wide = false;
   h.params = new URLSearchParams("agent=bot-a&section=setup");
   h.session = createStudioSessionState(h.ownerId);
   h.focus.mockReset();
@@ -123,6 +132,48 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Studio settings-to-Test handoff", () => {
+  it("focuses explicit Computer navigation while retaining the setup conversation", () => {
+    h.wide = true;
+    h.params = new URLSearchParams("agent=bot-a&panel=computer&focus=computer");
+    const nodes = render();
+    expect(nodes.find((node) => node.type === "resizable-panel")?.props.fill).toBe(true);
+    expect(nodes.find((node) => node.type === "workroom")?.props.mode).toBe("configure");
+    expect(h.params.get("agent")).toBe("bot-a");
+    expect(h.params.get("focus")).toBe("computer");
+    expect(h.params.has("panel")).toBe(false);
+
+    h.params = new URLSearchParams("agent=bot-a");
+    expect(render().find((node) => node.type === "resizable-panel")?.props.fill).toBe(false);
+  });
+
+  it("keeps the selected Bot when focused Computer moves to a narrow screen", () => {
+    h.params = new URLSearchParams("agent=bot-a&focus=computer");
+    expect(render().find((node) => node.type === "navigate")?.props.to).toBe(
+      "/computer?agent=bot-a",
+    );
+  });
+
+  it("keeps Computer when restoring a focused bookmark to the side panel without saved preferences", () => {
+    h.wide = true;
+    h.params = new URLSearchParams("agent=bot-a&focus=computer");
+    const panelNodes = () => {
+      const panel = render().find((node) => node.type === "resizable-panel")!;
+      const content = panel.props.children as unknown as (state: {
+        collapsed: boolean;
+      }) => ReactNode;
+      return elements(content({ collapsed: false }));
+    };
+    panelNodes().find((node) => node.props["aria-label"] === "Full width")!.props.onClick!();
+    expect(render().find((node) => node.type === "resizable-panel")?.props.fill).toBe(false);
+    expect(
+      panelNodes().find((node) => node.props.id === "studio-inspector-tab-computer")?.props[
+        "aria-selected"
+      ],
+    ).toBe(true);
+    expect(h.params.get("agent")).toBe("bot-a");
+    expect(h.params.has("focus")).toBe(false);
+  });
+
   it.each(["setup", "review"])("focuses the committed voice Start control from %s", (section) => {
     h.params.set("section", section);
     requestTest();

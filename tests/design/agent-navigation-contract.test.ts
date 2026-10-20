@@ -77,7 +77,7 @@ describe("authenticated Bot navigation contract", () => {
     expect(studio).toContain("StudioWorkroom");
     expect(studio).toContain("StudioAgentReviewPanel");
     expect(studio).toContain("WorkspaceResizablePanel");
-    expect(workroom).toContain('mode === "test" ? "Private Rehearsal" : "Change Your Bot"');
+    expect(workroom).toContain('mode === "test" ? "Private Rehearsal" : "Instructions"');
     expect(workroom).toContain('{ id: "test", label: "Try It", Icon: Mic }');
     expect(workroom).not.toContain('role="tablist"');
     expect(studio).not.toContain("StudioAgentCanvas");

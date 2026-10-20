@@ -549,7 +549,7 @@ const StudioWorkroom = forwardRef<
               >
                 {(
                   [
-                    { id: "configure", label: "Change", Icon: MessageCircle },
+                    { id: "configure", label: "Instructions", Icon: MessageCircle },
                     { id: "test", label: "Try It", Icon: Mic },
                   ] as const
                 ).map(({ id, label, Icon }) => (
@@ -570,7 +570,7 @@ const StudioWorkroom = forwardRef<
               </div>
             ) : (
               <span className="text-sm font-semibold text-foreground">
-                {mode === "test" ? "Private Rehearsal" : "Change Your Bot"}
+                {mode === "test" ? "Private Rehearsal" : "Instructions"}
               </span>
             )}
           </div>
@@ -705,13 +705,13 @@ const StudioWorkroom = forwardRef<
                     </div>
                   ) : null}
                 </div>
-              ) : (
+              ) : mode === "test" ? (
                 <div className="mx-auto flex h-full min-h-52 max-w-md flex-col items-center justify-center gap-3 py-8 text-center">
                   <h2 className="text-2xl font-semibold text-foreground">
-                    {mode === "test" ? "Try a Customer Question" : "What Should We Change?"}
+                    Try a Customer Question
                   </h2>
                 </div>
-              )}
+              ) : null}
             </div>
           </section>
 
@@ -763,7 +763,7 @@ const StudioWorkroom = forwardRef<
                   rows={1}
                   disabled={sending}
                   placeholder={
-                    mode === "test" ? "Ask as a customer…" : "Describe what should change"
+                    mode === "test" ? "Ask as a customer…" : "Share knowledge or give instructions…"
                   }
                   className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
                 />

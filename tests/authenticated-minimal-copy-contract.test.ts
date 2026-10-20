@@ -96,7 +96,7 @@ describe("authenticated minimal copy contract", () => {
     expect(studio).not.toContain("Shift+Enter line break");
   });
 
-  it("keeps the Studio Build empty canvas distinct from the composer prompt", () => {
+  it("keeps the instructions canvas clear and the composer neutral", () => {
     const studio = read("src/components/StudioWorkroom.tsx");
     const emptyHeading = studio.match(
       /<h2 className="text-2xl font-semibold text-foreground">[\s\S]*?<\/h2>/,
@@ -106,10 +106,11 @@ describe("authenticated minimal copy contract", () => {
     )?.[1];
 
     expect(emptyHeading).toContain("Try a Customer Question");
-    expect(emptyHeading).toContain("What Should We Change?");
+    expect(studio).not.toContain("What Should We Change?");
+    expect(studio).toContain(') : mode === "test" ? (');
     expect(emptyHeading).not.toMatch(/Describe What Should Change/i);
     expect(emptyHeading).not.toMatch(/describe what should change/i);
-    expect(composerPlaceholder).toBe("Describe what should change");
+    expect(composerPlaceholder).toBe("Share knowledge or give instructions…");
     expect(studio).not.toContain("Describe a change…");
   });
 

@@ -1038,6 +1038,8 @@ test("a page that did not load offers a retry instead of a dead form", async ({ 
 
   await page.goto("/computer");
   await expect(page.getByText("Your Bot's Computer Did Not Load")).toBeVisible();
+  await expect(page.getByText("Tasks Could Not Load", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Retry tasks", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "History" }).click();
   const history = page.getByRole("dialog", { name: "Recent tasks" });
   await expect(history.getByText("Recent tasks did not load.")).toBeVisible();
@@ -1046,9 +1048,9 @@ test("a page that did not load offers a retry instead of a dead form", async ({ 
 
   recoverLoad();
   await history.getByRole("button", { name: "Close" }).click();
-  await page.getByRole("button", { name: "Retry" }).click();
+  await page.getByRole("button", { name: "Retry", exact: true }).click();
+  await page.getByRole("button", { name: "Retry tasks", exact: true }).click();
   await page.getByRole("button", { name: "History" }).click();
-  await history.getByRole("button", { name: "Retry" }).click();
   await expect(page.getByText("Your Bot's Computer Did Not Load")).toHaveCount(0);
   await expect(history.getByText("No tasks yet.")).toBeVisible();
   await history.getByRole("button", { name: "Close" }).click();

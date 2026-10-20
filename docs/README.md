@@ -2,27 +2,32 @@
 
 BotBound's public story leads with capabilities, outcomes, and a clear signup action. It does not require a setup sequence. Inside the product, customers create a Bot, set it up, and rehearse privately before activating live work. Technical surface names such as Create, Training, Connections, Phone, Inbox, and Studio describe implementation ownership. Current launch positioning and creative status are governed by the launch source of truth indexed under Operating and release runbooks below.
 
-Broad public copy uses **Bot** or **Phone Bot**. Customers describe the job and choose Calls, Email, SMS, or a combination in the same workspace. Technical contracts retain `agent` and legacy plan/account identifiers for compatibility. Calls/SMS packages include one shared number; Email packages include a managed inbox. SMS and general outbound remain under separate readiness gates. Non-marketing service, coordination and callback calling for personal and business Bots has its own activation switch, with paid voice and captured Illinois recipient permission; the shared MCP contract covers preparation, authenticated review and status. The current commercial source is `src/lib/plan-catalog.ts`, reconciled through `docs/P0_BILLING_OPS_NOTE.md`.
+Broad public copy uses **Bot** or **Phone Bot** for personal users and small businesses. The launch story is voice Bots with a computer, phone number, and email address. Building and private rehearsal are separate from paid live channels and computer access. Email activation also depends on its current setup and readiness checks. SMS and outbound are not launch marketing offers; legacy channel code, saved history, and allowed reviewed calling retain their entitlement and runtime policy boundaries. Technical contracts retain `agent` and legacy plan/account identifiers for compatibility. The current commercial source is `src/lib/plan-catalog.ts`, reconciled through `docs/P0_BILLING_OPS_NOTE.md`.
 
 This file maps current doctrine, operating runbooks, and active plans. Dated audits and superseded decision evidence live in [AUDIT_INDEX.md](./AUDIT_INDEX.md).
 
 ## Product surfaces
 
-| Surface          | Source                                                                                              | Release posture                                                                                      |
-| ---------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Web and API      | `src/`, `server.ts`, `api/`                                                                         | **Live** canonical runtime.                                                                          |
-| Create           | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx`                             | Short intake for name, role, voice, personality, and starting brief.                                 |
-| Training         | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/` | Deep configuration, sources, behavior, policy, evaluation, and memory.                               |
-| Connections      | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx`                          | Numbers, integrations, routing, approvals, billing, and launch controls.                             |
-| Run / Studio     | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx`                         | Calls, texts, follow-up, approvals, handoff, and review.                                             |
-| BotBound Command | `apps/browser-extension/`                                                                           | **Early access** explicit-action browser handoff; technical package names remain stable.             |
-| Cloud Computer   | `src/pages/ComputerPage.tsx`, `src/lib/cloud-computer/`                                            | Owner-assigned work in an isolated hosted browser, with direct owner takeover at sign-in and decision checkpoints. |
-| iOS              | `ios/`                                                                                              | **Planned** until signing, physical-device acceptance, privacy review, and TestFlight.               |
-| Android          | `android/`                                                                                          | **Internal beta** until device acceptance, signing, privacy review, and Play release.                |
-| ChatGPT App      | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`                                   | **Early access** account-bound MCP/OAuth surface shared with Claude and Cursor.                      |
-| Claude Connector | `docs/CLAUDE_CONNECTOR.md`, `https://botbound.app/mcp`                                               | **Early access** directory submission of the same remote MCP server.                                 |
-| Cursor plugin    | `docs/CURSOR_PLUGIN.md`, `.mcp.json`, `plugin.json`, `mcp.json`                                     | **Early access** Cursor Directory package so a new user can create a BotBound account and first Bot. |
-| Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`                                 | **Retired live talking-head.** Identity badges only.                                                 |
+| Surface          | Source                                                                                              | Release posture                                                                                                    |
+| ---------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Web and API      | `src/`, `server.ts`, `api/`                                                                         | **Live** canonical runtime.                                                                                        |
+| Create           | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx`                             | Short role or brief intake; detailed setup stays in Workspace.                                                     |
+| Workspace        | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx`                         | Selected Bot, instructions, private rehearsal, details, summary, and access to Knowledge and Computer.             |
+| Knowledge        | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/` | Sources, facts, rules, reports, and saved context for the selected Bot.                                            |
+| Inbox            | `src/pages/EmailPage.tsx`, `src/components/ApprovalInbox.tsx`                                       | Email conversations and Approvals, with preserved legacy channel access where applicable.                          |
+| Calls            | `src/pages/PhonePage.tsx`, `src/components/CallLogsClaude.tsx`                                      | Call history, allowed reviewed calls, and Lines.                                                                   |
+| Calendar         | `src/pages/CalendarPage.tsx`                                                                        | Appointments and availability.                                                                                     |
+| Insights         | `src/pages/InsightsPage.tsx`                                                                        | Performance, reliability, quality, and revenue views.                                                              |
+| Connections      | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx`                          | Mailbox connections and optional connected tools.                                                                  |
+| Settings         | `src/pages/SettingsPage.tsx`, `src/components/settings/SettingsTabs.tsx`                            | Account, billing, team, appearance, apps, and compliance.                                                          |
+| BotBound Command | `apps/browser-extension/`                                                                           | **Early access** explicit-action browser handoff; technical package names remain stable.                           |
+| Cloud Computer   | `src/pages/ComputerPage.tsx`, `src/lib/cloud-computer/`                                             | Owner-assigned work in an isolated hosted browser, with direct owner takeover at sign-in and decision checkpoints. |
+| iOS              | `ios/`                                                                                              | **Planned** until signing, physical-device acceptance, privacy review, and TestFlight.                             |
+| Android          | `android/`                                                                                          | **Internal beta** until device acceptance, signing, privacy review, and Play release.                              |
+| ChatGPT App      | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`                                   | **Early access** account-bound MCP/OAuth surface shared with Claude and Cursor.                                    |
+| Claude Connector | `docs/CLAUDE_CONNECTOR.md`, `https://botbound.app/mcp`                                              | **Early access** directory submission of the same remote MCP server.                                               |
+| Cursor plugin    | `docs/CURSOR_PLUGIN.md`, `.mcp.json`, `plugin.json`, `mcp.json`                                     | **Early access** Cursor Directory package so a new user can create a BotBound account and first Bot.               |
+| Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`                                 | **Retired live talking-head.** Identity badges only.                                                               |
 
 ## Product interface rules
 
@@ -31,12 +36,13 @@ The optional voice-reference prototype is governed by [Voice cloning private pil
 The isolated speech worker has its own [setup guide](../services/voice-engine/README.md) and [third-party notices](../services/voice-engine/THIRD_PARTY_NOTICES.md).
 
 - Public pages explain. Authenticated pages execute.
-- Create stays short; Training owns detailed setup.
-- Connections owns numbers, integrations, routing, connected tools, approvals, billing, and live launch controls.
-- Studio is the workroom; Overview is the calm command center.
+- Create stays short. Workspace owns instructions, rehearsal, and setup details; Knowledge owns saved sources and reports.
+- Calls owns Lines, Inbox owns Approvals, Settings owns Billing, and Connections owns mailbox connections and optional tools.
+- Workspace is home. Overview and older roster routes remain compatibility entrances rather than competing dashboards.
+- Navigation comes from `src/constants/navigation.ts`: a compact desktop rail, a mobile dock, and More for secondary destinations.
 - Use labels, tabs, icons, state, and clear next actions instead of explanatory paragraphs on active work surfaces.
-- Phone / Call History and Analytics may explain history, coaching, exports, and insights.
-- Inbound and hybrid are first-class selectable modes, not fallback copy.
+- Calls and Insights may explain recorded outcomes, coaching, exports, and metric meaning. Call completion does not prove that a requested action succeeded.
+- Preserve runtime permission checks and saved history without promoting channels or actions outside the current launch story.
 - BotBound Command remains explicit-user-action only.
 
 ## Canonical repository and system documents
@@ -75,7 +81,7 @@ The isolated speech worker has its own [setup guide](../services/voice-engine/RE
 | Document                                                                                       | Role                                                                                                                                           |
 | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | [DATABASE_OPERATIONS.md](./DATABASE_OPERATIONS.md)                                             | Shared Postgres, migration, RLS, privilege, and rollback operations.                                                                           |
-| [DEPLOYMENT_RUNBOOK.md](./DEPLOYMENT_RUNBOOK.md)                                               | Exact-source Render deployment, production verification, environment, migration, and legacy rollback workflow.                                |
+| [DEPLOYMENT_RUNBOOK.md](./DEPLOYMENT_RUNBOOK.md)                                               | Exact-source Render deployment, production verification, environment, migration, and legacy rollback workflow.                                 |
 | [OPENAI_REALTIME_OPERATIONS.md](./OPENAI_REALTIME_OPERATIONS.md)                               | OpenAI Realtime admission reserve, key rotation, in-flight drain, canary, and rollback operations.                                             |
 | [BOTBOUND-AUTH-REDIRECT-CALLBACK-CHECKLIST.md](./BOTBOUND-AUTH-REDIRECT-CALLBACK-CHECKLIST.md) | Canonical-origin cutover inventory for sign-in, integration OAuth, MCP, webhooks, return URLs, deep links, and the launch-time Clerk decision. |
 | [RESEND_DELIVERY_FEEDBACK.md](./RESEND_DELIVERY_FEEDBACK.md)                                   | Signed Resend feedback receiver, provider suppression semantics, activation, and rollback.                                                     |
@@ -102,60 +108,60 @@ The isolated speech worker has its own [setup guide](../services/voice-engine/RE
 
 ## Brand, campaign, and launch-film delivery
 
-| Document                                                                                             | Role                                                                                           |
-| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| [BotBound brand workspace](../brand-work/README.md)                                                  | Brand-delivery entry point, Drive library, source/master split, and integrity workflow.        |
-| [Current asset index](../brand-work/CURRENT-ASSET-INDEX.md)                                          | Canonical identity, campaign and GTM inventory, with creative candidates and release evidence. |
-| [BotBound brand guide](../brand-work/BOTBOUND-BRAND-GUIDE.md)                                        | Identity, wordmark, typography, palette, spacing, and usage rules.                             |
-| [Second Ring campaign](../brand-work/SECOND-RING-CAMPAIGN.md)                                        | Campaign platform, story system, claims, channel behavior, and commercial direction.           |
-| [Launch copy kit](../brand-work/gtm/BOTBOUND-LAUNCH-COPY-KIT.md)                                     | Press, founder, social, email, OOH, CTA, UTM, and launch-sequence copy.                        |
-| [GTM workspace](../brand-work/gtm/README.md)                                                         | Founder deck, copy-kit, and review-artifact handoff.                                           |
-| [Brand font sources](../brand-work/fonts/README.md)                                                  | Licensed local font inventory and source notes for reproducible campaign rendering.            |
-| [September launch workspace](../brand-work/launch-2026-09/README.md)                                 | Original inbound-led launch campaign, production map, and delivery guidance.                   |
-| [September release pointer](../brand-work/launch-2026-09/CURRENT-RELEASE-POINTER.md)                 | Current release pointer for the original September launch library.                             |
-| [September product proof](../brand-work/launch-2026-09/CURRENT_PRODUCT_PROOF.md)                     | Current-product proof and freshness contract for the original launch library.                  |
-| [September launch provenance](../brand-work/launch-2026-09/PROVENANCE.md)                            | Source, generation, and review provenance for the original launch library.                     |
-| [September paid-media notes](../brand-work/launch-2026-09/copy/PAID_MEDIA_AND_PLACEMENT_NOTES.md)    | Placement, channel, and media-buying guidance.                                                 |
-| [September PR outreach](../brand-work/launch-2026-09/copy/PR_AND_CREATOR_OUTREACH.md)                | Press and creator outreach copy for the original launch.                                       |
-| [September social posts](../brand-work/launch-2026-09/copy/SOCIAL_POSTS.md)                          | Social copy and channel adaptations for the original launch.                                   |
+| Document                                                                                                        | Role                                                                                           |
+| --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| [BotBound brand workspace](../brand-work/README.md)                                                             | Brand-delivery entry point, Drive library, source/master split, and integrity workflow.        |
+| [Current asset index](../brand-work/CURRENT-ASSET-INDEX.md)                                                     | Canonical identity, campaign and GTM inventory, with creative candidates and release evidence. |
+| [BotBound brand guide](../brand-work/BOTBOUND-BRAND-GUIDE.md)                                                   | Identity, wordmark, typography, palette, spacing, and usage rules.                             |
+| [Second Ring campaign](../brand-work/SECOND-RING-CAMPAIGN.md)                                                   | Campaign platform, story system, claims, channel behavior, and commercial direction.           |
+| [Launch copy kit](../brand-work/gtm/BOTBOUND-LAUNCH-COPY-KIT.md)                                                | Press, founder, social, email, OOH, CTA, UTM, and launch-sequence copy.                        |
+| [GTM workspace](../brand-work/gtm/README.md)                                                                    | Founder deck, copy-kit, and review-artifact handoff.                                           |
+| [Brand font sources](../brand-work/fonts/README.md)                                                             | Licensed local font inventory and source notes for reproducible campaign rendering.            |
+| [September launch workspace](../brand-work/launch-2026-09/README.md)                                            | Original inbound-led launch campaign, production map, and delivery guidance.                   |
+| [September release pointer](../brand-work/launch-2026-09/CURRENT-RELEASE-POINTER.md)                            | Current release pointer for the original September launch library.                             |
+| [September product proof](../brand-work/launch-2026-09/CURRENT_PRODUCT_PROOF.md)                                | Current-product proof and freshness contract for the original launch library.                  |
+| [September launch provenance](../brand-work/launch-2026-09/PROVENANCE.md)                                       | Source, generation, and review provenance for the original launch library.                     |
+| [September paid-media notes](../brand-work/launch-2026-09/copy/PAID_MEDIA_AND_PLACEMENT_NOTES.md)               | Placement, channel, and media-buying guidance.                                                 |
+| [September PR outreach](../brand-work/launch-2026-09/copy/PR_AND_CREATOR_OUTREACH.md)                           | Press and creator outreach copy for the original launch.                                       |
+| [September social posts](../brand-work/launch-2026-09/copy/SOCIAL_POSTS.md)                                     | Social copy and channel adaptations for the original launch.                                   |
 | [Historical September investor one-pager](../brand-work/launch-2026-09/investor/BOTBOUND-INVESTOR-ONE-PAGER.md) | Investor-facing original launch narrative.                                                     |
-| [Outbound asset audit](../brand-work/ASSET-AUDIT-2026-09-01.md)                                      | Exhaustive outbound-pass inventory, creative decisions, repairs, and certification record.     |
-| [Outbound launch workspace](../brand-work/launch-2026-09-outbound/README.md)                         | Outbound-first production library, delivery map, render commands, and release links.           |
-| [Outbound campaign copy](../brand-work/launch-2026-09-outbound/CAMPAIGN_COPY.md)                     | Paid, social, lifecycle, and launch copy for The First Move campaign.                          |
-| [Outbound website messaging](../brand-work/launch-2026-09-outbound/WEBSITE_MESSAGING.md)             | Website message hierarchy that preserves inbound coverage while leading with outbound.         |
+| [Outbound asset audit](../brand-work/ASSET-AUDIT-2026-09-01.md)                                                 | Exhaustive outbound-pass inventory, creative decisions, repairs, and certification record.     |
+| [Outbound launch workspace](../brand-work/launch-2026-09-outbound/README.md)                                    | Outbound-first production library, delivery map, render commands, and release links.           |
+| [Outbound campaign copy](../brand-work/launch-2026-09-outbound/CAMPAIGN_COPY.md)                                | Paid, social, lifecycle, and launch copy for The First Move campaign.                          |
+| [Outbound website messaging](../brand-work/launch-2026-09-outbound/WEBSITE_MESSAGING.md)                        | Website message hierarchy that preserves inbound coverage while leading with outbound.         |
 | [Historical outbound investor brief](../brand-work/launch-2026-09-outbound/INVESTOR_ONE_PAGER.md)               | Investor narrative for the outbound wedge and expansion path.                                  |
-| [Outbound placement matrix](../brand-work/launch-2026-09-outbound/PLACEMENT_MATRIX.md)               | Candidate asset-to-channel mapping and placement guidance; publication remains gated.          |
-| [Outbound accessibility copy](../brand-work/launch-2026-09-outbound/ALT_TEXT_AND_ACCESSIBILITY.md)   | Alt text, motion, contrast, and accessible publishing notes.                                   |
-| [Outbound release provenance](../brand-work/launch-2026-09-outbound/PROVENANCE.md)                   | Source, model, render, QA, and checksum provenance for the outbound library.                   |
-| [Outbound visual sources](../brand-work/launch-2026-09-outbound/sources/RUNWAY-SOURCES.md)           | Approved atmospheric source provenance and usage constraints.                                  |
-| [Launch-film workspace](../apps/botbound-film/README.md)                                             | Remotion composition, render, caption, and review entry point.                                 |
-| [Launch-film production notes](../apps/botbound-film/PRODUCTION_NOTES.md)                            | Timing, sound, scene, safe-area, and export direction.                                         |
-| [Launch-film asset manifest](../apps/botbound-film/ASSET_MANIFEST.md)                                | Repository media inputs, provenance, and integrity hashes.                                     |
-| [Launch-film verification](../apps/botbound-film/VERIFICATION.md)                                    | Composition, caption, render, and visual-review evidence.                                      |
-| [Brand implementation QA](../design-qa.md)                                                           | Responsive visual comparison, interaction, accessibility, and browser-proof record.            |
+| [Outbound placement matrix](../brand-work/launch-2026-09-outbound/PLACEMENT_MATRIX.md)                          | Candidate asset-to-channel mapping and placement guidance; publication remains gated.          |
+| [Outbound accessibility copy](../brand-work/launch-2026-09-outbound/ALT_TEXT_AND_ACCESSIBILITY.md)              | Alt text, motion, contrast, and accessible publishing notes.                                   |
+| [Outbound release provenance](../brand-work/launch-2026-09-outbound/PROVENANCE.md)                              | Source, model, render, QA, and checksum provenance for the outbound library.                   |
+| [Outbound visual sources](../brand-work/launch-2026-09-outbound/sources/RUNWAY-SOURCES.md)                      | Approved atmospheric source provenance and usage constraints.                                  |
+| [Launch-film workspace](../apps/botbound-film/README.md)                                                        | Remotion composition, render, caption, and review entry point.                                 |
+| [Launch-film production notes](../apps/botbound-film/PRODUCTION_NOTES.md)                                       | Timing, sound, scene, safe-area, and export direction.                                         |
+| [Launch-film asset manifest](../apps/botbound-film/ASSET_MANIFEST.md)                                           | Repository media inputs, provenance, and integrity hashes.                                     |
+| [Launch-film verification](../apps/botbound-film/VERIFICATION.md)                                               | Composition, caption, render, and visual-review evidence.                                      |
+| [Brand implementation QA](../design-qa.md)                                                                      | Responsive visual comparison, interaction, accessibility, and browser-proof record.            |
 
 ## Current Creative Refresh
 
-| Document | Role |
-| --- | --- |
-| [Creative Refresh](../brand-work/launch-2026-09-refresh/README.md) | Current creative selection and release boundary. |
+| Document                                                                                  | Role                                                                    |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| [Creative Refresh](../brand-work/launch-2026-09-refresh/README.md)                        | Current creative selection and release boundary.                        |
 | [Creative Offer Status](../brand-work/launch-2026-09-refresh/LAUNCH-STATUS-2026-09-26.md) | Dated Render baseline, paused-activation offer, and publication limits. |
-| [Campaign Copy](../brand-work/launch-2026-09-refresh/COPY-KIT.md) | Short audience, founder, and channel drafts. |
-| [Founder Guide](../brand-work/launch-2026-09-refresh/FOUNDER-LAUNCH-GUIDE.md) | Asset selection and launch handoff. |
-| [Source Record](../brand-work/launch-2026-09-refresh/SOURCE-RECORD.md) | Art provenance, prompt, and reproduction. |
-| [Creative QA](../brand-work/launch-2026-09-refresh/QA-AND-DELIVERY.md) | Scope and limits of the current review. |
-| [Drive Brand Guide](../brand-work/launch-2026-09-refresh/DRIVE-BRAND-GUIDE.md) | Source for the current remote brand document. |
-| [Drive Copy Kit](../brand-work/launch-2026-09-refresh/DRIVE-COPY-KIT.md) | Reconciled remote campaign copy. |
-| [Drive Founder Guide](../brand-work/launch-2026-09-refresh/DRIVE-FOUNDER-GUIDE.md) | Founder guide with cloud destinations. |
-| [Drive Start Here](../brand-work/launch-2026-09-refresh/DRIVE-START-HERE.md) | Current library navigation and historical holds. |
-| [Drive Release Pointer](../brand-work/launch-2026-09-refresh/DRIVE-RELEASE-POINTER.md) | Current private creative delivery pointer. |
+| [Campaign Copy](../brand-work/launch-2026-09-refresh/COPY-KIT.md)                         | Short audience, founder, and channel drafts.                            |
+| [Founder Guide](../brand-work/launch-2026-09-refresh/FOUNDER-LAUNCH-GUIDE.md)             | Asset selection and launch handoff.                                     |
+| [Source Record](../brand-work/launch-2026-09-refresh/SOURCE-RECORD.md)                    | Art provenance, prompt, and reproduction.                               |
+| [Creative QA](../brand-work/launch-2026-09-refresh/QA-AND-DELIVERY.md)                    | Scope and limits of the current review.                                 |
+| [Drive Brand Guide](../brand-work/launch-2026-09-refresh/DRIVE-BRAND-GUIDE.md)            | Source for the current remote brand document.                           |
+| [Drive Copy Kit](../brand-work/launch-2026-09-refresh/DRIVE-COPY-KIT.md)                  | Reconciled remote campaign copy.                                        |
+| [Drive Founder Guide](../brand-work/launch-2026-09-refresh/DRIVE-FOUNDER-GUIDE.md)        | Founder guide with cloud destinations.                                  |
+| [Drive Start Here](../brand-work/launch-2026-09-refresh/DRIVE-START-HERE.md)              | Current library navigation and historical holds.                        |
+| [Drive Release Pointer](../brand-work/launch-2026-09-refresh/DRIVE-RELEASE-POINTER.md)    | Current private creative delivery pointer.                              |
 
 ## October Goal Creative
 
-| Document | Role |
-| --- | --- |
+| Document                                                               | Role                                                                 |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | [Goal campaign workspace](../brand-work/launch-2026-10-goal/README.md) | Prepared artwork, placement sizes, provenance, and release boundary. |
-| [Goal campaign copy](../brand-work/launch-2026-10-goal/COPY-KIT.md) | Draft social, founder, email, and accessible image copy. |
+| [Goal campaign copy](../brand-work/launch-2026-10-goal/COPY-KIT.md)    | Draft social, founder, email, and accessible image copy.             |
 
 ## Active strategy and planned work
 
