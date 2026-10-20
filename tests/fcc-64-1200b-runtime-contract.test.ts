@@ -103,8 +103,8 @@ describe("64.1200(b) runtime wiring", () => {
     // noncompliant tenant can suspend the platform's primary Twilio account,
     // so the AUP must make removal enforceable.
     const legal = read("src/components/LegalPage.tsx");
-    expect(legal).toMatch(/purchased, rented, or third-party lead lists/);
-    expect(legal).toMatch(/affiliate-marketing or third-party lead-generation/);
+    expect(legal).toMatch(/purchased, rented, or third party lead lists/);
+    expect(legal).toMatch(/affiliate marketing or third party lead generation/);
     expect(legal).toMatch(/cannot be bought, sold, or shared across brands/);
   });
 });

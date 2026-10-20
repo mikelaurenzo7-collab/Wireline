@@ -11,9 +11,9 @@ describe("launch-truth provider and response-time contracts", () => {
 
     expect(privacy).toContain("<strong>AgentMail</strong>");
     expect(privacy).toMatch(
-      /AgentMail[\s\S]{0,180}Platform-managed Bot mailboxes[\s\S]{0,180}inbound and[\s\S]{0,80}outbound Bot email/,
+      /AgentMail[\s\S]{0,180}Bot mailboxes managed by the platform[\s\S]{0,180}inbound\s+and[\s\S]{0,80}outbound Bot email/,
     );
-    expect(security).toContain("AgentMail for platform-managed Bot mailboxes and Bot email");
+    expect(security).toContain("AgentMail for Bot mailboxes managed by the platform and Bot email");
     expect(security).toContain("Resend for transactional platform email");
   });
 
@@ -51,7 +51,7 @@ describe("launch-truth provider and response-time contracts", () => {
     const team = read("src/components/admin/TeamPanel.tsx");
 
     expect(security).toContain("Processing locations vary by provider and feature.");
-    expect(security).toContain("Confirm any specific data-residency requirement");
+    expect(security).toContain("Confirm any specific data residency requirement");
     expect(security).not.toContain("US-East");
     expect(team).toContain("By provider");
     expect(team).not.toContain("US-East");
@@ -76,8 +76,8 @@ describe("launch-truth provider and response-time contracts", () => {
     expect(privacy).toContain("const LAST_UPDATED = ACCOUNT_PRIVACY_LAST_UPDATED");
     expect(privacy).toContain("description={ACCOUNT_PRIVACY_DESCRIPTION}");
     expect(consent).toContain("Last updated ${ACCOUNT_PRIVACY_LAST_UPDATED}.");
-    expect(consent).toContain('ACCOUNT_PRIVACY_LAST_UPDATED = "October 19, 2026"');
-    expect(security).toContain("Last updated · October 19, 2026");
+    expect(consent).toContain('ACCOUNT_PRIVACY_LAST_UPDATED = "October 20, 2026"');
+    expect(security).toContain("Last updated · October 20, 2026");
     expect(privacy).not.toContain("Last updated September 25, 2026");
     expect(security).not.toContain("Last updated · August 17, 2026");
   });

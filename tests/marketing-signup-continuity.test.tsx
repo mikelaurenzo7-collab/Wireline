@@ -62,12 +62,15 @@ beforeEach(() => vi.clearAllMocks());
 
 describe("marketing signup continuity", () => {
   it.each(Object.keys(WEDGES) as VerticalKey[])(
-    "preserves the %s industry while the sticky Start Free action selects Free Builder",
+    "keeps the %s sticky signup aligned with its primary action on Free Builder",
     (slug) => {
       const page = VerticalLanding({ slug });
       if (!page) throw new Error("Expected the industry landing page.");
-      const destination = new URL(stickyDestination(page)!, "https://botbound.app");
-      expect(destination.searchParams.get("wedge")).toBe(slug);
+      const href = stickyDestination(page);
+      expect(href).toBe(WEDGES[slug].primaryCta.href);
+      const destination = new URL(href!, "https://botbound.app");
+      expect(destination.pathname).toBe("/signup");
+      expect(destination.searchParams.get("wedge")).toBe(slug === "sales" ? "support" : slug);
       expect(destination.searchParams.get("plan")).toBe("free");
     },
   );

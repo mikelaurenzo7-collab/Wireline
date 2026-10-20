@@ -35,7 +35,7 @@ const MCP_BOUNDARIES = [
   {
     path: "prepare_call / get_call_status",
     description:
-      "Prepare a service call from ChatGPT, Claude, or Cursor. Review and place it in BotBound, then check its status from the same connected app.",
+      "Prepare a personal service or coordination call from ChatGPT, Claude, or Cursor. Review and place it in BotBound, then check its status from the same connected app.",
   },
   {
     path: "/api/openapi.json",
@@ -49,7 +49,7 @@ const MCP_CLIENTS = [
     title: "ChatGPT",
     description:
       "Create a BotBound account, then draft and privately rehearse your first Phone Bot.",
-    action: "Open ChatGPT Apps",
+    action: "Open ChatGPT",
     href: "https://chatgpt.com/",
     icon: MessageSquareText,
   },
@@ -64,7 +64,7 @@ const MCP_CLIENTS = [
   {
     title: "Cursor",
     description:
-      "Install the Cursor Directory plugin or add the BotBound MCP endpoint. New users create a BotBound account, then build their first Phone Bot.",
+      "Add the BotBound MCP endpoint with the install link below, or use Cursor Directory when listed. Sign in, then build and privately rehearse your Bot.",
     action: "Add to Cursor",
     href: "cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLmFwcC9tY3AifQ==",
     icon: Terminal,
@@ -198,9 +198,10 @@ export default function Developers() {
             </p>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
               Build and coach your Bot from ChatGPT, Claude, or Cursor. Connected apps can prepare
-              service calls for your review; placing a call happens in BotBound. Existing
-              connections need the new call permissions before those tools become available.
-              Training writes require the Apps toggle and your confirmation.
+              personal service or coordination calls for your review; placing a call happens in
+              BotBound. Business outbound calling and SMS are coming soon. Existing connections need
+              the new call permissions before those tools become available. Training writes require
+              the Apps toggle and your confirmation.
             </p>
           </div>
 

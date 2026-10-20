@@ -32,8 +32,8 @@ describe("launch artifact privacy and operations truth", () => {
 
   it("keeps public retention and recording claims aligned with runtime defaults", () => {
     const security = read("src/components/Security.tsx");
-    expect(security).toContain("365-day default; supported range 90 to 365 days");
-    expect(security).toContain("Managed full-call provider audio recording is disabled by default");
+    expect(security).toContain("365 days by default; supported range 90 to 365 days");
+    expect(security).toContain("Provider audio recording of full calls is disabled by default");
     expect(security).not.toContain("transcript retention defaults to 90 days");
   });
 

@@ -18,15 +18,15 @@ type TrustPack = {
 
 const PACKS: Record<string, TrustPack> = {
   medical: {
-    eyebrow: "Healthcare-sensitive workflows",
+    eyebrow: "Healthcare workflows",
     title: "Controls Before Credentials",
     subtitle:
       "A practical review of the safeguards available today, with explicit boundaries for protected health information.",
     controls: [
       {
-        title: "Tenant-Scoped Data Access",
+        title: "Account Data Isolation",
         detail:
-          "Server-owned tenant context and row-level policies isolate account data on authenticated database paths.",
+          "Server controlled account context and database access policies isolate account data.",
       },
       {
         title: "Recording Off by Default",
@@ -34,19 +34,19 @@ const PACKS: Record<string, TrustPack> = {
           "Audio capture requires an explicit tenant choice; transcript and recording retention are configurable.",
       },
       {
-        title: "Consent and Do-Not-Call Checks",
+        title: "Consent and Calling Controls",
         detail:
-          "Outbound voice paths apply consent and tenant do-not-call controls before expensive provider actions.",
+          "Business outbound calling is coming soon. Existing permission and Do Not Call safeguards remain in place.",
       },
       {
         title: "Auditable Operations",
         detail:
-          "Security-relevant activity, communication outcomes, and usage events are recorded where the runtime produces them.",
+          "Security activity, communication outcomes, and usage events are recorded where the runtime produces them.",
       },
       {
         title: "Deletion Workflow",
         detail:
-          "Self-serve deletion queues user-owned product data for purge and stops future subscription renewal when Stripe confirms it.",
+          "Account deletion queues your product data for removal and stops future subscription renewal when Stripe confirms it.",
       },
     ],
     boundary:
@@ -60,14 +60,14 @@ const PACKS: Record<string, TrustPack> = {
   },
   legal: {
     eyebrow: "Legal & professional services",
-    title: "Confidentiality-Aware, Never Presumptive",
+    title: "Your Firm Sets the Boundaries",
     subtitle:
       "Controls for structured intake and client communication without pretending software can determine privilege, conflicts, or legal advice.",
     controls: [
       {
-        title: "Tenant-Scoped Access",
+        title: "Account Data Isolation",
         detail:
-          "Authenticated reads and writes are constrained by server-owned account context and database isolation policies.",
+          "Authenticated reads and writes are constrained by server controlled account context and database isolation policies.",
       },
       {
         title: "Approved Communication Scripts",
@@ -82,19 +82,19 @@ const PACKS: Record<string, TrustPack> = {
       {
         title: "Recording Off by Default",
         detail:
-          "Audio capture is opt-in and should be enabled only after the firm approves jurisdiction-specific disclosures.",
+          "Audio capture requires an explicit choice and should be enabled only after the firm approves disclosures for each jurisdiction.",
       },
       {
         title: "Retention, Export, and Deletion",
         detail:
-          "Tenant settings and server-owned workflows support operational data review and lifecycle management.",
+          "Account settings and server controlled workflows support operational data review and lifecycle management.",
       },
     ],
     boundary:
-      "BotBound is not a law firm and does not provide legal advice. It cannot determine conflicts, privilege, representation, or matter acceptance; the firm owns those decisions and all jurisdiction-specific obligations.",
+      "BotBound is not a law firm and does not provide legal advice. It cannot determine conflicts, privilege, representation, or matter acceptance; the firm owns those decisions and all obligations that apply in its jurisdictions.",
     reviewItems: [
       "Define what the agent may and may not say.",
-      "Route conflict and matter-acceptance decisions to staff.",
+      "Route conflict and matter acceptance decisions to staff.",
       "Approve recording and consent rules by jurisdiction.",
       "Set retention, export, and deletion expectations.",
     ],
@@ -103,7 +103,7 @@ const PACKS: Record<string, TrustPack> = {
     eyebrow: "Insurance agencies",
     title: "Logged Work, Licensed Decisions",
     subtitle:
-      "Operational controls for policyholder communication while keeping regulated advice and carrier-specific decisions with qualified people.",
+      "Operational controls for policyholder communication while keeping regulated advice and decisions for each carrier with qualified people.",
     controls: [
       {
         title: "Communication Audit Trail",
@@ -111,9 +111,9 @@ const PACKS: Record<string, TrustPack> = {
           "Call outcomes, transcripts, and workflow events are retained according to the tenant's configured policy.",
       },
       {
-        title: "Consent and Do-Not-Call Controls",
+        title: "Consent and Calling Controls",
         detail:
-          "Outbound voice paths check consent posture and tenant suppression lists before dialing.",
+          "Business outbound calling is coming soon. Existing permission and Do Not Call safeguards remain in place.",
       },
       {
         title: "Licensed Human Handoff",
@@ -126,9 +126,9 @@ const PACKS: Record<string, TrustPack> = {
           "Recording defaults off and should be enabled only with approved disclosures and jurisdictional review.",
       },
       {
-        title: "Connected-System Logging",
+        title: "Connected Tool Records",
         detail:
-          "When a supported CRM path is configured, approved outcomes can be written back from server-owned integration routes.",
+          "When a supported connection is configured, approved outcomes can be saved through server controlled integrations.",
       },
     ],
     boundary:
@@ -136,8 +136,8 @@ const PACKS: Record<string, TrustPack> = {
     reviewItems: [
       "Map licensed and unlicensed activities.",
       "Approve scripts, disclosures, and suppression rules.",
-      "Define carrier and CRM write-back authority.",
-      "Set supervisor and exception-routing ownership.",
+      "Define who can update carrier and connected tool records.",
+      "Set supervisor and exception routing ownership.",
     ],
   },
   enterprise: {
@@ -149,12 +149,12 @@ const PACKS: Record<string, TrustPack> = {
       {
         title: "Tenant Isolation",
         detail:
-          "Server-owned account context and row-level database policies constrain authenticated product access.",
+          "Server controlled account context and database access policies constrain authenticated product access.",
       },
       {
         title: "Team Access Boundaries",
         detail:
-          "Account roles, route ownership checks, and server-held provider credentials keep authority out of the browser.",
+          "Account roles, route ownership checks, and provider credentials held on the server keep authority out of the browser.",
       },
       {
         title: "Provider Spend Protection",
@@ -164,7 +164,7 @@ const PACKS: Record<string, TrustPack> = {
       {
         title: "Data Lifecycle Controls",
         detail:
-          "Configurable retention, export paths, transcript-first call records, and a server-owned deletion workflow support review.",
+          "Configurable retention, export paths, call transcripts, and a server controlled deletion workflow support review.",
       },
       {
         title: "Security Review Channel",

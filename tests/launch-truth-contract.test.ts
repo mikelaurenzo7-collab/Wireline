@@ -46,7 +46,7 @@ describe("launch truth contract", () => {
     expect(trust).toContain("SSO, residency, DPA, BAA, support, and other enterprise terms");
     expect(trust).toContain("Important Boundary");
     expect(trust).toContain("reserve spend before the provider runs");
-    expect(trust).toContain("transcript-first call records");
+    expect(trust).toContain("call transcripts, and a server controlled deletion workflow");
     expect(trust).not.toContain("always-on hard cap");
     expect(trust).not.toContain("opt-in recordings");
   });
@@ -70,7 +70,7 @@ describe("launch truth contract", () => {
     expect(changelog).not.toContain("botbound.app/status");
     expect(changelog).not.toContain("trywireline.com/status");
 
-    expect(security).toContain("Last updated · October 19, 2026");
+    expect(security).toContain("Last updated · October 20, 2026");
     expect(security).toContain("Twilio provides phone numbers, PSTN transport, SIP, and SMS");
     // AI processing is described as BotBound's, on contracted providers, unnamed.
     expect(security).toContain(

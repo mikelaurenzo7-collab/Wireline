@@ -341,6 +341,9 @@ export function mergeSignupIntent(
     ...next,
     capturedAt: next.capturedAt,
   };
+  // A new solution selection replaces an earlier role choice, while an
+  // explicit role on the same link still takes precedence over that solution.
+  if (next.signupWedge && !next.preferredTemplateId) delete merged.preferredTemplateId;
   return sanitizeSignupIntent(merged);
 }
 

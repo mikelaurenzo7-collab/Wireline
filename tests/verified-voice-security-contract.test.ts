@@ -59,7 +59,7 @@ describe("retired private-voice provider contract", () => {
   it("separates existing live-call voices from explicitly consented private previews", () => {
     expect(terms).toContain("does not enable it");
     expect(terms).toContain("separate, explicit permission");
-    expect(terms).toContain("built-in artificial voices from its managed voice roster");
+    expect(terms).toContain("artificial voices from its managed voice roster");
     expect(privacy).toContain("Private voice previews require separate speaker permission");
     expect(privacy).toContain("Delete the saved voice to revoke future use");
     expect(`${terms}\n${privacy}`).not.toMatch(/ElevenLabs receives|source sample.*provider/i);

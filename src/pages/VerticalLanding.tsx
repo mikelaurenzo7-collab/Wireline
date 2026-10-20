@@ -16,7 +16,6 @@ import { PageMeta } from "../lib/page-meta";
 import { BOTBOUND_BRAND_NAME, BOTBOUND_PRODUCTION_ORIGIN } from "../lib/brand";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { type PainIconName, type VerticalKey, WEDGES } from "../data/vertical-wedges";
-import { signupHrefForWedge } from "../lib/signup-intent";
 
 const PAIN_ICONS: Record<PainIconName, LucideIcon> = {
   Calendar,
@@ -99,7 +98,7 @@ export default function VerticalLanding({
   };
 
   return (
-    <MarketingPageFrame stickyCta stickyCtaHref={signupHrefForWedge(slug, "personal")}>
+    <MarketingPageFrame stickyCta stickyCtaHref={cfg.primaryCta.href}>
       <PageMeta
         title={cfg.metaTitle}
         description={cfg.metaDescription}

@@ -126,7 +126,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "Phone",
         title: "No More Dropped Calls",
-        body: "Route overflow or after hours calls to a Bot that gathers the visit reason, follows your urgency rules, and offers configured next steps.",
+        body: "Route overflow or after hours calls to a Bot that answers general office questions and explains how to arrange an appointment with your staff.",
       },
       {
         icon: "Calendar",
@@ -144,7 +144,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
         body: "Healthcare sensitive intake controls include consent logging, opt out enforcement, recording off by default, and configurable retention. Do not use BotBound for PHI unless a signed BAA and approved configuration are confirmed in writing.",
       },
     ],
-    scriptPreview: `"Thanks for calling Dr. Chen's office. I can help schedule your visit. Was this for a cleaning, a specific concern, or something else? Got it. Our next opening for that is Thursday at 2:15 or Friday at 9. Which works?"`,
+    scriptPreview: `"Thanks for calling Dr. Chen's office. I'm an AI assistant. I can share office hours and explain how to request an appointment with our staff. Are you looking for our opening hours or scheduling instructions?"`,
     statValue: "After Hours",
     statLabel:
       "Route the calls your team cannot answer so configured intake and scheduling can continue after hours.",
@@ -163,7 +163,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "What About Insurance Verification?",
-        a: "The Bot can capture the insurance fields you approve during intake and route them with the appointment record. It does not verify eligibility today; your staff must validate coverage in the systems you already use.",
+        a: "Your Bot can explain how to reach your scheduling staff. Insurance eligibility and coverage checks stay with your team in your existing systems. Do not collect insurance details without a signed BAA and approved configuration.",
       },
       {
         q: "Will Patients Accept a Phone Bot?",

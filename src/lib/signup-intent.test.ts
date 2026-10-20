@@ -49,6 +49,36 @@ describe("signup-intent", () => {
     expect(recommendedPlanFromIntent(null)).toBe("personal");
   });
 
+  it("replaces an earlier role with a new solution without losing billing or acquisition context", () => {
+    const previous = {
+      preferredPlanId: "voice-email" as const,
+      preferredBillingInterval: "year" as const,
+      preferredTemplateId: "personal-assistant",
+      signupWedge: "personal" as const,
+      utmSource: "newsletter",
+      utmMedium: "email",
+      utmCampaign: "launch",
+      capturedAt: "2026-10-19T00:00:00.000Z",
+    };
+    const merged = mergeSignupIntent(previous, parseSignupIntent("?wedge=support&plan=free"));
+
+    expect(merged).toMatchObject({
+      preferredPlanId: "personal",
+      preferredBillingInterval: "year",
+      signupWedge: "support",
+      utmSource: "newsletter",
+      utmMedium: "email",
+      utmCampaign: "launch",
+    });
+    expect(merged?.preferredTemplateId).toBeUndefined();
+    expect(
+      mergeSignupIntent(
+        previous,
+        parseSignupIntent("?wedge=support&plan=free&template=appointment-setter"),
+      )?.preferredTemplateId,
+    ).toBe("appointment-setter");
+  });
+
   it("preserves only a known role starter and renders its BotBound label", () => {
     expect(parseSignupIntent("?plan=free&template=front-desk")?.preferredTemplateId).toBe(
       "front-desk",

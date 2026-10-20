@@ -141,9 +141,9 @@ export function resolvePostAuthDestination(
     const storedIntent = getStoredSignupIntent();
     const template =
       currentIntent?.preferredTemplateId ||
+      getSignupWedgeRecommendation(currentIntent?.signupWedge)?.templateId ||
       storedIntent?.preferredTemplateId ||
-      getSignupWedgeRecommendation(currentIntent?.signupWedge || storedIntent?.signupWedge)
-        ?.templateId;
+      getSignupWedgeRecommendation(storedIntent?.signupWedge)?.templateId;
     if (template) return `/studio?create=1&template=${encodeURIComponent(template)}`;
     return "/studio?create=1";
   }

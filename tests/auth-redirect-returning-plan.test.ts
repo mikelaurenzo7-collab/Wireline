@@ -11,6 +11,8 @@ import {
   SIGNUP_INTENT_STORAGE_KEY,
   SIGNUP_WEDGE_KEYS,
   SIGNUP_WEDGE_RECOMMENDATIONS,
+  captureSignupIntentFromLocation,
+  getStoredSignupIntent,
   parseSignupIntent,
 } from "../src/lib/signup-intent";
 
@@ -108,6 +110,29 @@ describe("post-auth destination", () => {
     expect(resolvePostAuthDestination("personal", "?template=front-desk")).toBe(
       "/studio?create=1&template=front-desk",
     );
+  });
+
+  it("uses a newly selected solution instead of a stale personal role for email and OAuth signup", () => {
+    window.location.search = "?plan=free&template=personal-assistant";
+    captureSignupIntentFromLocation();
+    sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+
+    // The current URL wins even if account completion precedes intent capture.
+    expect(resolvePostAuthDestination("business", "?wedge=support&plan=free")).toBe(
+      "/studio?create=1&template=front-desk",
+    );
+
+    // A query change on the same signup route must also replace the stored role
+    // before OAuth removes the query from the return URL.
+    window.location.search = "?wedge=support&plan=free";
+    expect(captureSignupIntentFromLocation()).toMatchObject({ signupWedge: "support" });
+    expect(getStoredSignupIntent()?.preferredTemplateId).toBeUndefined();
+    window.location.search = "";
+    sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+
+    expect(resolvePostAuthDestination("business", "")).toBe("/studio?create=1&template=front-desk");
+    expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
+    expect(resolvePostAuthDestination("business", "")).toBe("/studio");
   });
 
   it.each(SIGNUP_WEDGE_KEYS)(

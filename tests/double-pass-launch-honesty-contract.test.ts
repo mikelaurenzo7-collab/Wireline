@@ -172,13 +172,13 @@ describe("double-pass launch honesty", () => {
   it("keeps carrier messaging disclosures and registration ownership accurate", () => {
     const terms = read("src/components/LegalPage.tsx");
     const privacy = read("src/components/PrivacyPolicyPage.tsx");
-    expect(terms).toContain("Mobile contact information and SMS opt-in records are not sold or");
+    expect(terms).toContain("Mobile contact information and SMS opt in records are not sold or");
     expect(terms).toContain("Carriers are not liable");
     expect(terms).toContain("You are responsible for accurate");
     expect(terms).toContain("BotBound may request proof or disable");
     expect(terms).not.toContain("coordinates that registration through Twilio");
     expect(terms).not.toContain("as the Communications Service Provider");
-    expect(privacy).toContain("Mobile contact information and SMS opt-in records are not sold or");
+    expect(privacy).toContain("Mobile contact information and SMS opt in records are not sold or");
   });
 
   it("fails commercial email readiness closed without a postal address", () => {

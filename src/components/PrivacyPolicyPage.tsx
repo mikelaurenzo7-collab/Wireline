@@ -10,7 +10,7 @@ const LAST_UPDATED = ACCOUNT_PRIVACY_LAST_UPDATED;
 const NOTICE_STORAGE_KEY = "wireline_cookie_consent";
 const MEASUREMENT_STORAGE_KEY = "wireline_marketing_measurement_consent";
 const MEASUREMENT_CONSENT_EVENT = "wireline:marketing-measurement-consent";
-const CCPA_SHARING_DISCLOSURE = `We do not sell personal information for money. California law may treat disclosure of limited website event and device data to an advertising platform for cross-context campaign measurement as "sharing," even when no money changes hands. Meta measurement remains off unless you affirmatively allow it.`;
+const CCPA_SHARING_DISCLOSURE = `We do not sell personal information for money. California law may treat disclosure of limited website event and device data to an advertising platform for campaign measurement across contexts as "sharing," even when no money changes hands. Meta measurement remains off unless you affirmatively allow it.`;
 
 type MeasurementConsent = "granted" | "denied";
 
@@ -97,7 +97,7 @@ export default function PrivacyPolicyPage() {
           {[
             "We do not sell personal information.",
             "Optional advertising measurement stays off unless you allow it.",
-            "Phone calls use BotBound's built-in voices. Private voice previews require separate speaker permission.",
+            "Phone calls use BotBound's managed voices. Private voice previews require separate speaker permission.",
           ].map((item) => (
             <div
               key={item}
@@ -168,15 +168,15 @@ export default function PrivacyPolicyPage() {
           <Section title="1. Who We Are">
             <p>
               <strong>BotBound</strong> ("we", "our", or "us") operates a Bot platform for calls,
-              texts, and email. Questions about this policy can be sent to{" "}
-              <strong>support@botbound.app</strong>.
+              email, and computer tasks, with SMS for existing activated services. Questions about
+              this policy can be sent to <strong>support@botbound.app</strong>.
             </p>
           </Section>
 
           <Section title="2. Data We Collect">
             <p>
               <strong>Account data</strong>: Email address, password hashes, authentication tokens,
-              and account preferences provided during sign-up and use of the platform.
+              and account preferences provided during signup and use of the platform.
             </p>
             <p>
               <strong>Bot configuration</strong>: Names, personas, directives, knowledge entries,
@@ -187,9 +187,9 @@ export default function PrivacyPolicyPage() {
               may explicitly submit a recording of your own voice. We encrypt the saved recording
               and retain its permission, review, and processing metadata. A separate speech service
               processes the recording to generate a private preview; it does not replace your Bot's
-              live-call voice. Delete the saved voice to revoke future use and remove its active
+              live call voice. Delete the saved voice to revoke future use and remove its active
               encrypted recording. Generated previews are temporary and are not saved in the voice
-              library. Backup copies follow our account-data retention practices. We do not use
+              library. Backup copies follow our account data retention practices. We do not use
               these recordings to identify or authenticate people, train a shared model, or create a
               public voice library.
             </p>
@@ -207,8 +207,8 @@ export default function PrivacyPolicyPage() {
               the calling, texting, and email service you configure.
             </p>
             <p>
-              <strong>Usage and billing data</strong>: Feature usage, AI-model consumption, plan and
-              balance records, and Stripe billing information. We do not store full payment-card
+              <strong>Usage and billing data</strong>: Feature usage, AI model consumption, plan and
+              balance records, and Stripe billing information. We do not store full payment card
               numbers.
             </p>
             <p>
@@ -221,7 +221,7 @@ export default function PrivacyPolicyPage() {
               without advertising cookies. If you explicitly allow advertising measurement, Meta may
               also receive limited browser/device identifiers, IP address, page and referrer URLs,
               and conversion events for campaign attribution. We do not send Bot content, call
-              recordings, transcripts, customer contact lists, email or SMS bodies, or payment-card
+              recordings, transcripts, customer contact lists, email or SMS bodies, or payment card
               data to Meta Pixel.
             </p>
           </Section>
@@ -247,7 +247,7 @@ export default function PrivacyPolicyPage() {
             </p>
           </Section>
 
-          <Section title="4. Third-Party Sub-Processors and Measurement Providers">
+          <Section title="4. Subprocessors and Measurement Providers">
             <p>We rely on the following providers for defined service functions:</p>
             <ul className="list-disc space-y-1.5 pl-5 marker:text-muted-foreground">
               <li>
@@ -268,8 +268,8 @@ export default function PrivacyPolicyPage() {
                 <strong>Resend</strong>: Transactional email delivery
               </li>
               <li>
-                <strong>AgentMail</strong>: Platform-managed Bot mailboxes, including inbound and
-                outbound Bot email
+                <strong>AgentMail</strong>: Bot mailboxes managed by the platform, including inbound
+                and outbound Bot email
               </li>
               <li>
                 <strong>Render</strong>: Website and API hosting, and the persistent voice runtime
@@ -289,14 +289,14 @@ export default function PrivacyPolicyPage() {
                 <strong>Upstash</strong>: Distributed rate limits and spend controls
               </li>
               <li>
-                <strong>Plausible</strong>: Privacy-oriented aggregate website analytics
+                <strong>Plausible</strong>: Aggregate website analytics designed for privacy
               </li>
               <li>
                 <strong>Meta</strong>: Optional advertising measurement and campaign attribution,
                 only after explicit consent and subject to Global Privacy Control
               </li>
               <li>
-                <strong>Have I Been Pwned Pwned Passwords</strong>: Compromised-password screening
+                <strong>Have I Been Pwned Pwned Passwords</strong>: Compromised password screening
                 using a k-anonymous partial hash prefix
               </li>
               <li>
@@ -309,7 +309,7 @@ export default function PrivacyPolicyPage() {
               Bot to use it.
             </p>
             <p>
-              Mobile contact information and SMS opt-in records are not sold or shared with third
+              Mobile contact information and SMS opt in records are not sold or shared with third
               parties for their marketing.
             </p>
           </Section>
@@ -320,11 +320,11 @@ export default function PrivacyPolicyPage() {
               the service, resolve disputes, prevent abuse, and meet legal obligations. Account
               deletion starts a documented deletion process; associated personal data is erased
               within 30 days except for records we must retain by law or security records that have
-              been de-identified.
+              been deidentified.
             </p>
             <p>
               We use access controls, encryption in transit, restricted secrets, tenant isolation,
-              audit logging, and database row-level security. No system is perfectly secure, but we
+              audit logging, and database row level security. No system is perfectly secure, but we
               continuously review and improve these safeguards.
             </p>
           </Section>
@@ -356,7 +356,7 @@ export default function PrivacyPolicyPage() {
 
           <Section title="8. Cookies, Local Storage, and Analytics">
             <p>
-              BotBound uses first-party session cookies and local storage necessary for
+              BotBound uses first party session cookies and local storage necessary for
               authentication, security, preferences, and remembering your privacy choice. Plausible
               aggregate analytics is separate from advertising measurement and does not use
               advertising cookies.
@@ -364,9 +364,8 @@ export default function PrivacyPolicyPage() {
             <p>
               Meta Pixel is optional and remains off until you choose{" "}
               <strong>Allow Optional</strong>. Global Privacy Control overrides an allow choice.
-              Turning measurement off replaces BotBound's browser-side measurement function with a
-              no-op so future BotBound-triggered Meta events stop;{" "}
-              {"a request already in flight before revocation may still complete"}.
+              Turning measurement off stops future Meta events triggered by BotBound in your
+              browser; {"a request already in flight before revocation may still complete"}.
             </p>
           </Section>
 
@@ -380,7 +379,7 @@ export default function PrivacyPolicyPage() {
 
           <Section title="10. Healthcare Data (HIPAA)">
             <p>
-              <strong>BotBound is not HIPAA-certified at this time.</strong> Do not use BotBound to
+              <strong>BotBound is not HIPAA certified at this time.</strong> Do not use BotBound to
               process or transmit Protected Health Information unless and until a written Business
               Associate Agreement and an explicitly supported HIPAA configuration are in place.
             </p>
@@ -389,8 +388,8 @@ export default function PrivacyPolicyPage() {
           <Section title="11. Changes to This Policy">
             <p>
               We will post material changes on this page with a revised date and provide additional
-              notice where required. Material changes to consent-based measurement will not convert
-              an existing off choice into an allow choice.
+              notice where required. Material changes to measurement based on consent will not
+              convert an existing off choice into an allow choice.
             </p>
           </Section>
 

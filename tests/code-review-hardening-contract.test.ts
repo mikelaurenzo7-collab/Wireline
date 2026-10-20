@@ -327,7 +327,7 @@ describe("code review hardening contracts", () => {
     expect(pricing).toContain("within 30 days of your first paid invoice");
     expect(pricing).toContain("verify the account and transaction");
     expect(pricing).not.toContain("within 14 days of a first paid charge");
-    expect(terms).toContain("30-day money-back guarantee");
+    expect(terms).toContain("Money back guarantee for 30 days");
     expect(terms).toContain("verifies the account and transaction");
     expect(terms).not.toContain("No forms, no escalation");
     expect(terms).not.toContain("coordinates that registration through Twilio");

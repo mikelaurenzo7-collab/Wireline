@@ -40,9 +40,9 @@ const SECTIONS: SecurityTopic[] = [
     technical: true,
     items: [
       "HTTPS is enforced on public endpoints. HSTS is configured with includeSubDomains and preload.",
-      "Passwords are hashed with Node.js scrypt and a random per-user salt. They are never stored in plaintext.",
-      "Password-reset + email-verification tokens are stored as SHA-256 hashes; plaintext exists only inside the email link.",
-      "Session JWTs are signed HS256 with a server-held secret and delivered in an httpOnly SameSite=Lax cookie (2h TTL). Mutating API calls are Origin-checked; cross-site form posts cannot ride the session.",
+      "Passwords are hashed with Node.js scrypt and a random salt for each user. They are never stored in plaintext.",
+      "Password reset and email verification tokens are stored as SHA-256 hashes; plaintext exists only inside the email link.",
+      "Session JWTs are signed HS256 with a secret held on the server and delivered in an httpOnly SameSite=Lax cookie (2h TTL). Mutating API calls check Origin; form posts from other sites cannot ride the session.",
     ],
   },
   {
@@ -51,8 +51,8 @@ const SECTIONS: SecurityTopic[] = [
     technical: true,
     items: [
       "Content-Security-Policy: explicit allowlist; no unsafe-eval. Blocks classic XSS at the browser layer.",
-      "Cross-Origin-Opener-Policy: same-origin-allow-popups. Restricts opener relationships while preserving user-initiated OAuth connections.",
-      "Cross-Origin-Resource-Policy: same-origin where appropriate. Defends against Spectre-class leaks.",
+      "Cross-Origin-Opener-Policy: same-origin-allow-popups. Restricts opener relationships while preserving OAuth connections initiated by the user.",
+      "Cross-Origin-Resource-Policy: same-origin where appropriate. Defends against leaks in the Spectre family.",
       "Referrer-Policy: strict-origin-when-cross-origin. Permissions-Policy: locked to what we use.",
     ],
   },
@@ -61,8 +61,8 @@ const SECTIONS: SecurityTopic[] = [
     title: "Webhook Signature Verification",
     technical: true,
     items: [
-      "Inbound webhook paths use provider-appropriate signatures or timing-safe shared-secret verification.",
-      "Invalid signatures are rejected; timestamped HMAC paths enforce a five-minute replay window.",
+      "Inbound webhook paths use the provider's signatures or shared secret verification with constant time comparison.",
+      "Invalid signatures are rejected; timestamped HMAC paths enforce a replay window of five minutes.",
       "Outbound webhooks are signed before delivery. Shared secrets are not placed in URLs.",
     ],
   },
@@ -70,17 +70,17 @@ const SECTIONS: SecurityTopic[] = [
     icon: Eye,
     title: "What We Store, and What We Don't",
     items: [
-      "Call transcripts are stored in the managed database with configurable retention per tenant (365-day default; supported range 90 to 365 days).",
-      "Managed full-call provider audio recording is disabled by default. Caller-submitted voicemail or message-recording features may create audio when intentionally used.",
+      "Call transcripts are stored in the managed database with configurable retention per account (365 days by default; supported range 90 to 365 days).",
+      "Provider audio recording of full calls is disabled by default. Voicemail or message recording may create audio when intentionally used.",
       "Credit card numbers are never stored, logged, or read by BotBound servers. PCI scope is reduced through Stripe Checkout.",
-      "Healthcare-sensitive runtime controls can reduce sensitive content in logs and restrict some exports. Do not process PHI unless BotBound confirms a signed BAA and approved configuration in writing.",
+      "Healthcare runtime controls can reduce sensitive content in logs and restrict some exports. Do not process PHI unless BotBound confirms a signed BAA and approved configuration in writing.",
     ],
   },
   {
     icon: HeartPulse,
-    title: "Healthcare-Sensitive Controls",
+    title: "Healthcare Data Controls",
     items: [
-      "Per-agent compliance_mode = 'hipaa' tightens runtime behavior and data-handling defaults. This setting is not a certification or compliance determination.",
+      "The compliance_mode = 'hipaa' setting for each Bot tightens runtime behavior and data handling defaults. This setting is not a certification or compliance determination.",
       "Do not send, store, or process PHI unless BotBound confirms both a signed BAA and an approved configuration in writing.",
       "A SOC 2 Type II attestation is not currently available. BotBound does not display an unearned badge or imply that planning equals proof.",
     ],
@@ -97,9 +97,9 @@ const SECTIONS: SecurityTopic[] = [
     icon: Globe2,
     title: "GDPR + CCPA",
     items: [
-      "Right-to-erasure uses a server-owned deletion workflow for user-owned product data.",
+      "The right to erasure uses a server controlled deletion workflow for your product data.",
       "Contact security@botbound.app for current privacy documentation and any contractual review.",
-      "Processing locations vary by provider and feature. Confirm any specific data-residency requirement with BotBound in writing before sharing data.",
+      "Processing locations vary by provider and feature. Confirm any specific data residency requirement with BotBound in writing before sharing data.",
     ],
   },
   {
@@ -107,9 +107,9 @@ const SECTIONS: SecurityTopic[] = [
     title: "Operational Security",
     technical: true,
     items: [
-      "High-risk authentication and public API paths use rate limiting; signed webhook paths fail closed when verification is unavailable.",
+      "Sensitive authentication and public API paths use rate limiting; signed webhook paths fail closed when verification is unavailable.",
       "Database migrations are versioned, reviewed, and applied through the deployment pipeline.",
-      "BotBound monitors calling, messaging, and reasoning health behind the scenes; customer-impacting issues surface through product messaging and support.",
+      "BotBound monitors calling, messaging, and reasoning health behind the scenes; issues that affect customers surface through product messaging and support.",
       "Runtime usage and reliability events record provider, model, token, cost, and latency data where the provider returns it.",
     ],
   },
@@ -118,9 +118,9 @@ const SECTIONS: SecurityTopic[] = [
     title: "Database Posture",
     technical: true,
     items: [
-      "Postgres on Supabase. Tenant isolation uses SET LOCAL ROLE wireline_server with per-request app.current_user_id RLS policies on tenant tables.",
-      "Foreign-key and server-owned deletion paths remove user-owned downstream data.",
-      "Backup and point-in-time recovery availability follow the active Supabase plan; recovery drills remain an operational responsibility.",
+      "Postgres on Supabase. Tenant isolation uses SET LOCAL ROLE wireline_server with app.current_user_id RLS policies for each request on tenant tables.",
+      "Foreign key constraints and server controlled deletion paths remove your downstream data.",
+      "Backup and point in time recovery availability follow the active Supabase plan; recovery drills remain an operational responsibility.",
     ],
   },
   {
@@ -140,9 +140,9 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     icon: ShieldCheck,
     title: "Tenant Isolation",
     items: [
-      "Authenticated product reads and writes are scoped through server-owned tenant context rather than client-supplied filters alone.",
+      "Authenticated product reads and writes are scoped through account context controlled by the server rather than filters supplied by the client alone.",
       "Provider credentials, OAuth tokens, and billing authority never ship to browsers or mobile clients.",
-      "Cross-tenant access is rejected by route ownership checks and database isolation controls.",
+      "Access to another account is rejected by route ownership checks and database isolation controls.",
     ],
   },
   {
@@ -161,34 +161,34 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     technical: true,
     items: [
       "Optional companions. Android is internal beta; iPhone is planned. The web app is the GA product.",
-      "When available, natives use short-lived Bearer sessions against the same API; prompts, billing, and compliance stay server-owned.",
-      "App Store / Play account-deletion paths ship with each store build. They are not a launch gate for the web product.",
+      "When available, native clients use temporary Bearer sessions against the same API; prompts, billing, and compliance stay on the server.",
+      "App Store / Play account deletion paths ship with each store build. They are not a launch gate for the web product.",
     ],
   },
   {
     icon: HeartPulse,
     title: "Call Compliance (TCPA / DNC)",
     items: [
-      "Outbound call policy accounts for recipient consent and Do Not Call screening before a call can start.",
-      "Tenant DNC lists are enforced before expensive PSTN actions.",
+      "Eligible personal calls require the applicable recipient permission and Do Not Call checks before they can start. Business outbound calling is coming soon.",
+      "Account Do Not Call lists remain enforced before eligible outgoing calls are placed.",
     ],
   },
   {
     icon: CreditCard,
     title: "Billing & Spend Controls",
     items: [
-      "Runtime Balance is a prepaid ledger. Paid plans draw overflow voice and SMS from funded balance after included minutes. Free Builder cannot run live voice until a paid plan is active.",
-      "Paid plans include a managed AI allowance for platform-funded AI, research, and enrichment. Calls can use up to 10 minutes of paid completion credit within their session limit. Any amount due pauses new calls and prepaid extras until topped up.",
-      "Daily spend accumulators and economics-at-risk alerts help the platform owner catch margin leaks early.",
+      "Runtime Balance is a prepaid ledger. Paid plans draw overflow voice from funded balance after included minutes. SMS is coming soon for new customers; existing SMS service retains its billing and verification requirements. Free Builder cannot run live voice until a paid plan is active.",
+      "Paid plans include a managed AI allowance for AI, research, and enrichment funded by the platform. Calls can use up to 10 minutes of paid completion credit within their session limit. Any amount due pauses new calls and prepaid extras until topped up.",
+      "Daily spend totals and cost alerts help the platform owner catch margin leaks early.",
     ],
   },
   {
     icon: Eye,
     title: "Account Deletion & Data Rights",
     items: [
-      "Self-serve account deletion runs a server-owned workflow over user-owned product data.",
+      "Account deletion runs a server controlled workflow over your product data.",
       "GDPR/CCPA erasure requests follow the same workflow. Contact security@botbound.app for current privacy and security documentation.",
-      "Transcript retention defaults to 365 days and supports 90 to 365 days per tenant. Managed full-call provider audio recording defaults off; intentionally used voicemail/message-recording features may still create audio.",
+      "Transcript retention defaults to 365 days and supports 90 to 365 days per account. Provider audio recording of full calls defaults off; intentionally used voicemail or message recording may still create audio.",
     ],
   },
   {
@@ -198,10 +198,10 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
       "Production voice: Twilio provides phone numbers, PSTN transport, SIP, and SMS. BotBound runs phone conversations, speech recognition, and transcription on contracted AI model providers, with a backup provider for continuity. A current subprocessor list is available on request.",
       "Payments: Stripe (PCI scope reduced, BotBound never stores card numbers).",
       "Data plane: Supabase Postgres. Rate limits: Upstash Redis. Hosting: Render.",
-      "Email: AgentMail for platform-managed Bot mailboxes and Bot email; Resend for transactional platform email.",
+      "Email: AgentMail for Bot mailboxes managed by the platform and Bot email; Resend for transactional platform email.",
       "Computer: Browserless hosts remote browser sessions. An AI model provider processes screen context to carry out tasks.",
       "Monitoring: Sentry receives redacted server error reports and operational diagnostics when configured.",
-      "Provider credentials and routing stay server-side. BotBound owns the customer-facing experience while this Trust Center names key subprocessors for transparency.",
+      "Provider credentials and routing stay on the server. BotBound owns the customer experience while this Trust Center names key subprocessors for transparency.",
     ],
   },
 ];
@@ -266,7 +266,7 @@ export default function Security() {
               </div>
             </div>
             <p className="mt-4 text-eyebrow !text-[0.625rem]">
-              <span className="whitespace-nowrap">Last updated · October 19, 2026</span>
+              <span className="whitespace-nowrap">Last updated · October 20, 2026</span>
             </p>
           </motion.div>
 
@@ -318,8 +318,8 @@ export default function Security() {
               <li>
                 Additional data regions based on contractual demand and operational readiness.
               </li>
-              <li>Hardware-backed MFA and enterprise identity controls.</li>
-              <li>A structured vulnerability-disclosure or bounty program with written scope.</li>
+              <li>Hardware backed MFA and enterprise identity controls.</li>
+              <li>A structured vulnerability disclosure or bounty program with written scope.</li>
             </ul>
             <p className="mx-auto mt-3 max-w-2xl text-xs leading-5 text-muted-foreground">
               Evaluation is not a delivery commitment. Contractual requirements apply only when
@@ -336,7 +336,7 @@ export default function Security() {
             </p>
             <p>
               <Link to="/trust" className="text-brand hover:underline">
-                Trust Center (sales-ready overview)
+                Trust Center
               </Link>
               {" · "}
               <Link to="/support" className="text-brand hover:underline">
