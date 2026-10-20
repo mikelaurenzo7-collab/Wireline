@@ -79,7 +79,9 @@ function gateResponse(res: Response, gate: DeniedOutboundDialGate) {
   if (gate.reason === "federal_dnc_unconfigured") {
     return res.status(503).json({
       code: gate.federalDncCode || "FEDERAL_DNC_UNCONFIGURED",
-      error: gate.federalDncMessage || "Federal DNC is not configured for marketing dials.",
+      error:
+        gate.federalDncMessage ||
+        "Sales and marketing calls aren't available yet. Answering calls still works.",
     });
   }
   if (gate.reason === "blocked_internal_dnc") {

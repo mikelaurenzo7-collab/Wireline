@@ -516,7 +516,8 @@ router.post(
           throw new AppError(
             503,
             gate.federalDncCode || "FEDERAL_DNC_UNCONFIGURED",
-            gate.federalDncMessage || "Federal DNC is not configured for marketing sends.",
+            gate.federalDncMessage ||
+              "Sales and marketing texts aren't available yet. Answering calls still works.",
           );
         }
         throw new AppError(

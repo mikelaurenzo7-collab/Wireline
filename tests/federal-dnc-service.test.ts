@@ -132,7 +132,9 @@ describe("federal-dnc-service", () => {
     expect(gate.configured).toBe(false);
     if (gate.allowed) return;
     expect(gate.code).toBe("FEDERAL_DNC_NOT_CONFIGURED");
-    expect(gate.message).toContain("must be configured");
+    expect(gate.message).toBe(
+      "Sales and marketing calls aren't available yet. Answering calls still works.",
+    );
   });
 
   it("reports configured when federal screening credentials are valid", () => {

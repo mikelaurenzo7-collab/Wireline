@@ -141,7 +141,7 @@ export function assertFederalDncForMarketing(): FederalDncMarketingGate {
     allowed: false,
     configured: false,
     code: "FEDERAL_DNC_NOT_CONFIGURED",
-    message: "Federal DNC screening must be configured before marketing outbound can run.",
+    message: "Sales and marketing calls aren't available yet. Answering calls still works.",
   };
 }
 
