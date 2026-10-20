@@ -338,6 +338,7 @@
   outline-offset: 2px;
 }
 
+.wl-computer-detail:fullscreen,
 .wl-computer-takeover:fullscreen,
 .wl-computer-screen:fullscreen {
   overflow: auto;
@@ -345,6 +346,12 @@
   border: 0;
   border-radius: 0;
   background: var(--wireline-color-surface-default);
+}
+
+.wl-computer-detail:fullscreen > * {
+  flex-shrink: 0;
+  width: min(100%, 1280px);
+  margin-inline: auto;
 }
 
 .wl-computer-takeover:fullscreen {

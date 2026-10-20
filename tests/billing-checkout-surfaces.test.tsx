@@ -210,19 +210,40 @@ describe("billing plan decisions", () => {
     );
   });
 
-  it("offers a usable billing contact link for an unavailable individual plan", async () => {
-    h.catalog.plans = [
-      paidPlan(),
-      paidPlan({ id: "team", name: "Starter Plus", configured: false, annual_configured: false }),
-    ];
-    await mount("card");
-    const contact = render("card").find(
-      (element) => element.type === "a" && text(element).includes("Contact Sales"),
-    );
-    expect(contact).toBeUndefined();
-    expect(button("card", "Continue to Checkout").props.disabled).toBe(false);
-    expect(h.fetch.mock.calls.some(([path]) => path === "/api/billing/checkout")).toBe(false);
-  });
+  it.each(["email-regular", "voice-email-regular"])(
+    "offers setup review for held %s activation without opening checkout",
+    async (planId) => {
+      h.signupIntent = { preferredPlanId: planId };
+      h.catalog.plans = [
+        paidPlan(),
+        paidPlan({
+          id: planId,
+          name: planId === "email-regular" ? "Email" : "Calls + Email",
+          channels: planId === "email-regular" ? ["email"] : ["voice", "email"],
+          included_mailboxes: 1,
+          configured: false,
+          annual_configured: false,
+          contact_sales: true,
+        }),
+      ];
+      await mount("card");
+      const elements = render("card");
+      expect(
+        elements.some((element) =>
+          text(element).includes("Email activation requires a setup review."),
+        ),
+      ).toBe(true);
+      expect(
+        elements.find(
+          (element) => element.type === "a" && text(element).includes("Ask About Email Setup"),
+        )?.props.to,
+      ).toBe("/contact?topic=email");
+      const checkout = button("card", "Checkout Paused");
+      expect(checkout.props.disabled).toBe(true);
+      await checkout.props.onClick?.();
+      expect(h.fetch.mock.calls.some(([path]) => path === "/api/billing/checkout")).toBe(false);
+    },
+  );
 
   it("retains a free path while the global checkout gate is paused", async () => {
     h.catalog.checkout_available = false;

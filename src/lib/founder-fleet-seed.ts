@@ -231,18 +231,22 @@ export function founderFleetSeedNeedsRefresh(state: FounderFleetSeedState): bool
 }
 
 /**
- * Live plan facts for the agents that sell BotBound.
+ * Current launch plan facts for the agents that sell BotBound.
  *
- * Derived from the Stripe catalog rather than written out, so a catalog change
- * cannot leave the fleet quoting a retired price on a real call. Never hardcode
- * plan pricing here.
+ * Prices and availability come from the same catalog as public pricing.
+ * Persisted Training remains founder controlled and needs review when the
+ * offer changes; refreshing the fleet must not restore edited seed text.
  */
 export function wirelinePlanFacts(): string[] {
   // plansForClient() is the same public catalog the pricing page consumes. A
   // hand-rolled `plan.public` filter here silently dropped every paid plan,
   // because paid plans are public by omission (`public !== false`) — the fleet
   // would have gone to work knowing only Free Builder.
-  const lines = plansForClient().map((plan) => {
+  const launchPlans = plansForClient().filter(
+    (plan) =>
+      plan.is_free || (plan.catalog_family === "channels" && !plan.channels.includes("sms")),
+  );
+  const lines = launchPlans.map((plan) => {
     const price =
       plan.price_usd_monthly === 0
         ? "free"
@@ -261,18 +265,20 @@ export function wirelinePlanFacts(): string[] {
     const agents = `${plan.max_agents} Bot${plan.max_agents === 1 ? "" : "s"}`;
     const availability = plan.is_free
       ? "Private setup and bounded rehearsal."
-      : plan.checkout_availability === "sms_readiness_required"
-        ? "SMS activation is unavailable."
-        : "Activation depends on current Billing availability.";
+      : plan.channels.includes("email") && plan.contact_sales
+        ? "Email activation requires a setup review. Confirm current Billing availability."
+        : !plan.configured && !plan.annual_configured
+          ? "Paid activation is currently unavailable. Confirm current Billing availability."
+          : "Activation depends on current Billing availability.";
     return `${plan.name}: ${price}. ${agents}, ${minutes}, ${numbers}, ${mailboxes}. ${availability}`;
   });
   return [
     `BotBound in one line: ${BRAND_SYSTEM.northStar}`,
     ...lines,
-    "Channel packages include one Bot with only the selected channels. Extra-Bot add-ons are not available. Calls/SMS include one number; Email includes one managed mailbox.",
+    "Channel packages include one Bot with only the selected Calls and Email channels. Extra Bots are not available as add ons. Calls includes one number; Email includes one managed mailbox. SMS activation is unavailable and SMS packages are not part of the launch offer.",
     "Channel call minutes and managed AI renew on the monthly subscription anniversary, including annual plans; unused included usage does not roll over.",
     "Calls packages allow one call at a time. Extra minutes use prepaid Runtime Balance, with up to 10 minutes of completion credit within the call's duration limit. Any amount due pauses new calls and prepaid extras until topped up. There is no automatic overage invoice or guarantee that a call cannot end at its duration limit.",
-    "Outbound calling remains unavailable until its consent, screening and pre-dial funding gates pass. A selected area code does not grant recipient permission.",
+    "Reviewed personal coordination and specific business service or appointment calls require recipient permission, a paid Calls plan, and supported caller and recipient locations in Illinois. Each call needs account holder review and current dispatch and funding checks. Marketing and sales call campaigns are unavailable. A selected area code does not grant recipient permission.",
     "Quote only these plan facts. If asked for a discount, custom terms, or anything not listed, take the request and escalate instead of inventing an offer.",
   ];
 }
@@ -281,7 +287,7 @@ const KNOWLEDGE_SNIPPETS: Record<string, string[]> = {
   default: [
     "Operators configure Bots via Create, Knowledge, Connections, and the Workspace.",
     "Escalations route to the configured phone/email; use escalate_to_human when risk is high.",
-    "BotBound Bots work across voice, text, and email under one identity, memory, and outcome record.",
+    "BotBound Bots handle calls, email, and computer tasks through their enabled channels and actions. Describe only the capabilities configured for this Bot.",
   ],
   sales: [
     "Lead with outcome before features. Always propose a concrete next step before ending the conversation.",
@@ -300,7 +306,7 @@ const KNOWLEDGE_SNIPPETS: Record<string, string[]> = {
   marketing: [
     "Campaign brief template: Audience → Hook → Offer → CTA → Success metric.",
     "BotBound markets its own product with its own Bots. Anything sent must be something the founder would sign.",
-    "Outbound marketing contact runs only after consent and DNC gates pass. If a gate blocks the work, report it instead of routing around it.",
+    "Marketing and sales call campaigns are not available in the current launch. Reviewed service and personal calls cannot be used to bypass that boundary.",
   ],
   technical_support: [
     "Diagnose in this order: number and routing, then Bot configuration, then integration connection, then provider status.",
@@ -400,8 +406,15 @@ export function namespacedAssistantAgentId(templateId: string, userId: string): 
   return `${userId}-${templateId}`;
 }
 
-async function ensurePersonality(agentId: string, userId: string, content: string): Promise<void> {
-  const [existing] = await drizzle
+type FounderSeedDb = typeof drizzle | Parameters<Parameters<typeof drizzle.transaction>[0]>[0];
+
+async function ensurePersonality(
+  agentId: string,
+  userId: string,
+  content: string,
+  db: FounderSeedDb,
+): Promise<void> {
+  const [existing] = await db
     .select({ agentId: schema.personality.agentId })
     .from(schema.personality)
     .where(and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)))
@@ -410,7 +423,7 @@ async function ensurePersonality(agentId: string, userId: string, content: strin
     return;
   }
 
-  const [foreign] = await drizzle
+  const [foreign] = await db
     .select({ agentId: schema.personality.agentId })
     .from(schema.personality)
     .where(eq(schema.personality.agentId, agentId))
@@ -423,7 +436,7 @@ async function ensurePersonality(agentId: string, userId: string, content: strin
     return;
   }
 
-  await drizzle.insert(schema.personality).values({ agentId, userId, content });
+  await db.insert(schema.personality).values({ agentId, userId, content });
 }
 
 function recordValue(value: unknown): Record<string, unknown> {
@@ -455,9 +468,10 @@ async function seedTrainingArtifacts(
   userId: string,
   role: string,
   report: FounderAssistantSeedReport,
+  db: FounderSeedDb,
 ): Promise<void> {
   for (const content of knowledgeForRole(role)) {
-    const exists = await drizzle
+    const exists = await db
       .select({ id: schema.knowledge.id })
       .from(schema.knowledge)
       .where(
@@ -469,13 +483,13 @@ async function seedTrainingArtifacts(
       )
       .limit(1);
     if (exists.length === 0) {
-      await drizzle.insert(schema.knowledge).values({ agentId, userId, content });
+      await db.insert(schema.knowledge).values({ agentId, userId, content });
       report.knowledgeInserted++;
     }
   }
 
   for (const [i, content] of DIRECTIVE_SNIPPETS.entries()) {
-    const exists = await drizzle
+    const exists = await db
       .select({ id: schema.directives.id })
       .from(schema.directives)
       .where(
@@ -487,7 +501,7 @@ async function seedTrainingArtifacts(
       )
       .limit(1);
     if (exists.length === 0) {
-      await drizzle.insert(schema.directives).values({
+      await db.insert(schema.directives).values({
         agentId,
         userId,
         content,
@@ -498,17 +512,17 @@ async function seedTrainingArtifacts(
   }
 
   for (const lesson of LESSON_SNIPPETS) {
-    try {
-      await drizzle.insert(schema.agentLessons).values({
+    const inserted = await db
+      .insert(schema.agentLessons)
+      .values({
         agentId,
         userId,
         lesson,
         source: "founder-agent-seed",
-      });
-      report.lessonsInserted++;
-    } catch {
-      // unique (agent_id, lesson) — already seeded
-    }
+      })
+      .onConflictDoNothing({ target: [schema.agentLessons.agentId, schema.agentLessons.lesson] })
+      .returning({ id: schema.agentLessons.id });
+    report.lessonsInserted += inserted.length;
   }
 }
 
@@ -638,6 +652,15 @@ async function upsertAgent(
     }
 
     if (existing) {
+      // A completed contract owns its saved Training. Exact-content matching
+      // alone would restore defaults after the founder edits or removes them.
+      if (
+        recordValue(existing.businessVariables).founder_seed_contract_version !==
+        FOUNDER_FLEET_SEED_CONTRACT_VERSION
+      ) {
+        await ensurePersonality(agentId, userId, personalityForTemplate(template), tx);
+        await seedTrainingArtifacts(agentId, userId, template.role, report, tx);
+      }
       await tx
         .update(schema.agents)
         .set(
@@ -651,13 +674,15 @@ async function upsertAgent(
       return { kind: "updated", agentId } as const;
     }
     await tx.insert(schema.agents).values({ id: agentId, ...values, markKey });
+    // Commit the initial Bot, Training and contract marker together. A failed
+    // insert rolls back the marker so the next bootstrap can retry safely.
+    await ensurePersonality(agentId, userId, personalityForTemplate(template), tx);
+    await seedTrainingArtifacts(agentId, userId, template.role, report, tx);
     return { kind: "created", agentId } as const;
   });
   if (outcome.kind === "updated") report.agentsUpdated++;
   else report.agentsCreated++;
 
-  await ensurePersonality(outcome.agentId, userId, personalityForTemplate(template));
-  await seedTrainingArtifacts(outcome.agentId, userId, template.role, report);
   report.agentIds.push(outcome.agentId);
   return outcome.agentId;
 }
@@ -709,17 +734,15 @@ export async function seedFounderAssistant(userId: string): Promise<FounderAssis
     await upsertAgent(userId, template, voiceIndex++, report);
   }
 
-  // Existing owner-created Bots keep their chosen tools and Studio settings.
-  // A versioned refresh may add missing canonical training facts, but it must
-  // not silently broaden the external actions a dogfooded Bot can perform.
+  // Owner-created Bots are not seed targets. Keep them in the report without
+  // injecting plan snapshots or restoring Training the founder has edited.
   const ownerAgents = await drizzle
-    .select({ id: schema.agents.id, role: schema.agents.role })
+    .select({ id: schema.agents.id })
     .from(schema.agents)
     .where(eq(schema.agents.userId, userId));
 
   for (const row of ownerAgents) {
     if (!report.agentIds.includes(row.id)) {
-      await seedTrainingArtifacts(row.id, userId, row.role || "customer_service", report);
       report.agentIds.push(row.id);
     }
   }

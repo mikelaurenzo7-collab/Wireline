@@ -31,6 +31,7 @@ const PILLARS: readonly Pillar[] = [
     label: "Phone Number",
     title: "Ready When the Phone Rings",
     body: "Your Bot answers calls, handles questions, and takes requests. It can also place reviewed personal calls and specific business service or appointment calls. With a configured calendar, it can book available times.",
+    note: "Reviewed calls are currently available when both you and the recipient are in Illinois.",
   },
   {
     icon: MonitorSmartphone,

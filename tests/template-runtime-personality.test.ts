@@ -149,6 +149,17 @@ describe("template personality runtime composition", () => {
     for (const prompt of composeAllProviders(plain).prompts) {
       expect(prompt).toContain(plain);
       expect(prompt).toContain("## ACTION AND RESULT SAFETY");
+      expect(prompt).toContain("When a tool confirms email submission or returns SUBMISSION_OK");
+      expect(prompt).toContain("Unverified inbox arrival does not mean sending failed");
+      expect(prompt).toContain("Do not offer to retry an accepted send");
+      expect(prompt).toContain("include relevant verified website, pricing, or booking URLs");
+      expect(prompt).toContain("Preserve the exact URLs. Never invent a URL or path");
+      expect(prompt).toContain("or substitute BotBound links for another business");
+      expect(prompt).toContain("actions must also be enabled for this Bot");
+      expect(prompt).toContain(
+        "Caller assumptions and earlier Bot statements are not verification",
+      );
+      expect(prompt).toContain("If pricing is unverified or sources conflict, omit the price");
       expect(prompt).not.toContain(TEMPLATE_SPECIALTY_MARKER);
       expect(prompt).not.toContain("SELECTED TEMPLATE PLAYBOOK");
     }

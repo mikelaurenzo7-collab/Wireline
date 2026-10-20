@@ -49,6 +49,40 @@ describe("Workspace computer panel", () => {
     expect(panel).toContain("{!collapsed && !fill ? (");
   });
 
+  it("keeps checkpoint, owner stop and error recovery inside the expanded task", () => {
+    const detail = computer.slice(computer.indexOf("function TaskDetail("));
+    const fullscreenTarget = computer.slice(
+      computer.indexOf('aria-label={expanded ? "Exit expanded browser"'),
+      computer.indexOf("surface.requestFullscreen().catch"),
+    );
+    expect(fullscreenTarget).toContain('closest(".wl-computer-detail")');
+    expect(fullscreenTarget).not.toContain('closest(".wl-computer-takeover")');
+    expect(detail).toContain(
+      '<section ref={detailRef} className="wl-computer-detail" aria-labelledby="computer-task-title">',
+    );
+    expect(detail).toContain('className="wl-computer-question"');
+    expect(detail).toContain('onClick={() => void act("stop")}');
+    expect(detail).toContain('title="Something Went Wrong"');
+    expect(detail).toContain("!active && document.fullscreenElement === detailRef.current");
+    expect(detail).toMatch(
+      /exitEndedTask\(\);\s*document\.addEventListener\("fullscreenchange", exitEndedTask\)/,
+    );
+    expect(detail).toContain('document.removeEventListener("fullscreenchange", exitEndedTask)');
+    const activity = detail.slice(
+      detail.indexOf("const openActivity = async () =>"),
+      detail.indexOf('const act = async (kind: "stop" | "reply")'),
+    );
+    expect(activity.indexOf("await document.exitFullscreen()")).toBeGreaterThan(-1);
+    expect(activity.indexOf("setActivityOpen(true)")).toBeGreaterThan(
+      activity.indexOf("await document.exitFullscreen()"),
+    );
+    expect(activity).toContain("return;");
+    expect(read("src/styles/cloud-computer.css")).toContain(".wl-computer-detail:fullscreen > *");
+    expect(computer).toMatch(
+      /update\(\);\s*document\.addEventListener\("fullscreenchange", update\)/,
+    );
+  });
+
   it("never lets a drag narrow the conversation past a readable column", () => {
     expect(studio).toContain("const CONVERSATION_MIN_WIDTH = 420;");
     expect(studio).toContain("workspaceWidth - CONVERSATION_MIN_WIDTH");

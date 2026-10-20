@@ -56,8 +56,12 @@ describe("product documentation and compatibility contract", () => {
     expect(launchTruth).toContain("Do not add a public setup sequence or repeat process slogans.");
     expect(launchTruth).toContain("For You. For Your Business.");
     expect(readme).toContain("Broad public copy uses **Bot** or **Phone Bot**");
-    expect(readme).toContain("in the same workspace");
-    expect(readme).toContain("Calls/SMS packages include one shared number");
+    expect(readme).toContain(
+      "The launch story is voice Bots with a computer, phone number, and email address.",
+    );
+    expect(readme).toContain(
+      "SMS and outbound are not launch marketing offers; legacy channel code, saved history, and allowed reviewed calling retain their entitlement and runtime policy boundaries.",
+    );
     expect(readme).toContain("Training");
     expect(readme).toContain("BotBound Command");
     expect(readme).toContain("WIRELINE_2026_ROADMAP.md");
@@ -121,7 +125,7 @@ describe("product documentation and compatibility contract", () => {
 
   it("keeps static metadata and OG positioning aligned with BotBound", () => {
     const head = read("index.html");
-    const ogImage = read("public/og-image.svg");
+    const ogImage = read("public/og-image.svg").replace(/<image\b[^>]*\/>/g, "");
 
     expect(head).toContain("BotBound | A Bot for You");
     expect(head).toContain("Voice Bots with a computer, phone number, and email address.");
@@ -137,7 +141,9 @@ describe("product documentation and compatibility contract", () => {
 
     expect(ogImage).toContain("BotBound");
     expect(ogImage).toContain("Give Your Bot a Goal");
-    expect(ogImage).toContain("Incoming calls, personal calling, email, and computer tasks.");
+    expect(ogImage).toContain(
+      "For You. For Your Business. Answer calls. Handle email. Work online.",
+    );
     expect(ogImage).not.toContain("ONE BOT.");
     expect(ogImage).not.toContain("Find. Call. Book");
     expect(ogImage).toMatch(/phone|Phone/);

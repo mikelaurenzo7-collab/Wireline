@@ -356,6 +356,7 @@ function LiveScreen({
   useEffect(() => {
     const update = () =>
       setExpanded(Boolean(document.fullscreenElement?.contains(screenRef.current)));
+    update();
     document.addEventListener("fullscreenchange", update);
     return () => document.removeEventListener("fullscreenchange", update);
   }, []);
@@ -490,7 +491,7 @@ function LiveScreen({
                 return;
               }
               const surface =
-                event.currentTarget.closest(".wl-computer-takeover") ?? screenRef.current;
+                event.currentTarget.closest(".wl-computer-detail") ?? screenRef.current;
               if (surface instanceof HTMLElement && surface.requestFullscreen) {
                 void surface.requestFullscreen().catch(() => undefined);
               }
@@ -743,6 +744,7 @@ function TaskDetail({
   const [ownerText, setOwnerText] = useState("");
   const [showOwnerText, setShowOwnerText] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
+  const detailRef = useRef<HTMLElement | null>(null);
   const [ownerUrl, setOwnerUrl] = useState(
     /^https?:\/\//i.test(task.currentUrl || "") ? task.currentUrl! : task.startUrl || "",
   );
@@ -764,6 +766,35 @@ function TaskDetail({
   const viewportOwnsControls = active && !task.ownerControl;
   const browserStillOpen = !active && task.liveView;
   const events = useMemo(() => [...task.events].reverse(), [task.events]);
+
+  useEffect(() => {
+    // The live screen and its exit button disappear when the task ends.
+    // A pending fullscreen request may resolve after the terminal update.
+    const exitEndedTask = () => {
+      if (!active && document.fullscreenElement === detailRef.current) {
+        void document.exitFullscreen().catch(() => undefined);
+      }
+    };
+    exitEndedTask();
+    document.addEventListener("fullscreenchange", exitEndedTask);
+    return () => document.removeEventListener("fullscreenchange", exitEndedTask);
+  }, [active]);
+
+  const openActivity = async () => {
+    // The activity sheet uses a document portal, outside the fullscreen surface.
+    if (document.fullscreenElement === detailRef.current) {
+      try {
+        await document.exitFullscreen();
+      } catch {
+        setFailure({
+          message: "Exit the expanded browser to view task activity.",
+          status: task.status,
+        });
+        return;
+      }
+    }
+    setActivityOpen(true);
+  };
 
   const act = async (kind: "stop" | "reply") => {
     setBusy(kind);
@@ -845,7 +876,7 @@ function TaskDetail({
   };
 
   return (
-    <section className="wl-computer-detail" aria-labelledby="computer-task-title">
+    <section ref={detailRef} className="wl-computer-detail" aria-labelledby="computer-task-title">
       <header className="wl-computer-detail__header">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -869,7 +900,7 @@ function TaskDetail({
             variant="outline"
             size="sm"
             className="shrink-0 whitespace-nowrap"
-            onClick={() => setActivityOpen(true)}
+            onClick={() => void openActivity()}
             aria-label="Open task activity"
           >
             <PanelRightOpen aria-hidden="true" />

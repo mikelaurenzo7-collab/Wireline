@@ -66,8 +66,15 @@ describe("canonical mobile overlay system", () => {
     expect(plan).toContain("Mobile marketing navigation");
     expect(plan).toContain("Mobile page and toolbar actions");
     expect(plan).toContain("Persistent workspace routing");
+    expect(plan).toContain("Use the existing Radix primitives for new blocking surfaces.");
     expect(plan).toContain(
-      "Delegate Escape, focus trapping, focus restoration, and body scroll locking to Radix.",
+      "The existing command palette uses the shared `useModalFocusTrap` and `useBodyScrollLock` lifecycle.",
+    );
+    expect(plan).toContain(
+      "Every mobile overlay requires a visible close action, an accessible name, focus containment, and focus restoration.",
+    );
+    expect(plan).toContain(
+      "`CommandBar` supports command search, arrow selection, Enter, Escape, and the registered `g` shortcuts.",
     );
   });
 });

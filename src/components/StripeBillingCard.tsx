@@ -618,8 +618,24 @@ function PlanPicker({
             checkoutReleased &&
             live?.checkout_availability === "available" &&
             (billingInterval === "year" ? live.annual_configured : live.configured) === true;
+          const needsEmailSetupReview =
+            checkoutReleased &&
+            live?.contact_sales === true &&
+            live.checkout_availability === "available" &&
+            live.channels.includes("email");
           return (
             <div className="space-y-2">
+              {needsEmailSetupReview ? (
+                <div role="status" className="space-y-2 text-sm text-muted-foreground">
+                  <p>Email activation requires a setup review.</p>
+                  <Link
+                    to="/contact?topic=email"
+                    className="wl-focus-ring-halo inline-flex min-h-11 items-center rounded-md font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    Ask About Email Setup
+                  </Link>
+                </div>
+              ) : null}
               <ShadButton
                 type="button"
                 disableAnimations

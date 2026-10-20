@@ -64,6 +64,26 @@ describe("founder fleet composition", () => {
     expect(source).toContain("async function ensurePersonality");
     expect(source).not.toContain(".set({ content })");
     expect(source).not.toContain(".set({ enabledTools: ALL_AGENT_TOOLS })");
+    const existingBranch = source.slice(
+      source.indexOf("    if (existing) {", source.indexOf("async function upsertAgent")),
+      source.indexOf('return { kind: "updated", agentId } as const;'),
+    );
+    expect(existingBranch).toMatch(
+      /founder_seed_contract_version !==\s*FOUNDER_FLEET_SEED_CONTRACT_VERSION/,
+    );
+    expect(existingBranch).toContain(
+      "await seedTrainingArtifacts(agentId, userId, template.role, report, tx)",
+    );
+    const creationBranch = source.slice(
+      source.indexOf("    await tx.insert(schema.agents)"),
+      source.indexOf('return { kind: "created", agentId } as const;'),
+    );
+    expect(creationBranch).toContain(
+      "await seedTrainingArtifacts(agentId, userId, template.role, report, tx)",
+    );
+    expect(source.slice(source.indexOf("  const ownerAgents ="))).not.toContain(
+      "seedTrainingArtifacts",
+    );
   });
 
   it("retries when only the internal personas completed the current seed contract", () => {
@@ -133,20 +153,27 @@ describe("founder fleet composition", () => {
     }
   });
 
-  it("teaches the fleet the live plan catalog instead of hardcoded prices", () => {
+  it("teaches current launch plans from the catalog without offering retained SMS packages", () => {
     const facts = wirelinePlanFacts().join("\n");
     const plans = plansForClient();
-    expect(plans.length).toBeGreaterThan(1);
+    const launchPlans = plans.filter(
+      (plan) =>
+        plan.is_free || (plan.catalog_family === "channels" && !plan.channels.includes("sms")),
+    );
+    expect(launchPlans).toHaveLength(10);
 
-    // Every public plan — not just the free tier — must reach the agents. A
-    // hand-rolled `plan.public` filter once dropped every paid launch plan, which
-    // would have put a fleet on the phone that only knew Free Builder.
-    for (const plan of plans) {
+    // Every launch package keeps its exact canonical price and capacity. SMS
+    // remains in billing for existing subscribers without becoming sales copy.
+    for (const plan of launchPlans) {
       expect(facts, `${plan.name} missing from plan facts`).toContain(plan.name);
       if (plan.price_usd_monthly > 0) {
-        expect(facts).toContain(`$${plan.price_usd_monthly}/month`);
-        expect(facts).toContain(`$${plan.price_usd_annual}/year`);
+        expect(facts).toContain(
+          `${plan.name}: $${plan.price_usd_monthly}/month or $${plan.price_usd_annual}/year`,
+        );
       }
+    }
+    for (const plan of plans.filter((plan) => plan.channels.includes("sms"))) {
+      expect(facts).not.toContain(`${plan.name}:`);
     }
 
     // Prices can recur in different offers; reject retired identities and
@@ -155,7 +182,7 @@ describe("founder fleet composition", () => {
     expect(facts).not.toMatch(
       /Additional agents are an add-on|Every paid Bot includes|never cut mid conversation/,
     );
-    expect(facts).toContain("Extra-Bot add-ons are not available");
+    expect(facts).toContain("Extra Bots are not available as add ons");
     expect(facts).toContain("one call at a time");
     expect(facts).toContain(
       "up to 10 minutes of completion credit within the call's duration limit",
@@ -164,6 +191,16 @@ describe("founder fleet composition", () => {
     const email = facts.split("\n").find((line) => line.startsWith("BotBound Email Light:"))!;
     expect(email).toContain("Calls not included, no included number, 1 managed mailbox");
     expect(email).not.toContain("until a paid plan is active");
+    const emailPlan = launchPlans.find((plan) => plan.id === "email")!;
+    if (emailPlan.contact_sales) {
+      expect(email).toContain("Email activation requires a setup review");
+    }
+    expect(facts).toContain("Reviewed personal coordination");
+    expect(facts).toContain("supported caller and recipient locations in Illinois");
+    expect(facts).toContain("Marketing and sales call campaigns are unavailable");
+    expect(knowledgeForRole("customer_service").join("\n")).not.toContain(
+      "work across voice, text, and email",
+    );
 
     // Guardrail so a seeded agent cannot improvise commercial terms.
     expect(facts).toMatch(/escalate instead of inventing an offer/i);

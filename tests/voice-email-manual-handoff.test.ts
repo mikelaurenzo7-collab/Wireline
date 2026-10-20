@@ -15,6 +15,7 @@ vi.mock("../src/lib/integrations", () => ({
 }));
 vi.mock("../src/lib/server-context", () => ({
   auditLogger: {},
+  drizzle: {},
   log: { warn: vi.fn(), error: vi.fn() },
 }));
 vi.mock("../src/lib/account-environment-policy", () => ({
@@ -37,6 +38,7 @@ vi.mock("../src/lib/agent-link-tool-handlers", () => ({
 import { handleCoreToolCall } from "../src/lib/bot-tools/core";
 import { isManualOperatorTask } from "../src/lib/operator-work-status";
 import { enforceAgentToolResultTruth } from "../src/lib/agent-tool-result-truth";
+import { isToolCallFailureResult } from "../src/lib/call-reliability-capture";
 import { RUNTIME_ACTION_SAFETY_BLOCK } from "../src/lib/agent-runtime";
 
 const args = {
@@ -167,13 +169,27 @@ describe("live email delivery and manual handoff", () => {
   });
 
   it("reports a successful provider submission without creating manual work or claiming inbox receipt", async () => {
+    h.supervise.mockResolvedValue({
+      subject: "Reviewed pricing",
+      body: "Requested details: https://example.test/plans?source=call&view=monthly",
+    });
     h.sendEmail.mockResolvedValue(true);
     const result = await handleCoreToolCall("send_email", args, context);
-    expect(h.sendEmail).toHaveBeenCalledTimes(1);
+    expect(h.sendEmail).toHaveBeenCalledExactlyOnceWith({
+      to: args.to_email,
+      subject: "Reviewed pricing",
+      body: "Requested details: https://example.test/plans?source=call&view=monthly",
+      agentId: "agent-owned",
+    });
     expect(h.saveTask).not.toHaveBeenCalled();
-    expect(result?.result).toBe(
-      "Email submitted successfully. Inbox delivery has not been verified.",
-    );
+    expect(result?.result).toMatch(/^SUBMISSION_OK:/);
+    expect(result?.result).toContain(`Email accepted by the sending service for ${args.to_email}`);
+    expect(result?.result).toContain(`"I've sent the email to ${args.to_email}."`);
+    expect(result?.result).toContain("Inbox arrival is separate and has not been checked");
+    expect(result?.result).toContain("Do not describe this as a failed send or offer a retry");
+    expect(result?.result).toContain("Do not resend merely because inbox arrival is unverified");
+    expect(enforceAgentToolResultTruth("send_email", result!)).toEqual(result);
+    expect(isToolCallFailureResult(result!.result)).toBe(false);
   });
 
   it.each(["environment", "entity"] as const)(

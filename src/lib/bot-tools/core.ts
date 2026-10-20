@@ -290,7 +290,7 @@ export async function handleCoreToolCall(
       if (success) {
         return {
           toolCallId,
-          result: "Email submitted successfully. Inbox delivery has not been verified.",
+          result: `SUBMISSION_OK: Email accepted by the sending service for ${to_email}. Tell the caller: "I've sent the email to ${to_email}." Submission succeeded. Inbox arrival is separate and has not been checked. Do not describe this as a failed send or offer a retry. Do not resend merely because inbox arrival is unverified.`,
         };
       }
       const recorded = await recordCommsFollowUpTask(drizzle, {
