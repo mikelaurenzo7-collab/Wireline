@@ -342,7 +342,7 @@ for (const width of [390, 1024]) {
     await expect(page.locator(".wl-computer-composer")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
     await expect(page.getByRole("button", { name: "History" })).toBeVisible();
-    await expect(page.getByRole("dialog", { name: "Recent tasks" })).toHaveCount(0);
+    await expect(page.getByRole("dialog", { name: "Recent Tasks" })).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
     await capture(page, info, `computer-completed-result-${width}`);
 
@@ -352,7 +352,7 @@ for (const width of [390, 1024]) {
     await capture(page, info, `computer-new-task-${width}`);
 
     await page.getByRole("button", { name: "History" }).click();
-    const history = page.getByRole("dialog", { name: "Recent tasks" });
+    const history = page.getByRole("dialog", { name: "Recent Tasks" });
     await history.getByRole("button", { name: /Compare supplier prices/ }).click();
     await expect(history).toHaveCount(0);
     await expect(page.locator(".wl-computer-composer")).toHaveCount(0);
@@ -447,7 +447,7 @@ for (const width of [390, 1024]) {
     expect(stop && stop.width > stop.height).toBe(true);
     await expect(page.locator(".wl-computer-composer")).toHaveCount(0);
     await detail.getByRole("button", { name: "Open task activity" }).click();
-    const activity = page.getByRole("dialog", { name: "Task activity" });
+    const activity = page.getByRole("dialog", { name: "Task Activity" });
     await expect(activity.getByText('Clicked "Open Saturday"')).toBeVisible();
     await activity.getByRole("button", { name: "Close" }).click();
     await expectNoHorizontalOverflow(page);
@@ -459,7 +459,7 @@ for (const width of [390, 1024]) {
     expect(replies).toEqual(["Yes, skip the sign in."]);
 
     await page.getByRole("button", { name: "History" }).click();
-    const history = page.getByRole("dialog", { name: "Recent tasks" });
+    const history = page.getByRole("dialog", { name: "Recent Tasks" });
     await history.getByRole("button", { name: /Google Business page/ }).click();
     await expect(history).toHaveCount(0);
     await expect(page.getByText("Your hours match on both pages.")).toBeVisible();
@@ -540,7 +540,7 @@ test("a running task keeps updating while the owner reads an older result", asyn
   await capture(page, info, "computer-stopping");
 
   await page.getByRole("button", { name: "History" }).click();
-  const history = page.getByRole("dialog", { name: "Recent tasks" });
+  const history = page.getByRole("dialog", { name: "Recent Tasks" });
   await history.getByRole("button", { name: /Google Business page/ }).click();
   await expect(page.getByText("Your hours match on both pages.")).toBeVisible();
 
@@ -1041,7 +1041,7 @@ test("a page that did not load offers a retry instead of a dead form", async ({ 
   await expect(page.getByText("Tasks Could Not Load", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Retry tasks", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "History" }).click();
-  const history = page.getByRole("dialog", { name: "Recent tasks" });
+  const history = page.getByRole("dialog", { name: "Recent Tasks" });
   await expect(history.getByText("Recent tasks did not load.")).toBeVisible();
   await expect(page.getByText("The Task Did Not Start")).toHaveCount(0);
   await capture(page, info, "computer-load-retry");

@@ -1250,7 +1250,7 @@ function TaskDetail({
       <Sheet open={activityOpen} onOpenChange={setActivityOpen}>
         <SheetContent side="right" className="wl-computer-activity-panel">
           <SheetHeader>
-            <SheetTitle>Task activity</SheetTitle>
+            <SheetTitle>Task Activity</SheetTitle>
           </SheetHeader>
           <div className="wl-computer-activity">
             {events.length ? (
@@ -1862,7 +1862,7 @@ export function ComputerWorkbench({
         <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
           <SheetContent side="right" className="wl-computer-history-panel">
             <SheetHeader>
-              <SheetTitle>Recent tasks</SheetTitle>
+              <SheetTitle>Recent Tasks</SheetTitle>
             </SheetHeader>
             <aside className="wl-computer-history" aria-label="Recent tasks">
               {tasks === null && listFailed ? (

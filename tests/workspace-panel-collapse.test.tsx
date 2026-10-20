@@ -34,6 +34,8 @@ type ElementProps = {
   role?: string;
   style?: { width?: number };
   "data-collapsed"?: string;
+  "aria-valuemax"?: number;
+  "aria-valuenow"?: number;
   onKeyDown?: (event: { key: string; preventDefault: () => void }) => void;
 };
 
@@ -120,6 +122,15 @@ describe("workspace panel collapse ownership", () => {
     expect(preventDefault).toHaveBeenCalledOnce();
     expect(render({ collapsed: false }).state.size).toBe(388);
     render({ collapsed: true });
+    expect(render({ collapsed: false }).element.props.style?.width).toBe(388);
+
+    const narrowed = render({ collapsed: false, maxSize: 360 });
+    const narrowedChildren = narrowed.element.props
+      .children as Array<ReactElement<ElementProps> | null>;
+    const narrowedSeparator = narrowedChildren.find((child) => child?.props.role === "separator");
+    expect(narrowed.element.props.style?.width).toBe(360);
+    expect(narrowedSeparator?.props["aria-valuemax"]).toBe(360);
+    expect(narrowedSeparator?.props["aria-valuenow"]).toBe(360);
     expect(render({ collapsed: false }).element.props.style?.width).toBe(388);
   });
 });

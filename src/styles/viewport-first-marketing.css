@@ -433,39 +433,23 @@
 }
 
 /*
- * Case doctrine — optical corrections for the uppercase tiers.
- *
- * Wireline ranks by case: short things shout, sentences do not. The rule the
- * product now follows is three lines long:
- *
- *   - Three words or fewer, in a title/label/tab/button slot: UPPERCASE.
- *     Source copy is written in Title Case so it reads correctly in the places
- *     that do not uppercase it (document titles, meta descriptions, aria
- *     labels, native clients) and shouts where the tier applies.
- *   - Longer titles and heroes: still uppercase — that is the Wireline voice —
- *     but never with terminal punctuation. A period ends a sentence; a cased
- *     title is a label, and "CONNECTIONS." reads as a typo at 56px.
- *   - Anything that is genuinely a sentence — subheads, body, empty-state
- *     explanations, prose — stays sentence case.
- *
- * Punctuation is removed from the copy strings themselves, not faked here:
- * `content` tricks would strip the period from the accessible name too. What
- * this block owns is the optics — caps need looser tracking than the tight
- * lowercase display they inherited from, and a hair of extra word-spacing so
- * multi-word caps titles do not read as one long word.
+ * Preserve authored Title Case for public headings. Size, weight, and spacing
+ * establish hierarchy without transforming the text. Supporting prose stays
+ * in sentence case, and customer authored text keeps its original casing.
+ * The homepage hero retains its approved wording and punctuation.
+ * These rules only tune word spacing and line height for display headings.
  */
 .marketing-surface :is(.marketing-hero__title, .wl-public-section-heading, .wl-stitch-display) {
   word-spacing: 0.02em;
 }
 
-/* Caps have no descenders and no lowercase x-height to separate the lines, so
-   the leading that suited sentence case closes up. */
+/* Keep supporting display headings compact while preserving authored casing. */
 .marketing-surface :is(.wl-public-section-heading, .wl-stitch-display) {
   line-height: 1.04;
 }
 
 /*
- * Rank by size as well as by case.
+ * Establish heading hierarchy by size.
  *
  * The section tier clamped to 57px and the hero to 56px, so a panel heading and
  * the page's own headline arrived at the same weight one screen apart and

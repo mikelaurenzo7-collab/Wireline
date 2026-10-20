@@ -97,7 +97,7 @@ for (const width of [320, 1440]) {
       await page.evaluate(() => {
         document.documentElement.style.fontSize = "200%";
       });
-    const dialog = page.getByRole("dialog", { name: "Phone test", exact: true });
+    const dialog = page.getByRole("dialog", { name: "Phone Test", exact: true });
     await page
       .getByRole("textbox", { name: "Your phone number", exact: true })
       .fill("312.555.0123");
@@ -144,7 +144,7 @@ for (const width of [320, 1440]) {
 
 test("a lost POST response survives close and reload without a second call", async ({ page }) => {
   const state = await setup(page, true);
-  const dialog = page.getByRole("dialog", { name: "Phone test", exact: true });
+  const dialog = page.getByRole("dialog", { name: "Phone Test", exact: true });
   await page.getByRole("textbox", { name: "Your phone number", exact: true }).fill("3125550123");
   await page
     .getByRole("checkbox", { name: "I’m requesting an AI test call to my own phone.", exact: true })
@@ -164,7 +164,7 @@ test("a lost POST response survives close and reload without a second call", asy
 
 test("a definite pre-call refusal keeps the entered phone editable", async ({ page }) => {
   const state = await setup(page, false, true);
-  const dialog = page.getByRole("dialog", { name: "Phone test", exact: true });
+  const dialog = page.getByRole("dialog", { name: "Phone Test", exact: true });
   await page.getByRole("textbox", { name: "Your phone number", exact: true }).fill("3125550123");
   await page
     .getByRole("checkbox", { name: "I’m requesting an AI test call to my own phone.", exact: true })

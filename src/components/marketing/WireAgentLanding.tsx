@@ -152,7 +152,7 @@ export default function WireAgentLanding() {
             <header className="landing-prestige__section-heading">
               <p>Everyday Life + Work</p>
               <h2>
-                <span>Pick the Work.</span> <span>Put a Bot on It.</span>
+                <span>Put a Bot on</span> <span>Your Everyday Work</span>
               </h2>
               <span>Start with a role. Make its knowledge, voice, and next steps your own.</span>
             </header>
@@ -202,7 +202,7 @@ export default function WireAgentLanding() {
             <header className="landing-prestige__section-heading">
               <p>Pricing</p>
               <h2>
-                <span>Create Your Bot for Free.</span> <span>Go Live on Your Terms.</span>
+                <span>Create Your Bot</span> <span>for Free</span>
               </h2>
               <span>
                 Starting plans. Every paid plan includes a cloud computer; tasks use its AI
@@ -293,7 +293,7 @@ export default function WireAgentLanding() {
         <section className="landing-prestige__closing" aria-labelledby="landing-prestige-closing">
           <div className="landing-prestige__rail">
             <h2 id="landing-prestige-closing">
-              <span>Put Your First Bot</span> <span>to Work.</span>
+              <span>Put Your First Bot</span> <span>to Work</span>
             </h2>
             <p>Set up your Bot free. Make it yours, then go live when you are ready.</p>
             <div className="landing-prestige__actions">

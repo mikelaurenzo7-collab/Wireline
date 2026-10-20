@@ -133,7 +133,15 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
   const emptyState = !hasAgents
     ? { title: "Create a Bot", action: { label: "New Bot", to: "/studio?create=1" } }
     : !livePhone
-      ? { title: "Connect a Line", action: { label: "Add a Line", to: "/phone?tab=setup" } }
+      ? {
+          title: "Connect a Line",
+          action: {
+            label: "Add a Line",
+            to: agentId
+              ? `/phone?tab=setup&agent=${encodeURIComponent(agentId)}`
+              : "/phone?tab=setup",
+          },
+        }
       : {
           title: agentId ? "No Calls for This Bot" : "No Calls Yet",
           action: { label: "Call the Line", to: `tel:${livePhone}` },

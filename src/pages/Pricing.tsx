@@ -106,7 +106,7 @@ export default function Pricing() {
   const selectedHasCalls =
     CHANNEL_PLANS.find((plan) => plan.id === selectedPlanId)?.channels.includes("voice") === true;
   return (
-    <MarketingPageFrame className="wl-pricing-page" stickyCta>
+    <MarketingPageFrame className="wl-pricing-page">
       <PageMeta
         title="Pricing | Build Free, Add Calls or Email | BotBound"
         description="Build and rehearse a Bot for free. Compare Calls, Email, and combined plans, including their monthly usage and live activation options."

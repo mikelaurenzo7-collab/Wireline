@@ -336,7 +336,7 @@ test("native voice pilot uploads, reviews, previews, and deletes without changin
   const panel = voice.getByRole("region", { name: "Private custom voice previews", exact: true });
   await expect(panel.getByText("No voice recordings saved.", { exact: true })).toBeVisible();
   await panel.getByRole("button", { name: "Add voice", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "Create your voice", exact: true });
+  const dialog = page.getByRole("dialog", { name: "Create Your Voice", exact: true });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("checkbox")).not.toBeChecked();
   await expect(dialog.getByRole("button", { name: "Save voice", exact: true })).toBeDisabled();
@@ -423,9 +423,9 @@ for (const enlarged of [false, true]) {
     await capture(page, info, `voice-clone-320${enlarged ? "-200pct" : ""}-dark-assets`);
     const add = panel.getByRole("button", { name: "Add voice", exact: true });
     await add.click();
-    const dialog = page.getByRole("dialog", { name: "Create your voice", exact: true });
+    const dialog = page.getByRole("dialog", { name: "Create Your Voice", exact: true });
     await expect(dialog).toBeVisible();
-    const title = dialog.getByRole("heading", { name: "Create your voice", exact: true });
+    const title = dialog.getByRole("heading", { name: "Create Your Voice", exact: true });
     expect(
       await title.evaluate((element) => {
         const text = element.firstChild;

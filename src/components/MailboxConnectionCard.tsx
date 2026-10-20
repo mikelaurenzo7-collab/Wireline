@@ -31,7 +31,7 @@ const PROVIDERS: Array<{
   {
     id: "icloud",
     label: "iCloud Mail",
-    detail: "App-specific password required",
+    detail: "Requires an app password",
     logo: "icloud",
   },
 ];
@@ -344,8 +344,8 @@ export default function MailboxConnectionCard() {
                         autoComplete="off"
                         value={icloudPassword}
                         onChange={(event) => setIcloudPassword(event.target.value)}
-                        placeholder="App-specific password"
-                        aria-label="Apple app-specific password"
+                        placeholder="App password"
+                        aria-label="Apple app password"
                         className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
                       />
                       <p className="text-[11px] leading-relaxed text-muted-foreground">

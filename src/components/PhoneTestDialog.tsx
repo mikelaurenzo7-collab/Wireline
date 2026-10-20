@@ -215,7 +215,7 @@ function OwnedPhoneTestDialog({
         }}
       >
         <DialogHeader className="pr-[44px]">
-          <DialogTitle className="pr-0">Phone test</DialogTitle>
+          <DialogTitle className="pr-0">Phone Test</DialogTitle>
           <DialogDescription className={requestKey ? "sr-only" : undefined}>
             {pending
               ? "Your call continues if you close this window."

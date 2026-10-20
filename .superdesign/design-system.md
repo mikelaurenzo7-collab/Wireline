@@ -68,7 +68,7 @@ Dark is the first-visit appearance. A saved light, dark, or system preference al
 - Caption: 13/19, weight 500
 - Overline: 11/16, weight 700, tracking 0.09em
 
-Author every title and heading in **Title Case**: heroes, page titles, section titles, cards, dialogs, and empty-state titles. Preserve proper names and acronyms; keep short articles, conjunctions, and prepositions lowercase unless they begin or end the title. Titles do not end in a period; questions keep their question mark. CSS must preserve authored title casing, including titles rendered through shared components or portals.
+Author every title and heading in **Title Case**: heroes, page titles, section titles, cards, dialogs, and empty-state titles. Preserve proper names and acronyms; keep short articles, conjunctions, and prepositions lowercase unless they begin or end the title. Titles do not end in a period; questions keep their question mark. The preserved homepage hero below is the explicit exception and retains its existing period. CSS must preserve authored title casing, including titles rendered through shared components or portals.
 
 Use the available layout width for headlines and let them wrap naturally on small screens. Supporting copy should stay around 52–68 characters per line. Preserve sentence case for explanatory copy and the exact casing of customer-authored text. Compact uppercase is reserved for operational labels, overlines, and deliberately cased controls.
 
@@ -106,7 +106,7 @@ Public routes do not offer anonymous live calling. Private tests and live callin
 
 ## Components and interaction rules
 
-- Primary CTA: solid lavender action, dark text, minimum 48px target for hero and conversion moments.
+- Primary CTA: use the semantic primary action and onAction colors for the current appearance. Dark mode uses lavender with dark text; light mode uses deeper violet with white text. Keep a minimum 48px target for hero and conversion moments.
 - Secondary CTA: silver/dark outlined treatment with equal target size.
 - Navigation must preserve clear active/hover/focus states and collapse cleanly on mobile.
 - Supporting public pages expose only Features, Pricing, and account entry in their header. Use a compact menu on phones; the homepage retains its dedicated product entrance.
@@ -244,7 +244,7 @@ The viewport is the primary surface during active computer work. Keep the curren
 
 Owner input is enabled only with confirmed ownership and a usable current frame. Keep sensitive entry in the owner controlled browser. When a frame is stale or disconnected, show that state and retain an accessible exit. Do not silently type into a stale page.
 
-Fullscreen must preserve a clear exit. Owner prompts and stop controls should remain reachable; until all controls are inside the fullscreen container, the user must be able to exit to the full work surface. Do not claim fullscreen interaction parity without checking these states.
+Fullscreen uses the task detail surface so checkpoint replies, Take control, owner Stop, and errors remain inside the expanded view with a clear exit. A terminal task exits fullscreen, including when a pending fullscreen request finishes after the task ends. Activity exits fullscreen before opening its drawer. Preserve server ownership and termination checks, and verify these interaction states when changing the fullscreen surface.
 
 ### Action Record and Activity Drawer
 

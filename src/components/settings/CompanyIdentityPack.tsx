@@ -450,7 +450,7 @@ export default function CompanyIdentityPack() {
             <div className="flex items-start gap-3">
               <ShieldCheck size={18} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
               <div>
-                <h3 className="text-sm font-semibold text-foreground">Caller profile</h3>
+                <h3 className="text-sm font-semibold text-foreground">Caller Profile</h3>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">{identity.guarantee}</p>
               </div>
             </div>

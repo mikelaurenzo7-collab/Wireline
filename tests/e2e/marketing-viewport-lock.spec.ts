@@ -242,7 +242,7 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
     "/signin",
   );
   await expect(
-    page.getByRole("heading", { name: "Pick the Work. Put a Bot on It." }),
+    page.getByRole("heading", { name: "Put a Bot on Your Everyday Work" }),
   ).toBeAttached();
 
   const metrics = await publicMetrics(page);

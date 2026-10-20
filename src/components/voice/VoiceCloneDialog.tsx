@@ -343,7 +343,7 @@ export default function VoiceCloneDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle className="pr-0 sm:pr-14">Create your voice</DialogTitle>
+          <DialogTitle className="pr-0 sm:pr-14">Create Your Voice</DialogTitle>
           <DialogDescription>Record your own voice for a private preview.</DialogDescription>
         </DialogHeader>
         <div className="min-w-0 space-y-4">

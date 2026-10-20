@@ -220,7 +220,7 @@ export default function WorkspaceResizablePanel({
           aria-orientation="vertical"
           aria-valuemin={minSize}
           aria-valuemax={maxSize}
-          aria-valuenow={Math.round(size)}
+          aria-valuenow={Math.round(renderedSize)}
           tabIndex={0}
           onPointerDown={startResize}
           onKeyDown={handleResizeKeyDown}

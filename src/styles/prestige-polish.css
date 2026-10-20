@@ -463,12 +463,19 @@ body {
 }
 
 .wl-workspace-content :where(input, textarea, select):not([type="checkbox"]):not([type="radio"]) {
-  border-color: var(--wl-prestige-hairline);
   background: color-mix(in srgb, var(--wireline-color-surface-recessed) 82%, transparent);
+}
+
+.wl-workspace-content
+  :where(input, textarea, select):not([type="checkbox"]):not([type="radio"]):not(:focus):not(
+    [aria-invalid]:not([aria-invalid="false"])
+  ) {
+  border-color: var(--wl-prestige-hairline);
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18);
 }
 
-.wl-workspace-content :where(input, textarea, select):focus-visible {
+.wl-workspace-content
+  :where(input, textarea, select):not([aria-invalid]:not([aria-invalid="false"])):focus-visible {
   border-color: color-mix(
     in srgb,
     var(--wireline-color-action-primary-default) 58%,

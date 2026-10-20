@@ -249,13 +249,21 @@
   :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not(
     .wl-composer-dock__input
   ) {
-  border-color: var(--bb-polish-rule);
-  border-radius: 0.7rem;
+  border-radius: var(--wireline-radius-lg);
   background: color-mix(
     in srgb,
     var(--wireline-color-surface-default) 84%,
     var(--wireline-color-canvas-default)
   );
+}
+
+/* Neutral polish must not hide the shared field error or keyboard focus state. */
+.wl-workspace-shell
+  .wl-workspace-content
+  :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not(
+    .wl-composer-dock__input
+  ):not(:focus):not([aria-invalid]:not([aria-invalid="false"])) {
+  border-color: var(--bb-polish-rule);
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 3%, transparent);
 }
 
@@ -263,7 +271,7 @@
   .wl-workspace-content
   :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not(
     .wl-composer-dock__input
-  ):hover {
+  ):not(:focus):not([aria-invalid]:not([aria-invalid="false"])):hover {
   border-color: var(--bb-polish-rule-strong);
 }
 
