@@ -82,8 +82,8 @@ describe("BotBound product voice", () => {
     expect(BOT_BRAND).toMatchObject({
       name: "BotBound",
       slogan: "For You. For Your Business.",
-      supportingLine: "CALL · TEXT · EMAIL",
-      promise: "Your Bot for calls, texts, and email.",
+      supportingLine: "CALL · EMAIL · COMPUTER",
+      promise: "Your Bot for calls, email, and computer tasks.",
     });
     expect(BRAND_SYSTEM).toMatchObject({
       northStar: BOT_BRAND.promise,
@@ -153,15 +153,19 @@ describe("BotBound product voice", () => {
     }
   });
 
-  it("makes all three communication channels explicit in one consistent order", () => {
+  it("preserves channel compatibility while promoting only the current launch capabilities", () => {
     expect(BOT_CHANNELS.map((channel) => channel.label)).toEqual(["Call", "Text", "Email"]);
-    expect(MARKETING_VOICE.channelProof).toEqual(["Call", "Text", "Email"]);
-    expect(BOT_MARKETING_VOICE.spine).toEqual(["Call", "Text", "Email"]);
-    expect(WORKSPACE_VOICE.emptyCue).toContain("calls, text, email");
+    expect(BOT_CHANNELS.find((channel) => channel.key === "text")?.description).toContain(
+      "SMS is coming soon",
+    );
+    expect(MARKETING_VOICE.channelProof).toEqual(["Call", "Email", "Computer"]);
+    expect(BOT_MARKETING_VOICE.spine).toEqual(["Call", "Email", "Computer"]);
+    expect(WORKSPACE_VOICE.emptyCue).toContain("calls, email, knowledge, and computer tasks");
     expect(AGENT_NUMBER_PROMISE).toContain("Plans with calls");
     expect(AGENT_NUMBER_PROMISE).toContain("BotBound number");
-    expect(AGENT_NUMBER_PROMISE).toContain("answer and make calls");
-    expect(AGENT_NUMBER_PROMISE).toContain("SMS requires an eligible plan and activation");
+    expect(AGENT_NUMBER_PROMISE).toContain("Answer incoming calls");
+    expect(AGENT_NUMBER_PROMISE).toContain("personal plans with recipient permission");
+    expect(AGENT_NUMBER_PROMISE).toContain("SMS is coming soon");
   });
 
   it("keeps Phone Bot, Conversation Bot, and Human Bot as configuration lenses", () => {
@@ -171,14 +175,14 @@ describe("BotBound product voice", () => {
       "Human Bot",
     ]);
     expect(BOT_PRODUCT_TYPES.find((type) => type.name === "Phone Bot")?.description).toContain(
-      "build outbound playbooks",
+      "Answer incoming calls",
     );
     expect(BOT_PRODUCT_TYPES.find((type) => type.name === "Phone Bot")?.description).not.toContain(
       "Live outbound dialing",
     );
     expect(
       BOT_PRODUCT_TYPES.find((type) => type.name === "Conversation Bot")?.description,
-    ).toContain("calls, text, and email");
+    ).toContain("calls and email");
     expect(BOT_PRODUCT_TYPES.find((type) => type.name === "Human Bot")?.description).toContain(
       "real human role",
     );
@@ -189,7 +193,7 @@ describe("BotBound product voice", () => {
     const directions = [
       ...new Set(BOT_ROLE_TEMPLATES.map((template) => template.direction)),
     ].sort();
-    expect(directions).toEqual(["hybrid", "inbound", "outbound"]);
+    expect(directions).toEqual(["hybrid", "inbound"]);
     for (const role of [
       "Front Desk",
       "Sales Rep",
@@ -216,13 +220,14 @@ describe("BotBound product voice", () => {
   });
 
   it("keeps role positioning concrete and action-oriented", () => {
-    expect(AGENT_DIRECTION_MODES.outbound.label).toBe("Sales Associate");
+    expect(AGENT_DIRECTION_MODES.outbound.label).toBe("Personal Assistant");
     expect(AGENT_DIRECTION_MODES.inbound.label).toBe("Receptionist");
-    expect(AGENT_DIRECTION_MODES.hybrid.label).toBe("All-Purpose Bot");
-    expect(AGENT_DIRECTION_MODES.outbound.loop).toEqual(["Research", "Call", "Book", "Log"]);
-    expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Qualify", "Act", "Log"]);
-    expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual(["Answer", "Act", "Follow Up", "Sync"]);
-    expect(OUTBOUND_WEDGE.headline).toBe("A Bot That Moves Growth Work Forward");
+    expect(AGENT_DIRECTION_MODES.hybrid.label).toBe("Flexible Assistant");
+    expect(AGENT_DIRECTION_MODES.outbound.loop).toEqual(["Research", "Review", "Call", "Log"]);
+    expect(AGENT_DIRECTION_MODES.inbound.loop).toEqual(["Answer", "Understand", "Help", "Log"]);
+    expect(AGENT_DIRECTION_MODES.hybrid.loop).toEqual(["Answer", "Research", "Reply", "Log"]);
+    expect(OUTBOUND_WEDGE.headline).toBe("A Bot That Helps With Everyday Plans");
+    expect(OUTBOUND_WEDGE.subline).toContain("Business outbound is coming soon.");
   });
 
   it("keeps the public entrance concise, auth-forward, and tied to shared constants", () => {
@@ -250,7 +255,7 @@ describe("BotBound product voice", () => {
 
   it("keeps shared marketing voice aligned to BotBound", () => {
     expect(MARKETING_VOICE.headline).toBe(BOT_BRAND.slogan);
-    expect(MARKETING_VOICE.eyebrow).toBe("CALL · TEXT · EMAIL");
+    expect(MARKETING_VOICE.eyebrow).toBe("CALL · EMAIL · COMPUTER");
     expect(MARKETING_VOICE.primaryCta).toBe("Start Free");
     expect(MARKETING_VOICE.subline).toBe(BOT_BRAND.promise);
     expect(BOT_MARKETING_VOICE.headline).toBe(BOT_BRAND.slogan);

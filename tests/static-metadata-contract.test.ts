@@ -14,7 +14,7 @@ describe("BotBound static marketing metadata", () => {
     const index = read("index.html");
 
     expect(index).toContain("BotBound | A Bot for You");
-    expect(index).toContain("Give your voice Bot a goal: answer calls, make calls");
+    expect(index).toContain("Voice Bots with a computer, phone number, and email address.");
     expect(structuredData().find((entry) => entry["@type"] === "Organization")).toMatchObject({
       name: "BotBound",
       slogan: "For You. For Your Business.",
@@ -75,19 +75,19 @@ describe("BotBound static marketing metadata", () => {
     expect(landing).not.toContain("VITE_PUBLIC_SITE_URL");
     expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | A Bot for You"');
     expect(pageMeta).toMatch(
-      /DEFAULT_DESCRIPTION =\s*"Give your voice Bot a goal: answer calls, make calls/,
+      /DEFAULT_DESCRIPTION =\s*"Voice Bots with a computer, phone number, and email address\./,
     );
     expect(pageMeta).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(pageMeta).not.toContain("VITE_PUBLIC_SITE_URL");
     expect(pageMeta).not.toContain('DEFAULT_TITLE = "WIRELINE');
   });
 
-  it("keeps the OG source aligned with the current inbound and outbound story", () => {
+  it("keeps the OG source aligned with the incoming calls and personal assistance story", () => {
     const ogImage = read("public/og-image.svg");
 
     expect(ogImage).toContain("BotBound");
     expect(ogImage).toContain("Give Your Bot a Goal");
-    expect(ogImage).toContain("Inbound and outbound voice Bots with cloud-browser work.");
+    expect(ogImage).toContain("Incoming calls, personal calling, email, and computer tasks.");
     expect(ogImage).not.toContain("ONE BOT");
     expect(ogImage).not.toContain("Find. Call. Book");
     expect(ogImage).toMatch(/phone|Phone/);
@@ -126,7 +126,7 @@ describe("BotBound static marketing metadata", () => {
     expect(manifest.name).toBe("BotBound | For You. For Your Business.");
     expect(manifest.short_name).toBe("BotBound");
     expect(manifest.description).toBe(
-      "Voice Bots for inbound and outbound calls and cloud browser tasks.",
+      "Voice Bots with a computer, phone number, and email address.",
     );
     expect(manifest.start_url).toBe("/studio");
     expect(manifest.icons[0]?.src).toBe("/botbound-icon-192.png");
@@ -136,7 +136,7 @@ describe("BotBound static marketing metadata", () => {
       "CALLS",
     ]);
     expect(manifest.shortcuts.find((shortcut) => shortcut.name === "INBOX")?.description).toContain(
-      "texts and email",
+      "email and conversations",
     );
     expect(manifest.shortcuts.some((shortcut) => shortcut.url === "/agents")).toBe(false);
   });

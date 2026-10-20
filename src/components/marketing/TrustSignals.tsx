@@ -22,7 +22,7 @@ const TRUST_POINTS = [
   },
   {
     title: "Outcome Record",
-    detail: "Calls, texts, email, approvals, and next steps stay in one auditable history.",
+    detail: "Calls, email, tasks, approvals, and next steps stay in one auditable history.",
   },
 ] as const;
 

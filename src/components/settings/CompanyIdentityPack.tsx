@@ -70,7 +70,7 @@ const EMPTY_FORM: IdentityForm = {
   support_email: "",
   physical_postal_address: "",
   default_call_reason: "",
-  requested_channels: [...CHANNELS],
+  requested_channels: ["voice", "email"],
 };
 
 const FIELD_CLASS =
@@ -323,6 +323,15 @@ export default function CompanyIdentityPack() {
     savedReviewStatuses.every((status) => status !== "not_requested");
   const reviewRejected = savedReviewStatuses.includes("rejected");
   const summary = reviewSummary(identity);
+  // Keep saved SMS requests and provider decisions manageable, without offering
+  // a new SMS identity request during the voice and email launch.
+  const visibleChannels = CHANNELS.filter(
+    (channel) =>
+      channel !== "sms" ||
+      identity?.profile.requested_channels.includes("sms") ||
+      (identity?.channels.sms.provider_status &&
+        identity.channels.sms.provider_status !== "not_requested"),
+  );
 
   function updateField(field: keyof Omit<IdentityForm, "requested_channels">, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -424,8 +433,10 @@ export default function CompanyIdentityPack() {
         <p className="py-8 text-center text-sm text-muted-foreground">Loading company identity…</p>
       ) : identity ? (
         <>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {CHANNELS.map((channel) => (
+          <div
+            className={`grid gap-3 ${visibleChannels.length === 3 ? "md:grid-cols-2 xl:grid-cols-3" : "md:grid-cols-2"}`}
+          >
+            {visibleChannels.map((channel) => (
               <ChannelCard
                 key={channel}
                 channel={channel}
@@ -552,7 +563,7 @@ export default function CompanyIdentityPack() {
                 Request identity for
               </legend>
               <div className="mt-3 flex flex-wrap gap-2">
-                {CHANNELS.map((channel) => (
+                {visibleChannels.map((channel) => (
                   <label
                     key={channel}
                     className={cn(

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { runInNewContext } from "node:vm";
+import { describe, expect, it, vi } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 const baseManifest = JSON.parse(read("apps/browser-extension/manifest.base.json")) as Record<
@@ -103,9 +104,7 @@ describe("BotBound Command extension contract", () => {
     expect(worker).toContain('const BOTBOUND_ORIGIN = "https://botbound.app"');
     expect(worker).toContain('["phone", `${BOTBOUND_ORIGIN}/phone`]');
     expect(worker).toContain('["inbox", `${BOTBOUND_ORIGIN}/inbox`]');
-    expect(`${JSON.stringify(baseManifest)}\n${panel}\n${worker}`).not.toContain(
-      "trywireline.com",
-    );
+    expect(`${JSON.stringify(baseManifest)}\n${panel}\n${worker}`).not.toContain("trywireline.com");
     // This is the published Firefox add-on identifier, not a customer-facing URL.
     expect(firefoxManifest).toMatchObject({
       browser_specific_settings: { gecko: { id: "command@wireline.com" } },
@@ -116,5 +115,65 @@ describe("BotBound Command extension contract", () => {
     const doc = read("docs/MULTI_SURFACE_QA_2026-07-07.md");
     expect(doc).toContain("browser-extension");
     expect(doc).toContain("mcp-oauth-security-contract");
+  });
+
+  it("keeps SMS unavailable after successful and failed handoffs while restoring active commands", async () => {
+    const panel = read("apps/browser-extension/panel/index.html");
+    function control(attributes = "") {
+      return {
+        disabled: /\bdisabled\b/.test(attributes),
+        dataset: { action: attributes.match(/data-action="([^"]+)"/)?.[1] },
+        value: "",
+        textContent: "",
+        hidden: false,
+        listeners: new Map<string, () => void>(),
+        addEventListener(event: string, listener: () => void) {
+          this.listeners.set(event, listener);
+        },
+      };
+    }
+    const quickActions = [...panel.matchAll(/<button\b([^>]*class="quick-action"[^>]*)>/g)].map(
+      (match) => control(match[1]),
+    );
+    const controls = new Map<string, ReturnType<typeof control>>();
+    function select(selector: string) {
+      if (!controls.has(selector)) controls.set(selector, control());
+      return controls.get(selector)!;
+    }
+    const sendMessage = vi.fn().mockResolvedValue({ ok: true, result: {} });
+    runInNewContext(
+      read("apps/browser-extension/panel/panel.js"),
+      {
+        browser: { runtime: { sendMessage } },
+        document: { querySelector: select, querySelectorAll: () => quickActions },
+        URL,
+        Error,
+      },
+      { timeout: 1000 },
+    );
+    const sms = quickActions.find((button) => button.dataset.action === "text")!;
+    const call = quickActions.find((button) => button.dataset.action === "call")!;
+    const email = quickActions.find((button) => button.dataset.action === "followup")!;
+    expect(sms.disabled).toBe(true);
+    call.listeners.get("click")!();
+    expect(call.disabled).toBe(true);
+    await vi.waitFor(() => expect(select("#handoff-button").disabled).toBe(false));
+    expect(call.disabled).toBe(false);
+    expect(sms.disabled).toBe(true);
+    expect(sendMessage).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        action: "call",
+        request: expect.stringContaining("personal call"),
+      }),
+    );
+
+    sendMessage.mockRejectedValueOnce(new Error("Handoff unavailable"));
+    email.listeners.get("click")!();
+    await vi.waitFor(() => expect(select("#handoff-button").disabled).toBe(false));
+    expect(email.disabled).toBe(false);
+    expect(sms.disabled).toBe(true);
+    expect(select("#status").textContent).toBe("Handoff unavailable");
+    sms.listeners.get("click")!();
+    expect(sendMessage).toHaveBeenCalledTimes(2);
   });
 });

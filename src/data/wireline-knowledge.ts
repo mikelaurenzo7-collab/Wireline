@@ -11,10 +11,10 @@ export const WIRELINE_URL = "https://botbound.app";
 export const WIRELINE_SUPPORT_EMAIL = "support@botbound.app";
 
 export const WIRELINE_ONE_LINER =
-  "BotBound runs calls, texts, follow-up, browser context, email, and integrations through trained Bots that stay on your playbook.";
+  "BotBound gives your voice Bots a computer, phone number, and email address to answer calls, handle requests, and get everyday work done.";
 
 export const WIRELINE_VOICE_STACK =
-  "Live calls and private browser rehearsals run on separate BotBound-managed voice paths, so a rehearsal cannot take over a customer phone Bot.";
+  "Live calls and private browser rehearsals run on separate BotBound managed voice paths, so a rehearsal cannot take over a customer phone Bot.";
 
 export const WIRELINE_PLANS = [
   {
@@ -27,9 +27,11 @@ export const WIRELINE_PLANS = [
       "Private rehearsals only: no live calls, texts, or number until you activate a paid plan",
     ],
   },
-  ...STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels").map((plan) => ({
+  ...STRIPE_PLANS.filter(
+    (plan) => plan.catalogFamily === "channels" && !plan.channels.includes("sms"),
+  ).map((plan) => ({
     name: plan.name,
-    price: `$${plan.price_usd_monthly}/mo or $${plan.price_usd_annual}/year${plan.checkoutAvailability === "sms_readiness_required" ? " (SMS activation unavailable)" : ""}`,
+    price: `$${plan.price_usd_monthly}/mo or $${plan.price_usd_annual}/year`,
     bestFor: `One Bot with ${plan.channels.map((channel) => (channel === "voice" ? "Calls" : channel === "email" ? "Email" : "SMS")).join(" + ")} at ${plan.capacityTier} monthly capacity.`,
     includes: [
       "1 Bot; only selected channels are included",
@@ -49,9 +51,7 @@ export const WIRELINE_PLANS = [
       ...(plan.runtime_allowance_usd_monthly
         ? [`$${plan.runtime_allowance_usd_monthly.toFixed(2)} Runtime Allowance/month`]
         : []),
-      ...(plan.checkoutAvailability === "sms_readiness_required"
-        ? ["SMS activation is unavailable until carrier and cost checks pass"]
-        : ["Activation depends on live checkout availability"]),
+      "Activation depends on live checkout availability",
     ],
   })),
   {
@@ -59,20 +59,20 @@ export const WIRELINE_PLANS = [
     price: "Custom committed usage",
     bestFor: "Governed rollout for organizations that need 25 or more Bots.",
     includes: [
-      "Custom Bot and production-number capacity",
+      "Custom Bot and production number capacity",
       "SSO, security review, retention controls, and implementation support",
       "Custom integrations, channel economics, and service commitments",
-      "Founder-led scoping instead of self-serve checkout",
+      "Guided scoping with the founder",
     ],
   },
   {
     name: "Runtime Balance",
-    price: "Optional top-up funding for usage beyond your plan",
+    price: "Optional prepaid funding for usage beyond your plan",
     bestFor: "Customers who want direct control over usage funding.",
     includes: [
       "Web checkout only",
-      "One-time top-ups",
-      "Ledger-backed funding for calls, texts, and follow-up beyond included capacity",
+      "One time balance purchases",
+      "Ledger backed funding for calls and eligible live actions beyond included capacity",
       "Calls can use up to 10 minutes of completion credit within their session limit. Any amount due pauses new calls and prepaid extras until topped up",
     ],
   },
@@ -85,32 +85,37 @@ export const WIRELINE_FEATURES = [
       "Configured Bots answer inbound calls, handle approved questions, route requests, schedule appointments, and capture intent.",
   },
   {
-    title: "Outbound Sales",
+    title: "Personal Calls",
     blurb:
-      "Find prospects through connected sources or import a list. Give your Sales Bot a playbook to qualify interest, follow up, and book next steps.",
+      "Prepare appointment and service calls for yourself, then review each one before placement. Recipient permission is required. Illinois callers and recipients are currently supported.",
   },
   {
     title: "Email Workflows",
     blurb:
-      "Bots triage your inbox, reply on-brand, follow up, and escalate the threads you need to see personally.",
+      "Bots manage their inbox, answer replies, send approved recaps, and escalate threads you need to see personally.",
   },
   {
-    title: "Two-Way Texting",
+    title: "Cloud Computer",
     blurb:
-      "SMS activation is not available yet. When enabled after carrier and consent checks, Bots can handle two-way texting with STOP and UNSUBSCRIBE handling.",
+      "Give your Bot a web task. It researches, navigates sites, and fills in forms with your instructions. Every paid plan includes a cloud computer.",
   },
   {
     title: "Recaps and Oversight",
-    blurb: "Unified recaps keep calls, texts, follow-up, and operating visibility in one place.",
+    blurb: "Keep calls, email, tasks, and next steps in one workspace.",
+  },
+  {
+    title: "SMS Coming Soon",
+    blurb:
+      "Texting is not part of the current launch offer. Sender registration and approval must be complete before activation.",
   },
 ] as const;
 
 /**
- * The growth-engine story - WIRELINE's autonomous outbound and follow-up stack,
- * framed as the answer to "I need more leads" or "my pipeline is dry."
+ * Compatibility export for product-help prompts. Describe the current launch
+ * offer rather than promoting the retained outbound campaign implementation.
  */
 export const WIRELINE_GROWTH_ENGINE =
-  "BotBound's growth engine researches and prepares leads across calls, texts, and email. After required consent rules, federal DNC screening, provider connections, and account configuration are ready, it can run approved qualification, follow-up, and supported meeting booking.";
+  "BotBound helps small businesses answer incoming calls, capture requests, book available times, and send approved email recaps. Business outbound campaigns are not part of the current launch offer. Marketing calls still require consent rules, federal DNC screening, and provider approval; they are unavailable today.";
 
 /**
  * Pain -> capability map. When a caller names a problem, the Bot should
@@ -118,9 +123,9 @@ export const WIRELINE_GROWTH_ENGINE =
  */
 export const WIRELINE_PAIN_SOLUTIONS = [
   {
-    pain: "Struggling with leads, dry pipeline, or need more customers",
+    pain: "Losing incoming inquiries while busy",
     solution:
-      "the growth engine - research and prepare leads, then run approved outreach and qualification only after consent rules, federal DNC screening, and required provider connections are ready",
+      "a Bot that answers incoming questions, captures customer needs, and offers the next available appointment",
   },
   {
     pain: "Missing calls or losing business after hours",
@@ -128,49 +133,35 @@ export const WIRELINE_PAIN_SOLUTIONS = [
       "inbound Bots that answer 24/7, capture intent, and book or route the work so missed calls do not die in voicemail",
   },
   {
-    pain: "No time to follow up or leads going cold",
-    solution:
-      "cadences and email workflows that follow up across approved channels only after consent, compliance screening, and required connections are ready; every opt-out stops the sequence",
+    pain: "No time to organize customer requests",
+    solution: "clear call records, approved email recaps, and next steps in one workspace",
   },
   {
     pain: "Drowning in the inbox",
     solution:
-      "Bots that triage email, reply on-brand, and escalate only the messages that need a human",
+      "Bots that manage their inbox, answer replies, and escalate messages that need a human",
   },
   {
     pain: "Can't justify or afford more staff",
-    solution:
-      "one operating layer of trained Bots covering inbound, outbound, and email in the same workspace",
+    solution: "Bots covering inbound calls, email, and computer tasks in the same workspace",
   },
   {
-    pain: "Worried quality will slip or Bots will go off-script",
+    pain: "Worried quality will slip or Bots will ignore instructions",
     solution:
       "a supervised workroom with transcripts, approvals, and a feedback loop that keeps improving what the Bots do",
   },
 ] as const;
 
 /**
- * Connector names are examples, not unconditional availability promises. Every
- * public prompt must retain the "when connected" qualifier because OAuth app
- * configuration, provider authorization, and provider-side limits vary.
+ * Keep the launch story focused on supported ways to use the workspace.
+ * Optional connections are not a prerequisite for the native calendar or inbox.
  */
 export const WIRELINE_INTEGRATIONS = [
-  "HubSpot when connected",
-  "Salesforce when connected",
-  "Apollo when configured",
-  "Slack when connected",
-  "Microsoft Teams when connected",
-  "DocuSign when configured",
-  "Google Calendar when connected",
-  "Google Sheets when connected",
-  "Microsoft 365 (Outlook + Excel) when connected",
-  "Shopify when connected",
-  "Square when connected",
-  "Zoom when connected",
-  "Meta (Facebook + Instagram Ads) when connected",
-  "X (Twitter) when connected",
-  "Stripe for BotBound billing",
-  "bring-your-own carrier where supported",
+  "ChatGPT through account authorized MCP",
+  "Claude through account authorized MCP",
+  "Cursor through account authorized MCP",
+  "Google Calendar busy times when connected",
+  "Outlook Calendar busy times when connected",
 ] as const;
 
 /**

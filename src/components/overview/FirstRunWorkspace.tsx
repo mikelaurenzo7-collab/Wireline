@@ -26,8 +26,8 @@ export default function FirstRunWorkspace() {
               Create Your Bot
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
-              Start with a proven role or create your own. Configure voice, text, email, knowledge,
-              tools, guardrails, approvals, and handoffs in one BotBound workspace.
+              Start with a role or create your own. Give your Bot the knowledge and rules it needs
+              for calls, email, and computer tasks.
             </p>
             <div className="mt-6 flex flex-col gap-2 sm:flex-row">
               <Button asChild className="justify-center sm:min-w-[170px]">
@@ -66,7 +66,7 @@ export default function FirstRunWorkspace() {
               [
                 "2",
                 "Connect the Channels",
-                "Use voice, text, and email together or only where the workflow needs them.",
+                "Choose Calls, Email, or both. Every paid plan includes a cloud computer.",
               ],
               [
                 "3",

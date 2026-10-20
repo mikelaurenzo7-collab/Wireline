@@ -1,7 +1,7 @@
 {
   "name": "BotBound | For You. For Your Business.",
   "short_name": "BotBound",
-  "description": "Voice Bots for inbound and outbound calls and cloud browser tasks.",
+  "description": "Voice Bots with a computer, phone number, and email address.",
   "id": "/",
   "start_url": "/studio",
   "scope": "/",
@@ -19,7 +19,7 @@
   ],
   "shortcuts": [
     { "name": "BOT STUDIO", "short_name": "STUDIO", "description": "Build and configure a Bot in BotBound.", "url": "/studio" },
-    { "name": "INBOX", "short_name": "INBOX", "description": "Review texts and email by Bot.", "url": "/inbox" },
+    { "name": "INBOX", "short_name": "INBOX", "description": "Review email and conversations by Bot.", "url": "/inbox" },
     { "name": "CALLS", "short_name": "CALLS", "description": "Manage lines and review call history.", "url": "/phone" }
   ],
   "prefer_related_applications": false

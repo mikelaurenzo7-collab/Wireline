@@ -36,7 +36,7 @@ const DEFAULT_CHANNELS: BotChannelConfiguration = {
       "Answer naturally, identify the need, complete the next step, and recap the outcome.",
   },
   text: {
-    enabled: true,
+    enabled: false,
     instructions:
       "Continue approved conversations, confirm details, and honor opt-outs immediately.",
   },
@@ -72,9 +72,7 @@ export function createBotConfiguration(
 ): BotConfigurationDraft {
   const template = getBotTemplate(templateKey);
   const role = template.key === "custom" ? "Custom Role" : template.name;
-  const channels = overrides.channels
-    ? cloneChannels(overrides.channels)
-    : cloneDefaultChannels();
+  const channels = overrides.channels ? cloneChannels(overrides.channels) : cloneDefaultChannels();
 
   return {
     workspaceKind: UNIFIED_WORKSPACE_KIND,
@@ -85,8 +83,7 @@ export function createBotConfiguration(
     direction: template.direction,
     knowledgeBrief: "Use only the knowledge and policies approved in this workspace.",
     toolsBrief: "Connect the tools this role needs to complete its job.",
-    approvalBrief:
-      "Ask for approval before sensitive, financial, legal, or irreversible actions.",
+    approvalBrief: "Ask for approval before sensitive, financial, legal, or irreversible actions.",
     handoffBrief:
       "Escalate with the conversation context, requested next step, and urgency intact.",
     ...overrides,

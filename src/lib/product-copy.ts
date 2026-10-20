@@ -11,18 +11,18 @@ export const BRAND_SYSTEM = {
   defaultRole: "Your Bot",
   productTypes: BOT_PRODUCT_TYPES,
   toneRules: [
-    "Lead with the job, leverage, or outcome before AI mechanics.",
-    "Use Phone Bot as the public acquisition wedge; Call, Text, and Email are the compact channel proof.",
+    "Lead with the job or outcome before AI mechanics.",
+    "Lead with Voice Bots with a computer, phone number, and email address. Call, Email, and Computer are the compact capability proof.",
     "Do not stack BotBound with Phone Bot or Voice Bot as a compound noun. The brand already contains Bot. Say BotBound, or say Phone Bot, not both.",
     "Treat workspace architecture as product proof, never as a marketing headline.",
     "Use Bot as the customer-facing object while keeping agent as the technical domain.",
     "Use Phone Bot, Conversation Bot, and Human Bot as configuration lenses, never separate products or workspaces.",
     "Treat employee roles as starting templates, not product categories or permanent limits.",
-    "Make clear only when useful that one Bot can call, text, and email with shared context.",
+    "Show incoming business calls, email, computer tasks, and personal calling as the launch uses. SMS and business outbound are coming soon.",
     "Let customers train the playbook, channels, knowledge, tools, guardrails, approvals, and handoffs.",
-    "Only promise a number for plans that include Calls or SMS, and an inbox for plans that include Email. State each channel's live availability.",
+    "Only promise a number for launch plans that include Calls, and an inbox for plans that include Email. Preserve existing SMS access without promoting new SMS setup.",
     "Treat additional Bots as optional expansion for concurrency or genuinely separate roles.",
-    "Show logged proof after calls, texts, emails, handoffs, campaigns, and follow-up when proof helps the decision.",
+    "Show logged proof after calls, emails, computer tasks, and handoffs when proof helps the decision.",
     "Never present Personal or Business as a customer-facing product, workspace, signup, or pricing classification.",
     "Public headlines must create desire, tension, leverage, or curiosity before they explain architecture.",
     "Leave room for curiosity; do not explain every capability before account entry.",
@@ -88,48 +88,47 @@ export function customerAgentLanguage(_posture?: CustomerAgentPosture) {
 /** Role starters. Keys remain stable because signup links and analytics use them. */
 export const AGENT_DIRECTION_MODES = {
   outbound: {
-    label: "Sales Associate",
-    eyebrow: "Bot for sales and growth",
-    loop: ["Research", "Call", "Book", "Log"],
+    label: "Personal Assistant",
+    eyebrow: "Bot for everyday coordination",
+    loop: ["Research", "Review", "Call", "Log"],
     promise:
-      "Researches the lead, calls with context, sends the follow-up, books the meeting, and logs what moved forward.",
+      "Researches the task and helps coordinate personal plans through calls you review. Business outbound is coming soon.",
   },
   inbound: {
     label: "Receptionist",
-    eyebrow: "Bot for inbound demand",
-    loop: ["Answer", "Qualify", "Act", "Log"],
+    eyebrow: "Bot for incoming calls",
+    loop: ["Answer", "Understand", "Help", "Log"],
     promise:
-      "Answers live demand by phone, continues by text or email when useful, and routes only what needs a person.",
+      "Answers incoming calls, captures requests, continues by email, and brings you in when needed.",
   },
   hybrid: {
-    label: "All-Purpose Bot",
-    eyebrow: "Bot for flexible operations",
-    loop: ["Answer", "Act", "Follow Up", "Sync"],
-    promise:
-      "Keeps calls, text, email, sales, service, scheduling, and follow-through moving under your direction.",
+    label: "Flexible Assistant",
+    eyebrow: "Bot for life and work",
+    loop: ["Answer", "Research", "Reply", "Log"],
+    promise: "Keeps calls, email, and computer tasks together under your direction.",
   },
 } as const;
 
 export const AGENT_NUMBER_PROMISE =
-  "Plans with calls include a BotBound number at no extra line fee. Your Bot can answer and make calls, take callbacks, and manage handoffs. SMS requires an eligible plan and activation." as const;
+  "Plans with calls include a BotBound number at no extra line fee. Answer incoming calls or coordinate personal plans with recipient permission. SMS is coming soon." as const;
 
 export const OUTBOUND_WEDGE = {
   eyebrow: AGENT_DIRECTION_MODES.outbound.eyebrow,
-  headline: "A Bot That Moves Growth Work Forward",
+  headline: "A Bot That Helps With Everyday Plans",
   subline:
-    "Start with a Sales Associate Bot that researches leads, calls, handles the conversation, texts, emails, books, follows up, and logs proof. Change the role or add another Bot only when the work calls for it.",
+    "Research options, prepare email, and review personal calls for appointments and service requests. Business outbound is coming soon.",
   lanes: [
-    "Appointment setting",
-    "Lead revival",
-    "Offer promotion",
-    "Quote follow-up",
-    "Payment recovery",
-    "Inbound conversion",
+    "Appointment requests",
+    "Service coordination",
+    "Web research",
+    "Email preparation",
+    "Personal admin",
+    "Incoming questions",
   ],
   loop: AGENT_DIRECTION_MODES.outbound.loop,
-  proof: ["Researches", "Calls", "Texts", "Emails", "Books", "Reports"],
+  proof: ["Researches", "Prepares", "Calls", "Emails", "Coordinates", "Reports"],
   differentiator:
-    "BotBound turns calls, text, and email into completed tasks, booked appointments, revived leads, handled callbacks, recovered opportunities, and logged proof.",
+    "Your Bot answers calls, works with email, and uses a computer to help with the next step.",
   beforeStrip:
     "Build one capable Bot or a coordinated roster. Train each role, connect the right channels, and improve from logged outcomes.",
 } as const;
@@ -139,9 +138,9 @@ export const MARKETING_VOICE = {
   headline: BOT_BRAND.slogan,
   primaryCta: "Start Free",
   subline: BOT_BRAND.promise,
-  channelProof: ["Call", "Text", "Email"],
+  channelProof: ["Call", "Email", "Computer"],
   extensionLead:
-    "Send this page to your Workspace. Your Bot can prepare a call, draft a text, or follow up without leaving the tab.",
+    "Send this page to your Workspace to research it, draft an email, or prepare a personal call for review.",
   differentiator: OUTBOUND_WEDGE.differentiator,
   buyingNoun: BRAND_SYSTEM.buyingNoun,
 } as const;
@@ -158,21 +157,27 @@ export const CLIENT_SURFACE_POSTURE = {
 
 /** Retained export name for compatibility with older marketing modules. */
 export const BUSINESS_MARKETING_VOICE = {
-  eyebrow: "PHONE BOTS FOR CALLS, TEXT, AND EMAIL",
-  proof: ["Answers calls", "Makes calls", "Sends texts", "Continues by email", "Logs outcomes"],
-  differentiator: "BotBound keeps valuable conversations moving across calls, text, and email.",
+  eyebrow: "VOICE BOTS WITH A COMPUTER, PHONE NUMBER, AND EMAIL ADDRESS",
+  proof: [
+    "Answers calls",
+    "Captures requests",
+    "Uses a computer",
+    "Replies by email",
+    "Logs outcomes",
+  ],
+  differentiator: "BotBound helps small businesses answer incoming calls and continue by email.",
   beforeStrip: OUTBOUND_WEDGE.beforeStrip,
 } as const;
 
 export const WORKSPACE_VOICE = {
   createHeadline: "Create Your Bot",
   runHeadline: "Your Bot Is Live",
-  emptyCue: "Describe the job. Connect calls, text, email, knowledge, and tools.",
+  emptyCue: "Describe the job. Connect calls, email, knowledge, and computer tasks.",
   configurePrompts: ["Adjust the greeting", "Change the tone", "Add a rule"],
   testPrompts: [
     "What can you help with?",
     "I want to book an appointment.",
-    "Can you follow up by text?",
+    "Can you send the details by email?",
     "I need to speak with a person.",
   ],
 } as const;
@@ -182,7 +187,7 @@ export const PRODUCT_VERSATILITY = {
   tagline:
     "Start with a Phone Bot, Conversation Bot, Human Bot, or role template. Add another only when a separate role or more capacity helps.",
   short:
-    "Bots for calling, texting, email, sales, marketing, appointment setting, lead revival, support, scheduling, follow-up, inbound conversion, recovery, and personal admin.",
+    "Bots for incoming calls, email, web research, support, appointment requests, and personal coordination.",
   hero: "Give the Work a Bot. Step In Only When You Want To",
 } as const;
 
@@ -193,14 +198,14 @@ export const PRODUCT_POSTURE = {
     badgeShort: "Bot",
     createCta: "Create Your Bot",
     emptyTitle: "Your Bot",
-    emptyBody: "Calls, text, email, tools, and outcomes with your Bot.",
+    emptyBody: "Calls, email, computer tasks, and outcomes with your Bot.",
   },
   business: {
     badge: "Bot",
     badgeShort: "Bot",
     createCta: "Create Your Bot",
     emptyTitle: "Your Bot",
-    emptyBody: "Calls, text, email, tools, and outcomes with your Bot.",
+    emptyBody: "Calls, email, computer tasks, and outcomes with your Bot.",
   },
 } as const;
 
@@ -214,7 +219,7 @@ export function formatAgentRoleLabel(role?: string | null): string {
 
 /** Canonical trust posture for sales and regulated verticals. Policy driven, not stealth. */
 export const TRUST_DISCLOSURE_FAQ =
-  "BotBound Bots follow your disclosure policy, consent rules, and conversation purpose. When disclosure is required or enabled, BotBound logs it automatically. The goal is quick, clear qualification and real opportunities that move forward." as const;
+  "BotBound Bots follow your disclosure policy, consent rules, and conversation purpose. When disclosure is required or enabled, BotBound logs it automatically. Personal calling still requires recipient permission." as const;
 
 export function rosterSummary(personalCount: number, businessCount: number): string {
   const total = personalCount + businessCount;

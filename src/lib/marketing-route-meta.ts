@@ -8,7 +8,7 @@ export const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 const BRAND_SUFFIX = ` | ${BOTBOUND_BRAND_NAME}`;
 export const HOME_TITLE = "BotBound | A Bot for You";
 export const HOME_DESCRIPTION =
-  "Give your voice Bot a goal: answer calls, make calls, and work online with a cloud browser for you or your business. Calls plans include a dedicated phone number; managed email is available on eligible plans.";
+  "Voice Bots with a computer, phone number, and email address. Answer calls, handle requests, and get everyday work done for you or your business.";
 const HOME_ROBOTS_TAG =
   '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />';
 const HOME_GOOGLEBOT_TAG =
@@ -138,14 +138,14 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
       "BotBound customer care SMS: permission script, message examples, and instructions to stop messages.",
   },
   "/solutions/sales": {
-    title: "Set Up a Sales Bot for Lead Follow Up | BotBound",
+    title: "Give Every Sales Inquiry a Clear Next Step | BotBound",
     description:
-      "Bring a list or connect a source. Give your Sales Bot a playbook to call prospects, qualify interest, and record the next step.",
+      "Answer incoming questions, capture what the customer needs, and offer an available appointment. Keep the conversation and next step in BotBound.",
   },
   "/solutions/support": {
     title: "A Front Desk That Answers Before Demand Goes Cold | BotBound",
     description:
-      "Give a Front Desk Bot your policies, calendar, and rules. It answers calls, completes supported requests, books available times, and records outcomes. Add text or email when those channels are configured.",
+      "Give a Front Desk Bot your policies, calendar, and rules. It answers calls, captures requests, books available times, and keeps the outcome in your workspace. Add email for written replies and recaps.",
   },
 };
 

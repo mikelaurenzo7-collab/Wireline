@@ -5,16 +5,13 @@ import { WirelineLockup, WirelineWordmark } from "../brand/WirelineBrand";
 const OPEN_PRIVACY_CHOICES_EVENT = "wireline:open-privacy-choices";
 
 const PRODUCT_LINKS = [
-  { to: "/solutions/sales", label: "Sales" },
-  { to: "/solutions/support", label: "Support" },
+  { to: "/solutions/support", label: "Front Desk" },
   { to: "/features", label: "Features" },
   { to: "/pricing", label: "Pricing" },
   { to: "/compare", label: "Compare" },
 ] as const;
 
-// Every built wedge, symmetrically. Everyday calls lead and no industry is
-// privileged, preserving the broad-entry posture without turning use cases
-// into separate products.
+// Launch use cases. Legacy sales routes remain available for existing links.
 const WHO_ITS_FOR_LINKS = [
   { to: "/for/everyday", label: "For You" },
   { to: "/for/home-services", label: "Home Services" },
@@ -23,7 +20,6 @@ const WHO_ITS_FOR_LINKS = [
   { to: "/for/medical", label: "Medical" },
   { to: "/for/real-estate", label: "Real Estate" },
   { to: "/for/restaurants", label: "Restaurants" },
-  { to: "/for/sales", label: "Sales Teams" },
 ] as const;
 
 const COMPANY_LINKS = [

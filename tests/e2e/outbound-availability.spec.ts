@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
 
 for (const width of [320, 1280]) {
-  test(`outbound opens the business call review without bypassing permission at ${width}px`, async ({
+  test(`personal calls open review without bypassing permission at ${width}px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 740 });
-    const dialRequests: string[] = [];
+    const outboundWrites: string[] = [];
     await page.route("**/api/**", async (route) => {
       const request = route.request();
       const path = new URL(request.url()).pathname;
@@ -22,7 +22,11 @@ for (const width of [320, 1280]) {
         });
         return;
       }
-      if (path === "/api/outbound/dial") dialRequests.push(request.method());
+      if (
+        request.method() === "POST" &&
+        /^\/api\/(?:outbound|campaigns|cadences|callbacks)(?:\/|$)/.test(path)
+      )
+        outboundWrites.push(path);
       const json =
         path === "/api/auth/session"
           ? {
@@ -36,9 +40,17 @@ for (const width of [320, 1280]) {
             ? {
                 agents: [
                   {
-                    id: "outbound-bot",
-                    name: "Front Desk",
+                    id: "business-bot",
+                    name: "Business Front Desk",
                     role: "receptionist",
+                    isBusinessAgent: true,
+                    phone_number: "+13125551235",
+                  },
+                  {
+                    id: "outbound-bot",
+                    name: "Personal Assistant",
+                    role: "personal_assistant",
+                    isBusinessAgent: false,
                     phone_number: "+13125551234",
                   },
                 ],
@@ -59,11 +71,18 @@ for (const width of [320, 1280]) {
     });
 
     await page.goto("/phone?tab=outbound");
+    await expect(page.getByRole("combobox", { name: "Outbound section" })).toHaveCount(0);
+    await expect(page.getByRole("tab", { name: /Lead Hunt|Sequences|Callbacks/ })).toHaveCount(0);
     const opener = page.getByRole("button", { name: "New call", exact: true }).first();
     await opener.click();
     const dialog = page.getByRole("dialog", { name: "New call", exact: true });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByLabel("Bot", { exact: true })).toHaveValue("outbound-bot");
+    await expect(dialog.getByRole("combobox", { name: "Bot", exact: true })).toHaveValue(
+      "outbound-bot",
+    );
+    await expect(
+      dialog.getByRole("combobox", { name: "Bot", exact: true }).getByRole("option"),
+    ).toHaveText(["Personal Assistant"]);
     await expect(dialog.getByRole("textbox", { name: "Phone number", exact: true })).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Place call", exact: true })).toBeDisabled();
     await expect(dialog.getByRole("option", { name: "Marketing or sales" })).toHaveCount(0);
@@ -80,6 +99,12 @@ for (const width of [320, 1280]) {
     await page.keyboard.press("Escape");
     await expect(dialog).not.toBeVisible();
     await expect(opener).toBeFocused();
-    expect(dialRequests).toEqual([]);
+    expect(outboundWrites).toEqual([]);
+    await page.goto("/phone?tab=outbound&view=campaigns");
+    await expect(
+      page.getByRole("heading", { name: "Business outbound is coming soon", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "New call", exact: true })).toHaveCount(0);
+    expect(outboundWrites).toEqual([]);
   });
 }

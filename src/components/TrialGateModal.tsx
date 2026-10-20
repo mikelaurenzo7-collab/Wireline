@@ -50,8 +50,13 @@ function selfServeTiers(
 ): CheckoutTier[] {
   const hasLiveCatalog = livePlans !== null;
   const source = hasLiveCatalog
-    ? livePlans.filter((plan) => plan.catalog_family === "channels").filter(hasChannelPlanDetails)
-    : STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels").map((plan) => ({
+    ? livePlans
+        .filter((plan) => plan.catalog_family === "channels")
+        .filter(hasChannelPlanDetails)
+        .filter((plan) => !plan.channels.includes("sms"))
+    : STRIPE_PLANS.filter(
+        (plan) => plan.catalogFamily === "channels" && !plan.channels.includes("sms"),
+      ).map((plan) => ({
         id: plan.id,
         name: plan.name,
         price_usd_monthly: plan.price_usd_monthly,
@@ -170,7 +175,12 @@ export default function TrialGateModal() {
       setCheckoutAvailable(false);
       const intended = recommendedPlanFromIntent(getStoredSignupIntent());
       setSelectedPlanId(
-        STRIPE_PLANS.some((plan) => plan.id === intended && plan.catalogFamily === "channels")
+        STRIPE_PLANS.some(
+          (plan) =>
+            plan.id === intended &&
+            plan.catalogFamily === "channels" &&
+            !plan.channels.includes("sms"),
+        )
           ? intended
           : DEFAULT_ACTIVATION_PLAN_ID,
       );
@@ -225,8 +235,13 @@ export default function TrialGateModal() {
     getStoredSignupIntent()?.preferredBillingInterval === "year" ? "year" : "month";
   const checkoutTiers = selfServeTiers(preferredInterval, livePlans, checkoutAvailable);
   const channelPlans =
-    livePlans?.filter((plan) => plan.catalog_family === "channels").filter(hasChannelPlanDetails) ??
-    STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels");
+    livePlans
+      ?.filter((plan) => plan.catalog_family === "channels")
+      .filter(hasChannelPlanDetails)
+      .filter((plan) => !plan.channels.includes("sms")) ??
+    STRIPE_PLANS.filter(
+      (plan) => plan.catalogFamily === "channels" && !plan.channels.includes("sms"),
+    );
   const selectedTier = checkoutTiers.find((tier) => tier.id === selectedPlanId);
   const catalogPending = livePlans === null;
   const checkoutUnavailable =
@@ -538,6 +553,7 @@ export default function TrialGateModal() {
                     <ChannelPlanPicker
                       id="activation"
                       plans={channelPlans}
+                      availableChannels={["voice", "email"]}
                       selectedPlanId={selectedPlanId}
                       onSelectPlan={(id) => {
                         setSelectedPlanId(id);
@@ -553,8 +569,6 @@ export default function TrialGateModal() {
                       disabled={!!pending}
                       renderAction={(plan) => {
                         const tier = checkoutTiers.find((item) => item.id === plan.id);
-                        const smsPending =
-                          plan.channels.includes("sms") && tier?.disabled !== false;
                         return (
                           <div className="space-y-2">
                             <ShadButton
@@ -568,8 +582,6 @@ export default function TrialGateModal() {
                                 <>
                                   <Loader2 className="size-4 animate-spin" /> Opening
                                 </>
-                              ) : smsPending ? (
-                                "Sender Approval Required"
                               ) : tier?.disabled ? (
                                 "Checkout Paused"
                               ) : (
@@ -578,22 +590,13 @@ export default function TrialGateModal() {
                                 </>
                               )}
                             </ShadButton>
-                            {smsPending ? (
-                              <p role="status" className="text-sm text-muted-foreground">
-                                SMS needs an approved sender.{" "}
-                                <Link
-                                  to="/contact?topic=sms"
-                                  onClick={closeModal}
-                                  className="underline underline-offset-4"
-                                >
-                                  Set up texting
-                                </Link>
-                              </p>
-                            ) : null}
                           </div>
                         );
                       }}
                     />
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      SMS is coming soon. Choose Calls, Email, or both.
+                    </p>
                   </details>
                 </>
               )}

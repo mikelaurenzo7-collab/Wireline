@@ -139,7 +139,7 @@ export default function BillingSettings() {
                 setCheckoutReturnNotice({
                   tone: "success",
                   title: "Runtime Balance Added",
-                  message: "Your prepaid balance is ready for calls, texts, and live work.",
+                  message: "Your prepaid balance is ready for calls and eligible live actions.",
                 });
               } else if (returnFlow === "plan" && verification.synced) {
                 setCheckoutReturnNotice({
@@ -422,8 +422,10 @@ export default function BillingSettings() {
                   {CONVERSATION_BALANCE_COPY.title}
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                  Prepaid extra call minutes, SMS, and eligible live actions. Computer uses your
-                  managed AI allowance.
+                  {plan?.channels.includes("sms")
+                    ? "Prepaid extra call minutes, SMS, and eligible live actions."
+                    : "Prepaid extra call minutes and eligible live actions."}{" "}
+                  Computer uses your managed AI allowance.
                 </p>
               </div>
               <ShieldCheck className="size-5 shrink-0 text-primary" aria-hidden="true" />

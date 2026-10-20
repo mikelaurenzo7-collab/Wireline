@@ -28,9 +28,8 @@ const PILLARS: readonly Pillar[] = [
   {
     icon: Phone,
     label: "Phone Number",
-    title: "Answers and Makes Calls",
-    body: "Your Bot answers calls, coordinates appointments, and follows up for you or your business. Each call leaves a record of what happened.",
-    note: "Outbound service calls require recipient permission and currently support Illinois callers and recipients. Marketing calls remain unavailable.",
+    title: "Ready When the Phone Rings",
+    body: "Your Bot answers calls, handles questions, takes requests, and books available times. Every conversation leaves a clear record.",
   },
   {
     icon: MonitorSmartphone,
@@ -53,6 +52,11 @@ const CAPABILITIES: readonly { icon: LucideIcon; title: string; body: string }[]
     icon: Sparkles,
     title: "Made Yours",
     body: "Your knowledge, preferences, voice, and rules shape how your Bot works.",
+  },
+  {
+    icon: Phone,
+    title: "Personal Calls",
+    body: "Prepare appointment and service calls for yourself. Review each call before placing it. Recipient permission is required, with Illinois callers and recipients currently supported.",
   },
   {
     icon: CalendarCheck,

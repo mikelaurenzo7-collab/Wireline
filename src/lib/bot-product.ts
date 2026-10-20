@@ -6,8 +6,8 @@ export type BotProductTypeKey = "voice" | "conversation" | "human";
 export const BOT_BRAND = {
   name: "BotBound",
   slogan: "For You. For Your Business.",
-  supportingLine: "CALL · TEXT · EMAIL",
-  promise: "Your Bot for calls, texts, and email.",
+  supportingLine: "CALL · EMAIL · COMPUTER",
+  promise: "Your Bot for calls, email, and computer tasks.",
 } as const;
 
 export const BOT_PRODUCT_TYPES = [
@@ -15,15 +15,13 @@ export const BOT_PRODUCT_TYPES = [
     key: "voice" as const,
     name: "Phone Bot",
     label: "PHONE BOT",
-    description:
-      "Answer inbound calls and build outbound playbooks to follow up, qualify, and book.",
+    description: "Answer incoming calls, capture requests, and coordinate personal plans.",
   },
   {
     key: "conversation" as const,
     name: "Conversation Bot",
     label: "CONVERSATION BOT",
-    description:
-      "Carry one continuous conversation across calls, text, and email with shared context.",
+    description: "Keep calls and email together with shared context and clear next steps.",
   },
   {
     key: "human" as const,
@@ -44,13 +42,12 @@ export const BOT_CHANNELS = [
     key: "voice" as const,
     label: "Call",
     description:
-      "Answer inbound calls, follow up by phone, qualify needs, book, transfer, and recap.",
+      "Answer incoming calls, capture requests, route callers, and coordinate personal plans.",
   },
   {
     key: "text" as const,
     label: "Text",
-    description:
-      "Continue the conversation by SMS after sender approval, with reminders, confirmations, and updates.",
+    description: "SMS is coming soon. Existing conversations stay available.",
   },
   {
     key: "email" as const,
@@ -66,38 +63,38 @@ export const BOT_ROLE_TEMPLATES = [
     name: "Front Desk",
     category: "Operations" as const,
     direction: "inbound" as const,
-    summary: "Welcome callers, answer questions, and book appointments.",
-    outcomes: ["Route Calls", "Capture Intake", "Book Appointments"],
+    summary: "Welcome callers, answer questions, and capture appointment requests.",
+    outcomes: ["Route Calls", "Capture Intake", "Request Appointments"],
     moves: [
       "Intent + urgency + routing",
       "Caller + service intake",
-      "Calendar booking + confirmations",
+      "Appointment requests + owner review",
     ],
   },
   {
     key: "sales-rep",
     name: "Sales Rep",
     category: "Operations" as const,
-    direction: "hybrid" as const,
-    summary: "Prepare sales conversations and rehearse each next step.",
-    outcomes: ["Qualify Leads", "Handle Objections", "Advance Deals"],
+    direction: "inbound" as const,
+    summary: "Answer incoming product questions and capture interest for owner review.",
+    outcomes: ["Answer Questions", "Understand Needs", "Capture Interest"],
     moves: [
-      "Instant lead response",
-      "Fit + timing + objection handling",
-      "CRM handoff + next steps",
+      "Incoming product questions",
+      "Needs + timing + approved answers",
+      "Owner handoff + next steps",
     ],
   },
   {
     key: "appointment-setter",
     name: "Appointment Setter",
     category: "Operations" as const,
-    direction: "outbound" as const,
-    summary: "Coordinate appointments, confirm details, and keep calendars moving.",
-    outcomes: ["Coordinate Plans", "Confirm Details", "Set Meetings"],
+    direction: "inbound" as const,
+    summary: "Answer scheduling calls, collect preferences, and capture booking requests.",
+    outcomes: ["Collect Availability", "Confirm Details", "Request Appointments"],
     moves: [
-      "Availability + call windows",
+      "Availability + preferred times",
       "Questions + appointment details",
-      "Calendar booking + reminders",
+      "Booking requests + owner review",
     ],
   },
   {
@@ -117,8 +114,8 @@ export const BOT_ROLE_TEMPLATES = [
     key: "lead-qualifier",
     name: "Lead Qualifier",
     category: "Operations" as const,
-    direction: "hybrid" as const,
-    summary: "Keep human time focused on the opportunities that deserve it.",
+    direction: "inbound" as const,
+    summary: "Understand incoming inquiries and send the owner a useful summary.",
     outcomes: ["Discover Needs", "Score Fit", "Route Qualified Leads"],
     moves: [
       "Qualification questions",
@@ -130,26 +127,26 @@ export const BOT_ROLE_TEMPLATES = [
     key: "recruiter",
     name: "Recruiter",
     category: "Operations" as const,
-    direction: "hybrid" as const,
-    summary: "Move candidates from first contact to a scheduled interview faster.",
-    outcomes: ["Screen Candidates", "Collect Availability", "Schedule Interviews"],
+    direction: "inbound" as const,
+    summary: "Answer candidate questions and capture availability for owner review.",
+    outcomes: ["Answer Role Questions", "Collect Availability", "Capture Interview Requests"],
     moves: [
-      "Role screening questions",
+      "Approved role information",
       "Candidate FAQ + availability",
-      "Interview booking + confirmations",
+      "Interview requests + owner review",
     ],
   },
   {
     key: "property-manager",
     name: "Property Manager",
     category: "Operations" as const,
-    direction: "hybrid" as const,
-    summary: "Keep leasing, maintenance, residents, and vendors from stalling out.",
-    outcomes: ["Handle Leasing Inquiries", "Open Work Orders", "Coordinate Vendors"],
+    direction: "inbound" as const,
+    summary: "Answer leasing questions and capture maintenance requests for the owner.",
+    outcomes: ["Handle Leasing Inquiries", "Capture Requests", "Notify the Owner"],
     moves: [
       "Leasing + maintenance triage",
       "Unit + access + urgency intake",
-      "Resident + vendor coordination",
+      "Owner handoff + next steps",
     ],
   },
   {
@@ -159,11 +156,7 @@ export const BOT_ROLE_TEMPLATES = [
     direction: "hybrid" as const,
     summary: "Handle calls, coordinate plans, and research the things on your list.",
     outcomes: ["Manage Schedule", "Research & Follow Up", "Coordinate Tasks"],
-    moves: [
-      "Calendar + reminder coordination",
-      "Research + concise briefs",
-      "Calls + email coordination",
-    ],
+    moves: ["Appointments + planning", "Research + concise briefs", "Calls + email coordination"],
   },
   {
     key: "family-concierge",
@@ -174,7 +167,7 @@ export const BOT_ROLE_TEMPLATES = [
     outcomes: ["Coordinate Plans", "Book Services", "Track Household Tasks"],
     moves: [
       "Appointments + reservations",
-      "Recurring household reminders",
+      "Household requests + owner review",
       "Service calls + next steps",
     ],
   },
@@ -182,7 +175,7 @@ export const BOT_ROLE_TEMPLATES = [
     key: "custom",
     name: "Create Your Own",
     category: "Custom" as const,
-    direction: "hybrid" as const,
+    direction: "inbound" as const,
     summary: "Build the exact job you wish somebody would just own.",
     outcomes: ["Define Any Job", "Connect the Right Tools", "Set the Rules"],
     moves: [
@@ -198,7 +191,7 @@ export const BOT_MARKETING_VOICE = {
   headline: BOT_BRAND.slogan,
   subline: BOT_BRAND.promise,
   primaryCta: "Start Free",
-  spine: ["Call", "Text", "Email"],
+  spine: ["Call", "Email", "Computer"],
 } as const;
 
 export const BOT_WORKSPACE_PROMISE = {

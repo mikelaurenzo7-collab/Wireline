@@ -158,14 +158,14 @@ export const AGENT_TEMPLATES = [
     id: "scheduler-realestate",
     category: "Scheduling",
     name: "Real Estate Tour Booker",
-    description: "Qualifies buyers, books tours, and follows up on listings.",
+    description: "Answers listing questions, captures buyer needs, and books available tours.",
     role: "lead_qualifier",
     channel: "voice" as const,
     icon: Building2,
     accent: BRAND.colors.primary,
     badge: null,
     firstMessage:
-      "Hi, I'm following up about a property you asked about. Would you like to review details or request a showing time?",
+      "Thanks for calling. I can answer listing questions or help find a showing time. Which property are you interested in?",
   },
   // === COLLECTIONS & FINANCE ===
   {
@@ -310,6 +310,21 @@ export const AGENT_TEMPLATES = [
 
 type Template = (typeof AGENT_TEMPLATES)[number];
 
+// Keep the full definitions for existing Bots and runtime compatibility.
+// The launch gallery offers incoming business work and personal calling.
+const DEFERRED_BUSINESS_TEMPLATE_IDS = new Set<string>([
+  "sales-sdr",
+  "sales-closer",
+  "collections-soft",
+  "collections-hard",
+  "marketing-reengagement",
+  "marketing-survey",
+]);
+
+export const LAUNCH_AGENT_TEMPLATES = AGENT_TEMPLATES.filter(
+  (template) => !DEFERRED_BUSINESS_TEMPLATE_IDS.has(template.id),
+);
+
 export function getTemplateSelfServeRestriction(template: Template): string | null {
   return "selfServeRestriction" in template ? template.selfServeRestriction : null;
 }
@@ -329,7 +344,11 @@ const CATEGORIES = [
   "Everyday & Lifestyle",
 ] as const;
 
-const TEMPLATE_TOTAL = AGENT_TEMPLATES.length;
+const LAUNCH_CATEGORIES = CATEGORIES.filter(
+  (category) =>
+    category === "All" || LAUNCH_AGENT_TEMPLATES.some((template) => template.category === category),
+);
+const TEMPLATE_TOTAL = LAUNCH_AGENT_TEMPLATES.length;
 
 function searchableTemplateText(template: Template) {
   return [
@@ -516,7 +535,7 @@ export default function AgentTemplates() {
   useEffect(() => {
     const templateId = new URLSearchParams(window.location.search).get("template");
     if (!templateId) return;
-    const template = AGENT_TEMPLATES.find((t) => t.id === templateId);
+    const template = LAUNCH_AGENT_TEMPLATES.find((t) => t.id === templateId);
     if (!template) return;
     setActiveCategory(template.category);
     setSearch(template.name);
@@ -532,7 +551,7 @@ export default function AgentTemplates() {
   }, [deployedNames]);
 
   const q = search.trim().toLowerCase();
-  const visible = AGENT_TEMPLATES.filter((t) => {
+  const visible = LAUNCH_AGENT_TEMPLATES.filter((t) => {
     const matchesCategory = activeCategory === "All" || t.category === activeCategory;
     const matchesSearch = !q || searchableTemplateText(t).includes(q);
     return matchesCategory && matchesSearch;
@@ -542,12 +561,17 @@ export default function AgentTemplates() {
     : `${visible.length} of ${TEMPLATE_TOTAL} templates`;
 
   const handleOpenDeploy = (template: Template) => {
-    if (deploying || !isTemplateSelfServeAvailable(template)) return;
+    if (
+      deploying ||
+      DEFERRED_BUSINESS_TEMPLATE_IDS.has(template.id) ||
+      !isTemplateSelfServeAvailable(template)
+    )
+      return;
     setModalTemplate(template);
   };
 
   const handleConfirmedDeploy = async (values: DeployValues) => {
-    if (!modalTemplate) return;
+    if (!modalTemplate || DEFERRED_BUSINESS_TEMPLATE_IDS.has(modalTemplate.id)) return;
     setDeploying(modalTemplate.id);
     try {
       const uniqueId = `${modalTemplate.id}-${Date.now()}`;
@@ -630,7 +654,7 @@ export default function AgentTemplates() {
                 setActiveCategory(event.target.value as (typeof CATEGORIES)[number])
               }
             >
-              {CATEGORIES.map((cat) => (
+              {LAUNCH_CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat === "All" ? "All Categories" : cat}
                 </option>

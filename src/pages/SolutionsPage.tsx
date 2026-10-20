@@ -4,23 +4,20 @@ import { PageMeta } from "../lib/page-meta";
 
 const SOLUTIONS = {
   sales: {
-    title: "Set Up a Sales Bot for Lead Follow Up",
+    title: "Give Every Sales Inquiry a Clear Next Step",
     description:
-      "Bring a list or connect a source. Give your Sales Bot a playbook to call prospects, qualify interest, and record the next step.",
-    primary: { href: "/signup?wedge=sales", label: "Create Your Sales Bot" },
+      "Answer incoming questions, capture what the customer needs, and offer an available appointment. Keep the conversation and next step in BotBound.",
+    primary: { href: "/signup?plan=free&template=front-desk", label: "Create Your Front Desk" },
     secondary: { href: "/features", label: "See How It Works" },
     sequence: [
-      [
-        "Find or Bring the Leads",
-        "Lead Hunt surfaces prospects from a connected source, or you import an approved list.",
-      ],
+      ["A Customer Calls", "Your Bot answers on its own number and asks what the caller needs."],
       [
         "Set the Playbook",
-        "Choose who to contact, what to say, and how your Bot should qualify and book.",
+        "Add your services, common questions, prices, and rules for involving you.",
       ],
       [
-        "Call. Book. Follow Up.",
-        "Your Bot works through the call, records the outcome, and keeps the next step moving.",
+        "Answer. Book. Keep the Record.",
+        "Offer an available appointment, record the request, or hand the conversation to you.",
       ],
     ],
     capabilities: [
@@ -28,18 +25,18 @@ const SOLUTIONS = {
         "Your Playbook in Every Call",
         "Use your positioning, tone, qualification rules, and approved claims.",
       ],
-      ["Follow Up Across Channels", "Add text or email follow up when you enable those channels."],
+      ["Email Recaps", "Send a recap from your Bot's email address when Email is enabled."],
       [
         "Calendar Aware Booking",
         "Offer real availability and write the confirmed next step back to the record.",
       ],
     ],
-    proof: "Give one Sales Bot a calling playbook and keep its outcomes visible.",
+    proof: "Start with your Bot's inbox, calendar, and call records. No CRM required.",
   },
   support: {
     title: "A Front Desk That Answers Before Demand Goes Cold",
     description:
-      "Give a Front Desk Bot your policies, calendar, and rules. It answers calls, completes supported requests, books available times, and records outcomes. Add text or email when those channels are configured.",
+      "Give a Front Desk Bot your policies, calendar, and rules. It answers calls, captures requests, books available times, and keeps the outcome in your workspace. Add email for written replies and recaps.",
     primary: {
       href: "/signup?wedge=support",
       label: "Create Front Desk Bot",
@@ -53,7 +50,7 @@ const SOLUTIONS = {
       ],
       [
         "It Completes the Next Step",
-        "Your Bot answers, books when Calendar is connected, and records the outcome. Your rules decide when a person steps in.",
+        "Your Bot answers, books through BotBound Calendar, and records the outcome. Your rules decide when a person steps in.",
       ],
     ],
     capabilities: [
@@ -90,9 +87,7 @@ export default function SolutionsPage() {
       <section className="marketing-section marketing-section--screen">
         <div className="wl-public-rail">
           <div className="mx-auto mb-8 max-w-6xl text-center">
-            <p className="wl-eyebrow wl-eyebrow--wired text-primary">
-              {key === "sales" ? "Outbound" : "Inbound"}
-            </p>
+            <p className="wl-eyebrow wl-eyebrow--wired text-primary">Inbound</p>
             <h1 className="marketing-hero-title mx-auto mt-4 text-[clamp(1.9rem,3.4vw,2.9rem)]">
               {page.title}
             </h1>

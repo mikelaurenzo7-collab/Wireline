@@ -106,7 +106,7 @@ describe("current-state UI contract", () => {
     expect(customerAgentLanguage("personal")).toEqual(customerAgentLanguage("business"));
     expect(PRODUCT_POSTURE.personal).toEqual(PRODUCT_POSTURE.business);
     expect(PRODUCT_POSTURE.personal.emptyBody).toBe(
-      "Calls, text, email, tools, and outcomes with your Bot.",
+      "Calls, email, computer tasks, and outcomes with your Bot.",
     );
     const copy = read("src/lib/product-copy.ts");
     expect(copy).toContain("under your direction");

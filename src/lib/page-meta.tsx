@@ -15,7 +15,7 @@ const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 const DEFAULT_TITLE = "BotBound | A Bot for You";
 const DEFAULT_DESCRIPTION =
-  "Give your voice Bot a goal: answer calls, make calls, and work online with a cloud browser for you or your business. Calls plans include a dedicated phone number; managed email is available on eligible plans.";
+  "Voice Bots with a computer, phone number, and email address. Answer calls, handle requests, and get everyday work done for you or your business.";
 
 function brandTitle(value: string): string {
   return value

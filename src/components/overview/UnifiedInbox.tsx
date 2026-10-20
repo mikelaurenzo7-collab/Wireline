@@ -37,7 +37,7 @@ export default function UnifiedInbox({
       <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
-            Voice · Text · Email
+            Voice · Email
           </p>
           <h2 id="unified-inbox-title" className="mt-1 text-lg font-semibold text-foreground">
             Unified Inbox
@@ -47,7 +47,6 @@ export default function UnifiedInbox({
           {[
             ["All", "/inbox"],
             ["Calls", "/phone?tab=logs"],
-            ["Texts", "/inbox?tab=sms"],
             ["Email", "/inbox?tab=email"],
           ].map(([label, href], index) => (
             <Link

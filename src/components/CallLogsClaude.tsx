@@ -102,7 +102,7 @@ export function readableCallSummary(
 }
 
 export default function CallLogsClaude({ agentId }: { agentId?: string | null }) {
-  const callLabel = "New call";
+  const callLabel = "Personal call";
   const [calls, setCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

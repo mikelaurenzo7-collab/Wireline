@@ -232,12 +232,15 @@ describe("authenticated workspace design architecture", () => {
     expect(settingsTabs).toContain("WorkspaceControlBand");
   });
 
-  it("offers a call action and permission management in outbound dispatch", () => {
+  it("offers personal calling and permissions while keeping business outbound as coming soon", () => {
     const hub = read("src/components/outbound/OutboundHub.tsx");
-    expect(hub).toContain('title="Make a call"');
+    expect(hub).toContain('title="Make a personal call"');
     expect(hub).toContain('label: "New call"');
     expect(hub).toContain("RecipientVoicePermissions");
-    expect(hub).toContain("Lead Intake");
+    expect(hub).toContain('title="Business outbound is coming soon"');
+    expect(hub).not.toContain("Lead Intake");
+    expect(hub).not.toContain("CampaignsPanel");
+    expect(hub).not.toContain("Cadences");
   });
 
   it("keeps Lead Hunt as the empty campaign canvas and reveals past appointments", () => {

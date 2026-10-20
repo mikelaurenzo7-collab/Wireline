@@ -9,7 +9,7 @@ const GOLD_ROUTES = [
     eyebrow: /Workspace|Create Your Bot|Try It/i,
     marker: '#studio-brief, #studio-workroom-message, [aria-label="Loading Studio workspace"]',
   },
-  { path: "/phone?tab=logs", eyebrow: /Place outbound call/i, marker: ".wl-operate-surface" },
+  { path: "/phone?tab=logs", eyebrow: /Personal call/i, marker: ".wl-operate-surface" },
   {
     path: "/studio?create=1",
     eyebrow: /Create|Agent|Studio/i,

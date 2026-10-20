@@ -59,16 +59,18 @@ describe("sales trust copy contract", () => {
     expect(violations).toEqual([]);
   });
 
-  it("keeps the sales wedge Bot-native while trust guidance stays on the Trust Center", () => {
+  it("keeps the legacy sales route focused on inbound inquiries", () => {
     const sales = WEDGES.sales;
     const security = read("src/components/Security.tsx");
     const product = read("src/lib/bot-product.ts");
-    expect(sales.metaTitle).toBe("BotBound for Sales Teams | Phone Bots for Lead Follow Up");
-    expect(sales.headline).toBe("Set Up a Sales Bot for Lead Follow Up");
-    expect(sales.pains.map(({ title }) => title)).toContain("Outbound Follow Up");
-    expect(sales.statValue).toBe("Fast Follow Up");
+    expect(sales.metaTitle).toBe("BotBound for Sales Inquiries | Phone Bots for Incoming Calls");
+    expect(sales.headline).toBe("Give Every Inquiry a Clear Next Step");
+    expect(sales.pains.map(({ title }) => title)).toContain("Incoming Questions");
+    expect(sales.statValue).toBe("Ready to Answer");
     expect(sales.trustLine).toContain("remain visible in BotBound");
     expect(JSON.stringify(sales)).not.toMatch(/consent|do not call|\bDNC\b|coming soon/i);
+    expect(JSON.stringify(sales)).not.toMatch(/call prospects|outbound|lead list/i);
+    expect(sales.primaryCta.href).toContain("wedge=support");
     expect(security).toContain(
       "Outbound call policy accounts for recipient consent and Do Not Call screening before a call can start.",
     );

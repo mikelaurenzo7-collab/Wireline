@@ -7,7 +7,7 @@ import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 const DIFFERENCES = [
   {
     title: "Works Across Channels",
-    copy: "Handles conversations through the voice, email, and text channels you configure. Live text activation is reviewed before it starts. Outcomes stay in one workspace.",
+    copy: "Handles calls, email, and computer tasks with your knowledge and rules. Outcomes stay in one workspace.",
   },
   {
     title: "Plain Instructions",
@@ -86,11 +86,11 @@ const TABLE_ROWS = [
   ["Wait on hold", "Your Bot waits and reports back"],
   ["Repeat the same details", "Your Bot keeps the instructions"],
   ["Receive another task", "You get a clear next step"],
-  ["Miss after-hours calls", "Your Bot can answer within the coverage rules you configure"],
+  ["Miss after hours calls", "Your Bot can answer within the coverage rules you configure"],
   ["Train a new receptionist", "Your Bot starts with your playbook on day one"],
   [
-    "Log calls manually in a CRM",
-    "Your Bot can write a summary and sync supported records when the CRM is connected",
+    "Keep notes in separate tools",
+    "Your Bot keeps the conversation, summary, and next step in one workspace",
   ],
   [
     "Follow up on every inbound lead",

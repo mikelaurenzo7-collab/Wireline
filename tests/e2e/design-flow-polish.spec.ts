@@ -133,13 +133,14 @@ for (const width of [320, 390, 1440]) {
     await page.evaluate(() => document.fonts.ready);
     const pillars = page.getByRole("list", { name: "Available Bot capabilities" });
     await expect(pillars.getByRole("heading", { level: 2 })).toHaveText([
-      "Answers and Makes Calls",
+      "Ready When the Phone Rings",
       "Works From a Goal",
       "Follows Up in Writing",
     ]);
     const features = page.getByRole("list", { name: "Built Around You" });
     await expect(features.getByRole("heading", { level: 3 })).toHaveText([
       "Made Yours",
+      "Personal Calls",
       "Native Calendar Booking",
       "Approvals and Handoffs",
       "One Workspace",

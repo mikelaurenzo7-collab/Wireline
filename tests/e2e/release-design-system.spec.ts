@@ -112,7 +112,7 @@ for (const viewport of [
     });
     await dialog.getByText("View Plans", { exact: true }).click();
     await expect(plans).toHaveCount(1);
-    await expect(dialog.getByRole("checkbox")).toHaveCount(3);
+    await expect(dialog.getByRole("checkbox")).toHaveCount(2);
     await expect(plans).toBeDisabled();
     const packageCard = dialog.getByRole("article", { name: "Selected package" });
     const geometry = await packageCard.evaluate((element) => ({

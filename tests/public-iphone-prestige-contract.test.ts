@@ -14,7 +14,7 @@ describe("BotBound public iPhone prestige contract", () => {
 
     expect(product).toContain('name: "BotBound"');
     expect(product).toContain('slogan: "For You. For Your Business."');
-    expect(product).toContain('supportingLine: "CALL · TEXT · EMAIL"');
+    expect(product).toContain('supportingLine: "CALL · EMAIL · COMPUTER"');
     expect(product).toMatch(
       /key:\s*"voice"[\s\S]*?label:\s*"Call"[\s\S]*?key:\s*"text"[\s\S]*?label:\s*"Text"[\s\S]*?key:\s*"email"[\s\S]*?label:\s*"Email"/,
     );
@@ -123,21 +123,22 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(generator).toContain("BOT_MARK_CHOICES");
   });
 
-  it("makes starter cards role-specific without rendering retired Personal/Business category labels", () => {
+  it("keeps starter cards specific to personal and inbound business jobs", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const product = read("src/lib/bot-product.ts");
 
     expect(landing).toContain("<span>Pick the Work.</span> <span>Put a Bot on It.</span>");
     expect(landing).toContain("template.moves.map");
-    expect(landing).toContain("DIRECTION_LABELS[template.direction]");
+    expect(landing).toContain('"For You"');
+    expect(landing).toContain('"For Your Business"');
+    expect(landing).not.toContain("DIRECTION_LABELS");
     expect(landing).not.toContain("template.category");
 
     for (const specificMove of [
       "Intent + urgency + routing",
-      "CRM handoff + next steps",
+      "Owner handoff + next steps",
       "Answers from your knowledge",
-      "Calendar booking + reminders",
-      "Resident + vendor coordination",
+      "Booking requests + owner review",
       "Channels + actions + connected tools",
     ]) {
       expect(product).toContain(specificMove);

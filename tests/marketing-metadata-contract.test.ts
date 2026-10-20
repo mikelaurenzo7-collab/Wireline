@@ -17,10 +17,9 @@ describe("marketing metadata contract", () => {
     expect(staticHead).toContain("BotBound | A Bot for You");
     expect(runtimeMeta).toContain('const DEFAULT_TITLE = "BotBound | A Bot for You"');
     for (const source of [staticHead, runtimeMeta]) {
-      expect(source).toContain("Give your voice Bot a goal: answer calls, make calls");
-      expect(source).toContain("work online with a cloud browser");
-      expect(source).toContain("Calls plans include a dedicated phone number");
-      expect(source).toContain("managed email is available on eligible plans");
+      expect(source).toContain(
+        "Voice Bots with a computer, phone number, and email address. Answer calls, handle requests, and get everyday work done for you or your business.",
+      );
       expect(source).not.toContain("WIRE YOUR PHONE BOT");
       expect(source).not.toContain("VOICE-FIRST");
       expect(source).not.toContain("—");

@@ -36,11 +36,6 @@ const FEATURED_TEMPLATES = FEATURED_TEMPLATE_KEYS.map((key) => {
   if (!template) throw new Error(`Missing Bot template: ${key}`);
   return template;
 });
-const DIRECTION_LABELS = {
-  inbound: "Inbound",
-  outbound: "Outbound",
-  hybrid: "Inbound + outbound",
-} as const;
 const ROLE_ICONS: Record<string, LucideIcon> = {
   "personal-assistant": UserRound,
   "family-concierge": House,
@@ -168,7 +163,14 @@ export default function WireAgentLanding() {
                   <article key={template.key} className="landing-prestige__role-card">
                     <div className="landing-prestige__role-topline">
                       <Icon aria-hidden="true" />
-                      <span>{DIRECTION_LABELS[template.direction]}</span>
+                      <span>
+                        {template.key === "personal-assistant" ||
+                        template.key === "family-concierge"
+                          ? "For You"
+                          : template.key === "custom"
+                            ? "Your Choice"
+                            : "For Your Business"}
+                      </span>
                     </div>
                     <h3>{template.name}</h3>
                     <p>{template.summary}</p>

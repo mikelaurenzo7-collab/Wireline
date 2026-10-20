@@ -137,6 +137,37 @@ beforeEach(() => {
 });
 
 describe("company identity error recovery", () => {
+  it.each([
+    { requestedChannels: ["voice", "email"], smsVisible: false },
+    { requestedChannels: ["voice", "sms"], smsVisible: true },
+  ])(
+    "preserves saved channels while showing SMS only for existing requests: $smsVisible",
+    async ({ requestedChannels, smsVisible }) => {
+      const saved = {
+        ...identity,
+        profile: { ...identity.profile, requested_channels: requestedChannels },
+      };
+      h.fetch.mockResolvedValueOnce(response(saved));
+      await settle();
+
+      const smsLabel = elements(tree).find((node) => node.type === "label" && text(node) === "SMS");
+      expect(Boolean(smsLabel)).toBe(smsVisible);
+      businessNameInput()!.props.onChange!({ target: { value: "Updated Services LLC" } });
+      render();
+      h.fetch.mockResolvedValueOnce(
+        response({
+          ...saved,
+          profile: { ...saved.profile, business_name: "Updated Services LLC" },
+        }),
+      );
+      button("Save Identity")!.props.onClick!();
+      await settle();
+
+      const [, request] = h.fetch.mock.calls[1];
+      expect(JSON.parse(request.body).requested_channels).toEqual(requestedChannels);
+    },
+  );
+
   it("keeps the owner's edits and names the failure when a save is rejected", async () => {
     h.fetch.mockResolvedValueOnce(response(identity));
     await settle();

@@ -13,8 +13,7 @@ export const COMPANY_IDENTITY_PROVIDER_STATUSES = [
   "rejected",
   "limited",
 ] as const;
-export type CompanyIdentityProviderStatus =
-  (typeof COMPANY_IDENTITY_PROVIDER_STATUSES)[number];
+export type CompanyIdentityProviderStatus = (typeof COMPANY_IDENTITY_PROVIDER_STATUSES)[number];
 
 export type CompanyIdentityPreferences = {
   version: typeof COMPANY_IDENTITY_VERSION;
@@ -66,7 +65,7 @@ export function defaultCompanyIdentityPreferences(): CompanyIdentityPreferences 
     supportEmail: null,
     physicalPostalAddress: null,
     defaultCallReason: null,
-    requestedChannels: [...COMPANY_IDENTITY_CHANNELS],
+    requestedChannels: ["voice", "email"],
     reviewRequestedAt: null,
     reviewFingerprint: null,
     providerStatus: { ...DEFAULT_PROVIDER_STATUS },
@@ -88,7 +87,9 @@ export function readCompanyIdentityPreferences(value: unknown): CompanyIdentityP
   if (!value || typeof value !== "object" || Array.isArray(value)) return defaults;
   const raw = value as Record<string, unknown>;
   const rawProviderStatus =
-    raw.providerStatus && typeof raw.providerStatus === "object" && !Array.isArray(raw.providerStatus)
+    raw.providerStatus &&
+    typeof raw.providerStatus === "object" &&
+    !Array.isArray(raw.providerStatus)
       ? (raw.providerStatus as Record<string, unknown>)
       : {};
   const requestedChannels = Array.isArray(raw.requestedChannels)
@@ -99,7 +100,9 @@ export function readCompanyIdentityPreferences(value: unknown): CompanyIdentityP
           ),
         ),
       ]
-    : defaults.requestedChannels;
+    : // A saved legacy profile without an explicit selection used all channels.
+      // Keep that existing request readable; only an absent profile gets new defaults.
+      [...COMPANY_IDENTITY_CHANNELS];
 
   return {
     version: COMPANY_IDENTITY_VERSION,
@@ -129,7 +132,8 @@ export function buildCompanyIdentityProfile(args: {
 }): CompanyIdentityProfile {
   return {
     businessName: nullableString(args.settings?.businessName),
-    brandName: nullableString(args.settings?.brandName) ?? nullableString(args.settings?.businessName),
+    brandName:
+      nullableString(args.settings?.brandName) ?? nullableString(args.settings?.businessName),
     logoUrl: nullableString(args.settings?.brandLogoUrl),
     callerIdName: args.preferences.callerIdName,
     website: args.preferences.website,
@@ -172,7 +176,10 @@ function supportEmailMatchesWebsite(website: string | null, supportEmail: string
   if (!website || !supportEmail) return false;
   try {
     const websiteHost = new URL(website).hostname.toLowerCase().replace(/^www\./, "");
-    const emailDomain = supportEmail.split("@")[1]?.toLowerCase().replace(/^www\./, "");
+    const emailDomain = supportEmail
+      .split("@")[1]
+      ?.toLowerCase()
+      .replace(/^www\./, "");
     if (!emailDomain) return false;
     return (
       websiteHost === emailDomain ||
@@ -193,7 +200,10 @@ export function buildCompanyIdentityReadiness(args: {
   const hasWebsite = Boolean(args.profile.website);
   const hasSupportEmail = Boolean(args.profile.supportEmail);
   const hasPhysicalPostalAddress = Boolean(args.profile.physicalPostalAddress);
-  const hasBrandedSupportEmail = supportEmailMatchesWebsite(args.profile.website, args.profile.supportEmail);
+  const hasBrandedSupportEmail = supportEmailMatchesWebsite(
+    args.profile.website,
+    args.profile.supportEmail,
+  );
   const hasCallerIdName = Boolean(args.profile.callerIdName);
 
   const voiceMissing = [

@@ -225,8 +225,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /checkoutAvailability === "sms_readiness_required"[\s\S]*canActivate\(plan\.id\) && !smsPending/,
-    "pricing must keep unavailable SMS selections out of activation",
+    /!plan\.channels\.includes\("sms"\)[\s\S]*availableChannels=\{\["voice", "email"\]\}/,
+    "pricing must keep SMS packages and controls out of launch selection",
   );
   mustInclude(
     "src/pages/Pricing.tsx",

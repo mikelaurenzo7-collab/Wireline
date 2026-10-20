@@ -480,7 +480,7 @@ export const STRIPE_PLANS: StripePlan[] = [
           "1 Bot",
           ...(voice
             ? [
-                `${capacity.minutes.toLocaleString("en-US")} live-call minutes each month`,
+                `${capacity.minutes.toLocaleString("en-US")} live call minutes each month`,
                 "1 call at a time",
               ]
             : []),
@@ -499,7 +499,7 @@ export const STRIPE_PLANS: StripePlan[] = [
                 `Up to ${VOICE_COMPLETION_GRACE_MINUTES} additional completion minutes within the call limit; any balance due pauses new calls and prepaid extras`,
               ]
             : []),
-          "No automatic top-ups or overage invoices",
+          "No automatic balance purchases or overage invoices",
         ],
       };
     }),

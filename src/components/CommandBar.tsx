@@ -88,7 +88,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     // "Calls" everywhere: the rail, page titles, and the authenticated 404 all
     // name /phone "Calls" (constants/navigation.ts) — the palette must match.
     label: "Calls",
-    keywords: "phone calls history outbound campaigns",
+    keywords: "phone calls history personal",
     icon: Phone,
     href: "/phone",
     category: "Workspace",

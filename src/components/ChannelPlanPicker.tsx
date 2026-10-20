@@ -98,6 +98,7 @@ export default function ChannelPlanPicker({
   renderAction,
   disabled = false,
   lockChannels = false,
+  availableChannels,
 }: {
   id?: string;
   plans: readonly ChannelPlanOption[];
@@ -108,6 +109,8 @@ export default function ChannelPlanPicker({
   disabled?: boolean;
   /** Paid capacity changes keep the current channel package intact. */
   lockChannels?: boolean;
+  /** Display only the channels offered on this surface; existing packages stay readable. */
+  availableChannels?: readonly CommunicationChannel[];
 }) {
   const plan =
     plans.find((item) => item.id === selectedPlanId) ??
@@ -131,12 +134,17 @@ export default function ChannelPlanPicker({
   };
   const price = interval === "year" ? plan.price_usd_annual : plan.price_usd_monthly;
   const annualSavings = Math.max(0, plan.price_usd_monthly * 12 - plan.price_usd_annual);
+  const channelChoices = CHANNEL_CHOICES.filter(
+    (channel) => !availableChannels || availableChannels.includes(channel.id),
+  );
   return (
     <div className="min-w-0 space-y-4">
       <fieldset disabled={disabled || lockChannels} className="min-w-0">
         <legend className="mb-2 text-sm font-medium text-foreground">Choose your channels</legend>
-        <div className="grid min-w-0 grid-cols-3 gap-2 max-[359px]:grid-cols-1">
-          {CHANNEL_CHOICES.map(({ id, label, icon: Icon }) => {
+        <div
+          className={`grid min-w-0 gap-2 max-[359px]:grid-cols-1 ${channelChoices.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}
+        >
+          {channelChoices.map(({ id, label, icon: Icon }) => {
             const checked = plan.channels.includes(id);
             return (
               <label

@@ -112,7 +112,9 @@ describe("restored launch regression guards", () => {
     expect(dialog).toContain("isBusinessTemplateCategory(selectedTemplate.category)");
     expect(dialog).not.toContain("accountType");
     expect(dialog).toContain("BOT_ROLE_TEMPLATES.map");
-    expect(dialog).toContain("BOT_CHANNELS.map");
+    expect(dialog).toContain(
+      'Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")',
+    );
     expect(dialog).toContain('workspace_model: "one_workspace"');
     expect(dialog).not.toMatch(/setPosture|rolesForPosture|Choose one personal job/);
   });

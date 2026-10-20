@@ -87,7 +87,9 @@ test("personal MCP proposal stays immutable, places once after review, and recon
   await expect(dialog.getByRole("option", { name: "Marketing or sales" })).toHaveCount(0);
   expect(writes).toHaveLength(0);
   await expect(dialog.getByRole("button", { name: "Place call", exact: true })).toBeDisabled();
-  await dialog.getByLabel("Recipient permission", { exact: true }).selectOption(permissionId);
+  await dialog
+    .getByRole("combobox", { name: "Recipient permission", exact: true })
+    .selectOption(permissionId);
   await expect(dialog.getByRole("button", { name: "Place call", exact: true })).toBeEnabled();
   expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(
     true,

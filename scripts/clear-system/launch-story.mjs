@@ -28,8 +28,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "index.html",
     indexHtml,
-    /Calls plans include a dedicated phone number/,
-    "static metadata must qualify the dedicated phone identity by plan",
+    /Voice Bots with a computer, phone number, and email address/,
+    "static metadata must describe the focused launch offer",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
@@ -40,8 +40,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_DESCRIPTION =\s*"Give your voice Bot a goal:[\s\S]*Calls plans include a dedicated phone number/,
-    "runtime metadata must carry the voice Bot offer and qualified phone identity",
+    /DEFAULT_DESCRIPTION =\s*"Voice Bots with a computer, phone number, and email address/,
+    "runtime metadata must carry the focused voice Bot offer",
   );
   mustInclude(
     "public/site.webmanifest",
@@ -71,8 +71,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
-    /supportingLine:\s*"CALL · TEXT · EMAIL"/,
-    "shared model must keep customer channels explicit in canonical order",
+    /supportingLine:\s*"CALL · EMAIL · COMPUTER"/,
+    "shared model must keep launch capabilities explicit in canonical order",
   );
   for (const productType of ["Phone Bot", "Conversation Bot", "Human Bot"])
     mustInclude(
@@ -184,8 +184,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /STRIPE_PLANS\.filter\(\(plan\) => plan\.catalogFamily === "channels"\)/,
-    "public pricing must select the current channel catalog, not retained historical plans",
+    /STRIPE_PLANS\.filter\([\s\S]*plan\.catalogFamily === "channels" && !plan\.channels\.includes\("sms"\)/,
+    "public pricing must select current launch packages while retaining SMS in the catalog",
   );
   mustInclude(
     "src/pages/Pricing.tsx",

@@ -15,6 +15,7 @@ import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
 import { useChannelEntitlements } from "../hooks/useChannelEntitlements";
 import ChannelAccessNotice from "../components/ChannelAccessNotice";
+import { planById } from "../lib/plan-catalog";
 
 type InboxTabId = "email" | "sms" | "approvals";
 
@@ -49,6 +50,16 @@ export default function EmailPage() {
   const [mailboxAttempt, setMailboxAttempt] = useState(0);
 
   const requestedTab = params.get("tab") as InboxTabId | null;
+  const subscribedChannels = planById(access.data?.plan_id ?? "")?.channels ?? [];
+  const hasSmsPackage = subscribedChannels.includes("sms");
+  const smsPaymentNeedsAttention =
+    hasSmsPackage &&
+    ["past_due", "unpaid", "incomplete"].includes(access.data?.subscription_status ?? "");
+  // Existing SMS access and direct history links remain usable during launch.
+  // New accounts discover Email and Approvals without an unavailable upsell.
+  const visibleTabs = inboxTabs.filter(
+    (tab) => tab.id !== "sms" || hasSmsPackage || access.includes("sms") || requestedTab === "sms",
+  );
   const hasExplicitConversationScope = ["agent", "account", "thread"].some((key) =>
     params.has(key),
   );
@@ -61,7 +72,9 @@ export default function EmailPage() {
         !access.includes("email") &&
         !access.includes("sms")
       ? "approvals"
-      : access.includes("sms") && !access.includes("email")
+      : (hasSmsPackage || access.includes("sms")) &&
+          !subscribedChannels.includes("email") &&
+          !access.includes("email")
         ? "sms"
         : "email";
   useEffect(() => {
@@ -246,7 +259,7 @@ export default function EmailPage() {
           primary={
             <WorkspaceTabStrip
               ariaLabel="Inbox sections"
-              tabs={inboxTabs}
+              tabs={visibleTabs}
               activeId={activeTab}
               onSelect={(id) => setActiveTab(id as InboxTabId)}
               align="start"
@@ -256,7 +269,14 @@ export default function EmailPage() {
           }
           secondary={scopeControls}
         />
-        {activeTab !== "approvals" ? (
+        {activeTab === "sms" &&
+        access.status === "ready" &&
+        !access.includes("sms") &&
+        !smsPaymentNeedsAttention ? (
+          <StatusNotice tone="info" title="SMS Coming Soon" className="my-3">
+            Saved conversations remain available.
+          </StatusNotice>
+        ) : activeTab !== "approvals" ? (
           <ChannelAccessNotice access={access} channel={activeTab} />
         ) : null}
         {mailboxStatus === "error" && activeTab === "email" && !activeAccountId && !scopeError ? (

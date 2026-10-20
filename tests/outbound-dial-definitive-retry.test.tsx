@@ -13,7 +13,16 @@ const harness = vi.hoisted(() => ({
   hooks: [] as Hook[],
   cursor: 0,
   effects: [] as Array<() => void>,
-  agents: [{ id: "bot-1", name: "Front Desk", phone_number: "+13125550124", channel: "voice" }],
+  agents: [
+    {
+      id: "bot-1",
+      name: "Personal Assistant",
+      role: "personal_assistant",
+      is_business_agent: false,
+      phone_number: "+13125550124",
+      channel: "voice",
+    },
+  ],
 }));
 function sameDeps(left: readonly unknown[] | undefined, right: readonly unknown[] | undefined) {
   return (
@@ -192,6 +201,16 @@ function unmount() {
 
 beforeEach(() => {
   unmount();
+  harness.agents = [
+    {
+      id: "bot-1",
+      name: "Personal Assistant",
+      role: "personal_assistant",
+      is_business_agent: false,
+      phone_number: "+13125550124",
+      channel: "voice",
+    },
+  ];
   entries.clear();
   close.mockClear();
   store.removeItem.mockReset().mockImplementation((key) => {
@@ -222,6 +241,42 @@ afterEach(() => {
 });
 
 describe("direct outbound definitive-refusal retry", () => {
+  it("does not substitute a personal Bot for a business Bot named by an existing proposal", async () => {
+    harness.agents = [
+      {
+        id: "bot-1",
+        name: "Business Front Desk",
+        role: "receptionist",
+        is_business_agent: true,
+        phone_number: "+13125550124",
+        channel: "voice",
+      },
+      {
+        id: "personal-bot",
+        name: "Personal Assistant",
+        role: "personal_assistant",
+        is_business_agent: false,
+        phone_number: "+13125550125",
+        channel: "voice",
+      },
+    ];
+    await settle();
+    expect(
+      nodes.some(
+        (node) =>
+          node.type === "p" &&
+          node.props.children ===
+            "Business outbound is coming soon. This proposal cannot be placed yet.",
+      ),
+    ).toBe(true);
+    expect(nodes.some((node) => node.type === "select")).toBe(false);
+    expect(button("Place call").props.disabled).toBe(true);
+    button("Place call").props.onClick!();
+    await settle();
+    expect(posts()).toHaveLength(0);
+    expect(entries.size).toBe(0);
+  });
+
   it.each([400, 403, 409, 429])(
     "uses a fresh operation for an unchanged draft after definite HTTP %s refusal",
     async (status) => {

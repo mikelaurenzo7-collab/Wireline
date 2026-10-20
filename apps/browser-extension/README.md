@@ -16,9 +16,9 @@ Both packages run in desktop browsers on Windows and macOS. These are browser co
 
 ## Product role
 
-- Prepare a call from the current page or a `tel:` link.
-- Draft a text from page context.
-- Create a follow-up from selected text.
+- Prepare a call for personal coordination from the current page or a `tel:` link.
+- Draft a text from page context is coming soon. The Text control remains disabled for launch.
+- Draft an email from selected text.
 - Send a Bot task into Studio.
 - Jump to Bots, Connections, Phone, Inbox, Knowledge, or Studio.
 
@@ -38,9 +38,9 @@ The extension reads the active page only after a user action. It captures a cons
 
 BotBound Command should be a competitive advantage because every workflow is explicit and reviewable. The approved product workflows are:
 
-1. **Prepare call from this page** — send the active page title/URL/selection only after the user clicks the command, then ask for call confirmation in Studio before any live call.
+1. **Prepare personal call from this page:** send the active page title/URL/selection only after the user clicks the command, then ask for call confirmation in Studio before any live call.
 2. **Extract facts into Knowledge** — turn selected page context into proposed knowledge or directives that the customer can review.
-3. **Draft follow-up** — use the current page or selection to draft a text/email/call recap without sending it automatically.
+3. **Draft email:** use the current page or selection to draft an email without sending it automatically.
 4. **Send to Studio** — hand the context to the selected Bot workroom for review, simulation, or next action.
 
 Non-negotiables: no broad host permissions, no silent page harvesting, no browser token storage, and no background CRM mirror.
@@ -85,7 +85,7 @@ Rebuild with `node apps/browser-extension/scripts/build.mjs` whenever shipping a
 2. Prefer the in-product download page, or load `dist/chromium` as an unpacked extension in Chrome, Edge, Brave, or Opera. Use the browser's extensions page (`chrome://extensions`, `edge://extensions`, `brave://extensions`, or `opera://extensions`), enable Developer mode, and choose Load unpacked.
 3. Load `dist/firefox/manifest.json` through Load Temporary Add-on in `about:debugging#/runtime/this-firefox`. Firefox removes temporary installations on restart.
 4. Test the toolbar action, selected-text context menu, page context menu, `tel:` link context menu, and `Ctrl/Command+Shift+Y` shortcut.
-5. Confirm quick commands exist for Call, Text, Email, and Bot task.
+5. Confirm quick commands exist for Personal call, Email, and Bot task. Text is marked coming soon and stays disabled after another command completes.
 6. Confirm Studio opens with the prefilled brief, the context is visibly labeled as reference, and the URL fragment is removed.
 7. Confirm restricted pages do not break the extension and cannot be silently inspected.
 

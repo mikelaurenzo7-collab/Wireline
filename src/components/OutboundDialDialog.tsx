@@ -15,6 +15,7 @@ import { Checkbox } from "./ui/shadcn/Checkbox";
 import { useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
+import { isPrincipalVoiceRole } from "../lib/agent-role-definitions";
 import { authFetch } from "../lib/api";
 import {
   OUTBOUND_CONSENT_HELP,
@@ -68,6 +69,7 @@ function DirectOutboundDialDialog({
     () =>
       agents.filter(
         (agent) =>
+          (agent.is_business_agent === false || isPrincipalVoiceRole(agent.role)) &&
           agent.phone_number &&
           (agent.channel === "voice" || agent.channel === "omnichannel" || !agent.channel),
       ),
@@ -249,6 +251,9 @@ function DirectOutboundDialDialog({
   // refresh) so placeCall can't submit a stale id the <select> no longer shows.
   useEffect(() => {
     if (!open || placing || uncertain || preparedCall || voiceAgents.length === 0) return;
+    // A scoped history action or Studio proposal must never switch its Bot
+    // silently while carrying over the proposed recipient and instructions.
+    if (initialAgentId && !voiceAgents.some((agent) => agent.id === initialAgentId)) return;
     if (agentId && voiceAgents.some((agent) => agent.id === agentId)) return;
     const fallback =
       (initialAgentId && voiceAgents.some((agent) => agent.id === initialAgentId)
@@ -258,11 +263,19 @@ function DirectOutboundDialDialog({
   }, [open, agentId, initialAgentId, voiceAgents, placing, uncertain, preparedCall]);
 
   const selectedAgent = voiceAgents.find((agent) => agent.id === agentId);
-  const callingEnabled = !!selectedAgent && outboundCallingEnabledFor(callPurpose, calling);
+  const requestedAgentId = preparedCall?.agent_id || initialAgentId;
+  const requestedAgent = agents.find((agent) => agent.id === requestedAgentId);
+  const requestedAgentUnavailable =
+    !!requestedAgentId && !voiceAgents.some((agent) => agent.id === requestedAgentId);
+  const callingEnabled =
+    !!selectedAgent &&
+    !requestedAgentUnavailable &&
+    callPurpose !== "marketing_or_sales" &&
+    outboundCallingEnabledFor(callPurpose, calling);
   useEffect(() => {
-    if (!calling.general && callPurpose === "marketing_or_sales")
+    if (!preparedCall && !calling.general && callPurpose === "marketing_or_sales")
       setCallPurpose("service_or_requested");
-  }, [calling.general, callPurpose]);
+  }, [calling.general, callPurpose, preparedCall]);
   const availablePermissions = permissions.filter(
     (permission) =>
       permission.status === "granted" &&
@@ -280,7 +293,6 @@ function DirectOutboundDialDialog({
     !!agentId &&
     availablePermissions.some((permission) => permission.id === consentArtifactId) &&
     number.trim().length > 0 &&
-    (callPurpose !== "marketing_or_sales" || consentConfirmed) &&
     voiceAgents.length > 0;
 
   const placeCall = async () => {
@@ -442,11 +454,20 @@ function DirectOutboundDialDialog({
                 ? "Your Bot list could not be loaded. Close this and try again in a moment."
                 : "We could not check which numbers are attached. Close this and try again in a moment."}
             </p>
+          ) : requestedAgentUnavailable ? (
+            <p className="px-6 py-8 text-sm text-muted-foreground" role="status">
+              {!requestedAgent
+                ? "The selected Bot is unavailable. Check call history before another request."
+                : requestedAgent.is_business_agent === false ||
+                    isPrincipalVoiceRole(requestedAgent.role)
+                  ? "This personal Bot needs an active phone line before you can place the call."
+                  : "Business outbound is coming soon. This proposal cannot be placed yet."}
+            </p>
           ) : voiceAgents.length === 0 ? (
             <p className="px-6 py-8 text-sm text-muted-foreground">
-              No Bots with a phone line yet.{" "}
+              Personal calling needs a personal Bot with an active phone line.{" "}
               <Link
-                to="/studio?create=1"
+                to="/studio?create=1&template=personal-assistant"
                 onClick={closeForNavigation}
                 className="text-brand underline underline-offset-2"
               >
@@ -513,9 +534,6 @@ function DirectOutboundDialDialog({
                 >
                   <option value="service_or_requested">Service or coordination</option>
                   <option value="callback">Callback</option>
-                  {calling.general && !preparedCall ? (
-                    <option value="marketing_or_sales">Marketing or sales</option>
-                  ) : null}
                 </select>
               </label>
 
@@ -561,6 +579,34 @@ function DirectOutboundDialDialog({
               >
                 Manage recipient permissions
               </Link>
+
+              {callPurpose === "marketing_or_sales" ? (
+                <label className="flex items-start gap-3 rounded-md border border-input/80 bg-muted/30 p-3">
+                  <Checkbox
+                    className="mt-1"
+                    checked={consentConfirmed}
+                    disabled={placing || uncertain}
+                    onChange={(event) => setConsentConfirmed(event.target.checked)}
+                  />
+                  <span className="space-y-1 text-sm">
+                    <span className="block text-foreground">{OUTBOUND_CONSENT_LABEL}</span>
+                    <span className="block text-muted-foreground text-xs">
+                      {OUTBOUND_CONSENT_HELP}
+                    </span>
+                    <Link
+                      to={OUTBOUND_CONSENT_LEGAL_PATH}
+                      onClick={closeForNavigation}
+                      className="text-xs text-brand underline-offset-2 hover:underline"
+                    >
+                      {OUTBOUND_CONSENT_LEARN_MORE}
+                    </Link>
+                  </span>
+                </label>
+              ) : null}
+            </div>
+          )}
+          {uncertain || recoveryError ? (
+            <div className="space-y-3 px-6 py-4">
               {uncertain ? (
                 <p role="status" className="text-sm text-foreground">
                   Call status is being reconciled. Check History before starting another call.
@@ -591,32 +637,8 @@ function DirectOutboundDialDialog({
                   {reconciling ? "Checking status…" : "Refresh call status"}
                 </Button>
               ) : null}
-
-              {callPurpose === "marketing_or_sales" ? (
-                <label className="flex items-start gap-3 rounded-md border border-input/80 bg-muted/30 p-3">
-                  <Checkbox
-                    className="mt-1"
-                    checked={consentConfirmed}
-                    disabled={placing || uncertain}
-                    onChange={(event) => setConsentConfirmed(event.target.checked)}
-                  />
-                  <span className="space-y-1 text-sm">
-                    <span className="block text-foreground">{OUTBOUND_CONSENT_LABEL}</span>
-                    <span className="block text-muted-foreground text-xs">
-                      {OUTBOUND_CONSENT_HELP}
-                    </span>
-                    <Link
-                      to={OUTBOUND_CONSENT_LEGAL_PATH}
-                      onClick={closeForNavigation}
-                      className="text-xs text-brand underline-offset-2 hover:underline"
-                    >
-                      {OUTBOUND_CONSENT_LEARN_MORE}
-                    </Link>
-                  </span>
-                </label>
-              ) : null}
             </div>
-          )}
+          ) : null}
         </div>
 
         <DialogFooter className="shrink-0 gap-2 border-t border-border bg-[var(--wireline-color-surface-default)] px-6 py-4 sm:gap-0">

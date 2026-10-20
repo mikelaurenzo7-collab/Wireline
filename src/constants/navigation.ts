@@ -148,7 +148,7 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     title: "Inbox",
     label: "Inbox",
     eyebrow: "Operate",
-    description: "Review text and email conversations in one queue.",
+    description: "Review email conversations and actions in one queue.",
     icon: "Inbox",
     desktop: { group: "work", order: 20 },
     mobile: { placement: "primary", order: 20 },

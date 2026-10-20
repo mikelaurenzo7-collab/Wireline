@@ -325,7 +325,9 @@ export default function CreateAgentDialog({
               message: [
                 `Role starter: ${selectedTemplate.name}.`,
                 `Conversation direction: ${selectedTemplate.direction}.`,
-                `Configurable channels: ${BOT_CHANNELS.map((channel) => channel.label).join(", ")}.`,
+                `Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")
+                  .map((channel) => channel.label)
+                  .join(", ")}.`,
                 `First brief: ${finalBrief}`,
               ].join("\n"),
             }),

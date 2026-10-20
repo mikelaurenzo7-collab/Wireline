@@ -2,7 +2,8 @@ import { expect, test } from "@playwright/test";
 import { STRIPE_PLANS } from "../../src/lib/plan-catalog";
 
 const plans = STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels");
-test("all channel capacities retain exact annual signup intent in one readable selector", async ({
+const launchPlans = plans.filter((plan) => !plan.channels.includes("sms"));
+test("launch channel capacities retain exact annual signup intent in one readable selector", async ({
   page,
 }) => {
   test.setTimeout(60_000);
@@ -39,7 +40,8 @@ test("all channel capacities retain exact annual signup intent in one readable s
   await privacy.getByRole("button", { name: "Essential Only", exact: true }).click();
   await expect(privacy).toBeHidden();
   const labels = { voice: "Calls", email: "Email", sms: "SMS" } as const;
-  for (const plan of plans) {
+  await expect(page.getByRole("checkbox", { name: "SMS", exact: true })).toHaveCount(0);
+  for (const plan of launchPlans) {
     await page
       .getByRole("radio", {
         name: new RegExp(
@@ -49,7 +51,7 @@ test("all channel capacities retain exact annual signup intent in one readable s
       .check();
     for (const channel of plan.channels)
       await page.getByRole("checkbox", { name: labels[channel], exact: true }).check();
-    for (const channel of ["voice", "email", "sms"] as const)
+    for (const channel of ["voice", "email"] as const)
       if (!plan.channels.includes(channel))
         await page.getByRole("checkbox", { name: labels[channel], exact: true }).uncheck();
     const card = page.getByRole("article", { name: "Selected package" });
@@ -58,7 +60,7 @@ test("all channel capacities retain exact annual signup intent in one readable s
     const signup = card.locator('a[href^="/signup?"]');
     await expect(signup).toHaveAttribute("href", `/signup?plan=${plan.id}&interval=year`);
     const usageNote = page.getByText("Included usage is shown per month.", { exact: false });
-    await expect(usageNote).toContainText("No automatic top-ups or overage invoices.");
+    await expect(usageNote).toContainText("No automatic balance purchases or overage invoices.");
     if (plan.channels.includes("voice"))
       await expect(usageNote).toContainText(
         "Extra minutes cost $0.22/min, using Runtime Balance or completion credit.",
@@ -67,8 +69,6 @@ test("all channel capacities retain exact annual signup intent in one readable s
       await expect(usageNote).not.toContainText("Extra minutes");
       await expect(usageNote).not.toContainText("Outbound calls");
     }
-    if (plan.checkoutAvailability !== "available")
-      await expect(card).toContainText("SMS needs sender approval.");
     const overflow = await card.locator("..").evaluate((element) =>
       [element, ...element.querySelectorAll("*")]
         .filter((node) => node.clientWidth > 0 && node.scrollWidth > node.clientWidth + 2)

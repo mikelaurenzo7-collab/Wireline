@@ -124,7 +124,7 @@ describe("product documentation and compatibility contract", () => {
     const ogImage = read("public/og-image.svg");
 
     expect(head).toContain("BotBound | A Bot for You");
-    expect(head).toContain("Give your voice Bot a goal: answer calls, make calls");
+    expect(head).toContain("Voice Bots with a computer, phone number, and email address.");
     const graph = JSON.parse(
       head.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)![1],
     )["@graph"];
@@ -137,7 +137,7 @@ describe("product documentation and compatibility contract", () => {
 
     expect(ogImage).toContain("BotBound");
     expect(ogImage).toContain("Give Your Bot a Goal");
-    expect(ogImage).toContain("Inbound and outbound voice Bots with cloud-browser work.");
+    expect(ogImage).toContain("Incoming calls, personal calling, email, and computer tasks.");
     expect(ogImage).not.toContain("ONE BOT.");
     expect(ogImage).not.toContain("Find. Call. Book");
     expect(ogImage).toMatch(/phone|Phone/);

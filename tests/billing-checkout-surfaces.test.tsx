@@ -16,6 +16,7 @@ const h = vi.hoisted(() => ({
   checkoutAvailability: vi.fn(),
   subscription: null as Record<string, unknown> | null,
   catalog: {} as Record<string, unknown>,
+  signupIntent: null as { preferredPlanId: string } | null,
 }));
 vi.mock("react", async (original) => ({
   ...(await original<typeof import("react")>()),
@@ -45,8 +46,8 @@ vi.mock("../src/lib/api", () => ({
 }));
 vi.mock("../src/lib/signup-intent", () => ({
   DEFAULT_ACTIVATION_PLAN_ID: "voice-regular",
-  getStoredSignupIntent: () => null,
-  recommendedPlanFromIntent: () => "voice-regular",
+  getStoredSignupIntent: () => h.signupIntent,
+  recommendedPlanFromIntent: () => h.signupIntent?.preferredPlanId ?? "voice-regular",
   persistSignupIntent: vi.fn(),
   mergeSignupIntent: (_previous: unknown, next: unknown) => next,
   billingIntervalFromIntent: () => "month",
@@ -132,6 +133,7 @@ beforeEach(() => {
   h.effects = [];
   h.listener = undefined;
   h.subscription = null;
+  h.signupIntent = null;
   h.catalog = { stripe_configured: true, checkout_available: true, plans: [paidPlan()] };
   h.fetch.mockReset();
   h.checkoutAvailability.mockReset();
@@ -506,7 +508,7 @@ it.each(["reconciliation", "unmount"] as const)(
 describe.each(["card", "modal"] as const)("%s selected channel package", (surface) => {
   function selectChannel(index: number) {
     const channels = render(surface).filter((element) => element.type === Checkbox);
-    expect(channels).toHaveLength(3);
+    expect(channels).toHaveLength(2);
     channels[index].props.onChange?.();
   }
   it("posts Email exactly after Calls is deselected", async () => {
@@ -528,19 +530,33 @@ describe.each(["card", "modal"] as const)("%s selected channel package", (surfac
       }),
     );
   });
-  it("does not submit an SMS package even if a malformed provider fixture says configured", async () => {
+  it("requires review of a visible launch plan when earlier signup intent requested SMS", async () => {
+    h.signupIntent = { preferredPlanId: "sms-regular" };
+    window.location.search = "?plan=sms-regular";
     h.catalog.plans = STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels").map((plan) =>
       paidPlan({
         ...plan,
         catalog_family: plan.catalogFamily,
-        checkout_availability: plan.checkoutAvailability,
+        checkout_availability: "available",
       }),
     );
     await mount(surface);
-    selectChannel(2);
-    const action = button(surface, "Sender Approval Required");
-    expect(action.props.disabled).toBe(true);
-    await action.props.onClick?.();
+    const elements = render(surface);
+    expect(elements.filter((element) => element.type === Checkbox)).toHaveLength(2);
+    expect(elements.some((element) => text(element).includes("SMS is coming soon."))).toBe(true);
+    expect(
+      elements
+        .filter((element) => element.type === "label")
+        .some((element) => text(element).trim() === "SMS"),
+    ).toBe(false);
+    expect(elements.some((element) => text(element).includes("Calls Regular"))).toBe(true);
     expect(h.fetch.mock.calls.some(([path]) => path === "/api/billing/checkout")).toBe(false);
+    await button(surface, "Continue to Checkout").props.onClick?.();
+    expect(h.fetch).toHaveBeenCalledWith(
+      "/api/billing/checkout",
+      expect.objectContaining({
+        body: JSON.stringify({ plan_id: "voice-regular", interval: "month" }),
+      }),
+    );
   });
 });

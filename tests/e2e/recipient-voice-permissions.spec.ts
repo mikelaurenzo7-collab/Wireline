@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 const permission = {
   id: "e2c86757-a3c0-42eb-a6bc-2405ffb0c09c",
   agent_id: "permission-bot",
-  bot_name: "Front Desk",
+  bot_name: "Personal Assistant",
   recipient_phone_masked: "•••0123",
   purpose: "callback",
   status: "pending",
@@ -77,8 +77,9 @@ async function setup(page: Page, recovery = false, malformedLink = false) {
                 agents: [
                   {
                     id: "permission-bot",
-                    name: "Front Desk",
-                    role: "receptionist",
+                    name: "Personal Assistant",
+                    role: "personal_assistant",
+                    isBusinessAgent: false,
                     phone_number: "+13125550123",
                   },
                 ],
@@ -129,7 +130,9 @@ for (const width of [320, 1280]) {
     await panel.getByRole("button", { name: "New permission", exact: true }).click();
     await panel.getByRole("combobox", { name: "Bot", exact: true }).selectOption("permission-bot");
     await panel.getByRole("textbox", { name: "Recipient phone", exact: true }).fill("+13125550123");
-    await panel.getByRole("combobox", { name: "Recipient location", exact: true }).selectOption("IL");
+    await panel
+      .getByRole("combobox", { name: "Recipient location", exact: true })
+      .selectOption("IL");
     await panel.getByRole("button", { name: "Create link", exact: true }).click();
     await expect(panel.getByRole("alert")).toBeVisible();
     await expect(panel.getByRole("textbox", { name: "Recipient phone", exact: true })).toHaveValue(

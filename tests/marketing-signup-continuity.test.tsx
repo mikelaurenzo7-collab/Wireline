@@ -117,9 +117,10 @@ describe("marketing signup continuity", () => {
       .map((element) => Children.toArray(element.props.children).join(""))
       .join(" ");
     if (wedge === "sales") {
-      expect(renderedText).toContain("Outbound");
-      expect(renderedText).toContain("Set Up a Sales Bot for Lead Follow Up");
-      expect(renderedText).toContain("Call. Book. Follow Up.");
+      expect(renderedText).toContain("Inbound");
+      expect(renderedText).toContain("Give Every Sales Inquiry a Clear Next Step");
+      expect(renderedText).toContain("Answer. Book. Keep the Record.");
+      expect(heroLink?.props.to).toBe("/signup?plan=free&template=front-desk");
       expect(renderedText).not.toMatch(
         /server-verifiable consent records|Federal Do Not Call screening|not available yet|coming soon/i,
       );

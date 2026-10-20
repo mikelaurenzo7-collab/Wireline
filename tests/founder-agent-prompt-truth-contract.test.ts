@@ -8,17 +8,22 @@ import { WIRELINE_PERSONAS } from "../src/lib/wireline-agent-personas";
 import { STRIPE_PLANS } from "../src/lib/plan-catalog";
 
 describe("founder agent prompt truth contract", () => {
-  it("quotes all current channel capacities and exact annual prices without retired benefits", () => {
+  it("quotes launch channel capacities and exact annual prices without promoting SMS or retired benefits", () => {
     const sales = WIRELINE_PERSONAS.sales.systemPrompt;
     const current = STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels");
     expect(current).toHaveLength(21);
-    for (const plan of current) {
+    const launch = current.filter((plan) => !plan.channels.includes("sms"));
+    expect(launch).toHaveLength(9);
+    for (const plan of launch) {
       expect(sales).toContain(
         `${plan.name}: $${plan.price_usd_monthly}/mo or $${plan.price_usd_annual}/year`,
       );
     }
+    for (const plan of current.filter((plan) => plan.channels.includes("sms"))) {
+      expect(sales).not.toContain(`${plan.name}: $`);
+    }
     expect(sales).toContain("Annual savings vary by package and capacity");
-    expect(sales).toContain("SMS activation is unavailable");
+    expect(sales).toContain("never promise SMS activation or outbound calling while unavailable");
     expect(sales).toContain("only selected channels are included");
     const prompts = Object.values(WIRELINE_PERSONAS)
       .map((persona) => persona.systemPrompt)

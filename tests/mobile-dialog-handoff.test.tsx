@@ -72,7 +72,16 @@ vi.mock("../src/components/ui/EmptyState", () => ({ EmptyState: "empty-state" })
 vi.mock("../src/components/layout/ClientRouteLoading", () => ({ default: "loading" }));
 vi.mock("../src/contexts/AgentsContext", () => ({
   useAgents: () => ({
-    agents: [{ id: "bot-1", name: "Front Desk", phone_number: "+15555550123", channel: "voice" }],
+    agents: [
+      {
+        id: "bot-1",
+        name: "Personal Assistant",
+        role: "personal_assistant",
+        is_business_agent: false,
+        phone_number: "+15555550123",
+        channel: "voice",
+      },
+    ],
     loading: false,
   }),
 }));

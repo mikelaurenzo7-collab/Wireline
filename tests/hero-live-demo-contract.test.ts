@@ -17,7 +17,7 @@ describe("public voice-preview retirement contract", () => {
     expect(landing).toContain("Plan. Coordinate.");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo|\/api\/public\/demo-/);
     expect(botProduct).toContain('slogan: "For You. For Your Business."');
-    expect(botProduct).toContain('supportingLine: "CALL · TEXT · EMAIL"');
+    expect(botProduct).toContain('supportingLine: "CALL · EMAIL · COMPUTER"');
     expect(botProduct).not.toContain("activationLine:");
   });
 

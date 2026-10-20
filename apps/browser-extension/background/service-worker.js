@@ -82,14 +82,14 @@ function requestForAction(action, context = {}) {
   const link = typeof context.link === "string" ? context.link.replace(/^tel:/iu, "").trim() : "";
   if (action === "call") {
     return link
-      ? `Have a BotBound Bot prepare a call to ${link}. Use this page as context, then ask me to confirm before any live call.`
-      : "Have a BotBound Bot prepare a call using this page as context. Ask me for the number and confirmation before any live call.";
+      ? `Have a BotBound Bot prepare a personal call to ${link}. Use this page as context, then ask me to confirm before any live call.`
+      : "Have a BotBound Bot prepare a personal call using this page as context. Ask me for the number and confirmation before any live call.";
   }
   if (action === "text") {
     return "Have a BotBound Bot draft a text message using this page as context. Ask me to review before sending.";
   }
   if (action === "followup") {
-    return "Have a BotBound Bot create a concise follow-up from this page and selected text. Include next step, owner, and timing.";
+    return "Have a BotBound Bot draft a concise email from this page and selected text. Include the next step, owner, and timing. Ask me to review before sending.";
   }
   return "Use this page and selected text as context for a BotBound Bot task.";
 }
@@ -120,22 +120,23 @@ async function registerMenus() {
   });
   api.contextMenus.create({
     id: "wireline-call-from-page",
-    title: "Prepare a BotBound call from this page",
+    title: "Prepare a personal call with BotBound",
     contexts: ["page", "selection"],
   });
   api.contextMenus.create({
     id: "wireline-text-from-page",
-    title: "Draft a BotBound text from this page",
+    title: "BotBound SMS is coming soon",
+    enabled: false,
     contexts: ["page", "selection"],
   });
   api.contextMenus.create({
     id: "wireline-followup-from-page",
-    title: "Create BotBound follow-up",
+    title: "Draft an email with BotBound",
     contexts: ["page", "selection"],
   });
   api.contextMenus.create({
     id: "wireline-call-number",
-    title: "Prepare a BotBound call to this number",
+    title: "Prepare a personal call to this number",
     contexts: ["link"],
     targetUrlPatterns: ["tel:*"],
   });

@@ -14,6 +14,23 @@ import {
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("company identity pack", () => {
+  it("defaults new identity requests to calling and email while preserving saved SMS requests", () => {
+    expect(defaultCompanyIdentityPreferences().requestedChannels).toEqual(["voice", "email"]);
+    expect(readCompanyIdentityPreferences(undefined).requestedChannels).toEqual(["voice", "email"]);
+    expect(
+      readCompanyIdentityPreferences({
+        requestedChannels: ["sms", "voice"],
+        providerStatus: { sms: "in_review" },
+      }),
+    ).toMatchObject({
+      requestedChannels: ["sms", "voice"],
+      providerStatus: { sms: "in_review" },
+    });
+    expect(
+      readCompanyIdentityPreferences({ callerIdName: "SAVED NAME" }).requestedChannels,
+    ).toEqual(["voice", "sms", "email"]);
+  });
+
   it("keeps provider approval separate from profile readiness", () => {
     const preferences = defaultCompanyIdentityPreferences();
     const profile = buildCompanyIdentityProfile({

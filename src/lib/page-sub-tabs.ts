@@ -50,9 +50,9 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
       { id: "logs", label: "History", icon: History },
       {
         id: "outbound",
-        label: "Outbound",
-        shortLabel: "Out",
-        ariaLabel: "Outbound",
+        label: "Personal calls",
+        shortLabel: "Personal",
+        ariaLabel: "Personal calls",
         icon: PhoneOutgoing,
       },
     ],
@@ -220,16 +220,9 @@ export const OUTBOUND_VIEW_TABS: AppPageSubTab[] = [
   },
 ];
 
-export const APP_PAGE_SECONDARY_TAB_ROUTES: AppPageSecondaryTabRoute[] = [
-  {
-    pathname: "/phone",
-    whenPrimaryTab: "outbound",
-    tabs: OUTBOUND_VIEW_TABS,
-    defaultView: "dispatch",
-    ariaLabel: "Outbound sections",
-    layoutIdPrefix: "outbound-view",
-  },
-];
+// Retain business outbound route identifiers above for old links, without
+// advertising those views in the launch navigation.
+export const APP_PAGE_SECONDARY_TAB_ROUTES: AppPageSecondaryTabRoute[] = [];
 
 export function resolveInsightsSecondaryTabs(groupId: string): AppPageSubTab[] {
   const group = OPS_INSIGHTS_GROUPS.find((g) => g.id === groupId);

@@ -206,7 +206,8 @@ export default function StripeBillingCard({
       !selfServeBillingReleased ||
       !selectedIntervalReady ||
       selectedPlan?.checkout_availability !== "available" ||
-      selectedPlan.catalog_family !== "channels"
+      selectedPlan.catalog_family !== "channels" ||
+      selectedPlan.channels?.includes("sms")
     ) {
       setError(CHECKOUT_RELEASE_MESSAGE);
       return;
@@ -553,10 +554,13 @@ function PlanPicker({
 }) {
   const availablePlans = plans
     .filter((plan) => plan.catalog_family === "channels")
-    .filter(hasChannelPlanDetails);
+    .filter(hasChannelPlanDetails)
+    .filter((plan) => !plan.channels.includes("sms"));
   const displayPlans = availablePlans.length
     ? availablePlans
-    : STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels");
+    : STRIPE_PLANS.filter(
+        (plan) => plan.catalogFamily === "channels" && !plan.channels.includes("sms"),
+      );
   const [selectedId, setSelectedId] = useState(() =>
     displayPlans.some((plan) => plan.id === signupPlanInterest)
       ? signupPlanInterest!
@@ -566,7 +570,10 @@ function PlanPicker({
     if (
       signupPlanInterest &&
       STRIPE_PLANS.some(
-        (plan) => plan.catalogFamily === "channels" && plan.id === signupPlanInterest,
+        (plan) =>
+          plan.catalogFamily === "channels" &&
+          plan.id === signupPlanInterest &&
+          !plan.channels.includes("sms"),
       )
     )
       setSelectedId(signupPlanInterest);
@@ -600,14 +607,13 @@ function PlanPicker({
       <ChannelPlanPicker
         id="billing"
         plans={displayPlans}
+        availableChannels={["voice", "email"]}
         selectedPlanId={selectedId}
         onSelectPlan={selectPackage}
         interval={billingInterval}
         disabled={!!busy}
         renderAction={(plan) => {
           const live = availablePlans.find((item) => item.id === plan.id);
-          const smsPending =
-            plan.channels.includes("sms") && live?.checkout_availability !== "available";
           const canSubscribe =
             checkoutReleased &&
             live?.checkout_availability === "available" &&
@@ -625,26 +631,19 @@ function PlanPicker({
                   <>
                     <Loader2 className="size-4 animate-spin" /> Opening checkout
                   </>
-                ) : smsPending ? (
-                  "Sender Approval Required"
                 ) : canSubscribe ? (
                   "Continue to Checkout"
                 ) : (
                   "Checkout Paused"
                 )}
               </ShadButton>
-              {smsPending ? (
-                <p role="status" className="text-sm text-muted-foreground">
-                  SMS needs an approved sender.{" "}
-                  <Link to="/contact?topic=sms" className="underline underline-offset-4">
-                    Set up texting
-                  </Link>
-                </p>
-              ) : null}
             </div>
           );
         }}
       />
+      <p className="text-sm text-muted-foreground">
+        SMS is coming soon. Choose Calls, Email, or both.
+      </p>
       <ShadButton asChild disableAnimations variant="outline" className="w-full">
         <Link to="/studio">
           Open Free Builder <ArrowRight className="size-4" />

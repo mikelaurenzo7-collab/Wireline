@@ -93,7 +93,7 @@ export function ConfigureCard({ bot }: { bot?: WorkspaceAgentSummary }) {
     },
     {
       label: "Channels & Tools",
-      detail: "Voice, text, email, calendar, and CRM",
+      detail: "Email, calendars, and optional tools",
       href: "/connections",
       icon: Workflow,
     },

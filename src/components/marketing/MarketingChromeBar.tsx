@@ -10,8 +10,7 @@ const OPEN_PRIVACY_CHOICES_EVENT = "wireline:open-privacy-choices";
 const PRODUCT_LINKS = [
   { to: "/features", label: "Features" },
   { to: "/pricing", label: "Pricing" },
-  { to: "/solutions/sales", label: "Sales Bots" },
-  { to: "/solutions/support", label: "Support Bots" },
+  { to: "/solutions/support", label: "Front Desk" },
   { to: "/compare", label: "Compare" },
 ] as const;
 
@@ -23,7 +22,6 @@ const WHO_ITS_FOR_LINKS = [
   { to: "/for/medical", label: "Medical" },
   { to: "/for/real-estate", label: "Real Estate" },
   { to: "/for/restaurants", label: "Restaurants" },
-  { to: "/for/sales", label: "Sales Teams" },
 ] as const;
 
 const COMPANY_LINKS = [

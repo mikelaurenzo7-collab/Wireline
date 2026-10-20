@@ -39,7 +39,7 @@ describe("Clear System channel catalog guard", () => {
     [
       "src/pages/Pricing.tsx",
       (source) => source.replace('plan.catalogFamily === "channels"', "plan.public"),
-      "current channel catalog",
+      "current launch packages",
     ],
     [
       "src/components/ChannelPlanPicker.tsx",
@@ -57,13 +57,13 @@ describe("Clear System channel catalog guard", () => {
     ],
     [
       "src/pages/Pricing.tsx",
-      (source) => source.replace("canActivate(plan.id) && !smsPending", "canActivate(plan.id)"),
-      "unavailable SMS",
+      (source) => source.replace(' && !plan.channels.includes("sms")', ""),
+      "SMS packages and controls",
     ],
     [
       "src/data/wireline-knowledge.ts",
       (source) => source.replace('plan.catalogFamily === "channels"', "plan.public"),
-      "derive current channel offers",
+      "derive current launch offers",
     ],
     [
       "src/data/wireline-knowledge.ts",

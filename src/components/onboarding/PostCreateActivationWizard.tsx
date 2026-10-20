@@ -416,7 +416,7 @@ export default function PostCreateActivationWizard({
                     <SoftOpenCheckoutNote />
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      Choose Calls, Email, SMS, or a combination. Private rehearsal stays available.
+                      Choose Calls, Email, or both. SMS is coming soon.
                     </p>
                   )}
                   <Button asChild size="sm">

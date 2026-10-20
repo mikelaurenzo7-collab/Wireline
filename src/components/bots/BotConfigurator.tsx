@@ -1,8 +1,5 @@
 import { BOT_CHANNELS, BOT_ROLE_TEMPLATES, type BotChannelKey } from "../../lib/bot-product";
-import {
-  createBotConfiguration,
-  type BotConfigurationDraft,
-} from "../../lib/bot-configuration";
+import { createBotConfiguration, type BotConfigurationDraft } from "../../lib/bot-configuration";
 import { Checkbox } from "../ui/shadcn/Checkbox";
 
 export type BotConfiguratorProps = {
@@ -56,6 +53,13 @@ export default function BotConfigurator({
   onChange,
   disabled = false,
 }: BotConfiguratorProps) {
+  const template = BOT_ROLE_TEMPLATES.find((item) => item.key === value.templateKey);
+  // Creation treats Custom as a business capability profile. Only Everyday
+  // starters opt into personal calling; saved directions stay readable below.
+  const personalCalling = template?.category === "Everyday";
+  const visibleChannels = BOT_CHANNELS.filter(
+    (channel) => channel.key !== "text" || value.channels.text.enabled,
+  );
   const setField = <Key extends keyof BotConfigurationDraft>(
     key: Key,
     next: BotConfigurationDraft[Key],
@@ -89,8 +93,7 @@ export default function BotConfigurator({
           Define the Job. Choose the Channels
         </h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Every Bot lives in the same workspace. Start with a role, then configure only the voice,
-          text, email, knowledge, tools, approvals, and handoffs that role needs.
+          Choose the calls, email, knowledge, and tools your Bot needs.
         </p>
       </header>
 
@@ -101,9 +104,7 @@ export default function BotConfigurator({
             value={value.templateKey}
             disabled={disabled}
             onChange={(event) =>
-              selectTemplate(
-                event.target.value as (typeof BOT_ROLE_TEMPLATES)[number]["key"],
-              )
+              selectTemplate(event.target.value as (typeof BOT_ROLE_TEMPLATES)[number]["key"])
             }
             className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
           >
@@ -148,8 +149,18 @@ export default function BotConfigurator({
             className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
           >
             <option value="inbound">Inbound</option>
-            <option value="outbound">Outbound</option>
-            <option value="hybrid">Inbound + Outbound</option>
+            {personalCalling || value.direction === "outbound" ? (
+              <option value="outbound">
+                {personalCalling ? "Personal Calls" : "Outgoing Calls (Existing)"}
+              </option>
+            ) : null}
+            {personalCalling || value.direction === "hybrid" ? (
+              <option value="hybrid">
+                {personalCalling
+                  ? "Incoming and Personal Calls"
+                  : "Incoming and Outgoing Calls (Existing)"}
+              </option>
+            ) : null}
           </select>
         </label>
       </div>
@@ -169,10 +180,12 @@ export default function BotConfigurator({
       <fieldset className="space-y-3">
         <legend className="text-sm font-semibold text-foreground">Channels</legend>
         <p className="text-sm leading-6 text-muted-foreground">
-          A Bot can use one channel or all three. Each channel keeps its own operating instructions.
+          Each channel keeps its own instructions.
         </p>
-        <div className="grid gap-3 lg:grid-cols-3">
-          {BOT_CHANNELS.map((channel) => {
+        <div
+          className={`grid gap-3 ${visibleChannels.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2"}`}
+        >
+          {visibleChannels.map((channel) => {
             const channelValue = value.channels[channel.key];
             return (
               <article
@@ -191,9 +204,7 @@ export default function BotConfigurator({
                     disabled={disabled}
                     aria-label={`${channel.label} enabled`}
                     onChange={(event) =>
-                      onChange(
-                        updateChannel(value, channel.key, { enabled: event.target.checked }),
-                      )
+                      onChange(updateChannel(value, channel.key, { enabled: event.target.checked }))
                     }
                   />
                 </label>

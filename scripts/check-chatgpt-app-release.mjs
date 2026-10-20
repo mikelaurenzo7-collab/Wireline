@@ -96,11 +96,11 @@ const privacy = await request("/chatgpt-app-privacy.html", { headers: { Accept: 
 assert(privacy.response.status === 200, "ChatGPT app privacy notice must return HTTP 200.");
 assert(
   typeof privacy.body === "string" &&
-    privacy.body.includes("Information Returned to the Connecting Client"),
+    privacy.body.includes("Information Returned to ChatGPT"),
   "Privacy notice must disclose information returned to ChatGPT.",
 );
 assert(
-  privacy.body.includes("receives a session-bound connection answer") &&
+  privacy.body.includes("receives a session bound connection answer") &&
     privacy.body.includes("no OpenAI credential is returned"),
   "Privacy notice must disclose server-mediated SDP without a widget credential.",
 );

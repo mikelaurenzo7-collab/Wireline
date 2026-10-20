@@ -17,7 +17,9 @@ import BillingIntervalControl from "../components/BillingIntervalControl";
 import ChannelPlanPicker from "../components/ChannelPlanPicker";
 import { usePaidPlanAvailability } from "../hooks/usePaidPlanAvailability";
 
-const CHANNEL_PLANS = STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels");
+const CHANNEL_PLANS = STRIPE_PLANS.filter(
+  (plan) => plan.catalogFamily === "channels" && !plan.channels.includes("sms"),
+);
 const TOPUP_RATE = `$${FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min`;
 const FAQ = [
   [
@@ -26,15 +28,15 @@ const FAQ = [
   ],
   [
     "What Changes with Capacity?",
-    "Light, Regular, and High keep the same Bot and selected channels. Calls include 50, 250, or 500 minutes each month; Email and SMS allowances increase with capacity. Each package shows its included usage and price.",
+    "Light, Regular, and High keep the same Bot and selected channels. Calls include 50, 250, or 500 minutes each month; Email allowances increase with capacity. Each package shows its included usage and price.",
   ],
   [
     "Can One Bot Use Several Channels?",
-    "Yes. Choose Calls, Email, SMS, or any combination. Your selected channels share the Bot's knowledge and rules. Live SMS requires sender registration and approval. You can prepare your Bot while we review setup.",
+    "Yes. Choose Calls, Email, or both. They share your Bot's knowledge and rules. Every paid plan also includes a cloud computer for web tasks.",
   ],
   [
-    "Can I Keep My Number When I Add Texting?",
-    "Usually, yes. An eligible local number can be registered for SMS while keeping its calling service. We review the sender identity, message purpose, and consent flow. An existing approval may be reusable for the same sender and purpose, but a new number still needs provider registration. We confirm eligibility and charges before activation.",
+    "Is Texting Available?",
+    "SMS is coming soon. Start with calls, email, and computer tasks today.",
   ],
   [
     "When Does Included Usage Reset?",
@@ -42,7 +44,7 @@ const FAQ = [
   ],
   [
     "Which Plans Include a Phone Number?",
-    "Calls and SMS packages include one local number. One new number per included line is available every 31 days; releasing a number does not reset that limit. Email does not require a phone number. Free Builder does not receive live numbers.",
+    "Calls packages include one local number. One new number per included line is available every 31 days; releasing a number does not reset that limit. Email does not require a phone number. Free Builder does not receive live numbers.",
   ],
   [
     "What Happens When Included Call Minutes Run Out?",
@@ -145,36 +147,33 @@ export default function Pricing() {
             <ChannelPlanPicker
               id="pricing"
               plans={CHANNEL_PLANS}
+              availableChannels={["voice", "email"]}
               selectedPlanId={selectedPlanId}
               onSelectPlan={selectPlan}
               interval={billingInterval}
               renderAction={(plan) => {
-                const selected = CHANNEL_PLANS.find((item) => item.id === plan.id)!;
-                const smsPending = selected.checkoutAvailability === "sms_readiness_required";
                 return (
                   <div className="space-y-3">
                     <p role="status" className="text-sm text-muted-foreground">
-                      {smsPending
-                        ? "SMS needs sender approval. Keep building your Bot while we review your number and texting setup."
-                        : notice}
+                      {notice}
                     </p>
                     <Link
                       to={signupHrefForPlan(plan.id as SignupPlanId, { interval: billingInterval })}
                       className="marketing-btn-primary inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold"
                     >
-                      {canActivate(plan.id) && !smsPending
+                      {canActivate(plan.id)
                         ? "Get Started"
-                        : emailSetupReview || smsPending
+                        : emailSetupReview
                           ? "Create a Free Bot"
                           : "Set Up These Channels"}{" "}
                       <ArrowRight className="size-4" aria-hidden="true" />
                     </Link>
-                    {emailSetupReview || smsPending ? (
+                    {emailSetupReview ? (
                       <Link
-                        to={smsPending ? "/contact?topic=sms" : "/contact?topic=email"}
+                        to="/contact?topic=email"
                         className="inline-flex min-h-11 w-full items-center justify-center px-4 text-sm font-semibold text-primary underline underline-offset-4"
                       >
-                        {smsPending ? "Set Up Texting" : "Ask About Email Setup"}
+                        Ask About Email Setup
                       </Link>
                     ) : null}
                   </div>
@@ -187,7 +186,7 @@ export default function Pricing() {
                 <>
                   {" "}
                   Extra minutes cost {TOPUP_RATE}, using Runtime Balance or completion credit. Bots
-                  answer and place calls from their own number.
+                  answer calls on their own number. Personal calls require recipient permission.
                 </>
               ) : null}
             </p>

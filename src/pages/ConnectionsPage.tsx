@@ -23,7 +23,7 @@ export default function ConnectionsPage() {
               <span className="flex flex-col items-start gap-0.5 text-left">
                 <span>Connected Tools</span>
                 <span className="text-xs font-normal text-muted-foreground">
-                  CRM, team, social, and spreadsheet tools
+                  Optional tools you already use
                 </span>
               </span>
             </AccordionTrigger>

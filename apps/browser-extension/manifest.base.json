@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "BotBound Command",
-  "version": "0.1.3",
-  "description": "Send the current page to your BotBound Workspace as reference for calls, texts, follow-ups, and tasks. Only when you click.",
+  "version": "0.1.4",
+  "description": "Send the current page to your BotBound Workspace for personal calls, email, and computer tasks. Only when you click.",
   "homepage_url": "https://botbound.app",
   "action": {
     "default_title": "Open BotBound Command",

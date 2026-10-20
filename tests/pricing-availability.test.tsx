@@ -204,20 +204,23 @@ describe("public pricing activation availability", () => {
     expect(text(contact)).toBe("Ask About Email Setup");
   });
 
-  it("keeps SMS as private planning with a setup review instead of paid checkout", async () => {
+  it("keeps a stale SMS link out of the launch offer and shows a visible Calls choice", async () => {
     window.location.search = "?plan=sms&interval=month";
     await load(
       response({
         plans: [{ id: "sms", configured: false, annual_configured: false, contact_sales: true }],
       }),
     );
-    expect(text(render())).toContain(
-      "SMS needs sender approval. Keep building your Bot while we review your number and texting setup.",
-    );
-    expect(text(planLink("sms"))).toBe("Create a Free Bot ");
-    expect(planLink("sms")?.props.to).toBe("/signup?plan=sms&interval=month");
+    expect(text(render())).toContain("SMS is coming soon.");
+    expect(planLink("sms")).toBeUndefined();
+    expect(planLink("voice-regular")?.props.to).toBe("/signup?plan=voice-regular&interval=month");
     const contact = links().find((element) => element.props.to === "/contact?topic=sms");
-    expect(text(contact)).toBe("Set Up Texting");
+    expect(contact).toBeUndefined();
+    const channelFieldset = elements(render()).find(
+      (element) => element.type === "fieldset" && text(element).includes("Choose your channels"),
+    );
+    expect(text(channelFieldset)).toContain("CallsEmail");
+    expect(text(channelFieldset)).not.toContain("SMS");
   });
 
   it.each([

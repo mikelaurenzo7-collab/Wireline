@@ -4,6 +4,7 @@ import { Copy, Loader2, Plus, RefreshCw } from "lucide-react";
 import { Button, Input } from "../atoms";
 import { useAgents } from "../../contexts/AgentsContext";
 import { useAuth } from "../../contexts/AuthContext";
+import { isPrincipalVoiceRole } from "../../lib/agent-role-definitions";
 import { authFetch } from "../../lib/api";
 import {
   checkedVoicePermissionLink,
@@ -37,6 +38,9 @@ export default function RecipientVoicePermissions() {
 
 function OwnedRecipientVoicePermissions() {
   const { agents, loading: agentsLoading, degraded } = useAgents();
+  const personalAgents = agents.filter(
+    (agent) => agent.is_business_agent === false || isPrincipalVoiceRole(agent.role),
+  );
   const [rows, setRows] = useState<VoicePermissionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -162,7 +166,14 @@ function OwnedRecipientVoicePermissions() {
 
   function create(event: FormEvent) {
     event.preventDefault();
-    if (mutation.current || !agentId || !phone.trim() || recipientState !== "IL" || degraded)
+    if (
+      mutation.current ||
+      !personalAgents.some((agent) => agent.id === agentId) ||
+      purpose === "marketing_or_sales" ||
+      !phone.trim() ||
+      recipientState !== "IL" ||
+      degraded
+    )
       return;
     const payload = {
       agent_id: agentId,
@@ -264,7 +275,7 @@ function OwnedRecipientVoicePermissions() {
               required
             >
               <option value="">Choose a Bot</option>
-              {agents.map((agent) => (
+              {personalAgents.map((agent) => (
                 <option key={agent.id} value={agent.id}>
                   {agent.name}
                 </option>
@@ -292,11 +303,13 @@ function OwnedRecipientVoicePermissions() {
               onChange={(event) => setPurpose(event.target.value as VoicePermissionPurpose)}
               disabled={!!pending}
             >
-              {Object.entries(PURPOSE_LABELS).map(([id, label]) => (
-                <option key={id} value={id}>
-                  {label}
-                </option>
-              ))}
+              {Object.entries(PURPOSE_LABELS)
+                .filter(([id]) => id !== "marketing_or_sales")
+                .map(([id, label]) => (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                ))}
             </select>
           </label>
           <label className="block space-y-1 text-sm">

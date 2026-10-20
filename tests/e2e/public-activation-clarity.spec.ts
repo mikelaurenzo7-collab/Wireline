@@ -42,21 +42,21 @@ test("homepage gives Email interests a private build and setup-review path", asy
   const combined = page.getByRole("article", { name: "Calls + Email plan", exact: true });
   const calls = page.getByRole("article", { name: "Calls plan", exact: true });
   await expect(email).toContainText("$9");
-  await expect(combined).toContainText("$79");
+  await expect(combined).toContainText("$25");
   await expect(email.getByRole("link", { name: "Build Email Bot Free" })).toHaveAttribute(
     "href",
     "/signup?plan=email",
   );
   await expect(
     combined.getByRole("link", { name: "Build Calls + Email Bot Free" }),
-  ).toHaveAttribute("href", "/signup?plan=voice-email-regular");
+  ).toHaveAttribute("href", "/signup?plan=voice-email");
   await expect(email.getByRole("link", { name: "setup review" })).toHaveAttribute(
     "href",
     "/contact?topic=email",
   );
   await expect(calls.getByRole("link", { name: "Choose Calls" })).toHaveAttribute(
     "href",
-    "/signup?plan=voice-regular",
+    "/signup?plan=voice",
   );
 });
 
@@ -72,7 +72,7 @@ test("paused activation stays explicit from the homepage through paid signup", a
   await expect(access.getByRole("status")).toHaveText(
     "Paid activation is unavailable. Create a Bot for free and rehearse privately.",
   );
-  await expect(access).toContainText("$59/month");
+  await expect(access).toContainText("$19/month");
   await page.getByRole("link", { name: "Pricing", exact: true }).click();
   await expect(
     page.getByText("Paid activation is unavailable. Create a Bot for free and rehearse privately."),
@@ -127,10 +127,12 @@ test("signup checks the selected annual plan even when other paid plans are avai
   );
 });
 
-test("mobile signup keeps activation status inside the visible account flow", async ({ page }) => {
+test("mobile paid signup keeps activation status visible without adding it to free signup", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await mockPublicAccount(page, { ...paidPlans, checkout_available: false });
-  await page.goto("/signup");
+  await page.goto("/signup?plan=voice");
   const access = page.getByRole("region", { name: "Account access" });
   const notice = access.getByRole("status");
   await expect(notice).toHaveText(
@@ -143,4 +145,9 @@ test("mobile signup keeps activation status inside the visible account flow", as
   expect(await notice.evaluate((element) => element.scrollWidth <= element.clientWidth + 2)).toBe(
     true,
   );
+  await page.goto("/signup");
+  await expect(access.getByRole("status")).toHaveCount(0);
+  await expect(
+    access.getByRole("button", { name: "Create Account", exact: true }).last(),
+  ).toBeVisible();
 });

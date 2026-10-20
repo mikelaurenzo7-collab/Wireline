@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   AGENT_TEMPLATES,
+  LAUNCH_AGENT_TEMPLATES,
   getTemplateSelfServeRestriction,
   isTemplateSelfServeAvailable,
 } from "../src/components/AgentTemplates";
@@ -14,6 +15,25 @@ function template(id: string) {
 }
 
 describe("agent template launch truth", () => {
+  it("offers inbound business and personal starters while retaining deferred definitions", () => {
+    const launchIds = new Set<string>(LAUNCH_AGENT_TEMPLATES.map((candidate) => candidate.id));
+    for (const id of [
+      "sales-sdr",
+      "sales-closer",
+      "collections-soft",
+      "collections-hard",
+      "marketing-reengagement",
+      "marketing-survey",
+    ]) {
+      expect(template(id)).toBeDefined();
+      expect(launchIds.has(id)).toBe(false);
+    }
+    for (const id of ["support-tier1", "support-email", "personal-errand", "personal-negotiator"]) {
+      expect(launchIds.has(id)).toBe(true);
+    }
+    expect(template("scheduler-realestate").firstMessage).toContain("Thanks for calling");
+  });
+
   it("keeps healthcare scheduling visible but unavailable for self-serve deployment", () => {
     const medical = template("scheduler-medical");
     const restriction = getTemplateSelfServeRestriction(medical);

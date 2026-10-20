@@ -46,6 +46,33 @@ async function mockWorkspace(page: Page) {
   return threadRequests;
 }
 
+test("an existing SMS subscriber keeps payment recovery and history when renewal fails", async ({
+  page,
+}) => {
+  await mockWorkspace(page);
+  await page.route("**/api/billing/status", (route) =>
+    route.fulfill({
+      json: {
+        channel_entitlements: {
+          plan_id: "sms",
+          subscription_status: "past_due",
+          channels: [],
+          is_owner: false,
+        },
+      },
+    }),
+  );
+
+  await page.goto("/inbox");
+  await expect(page.getByRole("button", { name: "Text", exact: true })).toBeVisible();
+  await expect(page.getByText("Payment Needs Attention", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Update Payment" })).toHaveAttribute(
+    "href",
+    "/settings/billing",
+  );
+  await expect(page.getByText("SMS Coming Soon", { exact: true })).toHaveCount(0);
+});
+
 test("a mailbox deep link never requests all conversations while its scope loads", async ({
   page,
 }) => {
