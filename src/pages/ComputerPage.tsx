@@ -705,13 +705,30 @@ function LiveScreen({
   );
 }
 
+function ActivityCard({ event, index }: { event: TaskEvent; index: number }) {
+  return (
+    <li key={`${event.at}-${index}`} className="wl-computer-action" data-kind={event.kind}>
+      <time dateTime={event.at}>{clockTime(event.at)}</time>
+      <div className="wl-computer-action__body">
+        <span className="wl-computer-action__kind">{EVENT_KIND_LABEL[event.kind]}</span>
+        <span>
+          {event.text}
+          {event.url ? <em> · {hostOf(event.url)}</em> : null}
+        </span>
+      </div>
+    </li>
+  );
+}
+
 function TaskDetail({
   task,
   onChanged,
+  onStartAnother,
   botName,
 }: {
   task: ComputerTask;
   onChanged: (task: ComputerTask) => void;
+  onStartAnother?: () => void;
   botName?: string;
 }) {
   const [reply, setReply] = useState("");
@@ -1096,6 +1113,22 @@ function TaskDetail({
         </p>
       )}
 
+      {!active &&
+      (task.status === "failed" || task.status === "blocked" || task.status === "interrupted") ? (
+        <div className="wl-computer-recovery" role="status">
+          <p>
+            {task.status === "blocked"
+              ? "Finish the remaining step yourself, or start a new task with a clearer goal."
+              : "This task stopped before it finished. Review the steps, then start a new task."}
+          </p>
+          {onStartAnother ? (
+            <Button type="button" size="sm" onClick={onStartAnother}>
+              New task
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+
       {!active && task.summary ? (
         <div
           className={cn(
@@ -1139,24 +1172,32 @@ function TaskDetail({
           </SheetHeader>
           <div className="wl-computer-activity">
             {events.length ? (
-              <ol>
-                {events.map((event, index) => (
-                  <li
-                    key={`${event.at}-${index}`}
-                    className="wl-computer-action"
-                    data-kind={event.kind}
-                  >
-                    <time dateTime={event.at}>{clockTime(event.at)}</time>
-                    <div className="wl-computer-action__body">
-                      <span className="wl-computer-action__kind">{EVENT_KIND_LABEL[event.kind]}</span>
-                      <span>
-                        {event.text}
-                        {event.url ? <em> · {hostOf(event.url)}</em> : null}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ol>
+              <>
+                {events.some((event) => event.kind !== "note") ? (
+                  <ol>
+                    {events
+                      .filter((event) => event.kind !== "note")
+                      .map((event, index) => (
+                        <ActivityCard key={`${event.at}-${index}`} event={event} index={index} />
+                      ))}
+                  </ol>
+                ) : null}
+                {events.some((event) => event.kind === "note") ? (
+                  <details className="wl-computer-plan" open={!events.some((event) => event.kind !== "note")}>
+                    <summary>
+                      Planning
+                      <span>{events.filter((event) => event.kind === "note").length}</span>
+                    </summary>
+                    <ol>
+                      {events
+                        .filter((event) => event.kind === "note")
+                        .map((event, index) => (
+                          <ActivityCard key={`${event.at}-${index}`} event={event} index={index} />
+                        ))}
+                    </ol>
+                  </details>
+                ) : null}
+              </>
             ) : (
               <p className="text-sm text-muted-foreground">
                 Your Bot's steps appear here as it works.
@@ -1489,6 +1530,7 @@ export function ComputerWorkbench({
       key={selected.id}
       task={selected}
       onChanged={(next) => applyTask(next, false)}
+      onStartAnother={() => setShowComposer(true)}
       botName={selectedBot?.name}
     />
   ) : null;

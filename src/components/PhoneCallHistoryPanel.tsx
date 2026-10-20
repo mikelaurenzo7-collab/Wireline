@@ -137,6 +137,7 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
       : {
           title: agentId ? "No Calls for This Bot" : "No Calls Yet",
           action: { label: "Call the Line", to: `tel:${livePhone}` },
+          secondary: { label: "New call", to: "/phone?tab=outbound" },
         };
 
   // History is this tab's only content, so its empty state is a message
@@ -151,7 +152,10 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
         className="w-full"
         icon={History}
         title={emptyState.title}
-        actions={[{ ...emptyState.action, primary: true }]}
+        actions={[
+          { ...emptyState.action, primary: true },
+          ...("secondary" in emptyState && emptyState.secondary ? [emptyState.secondary] : []),
+        ]}
       />
     </div>
   );

@@ -271,7 +271,9 @@ export default function OverviewPage() {
               className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(18rem,0.65fr)]"
               aria-label="Customer demand and outcomes"
             >
-              <span className="sr-only">Voice · Text · Email. Recent customer conversations.</span>
+              <span className="sr-only">
+                Calls, reviewed calls, email, and computer tasks. Recent conversations.
+              </span>
               <UnifiedInbox
                 conversations={conversations}
                 selectedId={selectedConversationId}

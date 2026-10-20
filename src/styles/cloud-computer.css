@@ -931,6 +931,57 @@
   min-width: 0;
 }
 
+.wl-computer-plan {
+  margin-top: var(--wireline-space-100);
+}
+
+.wl-computer-plan summary {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wireline-space-075);
+  cursor: pointer;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.wl-computer-plan summary span {
+  color: var(--wireline-color-text-tertiary);
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.wl-computer-recovery {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wireline-space-100);
+  padding: var(--wireline-space-125);
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--wireline-color-status-warning) 45%,
+      var(--wireline-color-border-default)
+    );
+  border-radius: var(--wireline-radius-md);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-status-warning) 8%,
+    var(--wireline-color-surface-default)
+  );
+}
+
+.wl-computer-recovery p {
+  margin: 0;
+  color: var(--wireline-color-text-primary);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
 .wl-computer-activity time {
   color: var(--wireline-color-text-tertiary);
   font-family: var(--wireline-font-family-mono);

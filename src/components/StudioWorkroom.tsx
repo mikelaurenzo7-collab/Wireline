@@ -619,7 +619,7 @@ const StudioWorkroom = forwardRef<
               onClick={() => setRehearsalView("text")}
             >
               <MessageCircle className="size-4" aria-hidden="true" />
-              Text
+              Typed
             </Button>
           </div>
         </div>

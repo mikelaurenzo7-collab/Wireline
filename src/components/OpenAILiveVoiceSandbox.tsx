@@ -528,7 +528,7 @@ export default function OpenAILiveVoiceSandbox({
         ) : null}
       </div>
 
-      {showActivity ? (
+      {state !== "idle" && showActivity ? (
         <ConversationActivity
           className="mt-4"
           state={activity.state}

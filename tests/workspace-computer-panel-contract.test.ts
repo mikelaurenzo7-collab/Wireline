@@ -26,6 +26,10 @@ describe("Workspace computer panel", () => {
 
   it("shares one workbench between the panel and the Computer page", () => {
     expect(computer).toContain("export function ComputerWorkbench(");
+    expect(computer).toContain('className="wl-computer-plan"');
+    expect(computer).toContain("Planning");
+    expect(computer).toContain('className="wl-computer-recovery"');
+    expect(computer).toContain("This task stopped before it finished.");
     expect(computer).toContain('if (layout === "panel")');
     expect(computer).toContain("{agents.length > 1 && !pinned ? (");
     expect(studio).toContain('import("../pages/ComputerPage")');
