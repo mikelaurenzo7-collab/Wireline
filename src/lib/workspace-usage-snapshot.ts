@@ -2,13 +2,14 @@
  * Unified workspace usage for billing UI + Director composer indicator.
  */
 import { eq } from "drizzle-orm";
-import { drizzle } from "./server-context";
+import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { getBudgetSnapshot, clearBudgetCache } from "./spend-guards";
 import { planById, planIncludesChannel } from "./plan-catalog";
 import { VOICE_COMPLETION_GRACE_MINUTES, type VoiceCallPolicy } from "./voice-funding-policy";
 import { getVoiceUsageSnapshot } from "./voice-usage";
 import { getCreditBalanceUsd } from "./credit-wallet";
+import { ensureCurrentRuntimeAllowance } from "./subscription-welcome-credit";
 import { defaultAiSpendBudgetUsdForPlan } from "./plan-entitlements";
 import { quotaTracker } from "./server-context";
 
@@ -55,6 +56,14 @@ function pct(used: number, limit: number): number {
 }
 
 export async function getWorkspaceUsageSnapshot(userId: string): Promise<WorkspaceUsageSnapshot> {
+  try {
+    await ensureCurrentRuntimeAllowance(userId);
+  } catch (error) {
+    log.warn("runtime allowance slice could not be posted for usage", {
+      userId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
   // These reads are independent — fetch them together to save round-trips.
   const [voice, snap, { profile }, tokenUsed, creditBalanceUsd] = await Promise.all([
     getVoiceUsageSnapshot(userId),

@@ -488,6 +488,17 @@ router.post(
           });
         }
       }
+      if (
+        task.payload &&
+        typeof task.payload === "object" &&
+        !Array.isArray(task.payload) &&
+        expectedPayload === undefined
+      ) {
+        return res.status(400).json({
+          code: "REVIEW_SNAPSHOT_REQUIRED",
+          error: "Review the latest task details before approving.",
+        });
+      }
 
       const taskType = task.taskType;
       if (isManualOperatorTask(taskType)) {

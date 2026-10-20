@@ -314,9 +314,14 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
                         OutboundConsentFields()
                     }
                 }
+                Text(
+                    "Calling from the Android app is not available yet. Open BotBound in the browser to place this call.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Brand.Text2,
+                )
                 Button(
-                    onClick = { agent?.let { model.placeCall(it.id, number, context, callPurpose, requiresMarketingConsent && consentConfirmed) } },
-                    enabled = agent != null && number.isNotBlank() && (!requiresMarketingConsent || consentConfirmed) && !state.isWorking,
+                    onClick = {},
+                    enabled = false,
                     shape = RoundedCornerShape(Brand.RadiusSm),
                 ) { Text("PLACE CALL") }
             }

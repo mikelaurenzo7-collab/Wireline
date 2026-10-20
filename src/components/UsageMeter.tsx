@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Activity, AlertTriangle, Loader2, TrendingUp, Wallet } from "lucide-react";
 import { authFetch } from "../lib/api";
+import { planIncludesChannel } from "../lib/plan-catalog";
 import { CONVERSATION_BALANCE_COPY } from "../lib/conversation-balance";
 import { cn } from "../lib/utils";
 import { Progress } from "./ui/shadcn/Progress";
@@ -93,6 +94,7 @@ export default function UsageMeter({
     return null;
   }
 
+  const includesVoice = planIncludesChannel(snap.plan_id, "voice");
   const used = snap.voice_minutes_used;
   const included = snap.voice_minutes_included;
   const pct = included > 0 ? Math.min(100, Math.round((used / included) * 100)) : 0;
@@ -122,7 +124,10 @@ export default function UsageMeter({
       ? `${compactTitle}. Managed AI: ${formatAiSpendUsd(aiUsed)} of ${formatAiSpendUsd(aiLimit)} used.`
       : compactTitle;
 
+  if (!includesVoice && !(aiLimit > 0)) return null;
+
   if (compact) {
+    if (!includesVoice) return null;
     return (
       <div
         className="usage-meter flex items-center gap-2 py-1.5 px-3.5 rounded-full wl-panel-elevated border border-white/8 wl-micro-badge font-mono shadow-sm hover:shadow-brand/10 hover:border-brand/30 transition-all duration-300 cursor-help"
@@ -151,6 +156,8 @@ export default function UsageMeter({
           {loadError} Showing last known usage.
         </p>
       ) : null}
+      {includesVoice ? (
+      <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-md flex items-center justify-center shadow-lg wl-accent-icon-box">
@@ -189,6 +196,8 @@ export default function UsageMeter({
           )}
         />
       </div>
+      </>
+      ) : null}
 
       {Number.isFinite(aiLimit) && aiLimit > 0 ? (
         <div className="space-y-2 border-t border-white/8 pt-4">

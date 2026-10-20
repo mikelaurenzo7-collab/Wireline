@@ -166,7 +166,7 @@ export default function Pricing() {
                         to={smsPending ? "/contact?topic=sms" : "/contact?topic=email"}
                         className="inline-flex min-h-11 w-full items-center justify-center px-4 text-sm font-semibold text-primary underline underline-offset-4"
                       >
-                        {smsPending ? "Ask About SMS Setup" : "Ask About Email Setup"}
+                        {smsPending ? "Ask About SMS Setup" : "Ask About Email Checkout"}
                       </Link>
                     ) : null}
                   </div>

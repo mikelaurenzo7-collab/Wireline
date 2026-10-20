@@ -2,6 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { addCredit } from "./credit-wallet";
+import { ensureCurrentRuntimeAllowance } from "./subscription-welcome-credit";
 import { drizzle, log } from "./server-context";
 
 export type RuntimeArtifactFormat = "pdf" | "docx" | "pptx" | "xlsx";
@@ -32,6 +33,15 @@ export async function reserveRuntimeUsage(input: {
 }): Promise<{ reserved: boolean; alreadyReserved: boolean; balanceUsd: number }> {
   const amount = cents(input.amountUsd);
   if (!(amount > 0)) return { reserved: true, alreadyReserved: false, balanceUsd: 0 };
+
+  try {
+    await ensureCurrentRuntimeAllowance(input.userId);
+  } catch (error) {
+    log.warn("runtime allowance slice could not be posted before spend", {
+      userId: input.userId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 
   return drizzle.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${input.userId}))`);

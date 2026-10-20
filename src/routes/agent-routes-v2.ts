@@ -11,6 +11,7 @@ import { agentMutationRateLimit } from "../middleware/api-rate-limits";
 import { recordAmbiguousProviderAttempt, recordUsage } from "../lib/ai-audit";
 import { drizzle, log } from "../lib/server-context";
 import { phoneCallVoiceFor } from "../lib/voice/xai-voice-config";
+import { xaiSipCredentialsFor } from "../lib/voice/xai-phone-registration";
 import { isVoiceSampleAvailable, synthesizeVoiceSample } from "../lib/voice/voice-sample";
 import {
   isPlaybookEmpty,
@@ -779,6 +780,30 @@ router.get(
       },
     );
     const record = agentRows[0];
+    const phoneCall = phoneCallVoiceFor(
+      record?.voiceProvider === "presenter" ? record?.phoneVoiceId : record?.voiceId,
+    );
+    let phoneCallReady: boolean | null = null;
+    if (phoneCall) {
+      const [line] = await drizzle
+        .select({ phoneNumber: schema.phoneNumbers.phoneNumber })
+        .from(schema.phoneNumbers)
+        .where(
+          and(
+            eq(schema.phoneNumbers.userId, req.user.id),
+            eq(schema.phoneNumbers.agentId, req.params.id),
+          ),
+        )
+        .limit(1);
+      if (!line?.phoneNumber) phoneCallReady = false;
+      else {
+        try {
+          phoneCallReady = Boolean(await xaiSipCredentialsFor(line.phoneNumber));
+        } catch {
+          phoneCallReady = false;
+        }
+      }
+    }
     const identity = record
       ? resolveAgentVideoPresenter({
           id: req.params.id,
@@ -810,9 +835,8 @@ router.get(
         provider: record?.voiceProvider || null,
         phoneVoiceId: record?.phoneVoiceId || null,
         phoneVoiceProvider: record?.phoneVoiceProvider || null,
-        phoneCall: phoneCallVoiceFor(
-          record?.voiceProvider === "presenter" ? record?.phoneVoiceId : record?.voiceId,
-        ),
+        phoneCall,
+        phoneCallReady,
       },
       personality: personalities[0]?.content || "",
       directives,

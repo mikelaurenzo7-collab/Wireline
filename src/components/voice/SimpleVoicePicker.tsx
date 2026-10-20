@@ -25,6 +25,7 @@ type AgentVoiceResponse = {
     phoneVoiceId?: string | null;
     phoneVoiceProvider?: string | null;
     phoneCall?: PhoneCallVoice;
+    phoneCallReady?: boolean | null;
   };
 };
 
@@ -48,6 +49,7 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
   const [previewOpen, setPreviewOpen] = useState(false);
   const [choicesOpen, setChoicesOpen] = useState(false);
   const [phoneCall, setPhoneCall] = useState<PhoneCallVoice>(null);
+  const [phoneCallReady, setPhoneCallReady] = useState<boolean | null>(null);
   const [sampleVoiceId, setSampleVoiceId] = useState<string | null>(null);
   const [sampleLoading, setSampleLoading] = useState(false);
   const sampleAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -99,6 +101,9 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
         );
         setSelectedVoiceId(managedVoice?.id ?? storedVoiceId);
         setPhoneCall(agentData.voice?.phoneCall ?? null);
+        setPhoneCallReady(
+          typeof agentData.voice?.phoneCallReady === "boolean" ? agentData.voice.phoneCallReady : null,
+        );
         setSelectedProvider(
           managedVoice && (!storedProvider || storedProvider === "openai")
             ? "openai"
@@ -202,6 +207,7 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
       const body = (await response.json().catch(() => null)) as {
         error?: string;
         voice?: {
+          phoneCallReady?: boolean | null;
           voiceId?: string | null;
           provider?: string | null;
           phoneVoiceId?: string | null;
@@ -212,6 +218,9 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
       if (!response.ok) throw new Error(body?.error || "Voice could not be saved.");
       if (!isCurrentSave()) return;
       setPhoneCall(body?.voice?.phoneCall ?? null);
+      setPhoneCallReady(
+        typeof body?.voice?.phoneCallReady === "boolean" ? body.voice.phoneCallReady : null,
+      );
       const savedPrimaryProvider = body?.voice?.provider?.trim().toLowerCase() || null;
       const savedPrimaryVoiceId = body?.voice?.voiceId?.trim() || null;
       const savedWithPhoneFallback = savedPrimaryProvider === "presenter";
@@ -368,7 +377,9 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
       ) : null}
 
       <p className="text-xs leading-5 text-muted-foreground">
-        {phoneCallVoiceName(phoneCall)
+        {phoneCall && phoneCallReady === false
+          ? `Used for browser rehearsals. This number is not registered for the phone voice yet, so callers still hear the standard voice until registration finishes.`
+          : phoneCallVoiceName(phoneCall)
           ? `Used for browser rehearsals. On phone calls, callers hear ${phoneCallVoiceName(phoneCall)}, the closest phone voice. Preview starts a private voice rehearsal.`
           : "Used for phone calls and browser rehearsals. Preview starts a private voice rehearsal."}
       </p>

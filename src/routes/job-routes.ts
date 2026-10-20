@@ -554,9 +554,12 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
     }
 
     let trialsExpired = 0;
+    let expiredAppointmentHolds = 0;
     if (withinSweepBudget() && (req._sweepMode === "cron" || !req._sweepMode)) {
       const { sweepExpiredTrials } = await import("../lib/trial-gate");
       trialsExpired = await sweepExpiredTrials();
+      const { releaseExpiredAppointmentHolds } = await import("../lib/native-calendar");
+      expiredAppointmentHolds = await releaseExpiredAppointmentHolds();
     }
 
     if (withinSweepBudget() && (req._sweepMode === "cron" || !req._sweepMode)) {
@@ -611,7 +614,13 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
     }
 
     const mode = req._sweepMode || "cron";
-    res.json({ processed, recovered, mode, trials_expired: trialsExpired });
+    res.json({
+      processed,
+      recovered,
+      mode,
+      trials_expired: trialsExpired,
+      expired_appointment_holds: expiredAppointmentHolds,
+    });
     if (processed > 0) {
       void auditLogger
         .logJobSweep("completed", {

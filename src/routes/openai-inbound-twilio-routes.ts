@@ -30,6 +30,10 @@ function hangupTwiml(): string {
   return '<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>';
 }
 
+function unassignedLineTwiml(): string {
+  return '<?xml version="1.0" encoding="UTF-8"?><Response><Say voice="alice">This number is not ready yet. Please try again later.</Say><Hangup/></Response>';
+}
+
 function inboundBridgeTwiml(target: RealtimeSipTarget): string {
   // Answer the parent before dialing SIP: Twilio rejects the funded REST
   // timeLimit update on an unanswered parent (21220). The worker must still
@@ -91,7 +95,7 @@ router.post(
         log.warn("Twilio inbound OpenAI bridge found no assigned BotBound line", {
           calledSuffix: phoneSuffixForLog(calledNumber),
         });
-        res.status(200).send(hangupTwiml());
+        res.status(200).send(unassignedLineTwiml());
         return;
       }
       const environment = await liveExternalActionPolicyForUser(userId);

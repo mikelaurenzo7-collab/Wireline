@@ -257,6 +257,9 @@ export async function resolveAllowanceWindow(
   // Expired subscriptions keep their historical plan id, but reconciliation
   // restores the bounded Free Builder budget. Voice separately requires active.
   if (!["active", "trialing"].includes(billing?.status ?? "")) return calendarAllowanceWindow(now);
+  // Trialing has no paid invoice receipt. Voice admission allows the status,
+  // so the allowance window must not throw and block the call.
+  if (billing?.status === "trialing") return calendarAllowanceWindow(now);
   if (billing?.status !== "active" || !billing.subscriptionId || !billing.customerId)
     throw allowanceSyncRequired();
   const rows = await reader

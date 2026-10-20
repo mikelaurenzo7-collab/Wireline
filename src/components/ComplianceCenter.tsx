@@ -143,6 +143,16 @@ export default function ComplianceCenter() {
               </div>
               <div className="flex items-baseline justify-between gap-4 sm:block">
                 <dt className="shrink-0 text-xs font-medium text-muted-foreground">
+                  Federal DNC
+                </dt>
+                <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">
+                  {summary.federal_dnc_configured
+                    ? "Platform screening is configured"
+                    : "Platform screening is not configured"}
+                </dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-4 sm:block">
+                <dt className="shrink-0 text-xs font-medium text-muted-foreground">
                   Workspace DNC
                 </dt>
                 <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">

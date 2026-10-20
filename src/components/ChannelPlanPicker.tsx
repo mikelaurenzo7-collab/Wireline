@@ -81,7 +81,9 @@ export function channelPlanHighlights(plan: ChannelPlanOption): string[] {
     plan.runtime_allowance_usd_monthly > 0
   )
     highlights.push(
-      `$${plan.runtime_allowance_usd_monthly.toFixed(2)} Runtime Allowance each month`,
+      plan.channels.includes("sms")
+        ? `$${plan.runtime_allowance_usd_monthly.toFixed(2)} SMS transport allowance each month`
+        : `$${plan.runtime_allowance_usd_monthly.toFixed(2)} Runtime Allowance each month`,
     );
   return highlights;
 }

@@ -48,6 +48,8 @@ struct CallAgentIntent: AppIntent {
             return .result(dialog: "\(agent.name) is calling \(phoneNumber) now.")
         } catch let WirelineAPI.APIError.http(status, _) where status == 401 || status == 403 {
             return .result(dialog: "Your session has expired. Open BotBound to sign in again.")
+        } catch let WirelineAPI.APIError.http(status, _) where status == 503 {
+            return .result(dialog: "Calling from Siri is not available yet. Open BotBound in the browser to place this call.")
         } catch {
             return .result(dialog: "I couldn't place that call right now. Try again in a moment.")
         }

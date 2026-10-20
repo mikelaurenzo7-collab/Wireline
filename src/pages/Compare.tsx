@@ -7,7 +7,7 @@ import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 const DIFFERENCES = [
   {
     title: "Works Across Channels",
-    copy: "Handles conversations through the voice, email, and text channels you configure, with outcomes visible in one workspace.",
+    copy: "Handles conversations through the voice, email, and text channels you configure. Live text activation is reviewed before it starts. Outcomes stay in one workspace.",
   },
   {
     title: "Plain Instructions",

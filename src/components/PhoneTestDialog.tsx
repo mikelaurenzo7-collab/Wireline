@@ -330,6 +330,21 @@ function OwnedPhoneTestDialog({
                     ) : null}
                     Check call
                   </Button>
+                  {receipt?.status === "uncertain" ? (
+                    <Button
+                      variant="secondary"
+                      disabled={Boolean(busy)}
+                      onClick={() => {
+                        saveRequest(storageKey, null);
+                        setRequestKey(null);
+                        setReceipt(null);
+                        setConsent(false);
+                        setError(null);
+                      }}
+                    >
+                      Start over
+                    </Button>
+                  ) : null}
                   <Button
                     variant="outline"
                     disabled={Boolean(busy) || receipt?.status === "ending"}

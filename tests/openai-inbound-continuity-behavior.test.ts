@@ -158,7 +158,9 @@ describe("OpenAI inbound carrier continuity", () => {
     expect(invalid.select).not.toHaveBeenCalled();
 
     const unassigned = await invokePrimary({ ownerRows: [] });
-    expect(unassigned.captured).toEqual({ statusCode: 200, body: HANGUP_TWIML });
+    expect(unassigned.captured.statusCode).toBe(200);
+    expect(String(unassigned.captured.body)).toContain("This number is not ready yet");
+    expect(String(unassigned.captured.body)).toContain("<Hangup/>");
 
     const suspended = await invokePrimary({ environmentAllowed: false });
     expect(suspended.captured).toEqual({ statusCode: 200, body: HANGUP_TWIML });

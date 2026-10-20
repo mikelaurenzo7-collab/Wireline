@@ -390,7 +390,10 @@ describe("billing proof contract", () => {
   it("keeps the Runtime Allowance grant idempotent per billing period", () => {
     const welcome = read("src/lib/subscription-welcome-credit.ts");
     expect(welcome).toContain('entryKind: "grant"');
-    expect(welcome).toContain("id: billingPeriodReference");
+    expect(welcome).toContain("let reference = billingPeriodReference");
+    expect(welcome).toContain("id: reference");
+    expect(welcome).toContain("annualAllowanceSliceReference");
+    expect(welcome).toContain("legacyAnnualLumpExists");
   });
 
   it("checks the canonical founder Stripe environment without reviving postpaid metering", () => {

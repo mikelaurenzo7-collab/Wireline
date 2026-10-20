@@ -6,7 +6,7 @@ import { addCredit, reverseCredit } from "../lib/credit-wallet";
 import { getErrorMessage } from "../lib/server-utils";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import {
   stripe,
   stripeAvailable,
@@ -168,6 +168,7 @@ async function resolveSubscriptionAllowanceContext(
     );
   }
 
+  const baseReference = grantReferences[0];
   const grants = await tenantStore.run(owner.userId, () =>
     drizzle
       .select({
@@ -180,29 +181,49 @@ async function resolveSubscriptionAllowanceContext(
         and(
           eq(schema.creditLedger.userId, owner.userId),
           eq(schema.creditLedger.refType, "subscription_runtime_allowance"),
-          inArray(schema.creditLedger.refId, grantReferences),
+          or(
+            eq(schema.creditLedger.refId, baseReference),
+            sql`${schema.creditLedger.refId} like ${`${baseReference}:slice:%`}`,
+          ),
         ),
       )
-      .limit(2),
+      .limit(16),
   );
-  if (grants.length !== 1) {
+  if (grants.length === 0) {
     throw new Error(
       `Stripe invoice ${invoiceId} has no unambiguous posted Runtime Allowance grant.`,
     );
   }
-  const grant = grants[0];
-  const grantAmountUsd = Number(grant.amountUsd);
-  const metadata = grant.metadata as { plan_id?: unknown; billing_interval?: unknown } | null;
-  if (
-    !Number.isFinite(grantAmountUsd) ||
-    !(grantAmountUsd > 0) ||
-    !grant.reference ||
-    typeof metadata?.plan_id !== "string" ||
-    !metadata.plan_id ||
-    (metadata.billing_interval !== "month" && metadata.billing_interval !== "year")
-  ) {
-    throw new Error(`Stripe invoice ${invoiceId} has an invalid posted Runtime Allowance grant.`);
+  let grantAmountUsd = 0;
+  let planId: string | null = null;
+  let interval: "month" | "year" | null = null;
+  for (const grant of grants) {
+    const amountUsd = Number(grant.amountUsd);
+    const metadata = grant.metadata as { plan_id?: unknown; billing_interval?: unknown } | null;
+    if (
+      !Number.isFinite(amountUsd) ||
+      !(amountUsd > 0) ||
+      !grant.reference ||
+      typeof metadata?.plan_id !== "string" ||
+      !metadata.plan_id ||
+      (metadata.billing_interval !== "month" && metadata.billing_interval !== "year")
+    ) {
+      throw new Error(`Stripe invoice ${invoiceId} has an invalid posted Runtime Allowance grant.`);
+    }
+    if (planId && (planId !== metadata.plan_id || interval !== metadata.billing_interval)) {
+      throw new Error(
+        `Stripe invoice ${invoiceId} has no unambiguous posted Runtime Allowance grant.`,
+      );
+    }
+    planId = metadata.plan_id;
+    interval = metadata.billing_interval;
+    grantAmountUsd = Math.round((grantAmountUsd + amountUsd) * 100) / 100;
   }
+  const metadata = {
+    plan_id: planId,
+    billing_interval: interval,
+  };
+  const grant = { reference: baseReference, amountUsd: grantAmountUsd, metadata };
 
   return {
     userId: owner.userId,

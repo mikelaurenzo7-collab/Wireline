@@ -63,7 +63,7 @@ const SOLUTIONS = {
       ],
       [
         "Booking That Closes the Loop",
-        "Offer available times through Calendar and capture the confirmed booking.",
+        "Offer available times through Calendar and save the booking. Approval mode holds it until you confirm.",
       ],
       ["Human Help When Needed", "Bring in a person for exceptions with the context attached."],
     ],

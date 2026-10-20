@@ -88,17 +88,6 @@ struct OutboundCallView: View {
         isPlacing = true
         errorMessage = nil
         defer { isPlacing = false }
-        do {
-            _ = try await WirelineAPI.shared.placeCall(
-                agentId: selectedAgentId,
-                to: number,
-                context: context.isEmpty ? nil : context,
-                callPurpose: callPurpose,
-                hasExpressWrittenConsent: requiresMarketingConsent && consentConfirmed
-            )
-            dismiss()
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        errorMessage = "Calling from the iPhone app is not available yet. Open BotBound in the browser to place this call."
     }
 }
