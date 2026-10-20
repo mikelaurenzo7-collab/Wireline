@@ -239,6 +239,16 @@
   background: var(--wireline-color-surface-subtle);
 }
 
+/* Compare names are proper nouns. The global anywhere/balance wrap is for long
+ * prose; on a narrow first column it was splitting BotBound and Goodcall
+ * mid-word. Size the column to the name. */
+.marketing-surface.wl-compare-page table th:first-child {
+  width: 1%;
+  white-space: nowrap;
+  text-wrap: nowrap;
+  overflow-wrap: normal;
+}
+
 /* Features / About / Compare: same gutter + section beat as the landing rail. */
 .marketing-surface.wl-features-page .marketing-section,
 .marketing-surface.wl-about-page .marketing-section,
