@@ -10,7 +10,14 @@ vi.mock("../src/lib/server-context", () => ({
 }));
 
 import { mergeMeaningMatches } from "../src/lib/agent-knowledge-search";
-import { compileKnowledgeDocument, knowledgeContentHash } from "../src/lib/knowledge-index";
+import { drizzle } from "../src/lib/server-context";
+import {
+  compileKnowledgeDocument,
+  knowledgeContentHash,
+  knowledgeIndexHealth,
+  resetKnowledgeIndexSweepState,
+  syncStaleKnowledgeIndexes,
+} from "../src/lib/knowledge-index";
 import {
   KNOWLEDGE_SEARCH_URL,
   isKnowledgeIndexConfigured,
@@ -22,7 +29,23 @@ import {
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 const COLLECTION = "collection_dbc087b1-6c99-493d-86c6-b401fee34a9d";
 
-afterEach(() => vi.unstubAllEnvs());
+/** A thenable query builder: every method chains, awaiting yields `result`. */
+function queryChain<T>(result: T) {
+  const chain: Record<string, unknown> = {};
+  for (const method of ["select", "from", "where", "orderBy", "limit", "update", "set"]) {
+    chain[method] = () => chain;
+  }
+  chain.then = (onFulfilled: (value: T) => unknown, onRejected?: (reason: unknown) => unknown) =>
+    Promise.resolve(result).then(onFulfilled, onRejected);
+  return chain;
+}
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+  resetKnowledgeIndexSweepState();
+  for (const key of Object.keys(drizzle)) delete (drizzle as Record<string, unknown>)[key];
+});
 
 describe("knowledge index", () => {
   it("stays inert until both keys exist", () => {
@@ -156,5 +179,81 @@ describe("knowledge index", () => {
   it("keeps vendor names out of the index's customer-visible text", () => {
     const doc = compileKnowledgeDocument({ agentName: "Ava", rules: [], facts: ["x"] }).text;
     expect(doc).not.toMatch(/xai|grok/i);
+  });
+
+  it("reports a rejected management key as a paused sweep on the health surface", async () => {
+    vi.stubEnv("XAI_API_KEY", "test-key");
+    vi.stubEnv("XAI_MANAGEMENT_API_KEY", "test-management-key");
+    const db = drizzle as Record<string, unknown>;
+    db.execute = async () => [
+      {
+        agent_id: "agent_1",
+        user_id: "user_1",
+        name: "Mira",
+        knowledge_index: null,
+        content_hash: "abc",
+        entries: 1,
+      },
+    ];
+    db.select = () => queryChain([{ content: "Closed on Sundays." }]);
+    db.update = () => queryChain(undefined);
+    const fetchImpl = vi.fn(async () => new Response("unauthorized", { status: 401 }));
+    vi.stubGlobal("fetch", fetchImpl);
+
+    expect(knowledgeIndexHealth()).toMatchObject({
+      configured: true,
+      paused_until: null,
+      last_error: null,
+    });
+    await expect(syncStaleKnowledgeIndexes()).resolves.toEqual({ synced: 0, failed: 1 });
+
+    const health = knowledgeIndexHealth();
+    expect(health.paused_until).not.toBeNull();
+    expect(health.last_error?.message).toContain("HTTP 401, management key");
+    // The pause is honoured without touching the provider again.
+    fetchImpl.mockClear();
+    await expect(syncStaleKnowledgeIndexes()).resolves.toEqual({ synced: 0, failed: 0 });
+    expect(fetchImpl).not.toHaveBeenCalled();
+    // The authenticated health probe exposes this state without provider I/O.
+    const healthRoutes = read("src/routes/health-routes.ts");
+    expect(healthRoutes).toContain("knowledge_index: knowledgeIndexProbe()");
+    expect(healthRoutes).toContain("Index sweep paused: xAI rejected a key");
+  });
+
+  it("clears the last sweep error once a Bot syncs again", async () => {
+    vi.stubEnv("XAI_API_KEY", "test-key");
+    vi.stubEnv("XAI_MANAGEMENT_API_KEY", "test-management-key");
+    const db = drizzle as Record<string, unknown>;
+    db.execute = async () => [
+      {
+        agent_id: "agent_1",
+        user_id: "user_1",
+        name: "Mira",
+        knowledge_index: null,
+        content_hash: "abc",
+        entries: 1,
+      },
+    ];
+    db.select = () => queryChain([{ content: "Closed on Sundays." }]);
+    db.update = () => queryChain(undefined);
+    let calls = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        calls += 1;
+        if (calls === 1) return new Response("flaky", { status: 500 });
+        if (url.endsWith("/collections")) return Response.json({ collection_id: COLLECTION });
+        if (url.endsWith("/files")) return Response.json({ id: "file_1" });
+        return Response.json({});
+      }),
+    );
+
+    await expect(syncStaleKnowledgeIndexes()).resolves.toEqual({ synced: 0, failed: 1 });
+    expect(knowledgeIndexHealth().last_error?.message).toContain("HTTP 500");
+    // A 500 backs off only that Bot; lift the backoff and the next tick succeeds.
+    resetKnowledgeIndexSweepState();
+    await expect(syncStaleKnowledgeIndexes()).resolves.toEqual({ synced: 1, failed: 0 });
+    expect(knowledgeIndexHealth()).toMatchObject({ paused_until: null, last_error: null });
+    expect(knowledgeIndexHealth().last_synced_at).not.toBeNull();
   });
 });

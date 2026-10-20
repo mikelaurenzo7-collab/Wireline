@@ -283,10 +283,40 @@ const RETRY_BACKOFF_MS = 30 * 60_000;
 const retryAfter = new Map<string, number>();
 /** A rejected key fails every Bot the same way, so the whole sweep pauses instead. */
 let pausedUntil = 0;
+/** The most recent sweep failure, kept until a Bot syncs again, for health diagnostics. */
+let lastSweepError: { at: string; message: string } | null = null;
+let lastSyncedAt: string | null = null;
 
 function isAuthRejection(error: unknown): boolean {
   const status = (error as { status?: unknown } | null)?.status;
   return status === 401 || status === 403;
+}
+
+/**
+ * What the authenticated health surface shows for the index: whether both keys
+ * are present, whether the sweep is paused on a rejected key, and the last
+ * failure. Index ids and Bot content never leave this process.
+ */
+export function knowledgeIndexHealth(now = Date.now()): {
+  configured: boolean;
+  paused_until: string | null;
+  last_synced_at: string | null;
+  last_error: { at: string; message: string } | null;
+} {
+  return {
+    configured: isKnowledgeIndexConfigured(),
+    paused_until: pausedUntil > now ? new Date(pausedUntil).toISOString() : null,
+    last_synced_at: lastSyncedAt,
+    last_error: lastSweepError,
+  };
+}
+
+/** Test seam: forget pause, retry, and health state between cases. */
+export function resetKnowledgeIndexSweepState(): void {
+  pausedUntil = 0;
+  retryAfter.clear();
+  lastSweepError = null;
+  lastSyncedAt = null;
 }
 
 /** One sweep tick: rebuild up to SYNC_BATCH changed Bots. Never throws. */
@@ -303,9 +333,9 @@ export async function syncStaleKnowledgeIndexes(
       .filter((bot) => (retryAfter.get(bot.agentId) ?? 0) <= now)
       .slice(0, SYNC_BATCH);
   } catch (error) {
-    log.warn("Knowledge index scan failed", {
-      error: error instanceof Error ? error.message : String(error),
-    });
+    const message = error instanceof Error ? error.message : String(error);
+    lastSweepError = { at: new Date().toISOString(), message: message.slice(0, 200) };
+    log.warn("Knowledge index scan failed", { error: message });
     return { synced, failed };
   }
   for (const bot of stale) {
@@ -314,20 +344,19 @@ export async function syncStaleKnowledgeIndexes(
       await syncAgentKnowledgeIndex(bot);
       retryAfter.delete(bot.agentId);
       synced++;
+      lastSyncedAt = new Date().toISOString();
+      lastSweepError = null;
     } catch (error) {
       failed++;
+      const message = error instanceof Error ? error.message : String(error);
+      lastSweepError = { at: new Date().toISOString(), message: message.slice(0, 200) };
       if (isAuthRejection(error)) {
         pausedUntil = Date.now() + RETRY_BACKOFF_MS;
-        log.error("Knowledge index paused: the provider rejected a key", {
-          error: error instanceof Error ? error.message : String(error),
-        });
+        log.error("Knowledge index paused: the provider rejected a key", { error: message });
         break;
       }
       retryAfter.set(bot.agentId, Date.now() + RETRY_BACKOFF_MS);
-      log.warn("Knowledge index sync failed", {
-        agentId: bot.agentId,
-        error: error instanceof Error ? error.message : String(error),
-      });
+      log.warn("Knowledge index sync failed", { agentId: bot.agentId, error: message });
     }
   }
   return { synced, failed };

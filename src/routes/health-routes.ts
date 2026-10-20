@@ -18,6 +18,7 @@ import {
 } from "../lib/ai-models";
 import { OPENAI_REALTIME_DEFAULT_MODEL } from "../lib/voice/openai-realtime-config";
 import { getHealthModelTiering } from "../lib/health-model-policy";
+import { knowledgeIndexHealth } from "../lib/knowledge-index";
 import { describeRuntimeChain } from "../lib/ai-client";
 import {
   probeOpenAIModelDiagnostic,
@@ -365,7 +366,26 @@ router.get("/models", healthRateLimiter, requireMonitorTokenOrPlatformAdmin, asy
         model: XAI_STRUCTURED_PRIMARY_MODEL,
         ...(process.env.XAI_API_KEY?.trim() ? {} : { error: "XAI_API_KEY not configured" }),
       },
+      // Per-Bot knowledge index sweep state from this process; no provider I/O.
+      // A paused sweep means xAI rejected a key and Bots answer from keyword
+      // matches only until the key is fixed, which otherwise shows up only in logs.
+      knowledge_index: knowledgeIndexProbe(),
     },
   });
 });
+
+function knowledgeIndexProbe() {
+  const health = knowledgeIndexHealth();
+  const ok = health.configured && !health.paused_until;
+  return {
+    ok,
+    latency_ms: 0,
+    ...health,
+    ...(health.configured
+      ? health.paused_until
+        ? { error: "Index sweep paused: xAI rejected a key (see last_error)" }
+        : {}
+      : { error: "XAI_API_KEY and XAI_MANAGEMENT_API_KEY are both required" }),
+  };
+}
 export default router;
