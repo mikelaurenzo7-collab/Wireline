@@ -2,6 +2,10 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import PhonePage from "../src/pages/PhonePage";
 
+vi.mock("../src/contexts/AuthContext", () => ({
+  useAuth: () => ({ user: { id: "owner-1" } }),
+}));
+
 vi.mock("../src/hooks/useChannelEntitlements", () => ({
   useChannelEntitlements: () => ({
     status: "ready",

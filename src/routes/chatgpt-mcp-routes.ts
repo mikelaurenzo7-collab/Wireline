@@ -241,7 +241,16 @@ function oauthConsentPage(request: AuthorizationRequest, user: { email: string }
     )
     .join("\n");
   const scopeList = request.scopes
-    .map((scope) => `<li>${escapeHtml(scope.replace(".", " "))}</li>`)
+    .map(
+      (scope) =>
+        `<li>${escapeHtml(
+          scope === "calls.prepare"
+            ? "Prepare service calls for you to review and place in BotBound"
+            : scope === "calls.read"
+              ? "Read the status of calls prepared through connected apps"
+              : scope.replace(".", " "),
+        )}</li>`,
+    )
     .join("");
   const client = escapeHtml(clientDisplayName(request.redirectUri, request.clientId));
   const partyHost = escapeHtml(relyingPartyHost(request.clientId, request.redirectUri));

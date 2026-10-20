@@ -15,6 +15,7 @@ const INQUIRY_TYPES = [
 export function ContactPage() {
   const [searchParams] = useSearchParams();
   const initialIntent = searchParams.get("intent") ?? searchParams.get("topic");
+  const startsAsSms = initialIntent?.toLowerCase() === "sms";
   const startsAsBilling = initialIntent?.toLowerCase() === "billing";
   const startsAsSales = ["sales", "business", "enterprise"].includes(
     initialIntent?.toLowerCase() ?? "",
@@ -206,7 +207,17 @@ export function ContactPage() {
         </nav>
 
         <section className="mt-5 wl-stitch-card p-6 sm:p-8">
-          <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">Send a Note</h2>
+          <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">
+            {startsAsSms ? "Set Up Texting" : "Send a Note"}
+          </h2>
+          {startsAsSms && !submitted ? (
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              Tell us whether you are texting for yourself or a business, what your Bot will send,
+              and whether you already have a number. We will confirm the registration path, required
+              details, and charges before activation. Please keep tax IDs and identity documents out
+              of this form.
+            </p>
+          ) : null}
           {submitted ? (
             <div className="py-10 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
@@ -224,7 +235,7 @@ export function ContactPage() {
             </div>
           ) : (
             <form onSubmit={onSubmit} noValidate className="mt-7 space-y-5">
-              <fieldset>
+              <fieldset hidden={startsAsSms}>
                 <legend id={inquiryLabelId} className="mb-2 block wl-stitch-label">
                   What can we help with?
                 </legend>

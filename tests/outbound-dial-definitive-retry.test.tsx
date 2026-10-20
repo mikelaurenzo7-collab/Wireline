@@ -89,21 +89,19 @@ vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: "o
 vi.mock("../src/contexts/ToastContext", () => ({ useToast: () => ({ toast: vi.fn() }) }));
 vi.mock("../src/lib/api", () => ({ authFetch: vi.fn() }));
 vi.mock("../src/lib/product-event-client", () => ({ emitProductEvent: vi.fn() }));
-vi.mock("../src/components/PhoneTestDialog", () => ({ default: "phone-test" }));
-vi.mock("../src/lib/outbound-call-purpose", async (original) => ({
-  ...(await original<typeof import("../src/lib/outbound-call-purpose")>()),
-  DIRECT_OUTBOUND_AVAILABILITY: { available: true },
-}));
 vi.mock("../src/lib/voice-permission-client", () => ({
-  listVoicePermissions: async () => [
-    {
-      id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-      agent_id: "bot-1",
-      purpose: "service_or_requested",
-      status: "granted",
-      recipient_phone_masked: "•••0123",
-    },
-  ],
+  loadVoicePermissionWorkspace: async () => ({
+    calling: { general: true, nonMarketing: true },
+    permissions: [
+      {
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        agent_id: "bot-1",
+        purpose: "service_or_requested",
+        status: "granted",
+        recipient_phone_masked: "•••0123",
+      },
+    ],
+  }),
 }));
 
 type Props = {

@@ -136,15 +136,6 @@
   color: transparent;
 }
 
-.landing-prestige__promise {
-  max-width: 40rem;
-  margin: clamp(1.25rem, 2.6vh, 1.75rem) auto 0;
-  color: var(--wireline-color-text-secondary);
-  font-size: clamp(1.02rem, 1.35vw, 1.2rem);
-  line-height: 1.6;
-  text-wrap: balance;
-}
-
 .landing-prestige__actions {
   display: flex;
   flex-wrap: wrap;

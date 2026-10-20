@@ -17,6 +17,11 @@ try {
 
 const accountWidgetUri = "ui://widget/wireline-agent-draft-v2.html";
 const expectedAnnotations = new Map([
+  ["prepare_call", { readOnlyHint: false, openWorldHint: false, destructiveHint: false }],
+  [
+    "get_call_status",
+    { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
+  ],
   ["create_agent_draft", { readOnlyHint: false, openWorldHint: false, destructiveHint: false }],
   ["get_agent_draft", { readOnlyHint: true, openWorldHint: false, destructiveHint: false }],
   ["update_agent_draft", { readOnlyHint: false, openWorldHint: false, destructiveHint: false }],
@@ -90,7 +95,8 @@ assert(
 const privacy = await request("/chatgpt-app-privacy.html", { headers: { Accept: "text/html" } });
 assert(privacy.response.status === 200, "ChatGPT app privacy notice must return HTTP 200.");
 assert(
-  typeof privacy.body === "string" && privacy.body.includes("Information returned to ChatGPT"),
+  typeof privacy.body === "string" &&
+    privacy.body.includes("Information Returned to the Connecting Client"),
   "Privacy notice must disclose information returned to ChatGPT.",
 );
 assert(
@@ -103,7 +109,7 @@ const mcpPrivacy = await request("/mcp-privacy.html", { headers: { Accept: "text
 assert(mcpPrivacy.response.status === 200, "MCP connector privacy notice must return HTTP 200.");
 assert(
   typeof mcpPrivacy.body === "string" &&
-    mcpPrivacy.body.includes("Information returned to the connecting client"),
+    mcpPrivacy.body.includes("Information Returned to the Connecting Client"),
   "MCP privacy notice must disclose information returned to connecting clients.",
 );
 
@@ -278,6 +284,17 @@ for (const tool of liveTools) {
 }
 
 const lazyAuthCalls = [
+  [
+    "prepare_call",
+    {
+      request_key: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      agent_id: "draft",
+      phone: "+13125550123",
+      instruction: "Confirm my requested appointment time.",
+      call_purpose: "service_or_requested",
+    },
+  ],
+  ["get_call_status", { request_key: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" }],
   ["create_agent_draft", { business_name: "Acme", primary_goal: "Answer after hours" }],
   ["update_agent_draft", { agent_id: "draft" }],
   [

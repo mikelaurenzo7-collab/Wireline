@@ -1,7 +1,13 @@
 import { AppError } from "./api-error";
 
 export const AGENT_CUSTOMIZATION_VERSION = 1 as const;
-export const AGENT_ROLES = ["receptionist", "scheduler", "sales", "customer_service"] as const;
+export const AGENT_ROLES = [
+  "receptionist",
+  "scheduler",
+  "sales",
+  "customer_service",
+  "personal_assistant",
+] as const;
 export const AGENT_ESCALATION_POLICIES = [
   "take_message",
   "handoff_when_configured",
@@ -83,6 +89,8 @@ function escalationPolicy(value: unknown): AgentEscalationPolicy {
 function defaultName(agentRole: AgentRole, businessName: string): string {
   const label = businessName || "BotBound";
   switch (agentRole) {
+    case "personal_assistant":
+      return `${label} Assistant`;
     case "scheduler":
       return `${label} Scheduling Assistant`;
     case "sales":
@@ -96,6 +104,8 @@ function defaultName(agentRole: AgentRole, businessName: string): string {
 
 function defaultGoal(agentRole: AgentRole): string {
   switch (agentRole) {
+    case "personal_assistant":
+      return "Help with personal coordination, service questions, and requested follow ups. Ask before making commitments.";
     case "scheduler":
       return "Understand scheduling needs, collect the details needed for a next step, and keep the calendar conversation moving.";
     case "sales":

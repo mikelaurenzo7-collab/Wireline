@@ -18,9 +18,10 @@ A local source capture is internal UI evidence. A product-proof claim needs the 
 
 ## One buyer story
 
-**Headline:** Your Next Hire Is a Bot.
-**Homepage support:** Answers calls. Follows up. Books the next step.
-**Primary CTA:** Build Your Bot
+**Eyebrow:** For You. For Your Business.
+**Headline:** Voice Bots With a Computer, Phone Number, and Email Address.
+**Homepage support:** No subhero paragraph. Personal and business examples lead to the same workspace.
+**Primary CTA:** Start Free
 **Offer:** Build free. Plans from $19/mo. Live activation subject to availability.
 **Channel proof:** Calls, texts, email, follow-up, and logged outcomes.  
 **Product model:** One BotBound workspace for every role and use case.

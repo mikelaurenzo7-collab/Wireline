@@ -36,7 +36,7 @@ export const BRAND_SYSTEM = {
     "Do not end a title with a period; retain a question mark when the title is a question.",
     "Prefer short sentences, concrete verbs, and specific outcomes.",
     "Public marketing leads with capabilities, outcomes, and a clear signup action. Do not add a public setup sequence or repeat process slogans. Keep operational setup guidance inside the product.",
-    "Avoid em dashes, inflated AI language, repetitive descriptor copy, and stacked claims on public buying surfaces.",
+    "Avoid hyphens, en dashes, and em dashes in product prose. Preserve technical identifiers, URLs, and customer text. Avoid inflated AI language, repetitive descriptions, and stacked claims.",
   ],
 } as const;
 

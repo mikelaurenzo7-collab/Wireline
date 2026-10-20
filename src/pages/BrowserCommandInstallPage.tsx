@@ -101,7 +101,7 @@ export default function BrowserCommandInstallPage() {
             Privacy
           </summary>
           <p className="max-w-prose py-3 text-sm leading-relaxed text-muted-foreground">
-            Reads pages only when you ask. No background browsing, account-token storage, or live
+            Reads pages only when you ask. No background browsing, account token storage, or live
             calls. Shared content is treated as reference material.
           </p>
         </details>

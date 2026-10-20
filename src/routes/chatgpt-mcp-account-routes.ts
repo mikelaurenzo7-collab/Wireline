@@ -9,6 +9,8 @@ import {
   type AgentDraftPrincipal,
 } from "../lib/agent-draft-service";
 import { CHATGPT_MCP_RESOURCE_URI, MCP_SCOPES, type McpScope } from "../lib/chatgpt-mcp";
+import { prepareCall, preparedCallStatus } from "../lib/prepared-call";
+import { OUTBOUND_REQUEST_ID_PATTERN } from "../lib/outbound-dial-recovery";
 import {
   CHATGPT_ACCOUNT_WIDGET_URI,
   buildAccountBoundWidgetHtml,
@@ -410,7 +412,10 @@ function toolDefinitions() {
       title: "Represented name",
       description: "The person, organization, or brand the Bot represents.",
     },
-    role: { type: "string", enum: ["receptionist", "scheduler", "sales", "customer_service"] },
+    role: {
+      type: "string",
+      enum: ["receptionist", "scheduler", "sales", "customer_service", "personal_assistant"],
+    },
     primary_goal: { type: "string", description: "The main outcome the agent should drive." },
     tone: { type: "string", description: "Speaking style, such as warm, concise, and capable." },
     success_criteria: {
@@ -446,6 +451,81 @@ function toolDefinitions() {
   };
 
   return [
+    {
+      name: "prepare_call",
+      title: "Prepare a call",
+      description:
+        "Save a personal or business Bot's service, coordination, or requested call for the account holder to review and place in BotBound. Requires a paid Calls plan. Never calls the recipient from this tool. Use a fresh UUIDv4 for a new request and reuse that UUID on retries. Show the returned review URL; do not approve or click Place call for the user. Recipient permission and Illinois caller/recipient scope currently apply. Sales and marketing are not supported.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          request_key: {
+            type: "string",
+            format: "uuid",
+            pattern: OUTBOUND_REQUEST_ID_PATTERN.source,
+          },
+          agent_id: { type: "string" },
+          phone: { type: "string", pattern: "^\\+1\\d{10}$" },
+          instruction: { type: "string", minLength: 1, maxLength: 2000 },
+          call_purpose: { type: "string", enum: ["service_or_requested", "callback"] },
+        },
+        required: ["request_key", "agent_id", "phone", "instruction", "call_purpose"],
+        additionalProperties: false,
+      },
+      outputSchema: {
+        type: "object",
+        properties: {
+          request_key: { type: "string" },
+          expires_at: { type: "string" },
+          review_url: { type: "string" },
+        },
+        required: ["request_key", "expires_at", "review_url"],
+        additionalProperties: false,
+      },
+      annotations: {
+        readOnlyHint: false,
+        openWorldHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+      securitySchemes: [{ type: "oauth2", scopes: ["calls.prepare"] }],
+      _meta: { securitySchemes: [{ type: "oauth2", scopes: ["calls.prepare"] }] },
+    },
+    {
+      name: "get_call_status",
+      title: "Check a prepared call",
+      description:
+        "Read the connected account's prepared call status using its request UUID. Awaiting review means no placement receipt exists; accepted means the carrier accepted the call, not that anyone answered or the task succeeded. Does not expose recipient details or call transcripts and never retries a call.",
+      inputSchema: {
+        type: "object",
+        properties: { request_key: { type: "string", format: "uuid" } },
+        required: ["request_key"],
+        additionalProperties: false,
+      },
+      outputSchema: {
+        type: "object",
+        properties: {
+          request_key: { type: "string" },
+          requestKey: { type: "string" },
+          expires_at: { type: "string" },
+          status: { type: "string" },
+          terminal: { type: "boolean" },
+          agentId: { type: "string" },
+          callId: { type: "string" },
+          leadId: { type: "string" },
+        },
+        required: ["request_key", "expires_at", "status", "terminal"],
+        additionalProperties: false,
+      },
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+      },
+      securitySchemes: [{ type: "oauth2", scopes: ["calls.read"] }],
+      _meta: { securitySchemes: [{ type: "oauth2", scopes: ["calls.read"] }] },
+    },
     {
       name: "create_agent_draft",
       title: "Create a BotBound agent draft",
@@ -788,7 +868,7 @@ router.post("/mcp", async (req, res) => {
         },
         serverInfo: { name: MCP_SERVER_NAME, title: MCP_SERVER_TITLE, version: MCP_SERVER_VERSION },
         instructions:
-          "BotBound is the system of record. Cursor, ChatGPT, and Claude help a new user create a BotBound account and build their first Bot here. They are not a voice SDK for a git repo. Confirm every create, update, rehearsal, and Training write. Training writes also require the Apps toggle. Never claim a live call, SMS, email, number attachment, or launch happened here. After the first draft, point the user to open_in_wireline_url for numbers and launch.",
+          "BotBound is the system of record. Cursor, ChatGPT, and Claude share the same tools. Confirm every Bot create, update, rehearsal, and Training write. Training writes also require the Apps toggle. Service and requested calls can be prepared for review in BotBound; the account holder must open the review URL and place the call. Sales and marketing are not supported. Never approve a call for the user or claim preparation placed it. Read its status using get_call_status; carrier acceptance and completion do not prove the requested task succeeded. SMS, email, number attachment, and launch remain workspace actions.",
       });
     }
     if (method === "ping") return jsonRpc(res, id, {});
@@ -843,6 +923,42 @@ router.post("/mcp", async (req, res) => {
       params.arguments && typeof params.arguments === "object"
         ? (params.arguments as Record<string, unknown>)
         : {};
+
+    if (name === "prepare_call") {
+      const authed = requireScope(principal, "calls.prepare");
+      await assertMcpDraftWriteRateLimit(authed.userId);
+      const prepared = await tenantStore.run(authed.userId, () => prepareCall(authed.userId, args));
+      const reviewUrl = `${issuer(req)}/phone?tab=outbound&callRequest=${encodeURIComponent(prepared.request_key)}`;
+      return jsonRpc(res, id, {
+        content: [
+          {
+            type: "text",
+            text: `Review this call in BotBound: ${reviewUrl}. Preparation does not place a call. The account holder must review it and select Place call.`,
+          },
+        ],
+        structuredContent: {
+          request_key: prepared.request_key,
+          expires_at: prepared.expires_at,
+          review_url: reviewUrl,
+        },
+      });
+    }
+
+    if (name === "get_call_status") {
+      const authed = requireScope(principal, "calls.read");
+      const status = await tenantStore.run(authed.userId, () =>
+        preparedCallStatus(authed.userId, text(args.request_key, 36)),
+      );
+      return jsonRpc(res, id, {
+        content: [
+          {
+            type: "text",
+            text: `Call status: ${status.status}. Carrier acceptance is not proof of an answered call or a completed task.`,
+          },
+        ],
+        structuredContent: status,
+      });
+    }
 
     if (name === "create_agent_draft") {
       const authed = requireScope(principal, "agents.write");

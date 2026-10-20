@@ -1,4 +1,3 @@
-import { DIRECT_OUTBOUND_AVAILABILITY } from "../lib/outbound-call-purpose";
 import { useEffect, useRef, useState } from "react";
 import { CalendarCheck2, Inbox, Phone, Plus, ShieldCheck, Sparkles } from "lucide-react";
 import { Link } from "react-router";
@@ -41,7 +40,7 @@ function metricRows(metrics: OverviewMetrics) {
       tone: metrics.conversationsToday > 0 ? ("success" as const) : ("neutral" as const),
     },
     {
-      label: "High-intent today",
+      label: "High intent today",
       value: metrics.highIntentToday,
       href: "/insights",
       icon: Sparkles,
@@ -213,7 +212,7 @@ export default function OverviewPage() {
                   onClick={() => setShowOutboundDial(true)}
                 >
                   <Phone size={15} aria-hidden="true" />
-                  {DIRECT_OUTBOUND_AVAILABILITY.available ? "Start a Call" : "Call my phone"}
+                  New call
                 </Button>
               ) : (
                 <Button asChild className="justify-center">

@@ -21,12 +21,20 @@ const CHANNEL_PLANS = STRIPE_PLANS.filter((plan) => plan.catalogFamily === "chan
 const TOPUP_RATE = `$${FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min`;
 const FAQ = [
   [
+    "Can I Use a Bot for Myself and My Business?",
+    "Yes. Personal tasks and business work use the same plans and workspace. Give each Bot the knowledge, permissions, and tools its job needs.",
+  ],
+  [
     "What Changes with Capacity?",
     "Light, Regular, and High keep the same Bot and selected channels. Calls include 50, 250, or 500 minutes each month; Email and SMS allowances increase with capacity. Each package shows its included usage and price.",
   ],
   [
     "Can One Bot Use Several Channels?",
-    "Yes. Choose Calls, Email, SMS, or any combination. Your selected channels share the Bot's knowledge and rules. SMS selections are for private planning and rehearsal; live activation requests receive a setup review.",
+    "Yes. Choose Calls, Email, SMS, or any combination. Your selected channels share the Bot's knowledge and rules. Live SMS requires sender registration and approval. You can prepare your Bot while we review setup.",
+  ],
+  [
+    "Can I Keep My Number When I Add Texting?",
+    "Usually, yes. An eligible local number can be registered for SMS while keeping its calling service. We review the sender identity, message purpose, and consent flow. An existing approval may be reusable for the same sender and purpose, but a new number still needs provider registration. We confirm eligibility and charges before activation.",
   ],
   [
     "When Does Included Usage Reset?",
@@ -34,15 +42,15 @@ const FAQ = [
   ],
   [
     "Which Plans Include a Phone Number?",
-    "Calls and SMS packages include one local number. One new number per included line is available every 31 days; releasing a number does not reset that limit. Email-only does not require a phone number. Free Builder does not receive live numbers.",
+    "Calls and SMS packages include one local number. One new number per included line is available every 31 days; releasing a number does not reset that limit. Email does not require a phone number. Free Builder does not receive live numbers.",
   ],
   [
     "What Happens When Included Call Minutes Run Out?",
-    `Extra calling uses prepaid Runtime Balance at ${TOPUP_RATE}. Each call requires at least one funded minute and is limited by available coverage, plus a completion buffer of up to 10 minutes, within the 60-minute session cap. Unpaid completion usage pauses new calls and prepaid extras until you top up. Billing and saved records stay available. No automatic top-ups or overage invoices.`,
+    `Extra calling uses prepaid Runtime Balance at ${TOPUP_RATE}. Each call requires at least one funded minute and is limited by available coverage, plus a completion buffer of up to 10 minutes, within the session cap of 60 minutes. Unpaid completion usage pauses new calls and prepaid extras until you top up. Billing and saved records stay available. No automatic balance purchases or overage invoices.`,
   ],
   [
     "How Long Can a Call Last?",
-    "Live phone calls can run for up to 60 minutes per session, unless a shorter limit is configured. Private browser rehearsals and message-taking flows have a 5-minute maximum. Reaching a session limit ends the call.",
+    "Live phone calls can run for up to 60 minutes per session, unless a shorter limit is configured. Private browser rehearsals and message taking have a maximum of 5 minutes. Reaching a session limit ends the call.",
   ],
   [
     "How Is Email Usage Covered?",
@@ -50,7 +58,7 @@ const FAQ = [
   ],
   [
     "Can I Cancel or Get a Refund?",
-    "Cancel from BotBound Billing anytime; access continues through the current billing period. Contact support@botbound.app within 30 days of your first paid invoice to request a first-invoice subscription refund. We verify the account and transaction before confirming.",
+    "Cancel from BotBound Billing anytime; access continues through the current billing period. Contact support@botbound.app within 30 days of your first paid invoice to request a refund of that subscription invoice. We verify the account and transaction before confirming.",
   ],
 ] as const;
 
@@ -147,7 +155,7 @@ export default function Pricing() {
                   <div className="space-y-3">
                     <p role="status" className="text-sm text-muted-foreground">
                       {smsPending
-                        ? "Plan and rehearse an SMS Bot privately. Ask us to review what live activation would require."
+                        ? "SMS needs sender approval. Keep building your Bot while we review your number and texting setup."
                         : notice}
                     </p>
                     <Link
@@ -166,7 +174,7 @@ export default function Pricing() {
                         to={smsPending ? "/contact?topic=sms" : "/contact?topic=email"}
                         className="inline-flex min-h-11 w-full items-center justify-center px-4 text-sm font-semibold text-primary underline underline-offset-4"
                       >
-                        {smsPending ? "Ask About SMS Setup" : "Ask About Email Setup"}
+                        {smsPending ? "Set Up Texting" : "Ask About Email Setup"}
                       </Link>
                     ) : null}
                   </div>
@@ -174,7 +182,7 @@ export default function Pricing() {
               }}
             />
             <p className="mt-4 text-center text-xs leading-5 text-muted-foreground">
-              Included usage is shown per month. No automatic top-ups or overage invoices.
+              Included usage is shown per month. No automatic balance purchases or overage invoices.
               {selectedHasCalls ? (
                 <>
                   {" "}

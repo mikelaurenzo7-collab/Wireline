@@ -96,7 +96,7 @@ export default function McpCoachingPanel() {
       setNotice(
         data?.coaching_writes_enabled
           ? "Connected apps can now save a confirmed Training fact or rule into BotBound."
-          : "Connected-app Training writes are off. Drafts and private rehearsals still work.",
+          : "Connected app Training writes are off. Drafts and private rehearsals still work.",
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't update Training permission.");
@@ -195,7 +195,11 @@ export default function McpCoachingPanel() {
                           ? "Edit Drafts & Training"
                           : scope === "demo.voice"
                             ? "Private Rehearsals"
-                            : scope,
+                            : scope === "calls.prepare"
+                              ? "Prepare Calls for Review"
+                              : scope === "calls.read"
+                                ? "Read Prepared Call Status"
+                                : scope,
                     )
                     .join(" · ")}
                 </p>

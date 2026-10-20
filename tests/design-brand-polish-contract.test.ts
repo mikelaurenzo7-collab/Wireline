@@ -199,9 +199,9 @@ describe("E2E design and BotBound brand polish", () => {
 
   it("keeps status foregrounds accessible while public entry paths remain text-labeled", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain('aria-label="Choose Bot direction"');
-    expect(landing).toContain("Call. Book.");
-    expect(landing).toContain("Answer. Act.");
+    expect(landing).toContain('aria-label="Choose what your Bot does"');
+    expect(landing).toContain("Answer. Book.");
+    expect(landing).toContain("Plan. Coordinate.");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
     const badge = read("src/components/atoms/Badge.tsx");
     expect(badge).toContain("text-[var(--wireline-color-status-success)]");
@@ -216,9 +216,9 @@ describe("E2E design and BotBound brand polish", () => {
     expect(landing).toContain('to={signupHrefForPlan("personal")}');
     expect(landing).toContain('to="/signin"');
     expect(landing).toMatch(
-      /<span>Voice Bots<\/span>\s*<span>With a Computer,<\/span>[\s\S]*<span>Phone Number,<\/span>\s*<span>and Branded Email\.<\/span>/,
+      /<span>Voice Bots<\/span>\s*<span>With a Computer,<\/span>[\s\S]*<span>Phone Number,<\/span>\s*<span>and Email Address\.<\/span>/,
     );
-    expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
+    expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).toContain("<BotBoundMark");
     expect(landing).toContain("landing-prestige__hero-mark");
     expect(landing).toContain("landing-prestige__directions");

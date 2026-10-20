@@ -12,7 +12,7 @@ Authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`
 | -------------- | ----------------------------------------------------------------------- |
 | Product        | Your Bot for calls, texts, and email                                    |
 | Public message | Capabilities, outcomes, and a clear signup action                       |
-| Public hero    | Your Next Hire Is a Bot.                                                |
+| Public hero    | For You. For Your Business.                                                |
 | CTA            | Build Your Bot                                                          |
 | Price line     | Build free. Plans from $19/mo. Live activation subject to availability. |
 | GTM posture    | First 3–5 founder-led design partners before scaled acquisition         |

@@ -118,8 +118,8 @@ describe("WIRELINE design-system double-pass contract", () => {
 
     expect(landing).not.toMatch(/\bvoice agents?\b/i);
     expect(footer).not.toMatch(/\bvoice agents?\b/i);
-    expect(landing).toContain("Call. Book.");
-    expect(landing).toContain("Answer. Act.");
+    expect(landing).toContain("Answer. Book.");
+    expect(landing).toContain("Plan. Coordinate.");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
   });
 

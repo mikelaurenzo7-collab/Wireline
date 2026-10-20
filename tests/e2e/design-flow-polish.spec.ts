@@ -137,9 +137,9 @@ for (const width of [320, 390, 1440]) {
       "Works From a Goal",
       "Follows Up in Writing",
     ]);
-    const features = page.getByRole("list", { name: "Built Around Your Business" });
+    const features = page.getByRole("list", { name: "Built Around You" });
     await expect(features.getByRole("heading", { level: 3 })).toHaveText([
-      "Trained on Your Business",
+      "Made Yours",
       "Native Calendar Booking",
       "Approvals and Handoffs",
       "One Workspace",

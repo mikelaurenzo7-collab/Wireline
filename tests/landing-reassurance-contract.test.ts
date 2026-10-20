@@ -19,25 +19,23 @@ describe("home landing launch clarity", () => {
     expect(landing).not.toContain("<AuthAccessPanel");
     expect(landing).toContain('to={signupHrefForPlan("personal")}');
     expect(landing).toContain("<span>With a Computer,</span>");
-    expect(landing).toContain("<span>and Branded Email.</span>");
+    expect(landing).toContain("<span>and Email Address.</span>");
     expect(css).toContain(".landing-prestige__hero-mark");
     expect(css).not.toMatch(/\.landing-prestige__(?:auth|entrance|desktop-only)\b/);
     expect(landing).not.toContain("00:42");
   });
 
   it("keeps free and paid capacity distinct without crowding the hero", () => {
-    expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
-    expect(product).toContain(
-      'activationLine:\n    "Start with calls, email, or both. Your Bot helps customers, reaches prospects, and tackles work from its own cloud computer."',
-    );
+    expect(landing).not.toContain("landing-prestige__promise");
+    expect(product).not.toContain("activationLine:");
     expect(landing).toContain("landing-prestige__directions");
-    expect(landing).toContain("Call. Book.");
-    expect(landing).toContain("Answer. Act.");
+    expect(landing).toContain("Answer. Book.");
+    expect(landing).toContain("Plan. Coordinate.");
     expect(landing).not.toContain("Build free. Put it on a number when it is ready.");
     expect(landing).toContain(
-      'const PUBLIC_PLAN_IDS = ["personal", "email", "voice-regular", "voice-email-regular"]',
+      'const PUBLIC_PLAN_IDS = ["personal", "email", "voice", "voice-email"]',
     );
-    for (const id of ["email", "voice-regular", "voice-email-regular"]) {
+    for (const id of ["email", "voice", "voice-email"]) {
       expect(planById(id)?.catalogFamily).toBe("channels");
       expect(planById(id)?.max_agents).toBe(1);
     }
@@ -46,8 +44,8 @@ describe("home landing launch clarity", () => {
       included_phone_numbers: 0,
       included_mailboxes: 1,
     });
-    expect(planById("voice-regular")).toMatchObject({
-      voice_minutes_monthly: 250,
+    expect(planById("voice")).toMatchObject({
+      voice_minutes_monthly: 50,
       included_phone_numbers: 1,
       included_mailboxes: 0,
     });

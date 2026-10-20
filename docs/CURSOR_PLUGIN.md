@@ -67,6 +67,13 @@ Same tools as ChatGPT and Claude:
 | `run_private_agent_turn`         | `demo.voice`   | Confirmed private text rehearsal. Not a live call.                   |
 | `get_agent_coaching_brief`       | `agents.read`  | Owner-authored Training facts and rules.                             |
 | `train_wireline_agent`           | `agents.write` | Confirmed fact or rule that lands in Training after the Apps toggle. |
+| `prepare_call` | `calls.prepare` | Saves a non-marketing service/callback proposal for the user to review and place in BotBound. |
+| `get_call_status` | `calls.read` | Reads the prepared call's placement status without recipient details or transcripts. |
+
+Non-marketing calling uses the same server, explicit new OAuth scopes, and authenticated browser
+review as Claude and ChatGPT. No Cursor-specific widget is required. The proposal is not
+dispatch authority. The full contract, including paid voice, captured Illinois recipient
+permission, 24-hour expiry, and retry behavior, is in `docs/CHATGPT_APP.md`.
 
 ### Non-goals
 

@@ -31,6 +31,7 @@ const ROLE_ARCHETYPES: Record<AgentCustomizationProfile["identity"]["role"], str
   scheduler: "Scheduling Agent",
   sales: "Sales Representative",
   customer_service: "Customer Support",
+  personal_assistant: "Personal Assistant",
 };
 
 export interface AgentDraftPrincipal {
@@ -221,7 +222,9 @@ export async function createAgentDraft(
         enabledTools: [],
         firstMessage: `Hi, this is ${profile.identity.name}. How can I help?`,
         personalityVibe: profile.identity.tone,
-        isBusinessAgent: profile.identity.businessName !== "Your work",
+        isBusinessAgent:
+          profile.identity.role !== "personal_assistant" &&
+          profile.identity.businessName !== "Your work",
         businessVariables: persistedBusinessVariables(profile),
         systemPromptOverride: compileAgentRuntimeInstructions(profile),
         disallowedTopics: profile.behavior.prohibitedTopics,
@@ -316,6 +319,9 @@ export async function updateAgentDraft(
       .set({
         name: merged.identity.name,
         role: merged.identity.role,
+        isBusinessAgent:
+          merged.identity.role !== "personal_assistant" &&
+          merged.identity.businessName !== "Your work",
         archetype: ROLE_ARCHETYPES[merged.identity.role],
         firstMessage: `Hi, this is ${merged.identity.name}. How can I help?`,
         personalityVibe: merged.identity.tone,

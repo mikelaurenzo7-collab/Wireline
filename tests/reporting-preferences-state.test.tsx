@@ -281,7 +281,7 @@ describe("report settings save continuity", () => {
     await settle();
     expect(text(tree)).toContain("Google Sheets for Google Drive");
     expect(text(tree)).toContain("Microsoft Excel for OneDrive");
-    expect(text(tree)).toContain("Check which connections are available under Business Tools.");
+    expect(text(tree)).toContain("Check which connections are available under Connected Tools.");
     expect(text(tree)).not.toContain("Connect Google Drive or OneDrive");
   });
 });

@@ -52,6 +52,8 @@ const labels = {
   "agents.read": "Read Bot Context",
   "agents.write": "Edit Drafts & Training",
   "demo.voice": "Private Rehearsals",
+  "calls.prepare": "Prepare Calls for Review",
+  "calls.read": "Read Prepared Call Status",
   "computer.plan": "Plan Computer Tasks",
 };
 beforeEach(() => {

@@ -47,7 +47,15 @@ The consent screen shows the connecting app name and the relying-party hostname.
 
 ## Tool contract
 
-Same ten tools as the ChatGPT App and Cursor plugin. Every tool has `title`, `readOnlyHint`, `destructiveHint`, and `openWorldHint`. Create, update, private text rehearsal, and Training writes require explicit confirmation. Training writes also require the Apps toggle. Private voice is tool-free. Workspace summary is aggregate only. Agent status never returns phone numbers.
+Same twelve tools as the ChatGPT App and Cursor plugin. Every tool has `title`, `readOnlyHint`, `destructiveHint`, and `openWorldHint`. Create, update, private text rehearsal, and Training writes require explicit confirmation. Training writes also require the Apps toggle. Private voice is tool-free. Workspace summary is aggregate only. Agent status never returns phone numbers.
+
+`prepare_call` (`calls.prepare`) saves a non-marketing service/callback proposal and returns
+a BotBound review link. `get_call_status` (`calls.read`) reconciles its placement
+receipt. Existing connections must explicitly authorize these new scopes. The user places the
+call from the authenticated browser review; preparing or reopening a link does not call anyone.
+The same workflow works in ChatGPT and Cursor without requiring widget support.
+See the call review contract in `docs/CHATGPT_APP.md` for activation, Illinois recipient
+permission scope, expiry, duplicate prevention, and acceptance-versus-outcome semantics.
 
 Prompts: `create_first_voice_agent`, `create_after_hours_receptionist`, `refine_draft_boundaries`, `inspect_workspace_status`, `rehearse_agent_reply`, `coach_agent_training`.
 

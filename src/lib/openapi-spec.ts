@@ -358,6 +358,12 @@ const OutboundDialRequest: JsonSchema = {
       description:
         "Recipient-signed permission matching the seller, Bot, number and purpose. A client checkbox or imported lead label is not permission evidence.",
     },
+    preparedRequestId: {
+      type: "string",
+      format: "uuid",
+      description:
+        "Optional UUIDv4 of an account owned call proposal. Must equal requestKey; the Bot, destination, instruction and purpose must exactly match the saved proposal.",
+    },
   },
   example: {
     agentId: "agt_123",

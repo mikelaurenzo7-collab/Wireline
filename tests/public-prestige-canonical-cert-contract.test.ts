@@ -13,9 +13,9 @@ describe("canonical BotBound public prestige certification", () => {
     const landingCss = read("src/styles/landing-prestige.css");
 
     expect(product).toContain('name: "BotBound"');
-    expect(product).toContain('slogan: "Your Next Hire Is a Bot"');
+    expect(product).toContain('slogan: "For You. For Your Business."');
     expect(product).toContain('supportingLine: "CALL · TEXT · EMAIL"');
-    expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
+    expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).not.toContain("<AuthAccessPanel");
     expect(landing).toContain('to={signupHrefForPlan("personal")}');

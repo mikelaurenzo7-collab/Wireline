@@ -5,7 +5,7 @@ export type BotProductTypeKey = "voice" | "conversation" | "human";
 
 export const BOT_BRAND = {
   name: "BotBound",
-  slogan: "Your Next Hire Is a Bot",
+  slogan: "For You. For Your Business.",
   supportingLine: "CALL · TEXT · EMAIL",
   promise: "Your Bot for calls, texts, and email.",
 } as const;
@@ -50,7 +50,7 @@ export const BOT_CHANNELS = [
     key: "text" as const,
     label: "Text",
     description:
-      "Continue the same conversation by SMS for follow-up, reminders, confirmations, and updates.",
+      "Continue the conversation by SMS after sender approval, with reminders, confirmations, and updates.",
   },
   {
     key: "email" as const,
@@ -79,12 +79,12 @@ export const BOT_ROLE_TEMPLATES = [
     name: "Sales Rep",
     category: "Operations" as const,
     direction: "hybrid" as const,
-    summary: "Set up lead follow-up playbooks and rehearse each next step.",
+    summary: "Prepare sales conversations and rehearse each next step.",
     outcomes: ["Qualify Leads", "Handle Objections", "Advance Deals"],
     moves: [
       "Instant lead response",
       "Fit + timing + objection handling",
-      "CRM handoff + next follow-up",
+      "CRM handoff + next steps",
     ],
   },
   {
@@ -92,11 +92,11 @@ export const BOT_ROLE_TEMPLATES = [
     name: "Appointment Setter",
     category: "Operations" as const,
     direction: "outbound" as const,
-    summary: "Set up appointment-setting playbooks for outreach and calendar handoffs.",
-    outcomes: ["Shape Outreach", "Confirm Interest", "Set Meetings"],
+    summary: "Coordinate appointments, confirm details, and keep calendars moving.",
+    outcomes: ["Coordinate Plans", "Confirm Details", "Set Meetings"],
     moves: [
-      "Outbound list + call windows",
-      "Interest + approved FAQ handling",
+      "Availability + call windows",
+      "Questions + appointment details",
       "Calendar booking + reminders",
     ],
   },
@@ -108,7 +108,7 @@ export const BOT_ROLE_TEMPLATES = [
     summary: "Resolve the repeatable work and make every escalation cleaner.",
     outcomes: ["Resolve Requests", "Collect Diagnostics", "Escalate With Context"],
     moves: [
-      "Knowledge-grounded answers",
+      "Answers from your knowledge",
       "Account + issue diagnostics",
       "Transcript + context escalation",
     ],
@@ -134,7 +134,7 @@ export const BOT_ROLE_TEMPLATES = [
     summary: "Move candidates from first contact to a scheduled interview faster.",
     outcomes: ["Screen Candidates", "Collect Availability", "Schedule Interviews"],
     moves: [
-      "Role-screening questions",
+      "Role screening questions",
       "Candidate FAQ + availability",
       "Interview booking + confirmations",
     ],
@@ -157,12 +157,12 @@ export const BOT_ROLE_TEMPLATES = [
     name: "Personal Assistant",
     category: "Everyday" as const,
     direction: "hybrid" as const,
-    summary: "Get the small coordination work out of your head and off your list.",
+    summary: "Handle calls, coordinate plans, and research the things on your list.",
     outcomes: ["Manage Schedule", "Research & Follow Up", "Coordinate Tasks"],
     moves: [
       "Calendar + reminder coordination",
       "Research + concise briefs",
-      "Routine email + text follow-through",
+      "Calls + email coordination",
     ],
   },
   {
@@ -171,11 +171,11 @@ export const BOT_ROLE_TEMPLATES = [
     category: "Everyday" as const,
     direction: "hybrid" as const,
     summary: "Handle the household logistics that usually live in someone’s memory.",
-    outcomes: ["Coordinate Plans", "Book Services", "Track Household Follow-Up"],
+    outcomes: ["Coordinate Plans", "Book Services", "Track Household Tasks"],
     moves: [
       "Appointments + reservations",
       "Recurring household reminders",
-      "Provider follow-up to closure",
+      "Service calls + next steps",
     ],
   },
   {
@@ -197,14 +197,11 @@ export const BOT_MARKETING_VOICE = {
   eyebrow: BOT_BRAND.supportingLine,
   headline: BOT_BRAND.slogan,
   subline: BOT_BRAND.promise,
-  activationLine:
-    "Start with calls, email, or both. Your Bot helps customers, reaches prospects, and tackles work from its own cloud computer.",
   primaryCta: "Start Free",
   spine: ["Call", "Text", "Email"],
 } as const;
 
 export const BOT_WORKSPACE_PROMISE = {
   title: "Your Bot. Already Moving",
-  description:
-    "Calls come in. Follow-ups go out. Context carries forward. You step in when you want to.",
+  description: "Calls, conversations, and tasks stay together. You step in when you want to.",
 } as const;

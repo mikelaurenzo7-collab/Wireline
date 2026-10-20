@@ -1,6 +1,7 @@
 import { OUTBOUND_CALL_PURPOSES } from "./outbound-call-purpose";
 import type { VoicePermissionSummary } from "./recipient-voice-permission-contract";
 import { authFetch } from "./api";
+import type { OutboundCallingAvailability } from "./outbound-call-purpose";
 
 export function isVoicePermissionSummary(value: unknown): value is VoicePermissionSummary {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
@@ -21,16 +22,29 @@ export function isVoicePermissionSummary(value: unknown): value is VoicePermissi
 export async function listVoicePermissions(
   signal?: AbortSignal,
 ): Promise<VoicePermissionSummary[]> {
+  return (await loadVoicePermissionWorkspace(signal)).permissions;
+}
+
+export async function loadVoicePermissionWorkspace(
+  signal?: AbortSignal,
+): Promise<{ permissions: VoicePermissionSummary[]; calling: OutboundCallingAvailability }> {
   const response = await authFetch("/api/voice-permissions", { signal });
   const body = (await response.json().catch(() => null)) as {
     permissions?: unknown;
     error?: string;
+    calling?: { general?: unknown; nonMarketing?: unknown };
   } | null;
   if (!response.ok) throw new Error(body?.error || "Could not load recipient permissions.");
   if (!Array.isArray(body?.permissions) || !body.permissions.every(isVoicePermissionSummary)) {
     throw new Error("Could not confirm recipient permissions. Refresh to try again.");
   }
-  return body.permissions;
+  return {
+    permissions: body.permissions,
+    calling: {
+      general: body.calling?.general === true,
+      nonMarketing: body.calling?.nonMarketing === true,
+    },
+  };
 }
 
 /** Capability links must stay on this application and out of query-string telemetry. */

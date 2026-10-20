@@ -60,11 +60,11 @@ export interface VerticalConfig {
 export const WEDGES: Record<VerticalKey, VerticalConfig> = {
   "home-services": {
     slug: "home-services",
-    metaTitle: "BotBound for Home Services | Phone Bots for Calls and Follow-Up",
+    metaTitle: "BotBound for Home Services | Phone Bots for Calls and Follow Up",
     metaDescription:
-      "A voice-first Bot for HVAC, plumbing, electrical, and roofing teams. Answer after-hours calls, book jobs, and follow up on open quotes.",
+      "A voice first Bot for HVAC, plumbing, electrical, and roofing teams. Answer after hours calls, book jobs, and follow up on open quotes.",
     eyebrow: "For Home Services Pros",
-    headline: "Turn After-Hours Calls into Scheduled Work",
+    headline: "Turn After Hours Calls into Scheduled Work",
     pains: [
       {
         icon: "Clock",
@@ -74,23 +74,23 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "Calendar",
         title: "Books to Your Calendar",
-        body: "Uses your Calendar hours and booking rules to offer available times, book the visit, or request your approval. Google and Outlook busy-time imports are optional.",
+        body: "Uses your Calendar hours and booking rules to offer available times, book the visit, or request your approval. Google and Outlook busy time imports are optional.",
       },
       {
         icon: "DollarSign",
-        title: "Quote Follow-Up",
+        title: "Quote Follow Up",
         body: "Use the original quote context to ask the next question, book a visit, and record the outcome.",
       },
       {
         icon: "Shield",
         title: "Outreach Controls",
-        body: "Choose who receives follow-up, the calling window, retry limits, and when your Bot should stop.",
+        body: "Choose who receives follow up, the calling window, retry limits, and when your Bot should stop.",
       },
     ],
     scriptPreview: `"Hey, this is Sarah from [Your Company]. Sounds like you have water coming through the ceiling. Let me get you on the schedule right now. Are you home in the next 90 minutes or would after 5 work better?"`,
     statValue: "24 / 7",
     statLabel:
-      "Built for the after-hours calls, urgent requests, and quote follow-ups your team chooses to route.",
+      "Built for the after hours calls, urgent requests, and quote follow ups your team chooses to route.",
     primaryCta: { label: "Create Home Services Bot", href: signupHrefForWedge("home-services") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
@@ -106,7 +106,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Can the Bot Actually Dispatch Me on an Emergency?",
-        a: "Configure on-call routing and approved urgency rules such as water, smoke, sparks, or no heat. The workflow can alert staff and offer available times from your configured Calendar; emergency dispatch, arrival promises, and direct field-service write-back stay with the tools and people you approve.",
+        a: "Configure on call routing and approved urgency rules such as water, smoke, sparks, or no heat. The workflow can alert staff and offer available times from your configured Calendar; emergency dispatch, arrival promises, and direct field service write back stay with the tools and people you approve.",
       },
       {
         q: "How Much Does It Cost Compared with an Answering Service?",
@@ -119,14 +119,14 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "medical",
     metaTitle: "BotBound for Medical Practices | Phone Bots for Intake and Scheduling",
     metaDescription:
-      "A voice-first Bot for dental, med spa, chiropractic, and primary care practices. Handle approved intake, book appointments, continue by text and email, and route exceptions.",
+      "A voice first Bot for dental, med spa, chiropractic, and primary care practices. Handle approved intake, book appointments, continue by text and email, and route exceptions.",
     eyebrow: "For Medical Practices",
     headline: "Patients on Hold Become Patients on the Schedule",
     pains: [
       {
         icon: "Phone",
         title: "No More Dropped Calls",
-        body: "Route overflow or after-hours calls to a Bot that gathers the visit reason, follows your urgency rules, and offers configured next steps.",
+        body: "Route overflow or after hours calls to a Bot that gathers the visit reason, follows your urgency rules, and offers configured next steps.",
       },
       {
         icon: "Calendar",
@@ -135,13 +135,13 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         icon: "MailCheck",
-        title: "Recall and Recare Follow-Up",
+        title: "Recall and Recare Follow Up",
         body: "Your Bot can contact approved recall lists, reference authorized visit context, and offer convenient appointment windows across voice, text, or email.",
       },
       {
         icon: "Shield",
-        title: "Compliance-Aware, Not Certified",
-        body: "Healthcare-sensitive intake controls include consent logging, opt-out enforcement, recording off by default, and configurable retention. Do not use BotBound for PHI unless a signed BAA and approved configuration are confirmed in writing.",
+        title: "Compliance Aware, Not Certified",
+        body: "Healthcare sensitive intake controls include consent logging, opt out enforcement, recording off by default, and configurable retention. Do not use BotBound for PHI unless a signed BAA and approved configuration are confirmed in writing.",
       },
     ],
     scriptPreview: `"Thanks for calling Dr. Chen's office. I can help schedule your visit. Was this for a cleaning, a specific concern, or something else? Got it. Our next opening for that is Thursday at 2:15 or Friday at 9. Which works?"`,
@@ -155,7 +155,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Is BotBound HIPAA Compliant?",
-        a: "No. BotBound offers healthcare-sensitive guardrails, but does not claim HIPAA compliance or certification. Do not use it for PHI unless BotBound confirms a signed BAA and approved configuration in writing.",
+        a: "No. BotBound offers healthcare sensitive guardrails, but does not claim HIPAA compliance or certification. Do not use it for PHI unless BotBound confirms a signed BAA and approved configuration in writing.",
       },
       {
         q: "Can the Bot Actually Book to My Existing Schedule?",
@@ -176,23 +176,23 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "legal",
     metaTitle: "BotBound for Law Firms | Phone Bots for Intake and Consult Routing",
     metaDescription:
-      "A voice-first Bot for law firms. Capture new matters, qualify urgency, schedule consults, continue by text and email, and route conflict checks for staff review.",
+      "A voice first Bot for law firms. Capture new matters, qualify urgency, schedule consults, continue by text and email, and route conflict checks for staff review.",
     eyebrow: "For Law Firms",
     headline: "Give Every Routed Intake a Clear Next Step",
     pains: [
       {
         icon: "Phone",
-        title: "Structured New-Matter Intake",
-        body: "Route overflow or after-hours calls to a Bot that captures matter type, urgency, contact details, and the next approved intake step.",
+        title: "Structured New Matter Intake",
+        body: "Route overflow or after hours calls to a Bot that captures matter type, urgency, contact details, and the next approved intake step.",
       },
       {
         icon: "MailCheck",
-        title: "Firm-Approved Intake Language",
+        title: "Firm Approved Intake Language",
         body: "Uses the disclaimer and intake language your firm approves. BotBound does not determine whether privilege exists and is configured not to provide legal advice.",
       },
       {
         icon: "Calendar",
-        title: "Conflict-Check Workflow",
+        title: "Conflict Check Workflow",
         body: "Captures prospective client and opposing party names, then routes the record for staff conflict review before any workflow you mark as requiring clearance.",
       },
       {
@@ -208,7 +208,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     primaryCta: { label: "Create Legal Intake Bot", href: signupHrefForWedge("legal") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
-      "Audit logs preserve configured disclosures and opt-outs. BotBound is the intake layer; your attorneys deliver the advice.",
+      "Audit logs preserve configured disclosures and opt outs. BotBound is the intake layer; your attorneys deliver the advice.",
     faqs: [
       {
         q: "Does the Bot Give Legal Advice?",
@@ -219,8 +219,8 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
         a: "The Bot captures the prospective client name, opposing party name, and matter type. It can route that record through connected Slack or your approved handoff path. Your firm remains responsible for running and clearing conflicts before engagement or scheduling when required.",
       },
       {
-        q: "What About Attorney-Client Privilege?",
-        a: "BotBound cannot determine whether attorney-client privilege applies. Your firm supplies the approved disclaimer, recording policy, retention settings, and staff access rules; configured disclosures are logged for review.",
+        q: "What About Attorney Client Privilege?",
+        a: "BotBound cannot determine whether attorney client privilege applies. Your firm supplies the approved disclaimer, recording policy, retention settings, and staff access rules; configured disclosures are logged for review.",
       },
       {
         q: "Can It Qualify by Case Type Before Booking?",
@@ -231,15 +231,15 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   "real-estate": {
     slug: "real-estate",
-    metaTitle: "BotBound for Real Estate | Phone Bots for Listing Calls and Follow-Up",
+    metaTitle: "BotBound for Real Estate | Phone Bots for Listing Calls and Follow Up",
     metaDescription:
-      "A voice-first Bot for real estate teams. Qualify buyers, book showings, and reconnect with older leads.",
+      "A voice first Bot for real estate teams. Qualify buyers, book showings, and reconnect with older leads.",
     eyebrow: "For Real Estate",
     headline: "Work More Listing Calls Without Losing Control",
     pains: [
       {
         icon: "Phone",
-        title: "Listing-Call Concierge",
+        title: "Listing Call Concierge",
         body: "When a sign call comes in, your Bot can capture timeline, budget, preapproval status, and representation, then alert the listing agent when the lead meets your rules.",
       },
       {
@@ -250,7 +250,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "Sparkles",
         title: "Lead Reactivation",
-        body: "Build follow-up playbooks for older leads from approved lists and source context, with clear next steps.",
+        body: "Build follow up playbooks for older leads from approved lists and source context, with clear next steps.",
       },
       {
         icon: "DollarSign",
@@ -261,7 +261,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     scriptPreview: `"Hi. You called about the listing at 1247 Maple. Great property. Quick question. Are you working with a buyer's agent already, or are we starting fresh? And ballpark, where do you need to be on price?"`,
     statValue: "Calendar Aware",
     statLabel:
-      "Qualified buyers can receive showing options from your configured Calendar; follow-up cadence and staff handoff remain configurable.",
+      "Qualified buyers can receive showing options from your configured Calendar; follow up cadence and staff handoff remain configurable.",
     primaryCta: { label: "Create Real Estate Bot", href: signupHrefForWedge("real-estate") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
@@ -277,7 +277,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How Does It Qualify the Buyer?",
-        a: "Configure the qualification fields your firm approves: preapproval status, timeline, price band, and whether the buyer is already represented. Matching callers can receive approved calendar options; text follow-up runs only through the cadence and consent rules you enable.",
+        a: "Configure the qualification fields your firm approves: preapproval status, timeline, price band, and whether the buyer is already represented. Matching callers can receive approved calendar options; text follow up runs only through the cadence and consent rules you enable.",
       },
       {
         q: "Can It Follow Up on Older Leads I Have Not Reached?",
@@ -288,16 +288,16 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   personal: {
     slug: "personal",
-    metaTitle: "BotBound for Everyone | Set Up a Phone Bot for Calls You Avoid",
+    metaTitle: "BotBound for You | Calls, Plans, and Everyday Tasks",
     metaDescription:
-      "Create a Phone Bot for appointments and customer-service calls. Give it a call brief, set limits, and rehearse before it acts.",
-    eyebrow: "For Everyone Who Hates the Phone",
-    headline: "Set Up a Bot for the Calls You Keep Avoiding",
+      "Create a Bot to coordinate appointments, handle calls, and work online for you. Set its knowledge and limits, then rehearse before it acts.",
+    eyebrow: "For You",
+    headline: "Put the Everyday Work on Your Bot",
     pains: [
       {
         icon: "Clock",
-        title: "Billing Calls",
-        body: "Prepare an approved offer, rehearse the conversation, and ask for any available terms in writing.",
+        title: "Calls and Messages",
+        body: "Answer calls on your own Bot line, take messages, and keep the next steps together.",
       },
       {
         icon: "Calendar",
@@ -306,17 +306,17 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         icon: "DollarSign",
-        title: "Returns & Disputes",
-        body: "Rehearse how your Bot should state the approved request, handle a hold, and report an escalation.",
+        title: "Research and Planning",
+        body: "Send your Bot online to compare options, read a policy, or find the details you need.",
       },
       {
         icon: "Shield",
-        title: "Phone Support",
-        body: "Set up authorized call instructions and review a private rehearsal. Not an emergency or certified accessibility service.",
+        title: "Work and Business",
+        body: "Use the same workspace for personal plans, client appointments, and your business front desk.",
       },
     ],
     scriptPreview:
-      "Hi, this is Alex calling on behalf of [Your Name] regarding account ending in 0000. [Your Name] authorized me to ask whether your team can consider a $1,200 one-time payment offer and send any available terms in writing. If that is not something you can review, who should I speak with?",
+      "Hi, this is Alex, an AI assistant calling for [Your Name] about the appointment you agreed to discuss. Is Thursday afternoon available, and is there anything they should bring?",
     statValue: "Yours",
     statLabel:
       "Set the brief, boundaries, and next step. Your Bot follows the instructions you approve.",
@@ -327,11 +327,11 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "How Do I Prepare a Call?",
-        a: "Give your Bot a call brief, choose whom to contact, set boundaries, and rehearse the conversation before activation. Rules vary by call type and location; use your own legal guidance.",
+        a: "Choose your Bot, enter the number and call instructions, and select the recipient's saved permission. Review the details before placing the call. Outbound service calls currently support Illinois callers and recipients. Marketing calls remain unavailable.",
       },
       {
-        q: "Can It Negotiate Debt?",
-        a: "You can rehearse an authorized offer and a request for written terms. Outcomes are not guaranteed; this is not legal or financial advice.",
+        q: "Can I Use the Same Bot for My Business?",
+        a: "Yes. The same plans and workspace support personal tasks and business work. Set the knowledge, permissions, and tools for each job.",
       },
       {
         q: "Can It Handle Phone Menus and Hold Time?",
@@ -343,7 +343,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "What Can't It Do?",
-        a: "Calls requiring identity verification beyond what you authorize, anything illegal or fraudulent, emergency-service calls, or work that legally requires appearing in person. Your Bot will tell you when a request is outside the supported scope.",
+        a: "Calls requiring identity verification beyond what you authorize, anything illegal or fraudulent, emergency calls, or work that legally requires appearing in person. Your Bot will tell you when a request is outside the supported scope.",
       },
     ],
   },
@@ -352,9 +352,9 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "insurance",
     metaTitle: "BotBound for Insurance Agencies | Phone Bots for Quote Intake and Renewals",
     metaDescription:
-      "A voice-first Bot for insurance agencies. Capture quote intake, first-notice-of-loss details, and renewal follow-up.",
+      "A voice first Bot for insurance agencies. Capture quote intake, first notice of loss details, and renewal follow up.",
     eyebrow: "For Insurance Agencies",
-    headline: "Keep Quote Intake and Renewal Follow-Up Moving",
+    headline: "Keep Quote Intake and Renewal Follow Up Moving",
     pains: [
       {
         icon: "Phone",
@@ -364,23 +364,23 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "Clock",
         title: "First Notice of Loss Capture",
-        body: "After-hours claim calls do not have to go to voicemail. The Bot captures approved loss fields and routes urgent or routine cases through the handoff paths you configure.",
+        body: "After hours claim calls do not have to go to voicemail. The Bot captures approved loss fields and routes urgent or routine cases through the handoff paths you configure.",
       },
       {
         icon: "MailCheck",
-        title: "Renewal Follow-Up",
-        body: "Set renewal dates, channels, scripts, and stop conditions so follow-up stays on schedule.",
+        title: "Renewal Follow Up",
+        body: "Set renewal dates, channels, scripts, and stop conditions so follow up stays on schedule.",
       },
       {
         icon: "Shield",
-        title: "Licensed-Decision Boundaries",
+        title: "Licensed Decision Boundaries",
         body: "Set boundaries for licensed decisions. The Bot collects details and routes coverage questions to your producer.",
       },
     ],
     scriptPreview: `"Hi, this is Alex with [Your Agency]. I see you requested an auto quote. I'd love to get you accurate numbers fast. Can you tell me the year, make, and model of your primary vehicle, and how many drivers we'll be covering?"`,
     statValue: "Configurable",
     statLabel:
-      "Renewal timing, channels, retry limits, opt-outs, and staff handoff stay under the agency's control.",
+      "Renewal timing, channels, retry limits, opt outs, and staff handoff stay under the agency's control.",
     primaryCta: { label: "Create Insurance Bot", href: signupHrefForWedge("insurance") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
@@ -388,7 +388,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Will the Bot Actually Bind a Policy?",
-        a: "No. Binding requires a licensed person. BotBound gathers the approved quote-intake fields and routes the record to your producer for review and any coverage decision.",
+        a: "No. Binding requires a licensed person. BotBound gathers the approved quote intake fields and routes the record to your producer for review and any coverage decision.",
       },
       {
         q: "Can It Handle Commercial Lines, Not Just Personal?",
@@ -396,11 +396,11 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "What About Claims?",
-        a: "First-notice-of-loss mode captures the structured fields your carrier workflow needs. Complex losses can transfer to your claims desk; routine ones can route a structured package and send an approved confirmation by text or email.",
+        a: "First notice of loss mode captures the structured fields your carrier workflow needs. Complex losses can transfer to your claims desk; routine ones can route a structured package and send an approved confirmation by text or email.",
       },
       {
         q: "How Does It Compare with a 24/7 Answering Service?",
-        a: "Compare BotBound on the complete intake, conversation, follow-up, and logged outcome, not only the per-call price. Paid plans include voice minutes, and prepaid Runtime Balance covers supported usage beyond the plan allowance.",
+        a: "Compare BotBound on the complete intake, conversation, follow up, and logged outcome, not only the per call price. Paid plans include voice minutes, and prepaid Runtime Balance covers supported usage beyond the plan allowance.",
       },
     ],
   },
@@ -409,7 +409,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "restaurants",
     metaTitle: "BotBound for Restaurants | Phone Bots for Reservations and Takeout",
     metaDescription:
-      "A voice-first Bot for restaurants. Take reservations, capture takeout requests, handle event inquiries, continue by text and email, and route exceptions to staff.",
+      "A voice first Bot for restaurants. Take reservations, capture takeout requests, handle event inquiries, continue by text and email, and route exceptions to staff.",
     eyebrow: "For Restaurants",
     headline: "The Phone Rings During Dinner Rush. The Bot Picks Up",
     pains: [
@@ -426,7 +426,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "Clock",
         title: "After Hours and Closed Days",
-        body: "Route catering and private-event inquiries to a structured intake, then notify the manager through the handoff path you configure.",
+        body: "Route catering and private event inquiries to a structured intake, then notify the manager through the handoff path you configure.",
       },
       {
         icon: "MailCheck",
@@ -437,11 +437,11 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     scriptPreview: `"Hi, thanks for calling [Your Restaurant]! Were you hoping to make a reservation, place an order to pick up, or ask about a private event? I can help with all three."`,
     statValue: "Saturday 7pm",
     statLabel:
-      "Built for the rush-hour calls your host cannot reach: reservations, structured takeout requests, and event inquiries.",
+      "Built for the rush hour calls your host cannot reach: reservations, structured takeout requests, and event inquiries.",
     primaryCta: { label: "Create Restaurant Bot", href: signupHrefForWedge("restaurants") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
-      "Callers hear the restaurant identity and the built-in OpenAI voice you choose; that speaker stays consistent for the full call.",
+      "Callers hear the restaurant identity and the built in OpenAI voice you choose; that speaker stays consistent for the full call.",
     faqs: [
       {
         q: "Will It Integrate with Resy, OpenTable, or Tock?",
@@ -449,30 +449,30 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Can It Handle Dietary Restrictions and Allergens Correctly?",
-        a: "The workflow can capture allergens as a structured field and flag them for staff confirmation. The Bot should not make medical or ingredient-safety promises; the restaurant remains responsible for review and the final response.",
+        a: "The workflow can capture allergens as a structured field and flag them for staff confirmation. The Bot should not make medical or ingredient safety promises; the restaurant remains responsible for review and the final response.",
       },
       {
-        q: "What About Private-Event Inquiries?",
+        q: "What About Private Event Inquiries?",
         a: "The Bot captures party size, date, food and beverage preferences, budget range, and contact information. When email routing is configured, it can send a structured request and offer approved tasting windows under the threshold rules you set.",
       },
       {
         q: "How Is This Different from Yelp or Google Booking Widgets?",
-        a: "Booking widgets cover web demand. BotBound adds a configurable Phone Bot for callers, larger-party questions, takeout requests, and private-event inquiries your web form may not resolve.",
+        a: "Booking widgets cover web demand. BotBound adds a configurable Phone Bot for callers, larger party questions, takeout requests, and private event inquiries your web form may not resolve.",
       },
     ],
   },
 
   sales: {
     slug: "sales",
-    metaTitle: "BotBound for Sales Teams | Phone Bots for Lead Follow-Up",
+    metaTitle: "BotBound for Sales Teams | Phone Bots for Lead Follow Up",
     metaDescription:
-      "Give a Sales Bot the playbook for speed-to-lead, quote follow-up, warm reactivation, and reviewable outcomes.",
+      "Give a Sales Bot the playbook for speed to lead, quote follow up, warm reactivation, and reviewable outcomes.",
     eyebrow: "For Sales Teams",
-    headline: "Set Up a Sales Bot for Lead Follow-Up",
+    headline: "Set Up a Sales Bot for Lead Follow Up",
     pains: [
       {
         icon: "Phone",
-        title: "Outbound Follow-Up",
+        title: "Outbound Follow Up",
         body: "Give your Bot a lead list, a call playbook, calling windows, and retry limits. Reviewable outcomes keep the next step clear.",
       },
       {
@@ -482,7 +482,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         icon: "Calendar",
-        title: "Calendar-Aware Booking",
+        title: "Calendar Aware Booking",
         body: "Uses your configured hours, timezone, buffers, and imported busy times to offer slots and record supported bookings.",
       },
       {
@@ -492,9 +492,9 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
     ],
     scriptPreview: `"Hi, this is Casey calling from [Your Company]. I saw you downloaded our [resource] last week. Got 2 minutes to see if what we do is even a fit before I book any of your team's time?"`,
-    statValue: "Fast Follow-Up",
+    statValue: "Fast Follow Up",
     statLabel:
-      "Give new requests and selected leads a clear next step, from the first call through booking and follow-up.",
+      "Give new requests and selected leads a clear next step, from the first call through booking and follow up.",
     primaryCta: { label: "Create Sales Bot", href: signupHrefForWedge("sales") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
@@ -514,7 +514,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How Is This Different from Apollo or Outreach AI Features?",
-        a: "Those products center on sales sequencing and enrichment. BotBound centers on voice conversations, call outcomes, and connected text and email follow-up when those channels are enabled.",
+        a: "Those products center on sales sequencing and enrichment. BotBound centers on voice conversations, call outcomes, and connected text and email follow up when those channels are enabled.",
       },
     ],
   },

@@ -232,11 +232,11 @@ describe("authenticated workspace design architecture", () => {
     expect(settingsTabs).toContain("WorkspaceControlBand");
   });
 
-  it("gives outbound dispatch an empty queue instead of a lone intake accordion", () => {
+  it("offers a call action and permission management in outbound dispatch", () => {
     const hub = read("src/components/outbound/OutboundHub.tsx");
-    expect(hub).toContain('title="No Calls Queued"');
-    expect(hub).toContain('label: "Find Leads"');
-    expect(hub).toContain('onViewChange("campaigns")');
+    expect(hub).toContain('title="Make a call"');
+    expect(hub).toContain('label: "New call"');
+    expect(hub).toContain("RecipientVoicePermissions");
     expect(hub).toContain("Lead Intake");
   });
 

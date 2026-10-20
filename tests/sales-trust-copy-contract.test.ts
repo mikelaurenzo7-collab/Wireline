@@ -63,10 +63,10 @@ describe("sales trust copy contract", () => {
     const sales = WEDGES.sales;
     const security = read("src/components/Security.tsx");
     const product = read("src/lib/bot-product.ts");
-    expect(sales.metaTitle).toBe("BotBound for Sales Teams | Phone Bots for Lead Follow-Up");
-    expect(sales.headline).toBe("Set Up a Sales Bot for Lead Follow-Up");
-    expect(sales.pains.map(({ title }) => title)).toContain("Outbound Follow-Up");
-    expect(sales.statValue).toBe("Fast Follow-Up");
+    expect(sales.metaTitle).toBe("BotBound for Sales Teams | Phone Bots for Lead Follow Up");
+    expect(sales.headline).toBe("Set Up a Sales Bot for Lead Follow Up");
+    expect(sales.pains.map(({ title }) => title)).toContain("Outbound Follow Up");
+    expect(sales.statValue).toBe("Fast Follow Up");
     expect(sales.trustLine).toContain("remain visible in BotBound");
     expect(JSON.stringify(sales)).not.toMatch(/consent|do not call|\bDNC\b|coming soon/i);
     expect(security).toContain(
@@ -92,8 +92,8 @@ describe("sales trust copy contract", () => {
   it("keeps the landing customer-facing without internal design meta", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     expect(landing).toContain("<span>With a Computer,</span>");
-    expect(landing).toContain("<span>and Branded Email.</span>");
-    expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
+    expect(landing).toContain("<span>and Email Address.</span>");
+    expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toMatch(/homepage now leads/i);
     expect(landing).not.toMatch(/live desk/i);
     expect(landing).not.toMatch(/Polish principles/i);
@@ -122,7 +122,7 @@ describe("sales trust copy contract", () => {
       expect(compare).toContain(url);
     }
     expect(compare.replace(/\s+/g, " ")).toContain(
-      "not a claim that unlike products are feature-for-feature equivalents",
+      "not a claim that unlike products are feature by feature equivalents",
     );
     expect(compare).toContain('signupHrefForPlan("personal")');
   });

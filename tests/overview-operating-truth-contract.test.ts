@@ -51,7 +51,7 @@ describe("Overview operating truth", () => {
   it("binds KPI tiles to exact operating metrics rather than sampled rows", () => {
     expect(overview).toContain("/api/overview/operating-metrics?since=");
     expect(overview).toContain('label: "Customer conversations today"');
-    expect(overview).toContain('label: "High-intent today"');
+    expect(overview).toContain('label: "High intent today"');
     expect(overview).toContain('label: "Appointments booked"');
     expect(overview).toContain('label: "Needs attention"');
     expect(overview).toContain("conversationsToday: Number(body?.conversationsToday ?? 0)");

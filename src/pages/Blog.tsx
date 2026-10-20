@@ -70,8 +70,8 @@ export default function Blog() {
   return (
     <MarketingPageFrame longform stickyCta>
       <PageMeta
-        title="BotBound Notes | Bot Guides for Small Business"
-        description="Practical guides for Bots: calling, appointment booking, live conversations, text and email follow-up, support queues, handoff boundaries, and getting routine communication work off your plate."
+        title="BotBound Notes | Guides for Your Life and Work"
+        description="Practical guides to calls, appointments, conversations, and computer tasks. Give your Bot a clear job and keep control of the outcome."
         path="/blog"
         structuredData={structuredData}
       />

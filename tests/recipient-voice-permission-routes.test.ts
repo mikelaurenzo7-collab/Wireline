@@ -96,6 +96,8 @@ function invoke(method: string, routePath: string, input: any = {}): Promise<any
 }
 
 beforeEach(() => {
+  vi.stubEnv("BOTBOUND_GENERAL_OUTBOUND_ENABLED", "false");
+  vi.stubEnv("BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED", "false");
   vi.stubEnv("APP_URL", "https://botbound.app");
   vi.stubEnv("NODE_ENV", "test");
   for (const name of [
@@ -154,6 +156,8 @@ describe("recipient voice permission HTTP boundaries", () => {
   it.each(["http://localhost:3000", "https://botbound-preview.example"])(
     "uses only configured canonical origin %s for sandbox links",
     async (origin) => {
+      vi.stubEnv("BOTBOUND_GENERAL_OUTBOUND_ENABLED", "false");
+      vi.stubEnv("BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED", "false");
       vi.stubEnv("APP_URL", origin);
       const response = await invoke("post", "/api/voice-permissions", {
         user: { id: "owner" },
@@ -177,6 +181,8 @@ describe("recipient voice permission HTTP boundaries", () => {
     "fails closed on noncanonical production origin %s before minting or retrieving a token",
     async (origin) => {
       vi.stubEnv("NODE_ENV", "production");
+      vi.stubEnv("BOTBOUND_GENERAL_OUTBOUND_ENABLED", "false");
+      vi.stubEnv("BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED", "false");
       vi.stubEnv("APP_URL", origin);
       const created = await invoke("post", "/api/voice-permissions", {
         user: { id: "owner" },
@@ -238,7 +244,7 @@ describe("recipient voice permission HTTP boundaries", () => {
   });
   it("returns only service-provided summaries on list and mints a link only on explicit owner action", async () => {
     expect((await invoke("get", "/api/voice-permissions", { user: { id: "owner" } })).body).toEqual(
-      { permissions: [summary] },
+      { permissions: [summary], calling: { general: false, nonMarketing: false } },
     );
     expect(h.link).not.toHaveBeenCalled();
     await invoke("post", "/api/voice-permissions/:id/link", { user: { id: "owner" } });

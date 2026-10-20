@@ -96,7 +96,7 @@ async function sellerIdentity(db: PermissionDb, userId: string, agentId: string)
     throw new AppError(
       409,
       "CALLER_IDENTITY_REQUIRED",
-      "Save your legal business name and Illinois operating address in Caller Identity before requesting permission.",
+      "Save your full name or legal business name and Illinois address in Caller Identity before requesting permission.",
       { settings_path: "/phone?tab=setup#company-identity" },
     );
   }

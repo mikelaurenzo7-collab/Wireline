@@ -151,7 +151,7 @@ describe("Claude Connector Directory contract", () => {
     expect(publicDocs).toContain('href="/contact">contact BotBound</a>');
     expect(publicDocs).not.toContain("mailto:support@trywireline.com");
     expect(privacy).toMatch(/<h2>Information Returned to the Connecting Client<\/h2>/i);
-    expect(privacy).toContain("The answer is not included in the model-visible conversation");
+    expect(privacy).toContain("The answer is not included in the model visible conversation");
     expect(privacy).toContain("no OpenAI credential is returned to the widget");
     expect(privacy).toContain("build their first Bot");
     expect(privacy).not.toMatch(/\bvoice agents?\b/i);

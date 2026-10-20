@@ -64,6 +64,8 @@ See `docs/AGENT_CUSTOMIZATION_ARCHITECTURE.md` for the client/domain boundary.
 
 | Tool | Scope | Effect |
 | --- | --- | --- |
+| `prepare_call` | `calls.prepare` | Saves an immutable, tenant-owned non-marketing service/callback proposal. Returns an authenticated review link; does not dispatch. |
+| `get_call_status` | `calls.read` | Reads that proposal's placement receipt without recipient details or transcripts. |
 | `create_agent_draft` | `agents.write` | Creates a confirmed, private, unlaunched draft. |
 | `get_agent_draft` | `agents.read` | Reads a private draft. |
 | `update_agent_draft` | `agents.write` | Applies a confirmed private customization update. |
@@ -84,6 +86,33 @@ See `docs/AGENT_CUSTOMIZATION_ARCHITECTURE.md` for the client/domain boundary.
 - No agent launch.
 - No autonomous external action from an intended-action field.
 - No repo-embedded voice SDK.
+
+### Call review
+
+Claude, ChatGPT, and Cursor use the same two call tools and the same browser review.
+Connect at `https://botbound.app/mcp`; grant `calls.prepare` and `calls.read` explicitly
+when requested. Existing grants and omitted-scope defaults do not gain these scopes.
+Use a personal or business Bot with a paid Calls plan and connected line.
+The legacy internal plan ID `personal` remains Free Builder, without live calls.
+
+`prepare_call` requires a request UUIDv4, Bot ID, E.164 US number, instruction,
+and `service_or_requested` or `callback` purpose. Retries reuse the UUID. Changed payloads
+under that UUID conflict. The proposal expires after 24 hours. Open the returned review URL,
+check the immutable details, choose the recipient's granted permission, and select **Place call**.
+Only the authenticated workspace route places the call; the MCP credential cannot approve it.
+It rechecks the saved payload and uses the existing durable outbound request, funding,
+recipient permission, quiet-hours, and carrier reconciliation path.
+
+Initial calling scope remains Illinois callers and recipients with captured permission.
+`BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED=true` enables this path independently of general
+outbound. Eligibility depends on the call's non-marketing purpose, not the Bot's audience.
+Marketing and campaigns remain under their existing separate gates. A client-selected
+purpose or existing-client label does not establish recipient permission.
+
+Use `get_call_status` to reconcile the same request. `accepted` means carrier
+acceptance, and `completed` means a terminal call receipt; neither proves that the requested
+appointment or other real-world task succeeded. Real OAuth and approved call evidence in
+each host is required before claiming end-to-end client certification.
 
 ## Required production environment variables
 

@@ -6,10 +6,12 @@ import WorkspaceShell from "../components/WorkspaceShell";
 import PhoneSetupPanel from "../components/PhoneSetupPanel";
 import PhoneCallHistoryPanel from "../components/PhoneCallHistoryPanel";
 import OutboundHub from "../components/outbound/OutboundHub";
+import PreparedCallReview from "../components/outbound/PreparedCallReview";
 import WorkspaceControlBand from "../components/layout/WorkspaceControlBand";
 import { WorkspaceOperateIntro, WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import { useAgents } from "../contexts/AgentsContext";
+import { useAuth } from "../contexts/AuthContext";
 import { useChannelEntitlements } from "../hooks/useChannelEntitlements";
 import ChannelAccessNotice from "../components/ChannelAccessNotice";
 import {
@@ -30,6 +32,7 @@ const PHONE_TABS = [
 const PHONE_TAB_ALIASES: Record<string, string> = { lines: "setup", history: "logs" };
 
 export default function PhonePage() {
+  const { user } = useAuth();
   const access = useChannelEntitlements();
   const [searchParams, setSearchParams] = useSearchParams();
   const {
@@ -161,6 +164,21 @@ export default function PhonePage() {
           }
         />
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+          {searchParams.get("callRequest") ? (
+            <PreparedCallReview
+              key={`${user?.id}:${searchParams.get("callRequest")}`}
+              requestKey={searchParams.get("callRequest")!}
+              onClose={() =>
+                setSearchParams(
+                  (previous) => {
+                    previous.delete("callRequest");
+                    return previous;
+                  },
+                  { replace: true },
+                )
+              }
+            />
+          ) : null}
           {scopeLoading ? (
             <div
               role="status"

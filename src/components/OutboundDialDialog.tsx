@@ -22,13 +22,14 @@ import {
   OUTBOUND_CONSENT_LEARN_MORE,
   OUTBOUND_CONSENT_LEGAL_PATH,
 } from "../lib/outbound-consent-copy";
-import {
-  DIRECT_OUTBOUND_AVAILABILITY,
-  type OutboundCallPurpose,
-} from "../lib/outbound-call-purpose";
+import type { OutboundCallPurpose } from "../lib/outbound-call-purpose";
 import { emitProductEvent } from "../lib/product-event-client";
-import PhoneTestDialog from "./PhoneTestDialog";
-import { listVoicePermissions } from "../lib/voice-permission-client";
+import { loadVoicePermissionWorkspace } from "../lib/voice-permission-client";
+import {
+  outboundCallingEnabledFor,
+  type OutboundCallingAvailability,
+} from "../lib/outbound-call-purpose";
+import type { PreparedCall } from "../lib/prepared-call-contract";
 import type { VoicePermissionSummary } from "../lib/recipient-voice-permission-contract";
 import {
   clearPendingOutboundDial,
@@ -44,62 +45,12 @@ type OutboundDialDialogProps = {
   initialAgentId?: string;
   initialNumber?: string;
   initialContext?: string;
+  preparedCall?: PreparedCall;
 };
 
 export default function OutboundDialDialog(props: OutboundDialDialogProps) {
-  const { agents, loading, degraded, phoneLookupDegraded } = useAgents();
   const { user } = useAuth();
-  const [selectedId, setSelectedId] = useState(props.initialAgentId || "");
-  useEffect(() => {
-    if (props.open) setSelectedId(props.initialAgentId || "");
-  }, [props.open, props.initialAgentId]);
-  const voiceAgents = agents.filter(
-    (agent) =>
-      agent.phone_number &&
-      (agent.channel === "voice" || agent.channel === "omnichannel" || !agent.channel),
-  );
-  const selected = voiceAgents.find((agent) => agent.id === selectedId) || voiceAgents[0];
-  if (DIRECT_OUTBOUND_AVAILABILITY.available && user)
-    return <DirectOutboundDialDialog key={user.id} {...props} userId={user.id} />;
-  if (selected && !loading && !degraded && !phoneLookupDegraded)
-    return (
-      <PhoneTestDialog
-        open={props.open}
-        onClose={props.onClose}
-        agentId={selected.id}
-        agentName={selected.name}
-        agents={voiceAgents}
-        onAgentChange={setSelectedId}
-      />
-    );
-  return (
-    <Dialog
-      open={props.open}
-      onOpenChange={(open) => {
-        if (!open) props.onClose();
-      }}
-    >
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Phone test</DialogTitle>
-          <DialogDescription>
-            {loading
-              ? "Loading your Bots…"
-              : degraded || phoneLookupDegraded
-                ? "Could not load your phone lines. Close this window and try again."
-                : "Connect a phone number to try your Bot on your own phone."}
-          </DialogDescription>
-        </DialogHeader>
-        {!loading && !degraded && !phoneLookupDegraded ? (
-          <Button asChild>
-            <Link to="/phone?tab=setup" onClick={props.onClose}>
-              Connect a number
-            </Link>
-          </Button>
-        ) : null}
-      </DialogContent>
-    </Dialog>
-  );
+  return user ? <DirectOutboundDialDialog key={user.id} {...props} userId={user.id} /> : null;
 }
 
 function DirectOutboundDialDialog({
@@ -108,6 +59,7 @@ function DirectOutboundDialDialog({
   initialAgentId = "",
   initialNumber = "",
   initialContext = "",
+  preparedCall,
   userId,
 }: OutboundDialDialogProps & { userId: string }) {
   const { agents, loading, degraded, phoneLookupDegraded } = useAgents();
@@ -125,7 +77,13 @@ function DirectOutboundDialDialog({
   const [agentId, setAgentId] = useState(initialAgentId);
   const [number, setNumber] = useState(initialNumber);
   const [context, setContext] = useState(initialContext);
-  const [callPurpose, setCallPurpose] = useState<OutboundCallPurpose>("service_or_requested");
+  const [callPurpose, setCallPurpose] = useState<OutboundCallPurpose>(
+    preparedCall?.call_purpose ?? "service_or_requested",
+  );
+  const [calling, setCalling] = useState<OutboundCallingAvailability>({
+    general: false,
+    nonMarketing: false,
+  });
   const [consentConfirmed, setConsentConfirmed] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [permissions, setPermissions] = useState<VoicePermissionSummary[]>([]);
@@ -168,12 +126,12 @@ function DirectOutboundDialDialog({
     setAgentId(initialAgentId);
     setNumber(initialNumber);
     setContext(initialContext);
-    setCallPurpose("service_or_requested");
+    setCallPurpose(preparedCall?.call_purpose ?? "service_or_requested");
     setConsentConfirmed(false);
     setConsentArtifactId("");
     setUncertain(false);
     requestRef.current = null;
-  }, [open, initialAgentId, initialNumber, initialContext]);
+  }, [open, initialAgentId, initialNumber, initialContext, preparedCall]);
 
   const refreshCallStatus = useCallback(
     async (signal?: AbortSignal) => {
@@ -261,9 +219,12 @@ function DirectOutboundDialDialog({
     setPermissionsLoading(true);
     setPermissionsError("");
     setPermissions([]);
-    void listVoicePermissions(controller.signal)
-      .then((rows) => {
-        if (!controller.signal.aborted) setPermissions(rows);
+    void loadVoicePermissionWorkspace(controller.signal)
+      .then((workspace) => {
+        if (!controller.signal.aborted) {
+          setPermissions(workspace.permissions);
+          setCalling(workspace.calling);
+        }
       })
       .catch((failure) => {
         if (!controller.signal.aborted) {
@@ -287,15 +248,21 @@ function DirectOutboundDialDialog({
   // exists in the roster (agent deleted or lost its phone line on a background
   // refresh) so placeCall can't submit a stale id the <select> no longer shows.
   useEffect(() => {
-    if (!open || placing || uncertain || voiceAgents.length === 0) return;
+    if (!open || placing || uncertain || preparedCall || voiceAgents.length === 0) return;
     if (agentId && voiceAgents.some((agent) => agent.id === agentId)) return;
     const fallback =
       (initialAgentId && voiceAgents.some((agent) => agent.id === initialAgentId)
         ? initialAgentId
         : voiceAgents[0]?.id) || "";
     if (fallback && fallback !== agentId) setAgentId(fallback);
-  }, [open, agentId, initialAgentId, voiceAgents, placing, uncertain]);
+  }, [open, agentId, initialAgentId, voiceAgents, placing, uncertain, preparedCall]);
 
+  const selectedAgent = voiceAgents.find((agent) => agent.id === agentId);
+  const callingEnabled = !!selectedAgent && outboundCallingEnabledFor(callPurpose, calling);
+  useEffect(() => {
+    if (!calling.general && callPurpose === "marketing_or_sales")
+      setCallPurpose("service_or_requested");
+  }, [calling.general, callPurpose]);
   const availablePermissions = permissions.filter(
     (permission) =>
       permission.status === "granted" &&
@@ -308,6 +275,8 @@ function DirectOutboundDialDialog({
     !recoveryError &&
     !permissionsLoading &&
     !permissionsError &&
+    callingEnabled &&
+    (!preparedCall || Date.parse(preparedCall.expires_at) > Date.now()) &&
     !!agentId &&
     availablePermissions.some((permission) => permission.id === consentArtifactId) &&
     number.trim().length > 0 &&
@@ -330,7 +299,7 @@ function DirectOutboundDialDialog({
       };
       const fingerprint = JSON.stringify(payload);
       if (requestRef.current?.fingerprint !== fingerprint) {
-        requestRef.current = { fingerprint, key: crypto.randomUUID() };
+        requestRef.current = { fingerprint, key: preparedCall?.request_key ?? crypto.randomUUID() };
       }
       // Persist the operation before dispatch so close/reopen/reload cannot silently redial.
       // No recipient or instruction data is stored in the browser.
@@ -343,6 +312,7 @@ function DirectOutboundDialDialog({
         body: JSON.stringify({
           ...payload,
           requestKey: requestRef.current.key,
+          ...(preparedCall ? { preparedRequestId: preparedCall.request_key } : {}),
         }),
       });
       const body = (await response.json()) as {
@@ -376,8 +346,8 @@ function DirectOutboundDialDialog({
       }
       toast({
         type: "success",
-        title: "Call Started",
-        message: "Your Bot is dialing now.",
+        title: "Call requested",
+        message: "The carrier accepted the call. Follow its progress in History.",
       });
       emitProductEvent({
         event: "outbound_call_started",
@@ -449,10 +419,10 @@ function DirectOutboundDialDialog({
         <DialogHeader className="shrink-0 border-b border-border px-6 py-5">
           <DialogTitle className="flex items-center gap-2 font-[var(--wireline-font-family-display)] text-xl font-normal tracking-[-0.02em]">
             <Phone className="h-4 w-4 text-primary" aria-hidden />
-            New Outbound Call
+            {preparedCall ? "Review call" : "New call"}
           </DialogTitle>
-          <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
-            Pick a Bot with a phone number and choose who to call.
+          <DialogDescription className="sr-only">
+            Review the Bot, recipient, and task before placing a call.
           </DialogDescription>
         </DialogHeader>
 
@@ -491,7 +461,7 @@ function DirectOutboundDialDialog({
                 <select
                   className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                   value={agentId}
-                  disabled={placing || uncertain}
+                  disabled={placing || uncertain || !!preparedCall}
                   onChange={(event) => setAgentId(event.target.value)}
                 >
                   {voiceAgents.map((agent) => (
@@ -511,7 +481,7 @@ function DirectOutboundDialDialog({
                   placeholder="+1 (415) 555-0142"
                   className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                   value={number}
-                  disabled={placing || uncertain}
+                  disabled={placing || uncertain || !!preparedCall}
                   onChange={(event) => setNumber(event.target.value)}
                 />
               </label>
@@ -524,7 +494,7 @@ function DirectOutboundDialDialog({
                   rows={3}
                   className="min-h-[88px] w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                   value={context}
-                  disabled={placing || uncertain}
+                  disabled={placing || uncertain || !!preparedCall}
                   onChange={(event) => setContext(event.target.value)}
                   placeholder="What should the Bot accomplish on this call?"
                 />
@@ -535,15 +505,17 @@ function DirectOutboundDialDialog({
                 <select
                   className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                   value={callPurpose}
-                  disabled={placing || uncertain}
+                  disabled={placing || uncertain || !!preparedCall}
                   onChange={(event) => {
                     setCallPurpose(event.target.value as OutboundCallPurpose);
                     setConsentConfirmed(false);
                   }}
                 >
-                  <option value="service_or_requested">Service or requested call</option>
+                  <option value="service_or_requested">Service or coordination</option>
                   <option value="callback">Callback</option>
-                  <option value="marketing_or_sales">Marketing or sales</option>
+                  {calling.general && !preparedCall ? (
+                    <option value="marketing_or_sales">Marketing or sales</option>
+                  ) : null}
                 </select>
               </label>
 
@@ -570,6 +542,16 @@ function DirectOutboundDialDialog({
               {permissionsError ? (
                 <p role="alert" className="text-sm text-destructive">
                   {permissionsError}
+                </p>
+              ) : null}
+              {!permissionsLoading && !permissionsError && !callingEnabled ? (
+                <p role="status" className="text-sm text-muted-foreground">
+                  Calling is temporarily unavailable for this Bot.
+                </p>
+              ) : null}
+              {preparedCall && Date.parse(preparedCall.expires_at) <= Date.now() ? (
+                <p role="alert" className="text-sm text-destructive">
+                  This proposal expired. Prepare a new call from your connected app.
                 </p>
               ) : null}
               <Link

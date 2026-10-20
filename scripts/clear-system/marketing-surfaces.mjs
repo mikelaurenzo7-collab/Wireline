@@ -79,17 +79,13 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
     ],
     [/to="\/signin"/, "root landing must keep sign-in one action away"],
     [
-      /<span>Voice Bots<\/span>\s*<span>With a Computer,<\/span>[\s\S]*<span>Phone Number,<\/span>\s*<span>and Branded Email\.<\/span>/,
+      /<span>Voice Bots<\/span>\s*<span>With a Computer,<\/span>[\s\S]*<span>Phone Number,<\/span>\s*<span>and Email Address\.<\/span>/,
       "root landing must make the computer, phone number, and email offer explicit",
     ],
     [/<PrecisionPublicHeader \/>/, "root landing must share the public header"],
-    [
-      /BOT_MARKETING_VOICE\.activationLine/,
-      "root landing must source the concise activation promise",
-    ],
-    [/landing-prestige__directions/, "hero must expose inbound and outbound starting paths"],
-    [/Call\. Book\./, "hero must retain the outbound activation path"],
-    [/Answer\. Act\./, "hero must retain the inbound activation path"],
+    [/landing-prestige__directions/, "hero must expose personal and business starting paths"],
+    [/Plan\. Coordinate\./, "hero must retain the personal assistant path"],
+    [/Answer\. Book\./, "hero must retain the front desk path"],
     [/FEATURED_TEMPLATE_KEYS/, "landing must curate role starters"],
     [/template\.moves\.map/, "role starters must show playbook moves"],
     [/id="pricing"/, "landing must preserve direct pricing"],
@@ -98,6 +94,12 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
     [/<LandingFooter\s*\/>/, "desktop landing must retain wayfinding"],
   ])
     mustInclude("src/components/marketing/WireAgentLanding.tsx", landing, pattern, description);
+  mustExclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    landing,
+    /BOT_MARKETING_VOICE\.activationLine|landing-prestige__promise/,
+    "root landing must keep the hero free of a redundant subhero paragraph",
+  );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
     executable(landing),

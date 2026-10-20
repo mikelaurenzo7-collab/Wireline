@@ -8,7 +8,7 @@ export default function SmsConsentPage() {
     <MarketingChrome>
       <PageMeta
         title="SMS Consent | BotBound"
-        description="BotBound customer-care SMS: verbal opt-in script, message examples, and opt-out instructions."
+        description="BotBound customer care SMS: permission script, message examples, and instructions to stop messages."
         path="/sms-consent"
       />
       <article className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-6 sm:py-14">
@@ -17,12 +17,12 @@ export default function SmsConsentPage() {
           Permission before a text.
         </h1>
         <p className="text-base leading-7 text-muted-foreground">
-          BotBound uses its own customer-service number for information and support requested during
+          BotBound uses its own customer service number for information and support requested during
           a conversation. This program does not include cold outreach, purchased lists, or marketing
           campaigns.
         </p>
         <p className="mt-4 rounded-md border border-border bg-muted/30 p-4 text-sm leading-6">
-          SMS activation is pending carrier verification. This page documents the opt-in flow
+          SMS activation is pending carrier verification. This page documents the opt in flow
           required for activation; it does not collect consent or show that any person has already
           agreed to receive messages.
         </p>
@@ -44,7 +44,7 @@ export default function SmsConsentPage() {
           </blockquote>
           <p className="leading-7 text-muted-foreground">
             A clear affirmative reply is required. A refusal, silence, or an unclear answer means no
-            text is sent. Permission applies to the requested customer-care follow-up, not unrelated
+            text is sent. Permission applies to the requested customer care follow up, not unrelated
             offers or messages from other businesses.
           </p>
         </section>
@@ -75,7 +75,7 @@ export default function SmsConsentPage() {
             and are not liable for delayed or undelivered messages.
           </p>
           <p className="leading-7 text-muted-foreground">
-            Mobile contact information and SMS opt-in records are not sold or shared with third
+            Mobile contact information and SMS opt in records are not sold or shared with third
             parties for their marketing.
           </p>
         </section>
@@ -87,13 +87,13 @@ export default function SmsConsentPage() {
           <p className="leading-7 text-muted-foreground">
             The sender must be verified and the Bot must use this permission flow. Each recipient’s
             affirmative response must be retained with the destination, time, sender, and
-            conversation reference before sending. Opt-out records must be checked on subsequent
+            conversation reference before sending. Opt out records must be checked on subsequent
             sends. This public script is documentation, not a substitute for those individual
             records.
           </p>
           <p className="leading-7 text-muted-foreground">
             Businesses using BotBound need their own sender verification, business identity, and
-            recipient permissions. This page covers BotBound’s own customer-care program.
+            recipient permissions. This page covers BotBound’s own customer care program.
           </p>
         </section>
 

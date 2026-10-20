@@ -96,9 +96,10 @@ describe("marketing signup continuity", () => {
     const renderedText = elements(page)
       .map((element) => text(element.props.children))
       .join(" ");
-    expect(renderedText).toContain("Answer. Act.");
-    expect(renderedText).toContain("Outbound");
-    expect(renderedText).toContain("Call. Book.");
+    expect(renderedText).toContain("For You");
+    expect(renderedText).toContain("Plan. Coordinate.");
+    expect(renderedText).toContain("For Your Business");
+    expect(renderedText).toContain("Answer. Book.");
     expect(renderedText).not.toContain("server-verifiable consent records");
     expect(renderedText).not.toContain("Federal Do Not Call screening");
     expect(renderedText).not.toMatch(/outbound calls are not available yet|coming soon/i);
@@ -117,7 +118,7 @@ describe("marketing signup continuity", () => {
       .join(" ");
     if (wedge === "sales") {
       expect(renderedText).toContain("Outbound");
-      expect(renderedText).toContain("Set Up a Sales Bot for Lead Follow-Up");
+      expect(renderedText).toContain("Set Up a Sales Bot for Lead Follow Up");
       expect(renderedText).toContain("Call. Book. Follow Up.");
       expect(renderedText).not.toMatch(
         /server-verifiable consent records|Federal Do Not Call screening|not available yet|coming soon/i,

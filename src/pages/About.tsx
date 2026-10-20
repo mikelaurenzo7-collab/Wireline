@@ -18,7 +18,7 @@ const POSITIONS = [
   },
   {
     heading: "Under Your Control",
-    copy: "Calling-hour rules, Do Not Call checks, opt-outs, approvals, and escalation boundaries are enforced in the runtime before execution.",
+    copy: "Call hours, Do Not Call checks, contact preferences, approvals, and escalation boundaries are enforced before your Bot acts.",
   },
   {
     heading: "Visible Outcomes",
@@ -37,8 +37,8 @@ export default function About() {
   return (
     <MarketingPageFrame className="wl-about-page">
       <PageMeta
-        title="About BotBound | Bots for Calls and Follow-Through"
-        description="BotBound is an independent platform for voice Bots, cloud browser tasks, and plan-based email. Set your knowledge and rules, review outcomes, and reach the founder directly for support."
+        title="About BotBound | A Bot for Your Life and Work"
+        description="BotBound is an independent platform for calls, email, and cloud browser tasks. Set your knowledge and rules, review outcomes, and reach the founder directly for support."
         path="/about"
       />
 

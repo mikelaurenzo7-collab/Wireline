@@ -72,7 +72,7 @@ export default function WorkspaceBrandEditor({
             <Input
               id={nameId}
               type="text"
-              placeholder="Your business name"
+              placeholder="Your name or business"
               className="app-input-soft h-auto py-3"
               value={settings.brand_name}
               onChange={(event) => onUpdate({ ...settings, brand_name: event.target.value })}

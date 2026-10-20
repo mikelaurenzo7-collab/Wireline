@@ -626,7 +626,7 @@ function PlanPicker({
                     <Loader2 className="size-4 animate-spin" /> Opening checkout
                   </>
                 ) : smsPending ? (
-                  "SMS setup unavailable"
+                  "Sender Approval Required"
                 ) : canSubscribe ? (
                   "Continue to Checkout"
                 ) : (
@@ -635,7 +635,10 @@ function PlanPicker({
               </ShadButton>
               {smsPending ? (
                 <p role="status" className="text-sm text-muted-foreground">
-                  SMS setup is not available yet. Choose Calls or Email to activate without SMS.
+                  SMS needs an approved sender.{" "}
+                  <Link to="/contact?topic=sms" className="underline underline-offset-4">
+                    Set up texting
+                  </Link>
                 </p>
               ) : null}
             </div>

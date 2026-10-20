@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 443
-**Protected:** 357
+**Routes scanned:** 444
+**Protected:** 358
 **Public (allowlisted):** 86
 **Violations:** 0
 
@@ -440,6 +440,7 @@
 | outbound-dial-atomic-routes.ts | POST | `/api/outbound/dial` | inline | — | — | Protected |
 | outbound-dial-atomic-routes.ts | GET | `/api/outbound/dial/:requestKey` | inline | — | — | Protected |
 | outbound-dial-atomic-routes.ts | POST | `/api/outbound/dial/:requestKey/cancel-missing` | inline | — | — | Protected |
+| outbound-dial-atomic-routes.ts | GET | `/api/outbound/prepared/:requestKey` | inline | — | — | Protected |
 | outbound-routes.ts | GET | `/api/callbacks` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/lead-hunt/approve` | inline | — | — | Protected |
 | outbound-routes.ts | GET | `/api/lead-hunt/leads` | inline | — | — | Protected |

@@ -25,6 +25,12 @@ import {
 } from "../lib/voice/openai-outbound-placement";
 import { inspectOutboundRecipientPermission } from "../lib/recipient-voice-permission-store";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
+import { callRequestKeySchema } from "../lib/prepared-call-contract";
+import {
+  assertPreparedCallMatches,
+  readPreparedCall,
+  preparedCallStatus,
+} from "../lib/prepared-call";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -43,8 +49,9 @@ const dialSchema = z.object({
   customerName: z.string().max(200).optional(),
   context: z.string().max(2000).optional(),
   callPurpose: z.enum(OUTBOUND_CALL_PURPOSES),
-  requestKey: z.string().uuid(),
+  requestKey: callRequestKeySchema,
   consentArtifactId: z.string().uuid().optional(),
+  preparedRequestId: callRequestKeySchema.optional(),
   hasExpressWrittenConsent: z.boolean().optional().default(false),
   consentSource: z.enum(["web_form", "lead_import", "crm", "manual_attestation"]).optional(),
   consentLeadId: z.string().max(200).optional(),
@@ -127,6 +134,17 @@ function isAmbiguousProviderResult(result: Awaited<ReturnType<typeof placeOutbou
 }
 
 router.get(
+  "/api/outbound/prepared/:requestKey",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    res.set("Cache-Control", "private, no-store");
+    const prepared = await readPreparedCall(req.user.id, req.params.requestKey);
+    const status = await preparedCallStatus(req.user.id, req.params.requestKey);
+    res.json({ prepared, status });
+  },
+);
+
+router.get(
   "/api/outbound/dial/:requestKey",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -157,6 +175,7 @@ router.post(
       consentLeadId,
       requestKey,
       consentArtifactId,
+      preparedRequestId,
     } = req.body;
     const normalized = normalizeOutboundNumber(customerNumber);
     const digits = normalized.replace(/\D/g, "");
@@ -168,6 +187,21 @@ router.post(
       });
     }
 
+    const prepared = preparedRequestId
+      ? await assertPreparedCallMatches(
+          {
+            userId: req.user.id,
+            preparedRequestId,
+            requestKey,
+            agentId,
+            customerNumber: phoneE164,
+            customerName,
+            context,
+            callPurpose,
+          },
+          { allowExpiredReceipt: true },
+        )
+      : null;
     const replay = await readNativeOutboundRequestReplay({
       userId: req.user.id,
       requestKey,
@@ -179,6 +213,10 @@ router.post(
       consentArtifactId,
     });
     if (replay) return res.status(replay.status).json({ ...replay, operationId: requestKey });
+    if (prepared && Date.parse(prepared.expires_at) <= Date.now())
+      throw AppError.conflict(
+        "This call proposal expired. Prepare a new call before reviewing it.",
+      );
     const permission = await inspectOutboundRecipientPermission({
       userId: req.user.id,
       agentId,
@@ -190,7 +228,8 @@ router.post(
     const effectiveCallPurpose = permission.effectiveCallPurpose;
     const marketing = isMarketingCallPurpose(effectiveCallPurpose);
     const expressConsent = marketing;
-    const operationKey = requestKey.toLowerCase();
+    // This column is globally unique. Client request keys are only unique per account.
+    const operationKey = `${req.user.id}:${requestKey.toLowerCase()}`;
     let providerCallId: string | null = null;
     let nativeLeadId: string | null = null;
     try {
@@ -277,7 +316,7 @@ router.post(
             code: "DIAL_STATUS_UNCERTAIN",
             error:
               "The carrier response was interrupted. BotBound is holding this number to prevent a duplicate call; check Phone before trying again.",
-            operationId: operationKey,
+            operationId: requestKey,
             doNotRetry: true,
             leadId: nativeLeadId,
           });
@@ -322,7 +361,7 @@ router.post(
         success: true,
         callId: providerCallId,
         leadId: nativeLeadId,
-        operationId: operationKey,
+        operationId: requestKey,
       });
     } catch (error) {
       if (providerCallId || nativeLeadId) {
@@ -342,7 +381,7 @@ router.post(
           code: "DIAL_ACCEPTED_RECONCILING",
           callId: providerCallId,
           leadId: nativeLeadId,
-          operationId: operationKey,
+          operationId: requestKey,
           doNotRetry: true,
           warning:
             "The call is being reconciled. BotBound is holding this number; do not retry it.",

@@ -1,4 +1,3 @@
-import { DIRECT_OUTBOUND_AVAILABILITY } from "../lib/outbound-call-purpose";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
@@ -103,6 +102,7 @@ export function readableCallSummary(
 }
 
 export default function CallLogsClaude({ agentId }: { agentId?: string | null }) {
+  const callLabel = "New call";
   const [calls, setCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -287,7 +287,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
           withHalo={false}
           action={
             <Button type="button" size="sm" onClick={() => setShowOutboundDial(true)}>
-              {DIRECT_OUTBOUND_AVAILABILITY.available ? "Dial" : "Call my phone"}
+              {callLabel}
             </Button>
           }
         />
@@ -479,7 +479,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
           ) : null}
           <Button type="button" size="sm" onClick={() => setShowOutboundDial(true)}>
             <Phone className="size-4" aria-hidden="true" />
-            {DIRECT_OUTBOUND_AVAILABILITY.available ? "Dial" : "Call my phone"}
+            {callLabel}
           </Button>
         </div>
       </div>

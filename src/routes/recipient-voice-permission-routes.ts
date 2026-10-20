@@ -6,6 +6,7 @@ import { validate } from "../middleware/input-validation";
 import { getCanonicalAppUrl } from "../lib/app-url";
 import { AppError } from "../lib/api-error";
 import { OUTBOUND_CALL_PURPOSES } from "../lib/outbound-call-purpose";
+import { outboundCallingAvailability } from "../lib/outbound-call-purpose";
 import {
   createRecipientVoicePermission,
   grantRecipientVoicePermission,
@@ -137,7 +138,10 @@ router.get(
   authenticateUser,
   ownerLimit,
   async (req: AuthenticatedRequest, res) => {
-    res.json({ permissions: await listRecipientVoicePermissions(req.user.id) });
+    res.json({
+      permissions: await listRecipientVoicePermissions(req.user.id),
+      calling: outboundCallingAvailability(),
+    });
   },
 );
 

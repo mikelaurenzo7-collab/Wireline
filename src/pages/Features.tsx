@@ -29,8 +29,8 @@ const PILLARS: readonly Pillar[] = [
     icon: Phone,
     label: "Phone Number",
     title: "Answers and Makes Calls",
-    body: "Give your Bot a local number and a clear playbook for inbound calls and outbound follow-up. It qualifies conversations, books next steps, and records outcomes.",
-    note: "Outbound calling is in early access.",
+    body: "Your Bot answers calls, coordinates appointments, and follows up for you or your business. Each call leaves a record of what happened.",
+    note: "Outbound service calls require recipient permission and currently support Illinois callers and recipients. Marketing calls remain unavailable.",
   },
   {
     icon: MonitorSmartphone,
@@ -41,17 +41,18 @@ const PILLARS: readonly Pillar[] = [
   },
   {
     icon: Mail,
-    label: "Branded Email",
+    label: "Email Address",
     title: "Follows Up in Writing",
-    body: "A managed inbox for your Bot, or your own domain with guided setup. It sends the recap, answers replies, and keeps the thread tied to the same customer.",
+    body: "A managed inbox for your Bot, or your own domain with guided setup. It sends recaps, answers replies, and keeps each conversation together.",
+    note: "Email activation requires a setup review.",
   },
 ];
 
 const CAPABILITIES: readonly { icon: LucideIcon; title: string; body: string }[] = [
   {
     icon: Sparkles,
-    title: "Trained on Your Business",
-    body: "Facts, sources, policies, voice, and tone. Your Bot answers the way your best person would.",
+    title: "Made Yours",
+    body: "Your knowledge, preferences, voice, and rules shape how your Bot works.",
   },
   {
     icon: CalendarCheck,
@@ -90,7 +91,7 @@ export default function Features() {
     >
       <PageMeta
         title="Features | BotBound"
-        description="Build a voice Bot for inbound and outbound calls, give it business knowledge and rules, and assign cloud browser tasks from the workspace."
+        description="Build a Bot for your life or your business. Answer calls, coordinate plans, manage email, and assign tasks to its cloud computer."
         path="/features"
       />
 
@@ -99,12 +100,11 @@ export default function Features() {
           <header className="wl-features-intro text-center">
             <p className="wl-eyebrow text-primary">Features</p>
             <h1 className="marketing-hero-title mx-auto mt-4 text-[clamp(1.9rem,3.4vw,2.9rem)]">
-              Inbound &amp; Outbound Bots
+              A Bot for Your Life and Work
             </h1>
             <p className="wl-features-intro__lead mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
-              Create a Bot for free, then rehearse privately. Paid plans add the channels you choose
-              (a local number, a branded inbox, or both) plus a cloud computer, trained on your
-              business and governed by your rules.
+              Create your Bot free. Add a phone number, email address, and cloud computer with the
+              plan that fits your needs.
             </p>
             <div className="marketing-hero__actions">
               <Link
@@ -137,7 +137,7 @@ export default function Features() {
           </ul>
 
           <h2 id="features-list-title" className="wl-features-controls">
-            Built Around Your Business
+            Built Around You
           </h2>
           <ul aria-labelledby="features-list-title" className="wl-features-grid text-left">
             {CAPABILITIES.map(({ icon: Icon, title, body }) => (

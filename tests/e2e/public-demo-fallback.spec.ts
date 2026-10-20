@@ -60,20 +60,20 @@ test("home offers outbound and inbound account paths without a public audio cont
   await page.setViewportSize({ width: 390, height: 844 });
   await openPage(page, "/");
 
-  const directions = page.getByRole("navigation", { name: "Choose Bot direction" });
-  const outbound = directions.getByRole("link", {
-    name: /Outbound, early access: Call\. Book\. Create an Outbound Bot/i,
+  const directions = page.getByRole("navigation", { name: "Choose what your Bot does" });
+  const business = directions.getByRole("link", {
+    name: /For Your Business: Answer\. Book\. Create Your Front Desk/i,
   });
-  const inbound = directions.getByRole("link", {
-    name: /Inbound: Answer\. Act\. Create an Inbound Bot/i,
+  const personal = directions.getByRole("link", {
+    name: /For You: Plan\. Coordinate\. Create Your Assistant/i,
   });
-  await expect(outbound).toHaveAttribute(
-    "href",
-    /\/signup\?[^\s]*plan=free[^\s]*template=sales-rep/,
-  );
-  await expect(inbound).toHaveAttribute(
+  await expect(business).toHaveAttribute(
     "href",
     /\/signup\?[^\s]*plan=free[^\s]*template=front-desk/,
+  );
+  await expect(personal).toHaveAttribute(
+    "href",
+    /\/signup\?[^\s]*plan=free[^\s]*template=personal-assistant/,
   );
   await expect(page.getByRole("button", { name: /talk to/i })).toHaveCount(0);
   await expect(page.locator("audio, video")).toHaveCount(0);

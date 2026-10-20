@@ -13,11 +13,10 @@ import {
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 /**
- * WIRELINE avoids en and em dashes in customer-facing prose. Standard hyphens
- * remain available for precise compounds such as feature-for-feature. Slugs,
+ * BotBound avoids hyphens, en dashes, and em dashes in product prose. Slugs,
  * links, classes, and identifiers are not copy and are excluded from the scan.
  */
-const LONG_DASH = /[–—]/;
+const LONG_DASH = /[–—]|[a-z]-[a-z]/i;
 const SKIP_KEYS = new Set(["href", "slug", "key", "id", "icon", "image"]);
 const isNonCopy = (value: string) =>
   value.startsWith("tel:") ||
@@ -102,18 +101,18 @@ describe("marketing copy punctuation and retired-positioning contract", () => {
     }
   });
 
-  it("keeps the R3 brand spine and Phone Bot wedge explicit while preserving precise compounds", () => {
-    expect(HOME_TITLE).toBe("BotBound | Hire a Voice Bot");
+  it("keeps the R3 brand spine and Phone Bot wedge explicit without compound hyphens", () => {
+    expect(HOME_TITLE).toBe("BotBound | A Bot for You");
     expect(HOME_DESCRIPTION).toBe(
-      "Give your voice Bot a goal: answer calls, make calls, and work online with a cloud browser. Calls plans include a dedicated phone number; managed email is available on eligible plans.",
+      "Give your voice Bot a goal: answer calls, make calls, and work online with a cloud browser for you or your business. Calls plans include a dedicated phone number; managed email is available on eligible plans.",
     );
     expect(read("src/lib/bot-product.ts")).toContain('name: "Phone Bot"');
     expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain(
       "<span>With a Computer,</span>",
     );
     expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain(
-      "<span>and Branded Email.</span>",
+      "<span>and Email Address.</span>",
     );
-    expect(read("src/pages/Compare.tsx")).toContain("feature-for-feature");
+    expect(read("src/pages/Compare.tsx")).toContain("feature by feature");
   });
 });

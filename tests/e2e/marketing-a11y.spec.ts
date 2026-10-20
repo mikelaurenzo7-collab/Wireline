@@ -48,12 +48,12 @@ test("homepage promise and access path stay centered inside the desktop viewport
   await gotoHomepageWithMain(page);
 
   const headline = page.getByRole("heading", {
-    name: "Voice Bots With a Computer, Phone Number, and Branded Email.",
+    name: "Voice Bots With a Computer, Phone Number, and Email Address.",
     exact: true,
   });
   await expect(headline).toBeVisible();
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Choose Bot direction" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Choose what your Bot does" })).toBeVisible();
 
   const bounds = await page.evaluate(() => {
     const headline = document.querySelector(".landing-prestige__hero h1")?.getBoundingClientRect();
@@ -83,8 +83,8 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
   await gotoHomepageWithMain(page);
 
   const outbound = page
-    .getByRole("navigation", { name: "Choose Bot direction" })
-    .getByRole("link", { name: /Outbound, early access: Call\. Book\. Create an Outbound Bot/i });
+    .getByRole("navigation", { name: "Choose what your Bot does" })
+    .getByRole("link", { name: /For Your Business: Answer\. Book\. Create Your Front Desk/i });
   await outbound.focus();
   await expect(outbound).toBeFocused();
   const focusStyle = await outbound.evaluate((element) => {

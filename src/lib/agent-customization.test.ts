@@ -5,6 +5,22 @@ import {
 } from "./agent-customization";
 
 describe("customizable agent profile", () => {
+  it("preserves a personal assistant role across all MCP client sources", () => {
+    for (const source of ["chatgpt_mcp", "claude_mcp", "cursor_mcp"] as const) {
+      const profile = normalizeAgentCustomization(
+        { business_name: "Alex", role: "personal_assistant" },
+        source,
+      );
+      expect(profile.identity).toMatchObject({
+        name: "Alex Assistant",
+        role: "personal_assistant",
+        businessName: "Alex",
+      });
+      expect(profile.lifecycle).toBe("draft");
+      expect(profile.source).toBe(source);
+      expect(profile.mission.primaryGoal).toContain("personal coordination");
+    }
+  });
   it("normalizes user customization into a bounded canonical profile", () => {
     const profile = normalizeAgentCustomization({
       agent_name: "  Ava  ",

@@ -156,7 +156,7 @@ export default function ResetPassword() {
           ) : signInRecovery ? (
             <StatusNotice tone="warning" title="Sign In to Continue">
               <p>
-                The response was incomplete. Try your new password at sign-in, or request a new
+                The response was incomplete. Try your new password at sign in, or request a new
                 reset link there.
               </p>
               <Link
@@ -170,7 +170,7 @@ export default function ResetPassword() {
             <StatusNotice tone="destructive" title="This Reset Link Is Incomplete">
               Request a new one from the{" "}
               <Link to="/signin" className="font-medium text-brand underline underline-offset-4">
-                sign-in page
+                sign in page
               </Link>
               .
             </StatusNotice>

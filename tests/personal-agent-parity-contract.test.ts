@@ -49,7 +49,9 @@ describe("unified Bot workspace compatibility", () => {
       createCta: "Create Bot",
     });
     expect(BOT_WORKSPACE_PROMISE.title).toBe("Your Bot. Already Moving");
-    expect(BOT_WORKSPACE_PROMISE.description).toContain("Context carries forward");
+    expect(BOT_WORKSPACE_PROMISE.description).toContain(
+      "Calls, conversations, and tasks stay together",
+    );
   });
 
   it("keeps operations, everyday, and custom starters in one role catalog", () => {

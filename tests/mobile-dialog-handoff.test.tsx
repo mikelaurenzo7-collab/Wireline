@@ -262,16 +262,20 @@ describe("mobile dialog handoff", () => {
   });
 });
 
-describe("outbound phone testing", () => {
-  it("routes the connected Bot to the actual self-phone journey", () => {
+describe("outbound call entry", () => {
+  it("opens the owner scoped dialer with the selected Bot", () => {
     const close = vi.fn();
-    const nodes = render(() => OutboundDialDialog({ open: true, onClose: close }));
-    const dialog = nodes.find((node) => node.type === PhoneTestDialog)!;
+    const nodes = render(() =>
+      OutboundDialDialog({ open: true, initialAgentId: "bot-1", onClose: close }),
+    );
+    const dialog = nodes[0];
+    expect(nodes.some((node) => node.type === PhoneTestDialog)).toBe(false);
+    expect(dialog.key).toBe("owner-1");
     expect(dialog).toBeDefined();
     expect(dialog.props).toMatchObject({
       open: true,
-      agentId: "bot-1",
-      agentName: "Front Desk",
+      initialAgentId: "bot-1",
+      userId: "owner-1",
       onClose: close,
     });
     expect(

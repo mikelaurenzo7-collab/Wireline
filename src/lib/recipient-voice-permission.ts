@@ -175,7 +175,7 @@ export function buildVoicePermissionDisclosure(input: {
       ? "marketing and sales calls using an artificial or AI-generated voice"
       : input.purpose === "callback"
         ? "one non-marketing callback using an artificial or AI-generated voice"
-        : "non-marketing customer-service and appointment updates using an artificial or AI-generated voice";
+        : "non-marketing service, appointment, and personal coordination calls using an artificial or AI-generated voice";
   return `I authorize ${input.sellerName} to call my number ending ${input.phone.slice(-4)} for ${scope}, until ${new Date(input.expiresAt).toLocaleString("en-US", { timeZone: "America/Chicago", timeZoneName: "short" })}. I may withdraw permission at any time. This permission is not a condition of buying anything. My typed name is my electronic signature. This link and signature record permission; they do not verify my identity or possession of the phone.`;
 }
 
@@ -193,7 +193,7 @@ export function assertVoicePermissionJurisdiction(input: {
     throw new AppError(
       403,
       "VOICE_PERMISSION_JURISDICTION_UNSUPPORTED",
-      "Calling is not cleared for this jurisdiction. Illinois recipients and an Illinois business are the supported initial scope.",
+      "Calling is not cleared for this jurisdiction. Illinois callers and recipients are the supported initial scope.",
     );
 }
 
@@ -228,7 +228,7 @@ export function assertVoicePermissionScope(input: {
     throw new AppError(
       403,
       "VOICE_PERMISSION_SCOPE_MISMATCH",
-      "Recipient permission does not match this business, Bot, number or purpose.",
+      "Recipient permission does not match this caller, Bot, number or purpose.",
     );
   const expires = Date.parse(request.expiresAt);
   const accepted = Date.parse(grant.acceptedAt);

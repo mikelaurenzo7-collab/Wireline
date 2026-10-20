@@ -10,17 +10,15 @@ describe("public voice-preview retirement contract", () => {
     const botProduct = read("src/lib/bot-product.ts");
 
     expect(landing).toContain("<span>With a Computer,</span>");
-    expect(landing).toContain("<span>and Branded Email.</span>");
-    expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
+    expect(landing).toContain("<span>and Email Address.</span>");
+    expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).toContain("landing-prestige__directions");
-    expect(landing).toContain("Call. Book.");
-    expect(landing).toContain("Answer. Act.");
+    expect(landing).toContain("Answer. Book.");
+    expect(landing).toContain("Plan. Coordinate.");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo|\/api\/public\/demo-/);
-    expect(botProduct).toContain('slogan: "Your Next Hire Is a Bot"');
+    expect(botProduct).toContain('slogan: "For You. For Your Business."');
     expect(botProduct).toContain('supportingLine: "CALL · TEXT · EMAIL"');
-    expect(botProduct).toContain(
-      'activationLine:\n    "Start with calls, email, or both. Your Bot helps customers, reaches prospects, and tackles work from its own cloud computer."',
-    );
+    expect(botProduct).not.toContain("activationLine:");
   });
 
   it("redirects the retired Showcase directly to canonical free signup", () => {

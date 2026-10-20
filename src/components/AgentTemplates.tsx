@@ -69,7 +69,7 @@ export const AGENT_TEMPLATES = [
     channel: "voice" as const,
     icon: Target,
     accent: BRAND.colors.primary,
-    badge: "Most popular",
+    badge: "Sales rehearsal",
     firstMessage:
       "Hi, I'm following up because you showed interest in what we offer. Is now a good time for two quick questions?",
   },
@@ -181,13 +181,13 @@ export const AGENT_TEMPLATES = [
     selfServeRestriction:
       "Self-serve deployment is unavailable. Payment-reminder use requires legal review and an approved jurisdiction-specific BotBound configuration.",
     firstMessage:
-      "This payment-reminder workflow is unavailable until its legal and account review is complete.",
+      "This payment reminder workflow is unavailable until its legal and account review is complete.",
   },
   {
     id: "collections-hard",
     category: "Collections & Finance",
     name: "Hard Collections: Recovery",
-    description: "Payment recovery with FDCPA-aware guardrails.",
+    description: "Payment recovery with FDCPA aware guardrails.",
     role: "collections",
     channel: "voice" as const,
     icon: Shield,
@@ -196,7 +196,7 @@ export const AGENT_TEMPLATES = [
     selfServeRestriction:
       "Self-serve deployment is unavailable. Debt-recovery use requires legal review and an approved jurisdiction-specific BotBound configuration.",
     firstMessage:
-      "This debt-recovery workflow is unavailable until its legal and account review is complete.",
+      "This debt recovery workflow is unavailable until its legal and account review is complete.",
   },
   // === MARKETING ===
   {
@@ -238,14 +238,14 @@ export const AGENT_TEMPLATES = [
     accent: BRAND.colors.onSurfaceMuted,
     badge: "Shopify or Square",
     firstMessage:
-      "Thanks for calling! I can help with store questions and take details for follow-up. What can I help you with today?",
+      "Thanks for calling! I can help with store questions and take details for follow up. What can I help you with today?",
   },
   {
     id: "ecommerce-phone-order",
     category: "E-commerce",
     name: "Phone Order Bot",
     description:
-      "Helps callers choose products and captures order details. Creates Square payment links or Shopify draft-order checkout links when the matching provider is connected.",
+      "Helps callers choose products and captures order details. Creates Square payment links or Shopify draft order checkout links when the matching provider is connected.",
     role: "ecommerce",
     channel: "voice" as const,
     icon: Receipt,
@@ -260,12 +260,12 @@ export const AGENT_TEMPLATES = [
     id: "personal-concierge",
     category: "Everyday & Lifestyle",
     name: "Personal Concierge",
-    description: "Handles appointments, follow-ups, and messages for you.",
+    description: "Handles appointments, calls, and messages for you.",
     role: "personal_assistant",
     channel: "voice" as const,
     icon: User,
     accent: BRAND.colors.primary,
-    badge: "Everyday · most versatile",
+    badge: "Everyday",
     firstMessage: "Hi, you've reached the line. How can I help today?",
   },
   {
@@ -302,7 +302,7 @@ export const AGENT_TEMPLATES = [
     channel: "voice" as const,
     icon: Receipt,
     accent: BRAND.colors.primary,
-    badge: "Everyday · saves money",
+    badge: "Everyday · billing",
     firstMessage:
       "Hi, I'm calling with the account holder's permission to ask about their current plan and pricing.",
   },

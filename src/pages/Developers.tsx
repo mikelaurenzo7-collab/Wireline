@@ -21,21 +21,26 @@ const MCP_BOUNDARIES = [
   {
     path: "train_wireline_agent / get_agent_coaching_brief",
     description:
-      "Coach the agent record behind a Bot: read owner-authored training, then persist a confirmed fact or rule into BotBound after the Apps toggle is on.",
+      "Coach the agent record behind a Bot: read owner authored training, then persist a confirmed fact or rule into BotBound after the Apps toggle is on.",
   },
   {
     path: "list_wireline_agents / get_wireline_workspace_summary / get_wireline_agent_status",
     description:
-      "Read account-scoped agent records, Bot readiness, next steps, and a minimized workspace summary.",
+      "Read account scoped agent records, Bot readiness, next steps, and a minimized workspace summary.",
   },
   {
     path: "start_private_voice_simulation / run_private_agent_turn",
-    description: "Private agent-runtime rehearsal for a Bot, not a live customer call.",
+    description: "Private agent runtime rehearsal for a Bot, not a live customer call.",
+  },
+  {
+    path: "prepare_call / get_call_status",
+    description:
+      "Prepare a service call from ChatGPT, Claude, or Cursor. Review and place it in BotBound, then check its status from the same connected app.",
   },
   {
     path: "/api/openapi.json",
     description:
-      "Machine-readable map of the session-authenticated product API used by the web app, not a public API-key product.",
+      "Machine readable map of the session authenticated product API used by the web app, not a public API key product.",
   },
 ] as const;
 
@@ -192,10 +197,10 @@ export default function Developers() {
                   : ""}
             </p>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Connected apps help new users create a BotBound account and build their first Phone
-              Bot. This connector cannot place calls, send messages, provision numbers, or launch a
-              live Bot. Training writes land only after you enable them in Apps and confirm each
-              change. There is no public API-key product and no repo voice SDK.
+              Build and coach your Bot from ChatGPT, Claude, or Cursor. Connected apps can prepare
+              service calls for your review; placing a call happens in BotBound. Existing
+              connections need the new call permissions before those tools become available.
+              Training writes require the Apps toggle and your confirmation.
             </p>
           </div>
 

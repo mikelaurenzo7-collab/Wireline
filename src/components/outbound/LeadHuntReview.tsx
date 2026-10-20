@@ -317,7 +317,7 @@ export function LeadHuntReview({
               />
               {selectedIds.size > 0 ? `${selectedIds.size} selected` : `Select all ${leads.length}`}
             </label>
-            <span className="text-[11px] text-muted-foreground">Phone-bearing matches only</span>
+            <span className="text-[11px] text-muted-foreground">Matches with phone numbers</span>
           </div>
 
           <ul className="max-h-72 space-y-2 overflow-y-auto pr-1">
@@ -423,7 +423,7 @@ export function LeadHuntReview({
             />
             <span className="text-xs leading-relaxed text-muted-foreground">
               I reviewed these recipients and approve adding them to this draft. This approval is
-              not consent proof and does not bypass suppression, DNC, TCPA, calling-hour, or launch
+              not consent proof and does not bypass suppression, DNC, TCPA, calling hour, or launch
               gates.
             </span>
           </label>

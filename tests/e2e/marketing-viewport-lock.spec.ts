@@ -224,12 +224,12 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
   ).toHaveCount(0);
   await expect(
     page.getByRole("heading", {
-      name: "Voice Bots With a Computer, Phone Number, and Branded Email.",
+      name: "Voice Bots With a Computer, Phone Number, and Email Address.",
     }),
   ).toBeVisible();
-  const directions = page.getByRole("navigation", { name: "Choose Bot direction" });
-  await expect(directions.getByText("Call. Book.", { exact: true })).toBeVisible();
-  await expect(directions.getByText("Answer. Act.", { exact: true })).toBeVisible();
+  const directions = page.getByRole("navigation", { name: "Choose what your Bot does" });
+  await expect(directions.getByText("Plan. Coordinate.", { exact: true })).toBeVisible();
+  await expect(directions.getByText("Answer. Book.", { exact: true })).toBeVisible();
   // Account access is one action away instead of a split-screen form.
   await expect(page.getByRole("region", { name: "Account access" })).toHaveCount(0);
   const actions = page.locator(".landing-prestige__hero .landing-prestige__actions");

@@ -35,12 +35,12 @@ describe("agent template launch truth", () => {
     expect(support.description).toContain("when Shopify or Square is connected");
     expect(support.description).not.toMatch(/returns|address changes|discount codes/i);
     expect(support.firstMessage).not.toMatch(/returns|address changes|discount codes/i);
-    expect(support.firstMessage).toContain("take details for follow-up");
+    expect(support.firstMessage).toContain("take details for follow up");
     expect(support.firstMessage).not.toMatch(/look up your order|current inventory/i);
 
     expect(phoneOrder.description).toContain("captures order details");
     expect(phoneOrder.description).toContain("Square payment links");
-    expect(phoneOrder.description).toContain("Shopify draft-order checkout links");
+    expect(phoneOrder.description).toContain("Shopify draft order checkout links");
     expect(phoneOrder.description).toContain("matching provider is connected");
     expect(phoneOrder.description).not.toMatch(/applies discounts|address corrections|all live/i);
     expect(phoneOrder.firstMessage).toContain("take your order details");
@@ -60,7 +60,7 @@ describe("agent template launch truth", () => {
     const reminderRestriction = getTemplateSelfServeRestriction(reminders);
     const restriction = getTemplateSelfServeRestriction(collections);
 
-    expect(visibleCopy).toContain("FDCPA-aware");
+    expect(visibleCopy).toContain("FDCPA aware");
     expect(visibleCopy).toMatch(/legal review/i);
     expect(visibleCopy).not.toMatch(/FDCPA compliant|compliant with FDCPA/i);
     expect(collections.firstMessage).not.toMatch(/protect your credit/i);

@@ -68,7 +68,7 @@ export default function VoicePermissionPage() {
     setError(null);
     if (!token) {
       setLoading(false);
-      setError("Reopen the permission link the business shared with you.");
+      setError("Reopen the permission link the caller shared with you.");
       return () => controller.abort();
     }
     void (async () => {
@@ -279,8 +279,8 @@ export default function VoicePermissionPage() {
                       required
                     />
                     <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
-                      These calls will reach me in Illinois (America/Chicago). I’ll tell the
-                      business if that changes.
+                      These calls will reach me in Illinois (America/Chicago). I’ll tell the caller
+                      if that changes.
                     </span>
                   </label>
                   <Button
@@ -303,8 +303,8 @@ export default function VoicePermissionPage() {
                     : status === "used"
                       ? "This permission has already authorized its one callback."
                       : status === "revoked"
-                        ? "Permission withdrawn. This business’s future calls to this number are suppressed."
-                        : "This permission request has expired. Ask the business for a new link."}
+                        ? "Permission withdrawn. This caller’s future calls to this number are suppressed."
+                        : "This permission request has expired. Ask the caller for a new link."}
                 </p>
               )}
               {status === "pending" || status === "granted" || status === "used" ? (

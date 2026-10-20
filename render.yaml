@@ -96,6 +96,8 @@ projects:
               - fromGroup: botbound-runtime-config
               - key: BOTBOUND_TRAFFIC_ENABLED
                 value: "false"
+              - key: BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED
+                sync: false
               # Keep secrets server-side; never expose them through VITE_* values.
               - key: POSTGRES_URL
                 sync: false
@@ -353,6 +355,11 @@ projects:
                 value: "10"
               - key: WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED
                 value: "false"
+              - key: BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED
               # Copy the current values; generateValue would break stored tokens
               # or API/worker signature parity during this hosting migration.
               - key: POSTGRES_URL

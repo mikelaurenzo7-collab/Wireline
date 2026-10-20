@@ -4,7 +4,7 @@ import { PageMeta } from "../lib/page-meta";
 
 const SOLUTIONS = {
   sales: {
-    title: "Set Up a Sales Bot for Lead Follow-Up",
+    title: "Set Up a Sales Bot for Lead Follow Up",
     description:
       "Bring a list or connect a source. Give your Sales Bot a playbook to call prospects, qualify interest, and record the next step.",
     primary: { href: "/signup?wedge=sales", label: "Create Your Sales Bot" },
@@ -28,9 +28,9 @@ const SOLUTIONS = {
         "Your Playbook in Every Call",
         "Use your positioning, tone, qualification rules, and approved claims.",
       ],
-      ["Follow-Up Across Channels", "Add text or email follow-up when you enable those channels."],
+      ["Follow Up Across Channels", "Add text or email follow up when you enable those channels."],
       [
-        "Calendar-Aware Booking",
+        "Calendar Aware Booking",
         "Offer real availability and write the confirmed next step back to the record.",
       ],
     ],

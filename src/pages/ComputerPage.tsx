@@ -167,7 +167,7 @@ function announcementFor(previous: ComputerTask | undefined, next: ComputerTask)
 
 const EXAMPLES = [
   {
-    label: "Find local businesses",
+    label: "Find a service",
     goal: "Find three plumbers near Austin with Saturday hours and list their phone numbers.",
   },
   {
@@ -175,8 +175,8 @@ const EXAMPLES = [
     goal: "Check our Google Business page and tell me if our hours match our website.",
   },
   {
-    label: "Summarize a policy",
-    goal: "Look up the return policy on our supplier's website and summarize it.",
+    label: "Plan a day out",
+    goal: "Find three free things to do in Chicago this Saturday and list opening hours and links.",
   },
 ];
 
@@ -240,7 +240,7 @@ function UnavailableNotice({ status }: { status: ComputerStatus }) {
         }
       >
         An active paid plan includes a secure cloud computer your Bot uses to research, read
-        websites, and finish follow-up.
+        websites, and finish follow up.
       </StatusNotice>
     );
   }

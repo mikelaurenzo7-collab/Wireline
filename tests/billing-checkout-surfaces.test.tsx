@@ -538,7 +538,7 @@ describe.each(["card", "modal"] as const)("%s selected channel package", (surfac
     );
     await mount(surface);
     selectChannel(2);
-    const action = button(surface, "SMS setup unavailable");
+    const action = button(surface, "Sender Approval Required");
     expect(action.props.disabled).toBe(true);
     await action.props.onClick?.();
     expect(h.fetch.mock.calls.some(([path]) => path === "/api/billing/checkout")).toBe(false);

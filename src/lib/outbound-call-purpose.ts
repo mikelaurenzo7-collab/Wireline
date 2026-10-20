@@ -6,6 +6,26 @@ export const OUTBOUND_CALL_PURPOSES = [
 
 export type OutboundCallPurpose = (typeof OUTBOUND_CALL_PURPOSES)[number];
 
+export type OutboundCallingAvailability = { general: boolean; nonMarketing: boolean };
+
+export function outboundCallingAvailability(): OutboundCallingAvailability {
+  return {
+    general: process.env.BOTBOUND_GENERAL_OUTBOUND_ENABLED === "true",
+    nonMarketing: process.env.BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED === "true",
+  };
+}
+
+/** Activation only; paid voice, recipient permission, and funding are checked separately. */
+export function outboundCallingEnabledFor(
+  purpose: OutboundCallPurpose,
+  availability: OutboundCallingAvailability,
+): boolean {
+  return (
+    availability.general ||
+    (availability.nonMarketing && (purpose === "service_or_requested" || purpose === "callback"))
+  );
+}
+
 export const OUTBOUND_CONSENT_VERSION = "tcpa-v1";
 
 /**

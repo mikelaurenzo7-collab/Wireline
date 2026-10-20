@@ -13,9 +13,9 @@ interface PageMetaProps {
 const BRAND_SUFFIX = ` | ${BOTBOUND_BRAND_NAME}`;
 const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
-const DEFAULT_TITLE = "BotBound | Hire a Voice Bot";
+const DEFAULT_TITLE = "BotBound | A Bot for You";
 const DEFAULT_DESCRIPTION =
-  "Give your voice Bot a goal: answer calls, make calls, and work online with a cloud browser. Calls plans include a dedicated phone number; managed email is available on eligible plans.";
+  "Give your voice Bot a goal: answer calls, make calls, and work online with a cloud browser for you or your business. Calls plans include a dedicated phone number; managed email is available on eligible plans.";
 
 function brandTitle(value: string): string {
   return value

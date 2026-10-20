@@ -22,7 +22,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "index.html",
     indexHtml,
-    /<title>BotBound \| Hire a Voice Bot<\/title>/,
+    /<title>BotBound \| A Bot for You<\/title>/,
     "static metadata must make the voice Bot offer explicit",
   );
   mustInclude(
@@ -34,7 +34,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_TITLE = "BotBound \| Hire a Voice Bot"/,
+    /DEFAULT_TITLE = "BotBound \| A Bot for You"/,
     "runtime metadata must use the BotBound hero",
   );
   mustInclude(
@@ -46,7 +46,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /"name"\s*:\s*"BotBound \| Your Next Hire Is a Bot"/,
+    /"name"\s*:\s*"BotBound \| For You\. For Your Business\."/,
     "install metadata must use BotBound",
   );
   mustExclude(
@@ -65,7 +65,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
-    /slogan:\s*"Your Next Hire Is a Bot"/,
+    /slogan:\s*"For You\. For Your Business\."/,
     "shared model must preserve the BotBound brand slogan",
   );
   mustInclude(
@@ -122,14 +122,14 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /<span>Voice Bots<\/span>\s*<span>With a Computer,<\/span>[\s\S]*<span>Phone Number,<\/span>\s*<span>and Branded Email\.<\/span>/,
+    /<span>Voice Bots<\/span>\s*<span>With a Computer,<\/span>[\s\S]*<span>Phone Number,<\/span>\s*<span>and Email Address\.<\/span>/,
     "landing must render the computer, phone number, and email hero",
   );
-  mustInclude(
+  mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /BOT_MARKETING_VOICE\.activationLine/,
-    "landing must source the concise activation promise",
+    /BOT_MARKETING_VOICE\.activationLine|landing-prestige__promise/,
+    "landing must keep the hero free of a redundant subhero paragraph",
   );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",

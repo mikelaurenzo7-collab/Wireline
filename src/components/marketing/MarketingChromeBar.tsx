@@ -16,7 +16,7 @@ const PRODUCT_LINKS = [
 ] as const;
 
 const WHO_ITS_FOR_LINKS = [
-  { to: "/for/everyday", label: "Everyday Calls" },
+  { to: "/for/everyday", label: "For You" },
   { to: "/for/home-services", label: "Home Services" },
   { to: "/for/insurance", label: "Insurance" },
   { to: "/for/legal", label: "Legal" },

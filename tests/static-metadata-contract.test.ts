@@ -4,16 +4,22 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+const structuredData = () =>
+  JSON.parse(
+    read("index.html").match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)![1],
+  )["@graph"] as Array<Record<string, unknown>>;
 
 describe("BotBound static marketing metadata", () => {
   it("keeps the HTML shell aligned with the BotBound promise", () => {
     const index = read("index.html");
 
-    expect(index).toContain("BotBound | Hire a Voice Bot");
+    expect(index).toContain("BotBound | A Bot for You");
     expect(index).toContain("Give your voice Bot a goal: answer calls, make calls");
-    expect(index).toContain('"name":"BotBound"');
-    expect(index).toContain('"slogan":"Your Next Hire Is a Bot"');
-    expect(index).toContain('"logo":"https://botbound.app/botbound-icon-512.png"');
+    expect(structuredData().find((entry) => entry["@type"] === "Organization")).toMatchObject({
+      name: "BotBound",
+      slogan: "For You. For Your Business.",
+      logo: "https://botbound.app/botbound-icon-512.png",
+    });
     expect(index).toContain('<link rel="canonical" href="https://botbound.app/" />');
     expect(index).toContain('<meta property="og:url" content="https://botbound.app/" />');
     expect(index).toContain(
@@ -52,9 +58,10 @@ describe("BotBound static marketing metadata", () => {
       '<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />',
     );
     expect(index).toContain('<link rel="manifest" href="/site.webmanifest" />');
-    expect(index).toContain('"@type":"WebSite"');
-    expect(index).toContain('"@id":"https://botbound.app/#website"');
-    expect(index).toContain('"publisher":{"@id":"https://botbound.app/#organization"}');
+    expect(structuredData().find((entry) => entry["@type"] === "WebSite")).toMatchObject({
+      "@id": "https://botbound.app/#website",
+      publisher: { "@id": "https://botbound.app/#organization" },
+    });
   });
 
   it("keeps runtime and hydrated landing metadata pinned to the same BotBound entrance", () => {
@@ -66,7 +73,7 @@ describe("BotBound static marketing metadata", () => {
     expect(landing).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(landing).not.toContain("LEGACY_PRODUCTION_ORIGIN");
     expect(landing).not.toContain("VITE_PUBLIC_SITE_URL");
-    expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | Hire a Voice Bot"');
+    expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | A Bot for You"');
     expect(pageMeta).toMatch(
       /DEFAULT_DESCRIPTION =\s*"Give your voice Bot a goal: answer calls, make calls/,
     );
@@ -116,7 +123,7 @@ describe("BotBound static marketing metadata", () => {
       shortcuts: Array<{ name: string; description: string; url: string }>;
     };
 
-    expect(manifest.name).toBe("BotBound | Your Next Hire Is a Bot");
+    expect(manifest.name).toBe("BotBound | For You. For Your Business.");
     expect(manifest.short_name).toBe("BotBound");
     expect(manifest.description).toBe(
       "Voice Bots for inbound and outbound calls and cloud browser tasks.",

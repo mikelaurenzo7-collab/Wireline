@@ -6,9 +6,9 @@ import { ACCOUNT_PRIVACY_DESCRIPTION, ACCOUNT_TERMS_DESCRIPTION } from "./legal-
 // origin. APP_URL remains independently configurable for provider callbacks.
 export const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 const BRAND_SUFFIX = ` | ${BOTBOUND_BRAND_NAME}`;
-export const HOME_TITLE = "BotBound | Hire a Voice Bot";
+export const HOME_TITLE = "BotBound | A Bot for You";
 export const HOME_DESCRIPTION =
-  "Give your voice Bot a goal: answer calls, make calls, and work online with a cloud browser. Calls plans include a dedicated phone number; managed email is available on eligible plans.";
+  "Give your voice Bot a goal: answer calls, make calls, and work online with a cloud browser for you or your business. Calls plans include a dedicated phone number; managed email is available on eligible plans.";
 const HOME_ROBOTS_TAG =
   '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />';
 const HOME_GOOGLEBOT_TAG =
@@ -59,22 +59,22 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/features": {
     title: "Features",
     description:
-      "Build a voice Bot for inbound and outbound calls, give it business knowledge and rules, and assign cloud browser tasks from the workspace.",
+      "Build a Bot for your life or your business. Answer calls, coordinate plans, manage email, and assign tasks to its cloud computer.",
   },
   "/compare": {
     title: "Why BotBound | Compare Bots",
     description:
-      "Compare BotBound's Bot workspace with flat-rate, per-call, and developer voice infrastructure pricing.",
+      "Compare BotBound's Bot workspace with flat subscriptions, usage pricing, and developer voice infrastructure.",
   },
   "/about": {
-    title: "About BotBound | Bots for Calls and Follow-Through",
+    title: "About BotBound | A Bot for Your Life and Work",
     description:
-      "BotBound is an independent platform for voice Bots, cloud browser tasks, and plan-based email. Set your knowledge and rules, review outcomes, and reach the founder directly for support.",
+      "BotBound is an independent platform for calls, email, and cloud browser tasks. Set your knowledge and rules, review outcomes, and reach the founder directly for support.",
   },
   "/blog": {
-    title: "BotBound Notes | Bot Guides for Small Business",
+    title: "BotBound Notes | Guides for Your Life and Work",
     description:
-      "Practical guides for Bots: calling, appointment booking, live conversations, text and email follow-up, support queues, handoff boundaries, and getting routine communication work off your plate.",
+      "Practical guides to calls, appointments, conversations, and computer tasks. Give your Bot a clear job and keep control of the outcome.",
   },
   "/support": {
     title: "Support | BotBound",
@@ -135,10 +135,10 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/sms-consent": {
     title: "SMS Consent | BotBound",
     description:
-      "BotBound customer-care SMS: verbal opt-in script, message examples, and opt-out instructions.",
+      "BotBound customer care SMS: permission script, message examples, and instructions to stop messages.",
   },
   "/solutions/sales": {
-    title: "Set Up a Sales Bot for Lead Follow-Up | BotBound",
+    title: "Set Up a Sales Bot for Lead Follow Up | BotBound",
     description:
       "Bring a list or connect a source. Give your Sales Bot a playbook to call prospects, qualify interest, and record the next step.",
   },

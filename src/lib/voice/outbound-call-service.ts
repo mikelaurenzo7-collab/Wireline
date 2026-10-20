@@ -15,6 +15,7 @@ import { requireTenantChannel } from "../channel-entitlements";
 import { AppError } from "../api-error";
 import { inferStateFromPhone } from "../tcpa-consent";
 import { inspectOutboundRecipientPermission } from "../recipient-voice-permission-store";
+import { outboundCallingAvailability, outboundCallingEnabledFor } from "../outbound-call-purpose";
 import {
   commitPlatformCostReservation,
   markPlatformCostReservationAmbiguous,
@@ -124,7 +125,8 @@ function ambiguousResult(leadId: bigint): PlaceCallResult {
 async function placeOutboundCallAfterDeletionFence(
   input: PlaceOutboundCallInput,
 ): Promise<PlaceCallResult> {
-  if (process.env.BOTBOUND_GENERAL_OUTBOUND_ENABLED !== "true")
+  const availability = outboundCallingAvailability();
+  if (!availability.general && !availability.nonMarketing)
     return {
       ok: false,
       status: 503,
@@ -158,7 +160,9 @@ async function placeOutboundCallAfterDeletionFence(
       .where(eq(schema.settings.userId, input.userId))
       .limit(1),
     drizzle
-      .select({ id: schema.agents.id })
+      .select({
+        id: schema.agents.id,
+      })
       .from(schema.agents)
       .where(and(eq(schema.agents.id, input.agentId), eq(schema.agents.userId, input.userId)))
       .limit(1),
@@ -182,6 +186,13 @@ async function placeOutboundCallAfterDeletionFence(
     return { ok: false, status: 403, error: "Upgrade your billing plan to place outbound calls." };
   }
   if (!agent) return { ok: false, status: 404, error: "Bot not found." };
+  if (!outboundCallingEnabledFor(input.callPurpose, availability))
+    return {
+      ok: false,
+      status: 503,
+      code: "OUTBOUND_UNAVAILABLE",
+      error: "Calling is currently available for service, coordination, and requested callbacks.",
+    };
   const fromNumber = normalizeOpenAIPhoneNumber(line?.phoneNumber);
   // The legacy column is retained for append-only schema compatibility; an
   // OpenAI-native line must contain the Twilio IncomingPhoneNumber SID.

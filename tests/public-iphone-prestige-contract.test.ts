@@ -13,16 +13,16 @@ describe("BotBound public iPhone prestige contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
 
     expect(product).toContain('name: "BotBound"');
-    expect(product).toContain('slogan: "Your Next Hire Is a Bot"');
+    expect(product).toContain('slogan: "For You. For Your Business."');
     expect(product).toContain('supportingLine: "CALL · TEXT · EMAIL"');
     expect(product).toMatch(
       /key:\s*"voice"[\s\S]*?label:\s*"Call"[\s\S]*?key:\s*"text"[\s\S]*?label:\s*"Text"[\s\S]*?key:\s*"email"[\s\S]*?label:\s*"Email"/,
     );
 
     expect(landing).toMatch(
-      /<h1[^>]*>[\s\S]*?<span>Voice Bots<\/span>\s*<span>With a Computer,<\/span>[\s\S]*?<span>Phone Number,<\/span>\s*<span>and Branded Email\.<\/span>[\s\S]*?<\/h1>/,
+      /<h1[^>]*>[\s\S]*?<span>Voice Bots<\/span>\s*<span>With a Computer,<\/span>[\s\S]*?<span>Phone Number,<\/span>\s*<span>and Email Address\.<\/span>[\s\S]*?<\/h1>/,
     );
-    expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
+    expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).not.toContain("HERO_CHANNELS.map");
     expect(landing).not.toContain('aria-label="BotBound channels"');
@@ -113,8 +113,8 @@ describe("BotBound public iPhone prestige contract", () => {
     const generator = read("src/lib/bot-mark.ts");
 
     expect(landing).toContain("landing-prestige__directions");
-    expect(landing).toContain("Call. Book.");
-    expect(landing).toContain("Answer. Act.");
+    expect(landing).toContain("Answer. Book.");
+    expect(landing).toContain("Plan. Coordinate.");
     expect(landing).not.toContain("markKey");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
     expect(component).not.toMatch(/monogram|mark\.initial|showMicroMonogram/i);
@@ -134,8 +134,8 @@ describe("BotBound public iPhone prestige contract", () => {
 
     for (const specificMove of [
       "Intent + urgency + routing",
-      "CRM handoff + next follow-up",
-      "Knowledge-grounded answers",
+      "CRM handoff + next steps",
+      "Answers from your knowledge",
       "Calendar booking + reminders",
       "Resident + vendor coordination",
       "Channels + actions + connected tools",

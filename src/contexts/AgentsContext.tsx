@@ -98,7 +98,8 @@ function parseAgentsPayload(
     mark_key: normalizeMarkKey(agent.markKey ?? agent.mark_key),
     role: agent.role ?? null,
     channel: normalizeChannel(agent.channel),
-    is_business_agent: !!agent.isBusinessAgent,
+    is_business_agent:
+      typeof agent.isBusinessAgent === "boolean" ? agent.isBusinessAgent : undefined,
     phone_number: agent.phone_number ?? numbersByAgent.get(agent.id) ?? null,
   }));
 }

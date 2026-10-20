@@ -212,12 +212,12 @@ describe("public pricing activation availability", () => {
       }),
     );
     expect(text(render())).toContain(
-      "Plan and rehearse an SMS Bot privately. Ask us to review what live activation would require.",
+      "SMS needs sender approval. Keep building your Bot while we review your number and texting setup.",
     );
     expect(text(planLink("sms"))).toBe("Create a Free Bot ");
     expect(planLink("sms")?.props.to).toBe("/signup?plan=sms&interval=month");
     const contact = links().find((element) => element.props.to === "/contact?topic=sms");
-    expect(text(contact)).toBe("Ask About SMS Setup");
+    expect(text(contact)).toBe("Set Up Texting");
   });
 
   it.each([

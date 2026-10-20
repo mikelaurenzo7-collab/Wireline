@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 for (const width of [320, 1280]) {
-  test(`outbound opens a usable self-phone test at ${width}px`, async ({ page }) => {
+  test(`outbound opens the business call review without bypassing permission at ${width}px`, async ({
+    page,
+  }) => {
     await page.setViewportSize({ width, height: 740 });
     const dialRequests: string[] = [];
     await page.route("**/api/**", async (route) => {
@@ -41,25 +43,32 @@ for (const width of [320, 1280]) {
                   },
                 ],
               }
-            : path === "/api/agent-config/outbound-bot"
-              ? { personality: "Clear", directives: [] }
-              : { data: [], numbers: [], keys: [], campaigns: [], messages: [], integrations: [] };
+            : path === "/api/voice-permissions"
+              ? { permissions: [], calling: { general: false, nonMarketing: true } }
+              : path === "/api/agent-config/outbound-bot"
+                ? { personality: "Clear", directives: [] }
+                : {
+                    data: [],
+                    numbers: [],
+                    keys: [],
+                    campaigns: [],
+                    messages: [],
+                    integrations: [],
+                  };
       await route.fulfill({ json });
     });
 
     await page.goto("/phone?tab=outbound");
-    const opener = page.getByRole("button", { name: "Call my phone", exact: true });
+    const opener = page.getByRole("button", { name: "New call", exact: true }).first();
     await opener.click();
-    const dialog = page.getByRole("dialog", { name: "Phone test", exact: true });
+    const dialog = page.getByRole("dialog", { name: "New call", exact: true });
     await expect(dialog).toBeVisible();
-    await expect(dialog).toContainText("Receive a real call from Front Desk.");
-    await expect(dialog).not.toContainText("BotBound verification");
-    await expect(
-      dialog.getByRole("textbox", { name: "Your phone number", exact: true }),
-    ).toBeVisible();
-    await expect(dialog.getByRole("button", { name: "Place call", exact: true })).toHaveCount(0);
+    await expect(dialog.getByLabel("Bot", { exact: true })).toHaveValue("outbound-bot");
+    await expect(dialog.getByRole("textbox", { name: "Phone number", exact: true })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Place call", exact: true })).toBeDisabled();
+    await expect(dialog.getByRole("option", { name: "Marketing or sales" })).toHaveCount(0);
     for (const control of [
-      dialog.getByRole("textbox", { name: "Your phone number", exact: true }),
+      dialog.getByRole("textbox", { name: "Phone number", exact: true }),
       dialog.getByRole("button", { name: "Close", exact: true }).last(),
     ]) {
       const box = await control.boundingBox();

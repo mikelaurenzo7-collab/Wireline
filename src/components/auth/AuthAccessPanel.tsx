@@ -266,15 +266,16 @@ export default function AuthAccessPanel({
   const isSignUp = mode === "signup";
   const isReset = mode === "reset";
   const intentLabel = signupIntentLabel(signupIntent);
+  const paidSignupPlan =
+    signupIntent?.preferredPlanId &&
+    signupIntent.preferredPlanId !== "personal" &&
+    publicSignupPlan(signupIntent.preferredPlanId)
+      ? signupIntent.preferredPlanId
+      : undefined;
   const { notice } = usePaidPlanAvailability({
-    enabled: isSignUp,
+    enabled: isSignUp && Boolean(paidSignupPlan),
     interval: signupIntent?.preferredBillingInterval === "year" ? "year" : "month",
-    planId:
-      signupIntent?.preferredPlanId &&
-      signupIntent.preferredPlanId !== "personal" &&
-      publicSignupPlan(signupIntent.preferredPlanId)
-        ? signupIntent.preferredPlanId
-        : undefined,
+    planId: paidSignupPlan,
   });
   const oauthProviders = availableProviders
     ? PROVIDERS.filter((provider) => availableProviders[provider.id] === true)
@@ -608,7 +609,7 @@ export default function AuthAccessPanel({
           {isSignUp && intentLabel ? (
             <span className="wl-access-panel__intent">{intentLabel}</span>
           ) : null}
-          {isSignUp ? <p role="status">{notice}</p> : null}
+          {isSignUp && paidSignupPlan ? <p role="status">{notice}</p> : null}
         </header>
 
         {!isReset ? (
@@ -715,7 +716,7 @@ export default function AuthAccessPanel({
                     setError(null);
                   }
                 }}
-                placeholder="you@company.com"
+                placeholder="you@example.com"
               />
             </div>
           </div>

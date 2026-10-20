@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 import {
   ArrowRight,
-  BriefcaseBusiness,
   CalendarDays,
   Check,
   Headphones,
   PhoneIncoming,
-  PhoneOutgoing,
+  House,
   ShieldCheck,
+  UserRound,
   WandSparkles,
   type LucideIcon,
 } from "lucide-react";
@@ -16,7 +16,7 @@ import { Link } from "react-router";
 import BotBoundMark from "../brand/BotBoundMark";
 import LandingFooter from "./LandingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
-import { BOT_BRAND, BOT_MARKETING_VOICE, BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
+import { BOT_BRAND, BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { signupHrefForPlan } from "../../lib/signup-intent";
@@ -24,9 +24,9 @@ import { usePaidPlanAvailability } from "../../hooks/usePaidPlanAvailability";
 import { useAuth } from "../../contexts/AuthContext";
 
 const FEATURED_TEMPLATE_KEYS = [
-  "sales-rep",
+  "personal-assistant",
+  "family-concierge",
   "front-desk",
-  "recruiter",
   "appointment-setter",
   "customer-support",
   "custom",
@@ -42,19 +42,19 @@ const DIRECTION_LABELS = {
   hybrid: "Inbound + outbound",
 } as const;
 const ROLE_ICONS: Record<string, LucideIcon> = {
-  "sales-rep": PhoneOutgoing,
+  "personal-assistant": UserRound,
+  "family-concierge": House,
   "front-desk": PhoneIncoming,
-  recruiter: BriefcaseBusiness,
   "appointment-setter": CalendarDays,
   "customer-support": Headphones,
   custom: WandSparkles,
 };
-const PUBLIC_PLAN_IDS = ["personal", "email", "voice-regular", "voice-email-regular"] as const;
+const PUBLIC_PLAN_IDS = ["personal", "email", "voice", "voice-email"] as const;
 const PLAN_NAMES: Record<(typeof PUBLIC_PLAN_IDS)[number], string> = {
   personal: "Free Builder",
   email: "Email",
-  "voice-regular": "Calls",
-  "voice-email-regular": "Calls + Email",
+  voice: "Calls",
+  "voice-email": "Calls + Email",
 };
 const PUBLIC_PLANS = PUBLIC_PLAN_IDS.map((id) => {
   const plan = STRIPE_PLANS.find((candidate) => candidate.id === id);
@@ -95,10 +95,9 @@ export default function WireAgentLanding() {
                 <span>Voice Bots</span> <span>With a Computer,</span>
               </span>{" "}
               <span className="landing-prestige__title-line is-accent">
-                <span>Phone Number,</span> <span>and Branded Email.</span>
+                <span>Phone Number,</span> <span>and Email Address.</span>
               </span>
             </h1>
-            <p className="landing-prestige__promise">{BOT_MARKETING_VOICE.activationLine}</p>
             <div className="landing-prestige__actions">
               {signedIn ? (
                 <Link to="/studio" className="landing-prestige__cta is-primary">
@@ -120,34 +119,33 @@ export default function WireAgentLanding() {
               )}
             </div>
             {signedIn ? null : <p className="landing-prestige__reassurance">No card required.</p>}
-            <nav className="landing-prestige__directions" aria-label="Choose Bot direction">
+            <nav className="landing-prestige__directions" aria-label="Choose what your Bot does">
               <Link
                 className="landing-prestige__direction is-inbound"
-                to={signupHrefForPlan("personal", { template: "front-desk" })}
-                aria-label="Inbound: Answer. Act. Create an Inbound Bot"
-                onClick={() => trackSignupIntent("hero_direction", "Inbound Front Desk")}
+                to={signupHrefForPlan("personal", { template: "personal-assistant" })}
+                aria-label="For You: Plan. Coordinate. Create Your Assistant"
+                onClick={() => trackSignupIntent("hero_direction", "Personal Assistant")}
               >
                 <span className="landing-prestige__direction-label">
-                  <PhoneIncoming aria-hidden="true" /> Inbound
+                  <UserRound aria-hidden="true" /> For You
                 </span>
-                <strong>Answer. Act.</strong>
+                <strong>Plan. Coordinate.</strong>
                 <span className="landing-prestige__direction-action">
-                  Create an Inbound Bot <ArrowRight aria-hidden="true" />
+                  Create Your Assistant <ArrowRight aria-hidden="true" />
                 </span>
               </Link>
               <Link
                 className="landing-prestige__direction is-outbound"
-                to={signupHrefForPlan("personal", { template: "sales-rep" })}
-                aria-label="Outbound, early access: Call. Book. Create an Outbound Bot"
-                onClick={() => trackSignupIntent("hero_direction", "Outbound Sales Rep")}
+                to={signupHrefForPlan("personal", { template: "front-desk" })}
+                aria-label="For Your Business: Answer. Book. Create Your Front Desk"
+                onClick={() => trackSignupIntent("hero_direction", "Business Front Desk")}
               >
                 <span className="landing-prestige__direction-label">
-                  <PhoneOutgoing aria-hidden="true" /> Outbound
-                  <span className="landing-prestige__direction-status">Early access</span>
+                  <PhoneIncoming aria-hidden="true" /> For Your Business
                 </span>
-                <strong>Call. Book.</strong>
+                <strong>Answer. Book.</strong>
                 <span className="landing-prestige__direction-action">
-                  Create an Outbound Bot <ArrowRight aria-hidden="true" />
+                  Create Your Front Desk <ArrowRight aria-hidden="true" />
                 </span>
               </Link>
             </nav>
@@ -157,7 +155,7 @@ export default function WireAgentLanding() {
         <section id="solutions" className="landing-prestige__section landing-prestige__roles">
           <div className="landing-prestige__rail">
             <header className="landing-prestige__section-heading">
-              <p>Inbound + Outbound</p>
+              <p>Everyday Life + Work</p>
               <h2>
                 <span>Pick the Work.</span> <span>Put a Bot on It.</span>
               </h2>
@@ -217,7 +215,7 @@ export default function WireAgentLanding() {
             <div className="landing-prestige__price-grid">
               {PUBLIC_PLANS.map(({ id, plan }) => {
                 const free = id === "personal";
-                const featured = id === "voice-email-regular";
+                const featured = id === "voice-email";
                 const emailSetupReview = needsEmailSetupReview(id);
                 return (
                   <article
@@ -256,7 +254,7 @@ export default function WireAgentLanding() {
                           ? "Upgrade for live work"
                           : id === "email"
                             ? "AI and email allowance included"
-                            : id === "voice-email-regular"
+                            : id === "voice-email"
                               ? "1 number + 1 email inbox"
                               : "1 local number included"}
                       </li>
@@ -295,10 +293,7 @@ export default function WireAgentLanding() {
             <h2 id="landing-prestige-closing">
               <span>Put Your First Bot</span> <span>to Work.</span>
             </h2>
-            <p>
-              Set up your Bot free. Rehearse until it sounds like your business, then go live on
-              your terms.
-            </p>
+            <p>Set up your Bot free. Make it yours, then go live when you are ready.</p>
             <div className="landing-prestige__actions">
               {signedIn ? (
                 <Link to="/studio" className="landing-prestige__cta is-primary">

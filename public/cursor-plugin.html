@@ -16,7 +16,7 @@
     <section class="card">
       <strong>MCP endpoint:</strong> <code>https://botbound.app/mcp</code><br />
       <strong>Transport:</strong> Streamable HTTP<br />
-      <strong>Auth:</strong> OAuth 2.0 with PKCE S256. Cursor registers dynamically against Cursor-operated callbacks. No API keys in the plugin.
+      <strong>Auth:</strong> OAuth 2.0 with PKCE S256. Cursor registers dynamically against Cursor operated callbacks. No API keys in the plugin.
     </section>
 
     <p>
@@ -32,7 +32,7 @@
     </ol>
 
     <h2>Manual Config</h2>
-    <p>Paste this into Cursor MCP settings. Do not add headers, API keys, or an <code>auth</code> client secret. Cursor discovers OAuth from BotBound's well-known metadata. The legacy technical server key remains <code>wireline</code> during the migration.</p>
+    <p>Paste this into Cursor MCP settings. Do not add headers, API keys, or an <code>auth</code> client secret. Cursor discovers OAuth from BotBound's well known metadata. The legacy technical server key remains <code>wireline</code> during the migration.</p>
     <pre><code>{
   "mcpServers": {
     "wireline": {
@@ -46,13 +46,17 @@
       <li>Create a BotBound account during Connect if you are new.</li>
       <li>Build your first confirmed private agent draft in that workspace.</li>
       <li>List agents and inspect one agent's next step without seeing phone numbers or customer records.</li>
-      <li>Trigger the agent in a private text rehearsal, or start a short tool-free private voice simulation.</li>
+      <li>Trigger the agent in a private text rehearsal, or start a short tool free private voice simulation.</li>
       <li>Save a confirmed Training fact or rule after you enable that permission in BotBound Apps.</li>
     </ul>
 
+    <h2>Calls for You and Your Business</h2>
+    <p>Connect a personal or business Bot with a paid Calls plan, then ask Cursor to prepare a service or requested call. Grant the new call permissions when prompted. Open the review link, check the recipient and instruction, choose a granted recipient permission, and select Place call in BotBound. Cursor can then check the call's status. Claude and ChatGPT use the same tools and review flow.</p>
+    <p>The initial scope is Illinois callers and recipients with captured permission. Preparing a call does not contact anyone. Proposals expire after 24 hours, and carrier acceptance does not mean the requested task succeeded.</p>
+
     <h2>What Stays in BotBound</h2>
     <ul>
-      <li>Phone-number purchase or attachment.</li>
+      <li>Phone number purchase or attachment.</li>
       <li>Live inbound or outbound calling and messaging.</li>
       <li>Integrations, billing, and agent launch.</li>
       <li>Call recordings, transcripts, and customer records.</li>

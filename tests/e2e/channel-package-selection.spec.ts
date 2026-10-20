@@ -68,7 +68,7 @@ test("all channel capacities retain exact annual signup intent in one readable s
       await expect(usageNote).not.toContainText("Outbound calls");
     }
     if (plan.checkoutAvailability !== "available")
-      await expect(card).toContainText("Plan and rehearse an SMS Bot privately.");
+      await expect(card).toContainText("SMS needs sender approval.");
     const overflow = await card.locator("..").evaluate((element) =>
       [element, ...element.querySelectorAll("*")]
         .filter((node) => node.clientWidth > 0 && node.scrollWidth > node.clientWidth + 2)

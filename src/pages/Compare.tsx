@@ -22,7 +22,7 @@ const DIFFERENCES = [
     copy: "Checks your configured hours, timezone, buffers, and imported busy times before supported bookings.",
   },
   {
-    title: "After-Hours Coverage",
+    title: "After Hours Coverage",
     copy: "Can answer around the clock within your configured runtime and routing rules.",
   },
   {
@@ -36,7 +36,7 @@ const MARKET_OPTIONS = [
     name: "BotBound",
     price: "$0 to build · Calls from $19/mo · Email from $9/mo",
     usage:
-      "Calls Light includes 50 minutes and one local number. Email and combined-channel activation follow a setup review.",
+      "Calls Light includes 50 minutes and one local number. Email and combined channel activation follow a setup review.",
     fit: "Owners who want a Bot with the channels they choose, connected tools, and logged outcomes",
     href: "/pricing",
     source: "BotBound pricing",
@@ -46,7 +46,7 @@ const MARKET_OPTIONS = [
     name: "Goodcall",
     price: "$79/mo Starter",
     usage:
-      "100 unique customers/mo, then $0.79 each; no per-minute charge. AI test runs have a separate allowance.",
+      "100 unique customers/mo, then $0.79 each; no per minute charge. AI test runs have a separate allowance.",
     fit: "Flat rate AI phone answering where customer count limits fit the call pattern",
     href: "https://www.goodcall.com/pricing",
     source: "Goodcall pricing",
@@ -56,7 +56,7 @@ const MARKET_OPTIONS = [
     name: "Smith.ai",
     price: "$0 free · Pro from $150/mo",
     usage: "25 live calls on Free; 75 included live calls on the first paid Pro tier",
-    fit: "AI receptionist buyers who prefer per-call capacity and service-backed tiers",
+    fit: "AI receptionist buyers who prefer per call capacity and service backed tiers",
     href: "https://smith.ai/pricing/ai-receptionist",
     source: "Smith.ai pricing",
     internal: false,
@@ -65,7 +65,7 @@ const MARKET_OPTIONS = [
     name: "Bland",
     price: "$0 platform · $0.14/min",
     usage: "Model and speech included; carrier costs separate; transfers $0.05/min",
-    fit: "Developers who want API-first voice with bundled model and speech costs",
+    fit: "Developers who want API based voice with bundled model and speech costs",
     href: "https://www.bland.ai/pricing",
     source: "Bland pricing",
     internal: false,
@@ -73,8 +73,8 @@ const MARKET_OPTIONS = [
   {
     name: "Retell",
     price: "$0.07 to $0.31/min",
-    usage: "Some speech-to-speech models cost more; phone numbers and messaging are separate",
-    fit: "Developers optimizing model, voice, telephony, and add-on choices per deployment",
+    usage: "Some direct speech models cost more; phone numbers and messaging are separate",
+    fit: "Developers optimizing model, voice, telephony, and add on choices per deployment",
     href: "https://www.retellai.com/pricing",
     source: "Retell pricing",
     internal: false,
@@ -108,7 +108,7 @@ export default function Compare() {
     >
       <PageMeta
         title="Why BotBound | Compare Bots"
-        description="Compare BotBound's Bot workspace with flat-rate, per-call, and developer voice infrastructure pricing."
+        description="Compare BotBound's Bot workspace with flat subscriptions, usage pricing, and developer voice infrastructure."
         path="/compare"
       />
 
@@ -172,7 +172,7 @@ export default function Compare() {
           <div className="mt-8 hidden w-full max-w-full overflow-x-auto border border-border bg-card lg:block">
             <table className="w-full min-w-[900px] border-collapse text-left">
               <caption className="sr-only">
-                Public launch pricing and buying-model comparison for BotBound and selected
+                Public launch pricing and buying model comparison for BotBound and selected
                 alternatives
               </caption>
               <thead className="border-b border-border bg-muted/40">
@@ -239,8 +239,8 @@ export default function Compare() {
           <p className="mt-4 max-w-4xl text-xs leading-5 text-muted-foreground">
             Public prices were checked on the linked official pages on October 11, 2026 and may
             change. Taxes, carrier fees, optional extras, annual discounts, implementation services,
-            and usage patterns can change the effective total. This is a buying-model reference, not
-            a claim that unlike products are feature-for-feature equivalents.
+            and usage patterns can change the effective total. This is a buying model reference, not
+            a claim that unlike products are feature by feature equivalents.
           </p>
           <details className="group mt-8 border-t border-border">
             <summary className="wl-focus-ring-halo flex min-h-11 max-w-none cursor-pointer list-none items-center justify-between gap-3 rounded-md py-3 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">

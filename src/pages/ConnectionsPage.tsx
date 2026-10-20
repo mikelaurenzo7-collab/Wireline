@@ -21,7 +21,7 @@ export default function ConnectionsPage() {
           <AccordionItem value="apps" className="rounded-xl border border-border bg-card">
             <AccordionTrigger className="wl-preserve-case min-h-16 px-4 py-2 text-base font-semibold text-foreground hover:no-underline data-[state=open]:border-b data-[state=open]:border-border">
               <span className="flex flex-col items-start gap-0.5 text-left">
-                <span>Business Tools</span>
+                <span>Connected Tools</span>
                 <span className="text-xs font-normal text-muted-foreground">
                   CRM, team, social, and spreadsheet tools
                 </span>

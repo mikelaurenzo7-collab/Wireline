@@ -17,6 +17,11 @@ const h = vi.hoisted(() => ({
   accepted: vi.fn(),
   failed: vi.fn(),
   order: [] as string[],
+  agent: { id: "bot", role: "receptionist", isBusinessAgent: true } as {
+    id: string;
+    role?: string;
+    isBusinessAgent?: boolean;
+  },
 }));
 vi.mock("../src/lib/channel-entitlements", () => ({ requireTenantChannel: h.channel }));
 vi.mock("../src/lib/account-environment-policy", () => ({
@@ -45,7 +50,7 @@ vi.mock("../src/lib/server-context", () => ({
           table === "wireline_settings"
             ? [{ subscriptionStatus: "active" }]
             : table === "wireline_agents"
-              ? [{ id: "bot" }]
+              ? [h.agent]
               : [{ phoneNumber: "+13125550102", carrierNumberId: `PN${"2".repeat(32)}` }],
       };
       return q;
@@ -99,6 +104,8 @@ const input = {
 };
 beforeEach(() => {
   vi.stubEnv("BOTBOUND_GENERAL_OUTBOUND_ENABLED", "true");
+  vi.stubEnv("BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED", "false");
+  h.agent = { id: "bot", role: "receptionist", isBusinessAgent: true };
   vi.clearAllMocks();
   h.order.length = 0;
   h.channel.mockResolvedValue({ planId: "voice", channels: ["voice"] });
@@ -108,9 +115,9 @@ beforeEach(() => {
     created: true,
     placementId,
   });
-  h.permission.mockImplementation(async () => {
+  h.permission.mockImplementation(async ({ callPurpose }) => {
     h.order.push("permission");
-    return { effectiveCallPurpose: "service_or_requested" };
+    return { effectiveCallPurpose: callPurpose };
   });
   h.prepare.mockImplementation(async () => {
     h.order.push("fund");
@@ -137,6 +144,49 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllEnvs());
 describe("ordinary outbound pre-SIP funding", () => {
+  it.each([
+    { role: "personal_assistant", isBusinessAgent: false, callPurpose: "service_or_requested" },
+    { role: "receptionist", isBusinessAgent: true, callPurpose: "callback" },
+    { role: "scheduler", isBusinessAgent: undefined, callPurpose: "service_or_requested" },
+  ] as const)(
+    "places non-marketing calls for any Bot through the same funding path: %j",
+    async ({ callPurpose, ...agent }) => {
+      vi.stubEnv("BOTBOUND_GENERAL_OUTBOUND_ENABLED", "false");
+      vi.stubEnv("BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED", "true");
+      h.agent = { id: "bot", ...agent };
+      await expect(placeOutboundCall({ ...input, callPurpose })).resolves.toMatchObject({
+        ok: true,
+        callId: sid,
+      });
+      expect(h.order).toEqual(["permission", "fund", "spend", "dispatch", "create"]);
+      expect(h.channel).toHaveBeenCalledWith("tenant", "voice");
+    },
+  );
+  it.each([
+    { role: "receptionist", isBusinessAgent: true, callPurpose: "marketing_or_sales" },
+    { role: "personal_assistant", isBusinessAgent: false, callPurpose: "marketing_or_sales" },
+  ] as const)(
+    "keeps marketing closed for every Bot audience: %j",
+    async ({ callPurpose, ...agent }) => {
+      vi.stubEnv("BOTBOUND_GENERAL_OUTBOUND_ENABLED", "false");
+      vi.stubEnv("BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED", "true");
+      h.agent = { id: "bot", ...agent };
+      await expect(placeOutboundCall({ ...input, callPurpose })).resolves.toMatchObject({
+        ok: false,
+        code: "OUTBOUND_UNAVAILABLE",
+      });
+      expect(h.claim).not.toHaveBeenCalled();
+      expect(h.create).not.toHaveBeenCalled();
+    },
+  );
+  it("does not treat the free personal plan as a paid voice entitlement", async () => {
+    vi.stubEnv("BOTBOUND_GENERAL_OUTBOUND_ENABLED", "false");
+    vi.stubEnv("BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED", "true");
+    h.agent = { id: "bot", role: "personal_assistant", isBusinessAgent: false };
+    h.channel.mockRejectedValueOnce(new Error("Voice channel requires a paid Calls plan"));
+    await expect(placeOutboundCall(input)).rejects.toThrow("paid Calls plan");
+    expect(h.create).not.toHaveBeenCalled();
+  });
   it.each([
     "+19075550101",
     "+18085550101",

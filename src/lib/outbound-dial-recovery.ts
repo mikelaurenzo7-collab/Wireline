@@ -1,4 +1,5 @@
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+export const OUTBOUND_REQUEST_ID_PATTERN =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
 export type PendingOutboundDial = { requestKey: string };
 type RecoveryStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
@@ -16,7 +17,7 @@ export function readPendingOutboundDial(
   if (
     record.version !== 1 ||
     typeof record.requestKey !== "string" ||
-    !UUID.test(record.requestKey)
+    !OUTBOUND_REQUEST_ID_PATTERN.test(record.requestKey)
   ) {
     throw new Error(
       "Saved call status could not be read. Check call history before another request.",
@@ -30,7 +31,7 @@ export function savePendingOutboundDial(
   requestKey: string,
   storage: RecoveryStorage,
 ): void {
-  if (!UUID.test(requestKey)) throw new Error("Invalid call request.");
+  if (!OUTBOUND_REQUEST_ID_PATTERN.test(requestKey)) throw new Error("Invalid call request.");
   storage.setItem(storageKey(userId), JSON.stringify({ version: 1, requestKey }));
   if (readPendingOutboundDial(userId, storage)?.requestKey !== requestKey) {
     throw new Error("Could not retain call status. The call was not requested.");
