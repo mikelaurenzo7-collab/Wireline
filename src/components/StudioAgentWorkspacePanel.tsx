@@ -50,11 +50,11 @@ type AgentSetupResponse = {
 /** What the Bot already knows, so the add box never reads as an empty Bot. */
 function knowledgeSummaryLabel(summary: { facts: number; rules: number }) {
   if (summary.facts === 0 && summary.rules === 0) {
-    return "Your Bot has no saved facts or rules yet. Anything you add here becomes its first.";
+    return "No saved facts or rules yet.";
   }
   const facts = `${summary.facts} ${summary.facts === 1 ? "fact" : "facts"}`;
   const rules = `${summary.rules} ${summary.rules === 1 ? "rule" : "rules"}`;
-  return `Your Bot uses ${facts} and ${rules}. Anything you add here joins them.`;
+  return `${facts} · ${rules}`;
 }
 
 function inferPersonality(value: string | undefined) {

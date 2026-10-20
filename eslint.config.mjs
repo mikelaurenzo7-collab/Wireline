@@ -30,6 +30,7 @@ export default [
       ".worktrees/**",
       "worktrees/**",
       "artifacts/**",
+      "output/**", // ignored local marketing/QA exports, not application source
       "coverage/**",
       "test-results/**",
       "playwright-report/**",

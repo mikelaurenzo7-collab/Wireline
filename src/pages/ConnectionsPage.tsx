@@ -13,7 +13,7 @@ export default function ConnectionsPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-6">
       <WorkspacePageFrame mode="standard" className="gap-3">
-        <WorkspacePageIntro title="Connections" titleHidden="lg" />
+        <WorkspacePageIntro title="Connections" />
 
         <MailboxConnectionCard />
 

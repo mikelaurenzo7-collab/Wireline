@@ -42,7 +42,7 @@ Use the narrowest sufficient checks while developing, then run the full gate for
 | ChatGPT App                                                                                | Root checks plus the MCP discovery/OAuth/release checks in `docs/CHATGPT_APP.md`                                  |
 | Cursor Directory                                                                           | Root checks plus the Open Plugins package and reviewer packet in `docs/CURSOR_PLUGIN.md`                          |
 
-GitHub Actions may be unavailable because of account billing. That does not lower the release standard: exact-head verification for the deployment target, CodeRabbit review, targeted provider checks, and production verification remain required. Keep any named check that ran and found a defect visible until resolved or documented as an independently verified baseline failure.
+GitHub Actions may be unavailable because of account billing. That does not lower the release standard: exact-head verification for the deployment target, review of the final source, targeted provider checks, and production verification remain required. No particular review vendor is required. Keep any named check that ran and found a defect visible until resolved or documented as an independently verified baseline failure.
 
 ## Database migrations
 

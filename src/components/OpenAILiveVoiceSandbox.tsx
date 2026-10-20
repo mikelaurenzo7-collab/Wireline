@@ -478,11 +478,6 @@ export default function OpenAILiveVoiceSandbox({
             >
               Speak with <span className="wl-preserve-case">{agentName}</span>
             </h3>
-            <p className="mt-1 max-w-2xl text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-              {compact
-                ? "Private browser mic. External actions stay off."
-                : "Try this Bot's rules, facts, and voice in a private browser session."}
-            </p>
           </div>
         </div>
         <button

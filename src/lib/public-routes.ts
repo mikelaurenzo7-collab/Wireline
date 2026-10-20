@@ -18,6 +18,7 @@ const MARKETING_PUBLIC_PATHS = new Set([
   "/trust",
   "/privacy",
   "/terms",
+  "/sms-consent",
   "/solutions",
   "/use-cases",
   "/not-found",

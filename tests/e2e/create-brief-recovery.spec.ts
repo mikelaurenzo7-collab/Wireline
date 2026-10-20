@@ -79,11 +79,15 @@ for (const sessionFailure of ["unavailable", "offline"] as const) {
       ),
     ).toBeVisible();
 
+    const workspaceUrl = page.url();
     failSession = true;
     await page.reload();
-    await page.waitForURL(/\/signin/);
+    await expect(
+      page.getByRole("heading", { name: "Session Could Not Be Confirmed", exact: true }),
+    ).toBeVisible();
+    await expect(page).toHaveURL(workspaceUrl);
     failSession = false;
-    await page.goto(`/studio?agent=${bot.id}&section=setup`);
+    await page.getByRole("button", { name: "Try Again", exact: true }).click();
     await expect(knowledge).toHaveValue(brief);
     await page.getByRole("button", { name: "Save Changes", exact: true }).click();
     await expect(

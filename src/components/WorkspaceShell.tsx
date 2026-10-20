@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode, type RefObject } from "react";
+import { useRef, useState, type ReactElement, type ReactNode, type RefObject } from "react";
 import { Link, useLocation } from "react-router";
 import { ChevronsLeft, ChevronsRight, Search } from "lucide-react";
 
@@ -27,6 +27,7 @@ import {
 } from "../constants/navigation";
 import { navIcon } from "./nav-icons";
 import { WiredEyebrow } from "./ui/WiredEyebrow";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/shadcn/Tooltip";
 
 // Legacy persistence/native identifiers intentionally remain stable through the
 // visible BotBound rebrand so existing installs and saved UI state do not reset.
@@ -37,6 +38,26 @@ const WORKSPACE_RAIL_STORAGE_KEY = "wireline:workspace-rail:v1";
 function userInitial(name?: string | null, email?: string | null) {
   const source = (name || email || "B").trim();
   return source.charAt(0).toUpperCase() || "B";
+}
+
+function RailHint({
+  label,
+  enabled,
+  children,
+}: {
+  label: string;
+  enabled: boolean;
+  children: ReactElement;
+}) {
+  if (!enabled) return children;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side="right" className="wl-shell-rail-tooltip">
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 function RailLink({
@@ -55,18 +76,20 @@ function RailLink({
   const hint = NAV_SHORTCUT_HINTS[item.href];
 
   return (
-    <Link
-      to={item.href}
-      aria-label={collapsed ? item.label : undefined}
-      aria-current={active ? "page" : undefined}
-      title={collapsed ? item.label : hint ? `${item.label} · ${hint}` : undefined}
-      data-wireline-nav-href={item.href}
-      data-wireline-nav-active={active ? "true" : undefined}
-      className="wl-shell-nav-item wl-focus-ring-halo"
-    >
-      <Icon size={17} strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
-      {!collapsed ? <span className="wl-shell-nav-label">{item.label}</span> : null}
-    </Link>
+    <RailHint label={item.label} enabled={collapsed}>
+      <Link
+        to={item.href}
+        aria-label={collapsed ? item.label : undefined}
+        aria-current={active ? "page" : undefined}
+        title={!collapsed && hint ? `${item.label} · ${hint}` : undefined}
+        data-wireline-nav-href={item.href}
+        data-wireline-nav-active={active ? "true" : undefined}
+        className="wl-shell-nav-item wl-focus-ring-halo"
+      >
+        <Icon size={17} strokeWidth={active ? 2.2 : 1.8} aria-hidden="true" />
+        {!collapsed ? <span className="wl-shell-nav-label">{item.label}</span> : null}
+      </Link>
+    </RailHint>
   );
 }
 
@@ -180,114 +203,127 @@ function DesktopRail({
   const settingsActive = isNavActive(pathname, "/settings");
 
   return (
-    <aside
-      aria-label="Workspace navigation"
-      data-wireline-rail-collapsed={collapsed ? "true" : undefined}
-      className="wl-shell-rail hidden h-full w-full min-w-0 flex-col lg:flex"
-    >
-      <div className="wl-shell-brand-row">
-        <Link to="/studio" aria-label="BotBound Workspace" className="wl-shell-brand-link">
-          <span className="wl-shell-brand-mark">
-            <BotBoundMark className="size-8" />
-          </span>
-          {!collapsed ? <BotBoundWordmark className="wl-shell-wordmark" /> : null}
-        </Link>
-        <button
-          type="button"
-          onClick={onToggleCollapsed}
-          aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
-          title={collapsed ? "Expand navigation" : "Collapse navigation"}
-          className="wl-shell-icon-button wl-focus-ring-halo"
-        >
-          {collapsed ? (
-            <ChevronsRight className="size-4" aria-hidden="true" />
-          ) : (
-            <ChevronsLeft className="size-4" aria-hidden="true" />
-          )}
-        </button>
-      </div>
-
-      <button
-        type="button"
-        aria-label="Open command palette"
-        title={collapsed ? `Search · ${searchShortcut}` : undefined}
-        className="wl-shell-search wl-focus-ring-halo"
-        onClick={() => window.dispatchEvent(new CustomEvent("wireline:open-command-bar"))}
+    <TooltipProvider delayDuration={180} skipDelayDuration={100}>
+      <aside
+        aria-label="Workspace navigation"
+        data-wireline-rail-collapsed={collapsed ? "true" : undefined}
+        className="wl-shell-rail hidden h-full w-full min-w-0 flex-col lg:flex"
       >
-        <Search size={15} strokeWidth={2} aria-hidden="true" />
-        {!collapsed ? (
-          <>
-            <span className="wl-shell-search-label">Search</span>
-            <kbd className="wl-shell-search-key">{searchShortcut}</kbd>
-          </>
-        ) : null}
-      </button>
+        <div className="wl-shell-brand-row">
+          <RailHint label="BotBound Workspace" enabled={collapsed}>
+            <Link to="/studio" aria-label="BotBound Workspace" className="wl-shell-brand-link">
+              <span className="wl-shell-brand-mark">
+                <BotBoundMark className="size-8" />
+              </span>
+              {!collapsed ? <BotBoundWordmark className="wl-shell-wordmark" /> : null}
+            </Link>
+          </RailHint>
+          <RailHint label="Expand navigation" enabled={collapsed}>
+            <button
+              type="button"
+              onClick={onToggleCollapsed}
+              aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
+              aria-expanded={!collapsed}
+              title={collapsed ? undefined : "Collapse navigation"}
+              className="wl-shell-icon-button wl-focus-ring-halo"
+            >
+              {collapsed ? (
+                <ChevronsRight className="size-4" aria-hidden="true" />
+              ) : (
+                <ChevronsLeft className="size-4" aria-hidden="true" />
+              )}
+            </button>
+          </RailHint>
+        </div>
 
-      {/* The Bot every page acts on keeps one fixed slot, on every route, so
+        <RailHint label={`Search · ${searchShortcut}`} enabled={collapsed}>
+          <button
+            type="button"
+            aria-label="Open command palette"
+            className="wl-shell-search wl-focus-ring-halo"
+            onClick={() => window.dispatchEvent(new CustomEvent("wireline:open-command-bar"))}
+          >
+            <Search size={15} strokeWidth={2} aria-hidden="true" />
+            {!collapsed ? (
+              <>
+                <span className="wl-shell-search-label">Search</span>
+                <kbd className="wl-shell-search-key">{searchShortcut}</kbd>
+              </>
+            ) : null}
+          </button>
+        </RailHint>
+
+        {/* The Bot every page acts on keeps one fixed slot, on every route, so
           the nav below never shifts between pages. */}
-      {agent ? (
-        <Link
-          to={`/studio?agent=${encodeURIComponent(agent.id)}`}
-          aria-label={`Current Bot: ${agent.name}`}
-          title={collapsed ? agent.name : undefined}
-          data-wireline-bot-selected="true"
-          className="wl-shell-bot-context wl-focus-ring-halo"
-        >
-          <BotMark
-            seed={agent.id}
-            name={agent.name}
-            markKey={agent.mark_key}
-            size={28}
-            title={agent.name}
-          />
-          {!collapsed ? (
-            <span className="wl-shell-bot-copy">
-              <span className="wl-shell-bot-name">{agent.name}</span>
-            </span>
-          ) : null}
-        </Link>
-      ) : null}
+        {agent ? (
+          <RailHint label={agent.name} enabled={collapsed}>
+            <Link
+              to={`/studio?agent=${encodeURIComponent(agent.id)}`}
+              aria-label={`Current Bot: ${agent.name}`}
+              data-wireline-bot-selected="true"
+              className="wl-shell-bot-context wl-focus-ring-halo"
+            >
+              <BotMark
+                seed={agent.id}
+                name={agent.name}
+                markKey={agent.mark_key}
+                size={28}
+                title={agent.name}
+              />
+              {!collapsed ? (
+                <span className="wl-shell-bot-copy">
+                  <span className="wl-shell-bot-name">{agent.name}</span>
+                </span>
+              ) : null}
+            </Link>
+          </RailHint>
+        ) : null}
 
-      <DesktopNavGroup
-        label="Work"
-        items={WORKSPACE_NAV}
-        pathname={pathname}
-        collapsed={collapsed}
-        secondaryRouteParent={secondaryRouteParent}
-      />
+        <DesktopNavGroup
+          label="Work"
+          items={WORKSPACE_NAV}
+          pathname={pathname}
+          collapsed={collapsed}
+          secondaryRouteParent={secondaryRouteParent}
+        />
 
-      <div className="wl-shell-nav-divider" />
-      <DesktopNavGroup
-        label="Manage"
-        items={OPERATE_NAV.filter((item) => item.href !== "/settings")}
-        pathname={pathname}
-        collapsed={collapsed}
-        secondaryRouteParent={secondaryRouteParent}
-      />
+        <div className="wl-shell-nav-divider" />
+        <DesktopNavGroup
+          label="Manage"
+          items={OPERATE_NAV.filter((item) => item.href !== "/settings")}
+          pathname={pathname}
+          collapsed={collapsed}
+          secondaryRouteParent={secondaryRouteParent}
+        />
 
-      <div className="wl-shell-rail-spacer" />
-      <div className="wl-shell-account-zone">
-        <Link
-          to="/settings"
-          aria-current={settingsActive ? "page" : undefined}
-          data-wireline-nav-href="/settings"
-          data-wireline-nav-active={settingsActive ? "true" : undefined}
-          className="wl-shell-account min-h-[44px] wl-focus-ring-halo"
-          aria-label="Account settings"
-          title="Account settings"
-        >
-          <span className="wl-shell-account-avatar">
-            {userInitial(user?.full_name, user?.email)}
-          </span>
-          {!collapsed ? (
-            <span className="wl-shell-account-copy">
-              <span className="wl-shell-account-name">Settings</span>
-              <span className="block truncate text-xs text-muted-foreground">{displayName}</span>
-            </span>
-          ) : null}
-        </Link>
-      </div>
-    </aside>
+        <div className="wl-shell-rail-spacer" />
+        <div className="wl-shell-account-zone">
+          <RailHint label="Account settings" enabled={collapsed}>
+            <Link
+              to="/settings"
+              aria-current={settingsActive ? "page" : undefined}
+              data-wireline-nav-href="/settings"
+              data-wireline-nav-active={settingsActive ? "true" : undefined}
+              className="wl-shell-account min-h-[44px] wl-focus-ring-halo"
+              aria-label="Account settings"
+              title={collapsed ? undefined : "Account settings"}
+            >
+              <span className="wl-shell-account-avatar">
+                {userInitial(user?.full_name, user?.email)}
+              </span>
+              {!collapsed ? (
+                <span className="wl-shell-account-copy">
+                  <span className="wl-shell-account-name">Settings</span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {displayName}
+                  </span>
+                </span>
+              ) : null}
+            </Link>
+          </RailHint>
+        </div>
+      </aside>
+    </TooltipProvider>
   );
 }
 
@@ -369,6 +405,7 @@ export default function WorkspaceShell({
           minSize={208}
           maxSize={320}
           collapsedSize={68}
+          defaultCollapsed
           resizeHandleLabel="Resize workspace navigation"
           className="wl-workspace-rail-panel hidden lg:block"
         >

@@ -223,6 +223,11 @@ async function resolveSubscriptionAllowanceContext(
     interval = metadata.billing_interval;
     grantAmountUsd = Math.round((grantAmountUsd + amountUsd) * 100) / 100;
   }
+  if (!planId || !interval) {
+    throw new Error(
+      `Stripe invoice ${invoiceId} has no unambiguous posted Runtime Allowance grant.`,
+    );
+  }
   const metadata = {
     plan_id: planId,
     billing_interval: interval,

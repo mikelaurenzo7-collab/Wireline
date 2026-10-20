@@ -151,12 +151,11 @@ for (const width of [1440, 390]) {
     expect(sessions).toEqual([]);
     await expect(page.locator('[aria-label="Voice rehearsal transcript"]')).toHaveCount(0);
     await expect(page.getByText("Ready for a Voice Rehearsal", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("Call your live Bot", { exact: true })).toBeVisible();
+    await expect(page.getByText("Actions enabled", { exact: true })).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Call connected line +13125550123" }),
     ).toHaveAttribute("href", "tel:+13125550123");
-    await expect(
-      page.getByText("Real call. Enabled actions can run.", { exact: true }),
-    ).toBeVisible();
     await page.getByRole("button", { name: "Start rehearsal", exact: true }).click();
     await expect(page.getByText("Listening", { exact: true })).toBeVisible();
     expect(sessions).toEqual(["bot-front-desk"]);

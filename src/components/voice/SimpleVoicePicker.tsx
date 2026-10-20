@@ -102,7 +102,9 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
         setSelectedVoiceId(managedVoice?.id ?? storedVoiceId);
         setPhoneCall(agentData.voice?.phoneCall ?? null);
         setPhoneCallReady(
-          typeof agentData.voice?.phoneCallReady === "boolean" ? agentData.voice.phoneCallReady : null,
+          typeof agentData.voice?.phoneCallReady === "boolean"
+            ? agentData.voice.phoneCallReady
+            : null,
         );
         setSelectedProvider(
           managedVoice && (!storedProvider || storedProvider === "openai")
@@ -378,10 +380,10 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
 
       <p className="text-xs leading-5 text-muted-foreground">
         {phoneCall && phoneCallReady === false
-          ? `Used for browser rehearsals. This number is not registered for the phone voice yet, so callers still hear the standard voice until registration finishes.`
+          ? "Phone voice registration is pending. Callers hear the standard voice until it finishes."
           : phoneCallVoiceName(phoneCall)
-          ? `Used for browser rehearsals. On phone calls, callers hear ${phoneCallVoiceName(phoneCall)}, the closest phone voice. Preview starts a private voice rehearsal.`
-          : "Used for phone calls and browser rehearsals. Preview starts a private voice rehearsal."}
+            ? `Callers hear ${phoneCallVoiceName(phoneCall)}, the closest phone voice to your rehearsal voice.`
+            : "Used for phone calls and browser rehearsals."}
       </p>
       <button
         type="button"

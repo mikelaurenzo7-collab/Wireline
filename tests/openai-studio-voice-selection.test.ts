@@ -192,7 +192,6 @@ describe("OpenAI Studio voice selection", () => {
     expect(picker).toContain("includedVoices.map(renderVoice)");
     expect(picker).toContain("Preview Voice");
     expect(picker).toContain("<OpenAILiveVoiceSandbox");
-    expect(picker).toContain("Preview starts a private voice rehearsal.");
     expect(picker).toContain("key={`${selectedProvider}:${selectedVoiceId}`}");
     expect(picker).toContain(
       'const usesSeparatePhoneVoice = storedPrimaryProvider === "presenter"',

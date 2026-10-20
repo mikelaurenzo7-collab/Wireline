@@ -168,7 +168,8 @@ test("Studio opens Computer for the Bot currently selected", async ({ page }) =>
 
   await expect(page).toHaveURL(new RegExp(`/computer\\?agent=${bots[1].id}$`));
   await expect(page.locator("#computer-agent")).toHaveValue(bots[1].id);
-  await expect(page.getByText("Sales Bot", { exact: true }).first()).toBeVisible();
+  await expect(page.locator("#computer-agent")).toBeVisible();
+  await expect(page.locator("#computer-agent option:checked")).toHaveText("Sales Bot");
 });
 
 async function expectContentFits(container: Locator) {

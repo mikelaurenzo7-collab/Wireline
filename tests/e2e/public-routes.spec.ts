@@ -22,6 +22,7 @@ const PUBLIC_ROUTES = [
   "/contact",
   "/privacy",
   "/terms",
+  "/sms-consent",
   "/developers",
   "/signin",
   "/signup",
@@ -71,6 +72,7 @@ for (const route of PUBLIC_ROUTES) {
 const PRERENDERED_HEAD = [
   { route: "/pricing", title: "Pricing | Build Free, Add Calls or Email | BotBound" },
   { route: "/features", title: "Features | BotBound" },
+  { route: "/sms-consent", title: "SMS Consent | BotBound" },
   {
     route: "/for/legal",
     title: "BotBound for Law Firms | Phone Bots for Intake and Consult Routing",

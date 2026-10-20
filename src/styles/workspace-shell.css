@@ -282,6 +282,14 @@
 
 .wl-shell-rail[data-wireline-rail-collapsed="true"] {
   padding-inline: 0.5rem;
+  scrollbar-gutter: auto;
+}
+
+/* Portaled labels stay visible beyond the rail's scroll container. */
+.wl-shell-rail-tooltip {
+  background: var(--wireline-color-canvas-deeper);
+  color: var(--wireline-color-text-primary);
+  border-color: var(--wireline-color-border-strong);
 }
 
 .wl-shell-rail[data-wireline-rail-collapsed="true"] .wl-shell-brand-row {

@@ -1,7 +1,7 @@
 import { Phone } from "lucide-react";
 
 import type { BotMarkKey } from "../lib/bot-mark";
-import { Button } from "./atoms";
+import { Badge, Button } from "./atoms";
 import OpenAILiveVoiceSandbox from "./OpenAILiveVoiceSandbox";
 
 export function studioVoiceStartId(agentId: string) {
@@ -34,11 +34,11 @@ export default function StudioVoiceRehearsal({
       />
       {phoneHref ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground">Test your connected phone</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Real call. Enabled actions can run.
-            </p>
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <p className="text-sm font-semibold text-foreground">Call your live Bot</p>
+            <Badge variant="warning" className="max-w-full whitespace-normal">
+              Actions enabled
+            </Badge>
           </div>
           <Button asChild size="sm" variant="outline" className="min-h-11">
             <a href={phoneHref} aria-label={`Call connected line ${phone}`}>

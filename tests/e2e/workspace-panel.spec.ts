@@ -20,6 +20,7 @@ async function mockWorkspace(page: Page) {
     if (path === "/api/billing/status") {
       await route.fulfill({
         json: {
+          email_verified: true,
           channel_entitlements: {
             plan_id: "omnichannel",
             subscription_status: "active",
@@ -55,6 +56,43 @@ const conversation = (page: Page, botName = "Front Desk") =>
 
 test.describe("wide screens", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
+
+  test("navigation starts compact, labels icons, and remembers expansion", async ({
+    page,
+  }, testInfo) => {
+    await mockWorkspace(page);
+    await page.goto(`/studio?agent=${bots[0].id}`);
+
+    const rail = page.getByRole("complementary", { name: "Workspace navigation", exact: true });
+    const expand = rail.getByRole("button", { name: "Expand navigation", exact: true });
+    await expect(expand).toHaveAttribute("aria-expanded", "false");
+    expect((await rail.boundingBox())!.width).toBeLessThan(80);
+
+    const calendar = rail.getByRole("link", { name: "Calendar", exact: true });
+    await calendar.hover();
+    await expect(page.getByRole("tooltip", { name: "Calendar", exact: true })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath("workspace-compact-navigation.png") });
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("tooltip")).toHaveCount(0);
+
+    const connections = rail.getByRole("link", { name: "Connections", exact: true });
+    await connections.focus();
+    await expect(page.getByRole("tooltip", { name: "Connections", exact: true })).toBeVisible();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/\/connections$/);
+    await expect(page.getByRole("heading", { name: "Connections", exact: true })).toBeVisible();
+
+    await expand.click();
+    await expect(
+      rail.getByRole("button", { name: "Collapse navigation", exact: true }),
+    ).toHaveAttribute("aria-expanded", "true");
+    expect((await rail.boundingBox())!.width).toBeGreaterThan(200);
+    await page.reload();
+    await expect(
+      rail.getByRole("button", { name: "Collapse navigation", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole("tooltip")).toHaveCount(0);
+  });
 
   test("Set Up rests on Try It beside the conversation and opens the Bot's computer", async ({
     page,

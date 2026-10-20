@@ -31,7 +31,8 @@ router.get(
     if (!process.env.MICROSOFT_CLIENT_ID || !process.env.MICROSOFT_CLIENT_SECRET) {
       return res.status(503).json({
         code: "SERVICE_UNAVAILABLE",
-        error: "Microsoft mailbox integration is finishing setup. Try again shortly.",
+        error:
+          "Microsoft connections are not available yet. Contact BotBound support for setup help.",
       });
     }
 

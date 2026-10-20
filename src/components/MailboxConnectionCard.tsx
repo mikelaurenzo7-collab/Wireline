@@ -249,7 +249,7 @@ export default function MailboxConnectionCard() {
             </StatusNotice>
           ) : null}
           {error ? (
-            <StatusNotice tone="destructive" title="Inbox Action Unavailable" className="mt-4">
+            <StatusNotice tone="destructive" title="Connection Unavailable" className="mt-4">
               {error}
             </StatusNotice>
           ) : null}

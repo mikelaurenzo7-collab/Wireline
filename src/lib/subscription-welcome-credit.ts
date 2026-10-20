@@ -114,7 +114,7 @@ export async function ensureCurrentRuntimeAllowance(userId: string): Promise<voi
   if (
     !subscription?.subscriptionId ||
     subscription.status !== "active" ||
-    !(planById(subscription.plan)?.runtime_allowance_usd_monthly > 0)
+    !((planById(subscription.plan)?.runtime_allowance_usd_monthly ?? 0) > 0)
   ) {
     return;
   }

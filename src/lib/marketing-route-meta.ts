@@ -132,6 +132,11 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
     title: "Terms of Service",
     description: ACCOUNT_TERMS_DESCRIPTION,
   },
+  "/sms-consent": {
+    title: "SMS Consent | BotBound",
+    description:
+      "BotBound customer-care SMS: verbal opt-in script, message examples, and opt-out instructions.",
+  },
   "/solutions/sales": {
     title: "Set Up a Sales Bot for Lead Follow-Up | BotBound",
     description:

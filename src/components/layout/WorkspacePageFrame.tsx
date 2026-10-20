@@ -51,12 +51,10 @@ type WorkspacePageIntroProps = {
   align?: "center" | "start";
   /**
    * Drop the visible heading when something else already names the section.
-   * `true` hides it at every breakpoint — right when a tab strip below carries
-   * the name on mobile too (Settings, Inbox). `"lg"` hides it only at `lg` and
-   * up, where the workspace sidebar names the page — right when mobile has no
-   * substitute (Connections sits under the dock's "More", with no tab strip,
-   * so below `lg` this heading is the page's only on-screen name). Either way
-   * the heading stays in the accessibility tree.
+   * `true` hides it at every breakpoint when a tab strip carries the name.
+   * `"lg"` hides it only at desktop sizes when another visible heading names
+   * the page. The icon-only sidebar is not a substitute for a page title.
+   * The heading stays in the accessibility tree.
    */
   titleHidden?: boolean | "lg";
 };

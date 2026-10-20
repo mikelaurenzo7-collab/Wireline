@@ -10,6 +10,7 @@ const routes = [
   "/security",
   "/support",
   "/contact",
+  "/sms-consent",
   "/signin",
 ];
 

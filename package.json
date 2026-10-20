@@ -170,7 +170,7 @@
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.62.0",
     "@typescript-eslint/parser": "^8.62.0",
-    "@vitest/coverage-v8": "^4.1.9",
+    "@vitest/coverage-v8": "4.1.11",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
@@ -183,7 +183,7 @@
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "vite": "^6.4.3",
-    "vitest": "^4.1.9"
+    "vitest": "4.1.11"
   },
   "overrides": {
     "brace-expansion@5": "5.0.12",

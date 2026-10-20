@@ -22,11 +22,9 @@ const oauthCallbackRoutes = [
 
 describe("OAuth provider-error responses", () => {
   it("returns static text and rate-limits callbacks without logging provider-controlled detail", () => {
-    const reflectedProviderError =
-      /\.send\(\s*`[^`]*\$\{(?:error|error_description|oauthError)\b/;
+    const reflectedProviderError = /\.send\(\s*`[^`]*\$\{(?:error|error_description|oauthError)\b/;
 
-    const callbackLimiter =
-      /router\.get\(\s*["'][^"']*\/callback["'],\s*oauthRateLimiter\b/g;
+    const callbackLimiter = /router\.get\(\s*["'][^"']*\/callback["'],\s*oauthRateLimiter\b/g;
     // Only reject provider-controlled detail logged from the provider-error branch.
     // Other callback diagnostics (for example an internal fetch/network error) may
     // legitimately use an `error` field without reflecting OAuth query data.
@@ -66,7 +64,7 @@ describe("OAuth provider-error responses", () => {
     for (const path of connectStarts) {
       const source = read(path);
       expect(source, path).toMatch(/status\(503\)|fromHttpStatus\(\s*503/);
-      expect(source, path).toContain("finishing setup");
+      expect(source, path).toMatch(/finishing setup|connections are not available yet/);
       expect(source, path).not.toMatch(
         /Missing [A-Z][A-Z0-9_]*_(CLIENT_ID|CLIENT_SECRET|APPLICATION_ID|APPLICATION_SECRET)/,
       );

@@ -32,7 +32,7 @@ router.get(
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
       return res.status(503).json({
         code: "SERVICE_UNAVAILABLE",
-        error: "Google mailbox integration is finishing setup. Try again shortly.",
+        error: "Google connections are not available yet. Contact BotBound support for setup help.",
       });
     }
 
