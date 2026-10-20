@@ -8,7 +8,7 @@
  * envelope instead (plan-entitlements), where every platform provider call is
  * metered.
  */
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { addCredit } from "./credit-wallet";
 import { planById } from "./plan-catalog";
@@ -48,6 +48,50 @@ async function legacyAnnualLumpExists(
   return Boolean(row);
 }
 
+/**
+ * Share of an annual period refunded or disputed and not later restored, in
+ * [0, 1]. Reversals name the period's base reference as grant_reference; a
+ * dispute restoration shares its reversal's reference id.
+ */
+async function withheldAnnualPortion(
+  userId: string,
+  billingPeriodReference: string,
+): Promise<number> {
+  const rows = await drizzle
+    .select({
+      refType: schema.creditLedger.refType,
+      refId: schema.creditLedger.refId,
+      metadata: schema.creditLedger.metadata,
+    })
+    .from(schema.creditLedger)
+    .where(
+      and(
+        eq(schema.creditLedger.userId, userId),
+        inArray(schema.creditLedger.refType, [
+          "subscription_runtime_allowance_reversal",
+          "subscription_runtime_allowance_dispute_restoration",
+        ]),
+      ),
+    );
+  const reversals = new Map<string, number>();
+  const restorations = new Map<string, number>();
+  for (const row of rows) {
+    const meta = (row.metadata ?? {}) as Record<string, unknown>;
+    if (!row.refId) continue;
+    if (row.refType === "subscription_runtime_allowance_reversal") {
+      if (meta.grant_reference !== billingPeriodReference) continue;
+      reversals.set(row.refId, clampUnitInterval(Number(meta.reversal_portion), 0));
+    } else {
+      restorations.set(row.refId, clampUnitInterval(Number(meta.restoration_portion), 0));
+    }
+  }
+  let withheld = 0;
+  for (const [refId, portion] of reversals) {
+    withheld += Math.max(0, portion - (restorations.get(refId) ?? 0));
+  }
+  return Math.min(1, withheld);
+}
+
 export async function grantSubscriptionRuntimeAllowance(
   userId: string,
   billingPeriodReference: string,
@@ -65,6 +109,12 @@ export async function grantSubscriptionRuntimeAllowance(
     const slice = annualAllowanceSliceReference(billingPeriodReference);
     if (!slice) return;
     reference = slice;
+    // Refunds and disputes reverse their portion of the slices already posted.
+    // Later slices shrink by the same portion, so a refunded year stops funding
+    // allowance and a partial refund withholds its share of every month.
+    const withheld = await withheldAnnualPortion(userId, billingPeriodReference);
+    amountUsd = Math.round(monthlyUsd * (1 - withheld) * 100) / 100;
+    if (!(amountUsd > 0)) return;
   }
 
   const { applied } = await addCredit(userId, amountUsd, "subscription_runtime_allowance", {
@@ -94,6 +144,15 @@ export async function grantSubscriptionRuntimeAllowance(
   }
 }
 
+const ALLOWANCE_CHECK_INTERVAL_MS = 10 * 60_000;
+const ALLOWANCE_CHECK_MAX_ENTRIES = 10_000;
+const allowanceCheckedAt = new Map<string, number>();
+
+/** Test seam: forget which accounts were recently checked. */
+export function resetRuntimeAllowanceCheckCache(): void {
+  allowanceCheckedAt.clear();
+}
+
 /**
  * Post the current month's slice when a customer spends or opens usage.
  * The subscription webhook posts the first slice; later months do not wait
@@ -101,6 +160,15 @@ export async function grantSubscriptionRuntimeAllowance(
  */
 export async function ensureCurrentRuntimeAllowance(userId: string): Promise<void> {
   if (!userId) return;
+  // This runs on the spend path. A new slice can appear at most once a month,
+  // so each process checks a given account at most once per interval.
+  const now = Date.now();
+  if ((allowanceCheckedAt.get(userId) ?? 0) > now - ALLOWANCE_CHECK_INTERVAL_MS) return;
+  allowanceCheckedAt.set(userId, now);
+  if (allowanceCheckedAt.size > ALLOWANCE_CHECK_MAX_ENTRIES) {
+    const oldest = allowanceCheckedAt.keys().next().value;
+    if (oldest !== undefined) allowanceCheckedAt.delete(oldest);
+  }
   const [subscription] = await drizzle
     .select({
       plan: schema.subscriptions.plan,
@@ -139,8 +207,10 @@ export async function ensureCurrentRuntimeAllowance(userId: string): Promise<voi
     .limit(1);
   if (!latest?.reference) return;
   const metadata = latest.metadata as { billing_interval?: unknown } | null;
-  const interval: SubscriptionBillingInterval =
-    metadata?.billing_interval === "year" ? "year" : "month";
+  // Monthly periods are granted by their invoice webhook; only annual slices
+  // are posted here.
+  if (metadata?.billing_interval !== "year") return;
+  const interval: SubscriptionBillingInterval = "year";
   const sliceMarker = ":slice:";
   const base = latest.reference.includes(sliceMarker)
     ? latest.reference.slice(0, latest.reference.indexOf(sliceMarker))

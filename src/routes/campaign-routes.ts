@@ -16,7 +16,8 @@ import { touchNavCounts } from "../lib/nav-counts-invalidate";
 import { CAMPAIGN_STATUS, LEAD_STATUS } from "../lib/outbound-status";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { assertFederalDncForMarketing } from "../lib/federal-dnc-service";
-import { evaluateSellerDncForMarketing } from "../lib/dnc-seller-registration";
+import { readDncSellerRegistration } from "../lib/dnc-seller-registration";
+import { evaluateDncSellerRegistration } from "../lib/dnc-seller-registration-rules";
 import { enqueue } from "../lib/job-queue";
 
 const router = Router();
@@ -401,9 +402,11 @@ router.post(
           error: federalGate.message,
         });
       }
+      // One read of the seller's subscription covers every queued number.
+      const sellerRegistration = await readDncSellerRegistration(req.user.id);
       for (const lead of queued) {
         if (!lead.customerNumber) continue;
-        const sellerGate = await evaluateSellerDncForMarketing(req.user.id, lead.customerNumber);
+        const sellerGate = evaluateDncSellerRegistration(sellerRegistration, lead.customerNumber);
         if (!sellerGate.allowed) {
           return res.status(403).json({
             code: sellerGate.code,

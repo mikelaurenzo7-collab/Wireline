@@ -488,11 +488,16 @@ router.post(
           });
         }
       }
+      // A blind approval (no review snapshot at all) is refused. Clients that
+      // already send a recipient or task snapshot keep working without the
+      // newer payload snapshot.
       if (
         task.payload &&
         typeof task.payload === "object" &&
         !Array.isArray(task.payload) &&
-        expectedPayload === undefined
+        expectedPayload === undefined &&
+        expectedTo === undefined &&
+        expectedTaskType === undefined
       ) {
         return res.status(400).json({
           code: "REVIEW_SNAPSHOT_REQUIRED",

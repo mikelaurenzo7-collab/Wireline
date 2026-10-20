@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { outboundDialReservations } from "../db/security-schema";
 import { authenticateUser } from "../middleware/auth";
+import { outboundStatusRateLimit } from "../middleware/api-rate-limits";
 import { validate } from "../middleware/input-validation";
 import { AppError } from "../lib/api-error";
 import { normalizeOutboundNumber } from "../lib/dialer-compliance";
@@ -136,6 +137,7 @@ function isAmbiguousProviderResult(result: Awaited<ReturnType<typeof placeOutbou
 router.get(
   "/api/outbound/prepared/:requestKey",
   authenticateUser,
+  outboundStatusRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     res.set("Cache-Control", "private, no-store");
     const prepared = await readPreparedCall(req.user.id, req.params.requestKey);
