@@ -516,7 +516,7 @@ export default function StudioAgentWorkspacePanel({
         </section>
 
         <PlaybookEditor
-          key={`${setupDrafts.ownerId}:${agentId}`}
+          key={`playbook:${setupDrafts.ownerId}:${agentId}`}
           agentId={agentId}
           compact={compact}
         />
@@ -534,7 +534,7 @@ export default function StudioAgentWorkspacePanel({
         <BusinessHoursEditor agentId={agentId} compact={compact} />
 
         <HumanHandoffEditor
-          key={`${setupDrafts.ownerId}:${agentId}`}
+          key={`handoff:${setupDrafts.ownerId}:${agentId}`}
           agentId={agentId}
           ownerId={setupDrafts.ownerId}
           botPhone={agents.find((agent) => agent.id === agentId)?.phone_number}
