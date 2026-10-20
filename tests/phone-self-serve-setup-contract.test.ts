@@ -12,7 +12,7 @@ describe("self-service calling setup", () => {
     expect(phonePage).toContain('defaultTab: "logs"');
     expect(phonePage).toContain('primaryTab === "logs"');
     expect(phonePage).toContain("<PhoneCallHistoryPanel");
-    expect(phonePage).toContain('{ id: "outbound", label: "Personal calls" }');
+    expect(phonePage).toContain('{ id: "outbound", label: "Reviewed calls" }');
     expect(phonePage).toContain('{ id: "setup", label: "Lines" }');
     expect(phonePage).toContain('primaryTab === "setup"');
     expect(phonePage).toMatch(/<PhoneSetupPanel\s+initialAgentId=\{activeAgentId\}/);

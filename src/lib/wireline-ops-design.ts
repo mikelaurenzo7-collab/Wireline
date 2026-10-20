@@ -121,7 +121,7 @@ export const OPS_CHANNEL_EMPTY = {
   pipeline: {
     title: "No Leads in the Pipeline",
     actions: [
-      { label: "Personal Calls", to: "/phone?tab=outbound", primary: true },
+      { label: "Reviewed Calls", to: "/phone?tab=outbound", primary: true },
       { label: "Open Connections", to: "/connections" },
     ],
   },
@@ -632,7 +632,7 @@ export const OPS_INSIGHTS_EMPTY = {
     title: "No Tagged Calls",
     actions: [
       { label: "Call Setup", to: "/phone?tab=setup", primary: true },
-      { label: "Personal Calls", to: "/phone?tab=outbound" },
+      { label: "Reviewed Calls", to: "/phone?tab=outbound" },
     ],
   },
   quality: {

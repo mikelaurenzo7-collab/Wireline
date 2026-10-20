@@ -87,7 +87,7 @@ export const WIRELINE_FEATURES = [
   {
     title: "Personal Calls",
     blurb:
-      "Prepare appointment and service calls for yourself, then review each one before placement. Recipient permission is required. Illinois callers and recipients are currently supported.",
+      "Prepare personal coordination calls and specific business service or appointment calls, then review each one before placement. Recipient permission is required. Illinois callers and recipients are currently supported.",
   },
   {
     title: "Email Workflows",
@@ -115,7 +115,7 @@ export const WIRELINE_FEATURES = [
  * offer rather than promoting the retained outbound campaign implementation.
  */
 export const WIRELINE_GROWTH_ENGINE =
-  "BotBound helps small businesses answer incoming calls, capture requests, book available times, and send approved email recaps. Business outbound campaigns are not part of the current launch offer. Marketing calls still require consent rules, federal DNC screening, and provider approval; they are unavailable today.";
+  "BotBound helps small businesses answer incoming calls, place reviewed service and appointment calls, capture requests, book available times, and send approved email recaps. Business outbound campaigns are not part of the current launch offer. Marketing calls still require consent rules, federal DNC screening, and provider approval; they are unavailable today.";
 
 /**
  * Pain -> capability map. When a caller names a problem, the Bot should

@@ -53,10 +53,6 @@ export default function BotConfigurator({
   onChange,
   disabled = false,
 }: BotConfiguratorProps) {
-  const template = BOT_ROLE_TEMPLATES.find((item) => item.key === value.templateKey);
-  // Creation treats Custom as a business capability profile. Only Everyday
-  // starters opt into personal calling; saved directions stay readable below.
-  const personalCalling = template?.category === "Everyday";
   const visibleChannels = BOT_CHANNELS.filter(
     (channel) => channel.key !== "text" || value.channels.text.enabled,
   );
@@ -148,19 +144,9 @@ export default function BotConfigurator({
             }
             className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
           >
-            <option value="inbound">Inbound</option>
-            {personalCalling || value.direction === "outbound" ? (
-              <option value="outbound">
-                {personalCalling ? "Personal Calls" : "Outgoing Calls (Existing)"}
-              </option>
-            ) : null}
-            {personalCalling || value.direction === "hybrid" ? (
-              <option value="hybrid">
-                {personalCalling
-                  ? "Incoming and Personal Calls"
-                  : "Incoming and Outgoing Calls (Existing)"}
-              </option>
-            ) : null}
+            <option value="inbound">Incoming Calls</option>
+            <option value="outbound">Reviewed Outgoing Calls</option>
+            <option value="hybrid">Incoming and Reviewed Calls</option>
           </select>
         </label>
       </div>

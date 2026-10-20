@@ -18,7 +18,7 @@ export const BRAND_SYSTEM = {
     "Use Bot as the customer-facing object while keeping agent as the technical domain.",
     "Use Phone Bot, Conversation Bot, and Human Bot as configuration lenses, never separate products or workspaces.",
     "Treat employee roles as starting templates, not product categories or permanent limits.",
-    "Promote incoming calls, email, and computer tasks for personal and business use. Keep deferred capabilities out of launch marketing.",
+    "Promote incoming calls, reviewed personal calls, specific business service calls, email, and computer tasks. Keep SMS and campaign calling out of launch marketing.",
     "Let customers train the playbook, channels, knowledge, tools, guardrails, approvals, and handoffs.",
     "Only promise a number for launch plans that include Calls, and an inbox for plans that include Email. Preserve existing channel access without promoting unavailable setup.",
     "Treat additional Bots as optional expansion for concurrency or genuinely separate roles.",
@@ -169,6 +169,8 @@ export const BUSINESS_MARKETING_VOICE = {
   beforeStrip: OUTBOUND_WEDGE.beforeStrip,
 } as const;
 
+export const CAMPAIGN_CALLING_TITLE = "Campaign Calling Is Not in This Launch" as const;
+
 export const WORKSPACE_VOICE = {
   createHeadline: "Create Your Bot",
   runHeadline: "Your Bot Is Live",
@@ -187,7 +189,7 @@ export const PRODUCT_VERSATILITY = {
   tagline:
     "Start with a Phone Bot, Conversation Bot, Human Bot, or role template. Add another only when a separate role or more capacity helps.",
   short:
-    "Bots for incoming calls, email, web research, support, appointment requests, and personal coordination.",
+    "Bots for incoming calls, reviewed service calls, email, web research, support, and appointment requests.",
   hero: "Give the Work a Bot. Step In Only When You Want To",
 } as const;
 

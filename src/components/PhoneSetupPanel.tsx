@@ -781,7 +781,7 @@ export default function PhoneSetupPanel({
         <div className="space-y-2 border-t border-border p-4 text-sm text-muted-foreground">
           <p>
             After activating a BotBound line, you can ask your current carrier to forward incoming
-            calls to it. Personal calls use your BotBound number.
+            calls to it. Reviewed calls use your BotBound number.
           </p>
           <p>
             To transfer the number itself,{" "}

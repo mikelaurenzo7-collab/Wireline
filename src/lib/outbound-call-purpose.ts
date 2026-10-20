@@ -47,6 +47,21 @@ export function isMarketingCallPurpose(callPurpose: OutboundCallPurpose): boolea
 }
 
 /**
+ * Soft-launch outbound is a reviewed call from a Bot that already has a voice
+ * line. Personal coordination and specific business service calls share this
+ * gate. Campaign and marketing dialing stay outside it.
+ */
+export function isReviewedOutboundCandidate(agent: {
+  phone_number?: string | null;
+  channel?: string | null;
+}): boolean {
+  return (
+    Boolean(agent.phone_number) &&
+    (!agent.channel || agent.channel === "voice" || agent.channel === "omnichannel")
+  );
+}
+
+/**
  * Purpose labels arriving at a direct-send boundary are caller assertions, not
  * evidence of an established business relationship or a consumer request.
  * Unless the server resolved such an artifact independently, fail closed to

@@ -624,7 +624,7 @@ function buildCompactBotBoundKnowledgeSection(kind: ShowcaseKind): string[] {
     "BOTBOUND KNOWLEDGE:",
     modeLead,
     `- ${WIRELINE_ONE_LINER}`,
-    "- Core capabilities: inbound calls, request capture, native calendar booking, email, cloud computer tasks, and reviewed personal calls where supported. No CRM is required. SMS is coming soon; business outbound campaigns are outside the launch offer.",
+    "- Core capabilities: inbound calls, reviewed personal calls, specific business service and appointment calls, request capture, native calendar booking, email, and cloud computer tasks. No CRM is required. SMS is coming soon; business outbound campaigns are outside the launch offer.",
     `- Small business use: ${WIRELINE_GROWTH_ENGINE}`,
     `- Pricing: ${buildCompactPricingSummary()}.`,
     `- Optional connections: ${WIRELINE_INTEGRATIONS.join(", ")}. The native calendar and inbox do not require a CRM.`,

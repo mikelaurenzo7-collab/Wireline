@@ -3,6 +3,7 @@ import { ChevronDown, Phone } from "lucide-react";
 import OutboundDialDialog from "../OutboundDialDialog";
 import { Button } from "../atoms";
 import { EmptyState } from "../ui/EmptyState";
+import { CAMPAIGN_CALLING_TITLE } from "../../lib/product-copy";
 import RecipientVoicePermissions from "./RecipientVoicePermissions";
 
 export default function OutboundHub({
@@ -21,12 +22,13 @@ export default function OutboundHub({
       <div className="flex flex-1 items-center justify-center p-6">
         <EmptyState
           icon={Phone}
-          title="Business outbound is coming soon"
+          title={CAMPAIGN_CALLING_TITLE}
+          description="Lead lists, sequences, and marketing calls stay closed. Personal coordination and specific business service calls stay on Reviewed calls."
           framed
           density="compact"
           withHalo={false}
           actions={[
-            { label: "Personal calls", onClick: () => onViewChange("dispatch"), primary: true },
+            { label: "Reviewed calls", onClick: () => onViewChange("dispatch"), primary: true },
           ]}
         />
       </div>
@@ -45,7 +47,8 @@ export default function OutboundHub({
         <div className="flex w-full flex-col items-center px-3 py-6 sm:px-6">
           <EmptyState
             icon={Phone}
-            title="Make a personal call"
+            title="Place a Reviewed Call"
+            description="Personal coordination or a specific business service call. The recipient grants permission first."
             framed
             density="compact"
             titleTone="ui"

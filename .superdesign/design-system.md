@@ -73,7 +73,7 @@ Use the available layout width for headlines and let them wrap naturally on smal
 The home page uses the shared BotBound header and footer around a vertical story:
 
 1. Hero: a short outcome-led headline, concise supporting copy, and a free-start primary action.
-2. Product preview: clearly illustrated examples of calls, text, and email. Examples are never presented as real customer activity.
+2. Product preview: clearly illustrated examples of incoming calls, reviewed personal and business service calls, email, and computer tasks. SMS and campaign calling stay out of the launch story. Examples are never presented as real customer activity.
 3. Keep public copy focused on capability and outcomes. Do not add setup-step lists or repeated process slogans; operational setup guidance belongs inside the product.
 4. Roles: useful starting points for one configurable Bot.
 5. Pricing: Free Builder, Starter, Starter Plus, and Pro with explicit limits and billing periods.

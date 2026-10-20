@@ -7,7 +7,7 @@ export const BOT_BRAND = {
   name: "BotBound",
   slogan: "For You. For Your Business.",
   supportingLine: "CALL · EMAIL · COMPUTER",
-  promise: "Your Bot for incoming calls, email, and computer tasks.",
+  promise: "Your Bot for incoming calls, reviewed calls, email, and computer tasks.",
 } as const;
 
 export const BOT_PRODUCT_TYPES = [
@@ -15,7 +15,8 @@ export const BOT_PRODUCT_TYPES = [
     key: "voice" as const,
     name: "Phone Bot",
     label: "PHONE BOT",
-    description: "Answer incoming calls, share useful information, and capture requests.",
+    description:
+      "Answer incoming calls, place reviewed personal or business calls, and capture requests.",
   },
   {
     key: "conversation" as const,

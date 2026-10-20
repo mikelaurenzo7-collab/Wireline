@@ -122,10 +122,11 @@ export function TermsOfService() {
       <Section title="2. Service Description">
         <p>
           BotBound provides voice, email, and computer tools for conversations and workflows.
-          Current offerings focus on inbound business calls, eligible personal calls, email, Bot
-          configuration, and analytics. Email activation requires a setup review. SMS and business
-          outbound calling are coming soon for new customers. Existing channel services remain
-          subject to their plan, sender verification, and permission requirements.
+          Current offerings focus on inbound calls, reviewed personal calls, reviewed business
+          service and appointment calls, email, Bot configuration, and analytics. Email activation
+          requires a setup review. SMS and campaign calling are not part of the current launch for
+          new customers. Existing channel services remain subject to their plan, sender
+          verification, and permission requirements.
         </p>
       </Section>
 

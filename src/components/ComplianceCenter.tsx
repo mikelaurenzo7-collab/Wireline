@@ -199,7 +199,7 @@ export default function ComplianceCenter() {
           <summary className="wl-paper wl-paper-elevated wl-focus-ring-halo min-h-11 cursor-pointer p-4 text-sm font-semibold text-foreground">
             DNC registration
             <span className="mt-1 block text-xs font-normal text-muted-foreground">
-              Business outbound is coming soon.
+              Campaign calling is not in this launch.
             </span>
           </summary>
           <div className="mt-3">

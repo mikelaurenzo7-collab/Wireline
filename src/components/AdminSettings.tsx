@@ -14,6 +14,7 @@ import { useBranding } from "../contexts/BrandingContext";
 import AdminHubViewport from "./layout/AdminHubViewport";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
+import { CAMPAIGN_CALLING_TITLE } from "../lib/product-copy";
 import { OPS_ADMIN, type OpsAdminTab } from "../lib/wireline-ops-design";
 import { BRAND } from "../constants/brand-colors";
 import { LIVE_VOICE_MODEL, LIVE_VOICE_PROVIDER } from "../lib/ai-models";
@@ -510,7 +511,7 @@ function AdminSettingsContent() {
                     >
                       <EmptyState
                         icon={Settings}
-                        title="Business outbound is coming soon"
+                        title={CAMPAIGN_CALLING_TITLE}
                         framed
                         density="compact"
                         withHalo={false}

@@ -7,6 +7,7 @@ import {
   Mail,
   MonitorSmartphone,
   Phone,
+  PhoneOutgoing,
   ShieldCheck,
   Sparkles,
   Waypoints,
@@ -29,7 +30,7 @@ const PILLARS: readonly Pillar[] = [
     icon: Phone,
     label: "Phone Number",
     title: "Ready When the Phone Rings",
-    body: "Your Bot answers calls, handles questions, and takes requests. With a configured calendar, it can book available times.",
+    body: "Your Bot answers calls, handles questions, and takes requests. It can also place reviewed personal calls and specific business service or appointment calls. With a configured calendar, it can book available times.",
   },
   {
     icon: MonitorSmartphone,
@@ -48,6 +49,11 @@ const PILLARS: readonly Pillar[] = [
 ];
 
 const CAPABILITIES: readonly { icon: LucideIcon; title: string; body: string }[] = [
+  {
+    icon: PhoneOutgoing,
+    title: "Reviewed Calls",
+    body: "Place a personal coordination call or a specific business service call after the recipient grants permission. Campaign calling is not in this launch.",
+  },
   {
     icon: Sparkles,
     title: "Made Yours",
@@ -90,7 +96,7 @@ export default function Features() {
     >
       <PageMeta
         title="Features | BotBound"
-        description="Build a Bot for your life or your business. Answer calls, coordinate plans, manage email, and assign tasks to its cloud computer."
+        description="Build a Bot for your life or your business. Answer calls, place reviewed calls, manage email, and assign tasks to its cloud computer."
         path="/features"
       />
 

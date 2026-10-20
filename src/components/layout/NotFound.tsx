@@ -126,7 +126,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
                 to="/phone"
                 icon={Phone}
                 label="Calls"
-                hint="History, personal calls, lines"
+                hint="History, reviewed calls, lines"
                 accent={BRAND.colors.primary}
               />
               <NotFoundCard

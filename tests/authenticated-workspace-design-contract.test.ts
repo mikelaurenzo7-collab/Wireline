@@ -234,10 +234,10 @@ describe("authenticated workspace design architecture", () => {
 
   it("offers personal calling and permissions while keeping business outbound as coming soon", () => {
     const hub = read("src/components/outbound/OutboundHub.tsx");
-    expect(hub).toContain('title="Make a personal call"');
+    expect(hub).toContain('title="Place a Reviewed Call"');
     expect(hub).toContain('label: "New call"');
     expect(hub).toContain("RecipientVoicePermissions");
-    expect(hub).toContain('title="Business outbound is coming soon"');
+    expect(hub).toContain("CAMPAIGN_CALLING_TITLE");
     expect(hub).not.toContain("Lead Intake");
     expect(hub).not.toContain("CampaignsPanel");
     expect(hub).not.toContain("Cadences");

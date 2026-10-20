@@ -19,6 +19,7 @@ import {
   BOT_PRODUCT_TYPES,
   BOT_ROLE_TEMPLATES,
 } from "../src/lib/bot-product";
+import { isReviewedOutboundCandidate } from "../src/lib/outbound-call-purpose";
 import { STRIPE_PLANS } from "../src/lib/plan-catalog";
 import { isSessionOptionalPublicPath } from "../src/lib/public-routes";
 
@@ -83,7 +84,7 @@ describe("BotBound product voice", () => {
       name: "BotBound",
       slogan: "For You. For Your Business.",
       supportingLine: "CALL · EMAIL · COMPUTER",
-      promise: "Your Bot for incoming calls, email, and computer tasks.",
+      promise: "Your Bot for incoming calls, reviewed calls, email, and computer tasks.",
     });
     expect(BRAND_SYSTEM).toMatchObject({
       northStar: BOT_BRAND.promise,
@@ -158,6 +159,17 @@ describe("BotBound product voice", () => {
     expect(BOT_CHANNELS.find((channel) => channel.key === "text")?.description).toContain(
       "SMS is coming soon",
     );
+    expect(
+      isReviewedOutboundCandidate({ phone_number: "+13125550100", channel: "voice" }),
+    ).toBe(true);
+    expect(
+      isReviewedOutboundCandidate({ phone_number: "+13125550100", channel: "omnichannel" }),
+    ).toBe(true);
+    expect(isReviewedOutboundCandidate({ phone_number: "+13125550100" })).toBe(true);
+    expect(isReviewedOutboundCandidate({ phone_number: "", channel: "voice" })).toBe(false);
+    expect(
+      isReviewedOutboundCandidate({ phone_number: "+13125550100", channel: "email" }),
+    ).toBe(false);
     expect(MARKETING_VOICE.channelProof).toEqual(["Call", "Email", "Computer"]);
     expect(BOT_MARKETING_VOICE.spine).toEqual(["Call", "Email", "Computer"]);
     expect(WORKSPACE_VOICE.emptyCue).toContain("calls, email, knowledge, and computer tasks");

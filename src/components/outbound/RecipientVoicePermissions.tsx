@@ -4,7 +4,7 @@ import { Copy, Loader2, Plus, RefreshCw } from "lucide-react";
 import { Button, Input } from "../atoms";
 import { useAgents } from "../../contexts/AgentsContext";
 import { useAuth } from "../../contexts/AuthContext";
-import { isPrincipalVoiceRole } from "../../lib/agent-role-definitions";
+import { isReviewedOutboundCandidate } from "../../lib/outbound-call-purpose";
 import { authFetch } from "../../lib/api";
 import {
   checkedVoicePermissionLink,
@@ -38,9 +38,7 @@ export default function RecipientVoicePermissions() {
 
 function OwnedRecipientVoicePermissions() {
   const { agents, loading: agentsLoading, degraded } = useAgents();
-  const personalAgents = agents.filter(
-    (agent) => agent.is_business_agent === false || isPrincipalVoiceRole(agent.role),
-  );
+  const callingAgents = agents.filter((agent) => isReviewedOutboundCandidate(agent));
   const [rows, setRows] = useState<VoicePermissionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -168,7 +166,7 @@ function OwnedRecipientVoicePermissions() {
     event.preventDefault();
     if (
       mutation.current ||
-      !personalAgents.some((agent) => agent.id === agentId) ||
+      !callingAgents.some((agent) => agent.id === agentId) ||
       purpose === "marketing_or_sales" ||
       !phone.trim() ||
       recipientState !== "IL" ||
@@ -275,7 +273,7 @@ function OwnedRecipientVoicePermissions() {
               required
             >
               <option value="">Choose a Bot</option>
-              {personalAgents.map((agent) => (
+              {callingAgents.map((agent) => (
                 <option key={agent.id} value={agent.id}>
                   {agent.name}
                 </option>

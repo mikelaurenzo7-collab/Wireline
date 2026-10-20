@@ -261,15 +261,17 @@ describe("direct outbound definitive-refusal retry", () => {
       },
     ];
     await settle();
-    expect(
-      nodes.some(
-        (node) =>
-          node.type === "p" &&
-          node.props.children ===
-            "Business outbound is coming soon. This proposal cannot be placed yet.",
-      ),
-    ).toBe(true);
-    expect(nodes.some((node) => node.type === "select")).toBe(false);
+    const optionLabels = nodes
+      .filter((node) => node.type === "option")
+      .map((node) => node.props.children)
+      .filter((label): label is string => typeof label === "string");
+    expect(nodes.some((node) => node.type === "select" && node.props.value === "bot-1")).toBe(
+      true,
+    );
+    expect(optionLabels).toEqual(
+      expect.arrayContaining(["Business Front Desk", "Personal Assistant"]),
+    );
+    expect(optionLabels).not.toContain("Marketing or sales");
     expect(button("Place call").props.disabled).toBe(true);
     button("Place call").props.onClick!();
     await settle();

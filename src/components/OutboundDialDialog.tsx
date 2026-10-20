@@ -15,7 +15,7 @@ import { Checkbox } from "./ui/shadcn/Checkbox";
 import { useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
-import { isPrincipalVoiceRole } from "../lib/agent-role-definitions";
+import { isReviewedOutboundCandidate } from "../lib/outbound-call-purpose";
 import { authFetch } from "../lib/api";
 import {
   OUTBOUND_CONSENT_HELP,
@@ -67,12 +67,7 @@ function DirectOutboundDialDialog({
   const { toast } = useToast();
   const voiceAgents = useMemo(
     () =>
-      agents.filter(
-        (agent) =>
-          (agent.is_business_agent === false || isPrincipalVoiceRole(agent.role)) &&
-          agent.phone_number &&
-          (agent.channel === "voice" || agent.channel === "omnichannel" || !agent.channel),
-      ),
+      agents.filter((agent) => isReviewedOutboundCandidate(agent)),
     [agents],
   );
 
@@ -458,14 +453,11 @@ function DirectOutboundDialDialog({
             <p className="px-6 py-8 text-sm text-muted-foreground" role="status">
               {!requestedAgent
                 ? "The selected Bot is unavailable. Check call history before another request."
-                : requestedAgent.is_business_agent === false ||
-                    isPrincipalVoiceRole(requestedAgent.role)
-                  ? "This personal Bot needs an active phone line before you can place the call."
-                  : "Business outbound is coming soon. This proposal cannot be placed yet."}
+                : "This Bot needs an active phone line before you can place the call."}
             </p>
           ) : voiceAgents.length === 0 ? (
             <p className="px-6 py-8 text-sm text-muted-foreground">
-              Personal calling needs a personal Bot with an active phone line.{" "}
+              Reviewed calling needs a Bot with an active phone line.{" "}
               <Link
                 to="/studio?create=1&template=personal-assistant"
                 onClick={closeForNavigation}

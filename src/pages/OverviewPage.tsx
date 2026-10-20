@@ -20,7 +20,7 @@ import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { StatusNotice } from "../components/molecules";
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
-import { isPrincipalVoiceRole } from "../lib/agent-role-definitions";
+import { isReviewedOutboundCandidate } from "../lib/outbound-call-purpose";
 
 function MetricSkeleton() {
   return (
@@ -188,11 +188,7 @@ export default function OverviewPage() {
 
   const primaryBot = agents[0];
   const hasBots = agents.length > 0;
-  const hasLiveLine = agents.some(
-    (bot) =>
-      Boolean(bot.phone_number) &&
-      (bot.is_business_agent === false || isPrincipalVoiceRole(bot.role)),
-  );
+  const hasLiveLine = agents.some((bot) => isReviewedOutboundCandidate(bot));
   const isFirstRun = !loading && !degraded && !hasBots;
   const primaryStudioHref = primaryBot
     ? `/studio?agent=${encodeURIComponent(primaryBot.id)}&section=setup`
@@ -217,7 +213,7 @@ export default function OverviewPage() {
                   onClick={() => setShowOutboundDial(true)}
                 >
                   <Phone size={15} aria-hidden="true" />
-                  Personal call
+                  New call
                 </Button>
               ) : (
                 <Button asChild className="justify-center">

@@ -78,11 +78,11 @@ for (const width of [320, 1280]) {
     const dialog = page.getByRole("dialog", { name: "New call", exact: true });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole("combobox", { name: "Bot", exact: true })).toHaveValue(
-      "outbound-bot",
+      "business-bot",
     );
     await expect(
       dialog.getByRole("combobox", { name: "Bot", exact: true }).getByRole("option"),
-    ).toHaveText(["Personal Assistant"]);
+    ).toHaveText(["Business Front Desk", "Personal Assistant"]);
     await expect(dialog.getByRole("textbox", { name: "Phone number", exact: true })).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Place call", exact: true })).toBeDisabled();
     await expect(dialog.getByRole("option", { name: "Marketing or sales" })).toHaveCount(0);
@@ -102,7 +102,7 @@ for (const width of [320, 1280]) {
     expect(outboundWrites).toEqual([]);
     await page.goto("/phone?tab=outbound&view=campaigns");
     await expect(
-      page.getByRole("heading", { name: "Business outbound is coming soon", exact: true }),
+      page.getByRole("heading", { name: "Campaign Calling Is Not in This Launch", exact: true }),
     ).toBeVisible();
     await expect(page.getByRole("button", { name: "New call", exact: true })).toHaveCount(0);
     expect(outboundWrites).toEqual([]);

@@ -46,7 +46,9 @@ describe("BotBound brand migration", () => {
     expect(product).toContain('name: "BotBound"');
     expect(product).toContain('slogan: "For You. For Your Business."');
     expect(product).toContain('supportingLine: "CALL · EMAIL · COMPUTER"');
-    expect(product).toContain('promise: "Your Bot for incoming calls, email, and computer tasks."');
+    expect(product).toContain(
+      'promise: "Your Bot for incoming calls, reviewed calls, email, and computer tasks."',
+    );
     expect(manifest.name).toContain("BotBound");
     expect(manifest.short_name).toBe("BotBound");
     expect(manifest.start_url).toBe("/studio");

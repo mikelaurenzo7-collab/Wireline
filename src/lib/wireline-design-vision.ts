@@ -41,6 +41,7 @@ export const WIRELINE_DESIGN_VISION = {
     "Route load → RouteFallback; panel load → skeleton presets; sole empty → EmptyState; errors → StatusNotice.",
     "Primary actions use atoms/Button, not HaloButton, VoidButton, or hand-rolled gradient CTAs on app surfaces.",
     "Navigation IA lives in constants/navigation.ts, never duplicate nav arrays in shell components.",
+    "Soft launch work is inbound calls, reviewed personal calls, specific business service calls, email, and computer tasks. SMS and campaign calling stay out of the launch interface.",
   ],
   shell: {
     componentOwner: "src/components/WorkspaceShell.tsx",
