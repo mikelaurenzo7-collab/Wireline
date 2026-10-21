@@ -70,6 +70,7 @@ type Props = {
   title?: string;
   disabled?: boolean;
   onClick?: () => unknown;
+  to?: string;
 };
 type Element = ReactElement<Props>;
 function expand(node: Element): ReactNode {
@@ -208,20 +209,33 @@ describe("setup guide requires confirmed calling", () => {
     await vi.waitFor(() => expect(text(render())).toContain("Your live number"));
   });
 
-  it("opens the chosen Bot's number picker without an automatic purchase", async () => {
-    payload = {
-      agentId: "bot",
-      agentName: "Front Desk",
-      phoneProvisionRequested: false,
-      phoneProvisioned: false,
-    };
-    stubFetch({ numbers: [] });
-    await mount();
-    button("Choose a number")?.props.onClick?.();
-    expect(h.navigate).toHaveBeenCalledWith("/phone?tab=setup&agent=bot");
-    expect(h.fetch.mock.calls.some(([url]) => url === "/api/phone-numbers/provision")).toBe(false);
-    expect(h.event.mock.calls.some(([event]) => event.event === "phone_channel_wired")).toBe(false);
-  });
+  it.each(["picker", "completion"])(
+    "keeps the chosen Bot in the %s route without an automatic purchase",
+    async (route) => {
+      payload = {
+        agentId: "bot",
+        agentName: "Front Desk",
+        phoneProvisionRequested: false,
+        phoneProvisioned: false,
+      };
+      stubFetch({ numbers: [] });
+      await mount();
+      if (route === "picker") {
+        button("Choose a number")?.props.onClick?.();
+        expect(h.navigate).toHaveBeenCalledWith("/phone?tab=setup&agent=bot");
+      } else {
+        button("Finish for Now")?.props.onClick?.();
+        const phoneSetup = elements(render()).find((element) => element.type === "a");
+        expect(phoneSetup?.props.to).toBe("/phone?tab=setup&agent=bot");
+      }
+      expect(h.fetch.mock.calls.some(([url]) => url === "/api/phone-numbers/provision")).toBe(
+        false,
+      );
+      expect(h.event.mock.calls.some(([event]) => event.event === "phone_channel_wired")).toBe(
+        false,
+      );
+    },
+  );
 
   it("uses honest soft-open copy instead of a checkout CTA when billing is closed", async () => {
     payload = {

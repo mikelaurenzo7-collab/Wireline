@@ -31,6 +31,7 @@ import {
 } from "../../lib/email-verification-return";
 import { clearFreshSignupSession, markFreshSignupSession } from "../../lib/post-signup-onboarding";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
+import { getPlanDisplayLabel } from "../../lib/plan-display";
 import {
   captureDemoSourceFromLocation,
   readDemoSourceCookie,
@@ -125,7 +126,7 @@ function signupPlanLabel(
   // Retired plans stay valid in old links but are never shown as an ID.
   const plan = publicSignupPlan(planId);
   if (!plan) return null;
-  const name = plan.name.replace(/^WIRELINE\s+/i, "");
+  const name = getPlanDisplayLabel(plan);
   if (plan.price_usd_monthly === 0) return name;
   return interval === "year"
     ? `${name} · $${plan.price_usd_annual}/year`

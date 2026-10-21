@@ -225,7 +225,9 @@ export default function CommandBar() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
-  const { resolvedId: activeAgentId } = useStudioActiveAgentId();
+  const { requestedId, resolvedId } = useStudioActiveAgentId();
+  // Preserve explicit scope so a stale link cannot navigate into another Bot.
+  const activeAgentId = requestedId?.trim() || resolvedId;
   const inputRef = useRef<HTMLInputElement | null>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const dialogRef = useRef<HTMLDivElement | null>(null);
@@ -405,85 +407,84 @@ export default function CommandBar() {
 
             <div className="max-h-[min(60dvh,32rem)] min-h-0">
               <ScrollArea className="max-h-[min(60dvh,32rem)]">
-                {filteredCommands.length ? (
-                  <div
-                    id="command-palette-listbox"
-                    role="listbox"
-                    aria-label="Command results"
-                    className="p-2 sm:p-3"
-                  >
-                    {COMMAND_CATEGORIES.map((category) => {
-                      const commands = filteredCommands.filter(
-                        (command) => command.category === category,
-                      );
-                      if (!commands.length) return null;
-                      return (
-                        <section key={category} className="mb-3 last:mb-0">
-                          <p className="px-2 pb-1 pt-1 font-mono text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                            {category}
-                          </p>
-                          <div className="space-y-1">
-                            {commands.map((command) => {
-                              const index = filteredCommands.indexOf(command);
-                              const selected = index === selectedIndex;
-                              const Icon = command.icon;
-                              return (
-                                <Button
-                                  key={command.id}
-                                  id={`command-palette-option-${command.id}`}
-                                  type="button"
-                                  variant="ghost"
-                                  role="option"
-                                  aria-selected={selected}
-                                  tabIndex={-1}
-                                  ref={(node) => {
-                                    optionRefs.current[index] = node;
-                                  }}
-                                  onClick={() => execute(command)}
-                                  onMouseEnter={() => setSelectedIndex(index)}
+                <div
+                  id="command-palette-listbox"
+                  role="listbox"
+                  aria-label="Command results"
+                  className={filteredCommands.length ? "p-2 sm:p-3" : undefined}
+                >
+                  {COMMAND_CATEGORIES.map((category) => {
+                    const commands = filteredCommands.filter(
+                      (command) => command.category === category,
+                    );
+                    if (!commands.length) return null;
+                    return (
+                      <section key={category} className="mb-3 last:mb-0">
+                        <p className="px-2 pb-1 pt-1 font-mono text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                          {category}
+                        </p>
+                        <div className="space-y-1">
+                          {commands.map((command) => {
+                            const index = filteredCommands.indexOf(command);
+                            const selected = index === selectedIndex;
+                            const Icon = command.icon;
+                            return (
+                              <Button
+                                key={command.id}
+                                id={`command-palette-option-${command.id}`}
+                                type="button"
+                                variant="ghost"
+                                role="option"
+                                aria-selected={selected}
+                                tabIndex={-1}
+                                ref={(node) => {
+                                  optionRefs.current[index] = node;
+                                }}
+                                onClick={() => execute(command)}
+                                onMouseEnter={() => setSelectedIndex(index)}
+                                className={cn(
+                                  "h-auto min-h-11 w-full justify-start gap-3 rounded-[var(--radius-md)] px-3 py-2 text-left",
+                                  selected ? "bg-primary/10 text-foreground" : "hover:bg-secondary",
+                                )}
+                              >
+                                <span
                                   className={cn(
-                                    "h-auto min-h-11 w-full justify-start gap-3 rounded-[var(--radius-md)] px-3 py-2 text-left",
+                                    "grid size-8 shrink-0 place-items-center rounded-[var(--radius-md)] border",
                                     selected
-                                      ? "bg-primary/10 text-foreground"
-                                      : "hover:bg-secondary",
+                                      ? "border-primary/20 bg-primary/10 text-primary"
+                                      : "border-border bg-card text-muted-foreground",
                                   )}
                                 >
-                                  <span
-                                    className={cn(
-                                      "grid size-8 shrink-0 place-items-center rounded-[var(--radius-md)] border",
-                                      selected
-                                        ? "border-primary/20 bg-primary/10 text-primary"
-                                        : "border-border bg-card text-muted-foreground",
-                                    )}
-                                  >
-                                    <Icon aria-hidden="true" className="size-4" />
-                                  </span>
-                                  <span className="min-w-0 flex-1 truncate text-sm font-semibold leading-5 text-foreground">
-                                    {command.label}
-                                  </span>
-                                  <ChevronRight
-                                    aria-hidden="true"
-                                    className={cn(
-                                      "size-4 shrink-0",
-                                      selected ? "text-primary" : "text-muted-foreground",
-                                    )}
-                                  />
-                                </Button>
-                              );
-                            })}
-                          </div>
-                        </section>
-                      );
-                    })}
+                                  <Icon aria-hidden="true" className="size-4" />
+                                </span>
+                                <span className="min-w-0 flex-1 truncate text-sm font-semibold leading-5 text-foreground">
+                                  {command.label}
+                                </span>
+                                <ChevronRight
+                                  aria-hidden="true"
+                                  className={cn(
+                                    "size-4 shrink-0",
+                                    selected ? "text-primary" : "text-muted-foreground",
+                                  )}
+                                />
+                              </Button>
+                            );
+                          })}
+                        </div>
+                      </section>
+                    );
+                  })}
+                </div>
+                {!filteredCommands.length ? (
+                  <div role="status">
+                    <EmptyState
+                      density="compact"
+                      className="m-4 min-h-48 border-dashed"
+                      icon={<Terminal className="size-5" />}
+                      title="No Matches"
+                    />
                   </div>
-                ) : (
-                  <EmptyState
-                    density="compact"
-                    className="m-4 min-h-48 border-dashed"
-                    icon={<Terminal className="size-5" />}
-                    title="No Matches"
-                  />
-                )}
+                ) : null}
               </ScrollArea>
             </div>
 

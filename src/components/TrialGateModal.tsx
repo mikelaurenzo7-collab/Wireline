@@ -23,6 +23,7 @@ import {
   type SignupPlanId,
 } from "../lib/signup-intent";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
+import { getPlanDisplayLabel } from "../lib/plan-display";
 import type { BillingPlansResponse, ClientPlan } from "../types/api-billing";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import ChannelPlanPicker, { hasChannelPlanDetails } from "./ChannelPlanPicker";
@@ -84,7 +85,7 @@ function selfServeTiers(
       (useAnnual ? annualReady : plan.configured === true);
     return {
       id: plan.id,
-      label: plan.name.replace(/^BotBound\s+/, ""),
+      label: getPlanDisplayLabel(plan),
       price: useAnnual ? plan.price_usd_annual : plan.price_usd_monthly,
       suffix: useAnnual ? ("/yr" as const) : ("/mo" as const),
       pitch: `${plan.max_agents} ${plan.max_agents === 1 ? "Bot" : "Bots"} · ${plan.voice_minutes_monthly} min/mo`,
@@ -257,7 +258,9 @@ export default function TrialGateModal() {
   const annualFallbackNote =
     !catalogPending &&
     preferredInterval === "year" &&
-    checkoutTiers.some((tier) => !tier.disabled && tier.interval === "month" && tier.price > 0);
+    selectedTier?.interval === "month" &&
+    selectedTier.price > 0 &&
+    !selectedTier.disabled;
 
   async function checkout(planId: string, interval: "month" | "year") {
     if (

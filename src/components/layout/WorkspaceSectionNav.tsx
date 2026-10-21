@@ -17,13 +17,16 @@ import { WorkspaceTabStrip } from "./WorkspaceTabStrip";
 export default function WorkspaceSectionNav({ className }: { className?: string }) {
   const { pathname } = useLocation();
   const [params] = useSearchParams();
-  const { resolvedId } = useStudioActiveAgentId();
+  const { requestedId, resolvedId } = useStudioActiveAgentId();
   const sideBySide = useMediaQuery("(min-width: 1180px)");
   const activeId =
     pathname === "/studio" && params.get("focus") === "computer"
       ? "computer"
       : (workspaceSectionForPath(pathname) ?? "setup");
-  const agentQuery = resolvedId ? `agent=${encodeURIComponent(resolvedId)}` : "";
+  // An explicit Bot remains the scope even when its roster entry is unavailable.
+  // The destination owns validation; navigation must not choose a different Bot.
+  const navigationAgentId = requestedId?.trim() || resolvedId;
+  const agentQuery = navigationAgentId ? `agent=${encodeURIComponent(navigationAgentId)}` : "";
 
   const hrefFor = (section: (typeof WORKSPACE_SECTIONS)[number]) => {
     if (section.id === "computer" && sideBySide) {

@@ -50,8 +50,7 @@ export function usePaidPlanAvailability({
       status === "ready" &&
       isSelfServeCheckoutAvailable(plans) &&
       plan?.contact_sales === false &&
-      plan.configured === true &&
-      (interval !== "year" || plan.annual_configured === true)
+      (interval === "year" ? plan.annual_configured : plan.configured) === true
     );
   };
   const available = planId

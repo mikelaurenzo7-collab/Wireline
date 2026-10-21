@@ -4,6 +4,11 @@ import ChannelPlanPicker, { channelPlanHighlights } from "../src/components/Chan
 import { Checkbox } from "../src/components/ui/shadcn/Checkbox";
 import { STRIPE_PLANS } from "../src/lib/plan-catalog";
 import {
+  getPlanCapacityLabel,
+  getPlanDisplayLabel,
+  getPlanDisplayName,
+} from "../src/lib/plan-display";
+import {
   activationBillingHref,
   parseSignupIntent,
   sanitizeSignupIntent,
@@ -34,6 +39,40 @@ function text(node: ReactNode): string {
   return typeof node === "string" || typeof node === "number" ? String(node) : "";
 }
 describe("channel package selection", () => {
+  it("separates display names from billing identity and retains legacy package distinctions", () => {
+    const originalCatalog = JSON.stringify(STRIPE_PLANS);
+    const selected = plans.find((plan) => plan.id === "voice-email-regular")!;
+    const tree = ChannelPlanPicker({
+      plans,
+      selectedPlanId: selected.id,
+      onSelectPlan: vi.fn(),
+      interval: "month",
+      renderAction: () => null,
+    });
+    const packageCard = elements(tree).find(
+      (element) => element.props["aria-label"] === "Selected package",
+    );
+    expect(text(elements(packageCard).find((element) => element.type === "h2"))).toBe(
+      "Calls + Email",
+    );
+    expect(
+      elements(packageCard).some((element) => element.type === "p" && text(element) === "Regular"),
+    ).toBe(true);
+    expect(getPlanDisplayLabel({ id: selected.id, name: "WIRELINE retired label" })).toBe(
+      "Calls + Email · Regular",
+    );
+    expect(getPlanCapacityLabel({ id: "email-high" })).toBe("High");
+    expect(getPlanDisplayName("free")).toBe("Free");
+    expect(getPlanDisplayLabel("starter")).toBe("Starter");
+    expect(getPlanDisplayLabel("team")).toBe("Starter Plus");
+    expect(getPlanDisplayLabel("sms")).toBe("SMS · Light");
+    expect(getPlanDisplayLabel("omnichannel-high")).toBe("Calls + Email + SMS · High");
+    expect(getPlanDisplayLabel({ id: "unknown", name: "BotBound Custom" })).toBe("Custom");
+    expect(getPlanDisplayLabel("unknown")).toBe("Plan");
+    expect(selected.name).toBe("BotBound Calls + Email Regular");
+    expect(JSON.stringify(STRIPE_PLANS)).toBe(originalCatalog);
+  });
+
   it("contains all seven channel combinations at three capacities", () => {
     expect(plans).toHaveLength(21);
   });

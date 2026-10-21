@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { authFetch, readApiJson } from "../../lib/api";
 import { formatMoney, safeFixed } from "../../lib/safe-number";
+import { getPlanDisplayLabel } from "../../lib/plan-display";
 import { cn } from "../../lib/utils";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty, SpendStat } from "./shared";
 import type { AuditSummary } from "../../types/api-insights";
@@ -38,6 +39,7 @@ type SpendStatus = {
   paid_allowance_funding_blocked?: boolean;
   alerts_fired?: Array<{ thresholdPct: number; firedAt?: string }>;
   guard_scope?: SpendGuardScope;
+  plan_id?: string;
   plan_name?: string;
   live_provider_work_enabled?: boolean;
   simulation_allowance_enabled?: boolean;
@@ -50,6 +52,7 @@ type SpendBudget = {
   warn_threshold_pct?: number;
   enabled?: boolean;
   guard_scope?: SpendGuardScope;
+  plan_id?: string;
   plan_name?: string;
   live_provider_work_enabled?: boolean;
   simulation_allowance_enabled?: boolean;
@@ -254,7 +257,7 @@ function SpendBudgetCard() {
     : "Live usage limit reached. New paid work is paused";
   const maximumHelper = isSimulationAllowance
     ? `Maximum $${safeFixed(maximumLimit, 2)} per month.`
-    : `Up to $${safeFixed(maximumLimit, 2)} for ${status?.plan_name || "the active plan"}. You can lower this guard, but it cannot exceed the usage allowance funded by the plan.`;
+    : `Up to $${safeFixed(maximumLimit, 2)} for ${status.plan_id || status.plan_name ? getPlanDisplayLabel({ id: status.plan_id, name: status.plan_name }) : "the active plan"}. You can lower this guard, but it cannot exceed the usage allowance funded by the plan.`;
   const hardCapHelper = isSimulationAllowance
     ? "Private simulation pauses at the monthly allowance."
     : "New paid work pauses at the limit. Completed in-flight work still settles.";

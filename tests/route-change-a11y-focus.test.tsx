@@ -133,7 +133,7 @@ describe("route change focus", () => {
     queryModals.mockReturnValue([]);
     render({ pathname: "/phone", search: "" });
     expect(heading.focus).toHaveBeenCalledExactlyOnceWith({ preventScroll: true });
-    expect(harness.message).toBe("Phone loaded");
+    expect(harness.message).toBe("Calls loaded");
   });
 
   it("focuses the destination while a closing sheet finishes its animation", () => {
@@ -144,7 +144,7 @@ describe("route change focus", () => {
     render({ pathname: "/settings/billing" });
 
     expect(heading.focus).toHaveBeenCalledExactlyOnceWith({ preventScroll: true });
-    expect(harness.message).toBe("Settings loaded");
+    expect(harness.message).toBe("Billing Settings loaded");
   });
 
   it("still focuses and announces a different page", () => {
@@ -155,7 +155,7 @@ describe("route change focus", () => {
     expect(heading.focus).toHaveBeenCalledExactlyOnceWith({ preventScroll: true });
     expect(scrollTo).toHaveBeenCalledExactlyOnceWith({ top: 0, left: 0 });
     expect(harness.restoreTabIndex).toHaveBeenCalledOnce();
-    expect(harness.message).toBe("Phone loaded");
+    expect(harness.message).toBe("Calls loaded");
   });
 
   it("still follows a changed anchor while ignoring later filter changes", () => {

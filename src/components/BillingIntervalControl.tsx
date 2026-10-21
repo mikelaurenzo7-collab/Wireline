@@ -4,9 +4,11 @@ type BillingInterval = "month" | "year";
 export default function BillingIntervalControl({
   value,
   onChange,
+  disabled = false,
 }: {
   value: BillingInterval;
   onChange: (value: BillingInterval) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="wl-billing-interval" role="group" aria-label="Billing interval">
@@ -15,6 +17,7 @@ export default function BillingIntervalControl({
           key={interval}
           type="button"
           aria-pressed={value === interval}
+          disabled={disabled}
           onClick={() => onChange(interval)}
           className="wl-focus-ring-halo"
         >

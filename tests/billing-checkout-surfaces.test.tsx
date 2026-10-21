@@ -16,7 +16,10 @@ const h = vi.hoisted(() => ({
   checkoutAvailability: vi.fn(),
   subscription: null as Record<string, unknown> | null,
   catalog: {} as Record<string, unknown>,
-  signupIntent: null as { preferredPlanId: string } | null,
+  signupIntent: null as {
+    preferredPlanId: string;
+    preferredBillingInterval?: "month" | "year";
+  } | null,
 }));
 vi.mock("react", async (original) => ({
   ...(await original<typeof import("react")>()),
@@ -261,9 +264,8 @@ describe("billing plan decisions", () => {
     await mount("card");
     const elements = render("card");
     expect(
-      elements.find(
-        (element) => element.type === "a" && text(element).includes("Open Free Builder"),
-      )?.props.to,
+      elements.find((element) => element.type === "a" && text(element).includes("Continue Free"))
+        ?.props.to,
     ).toBe("/studio");
     expect(
       elements.some((element) => element.type === "a" && text(element).includes("Contact Sales")),
@@ -278,7 +280,16 @@ describe("billing plan decisions", () => {
     await mount("card");
     button("card", "Annual").props.onClick?.();
     expect(render("card").some((element) => text(element).includes("$150/year"))).toBe(true);
-    await button("card", "Continue to Checkout").props.onClick?.();
+    const checkout = deferred<Response>();
+    h.fetch.mockImplementationOnce(() => checkout.promise);
+    const pending = button("card", "Continue to Checkout").props.onClick?.();
+    expect(button("card", "Monthly").props.disabled).toBe(true);
+    expect(button("card", "Annual").props.disabled).toBe(true);
+    expect(button("card", "Opening checkout").props.disabled).toBe(true);
+    checkout.resolve(
+      new Response(JSON.stringify({ url: "https://checkout.example.test/session" })),
+    );
+    await pending;
     expect(h.fetch).toHaveBeenCalledWith(
       "/api/billing/checkout",
       expect.objectContaining({
@@ -312,6 +323,33 @@ describe("billing plan decisions", () => {
     ).toBeUndefined();
     button("card", "Monthly").props.onClick?.();
     expect(button("card", "Continue to Checkout").props.disabled).toBe(false);
+  });
+
+  it("describes an annual fallback only for the selected activation package", async () => {
+    h.signupIntent = { preferredPlanId: "voice-regular", preferredBillingInterval: "year" };
+    h.catalog.plans = [
+      paidPlan(),
+      paidPlan({ id: "voice-high", name: "Calls High", annual_configured: false }),
+    ];
+    await mount("modal");
+    const fallbackMessage = "Annual billing is unavailable. Monthly prices are shown.";
+    expect(render("modal").some((element) => text(element).includes("$150/year"))).toBe(true);
+    expect(render("modal").some((element) => text(element).includes(fallbackMessage))).toBe(false);
+    const high = render("modal").find(
+      (element) => element.type === "label" && text(element).includes("High"),
+    );
+    descendants(high)
+      .find((element) => element.type === "input")
+      ?.props.onChange?.();
+    expect(render("modal").some((element) => text(element).includes("$15/month"))).toBe(true);
+    expect(render("modal").some((element) => text(element).includes(fallbackMessage))).toBe(true);
+    await button("modal", "Continue to Checkout").props.onClick?.();
+    expect(h.fetch).toHaveBeenCalledWith(
+      "/api/billing/checkout",
+      expect.objectContaining({
+        body: JSON.stringify({ plan_id: "voice-high", interval: "month" }),
+      }),
+    );
   });
 });
 afterEach(() => vi.unstubAllGlobals());
@@ -570,7 +608,17 @@ describe.each(["card", "modal"] as const)("%s selected channel package", (surfac
         .filter((element) => element.type === "label")
         .some((element) => text(element).trim() === "SMS"),
     ).toBe(false);
-    expect(elements.some((element) => text(element).includes("Calls Regular"))).toBe(true);
+    const selectedPackage = elements.find(
+      (element) => element.type === "article" && element.props["aria-label"] === "Selected package",
+    );
+    expect(
+      descendants(selectedPackage).find((element) => element.type === "h2")?.props.children,
+    ).toBe("Calls");
+    expect(
+      descendants(selectedPackage).some(
+        (element) => element.type === "p" && text(element) === "Regular",
+      ),
+    ).toBe(true);
     expect(h.fetch.mock.calls.some(([path]) => path === "/api/billing/checkout")).toBe(false);
     await button(surface, "Continue to Checkout").props.onClick?.();
     expect(h.fetch).toHaveBeenCalledWith(

@@ -40,7 +40,7 @@ const FAQ = [
   ],
   [
     "Which Plans Include a Phone Number?",
-    "Calls packages include one local number. One new number per included line is available every 31 days; releasing a number does not reset that limit. Email does not require a phone number. Free Builder does not receive live numbers.",
+    "Calls packages include one local number. One new number per included line is available every 31 days; releasing a number does not reset that limit. Email does not require a phone number. The Free plan does not include live numbers.",
   ],
   [
     "What Happens When Included Call Minutes Run Out?",
@@ -98,6 +98,10 @@ export default function Pricing() {
         capturedAt: new Date().toISOString(),
       }),
     );
+    const url = new URL(window.location.href);
+    url.searchParams.set("plan", id);
+    url.searchParams.set("interval", interval);
+    window.history.replaceState(window.history.state, "", url);
   };
   const { canActivate, emailSetupReview, notice } = usePaidPlanAvailability({
     interval: billingInterval,
@@ -188,7 +192,7 @@ export default function Pricing() {
             </p>
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
               <div className="text-left">
-                <h2 className="text-base font-semibold">Start with Free Builder</h2>
+                <h2 className="text-base font-semibold">Start Free</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   One private Bot. Set it up, add knowledge, and rehearse before activation.
                 </p>

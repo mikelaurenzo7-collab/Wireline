@@ -16,6 +16,7 @@ import BillingIntervalControl from "./BillingIntervalControl";
 import ChannelPlanPicker, { hasChannelPlanDetails } from "./ChannelPlanPicker";
 import CapacityUpgradeCard from "./CapacityUpgradeCard";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
+import { getPlanDisplayLabel } from "../lib/plan-display";
 import { safeDate, formatDate } from "../lib/safe-date";
 import UsageMeter from "./UsageMeter";
 import { ShadButton } from "./ui/shadcn/ShadButton";
@@ -598,6 +599,7 @@ function PlanPicker({
         <h3 className="text-2xl font-semibold tracking-tight">Your Plan</h3>
         <BillingIntervalControl
           value={billingInterval}
+          disabled={!!busy}
           onChange={(interval) => {
             selectPackage(selectedId, interval);
             onBillingIntervalChange(interval);
@@ -662,7 +664,7 @@ function PlanPicker({
       </p>
       <ShadButton asChild disableAnimations variant="outline" className="w-full">
         <Link to="/studio">
-          Open Free Builder <ArrowRight className="size-4" />
+          Continue Free <ArrowRight className="size-4" />
         </Link>
       </ShadButton>
     </div>
@@ -697,7 +699,7 @@ function GrantedPlanAccessCard({
               </Chip>
             </div>
             <h3 className="wl-display-mark text-3xl md:text-4xl text-foreground">
-              {sub.plan_name || sub.plan || "Paid Plan"}
+              {getPlanDisplayLabel({ id: sub.plan, name: sub.plan_name })}
             </h3>
             <p className="text-sm font-semibold text-foreground">Plan access is active</p>
             <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
@@ -768,7 +770,7 @@ function ActiveSubCard({
               )}
             </div>
             <h3 className="wl-display-mark break-words text-2xl sm:text-3xl text-foreground">
-              {sub.plan_name || sub.plan || "N/A"}
+              {getPlanDisplayLabel({ id: sub.plan, name: sub.plan_name })}
             </h3>
             <p className="text-sm tabular-nums text-muted-foreground">
               {sub.max_agents ? (

@@ -7,6 +7,11 @@ import {
   type CapacityTier,
   type CommunicationChannel,
 } from "../lib/plan-catalog";
+import {
+  getPlanCapacityLabel,
+  getPlanDisplayName,
+  PLAN_CAPACITY_LABELS,
+} from "../lib/plan-display";
 
 export type ChannelPlanOption = {
   id: string;
@@ -43,9 +48,9 @@ export const CHANNEL_CHOICES = [
 ] as const;
 
 export const CAPACITY_CHOICES = [
-  { id: "light", label: "Light" },
-  { id: "regular", label: "Regular" },
-  { id: "high", label: "High" },
+  { id: "light", label: PLAN_CAPACITY_LABELS.light },
+  { id: "regular", label: PLAN_CAPACITY_LABELS.regular },
+  { id: "high", label: PLAN_CAPACITY_LABELS.high },
 ] as const;
 
 /** Local catalog compatibility keeps an older cached API projection readable. */
@@ -207,9 +212,10 @@ export default function ChannelPlanPicker({
         aria-label="Selected package"
       >
         <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <h2 className="text-xl font-semibold tracking-tight">
-            {plan.name.replace(/^BotBound\s+/, "")}
-          </h2>
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">{getPlanDisplayName(plan)}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{getPlanCapacityLabel(plan)}</p>
+          </div>
           <p className="text-sm text-muted-foreground">
             <span className="text-3xl font-semibold tracking-tight text-foreground tabular-nums">
               ${price.toLocaleString()}

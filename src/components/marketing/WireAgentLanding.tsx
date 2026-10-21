@@ -18,6 +18,7 @@ import LandingFooter from "./LandingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import { BOT_BRAND, BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
+import { getPlanCapacityLabel, getPlanDisplayName } from "../../lib/plan-display";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { signupHrefForPlan } from "../../lib/signup-intent";
 import { usePaidPlanAvailability } from "../../hooks/usePaidPlanAvailability";
@@ -45,12 +46,6 @@ const ROLE_ICONS: Record<string, LucideIcon> = {
   custom: WandSparkles,
 };
 const PUBLIC_PLAN_IDS = ["personal", "email", "voice", "voice-email"] as const;
-const PLAN_NAMES: Record<(typeof PUBLIC_PLAN_IDS)[number], string> = {
-  personal: "Free Builder",
-  email: "Email",
-  voice: "Calls",
-  "voice-email": "Calls + Email",
-};
 const PUBLIC_PLANS = PUBLIC_PLAN_IDS.map((id) => {
   const plan = STRIPE_PLANS.find((candidate) => candidate.id === id);
   if (!plan) throw new Error(`Missing public plan: ${id}`);
@@ -217,19 +212,18 @@ export default function WireAgentLanding() {
             <div className="landing-prestige__price-grid">
               {PUBLIC_PLANS.map(({ id, plan }) => {
                 const free = id === "personal";
+                const planName = getPlanDisplayName(plan);
                 const featured = id === "voice-email";
                 const emailSetupReview = needsEmailSetupReview(id);
                 return (
                   <article
                     key={id}
-                    aria-label={`${PLAN_NAMES[id]} plan`}
+                    aria-label={`${planName} plan`}
                     className={`landing-prestige__price-card${featured ? " is-featured" : ""}`}
                   >
                     <div>
-                      <p>{PLAN_NAMES[id]}</p>
-                      <span>
-                        {free ? "Private" : plan.capacityTier === "light" ? "Light" : "Regular"}
-                      </span>
+                      <p>{planName}</p>
+                      <span>{free ? "Private" : getPlanCapacityLabel(plan)}</span>
                       <div className="landing-prestige__price-number">
                         <strong>${plan.price_usd_monthly}</strong>
                         <span>{free ? "forever" : "/mo"}</span>
@@ -269,13 +263,13 @@ export default function WireAgentLanding() {
                     <Link
                       to={signupHrefForPlan(id)}
                       className={featured ? "is-primary" : undefined}
-                      onClick={() => trackSignupIntent("pricing", PLAN_NAMES[id])}
+                      onClick={() => trackSignupIntent("pricing", planName)}
                     >
                       {free
                         ? "Start Free"
                         : emailSetupReview
-                          ? `Build ${PLAN_NAMES[id]} Bot Free`
-                          : `${canActivate(id) ? "Choose" : "Set Up"} ${PLAN_NAMES[id]}`}
+                          ? `Build ${planName} Bot Free`
+                          : `${canActivate(id) ? "Choose" : "Set Up"} ${planName}`}
                     </Link>
                   </article>
                 );

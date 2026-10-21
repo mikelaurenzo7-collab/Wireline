@@ -182,7 +182,7 @@ export default function AppointmentDialog({
       >
         <DialogHeader>
           <DialogTitle className="pr-[44px] text-lg">
-            {recovery ? "Check booking" : "New booking"}
+            {recovery ? "Check Booking" : "New Booking"}
           </DialogTitle>
           <DialogDescription>
             {zone} · {duration} min

@@ -175,13 +175,13 @@ test("an existing Calls subscription schedules more capacity without another che
     await expect(checkbox).toBeDisabled();
   await expect(capacity).toContainText("after successful renewal payment");
   await capacity.getByRole("button", { name: "Schedule Capacity Increase", exact: true }).click();
-  await expect(capacity).toContainText("BotBound Calls Regular is scheduled for");
+  await expect(capacity).toContainText("Calls · Regular is scheduled for");
   await expect(capacity).toContainText("Your current capacity stays available until then.");
   await page.reload();
   await capacity
     .getByRole("button", { name: /^(Increase Capacity|Scheduled Capacity Change)$/ })
     .click();
-  await expect(capacity).toContainText("BotBound Calls Regular is scheduled for");
+  await expect(capacity).toContainText("Calls · Regular is scheduled for");
   expect(posts).toBe(1);
   expect(checkoutPosts).toBe(0);
   await capacity.getByRole("button", { name: "Remove Scheduled Change", exact: true }).click();

@@ -2,8 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router";
 
 import { addTemporaryTabIndex } from "../lib/temporary-tab-index";
+import { workspaceRouteMeta } from "../constants/navigation";
 
 function labelFromPath(pathname: string) {
+  const workspaceRoute = workspaceRouteMeta(pathname);
+  if (workspaceRoute) return workspaceRoute.title;
   const segment = pathname.split("/").filter(Boolean)[0];
   if (!segment) return "Home";
   return segment.replace(/[-_]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());

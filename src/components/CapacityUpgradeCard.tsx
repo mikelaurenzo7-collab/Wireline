@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { authFetch } from "../lib/api";
+import { getPlanDisplayLabel } from "../lib/plan-display";
 import type { ClientPlan } from "../types/api-billing";
 import ChannelPlanPicker, { channelSelectionKey, hasChannelPlanDetails } from "./ChannelPlanPicker";
 import { ShadButton } from "./ui/shadcn/ShadButton";
@@ -265,9 +266,9 @@ export function CapacityUpgradeContent({
                   "Capacity change wasn’t confirmed. Remove it, then try again."
                 ) : (
                   <>
-                    {pendingPlan?.name ?? "Your capacity increase"} is scheduled for{" "}
-                    {dateLabel(status.pending.effective_at)}, after successful renewal payment. Your
-                    current capacity stays available until then.
+                    {pendingPlan ? getPlanDisplayLabel(pendingPlan) : "Your capacity increase"} is
+                    scheduled for {dateLabel(status.pending.effective_at)}, after successful renewal
+                    payment. Your current capacity stays available until then.
                   </>
                 )}
               </p>
@@ -303,8 +304,8 @@ export function CapacityUpgradeContent({
                       {status.effective_at
                         ? `Starts ${dateLabel(status.effective_at)}, after successful renewal payment.`
                         : "Starts after your next successful renewal payment."}{" "}
-                      Your channels and current capacity stay the same until then. Top-ups are
-                      available now.
+                      Your channels and current capacity stay the same until then. Balance purchases
+                      are available now.
                     </p>
                     <ShadButton
                       type="button"

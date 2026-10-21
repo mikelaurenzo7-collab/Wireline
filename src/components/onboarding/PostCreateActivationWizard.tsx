@@ -692,7 +692,9 @@ export default function PostCreateActivationWizard({
                 <Button asChild variant="secondary" size="sm">
                   <Link
                     to={
-                      checkoutClosed && !hasLine ? SOFT_OPEN_CHECKOUT_COPY.href : "/phone?tab=setup"
+                      checkoutClosed && !hasLine
+                        ? SOFT_OPEN_CHECKOUT_COPY.href
+                        : `/phone?tab=setup&agent=${encodeURIComponent(payload.agentId)}`
                     }
                   >
                     {hasLine

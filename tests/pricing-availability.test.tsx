@@ -100,10 +100,17 @@ beforeEach(() => {
   harness.effects = [];
   cleanups = [];
   const stored = new Map<string, string>();
+  const location = new URL("https://botbound.app/pricing");
   vi.stubGlobal("window", {
     setTimeout,
     clearTimeout,
-    location: { search: "" },
+    location,
+    history: {
+      state: null,
+      replaceState: vi.fn((_state: unknown, _unused: string, url: string | URL) => {
+        location.href = new URL(url, location.href).href;
+      }),
+    },
     localStorage: {
       getItem: (key: string) => stored.get(key) ?? null,
       setItem: (key: string, value: string) => stored.set(key, value),
@@ -268,20 +275,30 @@ describe("public pricing activation availability", () => {
     expect(planLink("voice-regular")?.props.to).toBe("/signup?plan=voice-regular&interval=year");
   });
 
-  it("offers the annual CTA only when that interval is enabled", async () => {
-    await load(response());
-    elements(render())
-      .find((element) => element.type === "button" && text(element) === "Annual")
-      ?.props.onClick?.();
-    expect(text(planLink("voice-regular"))).toBe("Get Started ");
-  });
+  it.each([true, false])(
+    "offers enabled annual checkout when monthly availability is %s",
+    async (configured) => {
+      await load(
+        response({
+          plans: [
+            { id: "voice-regular", configured, annual_configured: true, contact_sales: false },
+          ],
+        }),
+      );
+      elements(render())
+        .find((element) => element.type === "button" && text(element) === "Annual")
+        ?.props.onClick?.();
+      expect(text(planLink("voice-regular"))).toBe("Get Started ");
+    },
+  );
 
   it.each([
     ["voice", "voice"],
     ["email", "email"],
     ["voice-email", "voice-email"],
   ])("replaces an earlier annual choice with the visible monthly %s plan", (slug, planId) => {
-    window.location.search = `?plan=${slug}`;
+    window.location.search = `?plan=${slug}&interval=year&utm_source=launch`;
+    window.location.hash = "#plans";
     const chooseInterval = (label: string) => {
       const button = elements(render()).find(
         (element) => element.type === "button" && text(element) === label,
@@ -297,9 +314,16 @@ describe("public pricing activation availability", () => {
     };
 
     chooseInterval("Annual");
+    expect(new URL(window.location.href).searchParams.get("utm_source")).toBe("launch");
+    expect(new URL(window.location.href).hash).toBe("#plans");
     expect(followPlanLink()?.preferredBillingInterval).toBe("year");
 
     chooseInterval("Monthly");
+    expect(new URL(window.location.href).searchParams.get("interval")).toBe("month");
+    expect(new URL(window.location.href).searchParams.get("plan")).toBe(planId);
+    expect(new URL(window.location.href).hash).toBe("#plans");
+    harness.states = [];
+    expect(planLink(slug)?.props.to).toBe(`/signup?plan=${planId}&interval=month`);
     const monthlyIntent = followPlanLink();
     expect(monthlyIntent).toMatchObject({
       preferredPlanId: planId,
