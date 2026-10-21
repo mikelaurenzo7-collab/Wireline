@@ -22,7 +22,7 @@ describe("Workspace computer panel", () => {
     expect(sections).toContain("panel=computer&focus=computer");
     expect(sections).toContain('params.get("focus") === "computer"');
     expect(studio).toContain('useMediaQuery("(min-width: 1180px)")');
-    expect(studio).toContain('if (panelParam !== "computer") return;');
+    expect(studio).toContain('if (requestedAgentUnavailable || panelParam !== "computer") return;');
   });
 
   it("shares one workbench between the panel and the Computer page", () => {
