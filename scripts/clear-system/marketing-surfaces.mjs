@@ -195,21 +195,45 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
     /prefers-reduced-motion: reduce/,
     "signature motion must respect reduced motion",
   );
-  for (const tier of ["Free Builder", "Light", "Regular", "High"])
-    mustInclude(
-      "src/pages/Pricing.tsx",
-      pricingPage,
-      new RegExp(tier.replace(" ", "\\s+")),
-      `pricing must expose ${tier}`,
-    );
+  mustInclude(
+    "src/pages/Pricing.tsx",
+    pricingPage,
+    /<h2[^>]*>Start Free<\/h2>[\s\S]*?to=\{signupHrefForPlan\("personal"\)\}/,
+    "pricing must expose Free account creation through its canonical signup destination",
+  );
   const channelPicker = read("src/components/ChannelPlanPicker.tsx");
-  for (const label of ["Calls", "Email", "SMS", "Light", "Regular", "High"])
+  const planDisplay = read("src/lib/plan-display.ts");
+  for (const label of ["Calls", "Email", "SMS"])
     mustInclude(
       "src/components/ChannelPlanPicker.tsx",
       channelPicker,
       new RegExp(`label: "${label}"`),
       `shared pricing selector must preserve ${label}`,
     );
+  mustInclude(
+    "src/components/ChannelPlanPicker.tsx",
+    channelPicker,
+    /import\s*\{[^}]*\bPLAN_CAPACITY_LABELS\b[^}]*\}\s*from\s*"\.\.\/lib\/plan-display"/,
+    "shared pricing selector must import canonical capacity labels",
+  );
+  for (const [capacity, label] of [
+    ["light", "Light"],
+    ["regular", "Regular"],
+    ["high", "High"],
+  ]) {
+    mustInclude(
+      "src/lib/plan-display.ts",
+      planDisplay,
+      new RegExp(`PLAN_CAPACITY_LABELS[^=]*=\\s*\\{[^}]*\\b${capacity}:\\s*"${label}"`),
+      `canonical capacity labels must preserve ${label}`,
+    );
+    mustInclude(
+      "src/components/ChannelPlanPicker.tsx",
+      channelPicker,
+      new RegExp(`id:\\s*"${capacity}",\\s*label:\\s*PLAN_CAPACITY_LABELS\\.${capacity}\\b`),
+      `shared pricing selector must use the canonical ${label} label`,
+    );
+  }
   mustInclude(
     "src/components/ChannelPlanPicker.tsx",
     channelPicker,

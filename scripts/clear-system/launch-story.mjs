@@ -174,13 +174,18 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
     /included_phone_numbers/,
     "plan catalog must back included-number claims",
   );
-  for (const tier of ["Free Builder"])
-    mustInclude(
-      "src/pages/Pricing.tsx",
-      pricingPage,
-      new RegExp(tier.replace(" ", "\\s+")),
-      `pricing must preserve ${tier}`,
-    );
+  mustInclude(
+    "src/pages/Pricing.tsx",
+    pricingPage,
+    /<h2[^>]*>Start Free<\/h2>/,
+    "pricing must preserve the Free plan entry",
+  );
+  mustInclude(
+    "src/pages/Pricing.tsx",
+    pricingPage,
+    /to=\{signupHrefForPlan\("personal"\)\}/,
+    "pricing must route Free signup through the canonical free plan destination",
+  );
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
