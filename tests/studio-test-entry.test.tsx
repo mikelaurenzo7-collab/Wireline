@@ -1,6 +1,7 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import StudioWorkspaceV2 from "../src/components/StudioWorkspaceV2";
+import StudioContextChrome from "../src/components/studio/StudioContextChrome";
 import { createStudioSessionState } from "../src/lib/studio-session-state";
 
 const h = vi.hoisted(() => ({
@@ -15,10 +16,14 @@ const h = vi.hoisted(() => ({
   ownerId: "owner-a",
   botId: "bot-a",
   wide: false,
+  loading: false,
+  degraded: false,
   params: new URLSearchParams(),
   session: null as unknown,
   focus: vi.fn(),
   setTimer: vi.fn(),
+  writePreference: vi.fn(),
+  refresh: vi.fn(),
   agents: [
     { id: "bot-a", name: "Alpha" },
     { id: "bot-b", name: "Bravo" },
@@ -40,6 +45,7 @@ vi.mock("react", async (original) => ({
   },
   useRef: (initial: unknown) => (h.refs[h.refCursor++] ??= { current: initial }),
   useCallback: (callback: unknown) => callback,
+  useMemo: (compute: () => unknown) => compute(),
   useEffect(effect: () => unknown, dependencies: readonly unknown[]) {
     const index = h.effectCursor++;
     const previous = h.dependencies[index];
@@ -61,14 +67,26 @@ vi.mock("react-router", () => ({
 }));
 vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: h.ownerId } }) }));
 vi.mock("../src/contexts/AgentsContext", () => ({
-  useAgents: () => ({ agents: h.agents, loading: false }),
+  useAgents: () => ({
+    agents: h.agents,
+    loading: h.loading,
+    degraded: h.degraded,
+    refresh: h.refresh,
+  }),
 }));
 vi.mock("../src/contexts/StudioSessionContext", () => ({ useStudioSessionState: () => h.session }));
 vi.mock("../src/hooks/useStudioActiveAgentId", () => ({
-  useStudioActiveAgentId: () => ({ requestedId: h.botId, resolvedId: h.botId, agents: h.agents }),
+  useStudioActiveAgentId: () => ({
+    requestedId: h.params.get("agent"),
+    resolvedId: h.botId,
+    agents: h.agents,
+  }),
 }));
 vi.mock("../src/hooks/useMediaQuery", () => ({ useMediaQuery: () => h.wide }));
-vi.mock("../src/lib/studio-agent-preference", () => ({ writeStudioLastAgentId: vi.fn() }));
+vi.mock("../src/lib/studio-agent-preference", () => ({
+  writeStudioLastAgentId: h.writePreference,
+}));
+vi.mock("../src/components/molecules/StatusNotice", () => ({ StatusNotice: "notice" }));
 vi.mock("../src/components/StudioWorkroom", () => ({ default: "workroom" }));
 vi.mock("../src/components/StudioAgentWorkspacePanel", () => ({ default: "setup-panel" }));
 vi.mock("../src/components/StudioAgentReviewPanel", () => ({ default: "review-panel" }));
@@ -77,6 +95,10 @@ vi.mock("../src/components/WorkspaceRecovery", () => ({ default: "recovery" }));
 
 type Props = {
   children?: ReactNode;
+  action?: ReactNode;
+  title?: string;
+  agentId?: string;
+  initialCommand?: string;
   id?: string;
   ref?: { current: unknown };
   mode?: string;
@@ -92,7 +114,7 @@ type Props = {
 function elements(node: ReactNode): Array<ReactElement<Props>> {
   if (Array.isArray(node)) return node.flatMap(elements);
   if (!isValidElement<Props>(node)) return [];
-  return [node, ...elements(node.props.children)];
+  return [node, ...elements(node.props.children), ...elements(node.props.action)];
 }
 function render() {
   let tree: ReactNode;
@@ -123,15 +145,68 @@ beforeEach(() => {
   h.ownerId = "owner-a";
   h.botId = "bot-a";
   h.wide = false;
+  h.loading = false;
+  h.degraded = false;
   h.params = new URLSearchParams("agent=bot-a&section=setup");
   h.session = createStudioSessionState(h.ownerId);
   h.focus.mockReset();
   h.setTimer.mockReset();
+  h.writePreference.mockReset();
+  h.refresh.mockReset();
   vi.stubGlobal("window", { setTimeout: h.setTimer });
 });
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Studio settings-to-Test handoff", () => {
+  it.each([false, true])(
+    "blocks a missing explicit Bot and its commands on wide layout %s",
+    (wide) => {
+      h.wide = wide;
+      h.params = new URLSearchParams(
+        "agent=missing%2Fbot&command=Review+this+request&commandNonce=old-request&panel=computer&focus=computer",
+      );
+      const nodes = render();
+      expect(nodes.find((node) => node.type === "notice")?.props.title).toBe("Bot Unavailable");
+      expect(nodes.find((node) => node.type === "a")?.props.to).toBe("/studio");
+      expect(
+        nodes.some((node) =>
+          ["workroom", "setup-panel", "review-panel", "resizable-panel", "navigate"].includes(
+            String(node.type),
+          ),
+        ),
+      ).toBe(false);
+      expect(h.params.get("agent")).toBe("missing/bot");
+      expect(h.params.get("commandNonce")).toBe("old-request");
+      expect(h.params.get("panel")).toBe("computer");
+      expect(h.writePreference).not.toHaveBeenCalled();
+      expect((h.session as ReturnType<typeof createStudioSessionState>).conversations.size).toBe(0);
+      const chrome = elements(StudioContextChrome());
+      expect(chrome.some((node) => node.props["aria-label"] === "Bot details")).toBe(false);
+      expect(chrome.find((node) => node.type === "h1")?.props.children).not.toBe("Alpha");
+
+      h.degraded = true;
+      const degraded = render();
+      expect(degraded.find((node) => node.type === "notice")?.props.title).toBe(
+        "Bot Lookup Unavailable",
+      );
+      degraded.find((node) => node.props.children === "Retry")!.props.onClick!();
+      expect(h.refresh).toHaveBeenCalledOnce();
+      expect(h.params.get("agent")).toBe("missing/bot");
+
+      h.degraded = false;
+      h.params = new URLSearchParams();
+      h.botId = "bot-b";
+      const recovered = render();
+      expect(h.params.get("agent")).toBe("bot-b");
+      expect(recovered.find((node) => node.type === "workroom")?.props.agentId).toBe("bot-b");
+      expect(
+        recovered
+          .filter((node) => node.type === "workroom")
+          .every((node) => node.props.initialCommand === undefined),
+      ).toBe(true);
+    },
+  );
+
   it("focuses explicit Computer navigation while retaining the setup conversation", () => {
     h.wide = true;
     h.params = new URLSearchParams("agent=bot-a&panel=computer&focus=computer");

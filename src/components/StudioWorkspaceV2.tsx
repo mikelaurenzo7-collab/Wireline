@@ -5,6 +5,7 @@ import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react"
 import { Button, Skeleton } from "../components/atoms";
 import { PanelSkeleton } from "../components/atoms/skeleton-presets";
 import { EmptyState } from "../components/ui/EmptyState";
+import { StatusNotice } from "./molecules/StatusNotice";
 import { BotBoundLockup } from "./brand/BotBoundBrand";
 import WorkspaceResizablePanel from "../components/layout/WorkspaceResizablePanel";
 import { useAgents } from "../contexts/AgentsContext";
@@ -168,7 +169,11 @@ export default function StudioWorkspaceV2() {
   const [panelExpanded, setPanelExpanded] = useState(false);
   const [workspaceWidth, setWorkspaceWidth] = useState(0);
   const workspaceObserverRef = useRef<ResizeObserver | null>(null);
-  const active = resolvedAgentId ? agents.find((agent) => agent.id === resolvedAgentId) : undefined;
+  const requestedAgentId = requestedId?.trim() || "";
+  // Explicit links never select another Bot while the requested one is unavailable.
+  const activeAgentId = requestedAgentId || resolvedAgentId;
+  const active = activeAgentId ? agents.find((agent) => agent.id === activeAgentId) : undefined;
+  const requestedAgentUnavailable = Boolean(requestedAgentId && !active);
 
   const sectionParam = params.get("section");
   const panelParam = params.get("panel");
@@ -282,6 +287,7 @@ export default function StudioWorkspaceV2() {
   }, [sectionParam, workroomParam, commandParam, commandNonceParam]);
 
   useEffect(() => {
+    if (requestedAgentUnavailable) return;
     const needsNormalization =
       legacyMode === "workroom" ||
       legacyView === "workspace" ||
@@ -291,6 +297,7 @@ export default function StudioWorkspaceV2() {
     // The helper performs the legacy next.delete("mode") / next.delete("view") cleanup.
     setParams((current) => normalizeStudioRouteParams(current), { replace: true });
   }, [
+    requestedAgentUnavailable,
     legacyMode,
     legacyView,
     sectionParam,
@@ -305,6 +312,7 @@ export default function StudioWorkspaceV2() {
     // old ?create=1 URL over its handoff to the new Bot's setup panel.
     if (
       creatingRequested ||
+      requestedAgentId ||
       loading ||
       agents.length === 0 ||
       !resolvedAgentId ||
@@ -315,7 +323,7 @@ export default function StudioWorkspaceV2() {
       (current) => {
         const next = new URLSearchParams(current);
         next.set("agent", resolvedAgentId);
-        if (!requestedId) {
+        if (!requestedAgentId) {
           if (next.has("command") || next.has("commandNonce")) {
             next.set("workroom", "test");
           }
@@ -326,7 +334,15 @@ export default function StudioWorkspaceV2() {
       },
       { replace: true },
     );
-  }, [agents, creatingRequested, loading, requestedId, resolvedAgentId, setParams]);
+  }, [
+    agents,
+    creatingRequested,
+    loading,
+    requestedAgentId,
+    requestedId,
+    resolvedAgentId,
+    setParams,
+  ]);
 
   useEffect(() => {
     if (active?.id) writeStudioLastAgentId(active.id);
@@ -369,7 +385,7 @@ export default function StudioWorkspaceV2() {
 
   useEffect(() => {
     // The Computer destination and the optional side panel share one workbench.
-    if (panelParam !== "computer") return;
+    if (requestedAgentUnavailable || panelParam !== "computer") return;
     if (splitWorkspace) openPanelSection("computer");
     setParams(
       (current) => {
@@ -379,7 +395,7 @@ export default function StudioWorkspaceV2() {
       },
       { replace: true },
     );
-  }, [openPanelSection, panelParam, setParams, splitWorkspace]);
+  }, [openPanelSection, panelParam, requestedAgentUnavailable, setParams, splitWorkspace]);
 
   const closeInspector = useCallback(() => {
     setPanelExpanded(false);
@@ -462,6 +478,32 @@ export default function StudioWorkspaceV2() {
   ]);
 
   if (loading) return <StudioLoadingState />;
+  if (requestedAgentUnavailable) {
+    return (
+      <div className="p-4 sm:p-6">
+        <StatusNotice
+          tone="warning"
+          title={degraded ? "Bot Lookup Unavailable" : "Bot Unavailable"}
+          action={
+            <div className="flex flex-wrap gap-2">
+              {degraded ? (
+                <Button type="button" variant="secondary" size="sm" onClick={refresh}>
+                  Retry
+                </Button>
+              ) : null}
+              <Button asChild variant="secondary" size="sm">
+                <Link to="/studio">Choose Bot</Link>
+              </Button>
+            </div>
+          }
+        >
+          {degraded
+            ? "We couldn't verify the Bot in this link. Retry or choose a Bot to continue."
+            : "The Bot in this link is no longer available. Choose a Bot to continue."}
+        </StatusNotice>
+      </div>
+    );
+  }
   if (agents.length === 0 && degraded) return <WorkspaceRecovery onRetry={refresh} />;
   if (agents.length === 0) return <StudioEmptyState />;
 

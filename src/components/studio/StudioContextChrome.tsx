@@ -14,10 +14,13 @@ import {
 } from "../../lib/studio-route-state";
 
 export default function StudioContextChrome() {
-  const { agents, resolvedId, phoneLookupDegraded } = useStudioActiveAgentId();
+  const { agents, requestedId, resolvedId, phoneLookupDegraded } = useStudioActiveAgentId();
   const [searchParams, setSearchParams] = useSearchParams();
   const inspectorOpen = ["setup", "review"].includes(searchParams.get("section") || "");
-  const activeAgent = resolvedId ? (agents.find((agent) => agent.id === resolvedId) ?? null) : null;
+  const activeAgentId = requestedId?.trim() || resolvedId;
+  const activeAgent = activeAgentId
+    ? (agents.find((agent) => agent.id === activeAgentId) ?? null)
+    : null;
   const lineStatus = activeAgent ? agentLineStatus(activeAgent, phoneLookupDegraded) : null;
   const readyLabel = activeAgent ? agentReadinessLabel(activeAgent, phoneLookupDegraded) : null;
   const optionLabels = useMemo(() => buildAgentOptionLabels(agents), [agents]);

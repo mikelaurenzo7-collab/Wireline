@@ -224,8 +224,13 @@ describe("setup guide requires confirmed calling", () => {
         button("Choose a number")?.props.onClick?.();
         expect(h.navigate).toHaveBeenCalledWith("/phone?tab=setup&agent=bot");
       } else {
-        button("Finish for Now")?.props.onClick?.();
-        const phoneSetup = elements(render()).find((element) => element.type === "a");
+        const launchLater = button("Launch later");
+        expect(launchLater).toBeDefined();
+        launchLater!.props.onClick?.();
+        expect(text(render())).toContain("Ready When You Are");
+        const phoneSetup = elements(render()).find(
+          (element) => element.type === "a" && text(element) === "Get a number",
+        );
         expect(phoneSetup?.props.to).toBe("/phone?tab=setup&agent=bot");
       }
       expect(h.fetch.mock.calls.some(([url]) => url === "/api/phone-numbers/provision")).toBe(
