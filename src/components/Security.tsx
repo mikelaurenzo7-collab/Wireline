@@ -130,7 +130,7 @@ const SECTIONS: SecurityTopic[] = [
     items: [
       "Found a vulnerability? Email security@botbound.app with details.",
       "BotBound does not currently run a paid bug bounty. Credit or compensation is never promised before written terms.",
-      "Please do not test exploits against tenant data; use your own Free Builder account.",
+      "Please do not test exploits against tenant data; use your own Free account.",
     ],
   },
 ];
@@ -177,7 +177,7 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     icon: CreditCard,
     title: "Billing & Spend Controls",
     items: [
-      "Runtime Balance is a prepaid ledger. Paid plans draw overflow voice from funded balance after included minutes. Existing services retain their billing and verification requirements. Free Builder cannot run live voice until a paid plan is active.",
+      "Runtime Balance is a prepaid ledger. Paid plans draw overflow voice from funded balance after included minutes. Existing services retain their billing and verification requirements. The Free plan cannot run live voice until a paid plan is active.",
       "Paid plans include a managed AI allowance for AI, research, and enrichment funded by the platform. Calls can use up to 10 minutes of paid completion credit within their session limit. Any amount due pauses new calls and prepaid extras until topped up.",
       "Daily spend totals and cost alerts help the platform owner catch margin leaks early.",
     ],

@@ -3,6 +3,7 @@ import { PageMeta } from "../lib/page-meta";
 import { HOME_DESCRIPTION, HOME_TITLE } from "../lib/marketing-route-meta";
 import { BOTBOUND_PRODUCTION_ORIGIN } from "../lib/brand";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
+import { getPlanDisplayLabel } from "../lib/plan-display";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import WireAgentLanding from "../components/marketing/WireAgentLanding";
 
@@ -28,7 +29,7 @@ export default function LandingPage() {
       offerCount: publicPlans.length,
       offers: publicPlans.map((plan) => ({
         "@type": "Offer",
-        name: plan.name,
+        name: getPlanDisplayLabel(plan),
         price: plan.price_usd_monthly,
         priceCurrency: "USD",
         url: `${PUBLIC_ORIGIN}/pricing`,
