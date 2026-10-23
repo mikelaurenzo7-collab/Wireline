@@ -184,7 +184,9 @@ describe("live email delivery and manual handoff", () => {
     expect(h.saveTask).not.toHaveBeenCalled();
     expect(result?.result).toMatch(/^SUBMISSION_OK:/);
     expect(result?.result).toContain(`Email accepted by the sending service for ${args.to_email}`);
-    expect(result?.result).toContain('"Sent. Anything else I can help with?"');
+    expect(result?.result).toContain(
+      "I've sent that over. Is there anything else I can help with?",
+    );
     expect(result?.result).toContain("Do not read the email or overview aloud unless asked");
     expect(result?.result).toContain("Inbox arrival is separate and has not been checked");
     expect(result?.result).toContain("Do not describe this as a failed send or offer a retry");

@@ -290,7 +290,7 @@ export async function handleCoreToolCall(
       if (success) {
         return {
           toolCallId,
-          result: `SUBMISSION_OK: Email accepted by the sending service for ${to_email}. Confirm briefly, for example: "Sent. Anything else I can help with?" Then pause. Do not read the email or overview aloud unless asked. If the caller is saying goodbye, close warmly instead. Submission succeeded. Inbox arrival is separate and has not been checked. Do not describe this as a failed send or offer a retry. Do not resend merely because inbox arrival is unverified.`,
+          result: `SUBMISSION_OK: Email accepted by the sending service for ${to_email}. Confirm briefly, for example: "I've sent that over. Is there anything else I can help with?" Then pause. Do not read the email or overview aloud unless asked. If the caller is saying goodbye, close warmly instead. Submission succeeded. Inbox arrival is separate and has not been checked. Do not describe this as a failed send or offer a retry. Do not resend merely because inbox arrival is unverified.`,
         };
       }
       const recorded = await recordCommsFollowUpTask(drizzle, {

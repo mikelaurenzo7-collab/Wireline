@@ -22,7 +22,6 @@ import { drizzle, fetchWithTimeout, log, tenantStore } from "../server-context";
 import {
   buildConsentLedgerRow,
   CONSENT_RULE_VERSION,
-  detectAiDisclosure,
   detectOptOut,
   getConsentRuleForPhone,
 } from "../tcpa-consent";
@@ -262,25 +261,6 @@ export function deterministicSummary(transcript: string): string {
   if (!callerTurns.length) return "The caller did not say anything the Bot could transcribe.";
   const compact = `Caller: ${callerTurns.join(" / ")}`.replace(/\s+/g, " ").trim();
   return compact.length <= 600 ? compact : `${compact.slice(0, 597)}…`;
-}
-
-function buildInboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRuntime): string {
-  // A saved greeting that already declares the AI ("I'm an AI assistant")
-  // gives an inbound caller that identity; prefixing the generic disclosure as
-  // well makes them hear it twice. Only declarative agent phrasing counts.
-  // Outbound calls always keep the full prefix (on-behalf-of, opt-out notice).
-  if (detectAiDisclosure(runtime.greeting).found) return runtime.greeting.trim();
-  const disclosure = complianceFirstMessagePrefix(
-    input.complianceMode,
-    input.businessName || runtime.agentName,
-    {
-      // Native PSTN is always an AI assistant. Inbound sales and support
-      // callers still receive identity before the saved greeting.
-      outboundAiCall: true,
-      recordingEnabled: false,
-    },
-  );
-  return `${disclosure}${runtime.greeting}`.trim();
 }
 
 function buildOutboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRuntime): string {
@@ -2411,9 +2391,7 @@ async function runRealtimeSession(
         }
         connectedAt = Date.now();
         const outbound = callDirection(input) === "outbound";
-        const opening = outbound
-          ? buildOutboundOpening(input, runtime)
-          : buildInboundOpening(input, runtime);
+        const opening = outbound ? buildOutboundOpening(input, runtime) : runtime.greeting.trim();
         const instructions = outbound
           ? `${runtime.session.instructions}\n\n${buildOutboundInstructions(input)}`
           : runtime.session.instructions;

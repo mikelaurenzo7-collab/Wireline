@@ -108,22 +108,6 @@ describe("AI-identity disclosure evidence is persisted per outbound call", () =>
     expect(block).toContain("carriedConversation");
   });
 
-  it("skips the generic prefix only for an inbound greeting that already discloses", () => {
-    const inbound = handlers.slice(
-      handlers.indexOf("function buildInboundOpening"),
-      handlers.indexOf("function buildOutboundOpening"),
-    );
-    const outbound = handlers.slice(
-      handlers.indexOf("function buildOutboundOpening"),
-      handlers.indexOf("function buildOutboundOpening") + 1500,
-    );
-    expect(inbound).toContain("if (detectAiDisclosure(runtime.greeting).found)");
-    // Outbound always carries the full prefix: on-behalf-of and opt-out notice.
-    expect(outbound).not.toContain("detectAiDisclosure");
-    expect(detectAiDisclosure("Thanks for calling Acme. I'm an AI assistant.").found).toBe(true);
-    expect(detectAiDisclosure("Thanks for calling Acme. How can I help?").found).toBe(false);
-  });
-
   it("has a dedicated per-call uniqueness index", () => {
     // Sharing 0136's index would make the AI row and the recording row for one
     // call contend for a single slot, silently dropping one of them.

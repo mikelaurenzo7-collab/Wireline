@@ -354,18 +354,32 @@ beforeEach(() => {
 });
 
 describe("native SIP opening delivery", () => {
-  it("keeps the exact disclosure and greeting with the session's natural delivery", async () => {
-    const session = start();
-    await vi.advanceTimersByTimeAsync(0);
-    const opening = h.sent.find((event) => event.type === "response.create")?.response;
-    expect(opening?.instructions).toContain("warm, natural speaking style");
-    expect(opening?.instructions).toContain(
-      "Say exactly these words and nothing else: I am an AI assistant. How can I help?",
-    );
-    expect(opening?.output_modalities).toEqual(["audio"]);
-    h.sockets[0].close();
-    await session;
-  });
+  it.each(["inbound", "outbound"] as const)(
+    "uses the correct %s opening with natural delivery",
+    async (direction) => {
+      const greeting = "Hi, this is Nora with BotBound. How can I help you?";
+      const session = runOpenAISipCallSession(
+        { ...call, direction, businessName: "BOTBOUND LLC" },
+        { ...runtime, agentName: "Nora", greeting } as any,
+        1n,
+        claim,
+        reservation,
+      );
+      await vi.advanceTimersByTimeAsync(0);
+      const opening = h.sent.find((event) => event.type === "response.create")?.response;
+      expect(opening?.instructions).toContain("warm, natural speaking style");
+      expect(opening?.instructions).toContain(
+        `Say exactly these words and nothing else: ${direction === "inbound" ? greeting : "I am an AI assistant. Hi, this is Nora with BOTBOUND LLC. You can call us back at the business."}`,
+      );
+      if (direction === "inbound") {
+        expect(opening?.instructions).not.toContain("AI assistant");
+        expect(opening?.instructions).not.toContain("BOTBOUND LLC");
+      }
+      expect(opening?.output_modalities).toEqual(["audio"]);
+      h.sockets[0].close();
+      await session;
+    },
+  );
 });
 
 describe("native SIP semantic tool accounting", () => {
