@@ -65,7 +65,9 @@ describe("vendor live-research and voice posture", () => {
     // gemini_ground carries no merchant integration, so an integration-only UI
     // would never render it. The platform-tools list is what puts it on screen.
     expect(capabilities).toContain('group: "core"');
-    expect(permissions).toContain("AGENT_TOOL_CATALOG.filter((tool) => !tool.integration)");
+    expect(permissions).toContain("const VISIBLE_TOOLS = AGENT_TOOL_CATALOG.filter(");
+    expect(permissions).toContain('SMS_LAUNCH_UI_ENABLED || tool.name !== "send_text_message"');
+    expect(permissions).toContain("VISIBLE_TOOLS.filter((tool) => !tool.integration)");
     expect(permissions).toContain("Platform Actions");
 
     expect(permissions).toContain("JSON.stringify({ enabled_tools: enabled })");

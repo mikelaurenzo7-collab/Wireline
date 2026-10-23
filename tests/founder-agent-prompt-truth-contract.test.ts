@@ -32,7 +32,7 @@ describe("founder agent prompt truth contract", () => {
       /BotBound (?:Starter|Pro|Scale)|Annual pricing saves two months|Pro and Scale|beyond Pro/,
     );
     expect(WIRELINE_PERSONAS.success.systemPrompt).toContain(
-      "Light, Regular and High currently include one Bot",
+      "All channel plans currently include one Bot",
     );
     expect(WIRELINE_PERSONAS.technical.systemPrompt).toContain("PDF, Word, Excel");
   });

@@ -217,9 +217,9 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
     "shared pricing selector must import canonical capacity labels",
   );
   for (const [capacity, label] of [
-    ["light", "Light"],
-    ["regular", "Regular"],
-    ["high", "High"],
+    ["light", "Starter"],
+    ["regular", "Plus"],
+    ["high", "Pro"],
   ]) {
     mustInclude(
       "src/lib/plan-display.ts",

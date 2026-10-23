@@ -28,7 +28,7 @@ const FAQ = [
   ],
   [
     "What Changes with Capacity?",
-    "Light, Regular, and High keep the same Bot and selected channels. Calls include 50, 250, or 500 minutes each month; Email allowances increase with capacity. Each package shows its included usage and price.",
+    "Starter, Plus, and Pro keep the same Bot and selected channels. Calls include 50, 250, or 500 minutes each month; Email allowances increase with capacity. Each package shows its included usage and price.",
   ],
   [
     "Can One Bot Use Several Channels?",

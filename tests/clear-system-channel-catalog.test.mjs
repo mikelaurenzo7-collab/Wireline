@@ -43,8 +43,8 @@ describe("Clear System channel catalog guard", () => {
     ],
     [
       "src/lib/plan-display.ts",
-      (source) => source.replace('high: "High"', 'high: "Scale"'),
-      "preserve High",
+      (source) => source.replace('high: "Pro"', 'high: "Scale"'),
+      "preserve Pro",
     ],
     [
       "src/components/ChannelPlanPicker.tsx",

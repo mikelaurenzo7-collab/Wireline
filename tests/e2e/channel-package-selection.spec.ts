@@ -45,7 +45,7 @@ test("launch channel capacities retain exact annual signup intent in one readabl
     await page
       .getByRole("radio", {
         name: new RegExp(
-          `^${plan.capacityTier === "light" ? "Light" : plan.capacityTier === "regular" ? "Regular" : "High"}\\b`,
+          `^${plan.capacityTier === "light" ? "Starter" : plan.capacityTier === "regular" ? "Plus" : "Pro"}\\b`,
         ),
       })
       .check();
@@ -170,18 +170,18 @@ test("an existing Calls subscription schedules more capacity without another che
   await capacity
     .getByRole("button", { name: /^(Increase Capacity|Scheduled Capacity Change)$/ })
     .click();
-  await capacity.getByRole("radio", { name: /^Regular\b/ }).check();
+  await capacity.getByRole("radio", { name: /^Plus\b/ }).check();
   for (const checkbox of await capacity.getByRole("checkbox").all())
     await expect(checkbox).toBeDisabled();
   await expect(capacity).toContainText("after successful renewal payment");
   await capacity.getByRole("button", { name: "Schedule Capacity Increase", exact: true }).click();
-  await expect(capacity).toContainText("Calls · Regular is scheduled for");
+  await expect(capacity).toContainText("Calls · Plus is scheduled for");
   await expect(capacity).toContainText("Your current capacity stays available until then.");
   await page.reload();
   await capacity
     .getByRole("button", { name: /^(Increase Capacity|Scheduled Capacity Change)$/ })
     .click();
-  await expect(capacity).toContainText("Calls · Regular is scheduled for");
+  await expect(capacity).toContainText("Calls · Plus is scheduled for");
   expect(posts).toBe(1);
   expect(checkoutPosts).toBe(0);
   await capacity.getByRole("button", { name: "Remove Scheduled Change", exact: true }).click();

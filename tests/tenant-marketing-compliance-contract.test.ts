@@ -35,7 +35,7 @@ describe("tenant marketing email compliance contract", () => {
 
   it("keeps transactional tenant mail out of marketing suppression", () => {
     expect(integrations).toContain("if (params.marketing)");
-    expect(integrations).toContain("text: params.body");
+    expect(integrations).toContain("text: presentation.textBody");
     const fallback = integrations.slice(
       integrations.lastIndexOf("if (params.marketing)"),
       integrations.indexOf("// --- Private Helpers ---"),

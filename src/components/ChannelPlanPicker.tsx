@@ -169,7 +169,7 @@ export default function ChannelPlanPicker({
         </div>
       </fieldset>
       <fieldset disabled={disabled} className="min-w-0">
-        <legend className="mb-2 text-sm font-medium text-foreground">Monthly capacity</legend>
+        <legend className="mb-2 text-sm font-medium text-foreground">Choose your plan</legend>
         <div className="grid min-w-0 grid-cols-[repeat(3,minmax(0,1fr))] gap-2 max-[359px]:grid-cols-1">
           {CAPACITY_CHOICES.map(({ id: capacity, label }) => {
             const option = plans.find(
@@ -196,11 +196,23 @@ export default function ChannelPlanPicker({
                   {label}
                 </span>
                 {option ? (
-                  <span className="text-xs tabular-nums">
-                    {option.channels.includes("voice")
-                      ? `${option.voice_minutes_monthly.toLocaleString()} min`
-                      : `$${(option.ai_spend_allowance_usd_monthly ?? 0).toFixed(2)} allowance`}
-                  </span>
+                  <>
+                    <span className="text-base font-semibold tabular-nums text-foreground">
+                      $
+                      {(interval === "year"
+                        ? option.price_usd_annual
+                        : option.price_usd_monthly
+                      ).toLocaleString()}
+                      <span className="text-xs font-normal text-muted-foreground">
+                        /{interval === "year" ? "year" : "month"}
+                      </span>
+                    </span>
+                    <span className="text-xs tabular-nums">
+                      {option.channels.includes("voice")
+                        ? `${option.voice_minutes_monthly.toLocaleString()} min/month`
+                        : `$${(option.ai_spend_allowance_usd_monthly ?? 0).toFixed(2)} allowance/month`}
+                    </span>
+                  </>
                 ) : null}
               </label>
             );

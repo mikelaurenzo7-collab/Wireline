@@ -309,7 +309,7 @@ export const AGENT_TOOL_DEFS = {
   send_email: {
     name: "send_email",
     description:
-      "Sends an email to the customer for confirmations, quotes, or follow-up information discussed on the call.",
+      "Send the email the caller requested once their address is confirmed. Invoke this tool instead of reading the email aloud or asking permission to send it again. Wait for its result before confirming that it was sent.",
     parameters: {
       type: "object",
       properties: {
@@ -319,7 +319,11 @@ export const AGENT_TOOL_DEFS = {
           description: "True only after reading back the exact address and the caller confirms it.",
         },
         subject: { type: "string", description: "Email subject line." },
-        body: { type: "string", description: "Email body content." },
+        body: {
+          type: "string",
+          description:
+            "Requested email content as plain text with relevant verified https URLs. The service adds the Bot's business signature; omit a second signature and internal notes.",
+        },
       },
       required: ["to_email", "email_confirmed", "subject", "body"],
     },

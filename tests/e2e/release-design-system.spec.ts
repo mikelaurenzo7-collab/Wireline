@@ -192,7 +192,7 @@ async function expectContentFits(locator: Locator) {
 test("workspace actions share readable typography in both themes", async ({ page }) => {
   await mockWorkspace(page);
   await page.goto("/settings/billing");
-  const builder = page.getByRole("link", { name: "Open Free Builder", exact: true });
+  const builder = page.getByRole("link", { name: "Continue Free", exact: true });
   await expect(builder).toBeVisible();
   for (const light of [false, true]) {
     await page.evaluate(async (light) => {
@@ -222,7 +222,7 @@ test("workspace actions share readable typography in both themes", async ({ page
   await expect(page).toHaveURL(/\/studio/);
 });
 
-test("pricing keeps its header, annual prices, and both mobile actions readable at 320px and 200% text", async ({
+test("pricing keeps its header, annual prices, and signup action readable at 320px and 200% text", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 800 });
@@ -251,10 +251,11 @@ test("pricing keeps its header, annual prices, and both mobile actions readable 
   const selectedPackage = page.getByRole("article", { name: "Selected package" });
   await expect(
     selectedPackage.getByRole("heading", {
-      name: currentPlan.name.replace(/^BotBound\s+/, ""),
+      name: "Calls",
       exact: true,
     }),
   ).toBeVisible();
+  await expect(selectedPackage.getByText("Plus", { exact: true })).toBeVisible();
   await expect(selectedPackage).toContainText(
     `$${currentPlan.price_usd_annual.toLocaleString()}/year`,
   );
@@ -264,14 +265,7 @@ test("pricing keeps its header, annual prices, and both mobile actions readable 
   await expectContentFits(page.locator("#plans, #plans *"));
 
   await page.locator(".pricing-more__summary").scrollIntoViewIfNeeded();
-  await expect(page.locator(".marketing-sticky-cta")).toBeVisible();
-  await expectContentFits(page.locator(".marketing-sticky-cta, .marketing-sticky-cta *"));
-  for (const action of await page.locator(".marketing-sticky-cta a").all()) {
-    const box = (await action.boundingBox())!;
-    expect(box.width).toBeGreaterThan(100);
-    expect(box.x).toBeGreaterThanOrEqual(0);
-    expect(box.x + box.width).toBeLessThanOrEqual(320);
-  }
+  await expect(page.locator(".marketing-sticky-cta")).toHaveCount(0);
   await header.getByRole("button", { name: "Open navigation" }).click();
   await expect(page.getByRole("menuitem", { name: "Pricing", exact: true })).toBeVisible();
   const menuBox = (await page.getByRole("menu").boundingBox())!;
@@ -296,10 +290,11 @@ test("billing reflows its interval, cards, and dock without losing bottom action
   const selectedPackage = page.getByRole("article", { name: "Selected package" });
   await expect(
     selectedPackage.getByRole("heading", {
-      name: callsPlan.name.replace(/^BotBound\s+/, ""),
+      name: "Calls",
       exact: true,
     }),
   ).toBeVisible();
+  await expect(selectedPackage.getByText("Plus", { exact: true })).toBeVisible();
   await expect(selectedPackage).toContainText(
     `$${callsPlan.price_usd_annual.toLocaleString()}/year`,
   );
@@ -398,38 +393,39 @@ test("a signed-in unknown route has one page announcer", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
 });
 
-test("global overlays clear wrapped workspace and marketing controls", async ({ page }) => {
+test("global overlays clear the workspace dock and fit the marketing viewport", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await mockWorkspace(page);
-  for (const [path, chrome] of [
-    ["/settings/billing", ".wl-shell-dock"],
-    ["/pricing", ".marketing-sticky-cta"],
-  ]) {
+  for (const path of ["/settings/billing", "/pricing"]) {
     await page.goto(path);
     await expect(page.getByRole("group", { name: "Billing interval" })).toBeVisible();
     await enlargeText(page);
     if (path === "/pricing") await page.locator(".pricing-more__summary").scrollIntoViewIfNeeded();
-    await expect(page.locator(chrome)).toBeVisible();
-    const chromeBox = (await page.locator(chrome).boundingBox())!;
+    const lowerBoundary =
+      path === "/settings/billing"
+        ? (await page.locator(".wl-shell-dock").boundingBox())!.y
+        : page.viewportSize()!.height;
     await expect
       .poll(() =>
         page
           .getByRole("log", { name: "Notifications" })
           .evaluate((el) => el.getBoundingClientRect().bottom),
       )
-      .toBeLessThan(chromeBox.y);
+      .toBeLessThan(lowerBoundary);
     await page.evaluate(() => window.dispatchEvent(new Event("wireline:open-privacy-choices")));
     const privacy = page.getByRole("region", { name: "Privacy Choices" });
     await expect(privacy).toBeVisible();
     await expectContentFits(privacy.locator("*"));
     await expect
       .poll(() => privacy.evaluate((el) => el.getBoundingClientRect().bottom))
-      .toBeLessThan(chromeBox.y);
+      .toBeLessThan(lowerBoundary);
     const lastChoice = privacy.getByRole("button", { name: "Allow Optional", exact: true });
     await lastChoice.scrollIntoViewIfNeeded();
     const choiceBox = (await lastChoice.boundingBox())!;
     expect(choiceBox.y).toBeGreaterThanOrEqual(0);
-    expect(choiceBox.y + choiceBox.height).toBeLessThan(chromeBox.y);
+    expect(choiceBox.y + choiceBox.height).toBeLessThan(lowerBoundary);
     await page.keyboard.press("Escape");
     await expect(privacy).toBeHidden();
   }

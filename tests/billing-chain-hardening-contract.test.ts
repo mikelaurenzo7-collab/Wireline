@@ -136,7 +136,7 @@ describe("entitlement delivery survives webhook failure", () => {
     expect(catalog).toContain("is_free: isFree");
     expect(freeLinkStart).toBeGreaterThan(-1);
     expect(freeBranch).toContain('<Link to="/studio">');
-    expect(freeBranch).toContain("Open Free Builder");
+    expect(freeBranch).toContain("Continue Free");
     expect(freeBranch).not.toContain("onSelectPlan(plan.id");
   });
 });

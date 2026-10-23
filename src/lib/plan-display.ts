@@ -1,4 +1,5 @@
 import { planById, type CapacityTier, type CommunicationChannel } from "./plan-catalog";
+import { normalizeCustomerBrandText } from "./brand-text";
 
 export type PlanDisplaySource =
   | string
@@ -14,9 +15,9 @@ export type PlanDisplaySource =
   | undefined;
 
 export const PLAN_CAPACITY_LABELS: Record<CapacityTier, string> = {
-  light: "Light",
-  regular: "Regular",
-  high: "High",
+  light: "Starter",
+  regular: "Plus",
+  high: "Pro",
 };
 
 const CHANNEL_LABELS: ReadonlyArray<readonly [CommunicationChannel, string]> = [
@@ -42,7 +43,11 @@ export function getPlanDisplayName(source?: PlanDisplaySource): string {
       .map(([, label]) => label)
       .join(" + ");
   }
-  return plan.name?.replace(/^(?:BotBound|Wireline)\s+/i, "").trim() || "Plan";
+  return (
+    normalizeCustomerBrandText(plan.name ?? "")
+      .replace(/^BotBound\s+/i, "")
+      .trim() || "Plan"
+  );
 }
 
 export function getPlanCapacityLabel(source?: PlanDisplaySource): string | null {

@@ -81,13 +81,13 @@ for (const width of [320, 390, 1440]) {
     await brief.fill(supplied);
     await role.selectOption("appointment-setter");
     await expect(brief).toHaveValue(supplied);
-    await expect(dialog.getByRole("textbox", { name: /Bot Name/ })).toBeHidden();
+    await expect(dialog.getByRole("textbox", { name: /Bot Name/ })).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Create Bot", exact: true })).toBeInViewport();
     await expect
       .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
       .toBe(true);
     await capture(page, info, `create-${width}`);
-    const identity = dialog.getByRole("button", { name: /Name & appearance/ });
+    const identity = dialog.getByRole("button", { name: /Appearance/ });
     await identity.click();
     await dialog.getByRole("textbox", { name: /Bot Name/ }).fill("Repair Desk");
     await identity.click();
@@ -139,6 +139,7 @@ for (const width of [320, 390, 1440]) {
     ]);
     const features = page.getByRole("list", { name: "Built Around You" });
     await expect(features.getByRole("heading", { level: 3 })).toHaveText([
+      "Reviewed Calls",
       "Made Yours",
       "Native Calendar Booking",
       "Approvals and Handoffs",
@@ -292,7 +293,7 @@ test("Bot creation keeps its heading, fields and actions usable at 320px with en
   await expect(dialog.getByRole("button", { name: "Create Bot", exact: true })).toBeInViewport();
   const brief = dialog.getByRole("textbox", { name: "Describe the Job" });
   await brief.fill("Answer repair questions and book a visit.");
-  const identity = dialog.getByRole("button", { name: /Name & appearance/ });
+  const identity = dialog.getByRole("button", { name: /Appearance/ });
   await identity.click();
   await dialog.getByRole("textbox", { name: /Bot Name/ }).fill("Repair Desk");
   await identity.click();
@@ -326,7 +327,7 @@ for (const code of ["NAME_CONFLICT", "name_conflict", "BOT_MARK_CONFLICT", "bot_
     const brief = dialog.getByRole("textbox", { name: "Describe the Job" });
     await brief.fill("Book repair appointments.");
     await dialog.getByRole("button", { name: "Create Bot", exact: true }).click();
-    await expect(dialog.getByRole("button", { name: /Name & appearance/ })).toHaveAttribute(
+    await expect(dialog.getByRole("button", { name: /Appearance/ })).toHaveAttribute(
       "aria-expanded",
       "true",
     );

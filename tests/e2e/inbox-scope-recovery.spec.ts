@@ -46,7 +46,7 @@ async function mockWorkspace(page: Page) {
   return threadRequests;
 }
 
-test("an existing SMS subscriber keeps payment recovery and history when renewal fails", async ({
+test("an existing SMS subscriber keeps payment recovery without exposing the unreleased channel", async ({
   page,
 }) => {
   await mockWorkspace(page);
@@ -64,7 +64,8 @@ test("an existing SMS subscriber keeps payment recovery and history when renewal
   );
 
   await page.goto("/inbox");
-  await expect(page.getByRole("button", { name: "Text", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Text", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Email", exact: true })).toBeVisible();
   await expect(page.getByText("Payment Needs Attention", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Update Payment" })).toHaveAttribute(
     "href",

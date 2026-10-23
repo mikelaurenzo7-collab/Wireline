@@ -199,7 +199,7 @@ export default function DeployAgentModal({
                       if (e.key === "Enter" && canSubmit) handleSubmit();
                     }}
                     maxLength={80}
-                    placeholder="e.g. Sarah, Front Desk, Closer #2"
+                    placeholder="e.g. Nora or Alex"
                     className="w-full bg-muted/20 border border-border rounded-md px-4 py-3 text-[length:var(--wireline-typography-body-size)] text-foreground placeholder:text-foreground/55 outline-none focus:border-brand/50 transition-colors"
                   />
                 </div>

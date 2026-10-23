@@ -14,7 +14,10 @@ describe("actionable approvals", () => {
 
   it("opens the linked conversation from Approvals", () => {
     const page = read("src/pages/EmailPage.tsx");
-    expect(page.match(/initialThreadId=\{params\.get\("thread"\)\}/g)).toHaveLength(2);
+    expect(page).toContain(
+      'requestedTab === "sms" && !SMS_LAUNCH_UI_ENABLED ? null : params.get("thread")',
+    );
+    expect(page).toContain('initialThreadId={params.get("thread")}');
     expect(read("src/components/EmailInbox.tsx")).toContain("setSelectedId(initialThreadId);");
     expect(read("src/components/SmsThreads.tsx")).toContain(
       "if (linked && next.some((thread) => thread.id === linked)) return linked;",

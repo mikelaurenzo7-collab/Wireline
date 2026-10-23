@@ -17,7 +17,11 @@ vi.mock("../src/lib/server-context", async (importOriginal) => {
     ...actual,
     fetchWithTimeout: h.fetch,
     drizzle: {
-      select: () => ({ from: () => ({ where: async () => h.accounts }) }),
+      select: (fields?: unknown) => ({
+        from: () => ({
+          where: () => (fields ? { limit: async () => [] } : Promise.resolve(h.accounts)),
+        }),
+      }),
     },
   };
 });
@@ -216,7 +220,12 @@ describe("replying through each mailbox", () => {
     const [url, init] = h.fetch.mock.calls[1];
     expect(url).toBe("https://graph.microsoft.com/v1.0/me/messages/newest/reply");
     expect(JSON.parse(init.body)).toEqual({
-      message: { body: { contentType: "Text", content: "Tuesday at 10 works.\nSee you then." } },
+      message: {
+        body: {
+          contentType: "HTML",
+          content: expect.stringContaining("Tuesday at 10 works.<br />See you then."),
+        },
+      },
     });
   });
 

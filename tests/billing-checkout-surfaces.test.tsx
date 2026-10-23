@@ -336,7 +336,7 @@ describe("billing plan decisions", () => {
     expect(render("modal").some((element) => text(element).includes("$150/year"))).toBe(true);
     expect(render("modal").some((element) => text(element).includes(fallbackMessage))).toBe(false);
     const high = render("modal").find(
-      (element) => element.type === "label" && text(element).includes("High"),
+      (element) => element.type === "label" && text(element).includes("Pro"),
     );
     descendants(high)
       .find((element) => element.type === "input")
@@ -602,7 +602,7 @@ describe.each(["card", "modal"] as const)("%s selected channel package", (surfac
     await mount(surface);
     const elements = render(surface);
     expect(elements.filter((element) => element.type === Checkbox)).toHaveLength(2);
-    expect(elements.some((element) => text(element).includes("SMS is coming soon."))).toBe(true);
+    expect(elements.some((element) => text(element).includes("SMS is coming soon."))).toBe(false);
     expect(
       elements
         .filter((element) => element.type === "label")
@@ -616,7 +616,7 @@ describe.each(["card", "modal"] as const)("%s selected channel package", (surfac
     ).toBe("Calls");
     expect(
       descendants(selectedPackage).some(
-        (element) => element.type === "p" && text(element) === "Regular",
+        (element) => element.type === "p" && text(element) === "Plus",
       ),
     ).toBe(true);
     expect(h.fetch.mock.calls.some(([path]) => path === "/api/billing/checkout")).toBe(false);

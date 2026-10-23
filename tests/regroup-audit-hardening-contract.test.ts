@@ -154,7 +154,8 @@ describe("comms hardening", () => {
     expect(integrations).toContain("buildTenantListUnsubscribeHeaders(this.userId, params.to)");
     expect(integrations).toContain("buildTenantComplianceFooterText(complianceArgs)");
     expect(integrations).toContain("buildTenantComplianceFooterHtml(");
-    expect(integrations).toContain("plainTextEmailBodyHtml(params.body)");
+    expect(integrations).toContain("renderBusinessEmail({");
+    expect(integrations).toContain("htmlBody: presentation.htmlBody.replace(");
   });
 
   it("inbound SMS persistence failures ask Twilio to redeliver", () => {

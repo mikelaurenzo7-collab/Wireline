@@ -118,7 +118,7 @@ export default function BotConfigurator({
             value={value.name}
             disabled={disabled}
             onChange={(event) => setField("name", event.target.value)}
-            placeholder="Front Desk Bot"
+            placeholder="e.g. Nora or Alex"
             className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
           />
         </label>

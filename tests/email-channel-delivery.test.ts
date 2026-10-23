@@ -63,7 +63,11 @@ beforeEach(() => {
       emailAddress: "bot@example.com",
     },
   ];
-  h.select.mockImplementation(() => ({ from: () => ({ where: async () => h.accounts }) }));
+  h.select.mockImplementation((fields) => ({
+    from: () => ({
+      where: () => (fields ? { limit: async () => [] } : Promise.resolve(h.accounts)),
+    }),
+  }));
   h.channel.mockResolvedValue({ channels: ["email"] });
   h.environment.mockResolvedValue({ allowed: true });
   h.reserve.mockImplementation(async ({ perform }) => perform());
@@ -110,7 +114,15 @@ describe("customer email admission and funded transport", () => {
     expect(h.reserve).toHaveBeenCalledWith(
       expect.objectContaining({ userId: "tenant-a", provider: "agentmail" }),
     );
-    expect(h.agentmail).toHaveBeenCalledWith("bot@example.com", "test-only", message);
+    expect(h.agentmail).toHaveBeenCalledWith(
+      "bot@example.com",
+      "test-only",
+      expect.objectContaining({
+        ...message,
+        textBody: "Your information\n\nbot@example.com",
+        htmlBody: expect.stringContaining("bot@example.com"),
+      }),
+    );
   });
   it("uses the originating Bot's mailbox when another Bot's mailbox is listed first", async () => {
     h.accounts = [
@@ -134,9 +146,40 @@ describe("customer email admission and funded transport", () => {
     expect(h.agentmail).toHaveBeenCalledExactlyOnceWith(
       "front-desk@example.com",
       "front-desk-credential",
-      scopedMessage,
+      expect.objectContaining({
+        ...scopedMessage,
+        textBody: "Your information\n\nfront-desk@example.com",
+        htmlBody: expect.stringContaining("front-desk@example.com"),
+      }),
     );
     expect(h.platform).not.toHaveBeenCalled();
+  });
+  it("renders the assigned Bot's saved signature and the tenant's business identity", async () => {
+    h.accounts[0].agentId = "bot-front-desk";
+    h.select.mockImplementation((fields) => ({
+      from: () => ({
+        where: () =>
+          fields
+            ? {
+                limit: async () =>
+                  fields.businessName
+                    ? [{ businessName: "Oak & Elm", brandName: "Oak & Elm", logoUrl: null }]
+                    : fields.preferences
+                      ? [{ preferences: { company_identity: { website: "https://oak.example/" } } }]
+                      : [{ name: "Nora", signature: "Nora\nGuest Services", website: null }],
+              }
+            : Promise.resolve(h.accounts),
+      }),
+    }));
+    expect(
+      await new IntegrationService("tenant-a").sendEmail({ ...message, agentId: "bot-front-desk" }),
+    ).toBe(true);
+    const sent = h.agentmail.mock.calls[0][2];
+    expect(sent.textBody).toBe(
+      "Your information\n\nNora\nGuest Services\nOak & Elm\nbot@example.com\nhttps://oak.example/",
+    );
+    expect(sent.htmlBody).toContain('href="https://oak.example/"');
+    expect(sent.htmlBody).not.toContain("BotBound");
   });
   it("refuses a Bot send without its own mailbox instead of using another sender or fallback", async () => {
     h.accounts[0].agentId = "bot-other";

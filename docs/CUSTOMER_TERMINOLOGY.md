@@ -20,7 +20,7 @@ identifiers, not customer language and not separate product lanes.
 | Signup and setup | `Create` a Bot, `Set Up` its playbook, `Rehearse` privately, then activate live work when ready. Never `Wire` as a customer step. |
 | Workspace and navigation | `Bot`, `Bots`, `workspace`, `Knowledge` |
 | Role starters | Job names such as `Sales Rep`, `Support`, or `Personal Assistant` |
-| Pricing | `Free Builder`, `Starter`, `Starter Plus`, `Pro`, `Scale` |
+| Pricing | `Free`; `Calls`, `Email`, or `Calls + Email`, with `Starter`, `Plus`, and `Pro` capacity choices. Use `Custom Setup` for a founder reviewed request. |
 | Technical APIs, routes, DB, events, MCP tools | Keep stable `agent`, plan, and account identifiers |
 
 The shared customer-facing noun resolves through `CUSTOMER_AGENT_LANGUAGE` in
@@ -40,8 +40,9 @@ language.
 ## Avoid
 
 - Personal or Business as a workspace, signup choice, pricing lane, or product noun.
-- Audience-shaped public plan URLs. Emit `free`, `starter`, `starter-plus`, and
-  `pro`; continue accepting historical aliases.
+- Audience-shaped public plan URLs. Emit `free` or the canonical channel plan ID,
+  such as `voice-email-regular`; keep display names separate from billing identity
+  and continue accepting historical aliases.
 - `Wire` as a customer-facing setup step, nav label, or CTA. Technical events may retain `wire_*`.
 - `AI employee` as the product description.
 - `AI` next to `agent` in customer copy.

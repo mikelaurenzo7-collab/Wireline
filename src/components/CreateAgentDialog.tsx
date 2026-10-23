@@ -525,6 +525,21 @@ export default function CreateAgentDialog({
               </NativeSelect>
             </details>
 
+            <label className="grid gap-2">
+              <span className="text-sm font-semibold text-foreground">
+                {language.nameLabel}{" "}
+                <span className="font-normal text-muted-foreground">(optional)</span>
+              </span>
+              <Input
+                ref={nameRef}
+                disabled={creating}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="e.g. Nora or Alex"
+                autoComplete="off"
+              />
+            </label>
+
             <div className="rounded-xl border border-border">
               <button
                 type="button"
@@ -538,7 +553,7 @@ export default function CreateAgentDialog({
                   <span className="wl-preserve-case block truncate text-sm font-semibold text-foreground">
                     {name.trim() || defaultName(templateKey)}
                   </span>
-                  <span className="block text-xs text-muted-foreground">Name & appearance</span>
+                  <span className="block text-xs text-muted-foreground">Appearance</span>
                 </span>
                 <ChevronDown
                   className={`size-4 shrink-0 text-muted-foreground transition-transform ${customizing ? "rotate-180" : ""}`}
@@ -550,20 +565,6 @@ export default function CreateAgentDialog({
                 hidden={!customizing}
                 className="space-y-5 border-t border-border p-4"
               >
-                <label className="grid gap-2">
-                  <span className="text-sm font-semibold text-foreground">
-                    {language.nameLabel}{" "}
-                    <span className="font-normal text-muted-foreground">(optional)</span>
-                  </span>
-                  <Input
-                    ref={nameRef}
-                    disabled={creating}
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    placeholder={defaultName(templateKey)}
-                    autoComplete="off"
-                  />
-                </label>
                 <BotMarkPicker
                   value={markKey}
                   onChange={(nextMarkKey) => {

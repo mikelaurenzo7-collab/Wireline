@@ -23,6 +23,8 @@ import {
 import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
 import { requireTenantChannel } from "./channel-entitlements";
 import { sendFundedManagedEmail } from "./managed-mail-send-spend";
+import { readCompanyIdentityPreferences } from "./company-identity";
+import { renderBusinessEmail, type EmailIdentity } from "./email-presentation";
 
 const MAX_CALENDAR_PAGES = 20;
 
@@ -83,16 +85,6 @@ function providerStatusCode(error: unknown): number | null {
 function isDefinitiveProviderRejection(error: unknown): boolean {
   const status = providerStatusCode(error);
   return status !== null && status >= 400 && status < 500 && status !== 408;
-}
-
-function plainTextEmailBodyHtml(body: string): string {
-  const escaped = body
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-  return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.55; white-space: pre-wrap;">${escaped}</div>`;
 }
 
 function safeMimeHeaderValue(value: string): string {
@@ -588,7 +580,14 @@ export class IntegrationService {
             // Cadence marketing never falls through to Wireline's transactional
             // sender: honoring suppression and sender identity here is what makes a
             // recorded opt-out binding no matter which connected mailbox sends.
-            let sendParams: ConnectedMailboxSendParams = params;
+            const account =
+              mailAccounts.find((candidate) => candidate.provider === "agentmail") ??
+              mailAccounts[0];
+            const presentation = renderBusinessEmail({
+              ...params,
+              identity: await this.emailIdentity(account),
+            });
+            let sendParams: ConnectedMailboxSendParams = { ...params, ...presentation };
             if (params.marketing) {
               const {
                 getTenantMarketingIdentity,
@@ -618,17 +617,15 @@ export class IntegrationService {
               };
               sendParams = {
                 ...params,
-                textBody: `${params.body}${buildTenantComplianceFooterText(complianceArgs)}`,
-                htmlBody: `${plainTextEmailBodyHtml(params.body)}${buildTenantComplianceFooterHtml(
-                  complianceArgs,
-                )}`,
+                textBody: `${presentation.textBody}${buildTenantComplianceFooterText(complianceArgs)}`,
+                htmlBody: presentation.htmlBody.replace(
+                  "</body>",
+                  `${buildTenantComplianceFooterHtml(complianceArgs)}</body>`,
+                ),
                 unsubscribeHeaders: buildTenantListUnsubscribeHeaders(this.userId, params.to),
               };
             }
 
-            const account =
-              mailAccounts.find((candidate) => candidate.provider === "agentmail") ??
-              mailAccounts[0];
             if (account.provider === "google") {
               providerWorkStarted = true;
               return await this.sendGoogleEmail(account, sendParams);
@@ -679,12 +676,11 @@ export class IntegrationService {
           // the platform provides the transport. System security/billing notices
           // use email-service directly and are independent of this channel.
           const { sendEmail: sendPlatformEmail } = await import("./email-service");
-          const escaped = params.body
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;");
-          const html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.55; white-space: pre-wrap;">${escaped}</div>`;
           if (!process.env.RESEND_API_KEY?.trim()) return false;
+          const presentation = renderBusinessEmail({
+            ...params,
+            identity: await this.emailIdentity(),
+          });
           return sendFundedManagedEmail({
             userId: this.userId,
             provider: "resend",
@@ -693,8 +689,8 @@ export class IntegrationService {
               const result = await sendPlatformEmail({
                 to: params.to,
                 subject: params.subject,
-                text: params.body,
-                html,
+                text: presentation.textBody,
+                html: presentation.htmlBody,
               });
               if (!result.ok) {
                 log.warn("Platform Resend fallback failed for tenant email", {
@@ -770,8 +766,7 @@ export class IntegrationService {
             to: params.to,
             subject: params.subject,
             body: params.body,
-            textBody: params.body,
-            htmlBody: plainTextEmailBodyHtml(params.body),
+            ...renderBusinessEmail({ ...params, identity: await this.emailIdentity(account) }),
           };
           const query = { from: params.to, subject: params.subject };
 
@@ -790,7 +785,7 @@ export class IntegrationService {
             };
           }
           if (account.provider === "microsoft") {
-            return this.replyMicrosoftEmail(account, params, markSendStarted);
+            return this.replyMicrosoftEmail(account, sendParams, markSendStarted);
           }
           if (account.provider === "icloud") {
             if (!account.accessToken || !account.emailAddress) return notSent;
@@ -862,6 +857,54 @@ export class IntegrationService {
   }
 
   // --- Private Helpers ---
+
+  /** Identity belongs to the sending mailbox's tenant and assigned Bot only. */
+  private async emailIdentity(account?: {
+    agentId?: string | null;
+    emailAddress?: string | null;
+  }): Promise<EmailIdentity> {
+    const [settingsRows, preferenceRows, agentRows] = await Promise.all([
+      drizzle
+        .select({
+          businessName: schema.settings.businessName,
+          brandName: schema.settings.brandName,
+          logoUrl: schema.settings.brandLogoUrl,
+        })
+        .from(schema.settings)
+        .where(eq(schema.settings.userId, this.userId))
+        .limit(1),
+      drizzle
+        .select({ preferences: schema.userPreferences.preferences })
+        .from(schema.userPreferences)
+        .where(eq(schema.userPreferences.userId, this.userId))
+        .limit(1),
+      account?.agentId
+        ? drizzle
+            .select({
+              name: schema.agents.name,
+              website: schema.agents.websiteUrl,
+              signature: schema.agents.emailSignature,
+            })
+            .from(schema.agents)
+            .where(
+              and(eq(schema.agents.userId, this.userId), eq(schema.agents.id, account.agentId)),
+            )
+            .limit(1)
+        : Promise.resolve([]),
+    ]);
+    const settings = settingsRows[0];
+    const preferences = preferenceRows[0]?.preferences as Record<string, unknown> | undefined;
+    const company = readCompanyIdentityPreferences(preferences?.company_identity);
+    const agent = agentRows[0];
+    return {
+      businessName: settings?.brandName || settings?.businessName,
+      logoUrl: settings?.logoUrl,
+      botName: agent?.name,
+      signature: agent?.signature,
+      website: agent?.website || company.website,
+      mailboxEmail: account?.emailAddress,
+    };
+  }
 
   private async getAccounts(type: "calendar" | "mail") {
     // Tag every row with its source table. Token refresh used to infer the
@@ -1286,7 +1329,7 @@ export class IntegrationService {
         body: JSON.stringify({
           message: {
             subject: params.subject,
-            body: { contentType: "HTML", content: params.body },
+            body: { contentType: "HTML", content: params.htmlBody ?? params.body },
             toRecipients: [{ emailAddress: { address: params.to } }],
           },
         }),
@@ -1338,7 +1381,7 @@ export class IntegrationService {
 
   private async replyMicrosoftEmail(
     account: any,
-    params: { to: string; subject: string; body: string },
+    params: ConnectedMailboxSendParams,
     onSendAttempt?: () => void,
   ): Promise<ThreadReplyOutcome> {
     const token = await this.getMicrosoftToken(account);
@@ -1356,7 +1399,12 @@ export class IntegrationService {
           method: "POST",
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
           body: JSON.stringify({
-            message: { body: { contentType: "Text", content: params.body } },
+            message: {
+              body: {
+                contentType: params.htmlBody ? "HTML" : "Text",
+                content: params.htmlBody ?? params.textBody ?? params.body,
+              },
+            },
           }),
         },
         15_000,
@@ -1367,15 +1415,7 @@ export class IntegrationService {
         ambiguous: !res.ok && isAmbiguousProviderStatus(res.status),
       };
     }
-    const outcome = await this.sendMicrosoftEmailOutcome(
-      account,
-      {
-        to: params.to,
-        subject: params.subject,
-        body: plainTextEmailBodyHtml(params.body),
-      },
-      onSendAttempt,
-    );
+    const outcome = await this.sendMicrosoftEmailOutcome(account, params, onSendAttempt);
     return { ...outcome, threaded: false };
   }
 

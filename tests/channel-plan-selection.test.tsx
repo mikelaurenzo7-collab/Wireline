@@ -56,17 +56,17 @@ describe("channel package selection", () => {
       "Calls + Email",
     );
     expect(
-      elements(packageCard).some((element) => element.type === "p" && text(element) === "Regular"),
+      elements(packageCard).some((element) => element.type === "p" && text(element) === "Plus"),
     ).toBe(true);
     expect(getPlanDisplayLabel({ id: selected.id, name: "WIRELINE retired label" })).toBe(
-      "Calls + Email · Regular",
+      "Calls + Email · Plus",
     );
-    expect(getPlanCapacityLabel({ id: "email-high" })).toBe("High");
+    expect(getPlanCapacityLabel({ id: "email-high" })).toBe("Pro");
     expect(getPlanDisplayName("free")).toBe("Free");
     expect(getPlanDisplayLabel("starter")).toBe("Starter");
     expect(getPlanDisplayLabel("team")).toBe("Starter Plus");
-    expect(getPlanDisplayLabel("sms")).toBe("SMS · Light");
-    expect(getPlanDisplayLabel("omnichannel-high")).toBe("Calls + Email + SMS · High");
+    expect(getPlanDisplayLabel("sms")).toBe("SMS · Starter");
+    expect(getPlanDisplayLabel("omnichannel-high")).toBe("Calls + Email + SMS · Pro");
     expect(getPlanDisplayLabel({ id: "unknown", name: "BotBound Custom" })).toBe("Custom");
     expect(getPlanDisplayLabel("unknown")).toBe("Plan");
     expect(selected.name).toBe("BotBound Calls + Email Regular");

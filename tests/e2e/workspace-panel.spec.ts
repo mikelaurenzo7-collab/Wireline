@@ -114,7 +114,7 @@ test.describe("wide screens", () => {
     // Changing the Bot and trying it are on screen together.
     await expect(conversation(page)).toBeVisible();
     const panel = page.getByRole("complementary", { name: "Set Up panel" });
-    await panel.getByRole("button", { name: "Text", exact: true }).click();
+    await panel.getByRole("button", { name: "Typed", exact: true }).click();
     await expect(
       panel.getByRole("textbox", { name: "Customer message for Front Desk", exact: true }),
     ).toBeVisible();
@@ -239,7 +239,7 @@ test.describe("wide screens", () => {
     expect(taskStarts).toBe(0);
   });
 
-  test("the Computer section opens beside the conversation, which stays visible", async ({
+  test("the Computer section focuses the computer and preserves the Set Up draft", async ({
     page,
   }) => {
     await mockWorkspace(page);
@@ -249,22 +249,45 @@ test.describe("wide screens", () => {
       .getByRole("navigation", { name: "Workspace sections" })
       .getByRole("link", { name: "Computer", exact: true })
       .click({ timeout: 20_000 });
-    await expect(page).toHaveURL(new RegExp(`/studio\\?agent=${bots[1].id}$`));
+    await expect(page).toHaveURL(
+      (url) =>
+        url.pathname === "/studio" &&
+        url.searchParams.get("agent") === bots[1].id &&
+        url.searchParams.get("focus") === "computer",
+    );
     await expect(panelTab(page, "Computer")).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("button", { name: "Full width", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(conversation(page, "Sales Bot")).toHaveCount(0);
+    await page
+      .getByRole("navigation", { name: "Workspace sections" })
+      .getByRole("link", { name: "Set Up", exact: true })
+      .click();
     await expect(conversation(page, "Sales Bot")).toHaveValue(
       "Keep this while the computer opens.",
     );
   });
 
-  test("Computer links open beside the conversation on wide screens", async ({ page }) => {
+  test("Computer links open focused on wide screens and return to Set Up", async ({ page }) => {
     await mockWorkspace(page);
     await page.goto(`/computer?agent=${bots[1].id}`);
-    await expect(page).toHaveURL(new RegExp(`/studio\\?agent=${bots[1].id}$`), {
-      timeout: 20_000,
-    });
+    await expect(page).toHaveURL(
+      (url) =>
+        url.pathname === "/studio" &&
+        url.searchParams.get("agent") === bots[1].id &&
+        url.searchParams.get("focus") === "computer",
+      { timeout: 20_000 },
+    );
     await expect(panelTab(page, "Computer")).toHaveAttribute("aria-selected", "true", {
       timeout: 20_000,
     });
+    await expect(conversation(page, "Sales Bot")).toHaveCount(0);
+    await page
+      .getByRole("navigation", { name: "Workspace sections" })
+      .getByRole("link", { name: "Set Up", exact: true })
+      .click();
     await expect(conversation(page, "Sales Bot")).toBeVisible();
   });
 
