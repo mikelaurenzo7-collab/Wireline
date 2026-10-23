@@ -19,7 +19,7 @@ describe("soft launch surfaces", () => {
     const recoveryEnd = computer.indexOf("<Sheet open={activityOpen}", recoveryStart);
     expect(recoveryEnd).toBeGreaterThan(recoveryStart);
     const recovery = computer.slice(recoveryStart, recoveryEnd);
-    expect(recovery).toContain("onClick={onStartAnother}");
+    expect(recovery).toContain("onClick={(event) => onStartAnother?.(event.currentTarget)}");
     expect(recovery).not.toContain('ownerAction("take")');
     expect(css).toContain(".wl-computer-screen__controls");
   });
