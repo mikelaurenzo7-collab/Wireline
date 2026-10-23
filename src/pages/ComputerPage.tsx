@@ -767,6 +767,7 @@ function TaskDetail({
   const [showOwnerText, setShowOwnerText] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
   const detailRef = useRef<HTMLElement | null>(null);
+  const activityButtonRef = useRef<HTMLButtonElement | null>(null);
   const [ownerUrl, setOwnerUrl] = useState(
     /^https?:\/\//i.test(task.currentUrl || "") ? task.currentUrl! : task.startUrl || "",
   );
@@ -1048,6 +1049,7 @@ function TaskDetail({
             </>
           ) : null}
           <Button
+            ref={activityButtonRef}
             type="button"
             variant="ghost"
             size="sm"
@@ -1385,7 +1387,16 @@ function TaskDetail({
       )}
 
       <Sheet open={activityOpen} onOpenChange={setActivityOpen}>
-        <SheetContent side="right" className="wl-computer-activity-panel">
+        <SheetContent
+          side="right"
+          className="wl-computer-activity-panel"
+          onCloseAutoFocus={(event) => {
+            const trigger = activityButtonRef.current;
+            if (!trigger?.isConnected) return;
+            event.preventDefault();
+            trigger.focus({ preventScroll: true });
+          }}
+        >
           <SheetHeader>
             <SheetTitle>Task Activity</SheetTitle>
           </SheetHeader>

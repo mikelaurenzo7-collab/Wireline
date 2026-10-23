@@ -378,10 +378,23 @@ test("Studio retains a draft and exposes the final action after text enlargement
     throw error;
   }
   await page.getByRole("button", { name: "Close panel", exact: true }).click();
-  await expect(page.getByRole("textbox", { name: "Message Front Desk" })).toBeVisible();
-  await page.getByRole("button", { name: "Add a rule", exact: true }).click();
-  await expect(page.getByRole("textbox", { name: "Message Front Desk" })).toBeFocused();
-  await expect(page.getByRole("textbox", { name: "Message Front Desk" })).not.toHaveValue("");
+  const composer = page.getByRole("textbox", { name: "Message Front Desk", exact: true });
+  await expect(composer).toBeVisible();
+  const suggestions = page
+    .getByRole("region", { name: "Front Desk workroom", exact: true })
+    .locator("details.wl-studio-starters");
+  const addRule = suggestions.getByRole("button", { name: "Add a rule", exact: true });
+  await expect(suggestions).toHaveJSProperty("open", false);
+  await expect(addRule).toBeHidden();
+  const disclosure = suggestions.locator("summary");
+  await disclosure.focus();
+  await expect(disclosure).toBeFocused();
+  await disclosure.press("Enter");
+  await expect(suggestions).toHaveJSProperty("open", true);
+  await expect(addRule).toBeVisible();
+  await addRule.click();
+  await expect(composer).toBeFocused();
+  await expect(composer).toHaveValue("Add a rule");
 });
 
 test("More navigation leaves focus on the destination page", async ({ page }) => {

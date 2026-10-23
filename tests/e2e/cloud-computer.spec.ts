@@ -850,16 +850,17 @@ test("fullscreen browser keeps page input below the screen and Activity on one l
   const activity = detail.getByRole("button", { name: "Open task activity" });
   await expect(activity).toBeVisible();
   await expect(activity).toHaveCSS("white-space", "nowrap");
-  const textLines = await activity.evaluate((button) => {
-    const text = [...button.childNodes].find(
-      (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
-    );
-    if (!text) return 0;
+  const activityLabel = activity.getByText("Activity", { exact: true });
+  await expect(activityLabel).toBeVisible();
+  const textLines = await activityLabel.evaluate((label) => {
     const range = document.createRange();
-    range.selectNodeContents(text);
+    range.selectNodeContents(label);
     return range.getClientRects().length;
   });
   expect(textLines).toBe(1);
+  const activityBox = await activity.boundingBox();
+  expect(activityBox?.width).toBeGreaterThanOrEqual(44);
+  expect(activityBox?.height).toBeGreaterThanOrEqual(44);
 
   await detail.getByRole("button", { name: "Enter browser fullscreen" }).click();
   await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true);
@@ -869,6 +870,18 @@ test("fullscreen browser keeps page input below the screen and Activity on one l
     screenBox && handoffBox && screenBox.y + screenBox.height <= handoffBox.y + 1,
     JSON.stringify({ screenBox, handoffBox }),
   ).toBe(true);
+  await activity.scrollIntoViewIfNeeded();
+  await expect(activity).toBeInViewport({ ratio: 1 });
+  await activity.focus();
+  await expect(activity).toBeFocused();
+  await activity.press("Enter");
+  const activitySheet = page.getByRole("dialog", { name: "Task Activity", exact: true });
+  await expect(activitySheet).toBeVisible();
+  await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(false);
+  await page.keyboard.press("Escape");
+  await expect(activitySheet).toBeHidden();
+  await expect(activity).toBeFocused();
+  await expect(detail.getByRole("button", { name: "Stop", exact: true })).toBeEnabled();
 });
 
 test("a rejected fullscreen request keeps owner controls and normal browsing usable", async ({
