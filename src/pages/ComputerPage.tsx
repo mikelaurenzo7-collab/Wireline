@@ -320,9 +320,11 @@ function LiveScreen({
                   className="wl-browser-tab__close"
                   aria-label={`Close ${tab.label} tab`}
                   title={
-                    task.ownerTabs.length <= 1 ? "Keep at least one browser tab open" : "Close tab"
+                    (task.ownerTabs?.length ?? 0) <= 1
+                      ? "Keep at least one browser tab open"
+                      : "Close tab"
                   }
-                  disabled={ownerBusy || task.ownerTabs.length <= 1}
+                  disabled={ownerBusy || (task.ownerTabs?.length ?? 0) <= 1}
                   onClick={() => onOwnerInput?.({ kind: "close_tab", tabId: tab.id })}
                 >
                   <X aria-hidden="true" />
