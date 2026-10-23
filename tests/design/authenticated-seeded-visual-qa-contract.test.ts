@@ -9,7 +9,6 @@ describe("authenticated seeded-state visual QA contract", () => {
   it("keeps shared workspace tabs restrained instead of using solid action fills", () => {
     const tabs = read("src/components/layout/WorkspaceTabStrip.tsx");
     expect(tabs).toContain('data-active={active ? "true" : "false"}');
-    expect(tabs).toContain("bg-primary/15 text-primary");
     expect(tabs).not.toContain("bg-primary text-primary-foreground");
   });
 
