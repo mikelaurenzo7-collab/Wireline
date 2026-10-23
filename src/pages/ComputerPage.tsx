@@ -786,6 +786,7 @@ function TaskDetail({
   openingBrowser = false,
   canOpenBrowser = false,
   openBrowserError,
+  composerOpen = false,
   botName,
   compact = false,
   chatControls = false,
@@ -800,6 +801,7 @@ function TaskDetail({
   openingBrowser?: boolean;
   canOpenBrowser?: boolean;
   openBrowserError?: string | null;
+  composerOpen?: boolean;
   botName?: string;
   compact?: boolean;
   chatControls?: boolean;
@@ -1157,9 +1159,24 @@ function TaskDetail({
         <div className="wl-computer-detail__actions">
           {onOpenTasks ? (
             <>
-              {!active && onStartAnother && !compact ? (
-                <Button type="button" variant="outline" size="sm" onClick={onStartAnother}>
-                  {chatControls ? "Open browser" : "New task"}
+              {!active && onStartAnother && (!compact || !chatControls) ? (
+                <Button
+                  type="button"
+                  variant={compact ? "ghost" : "outline"}
+                  size="sm"
+                  className={compact ? "size-11 shrink-0 p-0" : undefined}
+                  aria-label={compact ? "New task" : undefined}
+                  aria-expanded={compact ? composerOpen : undefined}
+                  title={compact ? "New task" : undefined}
+                  onClick={onStartAnother}
+                >
+                  {compact ? (
+                    <Plus aria-hidden="true" />
+                  ) : chatControls ? (
+                    "Open browser"
+                  ) : (
+                    "New task"
+                  )}
                 </Button>
               ) : null}
               <Button
@@ -1595,6 +1612,7 @@ export function ComputerWorkbench({
   } = useComputerWorkspace();
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyPreviewId, setHistoryPreviewId] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const [startingMode, setStartingMode] = useState<"browser" | "task" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -1699,12 +1717,19 @@ export function ComputerWorkbench({
       key={selected.id}
       task={selected}
       onChanged={(next) => applyTask(next, false)}
-      onStartAnother={() => setShowComposer(true)}
+      onStartAnother={() => {
+        setShowComposer(true);
+        if (layout === "panel" && !chatControls)
+          requestAnimationFrame(() =>
+            panelRef.current?.querySelector<HTMLTextAreaElement>("#computer-goal")?.focus(),
+          );
+      }}
       onOpenTasks={layout === "panel" ? () => setHistoryOpen(true) : undefined}
       onOpenBrowser={() => void start(true)}
       canOpenBrowser={canOpenBrowser}
       openingBrowser={startingMode === "browser"}
       openBrowserError={error}
+      composerOpen={showComposer}
       botName={selectedBot?.name}
       compact={layout === "panel"}
       chatControls={chatControls}
@@ -1834,7 +1859,7 @@ export function ComputerWorkbench({
             </StatusNotice>
           ) : null}
           {anyActive ? taskDetail : null}
-          {!anyActive && selected && !showComposer ? taskDetail : null}
+          {!anyActive && selected && (layout === "panel" || !showComposer) ? taskDetail : null}
           {!anyActive && (!selected || showComposer) && !scopedAgentUnavailable ? (
             <form
               className="wl-computer-composer"
@@ -1843,6 +1868,25 @@ export function ComputerWorkbench({
                 if (canStart) void start(false);
               }}
             >
+              {layout === "panel" && selected ? (
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setShowComposer(false);
+                      requestAnimationFrame(() =>
+                        panelRef.current
+                          ?.querySelector<HTMLButtonElement>('button[aria-label="New task"]')
+                          ?.focus(),
+                      );
+                    }}
+                  >
+                    Back to task
+                  </Button>
+                </div>
+              ) : null}
               {/* In the Workspace panel the Bot is the one being set up beside it. */}
               {agents.length > 1 && !pinned ? (
                 <div className="wl-computer-field">
@@ -1910,11 +1954,13 @@ export function ComputerWorkbench({
                     {startingMode === "browser" ? "Opening…" : "Open browser"}
                   </Button>
                 </div>
-                <div className="wl-computer-launch-browser__canvas">
-                  <Globe className="size-8" aria-hidden="true" />
-                  <strong>A fresh browser</strong>
-                  <span>Open a site, or give your Bot a task.</span>
-                </div>
+                {!(layout === "panel" && selected) ? (
+                  <div className="wl-computer-launch-browser__canvas">
+                    <Globe className="size-8" aria-hidden="true" />
+                    <strong>A fresh browser</strong>
+                    <span>Open a site, or give your Bot a task.</span>
+                  </div>
+                ) : null}
               </div>
               {!chatControls ? (
                 <div className="wl-computer-field">
@@ -2124,8 +2170,8 @@ export function ComputerWorkbench({
           ? STATUS_COPY[activeTask.status]
           : { label: "Ready", variant: "success" as const };
     return (
-      <div className="wl-computer-panel">
-        {!selected || (!anyActive && showComposer) ? (
+      <div ref={panelRef} className="wl-computer-panel">
+        {!selected ? (
           <div className="wl-computer-panel__toolbar">
             <span aria-live="polite">
               {panelState ? <Badge variant={panelState.variant}>{panelState.label}</Badge> : null}

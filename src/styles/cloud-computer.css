@@ -315,6 +315,8 @@
   }
 
   .wl-computer-detail.is-compact .wl-computer-detail__actions {
+    max-width: 100%;
+    flex-wrap: wrap;
     justify-self: end;
   }
 }

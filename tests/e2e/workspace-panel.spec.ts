@@ -508,6 +508,73 @@ for (const status of ["stopped", "interrupted"] as const) {
   });
 }
 
+test("ended Configure browser keeps three actions and an unsent draft reachable at 320px enlarged text", async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  const goal = "Review the completed public listing.";
+  const fixture = await mockWorkspace(page, [
+    pastTask("ended-draft", bots[0].id, goal, "The listing was checked."),
+  ]);
+  let frameRequests = 0;
+  await page.route("**/api/computer/tasks/*/frame", (route) => {
+    frameRequests += 1;
+    return route.fulfill({ status: 204, body: "" });
+  });
+  await page.goto(`/studio?agent=${bots[0].id}&panel=computer&chat=setup`);
+  await expect(page.getByRole("region", { name: goal, exact: true })).toBeVisible();
+  await page.evaluate(() =>
+    document.documentElement.style.setProperty("font-size", "32px", "important"),
+  );
+  await page.evaluate(() => document.fonts.ready);
+  const detail = page.getByRole("region", { name: goal, exact: true });
+  for (const name of ["New task", "Tasks", "Open task activity"]) {
+    const control = detail.getByRole("button", { name, exact: true });
+    await control.scrollIntoViewIfNeeded();
+    await expect(control).toBeInViewport({ ratio: 1 });
+    const box = (await control.boundingBox())!;
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(320);
+  }
+  const newTask = detail.getByRole("button", { name: "New task", exact: true });
+  await newTask.focus();
+  await newTask.press("Enter");
+  const input = page.getByRole("textbox", { name: "What should your Bot do?", exact: true });
+  await expect(input).toBeFocused();
+  await input.fill("Keep this separate, unsent browser task.");
+  await page
+    .getByRole("textbox", { name: "Web address", exact: true })
+    .fill("https://directory.example/");
+  const ended = detail.getByRole("figure", { name: "Ended browser", exact: true });
+  await expect(ended).toBeAttached();
+  await expect(ended.getByRole("img")).toHaveCount(0);
+  await expect(page.locator(".wl-computer-launch-browser__canvas")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Tasks", exact: true })).toHaveCount(1);
+  const back = page.getByRole("button", { name: "Back to task", exact: true });
+  await expect(back).toHaveCount(1);
+  await back.scrollIntoViewIfNeeded();
+  await expect(back).toBeInViewport({ ratio: 1 });
+  await back.click();
+  await expect(input).toHaveCount(0);
+  await expect(newTask).toBeFocused();
+  await newTask.click();
+  await expect(input).toHaveValue("Keep this separate, unsent browser task.");
+  await expect(page.getByRole("textbox", { name: "Web address", exact: true })).toHaveValue(
+    "https://directory.example/",
+  );
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+    .toBe(true);
+  await expect
+    .poll(() => detail.evaluate((element) => element.scrollWidth <= element.clientWidth + 1))
+    .toBe(true);
+  expect(fixture.starts).toEqual([]);
+  expect(frameRequests).toBe(0);
+  await proof(page, info, "browser-primary-terminal-draft-320-enlarged");
+});
+
 for (const width of [1206, 390, 320]) {
   test(`Browser panel keeps its live canvas ahead of long task details at ${width}px`, async ({
     page,
@@ -597,7 +664,18 @@ for (const width of [1206, 390, 320]) {
     await expect(
       preview.getByRole("link", { name: "directory.example", exact: true }),
     ).toHaveAttribute("href", older.sources[0]);
-    await expect(image).toBeAttached();
+    // Radix hides the background from accessibility queries while its modal
+    // owns focus. Inspect only attachment through that hidden background;
+    // the normal visible-image locator is checked again after closing it.
+    const backgroundImage = page
+      .getByRole("region", { name: goal, exact: true, includeHidden: true })
+      .getByRole("img", {
+        name: "What your Bot's cloud computer shows right now",
+        exact: true,
+        includeHidden: true,
+      });
+    await expect(backgroundImage).toBeAttached();
+    await expect(backgroundImage).toHaveAttribute("src", /^blob:/);
     await expect(preview.getByRole("button", { name: "Stop", exact: true })).toHaveCount(0);
     await history.getByRole("button", { name: "Close", exact: true }).click();
     await image.scrollIntoViewIfNeeded();
@@ -897,6 +975,8 @@ test.describe("wide screens", () => {
     await page.goto(`/studio?agent=${bots[0].id}&chat=setup`);
     await panelTab(page, "Browser").click();
     await page.getByRole("button", { name: "New task", exact: true }).click();
+    await expect(page.getByRole("figure", { name: "Ended browser", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Tasks", exact: true })).toHaveCount(1);
     const goal = page.getByLabel("What should your Bot do?", { exact: true });
     const url = page.getByLabel("Web address", { exact: true });
     await goal.fill("Read the public Calls Regular monthly price.");
@@ -1039,7 +1119,9 @@ test.describe("wide screens", () => {
     await expect(preview).toBeVisible();
     await preview.locator("details > summary").press("Enter");
     await expect(preview.getByText(sales.summary, { exact: true })).toBeVisible();
-    await expect(browser.getByRole("region", { name: front.goal, exact: true })).toBeAttached();
+    await expect(
+      page.getByRole("region", { name: front.goal, exact: true, includeHidden: true }),
+    ).toBeAttached();
     await history.getByRole("button", { name: "Close", exact: true }).click();
     await expect(browser.getByText("Front Desk's active browser", { exact: true })).toBeVisible();
     fixture.setTask(front.id, {
@@ -1344,6 +1426,11 @@ for (const width of [1440, 390]) {
     await expect(
       page.getByRole("list", { name: "Task sources" }).getByRole("link"),
     ).toHaveAttribute("href", "https://directory.example/");
+    if (width > 1000)
+      await page
+        .getByRole("dialog", { name: "Recent Tasks", exact: true })
+        .getByRole("button", { name: "Close", exact: true })
+        .click();
     await proof(page, info, `work-result-${width}`);
     await page.getByRole("combobox", { name: "Switch Bot", exact: true }).selectOption(bots[1].id);
     await expect(workConversation(page, "Sales Bot")).toHaveValue(
