@@ -118,7 +118,7 @@ describe("WIRELINE design-system double-pass contract", () => {
 
     expect(landing).not.toMatch(/\bvoice agents?\b/i);
     expect(footer).not.toMatch(/\bvoice agents?\b/i);
-    expect(landing).toContain("Calling, email, and a computer.");
+    expect(landing).toContain("YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
   });
 

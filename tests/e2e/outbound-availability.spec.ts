@@ -79,6 +79,19 @@ for (const width of [320, 1280]) {
     await opener.click();
     const dialog = page.getByRole("dialog", { name: "New call", exact: true });
     await expect(dialog).toBeVisible();
+    if (width === 320) {
+      // Raw controls in the portalled dialog need the same mobile type floor
+      // as shared inputs, without starting a call or changing consent gates.
+      for (const field of [
+        dialog.getByRole("textbox", { name: "Phone number", exact: true }),
+        dialog.getByRole("textbox", { name: "Instruction (optional)", exact: true }),
+        dialog.getByRole("combobox", { name: "Bot", exact: true }),
+      ]) {
+        await expect
+          .poll(() => field.evaluate((element) => parseFloat(getComputedStyle(element).fontSize)))
+          .toBeGreaterThanOrEqual(16);
+      }
+    }
     if (process.env.BOTBOUND_WORKSPACE_PROOF_DIR) {
       await mkdir(process.env.BOTBOUND_WORKSPACE_PROOF_DIR, { recursive: true });
       await page.screenshot({

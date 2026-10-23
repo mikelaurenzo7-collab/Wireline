@@ -33,10 +33,19 @@
   font-size: 0.75rem;
 }
 
-/* Only the public page's primary message is capitalized. Section headings,
- * product names, prose, legal clauses, and literal values retain authored case.
- */
-.marketing-surface h1:not(.wl-preserve-case):not([data-wireline-preserve-case]) {
+/* Public display and section headings share the same casing. Customer text,
+ * actual product names, document prose and account access retain authored case. */
+.marketing-surface
+  :is(h1, h2, h3):not(.wl-preserve-case):not([data-wireline-preserve-case]):not(
+    :where(
+      .wl-preserve-case *,
+      [data-wireline-preserve-case] *,
+      .prose *,
+      .wl-public-document :is(h2, h3),
+      .wl-auth-form-panel *,
+      .wl-billing-plan *
+    )
+  ) {
   text-transform: uppercase;
   text-wrap: balance;
   word-break: normal;
@@ -141,10 +150,10 @@
   border-radius: 0;
 }
 
-.marketing-surface.wl-features-page .wl-features-pillar .wl-features-pillar__label {
+.marketing-surface.wl-features-page .wl-features-pillar .wl-features-pillar__title {
   margin-top: 1.5rem;
-  font-size: 0.75rem;
-  letter-spacing: 0.075em;
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  letter-spacing: -0.02em;
 }
 
 .marketing-surface.wl-features-page .wl-features-pillar__body,

@@ -262,6 +262,55 @@
   gap: var(--wireline-space-050);
 }
 
+/* The side panel is a tool surface. Keep the finished report available without
+ * repeating a full conversation beside the current one. */
+.wl-computer-completed-details > summary {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-block: 0.75rem;
+  border-top: 1px solid var(--wireline-color-border-default);
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.8125rem;
+  list-style: none;
+  cursor: pointer;
+}
+
+.wl-computer-completed-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.wl-computer-completed-details > summary:focus-visible {
+  outline: 2px solid var(--wireline-color-focus-default);
+  outline-offset: 2px;
+}
+
+.wl-computer-completed-details > summary svg {
+  flex-shrink: 0;
+}
+
+.wl-computer-completed-details[open] > summary svg {
+  transform: rotate(180deg);
+}
+
+.wl-computer-completed-details .wl-computer-detail__goal {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.wl-computer-completed-details .wl-computer-result {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+
 .wl-computer-owner-actions {
   position: sticky;
   top: 0;

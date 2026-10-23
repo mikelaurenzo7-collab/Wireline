@@ -45,8 +45,7 @@ export default function About() {
       <section className="marketing-section marketing-section--screen">
         <div className="wl-public-rail grid gap-10 !text-left lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
           <div>
-            <p className="wl-eyebrow wl-eyebrow--wired text-primary">ABOUT</p>
-            <h1 className="marketing-hero-title mt-4">Independent by Design</h1>
+            <h1 className="marketing-hero-title">Independent by Design</h1>
             <WireSignalArt className="mt-8 h-12 max-w-sm" />
             <a
               href="mailto:support@botbound.app"

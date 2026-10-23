@@ -744,6 +744,7 @@ function TaskDetail({
   onStartAnother,
   onOpenTasks,
   botName,
+  compact = false,
   chatControls = false,
   refreshRequired = false,
   onUnconfirmed,
@@ -753,6 +754,7 @@ function TaskDetail({
   onStartAnother?: () => void;
   onOpenTasks?: () => void;
   botName?: string;
+  compact?: boolean;
   chatControls?: boolean;
   refreshRequired?: boolean;
   onUnconfirmed?: () => void;
@@ -937,8 +939,51 @@ function TaskDetail({
     }
   };
 
+  const finishedResult =
+    !active && task.summary && !chatControls ? (
+      <div
+        className={cn(
+          "wl-computer-result",
+          task.status === "completed" ? "is-success" : task.status === "failed" ? "is-error" : "",
+        )}
+      >
+        <div className="flex items-start gap-2">
+          {task.status === "completed" ? (
+            <CheckCircle2
+              className="mt-0.5 size-4 shrink-0 text-[var(--wireline-color-status-success)]"
+              aria-hidden="true"
+            />
+          ) : (
+            <CircleAlert
+              className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+              aria-hidden="true"
+            />
+          )}
+          <p className="min-w-0 whitespace-pre-line [overflow-wrap:anywhere]">
+            <LinkifiedText>{task.summary}</LinkifiedText>
+          </p>
+        </div>
+        {task.sources.length ? (
+          <ul className="wl-computer-sources" aria-label="Sources">
+            {task.sources.map((source) => (
+              <li key={source}>
+                <a href={source} target="_blank" rel="noopener noreferrer nofollow">
+                  {hostOf(source)}
+                  <ExternalLink className="size-3" aria-hidden="true" />
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+    ) : null;
+
   return (
-    <section ref={detailRef} className="wl-computer-detail" aria-labelledby="computer-task-title">
+    <section
+      ref={detailRef}
+      className={cn("wl-computer-detail", compact && "is-compact")}
+      aria-labelledby="computer-task-title"
+    >
       <header className="wl-computer-detail__header">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -946,13 +991,22 @@ function TaskDetail({
               {active ? <span className="wl-computer-pulse" aria-hidden="true" /> : null}
               {status.label}
             </Badge>
-            <span className="text-xs text-muted-foreground">
-              Started {timeAgo(task.startedAt)} · {task.actionCount}{" "}
-              {task.actionCount === 1 ? "action" : "actions"}
+            <span
+              className="text-xs text-muted-foreground"
+              title={compact ? `Started ${timeAgo(task.startedAt)}` : undefined}
+            >
+              {!compact ? `Started ${timeAgo(task.startedAt)} · ` : null}
+              {task.actionCount} {task.actionCount === 1 ? "action" : "actions"}
             </span>
-            {botName ? <span className="text-xs text-muted-foreground">{botName}</span> : null}
+            {botName && !compact ? (
+              <span className="text-xs text-muted-foreground">{botName}</span>
+            ) : null}
           </div>
-          {(active || !task.summary) && (task.preparingBrowser || task.goal.length <= 160) ? (
+          {compact && !active && task.summary ? (
+            <p id="computer-task-title" className="sr-only">
+              {task.goal}
+            </p>
+          ) : (active || !task.summary) && (task.preparingBrowser || task.goal.length <= 160) ? (
             <p id="computer-task-title" className="wl-computer-detail__goal">
               {task.preparingBrowser ? "Your browser is ready" : task.goal}
             </p>
@@ -979,9 +1033,17 @@ function TaskDetail({
                   {chatControls ? "Open browser" : "New task"}
                 </Button>
               ) : null}
-              <Button type="button" variant="ghost" size="sm" onClick={onOpenTasks}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={compact ? "size-11 shrink-0 p-0" : undefined}
+                onClick={onOpenTasks}
+                aria-label="Tasks"
+                title="Recent tasks"
+              >
                 <History aria-hidden="true" />
-                Tasks
+                <span className={compact ? "sr-only" : undefined}>Tasks</span>
               </Button>
             </>
           ) : null}
@@ -989,12 +1051,13 @@ function TaskDetail({
             type="button"
             variant="ghost"
             size="sm"
-            className="shrink-0 whitespace-nowrap"
+            className={compact ? "size-11 shrink-0 p-0" : "shrink-0 whitespace-nowrap"}
             onClick={() => void openActivity()}
             aria-label="Open task activity"
+            title="Task activity"
           >
             <PanelRightOpen aria-hidden="true" />
-            Activity
+            <span className={compact ? "sr-only" : undefined}>Activity</span>
           </Button>
         </div>
       </header>
@@ -1308,43 +1371,18 @@ function TaskDetail({
         </div>
       ) : null}
 
-      {!active && task.summary && !chatControls ? (
-        <div
-          className={cn(
-            "wl-computer-result",
-            task.status === "completed" ? "is-success" : task.status === "failed" ? "is-error" : "",
-          )}
-        >
-          <div className="flex items-start gap-2">
-            {task.status === "completed" ? (
-              <CheckCircle2
-                className="mt-0.5 size-4 shrink-0 text-[var(--wireline-color-status-success)]"
-                aria-hidden="true"
-              />
-            ) : (
-              <CircleAlert
-                className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-                aria-hidden="true"
-              />
-            )}
-            <p className="min-w-0 whitespace-pre-line [overflow-wrap:anywhere]">
-              <LinkifiedText>{task.summary}</LinkifiedText>
-            </p>
-          </div>
-          {task.sources.length ? (
-            <ul className="wl-computer-sources" aria-label="Sources">
-              {task.sources.map((source) => (
-                <li key={source}>
-                  <a href={source} target="_blank" rel="noopener noreferrer nofollow">
-                    {hostOf(source)}
-                    <ExternalLink className="size-3" aria-hidden="true" />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      ) : null}
+      {finishedResult && compact ? (
+        <details className="wl-computer-completed-details">
+          <summary>
+            Task details
+            <ChevronDown className="size-4" aria-hidden="true" />
+          </summary>
+          <p className="wl-computer-detail__goal">{task.goal}</p>
+          {finishedResult}
+        </details>
+      ) : (
+        finishedResult
+      )}
 
       <Sheet open={activityOpen} onOpenChange={setActivityOpen}>
         <SheetContent side="right" className="wl-computer-activity-panel">
@@ -1572,6 +1610,7 @@ export function ComputerWorkbench({
       onStartAnother={() => setShowComposer(true)}
       onOpenTasks={layout === "panel" ? () => setHistoryOpen(true) : undefined}
       botName={selectedBot?.name}
+      compact={layout === "panel"}
       chatControls={chatControls}
       refreshRequired={refreshRequired}
       onUnconfirmed={markUnconfirmed}

@@ -259,7 +259,7 @@ test("switching from Build to Test isolates an unfinished configuration response
     await expect(
       page.getByRole("button", { name: "Clear conversation", exact: true }),
     ).toBeDisabled();
-    await page.getByRole("button", { name: "Try It", exact: true }).click();
+    await page.getByRole("button", { name: "Rehearse", exact: true }).click();
     await page.getByRole("button", { name: "Typed", exact: true }).click();
     await expect(
       page.getByRole("textbox", { name: "Customer message for Front Desk" }),
@@ -281,7 +281,7 @@ test("Studio preserves independent unsent drafts when switching modes and Bots",
   await page
     .getByRole("textbox", { name: "Message Front Desk", exact: true })
     .fill("Front desk setup draft");
-  await page.getByRole("button", { name: "Try It", exact: true }).click();
+  await page.getByRole("button", { name: "Rehearse", exact: true }).click();
   await page.getByRole("button", { name: "Typed", exact: true }).click();
   const frontTest = page.getByRole("textbox", { name: "Customer message for Front Desk" });
   await expect(frontTest).toHaveValue("");
@@ -292,7 +292,7 @@ test("Studio preserves independent unsent drafts when switching modes and Bots",
   const salesTest = page.getByRole("textbox", { name: "Customer message for Sales Bot" });
   await expect(salesTest).toHaveValue("");
   await salesTest.fill("Sales customer draft");
-  await page.getByRole("button", { name: "Instructions", exact: true }).click();
+  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
   const salesBuild = page.getByRole("textbox", { name: "Message Sales Bot", exact: true });
   await expect(salesBuild).toHaveValue("");
   await salesBuild.fill("Sales setup draft");
@@ -301,13 +301,13 @@ test("Studio preserves independent unsent drafts when switching modes and Bots",
   await expect(page.getByRole("textbox", { name: "Message Front Desk", exact: true })).toHaveValue(
     "Front desk setup draft",
   );
-  await page.getByRole("button", { name: "Try It", exact: true }).click();
+  await page.getByRole("button", { name: "Rehearse", exact: true }).click();
   await page.getByRole("button", { name: "Typed", exact: true }).click();
   await expect(frontTest).toHaveValue("Front desk customer draft");
   await page.getByRole("combobox", { name: "Switch Bot" }).selectOption("bot-sales");
   await page.getByRole("button", { name: "Typed", exact: true }).click();
   await expect(salesTest).toHaveValue("Sales customer draft");
-  await page.getByRole("button", { name: "Instructions", exact: true }).click();
+  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
   await expect(salesBuild).toHaveValue("Sales setup draft");
 });
 
@@ -321,8 +321,8 @@ test("Studio restores edits to a route-injected command after a mode switch", as
   const customerMessage = page.getByRole("textbox", { name: "Customer message for Front Desk" });
   await expect(customerMessage).toHaveValue("Original question");
   await customerMessage.fill("Customer edited the original question");
-  await page.getByRole("button", { name: "Instructions", exact: true }).click();
-  await page.getByRole("button", { name: "Try It", exact: true }).click();
+  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+  await page.getByRole("button", { name: "Rehearse", exact: true }).click();
   await page.getByRole("button", { name: "Typed", exact: true }).click();
   await expect(customerMessage).toHaveValue("Customer edited the original question");
 });

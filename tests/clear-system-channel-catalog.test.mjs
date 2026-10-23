@@ -27,7 +27,11 @@ describe("Clear System channel catalog guard", () => {
   it.each([
     [
       "src/components/marketing/WireAgentLanding.tsx",
-      (source) => source.replace("Calling, email, and a computer.", "Calling."),
+      (source) =>
+        source.replace(
+          "YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER",
+          "Calling.",
+        ),
       "describe the product family together",
     ],
     [

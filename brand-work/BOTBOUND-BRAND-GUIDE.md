@@ -17,7 +17,7 @@ The current homepage display is:
 > VOICE BOTS.
 > REAL WORK.
 
-Its supporting line is: “Calling, email, and a computer. Together in one workspace.” The hero introduces the complete offer; individual plan prices belong in Pricing.
+Its supporting line is: “YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER”. Follow it with “Choose the channels you need.” The hero introduces the product family; individual prices and channel entitlements belong in the plan cards. Personal connects an existing inbox rather than providing a managed mailbox.
 
 The general product category is **Voice Bots**. The launch campaign line is **Your Next Hire Is a Bot.** The prepared **Give Your Bot a Goal.** family remains a creative variant and uses the approved operator and the existing Stay in the Work photograph. Historical campaigns remain dated creative variants; “hire” describes software, not an employment service. See [the goal campaign copy kit](launch-2026-10-goal/COPY-KIT.md).
 
@@ -73,7 +73,7 @@ Violet is a signal, not decoration. Use it to show an answer, connection, active
 - Product body: Inter, 400 to 700.
 - Operational labels and campaign eyebrows: IBM Plex Mono, 700, uppercase, wide tracking.
 - Public hero messages use uppercase, short phrases, and balanced lines. The homepage has a larger two-line display; interior pages share a 32 to 60 px responsive tier with 1.04 line-height and restrained negative tracking. Avoid isolated final words and manual breaks that fail on smaller screens.
-- Center public hero content unless the page deliberately uses a split editorial layout. Align its eyebrow, title, supporting copy, and actions to the same axis. Product headings and section titles retain authored Title Case; body copy and controls retain natural case. Never recase names, literal values, or customer text.
+- Center public hero content unless the page deliberately uses a split editorial layout. Align its title, supporting copy, and actions to the same axis. Remove redundant decorative eyebrows and audience badges. Public display and section headings use uppercase; product names, legal prose, body copy, controls and customer text retain authored case.
 - Prefer short, standalone bullet points for self-explanatory capabilities. Do not add a sentence that repeats the label. Keep supporting detail when it explains a meaningful limit, decision, or next step.
 
 ### Public Interface Rhythm

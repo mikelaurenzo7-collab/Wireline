@@ -29,8 +29,7 @@ export default function TrustSignals() {
     >
       <div className="wl-public-rail">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="wl-eyebrow wl-eyebrow--wired text-primary">Operational Trust</p>
-          <h2 id="trust-heading" className="wl-display-2 mx-auto mt-4 max-w-[20ch]">
+          <h2 id="trust-heading" className="wl-display-2 mx-auto max-w-[20ch]">
             Built to Stay Under Your Control
           </h2>
         </div>

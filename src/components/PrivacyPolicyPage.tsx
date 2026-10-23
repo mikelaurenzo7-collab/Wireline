@@ -91,7 +91,9 @@ export default function PrivacyPolicyPage() {
           </div>
           <h1 className="marketing-hero-title">Privacy Policy</h1>
         </div>
-        <p className="mb-10 text-eyebrow !mx-0">Last updated · {LAST_UPDATED}</p>
+        <p className="mb-10 text-xs leading-relaxed text-muted-foreground !mx-0">
+          Last updated · {LAST_UPDATED}
+        </p>
 
         <div className="mb-10 grid gap-3 sm:grid-cols-3" aria-label="Privacy Policy summary">
           {[

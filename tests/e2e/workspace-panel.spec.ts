@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
-import { mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { OWNER_BROWSER_CAPABILITIES } from "../../src/lib/cloud-computer/browser-capabilities";
 
@@ -173,6 +173,321 @@ const conversation = (page: Page, botName = "Front Desk") =>
 const workConversation = (page: Page, botName = "Front Desk") =>
   page.getByRole("textbox", { name: `Task for ${botName}`, exact: true });
 
+for (const width of [700, 1206]) {
+  test(`Configure uses one compact composer and preserves rehearsal access at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "wireline:studio-panel:v3",
+        JSON.stringify({ size: 384, collapsed: false }),
+      );
+    });
+    const api = await mockWorkspace(page);
+    await page.goto(`/studio?agent=${bots[0].id}&chat=setup`);
+    if (width > 1180) {
+      await page.getByRole("button", { name: "Collapse navigation", exact: true }).click();
+    }
+    const room = page.getByRole("region", { name: "Front Desk workroom", exact: true });
+    const input = conversation(page);
+    const dock = room.locator(".wl-studio-composer");
+    const send = dock.getByRole("button", { name: "Send", exact: true });
+    await expect(input).toBeVisible();
+    await expect(room.locator(".wl-studio-chat__header")).toHaveCount(0);
+    await expect(page.getByRole("group", { name: "Set Up view" })).toHaveCount(0);
+    await expect(room.getByRole("button", { name: "Clear conversation", exact: true })).toHaveCount(
+      0,
+    );
+    await expect(dock).toHaveCSS("display", "grid");
+    const box = await dock.boundingBox();
+    expect(box?.height).toBeLessThanOrEqual(84);
+    const sendBox = await send.boundingBox();
+    expect(sendBox?.width).toBeGreaterThanOrEqual(44);
+    expect(sendBox?.height).toBeGreaterThanOrEqual(44);
+    const sendBackground = await send.evaluate(
+      (button) => getComputedStyle(button).backgroundColor,
+    );
+
+    const suggestions = room.locator("details.wl-studio-starters");
+    await expect(suggestions).toHaveJSProperty("open", false);
+    await expect(
+      suggestions.getByRole("button", { name: "Set the greeting", exact: true }),
+    ).toBeHidden();
+    await suggestions.getByText("Suggestions", { exact: true }).click();
+    await suggestions.getByRole("button", { name: "Set the greeting", exact: true }).click();
+    await expect(input).toHaveValue("Set the greeting");
+    await expect(suggestions).toHaveCount(0);
+    await input.fill("Keep this unsent instruction while I change views.");
+
+    const modes = page.getByRole("group", { name: "Conversation mode" });
+    await modes.getByRole("button", { name: "Work", exact: true }).click();
+    const workDock = workConversation(page).locator("..");
+    await expect(workDock).toHaveClass(/wl-studio-composer/);
+    await expect(workDock.getByText("Supervised web work", { exact: true })).toHaveCount(0);
+    await expect(workDock.getByRole("button", { name: "Start work", exact: true })).toHaveCSS(
+      "background-color",
+      sendBackground,
+    );
+    await modes.getByRole("button", { name: "Configure", exact: true }).click();
+    await expect(input).toHaveValue("Keep this unsent instruction while I change views.");
+
+    if (width < 1180) {
+      await room.getByRole("button", { name: "Rehearse", exact: true }).click();
+      await expect(
+        page.getByRole("button", { name: "Start rehearsal", exact: true }),
+      ).toBeVisible();
+      await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+      await expect(input).toBeFocused();
+    } else {
+      await panelTab(page, "Rehearse").click();
+      await expect(
+        page.getByRole("button", { name: "Start rehearsal", exact: true }),
+      ).toBeVisible();
+      await panelTab(page, "Browser").click();
+    }
+    await expect(input).toHaveValue("Keep this unsent instruction while I change views.");
+    expect(api.starts).toEqual([]);
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+      .toBe(true);
+    await proof(page, info, `configure-composer-${width}`);
+  });
+}
+
+test("Configure with history keeps a usable composer and actions at 320px with enlarged text", async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  const api = await mockWorkspace(page);
+  let sends = 0;
+  let clears = 0;
+  await page.route("**/api/agents/*/workspace/messages", (route) => {
+    if (route.request().method() === "DELETE") {
+      clears += 1;
+      return route.fulfill({ json: { cleared: true } });
+    }
+    return route.fulfill({
+      json: {
+        messages: [
+          {
+            id: "history-1",
+            role: "agent",
+            content: "Your saved instructions are ready to edit.",
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      },
+    });
+  });
+  await page.route("**/api/agents/*/workspace/messages/stream", (route) => {
+    sends += 1;
+    return route.fulfill({
+      contentType: "text/event-stream",
+      body: `event: done\ndata: ${JSON.stringify({
+        messageId: "2",
+        reply: "Review the updated instruction.",
+        changes: [],
+        toolToggles: [],
+        actions: [],
+      })}\n\n`,
+    });
+  });
+  await page.goto(`/studio?agent=${bots[0].id}&chat=setup`);
+  const room = page.getByRole("region", { name: "Front Desk workroom", exact: true });
+  await expect(
+    room.getByText("Your saved instructions are ready to edit.", { exact: true }),
+  ).toBeVisible();
+  await page.evaluate(() =>
+    document.documentElement.style.setProperty("font-size", "32px", "important"),
+  );
+  await expect
+    .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).fontSize))
+    .toBe("32px");
+  await page.evaluate(() => document.fonts.ready);
+  const input = conversation(page);
+  await input.scrollIntoViewIfNeeded();
+  await proof(page, info, "configure-composer-history-320-enlarged");
+  const dock = room.locator(".wl-studio-composer");
+  const inputBox = await input.boundingBox();
+  expect(inputBox?.width, JSON.stringify(inputBox)).toBeGreaterThanOrEqual(120);
+  const views = page.getByRole("navigation", { name: "Workspace view" });
+  const conversationBox = await views
+    .getByRole("button", { name: "Conversation", exact: true })
+    .boundingBox();
+  const browserBox = await views
+    .getByRole("button", { name: "Browser", exact: true })
+    .boundingBox();
+  expect(conversationBox && browserBox, "Both enlarged view controls have bounds").toBeTruthy();
+  expect(browserBox!.y).toBeGreaterThanOrEqual(conversationBox!.y + conversationBox!.height - 1);
+  for (const name of ["Rehearse", "Clear conversation", "Send"]) {
+    const control = dock.getByRole("button", { name, exact: true });
+    const box = await control.boundingBox();
+    expect(box, name).not.toBeNull();
+    expect(box!.width, name).toBeGreaterThanOrEqual(44);
+    expect(box!.height, name).toBeGreaterThanOrEqual(44);
+    expect(box!.x, name).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width, name).toBeLessThanOrEqual(321);
+  }
+  await expect
+    .poll(() => dock.evaluate((element) => element.scrollWidth <= element.clientWidth + 1))
+    .toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+    .toBe(true);
+  await input.fill("Keep the owner handoff instruction.");
+  await input.press("Shift+Enter");
+  expect(sends).toBe(0);
+  const send = dock.getByRole("button", { name: "Send", exact: true });
+  await send.scrollIntoViewIfNeeded();
+  await proof(page, info, "configure-composer-history-320-enlarged-actions");
+  const geometryPath = info.outputPath("composer-send-geometry.json");
+  await writeFile(
+    geometryPath,
+    JSON.stringify(
+      await send.evaluate((button) => {
+        const ancestors = [];
+        for (let node: Element | null = button; node; node = node.parentElement) {
+          const box = node.getBoundingClientRect();
+          const style = getComputedStyle(node);
+          ancestors.push({
+            tag: node.tagName,
+            className: node.className,
+            top: box.top,
+            bottom: box.bottom,
+            left: box.left,
+            right: box.right,
+            clientHeight: node.clientHeight,
+            scrollHeight: node.scrollHeight,
+            scrollTop: node.scrollTop,
+            overflowY: style.overflowY,
+            scrollPaddingTop: style.scrollPaddingTop,
+            scrollPaddingBottom: style.scrollPaddingBottom,
+          });
+        }
+        return { viewport: { width: innerWidth, height: innerHeight }, ancestors };
+      }),
+      null,
+      2,
+    ),
+  );
+  await info.attach("composer-send-geometry", {
+    contentType: "application/json",
+    path: geometryPath,
+  });
+  await expect(send).toBeInViewport({ ratio: 1 });
+  await send.click();
+  await expect(room.getByText("Review the updated instruction.", { exact: true })).toBeVisible();
+  expect(sends).toBe(1);
+  const clear = dock.getByRole("button", { name: "Clear conversation", exact: true });
+  await clear.scrollIntoViewIfNeeded();
+  await expect(clear).toBeInViewport({ ratio: 1 });
+  let confirmations = 0;
+  page.once("dialog", async (dialog) => {
+    expect(dialog.type()).toBe("confirm");
+    confirmations += 1;
+    await dialog.accept();
+  });
+  await clear.click();
+  await expect(
+    room.getByText("Your saved instructions are ready to edit.", { exact: true }),
+  ).toHaveCount(0);
+  await expect(room.getByText("Review the updated instruction.", { exact: true })).toHaveCount(0);
+  expect(clears).toBe(1);
+  expect(confirmations).toBe(1);
+  expect(api.starts).toEqual([]);
+});
+
+test("completed Configure browser keeps task details collapsed and keyboard-accessible", async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 1206, height: 900 });
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "wireline:studio-panel:v3",
+      JSON.stringify({ size: 384, collapsed: false }),
+    );
+  });
+  const summary = "The public directory lists three Saturday options.";
+  const api = await mockWorkspace(page, [
+    {
+      ...pastTask(
+        "completed-directory",
+        bots[0].id,
+        "Find Saturday services in the public directory.",
+        summary,
+      ),
+      sources: ["https://directory.example/report"],
+    },
+  ]);
+  await page.goto(`/studio?agent=${bots[0].id}&chat=setup`);
+  await page.getByRole("button", { name: "Collapse navigation", exact: true }).click();
+  const panel = page.getByRole("complementary", { name: "Workspace panel", exact: true });
+  const details = panel.locator("details.wl-computer-completed-details");
+  await expect(details).toHaveJSProperty("open", false);
+  await expect(panel.getByText(summary, { exact: true })).toBeHidden();
+  const disclosure = details.locator("summary");
+  await disclosure.focus();
+  await disclosure.press("Enter");
+  await expect(details).toHaveJSProperty("open", true);
+  await expect(details.getByText(summary, { exact: true })).toBeVisible();
+  await expect(
+    details.getByRole("link", { name: "directory.example", exact: true }),
+  ).toHaveAttribute("href", "https://directory.example/report");
+  await disclosure.press("Enter");
+  await expect(details).toHaveJSProperty("open", false);
+  await expect(panel.getByRole("button", { name: "Tasks", exact: true })).toBeVisible();
+  await expect(
+    panel.getByRole("button", { name: "Open task activity", exact: true }),
+  ).toBeVisible();
+  expect(api.starts).toEqual([]);
+  await expect
+    .poll(() => panel.evaluate((element) => element.scrollWidth <= element.clientWidth + 1))
+    .toBe(true);
+  await proof(page, info, "configure-completed-panel-1206");
+});
+
+for (const status of ["stopped", "interrupted"] as const) {
+  test(`${status} Configure browser without a report keeps its task brief readable`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width: 1206, height: 900 });
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "wireline:studio-panel:v3",
+        JSON.stringify({ size: 384, collapsed: false }),
+      );
+    });
+    const goal = "Check Saturday opening hours on the public directory.";
+    const api = await mockWorkspace(page, [
+      {
+        ...pastTask(`ended-without-report-${status}`, bots[0].id, goal, ""),
+        status,
+        summary: null,
+      },
+    ]);
+    await page.goto(`/studio?agent=${bots[0].id}&chat=setup`);
+    await page.getByRole("button", { name: "Collapse navigation", exact: true }).click();
+    const panel = page.getByRole("complementary", { name: "Workspace panel", exact: true });
+    const detail = panel.getByRole("region", { name: goal, exact: true });
+    const brief = detail.getByText(goal, { exact: true });
+    await expect(brief).toBeVisible();
+    const bounds = await brief.boundingBox();
+    expect(
+      bounds?.width,
+      "The ended task brief must be readable, not clipped to screen-reader size",
+    ).toBeGreaterThan(100);
+    expect(bounds?.height).toBeGreaterThanOrEqual(16);
+    await expect(detail.locator("details.wl-computer-completed-details")).toHaveCount(0);
+    await expect(detail.getByRole("button", { name: "Tasks", exact: true })).toBeVisible();
+    await expect(
+      detail.getByRole("button", { name: "Open task activity", exact: true }),
+    ).toBeVisible();
+    expect(api.starts).toEqual([]);
+    await proof(page, info, `configure-${status}-without-report`);
+  });
+}
+
 test.describe("wide screens", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
@@ -277,10 +592,11 @@ test.describe("wide screens", () => {
       timeout: 20_000,
     });
 
-    // Close hands the whole width to the conversation, with its own Try It switch.
+    // Close hands the width back without adding another mode header.
     await page.getByRole("button", { name: "Close panel", exact: true }).click();
     await expect(panelTabs(page)).toHaveCount(0);
-    await expect(page.getByRole("group", { name: "Set Up view" })).toBeVisible();
+    await expect(page.getByRole("group", { name: "Set Up view" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Rehearse", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Bot details", exact: true }).click();
     await expect(panelTab(page, "Set up")).toHaveAttribute("aria-selected", "true");
   });
@@ -699,7 +1015,8 @@ test.describe("phones", () => {
   }) => {
     await mockWorkspace(page);
     await page.goto(`/studio?agent=${bots[0].id}&chat=setup`);
-    await expect(page.getByRole("group", { name: "Set Up view" })).toBeVisible();
+    await expect(page.getByRole("group", { name: "Set Up view" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Rehearse", exact: true })).toBeVisible();
     await expect(panelTabs(page)).toHaveCount(0);
     await conversation(page).fill("Keep this instruction while I browse.");
     await expect

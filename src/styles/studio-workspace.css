@@ -187,6 +187,11 @@
   padding: 0.75rem 1rem max(1rem, env(safe-area-inset-bottom));
 }
 
+.wl-studio-task-chat__composer,
+.wl-studio-chat__composer {
+  container: studio-composer / inline-size;
+}
+
 .wl-studio-task-chat__composer .wl-studio-task-chat__measure {
   gap: 0.75rem;
 }
@@ -223,8 +228,98 @@
   box-shadow: none;
 }
 
-.wl-workspace-shell .wl-studio-task-chat__composer .wl-composer-dock__toolbar {
-  padding: 0.125rem 0.625rem 0.625rem;
+.wl-workspace-shell .wl-studio-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.5rem;
+  padding: 0.375rem;
+}
+
+.wl-workspace-shell .wl-studio-composer .wl-composer-dock__input {
+  display: block;
+  min-width: 0;
+  margin: 0;
+  padding: 0.75rem 0.5rem;
+  line-height: 1.5;
+}
+
+.wl-workspace-shell .wl-studio-composer .wl-composer-dock__toolbar {
+  align-self: end;
+  flex-wrap: nowrap;
+  gap: 0.25rem;
+  padding: 0 0 0.25rem;
+  border: 0;
+}
+
+@container studio-composer (max-width: 22rem) {
+  .wl-workspace-shell .wl-studio-composer {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wl-workspace-shell .wl-studio-composer .wl-composer-dock__input {
+    grid-column: 1 / -1;
+  }
+
+  .wl-workspace-shell .wl-studio-composer .wl-composer-dock__toolbar {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+.wl-studio-starters {
+  width: min(100%, 18rem);
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.8125rem;
+  text-align: left;
+}
+
+.wl-studio-starters summary {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.wl-studio-starters summary::after {
+  margin-inline-start: 0.5rem;
+  content: "+";
+}
+
+.wl-studio-starters[open] summary::after {
+  content: "−";
+}
+
+.wl-studio-starters > div {
+  display: grid;
+  gap: 0.25rem;
+  padding-top: 0.25rem;
+}
+
+.wl-studio-starters button {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.wl-studio-starters summary:hover,
+.wl-studio-starters button:hover {
+  background: var(--studio-hover);
+  color: var(--wireline-color-text-primary);
+}
+
+.wl-studio-starters summary:focus-visible,
+.wl-studio-starters button:focus-visible {
+  outline: 2px solid var(--wireline-color-focus-default);
+  outline-offset: 2px;
 }
 
 .wl-workspace-shell .wl-work-send {
@@ -373,6 +468,7 @@
 .wl-studio-surface-nav {
   display: flex;
   flex: 0 0 auto;
+  flex-wrap: wrap;
   gap: 0.25rem;
   padding: 0.4rem 0.75rem;
   border-bottom: 1px solid var(--studio-rule);
@@ -380,7 +476,9 @@
 
 .wl-studio-surface-nav button {
   display: inline-flex;
+  min-width: 0;
   min-height: 2.75rem;
+  flex: 1 1 9rem;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
@@ -479,11 +577,25 @@
   box-shadow: none;
 }
 
-@media (max-width: 639px) {
-  .wl-studio-surface-nav button {
-    flex: 1;
+@media (max-width: 1023px) {
+  /* Enlarged context and view controls must scroll away before they leave the
+   * conversation shorter than a single action. Keep this scrollport inside the
+   * shell's existing mobile-dock clearance, and preserve a usable workbench. */
+  [data-wireline-route="/studio"]
+    .wl-workspace-content-inner
+    > :has(> .wl-studio-context) {
+    overflow-y: auto;
   }
 
+  [data-wireline-route="/studio"]
+    .wl-workspace-content-inner
+    > :has(> .wl-studio-context)
+    > :has(> .wl-studio-workspace) {
+    min-height: 20rem;
+  }
+}
+
+@media (max-width: 639px) {
   .wl-studio-message {
     font-size: 0.9rem;
     line-height: 1.65;

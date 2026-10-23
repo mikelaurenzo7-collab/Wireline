@@ -79,14 +79,14 @@ export default function WireAgentLanding() {
             <div className="landing-prestige__hero-mark" aria-hidden="true">
               <BotBoundMark className="landing-prestige__hero-bot" />
             </div>
-            <p className="landing-prestige__eyebrow">For life. For work.</p>
             <h1 id="landing-prestige-title">
               <span className="landing-prestige__title-line">VOICE BOTS.</span>{" "}
               <span className="landing-prestige__title-line is-accent">REAL WORK.</span>
             </h1>
             <p className="landing-prestige__description">
-              Calling, email, and a computer. Together in one workspace.
+              YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER
             </p>
+            <p className="landing-prestige__channel-choice">Choose the channels you need.</p>
             <div className="landing-prestige__actions">
               {signedIn ? (
                 <Link to="/studio" className="landing-prestige__cta is-primary">
@@ -113,7 +113,6 @@ export default function WireAgentLanding() {
         <section id="solutions" className="landing-prestige__section landing-prestige__roles">
           <div className="landing-prestige__rail">
             <header className="landing-prestige__section-heading">
-              <p>Life + work</p>
               <h2>Make it yours.</h2>
               <span>Start with a role. Give it your way of doing things.</span>
             </header>
@@ -124,14 +123,6 @@ export default function WireAgentLanding() {
                   <article key={template.key} className="landing-prestige__role-card">
                     <div className="landing-prestige__role-topline">
                       <Icon aria-hidden="true" />
-                      <span>
-                        {template.key === "personal-assistant" ||
-                        template.key === "family-concierge"
-                          ? "For You"
-                          : template.key === "custom"
-                            ? "Your Choice"
-                            : "For Your Business"}
-                      </span>
                     </div>
                     <h3>{template.name}</h3>
                     <p>{template.summary}</p>
@@ -153,7 +144,6 @@ export default function WireAgentLanding() {
         <section id="pricing" className="landing-prestige__section landing-prestige__pricing">
           <div className="landing-prestige__rail">
             <header className="landing-prestige__section-heading">
-              <p>Pricing</p>
               <h2>Choose your setup.</h2>
               <span>
                 Every paid plan includes Computer access. Usage comes from its AI allowance.
@@ -200,7 +190,9 @@ export default function WireAgentLanding() {
                           ? "AI and email allowance included"
                           : id === "voice-email"
                             ? "1 number + 1 email inbox"
-                            : "1 local number included"}
+                            : id === "personal"
+                              ? "1 number + connected inbox"
+                              : "1 local number included"}
                       </li>
                     </ul>
                     {emailSetupReview ? (

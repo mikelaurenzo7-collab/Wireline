@@ -13,10 +13,10 @@ export default function SmsConsentPage() {
         noIndex
       />
       <article className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-6 sm:py-14">
-        <p className="mb-3 text-sm font-medium text-brand">BotBound Customer Care</p>
         <h1 className="marketing-hero-title mb-5 text-3xl sm:text-4xl">
           Permission before a text.
         </h1>
+        <p className="mb-4 text-base text-muted-foreground">BotBound Customer Care</p>
         <p className="text-base leading-7 text-muted-foreground">
           BotBound uses its own customer service number for information and support requested during
           a conversation. This program does not include cold outreach, purchased lists, or marketing

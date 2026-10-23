@@ -160,9 +160,10 @@ button[class*="tracking-[0.3em]"] {
 }
 
 /* Mobile editing contract: 16px controls prevent Safari focus zoom, including
- * legacy forms that have not yet migrated to the shared atoms. */
+ * legacy forms and dialogs portalled outside the app shell. */
 @media (max-width: 767px) {
-  .wl-ui-caps :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  :is(.wl-ui-caps, .wl-cased)
+    :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
     font-size: max(16px, 1rem);
   }
 

@@ -124,8 +124,7 @@ export default function Pricing() {
       <section id="plans" className="marketing-section marketing-section--screen">
         <div className="wl-public-rail mx-auto max-w-5xl">
           <div className="mx-auto mb-6 max-w-3xl text-center">
-            <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
-            <h1 className="marketing-hero-title mx-auto mt-4">Your Bot. Your Plan.</h1>
+            <h1 className="marketing-hero-title mx-auto">Your Bot. Your Plan.</h1>
             <p className="marketing-hero-lead mx-auto mt-4">
               Choose your channels and capacity. Every paid plan includes a computer.
             </p>
@@ -188,7 +187,7 @@ export default function Pricing() {
             </p>
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
               <div className="min-w-0 flex-1 text-left">
-                <h2 className="text-base font-semibold">Personal · $12/month</h2>
+                <h2 className="wl-preserve-case text-base font-semibold">Personal · $12/month</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Calls and a computer for lighter use. 20 call minutes. Connect Gmail or Outlook
                   for the inbox you already use.

@@ -77,8 +77,7 @@ export default function Blog() {
 
       <section className="marketing-section marketing-section--screen mx-auto max-w-6xl text-center">
         <div className="mx-auto max-w-6xl">
-          <p className="wl-eyebrow wl-eyebrow--wired text-primary">Notes</p>
-          <h1 className="marketing-hero-title mx-auto mt-4">Make Room for Better Work</h1>
+          <h1 className="marketing-hero-title mx-auto">Make Room for Better Work</h1>
         </div>
         <div className="mx-auto mt-10 grid max-w-6xl gap-px overflow-hidden border border-border bg-border md:grid-cols-3">
           {NOTES.map(({ title, copy }) => (

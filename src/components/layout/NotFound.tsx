@@ -54,7 +54,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
           transition={{ delay: 0.1, duration: 0.5 }}
           className="space-y-3 max-w-md"
         >
-          <p className="wl-eyebrow">Error 404</p>
+          {!isPublic ? <p className="wl-eyebrow">Error 404</p> : null}
           <h1 className="wl-display-mark text-2xl md:text-3xl text-foreground leading-tight">
             Page Not Found
           </h1>

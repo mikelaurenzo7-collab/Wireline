@@ -202,7 +202,10 @@ export default function PublicChangelog() {
                       {meta.label}
                     </span>
                   </div>
-                  <h2 className="font-display text-xl text-foreground leading-tight mb-1">
+                  <h2
+                    className="font-display text-xl text-foreground leading-tight mb-1"
+                    data-wireline-preserve-case={entry.title.includes("BotBound") || undefined}
+                  >
                     {entry.title}
                   </h2>
                   <p className="marketing-body">{entry.body}</p>
@@ -212,7 +215,7 @@ export default function PublicChangelog() {
           </ol>
 
           <div className="mt-12 pt-6 border-t border-border">
-            <p className="text-eyebrow mb-2">Under active evaluation</p>
+            <h2 className="mb-2 text-sm font-semibold">Under active evaluation</h2>
             <ul className="marketing-body space-y-1 list-disc pl-5">
               <li>Mobile controls for monitoring, coaching, and approvals on the go.</li>
               <li>Reusable workflow recipes with clearer review and publishing controls.</li>

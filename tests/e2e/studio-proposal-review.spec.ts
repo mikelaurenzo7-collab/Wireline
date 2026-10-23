@@ -253,9 +253,9 @@ for (const failure of ["unavailable", "malformed"] as const) {
       await expect(save).toBeDisabled();
       await page.keyboard.press("Enter");
       expect(requests).toHaveLength(2);
-      await page.getByRole("button", { name: "Try It", exact: true }).click();
+      await page.getByRole("button", { name: "Rehearse", exact: true }).click();
       await expect(review).toHaveCount(0);
-      await page.getByRole("button", { name: "Instructions", exact: true }).click();
+      await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
       await expect(review.getByText(opening.value, { exact: true })).toBeVisible();
       await expect(save).toBeDisabled();
       expect(requests).toHaveLength(2);
@@ -346,12 +346,12 @@ test("Change and Try It drafts survive leaving the Workspace without mixing thei
   await panel.getByRole("button", { name: "Typed", exact: true }).click();
   await expect(testInput).toHaveValue("Keep this unsent customer scenario.");
 
-  // Phones switch the one conversation between Instructions and Try It.
+  // Phones keep private rehearsal behind one contextual action.
   await page.setViewportSize({ width: 390, height: 844 });
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
     .toBe(true);
-  await page.getByRole("button", { name: "Try It", exact: true }).click();
+  await page.getByRole("button", { name: "Rehearse", exact: true }).click();
   await page.getByRole("button", { name: "Typed", exact: true }).click();
   await expect(testInput).toHaveValue("Keep this unsent customer scenario.");
   await page.screenshot({
@@ -360,7 +360,7 @@ test("Change and Try It drafts survive leaving the Workspace without mixing thei
     animations: "disabled",
   });
   await expect(review).toHaveCount(0);
-  await page.getByRole("button", { name: "Instructions", exact: true }).click();
+  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
   await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
 });
 
@@ -413,7 +413,7 @@ test("setup focuses voice without seeding a customer message or replacing the Se
   await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeFocused();
   await page.getByRole("button", { name: "Typed", exact: true }).click();
   await expect(testInput).toHaveValue("");
-  await page.getByRole("button", { name: "Instructions", exact: true }).click();
+  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
   await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
 });
 
@@ -422,13 +422,13 @@ test("Set Up proposals survive rehearsal and Bot switches without appearing on a
 }) => {
   const writes = await mockWorkspace(page);
   const review = await requestProposal(page);
-  await page.getByRole("button", { name: "Try It", exact: true }).click();
+  await page.getByRole("button", { name: "Rehearse", exact: true }).click();
   await page.getByRole("button", { name: "Typed", exact: true }).click();
   await expect(
     page.getByRole("textbox", { name: "Customer message for Front Desk" }),
   ).toBeVisible();
   await expect(review).toHaveCount(0);
-  await page.getByRole("button", { name: "Instructions", exact: true }).click();
+  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
   await expect(review.getByText(opening.value, { exact: true })).toBeVisible();
 
   await page.getByRole("combobox", { name: "Switch Bot" }).selectOption(bots[1].id);
@@ -485,11 +485,11 @@ test("a delayed clear remains pending across remounts and cannot restore deleted
   await page.goBack();
   await expect(review).toHaveCount(0);
   await expect(page.getByText(plan.reply, { exact: true })).toHaveCount(0);
-  await expect(
-    page.getByRole("button", { name: "Clear conversation", exact: true }),
-  ).toBeDisabled();
-  await page.getByRole("button", { name: "Try It", exact: true }).click();
-  await page.getByRole("button", { name: "Instructions", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Clear conversation", exact: true })).toHaveCount(
+    0,
+  );
+  await page.getByRole("button", { name: "Rehearse", exact: true }).click();
+  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
   await expect(review).toHaveCount(0);
   await expect(page.getByText(plan.reply, { exact: true })).toHaveCount(0);
   expect(deleteCount).toBe(1);
@@ -519,7 +519,7 @@ test("Rehearsal replies cannot surface or apply a configuration or communication
   await expect(page.getByRole("region", { name: "Review Email capability" })).toHaveCount(0);
   await expect(page.getByText(emailDraft.subject, { exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Open Inbox", exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: "Instructions", exact: true }).click();
+  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
   await expect(page.getByRole("region", { name: "Review Opening greeting" })).toHaveCount(0);
   expect(
     writes.filter((request) => /apply-change|toggle-tool|run-action|outbound/.test(request.path)),

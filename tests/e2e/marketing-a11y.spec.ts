@@ -54,7 +54,7 @@ test("homepage promise and access path stay centered inside the desktop viewport
   await expect(headline).toBeVisible();
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
   await expect(page.locator(".landing-prestige__description")).toHaveText(
-    "Calling, email, and a computer. Together in one workspace.",
+    "YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER",
   );
   await expect(page.locator(".landing-prestige__directions")).toHaveCount(0);
 
@@ -103,4 +103,118 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
   await start.click();
   await expect(page).toHaveURL(/\/signup$/);
   await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
+});
+
+test("homepage channels stay clear and readable without decorative labels at 320px", async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  await gotoHomepageWithMain(page);
+  await page.evaluate(() => document.fonts.ready);
+
+  const hero = page.locator(".landing-prestige__hero");
+  const description = hero.locator(".landing-prestige__description");
+  await expect(description).toHaveText(
+    "YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER",
+  );
+  await expect(hero.getByText("Choose the channels you need.", { exact: true })).toBeVisible();
+  await expect(hero.getByText("For life. For work.", { exact: true })).toHaveCount(0);
+  await expect(page.locator("main").getByText("Life + work", { exact: true })).toHaveCount(0);
+  await expect(
+    page
+      .locator(".landing-prestige__role-card")
+      .getByText(/^(For You|For Your Business|Your Choice)$/),
+  ).toHaveCount(0);
+  await expect(hero.getByRole("link", { name: "Get Started" })).toHaveAttribute("href", "/signup");
+  await expect(page.getByRole("link", { name: /Use this role\s*:\s*Front Desk/i })).toHaveAttribute(
+    "href",
+    "/signup?template=front-desk",
+  );
+  await expect(page.getByRole("article", { name: "Personal plan", exact: true })).toContainText(
+    "1 number + connected inbox",
+  );
+  for (const heading of await page.locator(".landing-prestige__section-heading h2").all()) {
+    expect(await heading.evaluate((element) => getComputedStyle(element).textTransform)).toBe(
+      "uppercase",
+    );
+  }
+
+  const lineMetrics = () =>
+    description.evaluate((element) => {
+      const node = element.firstChild!;
+      const lines: { top: number; left: number; right: number; words: number }[] = [];
+      for (const match of node.textContent!.matchAll(/\S+/g)) {
+        const range = document.createRange();
+        range.setStart(node, match.index!);
+        range.setEnd(node, match.index! + match[0].length);
+        const box = range.getBoundingClientRect();
+        const line = lines.find((candidate) => Math.abs(candidate.top - box.top) < 1);
+        if (line) {
+          line.left = Math.min(line.left, box.left);
+          line.right = Math.max(line.right, box.right);
+          line.words += 1;
+        } else {
+          lines.push({ top: box.top, left: box.left, right: box.right, words: 1 });
+        }
+      }
+      return { lines, bounds: element.getBoundingClientRect().toJSON(), width: innerWidth };
+    });
+
+  const normal = await lineMetrics();
+  expect(normal.lines.length).toBeGreaterThan(1);
+  expect(
+    normal.lines.every((line) => line.words >= 2),
+    "no isolated normal-size word",
+  ).toBe(true);
+  const widths = normal.lines.map((line) => line.right - line.left);
+  expect(Math.min(...widths) / Math.max(...widths), "balanced supporting lines").toBeGreaterThan(
+    0.5,
+  );
+  await page.screenshot({ path: info.outputPath("landing-channels-320.png"), fullPage: true });
+
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = "200%";
+  });
+  await description.scrollIntoViewIfNeeded();
+  const enlarged = await lineMetrics();
+  for (const line of enlarged.lines) {
+    expect(line.left).toBeGreaterThanOrEqual(enlarged.bounds.left - 1);
+    expect(line.right).toBeLessThanOrEqual(enlarged.bounds.right + 1);
+    expect(line.left).toBeGreaterThanOrEqual(0);
+    expect(line.right).toBeLessThanOrEqual(enlarged.width);
+  }
+  await expect(hero.getByRole("link", { name: "Get Started" })).toBeVisible();
+  await page.screenshot({
+    path: info.outputPath("landing-channels-320-enlarged.png"),
+    fullPage: true,
+  });
+});
+
+test("public brand titles retain their case and heading semantics within the uppercase system", async ({
+  page,
+}) => {
+  await page.goto("/trust");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCSS("text-transform", "uppercase");
+  await expect(
+    page.getByRole("heading", { name: "Tenant Isolation", level: 2, exact: true }),
+  ).toHaveCSS("text-transform", "uppercase");
+  await page.locator("summary").filter({ hasText: "Technical Details" }).click();
+  const extension = page.getByRole("heading", {
+    name: "BotBound Command (Browser Extension)",
+    level: 2,
+    exact: true,
+  });
+  await expect(extension).toBeVisible();
+  await expect(extension).toHaveText("BotBound Command (Browser Extension)");
+  await expect(extension).toHaveCSS("text-transform", "none");
+
+  await page.goto("/changelog");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCSS("text-transform", "uppercase");
+  const monitoring = page.getByRole("heading", {
+    name: "BotBound Runtime Monitoring",
+    level: 2,
+    exact: true,
+  });
+  await expect(monitoring).toHaveText("BotBound Runtime Monitoring");
+  await expect(monitoring).toHaveCSS("text-transform", "none");
 });

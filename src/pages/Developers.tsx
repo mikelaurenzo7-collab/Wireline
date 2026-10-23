@@ -130,7 +130,7 @@ export default function Developers() {
             </a>
           </div>
 
-          <h2 id="mcp-apps-heading" className="wl-eyebrow mt-9 text-muted-foreground">
+          <h2 id="mcp-apps-heading" className="mt-9 text-lg font-semibold text-foreground">
             Connect Once
           </h2>
 
@@ -143,7 +143,7 @@ export default function Developers() {
                 <span className="wl-accent-icon-chip mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg">
                   <Icon className="h-4 w-4" aria-hidden="true" />
                 </span>
-                <h3 className="wl-card-title">{title}</h3>
+                <h3 className="wl-card-title wl-preserve-case">{title}</h3>
                 <p className="mt-1.5 flex-1 text-sm leading-6 text-muted-foreground">
                   {description}
                 </p>

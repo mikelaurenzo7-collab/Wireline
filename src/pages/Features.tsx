@@ -19,7 +19,6 @@ import { PageMeta } from "../lib/page-meta";
 type Pillar = {
   icon: LucideIcon;
   label: string;
-  title: string;
   body: string;
   note?: string;
 };
@@ -28,20 +27,17 @@ const PILLARS: readonly Pillar[] = [
   {
     icon: Phone,
     label: "Phone Number",
-    title: "Answer the Call",
     body: "Answer questions, capture requests, and book available times with your configured calendar.",
   },
   {
     icon: Mail,
     label: "Email Address",
-    title: "Keep It in Writing",
     body: "Read incoming messages, draft replies, and send approved email. Use a managed inbox or your verified domain with guided setup.",
     note: "Email activation requires a setup review.",
   },
   {
     icon: MonitorSmartphone,
     label: "Cloud Computer",
-    title: "Give It a Goal",
     body: "Research sites and complete web tasks in a live browser. See the work, take control, and hand it back.",
     note: "Included with paid plans.",
   },
@@ -97,8 +93,7 @@ export default function Features() {
       <section className="marketing-section marketing-section--screen">
         <div className="wl-public-rail mx-auto max-w-6xl">
           <header className="wl-features-intro text-center">
-            <p className="wl-eyebrow text-primary">Features</p>
-            <h1 className="marketing-hero-title mx-auto mt-4">Calls. Email. Computer.</h1>
+            <h1 className="marketing-hero-title mx-auto">Calls. Email. Computer.</h1>
             <p className="wl-features-intro__lead mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
               One Bot, your knowledge, and the tools to get work done.
             </p>
@@ -119,13 +114,12 @@ export default function Features() {
           </header>
 
           <ul className="wl-features-pillars" aria-label="Available Bot capabilities">
-            {PILLARS.map(({ icon: Icon, label, title, body, note }) => (
+            {PILLARS.map(({ icon: Icon, label, body, note }) => (
               <li key={label} className="wl-features-pillar">
                 <span className="wl-features-pillar__icon" aria-hidden="true">
                   <Icon />
                 </span>
-                <p className="wl-features-pillar__label">{label}</p>
-                <h2 className="wl-features-pillar__title">{title}</h2>
+                <h2 className="wl-features-pillar__title">{label}</h2>
                 <p className="wl-features-pillar__body">{body}</p>
                 {note ? <p className="wl-features-pillar__note">{note}</p> : null}
               </li>

@@ -87,8 +87,7 @@ export default function SolutionsPage() {
       <section className="marketing-section marketing-section--screen">
         <div className="wl-public-rail">
           <div className="mx-auto mb-8 max-w-6xl text-center">
-            <p className="wl-eyebrow wl-eyebrow--wired text-primary">Inbound</p>
-            <h1 className="marketing-hero-title mx-auto mt-4">{page.title}</h1>
+            <h1 className="marketing-hero-title mx-auto">{page.title}</h1>
             <div className="marketing-hero__actions mt-7">
               <Link
                 to={page.primary.href}

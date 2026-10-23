@@ -235,16 +235,16 @@ export default function TrustPackPage() {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-brand text-on-brand">
             <ShieldCheck className="h-6 w-6" />
           </div>
-          <p className="wl-overline mt-5 text-muted-foreground">{pack.eyebrow}</p>
-          <h1 className="wl-public-section-heading mx-auto mt-3 max-w-[22ch]">{pack.title}</h1>
+          <h1 className="wl-public-section-heading mx-auto mt-5 max-w-[22ch]">{pack.title}</h1>
           <p className="wl-public-copy mx-auto mt-4 max-w-2xl">{pack.subtitle}</p>
-          <p className="mt-4 text-eyebrow">Reviewed for launch · July 28, 2026</p>
+          <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+            Reviewed for launch · July 28, 2026
+          </p>
         </section>
 
         <section className="mt-12" aria-labelledby="shipping-now">
           <div className="text-center">
-            <p className="wl-overline text-brand">Available today</p>
-            <h2 id="shipping-now" className="font-display mt-2 text-2xl text-foreground">
+            <h2 id="shipping-now" className="font-display text-2xl text-foreground">
               What Ships Now
             </h2>
           </div>

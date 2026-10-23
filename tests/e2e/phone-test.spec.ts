@@ -93,6 +93,12 @@ for (const width of [320, 1440]) {
   }) => {
     await page.setViewportSize({ width, height: 900 });
     const state = await setup(page);
+    if (width === 320) {
+      const phone = page.getByRole("textbox", { name: "Your phone number", exact: true });
+      await expect
+        .poll(() => phone.evaluate((element) => parseFloat(getComputedStyle(element).fontSize)))
+        .toBeGreaterThanOrEqual(16);
+    }
     if (width === 320)
       await page.evaluate(() => {
         document.documentElement.style.fontSize = "200%";

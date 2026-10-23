@@ -102,6 +102,7 @@ type Props = {
   id?: string;
   ref?: { current: unknown };
   mode?: string;
+  modeControls?: string;
   fill?: boolean;
   to?: string;
   "aria-label"?: string;
@@ -165,6 +166,17 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Studio settings-to-Test handoff", () => {
+  it.each([false, true])(
+    "lets the parent own Configure mode controls on wide layout %s",
+    (wide) => {
+      h.wide = wide;
+      h.params = new URLSearchParams("agent=bot-a&chat=setup");
+      const workroom = render().find((node) => node.type === "workroom")!;
+      expect(workroom.props.mode).toBe("configure");
+      expect(workroom.props.modeControls).toBe("composer");
+    },
+  );
+
   it.each([false, true])(
     "blocks a missing explicit Bot and its commands on wide layout %s",
     (wide) => {

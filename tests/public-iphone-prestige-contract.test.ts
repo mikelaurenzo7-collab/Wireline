@@ -22,7 +22,7 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(landing).toMatch(
       /<h1[^>]*>[\s\S]*?>VOICE BOTS\.<\/span>[\s\S]*?>REAL WORK\.<\/span>[\s\S]*?<\/h1>/,
     );
-    expect(landing).toContain("Calling, email, and a computer.");
+    expect(landing).toContain("YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER");
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).not.toContain("HERO_CHANNELS.map");
@@ -130,8 +130,9 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(landing).toContain("<h2>Make it yours.</h2>");
     expect(landing).toContain("template.summary");
     expect(landing).toContain("/signup?template=${encodeURIComponent(template.key)}");
-    expect(landing).toContain('"For You"');
-    expect(landing).toContain('"For Your Business"');
+    expect(landing).not.toContain('"For You"');
+    expect(landing).not.toContain('"For Your Business"');
+    expect(landing).not.toContain('"Your Choice"');
     expect(landing).not.toContain("DIRECTION_LABELS");
     expect(landing).not.toContain("template.category");
 

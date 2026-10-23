@@ -625,6 +625,7 @@ function StudioWorkspaceContent() {
       onDraftChange={(draft) => workroomDrafts.set(main.key, draft)}
       conversationSession={main.session}
       layout={splitWorkspace ? "split" : "standalone"}
+      modeControls="composer"
       mode={mainMode}
       // With the private rehearsal pane open, Set up chat only edits the Bot.
       // Narrow screens switch that same setup conversation into rehearsal.

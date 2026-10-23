@@ -18,7 +18,7 @@ describe("home landing launch clarity", () => {
     expect(landing).not.toContain("Booked and logged");
     expect(landing).not.toContain("<AuthAccessPanel");
     expect(landing).toContain('to="/signup"');
-    expect(landing).toContain("Calling, email, and a computer.");
+    expect(landing).toContain("YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER");
     expect(css).toContain(".landing-prestige__hero-mark");
     expect(css).not.toMatch(/\.landing-prestige__(?:auth|entrance|desktop-only)\b/);
     expect(landing).not.toContain("00:42");

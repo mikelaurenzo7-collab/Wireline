@@ -72,7 +72,10 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   for (const [pattern, description] of [
     [/to="\/signup"[\s\S]*?Get Started/, "root landing must offer a plan-neutral signup action"],
     [/to="\/signin"/, "root landing must keep sign-in one action away"],
-    [/Calling, email, and a computer\./, "root landing must describe the product family together"],
+    [
+      /YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER/,
+      "root landing must describe the product family together",
+    ],
     [/<PrecisionPublicHeader \/>/, "root landing must share the public header"],
     [/FEATURED_TEMPLATE_KEYS/, "landing must curate role starters"],
     [/template\.summary/, "role starters must explain their job concisely"],

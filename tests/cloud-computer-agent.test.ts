@@ -1885,9 +1885,328 @@ describe("OpenAI cloud computer agent loop", () => {
     expect(outcome).toMatchObject({ status: "completed" });
   });
 
-  it("does not mark a task complete from a plain message or before opening a public page", async () => {
+  it("recovers a text-only owner question through one metered protocol correction", async () => {
+    const { session, calls } = fakeSession({}, "about:blank");
+    const question = "Which public page should I read?";
+    const { client: openai, requests } = client([
+      response([message(question)]),
+      response([functionCall("q1", "ask_owner", { question })]),
+      response([openPublicUrlCall("n1", "https://example.com/")]),
+      response([
+        functionCall("f1", "finish_task", {
+          outcome: "completed",
+          summary: "Reviewed the public page after the owner replied.",
+          sources: ["https://example.com/"],
+        }),
+      ]),
+    ]);
+    const askOwner = vi.fn(async () => {
+      expect(calls).toHaveLength(0);
+      expect(requests).toHaveLength(2);
+      return "Use https://example.com/.";
+    });
+    const meteredTurns: number[] = [];
+    const { hooks: h, events } = hooks({
+      askOwner,
+      meter: async ({ operation, turn, reserveUsd }) => {
+        meteredTurns.push(turn);
+        expect(reserveUsd).toBeGreaterThan(0);
+        return operation();
+      },
+    });
+    const outcome = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Ask which public page to read first, then open and summarize it.",
+      startUrl: null,
+      hooks: h,
+    });
+
+    expect(askOwner).toHaveBeenCalledExactlyOnceWith(
+      question,
+      CLOUD_COMPUTER_LIMITS.ownerReplyWaitMs,
+    );
+    expect(meteredTurns).toEqual([1, 2, 3, 4]);
+    expect(h.recordUsage).toHaveBeenCalledTimes(4);
+    expect(requests[1]).toMatchObject({ tool_choice: "required", store: false });
+    expect(requests[1].tools).toEqual(requests[0].tools);
+    expect(requests[2]).not.toHaveProperty("tool_choice");
+    const correctionHistory = requests[1].input as Item[];
+    expect(correctionHistory).toContainEqual(message(question));
+    expect(JSON.stringify(correctionHistory.at(-1))).toContain("ask_owner");
+    const resumedHistory = requests[2].input as Item[];
+    expect(resumedHistory).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "function_call_output", call_id: "q1" }),
+      ]),
+    );
+    expect(JSON.stringify(resumedHistory)).toContain("Owner replied: Use https://example.com/.");
+    expect(events.filter((event) => event.kind === "question")).toEqual([
+      { kind: "question", text: question },
+    ]);
+    expect(events.filter((event) => event.kind === "note")).toHaveLength(1);
+    expect(calls).toEqual([{ member: "navigate", input: { url: "https://example.com/" } }]);
+    expect(outcome).toMatchObject({ status: "completed", sources: ["https://example.com/"] });
+  });
+
+  it("recovers plain-text completion only through a validated protocol report", async () => {
+    const { session, calls } = fakeSession({}, "https://example.com/");
+    const { client: openai, requests } = client([
+      response([message("Done, I read the page.")]),
+      response([
+        functionCall("f1", "finish_task", {
+          outcome: "completed",
+          summary: "Verified the public page.",
+          sources: ["https://example.com/"],
+        }),
+      ]),
+    ]);
+    const outcome = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Read this page.",
+      startUrl: "https://example.com/",
+      hooks: hooks().hooks,
+    });
+    expect(requests).toHaveLength(2);
+    expect(outcome).toMatchObject({ status: "completed", summary: "Verified the public page." });
+    expect(calls).toHaveLength(0);
+  });
+
+  it("recognizes the public page opened at a question-first owner checkpoint", async () => {
+    const { session, calls } = fakeSession({}, "about:blank");
+    const { client: openai, requests } = client([
+      response([functionCall("q1", "ask_owner", { question: "Open your public page?" })]),
+      response([
+        functionCall("f1", "finish_task", {
+          outcome: "completed",
+          summary: "Reviewed the page opened by the owner.",
+          sources: ["https://example.com/"],
+        }),
+      ]),
+    ]);
+    const { hooks: h } = hooks({
+      askOwner: async () => {
+        await session.execute("navigate", { url: "https://example.com/" });
+        return "The public page is open. Continue.";
+      },
+    });
+    const outcome = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Ask me to open a public page, then summarize its screen.",
+      startUrl: null,
+      hooks: h,
+    });
+    expect(requests).toHaveLength(2);
+    expect(calls).toEqual([{ member: "navigate", input: { url: "https://example.com/" } }]);
+    expect(outcome).toMatchObject({ status: "completed", sources: ["https://example.com/"] });
+  });
+
+  it("does not let protocol correction bypass citation-only report repair", async () => {
+    const { session, calls } = fakeSession({}, "https://example.com/");
+    const { client: openai, requests } = client([
+      response([message("I read the public page.")]),
+      response([
+        functionCall("f1", "finish_task", {
+          outcome: "completed",
+          summary: "See https://example.com/not-observed for proof.",
+          sources: ["https://example.com/not-observed"],
+        }),
+      ]),
+      response([functionCall("q1", "ask_owner", { question: "Can I browse somewhere else?" })]),
+    ]);
+    const askOwner = vi.fn();
+    const outcome = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Read this page.",
+      startUrl: "https://example.com/",
+      hooks: hooks({ askOwner }).hooks,
+    });
+    expect(requests).toHaveLength(3);
+    expect(requests[2]).toMatchObject({ tool_choice: { type: "function", name: "finish_task" } });
+    expect(askOwner).not.toHaveBeenCalled();
+    expect(calls).toHaveLength(0);
+    expect(outcome).toMatchObject({ status: "blocked" });
+  });
+
+  it.each(["stop", "time"] as const)(
+    "keeps %s authoritative during the metered protocol correction",
+    async (interruption) => {
+      let stopped = false;
+      let clock = 0;
+      let turns = 0;
+      const { session, calls } = fakeSession();
+      const { client: openai, requests } = client([
+        response([message("I will inspect this page.")]),
+        response([computerCall("c1", [{ type: "click", x: 42, y: 84 }])]),
+      ]);
+      const { hooks: h } = hooks({
+        stopRequested: () => stopped,
+        meter: async ({ operation }) => {
+          const result = await operation();
+          if (++turns === 2) {
+            if (interruption === "stop") stopped = true;
+            else clock = CLOUD_COMPUTER_LIMITS.maxRunMs + 1;
+          }
+          return result;
+        },
+      });
+      const outcome = await runCloudComputerAgent({
+        client: openai,
+        model: OPENAI_MODELS.GPT_5_6_TERRA,
+        session,
+        bot,
+        goal: "Inspect this page.",
+        startUrl: null,
+        hooks: h,
+        now: () => clock,
+      });
+      expect(requests).toHaveLength(2);
+      expect(h.recordUsage).toHaveBeenCalledTimes(2);
+      expect(calls).toHaveLength(0);
+      expect(outcome).toMatchObject(
+        interruption === "stop"
+          ? { status: "stopped" }
+          : { status: "failed", code: "COMPUTER_TIME_LIMIT" },
+      );
+    },
+  );
+
+  it("does not bypass the managed allowance for protocol correction", async () => {
+    let turns = 0;
+    const allowanceError = new Error("SPEND_CAP_REACHED");
+    const { client: openai, requests } = client([response([message("I will inspect this page.")])]);
+    const { hooks: h } = hooks({
+      meter: async ({ operation }) => {
+        if (++turns === 2) throw allowanceError;
+        return operation();
+      },
+    });
+    await expect(
+      runCloudComputerAgent({
+        client: openai,
+        model: OPENAI_MODELS.GPT_5_6_TERRA,
+        session: fakeSession().session,
+        bot,
+        goal: "Inspect this page.",
+        startUrl: null,
+        hooks: h,
+      }),
+    ).rejects.toBe(allowanceError);
+    expect(requests).toHaveLength(1);
+    expect(h.recordUsage).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not request protocol correction after Stop during note publication", async () => {
+    let stopped = false;
+    const { session, calls } = fakeSession();
+    const { client: openai, requests } = client([response([message("I will inspect this page.")])]);
+    const { hooks: h } = hooks({
+      stopRequested: () => stopped,
+      emit: async () => {
+        stopped = true;
+      },
+    });
+    const outcome = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Inspect this page.",
+      startUrl: null,
+      hooks: h,
+    });
+    expect(requests).toHaveLength(1);
+    expect(calls).toHaveLength(0);
+    expect(outcome).toMatchObject({ status: "stopped" });
+  });
+
+  it("does not spend a protocol correction after the provider browser closes", async () => {
+    let closed = false;
+    const { session, calls } = fakeSession();
+    Object.defineProperty(session, "isClosed", { get: () => closed });
+    const { client: openai, requests } = client([response([message("I will inspect this page.")])]);
+    const { hooks: h } = hooks({
+      meter: async ({ operation }) => {
+        const result = await operation();
+        closed = true;
+        return result;
+      },
+    });
+    const outcome = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Inspect this page.",
+      startUrl: null,
+      hooks: h,
+    });
+    expect(requests).toHaveLength(1);
+    expect(h.recordUsage).toHaveBeenCalledTimes(1);
+    expect(calls).toHaveLength(0);
+    expect(outcome).toMatchObject({ status: "failed", code: "COMPUTER_BROWSER_LOST" });
+  });
+
+  it("does not add a protocol correction beyond the existing turn limit", async () => {
+    const { session, calls } = fakeSession();
+    const { client: openai, requests } = client([
+      ...Array.from({ length: CLOUD_COMPUTER_LIMITS.maxTurns - 1 }, (_, index) =>
+        response([functionCall(`unknown-${index}`, "unknown_tool", {})]),
+      ),
+      response([message("I will inspect this page.")]),
+    ]);
+    const outcome = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Inspect this page.",
+      startUrl: null,
+      hooks: hooks().hooks,
+    });
+    expect(requests).toHaveLength(CLOUD_COMPUTER_LIMITS.maxTurns);
+    expect(calls).toHaveLength(0);
+    expect(outcome).toMatchObject({ status: "failed", code: "COMPUTER_NO_FINAL_REPORT" });
+  });
+
+  it("does not replenish protocol correction after a valid browser turn", async () => {
+    const { session, calls } = fakeSession();
+    const { client: openai, requests } = client([
+      response([message("I will inspect this page.")]),
+      response([computerCall("c1", [{ type: "click", x: 42, y: 84 }])]),
+      response([message("Done without a report.")]),
+    ]);
+    const outcome = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Inspect this page.",
+      startUrl: null,
+      hooks: hooks().hooks,
+    });
+    expect(requests).toHaveLength(3);
+    expect(calls.map(({ member }) => member)).toEqual(["left_click"]);
+    expect(outcome).toMatchObject({ status: "failed", code: "COMPUTER_NO_FINAL_REPORT" });
+  });
+
+  it("does not mark a task complete from repeated plain messages or before opening a public page", async () => {
     const noReport = await runCloudComputerAgent({
-      client: client([response([message("I will look this up now.")])]).client,
+      client: client([
+        response([message("I will look this up now.")]),
+        response([message("Done without a report.")]),
+      ]).client,
       model: OPENAI_MODELS.GPT_5_6_TERRA,
       session: fakeSession({}, "about:blank").session,
       bot,

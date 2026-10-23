@@ -215,7 +215,12 @@ export default function Security() {
     <section key={title}>
       <div className="mb-4 flex flex-col items-center gap-2.5 text-center">
         <Icon className="h-4 w-4 text-brand" strokeWidth={1.8} />
-        <h2 className="font-display text-lg leading-tight text-foreground">{title}</h2>
+        <h2
+          className="font-display text-lg leading-tight text-foreground"
+          data-wireline-preserve-case={title.includes("BotBound") || undefined}
+        >
+          {title}
+        </h2>
       </div>
       <ul className="mx-auto max-w-2xl space-y-1.5 text-left marketing-body">
         {items.map((line, index) => (
@@ -253,7 +258,7 @@ export default function Security() {
                 </h1>
               </div>
             </div>
-            <p className="mt-4 text-eyebrow">
+            <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
               <span className="whitespace-nowrap">Last updated · October 20, 2026</span>
             </p>
           </div>
@@ -299,7 +304,7 @@ export default function Security() {
           </details>
 
           <div className="mt-12 border-t border-border pt-6 text-center">
-            <p className="text-eyebrow mb-2">Under active evaluation</p>
+            <h2 className="mb-2 text-sm font-semibold">Under active evaluation</h2>
             <ul className="mx-auto max-w-2xl space-y-1 pl-5 text-left marketing-body">
               <li>Independent SOC 2 readiness work and audit planning.</li>
               <li>Continuous regression coverage for tenant isolation and public data exposure.</li>

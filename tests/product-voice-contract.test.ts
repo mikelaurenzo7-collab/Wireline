@@ -115,7 +115,10 @@ describe("BotBound product voice", () => {
       "Do not stack BotBound with Phone Bot or Voice Bot as a compound noun. The brand already contains Bot. Say BotBound, or say Phone Bot, not both.",
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
-      "Public page heroes use uppercase display styling with short, balanced lines. Product headings, section titles, cards, dialogs, and empty-state titles retain authored Title Case.",
+      "Public display and section headings use uppercase styling with short, balanced lines. Product dialogs and empty states retain authored Title Case.",
+    );
+    expect(BRAND_SYSTEM.toneRules).toContain(
+      "Remove redundant decorative marketing eyebrows. Keep supporting prose and controls readable; never recase customer text, product names, legal prose, or literal values.",
     );
   });
 
@@ -251,7 +254,7 @@ describe("BotBound product voice", () => {
     }
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
     expect(landing).not.toContain("<AuthAccessPanel");
-    expect(landing).toContain("Calling, email, and a computer.");
+    expect(landing).toContain("YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER");
     expect(landing).toContain('to="/signup"');
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toContain("landing-prestige__directions");

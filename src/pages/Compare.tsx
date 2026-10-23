@@ -108,8 +108,7 @@ export default function Compare() {
 
       <section className="marketing-section">
         <div className="mx-auto mb-8 max-w-6xl text-center">
-          <p className="wl-eyebrow wl-eyebrow--wired text-primary">Compare</p>
-          <h1 className="marketing-hero-title mx-auto mt-4">Find Your Fit</h1>
+          <h1 className="marketing-hero-title mx-auto">Find Your Fit</h1>
           <div className="marketing-hero__actions mt-7">
             <Link
               to="/signup"

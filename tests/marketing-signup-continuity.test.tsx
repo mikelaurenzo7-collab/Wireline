@@ -93,7 +93,7 @@ describe("marketing signup continuity", () => {
     },
   );
 
-  it("markets outbound roles without surfacing the live-dialing gate on the landing page", () => {
+  it("keeps role choice specific without decorative audience badges or retired gate copy", () => {
     const text = (node: ReactNode): string =>
       Array.isArray(node)
         ? node.map(text).join("")
@@ -106,10 +106,15 @@ describe("marketing signup continuity", () => {
     const renderedText = elements(page)
       .map((element) => text(element.props.children))
       .join(" ");
-    expect(renderedText).toContain("For You");
+    expect(renderedText).not.toContain("For You");
     expect(renderedText).toContain("Personal Assistant");
-    expect(renderedText).toContain("For Your Business");
+    expect(renderedText).not.toContain("For Your Business");
     expect(renderedText).toContain("Front Desk");
+    expect(renderedText).toContain(
+      "YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER",
+    );
+    expect(renderedText).toContain("Choose the channels you need.");
+    expect(renderedText).toContain("1 number + connected inbox");
     const roleLinks = elements(page).filter((element) =>
       element.props.to?.startsWith("/signup?template="),
     );
@@ -132,7 +137,7 @@ describe("marketing signup continuity", () => {
       .map((element) => Children.toArray(element.props.children).join(""))
       .join(" ");
     if (wedge === "sales") {
-      expect(renderedText).toContain("Inbound");
+      expect(renderedText).toContain("A Customer Calls");
       expect(renderedText).toContain("Every Inquiry. A Next Step.");
       expect(renderedText).toContain("Answer. Book. Keep the Record.");
       expect(heroLink?.props.to).toBe("/signup?template=front-desk");

@@ -25,6 +25,7 @@ import {
 import { emitProductEventOnce } from "../lib/product-event-client";
 import { formatPhone } from "../lib/safe-number";
 import { isManualOperatorTask } from "../lib/operator-work-status";
+import { ownerWorkAge } from "../lib/owner-work-age";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
 import { StatusNotice } from "./molecules";
@@ -382,6 +383,7 @@ function ApprovalTaskCard({
     value: FollowUpTaskRow;
   } | null>(null);
   const savedTask = savedEdit?.source === task ? savedEdit.value : task;
+  const created = ownerWorkAge(savedTask.created_at ?? savedTask.createdAt);
   const manualHandoff = isHumanHandoff(task);
   const manualTask = manualHandoff || isManualOperatorTask(rawTaskType(task));
   const { success: toastSuccess } = useToast();
@@ -670,6 +672,29 @@ function ApprovalTaskCard({
           {task.agent?.name ? (
             <span className="text-xs text-muted-foreground">{task.agent.name}</span>
           ) : null}
+        </div>
+        <div
+          data-owner-work-created
+          className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]"
+        >
+          {created ? (
+            <>
+              <time dateTime={created.dateTime} className="min-w-0 max-w-full">
+                Created{" "}
+                {new Date(created.dateTime).toLocaleString(undefined, {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                  timeZoneName: "short",
+                })}
+              </time>
+              <span>{created.ageLabel}</span>
+            </>
+          ) : (
+            <span>Creation time unavailable</span>
+          )}
         </div>
         {recipient ? (
           <p className="mt-1 break-words text-xs text-muted-foreground">

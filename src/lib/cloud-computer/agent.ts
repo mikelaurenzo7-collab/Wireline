@@ -659,6 +659,10 @@ export async function runCloudComputerAgent(input: {
   let actions = 0;
   let questions = 0;
   let ownerWaitMs = 0;
+  // A completed text-only turn is neither a report nor an owner checkpoint.
+  // Allow one metered protocol correction per task, within all existing caps.
+  let protocolCorrectionUsed = false;
+  let requireToolCall = false;
   // One metered report-only repair can correct citation mistakes after useful
   // browser work. It never grants another browser action or bypasses evidence.
   let rejectedReport: { status: "blocked"; summary: string; sources: string[] } | null = null;
@@ -772,7 +776,11 @@ export async function runCloudComputerAgent(input: {
     const requestInput = latestUserScreenHistory(inputItems);
     const request = {
       ...requestBase,
-      ...(rejectedReport ? { tool_choice: { type: "function", name: "finish_task" } } : {}),
+      ...(rejectedReport
+        ? { tool_choice: { type: "function", name: "finish_task" } }
+        : requireToolCall
+          ? { tool_choice: "required" }
+          : {}),
       input: requestInput,
     };
     const requestBytes = jsonBytes(request);
@@ -807,6 +815,7 @@ export async function runCloudComputerAgent(input: {
         return result;
       },
     });
+    requireToolCall = false;
     const responseInterruption = interruptionOutcome();
     if (responseInterruption) return responseInterruption;
     const record = response as unknown as Record<string, unknown>;
@@ -853,6 +862,7 @@ export async function runCloudComputerAgent(input: {
       for (const item of output) append(item);
     }
     // A repair's only customer-facing output is its validated final report.
+    let emittedNote = false;
     if (!rejectedReport) {
       for (const item of output) {
         if (!item || typeof item !== "object") continue;
@@ -864,6 +874,7 @@ export async function runCloudComputerAgent(input: {
               const text = (part as Record<string, unknown>).text;
               if (typeof text === "string" && text.trim()) {
                 await input.hooks.emit({ kind: "note", text: clip(text, 400) });
+                emittedNote = true;
               }
             }
           }
@@ -891,9 +902,29 @@ export async function runCloudComputerAgent(input: {
       return rejectedReport;
     if (!toolCalls.length) {
       const text = responseText(record);
-      if (text) await input.hooks.emit({ kind: "note", text: clip(text, 400) });
+      if (text && !emittedNote) await input.hooks.emit({ kind: "note", text: clip(text, 400) });
       const reportInterruption = interruptionOutcome();
       if (reportInterruption) return reportInterruption;
+      if (input.session.isClosed)
+        return {
+          status: "failed",
+          code: "COMPUTER_BROWSER_LOST",
+          summary: "The cloud computer lost its browser connection. Try the task again.",
+        };
+      if (!protocolCorrectionUsed && turn < CLOUD_COMPUTER_LIMITS.maxTurns) {
+        protocolCorrectionUsed = true;
+        requireToolCall = true;
+        append({
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: "The previous turn did not call a tool, so the task is still running. Continue with an available tool: call ask_owner to pause for an owner question, use the browser tools to perform and verify allowed work, or call finish_task with a supported report (blocked if unable to proceed). Plain text alone cannot ask for owner input or complete this task. No owner reply or permission has been received from this correction. All original safety rules and evidence requirements still apply.",
+            },
+          ],
+        });
+        continue;
+      }
       return {
         status: "failed",
         code: "COMPUTER_NO_FINAL_REPORT",
@@ -987,6 +1018,7 @@ export async function runCloudComputerAgent(input: {
             };
           }
           rememberCurrentPage();
+          hasPublicPage = /^https?:\/\//i.test(input.session.activeUrl());
           screenshotBytes += currentScreen.length;
           if (screenshotBytes > CLOUD_COMPUTER_LIMITS.imageBudgetBytes)
             return { ...CONTEXT_LIMIT_OUTCOME };

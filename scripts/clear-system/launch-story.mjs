@@ -122,7 +122,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /Calling, email, and a computer\./,
+    /YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER/,
     "landing must describe the calling, email and Computer product family",
   );
   mustExclude(

@@ -420,7 +420,7 @@ export default function StudioTaskChat({
             </p>
           ) : null}
           <form
-            className="wl-composer-dock"
+            className="wl-composer-dock wl-studio-composer"
             onSubmit={(event) => {
               event.preventDefault();
               void send();
@@ -469,12 +469,11 @@ export default function StudioTaskChat({
                   <Square aria-hidden="true" />
                   {ownActive.stopping ? "Stopping…" : "Stop"}
                 </Button>
-              ) : (
-                <span className="wl-work-composer-hint">Supervised web work</span>
-              )}
+              ) : null}
               <Button
                 type="submit"
                 size="sm"
+                variant="ghost"
                 className="wl-work-send ml-auto size-11 rounded-full p-0"
                 disabled={!canSend}
                 aria-label={

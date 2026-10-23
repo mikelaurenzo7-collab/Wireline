@@ -33,16 +33,6 @@
   height: 100%;
   object-fit: contain;
 }
-.landing-prestige p.landing-prestige__eyebrow {
-  margin: 0 0 1rem;
-  color: var(--wireline-color-text-secondary);
-  font-family: var(--wireline-font-family-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  line-height: 1.5;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
 .landing-prestige__hero h1 {
   max-width: 100%;
   margin: 0;
@@ -61,10 +51,19 @@
   color: var(--wireline-color-action-primary-default);
 }
 .landing-prestige p.landing-prestige__description {
-  max-width: 28rem;
+  max-width: 36rem;
   margin: 1.5rem 0 0;
   color: var(--wireline-color-text-secondary);
   font-size: clamp(1rem, 1.3vw, 1.125rem);
+  font-weight: 600;
+  line-height: 1.6;
+  text-wrap: balance;
+}
+.landing-prestige p.landing-prestige__channel-choice {
+  max-width: 30rem;
+  margin: 0.75rem 0 0;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.9375rem;
   line-height: 1.6;
   text-wrap: balance;
 }
@@ -133,16 +132,6 @@
   margin-inline: auto;
   text-align: center;
 }
-.landing-prestige .landing-prestige__section-heading > p {
-  margin: 0 0 0.75rem;
-  color: var(--wireline-color-text-secondary);
-  font-family: var(--wireline-font-family-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  line-height: 1.5;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
 .landing-prestige__section-heading h2,
 .landing-prestige__closing h2 {
   margin: 0;
@@ -193,11 +182,6 @@
   flex-shrink: 0;
   color: var(--wireline-color-action-primary-default);
   stroke-width: 1.7;
-}
-.landing-prestige__role-topline > span {
-  color: var(--wireline-color-text-secondary);
-  font-size: 0.75rem;
-  line-height: 1.5;
 }
 .landing-prestige__role-card h3 {
   margin: 0;

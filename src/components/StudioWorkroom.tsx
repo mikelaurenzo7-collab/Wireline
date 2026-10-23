@@ -147,6 +147,7 @@ const StudioWorkroom = forwardRef<
     layout?: "standalone" | "canvas" | "split";
     mode?: WorkroomMode;
     onModeChange?: (mode: WorkroomMode) => void;
+    modeControls?: "header" | "composer";
     allowOutbound?: boolean;
     phoneNumber?: string | null;
     voiceVisible?: boolean;
@@ -164,6 +165,7 @@ const StudioWorkroom = forwardRef<
     layout = "standalone",
     mode = "configure",
     onModeChange,
+    modeControls = "header",
     allowOutbound = false,
     phoneNumber,
     voiceVisible = true,
@@ -518,9 +520,15 @@ const StudioWorkroom = forwardRef<
   const selectMode = (option: WorkroomMode) => {
     if (option === mode) return;
     onModeChange?.(option);
-    // The workspace remounts the conversation when its mode changes. Keep
-    // keyboard focus on the same in-context action after the remount.
-    requestAnimationFrame(() => document.getElementById(modeActionId(option))?.focus());
+    // The workspace remounts when its mode changes. Focus the new view's
+    // composer or return action, rather than a control that was just removed.
+    const targetId =
+      modeControls === "composer"
+        ? option === "configure"
+          ? "studio-workroom-message"
+          : modeActionId("configure")
+        : modeActionId(option);
+    requestAnimationFrame(() => document.getElementById(targetId)?.focus());
   };
 
   const clearButton = (
@@ -535,69 +543,102 @@ const StudioWorkroom = forwardRef<
       {clearing ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
     </button>
   );
+  const starterPrompts = showStarterPrompts ? (
+    <details className="wl-studio-starters" aria-label="Starter prompts">
+      <summary>Suggestions</summary>
+      <div>
+        {quickPrompts.slice(0, 3).map((prompt, index) => (
+          <button
+            key={prompt}
+            type="button"
+            onClick={() => {
+              setDraft(prompt);
+              requestAnimationFrame(() => inputRef.current?.focus());
+            }}
+          >
+            {mode === "test"
+              ? ["What can you do?", "Book an appointment", "Email the details"][index]
+              : prompt}
+          </button>
+        ))}
+      </div>
+    </details>
+  ) : null;
 
   return (
     <section
       className="wl-studio-chat flex h-full min-h-0 flex-col overflow-y-auto bg-background"
       aria-label={mode === "test" ? `${agentName} rehearsal conversation` : `${agentName} workroom`}
     >
-      <header
-        className={`wl-studio-chat__header shrink-0 ${split ? "px-3 py-2 sm:px-4" : "px-4 py-2 sm:px-6"}`}
-      >
-        <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-2 sm:gap-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            {onModeChange ? (
-              // Changing the Bot and trying it are one Set Up job, so they are
-              // two views of the same place rather than separate destinations.
-              <div
-                role="group"
-                aria-label="Set Up view"
-                className="inline-flex items-center gap-0.5 rounded-lg bg-muted/40 p-0.5"
-              >
-                {(
-                  [
-                    { id: "configure", label: "Instructions", Icon: MessageCircle },
-                    { id: "test", label: "Try It", Icon: Mic },
-                  ] as const
-                ).map(({ id, label, Icon }) => (
-                  <Button
-                    key={id}
-                    id={modeActionId(id)}
-                    type="button"
-                    size="sm"
-                    variant={mode === id ? "secondary" : "ghost"}
-                    aria-pressed={mode === id}
-                    className="min-h-11"
-                    onClick={() => selectMode(id)}
-                  >
-                    <Icon aria-hidden="true" />
-                    {label}
-                  </Button>
-                ))}
-              </div>
-            ) : (
-              <span className="text-sm font-semibold text-foreground">
-                {mode === "test" ? "Private Rehearsal" : "Instructions"}
-              </span>
-            )}
+      {modeControls === "header" || mode === "test" ? (
+        <header
+          className={`wl-studio-chat__header shrink-0 ${split ? "px-3 py-2 sm:px-4" : "px-4 py-2 sm:px-6"}`}
+        >
+          <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-2 sm:gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              {onModeChange && modeControls === "composer" ? (
+                <Button
+                  id={modeActionId("configure")}
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => selectMode("configure")}
+                >
+                  Back to Configure
+                </Button>
+              ) : onModeChange ? (
+                // Changing the Bot and trying it are one Set Up job, so they are
+                // two views of the same place rather than separate destinations.
+                <div
+                  role="group"
+                  aria-label="Set Up view"
+                  className="inline-flex items-center gap-0.5 rounded-lg bg-muted/40 p-0.5"
+                >
+                  {(
+                    [
+                      { id: "configure", label: "Instructions", Icon: MessageCircle },
+                      { id: "test", label: "Try It", Icon: Mic },
+                    ] as const
+                  ).map(({ id, label, Icon }) => (
+                    <Button
+                      key={id}
+                      id={modeActionId(id)}
+                      type="button"
+                      size="sm"
+                      variant={mode === id ? "secondary" : "ghost"}
+                      aria-pressed={mode === id}
+                      className="min-h-11"
+                      onClick={() => selectMode(id)}
+                    >
+                      <Icon aria-hidden="true" />
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-sm font-semibold text-foreground">
+                  {mode === "test" ? "Private Rehearsal" : "Instructions"}
+                </span>
+              )}
+            </div>
+            <div className="flex max-w-full shrink-0 flex-wrap items-center gap-1.5">
+              {mode === "test" && allowOutbound ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setShowPhoneTest(true)}
+                  aria-label="Call my phone"
+                >
+                  <Phone className="size-3.5" aria-hidden="true" />
+                  <span className="hidden sm:inline">Call my phone</span>
+                </Button>
+              ) : null}
+              {mode === "test" && rehearsalView === "text" ? clearButton : null}
+            </div>
           </div>
-          <div className="flex max-w-full shrink-0 flex-wrap items-center gap-1.5">
-            {mode === "test" && allowOutbound ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={() => setShowPhoneTest(true)}
-                aria-label="Call my phone"
-              >
-                <Phone className="size-3.5" aria-hidden="true" />
-                <span className="hidden sm:inline">Call my phone</span>
-              </Button>
-            ) : null}
-            {mode !== "test" || rehearsalView === "text" ? clearButton : null}
-          </div>
-        </div>
-      </header>
+        </header>
+      ) : null}
 
       {mode === "test" ? (
         <div className="shrink-0 px-3 pb-1 sm:px-5">
@@ -717,12 +758,14 @@ const StudioWorkroom = forwardRef<
                   <h2 className="text-2xl font-semibold text-foreground">
                     Try a Customer Question
                   </h2>
+                  {starterPrompts}
                 </div>
               ) : (
                 <div className="wl-studio-chat__welcome">
                   <MessageCircle className="size-6" aria-hidden="true" />
                   <h2>What should {agentName} know?</h2>
                   <p>Share instructions. Review changes before saving.</p>
+                  {starterPrompts}
                 </div>
               )}
             </div>
@@ -730,27 +773,7 @@ const StudioWorkroom = forwardRef<
 
           <div className="wl-studio-chat__composer shrink-0 bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
             <div className="mx-auto max-w-3xl">
-              {showStarterPrompts ? (
-                <div
-                  className="-mx-3 mb-3 flex gap-2 overflow-x-auto px-3 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0"
-                  aria-label="Starter prompts"
-                >
-                  {quickPrompts.slice(0, 3).map((prompt) => (
-                    <button
-                      key={prompt}
-                      type="button"
-                      onClick={() => {
-                        setDraft(prompt);
-                        requestAnimationFrame(() => inputRef.current?.focus());
-                      }}
-                      className={`${WL_COMPOSER_CLASSES.starterChip} shrink-0 whitespace-nowrap`}
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-              <div className={WL_COMPOSER_CLASSES.composerDock}>
+              <div className={`${WL_COMPOSER_CLASSES.composerDock} wl-studio-composer`}>
                 <label className="sr-only" htmlFor={composerId}>
                   {mode === "test" ? `Customer message for ${agentName}` : `Message ${agentName}`}
                 </label>
@@ -781,24 +804,38 @@ const StudioWorkroom = forwardRef<
                   className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
                 />
                 <div className="wl-composer-dock__toolbar">
-                  <div className="ml-auto flex shrink-0 items-center gap-2">
+                  {mode === "configure" && modeControls === "composer" && onModeChange ? (
                     <Button
                       type="button"
                       size="sm"
-                      disabled={!draft.trim() || sending || loading || clearing}
-                      onClick={submit}
-                      className="size-10 shrink-0 rounded-full p-0"
-                      aria-busy={sending}
-                      aria-label={sending ? "Sending" : "Send"}
-                      title={sending ? "Sending" : "Send"}
+                      variant="ghost"
+                      className="min-h-11 min-w-11 px-2"
+                      onClick={() => selectMode("test")}
+                      aria-label="Rehearse"
+                      title="Rehearse privately"
                     >
-                      {sending ? (
-                        <Loader2 className="animate-spin" size={16} aria-hidden="true" />
-                      ) : (
-                        <ArrowUp size={18} aria-hidden="true" />
-                      )}
+                      <Mic className="size-4" aria-hidden="true" />
+                      <span className="hidden sm:inline">Rehearse</span>
                     </Button>
-                  </div>
+                  ) : null}
+                  {mode === "configure" && messages.length ? clearButton : null}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    disabled={!draft.trim() || sending || loading || clearing}
+                    onClick={submit}
+                    className="wl-work-send size-11 shrink-0 rounded-full p-0"
+                    aria-busy={sending}
+                    aria-label={sending ? "Sending" : "Send"}
+                    title={sending ? "Sending" : "Send"}
+                  >
+                    {sending ? (
+                      <Loader2 className="animate-spin" size={16} aria-hidden="true" />
+                    ) : (
+                      <ArrowUp size={18} aria-hidden="true" />
+                    )}
+                  </Button>
                 </div>
               </div>
             </div>
