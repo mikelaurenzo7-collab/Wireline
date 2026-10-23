@@ -17,9 +17,12 @@ describe("self-service calling setup", () => {
     expect(phonePage).toContain('primaryTab === "setup"');
     expect(phonePage).toMatch(/<PhoneSetupPanel\s+initialAgentId=\{activeAgentId\}/);
     expect(phonePage).toContain('voiceEnabled={access.includes("voice")}');
-    expect(phonePage).toContain(
-      'aria-label={primaryTab === "setup" ? "Choose Bot for Lines" : "Filter call history by Bot"}',
-    );
+    expect(phonePage).toContain('"Choose Bot for Lines"');
+    expect(phonePage).toContain('"Choose Bot for Reviewed calls"');
+    expect(phonePage).toContain('"Filter call history by Bot"');
+    const history = read("src/components/PhoneCallHistoryPanel.tsx");
+    expect(history).toContain("`/phone?tab=setup&agent=${encodeURIComponent(agentId)}`");
+    expect(history).toContain("`/phone?tab=outbound&agent=${encodeURIComponent(agentId)}`");
   });
 
   it("keeps self-service provisioning while presenting it as compact line management", () => {

@@ -183,6 +183,7 @@ export default function EmailPage() {
       if (agentId) updated.set("agent", agentId);
       else updated.delete("agent");
       updated.delete("account");
+      updated.delete("thread");
     });
   }
 
@@ -190,6 +191,7 @@ export default function EmailPage() {
     updateParams((updated) => {
       if (accountId) updated.set("account", accountId);
       else updated.delete("account");
+      updated.delete("thread");
     });
   }
 
@@ -197,6 +199,7 @@ export default function EmailPage() {
     updateParams((updated) => {
       updated.delete("agent");
       updated.delete("account");
+      updated.delete("thread");
     });
   }
 

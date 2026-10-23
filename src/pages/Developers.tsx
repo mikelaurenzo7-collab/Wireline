@@ -43,9 +43,9 @@ const MCP_CLIENTS = [
   {
     title: "ChatGPT",
     description:
-      "Create a BotBound account, then draft and privately rehearse your first Phone Bot.",
-    action: "Open ChatGPT",
-    href: "https://chatgpt.com/",
+      "In ChatGPT web, add the endpoint below from Plugins using OAuth with CIMD. Full Bot actions require Business, Enterprise, or Edu access and workspace permission.",
+    action: "ChatGPT Setup Guide",
+    href: "https://help.openai.com/en/articles/12584461-connecting-custom-mcp-servers-in-chatgpt",
     icon: MessageSquareText,
   },
   {

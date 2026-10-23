@@ -399,7 +399,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How Does It Compare with a 24/7 Answering Service?",
-        a: "Compare BotBound on the complete intake, conversation, follow up, and logged outcome, not only the per call price. Paid plans include voice minutes, and prepaid Runtime Balance covers supported usage beyond the plan allowance.",
+        a: "Compare BotBound on the complete intake, conversation, follow up, and logged outcome, not only the per call price. Calls plans include voice minutes, and prepaid Runtime Balance covers supported usage beyond the plan allowance.",
       },
     ],
   },

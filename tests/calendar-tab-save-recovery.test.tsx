@@ -74,6 +74,9 @@ type Props = {
   children?: ReactNode;
   tabs?: ReactNode;
   primary?: ReactNode;
+  secondary?: ReactNode;
+  action?: ReactNode;
+  title?: string;
   id?: string;
   disabled?: boolean;
   hidden?: boolean;
@@ -81,6 +84,7 @@ type Props = {
   onSubmit?: (event: FormEvent) => Promise<void>;
   onChange?: (event: { target: { value: string } }) => void;
   onSelect?: (id: string) => void;
+  onClick?: () => void;
 };
 function elements(node: ReactNode): Array<ReactElement<Props>> {
   if (Array.isArray(node)) return node.flatMap(elements);
@@ -90,6 +94,8 @@ function elements(node: ReactNode): Array<ReactElement<Props>> {
     ...elements(node.props.children),
     ...elements(node.props.tabs),
     ...elements(node.props.primary),
+    ...elements(node.props.secondary),
+    ...elements(node.props.action),
   ];
 }
 function text(node: ReactNode): string {
@@ -153,6 +159,41 @@ beforeEach(() => {
   h.fetch.mockResolvedValueOnce(response({ settings: defaults, configured: true }));
 });
 describe("Calendar pending saves across tabs", () => {
+  it("shows availability load failure and retry on the default Calendar tab", async () => {
+    h.params = new URLSearchParams();
+    h.fetch.mockReset();
+    h.fetch.mockResolvedValueOnce(response({ error: "Availability could not load." }, 503));
+    render();
+    await settle();
+    const notice = elements(page).find((node) => node.props.title === "Availability Unavailable");
+    expect(notice).toBeDefined();
+    expect(
+      elements(page).some(
+        (node) => node.props.hidden && elements(node.props.children).includes(notice!),
+      ),
+    ).toBe(false);
+    expect(text(notice)).toContain("Availability could not load.");
+    expect(
+      elements(page).find((node) => node.type === "button" && text(node) === "Set availability")
+        ?.props.disabled,
+    ).toBe(true);
+
+    h.fetch.mockResolvedValueOnce(response({ settings: defaults, configured: true }));
+    const retry = elements(notice).find((node) => node.type === "button" && text(node) === "Retry");
+    expect(retry).toBeDefined();
+    retry!.props.onClick!();
+    await settle();
+    expect(h.fetch).toHaveBeenCalledTimes(2);
+    expect(h.params.has("tab")).toBe(false);
+    expect(elements(page).some((node) => node.props.title === "Availability Unavailable")).toBe(
+      false,
+    );
+    expect(
+      elements(page).find((node) => node.type === "button" && text(node) === "New appointment")
+        ?.props.disabled,
+    ).toBe(false);
+  });
+
   it.each([true, false])(
     "keeps the mounted form locked across tab changes, success=%s",
     async (success) => {

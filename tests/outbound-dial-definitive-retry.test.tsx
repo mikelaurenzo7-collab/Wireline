@@ -1,6 +1,7 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import OutboundDialDialog from "../src/components/OutboundDialDialog";
+import OutboundHub from "../src/components/outbound/OutboundHub";
 import { authFetch } from "../src/lib/api";
 import { readPendingOutboundDial } from "../src/lib/outbound-dial-recovery";
 
@@ -116,6 +117,9 @@ vi.mock("../src/lib/voice-permission-client", () => ({
 type Props = {
   children?: ReactNode;
   value?: string;
+  open?: boolean;
+  initialAgentId?: string;
+  "aria-label"?: string;
   disabled?: boolean;
   onClick?: () => void;
   onChange?: (event: { target: { value: string } }) => void;
@@ -141,6 +145,28 @@ let nextKey = 0;
 let postOutcomes: Array<() => Promise<Response>>;
 let statusBody: (key: string) => unknown;
 let nodes: Node[];
+
+it("opens the reviewed call dialog with the Bot selected in Calls", () => {
+  const renderHub = () => {
+    harness.cursor = 0;
+    return descendants(
+      OutboundHub({ activeView: "dispatch", onViewChange: vi.fn(), initialAgentId: "bot-2" }),
+    );
+  };
+  let hub = renderHub();
+  expect(hub.find((node) => node.type === OutboundDialDialog)?.props.open).toBe(false);
+  const newCall = hub.find(
+    (node) => node.type === "button" && node.props["aria-label"] === "New call",
+  );
+  expect(newCall).toBeDefined();
+  newCall!.props.onClick!();
+  hub = renderHub();
+  expect(hub.find((node) => node.type === OutboundDialDialog)?.props).toMatchObject({
+    open: true,
+    initialAgentId: "bot-2",
+  });
+  expect(posts()).toHaveLength(0);
+});
 
 function render(open = true) {
   harness.cursor = 0;
@@ -265,9 +291,7 @@ describe("direct outbound definitive-refusal retry", () => {
       .filter((node) => node.type === "option")
       .map((node) => node.props.children)
       .filter((label): label is string => typeof label === "string");
-    expect(nodes.some((node) => node.type === "select" && node.props.value === "bot-1")).toBe(
-      true,
-    );
+    expect(nodes.some((node) => node.type === "select" && node.props.value === "bot-1")).toBe(true);
     expect(optionLabels).toEqual(
       expect.arrayContaining(["Business Front Desk", "Personal Assistant"]),
     );

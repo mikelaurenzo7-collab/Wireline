@@ -1,6 +1,7 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import EmailInbox from "../src/components/EmailInbox";
+import EmailPage from "../src/pages/EmailPage";
 
 const h = vi.hoisted(() => ({
   slots: [] as Array<{ value?: unknown; dependencies?: readonly unknown[]; cleanup?: () => void }>,
@@ -9,6 +10,8 @@ const h = vi.hoisted(() => ({
   layoutEffects: [] as Array<() => void>,
   effects: [] as Array<() => void>,
   fetch: vi.fn(),
+  page: false,
+  params: new URLSearchParams(),
 }));
 
 vi.mock("react", async (original) => {
@@ -70,7 +73,34 @@ vi.mock("react", async (original) => {
       effect(callback, dependencies, h.layoutEffects),
   };
 });
-vi.mock("react-router", () => ({ Link: "a" }));
+vi.mock("react-router", () => {
+  const setParams = (update: (current: URLSearchParams) => URLSearchParams) => {
+    h.params = update(new URLSearchParams(h.params));
+    h.dirty = true;
+  };
+  return { Link: "a", useSearchParams: () => [h.params, setParams] };
+});
+vi.mock("../src/contexts/AgentsContext", () => ({
+  useAgents: () => ({
+    agents: [
+      { id: "bot-a", name: "Alpha" },
+      { id: "bot-b", name: "Bravo" },
+    ],
+    loading: false,
+    degraded: false,
+    refresh: vi.fn(),
+  }),
+}));
+vi.mock("../src/hooks/useChannelEntitlements", () => ({
+  useChannelEntitlements: () => ({
+    status: "ready",
+    data: { plan_id: "email-regular", subscription_status: "active" },
+    includes: (channel: string) => channel === "email",
+  }),
+}));
+vi.mock("../src/components/ApprovalInbox", () => ({ default: "approval-inbox" }));
+vi.mock("../src/components/SmsThreads", () => ({ default: "sms-threads" }));
+vi.mock("../src/components/WorkspaceShell", () => ({ default: "workspace-shell" }));
 vi.mock("../src/lib/api", () => ({ authFetch: h.fetch }));
 vi.mock("../src/components/atoms", () => ({
   Badge: "badge",
@@ -87,6 +117,9 @@ vi.mock("../src/components/molecules", () => ({
 
 type Props = {
   children?: ReactNode;
+  primary?: ReactNode;
+  secondary?: ReactNode;
+  tabs?: ReactNode;
   action?: ReactNode;
   title?: string;
   description?: string;
@@ -104,6 +137,7 @@ type Element = ReactElement<Props>;
 let tree: ReactNode;
 let agentId: string | null;
 let accountId: string | null;
+let initialThreadId: string | null;
 let channelEnabled: boolean;
 let channelAccessResolved: boolean;
 let listResponses: Array<() => Promise<Response>>;
@@ -129,13 +163,16 @@ function render() {
     h.cursor = 0;
     h.effects = [];
     h.layoutEffects = [];
-    tree = EmailInbox({
-      embedded: true,
-      agentId,
-      accountId,
-      channelEnabled,
-      channelAccessResolved,
-    });
+    tree = h.page
+      ? EmailPage()
+      : EmailInbox({
+          embedded: true,
+          agentId,
+          accountId,
+          channelEnabled,
+          channelAccessResolved,
+          initialThreadId,
+        });
     h.layoutEffects.forEach((run) => run());
     h.effects.forEach((run) => run());
   } while (h.dirty);
@@ -150,7 +187,14 @@ async function settle() {
 function elements(node: ReactNode): Element[] {
   if (Array.isArray(node)) return node.flatMap(elements);
   if (!isValidElement<Props>(node)) return [];
-  return [node, ...elements(node.props.children), ...elements(node.props.action)];
+  return [
+    node,
+    ...elements(node.props.children),
+    ...elements(node.props.action),
+    ...elements(node.props.primary),
+    ...elements(node.props.secondary),
+    ...elements(node.props.tabs),
+  ];
 }
 function text(node: ReactNode): string {
   if (Array.isArray(node)) return node.map(text).join("");
@@ -182,8 +226,11 @@ beforeEach(() => {
   h.cursor = 0;
   h.dirty = false;
   h.fetch.mockReset();
+  h.page = false;
+  h.params = new URLSearchParams();
   agentId = null;
   accountId = null;
+  initialThreadId = null;
   channelEnabled = true;
   channelAccessResolved = false;
   threads = [];
@@ -193,7 +240,14 @@ beforeEach(() => {
   detailResponses = [];
   readResponses = [];
   h.fetch.mockImplementation(async (url: string, options?: RequestInit) => {
-    if (url === "/api/emails/accounts") return response({ accounts: [{ id: "mailbox" }] });
+    if (url === "/api/emails/accounts")
+      return response({
+        accounts: [
+          { id: "mailbox", emailAddress: "alpha@example.test", agentId: "bot-a" },
+          { id: "second-mailbox", emailAddress: "alpha-other@example.test", agentId: "bot-a" },
+          { id: "bravo-mailbox", emailAddress: "bravo@example.test", agentId: "bot-b" },
+        ],
+      });
     if (url === "/api/emails/sync") {
       const next = syncResponses.shift();
       if (!next) throw new Error("Unexpected mailbox sync");
@@ -201,8 +255,8 @@ beforeEach(() => {
     }
     if (url === "/api/emails/threads/read-state")
       return readResponses.shift()?.() ?? response({ success: true });
-    if (/\/api\/emails\/threads\/[^/]+\/outcome$/.test(url)) {
-      const threadId = url.split("/")[4];
+    if (/\/api\/emails\/threads\/[^/]+\/outcome(?:\?|$)/.test(url)) {
+      const threadId = decodeURIComponent(url.split("/")[4]);
       const result = await (detailResponses.shift()?.() ??
         response({
           thread: threads.find((thread) => thread.id === threadId) ?? threads[0],
@@ -228,6 +282,113 @@ beforeEach(() => {
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 
 describe("email inbox operation recovery", () => {
+  it.each(["Bot", "mailbox", "clear"])(
+    "removes a linked conversation when the user changes the %s filter",
+    async (change) => {
+      h.page = true;
+      h.params = new URLSearchParams({
+        tab: "email",
+        agent: change === "clear" ? "missing-bot" : "bot-a",
+        account: "mailbox",
+        thread: "linked-thread",
+        keep: "unchanged",
+      });
+      await settle();
+      if (change === "clear") button("Clear Filters").props.onClick!();
+      else {
+        const filter = elements(tree).find(
+          (node) =>
+            node.type === "select" &&
+            node.props["aria-label"] ===
+              (change === "Bot" ? "Filter Inbox by Bot" : "Filter email by mailbox"),
+        );
+        expect(filter).toBeDefined();
+        filter!.props.onChange!({
+          target: { value: change === "Bot" ? "bot-b" : "second-mailbox" },
+        });
+      }
+      await settle();
+      expect(h.params.has("thread")).toBe(false);
+      expect(h.params.get("agent")).toBe(
+        change === "clear" ? null : change === "Bot" ? "bot-b" : "bot-a",
+      );
+      expect(h.params.get("account")).toBe(change === "mailbox" ? "second-mailbox" : null);
+      expect(h.params.get("tab")).toBe("email");
+      expect(h.params.get("keep")).toBe("unchanged");
+    },
+  );
+
+  it("opens a scoped linked conversation outside the first list page using a scoped detail read", async () => {
+    agentId = "bot-a";
+    accountId = "mailbox";
+    initialThreadId = "older-thread";
+    threads = Array.from({ length: 100 }, (_, index) => ({
+      id: `new-${index}`,
+      subject: `New ${index}`,
+    }));
+    detailResponses = [
+      () =>
+        Promise.resolve(
+          response({
+            thread: { id: "older-thread", subject: "Older linked conversation" },
+            messages: [{ id: "old-message", content: "Older linked body" }],
+          }),
+        ),
+    ];
+    await settle();
+    const reads = requests("/api/emails/threads/older-thread/outcome");
+    expect(reads).toHaveLength(1);
+    const url = new URL(reads[0][0], "http://local");
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      agent_id: "bot-a",
+      account_id: "mailbox",
+    });
+    expect(text(tree)).toContain("Older linked body");
+    expect(requests("/api/emails/threads/read-state")).toHaveLength(1);
+  });
+
+  it("does not render or mark read a linked conversation rejected by the selected scope", async () => {
+    agentId = "bot-b";
+    initialThreadId = "other-bot-thread";
+    detailResponses = [
+      () => Promise.resolve(response({ error: "Email conversation not found." }, 404)),
+    ];
+    await settle();
+    expect(text(tree)).toContain("Email conversation not found.");
+    expect(requests("/api/emails/threads/other-bot-thread/outcome")[0][0]).toContain(
+      "agent_id=bot-b",
+    );
+    expect(requests("/api/emails/threads/read-state")).toHaveLength(0);
+    expect(elements(tree).some((node) => node.type === "conversation-message")).toBe(false);
+  });
+
+  it("aborts and ignores linked detail from the previous inbox scope without marking it read", async () => {
+    const pending = deferred();
+    agentId = "bot-a";
+    accountId = "mailbox";
+    initialThreadId = "linked-thread";
+    detailResponses = [() => pending.promise];
+    await settle();
+    const oldRequest = requests("/api/emails/threads/linked-thread/outcome")[0];
+    expect(oldRequest).toBeDefined();
+    agentId = "bot-b";
+    accountId = null;
+    initialThreadId = null;
+    threads = [{ id: "bravo-thread", subject: "Bravo conversation" }];
+    await settle();
+    expect(oldRequest[1].signal.aborted).toBe(true);
+    pending.resolve(
+      response({
+        thread: { id: "linked-thread" },
+        messages: [{ id: "late", content: "Previous Bot message" }],
+      }),
+    );
+    await settle();
+    expect(text(tree)).toContain("Bravo conversation");
+    expect(text(tree)).not.toContain("Previous Bot message");
+    expect(requests("/api/emails/threads/read-state")).toHaveLength(0);
+  });
+
   it("hides an empty inbox while Email access is pending or excluded", async () => {
     channelEnabled = false;
     await settle();

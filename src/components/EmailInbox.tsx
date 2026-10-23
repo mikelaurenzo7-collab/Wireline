@@ -328,6 +328,7 @@ export default function EmailInbox({
 
   const loadThreadDetail = useCallback(
     async (threadId: string) => {
+      if (filterKeyRef.current !== filterKey || selectedIdRef.current !== threadId) return false;
       detailAbortRef.current?.abort();
       const controller = new AbortController();
       detailAbortRef.current = controller;
@@ -335,20 +336,26 @@ export default function EmailInbox({
       const isCurrentRequest = () =>
         !controller.signal.aborted &&
         detailOperationRef.current === operation &&
+        filterKeyRef.current === filterKey &&
         selectedIdRef.current === threadId;
       setDetailLoading(true);
       setDetailError(null);
       try {
-        const response = await authFetch(`/api/emails/threads/${threadId}/outcome`, {
-          signal: controller.signal,
-        });
+        const queryParams = new URLSearchParams();
+        if (agentId) queryParams.set("agent_id", agentId);
+        if (accountId) queryParams.set("account_id", accountId);
+        const suffix = queryParams.toString();
+        const response = await authFetch(
+          `/api/emails/threads/${encodeURIComponent(threadId)}/outcome${suffix ? `?${suffix}` : ""}`,
+          { signal: controller.signal },
+        );
         const body = (await response.json().catch(() => null)) as {
           thread?: Record<string, unknown>;
           messages?: Array<Record<string, unknown>>;
           handoff?: { id: string; status: string } | null;
           error?: string;
         } | null;
-        if (!response.ok || !body?.thread)
+        if (!response.ok || !body?.thread || body.thread.id !== threadId)
           throw new Error(body?.error || "Could not load this conversation.");
         if (!isCurrentRequest()) return false;
         const thread = normalizeThread(body.thread);
@@ -373,7 +380,7 @@ export default function EmailInbox({
         if (detailAbortRef.current === controller) detailAbortRef.current = null;
       }
     },
-    [markThreadRead],
+    [accountId, agentId, filterKey, markThreadRead],
   );
 
   useLayoutEffect(() => {
@@ -428,7 +435,11 @@ export default function EmailInbox({
   // thread. Declared after the list reset above, so it wins on first render.
   const openedThreadRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!initialThreadId || openedThreadRef.current === initialThreadId) return;
+    if (!initialThreadId) {
+      openedThreadRef.current = null;
+      return;
+    }
+    if (openedThreadRef.current === initialThreadId) return;
     openedThreadRef.current = initialThreadId;
     setSelectedId(initialThreadId);
   }, [initialThreadId]);

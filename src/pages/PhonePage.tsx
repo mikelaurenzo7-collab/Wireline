@@ -64,11 +64,8 @@ export default function PhonePage() {
   // An explicit Bot is a scope, not a preference to replace with all calls.
   const activeAgentId = requestedAgentId;
   const hasRequestedAgent = agents.some((agent) => agent.id === activeAgentId);
-  const usesAgentScope = primaryTab === "logs" || primaryTab === "setup";
-  const scopeLoading = Boolean(usesAgentScope && activeAgentId && agentsLoading);
-  const scopeUnavailable = Boolean(
-    usesAgentScope && activeAgentId && !agentsLoading && !hasRequestedAgent,
-  );
+  const scopeLoading = Boolean(activeAgentId && agentsLoading);
+  const scopeUnavailable = Boolean(activeAgentId && !agentsLoading && !hasRequestedAgent);
   const scopeBlocked = scopeLoading || scopeUnavailable;
 
   function setPrimaryTab(id: string) {
@@ -107,7 +104,9 @@ export default function PhonePage() {
   }
 
   const showAgentScope =
-    (primaryTab === "logs" && (agents.length > 1 || activeAgentId)) || scopeBlocked;
+    (primaryTab === "logs" && (agents.length > 1 || activeAgentId)) ||
+    (primaryTab === "outbound" && activeAgentId) ||
+    scopeBlocked;
 
   // Bookmarks to the retired Calls › Analytics tab open the same view in Insights.
   if (rawTabParam === "analytics") {
@@ -117,7 +116,13 @@ export default function PhonePage() {
     <select
       value={activeAgentId}
       onChange={(event) => setAgentScope(event.target.value)}
-      aria-label={primaryTab === "setup" ? "Choose Bot for Lines" : "Filter call history by Bot"}
+      aria-label={
+        primaryTab === "setup"
+          ? "Choose Bot for Lines"
+          : primaryTab === "outbound"
+            ? "Choose Bot for Reviewed calls"
+            : "Filter call history by Bot"
+      }
       className="min-h-[44px] max-w-full shrink-0 rounded-lg border border-border bg-card px-3 text-base font-semibold text-foreground sm:min-h-9 sm:max-w-[10rem] sm:px-2 sm:text-xs wl-focus-ring-halo"
     >
       <option value="">All Bots</option>
@@ -209,13 +214,18 @@ export default function PhonePage() {
               <PhoneCallHistoryPanel agentId={activeAgentId || null} />
             </div>
           )}
-          {primaryTab === "outbound" && (
+          {primaryTab === "outbound" && !scopeBlocked && (
             <div className="contents" data-visual-qa-state="primary-outbound">
               {!access.includes("voice") ? (
                 <ChannelAccessNotice access={access} channel="voice" />
               ) : (
                 <div className="contents" data-visual-qa-state={`secondary-${outboundView}`}>
-                  <OutboundHub activeView={outboundView} onViewChange={setOutboundView} />
+                  <OutboundHub
+                    key={activeAgentId}
+                    activeView={outboundView}
+                    onViewChange={setOutboundView}
+                    initialAgentId={activeAgentId}
+                  />
                 </div>
               )}
             </div>

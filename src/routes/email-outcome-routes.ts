@@ -159,6 +159,45 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const requestedAgentId =
+        typeof req.query.agent_id === "string" ? req.query.agent_id.trim() : "";
+      const requestedAccountId =
+        typeof req.query.account_id === "string" ? req.query.account_id.trim() : "";
+      let accountIds: string[] | null = null;
+
+      // Match the list's current mailbox assignment, not the thread's historical Bot.
+      // Unscoped approval links can still open conversations beyond the current list page.
+      if (requestedAccountId) {
+        const [account] = await drizzle
+          .select({ id: schema.emailAccounts.id, agentId: schema.emailAccounts.agentId })
+          .from(schema.emailAccounts)
+          .where(
+            and(
+              eq(schema.emailAccounts.id, requestedAccountId),
+              eq(schema.emailAccounts.userId, req.user.id),
+            ),
+          )
+          .limit(1);
+        if (!account || (requestedAgentId && account.agentId !== requestedAgentId)) {
+          throw AppError.fromHttpStatus(404, "Email conversation not found.");
+        }
+        accountIds = [account.id];
+      } else if (requestedAgentId) {
+        const accounts = await drizzle
+          .select({ id: schema.emailAccounts.id })
+          .from(schema.emailAccounts)
+          .where(
+            and(
+              eq(schema.emailAccounts.userId, req.user.id),
+              eq(schema.emailAccounts.agentId, requestedAgentId),
+            ),
+          );
+        accountIds = accounts.map((account) => account.id);
+        if (!accountIds.length) {
+          throw AppError.fromHttpStatus(404, "Email conversation not found.");
+        }
+      }
+
       const [thread] = await drizzle
         .select({
           id: schema.emailThreads.id,
@@ -173,6 +212,7 @@ router.get(
           and(
             eq(schema.emailThreads.id, req.params.id),
             eq(schema.emailThreads.userId, req.user.id),
+            accountIds ? inArray(schema.emailThreads.accountId, accountIds) : undefined,
           ),
         )
         .limit(1);

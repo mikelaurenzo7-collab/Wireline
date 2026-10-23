@@ -57,16 +57,16 @@ describe("launch truth contract", () => {
 
     expect(changelog).toContain('date: "Aug 11, 2026"');
     expect(changelog).toContain('title: "Deeper Release Checks Before Anything Ships"');
-    expect(changelog).toContain("the non-E2E test suite");
-    expect(changelog).toContain("Post-promotion health checks verify the live service");
+    expect(changelog).toContain("Release checks match the scope of each change");
+    expect(changelog).toContain("Health checks after promotion verify the live service");
     expect(changelog).not.toContain("the full test suite");
     expect(changelog).not.toContain("live service health before promotion");
     expect(changelog).not.toContain("Every PR now runs");
-    expect(changelog).toContain("automated screenshot capture and responsive-layout auditing");
+    expect(changelog).toContain("automated screenshot capture and responsive layout auditing");
     expect(changelog).not.toContain("Playwright screenshot capture");
     expect(changelog).not.toContain("committed baselines");
     expect(changelog).toContain('title: "BotBound Runtime Monitoring"');
-    expect(changelog).toContain("Customer-impacting issues surface through BotBound");
+    expect(changelog).toContain("Issues that affect customers surface through BotBound");
     expect(changelog).not.toContain("botbound.app/status");
     expect(changelog).not.toContain("trywireline.com/status");
 

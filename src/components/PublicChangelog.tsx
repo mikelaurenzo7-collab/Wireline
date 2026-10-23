@@ -69,7 +69,7 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Aug 11, 2026",
     tag: "launch",
     title: "Deeper Release Checks Before Anything Ships",
-    body: "Every release now clears a wider battery of automated checks: code quality, dependency advisories, the non-E2E test suite, and database safety. Post-promotion health checks verify the live service, and demo or test activity stays strictly separate from real customer evidence.",
+    body: "Release checks match the scope of each change, including code quality, relevant tests, and additional security or database checks when needed. Health checks after promotion verify the live service, and demo or test activity stays separate from real customer evidence.",
   },
   {
     date: "Jul 25, 2026",
@@ -92,8 +92,8 @@ const ENTRIES: ChangelogEntry[] = [
   {
     date: "Jun 4, 2026",
     tag: "security",
-    title: "OAuth Sign-In Store Sealed Off from the Data API",
-    body: "A security review closed direct data-API access to the short-lived OAuth bridge used during sign-in. Row-level security, explicit grants, and related tenant-policy checks now keep that flow inside the server-owned callback path.",
+    title: "OAuth Sign In Store Sealed Off from the Data API",
+    body: "A security review closed direct data API access to the temporary OAuth bridge used during sign in. Row level security, explicit grants, and related tenant policy checks now keep that flow inside the server callback path.",
   },
   {
     date: "Jun 4, 2026",
@@ -105,13 +105,13 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jun 4, 2026",
     tag: "polish",
     title: "Sidebar Spacing Is Even at Every Screen Size",
-    body: "On tall desktop monitors the left navigation rail floated its items in the vertical middle, leaving an awkward gap under Search. Items now anchor directly beneath Search with a consistent rhythm and clean group separators, scaling identically from a 13-inch laptop to a 27-inch display.",
+    body: "On tall desktop monitors the left navigation rail floated its items in the vertical middle, leaving an awkward gap under Search. Items now anchor directly beneath Search with a consistent rhythm and clean group separators, scaling identically from a 13 inch laptop to a 27 inch display.",
   },
   {
     date: "Jun 4, 2026",
     tag: "polish",
     title: "Shared Actions Now Follow One Interaction System",
-    body: "Primary shared actions now use the canonical Button patterns for focus rings, touch targets, and press feedback. Automated checks protect the common components while the remaining specialized controls keep their purpose-built shapes.",
+    body: "Primary shared actions now use the canonical Button patterns for focus rings, touch targets, and press feedback. Automated checks protect the common components while specialized controls keep shapes suited to their purpose.",
   },
   {
     date: "Jan 28, 2026",
@@ -129,7 +129,7 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jan 27, 2026",
     tag: "infra",
     title: "BotBound Runtime Monitoring",
-    body: "BotBound now monitors calling and reasoning readiness behind the scenes with small, bounded checks. Customer-impacting issues surface through BotBound product messaging and support.",
+    body: "BotBound now monitors calling and reasoning readiness behind the scenes with small, bounded checks. Issues that affect customers surface through BotBound product messaging and support.",
   },
   {
     date: "Jan 27, 2026",
@@ -141,7 +141,7 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jan 27, 2026",
     tag: "infra",
     title: "Visual QA Coverage",
-    body: "Added automated screenshot capture and responsive-layout auditing for critical routes and viewports so visual QA can be run before release.",
+    body: "Added automated screenshot capture and responsive layout auditing for critical routes and viewports so visual QA can be run before release.",
   },
   {
     date: "Jan 27, 2026",
@@ -153,12 +153,12 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jan 27, 2026",
     tag: "infra",
     title: "Voice Runtime Rebalanced for Reliability",
-    body: "Structured reasoning now runs a managed primary policy with ordered continuity behind it, so a runtime issue degrades gracefully instead of failing a conversation. Authenticated Studio and ChatGPT rehearsals share the managed live-voice path, while production phone calls keep their dedicated calling runtime.",
+    body: "Structured reasoning now runs a managed primary policy with ordered continuity behind it, so a runtime issue degrades gracefully instead of failing a conversation. Authenticated Studio and ChatGPT rehearsals share the managed live voice path, while production phone calls keep their dedicated calling runtime.",
   },
   {
     date: "May 19, 2026",
     tag: "feature",
-    title: "Per-Bot Workspace: A Private DM with Each Bot",
+    title: "A Private Workspace and DM with Each Bot",
     body: 'Every Bot now has its own persistent chat thread. Coach your Bot in plain English ("be warmer on price objections"), ask how this week\'s calls went, or add context. Memory includes the thread and the last five call summaries with every reply.',
   },
 ];

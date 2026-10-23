@@ -1,10 +1,11 @@
 # Founder Launch Command Center
 
-Updated: 2026-08-11  
+Updated: 2026-10-22
+
 Status: **Active owner go/no-go runbook**  
 Primary authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`
 
-> September 27 launch boundary: [P0 Billing Ops](P0_BILLING_OPS_NOTE.md) supersedes earlier expansion and follow-up examples below. Start with one Calls-only Bot and verified inbound service. Email, SMS, additional Bots and outbound dialing remain separately held; a consented purpose alone does not clear the current outbound consent/funding implementation gates.
+> Current launch boundary: lead with voice Bots with a computer, phone number, and email address. Start with one focused Bot and a verified incoming call workflow. Free covers building and private rehearsal; live channels and Computer require the appropriate paid access. Email requires completed setup and activation proof. SMS and outbound are outside launch marketing. Existing reviewed calling retains the eligibility controls in [the Deployment Runbook](DEPLOYMENT_RUNBOOK.md#current-launch-posture). [P0 Billing Ops](P0_BILLING_OPS_NOTE.md) and the catalog govern package limits and availability.
 
 This file is deliberately short and state-light. Historical launch audits belong in Git history and `docs/AUDIT_INDEX.md`; provider balances, deployment SHAs, test totals, and temporary incident findings do **not** belong here as permanent operating truth.
 
@@ -28,7 +29,7 @@ role; a use case never creates a separate account mode, package, or onboarding
 branch.
 
 - Customer-facing copy uses **Bot**, **Phone Bot**, or a concrete role.
-- Additional Bots add capacity or genuinely separate roles inside the same product.
+- Current channel packages include one Bot. Higher capacity increases usage allowances, not Bot count; new extra Bot sales remain deferred.
 - Technical APIs, routes, events, database fields, and legacy compatibility IDs may keep `agent`, `personal`, or `business` internally.
 
 Do not use `AI employee` as the launch noun. Do not pair `AI` with `agent` in customer-facing copy.
@@ -93,20 +94,22 @@ Do not use `@agentmail.to` as a paid Bot identity or point the global default at
 domain. Activation, DNS, reconciliation, customer-domain guidance, and rollback are in
 `docs/AGENTMAIL_PRODUCTION_ACTIVATION.md`.
 
-### Federal marketing DNC
+### Reviewed calling and future messaging
 
 `FEDERAL_DNC_API_KEY` remains unconfigured pending the external business/vendor credential. Marketing/campaign outbound therefore stays fail-closed.
 
-Direct outbound is also disabled in source pending a server-owned, auditable consent artifact and the complete funding and eligibility path. An EIN or DNC credential by itself does not enable it.
+Reviewed service, coordination and requested callback calls for personal and business Bots have a separate runtime switch, `BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED`. They require paid voice, ownership of the line, captured recipient permission, supported Illinois jurisdiction, quiet hours, funding and duplicate suppression. The hosted permission capture is the current supported evidence path. An existing client relationship or an unverified checkbox does not bypass these controls. MCP proposals remain private until the owner reviews and places the call. See [the current deployment policy](DEPLOYMENT_RUNBOOK.md#current-launch-posture); this description does not assert that a production switch is enabled.
 
-This does **not** block the first design partners: begin with verified inbound calling, appointment handling, support, and other non-marketing workflows whose channels have passed their own activation checks.
+The founder's EIN and SMS sender verification remain pending. Keep SMS and campaign calling out of the launch offer. Completing those registrations alone does not enable calling or messaging, and their pending status is separate from the proof required for voice, email and Computer.
+
+Begin the first design partners with verified incoming calls, useful answers, request capture, approved email and supervised Computer work. Offer booking only where the configured calendar workflow has been proven; otherwise capture the appointment request for the owner.
 
 ### Carrier and payment account state
 
-Before the first real customer charge or production SMS dependence, verify the live provider dashboards rather than trusting an old snapshot:
+Before the first real customer charge, verify the live provider state rather than trusting an old snapshot:
 
 - Stripe merchant-facing identity and first real checkout -> webhook -> entitlement -> portal loop;
-- Twilio funding, number configuration, retry behavior, toll-free/A2P status, and STOP/HELP handling;
+- Twilio funding, number ownership and routing, callback configuration and retry behavior for the offered voice workflow;
 - provider budgets and alerts for the managed runtime.
 
 Record current evidence after verification; do not copy old dollar balances or carrier statuses forward.
@@ -128,11 +131,19 @@ Before admitting a real customer, complete one controlled founder dogfood from a
 5. complete the paid checkout path and verify entitlement state;
 6. claim or connect the live number;
 7. handle one real inbound call or permitted consented call;
-8. continue the workflow through text, email, booking, approval, or handoff where useful;
+8. continue through configured email, Computer work, booking, approval or owner handoff where useful;
 9. verify the transcript/outcome/log is correct;
 10. verify cancellation/portal behavior and support recovery paths.
 
 Use a disposable founder/demo account until a real customer exists. Never manufacture customer proof from that data.
+
+### Open launch proofs and founder decisions
+
+- [ ] Complete acceptance and deployment of the reviewed release, then verify the API, voice service and both scheduled services against the same source. A successful schedule run is not notification delivery proof.
+- [ ] Confirm the intended Stripe settlement account and the founder subscription's cancellation choice. Prove an ordinary account's purchase, entitlement, usage and portal flow; owner access is not that evidence.
+- [ ] Verify current mailbox capacity and the offered Bot's incoming email, reply and delivery history before opening Email activation. A purchased slot is not a completed delivery check.
+- [ ] Complete the deferred owned phone and email retest: confirm the recipient receives one message, its links are correct, and the Bot describes the actual send result accurately. Preserve the earlier successful send evidence without treating it as proof of this deferred check.
+- [ ] Assign a support owner and manual fallback, confirm runtime funding and provider alerts, and cap the assisted cohort to available capacity. Record current observations in the release evidence rather than treating old balances as live limits.
 
 ## GTM gate
 

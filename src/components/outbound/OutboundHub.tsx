@@ -9,9 +9,11 @@ import RecipientVoicePermissions from "./RecipientVoicePermissions";
 export default function OutboundHub({
   activeView,
   onViewChange,
+  initialAgentId,
 }: {
   activeView: string;
   onViewChange: (id: string) => void;
+  initialAgentId?: string;
 }) {
   const [showDial, setShowDial] = useState(false);
   const [showPermissions, setShowPermissions] = useState(false);
@@ -75,7 +77,11 @@ export default function OutboundHub({
           </details>
         </div>
       </div>
-      <OutboundDialDialog open={showDial} onClose={() => setShowDial(false)} />
+      <OutboundDialDialog
+        open={showDial}
+        onClose={() => setShowDial(false)}
+        initialAgentId={initialAgentId}
+      />
     </div>
   );
 }

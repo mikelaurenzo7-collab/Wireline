@@ -1,16 +1,16 @@
 # BotBound Launch Source of Truth
 
-Established 2026-08-11; homepage headline revised 2026-09-24.
+Established 2026-08-11; homepage headline revised 2026-09-24. Active launch guidance reconciled 2026-10-22; historical creative records below are preserved.
 
 **Active launch authority** for public positioning, launch creative, dogfood proof, and pre-customer GTM.
 
-> September 27 commercial scope correction: the earlier offer and universal number/additional-Bot statements below are historical. Current channel packages include one Bot, a number only with Calls/SMS and a mailbox only with Email; extra-Bot sales are deferred. Initial activation is Calls-only. [P0 Billing Ops](P0_BILLING_OPS_NOTE.md) and the source catalog govern current amounts and availability; the unchanged hero and proof standards remain applicable.
+> Current commercial scope: voice Bots with a computer, phone number, and email address. Current channel packages include one Bot, a number with Calls and a mailbox with Email. Extra Bot sales are deferred. Free covers building and private rehearsal; paid live channels and Computer remain subject to entitlement and readiness. Email requires completed setup. SMS and outbound are not launch marketing offers; existing code, saved history and reviewed calling retain their runtime policy. [P0 Billing Ops](P0_BILLING_OPS_NOTE.md), the source catalog and current production configuration govern prices and availability.
 
 This document is the tie-breaker for active launch language and creative status. Historical audits remain historical. The campaign pack and creative media kit still own detailed scripts, shot lists, and production mechanics, but when their high-level positioning or asset-status language conflicts with this file, this file wins.
 
 ## Current launch boundary
 
-The first design-partner workflow is one inbound Front Desk Bot and one configured, permitted follow-up. Outbound campaign acquisition remains held until `outbound_campaign_ready` and its audience, destination, copy, and media pass review. Working numbers, cinematic call displays, polished assets, and a local build do not establish this readiness.
+The first assisted workflow is one incoming Front Desk call with useful answers, request capture and a configured owner handoff or approved email. Show Computer through supervised work with visible results and recovery controls. SMS and outbound campaign acquisition remain outside the launch offer. Working numbers, cinematic call displays, polished assets and a local build do not establish readiness.
 
 Use `FOUNDER_LAUNCH_COMMAND_CENTER.md` for the standing operational checklist and `LAUNCH_GURU_PLAYBOOK_2026-07-20.md` for the funding and recovery sequence. Record current balances, invoices, source revisions and provider results in the timestamped release evidence; these evergreen checklists do not establish live account status. Use `../brand-work/gtm/BOTBOUND-LAUNCH-COPY-KIT.md` for the five-piece partner kit and setup/support template. Current public UI capture commands and their simulated-API boundary live in `../brand-work/launch-2026-09/CURRENT_PRODUCT_PROOF.md`.
 
@@ -22,8 +22,9 @@ A local source capture is internal UI evidence. A product-proof claim needs the 
 **Headline:** Voice Bots With a Computer, Phone Number, and Email Address.
 **Homepage support:** No subhero paragraph. Personal and business examples lead to the same workspace.
 **Primary CTA:** Start Free
-**Offer:** Build free. Plans from $19/mo. Live activation subject to availability.
-**Channel proof:** Calls, texts, email, follow-up, and logged outcomes.  
+**Offer:** Build free. Choose a paid plan for live channels and Computer. Email requires completed setup.
+**Product proof:** Incoming calls, supervised Computer work, approved email and recorded results.
+
 **Product model:** One BotBound workspace for every role and use case.
 
 Public marketing leads with capabilities, outcomes, and a clear signup action. The headline and product evidence should tell the story with minimal copy. Do not add a public setup sequence or repeat process slogans. Operational instructions and activation states belong inside the product.
@@ -42,11 +43,11 @@ Use:
 
 - Bot or Phone Bot
 - One product across every role
-- Calls, texts, email
-- Follow-up and logged outcomes
-- Every active paid Bot gets a dedicated production number
+- Voice, Computer and email
+- Useful answers, captured requests and recorded results
+- Calls includes a number; Email includes a managed mailbox
 - Private simulation before live launch
-- Start with one Bot; add another when the work needs it
+- Start with one focused Bot; choose capacity for the amount of work
 
 Avoid on broad public surfaces:
 
@@ -57,6 +58,7 @@ Avoid on broad public surfaces:
 - guaranteed bookings or revenue
 - customer-count, ROI, or testimonial claims that do not yet have real customer evidence
 - public WhatsApp claims while the feature remains outside the launch posture
+- SMS or outbound promotions, including coming soon offers
 - multiple workflow spines competing on the same journey
 
 ## Pre-customer proof standard
@@ -64,7 +66,8 @@ Avoid on broad public surfaces:
 BotBound does not need fake social proof. Until real customers exist, launch proof comes from the product itself:
 
 - a real Bot answering a real test call;
-- a real follow-up text or email;
+- a real approved email and its observed delivery result;
+- a completed supervised Computer task and its visible result;
 - a real booking or handoff when configured;
 - the real outcome/log appearing in BotBound;
 - transparent demo/test labeling where context could otherwise imply customer production usage;
@@ -155,8 +158,9 @@ Until customer telemetry exists, the founder account and explicit demo/test acco
 - training/knowledge ingestion;
 - phone connection or provisioning posture;
 - inbound call;
-- outbound call where compliance permits;
-- SMS and email continuation;
+- reviewed calling only within its supported permission, location and funding controls when that workflow is being validated;
+- configured email continuation and incoming reply;
+- supervised Computer work, owner checkpoints, Stop and recovery;
 - approval/handoff;
 - booking/calendar action when connected;
 - outcome and transcript/log visibility;
@@ -172,7 +176,7 @@ The immediate GTM objective is not to imply scale. It is to create enough credib
 
 1. Prepare the strongest exact-deployed-source founder/product reel. Publish only after the destination, evidence, and launch gates pass.
 2. Use the 15-second cut for targeted owner/operator acquisition once its current-source picture and real agent-audio proof are certified.
-3. Drive every generic acquisition path to Free Builder first; paid intent can enter through Pricing.
+3. Drive generic acquisition to Start Free; paid intent can enter through Pricing. Free is private setup and rehearsal, not live provider access.
 4. Personally recruit a small number of design partners whose missed-call or follow-up problem is obvious and measurable.
 5. Capture structured feedback and real outcomes before expanding testimonial, ROI, or vertical-specific claims.
 6. Treat the first successful live conversations as product evidence, not as permission to inflate adoption claims.
@@ -181,7 +185,7 @@ The immediate GTM objective is not to imply scale. It is to create enough credib
 
 Launch-clean means the repository, runtime, website, and creative all tell the same truth:
 
-**Your Bot for calls, texts, and email.**
-**Build free. Plans from $19/mo. Live activation subject to availability.**
+**Voice Bots With a Computer, Phone Number, and Email Address.**
+**Build free. Choose a paid plan for live channels and Computer. Email requires completed setup.**
 
 Everything else should support that story or get out of the way.

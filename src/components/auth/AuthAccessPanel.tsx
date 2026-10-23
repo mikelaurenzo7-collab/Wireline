@@ -386,16 +386,16 @@ export default function AuthAccessPanel({
       const contentType = response.headers.get("content-type") || "";
       if (!contentType.includes("application/json")) {
         await response.text().catch(() => "");
-        throw new Error("Sign-in is temporarily unavailable. Try again or use email.");
+        throw new Error("Signing in is temporarily unavailable. Try again or use email.");
       }
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
         throw new Error(
-          extractServerErrorMessage(payload) || `Could not start ${provider} sign-in.`,
+          extractServerErrorMessage(payload) || `Could not sign in with ${provider}.`,
         );
       }
       if (!isAllowedOAuthUrl(payload?.url)) {
-        throw new Error("Received an invalid sign-in URL.");
+        throw new Error("Received an invalid sign in URL.");
       }
       persistOAuthReturnFromSearch(location.search);
       // OAuth completion receives the database-authoritative new-user result.
@@ -405,7 +405,7 @@ export default function AuthAccessPanel({
     } catch (caught) {
       requestPendingRef.current = false;
       setOauthPending(null);
-      setError(cleanThrownMessage(caught) || "Sign-in is temporarily unavailable.");
+      setError(cleanThrownMessage(caught) || "Signing in is temporarily unavailable.");
     }
   };
 
@@ -666,7 +666,7 @@ export default function AuthAccessPanel({
         ) : null}
 
         {!isReset && oauthProviders.length > 0 ? (
-          <div className="wl-access-panel__oauth" role="group" aria-label="Single sign-on options">
+          <div className="wl-access-panel__oauth" role="group" aria-label="Sign in options">
             {oauthProviders.map((provider) => (
               <button
                 key={provider.id}

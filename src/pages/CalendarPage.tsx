@@ -124,6 +124,24 @@ export default function CalendarPage() {
           className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain"
           data-visual-qa-state={tab}
         >
+          {error ? (
+            <StatusNotice
+              tone="warning"
+              title="Availability Unavailable"
+              className="m-4"
+              action={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setReload((value) => value + 1)}
+                >
+                  Retry
+                </Button>
+              }
+            >
+              {error}
+            </StatusNotice>
+          ) : null}
           {tab === "agenda" ? (
             <>
               {bookingNotice ? (
@@ -140,24 +158,7 @@ export default function CalendarPage() {
           ) : null}
           {/* Keep the form's pending save and retry state alive across tab changes. */}
           <div hidden={tab !== "availability"} className="min-w-0">
-            {error ? (
-              <StatusNotice
-                tone="warning"
-                title="Availability Unavailable"
-                className="m-4"
-                action={
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setReload((value) => value + 1)}
-                  >
-                    Retry
-                  </Button>
-                }
-              >
-                {error}
-              </StatusNotice>
-            ) : settings && configured !== null ? (
+            {settings && configured !== null ? (
               <CalendarAvailabilityPanel
                 settings={settings}
                 configured={configured}
@@ -168,7 +169,7 @@ export default function CalendarPage() {
                   setConfigured(true);
                 }}
               />
-            ) : (
+            ) : !error ? (
               <div
                 className="mx-auto w-full max-w-2xl space-y-3 p-4"
                 aria-busy="true"
@@ -177,7 +178,7 @@ export default function CalendarPage() {
                 <Skeleton className="h-24 w-full" />
                 <Skeleton className="h-48 w-full" />
               </div>
-            )}
+            ) : null}
           </div>
         </div>
         {savedSettings ? (

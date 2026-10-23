@@ -66,6 +66,7 @@ type Props = {
   initialAgentId?: string;
   "aria-label"?: string;
   onClick?: () => void;
+  onSelect?: (id: string) => void;
   onChange?: (event: { target: { value: string } }) => void;
 };
 type Element = ReactElement<Props>;
@@ -156,6 +157,33 @@ describe("explicit Calls Bot scope", () => {
     expect(render().find((node) => node.type === "phone-setup")?.props.initialAgentId).toBe(
       "bot-b",
     );
+  });
+
+  it("keeps the chosen Bot when History opens Reviewed calls", () => {
+    h.agents.push({ id: "bot-b", name: "Bravo" });
+    const tabs = render().find((node) => node.type === "tab-strip");
+    expect(tabs).toBeDefined();
+    tabs!.props.onSelect!("outbound");
+    expect(h.params.get("agent")).toBe("bot-b");
+    const nodes = render();
+    expect(nodes.find((node) => node.type === "outbound-hub")?.props.initialAgentId).toBe("bot-b");
+    expect(scope(nodes)?.props["aria-label"]).toBe("Choose Bot for Reviewed calls");
+    expect(scope(nodes)?.props.value).toBe("bot-b");
+  });
+
+  it("blocks Reviewed calls until the requested Bot is verified or deliberately cleared", () => {
+    h.params.set("tab", "outbound");
+    h.loading = true;
+    expect(render().some((node) => node.type === "outbound-hub")).toBe(false);
+    h.loading = false;
+    expect(render().some((node) => node.type === "outbound-hub")).toBe(false);
+    expect(render().some((node) => node.props.title === "Selected Bot Unavailable")).toBe(true);
+    expect(h.params.get("agent")).toBe("bot-b");
+    const clear = button(render(), "All Bots");
+    expect(clear).toBeDefined();
+    clear!.props.onClick!();
+    expect(h.params.has("agent")).toBe(false);
+    expect(render().find((node) => node.type === "outbound-hub")?.props.initialAgentId).toBe("");
   });
 
   it("forwards the retired Analytics tab to account-wide call analytics in Insights", () => {

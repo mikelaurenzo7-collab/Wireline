@@ -9,7 +9,13 @@ const IDS = [1, 2, 3, 4].map(
 
 const h = vi.hoisted(() => ({
   rows: [] as Array<Array<Record<string, unknown>>>,
-  simulation: null as null | { threads: TestRow[]; messages: TestRow[]; asOf: string },
+  simulation: null as null | {
+    threads: TestRow[];
+    messages: TestRow[];
+    accounts?: TestRow[];
+    handoffs?: TestRow[];
+    asOf: string;
+  },
   queries: [] as Array<{
     table?: TestRow;
     columns?: TestRow;
@@ -76,16 +82,35 @@ vi.mock("../src/lib/server-context", () => ({
   },
 }));
 vi.mock("../src/db/schema", () => ({
-  emailAccounts: { id: "accounts.id", userId: "accounts.userId", agentId: "accounts.agentId" },
+  emailAccounts: {
+    $table: "accounts",
+    id: "accounts.id",
+    userId: "accounts.userId",
+    agentId: "accounts.agentId",
+  },
   emailThreads: {
     $table: "threads",
     id: "threads.id",
     userId: "threads.userId",
     accountId: "threads.accountId",
+    agentId: "threads.agentId",
+    subject: "threads.subject",
+    status: "threads.status",
+    summary: "threads.summary",
+    customerEmail: "threads.customerEmail",
     lastMessageAt: "threads.lastMessageAt",
     createdAt: "threads.createdAt",
   },
   agents: {},
+  followUpTasks: {
+    $table: "handoffs",
+    id: "handoffs.id",
+    userId: "handoffs.userId",
+    sourceType: "handoffs.sourceType",
+    sourceId: "handoffs.sourceId",
+    taskType: "handoffs.taskType",
+    status: "handoffs.status",
+  },
   emailMessages: {
     $table: "messages",
     id: "messages.id",
@@ -126,6 +151,7 @@ vi.mock("../src/lib/server-utils", () => ({
 vi.mock("../src/lib/nav-counts-invalidate", () => ({ touchNavCounts: h.touchNavCounts }));
 
 import router from "../src/routes/email-routes";
+import outcomeRouter from "../src/routes/email-outcome-routes";
 
 function isSql(value: unknown): value is SqlFragment {
   return Boolean(value && typeof value === "object" && "parts" in value && "values" in value);
@@ -177,6 +203,19 @@ function executeSnapshotQuery(
   query: (typeof h.queries)[number],
   simulation: NonNullable<typeof h.simulation>,
 ) {
+  // Outcome reads use the same actual bound equality and membership predicates.
+  // This is a data double, not a PostgreSQL integration or authentication test.
+  if (!query.columns?.asOf && !query.columns?.snapshotActivity) {
+    const rows =
+      query.table?.$table === "accounts"
+        ? (simulation.accounts ?? [])
+        : query.table?.$table === "messages"
+          ? simulation.messages
+          : query.table?.$table === "handoffs"
+            ? (simulation.handoffs ?? [])
+            : simulation.threads;
+    return rows.filter((row) => matches(query.where, row, simulation)).slice(0, query.limit);
+  }
   if (query.table?.$table === "messages") {
     const messages = simulation.messages.filter((row) => matches(query.where, row, simulation));
     return [
@@ -227,17 +266,31 @@ function cursor(overrides: Record<string, unknown> = {}) {
 }
 
 type Handler = (req: unknown, res: unknown) => Promise<unknown>;
-function handler(path: string): Handler {
+function handler(path: string, source = router, method?: "get"): Handler {
   const layers = (
-    router as unknown as {
-      stack: Array<{ route?: { path: string; stack: Array<{ handle: Handler }> } }>;
+    source as unknown as {
+      stack: Array<{
+        route?: { path: string; methods: { get?: boolean }; stack: Array<{ handle: Handler }> };
+      }>;
     }
   ).stack;
-  return layers.find((layer) => layer.route?.path === path)!.route!.stack.at(-1)!.handle;
+  return layers
+    .find((layer) => layer.route?.path === path && (!method || layer.route.methods[method]))!
+    .route!.stack.at(-1)!.handle;
 }
 async function list(query: Record<string, string> = {}) {
   const json = vi.fn();
   await handler("/api/emails/threads")({ user: { id: "owner" }, query }, { json });
+  return json.mock.calls[0][0];
+}
+
+async function detail(id: string, query: Record<string, string> = {}) {
+  const json = vi.fn();
+  await handler(
+    "/api/emails/threads/:id/outcome",
+    outcomeRouter,
+    "get",
+  )({ user: { id: "owner" }, params: { id }, query }, { json });
   return json.mock.calls[0][0];
 }
 
@@ -247,6 +300,97 @@ beforeEach(() => {
   h.queries = [];
   h.updates = [];
   h.touchNavCounts.mockReset();
+});
+
+describe("email detail follows the selected inbox scope", () => {
+  beforeEach(() => {
+    h.simulation = {
+      asOf: AS_OF,
+      accounts: [
+        { id: "mailbox-a", userId: "owner", agentId: "current-bot" },
+        { id: "mailbox-b", userId: "owner", agentId: "other-bot" },
+        { id: "foreign-mailbox", userId: "another-owner", agentId: "foreign-bot" },
+      ],
+      threads: [
+        { id: "older", userId: "owner", accountId: "mailbox-a", agentId: "previous-bot" },
+        { id: "foreign", userId: "another-owner", accountId: "mailbox-a" },
+        { id: "foreign-mail", userId: "owner", accountId: "foreign-mailbox" },
+      ],
+      messages: [
+        { id: "message", userId: "owner", threadId: "older", content: "Saved conversation" },
+        { id: "foreign-message", userId: "another-owner", threadId: "older" },
+      ],
+      handoffs: [
+        {
+          id: "handoff",
+          userId: "owner",
+          sourceId: "older",
+          sourceType: "email_thread",
+          taskType: "human_handoff",
+          status: "pending",
+        },
+        {
+          id: "foreign-handoff",
+          userId: "another-owner",
+          sourceId: "older",
+          sourceType: "email_thread",
+          taskType: "human_handoff",
+          status: "pending",
+        },
+      ],
+    };
+  });
+
+  it.each([
+    { agent_id: " current-bot ", account_id: " mailbox-a " },
+    { agent_id: "current-bot" },
+    { account_id: "mailbox-a" },
+  ] as Array<Record<string, string>>)(
+    "uses the current mailbox assignment instead of a historical thread Bot: %j",
+    async (query) => {
+      const result = await detail("older", query);
+      expect(result.thread.id).toBe("older");
+      expect(result.messages.map((message: TestRow) => message.id)).toEqual(["message"]);
+      expect(result.handoff.id).toBe("handoff");
+      expect(h.queries.find((query) => query.table?.$table === "threads")?.where).toEqual([
+        "and",
+        ["eq", "threads.id", "older"],
+        ["eq", "threads.userId", "owner"],
+        ["inArray", "threads.accountId", ["mailbox-a"]],
+      ]);
+    },
+  );
+
+  it.each([
+    ["older", { agent_id: "previous-bot" }],
+    ["older", { agent_id: "other-bot", account_id: "mailbox-a" }],
+    ["older", { account_id: "mailbox-b" }],
+    ["foreign", { account_id: "mailbox-a" }],
+    ["foreign-mail", { account_id: "foreign-mailbox" }],
+    ["foreign-mail", { agent_id: "foreign-bot" }],
+  ] as Array<[string, Record<string, string>]>)(
+    "rejects a mismatched or foreign scope before loading messages or handoffs: %s %j",
+    async (id, query) => {
+      await expect(detail(id, query)).rejects.toMatchObject({ status: 404 });
+      expect(
+        h.queries.some((query) => ["messages", "handoffs"].includes(String(query.table?.$table))),
+      ).toBe(false);
+    },
+  );
+
+  it("opens an unscoped approval link beyond the first hundred threads without a list read", async () => {
+    h.simulation!.threads.unshift(
+      ...Array.from({ length: 100 }, (_, index) => ({ id: `new-${index}`, userId: "owner" })),
+    );
+    const result = await detail("older");
+    expect(result.thread.id).toBe("older");
+    expect(h.queries.map((query) => query.table?.$table)).toEqual([
+      "threads",
+      "messages",
+      "handoffs",
+    ]);
+    expect(h.queries[0].limit).toBe(1);
+  });
 });
 
 describe("tenant-scoped email history pages", () => {
