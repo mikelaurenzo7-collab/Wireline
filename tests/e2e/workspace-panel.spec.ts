@@ -451,8 +451,14 @@ test.describe("wide screens", () => {
     ).toHaveAttribute("href", `/studio?agent=${bots[0].id}&panel=computer`);
     await expect(page.getByRole("button", { name: "Start work", exact: true })).toBeDisabled();
     await browser.getByRole("link", { name: "Switch to Front Desk", exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`/studio\\?agent=${bots[0].id}&panel=computer$`));
+    await expect(page).toHaveURL(
+      (url) =>
+        url.pathname === "/studio" &&
+        url.searchParams.get("agent") === bots[0].id &&
+        !url.searchParams.has("panel"),
+    );
     await expect(browser).toBeVisible();
+    await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true");
     await expect(workConversation(page, "Front Desk")).toBeVisible();
     await page.getByRole("combobox", { name: "Switch Bot", exact: true }).selectOption(bots[1].id);
     await expect(browser.getByText("Front Desk's active browser", { exact: true })).toBeVisible();
