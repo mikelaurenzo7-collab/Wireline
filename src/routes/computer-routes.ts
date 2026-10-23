@@ -3,6 +3,7 @@ import { Router, type Response } from "express";
 import { AppError } from "../lib/api-error";
 import {
   getComputerFrame,
+  getComputerDownload,
   getComputerStatus,
   getComputerTask,
   listComputerTasks,
@@ -102,6 +103,27 @@ router.post(
   computerWriteRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     res.json({ task: await stopComputerTask(req.user.id, String(req.params.taskId)) });
+  },
+);
+
+router.get(
+  "/api/computer/tasks/:taskId/downloads/:downloadId",
+  authenticateUser,
+  computerReadRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const file = await getComputerDownload(
+      req.user.id,
+      String(req.params.taskId),
+      String(req.params.downloadId),
+    );
+    res.setHeader("Cache-Control", "no-store, private");
+    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${file.name.replace(/[^A-Za-z0-9 ._()-]/g, "_")}"`,
+    );
+    res.send(file.data);
   },
 );
 

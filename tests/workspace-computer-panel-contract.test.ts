@@ -4,9 +4,8 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(path, "utf8");
 
 /**
- * Explicit Computer navigation focuses the task while keeping the Set Up
- * conversation mounted. The side panel remains available, and screens too
- * narrow for both open the Computer page instead.
+ * Computer opens beside Work/Set up chat. Explicit full-width remains optional;
+ * phones switch browser/conversation without discarding either draft.
  */
 describe("Workspace computer panel", () => {
   const studio = read("src/components/StudioWorkspaceV2.tsx");
@@ -14,15 +13,17 @@ describe("Workspace computer panel", () => {
   const sections = read("src/components/layout/WorkspaceSectionNav.tsx");
   const panel = read("src/components/layout/WorkspaceResizablePanel.tsx");
 
-  it("focuses explicit Computer navigation without creating a second workbench", () => {
+  it("opens Computer beside chat without creating a second workbench", () => {
     expect(computer).toContain('const SIDE_BY_SIDE_QUERY = "(min-width: 1180px)";');
-    expect(computer).toContain('new URLSearchParams({ panel: "computer", focus: "computer" })');
+    expect(computer).toContain('new URLSearchParams({ panel: "computer" })');
     expect(computer).toContain("<Navigate to={`/studio?${next.toString()}`} replace />");
     expect(sections).toContain('useMediaQuery("(min-width: 1180px)")');
-    expect(sections).toContain("panel=computer&focus=computer");
-    expect(sections).toContain('params.get("focus") === "computer"');
+    expect(sections).toContain("panel=computer");
+    expect(sections).not.toContain("panel=computer&focus=computer");
     expect(studio).toContain('useMediaQuery("(min-width: 1180px)")');
-    expect(studio).toContain('if (requestedAgentUnavailable || panelParam !== "computer") return;');
+    expect(studio).toContain(
+      'requestedAgentUnavailable || panelParam !== "computer" || !splitWorkspace',
+    );
   });
 
   it("shares one workbench between the panel and the Computer page", () => {
@@ -34,15 +35,17 @@ describe("Workspace computer panel", () => {
     expect(computer).toContain('if (layout === "panel")');
     expect(computer).toContain("{agents.length > 1 && !pinned ? (");
     expect(studio).toContain('import("../pages/ComputerPage")');
-    expect(studio).toContain(
-      '<ComputerWorkbench key={active.id} agentId={active.id} layout="panel" />',
+    expect(studio).toMatch(
+      /<ComputerWorkbench\s+key=\{active.id\}\s+agentId=\{active.id\}\s+layout="panel"\s+chatControls=/,
     );
+    expect(studio).toContain("<ComputerWorkspaceProvider>");
+    expect(studio).toContain("<StudioTaskChat");
   });
 
   it("keeps the conversation mounted behind focused Computer and manual Full width", () => {
     expect(studio).toContain("const panelFill = panelOpen && (panelExpanded || computerFocused);");
     expect(studio).toContain(
-      '(!splitWorkspace && inspectorOpen) || panelFill ? "hidden" : "block"',
+      '(!splitWorkspace && inspectorOpen) || mobileBrowserOpen || panelFill ? "hidden" : "block"',
     );
     expect(studio).toContain("if (!panelOpen) setPanelExpanded(false);");
     expect(panel).toContain('fill ? "min-w-0 flex-1" : "shrink-0"');

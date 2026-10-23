@@ -16,7 +16,7 @@ import { Link } from "react-router";
 import BotBoundMark from "../brand/BotBoundMark";
 import LandingFooter from "./LandingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
-import { BOT_BRAND, BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
+import { BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { getPlanCapacityLabel, getPlanDisplayName } from "../../lib/plan-display";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
@@ -79,15 +79,14 @@ export default function WireAgentLanding() {
             <div className="landing-prestige__hero-mark" aria-hidden="true">
               <BotBoundMark className="landing-prestige__hero-bot" />
             </div>
-            <p className="landing-prestige__eyebrow">{BOT_BRAND.slogan}</p>
+            <p className="landing-prestige__eyebrow">For life. For work.</p>
             <h1 id="landing-prestige-title">
-              <span className="landing-prestige__title-line">
-                <span>Voice Bots</span> <span>With a Computer,</span>
-              </span>{" "}
-              <span className="landing-prestige__title-line is-accent">
-                <span>Phone Number,</span> <span>and Email Address.</span>
-              </span>
+              <span className="landing-prestige__title-line">VOICE BOTS.</span>{" "}
+              <span className="landing-prestige__title-line is-accent">REAL WORK.</span>
             </h1>
+            <p className="landing-prestige__description">
+              Calling, email, and a computer. Together in one workspace.
+            </p>
             <div className="landing-prestige__actions">
               {signedIn ? (
                 <Link to="/studio" className="landing-prestige__cta is-primary">
@@ -96,7 +95,7 @@ export default function WireAgentLanding() {
               ) : (
                 <>
                   <Link
-                    to={signupHrefForPlan("personal")}
+                    to="/signup"
                     className="landing-prestige__cta is-primary"
                     onClick={() => trackSignupIntent("hero_primary", "Get Started")}
                   >
@@ -108,52 +107,15 @@ export default function WireAgentLanding() {
                 </>
               )}
             </div>
-            {signedIn ? null : (
-              <p className="landing-prestige__reassurance">
-                Personal is $12 a month. Cancel anytime.
-              </p>
-            )}
-            <nav className="landing-prestige__directions" aria-label="Choose what your Bot does">
-              <Link
-                className="landing-prestige__direction is-inbound"
-                to={signupHrefForPlan("personal", { template: "personal-assistant" })}
-                aria-label="For You: Plan. Coordinate. Create Your Assistant"
-                onClick={() => trackSignupIntent("hero_direction", "Personal Assistant")}
-              >
-                <span className="landing-prestige__direction-label">
-                  <UserRound aria-hidden="true" /> For You
-                </span>
-                <strong>Plan. Coordinate.</strong>
-                <span className="landing-prestige__direction-action">
-                  Create Your Assistant <ArrowRight aria-hidden="true" />
-                </span>
-              </Link>
-              <Link
-                className="landing-prestige__direction is-outbound"
-                to={signupHrefForPlan("personal", { template: "front-desk" })}
-                aria-label="For Your Business: Answer. Book. Create Your Front Desk"
-                onClick={() => trackSignupIntent("hero_direction", "Business Front Desk")}
-              >
-                <span className="landing-prestige__direction-label">
-                  <PhoneIncoming aria-hidden="true" /> For Your Business
-                </span>
-                <strong>Answer. Book.</strong>
-                <span className="landing-prestige__direction-action">
-                  Create Your Front Desk <ArrowRight aria-hidden="true" />
-                </span>
-              </Link>
-            </nav>
           </div>
         </section>
 
         <section id="solutions" className="landing-prestige__section landing-prestige__roles">
           <div className="landing-prestige__rail">
             <header className="landing-prestige__section-heading">
-              <p>Everyday Life + Work</p>
-              <h2>
-                <span>Put a Bot on</span> <span>Your Everyday Work</span>
-              </h2>
-              <span>Start with a role. Make its knowledge, voice, and next steps your own.</span>
+              <p>Life + work</p>
+              <h2>Make it yours.</h2>
+              <span>Start with a role. Give it your way of doing things.</span>
             </header>
             <div className="landing-prestige__role-grid">
               {FEATURED_TEMPLATES.map((template) => {
@@ -173,19 +135,11 @@ export default function WireAgentLanding() {
                     </div>
                     <h3>{template.name}</h3>
                     <p>{template.summary}</p>
-                    <ul>
-                      {template.moves.map((move) => (
-                        <li key={move}>
-                          <Check aria-hidden="true" />
-                          <span>{move}</span>
-                        </li>
-                      ))}
-                    </ul>
                     <Link
-                      to={signupHrefForPlan("personal", { template: template.key })}
+                      to={`/signup?template=${encodeURIComponent(template.key)}`}
                       onClick={() => trackSignupIntent("role_starter", template.name)}
                     >
-                      Create This Bot
+                      Use this role
                       <span className="sr-only">: {template.name}</span>
                       <ArrowRight aria-hidden="true" />
                     </Link>
@@ -200,12 +154,9 @@ export default function WireAgentLanding() {
           <div className="landing-prestige__rail">
             <header className="landing-prestige__section-heading">
               <p>Pricing</p>
-              <h2>
-                <span>Create Your Bot</span> <span>on a Paid Plan</span>
-              </h2>
+              <h2>Choose your setup.</h2>
               <span>
-                Starting plans. Every paid plan includes a cloud computer; tasks use its AI
-                allowance.
+                Every paid plan includes Computer access. Usage comes from its AI allowance.
               </span>
               {!available ? (
                 <span className="landing-prestige__activation" role="status">
@@ -282,9 +233,9 @@ export default function WireAgentLanding() {
         <section className="landing-prestige__closing" aria-labelledby="landing-prestige-closing">
           <div className="landing-prestige__rail">
             <h2 id="landing-prestige-closing">
-              <span>Put Your First Bot</span> <span>to Work</span>
+              <span>LESS BUSYWORK.</span> <span>MORE ROOM.</span>
             </h2>
-            <p>Make your Bot yours, then choose a paid plan to put it to work.</p>
+            <p>Your next task is a good place to start.</p>
             <div className="landing-prestige__actions">
               {signedIn ? (
                 <Link to="/studio" className="landing-prestige__cta is-primary">
@@ -292,7 +243,7 @@ export default function WireAgentLanding() {
                 </Link>
               ) : (
                 <Link
-                  to={signupHrefForPlan("personal")}
+                  to="/signup"
                   className="landing-prestige__cta is-primary"
                   onClick={() => trackSignupIntent("closing_primary", "Get Started")}
                 >

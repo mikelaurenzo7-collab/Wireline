@@ -67,12 +67,17 @@ describe("authenticated Bot navigation contract", () => {
     expect(shell).not.toContain("orderedAgents");
   });
 
-  it("keeps Set Up as one workspace with Try It beside the conversation", () => {
+  it("separates Work and Set up with a shared browser and explicit private rehearsal", () => {
     expect(studio).toContain('type InspectorSection = "setup" | "review"');
     expect(studio).toContain('type WorkroomMode = "configure" | "test"');
-    expect(studio).toContain('{ id: "try", label: "Try It" }');
-    expect(studio).toContain('{ id: "setup", label: "Details" }');
+    expect(studio).toContain('{ id: "work", label: "Work" }');
+    expect(studio).toContain('{ id: "computer", label: "Browser" }');
+    expect(studio).toContain('{ id: "try", label: "Rehearse" }');
+    expect(studio).toContain('{ id: "setup", label: "Set up" }');
     expect(studio).toContain('{ id: "review", label: "Summary" }');
+    expect(studio).toContain("<ComputerWorkspaceProvider>");
+    expect(studio).toContain("<StudioTaskChat");
+    expect(studio).toContain('aria-label="Conversation mode"');
     expect(studio).toContain("StudioAgentWorkspacePanel");
     expect(studio).toContain("StudioWorkroom");
     expect(studio).toContain("StudioAgentReviewPanel");

@@ -170,7 +170,7 @@ export const WIRELINE_DESIGN_VISION = {
   voiceModules: ["MARKETING_VOICE", "WORKSPACE_VOICE", "PRODUCT_POSTURE"],
   studioCanvas: {
     defaultSurface: "chat-plus-canvas",
-    canvasSurface: "spatial-cards",
+    canvasSurface: "browser-workbench",
     agentSwitcher: "context-chrome",
     railBehavior: "resizable-and-collapsible",
     railWidthPx: 232,

@@ -64,7 +64,7 @@ describe("sales trust copy contract", () => {
     const security = read("src/components/Security.tsx");
     const product = read("src/lib/bot-product.ts");
     expect(sales.metaTitle).toBe("BotBound for Sales Inquiries | Phone Bots for Incoming Calls");
-    expect(sales.headline).toBe("Give Every Inquiry a Clear Next Step");
+    expect(sales.headline).toBe("Turn Questions into Next Steps");
     expect(sales.pains.map(({ title }) => title)).toContain("Incoming Questions");
     expect(sales.statValue).toBe("Ready to Answer");
     expect(sales.trustLine).toContain("remain visible in BotBound");
@@ -93,8 +93,7 @@ describe("sales trust copy contract", () => {
 
   it("keeps the landing customer-facing without internal design meta", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain("<span>With a Computer,</span>");
-    expect(landing).toContain("<span>and Email Address.</span>");
+    expect(landing).toContain("Calling, email, and a computer.");
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toMatch(/homepage now leads/i);
     expect(landing).not.toMatch(/live desk/i);
@@ -126,6 +125,6 @@ describe("sales trust copy contract", () => {
     expect(compare.replace(/\s+/g, " ")).toContain(
       "not a claim that unlike products are feature by feature equivalents",
     );
-    expect(compare).toContain('signupHrefForPlan("personal")');
+    expect(compare).toContain('to="/signup"');
   });
 });

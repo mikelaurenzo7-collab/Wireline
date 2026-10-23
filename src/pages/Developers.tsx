@@ -102,7 +102,7 @@ export default function Developers() {
   }, []);
 
   return (
-    <MarketingPageFrame>
+    <MarketingPageFrame className="wl-developers-page">
       <PageMeta
         title="Developer Portal | BotBound"
         description="Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first Phone Bot in the chat you already use, then continue in the same BotBound workspace. No public API keys."
@@ -114,9 +114,7 @@ export default function Developers() {
         aria-labelledby="mcp-apps-heading"
       >
         <div className="mx-auto max-w-5xl text-center">
-          <h1 className="marketing-hero-title mx-auto max-w-[20ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
-            Bring BotBound into the Tools You Already Use
-          </h1>
+          <h1 className="marketing-hero-title mx-auto">Work Where You Think</h1>
           <div className="marketing-hero__actions mt-7">
             <a
               href="#mcp-endpoint"
@@ -136,7 +134,7 @@ export default function Developers() {
             Connect Once
           </h2>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
             {MCP_CLIENTS.map(({ title, description, action, href, icon: Icon }) => (
               <article
                 key={title}

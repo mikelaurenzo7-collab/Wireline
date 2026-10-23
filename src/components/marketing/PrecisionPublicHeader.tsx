@@ -10,7 +10,6 @@ import {
 } from "../atoms/DropdownMenu";
 import { BotBoundWordmark } from "../brand/BotBoundBrand";
 import SkipToContentLink from "../layout/SkipToContentLink";
-import { signupHrefForPlan } from "../../lib/signup-intent";
 import { useChromeHeight } from "../../hooks/useChromeHeight";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -24,7 +23,7 @@ export default function PrecisionPublicHeader() {
       className="wl-public-header fixed inset-x-0 top-0 z-[80] border-b border-border bg-[color:color-mix(in_srgb,var(--wireline-page)_96%,transparent)] backdrop-blur-xl"
     >
       <SkipToContentLink href="#main-content" />
-      <div className="wl-measure mx-auto flex min-h-16 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 sm:gap-x-5 sm:px-6 lg:px-8">
+      <div className="wl-public-header__rail mx-auto flex min-h-16 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2 sm:gap-x-5 sm:px-6 lg:px-8">
         <Link
           to="/"
           className="inline-flex min-h-11 max-w-full shrink-0 items-center rounded-[var(--radius-md)] px-1 text-foreground wl-focus-ring-halo"
@@ -61,9 +60,7 @@ export default function PrecisionPublicHeader() {
               aria-label="Open Workspace"
               className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold shrink-0 whitespace-nowrap max-[430px]:px-3"
             >
-              <span>
-                Open<span className="max-[430px]:hidden"> Workspace</span>
-              </span>
+              Open Workspace
             </Link>
           ) : (
             <>
@@ -74,13 +71,11 @@ export default function PrecisionPublicHeader() {
                 Sign In
               </Link>
               <Link
-                to={signupHrefForPlan("personal")}
+                to="/signup"
                 aria-label="Get Started"
                 className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold shrink-0 whitespace-nowrap max-[430px]:px-3"
               >
-                <span>
-                  Get<span className="max-[430px]:hidden"> Started</span>
-                </span>
+                Get Started
               </Link>
             </>
           )}

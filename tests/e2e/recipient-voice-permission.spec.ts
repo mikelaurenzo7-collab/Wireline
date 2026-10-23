@@ -131,6 +131,16 @@ test("recipient confirmation preserves its exact unknown-result draft at 320px a
   await page.getByLabel("Your phone number", { exact: true }).fill("3125550100");
   await page.getByLabel("Your full name", { exact: true }).fill("Taylor Example");
   await expectPendingFormToFit(page);
+  const headingLines = await page.locator("h1").evaluate((heading) => {
+    const range = document.createRange();
+    range.selectNodeContents(heading);
+    return new Set(
+      Array.from(range.getClientRects())
+        .filter((rect) => rect.width > 0 && rect.height > 0)
+        .map((rect) => Math.round(rect.top)),
+    ).size;
+  });
+  expect(headingLines).toBeLessThanOrEqual(2);
   await page.screenshot({
     path: "output/launch-completion-2026-10-17/permission-recipient-320-zoom.png",
     fullPage: true,

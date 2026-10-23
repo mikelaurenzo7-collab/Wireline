@@ -116,14 +116,14 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /to=\{signupHrefForPlan\("personal"\)\}/,
-    "landing must route its primary action to free account creation",
+    /to="\/signup"/,
+    "landing must route its primary action to plan-neutral account creation",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /<span>Voice Bots<\/span>\s*<span>With a Computer,<\/span>[\s\S]*<span>Phone Number,<\/span>\s*<span>and Email Address\.<\/span>/,
-    "landing must render the computer, phone number, and email hero",
+    /Calling, email, and a computer\./,
+    "landing must describe the calling, email and Computer product family",
   );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
@@ -146,8 +146,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /template\.moves\.map/,
-    "role cards must expose playbook moves",
+    /template\.summary/,
+    "role cards must describe the job without repeating playbook details",
   );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",

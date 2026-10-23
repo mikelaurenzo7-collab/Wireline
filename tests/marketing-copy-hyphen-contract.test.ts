@@ -101,17 +101,14 @@ describe("marketing copy punctuation and retired-positioning contract", () => {
     }
   });
 
-  it("keeps the R3 brand spine and Phone Bot wedge explicit without compound hyphens", () => {
+  it("keeps the brand spine and product family explicit without compound hyphens", () => {
     expect(HOME_TITLE).toBe("BotBound | A Bot for You");
     expect(HOME_DESCRIPTION).toBe(
       "Voice Bots with a computer, phone number, and email address. Answer calls, handle requests, and get everyday work done for you or your business.",
     );
     expect(read("src/lib/bot-product.ts")).toContain('name: "Phone Bot"');
     expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain(
-      "<span>With a Computer,</span>",
-    );
-    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain(
-      "<span>and Email Address.</span>",
+      "Calling, email, and a computer.",
     );
     expect(read("src/pages/Compare.tsx")).toContain("feature by feature");
   });

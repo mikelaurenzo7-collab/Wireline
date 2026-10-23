@@ -1,7 +1,6 @@
 /**
  * PublicChangelog.tsx — public-facing changelog at /changelog.
  */
-import { motion } from "motion/react";
 import { Rocket, Shield, Sparkles, Wrench, Zap } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingChrome from "./marketing/MarketingChrome";
@@ -177,31 +176,17 @@ export default function PublicChangelog() {
       />
       <MarketingChrome stickyCta={false}>
         <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-6 pt-12 pb-8 sm:pt-16 sm:pb-12">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-10"
-          >
-            <h1 className="marketing-hero-title text-3xl sm:text-4xl">
-              Every Change We've Shipped
-            </h1>
-          </motion.div>
+          <div className="mb-10">
+            <h1 className="marketing-hero-title">What’s New</h1>
+          </div>
 
           <ol className="space-y-6">
-            {SORTED_ENTRIES.map((entry, idx) => {
+            {SORTED_ENTRIES.map((entry) => {
               const meta = TAG_META[entry.tag];
               const Icon = meta.icon;
               return (
-                <motion.li
+                <li
                   key={`${entry.date}-${entry.title}`}
-                  initial={{ opacity: 0, y: 8 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.3 }}
-                  transition={{
-                    duration: 0.4,
-                    delay: Math.min(idx * 0.04, 0.4),
-                  }}
                   className="relative pl-4 sm:pl-6 marketing-panel-muted p-4 sm:p-5"
                 >
                   <span
@@ -209,9 +194,9 @@ export default function PublicChangelog() {
                     className="absolute left-0 top-6 w-1.5 h-1.5 rounded-full bg-brand"
                   />
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                    <span className="text-eyebrow !text-[0.625rem]">{entry.date}</span>
+                    <span className="text-eyebrow">{entry.date}</span>
                     <span
-                      className={`inline-flex items-center gap-1 text-eyebrow !text-[0.625rem] px-2 py-0.5 rounded-full border leading-none ${meta.tone}`}
+                      className={`inline-flex items-center gap-1 text-eyebrow px-2 py-0.5 rounded-full border leading-none ${meta.tone}`}
                     >
                       <Icon className="w-2.5 h-2.5" strokeWidth={2.2} />
                       {meta.label}
@@ -221,7 +206,7 @@ export default function PublicChangelog() {
                     {entry.title}
                   </h2>
                   <p className="marketing-body">{entry.body}</p>
-                </motion.li>
+                </li>
               );
             })}
           </ol>

@@ -29,7 +29,7 @@ async function openPage(page: Page, path: string) {
   await expect(page.locator("main").first()).toBeVisible({ timeout: 60_000 });
 }
 
-test("showcase redirects to free account creation without requesting microphone access", async ({
+test("showcase redirects to account creation without selecting a plan or requesting a microphone", async ({
   page,
 }) => {
   await installMicrophoneProbe(page);
@@ -41,14 +41,14 @@ test("showcase redirects to free account creation without requesting microphone 
   await page.setViewportSize({ width: 390, height: 844 });
   await openPage(page, "/showcase");
 
-  await expect(page).toHaveURL(/\/signup\?plan=free$/);
+  await expect(page).toHaveURL(/\/signup$/);
   await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
   await expect(page.locator("#showcase-preview")).toHaveCount(0);
   expect(publicVoiceRequests).toEqual([]);
   expect(await page.evaluate(() => window.__botboundMicRequests ?? 0)).toBe(0);
 });
 
-test("home offers outbound and inbound account paths without a public audio control", async ({
+test("home preserves role intent without selecting a plan or exposing a public audio control", async ({
   page,
 }) => {
   await installMicrophoneProbe(page);
@@ -60,21 +60,15 @@ test("home offers outbound and inbound account paths without a public audio cont
   await page.setViewportSize({ width: 390, height: 844 });
   await openPage(page, "/");
 
-  const directions = page.getByRole("navigation", { name: "Choose what your Bot does" });
-  const business = directions.getByRole("link", {
-    name: /For Your Business: Answer\. Book\. Create Your Front Desk/i,
+  const roles = page.locator("#solutions");
+  const business = roles.getByRole("link", {
+    name: /Use this role\s*:\s*Front Desk/i,
   });
-  const personal = directions.getByRole("link", {
-    name: /For You: Plan\. Coordinate\. Create Your Assistant/i,
+  const personal = roles.getByRole("link", {
+    name: /Use this role\s*:\s*Personal Assistant/i,
   });
-  await expect(business).toHaveAttribute(
-    "href",
-    /\/signup\?[^\s]*plan=free[^\s]*template=front-desk/,
-  );
-  await expect(personal).toHaveAttribute(
-    "href",
-    /\/signup\?[^\s]*plan=free[^\s]*template=personal-assistant/,
-  );
+  await expect(business).toHaveAttribute("href", "/signup?template=front-desk");
+  await expect(personal).toHaveAttribute("href", "/signup?template=personal-assistant");
   await expect(page.getByRole("button", { name: /talk to/i })).toHaveCount(0);
   await expect(page.locator("audio, video")).toHaveCount(0);
   expect(publicVoiceRequests).toEqual([]);

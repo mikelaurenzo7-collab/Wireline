@@ -34,7 +34,7 @@ export default function SettingsTabs() {
   return (
     <WorkspaceControlBand
       ariaLabel="Settings controls"
-      className="mb-5 sm:mb-7"
+      className="mb-0"
       primary={
         <WorkspaceTabStrip
           ariaLabel="Settings sections"

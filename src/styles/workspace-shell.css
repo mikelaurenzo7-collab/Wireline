@@ -2,11 +2,7 @@
 .wl-workspace-shell {
   --bb-shell-border: color-mix(in srgb, var(--wireline-color-border-default) 88%, transparent);
   --bb-shell-hover: color-mix(in srgb, var(--wireline-color-surface-subtle) 86%, transparent);
-  --bb-shell-active: color-mix(
-    in srgb,
-    var(--wireline-color-action-primary-container) 70%,
-    transparent
-  );
+  --bb-shell-active: var(--wireline-color-surface-subtle);
   --bb-shell-fast: var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard);
 }
 
@@ -14,6 +10,23 @@
   width: 100%;
   max-width: var(--wireline-layout-contentMax, 72rem);
   margin-inline: auto;
+}
+
+/* This canonical shell tier follows legacy polish. Product titles and tabs
+ * share one compact, quiet hierarchy across every authenticated page. */
+.wl-workspace-shell .wl-workspace-page-intro :where(h1, .wl-display-3),
+.wl-workspace-shell .wl-operate-surface :where(h1, .wl-display-3) {
+  font-size: clamp(1.5rem, 1.35rem + 0.6vw, 1.875rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.wl-workspace-shell .wl-workspace-tabs [data-active="true"] {
+  border-color: var(--wireline-color-border-default);
+  background: var(--wireline-color-surface-subtle);
+  color: var(--wireline-color-text-primary);
+  box-shadow: none;
 }
 
 /* Desktop rail */
@@ -25,7 +38,11 @@
   overscroll-behavior: contain;
   padding: 1rem 0.75rem;
   border-right: 1px solid var(--bb-shell-border);
-  background: var(--wireline-color-surface-default);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-subtle) 45%,
+    var(--wireline-color-canvas-default)
+  );
   scrollbar-gutter: stable;
 }
 
@@ -118,7 +135,7 @@
   background: color-mix(in srgb, var(--wireline-color-surface-subtle) 64%, transparent);
   color: var(--wireline-color-text-secondary);
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 500;
   text-align: left;
 }
 
@@ -163,7 +180,7 @@
   background: transparent;
   color: var(--wireline-color-text-secondary);
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.4;
   text-decoration: none;
   box-shadow: none;

@@ -40,7 +40,12 @@ vi.mock("../src/hooks/usePaidPlanAvailability", () => ({
   }),
 }));
 
-type Element = ReactElement<{ children?: ReactNode; to?: string; className?: string }>;
+type Element = ReactElement<{
+  children?: ReactNode;
+  to?: string;
+  href?: string;
+  className?: string;
+}>;
 
 function elements(node: ReactNode): Element[] {
   if (Array.isArray(node)) return node.flatMap(elements);
@@ -51,7 +56,7 @@ function elements(node: ReactNode): Element[] {
 function stickyDestination(page: ReactElement<Parameters<typeof MarketingPageFrame>[0]>) {
   const frame = MarketingPageFrame(page.props);
   const action = elements(frame).find((element) => element.type === MarketingStickyCta);
-  if (!action) throw new Error("Expected the public page's sticky action.");
+  if (!action) return undefined;
   const rendered = MarketingStickyCta(action.props as Parameters<typeof MarketingStickyCta>[0]);
   return elements(rendered)
     .filter((element) => element.type === "a")
@@ -62,16 +67,18 @@ beforeEach(() => vi.clearAllMocks());
 
 describe("marketing signup continuity", () => {
   it.each(Object.keys(WEDGES) as VerticalKey[])(
-    "keeps the %s sticky signup aligned with its primary action on Free Builder",
+    "preserves the %s signup intent without a duplicate sticky action",
     (slug) => {
       const page = VerticalLanding({ slug });
       if (!page) throw new Error("Expected the industry landing page.");
-      const href = stickyDestination(page);
+      const href = elements(page).find((element) => element.props.href?.startsWith("/signup"))
+        ?.props.href;
       expect(href).toBe(WEDGES[slug].primaryCta.href);
+      expect(stickyDestination(page)).toBeUndefined();
       const destination = new URL(href!, "https://botbound.app");
       expect(destination.pathname).toBe("/signup");
       expect(destination.searchParams.get("wedge")).toBe(slug === "sales" ? "support" : slug);
-      expect(destination.searchParams.get("plan")).toBe("free");
+      expect(destination.searchParams.has("plan")).toBe(false);
     },
   );
 
@@ -100,9 +107,14 @@ describe("marketing signup continuity", () => {
       .map((element) => text(element.props.children))
       .join(" ");
     expect(renderedText).toContain("For You");
-    expect(renderedText).toContain("Plan. Coordinate.");
+    expect(renderedText).toContain("Personal Assistant");
     expect(renderedText).toContain("For Your Business");
-    expect(renderedText).toContain("Answer. Book.");
+    expect(renderedText).toContain("Front Desk");
+    const roleLinks = elements(page).filter((element) =>
+      element.props.to?.startsWith("/signup?template="),
+    );
+    expect(roleLinks).toHaveLength(6);
+    expect(roleLinks.every((element) => !element.props.to?.includes("plan="))).toBe(true);
     expect(renderedText).not.toContain("server-verifiable consent records");
     expect(renderedText).not.toContain("Federal Do Not Call screening");
     expect(renderedText).not.toMatch(/outbound calls are not available yet|coming soon/i);
@@ -115,15 +127,15 @@ describe("marketing signup continuity", () => {
       (element) => element.type === "a" && element.props.to?.startsWith("/signup"),
     );
     expect(heroLink?.props.to).toBeTruthy();
-    expect(stickyDestination(page)).toBe(heroLink?.props.to);
+    expect(stickyDestination(page)).toBeUndefined();
     const renderedText = elements(page)
       .map((element) => Children.toArray(element.props.children).join(""))
       .join(" ");
     if (wedge === "sales") {
       expect(renderedText).toContain("Inbound");
-      expect(renderedText).toContain("Give Every Sales Inquiry a Clear Next Step");
+      expect(renderedText).toContain("Every Inquiry. A Next Step.");
       expect(renderedText).toContain("Answer. Book. Keep the Record.");
-      expect(heroLink?.props.to).toBe("/signup?plan=free&template=front-desk");
+      expect(heroLink?.props.to).toBe("/signup?template=front-desk");
       expect(renderedText).not.toMatch(
         /server-verifiable consent records|Federal Do Not Call screening|not available yet|coming soon/i,
       );
@@ -139,26 +151,24 @@ describe("marketing signup continuity", () => {
       const heroLink = elements(page).find(
         (element) => element.type === "a" && element.props.to?.startsWith("/signup"),
       );
-      expect(heading?.props.children).toBe("A Front Desk That Answers Before Demand Goes Cold");
+      expect(heading?.props.children).toBe("Meet Your Front Desk");
       expect(heroLink?.props.to).toBe("/signup?wedge=support");
-      expect(stickyDestination(page)).toBe(heroLink?.props.to);
+      expect(stickyDestination(page)).toBeUndefined();
     },
   );
 
-  it("keeps the generic free signup destination for pages without a role choice", () => {
+  it("keeps optional shared signup actions plan-neutral", () => {
     const page = <MarketingPageFrame stickyCta>Public content</MarketingPageFrame>;
-    expect(stickyDestination(page)).toBe("/signup?plan=free");
+    expect(stickyDestination(page)).toBe("/signup");
   });
 
-  it("targets Free Builder explicitly from both Blog signup actions", () => {
+  it("preserves the Blog signup intent with a single in-flow action", () => {
     const page = Blog();
     const signupLinks = elements(page).filter(
       (element) => element.type === "a" && element.props.to?.startsWith("/signup"),
     );
     expect(signupLinks).toHaveLength(1);
-    expect(new URL(signupLinks[0].props.to!, "https://botbound.app").searchParams.get("plan")).toBe(
-      "free",
-    );
-    expect(stickyDestination(page)).toBe("/signup?plan=free");
+    expect(signupLinks[0].props.to).toBe("/signup");
+    expect(stickyDestination(page)).toBeUndefined();
   });
 });

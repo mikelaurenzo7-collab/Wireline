@@ -73,7 +73,12 @@ export function createStudioSessionState(ownerId: string | null) {
           computerDraft?.showComposer
         )
           continue;
-        const keys = [`${candidate}:configure`, `${candidate}:test`];
+        const keys = [
+          `${candidate}:configure`,
+          `${candidate}:test`,
+          `${candidate}:work`,
+          `${candidate}:work-reply`,
+        ];
         if (
           keys.some((key) => {
             const session = conversations.get(key);

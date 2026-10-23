@@ -508,9 +508,9 @@ body {
 [data-slot="dialog-content"],
 [data-slot="popover-content"],
 [role="menu"] {
-  border-color: var(--wl-prestige-edge);
-  background: var(--wl-prestige-surface-raised);
-  box-shadow: var(--wl-prestige-shadow-raised);
+  border-color: var(--wireline-color-border-default);
+  background: var(--wireline-color-surface-raised);
+  box-shadow: var(--wireline-elevation-lg);
 }
 
 /* Light appearance keeps the same hierarchy without dark-mode shadow weight. */

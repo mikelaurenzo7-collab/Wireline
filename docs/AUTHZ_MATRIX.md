@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 444
-**Protected:** 358
+**Routes scanned:** 445
+**Protected:** 359
 **Public (allowlisted):** 86
 **Violations:** 0
 
@@ -239,6 +239,7 @@
 | computer-routes.ts | POST | `/api/computer/tasks/:taskId/control` | inline | — | — | Protected |
 | computer-routes.ts | POST | `/api/computer/tasks/:taskId/control/input` | inline | — | — | Protected |
 | computer-routes.ts | POST | `/api/computer/tasks/:taskId/control/return` | inline | — | — | Protected |
+| computer-routes.ts | GET | `/api/computer/tasks/:taskId/downloads/:downloadId` | inline | — | — | Protected |
 | computer-routes.ts | GET | `/api/computer/tasks/:taskId/frame` | inline | — | — | Protected |
 | computer-routes.ts | POST | `/api/computer/tasks/:taskId/reply` | inline | — | — | Protected |
 | computer-routes.ts | POST | `/api/computer/tasks/:taskId/stop` | inline | — | — | Protected |

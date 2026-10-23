@@ -28,8 +28,10 @@ export default function StudioContextChrome() {
 
   function selectAgent(agentId: string) {
     setSearchParams(
-      (current) => {
-        const next = new URLSearchParams(current);
+      () => {
+        // A Bot switch can immediately follow a Conversation/Browser change.
+        // Merge the current URL, not a previous render's panel preference.
+        const next = new URLSearchParams(window.location.search);
         next.set("agent", agentId);
         next.delete("command");
         next.delete("commandNonce");
@@ -115,7 +117,7 @@ export default function StudioContextChrome() {
               }
             >
               <SlidersHorizontal className="size-4" aria-hidden="true" />
-              Details
+              Set up
             </Button>
           ) : null}
           {readyLabel ? (

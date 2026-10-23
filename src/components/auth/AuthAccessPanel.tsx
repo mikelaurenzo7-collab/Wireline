@@ -268,9 +268,7 @@ export default function AuthAccessPanel({
   const isReset = mode === "reset";
   const intentLabel = signupIntentLabel(signupIntent);
   const paidSignupPlan =
-    signupIntent?.preferredPlanId &&
-    signupIntent.preferredPlanId !== "personal" &&
-    publicSignupPlan(signupIntent.preferredPlanId)
+    signupIntent?.preferredPlanId && publicSignupPlan(signupIntent.preferredPlanId)
       ? signupIntent.preferredPlanId
       : undefined;
   const { notice } = usePaidPlanAvailability({

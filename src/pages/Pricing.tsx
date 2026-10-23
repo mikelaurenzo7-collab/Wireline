@@ -125,18 +125,13 @@ export default function Pricing() {
         <div className="wl-public-rail mx-auto max-w-5xl">
           <div className="mx-auto mb-6 max-w-3xl text-center">
             <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
-            <h1 className="marketing-hero-title mx-auto mt-4 min-w-0 max-w-full text-[clamp(1.9rem,3.4vw,2.9rem)] [overflow-wrap:anywhere]">
-              Only the Channels You Need
-            </h1>
+            <h1 className="marketing-hero-title mx-auto mt-4">Your Bot. Your Plan.</h1>
             <p className="marketing-hero-lead mx-auto mt-4">
-              One Bot. Your channels. The capacity you need.
+              Choose your channels and capacity. Every paid plan includes a computer.
             </p>
           </div>
           <div className="mx-auto max-w-2xl">
-            <div className="wl-pricing-interval-row mb-4 flex flex-wrap items-center justify-center gap-3 sm:justify-between">
-              <p className="w-full text-center text-sm text-muted-foreground sm:w-auto sm:text-left">
-                Plans from $9/month
-              </p>
+            <div className="wl-pricing-interval-row mb-4 flex flex-wrap items-center justify-center gap-3">
               <BillingIntervalControl
                 value={billingInterval}
                 onChange={(interval) => {
@@ -192,7 +187,7 @@ export default function Pricing() {
               ) : null}
             </p>
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
-              <div className="text-left">
+              <div className="min-w-0 flex-1 text-left">
                 <h2 className="text-base font-semibold">Personal · $12/month</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Calls and a computer for lighter use. 20 call minutes. Connect Gmail or Outlook
@@ -201,7 +196,7 @@ export default function Pricing() {
               </div>
               <Link
                 to={signupHrefForPlan("personal")}
-                className="marketing-btn-secondary inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold"
+                className="marketing-btn-secondary inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold"
               >
                 Choose Personal <ArrowRight className="size-4" aria-hidden="true" />
               </Link>

@@ -53,7 +53,7 @@ test("settings sign-out followed by direct personal signup always enters Fast St
   });
   await page.route("**/api/auth/signout", async (route) => {
     sessionUser = null;
-    await route.fulfill({ status: 204, body: "" });
+    await route.fulfill({ status: 200, json: { success: true } });
   });
   await page.route("**/api/auth/signup", async (route) => {
     sessionUser = { id: "fresh-user", email: "fresh@example.test", full_name: "Fresh User" };

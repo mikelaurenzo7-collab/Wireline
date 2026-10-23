@@ -181,7 +181,7 @@ describe("BotBound design vision", () => {
     expect(WIRELINE_DESIGN_VISION.studioCanvas).toEqual(
       expect.objectContaining({
         defaultSurface: "chat-plus-canvas",
-        canvasSurface: "spatial-cards",
+        canvasSurface: "browser-workbench",
         agentSwitcher: "context-chrome",
         railBehavior: "resizable-and-collapsible",
         railWidthPx: 232,

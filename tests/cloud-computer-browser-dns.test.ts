@@ -90,6 +90,7 @@ describe("hosted browser context isolation", () => {
       addInitScript: vi.fn(async () => undefined),
       route: vi.fn(async () => undefined),
       routeWebSocket: vi.fn(async () => undefined),
+      newCDPSession: vi.fn(async () => ({ on: vi.fn(), send: vi.fn(async () => ({})) })),
       on: vi.fn(),
       setDefaultTimeout: vi.fn(),
       setDefaultNavigationTimeout: vi.fn(),
@@ -137,5 +138,19 @@ describe("hosted browser context isolation", () => {
     expect(fixture.browser.contexts).not.toHaveBeenCalled();
     expect(fixture.vendorContext.pages).not.toHaveBeenCalled();
     expect(fixture.browser.close).toHaveBeenCalledOnce();
+  });
+
+  it("fails before returning a session when hosted CDP request interception is unavailable", async () => {
+    const fixture = browserFixture();
+    fixture.isolatedContext.newCDPSession.mockRejectedValue(new Error("CDP unavailable"));
+    vi.spyOn(chromium, "connect").mockResolvedValue(fixture.browser as unknown as Browser);
+    await expect(
+      CloudBrowserSession.open({
+        kind: "remote",
+        wsEndpoint: "wss://browserless.example/playwright",
+      }),
+    ).rejects.toThrow("CDP unavailable");
+    expect(fixture.vendorContext.pages).not.toHaveBeenCalled();
+    expect(fixture.browser.close).toHaveBeenCalled();
   });
 });

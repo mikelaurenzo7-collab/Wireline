@@ -102,7 +102,7 @@ export const MOBILE_MORE_HREF = "__more__" as const;
  * strip instead of competing for top-level positions.
  */
 export const WORKSPACE_SECTIONS = [
-  { id: "setup", href: "/studio", label: "Set Up" },
+  { id: "setup", href: "/studio", label: "Workspace" },
   { id: "knowledge", href: "/knowledge", label: "Knowledge" },
   { id: "computer", href: "/computer", label: "Computer" },
 ] as const;

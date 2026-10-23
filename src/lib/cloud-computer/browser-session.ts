@@ -1,9 +1,11 @@
 import { Resolver } from "node:dns/promises";
 import { isIP } from "node:net";
+import type { Readable } from "node:stream";
 import {
   chromium,
   type Browser,
   type BrowserContext,
+  type Download,
   type Locator,
   type Page,
   type Request as BrowserRequest,
@@ -19,6 +21,15 @@ import {
   parseModifiers,
 } from "./browser-input";
 import { CLOUD_BROWSER_VIEWPORT } from "./browser-constants";
+import { BrowserNetworkGuard } from "./browser-network-guard";
+import {
+  OWNER_BROWSER_CAPABILITIES,
+  type OwnerBrowserCookie,
+  type OwnerBrowserDownload,
+  type OwnerBrowserHistory,
+  type OwnerSavedLogin,
+} from "./browser-capabilities";
+import { ownerCookiesFrom } from "./owner-input";
 import { snapshotExpression, type SnapshotMode } from "./page-snapshot";
 import {
   checkUrlAllowed,
@@ -42,7 +53,11 @@ const NAVIGATION_TIMEOUT_MS = 30_000;
 const ACTION_TIMEOUT_MS = 8_000;
 const READ_MAX_CHARS = 50_000;
 const TEXT_MAX_CHARS = 50_000;
-const MAX_TABS = 8;
+const MAX_TABS = OWNER_BROWSER_CAPABILITIES.maxTabs;
+const MAX_TOOL_SECRETS = 128;
+const MAX_TOOL_SECRET_CHARS = 65_536;
+const OWNER_DOWNLOAD_START_MS = 15_000;
+const OWNER_DOWNLOAD_TIMEOUT_MS = 30_000;
 const MAX_TYPE_CHARS = 4_000;
 const MAX_OWNER_REDACTIONS = 32;
 const MAX_OWNER_REDACTION_CHARS = 16_000;
@@ -117,7 +132,7 @@ export function typingPieces(text: string): string[] {
  * interception (shared and service workers, WebRTC) are simply unavailable.
  */
 const ISOLATION_INIT_SCRIPT = `(() => {
-  for (const name of ["SharedWorker", "RTCPeerConnection", "webkitRTCPeerConnection", "RTCDataChannel"]) {
+  for (const name of ["Worker", "SharedWorker", "RTCPeerConnection", "webkitRTCPeerConnection", "RTCDataChannel"]) {
     try { Object.defineProperty(window, name, { value: undefined, configurable: false, writable: false }); } catch {}
   }
   try { Object.defineProperty(Navigator.prototype, "serviceWorker", { get: () => undefined, configurable: false }); } catch {}
@@ -185,6 +200,13 @@ export type OwnerControlInput =
   | { kind: "navigate"; url: string }
   | { kind: "history"; action: "back" | "forward" | "reload" }
   | { kind: "switch_tab"; tabId: string }
+  | { kind: "new_tab"; url?: string }
+  | { kind: "close_tab"; tabId: string }
+  | { kind: "import_cookies"; cookies: OwnerBrowserCookie[] }
+  | { kind: "clear_cookies" }
+  | { kind: "save_login"; origin: string; username: string; password: string }
+  | { kind: "fill_login"; origin: string }
+  | { kind: "clear_saved_login"; origin: string }
   | { kind: "type"; text: string }
   | { kind: "key"; key: string };
 
@@ -295,6 +317,8 @@ function parseTarget(value: unknown, allowRef = true): Target {
 export class CloudBrowserSession {
   private readonly tabs = new Map<string, Page>();
   private readonly pageIds = new WeakMap<Page, string>();
+  private readonly networkReady = new WeakMap<Page, Promise<void>>();
+  private readonly networkGuards = new Set<BrowserNetworkGuard>();
   private activeTabId: string | null = null;
   private nextTabNumber = 1;
   private pendingChanges: BrowserStateChange[] = [];
@@ -309,6 +333,19 @@ export class CloudBrowserSession {
   private activeToken: MemberToken | null = null;
   /** Owner-entered text stays in memory for screenshot/text redaction only. */
   private readonly ownerEnteredValues: string[] = [];
+  /** Cookie/login values are never evicted while a page could still echo them. */
+  private readonly ownerToolSecrets = new Set<string>();
+  private readonly savedLogins = new Map<string, { username: string; password: string }>();
+  private readonly history: OwnerBrowserHistory[] = [];
+  private readonly lastHistoryUrl = new Map<string, string>();
+  private nextHistoryId = 1;
+  private readonly downloads = new Map<string, OwnerBrowserDownload & { data: Buffer }>();
+  private readonly pendingDownloads = new Set<Download>();
+  private readonly downloadStreams = new Map<Download, Readable>();
+  private nextDownloadId = 1;
+  private downloadAllowedUntil = 0;
+  private downloadPermissionEpoch = 0;
+  private downloadNotice: string | null = null;
   private closed = false;
   private disconnected = false;
   private disconnectedAt: number | null = null;
@@ -358,7 +395,7 @@ export class CloudBrowserSession {
       context = await browser.newContext({
         viewport: CLOUD_BROWSER_VIEWPORT,
         deviceScaleFactor: 1,
-        acceptDownloads: false,
+        acceptDownloads: true,
         serviceWorkers: "block",
         javaScriptEnabled: true,
         permissions: [],
@@ -373,10 +410,8 @@ export class CloudBrowserSession {
       await context.addInitScript(ISOLATION_INIT_SCRIPT);
       await context.route("**/*", (route) => session.guard(route));
       // WebSockets are not seen by context.route; screen them the same way.
-      // Both are first lines only: route handlers never see redirect hops,
-      // and page script or a Worker can open a socket around routeWebSocket.
-      // The listeners below detect what got through, and enforcePublicTabs
-      // blanks the tab before anything it loaded can be read.
+      // CDP's separate request-stage guard below covers redirect hops which
+      // Playwright routing does not expose. Workers and WebRTC stay disabled.
       await context.routeWebSocket(/.*/, async (ws) => {
         if (await session.urlIsPublic(ws.url())) {
           ws.connectToServer();
@@ -402,6 +437,7 @@ export class CloudBrowserSession {
       });
       const first = context.pages()[0] ?? (await context.newPage());
       if (!session.pageIds.has(first)) session.register(first);
+      await session.ensureNetworkGuard(first);
       session.activeTabId = session.pageIds.get(first) ?? null;
       // The initial tab is the starting state, not an opened-tab event.
       session.pendingChanges = [];
@@ -423,10 +459,14 @@ export class CloudBrowserSession {
     const id = `tab-${this.nextTabNumber++}`;
     this.tabs.set(id, page);
     this.pageIds.set(page, id);
+    void this.ensureNetworkGuard(page).catch(() => this.close());
     page.on("dialog", (dialog) => {
       dialog.dismiss().catch(() => undefined);
     });
     page.on("websocket", (ws) => this.screenUrl(page, ws.url()));
+    page.on("download", (download) => {
+      void this.captureOwnerDownload(download);
+    });
     page.on("close", () => {
       this.tabs.delete(id);
       if (this.activeTabId === id) this.activeTabId = [...this.tabs.keys()].at(-1) ?? null;
@@ -435,15 +475,68 @@ export class CloudBrowserSession {
     return id;
   }
 
+  private ensureNetworkGuard(page: Page): Promise<void> {
+    let ready = this.networkReady.get(page);
+    if (!ready) {
+      ready = (async () => {
+        if (this.isClosed) throw new Error("Browser session closed.");
+        const cdp = await withDeadline(this.context.newCDPSession(page), DNS_TIMEOUT_MS);
+        const guard = new BrowserNetworkGuard(
+          cdp,
+          (url) => this.urlIsPublic(url),
+          () => {
+            this.blockedRequests += 1;
+          },
+          () => {
+            void this.close();
+          },
+          () => page.isClosed() || this.isClosed,
+        );
+        this.networkGuards.add(guard);
+        page.on("close", () => {
+          guard.stop();
+          this.networkGuards.delete(guard);
+        });
+        await guard.start();
+        if (this.isClosed) throw new Error("Browser session closed.");
+      })();
+      this.networkReady.set(page, ready);
+    }
+    return ready;
+  }
+
   /** Every request, including subresources, must reach a public web address. */
   private async guard(route: Route): Promise<void> {
+    let page: Page;
+    try {
+      // Initial popup requests are held here until their own guard is ready.
+      // Frameless worker traffic is never allowed to bypass that requirement.
+      page = route.request().frame().page();
+    } catch {
+      // A popup's first request can precede its page/frame handle. Abort it
+      // rather than sending it before interception; its blank tab can recover.
+      this.blockedRequests += 1;
+      await route.abort("blockedbyclient").catch(() => undefined);
+      return;
+    }
+    try {
+      await this.ensureNetworkGuard(page);
+    } catch {
+      await route.abort("blockedbyclient").catch(() => undefined);
+      if (!this.isClosed) void this.close();
+      return;
+    }
+    if (this.isClosed) {
+      await route.abort("blockedbyclient").catch(() => undefined);
+      return;
+    }
     const raw = route.request().url();
     if (raw.startsWith("data:") || raw.startsWith("blob:") || raw === "about:blank") {
       await route.continue().catch(() => undefined);
       return;
     }
     const allowed = await this.urlIsPublic(raw);
-    if (allowed) {
+    if (allowed && !this.isClosed) {
       await route.continue().catch(() => undefined);
     } else {
       this.blockedRequests += 1;
@@ -510,8 +603,10 @@ export class CloudBrowserSession {
 
   private async withDnsSlot<T>(work: () => Promise<T>): Promise<T> {
     while (this.dnsInFlight >= DNS_CONCURRENCY) {
+      if (this.isClosed) throw new Error("Browser session closed.");
       await new Promise<void>((resolve) => this.dnsWaiters.push(resolve));
     }
+    if (this.isClosed) throw new Error("Browser session closed.");
     this.dnsInFlight += 1;
     try {
       return await work();
@@ -660,6 +755,241 @@ export class CloudBrowserSession {
       });
   }
 
+  ownerHistory(): OwnerBrowserHistory[] {
+    return this.history.map((entry) => ({ ...entry }));
+  }
+
+  ownerDownloads(): OwnerBrowserDownload[] {
+    return [...this.downloads.values()].map(({ data: _data, ...metadata }) => metadata);
+  }
+
+  ownerDownloadNotice(): string | null {
+    return this.downloadNotice;
+  }
+
+  ownerSavedLogins(): OwnerSavedLogin[] {
+    return [...this.savedLogins.keys()].map((origin) => ({
+      origin,
+      label: new URL(origin).hostname,
+    }));
+  }
+
+  ownerDownload(id: string): { name: string; data: Buffer } | null {
+    const download = this.downloads.get(id);
+    return download && !this.closed ? { name: download.name, data: download.data } : null;
+  }
+
+  /** Only checked, non-credential public locations enter this ephemeral history. */
+  private recordOwnerHistory(): void {
+    for (const [tabId, page] of this.tabs) {
+      if (page.isClosed()) continue;
+      const raw = page.url();
+      if (raw === "about:blank" || this.lastHistoryUrl.get(tabId) === raw) continue;
+      let parsed: URL;
+      try {
+        parsed = new URL(raw);
+      } catch {
+        continue;
+      }
+      if (!checkUrlAllowed(parsed).allowed) continue;
+      this.lastHistoryUrl.set(tabId, raw);
+      const evidence = publicEvidenceUrl(raw)?.url;
+      const url =
+        evidence && !this.containsOwnerEnteredUrlText(evidence) ? evidence : `${parsed.origin}/`;
+      this.history.push({
+        id: this.nextHistoryId++,
+        tabId,
+        label: url.replace(/^https?:\/\//, "").slice(0, 160),
+        url,
+        visitedAt: new Date().toISOString(),
+      });
+      if (this.history.length > OWNER_BROWSER_CAPABILITIES.historyLimit) this.history.shift();
+    }
+  }
+
+  private retainToolSecrets(values: string[]): void {
+    const next = new Set([...this.ownerToolSecrets, ...values.filter(Boolean)]);
+    if (
+      next.size > MAX_TOOL_SECRETS ||
+      [...next].reduce((sum, value) => sum + value.length, 0) > MAX_TOOL_SECRET_CHARS
+    ) {
+      fail("This browser has reached its private-value limit. Open a new browser session.");
+    }
+    for (const value of next) this.ownerToolSecrets.add(value);
+  }
+
+  private async secureOwnerOrigin(page: Page): Promise<string> {
+    const url = new URL(page.url());
+    if (
+      url.protocol !== "https:" ||
+      !checkUrlAllowed(url).allowed ||
+      !(await this.urlIsPublic(url.toString()))
+    ) {
+      fail("Session logins are available only on a public HTTPS page.");
+    }
+    return url.origin;
+  }
+
+  private async ownerNavigate(page: Page, url: string): Promise<void> {
+    let downloadStarted = false;
+    let signalDownload: (() => void) | undefined;
+    const onDownload = () => {
+      downloadStarted = true;
+      signalDownload?.();
+    };
+    page.on("download", onDownload);
+    try {
+      await page.goto(url, { waitUntil: "domcontentloaded" });
+    } catch (error) {
+      // An attachment navigation ends as a download, rather than a document.
+      // Chromium can reject goto just before dispatching the download event.
+      if (!downloadStarted) {
+        await withDeadline(
+          new Promise<void>((resolve) => {
+            signalDownload = resolve;
+          }),
+          1_000,
+        ).catch(() => undefined);
+      }
+      if (!downloadStarted) throw error;
+    } finally {
+      page.off("download", onDownload);
+    }
+  }
+
+  /** Owner action only: no API ever returns these values and no Bot tool can call this. */
+  private async fillOwnerLogin(page: Page, expectedOrigin: string): Promise<void> {
+    const origin = await this.secureOwnerOrigin(page);
+    if (origin !== expectedOrigin)
+      fail("The site changed. Check the current address before using a saved login.");
+    const login = this.savedLogins.get(origin);
+    if (!login) fail("No login is saved for this site in this browser session.");
+    // One synchronous main-frame evaluation binds the check and writes to the
+    // same document. A locator could re-resolve after a cross-origin redirect.
+    const result = await page.evaluate(
+      ({ expectedOrigin, username, password }) => {
+        if (location.origin !== expectedOrigin) return "origin";
+        const visible = (input: HTMLInputElement) =>
+          [...input.getClientRects()].some((rect) => rect.width > 0 && rect.height > 0) &&
+          getComputedStyle(input).visibility !== "hidden" &&
+          !input.disabled &&
+          !input.readOnly;
+        const passwords = [
+          ...document.querySelectorAll<HTMLInputElement>('input[type="password"]'),
+        ].filter(visible);
+        const usernames = [
+          ...document.querySelectorAll<HTMLInputElement>(
+            'input[autocomplete="username"], input[autocomplete="email"], input[type="email"]',
+          ),
+        ].filter(visible);
+        if (
+          passwords.length !== 1 ||
+          usernames.length > 1 ||
+          passwords[0].autocomplete.toLowerCase().split(/\s+/).includes("new-password")
+        )
+          return "ambiguous";
+        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+        if (!setter) return "unavailable";
+        const fill = (input: HTMLInputElement, value: string) => {
+          setter.call(input, value);
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+        };
+        if (usernames.length === 1 && username) fill(usernames[0], username);
+        if (location.origin !== expectedOrigin) return "origin";
+        fill(passwords[0], password);
+        return "filled";
+      },
+      { expectedOrigin: origin, ...login },
+    );
+    if (result !== "filled")
+      fail("Check the site and use a page with one sign-in form, or enter your login directly.");
+  }
+
+  private async captureOwnerDownload(download: Download): Promise<void> {
+    const epoch = this.downloadPermissionEpoch;
+    if (this.closed || !this.downloadAllowedUntil || Date.now() > this.downloadAllowedUntil) {
+      await download.cancel().catch(() => undefined);
+      await download.delete().catch(() => undefined);
+      return;
+    }
+    if (
+      this.pendingDownloads.size ||
+      this.downloads.size >= OWNER_BROWSER_CAPABILITIES.maxDownloads
+    ) {
+      this.downloadNotice =
+        "Finish the current download first. This browser keeps up to three files until it closes.";
+      await download.cancel().catch(() => undefined);
+      await download.delete().catch(() => undefined);
+      return;
+    }
+    this.pendingDownloads.add(download);
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      this.downloadStreams.get(download)?.destroy();
+      void download.cancel().catch(() => undefined);
+    }, OWNER_DOWNLOAD_TIMEOUT_MS);
+    try {
+      const source = download.url();
+      const sourceUrl = source.startsWith("blob:") ? source.slice(5) : source;
+      if (!(await this.urlIsPublic(sourceUrl))) fail("Download source is not public.");
+      if ((await this.enforcePublicTabs()).size) fail("Download page is not public.");
+      const stream = await withDeadline(download.createReadStream(), OWNER_DOWNLOAD_TIMEOUT_MS);
+      this.downloadStreams.set(download, stream);
+      if (timedOut || this.closed || epoch !== this.downloadPermissionEpoch) {
+        stream.destroy();
+        fail("Download was stopped.");
+      }
+      const chunks: Buffer[] = [];
+      let bytes = 0;
+      const retained = [...this.downloads.values()].reduce((sum, file) => sum + file.bytes, 0);
+      for await (const chunk of stream) {
+        if (timedOut || this.closed || epoch !== this.downloadPermissionEpoch) {
+          stream.destroy();
+          fail("Download was stopped.");
+        }
+        const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+        bytes += buffer.length;
+        if (retained + bytes > OWNER_BROWSER_CAPABILITIES.maxDownloadBytes) {
+          stream.destroy();
+          fail("Download retention limit reached.");
+        }
+        chunks.push(buffer);
+      }
+      if (timedOut || this.closed || epoch !== this.downloadPermissionEpoch)
+        fail("Download was stopped.");
+      const name =
+        download
+          .suggestedFilename()
+          .split(/[\\/]/)
+          .at(-1)
+          ?.replace(/[^A-Za-z0-9 ._()-]/g, "_")
+          .replace(/^\.+/, "")
+          .slice(0, 160) || "download";
+      const id = `download-${this.nextDownloadId++}`;
+      this.downloads.set(id, {
+        id,
+        name,
+        bytes,
+        createdAt: new Date().toISOString(),
+        data: Buffer.concat(chunks, bytes),
+      });
+      this.downloadNotice = null;
+    } catch {
+      if (!this.closed && epoch === this.downloadPermissionEpoch) {
+        this.downloadNotice =
+          "That file could not be retained. Downloads have a 30-second limit and share 20 MB per browser session.";
+      }
+      await download.cancel().catch(() => undefined);
+    } finally {
+      clearTimeout(timer);
+      this.pendingDownloads.delete(download);
+      this.downloadStreams.delete(download);
+      await download.delete().catch(() => undefined);
+    }
+  }
+
   safeCurrentEvidenceUrl(): string | null {
     const evidence = publicEvidenceUrl(this.activeUrl());
     return evidence && !this.containsOwnerEnteredUrlText(evidence.url) ? evidence.url : null;
@@ -707,6 +1037,7 @@ export class CloudBrowserSession {
         timeout: 10_000,
       });
       if ((await withDeadline(this.enforcePublicTabs(), MEMBER_DEADLINE_MS)).size) return null;
+      this.recordOwnerHistory();
       return jpeg;
     } catch {
       return null;
@@ -715,6 +1046,7 @@ export class CloudBrowserSession {
 
   /** Redacted JPEG for the model. Form values and owner-entered text are masked. */
   async modelFrame(): Promise<Buffer | null> {
+    this.revokeOwnerDownloads();
     try {
       if ((await withDeadline(this.enforcePublicTabs(), MEMBER_DEADLINE_MS)).size) return null;
       const jpeg = await this.captureModelScreenshot(this.activePage(), {
@@ -744,6 +1076,9 @@ export class CloudBrowserSession {
       }
       let page = this.activePage();
       const priorTabIds = new Set(this.tabs.keys());
+      if (["click", "key", "navigate", "history", "new_tab"].includes(input.kind)) {
+        this.downloadAllowedUntil = Date.now() + OWNER_DOWNLOAD_START_MS;
+      }
       await withDeadline(
         (async () => {
           switch (input.kind) {
@@ -789,7 +1124,7 @@ export class CloudBrowserSession {
               if (target.kind !== "url") {
                 fail(target.kind === "refused" ? target.reason : "Use a full web address.");
               }
-              await page.goto(target.url.toString(), { waitUntil: "domcontentloaded" });
+              await this.ownerNavigate(page, target.url.toString());
               break;
             }
             case "history":
@@ -807,6 +1142,76 @@ export class CloudBrowserSession {
               this.activeTabId = input.tabId;
               page = selected;
               await selected.bringToFront().catch(() => undefined);
+              break;
+            }
+            case "new_tab": {
+              if (this.tabs.size >= MAX_TABS) fail(`At most ${MAX_TABS} tabs can be open.`);
+              let target: URL | null = null;
+              if (input.url) {
+                const parsed = parseNavigateTarget(input.url);
+                if (parsed.kind !== "url") fail("Use a public web address for the new tab.");
+                if (!(await this.urlIsPublic(parsed.url.toString())))
+                  fail("Use a public web address for the new tab.");
+                target = parsed.url;
+              }
+              page = await this.context.newPage();
+              this.activeTabId = this.pageIds.get(page) ?? this.register(page);
+              await this.ensureNetworkGuard(page);
+              if (target) await this.ownerNavigate(page, target.toString());
+              break;
+            }
+            case "close_tab": {
+              const selected = this.tabs.get(input.tabId);
+              if (!selected || selected.isClosed()) fail("That browser tab is no longer open.");
+              if (this.tabs.size <= 1) fail("The last browser tab stays open.");
+              await selected.close();
+              page = this.activePage();
+              await page.bringToFront().catch(() => undefined);
+              break;
+            }
+            case "import_cookies": {
+              // Revalidate at the session boundary, including internal callers.
+              const cookies = ownerCookiesFrom(input.cookies);
+              for (const cookie of cookies) {
+                const url = cookie.url ?? `https://${cookie.domain?.replace(/^\./, "")}/`;
+                if (!(await this.urlIsPublic(url)))
+                  fail("Cookies must belong to public HTTPS sites.");
+              }
+              this.retainToolSecrets(cookies.map((cookie) => cookie.value));
+              await this.context.addCookies(cookies);
+              break;
+            }
+            case "clear_cookies":
+              await this.context.clearCookies();
+              // Keep redactions: the open page may still echo a former value.
+              break;
+            case "save_login": {
+              if (
+                typeof input.username !== "string" ||
+                typeof input.password !== "string" ||
+                !input.password ||
+                input.username.length > 1_000 ||
+                input.password.length > 1_000
+              ) {
+                fail("Enter a username and password up to 1,000 characters each.");
+              }
+              const origin = await this.secureOwnerOrigin(page);
+              if (origin !== input.origin)
+                fail("The site changed. Check the current address before saving a login.");
+              if (!this.savedLogins.has(origin) && this.savedLogins.size >= MAX_TABS)
+                fail("This browser has reached its session-login limit.");
+              this.retainToolSecrets([input.username, input.password]);
+              this.savedLogins.set(origin, { username: input.username, password: input.password });
+              break;
+            }
+            case "fill_login":
+              await this.fillOwnerLogin(page, input.origin);
+              break;
+            case "clear_saved_login": {
+              const origin = await this.secureOwnerOrigin(page);
+              if (origin !== input.origin)
+                fail("The site changed. Check the current address before clearing a login.");
+              this.savedLogins.delete(origin);
               break;
             }
             case "type": {
@@ -858,6 +1263,7 @@ export class CloudBrowserSession {
       return frame;
     } catch (error) {
       token.cancelled = true;
+      this.revokeOwnerDownloads();
       throw error;
     } finally {
       if (this.activeToken === token) this.activeToken = null;
@@ -867,12 +1273,32 @@ export class CloudBrowserSession {
   /** Stop an in-flight owner typing action when the task is stopped. */
   cancelCurrentInput(): void {
     if (this.activeToken) this.activeToken.cancelled = true;
+    this.revokeOwnerDownloads();
+  }
+
+  private revokeOwnerDownloads(): void {
+    this.downloadAllowedUntil = 0;
+    this.downloadPermissionEpoch += 1;
+    for (const download of this.pendingDownloads) {
+      this.downloadStreams.get(download)?.destroy();
+      void download.cancel().catch(() => undefined);
+    }
   }
 
   async close(): Promise<void> {
     if (this.closePromise) return this.closePromise;
     this.closed = true;
+    for (const guard of this.networkGuards) guard.stop();
+    this.networkGuards.clear();
+    this.resolver.cancel();
+    for (const resolve of this.dnsWaiters.splice(0)) resolve();
     this.ownerEnteredValues.length = 0;
+    this.ownerToolSecrets.clear();
+    this.savedLogins.clear();
+    this.history.length = 0;
+    this.lastHistoryUrl.clear();
+    this.downloads.clear();
+    this.revokeOwnerDownloads();
     if (this.activeToken) this.activeToken.cancelled = true;
     this.closePromise = (async () => {
       const shutdown = async () => {
@@ -1099,6 +1525,7 @@ export class CloudBrowserSession {
 
   /** Execute one browser-toolset member. Errors become is_error results; nothing throws. */
   async execute(member: string, input: MemberInput): Promise<MemberResult> {
+    this.revokeOwnerDownloads();
     const token: MemberToken = { cancelled: false };
     this.activeToken = token;
     try {
@@ -1195,11 +1622,12 @@ export class CloudBrowserSession {
   }
 
   private redactOwnerText(value: string): string {
-    if (!this.ownerEnteredValues.length) return value;
+    const secrets = [...new Set([...this.ownerEnteredValues, ...this.ownerToolSecrets])];
+    if (!secrets.length) return value;
     // Replace once: a later short value must not match text in a placeholder
     // inserted for an earlier value and expand it again. Longest-first also
     // hides a complete value when owner entries overlap.
-    const pattern = [...this.ownerEnteredValues]
+    const pattern = secrets
       .sort((left, right) => right.length - left.length)
       .map((secret) => secret.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
       .join("|");
@@ -1233,7 +1661,7 @@ export class CloudBrowserSession {
     const masks: Locator[] = [];
     for (const frame of page.frames()) {
       masks.push(frame.locator(MODEL_EDITABLE_SELECTOR));
-      for (const value of this.ownerEnteredValues) {
+      for (const value of new Set([...this.ownerEnteredValues, ...this.ownerToolSecrets])) {
         masks.push(frame.getByText(value, { exact: false }));
       }
     }
@@ -1639,6 +2067,7 @@ export class CloudBrowserSession {
         if (this.tabs.size >= MAX_TABS) fail(`At most ${MAX_TABS} tabs can be open.`);
         const page = await this.context.newPage();
         const id = this.pageIds.get(page) ?? this.register(page);
+        await this.ensureNetworkGuard(page);
         if (!this.pendingChanges.some((change) => change.tab_id === id)) {
           this.pendingChanges.push({ type: "tab_opened", tab_id: id });
         }

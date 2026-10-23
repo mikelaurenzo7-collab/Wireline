@@ -1,0 +1,331 @@
+/* The product workbench: one quiet conversation beside visible browser work. */
+.wl-studio-workspace {
+  --studio-rule: color-mix(in srgb, var(--wireline-color-border-default) 65%, transparent);
+}
+
+.wl-studio-mode-header {
+  display: flex;
+  min-height: 3.75rem;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 0.375rem 1rem;
+  border-bottom: 1px solid var(--studio-rule);
+}
+
+.wl-studio-chat-modes {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.wl-studio-chat-modes button {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.5rem;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.wl-studio-chat-modes button[aria-pressed="true"] {
+  background: var(--wireline-color-surface-subtle);
+  color: var(--wireline-color-text-primary);
+}
+
+.wl-studio-task-chat {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.wl-studio-task-chat__log {
+  min-height: 0;
+  flex: 1;
+  padding: 1.5rem clamp(1rem, 3vw, 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.wl-studio-task-chat__measure {
+  display: flex;
+  width: 100%;
+  max-width: 44rem;
+  min-height: 100%;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-inline: auto;
+}
+
+.wl-studio-task-chat__composer {
+  flex: 0 0 auto;
+  padding: 0.75rem 1rem max(1rem, env(safe-area-inset-bottom));
+}
+
+.wl-studio-task-chat__composer .wl-studio-task-chat__measure {
+  gap: 0.75rem;
+}
+
+.wl-studio-task-chat__composer textarea {
+  max-height: 10rem;
+  resize: none;
+  overflow-y: auto;
+}
+
+.wl-studio-task-chat__composer .wl-composer-dock,
+.wl-studio-chat__composer .wl-composer-dock {
+  border-radius: 1rem;
+  box-shadow: none;
+}
+
+.wl-work-steps {
+  margin-bottom: 1rem;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.8125rem;
+}
+
+.wl-work-steps summary {
+  min-height: 2.75rem;
+  padding-block: 0.6rem;
+  cursor: pointer;
+}
+
+.wl-work-steps ol {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem 0 0.75rem 1.25rem;
+  border-left: 1px solid var(--studio-rule);
+  line-height: 1.6;
+  list-style: decimal;
+}
+
+.wl-work-current-step,
+.wl-work-result-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+
+.wl-work-current-step svg,
+.wl-work-result-heading svg {
+  flex-shrink: 0;
+}
+
+.wl-work-current-step,
+.wl-work-composer-hint {
+  color: var(--wireline-color-text-secondary);
+}
+
+.wl-work-result-heading svg {
+  color: var(--wireline-color-status-success);
+}
+
+.wl-work-owner-reply {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-left: 2px solid var(--studio-rule);
+}
+
+.wl-work-owner-reply > span {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.wl-work-question {
+  display: grid;
+  justify-items: start;
+  gap: 1rem;
+}
+
+.wl-work-question > p,
+.wl-work-composer-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.wl-task-result-text {
+  display: grid;
+  gap: 1rem;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.wl-task-result-text p {
+  margin: 0;
+}
+
+.wl-task-result-text ul,
+.wl-task-result-text ol {
+  display: grid;
+  gap: 0.5rem;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+
+.wl-task-result-text ol {
+  list-style: decimal;
+}
+
+.wl-task-result-text a {
+  color: var(--wireline-color-text-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.wl-work-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  list-style: none;
+}
+
+.wl-work-sources a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--studio-rule);
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.wl-work-sources svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+}
+
+.wl-work-sources span {
+  overflow-wrap: anywhere;
+}
+
+.wl-studio-surface-nav {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.25rem;
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid var(--studio-rule);
+}
+
+.wl-studio-surface-nav button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 0.5rem;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.wl-studio-surface-nav button[aria-pressed="true"] {
+  background: var(--wireline-color-surface-subtle);
+  color: var(--wireline-color-text-primary);
+}
+
+.wl-studio-surface-nav button:focus-visible {
+  outline: 2px solid var(--wireline-color-focus-default);
+  outline-offset: 2px;
+}
+
+.wl-studio-chat__header,
+.wl-studio-panel-header {
+  min-height: 3.75rem;
+  border-bottom: 1px solid var(--studio-rule);
+}
+
+.wl-studio-chat__transcript {
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+
+.wl-studio-chat__transcript > div {
+  max-width: 44rem;
+}
+
+.wl-studio-message {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.wl-studio-message__body {
+  min-width: 0;
+  color: var(--wireline-color-text-primary);
+}
+
+.wl-studio-message.is-owner .wl-studio-message__body {
+  padding: 0.75rem 1rem;
+  border-radius: 1.1rem 1.1rem 0.35rem 1.1rem;
+  background: var(--wireline-color-surface-subtle);
+}
+
+.wl-studio-message.is-bot .wl-studio-message__body {
+  padding-block: 0.25rem;
+}
+
+.wl-studio-chat__welcome {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem 0.5rem;
+  text-align: center;
+}
+
+.wl-studio-chat__welcome > svg {
+  color: var(--wireline-color-text-tertiary);
+}
+
+.wl-studio-chat__welcome h2 {
+  max-width: 24ch;
+  margin: 0;
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.wl-studio-chat__welcome p {
+  max-width: 32ch;
+  margin: 0;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.wl-studio-chat__composer > div {
+  max-width: 44rem;
+}
+
+.wl-studio-chat__composer .wl-composer-dock {
+  border-radius: 1rem;
+  box-shadow: none;
+}
+
+@media (max-width: 639px) {
+  .wl-studio-surface-nav button {
+    flex: 1;
+  }
+
+  .wl-studio-message {
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+}

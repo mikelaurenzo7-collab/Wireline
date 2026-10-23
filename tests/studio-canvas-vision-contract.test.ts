@@ -24,7 +24,7 @@ describe("Studio Canvas vision contract", () => {
   it("keeps the design vision as the single source of truth", () => {
     expect(STUDIO_CANVAS_VISION).toBe(WIRELINE_DESIGN_VISION.studioCanvas);
     expect(STUDIO_CANVAS_VISION.defaultSurface).toBe("chat-plus-canvas");
-    expect(STUDIO_CANVAS_VISION.canvasSurface).toBe("spatial-cards");
+    expect(STUDIO_CANVAS_VISION.canvasSurface).toBe("browser-workbench");
     expect(STUDIO_CANVAS_VISION.agentSwitcher).toBe("context-chrome");
     expect(STUDIO_CANVAS_VISION.railBehavior).toBe("resizable-and-collapsible");
     expect(STUDIO_CANVAS_VISION.railWidthPx).toBe(232);

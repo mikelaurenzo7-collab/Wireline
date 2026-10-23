@@ -43,7 +43,7 @@ describe("marketing metadata contract", () => {
     const sitemap = read("public/sitemap.xml");
 
     expect(security).toContain('path={isTrustHub ? "/trust" : "/security"}');
-    expect(security).toContain("How BotBound Earns Live Calls");
+    expect(security).toContain('isTrustHub ? "Trust, Made Visible" : "Your Data. Your Control."');
     expect(security).not.toContain("Trust Center — how Wireline earns live calls.");
     expect(sitemap).toContain("<loc>https://botbound.app/trust</loc>");
     expect(marketingChrome.match(/<main\b/g)).toHaveLength(1);
@@ -115,7 +115,9 @@ describe("marketing metadata contract", () => {
     expect(planById("team")?.included_phone_numbers).toBe(2);
     expect(planById("business")?.price_usd_monthly).toBe(79);
     expect(planById("business")?.included_phone_numbers).toBe(5);
-    expect(pricing).toContain(`Plans from $${planById("email")?.price_usd_monthly}/month`);
+    expect(planById("email")?.price_usd_monthly).toBe(9);
+    expect(pricing).not.toContain("Plans from $");
+    expect(pricing).toContain("Choose your channels and capacity.");
     expect(pricing).toContain("Compare Calls, Email, and combined plans");
     expect(pricing).toContain("CHANNEL_PLANS = STRIPE_PLANS.filter");
     expect(pricing).toContain("plans={CHANNEL_PLANS}");

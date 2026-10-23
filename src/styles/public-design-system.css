@@ -1,0 +1,263 @@
+/* Public composition authority, October 2026.
+ * Shared marketing geometry lives here; the landing page owns its larger
+ * display lockup. Workspace density and customer-authored text are separate.
+ */
+.marketing-surface {
+  --wl-public-content-max: 70rem;
+  --wl-public-gutter-inline: clamp(1.25rem, 3vw, 2rem);
+  --wl-public-section-space: clamp(3rem, 5.5vw, 5rem);
+  --wl-public-section-space-tight: clamp(2.25rem, 4vw, 3.5rem);
+  --wl-public-hero-size: clamp(2rem, 1.45rem + 2.5vw, 3.75rem);
+  --wl-public-hero-leading: 1.04;
+  --wl-public-hero-tracking: -0.025em;
+  --wl-public-radius: 0.875rem;
+}
+
+.marketing-surface .wl-public-rail,
+.marketing-surface .wl-public-header__rail {
+  width: 100%;
+  max-width: var(--wl-public-content-max);
+  margin-inline: auto;
+}
+
+.marketing-surface .wl-public-header__rail {
+  max-width: calc(var(--wl-public-content-max) + 4rem);
+  min-height: 4.5rem;
+}
+
+.marketing-surface .wl-public-header {
+  border-color: color-mix(in srgb, var(--wireline-color-border-default) 70%, transparent);
+}
+
+.marketing-surface :is(.text-eyebrow, .wl-overline, .wl-eyebrow) {
+  font-size: 0.75rem;
+}
+
+/* Only the public page's primary message is capitalized. Section headings,
+ * product names, prose, legal clauses, and literal values retain authored case.
+ */
+.marketing-surface h1:not(.wl-preserve-case):not([data-wireline-preserve-case]) {
+  text-transform: uppercase;
+  text-wrap: balance;
+  word-break: normal;
+  hyphens: none;
+}
+
+.marketing-surface
+  :is(h1.marketing-hero-title, h1.marketing-hero__title, h1.wl-public-section-heading),
+.marketing-surface.wl-pricing-page #plans h1 {
+  max-width: min(100%, 22ch);
+  font-family: var(--wireline-font-family-display);
+  font-size: var(--wl-public-hero-size);
+  font-weight: 700;
+  line-height: var(--wl-public-hero-leading);
+  letter-spacing: var(--wl-public-hero-tracking);
+  text-shadow: none;
+}
+
+/* A legal document has a compact title, with its icon on the same baseline. */
+.marketing-surface .wl-public-document h1.marketing-hero-title {
+  max-width: none;
+  font-size: clamp(1.75rem, 1.35rem + 1.4vw, 2.5rem);
+}
+
+.marketing-surface .wl-public-document :is(.prose h1, .prose h2, .prose h3) {
+  text-transform: none;
+}
+
+.marketing-surface :is(.marketing-hero-lead, .wl-features-intro__lead) {
+  max-width: 46ch;
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  line-height: 1.65;
+  text-wrap: balance;
+}
+
+.marketing-surface .marketing-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+.marketing-surface :is(.marketing-btn-primary, .marketing-btn-secondary) {
+  min-height: 2.75rem;
+  gap: 0.5rem;
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.marketing-surface .marketing-hero__actions > :is(a, button) {
+  min-height: 3rem;
+  border-radius: 0.625rem;
+  padding-inline: 1.25rem;
+  font-weight: 600;
+}
+
+.wl-ui-caps.wl-ui-caps--document .marketing-surface:not(.landing-prestige) .marketing-section {
+  padding-block: var(--wl-public-section-space);
+  padding-inline: var(--wl-public-gutter-inline);
+}
+
+.wl-ui-caps.wl-ui-caps--document
+  .marketing-surface:not(.landing-prestige)
+  .marketing-frame-stack
+  > .marketing-section:first-of-type {
+  padding-top: clamp(3rem, 5vw, 4.5rem);
+}
+
+.marketing-surface :is(.wl-stitch-card, .marketing-panel, .marketing-panel-muted) {
+  border-radius: var(--wl-public-radius);
+  box-shadow: none;
+}
+
+.marketing-surface.wl-features-page .wl-features-intro .marketing-hero-title {
+  max-width: min(100%, 22ch);
+}
+
+.marketing-surface.wl-features-page .wl-features-pillars {
+  gap: 1.25rem;
+}
+
+.marketing-surface.wl-features-page .wl-features-pillar {
+  padding: clamp(1.25rem, 2.5vw, 1.75rem);
+  border-radius: var(--wl-public-radius);
+  background: var(--wireline-color-surface-default);
+}
+
+.marketing-surface.wl-features-page .wl-features-pillar::before {
+  content: none;
+}
+
+.marketing-surface.wl-features-page .wl-features-pillar__icon {
+  background: transparent;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0;
+}
+
+.marketing-surface.wl-features-page .wl-features-pillar .wl-features-pillar__label {
+  margin-top: 1.5rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.075em;
+}
+
+.marketing-surface.wl-features-page .wl-features-pillar__body,
+.marketing-surface.wl-features-page .wl-features-grid__item p {
+  text-wrap: pretty;
+}
+
+.marketing-surface.wl-features-page .wl-features-grid {
+  column-gap: 2rem;
+  row-gap: 0;
+}
+
+.marketing-surface.wl-features-page .wl-features-grid__item {
+  padding: 1.5rem 0;
+  border: 0;
+  border-top: 1px solid var(--wireline-color-border-default);
+  border-radius: 0;
+  background: transparent;
+}
+
+.marketing-surface.wl-solutions-page ol > li > span {
+  align-items: flex-start;
+}
+
+.marketing-surface.wl-solutions-page ol > li > span > span {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.marketing-surface .marketing-pain-card p {
+  max-width: 46ch;
+  margin-inline: 0;
+  text-wrap: pretty;
+}
+
+.marketing-surface .wl-trust-controls > article:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: none;
+}
+
+.marketing-surface.wl-developers-page article {
+  align-items: flex-start;
+  padding: 1.5rem;
+  text-align: left;
+}
+
+.marketing-surface.wl-developers-page article p {
+  margin-inline: 0;
+  text-wrap: pretty;
+}
+
+.marketing-surface.wl-developers-page ul > li:last-child {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: none;
+}
+
+.marketing-surface:is(.wl-contact-page, .wl-support-page) .marketing-frame-stack > section {
+  width: 100%;
+  max-width: 48rem;
+}
+
+.marketing-surface:is(.wl-contact-page, .wl-support-page) form :is(input, textarea, select) {
+  border-radius: 0.625rem;
+}
+
+.marketing-surface .marketing-chrome-bar__rail {
+  max-width: var(--wl-public-content-max);
+}
+
+.marketing-surface .marketing-chrome-bar :is(a, button) {
+  min-height: 2.75rem;
+}
+
+@media (max-width: 639px) {
+  .marketing-surface .wl-public-header__rail {
+    min-height: 4rem;
+    gap: 0.25rem;
+  }
+
+  .marketing-surface .wl-public-header .bb-wordmark.wl-public-header__wordmark {
+    font-size: 1.375rem;
+  }
+
+  .marketing-surface .wl-public-header [aria-label="Account"] {
+    gap: 0;
+  }
+
+  .marketing-surface .wl-public-header [aria-label="Account"] > a {
+    padding-inline: 0.875rem;
+    font-size: 0.8125rem;
+  }
+
+  .marketing-surface.wl-features-page .wl-features-pillars {
+    gap: 1rem;
+  }
+
+  .marketing-surface .marketing-pain-card {
+    flex-direction: row;
+    padding: 1.25rem;
+  }
+
+  .marketing-surface .marketing-pain-card > span {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-top: 0.125rem;
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing-surface :is(.wl-stitch-card, .marketing-btn-primary, .marketing-btn-secondary) {
+    transition: none;
+  }
+}

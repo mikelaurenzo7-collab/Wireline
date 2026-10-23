@@ -1,4 +1,4 @@
-import { useLocation, useSearchParams } from "react-router";
+import { useLocation } from "react-router";
 
 import { WORKSPACE_SECTIONS, workspaceSectionForPath } from "../../constants/navigation";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
@@ -11,18 +11,14 @@ import { WorkspaceTabStrip } from "./WorkspaceTabStrip";
  * the Bot's setup, what it knows, and its live computer work read as one place.
  * Each link carries the current Bot so switching sections never switches Bots.
  *
- * Explicit Computer navigation gives the task the workspace. The conversation
- * remains mounted on wide screens and can be restored beside it.
+ * Computer opens beside the conversation on wide screens. Inside Studio the
+ * browser already has its own visible panel/view, so no duplicate link is needed.
  */
 export default function WorkspaceSectionNav({ className }: { className?: string }) {
   const { pathname } = useLocation();
-  const [params] = useSearchParams();
   const { requestedId, resolvedId } = useStudioActiveAgentId();
   const sideBySide = useMediaQuery("(min-width: 1180px)");
-  const activeId =
-    pathname === "/studio" && params.get("focus") === "computer"
-      ? "computer"
-      : (workspaceSectionForPath(pathname) ?? "setup");
+  const activeId = workspaceSectionForPath(pathname) ?? "setup";
   // An explicit Bot remains the scope even when its roster entry is unavailable.
   // The destination owns validation; navigation must not choose a different Bot.
   const navigationAgentId = requestedId?.trim() || resolvedId;
@@ -30,7 +26,7 @@ export default function WorkspaceSectionNav({ className }: { className?: string 
 
   const hrefFor = (section: (typeof WORKSPACE_SECTIONS)[number]) => {
     if (section.id === "computer" && sideBySide) {
-      return `/studio?${agentQuery ? `${agentQuery}&` : ""}panel=computer&focus=computer`;
+      return `/studio?${agentQuery ? `${agentQuery}&` : ""}panel=computer`;
     }
     return `${section.href}${agentQuery ? `?${agentQuery}` : ""}`;
   };
@@ -38,7 +34,9 @@ export default function WorkspaceSectionNav({ className }: { className?: string 
   return (
     <WorkspaceTabStrip
       ariaLabel="Workspace sections"
-      tabs={WORKSPACE_SECTIONS.map((section) => ({
+      tabs={WORKSPACE_SECTIONS.filter(
+        (section) => pathname !== "/studio" || section.id !== "computer",
+      ).map((section) => ({
         id: section.id,
         label: section.label,
         href: hrefFor(section),

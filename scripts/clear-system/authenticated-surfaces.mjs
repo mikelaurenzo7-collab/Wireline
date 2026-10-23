@@ -27,6 +27,8 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   const mcpWidgetStyles = read("src/lib/wireline-mcp-widget-styles.ts");
   const chatgptAccountWidget = read("src/lib/chatgpt-mcp-account.ts");
   const signalOrbFrame = read("src/components/ui/SignalOrbFrame.tsx");
+  const computerPage = read("src/pages/ComputerPage.tsx");
+  const browserTools = read("src/components/computer/BrowserSessionTools.tsx");
 
   mustInclude(
     "src/routes/AppRoutes.tsx",
@@ -55,6 +57,25 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
       designVision,
     },
     { mustInclude, mustExclude },
+  );
+
+  mustInclude(
+    "src/pages/ComputerPage.tsx",
+    computerPage,
+    /task\.browserCapabilities\?\.tabs[\s\S]*kind: "close_tab"/,
+    "session tab management must follow the current browser capabilities",
+  );
+  mustInclude(
+    "src/components/computer/BrowserSessionTools.tsx",
+    browserTools,
+    /const disabled = !ownerControl \|\| ownerBusy/,
+    "session tools must require owner control and serialize owner input",
+  );
+  mustExclude(
+    "src/components/computer/BrowserSessionTools.tsx",
+    browserTools,
+    /(?:localStorage|sessionStorage)\.setItem/,
+    "browser credentials and cookies must never be saved to local drafts",
   );
 
   mustInclude(

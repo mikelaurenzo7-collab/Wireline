@@ -64,7 +64,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "A voice first Bot for HVAC, plumbing, electrical, and roofing teams. Answer after hours calls, capture requests, and book available appointments.",
     eyebrow: "For Home Services Pros",
-    headline: "Turn After Hours Calls into Scheduled Work",
+    headline: "Keep the Work Moving",
     pains: [
       {
         icon: "Clock",
@@ -91,7 +91,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "24 / 7",
     statLabel:
       "Built for the after hours calls, urgent requests, and quote inquiries your team chooses to route.",
-    primaryCta: { label: "Create Home Services Bot", href: signupHrefForWedge("home-services") },
+    primaryCta: { label: "Create Your Bot", href: signupHrefForWedge("home-services") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
       "Your greeting, approved answers, and handoff rules guide every incoming conversation.",
@@ -121,7 +121,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "A voice first Bot for general practice information and scheduling demonstrations. Use fictional details for rehearsals. Do not use BotBound for protected health information without an approved configuration and signed BAA.",
     eyebrow: "For Medical Practices",
-    headline: "Patients on Hold Become Patients on the Schedule",
+    headline: "Every Caller. Clear Limits.",
     pains: [
       {
         icon: "Phone",
@@ -148,7 +148,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "After Hours",
     statLabel:
       "Route the calls your team cannot answer so configured intake and scheduling can continue after hours.",
-    primaryCta: { label: "Create Medical Bot", href: signupHrefForWedge("medical") },
+    primaryCta: { label: "Create Your Bot", href: signupHrefForWedge("medical") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
       "Use your practice greeting and approved general information. Do not use BotBound for PHI unless a signed BAA and approved configuration are confirmed in writing.",
@@ -178,7 +178,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "A voice first Bot for law firms. Capture new matters, qualify urgency, schedule consults, continue by email, and route conflict checks for staff review.",
     eyebrow: "For Law Firms",
-    headline: "Give Every Routed Intake a Clear Next Step",
+    headline: "Intake with Next Steps",
     pains: [
       {
         icon: "Phone",
@@ -205,7 +205,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "Review Ready",
     statLabel:
       "Captures the prospective client, opposing party, and matter type, then routes the record to your designated reviewer.",
-    primaryCta: { label: "Create Legal Intake Bot", href: signupHrefForWedge("legal") },
+    primaryCta: { label: "Create Your Bot", href: signupHrefForWedge("legal") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
       "Audit logs preserve configured disclosures and opt outs. BotBound is the intake layer; your attorneys deliver the advice.",
@@ -235,7 +235,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "A voice first Bot for real estate professionals. Answer listing calls, capture buyer needs, and book available showings.",
     eyebrow: "For Real Estate",
-    headline: "Work More Listing Calls Without Losing Control",
+    headline: "Keep Up with Every Inquiry",
     pains: [
       {
         icon: "Phone",
@@ -262,7 +262,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "Calendar Aware",
     statLabel:
       "Qualified buyers can receive showing options from your configured Calendar. You set the rules for staff handoff.",
-    primaryCta: { label: "Create Real Estate Bot", href: signupHrefForWedge("real-estate") },
+    primaryCta: { label: "Create Your Bot", href: signupHrefForWedge("real-estate") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
       "Callers hear your configured brokerage greeting. Your team can review outcomes and next steps in BotBound.",
@@ -292,7 +292,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Create a Bot to answer incoming calls, organize email, and research everyday tasks online. Set its knowledge and limits, then rehearse before going live.",
     eyebrow: "For You",
-    headline: "Put the Everyday Work on Your Bot",
+    headline: "Make Room for Your Day",
     pains: [
       {
         icon: "Clock",
@@ -354,7 +354,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "A voice first Bot for insurance agencies. Answer incoming questions, capture quote intake and first notice of loss details, and route requests to your team.",
     eyebrow: "For Insurance Agencies",
-    headline: "Give Every Caller a Clear Next Step",
+    headline: "Every Call. Next Steps.",
     pains: [
       {
         icon: "Phone",
@@ -380,7 +380,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     scriptPreview: `"Thanks for calling [Your Agency]. I'm Alex, an AI assistant. Are you calling about a quote, a claim, or an existing policy? I can collect the details for your producer."`,
     statValue: "Configurable",
     statLabel: "Intake questions, routing, and staff handoff stay under the agency's control.",
-    primaryCta: { label: "Create Insurance Bot", href: signupHrefForWedge("insurance") },
+    primaryCta: { label: "Create Your Bot", href: signupHrefForWedge("insurance") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
       "Callers hear your configured agency greeting. Transcripts follow tenant retention; recording is optional and off by default.",
@@ -410,7 +410,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "A voice first Bot for restaurants. Take reservations, capture takeout requests, handle event inquiries, continue by email, and route exceptions to staff.",
     eyebrow: "For Restaurants",
-    headline: "The Phone Rings During Dinner Rush. The Bot Picks Up",
+    headline: "More Hosting. Less Holding.",
     pains: [
       {
         icon: "Calendar",
@@ -437,7 +437,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "Saturday 7pm",
     statLabel:
       "Built for the rush hour calls your host cannot reach: reservations, structured takeout requests, and event inquiries.",
-    primaryCta: { label: "Create Restaurant Bot", href: signupHrefForWedge("restaurants") },
+    primaryCta: { label: "Create Your Bot", href: signupHrefForWedge("restaurants") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
       "Callers hear the restaurant identity and the built in OpenAI voice you choose; that speaker stays consistent for the full call.",
@@ -467,7 +467,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     metaDescription:
       "Answer incoming sales questions, capture customer needs, and book available appointments with your Bot. No CRM required.",
     eyebrow: "For Sales Inquiries",
-    headline: "Give Every Inquiry a Clear Next Step",
+    headline: "Turn Questions into Next Steps",
     pains: [
       {
         icon: "Phone",
@@ -494,7 +494,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "Ready to Answer",
     statLabel:
       "Give incoming requests a clear next step, from the first question to an appointment or handoff.",
-    primaryCta: { label: "Create Front Desk Bot", href: signupHrefForWedge("support") },
+    primaryCta: { label: "Create Your Bot", href: signupHrefForWedge("support") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
       "Lead details, call outcomes, and next steps remain visible in BotBound for your team to review.",

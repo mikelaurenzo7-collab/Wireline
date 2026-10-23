@@ -81,7 +81,7 @@ describe("current-state UI contract", () => {
     expect(install).not.toContain("WIRELINE Command");
   });
 
-  it("keeps public conversion routes on the explicit selected plan", () => {
+  it("keeps generic signup neutral while preserving explicit plan and role selections", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const hero = read("src/components/marketing/MarketingHero.tsx");
     const authPortal = read("src/components/AuthPortal.tsx");
@@ -90,7 +90,8 @@ describe("current-state UI contract", () => {
     expect(landing).toContain("STRIPE_PLANS");
     expect(landing).toContain("price_usd_monthly");
     expect(landing).toContain("to={signupHrefForPlan(id)}");
-    expect(landing).toContain('signupHrefForPlan("personal", { template: template.key })');
+    expect(landing).toContain('to="/signup"');
+    expect(landing).toContain("/signup?template=${encodeURIComponent(template.key)}");
     expect(hero).toContain("marketing-hero__title");
     expect(hero).toContain("marketing-hero__actions");
     expect(authPortal).toContain('location.pathname.startsWith("/signup/")');

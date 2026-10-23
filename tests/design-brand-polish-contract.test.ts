@@ -83,7 +83,7 @@ describe("E2E design and BotBound brand polish", () => {
     const hero = read("src/components/marketing/MarketingHero.tsx");
     const polish = read("src/styles/e2e-design-polish.css");
     const executablePolish = withoutComments(polish);
-    expect(polish).toContain(".marketing-surface :is(h1, h2, h3, h4, h5, h6) {");
+    expect(polish).toContain(".marketing-surface :is(h2, h3, h4, h5, h6) {");
     const bodyRule =
       executablePolish.match(
         /\.marketing-surface :is\(p, li, \.wl-public-copy, \.wl-route-copy, \.wl-page-copy\)\s*\{[^}]*\}/,
@@ -181,15 +181,17 @@ describe("E2E design and BotBound brand polish", () => {
     expect(features).toContain(">\n                Get Started\n");
     expect(features).toContain(">\n                See Pricing\n");
     expect(features).not.toMatch(/START FREE|SEE PRICING/);
-    expect(features).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
-    expect(pricing).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
-    expect(compare).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
+    const publicSystem = read("src/styles/public-design-system.css");
+    expect(publicSystem).toContain("--wl-public-hero-size:");
+    expect(publicSystem).toContain("h1.marketing-hero-title");
+    expect(pricing).toContain("marketing-hero-title");
+    expect(compare).toContain("marketing-hero-title");
     expect(solutions).toContain("marketing-hero-title");
     expect(solutions).not.toContain("<MarketingHero");
-    expect(solutions).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
-    expect(blog).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
-    expect(support).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
-    expect(contact).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
+    expect(solutions).toContain("marketing-hero-title");
+    expect(blog).toContain("marketing-hero-title");
+    expect(support).toContain("marketing-hero-title");
+    expect(contact).toContain("marketing-hero-title");
     expect(notFound).toContain("text-[4.25rem]");
     expect(notFound).not.toContain("xl:text-[12rem]");
     expect(responsive).not.toMatch(/\.wl-pricing-page h1\s*\{[^}]*10\.4vw/);
@@ -199,9 +201,9 @@ describe("E2E design and BotBound brand polish", () => {
 
   it("keeps status foregrounds accessible while public entry paths remain text-labeled", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain('aria-label="Choose what your Bot does"');
-    expect(landing).toContain("Answer. Book.");
-    expect(landing).toContain("Plan. Coordinate.");
+    expect(landing).toContain('id="solutions"');
+    expect(landing).toContain("FEATURED_TEMPLATES.map");
+    expect(landing).toContain("encodeURIComponent(template.key)");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
     const badge = read("src/components/atoms/Badge.tsx");
     expect(badge).toContain("text-[var(--wireline-color-status-success)]");
@@ -213,19 +215,18 @@ describe("E2E design and BotBound brand polish", () => {
     const auth = read("src/styles/auth-access-panel.css");
     // Account access lives behind two clear actions instead of a split form.
     expect(landing).not.toContain("<AuthAccessPanel");
-    expect(landing).toContain('to={signupHrefForPlan("personal")}');
+    expect(landing).toContain('to="/signup"');
     expect(landing).toContain('to="/signin"');
-    expect(landing).toMatch(
-      /<span>Voice Bots<\/span>\s*<span>With a Computer,<\/span>[\s\S]*<span>Phone Number,<\/span>\s*<span>and Email Address\.<\/span>/,
-    );
+    expect(landing).toMatch(/<h1[^>]*>[\s\S]*VOICE BOTS\.[\s\S]*REAL WORK\.[\s\S]*<\/h1>/);
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).toContain("<BotBoundMark");
     expect(landing).toContain("landing-prestige__hero-mark");
-    expect(landing).toContain("landing-prestige__directions");
+    expect(landing).not.toContain("landing-prestige__directions");
+    expect(landing).not.toContain("Personal is $12 a month");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).toContain("FEATURED_TEMPLATE_KEYS");
     expect(landing).toContain("FEATURED_TEMPLATES.map");
-    expect(landing).toContain("template.moves.map");
+    expect(landing).toContain("{template.summary}");
     expect(landing).toContain('id="pricing"');
     expect(landing).toContain("landing-prestige__trust");
     expect(landing).toContain("<LandingFooter />");

@@ -35,6 +35,7 @@ async function openPublicRoute(page: Page, path: string) {
       await expect(page.getByRole("heading", { name: "Loading", exact: true })).toHaveCount(0, {
         timeout: 60_000,
       });
+      await page.evaluate(() => document.fonts.ready);
       return;
     } catch (error) {
       lastError = error;
@@ -57,7 +58,18 @@ async function publicMetrics(page: Page) {
     const prestigeActions = document.querySelector<HTMLElement>(
       ".landing-prestige__hero .landing-prestige__actions",
     );
-    const prestigeDirections = document.querySelector<HTMLElement>(".landing-prestige__directions");
+    const titleLines = Array.from(
+      document.querySelectorAll<HTMLElement>(".landing-prestige__title-line"),
+    ).map((line) => {
+      const range = document.createRange();
+      range.selectNodeContents(line);
+      const boxes = [...range.getClientRects()].filter((box) => box.width > 0);
+      return {
+        text: line.textContent?.trim() ?? "",
+        words: line.textContent?.trim().split(/\s+/).length ?? 0,
+        boxes: boxes.map((box) => ({ left: box.left, right: box.right, width: box.width })),
+      };
+    });
     const startFree = Array.from(document.querySelectorAll<HTMLAnchorElement>("a")).find(
       (link) => link.textContent?.trim() === "Get Started",
     );
@@ -72,7 +84,6 @@ async function publicMetrics(page: Page) {
     const prestigeHeroRect = rect(prestigeHero);
     const prestigeTitleRect = rect(prestigeTitle);
     const prestigeActionsRect = rect(prestigeActions);
-    const prestigeDirectionsRect = rect(prestigeDirections);
 
     return {
       rootHorizontalOverflow: root.scrollWidth - root.clientWidth,
@@ -102,8 +113,7 @@ async function publicMetrics(page: Page) {
         ? prestigeTitleRect.left + prestigeTitleRect.width / 2
         : 0,
       prestigeActionsBottom: prestigeActionsRect?.bottom ?? Number.POSITIVE_INFINITY,
-      prestigeDirectionsWidth: prestigeDirectionsRect?.width ?? 0,
-      prestigeDirectionsHeight: prestigeDirectionsRect?.height ?? 0,
+      titleLines,
       prestigeHeroDisplay: prestigeHero ? getComputedStyle(prestigeHero).display : "",
       viewportHeight: window.innerHeight,
       viewportWidth: window.innerWidth,
@@ -132,6 +142,27 @@ function expectNoHorizontalEscape(
   expect(metrics.headerRight, `${name} header right edge`).toBeLessThanOrEqual(
     metrics.viewportWidth + 2,
   );
+}
+
+function expectBalancedHomeMessage(
+  metrics: Awaited<ReturnType<typeof publicMetrics>>,
+  name: string,
+) {
+  expect(metrics.titleLines, `${name} short hero phrases`).toHaveLength(2);
+  for (const line of metrics.titleLines) {
+    expect(line.text, `${name} uppercase display`).toBe(line.text.toUpperCase());
+    expect(line.words, `${name} no isolated word`).toBeGreaterThanOrEqual(2);
+    expect(line.boxes, `${name} phrase stays on one line`).toHaveLength(1);
+    expect(line.boxes[0].left, `${name} text left edge`).toBeGreaterThanOrEqual(0);
+    expect(line.boxes[0].right, `${name} text right edge`).toBeLessThanOrEqual(
+      metrics.viewportWidth,
+    );
+  }
+  const widths = metrics.titleLines.map((line) => line.boxes[0].width);
+  expect(
+    Math.min(...widths) / Math.max(...widths),
+    `${name} balanced line lengths`,
+  ).toBeGreaterThan(0.6);
 }
 
 for (const { path, name } of PUBLIC_ROUTES) {
@@ -224,33 +255,30 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
   ).toHaveCount(0);
   await expect(
     page.getByRole("heading", {
-      name: "Voice Bots With a Computer, Phone Number, and Email Address.",
+      name: "VOICE BOTS. REAL WORK.",
     }),
   ).toBeVisible();
-  const directions = page.getByRole("navigation", { name: "Choose what your Bot does" });
-  await expect(directions.getByText("Plan. Coordinate.", { exact: true })).toBeVisible();
-  await expect(directions.getByText("Answer. Book.", { exact: true })).toBeVisible();
+  await expect(page.locator(".landing-prestige__directions")).toHaveCount(0);
+  await expect(page.locator(".landing-prestige__hero")).not.toContainText("$12");
   // Account access is one action away instead of a split-screen form.
   await expect(page.getByRole("region", { name: "Account access" })).toHaveCount(0);
   const actions = page.locator(".landing-prestige__hero .landing-prestige__actions");
   await expect(actions.getByRole("link", { name: "Get Started" })).toHaveAttribute(
     "href",
-    /\/signup\?[^\s]*plan=free/,
+    "/signup",
   );
   await expect(actions.getByRole("link", { name: "Sign In", exact: true })).toHaveAttribute(
     "href",
     "/signin",
   );
-  await expect(
-    page.getByRole("heading", { name: "Put a Bot on Your Everyday Work" }),
-  ).toBeAttached();
+  await expect(page.getByRole("heading", { name: "Make it yours.", exact: true })).toBeAttached();
 
   const metrics = await publicMetrics(page);
   expectNoHorizontalEscape(metrics, "desktop home");
   // The centered promise and both actions land above the fold.
   expect(Math.abs(metrics.prestigeTitleCenter - metrics.viewportWidth / 2)).toBeLessThan(24);
   expect(metrics.prestigeActionsBottom).toBeLessThanOrEqual(metrics.viewportHeight);
-  expect(metrics.prestigeDirectionsHeight).toBeGreaterThanOrEqual(44);
+  expectBalancedHomeMessage(metrics, "desktop home");
 });
 
 test("home remains usable on a short laptop", async ({ page }) => {
@@ -262,8 +290,7 @@ test("home remains usable on a short laptop", async ({ page }) => {
   expect(metrics.prestigeTitleLeft).toBeGreaterThanOrEqual(0);
   expect(metrics.prestigeTitleRight).toBeLessThanOrEqual(metrics.viewportWidth);
   expect(metrics.prestigeActionsBottom).toBeLessThanOrEqual(metrics.viewportHeight);
-  expect(metrics.prestigeDirectionsHeight).toBeGreaterThanOrEqual(44);
-  expect(metrics.prestigeDirectionsWidth).toBeGreaterThan(240);
+  expectBalancedHomeMessage(metrics, "short-laptop home");
 });
 
 test("home keeps the BotBound promise and account path in one mobile flow", async ({ page }) => {
@@ -285,31 +312,46 @@ test("home keeps the BotBound promise and account path in one mobile flow", asyn
   expect(metrics.prestigeHeroDisplay).toBe("grid");
   expect(metrics.prestigeTitleLeft).toBeGreaterThanOrEqual(0);
   expect(metrics.prestigeTitleRight).toBeLessThanOrEqual(metrics.viewportWidth);
+  expectBalancedHomeMessage(metrics, "phone home");
 });
 
-test("home direction choices fit the narrowest supported width", async ({ page }) => {
+test("home role choices and hero fit the narrowest supported width", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await openPublicRoute(page, "/");
 
   const geometry = await page.evaluate(() => {
     const choices = Array.from(
-      document.querySelectorAll<HTMLElement>(".landing-prestige__direction"),
-    ).map((element) => element.getBoundingClientRect());
+      document.querySelectorAll<HTMLElement>(".landing-prestige__role-card"),
+    ).map((element) => {
+      const card = element.getBoundingClientRect();
+      const action = element.querySelector<HTMLAnchorElement>("a")!;
+      return {
+        left: card.left,
+        right: card.right,
+        actionHeight: action.getBoundingClientRect().height,
+        href: action.getAttribute("href"),
+      };
+    });
     const group = document
-      .querySelector<HTMLElement>(".landing-prestige__directions")
+      .querySelector<HTMLElement>(".landing-prestige__role-grid")
       ?.getBoundingClientRect();
     return { group, choices, width: window.innerWidth };
   });
 
   expect(geometry.group).toBeTruthy();
-  expect(geometry.choices).toHaveLength(2);
+  expect(geometry.choices).toHaveLength(6);
   expect(geometry.group!.left).toBeGreaterThanOrEqual(-1);
   expect(geometry.group!.right).toBeLessThanOrEqual(geometry.width + 1);
   for (const choice of geometry.choices) {
     expect(choice.left).toBeGreaterThanOrEqual(geometry.group!.left - 1);
     expect(choice.right).toBeLessThanOrEqual(geometry.group!.right + 1);
-    expect(choice.width).toBeGreaterThan(100);
+    expect(choice.actionHeight).toBeGreaterThanOrEqual(44);
+    const destination = new URL(choice.href!, "https://botbound.app");
+    expect(destination.pathname).toBe("/signup");
+    expect(destination.searchParams.get("template")).toBeTruthy();
+    expect(destination.searchParams.has("plan")).toBe(false);
   }
+  expectBalancedHomeMessage(await publicMetrics(page), "narrow phone home");
 });
 
 test("home remains composed on a short wide desktop", async ({ page }) => {
@@ -319,7 +361,7 @@ test("home remains composed on a short wide desktop", async ({ page }) => {
 
   expectNoHorizontalEscape(metrics, "short-wide home");
   expect(metrics.prestigeTitleRight).toBeLessThanOrEqual(metrics.viewportWidth);
-  expect(metrics.prestigeDirectionsHeight).toBeGreaterThanOrEqual(44);
+  expectBalancedHomeMessage(metrics, "short-wide home");
 });
 
 test("features and pricing remain scrollable without horizontal clipping", async ({ page }) => {
@@ -333,12 +375,12 @@ test("features and pricing remain scrollable without horizontal clipping", async
   }
 });
 
-test("showcase redirects into free account creation without horizontal escape", async ({
+test("showcase redirects into plan-neutral account creation without horizontal escape", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await openPublicRoute(page, "/showcase");
-  await expect(page).toHaveURL(/\/signup\?plan=free$/);
+  await expect(page).toHaveURL(/\/signup$/);
   await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
   await expect(page.locator("#showcase-preview")).toHaveCount(0);
   const metrics = await publicMetrics(page);

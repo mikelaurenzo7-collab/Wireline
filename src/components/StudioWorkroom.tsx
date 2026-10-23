@@ -93,12 +93,10 @@ function MessageBubble({
 
   if (isUser) {
     return (
-      <article className="ml-auto max-w-[84%]">
-        <div className="rounded-xl bg-primary px-4 py-3 text-[14px] font-medium leading-[1.5] text-primary-foreground shadow-sm">
+      <article className="wl-studio-message is-owner ml-auto max-w-[84%]">
+        <div className="wl-studio-message__body">
           <p className="whitespace-pre-wrap break-words">
-            <LinkifiedText className="text-primary-foreground decoration-current hover:decoration-current">
-              {message.content}
-            </LinkifiedText>
+            <LinkifiedText>{message.content}</LinkifiedText>
           </p>
         </div>
         {mode === "test" ? (
@@ -109,9 +107,9 @@ function MessageBubble({
   }
 
   return (
-    <article className="w-fit max-w-[92%]" aria-label={`${agentName} response`}>
+    <article className="wl-studio-message is-bot w-full" aria-label={`${agentName} response`}>
       <div className="min-w-0">
-        <div className="rounded-xl border border-border bg-card px-4 py-3 text-[14px] leading-[1.5] text-foreground shadow-sm">
+        <div className="wl-studio-message__body">
           <p className="whitespace-pre-wrap break-words">
             <LinkifiedText>{message.content}</LinkifiedText>
           </p>
@@ -540,10 +538,12 @@ const StudioWorkroom = forwardRef<
 
   return (
     <section
-      className="flex h-full min-h-0 flex-col overflow-y-auto bg-background"
+      className="wl-studio-chat flex h-full min-h-0 flex-col overflow-y-auto bg-background"
       aria-label={mode === "test" ? `${agentName} rehearsal conversation` : `${agentName} workroom`}
     >
-      <header className={`shrink-0 ${split ? "px-3 py-2 sm:px-4" : "px-4 py-2 sm:px-6"}`}>
+      <header
+        className={`wl-studio-chat__header shrink-0 ${split ? "px-3 py-2 sm:px-4" : "px-4 py-2 sm:px-6"}`}
+      >
         <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-2 sm:gap-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             {onModeChange ? (
@@ -681,7 +681,7 @@ const StudioWorkroom = forwardRef<
 
           <section
             ref={scrollRef}
-            className="min-h-0 flex-1 overflow-y-auto px-4 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:px-6"
+            className="wl-studio-chat__transcript min-h-0 flex-1 overflow-y-auto px-4 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:px-6"
             role="log"
             aria-label="Conversation"
             aria-live="polite"
@@ -718,11 +718,17 @@ const StudioWorkroom = forwardRef<
                     Try a Customer Question
                   </h2>
                 </div>
-              ) : null}
+              ) : (
+                <div className="wl-studio-chat__welcome">
+                  <MessageCircle className="size-6" aria-hidden="true" />
+                  <h2>What should {agentName} know?</h2>
+                  <p>Share instructions. Review changes before saving.</p>
+                </div>
+              )}
             </div>
           </section>
 
-          <div className="shrink-0 border-t border-border/70 bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
+          <div className="wl-studio-chat__composer shrink-0 bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
             <div className="mx-auto max-w-3xl">
               {showStarterPrompts ? (
                 <div

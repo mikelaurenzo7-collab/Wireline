@@ -33,6 +33,11 @@ vi.mock("react", async (original) => ({
       },
     ];
   },
+  useRef(initial: unknown) {
+    const index = h.cursor++;
+    const slot = (h.slots[index] ??= { value: { current: initial } });
+    return slot.value;
+  },
   useEffect(callback: () => void | (() => void), dependencies: readonly unknown[]) {
     const index = h.cursor++;
     const slot = (h.slots[index] ??= {});
@@ -106,6 +111,112 @@ beforeEach(() => {
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 
 describe("connected app access recovery", () => {
+  it.each(["network", "missing receipt", "different permission"])(
+    "retains confirmed permission after %s and requires an authoritative refresh",
+    async (failure) => {
+      h.fetch.mockResolvedValueOnce(response({ coaching_writes_enabled: true, connections: [] }));
+      let nodes = await settle();
+      if (failure === "network") h.fetch.mockRejectedValueOnce(new Error("Connection lost"));
+      else
+        h.fetch.mockResolvedValueOnce(
+          response(failure === "missing receipt" ? {} : { coaching_writes_enabled: true }),
+        );
+      nodes.find((node) => node.type === "switch")!.props.onCheckedChange!(false);
+      nodes = await settle();
+      expect(nodes.find((node) => node.type === "switch")?.props).toMatchObject({
+        checked: true,
+        disabled: true,
+      });
+      expect(nodes.some((node) => node.props.title === "Connected Apps Updated")).toBe(false);
+      nodes.find((node) => node.type === "switch")!.props.onCheckedChange!(false);
+      expect(h.fetch).toHaveBeenCalledTimes(2);
+      h.fetch.mockResolvedValueOnce(response({ coaching_writes_enabled: false, connections: [] }));
+      nodes.find((node) => node.type === "button" && text(node) === "Refresh Access")!.props
+        .onClick!();
+      nodes = await settle();
+      expect(nodes.find((node) => node.type === "switch")?.props).toMatchObject({
+        checked: false,
+        disabled: false,
+      });
+      expect(nodes.some((node) => node.props.title === "Connected Apps Updated")).toBe(false);
+    },
+  );
+
+  it("keeps connected apps until a canonical revocation receipt and resets review after an unknown result", async () => {
+    const current = {
+      coaching_writes_enabled: false,
+      connections: [
+        {
+          client: "Cursor",
+          scope: "agents.read",
+          created_at: "2026-10-01T00:00:00Z",
+          expires_at: "2026-11-01T00:00:00Z",
+        },
+      ],
+    };
+    h.fetch.mockResolvedValueOnce(response(current));
+    let nodes = await settle();
+    nodes.find((node) => node.type === "button" && text(node) === "Disconnect All Connected Apps")!
+      .props.onClick!();
+    nodes = await settle();
+    h.fetch.mockResolvedValueOnce(response({ disconnected: false }));
+    nodes.find((node) => node.type === "button" && text(node) === "Confirm Disconnect All")!.props
+      .onClick!();
+    nodes = await settle();
+    expect(nodes.some((node) => text(node) === "Cursor")).toBe(true);
+    expect(nodes.some((node) => node.props.title === "Connected Apps Updated")).toBe(false);
+    h.fetch.mockResolvedValueOnce(response(current));
+    nodes.find((node) => node.type === "button" && text(node) === "Refresh Access")!.props
+      .onClick!();
+    nodes = await settle();
+    expect(
+      nodes.some(
+        (node) => node.type === "button" && text(node) === "Disconnect All Connected Apps",
+      ),
+    ).toBe(true);
+    nodes.find((node) => node.type === "button" && text(node) === "Disconnect All Connected Apps")!
+      .props.onClick!();
+    nodes = await settle();
+    h.fetch.mockResolvedValueOnce(response({ disconnected: true }));
+    nodes.find((node) => node.type === "button" && text(node) === "Confirm Disconnect All")!.props
+      .onClick!();
+    nodes = await settle();
+    expect(nodes.some((node) => text(node) === "Cursor")).toBe(false);
+    expect(nodes.some((node) => node.props.title === "Connected Apps Updated")).toBe(true);
+  });
+
+  it("serializes permission and revocation before a pending render", async () => {
+    h.fetch.mockResolvedValueOnce(
+      response({
+        coaching_writes_enabled: false,
+        connections: [
+          {
+            client: "Cursor",
+            scope: "agents.read",
+            created_at: "2026-10-01T00:00:00Z",
+            expires_at: "2026-11-01T00:00:00Z",
+          },
+        ],
+      }),
+    );
+    let nodes = await settle();
+    const pending = deferred<ReturnType<typeof response>>();
+    h.fetch.mockReturnValueOnce(pending.promise);
+    const toggle = nodes.find((node) => node.type === "switch")!.props.onCheckedChange!;
+    toggle(true);
+    toggle(true);
+    nodes.find((node) => node.type === "button" && text(node) === "Disconnect All Connected Apps")!
+      .props.onClick!();
+    expect(h.fetch).toHaveBeenCalledTimes(2);
+    pending.resolve(response({ coaching_writes_enabled: true }));
+    nodes = await settle();
+    expect(nodes.find((node) => node.type === "switch")?.props).toMatchObject({
+      checked: true,
+      disabled: false,
+    });
+    expect(nodes.some((node) => node.props.title === "Connected Apps Updated")).toBe(true);
+  });
+
   it.each(["503", "network", "malformed success"])(
     "keeps unknown access read-only after %s and restores server state on retry",
     async (failure) => {

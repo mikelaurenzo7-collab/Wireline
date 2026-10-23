@@ -73,7 +73,7 @@ export default function MarketingFooter({
               <WirelineLockup size="large" />
             </Link>
             <p className="mt-3 max-w-sm text-[15px] leading-6 text-muted-foreground">
-              Voice Bots with a computer, phone number, and email address.
+              Calling, email, and a computer. One workspace.
             </p>
           </div>
 

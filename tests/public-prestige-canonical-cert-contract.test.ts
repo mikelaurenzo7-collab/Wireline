@@ -18,7 +18,8 @@ describe("canonical BotBound public prestige certification", () => {
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).not.toContain("<AuthAccessPanel");
-    expect(landing).toContain('to={signupHrefForPlan("personal")}');
+    expect(landing).toContain('to="/signup"');
+    expect(landing).toContain("to={signupHrefForPlan(id)}");
     expect(landing).not.toContain("template.category");
     expect(landing).not.toContain("ONE WORKSPACE");
 

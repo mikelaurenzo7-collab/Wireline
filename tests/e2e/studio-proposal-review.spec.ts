@@ -77,7 +77,7 @@ async function mockWorkspace(page: Page) {
 }
 
 async function requestProposal(page: Page) {
-  await page.goto(`/studio?agent=${bots[0].id}`);
+  await page.goto(`/studio?agent=${bots[0].id}&chat=setup`);
   await page
     .getByRole("textbox", { name: "Message Front Desk", exact: true })
     .fill("Suggest a new opening and a follow-up email.");
@@ -167,16 +167,21 @@ test("Studio opens Computer for the Bot currently selected", async ({ page }) =>
   await mockWorkspace(page);
   await page.goto(`/studio?agent=${bots[1].id}`);
 
-  const computerLink = page
-    .getByRole("navigation", { name: "Workspace sections" })
-    .getByRole("link", { name: "Computer", exact: true });
-  await expect(computerLink).toHaveAttribute("href", `/computer?agent=${bots[1].id}`);
-  await computerLink.click();
-
-  await expect(page).toHaveURL(new RegExp(`/computer\\?agent=${bots[1].id}$`));
-  await expect(page.locator("#computer-agent")).toHaveValue(bots[1].id);
-  await expect(page.locator("#computer-agent")).toBeVisible();
-  await expect(page.locator("#computer-agent option:checked")).toHaveText("Sales Bot");
+  const browser = page
+    .getByRole("navigation", { name: "Workspace view" })
+    .getByRole("button", { name: "Browser", exact: true });
+  await browser.click();
+  await expect(page).toHaveURL(
+    (url) =>
+      url.pathname === "/studio" &&
+      url.searchParams.get("agent") === bots[1].id &&
+      url.searchParams.get("panel") === "computer",
+  );
+  await expect(page.locator("#computer-agent")).toHaveCount(0);
+  await expect(page.getByRole("combobox", { name: "Switch Bot", exact: true })).toHaveValue(
+    bots[1].id,
+  );
+  await expect(page.getByRole("button", { name: "Open browser", exact: true })).toBeVisible();
 });
 
 async function expectContentFits(container: Locator) {
@@ -317,12 +322,13 @@ test("Change and Try It drafts survive leaving the Workspace without mixing thei
   const review = await requestProposal(page);
   const buildInput = page.getByRole("textbox", { name: "Message Front Desk", exact: true });
   // Wide screens keep Try It beside the conversation that changes the Bot.
-  const panel = page.getByRole("complementary", { name: "Set Up panel" });
+  const panel = page.getByRole("complementary", { name: "Workspace panel" });
   const testInput = page.getByRole("textbox", {
     name: "Customer message for Front Desk",
     exact: true,
   });
   await buildInput.fill("Keep this unsent Build instruction.");
+  await page.getByRole("tab", { name: "Rehearse", exact: true }).click();
   await panel.getByRole("button", { name: "Typed", exact: true }).click();
   await testInput.fill("Keep this unsent customer scenario.");
   await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
@@ -358,7 +364,7 @@ test("Change and Try It drafts survive leaving the Workspace without mixing thei
   await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
 });
 
-for (const section of ["Details", "Summary"] as const) {
+for (const section of ["Set up", "Summary"] as const) {
   test(`${section} rehearsal focuses voice and preserves an existing customer draft`, async ({
     page,
   }) => {
@@ -389,7 +395,7 @@ test("setup focuses voice without seeding a customer message or replacing the Se
   page,
 }) => {
   await mockWorkspace(page);
-  await page.goto(`/studio?agent=${bots[0].id}`);
+  await page.goto(`/studio?agent=${bots[0].id}&chat=setup`);
   const buildInput = page.getByRole("textbox", { name: "Message Front Desk", exact: true });
   await buildInput.fill("Keep this unsent Build instruction.");
   await expect(buildInput).toHaveCSS("resize", "none");

@@ -2,6 +2,7 @@ import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { OWNER_BROWSER_CAPABILITIES } from "../../src/lib/cloud-computer/browser-capabilities";
 
 // Computer is its own page below 1180px. Wider screens open it beside the Set Up
 // conversation instead (workspace-panel.spec.ts), sharing this same workbench.
@@ -201,12 +202,40 @@ async function mockComputer(
         setTask(controlInputMatch[1], {
           ownerTabs: tabs.map((tab) => ({ ...tab, active: tab.id === input.tabId })),
         });
+      } else if (input.kind === "new_tab") {
+        const current = tasks.find((item) => item.id === controlInputMatch[1]);
+        const tabs = current?.ownerTabs as Array<{ id: string; label: string; active: boolean }>;
+        setTask(controlInputMatch[1], {
+          currentUrl: null,
+          ownerTabs: [
+            ...tabs.map((tab) => ({ ...tab, active: false })),
+            { id: "tab-new", label: "New tab", active: true },
+          ],
+        });
+      } else if (input.kind === "close_tab") {
+        const current = tasks.find((item) => item.id === controlInputMatch[1]);
+        const tabs = current?.ownerTabs as Array<{ id: string; label: string; active: boolean }>;
+        setTask(controlInputMatch[1], { ownerTabs: tabs.filter((tab) => tab.id !== input.tabId) });
+      } else if (input.kind === "save_login") {
+        setTask(controlInputMatch[1], {
+          ownerSavedLogins: [
+            { origin: "https://austinplumbers.example", label: "austinplumbers.example" },
+          ],
+        });
+      } else if (input.kind === "clear_saved_login") {
+        setTask(controlInputMatch[1], { ownerSavedLogins: [] });
       }
       if (options.ownerInputDelayMs) {
         await new Promise((resolve) => setTimeout(resolve, options.ownerInputDelayMs));
       }
       return route.fulfill({
         json: { task: tasks.find((item) => item.id === controlInputMatch[1]) },
+      });
+    }
+    if (/^\/api\/computer\/tasks\/[^/]+\/downloads\/[^/]+$/.test(path)) {
+      return route.fulfill({
+        contentType: "application/octet-stream",
+        body: "A synthetic owner download.",
       });
     }
     const controlReturnMatch = /^\/api\/computer\/tasks\/([^/]+)\/control\/return$/.exec(path);
@@ -263,6 +292,7 @@ async function mockComputer(
       tasks = [next, ...tasks];
     },
     setTask,
+    getTask: (id: string) => structuredClone(tasks.find((item) => item.id === id)),
     setFrame: (next: Buffer | null) => {
       frame = next;
     },
@@ -348,7 +378,7 @@ for (const width of [390, 1024]) {
     await expect(result.getByText(/Browser screen cleared/)).toHaveCount(0);
     await expect(page.locator(".wl-computer-composer")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "History" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Tasks" })).toBeVisible();
     await expect(page.getByRole("dialog", { name: "Recent Tasks" })).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
     await capture(page, info, `computer-completed-result-${width}`);
@@ -358,7 +388,7 @@ for (const width of [390, 1024]) {
     await expect(page.getByRole("button", { name: "Back to task" })).toBeVisible();
     await capture(page, info, `computer-new-task-${width}`);
 
-    await page.getByRole("button", { name: "History" }).click();
+    await page.getByRole("button", { name: "Tasks" }).click();
     const history = page.getByRole("dialog", { name: "Recent Tasks" });
     await history.getByRole("button", { name: /Compare supplier prices/ }).click();
     await expect(history).toHaveCount(0);
@@ -448,7 +478,7 @@ for (const width of [390, 1024]) {
     await expect(
       detail.getByRole("img", { name: "What your Bot's cloud computer shows right now" }),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: "Open browser" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Open browser", exact: true })).toHaveCount(0);
     // The live browser owns the page until the task finishes.
     const stop = await detail.getByRole("button", { name: "Stop" }).boundingBox();
     expect(stop && stop.width > stop.height).toBe(true);
@@ -465,7 +495,7 @@ for (const width of [390, 1024]) {
     await expect(detail.getByText("Working", { exact: true })).toBeVisible();
     expect(replies).toEqual(["Yes, skip the sign in."]);
 
-    await page.getByRole("button", { name: "History" }).click();
+    await page.getByRole("button", { name: "Tasks" }).click();
     const history = page.getByRole("dialog", { name: "Recent Tasks" });
     await history.getByRole("button", { name: /Google Business page/ }).click();
     await expect(history).toHaveCount(0);
@@ -548,7 +578,7 @@ test("a running task keeps updating while the owner reads an older result", asyn
   expect(stops).toEqual(["task-live"]);
   await capture(page, info, "computer-stopping");
 
-  await page.getByRole("button", { name: "History" }).click();
+  await page.getByRole("button", { name: "Tasks" }).click();
   const history = page.getByRole("dialog", { name: "Recent Tasks" });
   await history.getByRole("button", { name: /Google Business page/ }).click();
   await expect(page.getByText("Your hours match on both pages.")).toBeVisible();
@@ -560,12 +590,17 @@ test("a running task keeps updating while the owner reads an older result", asyn
     summary: "Stopped.",
     liveView: false,
   });
-  await page.getByRole("button", { name: "History" }).click();
+  await page.getByRole("button", { name: "Tasks" }).click();
   await expect(
     history.getByRole("button", { name: /Find three plumbers/ }).getByText("Stopped"),
   ).toBeVisible();
   await history.getByRole("button", { name: "Close" }).click();
-  await expect(page.getByText("The task stopped.")).toBeAttached();
+  await expect(page.getByText("Task stopped.", { exact: true })).toBeAttached();
+  await expect(
+    page
+      .getByRole("region", { name: /Find three plumbers/ })
+      .getByText("Stopped.", { exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "New task" }).click();
   await page
     .getByRole("textbox", { name: "What should your Bot do?" })
@@ -874,7 +909,7 @@ for (const width of [390, 1024]) {
 
     await page.goto("/computer");
     await expect(
-      page.locator(".wl-computer-launch-browser__canvas").getByText("New tab"),
+      page.locator(".wl-computer-launch-browser__canvas").getByText("A fresh browser"),
     ).toBeVisible();
     await expect(
       page.locator(".wl-computer-launch-browser__bar").getByRole("textbox", {
@@ -1009,7 +1044,7 @@ test("starting fresh work clears the previous completion announcement", async ({
     liveView: false,
   });
   const announcement = page.locator('[aria-live="polite"][aria-atomic="true"]');
-  await expect(announcement).toHaveText("Your Bot finished the task.");
+  await expect(announcement).toHaveText("Task completed.");
   await page.getByRole("button", { name: "New task" }).click();
   await page
     .getByRole("textbox", { name: "What should your Bot do?" })
@@ -1049,7 +1084,7 @@ test("a page that did not load offers a retry instead of a dead form", async ({ 
   await expect(page.getByText("Your Bot's Computer Did Not Load")).toBeVisible();
   await expect(page.getByText("Tasks Could Not Load", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Retry tasks", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "History" }).click();
+  await page.getByRole("button", { name: "Tasks", exact: true }).click();
   const history = page.getByRole("dialog", { name: "Recent Tasks" });
   await expect(history.getByText("Recent tasks did not load.")).toBeVisible();
   await expect(page.getByText("The Task Did Not Start")).toHaveCount(0);
@@ -1059,7 +1094,7 @@ test("a page that did not load offers a retry instead of a dead form", async ({ 
   await history.getByRole("button", { name: "Close" }).click();
   await page.getByRole("button", { name: "Retry", exact: true }).click();
   await page.getByRole("button", { name: "Retry tasks", exact: true }).click();
-  await page.getByRole("button", { name: "History" }).click();
+  await page.getByRole("button", { name: "Tasks", exact: true }).click();
   await expect(page.getByText("Your Bot's Computer Did Not Load")).toHaveCount(0);
   await expect(history.getByText("No tasks yet.")).toBeVisible();
   await history.getByRole("button", { name: "Close" }).click();
@@ -1093,4 +1128,284 @@ test("an account without a paid plan sees one clear upgrade path", async ({ page
     /Google Business page/,
   );
   await expect(page.getByRole("button", { name: "Start Task" })).toBeDisabled();
+});
+
+test("browser toolbar manages tabs, screenshots, history and owner downloads", async ({ page }) => {
+  const { ownerInputs } = await mockComputer(page, {
+    status: READY,
+    frame: await fakeFrame(page),
+    tasks: [
+      task({
+        id: "task-tools",
+        status: "needs_input",
+        ownerControl: true,
+        browserCapabilities: OWNER_BROWSER_CAPABILITIES,
+        ownerTabs: [{ id: "tab-1", label: "Plumbing directory", active: true }],
+        ownerHistory: [
+          {
+            id: 1,
+            tabId: "tab-1",
+            label: "Previous directory",
+            url: "https://previous.example/",
+            visitedAt: NOW,
+          },
+        ],
+        ownerDownloads: [{ id: "download-1", name: "comparison.txt", bytes: 27, createdAt: NOW }],
+      }),
+    ],
+  });
+  await page.goto("/computer");
+  await expect(page.getByRole("button", { name: "Download browser screenshot" })).toBeEnabled();
+  const screenshot = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download browser screenshot" }).click();
+  expect((await screenshot).suggestedFilename()).toMatch(/^botbound-screen-\d+\.jpg$/);
+
+  await page.getByRole("button", { name: "New browser tab" }).click();
+  await expect(page.getByRole("button", { name: "New tab", exact: true })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await page.getByRole("button", { name: "Close New tab tab" }).click();
+  await expect(page.getByRole("button", { name: "Close New tab tab" })).toHaveCount(0);
+  expect(ownerInputs).toContainEqual({ kind: "new_tab" });
+  expect(ownerInputs).toContainEqual({ kind: "close_tab", tabId: "tab-new" });
+
+  await page.getByRole("button", { name: "Open browser tools" }).click();
+  const tools = page.getByRole("dialog", { name: "Browser tools" });
+  const file = page.waitForEvent("download");
+  await tools.getByRole("button", { name: /comparison.txt/ }).click();
+  expect((await file).suggestedFilename()).toBe("comparison.txt");
+  await tools.getByRole("button", { name: /Previous directory/ }).click();
+  await expect(tools).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "Web address", exact: true })).toHaveValue(
+    "https://previous.example/",
+  );
+  expect(ownerInputs).toContainEqual({ kind: "navigate", url: "https://previous.example/" });
+});
+
+test("session tools send explicit cookie and login actions without retaining secret fields", async ({
+  page,
+}) => {
+  const { ownerInputs, setTask } = await mockComputer(page, {
+    status: READY,
+    frame: await fakeFrame(page),
+    tasks: [
+      task({
+        id: "task-private-tools",
+        status: "needs_input",
+        ownerControl: true,
+        browserCapabilities: OWNER_BROWSER_CAPABILITIES,
+      }),
+    ],
+  });
+  await page.goto("/computer");
+  await page.getByRole("button", { name: "Open browser tools" }).click();
+  const tools = page.getByRole("dialog", { name: "Browser tools" });
+  const fileInput = tools.getByLabel("Import session cookies");
+  await fileInput.setInputFiles({
+    name: "invalid.json",
+    mimeType: "application/json",
+    buffer: Buffer.from('"private-cookie-token" invalid'),
+  });
+  await expect(
+    tools.getByText("Choose a valid JSON file containing an array of cookies."),
+  ).toBeVisible();
+  await expect(tools.getByText(/private-cookie-token/)).toHaveCount(0);
+  const cookies = [
+    {
+      name: "session",
+      value: "synthetic-cookie-value",
+      url: "https://austinplumbers.example/",
+      secure: true,
+    },
+  ];
+  await fileInput.setInputFiles({
+    name: "cookies.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(cookies)),
+  });
+  await expect.poll(() => ownerInputs).toContainEqual({ kind: "import_cookies", cookies });
+  await tools.getByRole("button", { name: "Clear cookies", exact: true }).click();
+  await expect.poll(() => ownerInputs).toContainEqual({ kind: "clear_cookies" });
+
+  await tools.getByLabel("Username", { exact: true }).fill("owner@example.test");
+  await tools.getByLabel("Password", { exact: true }).fill("synthetic-session-password");
+  await tools.getByRole("button", { name: "Save for session", exact: true }).click();
+  await expect(tools.getByLabel("Username", { exact: true })).toHaveValue("");
+  await expect(tools.getByLabel("Password", { exact: true })).toHaveValue("");
+  await expect(tools.getByRole("button", { name: "Fill login", exact: true })).toBeEnabled();
+  await tools.getByRole("button", { name: "Fill login", exact: true }).click();
+  await expect
+    .poll(() => ownerInputs)
+    .toContainEqual({ kind: "fill_login", origin: "https://austinplumbers.example" });
+  expect(ownerInputs).toContainEqual({
+    kind: "save_login",
+    origin: "https://austinplumbers.example",
+    username: "owner@example.test",
+    password: "synthetic-session-password",
+  });
+  await tools.getByLabel("Username", { exact: true }).fill("unfinished-user");
+  await tools.getByLabel("Password", { exact: true }).fill("unfinished-secret");
+  setTask("task-private-tools", { currentUrl: "https://other.example/" });
+  await expect(tools.getByText("https://other.example", { exact: true })).toBeVisible();
+  await expect(tools.getByLabel("Username", { exact: true })).toHaveValue("");
+  await expect(tools.getByLabel("Password", { exact: true })).toHaveValue("");
+  await expect(tools.getByRole("button", { name: "Fill login", exact: true })).toBeDisabled();
+  const storage = await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }));
+  expect(storage).not.toContain("synthetic-session-password");
+  expect(storage).not.toContain("synthetic-cookie-value");
+  await expect(
+    tools.getByText("This isolated browser does not support installing extensions."),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(tools).toHaveCount(0);
+});
+
+test("delayed reads cannot undo confirmed take control, navigation, or pending Stop", async ({
+  page,
+}) => {
+  test.setTimeout(45_000);
+  const fixture = await mockComputer(page, {
+    status: READY,
+    frame: await fakeFrame(page),
+    tasks: [
+      task({ id: "task-owner-race", status: "needs_input", question: "Sign in to continue." }),
+    ],
+  });
+  await page.goto("/computer");
+  const detail = page.getByRole("region", { name: /Find three plumbers/ });
+  await expect(detail).toBeVisible();
+  const holdRead = async () => {
+    let held = false;
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route("**/api/computer/tasks/task-owner-race", async (route) => {
+      if (held) return route.fallback();
+      held = true;
+      const snapshot = fixture.getTask("task-owner-race");
+      await gate;
+      await route.fulfill({ json: { task: snapshot } });
+    });
+    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    await expect.poll(() => held).toBe(true);
+    return async () => {
+      const response = page.waitForResponse(
+        (item) =>
+          item.url().endsWith("/api/computer/tasks/task-owner-race") &&
+          item.request().method() === "GET",
+      );
+      release();
+      await (await response).finished();
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          ),
+      );
+    };
+  };
+  const finishTakeRead = await holdRead();
+  await detail.getByRole("button", { name: "Take control", exact: true }).click();
+  await expect(detail.getByLabel("Type into selected field", { exact: true })).toBeVisible();
+  await finishTakeRead();
+  await expect(detail.getByLabel("Type into selected field", { exact: true })).toBeVisible();
+
+  const finishInputRead = await holdRead();
+  const address = detail.getByRole("textbox", { name: "Web address", exact: true });
+  await address.fill("https://confirmed.example/");
+  await address.press("Enter");
+  await expect(address).toHaveValue("https://confirmed.example/");
+  await expect(address).toBeEnabled();
+  await finishInputRead();
+  await expect(address).toHaveValue("https://confirmed.example/");
+
+  const finishStopRead = await holdRead();
+  await detail.getByRole("button", { name: "Stop", exact: true }).click();
+  await expect(detail.getByRole("button", { name: "Stopping…", exact: true })).toBeDisabled();
+  await finishStopRead();
+  await expect(detail.getByRole("button", { name: "Stopping…", exact: true })).toBeDisabled();
+  // Even a later snapshot cannot retract a confirmed pending Stop before terminal state.
+  fixture.setTask("task-owner-race", { stopping: false });
+  const freshRead = page.waitForResponse(
+    (item) =>
+      item.url().endsWith("/api/computer/tasks/task-owner-race") &&
+      item.request().method() === "GET",
+  );
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await (await freshRead).finished();
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+  await expect(detail.getByRole("button", { name: "Stopping…", exact: true })).toBeDisabled();
+});
+
+test("a post-action409 requires refresh and inspection before repeating browser input", async ({
+  page,
+}) => {
+  const fixture = await mockComputer(page, {
+    status: READY,
+    frame: await fakeFrame(page),
+    tasks: [task({ id: "task-uncertain-input", status: "needs_input", ownerControl: true })],
+  });
+  let writes = 0;
+  await page.route("**/api/computer/tasks/task-uncertain-input/control/input", async (route) => {
+    writes += 1;
+    fixture.setTask("task-uncertain-input", { currentUrl: "https://submitted.example/" });
+    await route.fulfill({
+      status: 409,
+      json: { error: "Browser input could not finish.", code: "COMPUTER_INPUT_FAILED" },
+    });
+  });
+  await page.goto("/computer");
+  const input = page.getByLabel("Type into selected field", { exact: true });
+  await input.fill("synthetic-private-input");
+  await page.getByRole("button", { name: "Show entered text", exact: true }).click();
+  await page.getByRole("button", { name: "Send to page", exact: true }).click();
+  await expect(
+    page.getByText(
+      "The browser action may have happened. Refresh work and inspect the page before repeating it.",
+    ),
+  ).toBeVisible();
+  await expect(input).toHaveValue("");
+  await expect(input).toHaveAttribute("type", "password");
+  await expect(input).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Return control to Bot", exact: true }),
+  ).toBeDisabled();
+  expect(writes).toBe(1);
+  await page.getByRole("button", { name: "Refresh work", exact: true }).click();
+  await expect(input).toBeEnabled();
+  await expect(page.getByRole("textbox", { name: "Web address", exact: true })).toHaveValue(
+    "https://submitted.example/",
+  );
+  expect(writes).toBe(1);
+});
+
+test("remote handback clears an unsent private field and its visibility preference", async ({
+  page,
+}) => {
+  const fixture = await mockComputer(page, {
+    status: READY,
+    frame: await fakeFrame(page),
+    tasks: [task({ id: "task-remote-return", status: "needs_input", ownerControl: true })],
+  });
+  await page.goto("/computer");
+  const input = page.getByLabel("Type into selected field", { exact: true });
+  await input.fill("unsent-synthetic-secret");
+  const address = page.getByRole("textbox", { name: "Web address", exact: true });
+  await address.fill("https://draft.example/?code=synthetic-code");
+  await page.getByRole("button", { name: "Show entered text", exact: true }).click();
+  await expect(input).toHaveAttribute("type", "text");
+  fixture.setTask("task-remote-return", { ownerControl: false, status: "running" });
+  await expect(input).toHaveCount(0);
+  fixture.setTask("task-remote-return", { ownerControl: true, status: "needs_input" });
+  await expect(input).toHaveValue("");
+  await expect(input).toHaveAttribute("type", "password");
+  await expect(address).toHaveValue("https://austinplumbers.example/");
+  expect(fixture.ownerInputs).toEqual([]);
 });

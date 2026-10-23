@@ -15,7 +15,6 @@ import { PanelSkeleton } from "../atoms/skeleton-presets";
 import ClientRouteViewport from "../layout/ClientRouteViewport";
 import ClientToolbar from "../layout/ClientToolbar";
 import { SegmentStrip } from "../ui/SegmentStrip";
-import { OPS_CHANNEL_TOOLBAR } from "../../lib/wireline-ops-design";
 import {
   resolveAppPageSecondaryRoute,
   resolveAppPageSecondaryTabId,
@@ -46,6 +45,24 @@ const VoiceReliabilityView = lazy(() => import("./VoiceReliabilityView"));
 const QualityView = lazy(() => import("./QualityView"));
 
 const DAY_OPTIONS = [7, 14, 30, 60, 90] as const;
+// Only these views pass the selected window into their API requests.
+const WINDOWED_VIEWS = new Set([
+  "funnel",
+  "attribution",
+  "heatmap",
+  "leaderboard",
+  "latency",
+  "reliability",
+  "spend",
+  "quality",
+]);
+const FIXED_PERIOD_LABELS: Record<string, string> = {
+  calls: "Today and all-time",
+  goals: "This month",
+  topics: "Recent calls",
+  failures: "Recent qualifying calls",
+  learning: "Saved learning",
+};
 
 type InsightGroupId = "performance" | "reliability" | "quality" | "revenue";
 
@@ -117,7 +134,7 @@ export default function InsightsView() {
     );
   }
 
-  const dayPicker = (
+  const periodControl = WINDOWED_VIEWS.has(activeView) ? (
     <SegmentStrip
       aria-label="Insights date range"
       testIdPrefix="insights-days"
@@ -126,15 +143,19 @@ export default function InsightsView() {
       onChange={(v) => setDays(Number(v) as (typeof DAY_OPTIONS)[number])}
       variant="soft"
     />
-  );
+  ) : FIXED_PERIOD_LABELS[activeView] ? (
+    <span className="text-xs font-medium text-muted-foreground">
+      {FIXED_PERIOD_LABELS[activeView]}
+    </span>
+  ) : null;
 
   return (
     <ClientRouteViewport>
       <ClientToolbar
         actions={
           <>
-            {dayPicker}
-            <CsvExportButton type="calls" label={OPS_CHANNEL_TOOLBAR.insights.export} />
+            {periodControl}
+            <CsvExportButton type="calls" label="Export all calls" />
           </>
         }
       />

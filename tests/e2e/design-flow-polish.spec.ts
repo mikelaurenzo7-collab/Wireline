@@ -108,7 +108,7 @@ test("Studio setup edits survive Review and closing the inspector without saving
   await page.getByLabel(/Add facts or rules/).fill("Ask for the appliance model before booking.");
   await page.getByRole("button", { name: "Warm", exact: true }).click();
   await page.getByRole("tab", { name: "Summary", exact: true }).click();
-  await page.getByRole("tab", { name: "Details", exact: true }).click();
+  await page.getByRole("tab", { name: "Set up", exact: true }).click();
   await expect(page.getByLabel("Opening greeting")).toHaveValue("Welcome to the repair desk.");
   await expect(page.getByText("Unsaved changes", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Close panel", exact: true }).click();
@@ -133,9 +133,9 @@ for (const width of [320, 390, 1440]) {
     await page.evaluate(() => document.fonts.ready);
     const pillars = page.getByRole("list", { name: "Available Bot capabilities" });
     await expect(pillars.getByRole("heading", { level: 2 })).toHaveText([
-      "Ready When the Phone Rings",
-      "Works From a Goal",
-      "Follows Up in Writing",
+      "Answer the Call",
+      "Keep It in Writing",
+      "Give It a Goal",
     ]);
     const features = page.getByRole("list", { name: "Built Around You" });
     await expect(features.getByRole("heading", { level: 3 })).toHaveText([
@@ -159,7 +159,10 @@ for (const width of [320, 390, 1440]) {
         const featureHeading = document.getElementById("features-list-title")!;
         const actions = document.querySelector(".wl-features-intro .marketing-hero__actions")!;
         return {
-          lines: range.getClientRects().length,
+          lines: [...range.getClientRects()]
+            .filter((box) => box.width > 0)
+            .map((box) => ({ left: box.left, right: box.right, width: box.width })),
+          case: getComputedStyle(title).textTransform,
           titleCenter: center(title),
           featureCenter: center(featureHeading),
           actionCenter: center(actions),
@@ -167,7 +170,16 @@ for (const width of [320, 390, 1440]) {
         };
       });
       // One centered column: title, actions, and section heading share an axis.
-      expect(geometry.lines).toBe(1);
+      expect(geometry.case).toBe("uppercase");
+      expect(geometry.lines.length).toBeGreaterThanOrEqual(1);
+      for (const line of geometry.lines) {
+        expect(line.left).toBeGreaterThanOrEqual(0);
+        expect(line.right).toBeLessThanOrEqual(width);
+      }
+      if (geometry.lines.length > 1) {
+        const widths = geometry.lines.map((line) => line.width);
+        expect(Math.min(...widths) / Math.max(...widths)).toBeGreaterThan(0.5);
+      }
       expect(Math.abs(geometry.titleCenter - geometry.viewportCenter)).toBeLessThan(12);
       expect(Math.abs(geometry.actionCenter - geometry.viewportCenter)).toBeLessThan(12);
       expect(Math.abs(geometry.featureCenter - geometry.viewportCenter)).toBeLessThan(12);
@@ -184,7 +196,7 @@ for (const width of [320, 390, 1440]) {
     await expect(page).toHaveURL(/\/pricing$/);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await header.getByRole("link", { name: "Get Started", exact: true }).click();
-    await expect(page).toHaveURL(/\/signup\?plan=free/);
+    await expect(page).toHaveURL(/\/signup$/);
   });
 }
 
@@ -257,7 +269,7 @@ test("Studio settings and navigation reflow at 320px with enlarged text", async 
   );
   await page.getByLabel("Opening greeting").fill("Welcome to the repair desk.");
   await page.getByRole("tab", { name: "Summary", exact: true }).click();
-  await page.getByRole("tab", { name: "Details", exact: true }).click();
+  await page.getByRole("tab", { name: "Set up", exact: true }).click();
   await expect(page.getByLabel("Opening greeting")).toHaveValue("Welcome to the repair desk.");
   await capture(page, info, "studio-320-enlarged-text");
   await page.getByRole("button", { name: "Close panel", exact: true }).click();

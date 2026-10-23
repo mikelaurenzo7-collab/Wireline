@@ -98,7 +98,7 @@ export default function VerticalLanding({
   };
 
   return (
-    <MarketingPageFrame stickyCta stickyCtaHref={cfg.primaryCta.href}>
+    <MarketingPageFrame>
       <PageMeta
         title={cfg.metaTitle}
         description={cfg.metaDescription}
@@ -108,9 +108,7 @@ export default function VerticalLanding({
 
       <section className="marketing-section marketing-section--screen mx-auto max-w-6xl">
         <div className="mb-9 text-center">
-          <h1 className="marketing-hero-title mx-auto text-[clamp(1.9rem,3.4vw,2.9rem)]">
-            {cfg.headline}
-          </h1>
+          <h1 className="marketing-hero-title mx-auto">{cfg.headline}</h1>
           <div className="marketing-hero__actions mt-7">
             <CtaLink
               href={cfg.primaryCta.href}
@@ -132,7 +130,7 @@ export default function VerticalLanding({
             return (
               <article
                 key={pain.title}
-                className="wl-stitch-card marketing-pain-card flex flex-col items-center gap-4 p-5 text-center sm:p-6"
+                className="wl-stitch-card marketing-pain-card flex items-start gap-4 p-5 text-left sm:p-6"
               >
                 <span className="wl-accent-icon-chip grid h-9 w-9 shrink-0 place-items-center rounded-lg">
                   <Icon className="h-4 w-4" />
@@ -201,9 +199,7 @@ export default function VerticalLanding({
             <div className="grid justify-items-center gap-7 text-center">
               <div className="max-w-2xl">
                 <h2 className="text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
-                  {isEverydayCalls
-                    ? "Start with One Everyday Task"
-                    : "Start with the Workflow Your Team Needs Covered"}
+                  {isEverydayCalls ? "Start with One Everyday Task" : "Start with One Workflow"}
                 </h2>
               </div>
               <CtaLink

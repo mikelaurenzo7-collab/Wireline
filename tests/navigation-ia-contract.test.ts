@@ -25,7 +25,7 @@ describe("BotBound workspace information architecture", () => {
       "/calendar",
     ]);
     expect(WORKSPACE_SECTIONS.map((section) => [section.href, section.label])).toEqual([
-      ["/studio", "Set Up"],
+      ["/studio", "Workspace"],
       ["/knowledge", "Knowledge"],
       ["/computer", "Computer"],
     ]);

@@ -1,4 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
 
 async function mockCalendar(
   page: Page,
@@ -129,6 +131,15 @@ for (const width of [320, 1440]) {
     await page.getByRole("button", { name: "New appointment", exact: true }).click();
     const dialog = page.getByRole("dialog");
     await expect(page.getByLabel("Customer name", { exact: true })).toBeFocused();
+    if (process.env.BOTBOUND_WORKSPACE_PROOF_DIR) {
+      await mkdir(process.env.BOTBOUND_WORKSPACE_PROOF_DIR, { recursive: true });
+      await page.screenshot({
+        path: join(
+          process.env.BOTBOUND_WORKSPACE_PROOF_DIR,
+          `synthetic-calendar-dialog-${width}.png`,
+        ),
+      });
+    }
     if (width === 320)
       await page.evaluate(() => {
         document.documentElement.style.fontSize = "200%";

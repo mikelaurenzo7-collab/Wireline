@@ -1,4 +1,4 @@
-import { Maximize2, Minimize2, Plus, Sparkles, Users, X } from "lucide-react";
+import { Globe, Maximize2, MessageCircle, Minimize2, Plus, Sparkles, Users, X } from "lucide-react";
 import { Link, Navigate, useSearchParams } from "react-router";
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 
@@ -27,6 +27,8 @@ import StudioAgentReviewPanel from "./StudioAgentReviewPanel";
 import StudioAgentWorkspacePanel from "./StudioAgentWorkspacePanel";
 import StudioWorkroom, { type StudioWorkroomHandle } from "./StudioWorkroom";
 import WorkspaceRecovery from "./WorkspaceRecovery";
+import StudioTaskChat from "./StudioTaskChat";
+import { ComputerWorkspaceProvider } from "../contexts/ComputerWorkspaceContext";
 
 // The computer is a page of its own; load it only when its panel tab opens.
 const ComputerWorkbench = lazy(() =>
@@ -40,20 +42,20 @@ type PanelSection = RestingSection | InspectorSection;
 type WorkroomMode = "configure" | "test";
 
 const BOT_LANGUAGE = customerAgentLanguage();
-// v2: the wide-screen panel now rests open on Try It instead of closed.
-const STUDIO_INSPECTOR_STORAGE_KEY = "wireline:studio-panel:v2";
+// A wider browser workspace has its own size preference. Earlier saved widths
+// belong to the narrower setup inspector and cannot fit a usable browser.
+const STUDIO_INSPECTOR_STORAGE_KEY = "wireline:studio-panel:v3";
 const STUDIO_PANEL_REST_STORAGE_KEY = "wireline:studio-panel-rest:v1";
 const PANEL_TABS: ReadonlyArray<{ id: PanelSection; label: string }> = [
-  { id: "try", label: "Try It" },
-  { id: "computer", label: "Computer" },
-  { id: "setup", label: "Details" },
+  { id: "computer", label: "Browser" },
+  { id: "try", label: "Rehearse" },
+  { id: "setup", label: "Set up" },
   { id: "review", label: "Summary" },
 ];
 // The panel can be dragged as wide as the conversation allows; Full width
 // takes the rest. The conversation never narrows past a readable column.
-const PANEL_DEFAULT_WIDTH = 440;
+const PANEL_DEFAULT_WIDTH = 600;
 const PANEL_MIN_WIDTH = 384;
-const PANEL_MAX_FLOOR = 560;
 const PANEL_MAX_CAP = 1120;
 const CONVERSATION_MIN_WIDTH = 420;
 
@@ -69,11 +71,11 @@ function readStoredPanelCollapsed(): boolean {
 
 function readStoredRestingSection(): RestingSection {
   try {
-    return window.localStorage.getItem(STUDIO_PANEL_REST_STORAGE_KEY) === "computer"
-      ? "computer"
-      : "try";
+    return window.localStorage.getItem(STUDIO_PANEL_REST_STORAGE_KEY) === "try"
+      ? "try"
+      : "computer";
   } catch {
-    return "try";
+    return "computer";
   }
 }
 
@@ -147,6 +149,14 @@ function StudioEmptyState() {
 }
 
 export default function StudioWorkspaceV2() {
+  return (
+    <ComputerWorkspaceProvider>
+      <StudioWorkspaceContent />
+    </ComputerWorkspaceProvider>
+  );
+}
+
+function StudioWorkspaceContent() {
   const { loading, degraded, refresh } = useAgents();
   const { user } = useAuth();
   const studioSession = useStudioSessionState();
@@ -161,8 +171,8 @@ export default function StudioWorkspaceV2() {
   const tryWorkroomRef = useRef<StudioWorkroomHandle>(null);
   const inspectorTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const splitWorkspace = useMediaQuery("(min-width: 1180px)");
-  // Wide screens keep Try It beside the setup conversation. The owner can close
-  // the panel; that choice persists, and a Details link always reopens it.
+  // Wide screens open Work chat beside its browser. Rehearsal and setup share
+  // that optional panel; explicit links reopen it even after a saved collapse.
   const [panelCollapsed, setPanelCollapsedState] = useState(readStoredPanelCollapsed);
   const [restingSection, setRestingSectionState] = useState(readStoredRestingSection);
   // Full width hides the conversation (kept mounted) until the owner restores it.
@@ -183,6 +193,12 @@ export default function StudioWorkspaceV2() {
   const commandNonceParam = params.get("commandNonce");
   const legacyMode = params.get("mode");
   const legacyView = params.get("view");
+  const setupChat =
+    params.get("chat") === "setup" ||
+    sectionParam === "setup" ||
+    sectionParam === "review" ||
+    workroomParam === "test" ||
+    Boolean(commandParam || commandNonceParam);
   const routeState = {
     section: sectionParam,
     workroom: workroomParam,
@@ -210,17 +226,17 @@ export default function StudioWorkspaceV2() {
       ? "computer"
       : restingSection;
   const panelOpen = splitWorkspace && (inspectorOpen || computerFocused || !panelCollapsed);
+  const mobileBrowserOpen = !splitWorkspace && panelParam === "computer" && !inspectorOpen;
   const panelFill = panelOpen && (panelExpanded || computerFocused);
-  // With Try It beside it, the main conversation edits the Bot. A rehearsal
-  // command still has to land somewhere when Details or Summary is the open
-  // panel, so that command keeps the main conversation in Try It.
+  // Set up chat keeps its configuration and rehearsal histories separate. A
+  // rehearsal command still reaches that conversation if another panel is open.
   const injectedRehearsal = Boolean(commandParam || commandNonceParam);
   const mainMode: WorkroomMode =
     panelOpen && !(injectedRehearsal && panelSection !== "try") ? "configure" : workroomMode;
   const panelMaxSize =
     workspaceWidth > 0
-      ? Math.min(PANEL_MAX_CAP, Math.max(PANEL_MAX_FLOOR, workspaceWidth - CONVERSATION_MIN_WIDTH))
-      : PANEL_MAX_FLOOR;
+      ? Math.min(PANEL_MAX_CAP, Math.max(PANEL_MIN_WIDTH, workspaceWidth - CONVERSATION_MIN_WIDTH))
+      : PANEL_DEFAULT_WIDTH;
 
   // A callback ref: the layout mounts only after the roster resolves.
   const measureWorkspace = useCallback((node: HTMLDivElement | null) => {
@@ -260,7 +276,7 @@ export default function StudioWorkspaceV2() {
 
   useEffect(() => {
     // A Details link, or a rehearsal request on a wide screen, opens the panel;
-    // a rehearsal request also brings Try It forward over the computer.
+    // a rehearsal request also brings Rehearse forward over the browser.
     if (!splitWorkspace) return;
     if (inspectorOpen || workroomMode === "test") setPanelCollapsed(false);
     if (workroomMode === "test" && !inspectorOpen) setRestingSection("try");
@@ -385,8 +401,8 @@ export default function StudioWorkspaceV2() {
 
   useEffect(() => {
     // The Computer destination and the optional side panel share one workbench.
-    if (requestedAgentUnavailable || panelParam !== "computer") return;
-    if (splitWorkspace) openPanelSection("computer");
+    if (requestedAgentUnavailable || panelParam !== "computer" || !splitWorkspace) return;
+    openPanelSection("computer");
     setParams(
       (current) => {
         const next = new URLSearchParams(current);
@@ -434,6 +450,7 @@ export default function StudioWorkspaceV2() {
           const next = clearStudioInspectorSectionParams(
             setStudioWorkroomModeParams(current, mode),
           );
+          next.set("chat", "setup");
           next.delete("focus");
           return next;
         },
@@ -451,6 +468,19 @@ export default function StudioWorkspaceV2() {
   }, [active?.id, openPanelSection, setWorkroomMode, splitWorkspace, user?.id]);
 
   const rehearsalVisible = panelOpen ? panelSection === "try" : workroomMode === "test";
+
+  const showBrowser = useCallback(() => {
+    if (splitWorkspace) openPanelSection("computer");
+    else
+      setParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          next.set("panel", "computer");
+          return next;
+        },
+        { replace: true },
+      );
+  }, [openPanelSection, setParams, splitWorkspace]);
 
   useEffect(() => {
     if (!rehearsalFocusRequest) return;
@@ -579,7 +609,7 @@ export default function StudioWorkspaceV2() {
   };
 
   const main = sessionFor(mainMode);
-  // Route commands prefill a rehearsal; beside the panel, that is Try It's composer.
+  // Route commands prefill the explicit private rehearsal composer.
   const mainReceivesCommand = mainMode === "test";
   const workroom = (
     <StudioWorkroom
@@ -595,12 +625,12 @@ export default function StudioWorkspaceV2() {
       conversationSession={main.session}
       layout={splitWorkspace ? "split" : "standalone"}
       mode={mainMode}
-      // Beside an open Try It panel the conversation only edits; otherwise
-      // the owner switches between changing the Bot and trying it here.
+      // With the private rehearsal pane open, Set up chat only edits the Bot.
+      // Narrow screens switch that same setup conversation into rehearsal.
       onModeChange={panelOpen ? undefined : setWorkroomMode}
       allowOutbound={Boolean(active.phone_number)}
       phoneNumber={active.phone_number}
-      voiceVisible={splitWorkspace || !inspectorOpen}
+      voiceVisible={setupChat && (splitWorkspace || !inspectorOpen) && !mobileBrowserOpen}
     />
   );
 
@@ -628,7 +658,7 @@ export default function StudioWorkspaceV2() {
 
   // Keyed by Bot: a different Bot's computer composer never inherits a draft.
   const computerPanel =
-    panelOpen && panelSection === "computer" ? (
+    (panelOpen && panelSection === "computer") || mobileBrowserOpen ? (
       <Suspense
         fallback={
           <div className="p-3" aria-busy="true" aria-label="Loading computer">
@@ -636,13 +666,17 @@ export default function StudioWorkspaceV2() {
           </div>
         }
       >
-        <ComputerWorkbench key={active.id} agentId={active.id} layout="panel" />
+        <ComputerWorkbench
+          key={active.id}
+          agentId={active.id}
+          layout="panel"
+          chatControls={!setupChat && splitWorkspace}
+        />
       </Suspense>
     ) : null;
 
-  // Wide screens add Try It and the Bot's computer beside Details and Summary;
-  // narrow screens switch the conversation itself between Change and Try It,
-  // and reach the computer through the Workspace section strip.
+  // Wide screens offer Browser, Rehearse, Set up and Summary in one pane.
+  // Phones switch Conversation/Browser in place and open setup details explicitly.
   const panelTabs = splitWorkspace
     ? PANEL_TABS
     : PANEL_TABS.filter((tab) => tab.id !== "try" && tab.id !== "computer");
@@ -653,11 +687,11 @@ export default function StudioWorkspaceV2() {
       : openInspector(section);
 
   const inspectorHeader = (
-    <header className="flex min-h-12 shrink-0 items-center gap-2 border-b border-border/70 px-3 py-2">
+    <header className="wl-studio-panel-header flex min-h-12 shrink-0 items-center gap-2 border-b border-border/70 px-3 py-2">
       <div
         className="flex min-w-0 max-w-full flex-wrap items-center gap-0.5 rounded-lg bg-muted/35 p-0.5"
         role="tablist"
-        aria-label="Set Up panel"
+        aria-label="Workspace panel"
       >
         {panelTabs.map(({ id, label }, index) => (
           <button
@@ -767,46 +801,143 @@ export default function StudioWorkspaceV2() {
     <aside
       id="studio-inspector"
       className="flex h-full min-h-0 w-full flex-col"
-      aria-label="Set Up panel"
+      aria-label="Workspace panel"
     >
       {inspectorHeader}
       {inspectorBody}
     </aside>
   );
 
-  return (
-    <div ref={measureWorkspace} className="flex h-full min-h-0 overflow-hidden bg-background">
-      {/* Keep drafts and in-flight conversations intact while mobile details
-          are open or the panel is full width. */}
-      <div
-        className={`${(!splitWorkspace && inspectorOpen) || panelFill ? "hidden" : "block"} min-h-0 min-w-0 flex-1 overflow-hidden`}
-      >
-        {workroom}
-      </div>
-      {splitWorkspace ? (
-        <WorkspaceResizablePanel
-          storageKey={STUDIO_INSPECTOR_STORAGE_KEY}
-          side="right"
-          defaultSize={PANEL_DEFAULT_WIDTH}
-          minSize={PANEL_MIN_WIDTH}
-          maxSize={panelMaxSize}
-          collapsedSize={0}
-          collapsed={!panelOpen}
-          fill={panelFill}
-          onCollapsedChange={(collapsed) => {
-            if (collapsed) closeInspector();
-            else openPanelSection(panelSection);
+  const chatModes = (
+    <div className="wl-studio-chat-modes" role="group" aria-label="Conversation mode">
+      {(
+        [
+          { id: "work", label: "Work" },
+          { id: "setup", label: "Set up" },
+        ] as const
+      ).map(({ id, label }) => (
+        <button
+          key={id}
+          type="button"
+          aria-pressed={(id === "setup") === setupChat}
+          onClick={() => {
+            setParams(
+              (current) => {
+                const next = setStudioWorkroomModeParams(current, "configure");
+                if (id === "setup") next.set("chat", "setup");
+                else {
+                  next.delete("chat");
+                  next.delete("section");
+                  next.delete("focus");
+                }
+                return next;
+              },
+              { replace: true },
+            );
+            if (id === "work" && splitWorkspace) {
+              setRestingSection("computer");
+              setPanelCollapsed(false);
+            }
           }}
-          resizeHandleLabel="Resize Set Up panel"
-          className={
-            panelOpen ? `${panelFill ? "" : "border-l border-border/70 "}bg-card/25` : undefined
-          }
         >
-          {({ collapsed }) => (collapsed ? null : inspector)}
-        </WorkspaceResizablePanel>
-      ) : inspectorOpen ? (
-        <div className="min-h-0 min-w-0 flex-1 overflow-hidden">{inspector}</div>
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="wl-studio-workspace flex h-full min-h-0 flex-col overflow-hidden bg-background">
+      {(!splitWorkspace || !panelOpen) && !inspectorOpen ? (
+        <nav className="wl-studio-surface-nav" aria-label="Workspace view">
+          <button
+            type="button"
+            aria-pressed={!mobileBrowserOpen}
+            onClick={() => {
+              setParams(
+                (current) => {
+                  const next = new URLSearchParams(current);
+                  next.delete("panel");
+                  next.delete("focus");
+                  return next;
+                },
+                { replace: true },
+              );
+            }}
+          >
+            <MessageCircle className="size-4" aria-hidden="true" />
+            Conversation
+          </button>
+          <button
+            type="button"
+            aria-pressed={mobileBrowserOpen}
+            onClick={() => {
+              if (splitWorkspace) openPanelSection("computer");
+              else
+                setParams(
+                  (current) => {
+                    const next = new URLSearchParams(current);
+                    next.set("panel", "computer");
+                    next.delete("focus");
+                    return next;
+                  },
+                  { replace: true },
+                );
+            }}
+          >
+            <Globe className="size-4" aria-hidden="true" />
+            Browser
+          </button>
+        </nav>
       ) : null}
+      <div ref={measureWorkspace} className="flex min-h-0 flex-1 overflow-hidden">
+        {/* Keep drafts and in-flight conversations intact while mobile details
+          are open or the panel is full width. */}
+        <div
+          className={`${(!splitWorkspace && inspectorOpen) || mobileBrowserOpen || panelFill ? "hidden" : "block"} min-h-0 min-w-0 flex-1 overflow-hidden`}
+        >
+          <div className="flex h-full min-h-0 flex-col">
+            <header className="wl-studio-mode-header">{chatModes}</header>
+            <div hidden={!setupChat} className="min-h-0 flex-1">
+              {workroom}
+            </div>
+            <div hidden={setupChat} className="min-h-0 flex-1">
+              <StudioTaskChat
+                key={`${user?.id}:${active.id}`}
+                agentId={active.id}
+                agentName={active.name}
+                onShowBrowser={showBrowser}
+              />
+            </div>
+          </div>
+        </div>
+        {splitWorkspace ? (
+          <WorkspaceResizablePanel
+            storageKey={STUDIO_INSPECTOR_STORAGE_KEY}
+            side="right"
+            defaultSize={PANEL_DEFAULT_WIDTH}
+            minSize={PANEL_MIN_WIDTH}
+            maxSize={panelMaxSize}
+            collapsedSize={0}
+            collapsed={!panelOpen}
+            fill={panelFill}
+            onCollapsedChange={(collapsed) => {
+              if (collapsed) closeInspector();
+              else openPanelSection(panelSection);
+            }}
+            resizeHandleLabel="Resize workspace panel"
+            className={
+              panelOpen ? `${panelFill ? "" : "border-l border-border/70 "}bg-card/25` : undefined
+            }
+          >
+            {({ collapsed }) => (collapsed ? null : inspector)}
+          </WorkspaceResizablePanel>
+        ) : mobileBrowserOpen ? (
+          <div className="min-h-0 min-w-0 flex-1 overflow-hidden">{computerPanel}</div>
+        ) : inspectorOpen ? (
+          <div className="min-h-0 min-w-0 flex-1 overflow-hidden">{inspector}</div>
+        ) : null}
+      </div>
     </div>
   );
 }

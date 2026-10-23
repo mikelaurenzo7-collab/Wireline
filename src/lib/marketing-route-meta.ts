@@ -139,12 +139,12 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
     noIndex: true,
   },
   "/solutions/sales": {
-    title: "Give Every Sales Inquiry a Clear Next Step | BotBound",
+    title: "Every Inquiry. A Next Step. | BotBound",
     description:
       "Answer incoming questions, capture what the customer needs, and offer an available appointment. Keep the conversation and next step in BotBound.",
   },
   "/solutions/support": {
-    title: "A Front Desk That Answers Before Demand Goes Cold | BotBound",
+    title: "Meet Your Front Desk | BotBound",
     description:
       "Give a Front Desk Bot your policies, calendar, and rules. It answers calls, captures requests, books available times, and keeps the outcome in your workspace. Add email for written replies and recaps.",
   },

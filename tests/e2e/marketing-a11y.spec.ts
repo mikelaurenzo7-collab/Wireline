@@ -48,12 +48,15 @@ test("homepage promise and access path stay centered inside the desktop viewport
   await gotoHomepageWithMain(page);
 
   const headline = page.getByRole("heading", {
-    name: "Voice Bots With a Computer, Phone Number, and Email Address.",
+    name: "VOICE BOTS. REAL WORK.",
     exact: true,
   });
   await expect(headline).toBeVisible();
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Choose what your Bot does" })).toBeVisible();
+  await expect(page.locator(".landing-prestige__description")).toHaveText(
+    "Calling, email, and a computer. Together in one workspace.",
+  );
+  await expect(page.locator(".landing-prestige__directions")).toHaveCount(0);
 
   const bounds = await page.evaluate(() => {
     const headline = document.querySelector(".landing-prestige__hero h1")?.getBoundingClientRect();
@@ -82,12 +85,10 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
   await page.setViewportSize({ width: 1365, height: 900 });
   await gotoHomepageWithMain(page);
 
-  const outbound = page
-    .getByRole("navigation", { name: "Choose what your Bot does" })
-    .getByRole("link", { name: /For Your Business: Answer\. Book\. Create Your Front Desk/i });
-  await outbound.focus();
-  await expect(outbound).toBeFocused();
-  const focusStyle = await outbound.evaluate((element) => {
+  const role = page.getByRole("link", { name: /Use this role\s*:\s*Front Desk/i });
+  await role.focus();
+  await expect(role).toBeFocused();
+  const focusStyle = await role.evaluate((element) => {
     const style = getComputedStyle(element);
     return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth };
   });
@@ -100,6 +101,6 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
     .locator(".landing-prestige__hero .landing-prestige__actions")
     .getByRole("link", { name: "Get Started" });
   await start.click();
-  await expect(page).toHaveURL(/\/signup\?[^\s]*plan=free/);
+  await expect(page).toHaveURL(/\/signup$/);
   await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
 });

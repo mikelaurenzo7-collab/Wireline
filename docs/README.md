@@ -56,6 +56,7 @@ The isolated speech worker has its own [setup guide](../services/voice-engine/RE
 | [CUSTOMER_TERMINOLOGY.md](./CUSTOMER_TERMINOLOGY.md)                                             | One-product customer-language contract and compatibility boundary.                |
 | [ONE-AGENT-STRATEGY.md](./ONE-AGENT-STRATEGY.md)                                                 | Unified Bot positioning and roster-compatible launch framing.                     |
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md)                                                       | Web, browser, native, ChatGPT, and presenter ownership and release boundaries.    |
+| [CLOUD_COMPUTER_BROWSER.md](./CLOUD_COMPUTER_BROWSER.md)                                         | Owner browser tools, session privacy, provider limits, and extension/password implementation path. |
 | [CHATGPT_APP.md](./CHATGPT_APP.md)                                                               | ChatGPT App behavior, OAuth, tool boundaries, and release verification.           |
 | [CLAUDE_CONNECTOR.md](./CLAUDE_CONNECTOR.md)                                                     | Claude Connector Directory and MCP App behavior for the shared `/mcp` server.     |
 | [CURSOR_PLUGIN.md](./CURSOR_PLUGIN.md)                                                           | Cursor Directory plugin package and account-bound MCP behavior.                   |

@@ -24,6 +24,16 @@
   max-width: min(32rem, calc(100vw - (var(--wireline-modal-inline-gutter) * 2)));
 }
 
+/* Portals sit outside WorkspaceShell, so their fields need the same geometry
+ * as the page forms. Keep special native controls and focus/error states intact. */
+.wl-cased[data-slot="dialog-content"]
+  :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not(
+    [type="range"]
+  ):not([type="color"]):not([type="file"]):not([type="hidden"]) {
+  border-radius: var(--wireline-radius-lg);
+  background-color: var(--wireline-color-surface-default);
+}
+
 [data-slot="dialog-content"][data-presentation="modal"] :where(h1, h2, h3, p, li, label),
 .wl-ui-caps [role="dialog"] :where(h1, h2, h3, p, li, label) {
   min-width: 0;

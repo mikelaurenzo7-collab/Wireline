@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
-import { signupHrefForPlan } from "../lib/signup-intent";
 
 type Pillar = {
   icon: LucideIcon;
@@ -29,22 +28,22 @@ const PILLARS: readonly Pillar[] = [
   {
     icon: Phone,
     label: "Phone Number",
-    title: "Ready When the Phone Rings",
-    body: "Your Bot answers calls, handles questions, and takes requests. With a configured calendar, it can book available times.",
-  },
-  {
-    icon: MonitorSmartphone,
-    label: "Cloud Computer",
-    title: "Works From a Goal",
-    body: "Give your Bot a goal and a cloud browser. It researches, navigates sites, and fills in forms. When it pauses for you, take control of the browser and hand it back.",
-    note: "Included with paid plans.",
+    title: "Answer the Call",
+    body: "Answer questions, capture requests, and book available times with your configured calendar.",
   },
   {
     icon: Mail,
     label: "Email Address",
-    title: "Follows Up in Writing",
-    body: "A managed inbox for your Bot, or your own domain with guided setup. It reads incoming messages, drafts replies, and sends approved email.",
+    title: "Keep It in Writing",
+    body: "Read incoming messages, draft replies, and send approved email. Use a managed inbox or your verified domain with guided setup.",
     note: "Email activation requires a setup review.",
+  },
+  {
+    icon: MonitorSmartphone,
+    label: "Cloud Computer",
+    title: "Give It a Goal",
+    body: "Research sites and complete web tasks in a live browser. See the work, take control, and hand it back.",
+    note: "Included with paid plans.",
   },
 ];
 
@@ -88,12 +87,7 @@ const CAPABILITIES: readonly { icon: LucideIcon; title: string; body: string }[]
 
 export default function Features() {
   return (
-    <MarketingPageFrame
-      className="wl-features-page"
-      stickyCta
-      stickyCtaSecondaryHref="/pricing"
-      stickyCtaSecondaryLabel="See Pricing"
-    >
+    <MarketingPageFrame className="wl-features-page">
       <PageMeta
         title="Features | BotBound"
         description="Build a Bot for your life or your business. Answer calls, manage email, and assign tasks to its cloud computer."
@@ -104,16 +98,13 @@ export default function Features() {
         <div className="wl-public-rail mx-auto max-w-6xl">
           <header className="wl-features-intro text-center">
             <p className="wl-eyebrow text-primary">Features</p>
-            <h1 className="marketing-hero-title mx-auto mt-4 text-[clamp(1.9rem,3.4vw,2.9rem)]">
-              A Bot for Your Life and Work
-            </h1>
+            <h1 className="marketing-hero-title mx-auto mt-4">Calls. Email. Computer.</h1>
             <p className="wl-features-intro__lead mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
-              Choose a paid plan for your Bot's calls, email, and cloud computer. Personal starts at
-              $12 a month, and channel plans include the numbers and inboxes you choose.
+              One Bot, your knowledge, and the tools to get work done.
             </p>
             <div className="marketing-hero__actions">
               <Link
-                to={signupHrefForPlan("personal")}
+                to="/signup"
                 className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
               >
                 Get Started
@@ -157,10 +148,7 @@ export default function Features() {
           </ul>
 
           <div className="wl-features-closing">
-            <Link
-              to={signupHrefForPlan("personal")}
-              className="marketing-btn-primary min-h-11 px-5"
-            >
+            <Link to="/signup" className="marketing-btn-primary min-h-11 px-5">
               Get Started <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
           </div>

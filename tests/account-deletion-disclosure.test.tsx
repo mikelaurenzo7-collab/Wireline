@@ -22,6 +22,7 @@ vi.mock("react", async (original) => ({
     ];
   },
   useEffect: (effect: () => void) => h.effects.push(effect),
+  useRef: (initial: unknown) => ({ current: initial }),
 }));
 vi.mock("react-router", () => ({ useNavigate: () => vi.fn() }));
 vi.mock("../src/contexts/AuthContext", () => ({

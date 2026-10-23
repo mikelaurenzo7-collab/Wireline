@@ -40,10 +40,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
     [/aria-label="BotBound home"/, "public header must name the BotBound home link"],
     [/aria-label="Account"/, "public header must expose account actions"],
     [/to="\/signin"/, "public header must keep sign in visible"],
-    [
-      /signupHrefForPlan\("personal"\)/,
-      "public header must keep free signup visible through the canonical slug builder",
-    ],
+    [/to="\/signup"/, "public header must offer a plan-neutral account entry"],
   ])
     mustInclude(
       "src/components/marketing/PrecisionPublicHeader.tsx",
@@ -59,7 +56,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   );
   for (const destination of executable(publicHeader).matchAll(/\bto(?:=|:\s*)["']([^"']+)["']/g)) {
     // "/studio" is the signed-in visitor's single way back to work.
-    if (!["/", "/features", "/pricing", "/signin", "/studio"].includes(destination[1])) {
+    if (!["/", "/features", "/pricing", "/signin", "/signup", "/studio"].includes(destination[1])) {
       failures.push(
         `src/components/marketing/PrecisionPublicHeader.tsx: unexpected header destination ${destination[1]}`,
       );
@@ -73,21 +70,13 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   );
 
   for (const [pattern, description] of [
-    [
-      /to=\{signupHrefForPlan\("personal"\)\}[\s\S]*?Get Started/,
-      "root landing must lead with the paid Personal plan",
-    ],
+    [/to="\/signup"[\s\S]*?Get Started/, "root landing must offer a plan-neutral signup action"],
     [/to="\/signin"/, "root landing must keep sign-in one action away"],
-    [
-      /<span>Voice Bots<\/span>\s*<span>With a Computer,<\/span>[\s\S]*<span>Phone Number,<\/span>\s*<span>and Email Address\.<\/span>/,
-      "root landing must make the computer, phone number, and email offer explicit",
-    ],
+    [/Calling, email, and a computer\./, "root landing must describe the product family together"],
     [/<PrecisionPublicHeader \/>/, "root landing must share the public header"],
-    [/landing-prestige__directions/, "hero must expose personal and business starting paths"],
-    [/Plan\. Coordinate\./, "hero must retain the personal assistant path"],
-    [/Answer\. Book\./, "hero must retain the front desk path"],
     [/FEATURED_TEMPLATE_KEYS/, "landing must curate role starters"],
-    [/template\.moves\.map/, "role starters must show playbook moves"],
+    [/template\.summary/, "role starters must explain their job concisely"],
+    [/encodeURIComponent\(template\.key\)/, "role selection must preserve template intent"],
     [/id="pricing"/, "landing must preserve direct pricing"],
     [/STRIPE_PLANS/, "landing pricing must use Stripe plan catalog"],
     [/landing-prestige__trust/, "landing must retain trust exit"],
@@ -109,7 +98,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /ONE WORKSPACE|Business and personal templates|Runtime\s+Balance|Start 7-day trial|Try 7 days free|\$159|postpaid voice-overage/i,
+    /Business and personal templates|Runtime\s+Balance|Start 7-day trial|Try 7 days free|\$159|postpaid voice-overage/i,
     "landing must not lead with architecture or billing mechanics",
   );
 
@@ -119,8 +108,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
       "home hero must be one centered column",
     ],
     [
-      /\.landing-prestige h2 > span,\s*\.landing-prestige__title-line > span\s*\{[^}]*display:\s*inline-block;[^}]*white-space:\s*nowrap;/,
-      "headings must wrap between phrases, never strand one word",
+      /text-wrap:\s*balance;/,
+      "display headings must balance lines while retaining text enlargement",
     ],
     [
       /\.landing-prestige__section-heading\s*\{[^}]*margin-inline:\s*auto;[^}]*text-align:\s*center;/,

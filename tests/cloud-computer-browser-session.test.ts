@@ -105,9 +105,11 @@ describe("cloud computer input rules", () => {
   it("redacts short and overlapping owner values once without expanding its placeholders", () => {
     const redactor = Object.create(CloudBrowserSession.prototype) as {
       ownerEnteredValues: string[];
+      ownerToolSecrets: Set<string>;
       redactOwnerText: (text: string) => string;
     };
     redactor.ownerEnteredValues = "aetxohindr".split("");
+    redactor.ownerToolSecrets = new Set();
     const redacted = redactor.redactOwnerText("A page about a task");
     expect(redacted).toContain("[owner-entered text hidden]");
     expect(redacted.length).toBeLessThan(1_000);

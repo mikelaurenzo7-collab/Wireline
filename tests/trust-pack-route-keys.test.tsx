@@ -35,11 +35,12 @@ describe("public trust-pack route keys", () => {
     (vertical) => {
       h.vertical = vertical;
       const tree = TrustPackPage();
-      expect(text(tree)).toContain("Trust pack not found.");
+      const heading = elements(tree).find((node) => node.type === "h1");
+      expect(text(heading)).toBe("Trust Pack Not Found");
       expect(elements(tree).find((node) => node.type === "page-meta")?.props.noIndex).toBe(true);
-      expect(elements(tree).some((node) => node.type === "a" && node.props.to === "/security")).toBe(
-        true,
-      );
+      expect(
+        elements(tree).some((node) => node.type === "a" && node.props.to === "/security"),
+      ).toBe(true);
     },
   );
 
@@ -49,7 +50,7 @@ describe("public trust-pack route keys", () => {
       h.vertical = vertical;
       const tree = TrustPackPage();
       expect(text(tree)).toContain("What Ships Now");
-      expect(text(tree)).not.toContain("Trust pack not found.");
+      expect(text(tree)).not.toContain("Trust Pack Not Found");
       const meta = elements(tree).find((node) => node.type === "page-meta")!;
       expect(meta.props.path).toBe(`/trust/${vertical}`);
       expect(meta.props.title).toContain("BotBound");

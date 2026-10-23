@@ -8,10 +8,7 @@ import {
   setStudioInspectorSectionParams,
   setStudioWorkroomModeParams,
 } from "../src/lib/studio-route-state";
-import {
-  addTemporaryTabIndex,
-  type TemporaryTabIndexTarget,
-} from "../src/lib/temporary-tab-index";
+import { addTemporaryTabIndex, type TemporaryTabIndexTarget } from "../src/lib/temporary-tab-index";
 
 function attributeTarget(initial?: string) {
   const attributes = new Map<string, string>();
@@ -129,12 +126,12 @@ describe("Studio route state", () => {
       new URLSearchParams("agent=bot-1&workroom=test&command=Hello&commandNonce=3"),
       "review",
     );
-    expect(inspector.toString()).toBe("agent=bot-1&workroom=test&section=review");
+    expect(inspector.toString()).toBe("agent=bot-1&workroom=test&section=review&chat=setup");
     expect(inspector.has("command")).toBe(false);
     expect(inspector.has("commandNonce")).toBe(false);
 
     const closed = clearStudioInspectorSectionParams(inspector);
-    expect(closed.toString()).toBe("agent=bot-1&workroom=test");
+    expect(closed.toString()).toBe("agent=bot-1&workroom=test&chat=setup");
   });
 
   it("writes canonical test state without disturbing inspector selection", () => {
@@ -147,9 +144,9 @@ describe("Studio route state", () => {
 
   it("clears only an untouched route-injected command", () => {
     expect(reconcileStudioCommandDraft("Call this lead", "Call this lead", null)).toBe("");
-    expect(
-      reconcileStudioCommandDraft("Call this lead tomorrow", "Call this lead", null),
-    ).toBe("Call this lead tomorrow");
+    expect(reconcileStudioCommandDraft("Call this lead tomorrow", "Call this lead", null)).toBe(
+      "Call this lead tomorrow",
+    );
     expect(reconcileStudioCommandDraft("", null, "  New customer question  ")).toBe(
       "New customer question",
     );

@@ -1,7 +1,6 @@
 import { Link } from "react-router";
 import { ArrowRight, Check, ChevronDown, ExternalLink } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
-import { signupHrefForPlan } from "../lib/signup-intent";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 
 const DIFFERENCES = [
@@ -100,12 +99,7 @@ const TABLE_ROWS = [
 
 export default function Compare() {
   return (
-    <MarketingPageFrame
-      className="wl-compare-page"
-      stickyCta
-      stickyCtaSecondaryHref="/pricing"
-      stickyCtaSecondaryLabel="See Pricing"
-    >
+    <MarketingPageFrame className="wl-compare-page">
       <PageMeta
         title="Why BotBound | Compare Bots"
         description="Compare BotBound's Bot workspace with flat subscriptions, usage pricing, and developer voice infrastructure."
@@ -115,12 +109,10 @@ export default function Compare() {
       <section className="marketing-section">
         <div className="mx-auto mb-8 max-w-6xl text-center">
           <p className="wl-eyebrow wl-eyebrow--wired text-primary">Compare</p>
-          <h1 className="marketing-hero-title mx-auto mt-4 max-w-[22ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
-            BotBound vs. Other Voice AI
-          </h1>
+          <h1 className="marketing-hero-title mx-auto mt-4">Find Your Fit</h1>
           <div className="marketing-hero__actions mt-7">
             <Link
-              to={signupHrefForPlan("personal")}
+              to="/signup"
               className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
             >
               Get Started
@@ -287,10 +279,7 @@ export default function Compare() {
           </div>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            <Link
-              to={signupHrefForPlan("personal")}
-              className="font-semibold text-primary hover:underline"
-            >
+            <Link to="/signup" className="font-semibold text-primary hover:underline">
               Get Started
             </Link>{" "}
             and build one before you compare another.

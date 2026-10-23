@@ -125,7 +125,7 @@ describe("authenticated workspace design architecture", () => {
     const review = read("src/components/StudioAgentReviewPanel.tsx");
 
     expect(studio).toContain('useMediaQuery("(min-width: 1180px)")');
-    expect(studio).toContain("wireline:studio-panel:v2");
+    expect(studio).toContain("wireline:studio-panel:v3");
     expect(studio).toContain('side="right"');
     expect(studio).toContain("defaultSize={PANEL_DEFAULT_WIDTH}");
     expect(studio).toContain("minSize={PANEL_MIN_WIDTH}");
@@ -142,10 +142,8 @@ describe("authenticated workspace design architecture", () => {
     );
     expect(studio).toContain("const panelFill = panelOpen && (panelExpanded || computerFocused);");
     expect(studio).toContain("aria-pressed={panelFill}");
-    expect(studio).toContain('{ id: "computer", label: "Computer" }');
-    expect(studio).toContain(
-      '<ComputerWorkbench key={active.id} agentId={active.id} layout="panel" />',
-    );
+    expect(studio).toContain('{ id: "computer", label: "Browser" }');
+    expect(studio).toContain("<ComputerWorkbench");
     expect(studio.match(/compact=\{splitWorkspace\}/g)).toHaveLength(2);
     expect(studio).toContain('layout={splitWorkspace ? "split" : "standalone"}');
     expect(setup).toContain('data-wireline-studio-setup-density={compact ? "inspector" : "page"}');

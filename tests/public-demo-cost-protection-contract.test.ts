@@ -29,7 +29,7 @@ describe("retired public browser voice cost boundary", () => {
     expect(landing).not.toMatch(
       /BrowserCallWidget|useProtectedPublicDemo|RTCPeerConnection|getUserMedia/,
     );
-    expect(showcase).toContain("<Navigate to={FREE_SIGNUP} replace />");
+    expect(showcase).toContain('<Navigate to="/signup" replace />');
     expect(showcase).not.toMatch(
       /BrowserCallWidget|useProtectedPublicDemo|RTCPeerConnection|getUserMedia/,
     );

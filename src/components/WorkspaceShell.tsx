@@ -405,7 +405,7 @@ export default function WorkspaceShell({
           minSize={208}
           maxSize={320}
           collapsedSize={68}
-          defaultCollapsed
+          defaultCollapsed={false}
           resizeHandleLabel="Resize workspace navigation"
           className="wl-workspace-rail-panel hidden lg:block"
         >

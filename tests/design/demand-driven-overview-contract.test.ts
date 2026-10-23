@@ -67,10 +67,15 @@ describe("demand-driven authenticated experience", () => {
     expect(activation).not.toContain("Test conversation completed");
   });
 
-  it("keeps Set Up as one workroom with a Try It / Details / Summary panel and progressive disclosure", () => {
+  it("keeps real Work beside Browser, with separate Set up and progressive disclosure", () => {
     expect(studio).toContain('"setup" | "review"');
     expect(studio).toContain('"configure" | "test"');
-    expect(studio).toContain('{ id: "setup", label: "Details" }');
+    expect(studio).toContain('{ id: "work", label: "Work" }');
+    expect(studio).toContain('{ id: "computer", label: "Browser" }');
+    expect(studio).toContain('{ id: "try", label: "Rehearse" }');
+    expect(studio).toContain('{ id: "setup", label: "Set up" }');
+    expect(studio).toContain("<StudioTaskChat");
+    expect(studio).toContain("<ComputerWorkspaceProvider>");
     expect(studio).toContain("StudioAgentReviewPanel");
     expect(studio).not.toContain("StudioAgentCanvas");
     expect(setup).not.toMatch(/AgentPresenceLivePreview|VoiceGallery/);

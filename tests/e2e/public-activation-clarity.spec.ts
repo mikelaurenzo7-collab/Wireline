@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { SIGNUP_INTENT_STORAGE_KEY } from "../../src/lib/signup-intent";
 
 async function mockPublicAccount(page: Page, plans: unknown, status = 200) {
   await page.route("**/api/**", async (route) => {
@@ -20,12 +21,14 @@ async function mockPublicAccount(page: Page, plans: unknown, status = 200) {
 const paidPlans = {
   stripe_configured: true,
   checkout_available: true,
-  plans: ["voice", "email", "voice-email", "voice-regular", "voice-email-regular"].map((id) => ({
-    id,
-    contact_sales: false,
-    configured: true,
-    annual_configured: true,
-  })),
+  plans: ["personal", "voice", "email", "voice-email", "voice-regular", "voice-email-regular"].map(
+    (id) => ({
+      id,
+      contact_sales: false,
+      configured: true,
+      annual_configured: true,
+    }),
+  ),
 };
 
 test("homepage gives Email interests a paid plan and setup-review path", async ({ page }) => {
@@ -128,7 +131,7 @@ test("signup checks the selected annual plan even when other paid plans are avai
   );
 });
 
-test("mobile paid signup keeps activation status visible without adding it to free signup", async ({
+test("mobile paid signup includes Personal status and keeps generic signup neutral", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 800 });
@@ -144,7 +147,19 @@ test("mobile paid signup keeps activation status visible without adding it to fr
   expect(await notice.evaluate((element) => element.scrollWidth <= element.clientWidth + 2)).toBe(
     true,
   );
+  await page.goto("/signup?plan=free");
+  await expect(access.getByRole("status")).toHaveText(
+    "Checkout is unavailable right now. Try again shortly.",
+  );
+  await expect(access.getByText("Personal · Starter · $12/month")).toBeVisible();
   await page.goto("/signup");
+  await expect(access.getByText("Personal · Starter · $12/month")).toBeVisible();
+  await expect(access.getByRole("status")).toHaveText(
+    "Checkout is unavailable right now. Try again shortly.",
+  );
+  // A prior explicit choice resumes; a fresh generic entry has no selected plan.
+  await page.evaluate((key) => localStorage.removeItem(key), SIGNUP_INTENT_STORAGE_KEY);
+  await page.reload();
   await expect(access.getByRole("status")).toHaveCount(0);
   await expect(
     access.getByRole("button", { name: "Create Account", exact: true }).last(),

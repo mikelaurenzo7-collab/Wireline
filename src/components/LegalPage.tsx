@@ -19,7 +19,7 @@ function LegalLayout({
 }) {
   return (
     <MarketingChrome stickyCta={false}>
-      <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
+      <div className="wl-public-document max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
         <Link
           to="/"
           className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-foreground transition-colors mb-8 -mx-2 px-2 py-2 rounded-md hover:bg-black/[0.03] min-h-[44px]"
@@ -31,9 +31,9 @@ function LegalLayout({
           <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-brand">
             <Icon className="w-5 h-5 text-on-brand" />
           </div>
-          <h1 className="marketing-hero-title text-2xl sm:text-3xl">{title}</h1>
+          <h1 className="marketing-hero-title">{title}</h1>
         </div>
-        <p className="mb-10 text-eyebrow !mx-0 !text-[0.625rem]">Last updated · {LAST_UPDATED}</p>
+        <p className="mb-10 text-eyebrow !mx-0">Last updated · {LAST_UPDATED}</p>
 
         {summary?.length ? (
           <div className="mb-10 grid gap-3 sm:grid-cols-3" aria-label={`${title} summary`}>

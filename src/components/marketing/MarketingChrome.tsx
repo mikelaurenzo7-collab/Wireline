@@ -15,15 +15,12 @@ type Props = {
 };
 
 /**
- * Header, pinned chrome bar, and an optional mobile sticky CTA, for pages that
+ * Header, footer chrome, and an optional mobile sticky CTA, for pages that
  * bring their own content width: legal, trust, changelog, support.
  *
- * These are the long-form routes, and they are exactly why the frame is a frame
- * rather than a per-page decision. A terms-of-service page has to scroll; what
- * it must not do is scroll the *window*, because then the header detaches, the
- * chrome bar drops off the bottom, and the route stops matching every other
- * public page. So it gets the same 100dvh surface as the composed pages, and
- * the document flows inside the same single `.marketing-flow` scroller.
+ * Public routes use normal document scrolling. The measured header reserves
+ * its own space; the footer follows the content. Workspace viewport behavior
+ * remains independent of this public shell.
  */
 export default function MarketingChrome({
   children,
@@ -45,8 +42,7 @@ export default function MarketingChrome({
         id="main-content"
         tabIndex={-1}
         className={cn(
-          /* One scroller, and it is this one. The header offset is authored on
-             `.marketing-flow` itself, so no page reserves h-16 of its own. */
+          /* The document owns scrolling. This flow reserves the measured header. */
           "marketing-flow marketing-longform relative z-10 flex flex-col",
           stickyCta && "marketing-has-sticky-cta",
         )}

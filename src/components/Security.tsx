@@ -8,7 +8,6 @@
  * Hard rule: no fabrication. Do not imply an attestation, certification,
  * contractual safeguard, or delivery date until it is verified and signed.
  */
-import { motion } from "motion/react";
 import { Link, useLocation } from "react-router";
 import {
   Lock,
@@ -212,14 +211,8 @@ export default function Security() {
   const sections = isTrustHub ? [...SECTIONS, ...TRUST_PACK_SECTIONS] : SECTIONS;
   const overviewSections = sections.filter((section) => !section.technical);
   const technicalSections = sections.filter((section) => section.technical);
-  const renderSection = ({ icon: Icon, title, items }: SecurityTopic, index: number) => (
-    <motion.section
-      key={title}
-      initial={{ opacity: 0, y: 8 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.4, delay: Math.min(index * 0.04, 0.4) }}
-    >
+  const renderSection = ({ icon: Icon, title, items }: SecurityTopic) => (
+    <section key={title}>
       <div className="mb-4 flex flex-col items-center gap-2.5 text-center">
         <Icon className="h-4 w-4 text-brand" strokeWidth={1.8} />
         <h2 className="font-display text-lg leading-tight text-foreground">{title}</h2>
@@ -235,7 +228,7 @@ export default function Security() {
           </li>
         ))}
       </ul>
-    </motion.section>
+    </section>
   );
 
   return (
@@ -247,28 +240,23 @@ export default function Security() {
         // evidence beyond /security, so each indexable route owns its canonical.
         path={isTrustHub ? "/trust" : "/security"}
       />
-      <MarketingChrome stickyCta className="wl-security-page">
+      <MarketingChrome className="wl-security-page">
         <div className="wl-security-doc relative z-10 mx-auto max-w-3xl px-5 sm:px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-10 text-center"
-          >
+          <div className="mb-10 text-center">
             <div className="mb-5 flex flex-col items-center justify-center gap-3 text-center">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand">
                 <ShieldCheck className="h-5 w-5 text-on-brand" />
               </div>
               <div className="text-center">
                 <h1 className="wl-public-section-heading max-w-[22ch]">
-                  {isTrustHub ? "How BotBound Earns Live Calls" : "How We Keep Your Data Safe"}
+                  {isTrustHub ? "Trust, Made Visible" : "Your Data. Your Control."}
                 </h1>
               </div>
             </div>
-            <p className="mt-4 text-eyebrow !text-[0.625rem]">
+            <p className="mt-4 text-eyebrow">
               <span className="whitespace-nowrap">Last updated · October 20, 2026</span>
             </p>
-          </motion.div>
+          </div>
 
           <section className="mb-10" aria-labelledby="trust-packs-heading">
             <h2 id="trust-packs-heading" className="mb-3 text-center text-sm font-semibold">

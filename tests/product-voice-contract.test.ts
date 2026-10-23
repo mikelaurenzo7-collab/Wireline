@@ -115,7 +115,7 @@ describe("BotBound product voice", () => {
       "Do not stack BotBound with Phone Bot or Voice Bot as a compound noun. The brand already contains Bot. Say BotBound, or say Phone Bot, not both.",
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
-      "Author every product title and heading in Title Case, including heroes, page titles, section titles, cards, dialogs, and empty-state titles. Never uppercase headings with CSS.",
+      "Public page heroes use uppercase display styling with short, balanced lines. Product headings, section titles, cards, dialogs, and empty-state titles retain authored Title Case.",
     );
   });
 
@@ -226,7 +226,7 @@ describe("BotBound product voice", () => {
       expect(template.summary.length).toBeGreaterThan(24);
     }
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
-    expect(landing).toContain("template.moves.map");
+    expect(landing).toContain("{template.summary}");
     expect(landing).not.toContain("template.category");
   });
 
@@ -251,14 +251,14 @@ describe("BotBound product voice", () => {
     }
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
     expect(landing).not.toContain("<AuthAccessPanel");
-    expect(landing).toContain("<span>With a Computer,</span>");
-    expect(landing).toContain("<span>and Email Address.</span>");
+    expect(landing).toContain("Calling, email, and a computer.");
+    expect(landing).toContain('to="/signup"');
     expect(landing).not.toContain("landing-prestige__promise");
-    expect(landing).toContain("landing-prestige__directions");
+    expect(landing).not.toContain("landing-prestige__directions");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).not.toContain("HERO_CHANNELS.map");
     expect(landing).toContain("FEATURED_TEMPLATES.map");
-    expect(landing).toContain("template.moves.map");
+    expect(landing).toContain("{template.summary}");
     expect(landing).toContain("STRIPE_PLANS");
     expect(landing).toContain("LandingFooter");
     expect(landing).toContain("<PrecisionPublicHeader />");

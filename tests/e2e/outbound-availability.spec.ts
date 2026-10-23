@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
 
 for (const width of [320, 1280]) {
   test(`personal calls open review without bypassing permission at ${width}px`, async ({
@@ -77,6 +79,12 @@ for (const width of [320, 1280]) {
     await opener.click();
     const dialog = page.getByRole("dialog", { name: "New call", exact: true });
     await expect(dialog).toBeVisible();
+    if (process.env.BOTBOUND_WORKSPACE_PROOF_DIR) {
+      await mkdir(process.env.BOTBOUND_WORKSPACE_PROOF_DIR, { recursive: true });
+      await page.screenshot({
+        path: join(process.env.BOTBOUND_WORKSPACE_PROOF_DIR, `synthetic-call-dialog-${width}.png`),
+      });
+    }
     await expect(dialog.getByRole("combobox", { name: "Bot", exact: true })).toHaveValue(
       "business-bot",
     );

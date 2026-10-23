@@ -26,7 +26,7 @@ describe("marketing centering contract", () => {
     );
     expect(header).toContain('aria-label="Account"');
     expect(header).toContain('to="/signin"');
-    expect(header).toContain('to={signupHrefForPlan("personal")}');
+    expect(header).toContain('to="/signup"');
     expect(header).toContain('<BotBoundWordmark className="wl-public-header__wordmark" />');
     expect(header).toContain('aria-label="Get Started"');
     expect(header).not.toContain('aria-label="Start Free"');
@@ -156,6 +156,6 @@ describe("marketing centering contract", () => {
         `${path} should explicitly declare its copy alignment`,
       ).toBe(true);
     }
-    expect(read("src/pages/Showcase.tsx")).toContain("<Navigate to={FREE_SIGNUP} replace />");
+    expect(read("src/pages/Showcase.tsx")).toContain('<Navigate to="/signup" replace />');
   });
 });

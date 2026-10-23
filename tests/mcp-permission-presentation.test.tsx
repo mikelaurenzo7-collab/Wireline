@@ -25,6 +25,7 @@ vi.mock("react", async (original) => ({
     ];
   },
   useEffect: vi.fn(),
+  useRef: (initial: unknown) => ({ current: initial }),
   useCallback: (callback: unknown) => callback,
 }));
 vi.mock("../src/lib/api", () => ({ authFetch: vi.fn() }));

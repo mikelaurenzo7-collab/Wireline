@@ -339,7 +339,7 @@ test("Studio retains a draft and exposes the final action after text enlargement
   const draft = "Welcome to the repair desk. How can I help?";
   await greeting.fill(draft);
   await page.getByRole("tab", { name: "Summary", exact: true }).click();
-  await page.getByRole("tab", { name: "Details", exact: true }).click();
+  await page.getByRole("tab", { name: "Set up", exact: true }).click();
   await expect(greeting).toHaveValue(draft);
   await page.setViewportSize({ width: 320, height: 800 });
   await enlargeText(page);

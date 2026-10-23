@@ -56,10 +56,12 @@ export default function TeamSettings() {
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const mutationPending = useRef(false);
   const inviteDialogRef = useRef<HTMLDivElement>(null);
 
   function openInviteDialog() {
-    if (teamAccess !== "ok") return;
+    if (teamAccess !== "ok" || loading || mutationPending.current) return;
     setInviteError(null);
     setIsInviteOpen(true);
   }
@@ -106,10 +108,10 @@ export default function TeamSettings() {
       }
       if (!response.ok)
         throw new Error(payload?.error || payload?.message || String(response.status));
-      setMembers(Array.isArray(payload?.members) ? payload.members : []);
+      if (!Array.isArray(payload?.members)) throw new Error("Team status could not be confirmed.");
+      setMembers(payload.members);
     } catch {
       setTeamAccess("error");
-      setMembers([]);
     } finally {
       setLoading(false);
     }
@@ -121,10 +123,13 @@ export default function TeamSettings() {
 
   const handleInvite = async (event: FormEvent) => {
     event.preventDefault();
-    if (!inviteEmail || inviting || teamAccess !== "ok") return;
+    if (!inviteEmail || inviting || loading || teamAccess !== "ok" || mutationPending.current)
+      return;
+    mutationPending.current = true;
     setInviting(true);
     setInviteError(null);
     setInviteSuccess(null);
+    let outcomeUnknown = true;
     try {
       const response = await authFetch("/api/team/invite", {
         method: "POST",
@@ -132,21 +137,40 @@ export default function TeamSettings() {
         body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
       });
       const payload = (await response.json().catch(() => null)) as
-        | (TeamErrorPayload & { email_sent?: boolean })
+        | (TeamErrorPayload & {
+            success?: boolean;
+            email_sent?: boolean;
+            invitation?: { id?: string; email?: string; role?: string };
+          })
         | null;
       if (!response.ok) {
+        outcomeUnknown =
+          response.status >= 500 && payload?.code !== "SHARED_WORKSPACES_NOT_CERTIFIED";
         if (payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED") {
           setTeamAccess("certifying");
           throw new Error(TEAM_INVITES_UNAVAILABLE);
         }
         throw new Error(payload?.error || payload?.message || "Invite could not be sent.");
       }
+      if (
+        payload?.success !== true ||
+        typeof payload.email_sent !== "boolean" ||
+        !payload.invitation ||
+        typeof payload.invitation.id !== "string" ||
+        !payload.invitation.id ||
+        payload.invitation.email?.trim().toLowerCase() !== inviteEmail.trim().toLowerCase() ||
+        payload.invitation.role !== inviteRole
+      ) {
+        setTeamAccess("error");
+        throw new Error(
+          "The invitation could not be confirmed. Refresh team status before trying again.",
+        );
+      }
+      outcomeUnknown = false;
       if (payload?.email_sent === false) {
         setInviteError(
-          `The invitation for ${inviteEmail} is saved, but the email was not delivered. Send it again.`,
+          `The invitation for ${inviteEmail} is saved, but email delivery was not confirmed. Check with the recipient before sending again.`,
         );
-        setIsInviteOpen(false);
-        setInviteEmail("");
         await loadTeam();
         return;
       }
@@ -156,25 +180,56 @@ export default function TeamSettings() {
       setInviteRole("member");
       await loadTeam();
     } catch (error) {
-      setInviteError(error instanceof Error ? error.message : "Invite could not be sent.");
+      if (outcomeUnknown) setTeamAccess("error");
+      setInviteError(
+        error instanceof Error
+          ? error.message
+          : "The invitation could not be confirmed. Refresh team status before trying again.",
+      );
     } finally {
+      mutationPending.current = false;
       setInviting(false);
     }
   };
 
   async function removeMember(member: TeamMemberRecord) {
-    if (!member.id || member.email === user?.email) return;
-    setInviteError(null);
-    const response = await authFetch(`/api/team/${member.id}`, { method: "DELETE" });
-    const payload = (await response.json().catch(() => null)) as TeamErrorPayload | null;
-    if (!response.ok) {
-      setInviteError(payload?.error || payload?.message || "Could not remove this teammate.");
+    if (
+      !member.id ||
+      member.email === user?.email ||
+      loading ||
+      teamAccess !== "ok" ||
+      mutationPending.current
+    )
       return;
+    mutationPending.current = true;
+    setRemovingId(member.id);
+    setInviteError(null);
+    setInviteSuccess(null);
+    try {
+      const response = await authFetch(`/api/team/${encodeURIComponent(member.id)}`, {
+        method: "DELETE",
+      });
+      const payload = (await response.json().catch(() => null)) as
+        (TeamErrorPayload & { success?: boolean }) | null;
+      if (!response.ok)
+        throw new Error(payload?.error || payload?.message || "Could not remove this teammate.");
+      if (payload?.success !== true)
+        throw new Error("Removal could not be confirmed. Refresh team status before trying again.");
+      await loadTeam();
+    } catch (error) {
+      setTeamAccess("error");
+      setInviteError(
+        error instanceof Error
+          ? error.message
+          : "Removal could not be confirmed. Refresh team status before trying again.",
+      );
+    } finally {
+      mutationPending.current = false;
+      setRemovingId(null);
     }
-    await loadTeam();
   }
 
-  const canInvite = teamAccess === "ok";
+  const canInvite = teamAccess === "ok" && !loading && !inviting && !removingId;
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-6">
@@ -196,13 +251,28 @@ export default function TeamSettings() {
 
         {teamAccess === "error" ? (
           <StatusNotice tone="destructive" title="Team Settings Could Not Be Loaded">
-            Your workspace is unaffected. Refresh this page to retry the team status check.
+            Team status could not be confirmed. Your last confirmed members remain visible.
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="mt-3"
+              disabled={loading || inviting || Boolean(removingId)}
+              onClick={() => void loadTeam()}
+            >
+              Refresh Team
+            </Button>
           </StatusNotice>
         ) : null}
 
         {inviteSuccess ? (
           <StatusNotice tone="success" title="Invite Sent">
             {inviteSuccess}
+          </StatusNotice>
+        ) : null}
+        {inviteError && !isInviteOpen ? (
+          <StatusNotice tone="destructive" title="Team Action Needs Attention">
+            {inviteError}
           </StatusNotice>
         ) : null}
 
@@ -265,9 +335,10 @@ export default function TeamSettings() {
                       type="button"
                       size="sm"
                       variant="secondary"
+                      disabled={teamAccess !== "ok" || loading || inviting || Boolean(removingId)}
                       onClick={() => void removeMember(member)}
                     >
-                      Remove
+                      {removingId === member.id ? "Removing…" : "Remove"}
                     </Button>
                   ) : null}
                 </div>
@@ -360,6 +431,18 @@ export default function TeamSettings() {
               {inviteError ? (
                 <StatusNotice tone="destructive" className="mt-4" title="Invite Failed">
                   {inviteError}
+                  {teamAccess === "error" ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="mt-3"
+                      disabled={loading || inviting}
+                      onClick={() => void loadTeam()}
+                    >
+                      Refresh Team
+                    </Button>
+                  ) : null}
                 </StatusNotice>
               ) : null}
               <div className="mt-8 flex justify-end gap-3">

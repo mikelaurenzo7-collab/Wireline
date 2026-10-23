@@ -9,24 +9,19 @@ describe("public voice-preview retirement contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const botProduct = read("src/lib/bot-product.ts");
 
-    expect(landing).toContain("<span>With a Computer,</span>");
-    expect(landing).toContain("<span>and Email Address.</span>");
+    expect(landing).toContain("Calling, email, and a computer.");
     expect(landing).not.toContain("landing-prestige__promise");
-    expect(landing).toContain("landing-prestige__directions");
-    expect(landing).toContain("Answer. Book.");
-    expect(landing).toContain("Plan. Coordinate.");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo|\/api\/public\/demo-/);
     expect(botProduct).toContain('slogan: "For You. For Your Business."');
     expect(botProduct).toContain('supportingLine: "CALL · EMAIL · COMPUTER"');
     expect(botProduct).not.toContain("activationLine:");
   });
 
-  it("redirects the retired Showcase directly to canonical free signup", () => {
+  it("redirects the retired Showcase directly to plan-neutral signup", () => {
     const showcase = read("src/pages/Showcase.tsx");
 
     expect(showcase).toContain('import { Navigate } from "react-router"');
-    expect(showcase).toContain('const FREE_SIGNUP = signupHrefForPlan("personal")');
-    expect(showcase).toContain("<Navigate to={FREE_SIGNUP} replace />");
+    expect(showcase).toContain('<Navigate to="/signup" replace />');
     expect(showcase).not.toMatch(/BrowserCallWidget|RTCPeerConnection|getUserMedia|demo-session/);
   });
 

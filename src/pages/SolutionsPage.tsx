@@ -4,10 +4,10 @@ import { PageMeta } from "../lib/page-meta";
 
 const SOLUTIONS = {
   sales: {
-    title: "Give Every Sales Inquiry a Clear Next Step",
+    title: "Every Inquiry. A Next Step.",
     description:
       "Answer incoming questions, capture what the customer needs, and offer an available appointment. Keep the conversation and next step in BotBound.",
-    primary: { href: "/signup?plan=free&template=front-desk", label: "Create Your Front Desk" },
+    primary: { href: "/signup?template=front-desk", label: "Create Your Front Desk" },
     secondary: { href: "/features", label: "See How It Works" },
     sequence: [
       ["A Customer Calls", "Your Bot answers on its own number and asks what the caller needs."],
@@ -34,7 +34,7 @@ const SOLUTIONS = {
     proof: "Start with your Bot's inbox, calendar, and call records. No CRM required.",
   },
   support: {
-    title: "A Front Desk That Answers Before Demand Goes Cold",
+    title: "Meet Your Front Desk",
     description:
       "Give a Front Desk Bot your policies, calendar, and rules. It answers calls, captures requests, books available times, and keeps the outcome in your workspace. Add email for written replies and recaps.",
     primary: {
@@ -77,7 +77,7 @@ export default function SolutionsPage() {
   const page = SOLUTIONS[key];
 
   return (
-    <MarketingPageFrame className="wl-solutions-page" stickyCta stickyCtaHref={page.primary.href}>
+    <MarketingPageFrame className="wl-solutions-page">
       <PageMeta
         title={`${page.title} | BotBound`}
         description={page.description}
@@ -88,9 +88,7 @@ export default function SolutionsPage() {
         <div className="wl-public-rail">
           <div className="mx-auto mb-8 max-w-6xl text-center">
             <p className="wl-eyebrow wl-eyebrow--wired text-primary">Inbound</p>
-            <h1 className="marketing-hero-title mx-auto mt-4 text-[clamp(1.9rem,3.4vw,2.9rem)]">
-              {page.title}
-            </h1>
+            <h1 className="marketing-hero-title mx-auto mt-4">{page.title}</h1>
             <div className="marketing-hero__actions mt-7">
               <Link
                 to={page.primary.href}
@@ -108,16 +106,14 @@ export default function SolutionsPage() {
           </div>
           <ol className="grid gap-3 sm:grid-cols-3">
             {page.sequence.map(([title, copy], index) => (
-              <li key={title} className="wl-stitch-card px-4 py-5 text-center">
-                <span className="flex items-center justify-center gap-2">
-                  <span className="grid h-5 w-5 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[10px] font-semibold text-primary">
+              <li key={title} className="wl-stitch-card px-5 py-6 text-left">
+                <span className="mb-4 flex items-center gap-2">
+                  <span className="grid h-5 w-5 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-xs font-semibold text-primary">
                     0{index + 1}
                   </span>
                   <h2 className="wl-card-title">{title}</h2>
                 </span>
-                <p className="mx-auto mt-2 max-w-[36ch] text-[13px] leading-[1.5] text-muted-foreground">
-                  {copy}
-                </p>
+                <p className="mt-2 max-w-[36ch] text-sm leading-6 text-muted-foreground">{copy}</p>
               </li>
             ))}
           </ol>

@@ -123,6 +123,13 @@ function render() {
     h.dirty = false;
     h.stateCursor = h.refCursor = h.effectCursor = 0;
     tree = StudioWorkspaceV2();
+    // The account provider is exercised in browser tests; this hook harness
+    // executes its child orchestrator to inspect route/focus behavior.
+    if (isValidElement<{ children: ReactElement }>(tree)) {
+      const child = tree.props.children;
+      if (isValidElement(child) && typeof child.type === "function")
+        tree = (child.type as () => ReactNode)();
+    }
     const workroom = elements(tree).find((node) => node.type === "workroom");
     if (workroom?.props.ref) workroom.props.ref.current = { focusVoiceRehearsal: h.focus };
     h.effects.splice(0).forEach((effect) => effect());

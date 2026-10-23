@@ -31,7 +31,7 @@ describe("auth transition and control case contract", () => {
       ["segmented tab", segmentedRule],
     ] as const) {
       expect(rule, `${name} rule must be present`).not.toBe("");
-      expect(rule).toContain("text-transform: uppercase");
+      expect(rule).toContain("text-transform: none");
       expect(rule).toContain("var(--wl-caps-control-tracking)");
     }
   });

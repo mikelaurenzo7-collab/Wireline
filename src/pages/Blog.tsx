@@ -2,7 +2,6 @@ import { Link } from "react-router";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 import { BOTBOUND_PRODUCTION_ORIGIN } from "../lib/brand";
-import { signupHrefForPlan } from "../lib/signup-intent";
 
 const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 
@@ -68,7 +67,7 @@ const structuredData = {
 
 export default function Blog() {
   return (
-    <MarketingPageFrame longform stickyCta>
+    <MarketingPageFrame longform>
       <PageMeta
         title="BotBound Notes | Guides for Your Life and Work"
         description="Practical guides to calls, appointments, conversations, and computer tasks. Give your Bot a clear job and keep control of the outcome."
@@ -79,15 +78,13 @@ export default function Blog() {
       <section className="marketing-section marketing-section--screen mx-auto max-w-6xl text-center">
         <div className="mx-auto max-w-6xl">
           <p className="wl-eyebrow wl-eyebrow--wired text-primary">Notes</p>
-          <h1 className="marketing-hero-title mx-auto mt-4 text-balance text-[clamp(1.9rem,3.4vw,2.9rem)]">
-            Practical Notes for Getting Time Back
-          </h1>
+          <h1 className="marketing-hero-title mx-auto mt-4">Make Room for Better Work</h1>
         </div>
         <div className="mx-auto mt-10 grid max-w-6xl gap-px overflow-hidden border border-border bg-border md:grid-cols-3">
           {NOTES.map(({ title, copy }) => (
             <article
               id={noteSlug(title)}
-              className="bg-card px-5 py-8 text-center sm:px-7 sm:py-10"
+              className="bg-card px-5 py-8 text-left sm:px-7 sm:py-10"
               key={title}
             >
               <h2 className="text-lg font-semibold tracking-[-.025em] text-foreground">{title}</h2>
@@ -107,7 +104,7 @@ export default function Blog() {
             </h2>
             <div className="wl-marketing-actions mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
-                to={signupHrefForPlan("personal")}
+                to="/signup"
                 className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
               >
                 Get Started

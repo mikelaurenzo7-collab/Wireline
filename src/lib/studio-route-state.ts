@@ -88,6 +88,7 @@ export function setStudioInspectorSectionParams(
   const hadCommand = current.has("command") || current.has("commandNonce");
   const next = canonicalStudioParams(current);
   next.set("section", section);
+  next.set("chat", "setup");
   if (hadCommand) next.set("workroom", "test");
   next.delete("command");
   next.delete("commandNonce");
@@ -97,6 +98,7 @@ export function setStudioInspectorSectionParams(
 export function clearStudioInspectorSectionParams(current: URLSearchParams): URLSearchParams {
   const next = canonicalStudioParams(current);
   if (next.get("section") === "setup" || next.get("section") === "review") {
+    next.set("chat", "setup");
     next.delete("section");
   }
   return next;

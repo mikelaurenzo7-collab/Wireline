@@ -12,9 +12,12 @@ The brand line is:
 
 > Your Next Hire Is a Bot.
 
-The current homepage headline is:
+The current homepage display is:
 
-> Voice Bots With a Computer, Phone Number, and Email Address.
+> VOICE BOTS.
+> REAL WORK.
+
+Its supporting line is: “Calling, email, and a computer. Together in one workspace.” The hero introduces the complete offer; individual plan prices belong in Pricing.
 
 The general product category is **Voice Bots**. The launch campaign line is **Your Next Hire Is a Bot.** The prepared **Give Your Bot a Goal.** family remains a creative variant and uses the approved operator and the existing Stay in the Work photograph. Historical campaigns remain dated creative variants; “hire” describes software, not an employment service. See [the goal campaign copy kit](launch-2026-10-goal/COPY-KIT.md).
 
@@ -66,12 +69,22 @@ Violet is a signal, not decoration. Use it to show an answer, connection, active
 
 ## Typography
 
-- Display and wordmark: Inter Tight, 800.
+- Display: Inter Tight, 700. Wordmark: Inter Tight, 800.
 - Product body: Inter, 400 to 700.
 - Operational labels and campaign eyebrows: IBM Plex Mono, 700, uppercase, wide tracking.
-- Hero headlines are compact, direct, and left aligned. Favor 0.82 to 0.95 line-height.
-- Author all titles, headlines, and brand lines in Title Case. Body copy uses sentence case. Uppercase is reserved for compact operational labels and status signals; do not use CSS to recase names or customer text.
+- Public hero messages use uppercase, short phrases, and balanced lines. The homepage has a larger two-line display; interior pages share a 32 to 60 px responsive tier with 1.04 line-height and restrained negative tracking. Avoid isolated final words and manual breaks that fail on smaller screens.
+- Center public hero content unless the page deliberately uses a split editorial layout. Align its eyebrow, title, supporting copy, and actions to the same axis. Product headings and section titles retain authored Title Case; body copy and controls retain natural case. Never recase names, literal values, or customer text.
 - Prefer short, standalone bullet points for self-explanatory capabilities. Do not add a sentence that repeats the label. Keep supporting detail when it explains a meaningful limit, decision, or next step.
+
+### Public Interface Rhythm
+
+- Use one 1120 px content rail and responsive 20 to 32 px page gutters.
+- Use 24, 32, 48, and 80 px spacing relationships. Sections size to their content and use the browser document for scrolling.
+- Keep controls at least 44 px high; hero actions use 48 px. Show full action labels on small screens and let enlarged text reflow.
+- Prefer quiet borders, limited card surfaces, and left-aligned detail inside cards. Violet signals the primary action or current state.
+- The header answers two buying questions: Features and Pricing. Keep account entry plan-neutral; group secondary public routes in the footer.
+- Avoid duplicate fixed conversion bars when the page already has clear actions. Preserve useful limits, delivery errors, pricing disclosures, and recovery paths.
+- `src/styles/public-design-system.css` owns shared public composition. The landing page owns its larger display; the authenticated workspace keeps its own density.
 
 ## Photography and Image Direction
 
@@ -93,7 +106,7 @@ The signature motion is the second ring: the first ring belongs to the missed ca
 
 ## Product Application
 
-- Public navigation uses the standard lockup with a 42 px mark and 18.9 px wordmark.
+- Public navigation uses the complete wordmark without a repeated robot. The approved operator anchors the homepage.
 - Hero lockups use the display size with an 84 px mark and 38.7 px wordmark.
 - Compact product chrome uses a 32 px app icon and a complete 800-weight wordmark.
 - All web, Stripe, browser extension, iOS, and Android outputs derive from the one app-icon master.

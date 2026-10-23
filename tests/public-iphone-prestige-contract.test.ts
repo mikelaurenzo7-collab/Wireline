@@ -2,13 +2,13 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-// Final certification anchor for the screenshot-driven public/mobile prestige pass.
-// Runtime source is frozen; this file guards the exact customer-facing decisions.
+// Source guards for public/mobile brand, signup intent, and access boundaries.
+// Responsive heading geometry is verified by the public viewport E2E checks.
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("BotBound public iPhone prestige contract", () => {
-  it("makes Phone Bot the public wedge without repeating the channel promise in the hero", () => {
+  it("keeps a short uppercase hero and the complete product family together", () => {
     const product = read("src/lib/bot-product.ts");
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
 
@@ -20,13 +20,13 @@ describe("BotBound public iPhone prestige contract", () => {
     );
 
     expect(landing).toMatch(
-      /<h1[^>]*>[\s\S]*?<span>Voice Bots<\/span>\s*<span>With a Computer,<\/span>[\s\S]*?<span>Phone Number,<\/span>\s*<span>and Email Address\.<\/span>[\s\S]*?<\/h1>/,
+      /<h1[^>]*>[\s\S]*?>VOICE BOTS\.<\/span>[\s\S]*?>REAL WORK\.<\/span>[\s\S]*?<\/h1>/,
     );
+    expect(landing).toContain("Calling, email, and a computer.");
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).not.toContain("HERO_CHANNELS.map");
     expect(landing).not.toContain('aria-label="BotBound channels"');
-    expect(landing).not.toMatch(/ONE WORKSPACE|one workspace/i);
   });
 
   it("treats the homepage as a product entrance on desktop and mobile", () => {
@@ -34,7 +34,8 @@ describe("BotBound public iPhone prestige contract", () => {
     const css = read("src/styles/landing-prestige.css");
 
     expect(landing).not.toContain("<AuthAccessPanel");
-    expect(landing).toContain('to={signupHrefForPlan("personal")}');
+    expect(landing).toContain('to="/signup"');
+    expect(landing).toContain("to={signupHrefForPlan(id)}");
     expect(landing).toContain('to="/signin"');
     expect(landing).toContain("<PrecisionPublicHeader />");
     expect(css).toMatch(
@@ -43,11 +44,12 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(css).toMatch(
       /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?min-height:\s*auto/,
     );
+    expect(landing).not.toContain("landing-prestige__directions");
     expect(css).toMatch(
-      /@media \(max-width: 520px\)[\s\S]*?\.landing-prestige__directions\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/,
+      /@media \(max-width: 640px\)[\s\S]*?\.landing-prestige__role-grid\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/,
     );
     expect(css).toMatch(
-      /@media \(max-width: 640px\)[\s\S]*?\.landing-prestige__role-grid,[\s\S]*?\.landing-prestige__price-grid\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/,
+      /@media \(max-width: 420px\)[\s\S]*?\.landing-prestige__price-grid\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/,
     );
     expect(css).not.toMatch(/\.landing-prestige__(?:auth|entrance|desktop-only)\b/);
   });
@@ -112,9 +114,7 @@ describe("BotBound public iPhone prestige contract", () => {
     const component = read("src/components/BotMark.tsx");
     const generator = read("src/lib/bot-mark.ts");
 
-    expect(landing).toContain("landing-prestige__directions");
-    expect(landing).toContain("Answer. Book.");
-    expect(landing).toContain("Plan. Coordinate.");
+    expect(landing).toContain("<BotBoundMark");
     expect(landing).not.toContain("markKey");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
     expect(component).not.toMatch(/monogram|mark\.initial|showMicroMonogram/i);
@@ -127,8 +127,9 @@ describe("BotBound public iPhone prestige contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const product = read("src/lib/bot-product.ts");
 
-    expect(landing).toContain("<span>Put a Bot on</span> <span>Your Everyday Work</span>");
-    expect(landing).toContain("template.moves.map");
+    expect(landing).toContain("<h2>Make it yours.</h2>");
+    expect(landing).toContain("template.summary");
+    expect(landing).toContain("/signup?template=${encodeURIComponent(template.key)}");
     expect(landing).toContain('"For You"');
     expect(landing).toContain('"For Your Business"');
     expect(landing).not.toContain("DIRECTION_LABELS");

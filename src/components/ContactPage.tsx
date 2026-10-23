@@ -1,6 +1,6 @@
 import React, { useEffect, useId, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Mail, Send } from "lucide-react";
+import { ArrowRight, CheckCircle2, Loader2, Mail, Send } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "./layout/MarketingPageFrame";
 import { Input } from "./ui/shadcn/Input";
@@ -160,24 +160,15 @@ export function ContactPage() {
   };
 
   return (
-    <MarketingPageFrame longform>
+    <MarketingPageFrame longform className="wl-contact-page">
       <PageMeta
         title="Contact BotBound"
         description="Talk to BotBound about building a Bot, a team rollout, partnerships, or support."
         path="/contact"
       />
       <section className="mx-auto max-w-4xl px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16">
-        <Link
-          to="/"
-          className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back Home
-        </Link>
-        <div className="mx-auto mt-8 max-w-3xl text-center">
-          <h1 className="marketing-hero-title wl-stitch-marketing-hero mx-auto max-w-[18ch] text-balance text-[clamp(1.9rem,3.4vw,2.9rem)]">
-            Talk Through the Bot You Need
-          </h1>
+        <div className="mx-auto max-w-3xl text-center">
+          <h1 className="marketing-hero-title mx-auto">Let's Talk</h1>
         </div>
 
         <nav
@@ -207,6 +198,12 @@ export function ContactPage() {
 
         <section className="mt-5 wl-stitch-card p-6 sm:p-8">
           <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">Send a Note</h2>
+          {!submitted && initialIntent?.toLowerCase() === "email" ? (
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              Include the business domain you want to use and whether you can update its DNS. Setup
+              review confirms the next steps before email activation.
+            </p>
+          ) : null}
           {submitted ? (
             <div className="py-10 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
@@ -263,6 +260,9 @@ export function ContactPage() {
                   required
                   type="email"
                   autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  inputMode="email"
                   value={email}
                   aria-invalid={invalidField === "email"}
                   aria-describedby={invalidField === "email" ? errorId : undefined}
@@ -303,9 +303,11 @@ export function ContactPage() {
                   rows={6}
                   className="w-full rounded border border-border bg-card px-3 py-3 text-sm leading-6 text-foreground outline-none focus:border-primary"
                   placeholder={
-                    inquiryType === "sales"
-                      ? "Team size, calls you need covered, systems you use today, and your timeline."
-                      : "Tell us the call or setup you need help with."
+                    initialIntent?.toLowerCase() === "email"
+                      ? "Your domain, email provider, and the address you want your Bot to use."
+                      : inquiryType === "sales"
+                        ? "Team size, calls you need covered, systems you use today, and your timeline."
+                        : "Tell us the call or setup you need help with."
                   }
                 />
               </label>

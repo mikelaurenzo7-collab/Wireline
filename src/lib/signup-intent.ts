@@ -107,9 +107,8 @@ export type SignupWedgeRecommendation = {
   templateLabel: string;
 };
 
-// Industry CTAs start the free build ("Create X Bot"). Activation then
-// recommends the current channel plan (activationBillingHref), so a wedge
-// never carries a retired plan into signup.
+// Industry attribution selects a relevant starting role without selecting a
+// paid package. Activation retains its own server-owned plan recommendation.
 export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRecommendation> = {
   "home-services": {
     label: "home services",
@@ -397,8 +396,9 @@ export function getSignupWedgeRecommendation(
 }
 
 export function signupHrefForWedge(wedge: SignupWedgeKey, planId?: SignupPlanId): string {
-  const plan = planId || SIGNUP_WEDGE_RECOMMENDATIONS[wedge].defaultPlanId;
-  return `/signup?wedge=${encodeURIComponent(wedge)}&plan=${encodeURIComponent(publicSignupPlanSlug(plan))}`;
+  const params = new URLSearchParams({ wedge });
+  if (planId) params.set("plan", publicSignupPlanSlug(planId));
+  return `/signup?${params.toString()}`;
 }
 
 export const SIGNUP_INTENT_SYNC_TIMEOUT_MS = 5_000;

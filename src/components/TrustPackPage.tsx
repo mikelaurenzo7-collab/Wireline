@@ -19,7 +19,7 @@ type TrustPack = {
 const PACKS: Record<string, TrustPack> = {
   medical: {
     eyebrow: "Healthcare workflows",
-    title: "Controls Before Credentials",
+    title: "Review the Safeguards",
     subtitle:
       "A practical review of the safeguards available today, with explicit boundaries for protected health information.",
     controls: [
@@ -101,7 +101,7 @@ const PACKS: Record<string, TrustPack> = {
   },
   insurance: {
     eyebrow: "Insurance agencies",
-    title: "Logged Work, Licensed Decisions",
+    title: "Logged Work. Clear Limits.",
     subtitle:
       "Operational controls for policyholder communication while keeping regulated advice and decisions for each carrier with qualified people.",
     controls: [
@@ -142,7 +142,7 @@ const PACKS: Record<string, TrustPack> = {
   },
   enterprise: {
     eyebrow: "Enterprise review",
-    title: "Proof That Matches the Product",
+    title: "Proof You Can Review",
     subtitle:
       "A concise starting point for security, procurement, and operations teams evaluating BotBound today.",
     controls: [
@@ -202,8 +202,11 @@ export default function TrustPackPage() {
       <MarketingChrome>
         <PageMeta title="Trust Pack Not Found | BotBound" noIndex />
         <div className="mx-auto max-w-lg px-4 py-16 text-center">
-          <p className="text-muted">Trust pack not found.</p>
-          <Link to="/security" className="wl-label mt-4 inline-block text-brand">
+          <h1 className="marketing-hero-title mx-auto">Trust Pack Not Found</h1>
+          <Link
+            to="/security"
+            className="marketing-btn-secondary mt-6 inline-flex min-h-11 items-center px-4"
+          >
             Security Overview
           </Link>
         </div>
@@ -235,7 +238,7 @@ export default function TrustPackPage() {
           <p className="wl-overline mt-5 text-muted-foreground">{pack.eyebrow}</p>
           <h1 className="wl-public-section-heading mx-auto mt-3 max-w-[22ch]">{pack.title}</h1>
           <p className="wl-public-copy mx-auto mt-4 max-w-2xl">{pack.subtitle}</p>
-          <p className="mt-4 text-eyebrow !text-[0.625rem]">Reviewed for launch · July 28, 2026</p>
+          <p className="mt-4 text-eyebrow">Reviewed for launch · July 28, 2026</p>
         </section>
 
         <section className="mt-12" aria-labelledby="shipping-now">
@@ -245,7 +248,7 @@ export default function TrustPackPage() {
               What Ships Now
             </h2>
           </div>
-          <div className="mt-6 grid gap-3 md:grid-cols-2">
+          <div className="wl-trust-controls mt-6 grid gap-3 md:grid-cols-2">
             {pack.controls.map((control) => (
               <article
                 key={control.title}

@@ -219,7 +219,7 @@ test("Studio keeps a draft unsent until saved conversation history loads", async
     await historyReady;
     await route.fulfill({ json: { messages: [] } });
   });
-  await page.goto("/studio?agent=bot-front-desk");
+  await page.goto("/studio?agent=bot-front-desk&chat=setup");
   const composer = page.getByRole("textbox", { name: "Message Front Desk", exact: true });
   try {
     await composer.fill("Use a warm, concise greeting.");
@@ -250,7 +250,7 @@ test("switching from Build to Test isolates an unfinished configuration response
       })
       .catch(() => undefined);
   });
-  await page.goto("/studio?agent=bot-front-desk");
+  await page.goto("/studio?agent=bot-front-desk&chat=setup");
   await page
     .getByRole("textbox", { name: "Message Front Desk", exact: true })
     .fill("Use a warm, concise greeting.");
@@ -277,7 +277,7 @@ test("Studio preserves independent unsent drafts when switching modes and Bots",
   await mockWorkspace(page);
   // Below 1180px, one conversation switches between Instructions and Try It.
   await page.setViewportSize({ width: 1024, height: 800 });
-  await page.goto("/studio?agent=bot-front-desk");
+  await page.goto("/studio?agent=bot-front-desk&chat=setup");
   await page
     .getByRole("textbox", { name: "Message Front Desk", exact: true })
     .fill("Front desk setup draft");

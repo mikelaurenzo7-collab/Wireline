@@ -12,6 +12,7 @@ import { Link, Navigate, useSearchParams } from "react-router";
 import {
   ArrowLeft,
   ArrowRight,
+  Camera,
   CheckCircle2,
   ChevronDown,
   CircleAlert,
@@ -20,16 +21,20 @@ import {
   ExternalLink,
   Globe,
   Hand,
+  History,
   MousePointer2,
   Loader2,
   Maximize2,
   Minimize2,
   MonitorSmartphone,
   PanelRightOpen,
+  Plus,
   RotateCw,
   Send,
   ShieldCheck,
+  SlidersHorizontal,
   Square,
+  X,
 } from "lucide-react";
 
 import { authFetch, readApiJson } from "../lib/api";
@@ -46,98 +51,19 @@ import WorkspaceShell from "../components/WorkspaceShell";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceSectionNav from "../components/layout/WorkspaceSectionNav";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../components/ui/shadcn/Sheet";
-
-type TaskStatus =
-  "running" | "needs_input" | "completed" | "blocked" | "failed" | "stopped" | "interrupted";
-
-type TaskEvent = {
-  at: string;
-  kind: "action" | "note" | "question" | "reply" | "result" | "error";
-  text: string;
-  url?: string;
-  ok?: boolean;
-};
-
-type ComputerTask = {
-  id: string;
-  agentId: string;
-  goal: string;
-  startUrl: string | null;
-  status: TaskStatus;
-  summary: string | null;
-  question: string | null;
-  sources: string[];
-  events: TaskEvent[];
-  errorCode: string | null;
-  turnCount: number;
-  actionCount: number;
-  startedAt: string;
-  finishedAt: string | null;
-  updatedAt: string;
-  liveView: boolean;
-  frameCapturedAt?: string | null;
-  frameUrl?: string | null;
-  agentPointer?: { x: number; y: number; at: string } | null;
-  currentUrl: string | null;
-  ownerControl: boolean;
-  controlRequested?: boolean;
-  ownerTabs?: Array<{ id: string; label: string; active: boolean }>;
-  preparingBrowser?: boolean;
-  stopping: boolean;
-};
-
-type OwnerBrowserInput =
-  | { kind: "click"; x: number; y: number }
-  | { kind: "drag"; from: { x: number; y: number }; to: { x: number; y: number } }
-  | { kind: "scroll"; x: number; y: number; deltaX: number; deltaY: number }
-  | { kind: "navigate"; url: string }
-  | { kind: "history"; action: "back" | "forward" | "reload" }
-  | { kind: "switch_tab"; tabId: string }
-  | { kind: "type"; text: string }
-  | { kind: "key"; key: string };
-
-type ComputerStatus = {
-  available: boolean;
-  reason:
-    | "ready"
-    | "model_unconfigured"
-    | "browser_unconfigured"
-    | "storage_unavailable"
-    | "plan_required";
-  limits: { maxMinutes: number; maxSteps: number };
-};
-
-const STATUS_REASONS: ReadonlySet<string> = new Set([
-  "ready",
-  "model_unconfigured",
-  "browser_unconfigured",
-  "storage_unavailable",
-  "plan_required",
-]);
-
-/** A status the page can render, or null so a malformed answer offers Retry instead of crashing. */
-function readComputerStatus(value: unknown): ComputerStatus | null {
-  if (!value || typeof value !== "object") return null;
-  const status = value as Partial<ComputerStatus>;
-  const limits = status.limits;
-  if (
-    typeof status.available !== "boolean" ||
-    typeof status.reason !== "string" ||
-    !STATUS_REASONS.has(status.reason) ||
-    !limits ||
-    typeof limits.maxMinutes !== "number" ||
-    typeof limits.maxSteps !== "number"
-  ) {
-    return null;
-  }
-  return {
-    available: status.available,
-    reason: status.reason,
-    limits: { maxMinutes: limits.maxMinutes, maxSteps: limits.maxSteps },
-  };
-}
-
-const ACTIVE: TaskStatus[] = ["running", "needs_input"];
+import BrowserSessionTools, {
+  saveBrowserFile,
+  type OwnerBrowserInput,
+} from "../components/computer/BrowserSessionTools";
+import {
+  ACTIVE_COMPUTER_TASKS as ACTIVE,
+  useComputerWorkspace,
+  type ComputerTask,
+  type ComputerTaskEvent as TaskEvent,
+  type ComputerTaskStatus as TaskStatus,
+  type ComputerStatus,
+} from "../contexts/ComputerWorkspaceContext";
+import { readComputerTaskReceipt } from "../lib/computer-task-receipt";
 
 const EVENT_KIND_LABEL: Record<TaskEvent["kind"], string> = {
   action: "Step",
@@ -160,24 +86,6 @@ const STATUS_COPY: Record<
   stopped: { label: "Stopped", variant: "default" },
   interrupted: { label: "Interrupted", variant: "default" },
 };
-
-// Read aloud when polling sees the task change, so a screen-reader owner hears
-// the question or the outcome without watching the badge.
-const ANNOUNCEMENTS: Partial<Record<TaskStatus, string>> = {
-  completed: "Your Bot finished the task.",
-  blocked: "Your Bot needs you to finish this task.",
-  failed: "Your Bot could not finish the task.",
-  stopped: "The task stopped.",
-  interrupted: "The task was interrupted.",
-};
-
-function announcementFor(previous: ComputerTask | undefined, next: ComputerTask): string | null {
-  if (!previous || previous.status === next.status) return null;
-  if (next.status === "needs_input") {
-    return next.question ? `Your Bot needs you: ${next.question}` : "Your Bot needs you.";
-  }
-  return ANNOUNCEMENTS[next.status] ?? null;
-}
 
 const EXAMPLES = [
   {
@@ -273,6 +181,7 @@ function LiveScreen({
   ownerUrl,
   onOwnerUrlChange,
   ownerBusy = false,
+  ownerError,
   controls = null,
 }: {
   task: ComputerTask;
@@ -281,6 +190,7 @@ function LiveScreen({
   ownerUrl?: string;
   onOwnerUrlChange?: (url: string) => void;
   ownerBusy?: boolean;
+  ownerError?: string | null;
   /** Pause, takeover, and stop stay on the viewport. Activity stays outside it. */
   controls?: ReactNode;
 }) {
@@ -288,6 +198,7 @@ function LiveScreen({
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [zoomed, setZoomed] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const screenRef = useRef<HTMLElement | null>(null);
   const active = ACTIVE.includes(task.status) || task.liveView;
   const latest = useRef<string | null>(null);
@@ -368,8 +279,7 @@ function LiveScreen({
     .reverse()
     .find((event) => event.kind === "action" || event.kind === "note" || event.kind === "error");
   const screenCurrent = !task.frameUrl || !lastUrl || task.frameUrl === lastUrl;
-  const newTab =
-    ownerControl && task.preparingBrowser && !/^https?:\/\//i.test(task.currentUrl || "");
+  const newTab = ownerControl && !/^https?:\/\//i.test(task.currentUrl || "");
 
   const screenPoint = (
     event: ReactPointerEvent<HTMLDivElement> | ReactWheelEvent<HTMLDivElement>,
@@ -390,12 +300,49 @@ function LiveScreen({
 
   return (
     <figure ref={screenRef} className="wl-computer-screen">
+      {ownerControl && task.ownerTabs?.length ? (
+        <div className="wl-computer-screen__tabs" role="group" aria-label="Browser tabs">
+          {task.ownerTabs.map((tab) => (
+            <div key={tab.id} className={cn("wl-browser-tab", tab.active && "is-active")}>
+              <button
+                type="button"
+                aria-current={tab.active ? "page" : undefined}
+                disabled={ownerBusy || tab.active}
+                onClick={() => onOwnerInput?.({ kind: "switch_tab", tabId: tab.id })}
+                title={tab.label}
+              >
+                <Globe aria-hidden="true" />
+                <span>{tab.label}</span>
+              </button>
+              {task.browserCapabilities?.tabs ? (
+                <button
+                  type="button"
+                  className="wl-browser-tab__close"
+                  aria-label={`Close ${tab.label} tab`}
+                  title="Close tab"
+                  disabled={ownerBusy}
+                  onClick={() => onOwnerInput?.({ kind: "close_tab", tabId: tab.id })}
+                >
+                  <X aria-hidden="true" />
+                </button>
+              ) : null}
+            </div>
+          ))}
+          {task.browserCapabilities?.tabs ? (
+            <button
+              className="wl-browser-tab__new"
+              type="button"
+              aria-label="New browser tab"
+              title="New tab"
+              disabled={ownerBusy || task.ownerTabs.length >= task.browserCapabilities.maxTabs}
+              onClick={() => onOwnerInput?.({ kind: "new_tab" })}
+            >
+              <Plus aria-hidden="true" />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       <div className="wl-computer-screen__bar">
-        <span className="wl-computer-screen__dots" aria-hidden="true">
-          <i />
-          <i />
-          <i />
-        </span>
         {ownerControl ? (
           <>
             <div
@@ -462,13 +409,42 @@ function LiveScreen({
           </span>
         )}
         {active ? <span className="wl-computer-screen__live">Latest screen</span> : null}
+        {active ? (
+          <>
+            <button
+              type="button"
+              className="wl-computer-screen__zoom wl-browser-icon-button wl-browser-screenshot"
+              aria-label="Download browser screenshot"
+              title="Download screenshot"
+              disabled={!src || !screenCurrent}
+              onClick={() => {
+                if (src && screenCurrent) saveBrowserFile(src, `botbound-screen-${Date.now()}.jpg`);
+              }}
+            >
+              <Camera className="size-3.5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="wl-computer-screen__zoom wl-browser-icon-button"
+              aria-label="Open browser tools"
+              title="History, downloads and session tools"
+              onClick={async () => {
+                if (document.fullscreenElement)
+                  await document.exitFullscreen().catch(() => undefined);
+                setToolsOpen(true);
+              }}
+            >
+              <SlidersHorizontal className="size-3.5" aria-hidden="true" />
+            </button>
+          </>
+        ) : null}
         {ownerControl && zoomed ? (
           <span className="wl-computer-screen__pan-hint">Alt+wheel or touch drag pans</span>
         ) : null}
         {active && src && screenCurrent ? (
           <button
             type="button"
-            className="wl-computer-screen__zoom"
+            className="wl-computer-screen__zoom wl-browser-zoom-toggle"
             aria-label={zoomed ? "Fit browser screen" : "View browser at actual size"}
             aria-pressed={zoomed}
             title={
@@ -507,21 +483,6 @@ function LiveScreen({
           </button>
         ) : null}
       </div>
-      {ownerControl && task.ownerTabs && task.ownerTabs.length > 1 ? (
-        <div className="wl-computer-screen__tabs" role="group" aria-label="Browser tabs">
-          {task.ownerTabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              aria-current={tab.active ? "page" : undefined}
-              disabled={ownerBusy || tab.active}
-              onClick={() => onOwnerInput?.({ kind: "switch_tab", tabId: tab.id })}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
       {active ? (
         <div className="wl-computer-screen__progress">
           {ownerControl ? (
@@ -541,7 +502,7 @@ function LiveScreen({
                   : latestEvent?.text || "Bot is opening the browser"}
               </span>
               <span className="wl-computer-screen__steps">
-                {task.actionCount} actions
+                {task.actionCount} {task.actionCount === 1 ? "action" : "actions"}
                 {task.frameCapturedAt ? ` · screen ${frameAge(task.frameCapturedAt)}` : ""}
               </span>
             </>
@@ -709,6 +670,27 @@ function LiveScreen({
         ) : null}
       </div>
       {controls ? <div className="wl-computer-screen__controls">{controls}</div> : null}
+      <BrowserSessionTools
+        open={toolsOpen}
+        onOpenChange={setToolsOpen}
+        taskId={task.id}
+        ownerControl={ownerControl}
+        ownerBusy={ownerBusy}
+        ownerError={ownerError}
+        capabilities={task.browserCapabilities}
+        history={task.ownerHistory}
+        downloads={task.ownerDownloads}
+        savedLogins={task.ownerSavedLogins}
+        downloadNotice={task.ownerDownloadNotice}
+        currentUrl={task.currentUrl}
+        screenshotUrl={src && screenCurrent ? src : null}
+        zoomed={zoomed}
+        onToggleZoom={() => {
+          setZoomed((current) => !current);
+          setToolsOpen(false);
+        }}
+        onOwnerInput={onOwnerInput}
+      />
     </figure>
   );
 }
@@ -732,12 +714,20 @@ function TaskDetail({
   task,
   onChanged,
   onStartAnother,
+  onOpenTasks,
   botName,
+  chatControls = false,
+  refreshRequired = false,
+  onUnconfirmed,
 }: {
   task: ComputerTask;
   onChanged: (task: ComputerTask) => void;
   onStartAnother?: () => void;
+  onOpenTasks?: () => void;
   botName?: string;
+  chatControls?: boolean;
+  refreshRequired?: boolean;
+  onUnconfirmed?: () => void;
 }) {
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState<"stop" | "reply" | "take" | "input" | "return" | null>(null);
@@ -765,6 +755,14 @@ function TaskDetail({
   const error = failure?.status === task.status ? failure.message : null;
   const status = STATUS_COPY[task.status];
   const active = ACTIVE.includes(task.status);
+  useEffect(() => {
+    if (!task.ownerControl || !active) {
+      setOwnerText("");
+      setShowOwnerText(false);
+      ownerUrlEditedRef.current = false;
+      setOwnerUrl(/^https?:\/\//i.test(task.currentUrl || "") ? task.currentUrl! : "");
+    }
+  }, [task.id, task.ownerControl, task.currentUrl, active]);
   const viewportOwnsControls = active && !task.ownerControl;
   const browserStillOpen = !active && task.liveView;
   const events = useMemo(() => [...task.events].reverse(), [task.events]);
@@ -799,8 +797,10 @@ function TaskDetail({
   };
 
   const act = async (kind: "stop" | "reply") => {
+    if (refreshRequired) return;
     setBusy(kind);
     setFailure(null);
+    let rejected = false;
     try {
       const response = await authFetch(`/api/computer/tasks/${task.id}/${kind}`, {
         method: "POST",
@@ -808,10 +808,20 @@ function TaskDetail({
         body: JSON.stringify(kind === "reply" ? { message: reply } : {}),
       });
       const result = await readApiJson<{ task: ComputerTask }>(response);
-      if (!result.ok) throw new Error(result.error);
+      if (!result.ok) {
+        rejected = result.status >= 400 && result.status < 500;
+        throw new Error(result.error);
+      }
+      const next = readComputerTaskReceipt(result.data?.task, {
+        taskId: task.id,
+        agentId: task.agentId,
+      });
+      if (!next)
+        throw new Error("The task action could not be confirmed. Refresh work before retrying.");
+      onChanged(next);
       if (kind === "reply") setReply("");
-      onChanged(result.data.task);
     } catch (reason) {
+      if (!rejected) onUnconfirmed?.();
       setFailure({
         message: reason instanceof Error ? reason.message : "That did not go through. Try again.",
         status: task.status,
@@ -822,7 +832,7 @@ function TaskDetail({
   };
 
   const ownerAction = async (kind: "take" | "input" | "return", input?: OwnerBrowserInput) => {
-    if (ownerActionInFlight.current) return;
+    if (ownerActionInFlight.current || refreshRequired) return;
     ownerActionInFlight.current = true;
     // Do not retain owner-entered credentials in React state through a slow
     // request, error, or a later return to this task.
@@ -832,6 +842,7 @@ function TaskDetail({
     }
     setBusy(kind);
     setFailure(null);
+    let rejected = false;
     try {
       const path =
         kind === "take" ? "control" : kind === "return" ? "control/return" : "control/input";
@@ -846,11 +857,29 @@ function TaskDetail({
               : "{}",
       });
       const result = await readApiJson<{ task: ComputerTask }>(response);
-      if (!result.ok) throw new Error(result.error);
+      if (!result.ok) {
+        rejected =
+          result.status >= 400 && result.status < 500 && result.code !== "COMPUTER_INPUT_FAILED";
+        if (result.code === "COMPUTER_INPUT_FAILED")
+          throw new Error(
+            "The browser action may have happened. Refresh work and inspect the page before repeating it.",
+          );
+        throw new Error(result.error);
+      }
+      const next = readComputerTaskReceipt(result.data?.task, {
+        taskId: task.id,
+        agentId: task.agentId,
+      });
+      if (!next)
+        throw new Error("The browser action could not be confirmed. Refresh work before retrying.");
       if (
         kind === "take" ||
         (kind === "input" &&
-          (input?.kind === "navigate" || input?.kind === "history" || input?.kind === "switch_tab"))
+          (input?.kind === "navigate" ||
+            input?.kind === "history" ||
+            input?.kind === "switch_tab" ||
+            input?.kind === "new_tab" ||
+            input?.kind === "close_tab"))
       ) {
         ownerUrlEditedRef.current = false;
       }
@@ -859,14 +888,17 @@ function TaskDetail({
         (input?.kind === "navigate" ||
           input?.kind === "history" ||
           input?.kind === "switch_tab" ||
-          result.data.task.currentUrl !== task.currentUrl) &&
+          input?.kind === "new_tab" ||
+          input?.kind === "close_tab" ||
+          next.currentUrl !== task.currentUrl) &&
         !ownerUrlEditedRef.current
       ) {
-        const currentUrl = result.data.task.currentUrl || "";
+        const currentUrl = next.currentUrl || "";
         setOwnerUrl(/^https?:\/\//i.test(currentUrl) ? currentUrl : "");
       }
-      onChanged(result.data.task);
+      onChanged(next);
     } catch (reason) {
+      if (!rejected) onUnconfirmed?.();
       setFailure({
         message: reason instanceof Error ? reason.message : "That did not go through. Try again.",
         status: task.status,
@@ -887,11 +919,12 @@ function TaskDetail({
               {status.label}
             </Badge>
             <span className="text-xs text-muted-foreground">
-              Started {timeAgo(task.startedAt)} · {task.actionCount} actions
+              Started {timeAgo(task.startedAt)} · {task.actionCount}{" "}
+              {task.actionCount === 1 ? "action" : "actions"}
             </span>
             {botName ? <span className="text-xs text-muted-foreground">{botName}</span> : null}
           </div>
-          {active || !task.summary ? (
+          {(active || !task.summary) && (task.preparingBrowser || task.goal.length <= 160) ? (
             <p id="computer-task-title" className="wl-computer-detail__goal">
               {task.preparingBrowser ? "Your browser is ready" : task.goal}
             </p>
@@ -911,6 +944,19 @@ function TaskDetail({
           )}
         </div>
         <div className="wl-computer-detail__actions">
+          {onOpenTasks ? (
+            <>
+              {!active && onStartAnother ? (
+                <Button type="button" variant="outline" size="sm" onClick={onStartAnother}>
+                  {chatControls ? "Open browser" : "New task"}
+                </Button>
+              ) : null}
+              <Button type="button" variant="outline" size="sm" onClick={onOpenTasks}>
+                <History aria-hidden="true" />
+                Tasks
+              </Button>
+            </>
+          ) : null}
           <Button
             type="button"
             variant="outline"
@@ -928,7 +974,7 @@ function TaskDetail({
               size="sm"
               className="shrink-0 whitespace-nowrap"
               onClick={() => void ownerAction("take")}
-              disabled={!task.liveView || busy !== null || task.controlRequested}
+              disabled={!task.liveView || busy !== null || task.controlRequested || refreshRequired}
               aria-busy={busy === "take" || task.controlRequested}
             >
               {busy === "take" || task.controlRequested ? (
@@ -948,7 +994,7 @@ function TaskDetail({
               className="shrink-0"
               onClick={() => void act("stop")}
               aria-busy={busy === "stop" || task.stopping}
-              disabled={busy === "stop" || task.stopping}
+              disabled={busy === "stop" || task.stopping || refreshRequired}
             >
               {task.stopping ? (
                 <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
@@ -990,7 +1036,7 @@ function TaskDetail({
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button
                   onClick={() => void ownerAction("take")}
-                  disabled={!task.liveView || busy !== null}
+                  disabled={!task.liveView || busy !== null || refreshRequired}
                   aria-busy={busy === "take"}
                 >
                   <MousePointer2 aria-hidden="true" />
@@ -1000,37 +1046,41 @@ function TaskDetail({
                   Sign in, handle a checkpoint, then hand the browser back.
                 </span>
               </div>
-              <form
-                className="mt-3 flex flex-col gap-2 sm:flex-row"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (reply.trim()) void act("reply");
-                }}
-              >
-                <label htmlFor="computer-reply" className="sr-only">
-                  Reply to your Bot
-                </label>
-                <Input
-                  id="computer-reply"
-                  value={reply}
-                  onChange={(event) => setReply(event.target.value)}
-                  placeholder="Tell your Bot what to do next"
-                  maxLength={1000}
-                  autoComplete="off"
-                  className="min-w-0 flex-1"
-                />
-                <Button
-                  type="submit"
-                  disabled={!reply.trim() || busy !== null}
-                  aria-busy={busy === "reply"}
+              {!chatControls ? (
+                <form
+                  className="mt-3 flex flex-col gap-2 sm:flex-row"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    if (reply.trim()) void act("reply");
+                  }}
                 >
-                  <Send aria-hidden="true" />
-                  Reply
-                </Button>
-              </form>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Replies go to your Bot. Use Take control for passwords, codes, or private details.
-              </p>
+                  <label htmlFor="computer-reply" className="sr-only">
+                    Reply to your Bot
+                  </label>
+                  <Input
+                    id="computer-reply"
+                    value={reply}
+                    onChange={(event) => setReply(event.target.value)}
+                    placeholder="Tell your Bot what to do next"
+                    maxLength={1000}
+                    autoComplete="off"
+                    className="min-w-0 flex-1"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={!reply.trim() || busy !== null || refreshRequired}
+                    aria-busy={busy === "reply"}
+                  >
+                    <Send aria-hidden="true" />
+                    Reply
+                  </Button>
+                </form>
+              ) : null}
+              {!chatControls ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Replies go to your Bot. Use Take control for passwords, codes, or private details.
+                </p>
+              ) : null}
             </>
           )}
         </div>
@@ -1053,7 +1103,8 @@ function TaskDetail({
               ownerUrlEditedRef.current = true;
               setOwnerUrl(url);
             }}
-            ownerBusy={busy !== null}
+            ownerBusy={busy !== null || refreshRequired}
+            ownerError={error}
           />
           <div className="wl-computer-control" aria-label="Browser controls">
             <form
@@ -1077,7 +1128,7 @@ function TaskDetail({
                 autoCorrect="off"
                 spellCheck={false}
                 maxLength={1000}
-                disabled={busy !== null}
+                disabled={busy !== null || refreshRequired}
               />
               <Button
                 type="button"
@@ -1085,13 +1136,14 @@ function TaskDetail({
                 size="sm"
                 aria-label={showOwnerText ? "Hide entered text" : "Show entered text"}
                 aria-pressed={showOwnerText}
+                disabled={refreshRequired}
                 onClick={() => setShowOwnerText((current) => !current)}
               >
                 {showOwnerText ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
               </Button>
               <Button
                 type="submit"
-                disabled={!ownerText || busy !== null}
+                disabled={!ownerText || busy !== null || refreshRequired}
                 aria-busy={busy === "input"}
               >
                 <Send aria-hidden="true" />
@@ -1116,7 +1168,7 @@ function TaskDetail({
                     size="sm"
                     // Keep the focused key in the tab order while its remote
                     // action runs, so Enter can repeat it when the response lands.
-                    aria-disabled={busy !== null}
+                    aria-disabled={busy !== null || refreshRequired}
                     onClick={() => void ownerAction("input", { kind: "key", key })}
                   >
                     {label}
@@ -1124,7 +1176,7 @@ function TaskDetail({
                 ))}
               </div>
             </details>
-            {task.preparingBrowser ? (
+            {task.preparingBrowser && !chatControls ? (
               <div className="wl-computer-control__form">
                 <label htmlFor="computer-handoff-goal">What should your Bot do from here?</label>
                 <Textarea
@@ -1136,19 +1188,27 @@ function TaskDetail({
                 />
               </div>
             ) : null}
-            <Button
-              className="w-full"
-              variant="secondary"
-              onClick={() => void ownerAction("return")}
-              disabled={busy !== null || (task.preparingBrowser && handoffGoal.trim().length < 4)}
-              aria-busy={busy === "return"}
-            >
-              {busy === "return"
-                ? "Handing browser to Bot…"
-                : task.preparingBrowser
-                  ? "Give task to Bot"
-                  : "Return control to Bot"}
-            </Button>
+            {task.preparingBrowser && chatControls ? (
+              <p className="text-sm text-muted-foreground">Give your Bot its task in Work chat.</p>
+            ) : (
+              <Button
+                className="w-full"
+                variant="secondary"
+                onClick={() => void ownerAction("return")}
+                disabled={
+                  busy !== null ||
+                  refreshRequired ||
+                  (task.preparingBrowser && handoffGoal.trim().length < 4)
+                }
+                aria-busy={busy === "return"}
+              >
+                {busy === "return"
+                  ? "Handing browser to Bot…"
+                  : task.preparingBrowser
+                    ? "Give task to Bot"
+                    : "Return control to Bot"}
+              </Button>
+            )}
             <details className="wl-computer-control__privacy">
               <summary>Privacy and browser input</summary>
               <p>
@@ -1170,7 +1230,9 @@ function TaskDetail({
                     size="sm"
                     className="shrink-0 whitespace-nowrap"
                     onClick={() => void ownerAction("take")}
-                    disabled={!task.liveView || busy !== null || task.controlRequested}
+                    disabled={
+                      !task.liveView || busy !== null || task.controlRequested || refreshRequired
+                    }
                     aria-busy={busy === "take" || task.controlRequested}
                   >
                     {busy === "take" || task.controlRequested ? (
@@ -1190,7 +1252,7 @@ function TaskDetail({
                   className="shrink-0"
                   onClick={() => void act("stop")}
                   aria-busy={busy === "stop" || task.stopping}
-                  disabled={busy === "stop" || task.stopping}
+                  disabled={busy === "stop" || task.stopping || refreshRequired}
                 >
                   {task.stopping ? (
                     <Loader2
@@ -1206,7 +1268,7 @@ function TaskDetail({
             ) : null
           }
         />
-      ) : !task.summary ? (
+      ) : !task.summary || chatControls ? (
         <p className="wl-computer-screen-cleared">
           <MonitorSmartphone className="size-4 shrink-0" aria-hidden="true" />
           The browser screen was cleared after this task ended.
@@ -1227,7 +1289,7 @@ function TaskDetail({
         </div>
       ) : null}
 
-      {!active && task.summary ? (
+      {!active && task.summary && !chatControls ? (
         <div
           className={cn(
             "wl-computer-result",
@@ -1318,6 +1380,8 @@ type ComputerWorkbenchProps = {
   agentId?: string;
   /** "panel" renders beside the Workspace conversation without page chrome. */
   layout?: "page" | "panel";
+  /** Work chat owns the task composer, replies and completion proof beside this browser. */
+  chatControls?: boolean;
 };
 
 const EMPTY_COMPUTER_DRAFT: ComputerComposerDraft = {
@@ -1334,6 +1398,7 @@ const EMPTY_COMPUTER_DRAFT: ComputerComposerDraft = {
 export function ComputerWorkbench({
   agentId: pinnedAgentId,
   layout = "page",
+  chatControls = false,
 }: ComputerWorkbenchProps) {
   const { agents, loading: agentsLoading, degraded, refresh } = useAgents();
   const { computerDrafts } = useStudioSessionState();
@@ -1371,21 +1436,29 @@ export function ComputerWorkbench({
       })),
     [updateComposerDraft],
   );
-  const [status, setStatus] = useState<ComputerStatus | null>(null);
-  const [statusFailed, setStatusFailed] = useState(false);
-  const [tasks, setTasks] = useState<ComputerTask[] | null>(null);
-  const [listFailed, setListFailed] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const {
+    status,
+    statusFailed,
+    tasks,
+    listFailed,
+    setListFailed,
+    selectedId,
+    setSelectedId,
+    selected,
+    activeTask,
+    anyActive,
+    announcement,
+    loadStatus,
+    loadTasks,
+    applyTask,
+    startTask,
+    refreshRequired,
+    refreshWork,
+    markUnconfirmed,
+  } = useComputerWorkspace();
   const [historyOpen, setHistoryOpen] = useState(false);
   const [startingMode, setStartingMode] = useState<"browser" | "task" | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [announcement, setAnnouncement] = useState("");
-  const tasksRef = useRef<ComputerTask[] | null>(null);
-  const listEpochRef = useRef(0);
-
-  useEffect(() => {
-    tasksRef.current = tasks;
-  }, [tasks]);
 
   useEffect(() => {
     if (hasScopedAgent) return;
@@ -1396,208 +1469,25 @@ export function ComputerWorkbench({
     });
   }, [agents, hasScopedAgent]);
 
-  const loadStatus = useCallback(async (signal?: AbortSignal) => {
-    try {
-      const response = await authFetch("/api/computer/status", { signal });
-      const result = await readApiJson<unknown>(response);
-      if (signal?.aborted) return;
-      const next = result.ok ? readComputerStatus(result.data) : null;
-      setStatusFailed(!next);
-      if (next) setStatus(next);
-    } catch {
-      if (!signal?.aborted) setStatusFailed(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void loadStatus(controller.signal);
-    return () => controller.abort();
-  }, [loadStatus]);
-
-  // One list for the whole account: only one task runs at a time across every
-  // Bot, so a running task or a question must show whichever Bot is selected.
-  const loadTasks = useCallback(
-    async ({
-      signal,
-      focusActive = false,
-      silent = false,
-    }: { signal?: AbortSignal; focusActive?: boolean; silent?: boolean } = {}) => {
-      const epoch = listEpochRef.current;
-      try {
-        const response = await authFetch("/api/computer/tasks", { signal });
-        const result = await readApiJson<{ tasks?: unknown }>(response);
-        if (signal?.aborted || epoch !== listEpochRef.current) return;
-        if (!result.ok || !Array.isArray(result.data?.tasks)) {
-          if (!silent || tasksRef.current === null) setListFailed(true);
-          return;
-        }
-        const next = result.data.tasks as ComputerTask[];
-        const activeTask = next.find((task) => ACTIVE.includes(task.status));
-        setListFailed(false);
-        setTasks(next);
-        setSelectedId((current) =>
-          (focusActive || activeTask?.status === "needs_input") && activeTask
-            ? activeTask.id
-            : current && next.some((task) => task.id === current)
-              ? current
-              : (next[0]?.id ?? null),
-        );
-      } catch {
-        if (!signal?.aborted && (!silent || tasksRef.current === null)) setListFailed(true);
-      }
-    },
-    [],
-  );
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void loadTasks({ signal: controller.signal });
-    return () => controller.abort();
-  }, [loadTasks]);
-
-  const applyTask = useCallback(
-    (next: ComputerTask, announce: boolean) => {
-      if (announce) {
-        const previous = tasksRef.current?.find((task) => task.id === next.id);
-        const message = announcementFor(previous, next);
-        if (message) setAnnouncement(message);
-        if (previous?.status !== next.status && next.status === "needs_input") {
-          setSelectedId(next.id);
-          setShowComposer(false);
-        }
-      } else if (next.status === "running") {
-        // A new owner handoff supersedes an earlier completion or checkpoint.
-        setAnnouncement("");
-      }
-      setTasks((current) =>
-        current ? current.map((task) => (task.id === next.id ? next : task)) : current,
-      );
-    },
-    [setShowComposer],
-  );
-
-  const selected = tasks?.find((task) => task.id === selectedId) ?? null;
   // An explicit Bot link is authoritative. Never fall back to another Bot if
   // the linked one is gone, or keep an earlier Bot when the URL changes.
   const composerBot = degraded ? undefined : agents.find((agent) => agent.id === composerAgentId);
   const scopedAgentUnavailable =
     hasScopedAgent && !agentsLoading && !degraded && agents.length > 0 && !composerBot;
-  // A new task cannot start while one is active, so the active task is always
-  // the newest. Poll it whichever task the owner is reading, so a question or a
-  // finish is never missed. Keyed on the id, not the object, so each poll result
-  // does not tear the loop down; the next poll waits for the previous one.
-  const activeTask = tasks?.find((task) => ACTIVE.includes(task.status)) ?? null;
-  const activeId = activeTask?.id ?? null;
-  useEffect(() => {
-    if (!activeId) return;
-    const controller = new AbortController();
-    let timer: number | undefined;
-    let inFlight = false;
-    const poll = async () => {
-      if (document.hidden) {
-        timer = window.setTimeout(poll, 2000);
-        return;
-      }
-      inFlight = true;
-      try {
-        const response = await authFetch(`/api/computer/tasks/${activeId}`, {
-          signal: controller.signal,
-        });
-        const result = await readApiJson<{ task: ComputerTask }>(response);
-        if (controller.signal.aborted) return;
-        if (result.ok) {
-          applyTask(result.data.task, true);
-        } else if (result.status === 404) {
-          // Its Bot was deleted: the task went with it.
-          void loadTasks();
-          return;
-        }
-      } catch {
-        /* a dropped poll is retried below */
-      } finally {
-        inFlight = false;
-      }
-      if (!controller.signal.aborted) timer = window.setTimeout(poll, 2000);
-    };
-    const refreshOnReturn = () => {
-      if (document.hidden || inFlight) return;
-      if (timer) window.clearTimeout(timer);
-      timer = undefined;
-      void poll();
-    };
-    document.addEventListener("visibilitychange", refreshOnReturn);
-    window.addEventListener("focus", refreshOnReturn);
-    timer = window.setTimeout(poll, 2000);
-    return () => {
-      controller.abort();
-      if (timer) window.clearTimeout(timer);
-      document.removeEventListener("visibilitychange", refreshOnReturn);
-      window.removeEventListener("focus", refreshOnReturn);
-    };
-  }, [activeId, applyTask, loadTasks]);
-
-  // A task can start in another tab or device while this page is idle. Refresh
-  // only while visible, and on return, without replacing the owner's draft or
-  // the result they chose to read.
-  const hasLoadedTasks = tasks !== null;
-  useEffect(() => {
-    if (activeId || !hasLoadedTasks) return;
-    const controller = new AbortController();
-    let inFlight = false;
-    const refreshVisible = async () => {
-      if (document.hidden || inFlight) return;
-      inFlight = true;
-      try {
-        await loadTasks({ signal: controller.signal, silent: true });
-      } finally {
-        inFlight = false;
-      }
-    };
-    const timer = window.setInterval(() => void refreshVisible(), 8000);
-    const onReturn = () => void refreshVisible();
-    document.addEventListener("visibilitychange", onReturn);
-    window.addEventListener("focus", onReturn);
-    return () => {
-      controller.abort();
-      window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", onReturn);
-      window.removeEventListener("focus", onReturn);
-    };
-  }, [activeId, hasLoadedTasks, loadTasks]);
-
-  const anyActive = activeId !== null;
-
   const start = async (prepareBrowser = false) => {
     if (!composerBot) return;
     setStartingMode(prepareBrowser ? "browser" : "task");
     setError(null);
-    setAnnouncement("");
     try {
-      const response = await authFetch("/api/computer/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          prepareBrowser
-            ? {
-                agentId: composerBot.id,
-                prepareBrowser: true,
-                startUrl: startUrl.trim() || undefined,
-              }
-            : { agentId: composerBot.id, goal, startUrl: startUrl.trim() || undefined },
-        ),
-      });
-      const result = await readApiJson<{ task: ComputerTask }>(response);
-      if (!result.ok) {
-        // Started from another tab or device: bring that task into view.
-        if (result.code === "COMPUTER_BUSY") {
-          setShowComposer(false);
-          // An older idle list read must not overwrite this fresh busy result.
-          listEpochRef.current += 1;
-          void loadTasks({ focusActive: true });
-        }
-        throw new Error(result.error);
-      }
+      await startTask(
+        prepareBrowser
+          ? {
+              agentId: composerBot.id,
+              prepareBrowser: true,
+              startUrl: startUrl.trim() || undefined,
+            }
+          : { agentId: composerBot.id, goal, startUrl: startUrl.trim() || undefined },
+      );
       if (!prepareBrowser) {
         // A late start confirmation must not erase a newer draft.
         updateComposerDraft((current) => ({
@@ -1605,9 +1495,6 @@ export function ComputerWorkbench({
           startUrl: current.startUrl === startUrl ? "" : current.startUrl,
         }));
       }
-      listEpochRef.current += 1;
-      setTasks((current) => [result.data.task, ...(current ?? [])]);
-      setSelectedId(result.data.task.id);
       setShowComposer(false);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "The task could not start.");
@@ -1617,10 +1504,22 @@ export function ComputerWorkbench({
   };
 
   const canStart = Boolean(
-    status?.available && composerBot && tasks !== null && goal.trim().length >= 4 && !anyActive,
+    status?.available &&
+    !statusFailed &&
+    !refreshRequired &&
+    composerBot &&
+    tasks !== null &&
+    goal.trim().length >= 4 &&
+    !anyActive,
   );
   const canOpenBrowser = Boolean(
-    status?.available && composerBot && tasks !== null && !anyActive && !startingMode,
+    status?.available &&
+    !statusFailed &&
+    !refreshRequired &&
+    composerBot &&
+    tasks !== null &&
+    !anyActive &&
+    !startingMode,
   );
   const botName = (id: string) =>
     agents.length > 1 ? agents.find((agent) => agent.id === id)?.name : undefined;
@@ -1634,7 +1533,11 @@ export function ComputerWorkbench({
       task={selected}
       onChanged={(next) => applyTask(next, false)}
       onStartAnother={() => setShowComposer(true)}
+      onOpenTasks={layout === "panel" ? () => setHistoryOpen(true) : undefined}
       botName={selectedBot?.name}
+      chatControls={chatControls}
+      refreshRequired={refreshRequired}
+      onUnconfirmed={markUnconfirmed}
     />
   ) : null;
 
@@ -1647,18 +1550,31 @@ export function ComputerWorkbench({
           variant="outline"
           onClick={() => setShowComposer((current) => !current)}
         >
-          {showComposer ? "Back to task" : "New task"}
+          {showComposer ? "Back to task" : chatControls ? "Open browser" : "New task"}
         </Button>
       ) : null}
       <Button type="button" variant="outline" size="sm" onClick={() => setHistoryOpen(true)}>
-        <PanelRightOpen aria-hidden="true" />
-        History
+        <History aria-hidden="true" />
+        Tasks
       </Button>
     </div>
   );
 
   const workbench = (
     <>
+      {refreshRequired && !chatControls ? (
+        <StatusNotice
+          tone="warning"
+          title="Confirm the last action"
+          action={
+            <Button type="button" size="sm" variant="secondary" onClick={() => void refreshWork()}>
+              Refresh work
+            </Button>
+          }
+        >
+          The server outcome is uncertain. Refresh before starting or repeating work.
+        </StatusNotice>
+      ) : null}
       {status && !status.available ? <UnavailableNotice status={status} /> : null}
       {!status && statusFailed ? (
         <StatusNotice
@@ -1805,34 +1721,37 @@ export function ComputerWorkbench({
                 </div>
                 <div className="wl-computer-launch-browser__canvas">
                   <Globe className="size-8" aria-hidden="true" />
-                  <span>New tab</span>
+                  <strong>A fresh browser</strong>
+                  <span>Open a site, or give your Bot a task.</span>
                 </div>
               </div>
-              <div className="wl-computer-field">
-                <label htmlFor="computer-goal">What should your Bot do?</label>
-                <Textarea
-                  id="computer-goal"
-                  value={goal}
-                  onChange={(event) => updateComposerDraft({ goal: event.target.value })}
-                  placeholder="Describe the job, like comparing supplier prices or checking a listing."
-                  rows={3}
-                  maxLength={2000}
-                />
-                {goal.trim() ? null : (
-                  <div className="wl-computer-examples" role="group" aria-label="Example tasks">
-                    {EXAMPLES.map((example) => (
-                      <button
-                        key={example.label}
-                        type="button"
-                        title={example.goal}
-                        onClick={() => updateComposerDraft({ goal: example.goal })}
-                      >
-                        {example.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {!chatControls ? (
+                <div className="wl-computer-field">
+                  <label htmlFor="computer-goal">What should your Bot do?</label>
+                  <Textarea
+                    id="computer-goal"
+                    value={goal}
+                    onChange={(event) => updateComposerDraft({ goal: event.target.value })}
+                    placeholder="Research, compare, or complete a job on the web…"
+                    rows={3}
+                    maxLength={2000}
+                  />
+                  {goal.trim() ? null : (
+                    <div className="wl-computer-examples" role="group" aria-label="Example tasks">
+                      {EXAMPLES.map((example) => (
+                        <button
+                          key={example.label}
+                          type="button"
+                          title={example.goal}
+                          onClick={() => updateComposerDraft({ goal: example.goal })}
+                        >
+                          {example.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : null}
               {tasks === null && listFailed ? (
                 <StatusNotice
                   tone="warning"
@@ -1855,19 +1774,21 @@ export function ComputerWorkbench({
                   Retry to check whether a task is already running.
                 </StatusNotice>
               ) : null}
-              <div className="wl-computer-composer__footer">
-                <p>
-                  <ShieldCheck className="size-4" aria-hidden="true" />
-                  Take control for passwords, payments, and submissions.
-                </p>
-                <Button
-                  type="submit"
-                  disabled={!canStart || startingMode !== null}
-                  aria-busy={startingMode === "task"}
-                >
-                  {startingMode === "task" ? "Starting task…" : "Start Task"}
-                </Button>
-              </div>
+              {!chatControls ? (
+                <div className="wl-computer-composer__footer">
+                  <p>
+                    <ShieldCheck className="size-4" aria-hidden="true" />
+                    Take control for passwords, payments, and submissions.
+                  </p>
+                  <Button
+                    type="submit"
+                    disabled={!canStart || startingMode !== null}
+                    aria-busy={startingMode === "task"}
+                  >
+                    {startingMode === "task" ? "Starting task…" : "Start Task"}
+                  </Button>
+                </div>
+              ) : null}
               {error ? (
                 <StatusNotice tone="destructive" title="The Task Did Not Start">
                   {error}
@@ -1951,12 +1872,14 @@ export function ComputerWorkbench({
           : { label: "Ready", variant: "success" as const };
     return (
       <div className="wl-computer-panel">
-        <div className="wl-computer-panel__toolbar">
-          <span aria-live="polite">
-            {panelState ? <Badge variant={panelState.variant}>{panelState.label}</Badge> : null}
-          </span>
-          {actions}
-        </div>
+        {!selected || (!anyActive && showComposer) ? (
+          <div className="wl-computer-panel__toolbar">
+            <span aria-live="polite">
+              {panelState ? <Badge variant={panelState.variant}>{panelState.label}</Badge> : null}
+            </span>
+            {actions}
+          </div>
+        ) : null}
         {workbench}
       </div>
     );
@@ -1976,10 +1899,10 @@ const SIDE_BY_SIDE_QUERY = "(min-width: 1180px)";
 export default function ComputerPage() {
   const sideBySide = useMediaQuery(SIDE_BY_SIDE_QUERY);
   const [searchParams] = useSearchParams();
-  // Explicit navigation focuses the computer. The setup conversation stays
-  // mounted behind the full width panel. Smaller screens get this page.
+  // Wide screens open the browser beside Work chat. Smaller screens also keep
+  // this standalone destination for existing direct links and task history.
   if (sideBySide) {
-    const next = new URLSearchParams({ panel: "computer", focus: "computer" });
+    const next = new URLSearchParams({ panel: "computer" });
     const agent = searchParams.get("agent")?.trim();
     if (agent) next.set("agent", agent);
     return <Navigate to={`/studio?${next.toString()}`} replace />;

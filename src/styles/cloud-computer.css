@@ -18,11 +18,23 @@
   height: 100%;
   min-height: 0;
   flex-direction: column;
-  gap: var(--wireline-space-125);
+  gap: 1rem;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: var(--wireline-space-125);
+  padding: 1rem;
   scrollbar-gutter: stable;
+}
+
+.wl-computer-panel .wl-computer-composer,
+.wl-computer-panel .wl-computer-detail {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.wl-computer-panel .wl-computer-composer {
+  gap: 1.25rem;
 }
 
 /* Full width keeps a comfortable measure instead of stretching edge to edge. */
@@ -91,7 +103,7 @@
 
 .wl-computer-launch-browser__canvas {
   display: flex;
-  min-height: clamp(5.5rem, 12vw, 8rem);
+  min-height: clamp(10rem, 25vh, 17rem);
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -99,6 +111,13 @@
   background: var(--wireline-color-surface-subtle);
   color: var(--wireline-color-text-secondary);
   font-size: 0.82rem;
+}
+
+.wl-computer-launch-browser__canvas strong {
+  color: var(--wireline-color-text-primary);
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
 }
 
 .wl-computer-launch-browser__canvas svg {
@@ -130,7 +149,7 @@
   margin: 0;
   color: var(--wireline-color-text-primary);
   font-size: 0.95rem;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .wl-computer-browse-first p {
@@ -299,19 +318,202 @@
   display: flex;
   align-items: center;
   gap: var(--wireline-space-075);
-  min-height: 2.25rem;
-  padding: 0 var(--wireline-space-075);
+  min-height: 3rem;
+  padding: 0.3rem var(--wireline-space-075);
   border-bottom: 1px solid var(--wireline-color-border-default);
   background: var(--wireline-color-surface-subtle);
 }
 
 .wl-computer-screen__tabs {
   display: flex;
-  gap: var(--wireline-space-050);
+  gap: 0.25rem;
   overflow-x: auto;
-  padding: var(--wireline-space-050) var(--wireline-space-075);
+  padding: 0.35rem 0.5rem 0;
   border-bottom: 1px solid var(--wireline-color-border-default);
   background: var(--wireline-color-surface-subtle);
+}
+
+.wl-computer-screen__tabs .wl-browser-tab {
+  display: flex;
+  min-width: 0;
+  max-width: 14rem;
+  align-items: center;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.wl-computer-screen__tabs .wl-browser-tab.is-active {
+  border-color: var(--wireline-color-border-default);
+  background: var(--wireline-color-surface-default);
+}
+
+.wl-computer-screen__tabs .wl-browser-tab > button {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 2.5rem;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.55rem;
+  border: 0;
+  background: transparent;
+}
+
+.wl-computer-screen__tabs .wl-browser-tab > button:first-child {
+  flex: 1;
+}
+
+.wl-computer-screen__tabs .wl-browser-tab > .wl-browser-tab__close {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  flex: 0 0 auto;
+  justify-content: center;
+  padding: 0;
+}
+
+.wl-computer-screen__tabs .wl-browser-tab > button span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wl-computer-screen__tabs .wl-browser-tab svg,
+.wl-computer-screen__tabs .wl-browser-tab__new svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+}
+
+.wl-computer-screen__tabs .wl-browser-tab__new {
+  display: grid;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  background: transparent;
+}
+
+.wl-computer-screen .wl-browser-icon-button {
+  display: grid;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0.5rem;
+  place-items: center;
+}
+
+.wl-browser-tools {
+  width: min(100vw, 30rem);
+  overflow-y: auto;
+}
+
+.wl-browser-tools__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding-top: 1.5rem;
+}
+
+.wl-browser-tools__body section {
+  min-width: 0;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--wireline-color-border-default);
+}
+
+.wl-browser-tools__body section:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.wl-browser-tools__body h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.65rem;
+  color: var(--wireline-color-text-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.wl-browser-tools__body h3 svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--wireline-color-text-secondary);
+}
+
+.wl-browser-tools__body p,
+.wl-browser-tools__login label {
+  margin: 0;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.wl-browser-tools__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.wl-browser-tools__list {
+  display: flex;
+  max-height: 18rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.wl-browser-tools__list button {
+  display: flex;
+  width: 100%;
+  min-height: 2.75rem;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.5rem;
+  color: var(--wireline-color-text-primary);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  text-align: start;
+  overflow-wrap: anywhere;
+}
+
+.wl-browser-tools__list button:hover {
+  background: var(--wireline-color-surface-subtle);
+}
+
+.wl-browser-tools__list button:focus-visible {
+  outline: 2px solid var(--wireline-color-focus-default);
+  outline-offset: -2px;
+}
+
+.wl-browser-tools__list small {
+  color: var(--wireline-color-text-tertiary);
+  font-size: 0.75rem;
+}
+
+.wl-browser-tools__login {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.wl-browser-tools__origin {
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--wireline-color-surface-subtle);
+  font-family: var(--wireline-font-family-mono);
+}
+
+.wl-browser-tools__notice {
+  padding: 0.75rem;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: 0.5rem;
 }
 
 .wl-computer-screen__tabs button {
@@ -323,7 +525,7 @@
   border-radius: var(--wireline-radius-sm);
   background: var(--wireline-color-surface-default);
   color: var(--wireline-color-text-secondary);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -396,7 +598,7 @@
   background: var(--wireline-color-surface-default);
   color: var(--wireline-color-text-secondary);
   font-family: var(--wireline-font-family-mono);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -487,7 +689,7 @@
   gap: 0.3rem;
   color: var(--wireline-color-text-secondary);
   font-family: var(--wireline-font-family-mono);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -495,7 +697,7 @@
 
 .wl-computer-screen__pan-hint {
   color: var(--wireline-color-text-secondary);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   white-space: nowrap;
 }
 
@@ -506,7 +708,7 @@
   border-radius: var(--wireline-radius-sm);
   background: var(--wireline-color-surface-default);
   color: var(--wireline-color-text-primary);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -549,7 +751,7 @@
 .wl-computer-screen__steps {
   color: var(--wireline-color-text-secondary);
   font-family: var(--wireline-font-family-mono);
-  font-size: 0.69rem;
+  font-size: 0.75rem;
   white-space: nowrap;
 }
 
@@ -581,7 +783,7 @@
   border-radius: var(--wireline-radius-pill);
   background: var(--wireline-color-surface-default);
   color: var(--wireline-color-text-primary);
-  font-size: 0.73rem;
+  font-size: 0.75rem;
   box-shadow: var(--wireline-elevation-sm);
   pointer-events: none;
 }
@@ -927,7 +1129,7 @@
   margin-bottom: 0.15rem;
   color: var(--wireline-color-text-tertiary);
   font-family: var(--wireline-font-family-mono);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   line-height: 1.4;
@@ -951,13 +1153,13 @@
   cursor: pointer;
   color: var(--wireline-color-text-secondary);
   font-size: 0.82rem;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .wl-computer-plan summary span {
   color: var(--wireline-color-text-tertiary);
   font-family: var(--wireline-font-family-mono);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 
@@ -1003,7 +1205,7 @@
 .wl-computer-activity time {
   color: var(--wireline-color-text-tertiary);
   font-family: var(--wireline-font-family-mono);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
   line-height: 1.9;
   white-space: nowrap;
@@ -1128,7 +1330,7 @@
   align-items: center;
   gap: 0.45rem;
   color: var(--wireline-color-text-tertiary);
-  font-size: 0.74rem;
+  font-size: 0.75rem;
 }
 
 @container computer (max-width: 639px) {
@@ -1204,6 +1406,11 @@
 }
 
 @container computer (max-width: 400px) {
+  .wl-computer-screen .wl-browser-screenshot,
+  .wl-computer-screen .wl-browser-zoom-toggle {
+    display: none;
+  }
+
   .wl-computer-screen__pan-hint {
     display: none;
   }

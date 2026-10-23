@@ -27,7 +27,7 @@ describe("launch artifact privacy and operations truth", () => {
     expect(route).toContain('"/api/public/demo-call"');
     expect(route).not.toMatch(/OpenAI|VAPI|createServerManagedOpenAIRealtimeCall|runInBackground/);
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo|demo-session/);
-    expect(showcase).toContain("<Navigate to={FREE_SIGNUP} replace />");
+    expect(showcase).toContain('<Navigate to="/signup" replace />');
   });
 
   it("keeps public retention and recording claims aligned with runtime defaults", () => {

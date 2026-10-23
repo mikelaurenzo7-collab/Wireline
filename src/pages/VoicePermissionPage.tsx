@@ -201,7 +201,7 @@ export default function VoicePermissionPage() {
           <WirelineLockup />
         </div>
         <div className="min-w-0 rounded-2xl border border-border bg-card p-[16px] shadow-sm sm:p-8">
-          <div className="mb-4 flex min-w-0 items-center gap-2">
+          <div className="mb-4 flex min-w-0 flex-wrap items-center gap-2">
             <ShieldCheck className="size-5 shrink-0 text-primary" aria-hidden="true" />
             <h1 className="min-w-0 text-xl font-semibold tracking-tight [overflow-wrap:anywhere] sm:text-2xl">
               Call permission

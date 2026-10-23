@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button, Switch } from "../atoms";
 import { StatusNotice } from "../molecules";
@@ -34,6 +34,8 @@ export default function McpCoachingPanel() {
   const [notice, setNotice] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadVersion, setLoadVersion] = useState(0);
+  const [refreshRequired, setRefreshRequired] = useState(false);
+  const mutationPending = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -55,6 +57,7 @@ export default function McpCoachingPanel() {
         }
         setEnabled(data.coaching_writes_enabled);
         setConnections(data.connections);
+        setRefreshRequired(false);
       } catch (err) {
         if (!active) return;
         setLoadError(err instanceof Error ? err.message : "Couldn't load connected apps.");
@@ -68,15 +71,26 @@ export default function McpCoachingPanel() {
   }, [loadVersion]);
 
   function retryLoad() {
-    if (loading) return;
+    if (loading || mutationPending.current) return;
     setLoading(true);
     setLoadError(null);
     setError(null);
+    setNotice(null);
+    setConfirmDisconnect(false);
     setLoadVersion((value) => value + 1);
   }
 
   async function updateWrites(next: boolean) {
-    if (loading || loadError || saving) return;
+    if (
+      loading ||
+      loadError ||
+      saving ||
+      disconnecting ||
+      refreshRequired ||
+      mutationPending.current
+    )
+      return;
+    mutationPending.current = true;
     setSaving(true);
     setError(null);
     setNotice(null);
@@ -92,25 +106,44 @@ export default function McpCoachingPanel() {
       if (!response.ok) {
         throw new Error(data?.error || "Couldn't update Training permission.");
       }
-      setEnabled(data?.coaching_writes_enabled === true);
+      if (
+        typeof data?.coaching_writes_enabled !== "boolean" ||
+        data.coaching_writes_enabled !== next
+      ) {
+        throw new Error(
+          "The permission change could not be confirmed. Refresh access before trying again.",
+        );
+      }
+      setEnabled(data.coaching_writes_enabled);
       setNotice(
         data?.coaching_writes_enabled
           ? "Connected apps can now save a confirmed Training fact or rule into BotBound."
           : "Connected app Training writes are off. Drafts and private rehearsals still work.",
       );
     } catch (err) {
+      setRefreshRequired(true);
       setError(err instanceof Error ? err.message : "Couldn't update Training permission.");
     } finally {
+      mutationPending.current = false;
       setSaving(false);
     }
   }
 
   async function disconnectAll() {
-    if (loading || loadError || disconnecting) return;
+    if (
+      loading ||
+      loadError ||
+      saving ||
+      disconnecting ||
+      refreshRequired ||
+      mutationPending.current
+    )
+      return;
     if (!confirmDisconnect) {
       setConfirmDisconnect(true);
       return;
     }
+    mutationPending.current = true;
     setDisconnecting(true);
     setError(null);
     setNotice(null);
@@ -123,12 +156,19 @@ export default function McpCoachingPanel() {
       if (!response.ok) {
         throw new Error(data?.error || "Couldn't disconnect connected apps.");
       }
+      if (data?.disconnected !== true) {
+        throw new Error(
+          "Disconnection could not be confirmed. Refresh access before trying again.",
+        );
+      }
       setConnections([]);
       setConfirmDisconnect(false);
       setNotice("Connected apps can no longer use this account until you connect again.");
     } catch (err) {
+      setRefreshRequired(true);
       setError(err instanceof Error ? err.message : "Couldn't disconnect connected apps.");
     } finally {
+      mutationPending.current = false;
       setDisconnecting(false);
     }
   }
@@ -153,7 +193,7 @@ export default function McpCoachingPanel() {
           className="shrink-0"
           checked={enabled}
           onCheckedChange={(checked) => void updateWrites(checked)}
-          disabled={loading || Boolean(loadError) || saving}
+          disabled={loading || Boolean(loadError) || saving || disconnecting || refreshRequired}
           aria-describedby="mcp-coaching-writes-help"
           aria-label="Allow connected apps to save Training"
         />
@@ -214,7 +254,7 @@ export default function McpCoachingPanel() {
           type="button"
           variant={confirmDisconnect ? "destructive" : "outline"}
           size="sm"
-          disabled={loading || Boolean(loadError) || disconnecting}
+          disabled={loading || Boolean(loadError) || saving || disconnecting || refreshRequired}
           onClick={() => void disconnectAll()}
         >
           {disconnecting
@@ -233,6 +273,18 @@ export default function McpCoachingPanel() {
       {error ? (
         <StatusNotice tone="destructive" title="Connected Apps">
           {error}
+          {refreshRequired ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              disabled={loading}
+              onClick={retryLoad}
+            >
+              Refresh Access
+            </Button>
+          ) : null}
         </StatusNotice>
       ) : null}
     </div>

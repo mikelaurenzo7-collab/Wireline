@@ -124,11 +124,13 @@ for (const [needle, description] of [
   ["landing-prestige__hero", "home must keep the centered hero"],
   ["<PrecisionPublicHeader />", "home must share the public header"],
   ["<BotBoundMark", "home must lead with the canonical phone-Bot mascot"],
-  ['to={signupHrefForPlan("personal")}', "home must keep direct free account creation"],
+  ['to="/signup"', "home must keep neutral account creation"],
   ['to="/signin"', "home must keep sign-in one action away"],
-  ["landing-prestige__directions", "home must expose personal and business starting paths"],
-  ["Plan. Coordinate.", "home must keep the personal assistant path"],
-  ["Answer. Book.", "home must keep the front desk path"],
+  ["FEATURED_TEMPLATES.map", "home must expose the canonical role choices"],
+  [
+    "to={`/signup?template=${encodeURIComponent(template.key)}`}",
+    "each role must preserve its signup intent",
+  ],
   ['id="solutions"', "home must include solutions"],
   ['id="pricing"', "home must include pricing"],
   ["landing-prestige__trust", "home must include trust controls"],
@@ -156,7 +158,7 @@ if (/variant="phone"|landing-phone|landing-os__tray|chrome="hidden"/.test(execut
 const showcase = executable(read("src/pages/Showcase.tsx"));
 for (const [needle, description] of [
   ["<Navigate", "retired Showcase must redirect instead of rendering a public voice preview"],
-  ['signupHrefForPlan("personal")', "Showcase must use the canonical free signup destination"],
+  ['to="/signup"', "Showcase must use neutral account creation"],
   ["replace", "Showcase redirect must replace the retired history entry"],
 ]) {
   if (!showcase.includes(needle)) failures.push(`src/pages/Showcase.tsx: ${description}`);

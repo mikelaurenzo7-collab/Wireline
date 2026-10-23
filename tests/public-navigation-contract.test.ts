@@ -15,7 +15,7 @@ describe("public navigation contract", () => {
     expect(header).not.toContain("WirelineLockup");
     expect(header).toContain('aria-label="Account"');
     expect(header).toContain('to="/signin"');
-    expect(header).toContain('to={signupHrefForPlan("personal")}');
+    expect(header).toContain('to="/signup"');
     expect(header).toContain("Sign In");
     expect(header).toContain("Get Started");
     expect(header).toContain("marketing-btn-primary");
@@ -36,7 +36,9 @@ describe("public navigation contract", () => {
       Array.from(header.matchAll(/\bto(?:=|:\s*)["']([^"']+)["']/g), (match) => match[1]),
     );
     // Signed-in visitors get one way back to work instead of Sign In / Start Free.
-    expect(destinations).toEqual(new Set(["/", "/features", "/pricing", "/signin", "/studio"]));
+    expect(destinations).toEqual(
+      new Set(["/", "/features", "/pricing", "/signin", "/signup", "/studio"]),
+    );
     expect(header).toContain("Open Workspace");
     expect(header).not.toContain('label: "Demos"');
     expect(header).not.toContain('label: "Trust"');

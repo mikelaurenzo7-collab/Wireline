@@ -113,19 +113,17 @@
 
 .wl-workspace-page-intro .wl-display-3,
 .wl-operate-surface > header .wl-display-3 {
-  font-size: clamp(1.75rem, 1.55rem + 0.8vw, 2.25rem);
-  line-height: 1;
+  font-size: clamp(1.5rem, 1.35rem + 0.6vw, 1.875rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
 }
 
 /* Tabs locate the user without competing with the page's primary action. */
 .wl-workspace-shell .wl-workspace-tabs [data-active="true"] {
-  border-color: color-mix(in srgb, var(--wireline-color-action-primary-default) 34%, transparent);
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-action-primary-default) 14%,
-    var(--wireline-color-surface-default)
-  );
-  color: var(--wireline-color-action-primary-default);
+  border-color: var(--wireline-color-border-default);
+  background: var(--wireline-color-surface-subtle);
+  color: var(--wireline-color-text-primary);
   box-shadow: none;
 }
 

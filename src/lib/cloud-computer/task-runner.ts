@@ -27,6 +27,13 @@ import {
 } from "./agent";
 import type { CloudBrowserSession, OwnerBrowserTab, OwnerControlInput } from "./browser-session";
 import {
+  OWNER_BROWSER_CAPABILITIES,
+  type OwnerBrowserCapabilities,
+  type OwnerBrowserDownload,
+  type OwnerBrowserHistory,
+  type OwnerSavedLogin,
+} from "./browser-capabilities";
+import {
   cloudComputerClient,
   cloudComputerConnection,
   cloudComputerModel,
@@ -225,6 +232,11 @@ export type ComputerTaskView = {
   /** Waiting for the executor's next safe checkpoint, not owner input yet. */
   controlRequested: boolean;
   ownerTabs: OwnerBrowserTab[];
+  browserCapabilities?: OwnerBrowserCapabilities | null;
+  ownerHistory?: OwnerBrowserHistory[];
+  ownerDownloads?: OwnerBrowserDownload[];
+  ownerDownloadNotice?: string | null;
+  ownerSavedLogins?: OwnerSavedLogin[];
   preparingBrowser: boolean;
   /** Stop was requested; the task ends at its executor's next checkpoint. */
   stopping: boolean;
@@ -287,6 +299,26 @@ function toView(row: TaskRow): ComputerTaskView {
     ownerTabs:
       task && !task.finished && task.ownerControl && task.userId === row.userId
         ? (task.session?.ownerTabs() ?? [])
+        : [],
+    browserCapabilities:
+      task && !task.finished && task.session && task.userId === row.userId
+        ? OWNER_BROWSER_CAPABILITIES
+        : null,
+    ownerHistory:
+      task && !task.finished && task.ownerControl && task.userId === row.userId
+        ? (task.session?.ownerHistory?.() ?? [])
+        : [],
+    ownerDownloads:
+      task && !task.finished && task.ownerControl && task.userId === row.userId
+        ? (task.session?.ownerDownloads?.() ?? [])
+        : [],
+    ownerDownloadNotice:
+      task && !task.finished && task.ownerControl && task.userId === row.userId
+        ? (task.session?.ownerDownloadNotice?.() ?? null)
+        : null,
+    ownerSavedLogins:
+      task && !task.finished && task.ownerControl && task.userId === row.userId
+        ? (task.session?.ownerSavedLogins?.() ?? [])
         : [],
     preparingBrowser: Boolean(task && !task.finished && task.preparingBrowser),
     stopping: Boolean(
@@ -678,6 +710,7 @@ export async function waitForComputerOwner(
   }
   const ownerReply = await reply;
   task.ownerControl = false;
+  task.session?.cancelCurrentInput();
   if (task.stop || task.finished) return null;
   const resumed = await persist(task, { status: "running", question: null });
   if (resumed !== "written") {
@@ -1590,6 +1623,38 @@ export async function sendComputerOwnerInput(
   }
 }
 
+/** Ephemeral owner-requested files never become task evidence or public assets. */
+export async function getComputerDownload(
+  userId: string,
+  taskId: string,
+  downloadId: string,
+): Promise<{ name: string; data: Buffer }> {
+  const row = await ownedRow(userId, taskId);
+  const task = live.get(taskId);
+  if (
+    row.status !== "needs_input" ||
+    !task ||
+    task.userId !== userId ||
+    task.finished ||
+    task.stop ||
+    !task.reply ||
+    !task.ownerControl ||
+    !task.session
+  ) {
+    throw new AppError(
+      409,
+      "COMPUTER_CONTROL_REQUIRED",
+      "Take control of this browser to retrieve its files.",
+    );
+  }
+  if (task.session.isClosed) failExpiredBrowser(task);
+  if (!/^download-[1-9]\d*$/.test(downloadId))
+    throw AppError.notFound("That browser file is no longer available.");
+  const download = task.session.ownerDownload(downloadId);
+  if (!download) throw AppError.notFound("That browser file is no longer available.");
+  return download;
+}
+
 export async function returnComputerControlToBot(
   userId: string,
   taskId: string,
@@ -1678,6 +1743,7 @@ export async function returnComputerControlToBot(
           : "This browser task has ended.",
       );
     }
+    task.session.cancelCurrentInput();
     if (task.stop || task.finished || task.reply !== resume) {
       throw new AppError(
         409,

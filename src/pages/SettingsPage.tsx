@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, KeyRound, LogOut, Mail, Trash2, UserRound } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -279,6 +279,7 @@ export default function SettingsPage() {
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resetState, setResetState] = useState<"idle" | "sending" | "sent">("idle");
+  const signOutPending = useRef(false);
   // The profile shows the name as entered. The sidebar label is a short
   // first-name chip, which here read as if the surname had been lost.
   const displayName =
@@ -304,13 +305,15 @@ export default function SettingsPage() {
   }
 
   async function handleSignOut() {
-    if (signingOut) return;
+    if (signingOut || signOutPending.current) return;
+    signOutPending.current = true;
     setSigningOut(true);
     setError(null);
     try {
-      await signOut();
+      await signOut({ requireServerConfirmation: true });
       navigate("/signin", { replace: true });
     } catch {
+      signOutPending.current = false;
       setError("Sign-out did not complete. Try again.");
       setSigningOut(false);
     }

@@ -104,9 +104,11 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "settings-expanded-state", pattern: /aria-expanded=\{inspectorOpen\}/ },
   ],
   canvas: [
-    // Beside an open Try It panel the conversation only edits the Bot.
+    // Browser work and rehearsal share the side panel without mixing chat scopes.
     { id: "single-workroom", pattern: /onModeChange=\{panelOpen \? undefined : setWorkroomMode\}/ },
-    { id: "panel-tabs", pattern: /\{ id: "try", label: "Try It" \}/ },
+    { id: "panel-tabs", pattern: /\{ id: "try", label: "Rehearse" \}/ },
+    { id: "computer-panel", pattern: /\{ id: "computer", label: "Browser" \}/ },
+    { id: "mobile-surface-switch", pattern: /aria-label="Workspace view"/ },
     {
       id: "inspector-body",
       pattern: /activePanelSection === "review"\s*\? reviewPanel\s*: setupPanel/,

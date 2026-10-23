@@ -278,8 +278,9 @@ describe("cloud computer source contracts", () => {
     const routes = read("src/routes/computer-routes.ts");
     const handlers = routes.match(/router\.(get|post)\(/g) ?? [];
     const authenticated = routes.match(/authenticateUser,/g) ?? [];
-    expect(handlers.length).toBe(10);
+    expect(handlers.length).toBe(11);
     expect(authenticated.length).toBe(handlers.length);
+    expect(routes).toContain('"/api/computer/tasks/:taskId/downloads/:downloadId"');
   });
 
   it("accepts tenant-owned founder showcase Bot IDs and isolates live frame reads", () => {

@@ -27,14 +27,13 @@ describe("Clear System channel catalog guard", () => {
   it.each([
     [
       "src/components/marketing/WireAgentLanding.tsx",
-      (source) => source.replace("<span>With a Computer,</span>", "<span>For Calls,</span>"),
-      "computer, phone number, and email",
+      (source) => source.replace("Calling, email, and a computer.", "Calling."),
+      "describe the product family together",
     ],
     [
       "src/styles/landing-prestige.css",
-      (source) =>
-        source.replace(/display: inline-block;\s*white-space: nowrap;/, "display: inline;"),
-      "never strand one word",
+      (source) => source.replaceAll("text-wrap: balance;", "text-wrap: wrap;"),
+      "display headings must balance lines",
     ],
     [
       "src/pages/Pricing.tsx",
@@ -76,6 +75,8 @@ describe("Clear System channel catalog guard", () => {
       "invent annual discounts",
     ],
   ])("rejects a regressed offer surface in %s (%s)", (file, mutate, expected) => {
+    const original = createCheckContext().read(file);
+    expect(mutate(original), "mutation fixture must change current source").not.toBe(original);
     expect(check({ [file]: mutate }).some((failure) => failure.includes(expected))).toBe(true);
   });
 });

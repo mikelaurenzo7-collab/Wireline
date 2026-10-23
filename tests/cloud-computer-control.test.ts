@@ -56,6 +56,7 @@ import {
   replyToComputerTask,
   returnComputerControlToBot,
   sendComputerOwnerInput,
+  getComputerDownload,
   stopComputerTask,
   takeComputerControl,
   waitForComputerOwner,
@@ -96,6 +97,15 @@ function fixture(status = "running") {
       isClosed: false,
       cancelCurrentInput: vi.fn(),
       ownerTabs: () => [],
+      ownerHistory: () => [],
+      ownerDownloads: () => [],
+      ownerSavedLogins: () => [],
+      ownerDownloadNotice: () => null,
+      ownerDownload: vi.fn((downloadId: string) =>
+        downloadId === "download-1"
+          ? { name: "report.txt", data: Buffer.from("synthetic report") }
+          : null,
+      ),
       activeUrl: () => "https://example.com/",
       frame: vi.fn(async () => Buffer.from("safe-screen")),
       executeOwnerInput: vi.fn(async () => Buffer.from("owner-screen")),
@@ -137,6 +147,58 @@ afterEach(() => {
 });
 
 describe("owner-requested computer pause admission", () => {
+  it("keeps files and saved-login actions behind tenant, owner-control, and live-session gates", async () => {
+    const task = fixture("needs_input");
+    task.reply = vi.fn();
+    await expect(getComputerDownload(userId, id, "download-1")).rejects.toMatchObject({
+      status: 409,
+    });
+    await expect(
+      sendComputerOwnerInput(userId, id, {
+        kind: "save_login",
+        origin: "https://example.com",
+        username: "owner",
+        password: "private",
+      }),
+    ).rejects.toMatchObject({ status: 409 });
+    task.ownerControl = true;
+    await expect(getComputerDownload("another-tenant", id, "download-1")).rejects.toMatchObject({
+      status: 404,
+    });
+    await expect(
+      sendComputerOwnerInput("another-tenant", id, {
+        kind: "fill_login",
+        origin: "https://example.com",
+      }),
+    ).rejects.toMatchObject({ status: 404 });
+    expect(await getComputerDownload(userId, id, "download-1")).toMatchObject({
+      name: "report.txt",
+      data: Buffer.from("synthetic report"),
+    });
+    await expect(getComputerDownload(userId, id, "download-1/../../")).rejects.toMatchObject({
+      status: 404,
+    });
+    task.stop = true;
+    await expect(getComputerDownload(userId, id, "download-1")).rejects.toMatchObject({
+      status: 409,
+    });
+    task.stop = false;
+    Object.assign(task.session!, { isClosed: true });
+    await expect(
+      sendComputerOwnerInput(userId, id, { kind: "fill_login", origin: "https://example.com" }),
+    ).rejects.toMatchObject({
+      status: 410,
+    });
+    const expiredDownloadTask = fixture("needs_input");
+    expiredDownloadTask.ownerControl = true;
+    expiredDownloadTask.reply = vi.fn();
+    Object.assign(expiredDownloadTask.session!, { isClosed: true });
+    await expect(getComputerDownload(userId, id, "download-1")).rejects.toMatchObject({
+      status: 410,
+    });
+    expect(task.session!.executeOwnerInput).not.toHaveBeenCalled();
+    expect(JSON.stringify(h.writes)).not.toContain("private");
+  });
   it("does not resume execution when saving the running state fails", async () => {
     const task = fixture();
     const waiting = waitForComputerOwner(task, "What next?", 10_000);
