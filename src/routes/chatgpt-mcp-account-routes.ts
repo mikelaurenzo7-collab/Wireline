@@ -27,6 +27,7 @@ import {
   hashMcpOAuthToken,
   isMcpResourceBound,
   mcpIssuer,
+  resolveMcpAccount,
 } from "../lib/mcp-oauth-security";
 import {
   applyMcpTransportHeaders,
@@ -123,6 +124,8 @@ async function principalFromRequest(req: Request): Promise<McpPrincipal | null> 
   if (!isMcpResourceBound(record.resource, req)) return null;
   const scopes = parseScopes(record.scope);
   if (!scopes.length) return null;
+  const account = await resolveMcpAccount(record.user_id);
+  if (!account) return null;
 
   let redirectUris: string[] = [];
   const clientId = record.client_id || "";
@@ -141,7 +144,7 @@ async function principalFromRequest(req: Request): Promise<McpPrincipal | null> 
 
   return {
     userId: record.user_id,
-    email: record.email,
+    email: account.email,
     scopes,
     draftSource: mcpDraftSourceForClient(clientId, redirectUris),
   };

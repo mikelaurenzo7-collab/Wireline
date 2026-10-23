@@ -9,7 +9,7 @@ import { authenticateUser } from "../middleware/auth";
 import { dashboardRateLimit } from "../middleware/api-rate-limits";
 import { computeDashboardStats } from "../lib/dashboard-stats";
 import { annotateCallsWithHappened } from "../lib/call-report";
-import { presentCallAnalysis } from "../lib/call-review-note";
+import { presentCallAnalysis, presentCallReport } from "../lib/call-review-note";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { getCachedDashboard, setCachedDashboard } from "../lib/dashboard-cache";
 import { getCachedNavCounts, setCachedNavCounts } from "../lib/nav-counts-cache";
@@ -163,7 +163,7 @@ router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res
     // happened to match by coincidence (id, summary, transcript, direction).
     const reported = await annotateCallsWithHappened(req.user.id, calls || []);
     const safeCalls = reported.map((call) => ({
-      ...presentCallAnalysis(call),
+      ...presentCallReport(call),
       recordingUrl: call.recordingUrl ? `/api/calls/${String(call.id)}/recording` : null,
     }));
 

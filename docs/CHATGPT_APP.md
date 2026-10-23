@@ -93,7 +93,7 @@ Claude, ChatGPT, and Cursor use the same two call tools and the same browser rev
 Connect at `https://botbound.app/mcp`; grant `calls.prepare` and `calls.read` explicitly
 when requested. Existing grants and omitted-scope defaults do not gain these scopes.
 Use a personal or business Bot with a paid Calls plan and connected line.
-The legacy internal plan ID `personal` remains Free Builder, without live calls.
+The internal plan ID `personal` now identifies paid BotBound Personal. Unpaid draft accounts cannot place live calls; current paid entitlement and line ownership determine eligibility.
 
 `prepare_call` requires a request UUIDv4, Bot ID, E.164 US number, instruction,
 and `service_or_requested` or `callback` purpose. Retries reuse the UUID. Changed payloads

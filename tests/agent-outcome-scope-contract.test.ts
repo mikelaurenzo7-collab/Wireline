@@ -27,16 +27,16 @@ describe("agent outcome scope", () => {
     expect(route).toContain('res.setHeader("Cache-Control", "private, no-store, max-age=0")');
     expect(route).not.toContain("recordingUrl: call.recordingUrl,");
     expect(route).not.toContain("userId: schema.callLogs.userId");
-    expect(route).not.toContain("vapiCallId: schema.callLogs.vapiCallId");
+    // The provider id joins internal outcome evidence, then the presenter strips it.
+    expect(route).toContain("annotateCallsWithHappened(req.user.id, calls || [])");
+    expect(route).toContain("...presentCallReport(call)");
     expect(route).not.toContain("demo: schema.callLogs.demo");
   });
 
   it("registers the scoped route and uses it only for agent ledgers", () => {
     expect(registry).toContain('import agentCallRouter from "../routes/agent-call-routes";');
     expect(registry).toContain("app.use(agentCallRouter);");
-    expect(ledger).toContain(
-      "`/api/agents/${encodeURIComponent(agentId)}/calls?limit=${limit}`",
-    );
+    expect(ledger).toContain("`/api/agents/${encodeURIComponent(agentId)}/calls?limit=${limit}`");
     expect(ledger).toContain("`/api/calls?limit=${limit}`");
     expect(ledger).toContain("!agentId || row.agent_id === agentId");
   });

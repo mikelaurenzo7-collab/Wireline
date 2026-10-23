@@ -284,7 +284,7 @@ export default function WireAgentLanding() {
             <h2 id="landing-prestige-closing">
               <span>Put Your First Bot</span> <span>to Work</span>
             </h2>
-            <p>Set up your Bot free. Make it yours, then go live when you are ready.</p>
+            <p>Make your Bot yours, then choose a paid plan to put it to work.</p>
             <div className="landing-prestige__actions">
               {signedIn ? (
                 <Link to="/studio" className="landing-prestige__cta is-primary">

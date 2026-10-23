@@ -4,14 +4,16 @@ This file is BotBound's durable repository-health contract. It defines what belo
 
 ## Current north star
 
-BotBound is the operating layer for your Bot across calls, texts, follow-up, browser context, email, and integrations. Public messaging leads with concrete Bot capabilities, outcomes, and signup rather than a setup-step list. The internal technical operating loop is **Create -> Train -> Wire -> Run**. Conversation review and later refinements remain optional controls, not additional setup steps.
+BotBound's launch offer is calling, email, and Computer: proven incoming calls, requested email, and supervised web work with visible proof, clear limits, recoverable failure, and useful owner handoff. SMS, campaign calling, and unproven messaging integrations stay outside launch promotion. Existing channel data and reviewed service-call controls retain their separate policies. Public messaging leads with concrete Bot capabilities, outcomes, and signup rather than a setup-step list. The internal technical operating loop is **Create -> Train -> Wire -> Run**. Conversation review and later refinements remain optional controls, not additional setup steps.
 
 - **Create** is short intake: name, role, voice, personality, and starting brief.
 - **Training** owns documents, sources, behavior, voice, policies, evaluation, memory, and escalation rules.
 - **Launch / Connections** owns numbers, integrations, routing, connected tools, approvals, billing, and launch controls.
-- **Run / Studio** is chat-first execution for calls, texts, follow-up, approvals, handoff, and review.
+- **Run / Studio** brings calls, email, Computer work, follow-up, approvals, handoff, and review together. Private rehearsal opens with Voice and starts the microphone only after an explicit Start action; text remains available. A real phone-call test is separate and can execute enabled live actions.
+- **Plans** use `src/lib/plan-catalog.ts` and server-owned entitlements. BotBound Personal is paid; historical Free Builder text and compatibility slugs are not current free-plan promises. A signup or private draft does not authorize live identity or paid work.
+- **Email identity** uses each customer's verified business identity and signature. Customer-owned domains need their own setup and DNS verification.
 - **Video presenter** is retired from the launch product. Compatibility code and provider references stay internal until they are safely removed.
-- **Customer voice choice** is the complete 10-voice built-in OpenAI Realtime catalog. A Bot keeps its saved voice for each entire session and may use a different saved voice on a later session. No external voice-cloning provider, catalog, upload, or runtime remains.
+- **Customer voice choice** is the complete 10-voice built-in OpenAI Realtime catalog, mapped to the configured phone provider when applicable. A Bot keeps its saved voice for each entire session and may use a different saved voice on a later session. The disabled-by-default platform-admin reference-recording/upload and private-preview pilot remains a separate future-product foundation; it does not assign a custom live-call voice. Preserve its consent, vault, review, deletion, and spend controls.
 
 Historic dashboard, manager, command-center, chat, operations, and temporary Studio paths must redirect into the active product model or be explicitly retired. Dark and light appearances must express one BotBound Design System rather than separate products.
 
@@ -71,7 +73,7 @@ The BotBound Design System is the only active design system. Use semantic surfac
 
 `docs/CUSTOMER_TERMINOLOGY.md` is the active canonical language policy; the summary here must match it and the product-voice contracts that enforce it.
 
-- Broad public language: `Bot` or `Phone Bot` in one product and workspace model. Never split signup, setup, pricing, or navigation into Personal and Business lanes. Technical compatibility identifiers remain stable.
+- Broad public language: `Bot` or `Phone Bot` in one product and workspace model. `BotBound Personal` is the current paid plan name; it does not create a separate workspace or policy model. Technical compatibility identifiers remain stable.
 - Context-specific examples use the actual job (`Personal Assistant`, `Sales Rep`, `Front Desk`) without creating audience lanes.
 - Technical contracts: `agent`.
 - Product nouns: `Training`, `Connections`, `Studio`, `calls`, `texts`, `follow-up`, `Runtime Balance`, and `included number`. After creation, the setup guide is Train, Test, Launch. Never use Wire as a customer-facing step.

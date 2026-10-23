@@ -11,6 +11,7 @@ describe("voice-pricing-display", () => {
   it("publishes voice capacity and the prepaid rate only for public Calls packages", () => {
     const rates = publishedVoiceRates();
     expect(rates.map((row) => row.planId)).toEqual([
+      "personal",
       "voice",
       "voice-regular",
       "voice-high",
@@ -24,7 +25,15 @@ describe("voice-pricing-display", () => {
       "omnichannel-regular",
       "omnichannel-high",
     ]);
-    expect(rates.slice(0, 3).map((row) => row.includedMinutes)).toEqual([50, 250, 500]);
+    expect(rates.find((row) => row.planId === "personal")).toMatchObject({
+      includedMinutes: 20,
+      rateUsd: 0.22,
+    });
+    expect(
+      ["voice", "voice-regular", "voice-high"].map(
+        (planId) => rates.find((row) => row.planId === planId)?.includedMinutes,
+      ),
+    ).toEqual([50, 250, 500]);
     expect(rates.every((row) => row.includedMinutes > 0)).toBe(true);
     expect(rates[0]?.rateUsd).toBe(voiceRateForPlan("starter"));
     expect(rates.every((row) => row.rateUsd === voiceRateForPlan("starter"))).toBe(true);

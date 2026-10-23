@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { FREE_BUILDER_SIMULATION_ALLOWANCE_USD } from "../src/lib/plan-entitlements";
+import {
+  defaultAiSpendBudgetUsdForPlan,
+  defaultAiSpendBudgetUsdForTier,
+  FREE_BUILDER_SIMULATION_ALLOWANCE_USD,
+} from "../src/lib/plan-entitlements";
 import { planById } from "../src/lib/plan-catalog";
 
 const read = (path: string) => readFileSync(path, "utf8");
@@ -77,14 +81,23 @@ describe("platform cost metering contract", () => {
     expect(catalog).toContain("separate from Runtime Allowance and voice");
   });
 
-  it("discloses the Free Builder simulation envelope, in lockstep with enforcement", () => {
-    // The free tier's hard cap 402s mid-training; a converting prospect must
-    // see the real shape before signup, and the disclosed number must be the
-    // enforced number.
-    const disclosed = planById("personal")?.features.find((feature) =>
-      feature.includes("private AI simulation each month"),
+  it("discloses paid Personal's managed AI envelope in lockstep with exact-plan enforcement", () => {
+    const personal = planById("personal")!;
+    expect(personal.price_usd_monthly).toBeGreaterThan(0);
+    const disclosed = personal.features.find((feature) =>
+      feature.includes("monthly managed allowance for AI"),
     );
     expect(disclosed).toBeDefined();
-    expect(disclosed).toContain(`$${FREE_BUILDER_SIMULATION_ALLOWANCE_USD.toFixed(2)}`);
+    expect(disclosed).toContain(`$${personal.ai_spend_allowance_usd_monthly.toFixed(2)}`);
+    expect(defaultAiSpendBudgetUsdForPlan("personal")).toBe(
+      personal.ai_spend_allowance_usd_monthly,
+    );
+    expect(personal.features.join(" ")).not.toContain("private AI simulation each month");
+  });
+
+  it("retains a bounded private simulation allowance for accounts without a paid plan", () => {
+    expect(FREE_BUILDER_SIMULATION_ALLOWANCE_USD).toBe(1.5);
+    expect(defaultAiSpendBudgetUsdForTier("free")).toBe(FREE_BUILDER_SIMULATION_ALLOWANCE_USD);
+    expect(defaultAiSpendBudgetUsdForPlan(null)).toBe(FREE_BUILDER_SIMULATION_ALLOWANCE_USD);
   });
 });

@@ -108,8 +108,8 @@ export default function Features() {
               A Bot for Your Life and Work
             </h1>
             <p className="wl-features-intro__lead mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
-              Create your Bot free. Add a phone number, email address, and cloud computer with the
-              plan that fits your needs.
+              Choose a paid plan for your Bot's calls, email, and cloud computer. Personal starts at
+              $12 a month, and channel plans include the numbers and inboxes you choose.
             </p>
             <div className="marketing-hero__actions">
               <Link

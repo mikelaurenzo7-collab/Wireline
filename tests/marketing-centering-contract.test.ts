@@ -28,7 +28,8 @@ describe("marketing centering contract", () => {
     expect(header).toContain('to="/signin"');
     expect(header).toContain('to={signupHrefForPlan("personal")}');
     expect(header).toContain('<BotBoundWordmark className="wl-public-header__wordmark" />');
-    expect(header).toContain('aria-label="Start Free"');
+    expect(header).toContain('aria-label="Get Started"');
+    expect(header).not.toContain('aria-label="Start Free"');
     expect(header).not.toContain("DialogTrigger");
     expect(header).not.toContain("wl-public-nav-overlay");
     expect(stickyCta).toContain('document.querySelector(".marketing-hero__actions")');

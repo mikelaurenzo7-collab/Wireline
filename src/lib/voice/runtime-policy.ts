@@ -1,10 +1,12 @@
 /**
- * BotBound voice-provider authority.
+ * Default OpenAI lane descriptors retained for source-contract compatibility.
  *
- * This boundary is intentionally small and explicit so a provider experiment
- * cannot silently become a customer runtime. Every Bot, including the
- * founder-owned public showcase fleet, uses OpenAI Realtime. Twilio supplies
- * telephone numbers, PSTN/SIP transport, and SMS only.
+ * Browser rehearsal stays on OpenAI Realtime. Actual phone admission is owned
+ * by realtime-sip-target.ts: OpenAI is the default, with xAI used only when
+ * explicitly configured and the number is registered. realtime-provider.ts
+ * binds later control and recovery to the provider encoded in the call id.
+ * These descriptors do not choose or switch a running call's provider.
+ * Twilio supplies telephone numbers, PSTN/SIP transport, and SMS only.
  */
 export const VOICE_RUNTIME_POLICY = {
   founderShowcase: {

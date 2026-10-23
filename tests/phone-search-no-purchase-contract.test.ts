@@ -19,13 +19,16 @@ describe("phone search does not buy a number", () => {
     expect(search).not.toContain("purchaseTwilioLocalNumber");
   });
 
-  it("fails closed for unknown, Free Builder, and Email-only plans", () => {
+  it("fails closed for unknown and Email-only plans while honoring paid Personal phone capacity", () => {
     const entitlements = read("src/lib/phone-line-entitlements.ts");
     expect(entitlements).toContain("if (tier) return slots;");
     expect(entitlements).toContain('if (entitlement.subscriptionStatus !== "active") return 0');
-    for (const plan of [null, "missing-plan", "personal", "email"]) {
+    for (const plan of [null, undefined, "missing-plan", "email"]) {
       expect(includedPhoneSlotsForPlan(plan, 0)).toBe(0);
+      expect(includedPhoneSlotsForPlan(plan, 3)).toBe(0);
     }
+    expect(includedPhoneSlotsForPlan("personal", 0)).toBe(1);
+    expect(includedPhoneSlotsForPlan("personal", 3)).toBe(1);
     expect(includedPhoneSlotsForPlan("voice", 0)).toBe(1);
     expect(includedPhoneSlotsForPlan("sms", 0)).toBe(1);
   });

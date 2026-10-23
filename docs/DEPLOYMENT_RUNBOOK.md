@@ -43,7 +43,7 @@ off. API traffic, voice admissions, checkout, number provisioning and schedules
 start disabled. Configure the existing credentials in Render's secret store;
 preserve JWT signing, vault encryption, OAuth and MCP secrets. Do not import
 Vercel environment metadata or AI Gateway credentials. Render disables the
-Gateway transport and uses the existing direct OpenAI/Gemini routes.
+Gateway transport and uses the server-owned direct xAI/OpenAI routes. Gemini is retired from runtime execution; historical model identifiers remain for usage accounting.
 
 Attach `botbound.app` directly to the `botbound-api` Render web service. Keep
 customer, provider and database credentials in Render's server-side secret store.
@@ -247,7 +247,7 @@ The next release target is a controlled design-partner pilot. This runbook is no
 
 Public marketing describes capabilities and outcomes. Operational setup and release instructions belong in the product and this runbook.
 
-A Bot must pass a private browser test before directing customer traffic to it. Free Builder stays private; an active paid account chooses its number in Phone setup, then managed mailbox setup runs within plan capacity. Background repair may restore an already-owned line but cannot choose or purchase a new number. That background setup is not proof that its knowledge or customer workflow is ready.
+A Bot must pass private microphone rehearsal before directing customer traffic to it. Accounts awaiting paid activation remain private; Personal is paid and uses a connected inbox. An active paid Calls account chooses its number in Phone setup; managed mailbox setup runs only for a plan that includes it and within capacity. Background repair may restore an already-owned line but cannot choose or purchase a new number. That background setup is not proof that its knowledge or customer workflow is ready.
 
 ## Non-negotiable release invariants
 

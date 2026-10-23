@@ -1,7 +1,10 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { STRIPE_PLANS } from "../../src/lib/plan-catalog";
 
-async function mockWorkspace(page: Page) {
+async function mockWorkspace(
+  page: Page,
+  { checkoutAvailable = false }: { checkoutAvailable?: boolean } = {},
+) {
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
     const json =
@@ -20,13 +23,13 @@ async function mockWorkspace(page: Page) {
             ? { personality: "Clear", directives: [], mark_key: "spark-rose" }
             : path === "/api/billing/plans"
               ? {
-                  checkout_available: false,
+                  checkout_available: checkoutAvailable,
                   stripe_configured: true,
                   plans: STRIPE_PLANS.map((plan) => ({
                     ...plan,
                     catalog_family: plan.catalogFamily,
                     checkout_availability: plan.checkoutAvailability,
-                    is_free: plan.id === "personal",
+                    is_free: plan.price_usd_monthly === 0,
                     configured: true,
                     annual_configured: true,
                   })),
@@ -190,16 +193,23 @@ async function expectContentFits(locator: Locator) {
 }
 
 test("workspace actions share readable typography in both themes", async ({ page }) => {
-  await mockWorkspace(page);
+  await mockWorkspace(page, { checkoutAvailable: true });
+  const checkoutRequests: Array<{ plan_id: string; interval: string }> = [];
+  await page.route("**/api/billing/checkout", async (route) => {
+    expect(route.request().method()).toBe("POST");
+    checkoutRequests.push(route.request().postDataJSON());
+    await route.fulfill({ json: { url: new URL("/studio", route.request().url()).href } });
+  });
   await page.goto("/settings/billing");
-  const builder = page.getByRole("button", { name: "Continue to Checkout", exact: true });
-  await expect(builder).toBeVisible();
+  const checkout = page.getByRole("button", { name: "Continue to Checkout", exact: true });
+  await expect(checkout).toBeVisible();
+  await expect(checkout).toBeEnabled();
   for (const light of [false, true]) {
     await page.evaluate(async (light) => {
       document.documentElement.classList.toggle("light", light);
       await document.fonts.ready;
     }, light);
-    for (const action of [builder, page.getByRole("button", { name: "Annual", exact: true })]) {
+    for (const action of [checkout, page.getByRole("button", { name: "Annual", exact: true })]) {
       const type = await action.evaluate((element) => {
         const style = getComputedStyle(element);
         return {
@@ -217,9 +227,10 @@ test("workspace actions share readable typography in both themes", async ({ page
     }
     await expectContentFits(page.locator(".wl-billing-plans, .wl-billing-plans *"));
   }
-  await builder.focus();
+  await checkout.focus();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/studio/);
+  expect(checkoutRequests).toEqual([{ plan_id: "voice-regular", interval: "month" }]);
 });
 
 test("pricing keeps its header, annual prices, and signup action readable at 320px and 200% text", async ({

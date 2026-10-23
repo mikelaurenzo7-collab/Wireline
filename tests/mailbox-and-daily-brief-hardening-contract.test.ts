@@ -101,7 +101,9 @@ describe("mailbox ownership hardening", () => {
 
   it("carries the canonical email-account id through every inbox provider", () => {
     expect(integrations).toContain("accountId: string;");
-    expect(integrations).toContain('const mailAccounts = await this.getAccounts("mail");');
+    expect(integrations).toContain('const accounts = await this.getAccounts("mail");');
+    expect(integrations).toContain("const mailAccounts = accounts.filter((account)");
+    expect(integrations).toContain("emailAccountTransportAllowed(entitlements, account.provider)");
     const fetchSection = integrations.match(/async fetchInboxMessages[\s\S]*?async sendEmail/)?.[0];
     expect(fetchSection).toBeTruthy();
     expect(fetchSection).not.toContain('getAccounts("calendar")');

@@ -34,7 +34,11 @@ describe("product documentation and compatibility contract", () => {
     expect(readme).toContain("**Rehearse** customer conversations privately and refine the setup.");
     expect(readme).toContain("**Connect and activate** a number");
     expect(readme).toContain("Studio / Operations");
-    expect(readme).toContain("your Bot across calls, texts, and email");
+    expect(readme).toContain("your Bot calling, email, and a Computer");
+    expect(readme).toContain(
+      "SMS, campaign calling, and unproven messaging integrations are outside launch promotion",
+    );
+    expect(readme).toContain("BotBound Personal is a paid plan");
     expect(readme).toContain("Paid packages include one Bot");
     expect(readme).toContain("Calls includes a local number; Email includes a managed mailbox.");
     expect(readme).toContain(
@@ -42,7 +46,7 @@ describe("product documentation and compatibility contract", () => {
     );
     expect(readme).toContain("Calls-only does not allocate an AgentMail mailbox");
     expect(readme).toContain("never chooses a new number for the customer");
-    expect(readme).toContain("Free Builder Bots receive no live identity");
+    expect(readme).toContain("Unpaid draft Bots receive no live identity");
     expect(readme).toContain("unused capacity does not pre-provision carrier numbers");
     expectNoTerms(readme, retiredProductTerms);
   });

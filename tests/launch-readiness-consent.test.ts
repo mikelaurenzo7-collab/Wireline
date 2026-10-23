@@ -41,16 +41,29 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("outbound capability readiness", () => {
-  it("requires at least one configured sale interval and reports held channels explicitly", () => {
+  it("requires a configured sale interval and keeps held SMS out of the eligible catalog", () => {
     vi.stubEnv("STRIPE_VOICE_PRICE_ID", "");
     expect(evaluateLaunchReadiness().launch_blockers).toContain("NO_CONFIGURED_NEW_SALE_PRICES");
     vi.stubEnv("STRIPE_EMAIL_ANNUAL_PRICE_ID", "price_fixture");
+    vi.stubEnv("STRIPE_SMS_PRICE_ID", "price_held_sms");
     const report = evaluateLaunchReadiness();
     expect(report.campaign_ready).toBe(true);
     expect(report.new_sale_catalog.configured).toMatchObject([
       { plan_id: "email", interval: "year" },
     ]);
-    expect(report.new_sale_catalog.deferred).toHaveLength(17);
+    expect(report.new_sale_catalog.configured).toHaveLength(1);
+    expect(report.new_sale_catalog.deferred).toHaveLength(19);
+    expect(report.new_sale_catalog.deferred).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ plan_id: "personal", interval: "month" }),
+        expect.objectContaining({ plan_id: "personal", interval: "year" }),
+      ]),
+    );
+    expect(
+      [...report.new_sale_catalog.configured, ...report.new_sale_catalog.deferred].some((entry) =>
+        entry.channels.includes("sms"),
+      ),
+    ).toBe(false);
   });
 
   it("keeps transactional delivery mandatory while managed-mail readiness follows offered channels", () => {

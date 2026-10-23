@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { planById } from "../src/lib/plan-catalog";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -10,7 +11,6 @@ describe("paid Bot identity reconciliation", () => {
   const mail = read("src/lib/agentmail-mail.ts");
   const ops = read("scripts/reconcile-paid-bot-identities.mts");
   const endpoint = read("api/reconcile-paid-bot-identities.ts");
-  const pricing = read("src/lib/plan-catalog.ts");
 
   it("allocates identity only after a paid subscription becomes active", () => {
     expect(identity).toContain('const PAID_IDENTITY_STATUSES = new Set(["active"])');
@@ -23,8 +23,14 @@ describe("paid Bot identity reconciliation", () => {
     );
     expect(identity).toContain("plan?.included_mailboxes ?? 0");
     expect(identity).toContain("if (!plan.eligible)");
-    expect(pricing).toContain('id: "personal"');
-    expect(pricing).toContain("included_phone_numbers: 0");
+    expect(planById("personal")).toMatchObject({
+      price_usd_monthly: 12,
+      price_usd_annual: 120,
+      catalogFamily: "channels",
+      channels: ["voice"],
+      included_phone_numbers: 1,
+      included_mailboxes: 0,
+    });
   });
 
   it("requires every accepted paid-Bot line to be owned by the configured Twilio account", () => {

@@ -1,7 +1,10 @@
 # BotBound Architecture
 
-BotBound is one Bot product and workspace across calls, texts, email, tools, and
-outcomes. Its technical operating loop is **Create -> Train -> Wire -> Run**.
+BotBound is one Bot product and workspace. Its launch offer is calling, email,
+and Computer: proven incoming calls, requested email, and supervised web work.
+SMS, campaign calling, and unproven messaging integrations remain outside launch
+promotion; retained channel code and reviewed service-call controls have separate
+entitlement and runtime boundaries. Its technical operating loop is **Create -> Train -> Wire -> Run**.
 Public messaging leads with concrete Bot capabilities, outcomes, and signup rather than a setup-step list.
 
 A customer configures a Bot with durable knowledge and policy, connects it to numbers and tools, then runs work through Studio. After create, customers see **Train -> Rehearse -> Launch**. Calls, texts, follow-up, approvals, handoffs, transcripts, and outcomes remain available for optional review and later refinements. Ongoing review is not an additional setup step.
@@ -11,7 +14,7 @@ A customer configures a Bot with durable knowledge and policy, connects it to nu
 1. A person creates a focused Bot.
 2. They train the Bot with instructions, knowledge, tone, voice, escalation policy, and workflow behavior.
 3. They wire calendars, email, contacts, CRM, numbers, billing, routing, approvals, and other launch controls when useful.
-4. Voice, messaging, browser context, email, and automation execution use the saved Bot profile.
+4. Calling, email, Computer, and connected-client execution use the saved Bot profile. Retained messaging workflows remain separately gated.
 5. Live talking-head video is retired. Compatibility presenter code may support identity badges and fail-closed legacy webhooks, but it must not mint sessions or create a separate product surface.
 6. Outcomes feed review, coaching, analytics, and retraining.
 
@@ -44,7 +47,7 @@ The visual layer is intentionally restrained: the BotBound Design System uses da
 - Enforces account entitlement and agent-cap rules.
 - Creates a Bot and starting personality in one transaction.
 - Records an audit event and invalidates account caches.
-- Queues durable identity setup after the Bot record commits. Free Builder allocates no live identity. Paid channel entitlements independently authorize the customer-selected number and/or managed mailbox; Email-only has no carrier dependency, and Calls-only has no mailbox dependency. SMS activation also requires carrier readiness. Connected-client drafts remain private until explicitly activated in BotBound. Private rehearsal and workflow review still precede customer traffic.
+- Queues durable identity setup after the Bot record commits. Unpaid draft accounts allocate no live identity. BotBound Personal is a paid plan with a number and connected existing inbox; historical Free Builder labels and compatibility plan slugs do not grant paid entitlements. Paid channel entitlements independently authorize the customer-selected number and/or managed mailbox; Email-only has no carrier dependency, and Calls-only has no mailbox dependency. SMS activation also requires carrier readiness. Connected-client drafts remain private until explicitly activated in BotBound. Private microphone rehearsal and workflow review still precede customer traffic; a real-call test can execute enabled live actions.
 
 ### Bot training
 
@@ -58,6 +61,10 @@ Training endpoints extract clear user instructions into durable Bot configuratio
 ### Wiring and integrations
 
 OAuth, CRM, telephony, billing, and connected-tool endpoints own authorization, callback validation, and provider-specific state. Studio reads connection state and sends users into the relevant connection flow; provider secrets never belong in browser state.
+
+Customer email uses each customer's verified business identity and signature.
+Customer-owned domains require their own setup and DNS verification; a managed
+mailbox allocation is a separate fact from a verified customer-owned domain.
 
 ### Runtime execution
 
@@ -76,7 +83,7 @@ Runtime execution reads the saved Bot profile, selected model/voice posture, con
   - OpenAI signs `realtime.call.incoming` at `/api/webhooks/openai/realtime`; BotBound accepts the call with the selected Bot runtime and maintains the server-side sideband tool session.
   - The public Render API webhook verifies and forwards the untouched signed event to a separate persistent Node 22 worker. The worker verifies both service authentication and the original provider signature before admission; it owns the sideband WebSocket, tools, rolling spend estimate and terminal persistence. Full telephone conversations default to 60 minutes; private rehearsals remain five minutes. Web and worker ship from the same reviewed source and require separate deployment verification and graceful worker drain. See `docs/OPENAI_REALTIME_VOICE.md` and `docs/DEPLOYMENT_RUNBOOK.md`.
   - Authenticated Studio rehearsals and hosted ChatGPT/MCP private simulations use server-mediated OpenAI Realtime WebRTC. Public and guest audio/call demos are retired. The server exchanges SDP and returns only a session-bound answer; provider credentials never reach the browser.
-  - BotBound has no external voice-cloning provider or customer voice-upload path. Historical provider tables are removed by migration; only OpenAI's built-in voice roster is selectable.
+  - Live voice selection uses the built-in roster and its configured phone-provider mapping. The disabled-by-default platform-admin voice-reference pilot has separate consent, encrypted upload/recording, review, revocation/deletion, and private-preview controls (`docs/VOICE_CLONING_PILOT.md`, `src/lib/voice/voice-asset-service.ts`). It does not assign a reference to live calls or establish customer cloning readiness. Retain that future-product foundation; distinguish its current registry from removed historical provider tables.
 - **LLM / structured reasoning:**
   - Central policy and catalog: `src/lib/ai-models.ts`.
   - Primary: direct xAI Responses API using `grok-4.7` by default (`WIRELINE_XAI_STRUCTURED_MODEL` overrides). Backup: direct OpenAI Responses API using GPT-5.6 Terra (`WIRELINE_OPENAI_STRUCTURED_MODEL` overrides). Gemini is retired; its ids remain only to price historical audit rows. The legacy Vercel deployment may still use AI Gateway as a final lane; Render disables that transport.

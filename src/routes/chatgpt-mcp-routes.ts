@@ -33,6 +33,7 @@ import {
   mcpIssuer,
   mcpResourceUrl,
   pruneExpiredMcpOAuthRows,
+  resolveMcpAccount,
   revokeMcpAccessTokensForClient,
   revokeMcpGrantByToken,
   type McpGrantExecutor,
@@ -42,6 +43,7 @@ import { drizzle, fetchWithTimeout, log, tenantStore } from "../lib/server-conte
 import { getSessionTokenFromRequest } from "../lib/session-cookie";
 import { isSessionGenerationActive } from "../lib/session-generation";
 import { sessionUsers } from "../db/security-schema";
+import { hasTerminalAccountDeletion } from "../middleware/auth";
 
 const router = express.Router();
 const ACCESS_TOKEN_TTL_MS = 60 * 60 * 1000;
@@ -392,6 +394,7 @@ async function sessionPrincipal(
     return Boolean(user && isSessionGenerationActive(payload, user));
   });
   if (!active) return null;
+  if (await hasTerminalAccountDeletion(payload.sub, executor)) return null;
 
   return { userId: payload.sub, email: payload.email };
 }
@@ -406,16 +409,20 @@ async function issueTokens(
   },
   tx: McpGrantExecutor,
 ) {
+  // Authorization codes and refresh tokens may predate the deletion deadline.
+  // Recheck on this transaction before revoking/creating any credentials.
+  const account = await resolveMcpAccount(input.userId, tx);
+  if (!account) return null;
   await revokeMcpAccessTokensForClient(input.userId, input.clientId, tx);
   const accessToken = `wlmcp_${publicId()}`;
   const refreshToken = `wlmcp_r_${publicId()}`;
   const accessExpiresAt = new Date(Date.now() + ACCESS_TOKEN_TTL_MS);
   const refreshExpiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
   await tx.execute(
-    sql`INSERT INTO wireline_mcp_access_tokens (token_hash, user_id, email, client_id, scope, resource, expires_at) VALUES (${tokenHash(accessToken)}, ${input.userId}::uuid, ${input.email}, ${input.clientId}, ${input.scopes.join(" ")}, ${input.resource}, ${accessExpiresAt})`,
+    sql`INSERT INTO wireline_mcp_access_tokens (token_hash, user_id, email, client_id, scope, resource, expires_at) VALUES (${tokenHash(accessToken)}, ${input.userId}::uuid, ${account.email}, ${input.clientId}, ${input.scopes.join(" ")}, ${input.resource}, ${accessExpiresAt})`,
   );
   await tx.execute(
-    sql`INSERT INTO wireline_mcp_refresh_tokens (token_hash, user_id, email, client_id, scope, resource, expires_at) VALUES (${tokenHash(refreshToken)}, ${input.userId}::uuid, ${input.email}, ${input.clientId}, ${input.scopes.join(" ")}, ${input.resource}, ${refreshExpiresAt})`,
+    sql`INSERT INTO wireline_mcp_refresh_tokens (token_hash, user_id, email, client_id, scope, resource, expires_at) VALUES (${tokenHash(refreshToken)}, ${input.userId}::uuid, ${account.email}, ${input.clientId}, ${input.scopes.join(" ")}, ${input.resource}, ${refreshExpiresAt})`,
   );
   return {
     access_token: accessToken,

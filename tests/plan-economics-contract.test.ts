@@ -38,12 +38,6 @@ function withoutComments(source: string): string {
 describe("plan economics contract", () => {
   it("keeps one production-number entitlement per live Bot coherent", () => {
     for (const plan of STRIPE_PLANS) {
-      if (plan.id === "personal") {
-        expect(plan.included_phone_numbers).toBe(0);
-        expect(plan.features.join(" ")).not.toMatch(/included Wireline number/i);
-        continue;
-      }
-
       if (plan.catalogFamily === "channels") {
         expect(plan.included_phone_numbers).toBe(
           Number(plan.channels.includes("voice") || plan.channels.includes("sms")),

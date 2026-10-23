@@ -405,10 +405,18 @@ const record = {
   runtime_policy: {
     managed_structured_chain:
       productionProvider === "render"
-        ? ["OpenAI", "Gemini"]
-        : ["OpenAI", "Vercel AI Gateway", "Gemini"],
+        ? ["xAI", "OpenAI"]
+        : ["xAI", "OpenAI", "Vercel AI Gateway"],
+    policy_sources: [
+      "src/lib/reasoning-provider-policy.ts",
+      "src/lib/ai-models.ts",
+      "src/lib/voice/xai-voice-config.ts",
+    ],
+    observation: "Declared source policy; live provider execution requires separate workflow evidence",
     openai:
-      "managed structured runtime (GPT-5.6 Terra) and OpenAI Realtime for every browser and Twilio PSTN conversation",
+      "structured backup and OpenAI Realtime for authenticated browser rehearsal and default telephone routing",
+    xai:
+      "managed structured primary; phone voice only when configured and the number is registered with xAI",
     twilio: "carrier transport, numbers, SIP, and SMS only",
   },
   surface_posture: {

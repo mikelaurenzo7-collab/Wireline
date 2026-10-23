@@ -49,20 +49,25 @@ export function accountDeletionBlocksAuthentication(
   );
 }
 
-export async function hasTerminalAccountDeletion(userId: string): Promise<boolean> {
-  const states = await tenantStore.run(userId, () =>
-    drizzle
-      .select({
-        status: deletionQueue.status,
-        scheduledPurgeAt: deletionQueue.scheduledPurgeAt,
-      })
-      .from(deletionQueue)
-      .where(
-        and(
-          eq(deletionQueue.userId, userId),
-          inArray(deletionQueue.status, ["pending", "purging"]),
+export async function hasTerminalAccountDeletion(
+  userId: string,
+  executor: Pick<typeof drizzle, "select"> = drizzle,
+): Promise<boolean> {
+  const states = await tenantStore.run(
+    userId,
+    async () =>
+      await executor
+        .select({
+          status: deletionQueue.status,
+          scheduledPurgeAt: deletionQueue.scheduledPurgeAt,
+        })
+        .from(deletionQueue)
+        .where(
+          and(
+            eq(deletionQueue.userId, userId),
+            inArray(deletionQueue.status, ["pending", "purging"]),
+          ),
         ),
-      ),
   );
 
   const now = new Date();

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const h = vi.hoisted(() => ({
   accounts: [] as Record<string, unknown>[],
   fetch: vi.fn(),
+  ownInbox: false,
 }));
 
 vi.mock("../src/lib/server-context", () => ({
@@ -23,13 +24,20 @@ vi.mock("../src/lib/agentmail-mail", () => ({
 }));
 vi.mock("../src/lib/account-environment-policy", () => ({}));
 vi.mock("../src/lib/tenant-provider-deletion-fence", () => ({}));
-vi.mock("../src/lib/channel-entitlements", () => ({ requireTenantChannel: vi.fn() }));
+vi.mock("../src/lib/channel-entitlements", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/lib/channel-entitlements")>()),
+  requireTenantEmailTransport: async () => ({
+    channels: h.ownInbox ? ["voice"] : ["email"],
+    ownInbox: h.ownInbox,
+  }),
+}));
 vi.mock("../src/lib/managed-mail-send-spend", () => ({ sendFundedManagedEmail: vi.fn() }));
 
 import { IntegrationService } from "../src/lib/integrations";
 
 beforeEach(() => {
   h.fetch.mockReset();
+  h.ownInbox = false;
   h.accounts = [
     {
       id: "outlook-inbox",
@@ -41,6 +49,17 @@ beforeEach(() => {
 });
 
 describe("Microsoft mailbox refresh outcomes", () => {
+  it("keeps Personal's Outlook reachable while reporting an excluded managed mailbox", async () => {
+    h.ownInbox = true;
+    h.accounts.push({ id: "retained-managed", provider: "agentmail", accessToken: "old-key" });
+    h.fetch.mockResolvedValue({ ok: true, json: async () => ({ value: [] }) });
+    const result = await new IntegrationService("test-user").fetchInboxMessages();
+    expect(result.messages).toEqual([]);
+    expect(result.successfulAccounts).toBe(1);
+    expect(result.failures).toEqual([{ provider: "agentmail", error: expect.any(String) }]);
+    expect(h.fetch).toHaveBeenCalledOnce();
+  });
+
   it.each([401, 403, 429, 503])("reports Graph HTTP %s as a failed mailbox", async (status) => {
     h.fetch.mockResolvedValue({ ok: false, status });
     const result = await new IntegrationService("test-user").fetchInboxMessages();

@@ -72,10 +72,16 @@ describe("product doctrine parity", () => {
     const catalog = read("src/lib/plan-catalog.ts");
 
     expect(root).toContain("unused capacity does not pre-provision carrier numbers");
-    expect(pricing).toContain("Email does not require a phone number");
-    expect(pricing).toContain("The Free plan does not include live numbers.");
+    expect(pricing).toContain("Email-only does not include a phone number.");
+    expect(pricing).toContain("Personal and Calls packages include one local number.");
+    expect(pricing).toContain("Personal · $12/month");
+    expect(root).toContain("BotBound Personal is a paid plan");
+    expect(pricing).not.toContain("The Free plan");
     expect(catalog).toContain("included_mailboxes");
     const identity = read("src/lib/paid-bot-identity.ts");
+    expect(identity).toContain('const PAID_IDENTITY_STATUSES = new Set(["active"])');
+    expect(identity).toContain("PAID_IDENTITY_STATUSES.has(status)");
+    expect(identity).toContain("plan.price_usd_monthly > 0");
     expect(identity).toContain('entitlement.channels.includes("email")');
     expect(identity).toContain('channel === "voice" || channel === "sms"');
     expect(identity).toContain("phoneAgentIds");

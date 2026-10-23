@@ -5,6 +5,7 @@ import {
   displayCallReviewNote,
   isLegacyCallReviewFailure,
   presentCallAnalysis,
+  presentCallReport,
 } from "../src/lib/call-review-note";
 
 describe("legacy post-call review notes", () => {
@@ -21,14 +22,42 @@ describe("legacy post-call review notes", () => {
     );
   });
 
-  it("is applied to both call history and the outcome ledger", () => {
+  it("keeps the outcome ledger's review filter while call history shows the new report", () => {
     const calls = readFileSync("src/components/CallLogsClaude.tsx", "utf8");
     const outcomes = readFileSync("src/components/OutcomeLedger.tsx", "utf8");
-    for (const source of [calls, outcomes]) {
-      expect(source).toContain("displayCallReviewNote(");
-      expect(source).toContain("isLegacyCallReviewFailure(");
-    }
+    expect(outcomes).toContain("displayCallReviewNote(");
+    expect(outcomes).toContain("isLegacyCallReviewFailure(");
+    expect(calls).toContain("callHappenedLabel(reportHappened(selected))");
+    expect(calls).not.toContain("selected.coaching_note");
+    expect(calls).not.toContain("selected.coachingNote");
   });
+
+  it.each(["Ask one question at a time.", "Gemini API key not configured"])(
+    "keeps outcome evidence but removes provider ids for review note %s",
+    (coachingNote) => {
+      const call = {
+        id: "call-1",
+        vapiCallId: "internal-provider-call",
+        coachingNote,
+        leadScore: 42,
+        intentLabel: "question",
+        sentiment: "neutral",
+        happened: "email_sent",
+        transcript: "Synthetic call evidence",
+      };
+      const result = presentCallReport(call);
+      expect(result).not.toHaveProperty("vapiCallId");
+      expect(result).toMatchObject({
+        id: "call-1",
+        happened: "email_sent",
+        transcript: "Synthetic call evidence",
+      });
+      expect(result.coachingNote).toBe(
+        isLegacyCallReviewFailure(coachingNote) ? null : coachingNote,
+      );
+      expect(call.vapiCallId).toBe("internal-provider-call");
+    },
+  );
 
   it("omits fabricated enrichment at the shared API presentation boundary", () => {
     const legacy = {
@@ -53,7 +82,7 @@ describe("legacy post-call review notes", () => {
       coachingNote: "Ask more questions.",
     });
     for (const route of ["agent-call-routes.ts", "dashboard-routes.ts"]) {
-      expect(readFileSync(`src/routes/${route}`, "utf8")).toContain("presentCallAnalysis(");
+      expect(readFileSync(`src/routes/${route}`, "utf8")).toContain("presentCallReport(");
     }
   });
 

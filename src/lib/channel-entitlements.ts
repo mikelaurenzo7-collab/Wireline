@@ -53,6 +53,17 @@ export function emailTransportAllowed(snapshot: TenantChannelEntitlements): bool
   return snapshot.channels.includes("email") || snapshot.ownInbox;
 }
 
+/** Personal authorizes its own connected inbox, never a managed/platform transport. */
+export function emailAccountTransportAllowed(
+  snapshot: TenantChannelEntitlements,
+  provider: string | null | undefined,
+): boolean {
+  return (
+    snapshot.channels.includes("email") ||
+    (snapshot.ownInbox && (provider === "google" || provider === "microsoft"))
+  );
+}
+
 export async function requireTenantEmailTransport(
   userId: string,
 ): Promise<TenantChannelEntitlements> {

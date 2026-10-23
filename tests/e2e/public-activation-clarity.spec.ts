@@ -28,7 +28,7 @@ const paidPlans = {
   })),
 };
 
-test("homepage gives Email interests a private build and setup-review path", async ({ page }) => {
+test("homepage gives Email interests a paid plan and setup-review path", async ({ page }) => {
   await mockPublicAccount(page, {
     ...paidPlans,
     plans: paidPlans.plans.map((plan) =>
@@ -43,13 +43,14 @@ test("homepage gives Email interests a private build and setup-review path", asy
   const calls = page.getByRole("article", { name: "Calls plan", exact: true });
   await expect(email).toContainText("$9");
   await expect(combined).toContainText("$25");
-  await expect(email.getByRole("link", { name: "Build Email Bot Free" })).toHaveAttribute(
+  await expect(email.getByRole("link", { name: "Choose Email" })).toHaveAttribute(
     "href",
     "/signup?plan=email",
   );
-  await expect(
-    combined.getByRole("link", { name: "Build Calls + Email Bot Free" }),
-  ).toHaveAttribute("href", "/signup?plan=voice-email");
+  await expect(combined.getByRole("link", { name: "Choose Calls + Email" })).toHaveAttribute(
+    "href",
+    "/signup?plan=voice-email",
+  );
   await expect(email.getByRole("link", { name: "setup review" })).toHaveAttribute(
     "href",
     "/contact?topic=email",

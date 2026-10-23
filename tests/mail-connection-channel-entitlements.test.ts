@@ -3,6 +3,7 @@ import type { Router, Request, Response } from "express";
 
 const h = vi.hoisted(() => ({
   channels: ["email"] as string[],
+  ownInbox: false,
   grants: vi.fn(),
   require: vi.fn(),
   upsert: vi.fn(),
@@ -18,7 +19,8 @@ vi.mock("../src/lib/server-context", () => ({
   log: { warn: vi.fn(), error: vi.fn() },
   IS_PROD: false,
 }));
-vi.mock("../src/lib/channel-entitlements", () => ({
+vi.mock("../src/lib/channel-entitlements", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/lib/channel-entitlements")>()),
   getTenantChannelEntitlements: h.grants,
   requireTenantChannel: h.require,
 }));
@@ -100,7 +102,8 @@ const request = {
 beforeEach(() => {
   vi.clearAllMocks();
   h.channels = ["email"];
-  h.grants.mockImplementation(async () => ({ channels: h.channels }));
+  h.ownInbox = false;
+  h.grants.mockImplementation(async () => ({ channels: h.channels, ownInbox: h.ownInbox }));
   h.require.mockResolvedValue({ channels: ["email"] });
   h.upsert.mockResolvedValue(true);
   h.calendar.mockResolvedValue(undefined);
@@ -130,6 +133,19 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe("mail connection channel boundary", () => {
+  it.each([
+    ["google", google],
+    ["microsoft", microsoft],
+  ] as const)("lets paid Personal connect its own %s inbox", async (provider, router) => {
+    h.channels = ["voice"];
+    h.ownInbox = true;
+    await handler(router, `/api/oauth/${provider}/callback`)(request, response());
+    expect(h.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "tenant-a", provider }),
+    );
+    expect(h.calendar).toHaveBeenCalledOnce();
+  });
+
   it("keeps Google calendar and Drive authorization while omitting Gmail scopes for Calls", async () => {
     h.channels = ["voice"];
     await handler(google, "/api/oauth/google/url")(request, response());

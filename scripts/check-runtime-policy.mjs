@@ -13,7 +13,12 @@ const forbidText = (source, needle, message) => {
 };
 
 const providerPolicy = read("src/lib/reasoning-provider-policy.ts");
-const runtimePolicy = read("src/lib/voice/runtime-policy.ts");
+const phoneProvider = read("src/lib/voice/realtime-provider.ts");
+const sipTarget = read("src/lib/voice/realtime-sip-target.ts");
+const sipSession = read("src/lib/voice/openai-sip-session.ts");
+const sipRoutes = read("src/routes/openai-sip-routes.ts");
+const studioVoice = read("src/lib/voice/openai-live-agent-service.ts");
+const mcpVoice = read("src/routes/chatgpt-mcp-account-routes.ts");
 const routes = read("src/server/register-api-routes.ts");
 const voiceCatalog = read("src/lib/voice-catalog.ts");
 const schema = read("src/db/schema-base.ts");
@@ -28,11 +33,80 @@ requireText(
 );
 forbidText(providerPolicy, '"gemini",', "Gemini is retired from the structured runtime order.");
 requireText(
-  runtimePolicy,
-  'runtime: "openai_realtime"',
-  "Every live voice posture must use OpenAI Realtime.",
+  studioVoice,
+  "await createServerManagedOpenAIRealtimeCall({",
+  "Studio private microphone rehearsal must use server-managed OpenAI Realtime.",
 );
-requireText(runtimePolicy, 'carrier: "twilio"', "Every phone posture must use Twilio.");
+requireText(
+  mcpVoice,
+  "await createOpenAIRealtimeSimulationCall({",
+  "MCP private voice simulation must use OpenAI Realtime.",
+);
+requireText(
+  phoneProvider,
+  'env.WIRELINE_PHONE_VOICE_PROVIDER || ""',
+  "Phone routing must require explicit provider configuration.",
+);
+requireText(
+  phoneProvider,
+  '? "xai"\n    : "openai"',
+  "OpenAI must remain the default new-call provider.",
+);
+requireText(
+  sipTarget,
+  'configuredPhoneVoiceProvider() !== "xai" || !xaiSipConfigured()',
+  "xAI SIP targets must require explicit opt-in and configuration.",
+);
+requireText(
+  sipTarget,
+  "await xaiSipCredentialsFor(ourNumber)",
+  "xAI SIP targets must require registration credentials for the called number.",
+);
+requireText(
+  sipTarget,
+  "if (!credentials)",
+  "Unregistered phone numbers must fall back before xAI admission.",
+);
+for (const uri of [
+  "buildOpenAIInboundSipUri(input.token)",
+  "buildOpenAIOutboundSipUri(input.token)",
+]) {
+  requireText(
+    sipTarget,
+    uri,
+    "OpenAI must remain the inbound and outbound fallback before a call starts.",
+  );
+}
+requireText(
+  phoneProvider,
+  'callId.startsWith(XAI_CALL_ID_PREFIX) ? "xai" : "openai"',
+  "An admitted call's provider must be encoded by its call id.",
+);
+for (const [path, source] of [
+  ["src/lib/voice/openai-sip-session.ts", sipSession],
+  ["src/routes/openai-sip-routes.ts", sipRoutes],
+]) {
+  requireText(
+    source,
+    "realtimeProviderForCallId(callId)",
+    `${path} must route call control by the admitted call id.`,
+  );
+  requireText(
+    source,
+    "realtimeCallControlUrl(callId, action)",
+    `${path} must control the same provider throughout a call.`,
+  );
+  forbidText(
+    source,
+    "configuredPhoneVoiceProvider(",
+    `${path} must not switch an admitted call with the new-call provider flag.`,
+  );
+}
+requireText(
+  sipSession,
+  "buildRealtimeSipSocketUrl(input.callId)",
+  "The persistent SIP socket must use the admitted call's provider.",
+);
 requireText(routes, "openAISipRouter", "OpenAI SIP webhook routes are not registered.");
 requireText(routes, "openAIOutboundRouter", "OpenAI outbound routes are not registered.");
 requireText(
@@ -90,4 +164,6 @@ if (failures.length) {
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
-console.log("Runtime policy verified: OpenAI Realtime plus Twilio, with retired providers absent.");
+console.log(
+  "Source runtime policy checked: OpenAI private rehearsal; default OpenAI or registered opt-in xAI phone routing over Twilio; call-id-bound control. Live workflow evidence remains separate.",
+);

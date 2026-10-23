@@ -472,9 +472,11 @@ for (const width of [390, 1024]) {
     await expect(page.getByText("Your hours match on both pages.")).toBeVisible();
     // The finished task never shows the live task's screen.
     const finished = page.getByRole("region", { name: /Google Business page/ });
+    await expect(finished.getByText("Your hours match on both pages.")).toBeVisible();
     await expect(
       finished.getByText("The browser screen was cleared after this task ended."),
-    ).toBeVisible();
+    ).toHaveCount(0);
+    await expect(finished.locator(".wl-computer-screen")).toHaveCount(0);
     await expect(finished.getByRole("img")).toHaveCount(0);
   });
 }

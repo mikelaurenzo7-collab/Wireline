@@ -1,6 +1,8 @@
 # BotBound
 
-BotBound is the operating layer for **your Bot across calls, texts, and email**. Start with one trained Bot or build a coordinated roster that can book appointments, revive leads, promote offers, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
+BotBound gives **your Bot calling, email, and a Computer**. Start with a focused job: answer incoming calls, handle requested email, or complete supervised web work with visible proof and an owner handoff. Connected browser and ChatGPT surfaces use the same account and Bot. Native clients and additional channels retain their own release gates.
+
+SMS, campaign calling, and unproven messaging integrations are outside launch promotion. Existing channel history and reviewed non-marketing service-call controls remain supported under their separate entitlement, permission, funding, and release policies.
 
 Public marketing leads with capabilities, outcomes, and a clear signup action. Inside the product, customers create a Bot, set it up, and rehearse privately before activating live work. Product architecture supports these steps through Create, Training, and Wire:
 
@@ -9,7 +11,7 @@ Public marketing leads with capabilities, outcomes, and a clear signup action. I
 3. **Rehearse** customer conversations privately and refine the setup.
 4. **Connect and activate** a number, integrations, routing, approvals, and billing when ready.
 
-**Studio / Operations** brings calls, texts, follow-up, approvals, handoffs, and logged outcomes together. Conversation review and later refinements remain available after launch; they are not another setup step.
+**Studio / Operations** brings calls, email, Computer work, follow-up, approvals, handoffs, and logged outcomes together. Conversation review and later refinements remain available after launch; they are not another setup step.
 
 Studio rehearsal opens with Voice and starts the microphone only after an explicit
 Start action. Text rehearsal remains available with its drafts preserved. A connected
@@ -26,11 +28,15 @@ optional live-transfer destination without using setup chat.
 - **Android - internal beta:** native calls, notifications, widgets, Telecom, FCM, and urgent owner controls; Play release remains gated.
 - **Identity - retired live talking-head:** identity badges stay on every Bot. Video files and clip-script substitutes are not offered. LiveAvatar / HeyGen sessions are not minted.
 
-Paid packages include one Bot and the **Calls, Email, or SMS channels selected at checkout**. Calls includes a local number; Email includes a managed mailbox. Customers choose an available US area code and exact number in Phone setup. Email-only activation does not require Twilio, and Calls-only does not allocate an AgentMail mailbox. SMS combinations remain unavailable to activate until carrier and cost checks pass. Background identity repair reuses an owned line and never chooses a new number for the customer. Free Builder Bots receive no live identity; unused capacity does not pre-provision carrier numbers. See `src/lib/plan-catalog.ts` for the commercial contract.
+Paid packages include one Bot. **BotBound Personal is a paid plan**, currently $12/month or $120/year, with 20 monthly call minutes, one local number, Computer access metered against its managed AI allowance, and a connection to the customer's existing Gmail or Outlook inbox. It does not include a managed mailbox. Historical Free Builder references and `free`/`builder` plan slugs do not make Personal free; account signup and a private draft do not authorize live work.
+
+Channel packages include the Calls and/or Email selected at checkout. Calls includes a local number; Email includes a managed mailbox. Customers choose an available US area code and exact number in Phone setup. Email-only activation does not require Twilio, and Calls-only does not allocate an AgentMail mailbox. SMS combinations remain unavailable to activate until carrier and cost checks pass and remain outside launch promotion. Background identity repair reuses an owned line and never chooses a new number for the customer. Unpaid draft Bots receive no live identity; unused capacity does not pre-provision carrier numbers. See `src/lib/plan-catalog.ts` and server-owned entitlements for the commercial contract.
+
+Every customer's email must use that customer's verified business identity and signature. Customer-owned domains require their own setup and DNS verification; an included managed mailbox does not prove a customer domain is configured.
 
 Calls Light / Regular / High include 50 / 250 / 500 minutes per month, respectively, with one Bot and one call at a time at every capacity. Higher usage capacity does not add Bots, numbers or mailboxes. Extra-Bot subscriptions are not available for new channel packages. Each included phone slot permits one new carrier number every 31 days; releasing a number does not reset replacement eligibility. Reassigning an existing line does not consume a new acquisition.
 
-Channel-plan call minutes and managed AI allowances reset on the paid monthly subscription anniversary, including monthly slices of annual plans. Unused included usage does not roll over. Billing and Activity show the next reset date; legacy plans and Free Builder retain calendar-month accounting.
+Channel-plan call minutes and managed AI allowances reset on the paid monthly subscription anniversary, including monthly slices of annual plans. Unused included usage does not roll over. Billing and Activity show the next reset date; legacy plans and unpaid draft allowances retain their separate accounting rules.
 
 Calendar owns appointments, weekly availability, timezone, and booking rules at `/calendar`. Save availability to enable native booking; appointments then confirm automatically unless the owner selects approval mode. Requested appointments hold their time until confirmed or cancelled. Google and Outlook connections are optional busy-time imports refreshed by calendar sync; new native bookings are not exported to those providers. Pausing native booking does not silently fall back to them. Existing `/phone?tab=appointments` links redirect to Calendar.
 

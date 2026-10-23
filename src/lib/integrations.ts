@@ -21,12 +21,14 @@ import {
   liveExternalActionPolicyForUser,
 } from "./account-environment-policy";
 import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
-import { requireTenantEmailTransport } from "./channel-entitlements";
+import { emailAccountTransportAllowed, requireTenantEmailTransport } from "./channel-entitlements";
 import { sendFundedManagedEmail } from "./managed-mail-send-spend";
 import { readCompanyIdentityPreferences } from "./company-identity";
 import { renderBusinessEmail, type EmailIdentity } from "./email-presentation";
 
 const MAX_CALENDAR_PAGES = 20;
+const PERSONAL_EMAIL_CONNECTION_MESSAGE =
+  "Personal can use a connected Gmail or Outlook inbox. Add Email to use this mailbox.";
 
 export type InboxMessagePreview = {
   accountId: string;
@@ -344,11 +346,20 @@ export class IntegrationService {
     const limit = Math.min(Math.max(opts.limit ?? 25, 1), 100);
     const failures: InboxFetchFailure[] = [];
     try {
-      await requireTenantEmailTransport(this.userId);
+      const entitlements = await requireTenantEmailTransport(this.userId);
       // Only canonical email-account rows may source inbox persistence. Google
       // and Microsoft callbacks upsert both calendar and mailbox rows; falling
       // back to calendar rows lost the mailbox identity needed for safe dedupe.
-      const mailAccounts = await this.getAccounts("mail");
+      const accounts = await this.getAccounts("mail");
+      const mailAccounts = accounts.filter((account) => {
+        if (emailAccountTransportAllowed(entitlements, account.provider)) return true;
+        failures.push({
+          provider: account.provider || "unknown",
+          error: PERSONAL_EMAIL_CONNECTION_MESSAGE,
+        });
+        return false;
+      });
+      const excludedAccounts = failures.length;
       if (mailAccounts.length === 0) return { messages: [], failures, successfulAccounts: 0 };
 
       // Fan out across every connected mail account the tenant has.
@@ -379,7 +390,7 @@ export class IntegrationService {
       return {
         messages: merged.slice(0, limit),
         failures,
-        successfulAccounts: mailAccounts.length - failures.length,
+        successfulAccounts: mailAccounts.length - (failures.length - excludedAccounts),
       };
     } catch (err) {
       const error = getErrorMessage(err);
@@ -546,12 +557,14 @@ export class IntegrationService {
           await assertExternalEntityActionAllowed(this.userId, "tenant_email_send", {
             email: params.to,
           });
-          await requireTenantEmailTransport(this.userId);
+          const entitlements = await requireTenantEmailTransport(this.userId);
           // This service sends one recipient per attempt. Reject header injection
           // and recipient lists before reserving funds or opening a transport.
           if (!/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(params.to)) return false;
 
-          const accounts = await this.getAccounts("mail");
+          const accounts = (await this.getAccounts("mail")).filter((account) =>
+            emailAccountTransportAllowed(entitlements, account.provider),
+          );
           const scopedAgentId = params.agentId?.trim();
           const agentScoped = params.agentId !== undefined;
           // A Bot's customer messages must retain its assigned sender identity.
@@ -566,7 +579,9 @@ export class IntegrationService {
               )
             : accounts.length > 0
               ? accounts
-              : await this.getAccounts("calendar");
+              : entitlements.channels.includes("email")
+                ? await this.getAccounts("calendar")
+                : [];
           if (agentScoped && mailAccounts.length === 0) {
             log.warn("Bot email skipped, no mailbox is assigned to the originating Bot", {
               userId: this.userId,
@@ -671,6 +686,11 @@ export class IntegrationService {
             });
             return false;
           }
+          if (!emailAccountTransportAllowed(entitlements, "resend")) {
+            // Personal must connect its own inbox; a missing inbox must never
+            // become a send from BotBound's transactional identity.
+            return false;
+          }
 
           // Customer-requested follow-ups remain Email-channel work even when
           // the platform provides the transport. System security/billing notices
@@ -755,13 +775,19 @@ export class IntegrationService {
           await assertExternalEntityActionAllowed(this.userId, "tenant_email_send", {
             email: params.to,
           });
-          await requireTenantEmailTransport(this.userId);
+          const entitlements = await requireTenantEmailTransport(this.userId);
           if (!/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(params.to)) return notSent;
 
           const account = (await this.getAccounts("mail")).find(
             (candidate) => candidate.id === params.accountId,
           );
           if (!account) return notSent;
+          if (!emailAccountTransportAllowed(entitlements, account.provider)) {
+            throw new AppError(402, "CHANNEL_NOT_INCLUDED", PERSONAL_EMAIL_CONNECTION_MESSAGE, {
+              channel: "email",
+              recovery_path: "/settings/billing",
+            });
+          }
           const sendParams: ConnectedMailboxSendParams = {
             to: params.to,
             subject: params.subject,

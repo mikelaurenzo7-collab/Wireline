@@ -230,6 +230,7 @@ function needsOwnerForActivation(
     (tag === "input" && /^(?:button|submit|image)$/.test(type)) ||
     role === "button";
   const isLink = tag === "a" || role === "link";
+  const isNativeControl = tag === "input" || tag === "select" || tag === "textarea";
   const isSubmit =
     type === "submit" ||
     type === "image" ||
@@ -246,7 +247,11 @@ function needsOwnerForActivation(
       !CONSEQUENTIAL_CONTROL.test(label)) ||
       (key === "Enter" && target.searchField));
   if (isSubmit && !isSearch) return true;
-  if ((isButton || isLink || target.clickable) && CONSEQUENTIAL_CONTROL.test(label)) return true;
+  if (
+    (isButton || isLink || isNativeControl || target.clickable) &&
+    CONSEQUENTIAL_CONTROL.test(label)
+  )
+    return true;
   if (
     key === "Enter" &&
     !isSearch &&
@@ -905,6 +910,7 @@ export class CloudBrowserSession {
     page: Page,
     key: "click" | "Enter" | "Space",
     point?: { x: number; y: number },
+    optionLabel?: string,
   ): Promise<void> {
     const checkpoint = (): never => {
       throw new OwnerCheckpointError("The owner must handle this control directly.");
@@ -976,6 +982,17 @@ export class CloudBrowserSession {
             .slice(0, 200);
           const label = (
             control.getAttribute("aria-label") ||
+            (control.getAttribute("aria-labelledby") || "")
+              .split(/\s+/)
+              .map((id) => document.getElementById(id)?.textContent || "")
+              .join(" ")
+              .trim() ||
+            ("labels" in control && control.labels
+              ? Array.from(control.labels as NodeListOf<HTMLLabelElement>)
+                  .map((label) => label.textContent || "")
+                  .join(" ")
+                  .trim()
+              : "") ||
             ("innerText" in control && typeof control.innerText === "string"
               ? control.innerText
               : "") ||
@@ -1034,6 +1051,7 @@ export class CloudBrowserSession {
     )
       checkpoint();
     if ((item.tag as string).includes("-")) checkpoint();
+    if (optionLabel && CONSEQUENTIAL_CONTROL.test(optionLabel)) checkpoint();
     if (needsOwnerForActivation(item as ActivationTarget, key)) checkpoint();
   }
 
@@ -1164,7 +1182,7 @@ export class CloudBrowserSession {
 
   private rememberOwnerEnteredValue(value: string): void {
     const trimmed = value.trim();
-    if (trimmed.length < 4 || this.ownerEnteredValues.includes(trimmed)) return;
+    if (!trimmed || this.ownerEnteredValues.includes(trimmed)) return;
     this.ownerEnteredValues.push(trimmed);
     let total = this.ownerEnteredValues.reduce((sum, item) => sum + item.length, 0);
     while (
@@ -1177,10 +1195,15 @@ export class CloudBrowserSession {
   }
 
   private redactOwnerText(value: string): string {
-    return this.ownerEnteredValues.reduce((text, secret) => {
-      const escaped = secret.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      return text.replace(new RegExp(escaped, "gi"), "[owner-entered text hidden]");
-    }, value);
+    if (!this.ownerEnteredValues.length) return value;
+    // Replace once: a later short value must not match text in a placeholder
+    // inserted for an earlier value and expand it again. Longest-first also
+    // hides a complete value when owner entries overlap.
+    const pattern = [...this.ownerEnteredValues]
+      .sort((left, right) => right.length - left.length)
+      .map((secret) => secret.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("|");
+    return value.replace(new RegExp(pattern, "gi"), "[owner-entered text hidden]");
   }
 
   private containsOwnerEnteredUrlText(url: string): boolean {
@@ -1577,6 +1600,11 @@ export class CloudBrowserSession {
         });
         if (kind === "password") fail("Passwords are entered by the owner, not the Bot.");
         if (kind === "file") fail("File uploads are not available on the cloud computer.");
+        // Check/select changes can submit through an onchange handler without
+        // a button click. Give form_input the same owner checkpoint as clicks.
+        const point = await this.pointAt(page, target);
+        await this.assertModelActivationSafe(page, "click", point);
+        if (token.cancelled || this.closed) fail("The form input was stopped before it started.");
         const value = input.value;
         if (kind === "check") {
           await locator.setChecked(value === true || value === "true", {
@@ -1593,10 +1621,12 @@ export class CloudBrowserSession {
               options.find(
                 (option) => (option.textContent || "").trim().toLowerCase() === wantedValue,
               );
-            return hit ? hit.value : null;
+            return hit ? { value: hit.value, label: hit.label } : null;
           }, wanted);
           if (match === null) fail(`No option matches "${String(value ?? "").slice(0, 60)}".`);
-          await locator.selectOption({ value: match }, { timeout: ACTION_TIMEOUT_MS });
+          await this.assertModelActivationSafe(page, "click", point, match.label);
+          if (token.cancelled || this.closed) fail("The form input was stopped before it started.");
+          await locator.selectOption({ value: match.value }, { timeout: ACTION_TIMEOUT_MS });
         } else {
           const text = String(value ?? "");
           if (text.length > MAX_TYPE_CHARS)

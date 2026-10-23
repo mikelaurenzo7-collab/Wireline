@@ -1,14 +1,32 @@
 import { createHmac } from "node:crypto";
 import type { Request } from "express";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { AppError } from "./api-error";
+import { sessionUsers } from "../db/security-schema";
+import { hasTerminalAccountDeletion } from "../middleware/auth";
 import { resolveCanonicalAppUrl } from "./app-url";
 import { BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
 import { rateLimit } from "./rate-limit";
-import { drizzle } from "./server-context";
+import { drizzle, tenantStore } from "./server-context";
 
-export type McpGrantExecutor = Pick<typeof drizzle, "execute">;
+export type McpGrantExecutor = Pick<typeof drizzle, "execute" | "select">;
 type McpGrantTable = "wireline_mcp_oauth_codes" | "wireline_mcp_refresh_tokens";
+
+/** MCP bearer grants use the same terminal lifecycle boundary as web sessions. */
+export async function resolveMcpAccount(
+  userId: string,
+  executor: Pick<typeof drizzle, "select"> = drizzle,
+): Promise<{ email: string } | null> {
+  return tenantStore.run(userId, async () => {
+    const [user] = await executor
+      .select({ email: sessionUsers.email })
+      .from(sessionUsers)
+      .where(eq(sessionUsers.id, userId))
+      .limit(1);
+    if (!user || (await hasTerminalAccountDeletion(userId, executor))) return null;
+    return user;
+  });
+}
 
 /** Serialize issuance and revocation on the existing account row. */
 export async function lockMcpGrantUser(executor: McpGrantExecutor, userId: string): Promise<void> {

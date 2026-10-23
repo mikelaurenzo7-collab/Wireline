@@ -384,7 +384,7 @@ describe("durable tenant allowance receipts", () => {
       (await resolveAllowanceWindow(data.db, "tenant", new Date("2026-10-30T12:00:00Z"))).key,
     ).toBe(`paid:sub_paid:${next.period_start}`);
   });
-  it.each(["personal", "starter", "team"])(
+  it.each(["starter", "team"])(
     "retains %s calendar behavior without paid receipts",
     async (plan) => {
       const data = database();
@@ -394,7 +394,29 @@ describe("durable tenant allowance receipts", () => {
       ).toBe("2026-10");
     },
   );
-  it("retains Free Builder private work for canceled channel subscribers", async () => {
+  it("requires paid allowance evidence for an active Personal subscription", async () => {
+    const data = database();
+    data.billing.tenant.plan = "personal";
+    const now = new Date("2026-10-01T00:00:00Z");
+    await expect(resolveAllowanceWindow(data.db, "tenant", now)).rejects.toMatchObject({
+      code: "PAID_ALLOWANCE_SYNC_REQUIRED",
+    });
+
+    const personalReceipt = { ...receipt(), plan_id: "personal" };
+    await recordPaidAllowanceReceipt("tenant", personalReceipt);
+    expect((await resolveAllowanceWindow(data.db, "tenant", now)).key).toBe(
+      `paid:sub_paid:${personalReceipt.period_start}`,
+    );
+  });
+  it("retains calendar accounting for trialing Personal subscriptions without paid receipts", async () => {
+    const data = database();
+    data.billing.tenant.plan = "personal";
+    data.billing.tenant.status = "trialing";
+    expect(
+      (await resolveAllowanceWindow(data.db, "tenant", new Date("2026-10-01T00:00:00Z"))).key,
+    ).toBe("2026-10");
+  });
+  it("retains calendar accounting for canceled channel subscriptions", async () => {
     const data = database();
     data.billing.tenant.status = "canceled";
     expect(

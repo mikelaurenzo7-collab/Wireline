@@ -5,15 +5,16 @@
 Canonical operating proof runbook: [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md).
 
 **Status:** the "Target commercial structure," "Pricing lock," and "Exact applied Stripe writes"
-sections below are historical records of earlier 2026 catalog experiments. The live self-serve
-catalog is **Founder Early Access v6**: Free Builder plus three public paid tiers with guaranteed included
-voice minutes, a recurring monthly Runtime Allowance, flat $0.22/min Runtime Balance top-ups, and a
-licensed extra-Bot add-on. **`src/lib/plan-catalog.ts` is the single source of truth** for plan
+sections below are historical records of earlier 2026 catalog experiments. As of October 23,
+new-sale source uses paid **BotBound Personal** and channel packages; the earlier Free Builder
+and bundled tiers below are historical compatibility records, not a current free offer.
+Personal uses a connected inbox; new packages include one Bot and do not sell the legacy extra-Bot add-on.
+**`src/lib/plan-catalog.ts` is the single source of truth** for plan
 ids, prices, included voice minutes, Runtime Allowance, overage rates, and Stripe price/lookup-key
 resolution. Treat any duplicated number in docs as stale unless it has just been verified against
 that file and the live Stripe catalog.
 
-## Product model
+## Historical product model (July 2026)
 
 BotBound sells operating capacity, not audience modes or template access.
 
@@ -22,7 +23,7 @@ BotBound sells operating capacity, not audience modes or template access.
 - Optional SMS and shareable-artifact generation draw from a smaller flexible monthly Runtime Allowance included in the same subscription (`runtime_allowance_usd_monthly`), funded every billing period rather than as a one-time welcome credit. Platform AI, live research, and enrichment use a separate catalog allowance (`ai_spend_allowance_usd_monthly`), where every platform-funded provider call—model turns, Perplexity research, platform-key Apollo enrichment—is metered per account. The hard floor reserves voice, Runtime Allowance, and AI allowance simultaneously; `npm run economics:report` proves both billing intervals from source.
 - Live work should always reconcile through a durable ledger instead of vague "unlimited" promises.
 
-## Current commercial structure (Founder Early Access, live in Stripe as of 2026-07-10)
+## Historical commercial structure (Founder Early Access, recorded 2026-07-10)
 
 | Plan id    | Product name          | Monthly / Annual | Voice min | Runtime |       Managed AI | Max Bots | Number slots |
 | ---------- | --------------------- | ---------------: | --------: | ------: | ---------------: | -------: | -----------: |

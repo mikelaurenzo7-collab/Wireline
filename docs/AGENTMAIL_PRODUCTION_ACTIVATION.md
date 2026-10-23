@@ -23,7 +23,7 @@ BotBound provisions each eligible paid Bot a managed AgentMail inbox. Production
 
 Keep AgentMail credentials Production-only. Preview and development must not receive the live key. New managed mailboxes fail closed when the key, required permissions, or verified BotBound domain is unavailable. They never fall back to `@agentmail.to`.
 
-Only Stripe `active` subscriptions enter the combined paid phone-and-mail identity lane. Free Builder, `trialing`, inactive, past-due, and canceled states do not allocate a carrier number or durable managed mailbox.
+Only Stripe `active` subscriptions enter the paid identity lane, and only their selected channel capacity is allocated. Personal includes a number and uses a connected existing inbox, with no managed mailbox. Unpaid drafts, `trialing`, inactive, past-due, and canceled states do not allocate a carrier number or durable managed mailbox.
 
 ## Readiness verification
 
@@ -93,7 +93,7 @@ Webhook and application logs may contain only redacted addresses, message IDs, s
 
 Provider capacity is an operating constraint, not a customer entitlement. When AgentMail rejects provisioning because account capacity is exhausted, keep the durable job retryable, add capacity deliberately, and retry without silently changing the customer's plan.
 
-Free Builder currently receives private email-workflow simulation only. Do not enable a real-email trial until automatic expiration, provider cleanup, per-user send/receive limits, abuse controls, a global concurrent-trial ceiling, capacity alerts, and a phone-independent email entitlement are all implemented and tested together.
+Unpaid draft accounts have no live email entitlement. Do not enable a real-email trial until automatic expiration, provider cleanup, per-user send/receive limits, abuse controls, a global concurrent-trial ceiling, capacity alerts, and a phone-independent email entitlement are all implemented and tested together.
 
 ## Customer-owned domains
 

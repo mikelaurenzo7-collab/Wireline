@@ -7,9 +7,23 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 describe("production voice runtime policy", () => {
   it("keeps audio-file generators out of live PSTN voice routing", () => {
     const policy = read("docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md");
-    expect(policy).toContain("Twilio carrier/PSTN → BotBound signed TwiML → OpenAI project SIP");
-    expect(policy).toContain("OpenAI Realtime `gpt-realtime-2.1`");
-    expect(policy).toContain("no alternate runtime or provider fallback");
+    expect(policy).toContain(
+      "Twilio carrier/PSTN through signed BotBound routing to the admitted voice provider",
+    );
+    expect(policy).toContain(
+      "OpenAI Realtime by default; registered numbers use xAI only with explicit configuration.",
+    );
+    expect(policy).toContain("A new-call flag cannot switch an active call's provider.");
+    expect(read("docs/OPENAI_REALTIME_VOICE.md")).toContain("`gpt-realtime-2.1`");
+    for (const path of [
+      "src/lib/voice/realtime-sip-target.ts",
+      "src/lib/voice/openai-phone-agent-runtime.ts",
+      "src/lib/voice/openai-sip-session.ts",
+    ]) {
+      expect(read(path), path).not.toMatch(
+        /elevenlabs|11labs|synthesizeVoiceSample|\/audio\/speech|text-to-speech/i,
+      );
+    }
   });
 
   it("labels only documented OpenAI voices as live phone voices", () => {

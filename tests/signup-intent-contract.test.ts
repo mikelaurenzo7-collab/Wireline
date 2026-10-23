@@ -208,11 +208,11 @@ describe("signup intent contract", () => {
     ).toBeNull();
   });
 
-  it("starts every industry wedge on Free Builder and activates a current channel plan", () => {
+  it("keeps paid Personal selected for industry wedges and preserves historical signup slugs", () => {
     for (const wedge of SIGNUP_WEDGE_KEYS) {
       const intent = parseSignupIntent(`?wedge=${wedge}`);
       expect(recommendedPlanFromIntent(intent)).toBe("personal");
-      expect(activationBillingHref(intent)).toContain("plan=voice-regular");
+      expect(activationBillingHref(intent)).toBe("/settings/billing?plan=personal&interval=month");
       // Retired plans (starter, starter-plus, pro) never reach a public CTA.
       expect(signupHrefForWedge(wedge)).toBe(`/signup?wedge=${wedge}&plan=free`);
     }

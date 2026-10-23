@@ -29,15 +29,7 @@ const DASHES = /[—–―]/;
  * must appear on the flagged line for it to be exempted, plus a reason. Keep
  * this list short and specific; prefer removing the dash to allow-listing it.
  */
-const ALLOWED = [
-  {
-    // Internal parsed delimiter (not display copy): customer-intel splits the
-    // producer format "[CUSTOMER PROFILE] <phone> — <intel>" on this exact
-    // separator. Changing it would break the extraction contract.
-    match: 'const sep = " — "',
-    reason: "parsed delimiter for the [CUSTOMER PROFILE] intel format",
-  },
-];
+const ALLOWED = [];
 
 const GLOBS = [
   "src/**/*.ts",

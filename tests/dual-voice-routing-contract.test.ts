@@ -50,7 +50,7 @@ describe("OpenAI Realtime voice routing contracts", () => {
     expect(routing).toContain('"degraded"');
   });
 
-  it("routes every PSTN call through the governed OpenAI runtime", () => {
+  it("retains the governed default OpenAI PSTN lane and admission controls", () => {
     const policy = read("src/lib/voice/runtime-policy.ts");
     const runtime = read("src/lib/voice/openai-phone-agent-runtime.ts");
     const inbound = read("src/routes/openai-inbound-twilio-routes.ts");

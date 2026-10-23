@@ -9,6 +9,7 @@ const h = vi.hoisted(() => ({
   agentMailFind: vi.fn(),
   agentMailSend: vi.fn(),
   funded: vi.fn(),
+  channel: vi.fn(),
 }));
 
 vi.mock("../src/lib/server-context", async (importOriginal) => {
@@ -35,7 +36,10 @@ vi.mock("../src/lib/account-environment-policy", () => ({
   liveExternalActionPolicyForUser: async () => ({ allowed: true }),
   assertExternalEntityActionAllowed: async () => undefined,
 }));
-vi.mock("../src/lib/channel-entitlements", () => ({ requireTenantChannel: async () => undefined }));
+vi.mock("../src/lib/channel-entitlements", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/lib/channel-entitlements")>()),
+  requireTenantEmailTransport: h.channel,
+}));
 vi.mock("../src/lib/secret-vault", () => ({
   decryptSecret: (value: string) => `plain:${value}`,
   encryptSecret: (value: string) => value,
@@ -85,6 +89,7 @@ const future = BigInt(Date.now() + 3_600_000);
 
 beforeEach(() => {
   h.accounts = [];
+  h.channel.mockReset().mockResolvedValue({ channels: ["email"], ownInbox: false });
   for (const mock of [
     h.fetch,
     h.gmailList,
@@ -158,76 +163,93 @@ describe("IMAP reply lookup", () => {
 });
 
 describe("replying through each mailbox", () => {
-  it("answers in the Gmail thread with In-Reply-To and References", async () => {
-    h.accounts = [
-      { id: "gmail-1", provider: "google", accessToken: "tok", expiresAt: future },
-      { id: "other", provider: "agentmail", accessToken: "tok", emailAddress: "bot@botbound.app" },
-    ];
-    h.gmailList.mockResolvedValue({ data: { messages: [{ id: "m-9", threadId: "t-4" }] } });
-    h.gmailGet.mockResolvedValue({
-      data: {
-        payload: {
-          headers: [
-            { name: "Message-ID", value: "<orig@gmail.example>" },
-            { name: "References", value: "<root@gmail.example>" },
-          ],
+  it.each(["Email", "Personal"])(
+    "answers in the Gmail thread on %s with In-Reply-To and References",
+    async (plan) => {
+      if (plan === "Personal") h.channel.mockResolvedValue({ channels: ["voice"], ownInbox: true });
+      h.accounts = [
+        { id: "gmail-1", provider: "google", accessToken: "tok", expiresAt: future },
+        {
+          id: "other",
+          provider: "agentmail",
+          accessToken: "tok",
+          emailAddress: "bot@botbound.app",
         },
-      },
-    });
-    h.gmailSend.mockResolvedValue({});
-
-    await expect(reply("gmail-1")).resolves.toEqual({
-      sent: true,
-      threaded: true,
-      ambiguous: false,
-    });
-
-    expect(h.gmailList).toHaveBeenCalledWith(
-      expect.objectContaining({ q: 'from:dana@example.com subject:"Quote for the kitchen"' }),
-    );
-    const request = h.gmailSend.mock.calls[0][0].requestBody;
-    expect(request.threadId).toBe("t-4");
-    const mime = Buffer.from(request.raw, "base64url").toString("utf8");
-    expect(mime).toContain("In-Reply-To: <orig@gmail.example>");
-    expect(mime).toContain("References: <root@gmail.example> <orig@gmail.example>");
-    expect(mime).toContain("To: dana@example.com");
-    expect(h.agentMailSend).not.toHaveBeenCalled();
-  });
-
-  it("uses Outlook's reply action on the matching message", async () => {
-    h.accounts = [{ id: "ms-1", provider: "microsoft", accessToken: "tok", expiresAt: future }];
-    h.fetch
-      .mockResolvedValueOnce(
-        json({
-          value: [
-            {
-              id: "older",
-              subject: "Quote for the kitchen",
-              receivedDateTime: "2026-10-01T10:00:00Z",
-            },
-            { id: "other", subject: "Invoice", receivedDateTime: "2026-10-05T10:00:00Z" },
-            {
-              id: "newest",
-              subject: "RE: Quote for the kitchen",
-              receivedDateTime: "2026-10-03T10:00:00Z",
-            },
-          ],
-        }),
-      )
-      .mockResolvedValueOnce(json({}));
-
-    await expect(reply("ms-1")).resolves.toEqual({ sent: true, threaded: true, ambiguous: false });
-    const [url, init] = h.fetch.mock.calls[1];
-    expect(url).toBe("https://graph.microsoft.com/v1.0/me/messages/newest/reply");
-    expect(JSON.parse(init.body)).toEqual({
-      message: {
-        body: {
-          contentType: "HTML",
-          content: expect.stringContaining("Tuesday at 10 works.<br />See you then."),
+      ];
+      h.gmailList.mockResolvedValue({ data: { messages: [{ id: "m-9", threadId: "t-4" }] } });
+      h.gmailGet.mockResolvedValue({
+        data: {
+          payload: {
+            headers: [
+              { name: "Message-ID", value: "<orig@gmail.example>" },
+              { name: "References", value: "<root@gmail.example>" },
+            ],
+          },
         },
-      },
-    });
-  });
+      });
+      h.gmailSend.mockResolvedValue({});
+
+      await expect(reply("gmail-1")).resolves.toEqual({
+        sent: true,
+        threaded: true,
+        ambiguous: false,
+      });
+
+      expect(h.gmailList).toHaveBeenCalledWith(
+        expect.objectContaining({ q: 'from:dana@example.com subject:"Quote for the kitchen"' }),
+      );
+      const request = h.gmailSend.mock.calls[0][0].requestBody;
+      expect(request.threadId).toBe("t-4");
+      const mime = Buffer.from(request.raw, "base64url").toString("utf8");
+      expect(mime).toContain("In-Reply-To: <orig@gmail.example>");
+      expect(mime).toContain("References: <root@gmail.example> <orig@gmail.example>");
+      expect(mime).toContain("To: dana@example.com");
+      expect(h.agentMailSend).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["Email", "Personal"])(
+    "uses Outlook's reply action on %s for the matching message",
+    async (plan) => {
+      if (plan === "Personal") h.channel.mockResolvedValue({ channels: ["voice"], ownInbox: true });
+      h.accounts = [{ id: "ms-1", provider: "microsoft", accessToken: "tok", expiresAt: future }];
+      h.fetch
+        .mockResolvedValueOnce(
+          json({
+            value: [
+              {
+                id: "older",
+                subject: "Quote for the kitchen",
+                receivedDateTime: "2026-10-01T10:00:00Z",
+              },
+              { id: "other", subject: "Invoice", receivedDateTime: "2026-10-05T10:00:00Z" },
+              {
+                id: "newest",
+                subject: "RE: Quote for the kitchen",
+                receivedDateTime: "2026-10-03T10:00:00Z",
+              },
+            ],
+          }),
+        )
+        .mockResolvedValueOnce(json({}));
+
+      await expect(reply("ms-1")).resolves.toEqual({
+        sent: true,
+        threaded: true,
+        ambiguous: false,
+      });
+      const [url, init] = h.fetch.mock.calls[1];
+      expect(url).toBe("https://graph.microsoft.com/v1.0/me/messages/newest/reply");
+      expect(JSON.parse(init.body)).toEqual({
+        message: {
+          body: {
+            contentType: "HTML",
+            content: expect.stringContaining("Tuesday at 10 works.<br />See you then."),
+          },
+        },
+      });
+    },
+  );
 
   it("sends a plain Re: email from Outlook when the original is gone", async () => {
     h.accounts = [{ id: "ms-1", provider: "microsoft", accessToken: "tok", expiresAt: future }];
@@ -273,5 +295,23 @@ describe("replying through each mailbox", () => {
       ambiguous: false,
     });
     expect(h.agentMailSend).not.toHaveBeenCalled();
+  });
+
+  it("rejects a retained managed mailbox on Personal before lookup, send, or funding", async () => {
+    h.channel.mockResolvedValue({ channels: ["voice"], ownInbox: true });
+    h.accounts = [
+      {
+        id: "managed",
+        provider: "agentmail",
+        accessToken: "tok",
+        emailAddress: "bot@example.test",
+      },
+    ];
+    h.agentMailFind.mockResolvedValue(null);
+    h.agentMailSend.mockResolvedValue(true);
+    await expect(reply("managed")).rejects.toMatchObject({ code: "CHANNEL_NOT_INCLUDED" });
+    expect(h.agentMailFind).not.toHaveBeenCalled();
+    expect(h.agentMailSend).not.toHaveBeenCalled();
+    expect(h.funded).not.toHaveBeenCalled();
   });
 });

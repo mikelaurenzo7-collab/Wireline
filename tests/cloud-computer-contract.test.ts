@@ -108,7 +108,14 @@ describe("cloud computer production gates", () => {
   });
 
   it("requires a paid active or trialing subscription for the computer", () => {
-    expect(hasPaidComputerPlan({ planId: "personal", subscriptionStatus: "active" })).toBe(false);
+    expect(hasPaidComputerPlan({ planId: "personal", subscriptionStatus: "active" })).toBe(true);
+    expect(hasPaidComputerPlan({ planId: "personal", subscriptionStatus: "trialing" })).toBe(true);
+    for (const subscriptionStatus of ["canceled", "incomplete", "past_due", "pending_activation"]) {
+      expect(hasPaidComputerPlan({ planId: "personal", subscriptionStatus })).toBe(false);
+    }
+    for (const planId of [null, "missing-plan"]) {
+      expect(hasPaidComputerPlan({ planId, subscriptionStatus: "active" })).toBe(false);
+    }
     expect(hasPaidComputerPlan({ planId: "starter", subscriptionStatus: "active" })).toBe(true);
     expect(hasPaidComputerPlan({ planId: "business", subscriptionStatus: "trialing" })).toBe(true);
     expect(hasPaidComputerPlan({ planId: "starter", subscriptionStatus: "canceled" })).toBe(false);

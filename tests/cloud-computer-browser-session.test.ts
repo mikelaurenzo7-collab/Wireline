@@ -101,6 +101,21 @@ describe("cloud computer input rules", () => {
     const long = typingPieces("x".repeat(95));
     expect(long.map((piece) => piece.length)).toEqual([40, 40, 15]);
   });
+
+  it("redacts short and overlapping owner values once without expanding its placeholders", () => {
+    const redactor = Object.create(CloudBrowserSession.prototype) as {
+      ownerEnteredValues: string[];
+      redactOwnerText: (text: string) => string;
+    };
+    redactor.ownerEnteredValues = "aetxohindr".split("");
+    const redacted = redactor.redactOwnerText("A page about a task");
+    expect(redacted).toContain("[owner-entered text hidden]");
+    expect(redacted.length).toBeLessThan(1_000);
+    redactor.ownerEnteredValues = ["secret", "secret-token", "a+b"];
+    expect(redactor.redactOwnerText("secret-token a+b")).toBe(
+      "[owner-entered text hidden] [owner-entered text hidden]",
+    );
+  });
 });
 
 describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)", () => {
@@ -311,6 +326,22 @@ describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)
 
     const bodyText = await session.execute("get_page_text", {});
     expect((bodyText.content[0] as { text: string }).text).not.toContain("owner@example.test");
+  });
+
+  it("redacts a short owner code echoed outside its input, including adjacent text", async () => {
+    const page = session.activePage();
+    await page.setContent(
+      "<label>Security code<input id=\"owner-code\" oninput=\"document.getElementById('echo').textContent='Code'+this.value+'accepted'\"></label><p id=\"echo\"></p>",
+    );
+    await page.locator("#owner-code").focus();
+    await session.executeOwnerInput({ kind: "type", text: "731" });
+
+    const bodyText = await session.execute("get_page_text", {});
+    const snapshot = await session.execute("read_page", { filter: "all" });
+    expect((bodyText.content[0] as { text: string }).text).toContain("[owner-entered text hidden]");
+    expect((bodyText.content[0] as { text: string }).text).not.toContain("731");
+    expect((snapshot.content[0] as { text: string }).text).not.toContain("731");
+    expect((await session.modelFrame())?.equals((await session.frame())!)).toBe(false);
   });
 
   it("inspects only visible heading semantics and safe public link destinations", async () => {
@@ -573,6 +604,49 @@ describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)
     expect(await page.locator("body").getAttribute("data-nav")).toBe("yes");
     await session.executeOwnerInput({ kind: "click", x: send!.x + 3, y: send!.y + 3 });
     expect(await page.locator("body").getAttribute("data-sent")).toBe("yes");
+    await page.setContent(FIXTURE);
+  });
+
+  it("pauses consequential native checkbox changes through clicks and form_input", async () => {
+    const page = session.activePage();
+    await page.setContent(`
+      <label><input id="confirm" type="checkbox"
+        onchange="document.body.dataset.submitted='yes'">Confirm purchase</label>
+    `);
+    const tree = await session.execute("read_page", { filter: "interactive" });
+    const ref = /checkbox "Confirm purchase" \[(ref_\d+)\]/.exec(
+      (tree.content[0] as { text: string }).text,
+    )?.[1];
+    expect(ref).toBeTruthy();
+    for (const member of ["left_click", "form_input"]) {
+      expect(
+        await session.execute(member, { target: { type: "ref", ref }, value: true }),
+      ).toMatchObject({ ok: false, ownerCheckpoint: true });
+      expect(await page.locator("#confirm").isChecked()).toBe(false);
+      expect(await page.locator("body").getAttribute("data-submitted")).toBeNull();
+    }
+    await page.setContent(FIXTURE);
+  });
+
+  it("pauses a consequential select option before its change handler runs", async () => {
+    const page = session.activePage();
+    await page.setContent(`
+      <label for="action">Action</label>
+      <select id="action" onchange="document.body.dataset.deleted='yes'">
+        <option value="none">Choose an action</option>
+        <option value="erase">Delete account</option>
+      </select>
+    `);
+    const tree = await session.execute("read_page", { filter: "interactive" });
+    const ref = /combobox "Action" \[(ref_\d+)\]/.exec(
+      (tree.content[0] as { text: string }).text,
+    )?.[1];
+    expect(ref).toBeTruthy();
+    expect(
+      await session.execute("form_input", { target: { type: "ref", ref }, value: "erase" }),
+    ).toMatchObject({ ok: false, ownerCheckpoint: true });
+    expect(await page.locator("#action").inputValue()).toBe("none");
+    expect(await page.locator("body").getAttribute("data-deleted")).toBeNull();
     await page.setContent(FIXTURE);
   });
 

@@ -19,14 +19,22 @@ export function displayCallReviewNote(value: string | null | undefined): string 
 }
 
 /** Keep stored evidence, but do not publish fabricated legacy enrichment. */
-export function presentCallAnalysis<
-  T extends {
-    coachingNote: string | null;
-    leadScore: number | null;
-    intentLabel: string | null;
-    sentiment: string | null;
-  },
->(call: T) {
+type CallAnalysisRow = {
+  coachingNote: string | null;
+  leadScore: number | null;
+  intentLabel: string | null;
+  sentiment: string | null;
+};
+
+export function presentCallAnalysis<T extends CallAnalysisRow>(call: T) {
   if (!isLegacyCallReviewFailure(call.coachingNote)) return call;
   return { ...call, coachingNote: null, leadScore: null, intentLabel: null, sentiment: null };
+}
+
+/** Provider ids may join internal outcome evidence but never enter the client report. */
+export function presentCallReport<T extends CallAnalysisRow & { vapiCallId?: string | null }>(
+  call: T,
+) {
+  const { vapiCallId: _providerCallId, ...report } = presentCallAnalysis(call);
+  return report;
 }

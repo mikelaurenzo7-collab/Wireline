@@ -45,7 +45,7 @@ Each tier can ship on its own cadence only when it stays inside these boundaries
 
 | Boundary                       | Requirement                                                                                                                                                                                                                                                                           |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Launch status                  | **Live**. This is the canonical production runtime for calls, texts, and email, implemented through Create, Training, Connections, and Studio, plus billing, voice, integrations, mobile adapters, ChatGPT MCP, and identity/clip APIs.                                               |
+| Launch status                  | **Deployed core runtime; customer acceptance remains gated.** The current launch offer is calling, requested email, and supervised Computer work. SMS, campaign calling, and unproven messaging integrations remain outside launch promotion. Endpoint implementation alone does not prove a completed customer workflow. |
 | Owning files/directories       | `src/`, `server.ts`, `api/`, `shared/`, `drizzle/`, `scripts/`, `tests/`, `docs/` contracts that describe runtime behavior.                                                                                                                                                           |
 | Required checks before release | `npm run verify`; `npm run verify:full` before merge/release or any auth, billing, CSP, route, data-access, provider, or shared-contract change; `npm run verify:contracts`; targeted smoke for touched provider flows; read-only `npm run db:health` when schema assumptions change. |
 | Non-goals                      | Do not fork client-specific business logic into web-only code; do not make inactive endpoints public contract; do not move native/browser release signing into the root runtime.                                                                                                      |
@@ -134,7 +134,7 @@ Do **not** extract business behavior into a client package. `packages/contracts`
 4. iOS stays SwiftUI and Android stays Kotlin/Compose. Their OS-level calling, widgets, intents, and push behavior are reasons to preserve native stacks—not reasons to fork backend logic.
 5. Wireline Command is a user-initiated browser command surface. It must never become a hidden scraper, CRM mirror, or independent background agent.
 6. The ChatGPT App, Claude Connector, and Cursor plugin stay account-bound. Their job is a BotBound account plus a first Bot draft. They can privately rehearse an owned Bot after confirmation. They cannot provision numbers, place live calls, launch Bots, or act as a repo-embedded voice SDK.
-7. Live talking-head video remains retired. Identity badges stay. Clip scripts are reviewable drafts. Do not call a Grok Bot API and do not generate Imagine files.
+7. Live talking-head video remains retired. Identity badges stay. Video files and clip-script substitutes are not offered. Compatibility billing and callback handling cannot re-enable provider sessions.
 
 ## Mobile API adapter discipline
 

@@ -15,10 +15,10 @@ Status: **Active canonical runbook**. This is the operator proof path for Stripe
 
 ## Commercial contract
 
-- Free Builder creates, trains, and privately simulates one draft.
-- Paid tiers include voice minutes, number capacity, and recurring Runtime Allowance as defined in `src/lib/plan-catalog.ts`.
+- New accounts begin in `pending_activation` and may prepare a draft; paid provider work requires the applicable activation and allowance checks. Personal is a paid plan. Historical `free`, `builder`, and `free-builder` slugs resolve to Personal for compatibility and do not grant paid access.
+- Personal and channel packages include only the voice minutes, number/mailbox capacity, and allowances defined in `src/lib/plan-catalog.ts`. Personal uses a connected inbox and includes no managed mailbox.
 - Runtime Balance is prepaid overflow. BotBound does not silently create a postpaid voice overage invoice.
-- Extra-agent add-ons include additional capacity and minutes as defined by the catalog.
+- Extra-agent add-ons remain compatible with historical subscriptions; new Personal and channel packages include one Bot and do not sell extra-Bot subscriptions.
 - **Live Video talking-head is retired.** Leftover Stripe add-on price IDs remain so webhooks do not brick billing. Checkout and session mint stay closed. Video files and clip-script substitutes are not generated.
 - Ops lock: [P0_BILLING_OPS_NOTE.md](./P0_BILLING_OPS_NOTE.md).
 
@@ -51,9 +51,9 @@ Run the live audit in the Render production shell with `STRIPE_SECRET_KEY` alrea
 3. Confirm public plans load from `GET /api/billing/plans`.
 4. Click a configured paid plan.
 5. Confirm `POST /api/billing/checkout` returns a Stripe Checkout URL.
-6. Confirm Free Builder has no recurring checkout; live provider work requires a paid plan.
+6. Confirm Personal offers its paid checkout and accounts awaiting activation cannot start paid provider work. Compatibility slugs must resolve to the same paid plan without granting entitlement.
 
-Expected failure modes must remain explicit JSON: `FREE_PLAN_NO_CHECKOUT`, `SERVICE_UNAVAILABLE`, `LEGACY_PLAN_RETIRED`, and `ALREADY_SUBSCRIBED`. Scale/custom sales intents are not plan aliases and never resolve to ordinary checkout.
+Expected failure modes must remain explicit JSON, including `SERVICE_UNAVAILABLE`, `LEGACY_PLAN_RETIRED`, and `ALREADY_SUBSCRIBED`. `FREE_PLAN_NO_CHECKOUT` is a defensive compatibility response for a zero-priced catalog entry, not a current public offer. Scale/custom sales intents are not plan aliases and never resolve to ordinary checkout.
 
 ### 2. Successful checkout updates server-owned entitlement state
 

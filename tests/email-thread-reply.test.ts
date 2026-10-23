@@ -283,7 +283,7 @@ describe("reply plumbing contracts", () => {
       integrations.indexOf("// --- Private Helpers ---"),
     );
     expect(reply).toContain("candidate.id === params.accountId");
-    expect(reply).toContain('await requireTenantChannel(this.userId, "email")');
+    expect(reply).toContain("await requireTenantEmailTransport(this.userId)");
     expect(reply).toContain("sendFundedManagedEmail");
     expect(reply).not.toContain("email-service");
     expect(reply).not.toContain("mailAccounts[0]");

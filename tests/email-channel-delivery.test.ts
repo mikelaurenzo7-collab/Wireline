@@ -17,7 +17,10 @@ vi.mock("../src/lib/server-context", () => ({
   log: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
   fetchWithTimeout: vi.fn(),
 }));
-vi.mock("../src/lib/channel-entitlements", () => ({ requireTenantChannel: h.channel }));
+vi.mock("../src/lib/channel-entitlements", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/lib/channel-entitlements")>()),
+  requireTenantEmailTransport: h.channel,
+}));
 vi.mock("../src/lib/managed-mail-send-spend", () => ({ sendFundedManagedEmail: h.reserve }));
 vi.mock("../src/lib/account-environment-policy", () => ({
   liveExternalActionPolicyForUser: h.environment,
@@ -110,7 +113,7 @@ describe("customer email admission and funded transport", () => {
   );
   it("funds AgentMail before sending under the tenant identity", async () => {
     expect(await new IntegrationService("tenant-a").sendEmail(message)).toBe(true);
-    expect(h.channel).toHaveBeenCalledWith("tenant-a", "email");
+    expect(h.channel).toHaveBeenCalledWith("tenant-a");
     expect(h.reserve).toHaveBeenCalledWith(
       expect.objectContaining({ userId: "tenant-a", provider: "agentmail" }),
     );
@@ -208,8 +211,43 @@ describe("customer email admission and funded transport", () => {
   it("does not bill connected customer SMTP as platform AgentMail capacity", async () => {
     h.accounts[0].provider = "icloud";
     expect(await new IntegrationService("tenant-a").sendEmail(message)).toBe(true);
-    expect(h.channel).toHaveBeenCalledWith("tenant-a", "email");
+    expect(h.channel).toHaveBeenCalledWith("tenant-a");
     expect(h.reserve).not.toHaveBeenCalled();
     expect(h.icloud).toHaveBeenCalledOnce();
+  });
+});
+
+describe("Personal uses only its connected Gmail or Outlook inbox", () => {
+  beforeEach(() => {
+    h.channel.mockResolvedValue({ channels: ["voice"], ownInbox: true });
+  });
+
+  it("does not substitute platform email when no personal inbox is connected", async () => {
+    h.accounts = [];
+    expect(await new IntegrationService("tenant-a").sendEmail(message)).toBe(false);
+    expect(h.reserve).not.toHaveBeenCalled();
+    expect(h.platform).not.toHaveBeenCalled();
+    expect(h.select).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["agentmail", "icloud"])(
+    "does not send through a retained %s mailbox",
+    async (provider) => {
+      h.accounts[0].provider = provider;
+      expect(await new IntegrationService("tenant-a").sendEmail(message)).toBe(false);
+      expect(h.reserve).not.toHaveBeenCalled();
+      expect(h.agentmail).not.toHaveBeenCalled();
+      expect(h.icloud).not.toHaveBeenCalled();
+      expect(h.platform).not.toHaveBeenCalled();
+    },
+  );
+
+  it("does not refresh retained managed mail and reports its plan boundary", async () => {
+    h.fetchInbox.mockResolvedValue([]);
+    const result = await new IntegrationService("tenant-a").fetchInboxMessages();
+    expect(result.messages).toEqual([]);
+    expect(result.successfulAccounts).toBe(0);
+    expect(result.failures).toEqual([{ provider: "agentmail", error: expect.any(String) }]);
+    expect(h.fetchInbox).not.toHaveBeenCalled();
   });
 });

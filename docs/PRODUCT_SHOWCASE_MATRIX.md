@@ -4,23 +4,26 @@ Status: **Active canonical showcase**. This document keeps every meaningful BotB
 
 ## Commercial posture
 
-BotBound's commercial posture is broad Phone Bot coverage: people, teams, and businesses can create Bots that answer, route, book, qualify, text outcomes, follow up, and escalate. Vertical pages and templates are proof routes, not admission gates. Public surfaces describe capabilities and outcomes with minimal copy and a clear signup action. Create, Training, Connections, and Studio are authenticated product architecture; they do not define a public setup sequence.
+BotBound's launch offer is calling, email, and Computer: proven incoming calls, requested email, and supervised web work with visible proof and useful owner handoff. SMS, campaign calling, and unproven messaging integrations remain outside launch promotion. Existing channel history and reviewed service-call controls keep their separate entitlement and runtime boundaries. Vertical pages and templates are proof routes, not admission gates. Public surfaces describe capabilities and outcomes with minimal copy and a clear signup action. Create, Training, Connections, and Studio are authenticated product architecture; they do not define a public setup sequence.
+
+BotBound Personal is paid. Historical Free Builder labels, private drafts, and compatibility signup slugs do not authorize live work. Email must use each customer's verified identity and signature; customer-owned domains need their own setup and DNS verification.
 
 ## Showcase pillars
 
 | Pillar               | Customer promise                                                                | Active surfaces                                                                                            | Launch standard                                                                                       |
 | -------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Agents               | Create focused voice, SMS, email, and follow-up agents.                         | Web Studio, native setup helpers, ChatGPT drafting.                                                        | New users can create one useful agent quickly and understand what it can do.                          |
+| Agents               | Create a focused Bot for calling, email, or supervised Computer work.          | Web Studio, native setup helpers, ChatGPT drafting.                                                        | New users can create one useful Bot quickly and understand its current limits.                        |
 | Training             | Teach facts, sources, policies, tone, escalation, pronunciation, and workflows. | Knowledge workspace, agent-config API, Studio proposals, mobile setup helpers.                             | Training changes are durable, reviewable, and tied to the selected agent.                             |
 | Launch               | Put the Bot on a live number, tools, billing, routing, and approvals.           | Connections, Carrier, OAuth integrations, Runtime Balance, spend controls.                                 | Live side effects are deliberate and server-owned.                                                    |
-| Run / Studio         | Execute calls, texts, follow-up, approvals, handoffs, and review.               | Studio workroom, call logs, SMS threads, email, activity, QA, analytics.                                   | Operators can see what happened, what needs action, and what the agent should learn.                  |
-| Voice                | Production PSTN Bots and authenticated realtime test paths.                     | OpenAI Realtime over Twilio SIP, OpenAI/Gemini structured continuity, ChatGPT widget, voice observability. | Calls are tenant-scoped, metered, observable, and cost-controlled.                                    |
+| Run / Studio         | Review calls, email, Computer work, follow-up, approvals, and handoffs.         | Studio workroom, call logs, email, Computer, activity, QA, analytics.                                      | Owners can see what happened, what needs action, and what the Bot should learn.                        |
+| Voice                | Incoming calls and private microphone rehearsal, with separate real-call tests. | OpenAI Realtime by default; registered xAI phone routing when configured; Twilio carrier; xAI/OpenAI structured reasoning. | Calls are tenant-scoped, metered, observable, and cost-controlled; private rehearsal is explicit. |
+| Computer             | Complete supervised web tasks and return visible proof.                        | Hosted isolated browser, live screen, activity, owner control, and report.                                  | Ownership, paid entitlements, spend limits, checkpoints, and recoverable failures remain enforced.      |
 | Browser context      | Explicitly bring page context into BotBound.                                    | BotBound Command browser extension.                                                                        | No silent browsing, no broad host permissions, no token storage.                                      |
 | Native control       | Urgent owner control on the go.                                                 | iOS, Android, widgets, live activity, push/device registration.                                            | Native apps handle calls, approvals, notifications, handoff, wallet safety, and daily review.         |
 | ChatGPT App          | Private account-bound drafting, refinement, simulation, and Bot workflows.      | OAuth MCP routes and ChatGPT app docs.                                                                     | ChatGPT can help configure and simulate without bypassing BotBound authorization.                     |
 | Live Video           | Identity badge. Live talking-head is retired.                                   | Video presenter identity routes.                                                                           | Do not mint LiveAvatar/HeyGen sessions. Do not generate video files. Do not substitute a clip script. |
 | Integrations         | Let agents work with calendars, email, CRM, commerce, documents, and alerts.    | OAuth routes, CRM/email/calendar services, certified integration UI.                                       | Customer-owned integrations stay server-authorized and scoped.                                        |
-| Trust and compliance | Make automation safe to buy.                                                    | RLS, authz checks, audit logs, CSP, SOC2 evidence, TCPA/DNC, spend controls.                               | Trust claims are truthful, current, and backed by code or runbooks.                                   |
+| Trust and compliance | Make automation safe to buy.                                                    | RLS, authz checks, audit logs, CSP, evidence collection, TCPA/DNC, spend controls.                         | Trust claims are truthful, current, and backed by code or runbooks; evidence collection is not certification. |
 | Margin engine        | Keep usage profitable and predictable.                                          | Runtime Balance, credit wallet, audit spend, plan catalog, Stripe.                                         | Expensive usage is metered, gated, visible, and funded.                                               |
 
 ## Surface posture
@@ -56,7 +59,13 @@ BotBound's commercial posture is broad Phone Bot coverage: people, teams, and bu
 
 Every feature in this matrix should map to one of those states before paid acquisition scales.
 
-## Feature status (August 2026)
+## Feature status (August 2026 historical snapshot)
+
+The dated inventory below records implementation posture at that time. It does
+not certify current production workflows or expand the current launch offer.
+In particular, outbound campaigns and SMS remain outside launch promotion.
+Refresh exact source, service parity, provider eligibility, and completed-job
+evidence before making a current readiness claim.
 
 | Feature                                                 | Status            | Notes                                                                                                                                        |
 | ------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
