@@ -36,13 +36,13 @@ function task(overrides: Partial<MockTask> & { id: string; status: string }): Mo
   };
 }
 
-async function fakeFrame(page: Page): Promise<Buffer> {
+async function fakeFrame(page: Page, heading = "Austin Plumbing Directory"): Promise<Buffer> {
   // A real JPEG of a plain web page stands in for the remote browser frame.
   const frame = await page.context().newPage();
   await frame.setViewportSize({ width: 1280, height: 800 });
   await frame.setContent(
     `<body style="margin:0;font:16px system-ui;background:#fff;color:#111">
-      <header style="padding:18px 32px;border-bottom:1px solid #ddd;font-weight:700">Austin Plumbing Directory</header>
+      <header style="padding:18px 32px;border-bottom:1px solid #ddd;font-weight:700">${heading}</header>
       <main style="padding:32px"><h1 style="margin:0 0 16px">Plumbers open Saturday</h1>
       <p>Lone Star Plumbing · (512) 555-0142 · Sat 8am–4pm</p>
       <p>Barton Creek Pipe Co. · (512) 555-0177 · Sat 9am–2pm</p></main></body>`,
@@ -1336,6 +1336,149 @@ test("a lost frame clears the old screen instead of looking live", async ({ page
   });
   await expect(detail.getByRole("img")).toHaveCount(0);
 });
+
+for (const transition of ["navigation", "new tab", "same-URL reload"] as const) {
+  test(`a delayed previous frame stays hidden and nonactionable after ${transition}`, async ({
+    page,
+  }) => {
+    const taskId = "task-frame-generation";
+    const initialFrame = await fakeFrame(page);
+    const nextFrame = await fakeFrame(page, "The next browser frame");
+    const { ownerInputs } = await mockComputer(page, {
+      status: READY,
+      frame: initialFrame,
+      tasks: [
+        task({
+          id: taskId,
+          status: "needs_input",
+          ownerControl: true,
+          currentUrl: "https://example.com/",
+          frameUrl: "https://example.com/",
+          ownerTabs: [{ id: "tab-1", label: "Original page", active: true }],
+          browserCapabilities: OWNER_BROWSER_CAPABILITIES,
+        }),
+      ],
+    });
+    let firstFrame = true;
+    let nextGeneration = false;
+    let oldHeld = false;
+    let nextHeld = false;
+    let releaseOld: () => void = () => undefined;
+    let releaseNext: () => void = () => undefined;
+    let oldFinished: () => void = () => undefined;
+    const oldGate = new Promise<void>((resolve) => {
+      releaseOld = resolve;
+    });
+    const nextGate = new Promise<void>((resolve) => {
+      releaseNext = resolve;
+    });
+    const oldDone = new Promise<void>((resolve) => {
+      oldFinished = resolve;
+    });
+    await page.route(`**/api/computer/tasks/${taskId}/frame`, async (route) => {
+      if (firstFrame) {
+        firstFrame = false;
+        return route.fulfill({ status: 200, contentType: "image/jpeg", body: initialFrame });
+      }
+      const belongsToNextGeneration = nextGeneration;
+      if (belongsToNextGeneration) {
+        nextHeld = true;
+        await nextGate;
+      } else {
+        oldHeld = true;
+        await oldGate;
+      }
+      try {
+        await route.fulfill({
+          status: 200,
+          contentType: "image/jpeg",
+          body: belongsToNextGeneration ? nextFrame : initialFrame,
+        });
+      } catch {
+        // Changing generation deliberately aborts the obsolete request.
+      } finally {
+        if (!belongsToNextGeneration) oldFinished();
+      }
+    });
+    try {
+      await page.goto("/computer");
+      const detail = page.getByRole("region", { name: /Find three plumbers/ });
+      const image = detail.getByRole("img", {
+        name: "Browser screen. Click or drag to interact with the page.",
+        exact: true,
+      });
+      await expect(image).toBeVisible();
+      const initialSrc = await image.getAttribute("src");
+      await expect.poll(() => oldHeld).toBe(true);
+      nextGeneration = true;
+      if (transition === "navigation") {
+        const address = detail.getByRole("textbox", { name: "Web address", exact: true });
+        await address.fill("https://next.example/");
+        await address.press("Enter");
+        await expect(address).toHaveValue("https://next.example/");
+        await expect(address).toBeEnabled();
+      } else if (transition === "new tab") {
+        await detail.getByRole("button", { name: "New browser tab", exact: true }).click();
+        await expect(detail.getByRole("button", { name: "New tab", exact: true })).toHaveAttribute(
+          "aria-current",
+          "page",
+        );
+      } else {
+        await detail.getByRole("button", { name: "Reload", exact: true }).click();
+      }
+      const expectedAction =
+        transition === "navigation"
+          ? { kind: "navigate", url: "https://next.example/" }
+          : transition === "new tab"
+            ? { kind: "new_tab" }
+            : { kind: "history", action: "reload" };
+      await expect.poll(() => ownerInputs).toEqual([expectedAction]);
+      await expect(image).toHaveCount(0);
+      await expect(
+        detail.getByRole("group", {
+          name: "Live browser. Click or drag on the screen to interact.",
+          exact: true,
+        }),
+      ).toHaveCount(0);
+      await expect(
+        detail.getByRole("button", { name: "Download browser screenshot", exact: true }),
+      ).toBeDisabled();
+      await detail.locator(".wl-computer-screen__viewport").click();
+      expect(ownerInputs).toEqual([expectedAction]);
+      releaseOld();
+      await oldDone;
+      await expect.poll(() => nextHeld).toBe(true);
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+          ),
+      );
+      await expect(image).toHaveCount(0);
+      await expect(
+        detail.getByRole("button", { name: "Download browser screenshot", exact: true }),
+      ).toBeDisabled();
+      releaseNext();
+      await expect(image).toBeVisible();
+      await expect(image).not.toHaveAttribute("src", initialSrc!);
+      await expect(
+        detail.getByRole("button", { name: "Download browser screenshot", exact: true }),
+      ).toBeEnabled();
+      await detail
+        .getByRole("group", {
+          name: "Live browser. Click or drag on the screen to interact.",
+          exact: true,
+        })
+        .click();
+      await expect.poll(() => ownerInputs).toHaveLength(2);
+      expect(ownerInputs[1]).toMatchObject({ kind: "click" });
+      await expect(detail.getByRole("button", { name: "Stop", exact: true })).toBeEnabled();
+    } finally {
+      releaseOld();
+      releaseNext();
+    }
+  });
+}
 
 test("a page that did not load offers a retry instead of a dead form", async ({ page }, info) => {
   await page.setViewportSize({ width: 1024, height: 900 });

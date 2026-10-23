@@ -1180,7 +1180,10 @@ test.describe("wide screens", () => {
         ),
       ).toBeVisible();
       await expect(recovery).not.toContainText("Diagnostic text");
-      await recovery.getByRole("button", { name: "New task", exact: true }).click();
+      const newTask = recovery.getByRole("button", { name: "New task", exact: true });
+      await newTask.focus();
+      await expect(newTask).toBeFocused();
+      await newTask.press("Enter");
       const ended = browser.getByRole("figure", { name: "Ended browser", exact: true });
       await expect(ended).toBeVisible();
       await expect(ended.getByRole("img")).toHaveCount(0);
@@ -1190,6 +1193,14 @@ test.describe("wide screens", () => {
       await expect(browser.getByLabel("New browser", { exact: true })).toHaveCount(0);
       const address = browser.getByRole("textbox", { name: "Web address", exact: true });
       await address.fill("https://directory.example/recovery");
+      expect(fixture.starts).toEqual([]);
+      const back = browser.getByRole("button", { name: "Back to task", exact: true });
+      await back.focus();
+      await back.press("Enter");
+      await expect(address).toHaveCount(0);
+      await expect(newTask).toBeFocused();
+      await newTask.press("Enter");
+      await expect(address).toHaveValue("https://directory.example/recovery");
       expect(fixture.starts).toEqual([]);
       await open.click();
       await expect

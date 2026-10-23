@@ -185,6 +185,8 @@ function LiveScreen({
   onOwnerUrlChange,
   ownerBusy = false,
   ownerError,
+  ownerInputVersion = 0,
+  navigationVersion = 0,
   controls = null,
 }: {
   task: ComputerTask;
@@ -194,10 +196,16 @@ function LiveScreen({
   onOwnerUrlChange?: (url: string) => void;
   ownerBusy?: boolean;
   ownerError?: string | null;
+  ownerInputVersion?: number;
+  navigationVersion?: number;
   /** Pause, takeover, and stop stay on the viewport. Activity stays outside it. */
   controls?: ReactNode;
 }) {
-  const [src, setSrc] = useState<string | null>(null);
+  const [frame, setFrame] = useState<{
+    url: string;
+    screenKey: string;
+    inputVersion: number;
+  } | null>(null);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [zoomed, setZoomed] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -210,20 +218,38 @@ function LiveScreen({
   );
   const screenRef = useRef<HTMLElement | null>(null);
   const active = ACTIVE.includes(task.status) || task.liveView;
-  const latest = useRef<string | null>(null);
+  const screenKey = JSON.stringify([
+    task.id,
+    task.ownerTabs?.find((tab) => tab.active)?.id ?? null,
+    task.currentUrl,
+    ownerControl,
+    task.liveView,
+    navigationVersion,
+  ]);
+  const requestKey = JSON.stringify([screenKey, ownerInputVersion]);
+  const currentRequest = useRef(requestKey);
+  currentRequest.current = requestKey;
+  const receivedFrame = frame?.screenKey === screenKey ? frame : null;
+  const src = receivedFrame?.url ?? null;
+  const frameConfirmed = Boolean(receivedFrame && receivedFrame.inputVersion === ownerInputVersion);
+  const latest = useRef<{ url: string; screenKey: string } | null>(null);
   const misses = useRef(0);
   const pointerStart = useRef<{ id: number; x: number; y: number; pointerType: string } | null>(
     null,
   );
 
   useEffect(() => {
-    if (!active) {
-      // The screen is cleared once a task ends, here as on the server.
-      if (latest.current) URL.revokeObjectURL(latest.current);
+    pointerStart.current = null;
+    setCursor(null);
+    if (!active || latest.current?.screenKey !== screenKey) {
+      // A prior page/tab is never the current screen. Same-page scroll/type
+      // may keep its pixels, but coordinate actions wait for the new frame.
+      if (latest.current) URL.revokeObjectURL(latest.current.url);
       latest.current = null;
-      setSrc(null);
-      return;
+      setFrame(null);
+      misses.current = 0;
     }
+    if (!active || ownerBusy) return;
     const controller = new AbortController();
     let timer: number | undefined;
     const load = async () => {
@@ -235,28 +261,30 @@ function LiveScreen({
         const response = await authFetch(`/api/computer/tasks/${task.id}/frame`, {
           signal: controller.signal,
         });
+        if (controller.signal.aborted || currentRequest.current !== requestKey) return;
         if (response.status === 200) {
           const blob = await response.blob();
-          if (controller.signal.aborted) return;
+          if (controller.signal.aborted || currentRequest.current !== requestKey) return;
           const url = URL.createObjectURL(blob);
-          if (latest.current) URL.revokeObjectURL(latest.current);
-          latest.current = url;
-          setSrc(url);
+          if (latest.current) URL.revokeObjectURL(latest.current.url);
+          latest.current = { url, screenKey };
+          setFrame({ url, screenKey, inputVersion: ownerInputVersion });
           misses.current = 0;
         } else {
           misses.current += 1;
           if (misses.current >= 2) {
-            if (latest.current) URL.revokeObjectURL(latest.current);
+            if (latest.current) URL.revokeObjectURL(latest.current.url);
             latest.current = null;
-            setSrc(null);
+            setFrame(null);
           }
         }
       } catch {
+        if (controller.signal.aborted || currentRequest.current !== requestKey) return;
         misses.current += 1;
         if (misses.current >= 2) {
-          if (latest.current) URL.revokeObjectURL(latest.current);
+          if (latest.current) URL.revokeObjectURL(latest.current.url);
           latest.current = null;
-          setSrc(null);
+          setFrame(null);
         }
       }
       if (!controller.signal.aborted) timer = window.setTimeout(load, 1500);
@@ -266,11 +294,11 @@ function LiveScreen({
       controller.abort();
       if (timer) window.clearTimeout(timer);
     };
-  }, [task.id, active]);
+  }, [task.id, active, screenKey, requestKey, ownerInputVersion, ownerBusy]);
 
   useEffect(
     () => () => {
-      if (latest.current) URL.revokeObjectURL(latest.current);
+      if (latest.current) URL.revokeObjectURL(latest.current.url);
     },
     [],
   );
@@ -294,6 +322,7 @@ function LiveScreen({
     event: ReactPointerEvent<HTMLDivElement> | ReactWheelEvent<HTMLDivElement>,
     clamp = false,
   ) => {
+    if (ownerControl && (!frameConfirmed || ownerBusy)) return null;
     const image = event.currentTarget.querySelector("img");
     if (!image) return null;
     const bounds = image.getBoundingClientRect();
@@ -438,7 +467,7 @@ function LiveScreen({
               className="wl-computer-screen__zoom wl-browser-icon-button wl-browser-screenshot"
               aria-label="Download browser screenshot"
               title="Download screenshot"
-              disabled={!src || !screenCurrent}
+              disabled={!src || !screenCurrent || !frameConfirmed || ownerBusy}
               onClick={() => {
                 if (src && screenCurrent) saveBrowserFile(src, `botbound-screen-${Date.now()}.jpg`);
               }}
@@ -552,13 +581,16 @@ function LiveScreen({
       <div
         className={cn(
           "wl-computer-screen__viewport",
-          ownerControl && src && screenCurrent && "is-owner-controlled",
+          ownerControl && src && screenCurrent && frameConfirmed && "is-owner-controlled",
           ownerBusy && "is-applying",
           zoomed && src && screenCurrent && "is-zoomed",
         )}
-        role={ownerControl && src && screenCurrent ? "group" : undefined}
+        role={
+          ownerControl && src && screenCurrent && frameConfirmed && !ownerBusy ? "group" : undefined
+        }
+        aria-busy={ownerControl && (!frameConfirmed || ownerBusy) ? true : undefined}
         aria-label={
-          ownerControl && src && screenCurrent
+          ownerControl && src && screenCurrent && frameConfirmed && !ownerBusy
             ? zoomed
               ? "Live browser at actual size. Tap or click to interact. Touch drag or Alt plus wheel pans this view."
               : "Live browser. Click or drag on the screen to interact."
@@ -652,7 +684,7 @@ function LiveScreen({
                   : "What your Bot's cloud computer shows right now"
               }
               draggable={false}
-              onError={() => setSrc(null)}
+              onError={() => setFrame(null)}
             />
             {ownerControl && cursor ? (
               <MousePointer2
@@ -703,9 +735,9 @@ function LiveScreen({
             <span>Enter a web address above, then browse or give your Bot a task.</span>
           </div>
         ) : null}
-        {ownerBusy ? (
+        {ownerBusy || (ownerControl && src && !frameConfirmed) ? (
           <div className="wl-computer-screen__applying" aria-hidden="true">
-            Applying…
+            {ownerBusy ? "Applying…" : "Refreshing…"}
           </div>
         ) : null}
       </div>
@@ -724,7 +756,7 @@ function LiveScreen({
         savedLogins={task.ownerSavedLogins}
         downloadNotice={task.ownerDownloadNotice}
         currentUrl={task.currentUrl}
-        screenshotUrl={src && screenCurrent ? src : null}
+        screenshotUrl={src && screenCurrent && frameConfirmed && !ownerBusy ? src : null}
         zoomed={zoomed}
         onToggleZoom={() => {
           setZoomed((current) => !current);
@@ -806,7 +838,7 @@ function TaskDetail({
 }: {
   task: ComputerTask;
   onChanged: (task: ComputerTask) => void;
-  onStartAnother?: () => void;
+  onStartAnother?: (opener: HTMLButtonElement) => void;
   onOpenTasks?: (opener: HTMLButtonElement) => void;
   onOpenBrowser?: () => void;
   openingBrowser?: boolean;
@@ -825,6 +857,7 @@ function TaskDetail({
   const [failure, setFailure] = useState<{ message: string; status: TaskStatus } | null>(null);
   const [ownerText, setOwnerText] = useState("");
   const [showOwnerText, setShowOwnerText] = useState(false);
+  const [screenVersion, setScreenVersion] = useState({ input: 0, navigation: 0 });
   const [activityOpen, setActivityOpen] = useState(false);
   const detailRef = useRef<HTMLElement | null>(null);
   const activityButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -925,6 +958,20 @@ function TaskDetail({
   const ownerAction = async (kind: "take" | "input" | "return", input?: OwnerBrowserInput) => {
     if (ownerActionInFlight.current || refreshRequired) return;
     ownerActionInFlight.current = true;
+    if (kind === "input" && input) {
+      const mayNavigate =
+        ["navigate", "history", "new_tab", "switch_tab", "close_tab", "click", "drag"].includes(
+          input.kind,
+        ) ||
+        (input.kind === "key" && ["Enter", "Space"].includes(input.key)) ||
+        (input.kind === "type" && /[\r\n]/.test(input.text));
+      // Reject pre-action JPEG responses even for same-URL reloads. Plain
+      // typing and scrolling keep their pixels while fresh coordinates wait.
+      setScreenVersion((current) => ({
+        input: current.input + 1,
+        navigation: current.navigation + (mayNavigate ? 1 : 0),
+      }));
+    }
     // Do not retain owner-entered credentials in React state through a slow
     // request, error, or a later return to this task.
     if ((kind === "input" && input?.kind === "type") || kind === "return" || kind === "take") {
@@ -1179,7 +1226,7 @@ function TaskDetail({
                   aria-label={compact ? "New task" : undefined}
                   aria-expanded={compact ? composerOpen : undefined}
                   title={compact ? "New task" : undefined}
-                  onClick={onStartAnother}
+                  onClick={(event) => onStartAnother?.(event.currentTarget)}
                 >
                   {compact ? (
                     <Plus aria-hidden="true" />
@@ -1310,6 +1357,8 @@ function TaskDetail({
             }}
             ownerBusy={busy !== null || refreshRequired}
             ownerError={error}
+            ownerInputVersion={screenVersion.input}
+            navigationVersion={screenVersion.navigation}
           />
           <div className="wl-computer-control" aria-label="Browser controls">
             <form
@@ -1477,7 +1526,12 @@ function TaskDetail({
           </p>
           {onStartAnother && (!compact || chatControls) ? (
             <div className="flex flex-wrap gap-2">
-              <Button type="button" size="sm" variant="outline" onClick={onStartAnother}>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={(event) => onStartAnother?.(event.currentTarget)}
+              >
                 New task
               </Button>
             </div>
@@ -1638,6 +1692,7 @@ export function ComputerWorkbench({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyPreviewId, setHistoryPreviewId] = useState<string | null>(null);
   const historyOpenerRef = useRef<HTMLButtonElement | null>(null);
+  const draftOpenerRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const [startingMode, setStartingMode] = useState<"browser" | "task" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -1747,7 +1802,8 @@ export function ComputerWorkbench({
       key={selected.id}
       task={selected}
       onChanged={(next) => applyTask(next, false)}
-      onStartAnother={() => {
+      onStartAnother={(opener) => {
+        draftOpenerRef.current = opener;
         setShowComposer(true);
         if (layout === "panel" && !chatControls)
           requestAnimationFrame(() =>
@@ -1929,11 +1985,10 @@ export function ComputerWorkbench({
                     variant="ghost"
                     onClick={() => {
                       setShowComposer(false);
-                      requestAnimationFrame(() =>
-                        panelRef.current
-                          ?.querySelector<HTMLButtonElement>('button[aria-label="New task"]')
-                          ?.focus(),
-                      );
+                      requestAnimationFrame(() => {
+                        const opener = draftOpenerRef.current;
+                        if (opener?.isConnected) opener.focus({ preventScroll: true });
+                      });
                     }}
                   >
                     Back to task
