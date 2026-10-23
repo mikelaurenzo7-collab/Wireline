@@ -3,6 +3,7 @@ import { Bot, Mail, UserRound } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
+import LinkifiedText from "../ui/LinkifiedText";
 
 export const conversationMessageVariants = cva(
   "min-w-0 max-w-full rounded-[var(--radius-lg)] border p-3 text-sm leading-6 sm:max-w-[92%] sm:p-3.5",
@@ -69,7 +70,7 @@ const ConversationMessage = React.forwardRef<HTMLElement, ConversationMessagePro
           {channel ? <span className="sr-only">{channel} message</span> : null}
         </div>
         <div data-wireline-preserve-case className="whitespace-pre-wrap [overflow-wrap:anywhere]">
-          {children}
+          {typeof children === "string" ? <LinkifiedText>{children}</LinkifiedText> : children}
         </div>
         {timestamp ? (
           <p className="mt-2 text-[length:var(--wireline-typography-overline-size)] text-muted-foreground">

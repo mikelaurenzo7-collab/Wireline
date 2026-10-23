@@ -234,7 +234,6 @@ const PROVIDERS: {
 
 export default function CrmConnectionCard() {
   const [state, setState] = useState<IntegrationState | null>(null);
-  const [showUnavailable, setShowUnavailable] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
@@ -566,9 +565,9 @@ export default function CrmConnectionCard() {
     const availability = resolveIntegrationAvailability(state[key]);
     return !availability.available && !availability.hasSavedGrant;
   });
-  const visibleProviders = showUnavailable
-    ? PROVIDERS
-    : PROVIDERS.filter(({ key }) => !hiddenProviders.some((provider) => provider.key === key));
+  const visibleProviders = PROVIDERS.filter(
+    ({ key }) => !hiddenProviders.some((provider) => provider.key === key),
+  );
 
   return (
     <div className="space-y-4">
@@ -963,20 +962,6 @@ export default function CrmConnectionCard() {
           })}
         </AnimatePresence>
       </div>
-      {hiddenProviders.length > 0 ? (
-        <ShadButton
-          type="button"
-          variant="ghost"
-          size="sm"
-          disableAnimations
-          aria-expanded={showUnavailable}
-          aria-controls="integration-provider-grid"
-          onClick={() => setShowUnavailable((visible) => !visible)}
-        >
-          {showUnavailable ? "Hide" : "Show"} {hiddenProviders.length} unavailable{" "}
-          {hiddenProviders.length === 1 ? "tool" : "tools"}
-        </ShadButton>
-      ) : null}
     </div>
   );
 }

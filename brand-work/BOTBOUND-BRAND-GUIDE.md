@@ -2,11 +2,11 @@
 
 Production identity approved 2026-08-20.
 
-Current public positioning reviewed October 10, 2026. Existing campaign images, videos and historical proof retain their original copy until separately refreshed; this source update does not recertify those assets.
+Current public positioning reviewed October 23, 2026. Existing campaign images, videos and historical proof retain their original copy until separately refreshed; this source update does not recertify those assets.
 
 ## The Idea
 
-BotBound gives businesses voice Bots for inbound and outbound calls, with cloud-browser work and managed email available through the workspace and selected plan. The identity makes the phone capability literal: a calm, friendly robot visibly grips a classic phone receiver to its ear. The hand is essential. It turns a generic support-bot silhouette into a specific, ownable operator.
+BotBound gives people and small businesses voice Bots with a computer, phone number, and email address, available through the workspace and selected plan. The launch story starts with answering calls, handling useful requests, sending approved email, and supervised Computer work. The identity makes the phone capability literal: a calm, friendly robot visibly grips a classic phone receiver to its ear. The hand is essential. It turns a generic support Bot silhouette into a specific, ownable operator.
 
 The brand line is:
 
@@ -14,9 +14,11 @@ The brand line is:
 
 The current homepage headline is:
 
-> Voice Bots With a Computer, Phone Number, and Branded Email.
+> Voice Bots With a Computer, Phone Number, and Email Address.
 
-The general product category is **Inbound & Outbound Voice Bots**. The current prepared static family leads with **Give Your Bot a Goal.** and uses the approved operator and the existing Stay in the Work photograph. The September campaigns remain dated creative variants; “sales hire” describes software, not an employment service. See [the current copy kit](launch-2026-10-goal/COPY-KIT.md).
+The general product category is **Voice Bots**. The launch campaign line is **Your Next Hire Is a Bot.** The prepared **Give Your Bot a Goal.** family remains a creative variant and uses the approved operator and the existing Stay in the Work photograph. Historical campaigns remain dated creative variants; “hire” describes software, not an employment service. See [the goal campaign copy kit](launch-2026-10-goal/COPY-KIT.md).
+
+Keep SMS, campaign calling, and unproven messaging integrations out of launch marketing and customer discovery. Reviewed personal and specific business service calls remain subject to the current eligibility controls. Do not promise that personal branding removes those controls. The [founder launch runbook](../docs/FOUNDER_LAUNCH_COMMAND_CENTER.md) owns the current scope and proof requirements.
 
 The homepage describes the product family. A dedicated number requires an eligible Calls plan; a managed inbox requires an eligible Email plan. Computer work starts as its own browser task. Do not imply that one task automatically receives the Bot's call or email history.
 

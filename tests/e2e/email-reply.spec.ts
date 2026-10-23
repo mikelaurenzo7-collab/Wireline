@@ -148,3 +148,60 @@ test("a refused reply keeps the text and retries under the same key", async ({ p
   expect(replies).toHaveLength(2);
   expect(replies[1].operation_key).toBe(replies[0].operation_key);
 });
+
+for (const width of [390, 1280]) {
+  test(`long email threads keep the reply in reach at ${width}px`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: width < 600 ? 844 : 720 });
+    await mockInbox(page, () => 502);
+    await page.route(`**/api/emails/threads/${THREAD_ID}/outcome`, (route) =>
+      route.fulfill({
+        json: {
+          thread,
+          messages: Array.from({ length: 20 }, (_, index) => ({
+            id: String(index + 1),
+            role: index % 2 ? "owner" : "user",
+            content:
+              index === 19
+                ? "See our plans at https://botbound.app/pricing."
+                : `Message ${index + 1}. Can you come out Tuesday? ${"Please confirm the appointment details. ".repeat(5)}`,
+            created_at: "2026-10-09T15:00:00Z",
+          })),
+          handoff: null,
+        },
+      }),
+    );
+    await page.goto("/inbox");
+    await page
+      .getByRole("button", { name: /Quote for the kitchen/ })
+      .first()
+      .click();
+    const composer = page.getByRole("form", { name: "Reply to this conversation" });
+    await expect(composer).toBeVisible();
+    // Account notices may need outer scrolling on a phone; the thread itself
+    // must retain reading space and keep the composer above the dock.
+    const send = composer.getByRole("button", { name: "Send Reply", exact: true });
+    await send.scrollIntoViewIfNeeded();
+    const readingPane = page.locator('[aria-label="Email inbox"] .overflow-y-auto').last();
+    expect((await readingPane.boundingBox())?.height).toBeGreaterThanOrEqual(100);
+    if (width < 600) {
+      const sendBox = await send.boundingBox();
+      const dockBox = await page.locator("nav.wl-shell-dock").boundingBox();
+      expect(sendBox!.y + sendBox!.height).toBeLessThanOrEqual(dockBox!.y);
+    }
+    if (process.env.BOTBOUND_DESIGN_PROOF_DIR) {
+      const path = `${process.env.BOTBOUND_DESIGN_PROOF_DIR}/inbox-long-thread-${width}.png`;
+      await page.screenshot({ path, fullPage: true, animations: "disabled" });
+      await info.attach("Inbox reply stays visible", { path, contentType: "image/png" });
+    }
+    await expect(
+      composer.getByRole("button", { name: "Send Reply", exact: true }),
+    ).toBeInViewport();
+    await expect(composer.getByRole("textbox")).toBeInViewport();
+    await expect(
+      page.getByRole("link", { name: "https://botbound.app/pricing", exact: true }),
+    ).toHaveAttribute("href", "https://botbound.app/pricing");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  });
+}

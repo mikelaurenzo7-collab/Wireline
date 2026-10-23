@@ -140,6 +140,13 @@
   margin-inline: auto;
 }
 
+/* Conversations fill the space below account notices. Keep a usable minimum
+ * on short screens, where the outer scrollport still exposes every control. */
+[data-wireline-route="/inbox"] .wl-workspace-content-inner {
+  height: auto;
+  flex: 1 0 44rem;
+}
+
 .wl-inbox-route .wl-channel-inbox-grid {
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--wireline-color-border-default) 88%, transparent);

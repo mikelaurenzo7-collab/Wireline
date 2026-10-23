@@ -143,6 +143,12 @@ test("Studio review cards and saved receipts survive a full page reload", async 
   await expect(review.getByRole("button", { name: "Save Opening greeting" })).toBeVisible();
   await review.getByRole("button", { name: "Save Opening greeting" }).click();
   await expect(review.getByText("Saved", { exact: true })).toBeVisible();
+  await expect(review.getByText(opening.value, { exact: true })).toBeHidden();
+  const receipt = review.locator("summary");
+  await expect(receipt).toBeFocused();
+  await receipt.press("Enter");
+  await expect(review.getByText(opening.value, { exact: true })).toBeVisible();
+  await receipt.press("Enter");
   expect(writes).toEqual([
     {
       field: opening.field,
@@ -154,6 +160,7 @@ test("Studio review cards and saved receipts survive a full page reload", async 
   await page.reload();
   await expect(review.getByText("Saved", { exact: true })).toBeVisible();
   await expect(review.getByRole("button", { name: "Save Opening greeting" })).toHaveCount(0);
+  await expect(review.getByText(opening.value, { exact: true })).toBeHidden();
 });
 
 test("Studio opens Computer for the Bot currently selected", async ({ page }) => {
@@ -248,7 +255,7 @@ for (const failure of ["unavailable", "malformed"] as const) {
       await expect(save).toBeDisabled();
       expect(requests).toHaveLength(2);
       await page.getByRole("link", { name: "Open Inbox", exact: true }).click();
-      await expect(page).toHaveURL(/\/inbox$/);
+      await expect(page).toHaveURL(/\/inbox\?tab=email&agent=bot-front-desk$/);
       await page.goBack();
       await expect(review).toBeVisible();
       await expect(save).toBeDisabled();
@@ -258,7 +265,7 @@ for (const failure of ["unavailable", "malformed"] as const) {
     }
     await expect(review.getByText("Saved", { exact: true })).toBeVisible();
     await page.getByRole("link", { name: "Open Inbox", exact: true }).click();
-    await expect(page).toHaveURL(/\/inbox$/);
+    await expect(page).toHaveURL(/\/inbox\?tab=email&agent=bot-front-desk$/);
     await page.goBack();
     await expect(review.getByText("Saved", { exact: true })).toBeVisible();
     expect(requests).toEqual([
@@ -326,7 +333,7 @@ test("Change and Try It drafts survive leaving the Workspace without mixing thei
     animations: "disabled",
   });
   await page.getByRole("link", { name: "Open Inbox", exact: true }).click();
-  await expect(page).toHaveURL(/\/inbox$/);
+  await expect(page).toHaveURL(/\/inbox\?tab=email&agent=bot-front-desk$/);
   await page.goBack();
   await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
   await expect(review).toBeVisible();
@@ -455,7 +462,7 @@ test("a delayed clear remains pending across remounts and cannot restore deleted
   try {
     await expect.poll(() => deleteCount).toBe(1);
     await page.getByRole("link", { name: "Open Inbox", exact: true }).click();
-    await expect(page).toHaveURL(/\/inbox$/);
+    await expect(page).toHaveURL(/\/inbox\?tab=email&agent=bot-front-desk$/);
     await expect(review).toHaveCount(0);
     await page.goBack();
     await expect(review).toBeVisible();
@@ -463,7 +470,7 @@ test("a delayed clear remains pending across remounts and cannot restore deleted
       page.getByRole("button", { name: "Clear conversation", exact: true }),
     ).toBeDisabled();
     await page.getByRole("link", { name: "Open Inbox", exact: true }).click();
-    await expect(page).toHaveURL(/\/inbox$/);
+    await expect(page).toHaveURL(/\/inbox\?tab=email&agent=bot-front-desk$/);
     await expect(review).toHaveCount(0);
   } finally {
     releaseDelete();

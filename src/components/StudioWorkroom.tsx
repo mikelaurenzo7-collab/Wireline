@@ -25,6 +25,7 @@ import { WORKSPACE_VOICE } from "../lib/product-copy";
 import { reconcileStudioCommandDraft } from "../lib/studio-route-state";
 import { WL_COMPOSER_CLASSES } from "../lib/wireline-design-system";
 import { retainStudioConversationMessages } from "../lib/studio-session-state";
+import LinkifiedText from "./ui/LinkifiedText";
 
 export type StudioMessage = {
   id: string;
@@ -94,7 +95,11 @@ function MessageBubble({
     return (
       <article className="ml-auto max-w-[84%]">
         <div className="rounded-xl bg-primary px-4 py-3 text-[14px] font-medium leading-[1.5] text-primary-foreground shadow-sm">
-          <p className="whitespace-pre-wrap break-words">{message.content}</p>
+          <p className="whitespace-pre-wrap break-words">
+            <LinkifiedText className="text-primary-foreground decoration-current hover:decoration-current">
+              {message.content}
+            </LinkifiedText>
+          </p>
         </div>
         {mode === "test" ? (
           <p className="mt-1 text-right text-xs text-muted-foreground">Customer</p>
@@ -107,7 +112,9 @@ function MessageBubble({
     <article className="w-fit max-w-[92%]" aria-label={`${agentName} response`}>
       <div className="min-w-0">
         <div className="rounded-xl border border-border bg-card px-4 py-3 text-[14px] leading-[1.5] text-foreground shadow-sm">
-          <p className="whitespace-pre-wrap break-words">{message.content}</p>
+          <p className="whitespace-pre-wrap break-words">
+            <LinkifiedText>{message.content}</LinkifiedText>
+          </p>
         </div>
         {mode === "configure" && message.proposals ? (
           <StudioProposalReview

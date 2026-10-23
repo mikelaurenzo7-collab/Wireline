@@ -1,10 +1,11 @@
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Link } from "react-router";
-import { Check, Loader2 } from "lucide-react";
+import { Check, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "./atoms";
 import OutboundDialDialog from "./OutboundDialDialog";
 import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
+import { SMS_LAUNCH_UI_ENABLED } from "../lib/product-copy";
 
 export type StudioProposals = {
   changes?: unknown[];
@@ -39,6 +40,9 @@ function ReviewCard({
   messageId: string;
   operation: StudioProposalOperation;
 }) {
+  const savedSummaryRef = useRef<HTMLElement>(null);
+  const saveButtonRef = useRef<HTMLButtonElement>(null);
+  const restoreSavedFocus = useRef(false);
   const subscribe = useCallback(
     (listener: () => void) => {
       operation.listeners.add(listener);
@@ -57,9 +61,16 @@ function ReviewCard({
     operation.snapshot = snapshot;
     operation.listeners.forEach((listener) => listener());
   };
+  useEffect(() => {
+    if (saved && restoreSavedFocus.current) {
+      savedSummaryRef.current?.focus();
+      restoreSavedFocus.current = false;
+    }
+  }, [saved]);
 
   const save = async () => {
     if (operation.snapshot.pending || operation.snapshot.saved) return;
+    restoreSavedFocus.current = document.activeElement === saveButtonRef.current;
     update({ pending: true, saved: false, error: null });
     try {
       const persistedMessage = /^[1-9]\d*$/.test(messageId);
@@ -91,6 +102,9 @@ function ReviewCard({
       if (!confirmed) throw new Error("Save was not confirmed. Try again.");
       // Persist the receipt in this Bot's session even if its workroom was closed
       // while the server completed the write. Never label another Bot as saved.
+      restoreSavedFocus.current &&=
+        document.activeElement === saveButtonRef.current ||
+        document.activeElement === document.body;
       update({ pending: false, saved: true, error: null });
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
     } catch (reason) {
@@ -105,40 +119,55 @@ function ReviewCard({
   return (
     <section
       aria-label={`Review ${item.label}`}
-      className="min-w-0 rounded-xl border border-border bg-card p-3"
+      className="min-w-0 rounded-xl border border-border bg-card"
     >
-      <p className="text-sm font-semibold text-foreground">{item.label}</p>
-      <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
-        {item.value}
-      </p>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        {saved ? (
-          <span
-            role="status"
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
+      {saved ? (
+        <details className="group">
+          <summary
+            ref={savedSummaryRef}
+            className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm wl-focus-ring-halo"
           >
-            <Check className="size-3.5" aria-hidden="true" />
-            Saved
-          </span>
-        ) : (
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            aria-label={`Save ${item.label}`}
-            disabled={pending}
-            onClick={() => void save()}
-          >
-            {pending ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : null}
-            {pending ? "Saving…" : "Save"}
-          </Button>
-        )}
-      </div>
-      {error ? (
-        <p role="alert" className="mt-2 break-words text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
+            <Check className="size-4 shrink-0 text-primary" aria-hidden="true" />
+            <span className="min-w-0 flex-1 font-medium text-foreground">{item.label}</span>
+            <span role="status" className="text-xs text-muted-foreground">
+              Saved
+            </span>
+            <ChevronDown
+              className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+              aria-hidden="true"
+            />
+          </summary>
+          <p className="whitespace-pre-wrap break-words border-t border-border px-3 py-3 text-sm leading-relaxed text-foreground">
+            {item.value}
+          </p>
+        </details>
+      ) : (
+        <div className="p-3">
+          <p className="text-sm font-semibold text-foreground">{item.label}</p>
+          <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
+            {item.value}
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button
+              ref={saveButtonRef}
+              type="button"
+              size="sm"
+              variant="secondary"
+              aria-label={`Save ${item.label}`}
+              disabled={pending}
+              onClick={() => void save()}
+            >
+              {pending ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : null}
+              {pending ? "Saving…" : "Save"}
+            </Button>
+          </div>
+          {error ? (
+            <p role="alert" className="mt-2 break-words text-sm text-destructive">
+              {error}
+            </p>
+          ) : null}
+        </div>
+      )}
     </section>
   );
 }
@@ -173,6 +202,7 @@ export default function StudioProposalReview({
     if (
       !record(value) ||
       !text(value.tool) ||
+      (value.tool === "send_text_message" && !SMS_LAUNCH_UI_ENABLED) ||
       !text(value.label) ||
       typeof value.enable !== "boolean"
     )
@@ -191,6 +221,7 @@ export default function StudioProposalReview({
     (value): value is Record<string, unknown> =>
       record(value) &&
       ["send_email", "send_text_message", "make_call"].includes(text(value.kind)) &&
+      (value.kind !== "send_text_message" || SMS_LAUNCH_UI_ENABLED) &&
       !!text(value.label),
   );
 
@@ -249,7 +280,7 @@ export default function StudioProposalReview({
             </Button>
           ) : (
             <Link
-              to="/inbox"
+              to={`/inbox?tab=${action.kind === "send_text_message" ? "sms" : "email"}&agent=${encodeURIComponent(agentId)}`}
               className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-4 hover:underline wl-focus-ring-halo"
             >
               Open Inbox

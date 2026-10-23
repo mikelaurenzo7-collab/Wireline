@@ -339,6 +339,13 @@ for (const width of [390, 1024]) {
     await page.goto("/computer");
     const result = page.getByRole("region", { name: "Check our Google Business page." });
     await expect(result.getByText("The listing has Saturday hours.")).toBeVisible();
+    await expect(result.getByText("Check our Google Business page.", { exact: true })).toBeHidden();
+    await result.locator("summary").click();
+    await expect(
+      result.getByText("Check our Google Business page.", { exact: true }),
+    ).toBeVisible();
+    await result.locator("summary").click();
+    await expect(result.getByText(/Browser screen cleared/)).toHaveCount(0);
     await expect(page.locator(".wl-computer-composer")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
     await expect(page.getByRole("button", { name: "History" })).toBeVisible();

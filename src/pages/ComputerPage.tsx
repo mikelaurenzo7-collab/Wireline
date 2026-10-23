@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  ChevronDown,
   CircleAlert,
   Eye,
   EyeOff,
@@ -39,6 +40,7 @@ import type { ComputerComposerDraft } from "../lib/studio-session-state";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { Badge, Button, Input, NativeSelect, Skeleton, Textarea } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
+import LinkifiedText from "../components/ui/LinkifiedText";
 import WorkspaceRecovery from "../components/WorkspaceRecovery";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
@@ -889,10 +891,24 @@ function TaskDetail({
             </span>
             {botName ? <span className="text-xs text-muted-foreground">{botName}</span> : null}
           </div>
-          {/* The goal is the owner's own sentence: body type, not a display title. */}
-          <p id="computer-task-title" className="wl-computer-detail__goal">
-            {task.preparingBrowser ? "Your browser is ready" : task.goal}
-          </p>
+          {active || !task.summary ? (
+            <p id="computer-task-title" className="wl-computer-detail__goal">
+              {task.preparingBrowser ? "Your browser is ready" : task.goal}
+            </p>
+          ) : (
+            <details className="group mt-1">
+              <summary className="flex min-h-11 w-fit cursor-pointer list-none items-center gap-2 text-sm text-muted-foreground wl-focus-ring-halo">
+                Task brief
+                <ChevronDown
+                  className="size-4 transition-transform group-open:rotate-180"
+                  aria-hidden="true"
+                />
+              </summary>
+              <p id="computer-task-title" className="wl-computer-detail__goal pb-2">
+                {task.goal}
+              </p>
+            </details>
+          )}
         </div>
         <div className="wl-computer-detail__actions">
           <Button
@@ -1190,12 +1206,12 @@ function TaskDetail({
             ) : null
           }
         />
-      ) : (
+      ) : !task.summary ? (
         <p className="wl-computer-screen-cleared">
           <MonitorSmartphone className="size-4 shrink-0" aria-hidden="true" />
           The browser screen was cleared after this task ended.
         </p>
-      )}
+      ) : null}
 
       {!active &&
       (task.status === "failed" || task.status === "blocked" || task.status === "interrupted") ? (
@@ -1230,7 +1246,9 @@ function TaskDetail({
                 aria-hidden="true"
               />
             )}
-            <p className="whitespace-pre-line">{task.summary}</p>
+            <p className="min-w-0 whitespace-pre-line [overflow-wrap:anywhere]">
+              <LinkifiedText>{task.summary}</LinkifiedText>
+            </p>
           </div>
           {task.sources.length ? (
             <ul className="wl-computer-sources" aria-label="Sources">

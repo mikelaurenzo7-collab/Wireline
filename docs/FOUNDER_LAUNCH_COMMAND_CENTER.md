@@ -1,6 +1,6 @@
 # Founder Launch Command Center
 
-Updated: 2026-10-22
+Updated: 2026-10-23
 
 Status: **Active owner go/no-go runbook**  
 Primary authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`
@@ -136,6 +136,15 @@ Before admitting a real customer, complete one controlled founder dogfood from a
 10. verify cancellation/portal behavior and support recovery paths.
 
 Use a disposable founder/demo account until a real customer exists. Never manufacture customer proof from that data.
+
+### The handoff must stay coherent
+
+- Give the Bot a name and verify the greeting, workspace identity, sending address, business signature, website and plan links agree. Only use verified facts and links supplied by that Bot's owner; never add BotBound's business links to another customer's message.
+- Keep private rehearsal and the actual phone runtime distinct in the evidence. A good microphone rehearsal does not prove the live number's voice, cadence or tool results.
+- When a caller requests an email, confirm the provider result briefly. Verify one delivered message and correct clickable links; do not repeat the entire email aloud or promise delivery when only a send was accepted.
+- Review a longer call, interruption, unavailable action and owner handoff. Confirm the owner can find the outcome and act on it without an integration.
+- Keep Inbox replies usable on a narrow screen and in a long thread. Finished Computer work must show its result and preserve its original task, activity and next action.
+- Show configured tools and saved connections that need recovery. Do not turn unavailable vendors into launch promises or make optional connections prerequisites for a useful Bot.
 
 ### Open launch proofs and founder decisions
 

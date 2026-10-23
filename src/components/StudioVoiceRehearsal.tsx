@@ -1,6 +1,7 @@
 import { Phone } from "lucide-react";
 
 import type { BotMarkKey } from "../lib/bot-mark";
+import { formatPhone } from "../lib/safe-number";
 import { Badge, Button } from "./atoms";
 import OpenAILiveVoiceSandbox from "./OpenAILiveVoiceSandbox";
 
@@ -43,7 +44,7 @@ export default function StudioVoiceRehearsal({
           <Button asChild size="sm" variant="outline" className="min-h-11">
             <a href={phoneHref} aria-label={`Call connected line ${phone}`}>
               <Phone aria-hidden="true" className="size-4" />
-              <span className="wl-preserve-case">{phone}</span>
+              <span className="wl-preserve-case tabular-nums">{formatPhone(phone)}</span>
             </a>
           </Button>
         </div>
