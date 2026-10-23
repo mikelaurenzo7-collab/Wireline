@@ -212,7 +212,7 @@ describe("Stripe account identity guard", () => {
       const openPaid = plansForClient().filter(
         (plan) => plan.price_usd_monthly > 0 && plan.checkout_availability === "available",
       );
-      expect(openPaid).toHaveLength(9);
+      expect(openPaid).toHaveLength(10);
       expect(openPaid.every((plan) => plan.configured && plan.annual_configured)).toBe(true);
       expect(openPaid.every((plan) => !plan.extra_agent_configured)).toBe(true);
       expect(openPaid.every((plan) => !plan.contact_sales)).toBe(true);

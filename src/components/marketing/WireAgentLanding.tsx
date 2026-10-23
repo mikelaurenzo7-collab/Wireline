@@ -98,9 +98,9 @@ export default function WireAgentLanding() {
                   <Link
                     to={signupHrefForPlan("personal")}
                     className="landing-prestige__cta is-primary"
-                    onClick={() => trackSignupIntent("hero_primary", "Start Free")}
+                    onClick={() => trackSignupIntent("hero_primary", "Get Started")}
                   >
-                    Start Free <ArrowRight aria-hidden="true" />
+                    Get Started <ArrowRight aria-hidden="true" />
                   </Link>
                   <Link to="/signin" className="landing-prestige__cta">
                     Sign In
@@ -108,7 +108,11 @@ export default function WireAgentLanding() {
                 </>
               )}
             </div>
-            {signedIn ? null : <p className="landing-prestige__reassurance">No card required.</p>}
+            {signedIn ? null : (
+              <p className="landing-prestige__reassurance">
+                Personal is $12 a month. Cancel anytime.
+              </p>
+            )}
             <nav className="landing-prestige__directions" aria-label="Choose what your Bot does">
               <Link
                 className="landing-prestige__direction is-inbound"
@@ -197,7 +201,7 @@ export default function WireAgentLanding() {
             <header className="landing-prestige__section-heading">
               <p>Pricing</p>
               <h2>
-                <span>Create Your Bot</span> <span>for Free</span>
+                <span>Create Your Bot</span> <span>on a Paid Plan</span>
               </h2>
               <span>
                 Starting plans. Every paid plan includes a cloud computer; tasks use its AI
@@ -211,7 +215,6 @@ export default function WireAgentLanding() {
             </header>
             <div className="landing-prestige__price-grid">
               {PUBLIC_PLANS.map(({ id, plan }) => {
-                const free = id === "personal";
                 const planName = getPlanDisplayName(plan);
                 const featured = id === "voice-email";
                 const emailSetupReview = needsEmailSetupReview(id);
@@ -223,36 +226,30 @@ export default function WireAgentLanding() {
                   >
                     <div>
                       <p>{planName}</p>
-                      <span>{free ? "Private" : getPlanCapacityLabel(plan)}</span>
+                      <span>{getPlanCapacityLabel(plan)}</span>
                       <div className="landing-prestige__price-number">
                         <strong>${plan.price_usd_monthly}</strong>
-                        <span>{free ? "forever" : "/mo"}</span>
+                        <span>/mo</span>
                       </div>
                     </div>
                     <ul>
                       <li>
                         <Check aria-hidden="true" />
-                        {free
-                          ? "1 private Bot"
-                          : `${plan.max_agents} live Bot${plan.max_agents === 1 ? "" : "s"}`}
+                        {`${plan.max_agents} live Bot${plan.max_agents === 1 ? "" : "s"}`}
                       </li>
                       <li>
                         <Check aria-hidden="true" />
-                        {free
-                          ? "Private simulation"
-                          : plan.voice_minutes_monthly > 0
-                            ? `${plan.voice_minutes_monthly} call minutes/month`
-                            : "1 managed email inbox"}
+                        {plan.voice_minutes_monthly > 0
+                          ? `${plan.voice_minutes_monthly} call minutes/month`
+                          : "1 managed email inbox"}
                       </li>
                       <li>
                         <Check aria-hidden="true" />
-                        {free
-                          ? "Upgrade for live work"
-                          : id === "email"
-                            ? "AI and email allowance included"
-                            : id === "voice-email"
-                              ? "1 number + 1 email inbox"
-                              : "1 local number included"}
+                        {id === "email"
+                          ? "AI and email allowance included"
+                          : id === "voice-email"
+                            ? "1 number + 1 email inbox"
+                            : "1 local number included"}
                       </li>
                     </ul>
                     {emailSetupReview ? (
@@ -265,11 +262,9 @@ export default function WireAgentLanding() {
                       className={featured ? "is-primary" : undefined}
                       onClick={() => trackSignupIntent("pricing", planName)}
                     >
-                      {free
-                        ? "Start Free"
-                        : emailSetupReview
-                          ? `Build ${planName} Bot Free`
-                          : `${canActivate(id) ? "Choose" : "Set Up"} ${planName}`}
+                      {emailSetupReview
+                        ? `Choose ${planName}`
+                        : `${canActivate(id) ? "Choose" : "Set Up"} ${planName}`}
                     </Link>
                   </article>
                 );
@@ -299,9 +294,9 @@ export default function WireAgentLanding() {
                 <Link
                   to={signupHrefForPlan("personal")}
                   className="landing-prestige__cta is-primary"
-                  onClick={() => trackSignupIntent("closing_primary", "Start Free")}
+                  onClick={() => trackSignupIntent("closing_primary", "Get Started")}
                 >
-                  Start Free <ArrowRight aria-hidden="true" />
+                  Get Started <ArrowRight aria-hidden="true" />
                 </Link>
               )}
               <Link to="/features" className="landing-prestige__cta">

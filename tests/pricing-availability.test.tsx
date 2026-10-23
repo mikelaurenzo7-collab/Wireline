@@ -163,9 +163,9 @@ describe("public pricing activation availability", () => {
     window.location.search = "?plan=voice&interval=month";
     expect(planLink("voice")?.props.to).toBe("/signup?plan=voice&interval=month");
   });
-  it("keeps Free Builder and plan intent available while checking, without offering a purchase", () => {
+  it("keeps Personal and plan intent available while checking, without offering a purchase", () => {
     expect(text(render())).toContain("Checking activation availability…");
-    expect(text(planLink("free"))).toBe("Create a Free Bot ");
+    expect(text(planLink("free"))).toBe("Choose Personal ");
     expect(text(planLink("voice-regular"))).toBe("Set Up These Channels ");
     expect(text(render())).not.toContain("Start for $19");
   });
@@ -203,7 +203,7 @@ describe("public pricing activation availability", () => {
     expect(text(render())).toContain(
       "Email activation requires a setup review. Create a Bot for free, rehearse privately, then ask us about activation.",
     );
-    expect(text(planLink("voice-email-regular"))).toBe("Create a Free Bot ");
+    expect(text(planLink("voice-email-regular"))).toBe("Create Your Bot ");
     expect(planLink("voice-email-regular")?.props.to).toBe(
       "/signup?plan=voice-email-regular&interval=month",
     );

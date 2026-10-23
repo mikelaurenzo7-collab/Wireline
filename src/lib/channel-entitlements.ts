@@ -10,6 +10,8 @@ export type TenantChannelEntitlements = {
   subscriptionStatus: string;
   channels: readonly CommunicationChannel[];
   isOwner: boolean;
+  /** Personal uses the customer's own inbox instead of a managed BotBound mailbox. */
+  ownInbox: boolean;
 };
 
 /** Server-read identity and subscription are the only sources of channel authority. */
@@ -37,12 +39,34 @@ export async function getTenantChannelEntitlements(
       subscriptionStatus,
       channels: active ? (plan?.channels ?? []) : [],
       isOwner,
+      ownInbox: active && plan?.id === "personal",
     };
   } catch {
     throw AppError.serviceUnavailable(
       "Your communication channels could not be verified. Please retry shortly.",
     );
   }
+}
+
+/** Email-channel plans get a BotBound inbox. Personal may use Gmail or Outlook instead. */
+export function emailTransportAllowed(snapshot: TenantChannelEntitlements): boolean {
+  return snapshot.channels.includes("email") || snapshot.ownInbox;
+}
+
+export async function requireTenantEmailTransport(
+  userId: string,
+): Promise<TenantChannelEntitlements> {
+  const snapshot = await getTenantChannelEntitlements(userId);
+  if (emailTransportAllowed(snapshot)) return snapshot;
+  throw new AppError(
+    402,
+    "CHANNEL_NOT_INCLUDED",
+    "Add Email to your plan before using this channel.",
+    {
+      channel: "email",
+      recovery_path: "/settings/billing",
+    },
+  );
 }
 
 export async function requireTenantChannel(

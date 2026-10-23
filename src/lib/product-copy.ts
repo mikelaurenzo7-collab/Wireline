@@ -139,7 +139,7 @@ export const OUTBOUND_WEDGE = {
 export const MARKETING_VOICE = {
   eyebrow: BOT_BRAND.supportingLine,
   headline: BOT_BRAND.slogan,
-  primaryCta: "Start Free",
+  primaryCta: "Get Started",
   subline: BOT_BRAND.promise,
   channelProof: ["Call", "Email", "Computer"],
   extensionLead:

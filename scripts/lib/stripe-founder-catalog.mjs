@@ -64,7 +64,27 @@ const metadataFor = (offer) => ({
   included_ai_spend_usd: String(offer.allowance),
   overage_policy: "bounded_completion_grace",
 });
+const PERSONAL_OFFER = {
+  id: "personal",
+  label: "Personal",
+  monthly: 12,
+  annual: 120,
+  channels: ["voice"],
+  capacity: "light",
+  numbers: 1,
+  mailboxes: 0,
+  minutes: 20,
+  allowance: 1,
+};
 export const FOUNDER_PRODUCTS = [
+  {
+    key: "personal",
+    name: "BotBound Personal",
+    description:
+      "1 Bot with calls and a computer. 20 live-call minutes/month. Up to 10 additional completion minutes within the call limit; any balance due pauses new calls and prepaid extras. Managed AI allowance included. Connect Gmail or Outlook for an inbox you already use. No automatic top-ups or overage invoices.",
+    defaultPriceKey: "personal_monthly_paid_2026_10_v3",
+    metadata: metadataFor(PERSONAL_OFFER),
+  },
   ...CHANNEL_OFFERS.map((offer) => ({
     key: offer.id,
     name: `BotBound ${offer.label}`,
@@ -94,6 +114,20 @@ export const FOUNDER_PRODUCTS = [
   },
 ];
 export const FOUNDER_PRICES = [
+  ...["month", "year"].map((interval) => {
+    const annual = interval === "year";
+    const key = `personal_${annual ? "annual" : "monthly"}_paid_2026_10_v3`;
+    return {
+      key,
+      productKey: "personal",
+      nickname: `BotBound Personal - ${annual ? "Annual" : "Monthly"}`,
+      lookupKey: key,
+      unitAmount: (annual ? PERSONAL_OFFER.annual : PERSONAL_OFFER.monthly) * 100,
+      recurring: { interval, usage_type: "licensed" },
+      envTarget: `STRIPE_PERSONAL_${annual ? "ANNUAL_" : ""}PRICE_ID`,
+      metadata: { ...metadataFor(PERSONAL_OFFER), wireline_price_key: key },
+    };
+  }),
   ...CHANNEL_OFFERS.flatMap((offer) =>
     ["month", "year"].map((interval) => {
       const annual = interval === "year";

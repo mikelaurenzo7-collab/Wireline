@@ -59,7 +59,7 @@ async function publicMetrics(page: Page) {
     );
     const prestigeDirections = document.querySelector<HTMLElement>(".landing-prestige__directions");
     const startFree = Array.from(document.querySelectorAll<HTMLAnchorElement>("a")).find(
-      (link) => link.textContent?.trim() === "Start Free",
+      (link) => link.textContent?.trim() === "Get Started",
     );
     const rect = (element: Element | null | undefined) => element?.getBoundingClientRect();
     const rootRect = rect(root);
@@ -164,7 +164,7 @@ test("supporting public headers keep signup and sign-in navigation reachable on 
   for (const path of ["/features", "/solutions/support"] as const) {
     await openPublicRoute(page, path);
     const header = page.locator(".wl-public-header");
-    const signup = header.getByRole("link", { name: "Start Free", exact: true });
+    const signup = header.getByRole("link", { name: "Get Started", exact: true });
     const menu = header.getByRole("button", { name: "Open navigation" });
     for (const target of [signup, menu]) {
       await expect(target).toBeVisible();
@@ -233,7 +233,7 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
   // Account access is one action away instead of a split-screen form.
   await expect(page.getByRole("region", { name: "Account access" })).toHaveCount(0);
   const actions = page.locator(".landing-prestige__hero .landing-prestige__actions");
-  await expect(actions.getByRole("link", { name: "Start Free" })).toHaveAttribute(
+  await expect(actions.getByRole("link", { name: "Get Started" })).toHaveAttribute(
     "href",
     /\/signup\?[^\s]*plan=free/,
   );
@@ -277,7 +277,7 @@ test("home keeps the BotBound promise and account path in one mobile flow", asyn
   await expect(page.locator("#solutions")).toBeAttached();
   await expect(page.locator("#pricing")).toBeAttached();
   const actions = page.locator(".landing-prestige__hero .landing-prestige__actions");
-  await expect(actions.getByRole("link", { name: "Start Free" })).toBeInViewport();
+  await expect(actions.getByRole("link", { name: "Get Started" })).toBeInViewport();
   await expect(actions.getByRole("link", { name: "Sign In", exact: true })).toBeInViewport();
 
   const metrics = await publicMetrics(page);

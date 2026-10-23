@@ -11,9 +11,9 @@ describe("founder agent prompt truth contract", () => {
   it("quotes launch channel capacities and exact annual prices without promoting SMS or retired benefits", () => {
     const sales = WIRELINE_PERSONAS.sales.systemPrompt;
     const current = STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels");
-    expect(current).toHaveLength(21);
+    expect(current).toHaveLength(22);
     const launch = current.filter((plan) => !plan.channels.includes("sms"));
-    expect(launch).toHaveLength(9);
+    expect(launch).toHaveLength(10);
     for (const plan of launch) {
       expect(sales).toContain(
         `${plan.name}: $${plan.price_usd_monthly}/mo or $${plan.price_usd_annual}/year`,

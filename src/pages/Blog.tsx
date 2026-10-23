@@ -110,7 +110,7 @@ export default function Blog() {
                 to={signupHrefForPlan("personal")}
                 className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
               >
-                Start Free
+                Get Started
               </Link>
               <Link
                 to="/features"

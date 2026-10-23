@@ -192,7 +192,7 @@ async function expectContentFits(locator: Locator) {
 test("workspace actions share readable typography in both themes", async ({ page }) => {
   await mockWorkspace(page);
   await page.goto("/settings/billing");
-  const builder = page.getByRole("link", { name: "Continue Free", exact: true });
+  const builder = page.getByRole("button", { name: "Continue to Checkout", exact: true });
   await expect(builder).toBeVisible();
   for (const light of [false, true]) {
     await page.evaluate(async (light) => {

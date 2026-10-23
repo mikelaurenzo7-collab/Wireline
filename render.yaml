@@ -209,6 +209,12 @@ projects:
                 sync: false
               - key: STRIPE_VOICE_HIGH_ANNUAL_PRICE_ID
                 sync: false
+              # Paid Personal calls-and-computer plan. Exact live price IDs
+              # stay in the secret store; the catalog fallback is used when unset.
+              - key: STRIPE_PERSONAL_PRICE_ID
+                sync: false
+              - key: STRIPE_PERSONAL_ANNUAL_PRICE_ID
+                sync: false
               - key: STRIPE_AUTOMATIC_TAX_ENABLED
                 sync: false
               - key: STRIPE_STARTER_9_PRICE_ID

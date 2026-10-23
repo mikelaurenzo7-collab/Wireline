@@ -18,7 +18,8 @@ import ChannelPlanPicker from "../components/ChannelPlanPicker";
 import { usePaidPlanAvailability } from "../hooks/usePaidPlanAvailability";
 
 const CHANNEL_PLANS = STRIPE_PLANS.filter(
-  (plan) => plan.catalogFamily === "channels" && !plan.channels.includes("sms"),
+  (plan) =>
+    plan.catalogFamily === "channels" && plan.id !== "personal" && !plan.channels.includes("sms"),
 );
 const TOPUP_RATE = `$${FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min`;
 const FAQ = [
@@ -40,7 +41,7 @@ const FAQ = [
   ],
   [
     "Which Plans Include a Phone Number?",
-    "Calls packages include one local number. One new number per included line is available every 31 days; releasing a number does not reset that limit. Email does not require a phone number. The Free plan does not include live numbers.",
+    "Personal and Calls packages include one local number. One new number per included line is available every 31 days; releasing a number does not reset that limit. Email-only does not include a phone number.",
   ],
   [
     "What Happens When Included Call Minutes Run Out?",
@@ -164,7 +165,7 @@ export default function Pricing() {
                       {canActivate(plan.id)
                         ? "Get Started"
                         : emailSetupReview
-                          ? "Create a Free Bot"
+                          ? "Create Your Bot"
                           : "Set Up These Channels"}{" "}
                       <ArrowRight className="size-4" aria-hidden="true" />
                     </Link>
@@ -192,16 +193,17 @@ export default function Pricing() {
             </p>
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
               <div className="text-left">
-                <h2 className="text-base font-semibold">Start Free</h2>
+                <h2 className="text-base font-semibold">Personal · $12/month</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  One private Bot. Set it up, add knowledge, and rehearse before activation.
+                  Calls and a computer for lighter use. 20 call minutes. Connect Gmail or Outlook
+                  for the inbox you already use.
                 </p>
               </div>
               <Link
                 to={signupHrefForPlan("personal")}
                 className="marketing-btn-secondary inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold"
               >
-                Create a Free Bot <ArrowRight className="size-4" aria-hidden="true" />
+                Choose Personal <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
             </div>
             <article

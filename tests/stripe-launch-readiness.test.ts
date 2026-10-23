@@ -72,7 +72,12 @@ async function audit(
   } = {},
 ) {
   const selected =
-    options.selected ?? prices.filter((price) => price.metadata.wireline_channels === "voice");
+    options.selected ??
+    prices.filter(
+      (price) =>
+        price.metadata.wireline_plan_id !== "personal" &&
+        price.metadata.wireline_channels === "voice",
+    );
   const live = selected.map(livePrice);
   options.mutate?.(live);
   const env = {

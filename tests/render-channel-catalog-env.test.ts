@@ -11,9 +11,27 @@ const api = blueprint.slice(
 describe("Render launch catalog inventory", () => {
   it("prompts for each current Calls interval without hardcoding provider identities", () => {
     const intervals = FOUNDER_PRICES.filter(
-      (price) => price.recurring && price.metadata.wireline_channels === "voice",
+      (price) =>
+        price.recurring &&
+        price.metadata.wireline_plan_id !== "personal" &&
+        price.metadata.wireline_channels === "voice",
     );
     expect(intervals).toHaveLength(6);
+    for (const interval of intervals) {
+      expect(api).toMatch(new RegExp(`key: ${interval.envTarget}\\s+sync: false`));
+      expect(api.match(new RegExp(`key: ${interval.envTarget}\\b`, "g"))).toHaveLength(1);
+    }
+    expect(api).not.toMatch(/value:\s*["']?price_/);
+  });
+
+  it("prompts for the paid Personal intervals without hardcoding provider identities", () => {
+    const intervals = FOUNDER_PRICES.filter(
+      (price) => price.recurring && price.metadata.wireline_plan_id === "personal",
+    );
+    expect(intervals.map((price) => price.envTarget).sort()).toEqual([
+      "STRIPE_PERSONAL_ANNUAL_PRICE_ID",
+      "STRIPE_PERSONAL_PRICE_ID",
+    ]);
     for (const interval of intervals) {
       expect(api).toMatch(new RegExp(`key: ${interval.envTarget}\\s+sync: false`));
       expect(api.match(new RegExp(`key: ${interval.envTarget}\\b`, "g"))).toHaveLength(1);

@@ -30,7 +30,7 @@ test("homepage mobile product and access path has clear branding and no serious 
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
   await expect(page.getByRole("link", { name: "BotBound home" })).toBeVisible();
   const actions = page.locator(".landing-prestige__hero .landing-prestige__actions");
-  await expect(actions.getByRole("link", { name: "Start Free" })).toBeVisible();
+  await expect(actions.getByRole("link", { name: "Get Started" })).toBeVisible();
   await expect(actions.getByRole("link", { name: "Sign In", exact: true })).toBeVisible();
 
   const results = await new AxeBuilder({ page }).include("main").analyze();
@@ -98,7 +98,7 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
   await gotoHomepageWithMain(page);
   const start = page
     .locator(".landing-prestige__hero .landing-prestige__actions")
-    .getByRole("link", { name: "Start Free" });
+    .getByRole("link", { name: "Get Started" });
   await start.click();
   await expect(page).toHaveURL(/\/signup\?[^\s]*plan=free/);
   await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();

@@ -11,7 +11,7 @@ describe("Stripe customer-facing product truth", () => {
     const packages = FOUNDER_PRODUCTS.filter(
       (product) => product.metadata.wireline_billing_model === "channel_package",
     );
-    expect(packages).toHaveLength(9);
+    expect(packages).toHaveLength(10);
     for (const product of packages) {
       const channels = product.metadata.wireline_channels.split(",");
       const count = Number(product.metadata.included_agents);

@@ -248,25 +248,24 @@ describe("billing plan decisions", () => {
     },
   );
 
-  it("retains a free path while the global checkout gate is paused", async () => {
+  it("does not offer a free studio bypass while the global checkout gate is paused", async () => {
     h.catalog.checkout_available = false;
     h.catalog.plans = [
       paidPlan({
         id: "personal",
-        name: "Free Builder",
-        price_usd_monthly: 0,
-        price_usd_annual: 0,
-        is_free: true,
-        features: ["Private simulation"],
+        name: "Personal",
+        price_usd_monthly: 12,
+        price_usd_annual: 120,
+        is_free: false,
+        features: ["20 call minutes"],
       }),
       paidPlan(),
     ];
     await mount("card");
     const elements = render("card");
     expect(
-      elements.find((element) => element.type === "a" && text(element).includes("Continue Free"))
-        ?.props.to,
-    ).toBe("/studio");
+      elements.find((element) => element.type === "a" && text(element).includes("Continue Free")),
+    ).toBeUndefined();
     expect(
       elements.some((element) => element.type === "a" && text(element).includes("Contact Sales")),
     ).toBe(false);

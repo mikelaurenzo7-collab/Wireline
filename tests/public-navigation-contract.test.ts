@@ -17,7 +17,7 @@ describe("public navigation contract", () => {
     expect(header).toContain('to="/signin"');
     expect(header).toContain('to={signupHrefForPlan("personal")}');
     expect(header).toContain("Sign In");
-    expect(header).toContain("Start Free");
+    expect(header).toContain("Get Started");
     expect(header).toContain("marketing-btn-primary");
   });
 

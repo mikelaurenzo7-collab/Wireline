@@ -68,10 +68,10 @@ router.post(
         contact_sales: "/contact?topic=enterprise",
       });
     }
-    if (plan.id === "personal" || plan.price_usd_monthly === 0) {
+    if (plan.price_usd_monthly === 0) {
       return res.status(400).json({
         code: "FREE_PLAN_NO_CHECKOUT",
-        error: "Free Builder does not require checkout.",
+        error: "This plan does not require checkout.",
       });
     }
     if (plan.checkoutAvailability !== "available") {

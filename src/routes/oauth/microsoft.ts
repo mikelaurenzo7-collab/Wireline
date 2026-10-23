@@ -19,7 +19,10 @@ import {
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
 import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
-import { getTenantChannelEntitlements } from "../../lib/channel-entitlements";
+import {
+  emailTransportAllowed,
+  getTenantChannelEntitlements,
+} from "../../lib/channel-entitlements";
 
 const router = express.Router();
 
@@ -38,7 +41,7 @@ router.get(
 
     const uid = req.user?.id as string | undefined;
     const tenantId = await assertOAuthProviderConnectAllowed(uid, "Microsoft");
-    const emailIncluded = (await getTenantChannelEntitlements(tenantId)).channels.includes("email");
+    const emailIncluded = emailTransportAllowed(await getTenantChannelEntitlements(tenantId));
     const redirectUri = getMicrosoftRedirectUri(req);
     const params = new URLSearchParams({
       client_id: process.env.MICROSOFT_CLIENT_ID!,
@@ -87,7 +90,7 @@ router.get(
         );
     }
     await assertOAuthProviderConnectAllowed(userId, "Microsoft");
-    const emailIncluded = (await getTenantChannelEntitlements(userId)).channels.includes("email");
+    const emailIncluded = emailTransportAllowed(await getTenantChannelEntitlements(userId));
 
     try {
       const redirectUri = getMicrosoftRedirectUri(req);

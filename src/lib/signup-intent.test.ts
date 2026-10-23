@@ -45,7 +45,7 @@ describe("signup-intent", () => {
     });
   });
 
-  it("defaults unqualified signup traffic to Free Builder", () => {
+  it("defaults unqualified signup traffic to the paid Personal plan", () => {
     expect(recommendedPlanFromIntent(null)).toBe("personal");
   });
 
@@ -102,11 +102,11 @@ describe("signup-intent", () => {
     );
   });
 
-  it("keeps Free Builder activation on Calls and preserves the selected interval", () => {
+  it("keeps Personal activation on the paid Personal plan and preserves the selected interval", () => {
     expect(activationBillingHref(parseSignupIntent("?plan=free&interval=year"))).toBe(
-      "/settings/billing?plan=voice-regular&interval=year",
+      "/settings/billing?plan=personal&interval=year",
     );
-    expect(activationBillingHref(null)).toBe("/settings/billing?plan=voice-regular&interval=month");
+    expect(activationBillingHref(null)).toBe("/settings/billing?plan=personal&interval=month");
   });
 
   it.each([

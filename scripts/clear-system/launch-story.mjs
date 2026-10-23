@@ -177,19 +177,19 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /<h2[^>]*>Start Free<\/h2>/,
-    "pricing must preserve the Free plan entry",
+    /<h2[^>]*>Personal · \$12\/month<\/h2>/,
+    "pricing must preserve the paid Personal plan entry",
   );
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
     /to=\{signupHrefForPlan\("personal"\)\}/,
-    "pricing must route Free signup through the canonical free plan destination",
+    "pricing must route Personal signup through the canonical plan destination",
   );
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /STRIPE_PLANS\.filter\([\s\S]*plan\.catalogFamily === "channels" && !plan\.channels\.includes\("sms"\)/,
+    /STRIPE_PLANS\.filter\([\s\S]*plan\.catalogFamily === "channels" &&[\s\S]*!plan\.channels\.includes\("sms"\)/,
     "public pricing must select current launch packages while retaining SMS in the catalog",
   );
   mustInclude(

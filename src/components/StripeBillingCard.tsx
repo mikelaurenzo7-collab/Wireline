@@ -5,7 +5,6 @@ import {
   CreditCard,
   Loader2,
   Shield,
-  ArrowRight,
   AlertTriangle,
   ExternalLink,
   Building2,
@@ -554,14 +553,20 @@ function PlanPicker({
   onSelectPlan: (planId: string, interval: "month" | "year") => void;
 }) {
   const availablePlans = plans
-    .filter((plan) => plan.catalog_family === "channels")
+    .filter((plan) => plan.catalog_family === "channels" && plan.id !== "personal")
     .filter(hasChannelPlanDetails)
     .filter((plan) => !plan.channels.includes("sms"));
   const displayPlans = availablePlans.length
     ? availablePlans
     : STRIPE_PLANS.filter(
-        (plan) => plan.catalogFamily === "channels" && !plan.channels.includes("sms"),
+        (plan) =>
+          plan.catalogFamily === "channels" &&
+          plan.id !== "personal" &&
+          !plan.channels.includes("sms"),
       );
+  const personalPlan =
+    plans.find((plan) => plan.id === "personal") ??
+    STRIPE_PLANS.find((plan) => plan.id === "personal");
   const [selectedId, setSelectedId] = useState(() =>
     displayPlans.some((plan) => plan.id === signupPlanInterest)
       ? signupPlanInterest!
@@ -574,6 +579,7 @@ function PlanPicker({
         (plan) =>
           plan.catalogFamily === "channels" &&
           plan.id === signupPlanInterest &&
+          plan.id !== "personal" &&
           !plan.channels.includes("sms"),
       )
     )
@@ -606,6 +612,30 @@ function PlanPicker({
           }}
         />
       </div>
+      {personalPlan ? (
+        <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h4 className="text-base font-semibold">
+              Personal · $
+              {billingInterval === "year"
+                ? personalPlan.price_usd_annual
+                : personalPlan.price_usd_monthly}
+              {billingInterval === "year" ? "/year" : "/month"}
+            </h4>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Calls and a computer. Connect Gmail or Outlook for the inbox you already use.
+            </p>
+          </div>
+          <ShadButton
+            type="button"
+            disableAnimations
+            disabled={!!busy}
+            onClick={() => onSelectPlan("personal", billingInterval)}
+          >
+            {busy === "personal" ? "Opening checkout" : "Choose Personal"}
+          </ShadButton>
+        </div>
+      ) : null}
       <ChannelPlanPicker
         id="billing"
         plans={displayPlans}
@@ -659,11 +689,6 @@ function PlanPicker({
           );
         }}
       />
-      <ShadButton asChild disableAnimations variant="outline" className="w-full">
-        <Link to="/studio">
-          Continue Free <ArrowRight className="size-4" />
-        </Link>
-      </ShadButton>
     </div>
   );
 }

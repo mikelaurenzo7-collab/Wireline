@@ -74,8 +74,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
 
   for (const [pattern, description] of [
     [
-      /to=\{signupHrefForPlan\("personal"\)\}[\s\S]*?Start Free/,
-      "root landing must lead with one free account-creation action",
+      /to=\{signupHrefForPlan\("personal"\)\}[\s\S]*?Get Started/,
+      "root landing must lead with the paid Personal plan",
     ],
     [/to="\/signin"/, "root landing must keep sign-in one action away"],
     [
@@ -198,8 +198,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /<h2[^>]*>Start Free<\/h2>[\s\S]*?to=\{signupHrefForPlan\("personal"\)\}/,
-    "pricing must expose Free account creation through its canonical signup destination",
+    /<h2[^>]*>Personal · \$12\/month<\/h2>[\s\S]*?to=\{signupHrefForPlan\("personal"\)\}/,
+    "pricing must expose the paid Personal plan through its canonical signup destination",
   );
   const channelPicker = read("src/components/ChannelPlanPicker.tsx");
   const planDisplay = read("src/lib/plan-display.ts");

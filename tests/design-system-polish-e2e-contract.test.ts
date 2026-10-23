@@ -43,11 +43,11 @@ describe("design system polish e2e verified wins", () => {
     const compare = withoutComments(read("src/pages/Compare.tsx"));
 
     expect(blog).toContain("marketing-btn-primary");
-    expect(blog).toContain("Start Free");
+    expect(blog).toContain("Get Started");
     expect(blog).toContain("See Features");
     expect(blog).not.toMatch(/START FREE|SEE FEATURES/);
     expect(blog).not.toContain('from "../components/atoms"');
-    expect(compare).toContain("Start Free");
+    expect(compare).toContain("Get Started");
     expect(compare).not.toMatch(/START FREE|SEE PRICING/);
     expect(compare).not.toContain(">Start free</");
   });
@@ -59,7 +59,7 @@ describe("design system polish e2e verified wins", () => {
     expect(pricing).not.toContain("WalletCards");
     expect(pricing).not.toContain("Sparkles");
     expect(pricing).not.toContain("icon: Users");
-    expect(pricing).toContain("Create a Free Bot");
+    expect(pricing).toContain("Create Your Bot");
     expect(compare).not.toMatch(/DIFFERENCES = \[[\s\S]*icon:/);
   });
 

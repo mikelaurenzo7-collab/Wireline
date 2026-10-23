@@ -38,23 +38,24 @@ afterEach(() => {
 });
 
 describe("plan-catalog", () => {
-  it("keeps Personal as the public $0 Free Builder tier", () => {
+  it("keeps Personal as a paid public plan for one person", () => {
     const personal = planById("personal");
-    expect(personal?.name).toBe("BotBound Free Builder");
+    expect(personal?.name).toBe("BotBound Personal");
     expect(personal?.public).toBe(true);
-    expect(personal?.price_usd_monthly).toBe(0);
-    expect(personal?.included_phone_numbers).toBe(0);
-    expect(personal?.features).toContain("Private call and email workflow simulation");
-    expect(personal?.features.join("\n")).toContain(
-      "No live number or customer conversations until activation",
-    );
+    expect(personal?.price_usd_monthly).toBe(12);
+    expect(personal?.price_usd_annual).toBe(120);
+    expect(personal?.channels).toEqual(["voice"]);
+    expect(personal?.voice_minutes_monthly).toBe(20);
+    expect(personal?.ai_spend_allowance_usd_monthly).toBe(1);
+    expect(personal?.included_phone_numbers).toBe(1);
+    expect(personal?.included_mailboxes).toBe(0);
+    expect(personal?.fallbackPriceId).toBe("price_1UTcVu8e6If87QKmf7GYiZsO");
+    expect(personal?.fallbackAnnualPriceId).toBe("price_1UTcVw8e6If87QKmEKbinlnv");
 
     const clientPersonal = plansForClient().find((plan) => plan.id === "personal");
     expect(clientPersonal).toMatchObject({
-      is_free: true,
-      configured: false,
-      annual_configured: false,
-      contact_sales: false,
+      is_free: false,
+      price_usd_monthly: 12,
     });
   });
 

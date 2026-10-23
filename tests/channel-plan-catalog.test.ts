@@ -66,7 +66,7 @@ describe("channel packages", () => {
       ["email-sms", [18, 180, 49, 499, 129, 1399]],
       ["omnichannel", [29, 309, 99, 1109, 219, 2549]],
     ] as const;
-    expect(STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels")).toHaveLength(21);
+    expect(STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels")).toHaveLength(22);
     for (const [base, prices] of offers) {
       for (const [index, tier] of (["light", "regular", "high"] as const).entries()) {
         const id = index ? `${base}-${tier}` : base;
@@ -99,11 +99,14 @@ describe("channel packages", () => {
   it("does not invent a package or entitlement from unknown selections", () => {
     expect(channelPlanForSelection([])).toBeNull();
     expect(channelPlanForSelection(["fax" as CommunicationChannel])).toBeNull();
-    expect(planIncludesChannel("personal", "voice")).toBe(false);
+    expect(planIncludesChannel("personal", "voice")).toBe(true);
+    expect(planIncludesChannel("personal", "email")).toBe(false);
     expect(planIncludesChannel("missing", "email")).toBe(false);
   });
   it("revisions changed Calls prices without re-keying unchanged capacity or channel offers", () => {
-    for (const plan of STRIPE_PLANS.filter((item) => item.catalogFamily === "channels")) {
+    for (const plan of STRIPE_PLANS.filter(
+      (item) => item.catalogFamily === "channels" && item.id !== "personal",
+    )) {
       const changed = plan.channels.includes("voice") && plan.capacityTier !== "regular";
       for (const key of [plan.lookupKeyMonthly, plan.lookupKeyAnnual]) {
         expect(key).toMatch(changed ? /_v2$/ : /_v1$/);
@@ -223,6 +226,7 @@ describe("channel packages", () => {
         .filter((plan) => plan.checkout_availability === "available" && !plan.is_free)
         .map((plan) => plan.id),
     ).toEqual([
+      "personal",
       "voice",
       "voice-regular",
       "voice-high",

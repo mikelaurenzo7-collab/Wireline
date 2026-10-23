@@ -32,7 +32,9 @@ function elements(node: ReactNode): ReactElement<Props>[] {
   if (!isValidElement<Props>(node)) return [];
   return [node, ...elements(node.props.children)];
 }
-const plans = STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels");
+const plans = STRIPE_PLANS.filter(
+  (plan) => plan.catalogFamily === "channels" && plan.id !== "personal",
+);
 function text(node: ReactNode): string {
   if (Array.isArray(node)) return node.map(text).join("");
   if (isValidElement<Props>(node)) return text(node.props.children);
@@ -62,7 +64,7 @@ describe("channel package selection", () => {
       "Calls + Email · Plus",
     );
     expect(getPlanCapacityLabel({ id: "email-high" })).toBe("Pro");
-    expect(getPlanDisplayName("free")).toBe("Free");
+    expect(getPlanDisplayName("free")).toBe("Personal");
     expect(getPlanDisplayLabel("starter")).toBe("Starter");
     expect(getPlanDisplayLabel("team")).toBe("Starter Plus");
     expect(getPlanDisplayLabel("sms")).toBe("SMS · Starter");

@@ -75,11 +75,11 @@ export default function PrecisionPublicHeader() {
               </Link>
               <Link
                 to={signupHrefForPlan("personal")}
-                aria-label="Start Free"
+                aria-label="Get Started"
                 className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold shrink-0 whitespace-nowrap max-[430px]:px-3"
               >
                 <span>
-                  Start<span className="max-[430px]:hidden"> Free</span>
+                  Get<span className="max-[430px]:hidden"> Started</span>
                 </span>
               </Link>
             </>

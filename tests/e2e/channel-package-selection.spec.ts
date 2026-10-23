@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { STRIPE_PLANS } from "../../src/lib/plan-catalog";
 
-const plans = STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels");
+const plans = STRIPE_PLANS.filter(
+  (plan) => plan.catalogFamily === "channels" && plan.id !== "personal",
+);
 const launchPlans = plans.filter((plan) => !plan.channels.includes("sms"));
 test("launch channel capacities retain exact annual signup intent in one readable selector", async ({
   page,

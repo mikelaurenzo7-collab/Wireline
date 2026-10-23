@@ -37,7 +37,7 @@ function displayPlan(
 export function getPlanDisplayName(source?: PlanDisplaySource): string {
   const plan = displayPlan(source);
   if (!plan) return "Plan";
-  if (plan.id === "personal") return "Free";
+  if (plan.id === "personal") return "Personal";
   if (plan.catalogFamily !== "legacy" && plan.channels?.length) {
     return CHANNEL_LABELS.filter(([channel]) => plan.channels?.includes(channel))
       .map(([, label]) => label)

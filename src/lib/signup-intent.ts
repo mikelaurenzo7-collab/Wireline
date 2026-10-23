@@ -382,7 +382,7 @@ export function billingIntervalFromIntent(
 /** Carry signup preferences into the existing paid activation path. */
 export function activationBillingHref(intent: SignupIntent | null | undefined): string {
   const recommended = recommendedPlanFromIntent(intent);
-  const plan = ["personal", "starter", "team", "business"].includes(recommended)
+  const plan = ["starter", "team", "business"].includes(recommended)
     ? DEFAULT_ACTIVATION_PLAN_ID
     : recommended;
   const params = new URLSearchParams({ plan, interval: billingIntervalFromIntent(intent) });

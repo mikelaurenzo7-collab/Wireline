@@ -17,16 +17,6 @@ export const WIRELINE_VOICE_STACK =
   "Live calls and private browser rehearsals run on separate BotBound managed voice paths, so a rehearsal cannot take over a customer phone Bot.";
 
 export const WIRELINE_PLANS = [
-  {
-    name: "BotBound Free Builder",
-    price: "Free to create, train, and privately rehearse",
-    bestFor: "Trying BotBound before going live.",
-    includes: [
-      "One private draft Bot",
-      "Setup and bounded private rehearsal",
-      "Private rehearsals only: no live calls, texts, or number until you activate a paid plan",
-    ],
-  },
   ...STRIPE_PLANS.filter(
     (plan) => plan.catalogFamily === "channels" && !plan.channels.includes("sms"),
   ).map((plan) => ({

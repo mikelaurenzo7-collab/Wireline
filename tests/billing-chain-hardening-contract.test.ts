@@ -124,20 +124,14 @@ describe("entitlement delivery survives webhook failure", () => {
     expect(billingPage).toContain("Your current billing options are shown below.");
   });
 
-  it("routes Free Builder to Studio without attempting Stripe Checkout", () => {
+  it("does not offer a free studio bypass from plan selection", () => {
     const catalog = read("src/lib/plan-catalog.ts");
-    const freeLinkStart = billingCard.indexOf('<Link to="/studio">');
-    const freeBranch = billingCard.slice(
-      freeLinkStart,
-      billingCard.indexOf("</Link>", freeLinkStart),
-    );
 
     expect(catalog).toContain("configured: !isFree && paidCheckoutAvailable");
     expect(catalog).toContain("is_free: isFree");
-    expect(freeLinkStart).toBeGreaterThan(-1);
-    expect(freeBranch).toContain('<Link to="/studio">');
-    expect(freeBranch).toContain("Continue Free");
-    expect(freeBranch).not.toContain("onSelectPlan(plan.id");
+    expect(catalog).toContain("const isFree = plan.price_usd_monthly === 0");
+    expect(billingCard).not.toContain("Continue Free");
+    expect(billingCard).not.toContain('<Link to="/studio">');
   });
 });
 

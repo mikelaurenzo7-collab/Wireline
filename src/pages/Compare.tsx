@@ -123,7 +123,7 @@ export default function Compare() {
               to={signupHrefForPlan("personal")}
               className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
             >
-              Start Free
+              Get Started
             </Link>
             <Link
               to="/pricing"
@@ -291,7 +291,7 @@ export default function Compare() {
               to={signupHrefForPlan("personal")}
               className="font-semibold text-primary hover:underline"
             >
-              Start Free
+              Get Started
             </Link>{" "}
             and build one before you compare another.
           </p>

@@ -82,7 +82,7 @@ const CAPABILITIES: readonly { icon: LucideIcon; title: string; body: string }[]
   {
     icon: ShieldCheck,
     title: "Rehearse Before Launch",
-    body: "Create a Bot for free, then rehearse privately before it goes live. No card required.",
+    body: "Choose Personal or the channels you need, then teach your Bot before it goes live.",
   },
 ];
 
@@ -116,7 +116,7 @@ export default function Features() {
                 to={signupHrefForPlan("personal")}
                 className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
               >
-                Start Free
+                Get Started
               </Link>
               <Link
                 to="/pricing"

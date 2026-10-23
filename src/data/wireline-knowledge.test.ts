@@ -11,7 +11,6 @@ import { STRIPE_PLANS } from "../lib/plan-catalog";
 describe("BotBound knowledge", () => {
   it("keeps public offer naming aligned with the launch catalog and brand law", () => {
     expect(WIRELINE_PLANS.map((plan) => plan.name)).toEqual([
-      "BotBound Free Builder",
       ...STRIPE_PLANS.filter(
         (plan) => plan.catalogFamily === "channels" && !plan.channels.includes("sms"),
       ).map((plan) => plan.name),
@@ -34,10 +33,11 @@ describe("BotBound knowledge", () => {
     }
   });
 
-  it("keeps Free Builder locked out of live work and never promises balance-funded calls", () => {
-    expect(WIRELINE_PLANS[0].name).toBe("BotBound Free Builder");
-    expect(WIRELINE_PLANS[0].price).not.toContain("Runtime Balance");
-    expect(WIRELINE_PLANS[0].includes.join(" ")).toMatch(/no live calls/);
+  it("keeps Personal paid and includes a number, email, and calls", () => {
+    expect(WIRELINE_PLANS[0].name).toBe("BotBound Personal");
+    expect(WIRELINE_PLANS[0].price).toContain("$12/mo");
+    expect(WIRELINE_PLANS[0].includes.join(" ")).toMatch(/call minutes/);
+    expect(WIRELINE_PLANS[0].includes.join(" ")).not.toMatch(/mailbox included/);
     expect(WIRELINE_PLANS.at(-1)?.name).toBe("Runtime Balance");
   });
 

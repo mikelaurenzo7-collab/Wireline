@@ -259,7 +259,7 @@ const EXTRA_AGENT_FEATURE =
 
 /**
  * Channel launch catalog:
- * - Free Builder creates and privately tests one draft Bot within its allowance.
+ * - Personal is the paid plan for one person: calls and a computer, with their own inbox.
  * - New paid packages include one Bot and only their selected channels.
  * - Calls/SMS share one customer-selected number; Email includes one managed mailbox.
  * - SMS packages stay visible but cannot check out until carrier/cost readiness.
@@ -271,25 +271,37 @@ const EXTRA_AGENT_FEATURE =
 export const STRIPE_PLANS: StripePlan[] = [
   {
     id: "personal",
-    name: "BotBound Free Builder",
-    price_usd_monthly: 0,
-    price_usd_annual: 0,
+    name: "BotBound Personal",
+    price_usd_monthly: 12,
+    price_usd_annual: 120,
     max_agents: 1,
-    voice_minutes_monthly: 0,
+    voice_minutes_monthly: 20,
     runtime_allowance_usd_monthly: 0,
-    ai_spend_allowance_usd_monthly: FREE_BUILDER_AI_ALLOWANCE_USD,
+    ai_spend_allowance_usd_monthly: 1,
     overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
-    included_phone_numbers: 0,
+    included_phone_numbers: 1,
     included_mailboxes: 0,
-    channels: [],
+    channels: ["voice"],
+    catalogFamily: "channels",
+    capacityTier: "light",
     checkoutAvailability: "available",
-    // Free Builder is not a Stripe product.
     public: true,
+    priceIdEnv: "STRIPE_PERSONAL_PRICE_ID",
+    annualPriceIdEnv: "STRIPE_PERSONAL_ANNUAL_PRICE_ID",
+    fallbackPriceId: "price_1UTcVu8e6If87QKmf7GYiZsO",
+    fallbackAnnualPriceId: "price_1UTcVw8e6If87QKmEKbinlnv",
+    lookupKeyMonthly: "personal_monthly_paid_2026_10_v3",
+    lookupKeyAnnual: "personal_annual_paid_2026_10_v3",
     features: [
-      "1 private draft Bot",
-      "Private call and email workflow simulation",
-      "Includes $1.50 of private AI simulation each month",
-      "No live number or customer conversations until activation",
+      "1 Bot",
+      "20 live call minutes each month",
+      "1 call at a time",
+      "1 local phone number",
+      "Connect Gmail or Outlook to use the inbox you already have",
+      "$1.00 monthly managed allowance for AI",
+      "Cloud computer for web tasks, billed to the AI allowance",
+      "Up to 10 additional completion minutes within the call limit; any balance due pauses new calls and prepaid extras",
+      "No automatic balance purchases or overage invoices",
     ],
   },
   {
@@ -523,6 +535,7 @@ export function channelPlanForSelection(
   return (
     STRIPE_PLANS.find(
       (plan) =>
+        plan.id !== "personal" &&
         plan.catalogFamily === "channels" &&
         plan.capacityTier === capacityTier &&
         plan.channels.length === selection.size &&
@@ -764,7 +777,7 @@ export function plansForClient() {
   const checkoutReleased = selfServeBillingEnabled();
 
   return STRIPE_PLANS.filter((plan) => plan.public !== false).map((plan) => {
-    const isFree = plan.id === "personal";
+    const isFree = plan.price_usd_monthly === 0;
     const monthlyConfigured = !!configuredPriceId(plan, "month");
     const annualConfigured = !!configuredPriceId(plan, "year");
     const packageAvailable = plan.checkoutAvailability === "available";

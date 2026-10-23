@@ -159,17 +159,17 @@ describe("BotBound product voice", () => {
     expect(BOT_CHANNELS.find((channel) => channel.key === "text")?.description).toContain(
       "SMS is coming soon",
     );
-    expect(
-      isReviewedOutboundCandidate({ phone_number: "+13125550100", channel: "voice" }),
-    ).toBe(true);
+    expect(isReviewedOutboundCandidate({ phone_number: "+13125550100", channel: "voice" })).toBe(
+      true,
+    );
     expect(
       isReviewedOutboundCandidate({ phone_number: "+13125550100", channel: "omnichannel" }),
     ).toBe(true);
     expect(isReviewedOutboundCandidate({ phone_number: "+13125550100" })).toBe(true);
     expect(isReviewedOutboundCandidate({ phone_number: "", channel: "voice" })).toBe(false);
-    expect(
-      isReviewedOutboundCandidate({ phone_number: "+13125550100", channel: "email" }),
-    ).toBe(false);
+    expect(isReviewedOutboundCandidate({ phone_number: "+13125550100", channel: "email" })).toBe(
+      false,
+    );
     expect(MARKETING_VOICE.channelProof).toEqual(["Call", "Email", "Computer"]);
     expect(BOT_MARKETING_VOICE.spine).toEqual(["Call", "Email", "Computer"]);
     expect(WORKSPACE_VOICE.emptyCue).toContain("calls, email, knowledge, and computer tasks");
@@ -268,16 +268,16 @@ describe("BotBound product voice", () => {
   it("keeps shared marketing voice aligned to BotBound", () => {
     expect(MARKETING_VOICE.headline).toBe(BOT_BRAND.slogan);
     expect(MARKETING_VOICE.eyebrow).toBe("CALL · EMAIL · COMPUTER");
-    expect(MARKETING_VOICE.primaryCta).toBe("Start Free");
+    expect(MARKETING_VOICE.primaryCta).toBe("Get Started");
     expect(MARKETING_VOICE.subline).toBe(BOT_BRAND.promise);
     expect(BOT_MARKETING_VOICE.headline).toBe(BOT_BRAND.slogan);
-    expect(BOT_MARKETING_VOICE.primaryCta).toBe("Start Free");
+    expect(BOT_MARKETING_VOICE.primaryCta).toBe("Get Started");
     expect(BOT_MARKETING_VOICE.subline).toBe(BOT_BRAND.promise);
   });
 
   it("allocates one selected channel identity and preserves historical fleet limits", () => {
     const channelPlans = STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels");
-    expect(channelPlans).toHaveLength(21);
+    expect(channelPlans).toHaveLength(22);
     for (const plan of channelPlans) {
       const phone = plan.channels.includes("voice") || plan.channels.includes("sms");
       const email = plan.channels.includes("email");

@@ -186,7 +186,7 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/data/wireline-knowledge.ts",
     wirelineKnowledge,
-    /BotBound Free Builder[\s\S]*STRIPE_PLANS\.filter\([\s\S]*plan\.catalogFamily === "channels" && !plan\.channels\.includes\("sms"\),?\s*\)\.map[\s\S]*BotBound Enterprise/,
+    /STRIPE_PLANS\.filter\([\s\S]*plan\.catalogFamily === "channels" && !plan\.channels\.includes\("sms"\),?\s*\)\.map[\s\S]*BotBound Enterprise/,
     "shared product knowledge must derive current launch offers from the catalog while excluding SMS",
   );
   mustExclude(

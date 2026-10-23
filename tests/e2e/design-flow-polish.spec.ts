@@ -183,7 +183,7 @@ for (const width of [320, 390, 1440]) {
     } else await header.getByRole("link", { name: "Pricing", exact: true }).click();
     await expect(page).toHaveURL(/\/pricing$/);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await header.getByRole("link", { name: "Start Free", exact: true }).click();
+    await header.getByRole("link", { name: "Get Started", exact: true }).click();
     await expect(page).toHaveURL(/\/signup\?plan=free/);
   });
 }

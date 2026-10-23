@@ -21,7 +21,7 @@ import {
   liveExternalActionPolicyForUser,
 } from "./account-environment-policy";
 import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
-import { requireTenantChannel } from "./channel-entitlements";
+import { requireTenantEmailTransport } from "./channel-entitlements";
 import { sendFundedManagedEmail } from "./managed-mail-send-spend";
 import { readCompanyIdentityPreferences } from "./company-identity";
 import { renderBusinessEmail, type EmailIdentity } from "./email-presentation";
@@ -344,7 +344,7 @@ export class IntegrationService {
     const limit = Math.min(Math.max(opts.limit ?? 25, 1), 100);
     const failures: InboxFetchFailure[] = [];
     try {
-      await requireTenantChannel(this.userId, "email");
+      await requireTenantEmailTransport(this.userId);
       // Only canonical email-account rows may source inbox persistence. Google
       // and Microsoft callbacks upsert both calendar and mailbox rows; falling
       // back to calendar rows lost the mailbox identity needed for safe dedupe.
@@ -546,7 +546,7 @@ export class IntegrationService {
           await assertExternalEntityActionAllowed(this.userId, "tenant_email_send", {
             email: params.to,
           });
-          await requireTenantChannel(this.userId, "email");
+          await requireTenantEmailTransport(this.userId);
           // This service sends one recipient per attempt. Reject header injection
           // and recipient lists before reserving funds or opening a transport.
           if (!/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(params.to)) return false;
@@ -755,7 +755,7 @@ export class IntegrationService {
           await assertExternalEntityActionAllowed(this.userId, "tenant_email_send", {
             email: params.to,
           });
-          await requireTenantChannel(this.userId, "email");
+          await requireTenantEmailTransport(this.userId);
           if (!/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(params.to)) return notSent;
 
           const account = (await this.getAccounts("mail")).find(
