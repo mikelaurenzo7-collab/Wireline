@@ -15,7 +15,7 @@ import {
   callHappenedLabel,
   classifyCallHappened,
   type CallHappened,
-} from "../lib/call-report";
+} from "../lib/call-happened";
 import { formatPhone } from "../lib/safe-number";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { Button, EmptyState, Skeleton } from "./atoms";
