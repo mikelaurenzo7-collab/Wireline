@@ -1014,14 +1014,8 @@ async function queuePostCallEnrichment(
   return true;
 }
 
-async function queuePostCallAutoQa(job: JobRow, ctx: CallContext): Promise<boolean> {
-  await enqueuePostCallChildJob({
-    parentJob: job,
-    userId: ctx.userId,
-    type: "auto_qa_score",
-    payload: { callLogId: String(ctx.callLogId), userId: ctx.userId },
-  });
-  return true;
+async function queuePostCallAutoQa(_job: JobRow, _ctx: CallContext): Promise<boolean> {
+  return false;
 }
 
 async function sendPostCallMobilePush(

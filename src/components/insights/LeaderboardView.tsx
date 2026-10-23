@@ -59,8 +59,6 @@ export default function LeaderboardView({ days }: { days: number }) {
       {agentRows.map((a, i) => {
         const metrics = [
           { label: "Calls", value: a.total_calls },
-          { label: "Qualified", value: a.qualified },
-          { label: "Avg Intent", value: a.avg_lead_score },
           { label: "Bookings", value: a.bookings },
           { label: "Minutes", value: a.minutes },
           { label: "$/Qual", value: unitCostLabel(a.cost_per_qualified, a.qualified) },

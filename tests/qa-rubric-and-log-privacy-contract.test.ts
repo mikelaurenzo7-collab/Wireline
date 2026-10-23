@@ -72,22 +72,22 @@ describe("the QA rubric actually runs", () => {
     expect(qaRubricShouldRun("not an object")).toBe(true);
   });
 
-  it("queues native calls for the final rubric without a provisional score blocking it", () => {
-    expect(read("src/lib/post-call-digest.ts")).toContain('type: "auto_qa_score"');
+  it("does not spend a sales rubric model call after a phone call", () => {
+    expect(read("src/lib/post-call-digest.ts")).not.toContain('type: "auto_qa_score"');
     expect(read("src/lib/voice/openai-sip-session.ts")).not.toContain(
       "source: QA_SCORE_SOURCE_HEURISTIC",
     );
-    expect(read("src/lib/job-worker-base.ts")).toContain("source: QA_SCORE_SOURCE_RUBRIC");
+    expect(read("src/lib/job-worker-base.ts")).toContain(
+      "sales rubric is not part of the call report",
+    );
   });
 
-  it("selects the breakdown the guard reads", () => {
-    // Guarding on a column the query never selected would silently re-score
-    // every call, once per retry, at one Claude call each.
+  it("does not score a call with the sales rubric", () => {
     const worker = read("src/lib/job-worker-base.ts");
     const job = worker.slice(worker.indexOf('if (job.type === "auto_qa_score")'));
-    expect(job.slice(0, job.indexOf("qaRubricShouldRun"))).toContain(
-      "qaBreakdown: schema.callLogs.qaBreakdown",
-    );
+    expect(job).toContain("sales rubric is not part of the call report");
+    expect(job).not.toContain("qaRubricShouldRun");
+    expect(job).not.toContain("claudeBrain.qaScore");
   });
 });
 

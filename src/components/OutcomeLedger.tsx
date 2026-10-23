@@ -274,9 +274,6 @@ export default function OutcomeLedger({
           <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
             {row.owner_label ? <span>Owner: {row.owner_label}</span> : null}
             {row.campaign_source ? <span>Source: {row.campaign_source}</span> : null}
-            {row.lead_score != null && row.lead_score > 0 ? (
-              <span>Score: {row.lead_score}</span>
-            ) : null}
             {row.compliance_state && row.compliance_state !== "clear" ? (
               <span>Compliance: {row.compliance_state}</span>
             ) : null}

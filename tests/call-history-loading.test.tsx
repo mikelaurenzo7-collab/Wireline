@@ -143,7 +143,7 @@ beforeEach(() => {
 });
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 describe("call history request ordering", () => {
-  it("does not present an unclassified call as completed and names score scales", async () => {
+  it("shows what the call did instead of a sales score", async () => {
     h.fetch.mockResolvedValueOnce(
       new Response(
         JSON.stringify({
@@ -154,16 +154,18 @@ describe("call history request ordering", () => {
       ),
     );
     await settle();
-    expect(text(tree)).toContain("Unclassified");
+    expect(text(tree)).toContain("No request");
     expect(text(tree)).not.toContain("Completed");
     const call = elements(tree).find(
-      (node) => node.type === "button" && text(node).includes("Unclassified"),
+      (node) => node.type === "button" && text(node).includes("No request"),
     );
     call!.props.onClick!();
     await settle();
-    expect(text(tree)).toContain("OutcomeUnclassified");
-    expect(text(tree)).toContain("Lead score30/100");
-    expect(text(tree)).toContain("Quality score69/100");
+    expect(text(tree)).toContain("OutcomeNo request");
+    expect(text(tree)).toContain("What happenedThe caller did not ask for a follow-up.");
+    expect(text(tree)).not.toContain("Lead score");
+    expect(text(tree)).not.toContain("Quality score");
+    expect(text(tree)).not.toContain("Intent");
   });
 
   it("blocks overlapping refresh and duplicate pagination, then retains all loaded calls", async () => {

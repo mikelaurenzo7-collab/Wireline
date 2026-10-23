@@ -1,19 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- job and webhook payloads are stored as Postgres jsonb. */
-import { log, quotaTracker, drizzle, tenantStore } from "./server-context";
+import { log, drizzle, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, sql, lt } from "drizzle-orm";
 import * as claudeBrain from "./ai-brains";
-import { createAuditContext, runInAuditContext } from "./ai-audit";
-import { postCallAnalysisOptions } from "./post-call-analysis-policy";
 import { getErrorMessage } from "./server-utils";
 import { startWorker, type JobRow, enqueue, writeTransactionConfig } from "./job-queue";
 import { executeAction } from "./action-engine";
 import { ActionItemSchema } from "./action-types";
-import { postCallFollowUpAction } from "./post-call-follow-up";
-import { KNOWLEDGE_GAP_PREFIX } from "./agent-runtime-helpers";
-import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
+import {
+  postCallFollowUpAction,
+  sendEmailDraftAlreadyDelivered,
+  toolAuditResultText,
+} from "./post-call-follow-up";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
-import { CRMService } from "./crm-service";
 import { apolloReadyForUser, searchLeads as apolloSearch } from "./apollo-service";
 import { LEAD_STATUS } from "./outbound-status";
 import {
@@ -22,27 +21,8 @@ import {
   releaseExternalResourcesForPurge,
 } from "./account-deletion";
 import { acquireAccountDeletionFence, runTerminalDeletionSequence } from "./account-deletion-fence";
-import { QA_SCORE_SOURCE_RUBRIC, qaRubricShouldRun } from "./qa-score-provenance";
 import { getCanonicalAppUrl } from "./app-url";
 import { assertJobPayloadOwner } from "./job-owner";
-
-/**
- * The post-call digest logs the call itself; enrichment adds only the lead
- * score it computed, so the CRM never gets the same call twice.
- */
-async function syncLeadScoreToCrm(input: {
-  userId: string;
-  crmType?: string | null;
-  customerNumber?: string | null;
-  leadScore?: number;
-}) {
-  if (input.crmType !== "salesforce" && input.crmType !== "hubspot") return;
-  if (!input.customerNumber || typeof input.leadScore !== "number") return;
-  await new CRMService(input.userId).syncEnrichedLead({
-    customerNumber: input.customerNumber,
-    leadScore: input.leadScore,
-  });
-}
 
 async function persistJobResult(jobId: string, result: Record<string, unknown>): Promise<void> {
   await drizzle
@@ -94,6 +74,24 @@ async function enqueueActionExtractionOnce(
   if (!queued.ok) throw new Error(`Failed to enqueue V2A extraction: ${queued.error}`);
 }
 
+/** Completed live send_email results for this provider call, if the audit recorded them. */
+async function completedSendEmailResults(userId: string, callId: string): Promise<string[]> {
+  if (!userId || !callId) return [];
+  const rows = await drizzle
+    .select({ metadata: schema.auditLog.metadata })
+    .from(schema.auditLog)
+    .where(
+      and(
+        eq(schema.auditLog.userId, userId),
+        eq(schema.auditLog.action, "agent_tool.send_email"),
+        eq(schema.auditLog.eventType, "voice.tool_call"),
+        sql`${schema.auditLog.metadata}->>'callId' = ${callId}`,
+        sql`${schema.auditLog.metadata}->>'status' = 'completed'`,
+      ),
+    );
+  return rows.map((row) => toolAuditResultText(row.metadata)).filter(Boolean);
+}
+
 /**
  * Global job handler.
  * Dispatches jobs from the wireline_jobs table.
@@ -126,119 +124,12 @@ export async function handleJob(job: JobRow): Promise<void> {
       useFlash?: boolean;
     };
 
-    // Starter enrichment uses the catalogued low-cost OpenAI model. Other
-    // tiers keep the managed structured default and its existing accounting.
-    const [settings] = await drizzle
-      .select({ aiTier: schema.settings.aiTier, crmType: schema.settings.crmType })
-      .from(schema.settings)
-      .where(eq(schema.settings.userId, p.userId))
-      .limit(1);
-    const analysisOptions = postCallAnalysisOptions({
-      aiTier: settings?.aiTier,
-      legacyUseFlash: p.useFlash,
-    });
     const transcript = p.transcript;
     if (!transcript?.trim()) return;
 
-    // Action extraction is independent of the score. Queue its durable draft
-    // before checking analysis availability so an outage cannot lose a promise.
+    // Follow-up drafts are the only post-call model work. Sales scores and
+    // lessons are not shown to customers and are not applied to the live prompt.
     await enqueueActionExtractionOnce(job, p);
-
-    if (analysisOptions.model && !process.env.OPENAI_API_KEY?.trim()) {
-      throw new Error("OpenAI runtime unavailable for starter post-call enrichment.");
-    }
-    if (!claudeBrain.isBrainAvailable()) {
-      throw new Error("Structured AI runtime unavailable for post-call enrichment.");
-    }
-
-    // A provider may charge for a response that fails structured parsing.
-    // Keep its usage context even when analysis or a later database write fails.
-    const auditContext = createAuditContext();
-    let result: Awaited<ReturnType<typeof claudeBrain.postCallAnalysis>>;
-    try {
-      result = await runInAuditContext(auditContext, () =>
-        claudeBrain.postCallAnalysis(
-          {
-            agentName: p.agentName || "BotBound Bot",
-            archetype: p.archetype || "Receptionist",
-            role: p.role,
-            customerNumber: p.customerNumber,
-            durationSeconds: p.durationSeconds ?? 0,
-            summary: p.summary || "",
-            transcript,
-          },
-          analysisOptions,
-        ),
-      );
-    } finally {
-      if (auditContext.records.length) {
-        await persistRuntimeAuditRecords({
-          userId: p.userId,
-          action: "jobs.post_call_enrichment",
-          records: auditContext.records,
-          requestMeta: { vapi_call_id: p.callId, agent_id: p.agentId },
-        }).catch((e: unknown) =>
-          log.warn("post_call audit persist failed", { error: getErrorMessage(e) }),
-        );
-      }
-    }
-
-    await drizzle
-      .update(schema.callLogs)
-      .set({
-        leadScore: result.lead_score,
-        intentLabel: result.intent_label,
-        sentiment: result.sentiment,
-        coachingNote: result.coaching_note,
-      })
-      .where(eq(schema.callLogs.vapiCallId, p.callId));
-
-    if (result.lesson?.trim()) {
-      await drizzle
-        .insert(schema.agentLessons)
-        .values({
-          agentId: p.agentId,
-          userId: p.userId,
-          lesson: result.lesson.trim(),
-          sourceCallId: p.callId,
-          source: "phone_call",
-        })
-        .onConflictDoNothing({
-          target: [schema.agentLessons.agentId, schema.agentLessons.lesson],
-        });
-    }
-
-    // Questions the Bot could not answer fill the Approvals "Gaps" tab.
-    const gaps = (Array.isArray(result.knowledge_gaps) ? result.knowledge_gaps : [])
-      .map((gap) => (typeof gap === "string" ? gap.trim().slice(0, 300) : ""))
-      .filter(Boolean)
-      .slice(0, 3);
-    for (const gap of gaps) {
-      await drizzle
-        .insert(schema.agentLessons)
-        .values({
-          agentId: p.agentId,
-          userId: p.userId,
-          lesson: `${KNOWLEDGE_GAP_PREFIX} ${gap}`,
-          sourceCallId: p.callId,
-          source: "phone_call",
-        })
-        .onConflictDoNothing({
-          target: [schema.agentLessons.agentId, schema.agentLessons.lesson],
-        });
-    }
-
-    if (!auditContext.records.length) {
-      const tokenCount = Math.ceil(((p.transcript?.length ?? 0) + (p.summary?.length ?? 0)) / 4);
-      await quotaTracker
-        .checkAndIncrement(p.userId, "claude_tokens_daily", Math.max(1, tokenCount))
-        .catch((e: unknown) => {
-          log.warn("quota token increment failed, usage may be under-counted", {
-            user_id: p.userId,
-            error: getErrorMessage(e),
-          });
-        });
-    }
 
     const [logRow] = await drizzle
       .select({
@@ -250,13 +141,6 @@ export async function handleJob(job: JobRow): Promise<void> {
       .limit(1);
     const direction =
       logRow?.direction === "outbound" ? ("outbound" as const) : ("inbound" as const);
-    const enrichment = {
-      lead_score: result.lead_score,
-      intent_label: result.intent_label,
-      sentiment: result.sentiment,
-      coaching_note: result.coaching_note,
-      lesson_extracted: !!(result.lesson && result.lesson.trim()),
-    };
     const payload = buildCallCompletedOutcome({
       vapi_call_id: p.callId,
       agent_id: p.agentId,
@@ -264,20 +148,8 @@ export async function handleJob(job: JobRow): Promise<void> {
       direction,
       duration_seconds: p.durationSeconds,
       enrichment_source: "async_post_call_job",
-      enrichment,
+      enrichment: null,
     });
-    await syncLeadScoreToCrm({
-      userId: p.userId,
-      crmType: settings?.crmType,
-      customerNumber: payload.customer_number,
-      leadScore: result.lead_score,
-    }).catch((e: unknown) =>
-      log.warn("Post-call lead score CRM sync failed", {
-        userId: p.userId,
-        callId: p.callId,
-        error: getErrorMessage(e),
-      }),
-    );
     dispatchWebhook(p.userId, "call.completed", payload).catch((e: unknown) =>
       log.error("webhook dispatch failed", {
         userId: p.userId,
@@ -285,19 +157,6 @@ export async function handleJob(job: JobRow): Promise<void> {
         error: getErrorMessage(e),
       }),
     );
-    if (typeof result.lead_score === "number" && result.lead_score >= 70) {
-      dispatchWebhook(p.userId, "lead.hot", {
-        vapi_call_id: p.callId,
-        lead_score: result.lead_score,
-        customer_number: payload.customer_number,
-      }).catch((e: unknown) =>
-        log.error("webhook dispatch failed", {
-          userId: p.userId,
-          event: "lead.hot",
-          error: getErrorMessage(e),
-        }),
-      );
-    }
   }
 
   if (job.type === "v2a_action_extraction") {
@@ -316,7 +175,13 @@ export async function handleJob(job: JobRow): Promise<void> {
       customerNumber: p.customerNumber,
     });
 
+    const completedEmailSends = await completedSendEmailResults(p.userId, p.callId);
+    let skippedDuplicateEmails = 0;
     for (const action of actions.map(postCallFollowUpAction)) {
+      if (sendEmailDraftAlreadyDelivered(action, completedEmailSends)) {
+        skippedDuplicateEmails += 1;
+        continue;
+      }
       await enqueue(drizzle, {
         userId: p.userId,
         type: "execute_action",
@@ -333,6 +198,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       userId: p.userId,
       callId: p.callId,
       actionsCount: actions.length,
+      skippedDuplicateEmails,
     });
   }
 
@@ -366,7 +232,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       score: number;
       breakdown: any;
     };
-    const userId = assertJobPayloadOwner(job, p);
+    assertJobPayloadOwner(job, p);
     if (
       typeof p.agentId !== "string" ||
       !p.agentId.trim() ||
@@ -381,48 +247,11 @@ export async function handleJob(job: JobRow): Promise<void> {
     )
       throw new Error("Adaptive optimization job contains an invalid call or Bot identity.");
 
-    const [call] = await drizzle
-      .select({ transcript: schema.callLogs.transcript })
-      .from(schema.callLogs)
-      .innerJoin(
-        schema.agents,
-        and(eq(schema.callLogs.agentId, schema.agents.id), eq(schema.agents.userId, userId)),
-      )
-      .where(
-        and(
-          eq(schema.callLogs.id, BigInt(p.callId)),
-          eq(schema.callLogs.userId, userId),
-          eq(schema.callLogs.agentId, p.agentId),
-        ),
-      )
-      .limit(1);
-    if (!call?.transcript) return;
-
-    const lesson = await claudeBrain.synthesizeLesson({
-      transcript: call.transcript,
-      score: p.score,
-      breakdown: p.breakdown,
+    log.info("adaptive_optimization skipped, lessons are not applied to the live prompt", {
+      jobId: job.id,
+      agentId: p.agentId,
     });
-
-    if (lesson) {
-      await drizzle
-        .insert(schema.agentLessons)
-        .values({
-          agentId: p.agentId,
-          userId,
-          lesson: lesson,
-          sourceCallId: p.callId,
-          source: "adaptive_tuning",
-        })
-        .onConflictDoNothing({
-          target: [schema.agentLessons.agentId, schema.agentLessons.lesson],
-        });
-      log.info("Adaptive optimization: new lesson synthesized", {
-        jobId: job.id,
-        agentId: p.agentId,
-        lessonLength: lesson.length,
-      });
-    }
+    return;
   }
 
   if (job.type === "purge_old_data") {
@@ -776,124 +605,11 @@ export async function handleJob(job: JobRow): Promise<void> {
   if (job.type === "auto_qa_score") {
     const p = job.payload as { callLogId: number | string; userId?: string };
     const userId = assertJobPayloadOwner(job, p);
-    if (!claudeBrain.isBrainAvailable()) {
-      log.warn("auto_qa_score skipped, claude unavailable", { callLogId: p.callLogId });
-      return;
-    }
-
-    // Safe-parse the callLogId — BigInt() throws on malformed input which
-    // would crash the worker. Skip the job cleanly instead.
-    let callLogIdBig: bigint;
-    try {
-      callLogIdBig = BigInt(p.callLogId as any);
-    } catch {
-      log.warn("auto_qa_score skipped, unparseable callLogId", { callLogId: p.callLogId });
-      return;
-    }
-
-    const [call] = await drizzle
-      .select({
-        id: schema.callLogs.id,
-        agentId: schema.callLogs.agentId,
-        summary: schema.callLogs.summary,
-        transcript: schema.callLogs.transcript,
-        sentiment: schema.callLogs.sentiment,
-        direction: schema.callLogs.direction,
-        durationSeconds: schema.callLogs.durationSeconds,
-        qaScore: schema.callLogs.qaScore,
-        qaBreakdown: schema.callLogs.qaBreakdown,
-        agentRole: schema.agents.role,
-      })
-      .from(schema.callLogs)
-      .leftJoin(
-        schema.agents,
-        and(eq(schema.callLogs.agentId, schema.agents.id), eq(schema.agents.userId, userId)),
-      )
-      .where(and(eq(schema.callLogs.id, callLogIdBig), eq(schema.callLogs.userId, userId)))
-      .limit(1);
-
-    if (!call || !call.transcript) {
-      log.info("auto_qa_score skipped, no call or transcript", { callLogId: p.callLogId });
-      return;
-    }
-
-    // Idempotency: skip only if the RUBRIC has already scored this call (e.g.
-    // Vapi retried end-of-call-report and the job ran twice).
-    //
-    // This used to test `call.qaScore != null`, which was always true: the Vapi
-    // end-of-call handler writes a provisional heuristic score on every single
-    // call before this job is even enqueued. So the guard fired every time, the
-    // five-dimension rubric never ran once, the score account holders read as a
-    // quality assessment was a regex over the coaching note, and the
-    // `adaptive_optimization` job that low rubric scores chain into — the whole
-    // agent-learning loop — was unreachable.
-    if (!qaRubricShouldRun(call.qaBreakdown)) {
-      log.info("auto_qa_score skipped, rubric already scored", { callLogId: p.callLogId });
-      return;
-    }
-
-    // Cost gate: skip auto-QA on calls under 30s — those are almost always
-    // unreachable / voicemail / wrong-number and carry no coachable
-    // signal. Saves a Claude call per dead-call without losing learning.
-    if ((call.durationSeconds || 0) < 30) {
-      log.info("auto_qa_score skipped, call too short for useful coaching", {
-        callLogId: p.callLogId,
-        durationSeconds: call.durationSeconds,
-      });
-      return;
-    }
-
-    try {
-      const breakdown = await claudeBrain.qaScore({
-        direction: (call.direction || "inbound") as "inbound" | "outbound",
-        agentRole: call.agentRole || undefined,
-        summary: call.summary || "",
-        transcript: call.transcript || "",
-        sentiment: call.sentiment || "neutral",
-        durationSeconds: call.durationSeconds || 0,
-      });
-      const QA_DIMS = ["greeting", "discovery", "solution", "objection", "closing"] as const;
-      const score = Math.min(
-        100,
-        Math.max(
-          0,
-          QA_DIMS.reduce((s, d) => s + (Number((breakdown as any)[d]) || 0), 0),
-        ),
-      );
-
-      const updates: any = {
-        qaScore: score,
-        // Stamped so the guard above can tell a completed rubric from the
-        // provisional heuristic the end-of-call handler leaves behind.
-        qaBreakdown: { ...(breakdown as any), source: QA_SCORE_SOURCE_RUBRIC },
-      };
-      if ((breakdown as any)?.coaching_note)
-        updates.coachingNote = (breakdown as any).coaching_note;
-      await drizzle
-        .update(schema.callLogs)
-        .set(updates)
-        .where(and(eq(schema.callLogs.id, callLogIdBig), eq(schema.callLogs.userId, userId)));
-
-      if (score < 60 && call.agentId) {
-        await enqueue(drizzle, {
-          userId,
-          type: "adaptive_optimization",
-          payload: { userId, agentId: call.agentId, callId: String(call.id), score, breakdown },
-        });
-      }
-
-      log.info("auto_qa_score completed", { callLogId: p.callLogId, score });
-    } catch (err: any) {
-      log.error("auto_qa_score failed", { callLogId: p.callLogId, error: err?.message });
-      // Re-throw so the queue actually retries. Swallowing marked the job done
-      // on the first Claude hiccup, and with it went the call's QA score, its
-      // coaching note, and the adaptive_optimization job that low scores chain
-      // into — the whole agent-learning loop, silently, with no dead letter to
-      // notice. The rubric-provenance guard above makes a retry that lands
-      // after a late success a no-op, so this is safe to hand back to the
-      // existing backoff and dead-letter path.
-      throw err;
-    }
+    log.info("auto_qa_score skipped, sales rubric is not part of the call report", {
+      callLogId: p.callLogId,
+      userId,
+    });
+    return;
   }
 
   if (job.type === "sweep_orphan_supervisor_subs") {

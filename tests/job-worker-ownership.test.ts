@@ -255,17 +255,12 @@ describe("job handler tenant ownership", () => {
     "synthesizes for the immutable row owner when legacy payload omits it: %j",
     async (row) => {
       await handleJob(claimed("adaptive_optimization", adaptive, row));
-      expect(h.lesson).toHaveBeenCalledTimes(1);
-      expect(h.inserts).toEqual([
-        {
-          table: expect.anything(),
-          values: expect.objectContaining({
-            userId: owner,
-            agentId: "bot-one",
-            sourceCallId: "42",
-          }),
-        },
-      ]);
+      expect(h.lesson).not.toHaveBeenCalled();
+      expect(h.inserts).toEqual([]);
+      expect(h.info).toHaveBeenCalledWith(
+        "adaptive_optimization skipped, lessons are not applied to the live prompt",
+        expect.objectContaining({ agentId: "bot-one" }),
+      );
     },
   );
 
@@ -275,13 +270,8 @@ describe("job handler tenant ownership", () => {
 
     await handleJob(claimed("adaptive_optimization", adaptive));
 
-    // Knowledge remains available to the Bot; operational logs retain only shape.
-    expect(h.inserts[0].values.lesson).toBe(privateLesson);
-    expect(h.info).toHaveBeenCalledWith("Adaptive optimization: new lesson synthesized", {
-      jobId: "job-one",
-      agentId: "bot-one",
-      lessonLength: privateLesson.length,
-    });
+    expect(h.lesson).not.toHaveBeenCalled();
+    expect(h.inserts).toEqual([]);
     expect(JSON.stringify(h.info.mock.calls)).not.toContain(privateLesson);
     expect(JSON.stringify(h.info.mock.calls)).not.toContain("+13125550123");
   });
@@ -326,27 +316,11 @@ describe("job handler tenant ownership", () => {
     expect(h.reads).toEqual([]);
   });
 
-  it("carries the claimed owner through real QA production and adaptive consumption", async () => {
+  it("does not spend a sales rubric or write a lesson from it", async () => {
     await handleJob(claimed("auto_qa_score", { callLogId: "42" }));
-    expect(h.qaScore).toHaveBeenCalledTimes(1);
-    expect(h.enqueue).toHaveBeenCalledWith(
-      h.db,
-      expect.objectContaining({
-        userId: owner,
-        type: "adaptive_optimization",
-        payload: expect.objectContaining({
-          userId: owner,
-          callId: "42",
-          agentId: "bot-one",
-          score: 25,
-        }),
-      }),
-    );
-    const produced = h.enqueue.mock.calls[0][1];
-    await handleJob(claimed(produced.type, produced.payload, { userId: produced.userId }));
-    expect(h.lesson).toHaveBeenCalledTimes(1);
-    expect(h.inserts[0].values.userId).toBe(owner);
-    expect(h.tables.calls[0].qaBreakdown).toMatchObject({ source: "rubric" });
+    expect(h.qaScore).not.toHaveBeenCalled();
+    expect(h.enqueue).not.toHaveBeenCalled();
+    expect(h.lesson).not.toHaveBeenCalled();
   });
 
   it("does not score another tenant's call or emit a follow-up job", async () => {

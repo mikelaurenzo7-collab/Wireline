@@ -254,25 +254,16 @@ describe("a cadence retries a failed touch instead of consuming the step", () =>
   });
 });
 
-describe("auto-QA failures reach the retry queue", () => {
-  it("re-throws so the job is not marked done on a provider hiccup", () => {
+describe("auto-QA does not spend a model call", () => {
+  it("returns before scoring so a queued job cannot call the rubric", () => {
     const worker = read("src/lib/job-worker-base.ts");
     const block = worker.slice(
-      worker.indexOf('log.error("auto_qa_score failed"'),
+      worker.indexOf('if (job.type === "auto_qa_score")'),
       worker.indexOf('if (job.type === "sweep_orphan_supervisor_subs")'),
     );
-    expect(block).toContain("throw err;");
-  });
-
-  it("keeps an idempotency guard that makes a retry safe", () => {
-    // The guard must exist, but it must key on the RUBRIC having run — not on
-    // `qaScore != null`. Legacy rows can contain provisional heuristic scores,
-    // so the old null-check incorrectly treated them as completed rubrics. See
-    // qa-score-provenance.ts.
-    const worker = read("src/lib/job-worker-base.ts");
-    expect(worker).toContain("qaRubricShouldRun(call.qaBreakdown)");
-    expect(worker).toContain("auto_qa_score skipped, rubric already scored");
-    expect(worker).not.toContain("if (call.qaScore != null) {");
+    expect(block).toContain("sales rubric is not part of the call report");
+    expect(block).not.toContain("claudeBrain.qaScore");
+    expect(block).not.toContain("throw err;");
   });
 });
 

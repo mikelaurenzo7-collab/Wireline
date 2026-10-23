@@ -89,6 +89,6 @@ describe("inbound/outbound runtime parity contract", () => {
     expect(session).toContain(
       'direction === "outbound" ? "openai_sip_outbound" : "openai_sip_inbound"',
     );
-    expect(digest).toContain('type: "auto_qa_score"');
+    expect(digest).not.toContain('type: "auto_qa_score"');
   });
 });

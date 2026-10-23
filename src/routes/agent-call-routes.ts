@@ -2,6 +2,7 @@ import { Router, type Response } from "express";
 import { and, desc, eq, sql } from "drizzle-orm";
 
 import { AppError } from "../lib/api-error";
+import { annotateCallsWithHappened } from "../lib/call-report";
 import { presentCallAnalysis } from "../lib/call-review-note";
 import { authenticateUser } from "../middleware/auth";
 import { drizzle, log } from "../lib/server-context";
@@ -48,6 +49,7 @@ router.get(
       const calls = await drizzle
         .select({
           id: schema.callLogs.id,
+          vapiCallId: schema.callLogs.vapiCallId,
           agentId: schema.callLogs.agentId,
           direction: schema.callLogs.direction,
           customerNumber: schema.callLogs.customerNumber,
@@ -62,6 +64,7 @@ router.get(
           coachingNote: schema.callLogs.coachingNote,
           qaScore: schema.callLogs.qaScore,
           outcomeTag: schema.callLogs.outcomeTag,
+          endedReason: schema.callLogs.endedReason,
           campaignSource: schema.callLogs.campaignSource,
           createdAt: schema.callLogs.createdAt,
         })
@@ -71,7 +74,8 @@ router.get(
         .limit(limit)
         .offset(offset);
 
-      const safeCalls = (calls || []).map((call) => ({
+      const reported = await annotateCallsWithHappened(req.user.id, calls || []);
+      const safeCalls = reported.map((call) => ({
         ...presentCallAnalysis(call),
         agentName: agent.name,
         recordingUrl: call.recordingUrl ? `/api/calls/${String(call.id)}/recording` : null,

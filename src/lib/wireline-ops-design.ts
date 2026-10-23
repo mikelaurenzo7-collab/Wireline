@@ -564,7 +564,7 @@ export const OPS_INSIGHTS_GROUPS = [
   {
     id: "quality",
     label: "Quality",
-    tabs: ["failures", "latency", "quality", "learning"] as const,
+    tabs: ["failures", "latency"] as const,
   },
   {
     id: "revenue",

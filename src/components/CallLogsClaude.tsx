@@ -10,7 +10,12 @@ import {
 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
-import { displayCallReviewNote, isLegacyCallReviewFailure } from "../lib/call-review-note";
+import {
+  callHappenedDetail,
+  callHappenedLabel,
+  classifyCallHappened,
+  type CallHappened,
+} from "../lib/call-report";
 import { formatPhone } from "../lib/safe-number";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { Button, EmptyState, Skeleton } from "./atoms";
@@ -30,10 +35,8 @@ type Call = {
   recording_url?: string | null;
   sentiment?: string | null;
   outcome_tag?: string | null;
-  intent_label?: string | null;
-  lead_score?: number | null;
-  qa_score?: number | null;
-  coaching_note?: string | null;
+  ended_reason?: string | null;
+  happened?: CallHappened | null;
   demo?: boolean | null;
   created_at?: string | null;
 };
@@ -75,12 +78,20 @@ function humanize(value: string | null | undefined, fallback = "Unclassified") {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function reportHappened(call: Call): CallHappened {
+  if (call.happened) return call.happened;
+  return classifyCallHappened({
+    outcomeTag: call.outcome_tag,
+    endedReason: call.ended_reason,
+  });
+}
+
 function statusTone(value: string | null | undefined) {
   const normalized = String(value || "").toLowerCase();
-  if (/booked|qualified|success|completed/.test(normalized)) {
+  if (/email|booked|message/.test(normalized)) {
     return "text-[var(--wireline-color-status-success)]";
   }
-  if (/failed|busy|missed|unreachable|voicemail|escalat|handoff|transfer/.test(normalized)) {
+  if (/missed|failed|busy|unreachable|voicemail/.test(normalized)) {
     return "text-[var(--wireline-color-status-warning)]";
   }
   return "text-muted-foreground";
@@ -210,8 +221,6 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
     () => calls.find((call) => call.id === selectedId) || null,
     [calls, selectedId],
   );
-  const reviewNote = displayCallReviewNote(selected?.coaching_note);
-  const analysisFailed = isLegacyCallReviewFailure(selected?.coaching_note);
   const visibleCalls = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return calls;
@@ -221,7 +230,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
         call.agent_name,
         call.summary,
         call.outcome_tag,
-        isLegacyCallReviewFailure(call.coaching_note) ? null : call.intent_label,
+        call.happened ? callHappenedLabel(call.happened) : null,
         call.direction,
       ]
         .filter(Boolean)
@@ -333,9 +342,9 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
                           {formatTime(call.created_at)}
                         </span>
                         <span
-                          className={`mt-1 block text-[10px] font-semibold ${statusTone(call.outcome_tag)}`}
+                          className={`mt-1 block text-[10px] font-semibold ${statusTone(callHappenedLabel(reportHappened(call)))}`}
                         >
-                          {humanize(call.outcome_tag)}
+                          {callHappenedLabel(reportHappened(call))}
                         </span>
                       </div>
                     </div>
@@ -387,40 +396,21 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
           </p>
         </section>
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {[
-            ["Outcome", humanize(selected.outcome_tag)],
-            ["Intent", humanize(analysisFailed ? null : selected.intent_label, "Unclassified")],
-            [
-              "Lead score",
-              !analysisFailed && typeof selected.lead_score === "number"
-                ? `${selected.lead_score}/100`
-                : "Not scored",
-            ],
-            [
-              "Quality score",
-              typeof selected.qa_score === "number" ? `${selected.qa_score}/100` : "Not scored",
-            ],
+            ["Outcome", callHappenedLabel(reportHappened(selected))],
+            ["What happened", callHappenedDetail(reportHappened(selected))],
           ].map(([label, value]) => (
             <div key={label} className="rounded-xl border border-border bg-card p-3">
               <span className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 {label}
               </span>
-              <strong className="mt-1.5 block truncate text-sm font-semibold text-foreground">
+              <strong className="mt-1.5 block text-sm font-semibold text-foreground">
                 {value}
               </strong>
             </div>
           ))}
         </div>
-
-        {reviewNote ? (
-          <section>
-            <h4 className="text-xs font-semibold tracking-[0.08em] text-muted-foreground">
-              Call Review
-            </h4>
-            <p className="wl-preserve-case mt-2 text-sm leading-6 text-foreground">{reviewNote}</p>
-          </section>
-        ) : null}
 
         {selected.transcript ? (
           <details className="rounded-xl border border-border bg-card">

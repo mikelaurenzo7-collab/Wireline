@@ -8,6 +8,7 @@ import { eq, and, sql, desc, lt, gte, inArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { dashboardRateLimit } from "../middleware/api-rate-limits";
 import { computeDashboardStats } from "../lib/dashboard-stats";
+import { annotateCallsWithHappened } from "../lib/call-report";
 import { presentCallAnalysis } from "../lib/call-review-note";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { getCachedDashboard, setCachedDashboard } from "../lib/dashboard-cache";
@@ -140,6 +141,7 @@ router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res
         qaScore: schema.callLogs.qaScore,
         qaBreakdown: schema.callLogs.qaBreakdown,
         outcomeTag: schema.callLogs.outcomeTag,
+        endedReason: schema.callLogs.endedReason,
         pipelineError: schema.callLogs.pipelineError,
         campaignSource: schema.callLogs.campaignSource,
         demo: schema.callLogs.demo,
@@ -159,7 +161,8 @@ router.get("/api/calls", authenticateUser, async (req: AuthenticatedRequest, res
     // detail panel actually populates lead score, intent label, transcript
     // metadata, recording URL — everything beyond the few fields that
     // happened to match by coincidence (id, summary, transcript, direction).
-    const safeCalls = (calls || []).map((call) => ({
+    const reported = await annotateCallsWithHappened(req.user.id, calls || []);
+    const safeCalls = reported.map((call) => ({
       ...presentCallAnalysis(call),
       recordingUrl: call.recordingUrl ? `/api/calls/${String(call.id)}/recording` : null,
     }));
