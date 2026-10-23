@@ -56,6 +56,7 @@ import BrowserSessionTools, {
   type OwnerBrowserInput,
 } from "../components/computer/BrowserSessionTools";
 import useActiveBrowserTab from "../components/computer/useActiveBrowserTab";
+import TaskResultText from "../components/computer/TaskResultText";
 import {
   ACTIVE_COMPUTER_TASKS as ACTIVE,
   useComputerWorkspace,
@@ -65,6 +66,7 @@ import {
   type ComputerStatus,
 } from "../contexts/ComputerWorkspaceContext";
 import { readComputerTaskReceipt } from "../lib/computer-task-receipt";
+import { shortComputerTaskLabel } from "../lib/computer-task-display";
 
 const EVENT_KIND_LABEL: Record<TaskEvent["kind"], string> = {
   action: "Step",
@@ -684,7 +686,7 @@ function LiveScreen({
             )}
           </div>
         )}
-        {newTab ? (
+        {newTab && !(src && screenCurrent) ? (
           <div className="wl-computer-new-tab">
             <Globe className="size-7" aria-hidden="true" />
             <strong>Your browser is ready</strong>
@@ -738,11 +740,52 @@ function ActivityCard({ event, index }: { event: TaskEvent; index: number }) {
   );
 }
 
+function EndedBrowserFrame({
+  onOpen,
+  disabled,
+  opening,
+}: {
+  onOpen?: () => void;
+  disabled: boolean;
+  opening: boolean;
+}) {
+  return (
+    <figure className="wl-computer-screen is-ended" aria-label="Ended browser">
+      <div className="wl-computer-screen__bar">
+        <Globe className="size-4" aria-hidden="true" />
+        <span className="text-sm text-muted-foreground">Browser</span>
+      </div>
+      <div className="wl-computer-screen__viewport">
+        <div className="wl-computer-screen__empty">
+          <MonitorSmartphone className="size-5" aria-hidden="true" />
+          <strong>Browser session ended</strong>
+          <span>Screen cleared.</span>
+          {onOpen ? (
+            <Button
+              type="button"
+              size="sm"
+              onClick={onOpen}
+              disabled={disabled}
+              aria-busy={opening}
+            >
+              {opening ? "Opening…" : "Open browser"}
+            </Button>
+          ) : null}
+        </div>
+      </div>
+    </figure>
+  );
+}
+
 function TaskDetail({
   task,
   onChanged,
   onStartAnother,
   onOpenTasks,
+  onOpenBrowser,
+  openingBrowser = false,
+  canOpenBrowser = false,
+  openBrowserError,
   botName,
   compact = false,
   chatControls = false,
@@ -753,6 +796,10 @@ function TaskDetail({
   onChanged: (task: ComputerTask) => void;
   onStartAnother?: () => void;
   onOpenTasks?: () => void;
+  onOpenBrowser?: () => void;
+  openingBrowser?: boolean;
+  canOpenBrowser?: boolean;
+  openBrowserError?: string | null;
   botName?: string;
   compact?: boolean;
   chatControls?: boolean;
@@ -941,7 +988,7 @@ function TaskDetail({
   };
 
   const finishedResult =
-    !active && task.summary && !chatControls ? (
+    !active && task.summary && (!chatControls || compact) ? (
       <div
         className={cn(
           "wl-computer-result",
@@ -979,6 +1026,79 @@ function TaskDetail({
       </div>
     ) : null;
 
+  const checkpoint =
+    task.status === "needs_input" && task.question && !task.stopping && !task.preparingBrowser ? (
+      <div className="wl-computer-question">
+        <div className="flex items-start gap-2">
+          <Hand
+            className="mt-0.5 size-4 shrink-0 text-[var(--wireline-color-status-warning)]"
+            aria-hidden="true"
+          />
+          <p className="font-medium">{task.question}</p>
+        </div>
+        {task.ownerControl ? (
+          <p className="mt-3 text-sm font-medium" role="status">
+            {compact
+              ? "Complete the browser step, then return control to your Bot."
+              : "You’re in control of the browser. Sign in or complete the step, then return control to your Bot."}
+          </p>
+        ) : (
+          <>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button
+                onClick={() => void ownerAction("take")}
+                disabled={!task.liveView || busy !== null || refreshRequired}
+                aria-busy={busy === "take"}
+              >
+                <MousePointer2 aria-hidden="true" />
+                {busy === "take" ? "Connecting…" : "Take control"}
+              </Button>
+              {!compact ? (
+                <span className="self-center text-xs text-muted-foreground">
+                  Sign in, handle a checkpoint, then hand the browser back.
+                </span>
+              ) : null}
+            </div>
+            {!chatControls ? (
+              <form
+                className="mt-3 flex flex-col gap-2 sm:flex-row"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (reply.trim()) void act("reply");
+                }}
+              >
+                <label htmlFor="computer-reply" className="sr-only">
+                  Reply to your Bot
+                </label>
+                <Input
+                  id="computer-reply"
+                  value={reply}
+                  onChange={(event) => setReply(event.target.value)}
+                  placeholder="Tell your Bot what to do next"
+                  maxLength={1000}
+                  autoComplete="off"
+                  className="min-w-0 flex-1"
+                />
+                <Button
+                  type="submit"
+                  disabled={!reply.trim() || busy !== null || refreshRequired}
+                  aria-busy={busy === "reply"}
+                >
+                  <Send aria-hidden="true" />
+                  Reply
+                </Button>
+              </form>
+            ) : null}
+            {!chatControls ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Replies go to your Bot. Use Take control for passwords, codes, or private details.
+              </p>
+            ) : null}
+          </>
+        )}
+      </div>
+    ) : null;
+
   return (
     <section
       ref={detailRef}
@@ -990,7 +1110,7 @@ function TaskDetail({
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={status.variant}>
               {active ? <span className="wl-computer-pulse" aria-hidden="true" /> : null}
-              {status.label}
+              {compact && task.preparingBrowser && task.ownerControl ? "Ready" : status.label}
             </Badge>
             <span
               className="text-xs text-muted-foreground"
@@ -1003,10 +1123,18 @@ function TaskDetail({
               <span className="text-xs text-muted-foreground">{botName}</span>
             ) : null}
           </div>
-          {compact && !active && task.summary ? (
-            <p id="computer-task-title" className="sr-only">
-              {task.goal}
-            </p>
+          {compact ? (
+            <>
+              <p id="computer-task-title" className="sr-only">
+                {task.goal}
+              </p>
+              <p
+                className="wl-computer-detail__label"
+                title={task.preparingBrowser ? undefined : task.goal}
+              >
+                {task.preparingBrowser ? "Browser" : shortComputerTaskLabel(task.goal)}
+              </p>
+            </>
           ) : (active || !task.summary) && (task.preparingBrowser || task.goal.length <= 160) ? (
             <p id="computer-task-title" className="wl-computer-detail__goal">
               {task.preparingBrowser ? "Your browser is ready" : task.goal}
@@ -1029,7 +1157,7 @@ function TaskDetail({
         <div className="wl-computer-detail__actions">
           {onOpenTasks ? (
             <>
-              {!active && onStartAnother ? (
+              {!active && onStartAnother && !compact ? (
                 <Button type="button" variant="outline" size="sm" onClick={onStartAnother}>
                   {chatControls ? "Open browser" : "New task"}
                 </Button>
@@ -1070,82 +1198,16 @@ function TaskDetail({
         </p>
       ) : null}
 
-      {task.status === "needs_input" &&
-      task.question &&
-      !task.stopping &&
-      !task.preparingBrowser ? (
-        <div className="wl-computer-question">
-          <div className="flex items-start gap-2">
-            <Hand
-              className="mt-0.5 size-4 shrink-0 text-[var(--wireline-color-status-warning)]"
-              aria-hidden="true"
-            />
-            <p className="font-medium">{task.question}</p>
-          </div>
-          {task.ownerControl ? (
-            <p className="mt-3 text-sm font-medium" role="status">
-              {task.preparingBrowser
-                ? "You’re in control. Browse first, then give your Bot a task using this browser."
-                : "You’re in control of the browser. Sign in or complete the step, then return control to your Bot."}
-            </p>
-          ) : (
-            <>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button
-                  onClick={() => void ownerAction("take")}
-                  disabled={!task.liveView || busy !== null || refreshRequired}
-                  aria-busy={busy === "take"}
-                >
-                  <MousePointer2 aria-hidden="true" />
-                  {busy === "take" ? "Connecting…" : "Take control"}
-                </Button>
-                <span className="self-center text-xs text-muted-foreground">
-                  Sign in, handle a checkpoint, then hand the browser back.
-                </span>
-              </div>
-              {!chatControls ? (
-                <form
-                  className="mt-3 flex flex-col gap-2 sm:flex-row"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    if (reply.trim()) void act("reply");
-                  }}
-                >
-                  <label htmlFor="computer-reply" className="sr-only">
-                    Reply to your Bot
-                  </label>
-                  <Input
-                    id="computer-reply"
-                    value={reply}
-                    onChange={(event) => setReply(event.target.value)}
-                    placeholder="Tell your Bot what to do next"
-                    maxLength={1000}
-                    autoComplete="off"
-                    className="min-w-0 flex-1"
-                  />
-                  <Button
-                    type="submit"
-                    disabled={!reply.trim() || busy !== null || refreshRequired}
-                    aria-busy={busy === "reply"}
-                  >
-                    <Send aria-hidden="true" />
-                    Reply
-                  </Button>
-                </form>
-              ) : null}
-              {!chatControls ? (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Replies go to your Bot. Use Take control for passwords, codes, or private details.
-                </p>
-              ) : null}
-            </>
-          )}
-        </div>
-      ) : null}
+      {!compact ? checkpoint : null}
 
       {error ? (
         <StatusNotice tone="destructive" title="Something Went Wrong">
           {error}
+        </StatusNotice>
+      ) : null}
+      {openBrowserError ? (
+        <StatusNotice tone="destructive" title="The browser did not open">
+          {openBrowserError}
         </StatusNotice>
       ) : null}
 
@@ -1157,7 +1219,7 @@ function TaskDetail({
             aria-label="Browser control handoff"
           >
             <span>
-              {task.preparingBrowser && chatControls
+              {task.preparingBrowser && chatControls && !compact
                 ? "Give your Bot its task in Work chat."
                 : "You’re in control"}
             </span>
@@ -1348,12 +1410,20 @@ function TaskDetail({
             ) : null
           }
         />
+      ) : compact ? (
+        <EndedBrowserFrame
+          onOpen={onOpenBrowser}
+          disabled={!canOpenBrowser || openingBrowser}
+          opening={openingBrowser}
+        />
       ) : !task.summary || chatControls ? (
         <p className="wl-computer-screen-cleared">
           <MonitorSmartphone className="size-4 shrink-0" aria-hidden="true" />
           The browser screen was cleared after this task ended.
         </p>
       ) : null}
+
+      {compact ? checkpoint : null}
 
       {!active &&
       (task.status === "failed" || task.status === "blocked" || task.status === "interrupted") ? (
@@ -1373,7 +1443,7 @@ function TaskDetail({
         </div>
       ) : null}
 
-      {finishedResult && compact ? (
+      {compact ? (
         <details className="wl-computer-completed-details">
           <summary>
             Task details
@@ -1524,6 +1594,7 @@ export function ComputerWorkbench({
     markUnconfirmed,
   } = useComputerWorkspace();
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyPreviewId, setHistoryPreviewId] = useState<string | null>(null);
   const [startingMode, setStartingMode] = useState<"browser" | "task" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -1549,12 +1620,22 @@ export function ComputerWorkbench({
         (task) => task.agentId === composerAgentId || (composerBot && task.id === activeTask?.id),
       )
     : tasks;
-  const selected = hasScopedAgent
+  const selectedHistory = hasScopedAgent
     ? (visibleTasks?.find((task) => task.id === accountSelected?.id) ??
       visibleTasks?.find((task) => task.agentId === composerAgentId) ??
       visibleTasks?.find((task) => task.id === activeTask?.id) ??
       null)
     : accountSelected;
+  // The right panel is the account's live browser. Reviewing an older result
+  // must not swap out that canvas or retarget its owner/Stop controls.
+  const selected =
+    layout === "panel" && activeTask && (!hasScopedAgent || composerBot)
+      ? (visibleTasks?.find((task) => task.id === activeTask.id) ?? selectedHistory)
+      : selectedHistory;
+  const historyPreview =
+    historyOpen && historyPreviewId
+      ? visibleTasks?.find((task) => task.id === historyPreviewId && !ACTIVE.includes(task.status))
+      : null;
   const foreignActive =
     selected && selected.id === activeTask?.id && selected.agentId !== composerAgentId;
   const foreignActiveBotName = foreignActive
@@ -1620,6 +1701,10 @@ export function ComputerWorkbench({
       onChanged={(next) => applyTask(next, false)}
       onStartAnother={() => setShowComposer(true)}
       onOpenTasks={layout === "panel" ? () => setHistoryOpen(true) : undefined}
+      onOpenBrowser={() => void start(true)}
+      canOpenBrowser={canOpenBrowser}
+      openingBrowser={startingMode === "browser"}
+      openBrowserError={error}
       botName={selectedBot?.name}
       compact={layout === "panel"}
       chatControls={chatControls}
@@ -1904,61 +1989,123 @@ export function ComputerWorkbench({
           ) : null}
         </div>
 
-        <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
+        <Sheet
+          open={historyOpen}
+          onOpenChange={(open) => {
+            setHistoryOpen(open);
+            if (!open) setHistoryPreviewId(null);
+          }}
+        >
           <SheetContent side="right" className="wl-computer-history-panel">
             <SheetHeader>
               <SheetTitle>Recent Tasks</SheetTitle>
             </SheetHeader>
+            {historyPreview ? (
+              <article className="wl-computer-history-preview" aria-label={historyPreview.goal}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setHistoryPreviewId(null)}
+                >
+                  <ArrowLeft aria-hidden="true" />
+                  All tasks
+                </Button>
+                <h3>{shortComputerTaskLabel(historyPreview.goal)}</h3>
+                <Badge variant={STATUS_COPY[historyPreview.status].variant}>
+                  {STATUS_COPY[historyPreview.status].label}
+                </Badge>
+                <details className="wl-computer-completed-details">
+                  <summary>
+                    Task details
+                    <ChevronDown aria-hidden="true" />
+                  </summary>
+                  <p className="wl-computer-detail__goal">{historyPreview.goal}</p>
+                  {historyPreview.summary ? (
+                    <TaskResultText>{historyPreview.summary}</TaskResultText>
+                  ) : (
+                    <p>No final report was produced.</p>
+                  )}
+                  {historyPreview.sources.length ? (
+                    <ul className="wl-computer-sources" aria-label="Sources">
+                      {historyPreview.sources.map((source) => (
+                        <li key={source}>
+                          <a href={source} target="_blank" rel="noopener noreferrer nofollow">
+                            {hostOf(source)}
+                            <ExternalLink className="size-3" aria-hidden="true" />
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </details>
+                <p className="text-xs text-muted-foreground">Read-only task history.</p>
+              </article>
+            ) : null}
             <aside className="wl-computer-history" aria-label="Recent tasks">
-              {tasks === null && listFailed ? (
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Recent tasks did not load.</p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setListFailed(false);
-                      void loadTasks();
-                    }}
-                  >
-                    Retry
-                  </Button>
-                </div>
-              ) : tasks === null ? (
-                <div className="space-y-2" aria-busy="true" aria-label="Loading tasks">
-                  <Skeleton className="h-14 w-full" />
-                  <Skeleton className="h-14 w-full" />
-                </div>
-              ) : visibleTasks?.length ? (
-                <ul>
-                  {visibleTasks.map((task) => {
-                    const copy = STATUS_COPY[task.status];
-                    return (
-                      <li key={task.id}>
-                        <button
-                          type="button"
-                          aria-current={task.id === selected?.id ? "true" : undefined}
-                          onClick={() => {
-                            setSelectedId(task.id);
-                            setShowComposer(false);
-                            setHistoryOpen(false);
-                          }}
-                        >
-                          <span className="wl-computer-history__goal">{task.goal}</span>
-                          <span className="wl-computer-history__meta">
-                            <Badge variant={copy.variant}>{copy.label}</Badge>
-                            <span>
-                              {botName(task.agentId) ? `${botName(task.agentId)} · ` : null}
-                              {timeAgo(task.startedAt)}
-                            </span>
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : (
-                <p className="text-sm text-muted-foreground">No tasks yet.</p>
+              {historyPreview ? null : (
+                <>
+                  {tasks === null && listFailed ? (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">Recent tasks did not load.</p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setListFailed(false);
+                          void loadTasks();
+                        }}
+                      >
+                        Retry
+                      </Button>
+                    </div>
+                  ) : tasks === null ? (
+                    <div className="space-y-2" aria-busy="true" aria-label="Loading tasks">
+                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-14 w-full" />
+                    </div>
+                  ) : visibleTasks?.length ? (
+                    <ul>
+                      {visibleTasks.map((task) => {
+                        const copy = STATUS_COPY[task.status];
+                        return (
+                          <li key={task.id}>
+                            <button
+                              type="button"
+                              aria-label={task.goal}
+                              aria-current={task.id === selected?.id ? "true" : undefined}
+                              onClick={() => {
+                                if (layout === "panel" && activeTask) {
+                                  if (task.id === activeTask.id) {
+                                    setHistoryPreviewId(null);
+                                    setHistoryOpen(false);
+                                  } else setHistoryPreviewId(task.id);
+                                  return;
+                                }
+                                setSelectedId(task.id);
+                                setShowComposer(false);
+                                setHistoryOpen(false);
+                              }}
+                            >
+                              <span className="wl-computer-history__goal">
+                                {shortComputerTaskLabel(task.goal)}
+                              </span>
+                              <span className="wl-computer-history__meta">
+                                <Badge variant={copy.variant}>{copy.label}</Badge>
+                                <span>
+                                  {botName(task.agentId) ? `${botName(task.agentId)} · ` : null}
+                                  {timeAgo(task.startedAt)}
+                                </span>
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No tasks yet.</p>
+                  )}
+                </>
               )}
             </aside>
           </SheetContent>

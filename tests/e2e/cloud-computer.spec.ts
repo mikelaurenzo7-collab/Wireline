@@ -1185,7 +1185,8 @@ for (const width of [390, 1024]) {
     expect(starts).toEqual([{ agentId: "design-bot", prepareBrowser: true }]);
     const detail = page.getByRole("region", { name: "Your browser is ready" });
     await expect(detail.getByText("You control the browser")).toBeVisible();
-    await expect(detail.locator(".wl-computer-new-tab")).toBeVisible();
+    // A received real frame is never covered by a decorative new-tab overlay.
+    await expect(detail.locator(".wl-computer-new-tab")).toHaveCount(0);
     await expect(
       detail.getByRole("img", {
         name: "Browser screen. Click or drag to interact with the page.",

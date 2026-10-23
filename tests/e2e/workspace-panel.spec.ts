@@ -409,6 +409,7 @@ test("completed Configure browser keeps task details collapsed and keyboard-acce
     );
   });
   const summary = "The public directory lists three Saturday options.";
+  let endedFrameRequests = 0;
   const api = await mockWorkspace(page, [
     {
       ...pastTask(
@@ -420,12 +421,23 @@ test("completed Configure browser keeps task details collapsed and keyboard-acce
       sources: ["https://directory.example/report"],
     },
   ]);
+  await page.route("**/api/computer/tasks/*/frame", (route) => {
+    endedFrameRequests += 1;
+    return route.fulfill({ status: 204, body: "" });
+  });
   await page.goto(`/studio?agent=${bots[0].id}&chat=setup`);
   await page.getByRole("button", { name: "Collapse navigation", exact: true }).click();
   const panel = page.getByRole("complementary", { name: "Workspace panel", exact: true });
   const details = panel.locator("details.wl-computer-completed-details");
   await expect(details).toHaveJSProperty("open", false);
   await expect(panel.getByText(summary, { exact: true })).toBeHidden();
+  const endedBrowser = panel.getByRole("figure", { name: "Ended browser", exact: true });
+  await expect(endedBrowser).toBeVisible();
+  await expect(endedBrowser.getByText("Screen cleared.", { exact: true })).toBeVisible();
+  await expect(endedBrowser.getByRole("img")).toHaveCount(0);
+  await expect(
+    endedBrowser.getByRole("button", { name: "Open browser", exact: true }),
+  ).toBeEnabled();
   const disclosure = details.locator("summary");
   await disclosure.focus();
   await disclosure.press("Enter");
@@ -441,10 +453,13 @@ test("completed Configure browser keeps task details collapsed and keyboard-acce
     panel.getByRole("button", { name: "Open task activity", exact: true }),
   ).toBeVisible();
   expect(api.starts).toEqual([]);
+  expect(endedFrameRequests).toBe(0);
   await expect
     .poll(() => panel.evaluate((element) => element.scrollWidth <= element.clientWidth + 1))
     .toBe(true);
   await proof(page, info, "configure-completed-panel-1206");
+  await endedBrowser.getByRole("button", { name: "Open browser", exact: true }).click();
+  await expect.poll(() => api.starts).toEqual([{ agentId: bots[0].id, prepareBrowser: true }]);
 });
 
 for (const status of ["stopped", "interrupted"] as const) {
@@ -470,7 +485,7 @@ for (const status of ["stopped", "interrupted"] as const) {
     await page.getByRole("button", { name: "Collapse navigation", exact: true }).click();
     const panel = page.getByRole("complementary", { name: "Workspace panel", exact: true });
     const detail = panel.getByRole("region", { name: goal, exact: true });
-    const brief = detail.getByText(goal, { exact: true });
+    const brief = detail.locator(".wl-computer-detail__label");
     await expect(brief).toBeVisible();
     const bounds = await brief.boundingBox();
     expect(
@@ -478,13 +493,120 @@ for (const status of ["stopped", "interrupted"] as const) {
       "The ended task brief must be readable, not clipped to screen-reader size",
     ).toBeGreaterThan(100);
     expect(bounds?.height).toBeGreaterThanOrEqual(16);
-    await expect(detail.locator("details.wl-computer-completed-details")).toHaveCount(0);
+    const details = detail.locator("details.wl-computer-completed-details");
+    await expect(details).toHaveJSProperty("open", false);
+    await details.locator("summary").press("Enter");
+    await expect(details.getByText(goal, { exact: true })).toBeVisible();
+    await expect(detail.getByRole("figure", { name: "Ended browser", exact: true })).toBeVisible();
+    await expect(detail.getByRole("img")).toHaveCount(0);
     await expect(detail.getByRole("button", { name: "Tasks", exact: true })).toBeVisible();
     await expect(
       detail.getByRole("button", { name: "Open task activity", exact: true }),
     ).toBeVisible();
     expect(api.starts).toEqual([]);
     await proof(page, info, `configure-${status}-without-report`);
+  });
+}
+
+for (const width of [1206, 390, 320]) {
+  test(`Browser panel keeps its live canvas ahead of long task details at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: width === 320 ? 900 : 1000 });
+    const now = new Date().toISOString();
+    const goal =
+      `Compare public service listings. ${"Read opening hours, availability, location, and prices. ".repeat(35)}`
+        .slice(0, 1980)
+        .trim();
+    const question = "Confirm which public listing should be used before continuing. "
+      .repeat(15)
+      .trim();
+    const active = {
+      ...pastTask("primary-browser-active", bots[0].id, goal, ""),
+      status: "needs_input",
+      summary: null,
+      finishedAt: null,
+      liveView: true,
+      currentUrl: "https://directory.example/",
+      question,
+      events: [{ at: now, kind: "question", text: "Which public listing should I use?" }],
+    };
+    const older = {
+      ...pastTask(
+        "primary-browser-old",
+        bots[0].id,
+        "Earlier listing research",
+        "Earlier verified result.",
+      ),
+      sources: ["https://directory.example/earlier"],
+    };
+    const frame = await syntheticFrame(page);
+    const fixture = await mockWorkspace(page, [active, older], frame);
+    const frameTaskIds: string[] = [];
+    await page.route("**/api/computer/tasks/*/frame", (route) => {
+      frameTaskIds.push(new URL(route.request().url()).pathname.split("/").at(-2)!);
+      return route.fulfill({ status: 200, contentType: "image/jpeg", body: frame });
+    });
+    await page.goto(`/studio?agent=${bots[0].id}&panel=computer&chat=setup`);
+    if (width >= 1180)
+      await page.getByRole("button", { name: "Collapse navigation", exact: true }).click();
+    if (width === 320) {
+      await page.evaluate(() =>
+        document.documentElement.style.setProperty("font-size", "32px", "important"),
+      );
+      await page.evaluate(() => document.fonts.ready);
+    }
+    const detail = page.getByRole("region", { name: goal, exact: true });
+    const image = detail.getByRole("img", {
+      name: "What your Bot's cloud computer shows right now",
+      exact: true,
+    });
+    await expect(image).toBeVisible();
+    const label = detail.locator(".wl-computer-detail__label");
+    expect(Array.from((await label.textContent()) || "").length).toBeLessThanOrEqual(80);
+    const imageBox = (await image.boundingBox())!;
+    const questionBox = (await detail.locator(".wl-computer-question").boundingBox())!;
+    expect(imageBox.y + imageBox.height).toBeLessThanOrEqual(questionBox.y);
+    await expect(detail.locator("details.wl-computer-completed-details")).toHaveJSProperty(
+      "open",
+      false,
+    );
+    await image.scrollIntoViewIfNeeded();
+    await expect(image).toBeInViewport({ ratio: 1 });
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+      .toBe(true);
+    await expect
+      .poll(() => detail.evaluate((element) => element.scrollWidth <= element.clientWidth + 1))
+      .toBe(true);
+    for (const name of ["Tasks", "Open task activity"]) {
+      const button = detail.getByRole("button", { name, exact: true });
+      const box = (await button.boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(width);
+    }
+    await proof(page, info, `browser-primary-live-${width}${width === 320 ? "-enlarged" : ""}`);
+    await detail.getByRole("button", { name: "Tasks", exact: true }).click();
+    const history = page.getByRole("dialog", { name: "Recent Tasks", exact: true });
+    await history.getByRole("button", { name: older.goal, exact: true }).click();
+    const preview = history.getByRole("article", { name: older.goal, exact: true });
+    await preview.locator("details > summary").press("Enter");
+    await expect(preview.getByText(older.summary, { exact: true })).toBeVisible();
+    await expect(
+      preview.getByRole("link", { name: "directory.example", exact: true }),
+    ).toHaveAttribute("href", older.sources[0]);
+    await expect(image).toBeAttached();
+    await expect(preview.getByRole("button", { name: "Stop", exact: true })).toHaveCount(0);
+    await history.getByRole("button", { name: "Close", exact: true }).click();
+    await image.scrollIntoViewIfNeeded();
+    await expect(image).toBeInViewport({ ratio: 1 });
+    expect(frameTaskIds.length).toBeGreaterThan(0);
+    expect(frameTaskIds.every((id) => id === active.id)).toBe(true);
+    await detail.getByRole("button", { name: "Stop", exact: true }).click();
+    expect(fixture.stops).toEqual([active.id]);
+    expect(fixture.starts).toEqual([]);
   });
 }
 
@@ -913,10 +1035,12 @@ test.describe("wide screens", () => {
     );
     await expect(history.getByRole("button", { name: new RegExp(front.goal) })).toBeVisible();
     await history.getByRole("button", { name: new RegExp(sales.goal) }).click();
-    await expect(browser.getByRole("region", { name: sales.goal, exact: true })).toBeVisible();
-    await browser
-      .getByRole("button", { name: "View Front Desk's active task", exact: true })
-      .click();
+    const preview = history.getByRole("article", { name: sales.goal, exact: true });
+    await expect(preview).toBeVisible();
+    await preview.locator("details > summary").press("Enter");
+    await expect(preview.getByText(sales.summary, { exact: true })).toBeVisible();
+    await expect(browser.getByRole("region", { name: front.goal, exact: true })).toBeAttached();
+    await history.getByRole("button", { name: "Close", exact: true }).click();
     await expect(browser.getByText("Front Desk's active browser", { exact: true })).toBeVisible();
     fixture.setTask(front.id, {
       status: "completed",
@@ -1126,12 +1250,18 @@ for (const width of [1440, 390]) {
         .getByRole("button", { name: /Old reference job/ })
         .click();
       await expect(
+        page.getByRole("article", { name: "Old reference job", exact: true }),
+      ).toBeVisible();
+      await page
+        .getByRole("dialog", { name: "Recent Tasks" })
+        .getByRole("button", { name: "Close", exact: true })
+        .click();
+      await expect(
         page
           .getByRole("log", { name: "Work conversation" })
           .getByText("Should I include the nearby suburbs?", { exact: true }),
       ).toBeVisible();
       await expect(reply).toBeVisible();
-      await page.getByRole("button", { name: "Respond to active task", exact: true }).click();
     }
     fixture.setTask("work-task-1", {
       ownerControl: true,
@@ -1254,7 +1384,11 @@ test("Work follows a long result and preserves the owner's manual reading positi
   ]);
   await page.goto(`/studio?agent=${bots[0].id}`);
   const log = page.getByRole("log", { name: "Work conversation" });
-  await expect(page.getByText("Task brief", { exact: true })).toBeVisible();
+  await expect(
+    page
+      .locator(".wl-computer-completed-details > summary")
+      .getByText("Task details", { exact: true }),
+  ).toBeVisible();
   await log.getByText("40 browser actions", { exact: false }).click();
   await expect
     .poll(() => log.evaluate((node) => node.scrollHeight > node.clientHeight + 300))
