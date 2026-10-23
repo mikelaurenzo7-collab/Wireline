@@ -354,7 +354,13 @@ describe("email inbox operation recovery", () => {
       () => Promise.resolve(response({ error: "Email conversation not found." }, 404)),
     ];
     await settle();
-    expect(text(tree)).toContain("Email conversation not found.");
+    const unavailable = elements(tree).find(
+      (node) => node.type === "empty-state" && node.props.title === "Conversation Unavailable",
+    );
+    expect(unavailable?.props.description).toBe("Email conversation not found.");
+    expect(
+      elements(unavailable).some((node) => node.type === "button" && text(node) === "Retry"),
+    ).toBe(true);
     expect(requests("/api/emails/threads/other-bot-thread/outcome")[0][0]).toContain(
       "agent_id=bot-b",
     );

@@ -73,7 +73,7 @@ describe("product doctrine parity", () => {
 
     expect(root).toContain("unused capacity does not pre-provision carrier numbers");
     expect(pricing).toContain("Email does not require a phone number");
-    expect(pricing).toContain("Free Builder does not receive live numbers");
+    expect(pricing).toContain("The Free plan does not include live numbers.");
     expect(catalog).toContain("included_mailboxes");
     const identity = read("src/lib/paid-bot-identity.ts");
     expect(identity).toContain('entitlement.channels.includes("email")');
