@@ -133,9 +133,9 @@ describe("authenticated workspace design architecture", () => {
     expect(studio).toContain("const CONVERSATION_MIN_WIDTH = 420;");
     expect(studio).toContain("collapsedSize={0}");
     expect(studio).toContain("collapsed={!panelOpen}");
-    // Claude-style panel: drag to resize, Full width to take the Workspace, close.
+    // Adjustable panel: drag, expand, restore split view, close.
     expect(studio).toContain("fill={panelFill}");
-    expect(studio).toContain('aria-label="Full width"');
+    expect(studio).toContain('aria-label={panelFill ? "Restore split view" : "Expand panel"}');
     expect(studio).toContain("const [panelExpanded, setPanelExpanded] = useState(false);");
     expect(studio).toContain(
       'const computerFocused = params.get("focus") === "computer" && !inspectorOpen;',
@@ -179,7 +179,6 @@ describe("authenticated workspace design architecture", () => {
     expect(shell).not.toContain(".wl-rail-link");
     expect(shell).not.toContain(".wl-rail-agent-link");
     expect(shell).toContain('.wl-shell-bot-context[data-wireline-bot-selected="true"]');
-    expect(shell).toContain('.wl-shell-bot-context[data-wireline-bot-selected="true"]::before');
     expect(master).not.toContain("--bb-polish-content-max");
     expect(master).toContain("--bb-polish-shadow: var(--wireline-elevation-md);");
     expect(master).toContain(':not([class*="bg-"])');

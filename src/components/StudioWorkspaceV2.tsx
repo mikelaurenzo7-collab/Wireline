@@ -170,6 +170,7 @@ function StudioWorkspaceContent() {
   const workroomRef = useRef<StudioWorkroomHandle>(null);
   const tryWorkroomRef = useRef<StudioWorkroomHandle>(null);
   const inspectorTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const panelExpandRef = useRef<HTMLButtonElement | null>(null);
   const splitWorkspace = useMediaQuery("(min-width: 1180px)");
   // Wide screens open Work chat beside its browser. Rehearsal and setup share
   // that optional panel; explicit links reopen it even after a saved collapse.
@@ -686,13 +687,24 @@ function StudioWorkspaceContent() {
       ? openPanelSection(section)
       : openInspector(section);
 
+  const restoreSplitView = () => {
+    setPanelExpanded(false);
+    if (!computerFocused) return;
+    setPanelCollapsed(false);
+    setRestingSection("computer");
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete("focus");
+        return next;
+      },
+      { replace: true },
+    );
+  };
+
   const inspectorHeader = (
-    <header className="wl-studio-panel-header flex min-h-12 shrink-0 items-center gap-2 border-b border-border/70 px-3 py-2">
-      <div
-        className="flex min-w-0 max-w-full flex-wrap items-center gap-0.5 rounded-lg bg-muted/35 p-0.5"
-        role="tablist"
-        aria-label="Workspace panel"
-      >
+    <header className="wl-studio-panel-header">
+      <div className="wl-studio-panel-tabs" role="tablist" aria-label="Workspace panel">
         {panelTabs.map(({ id, label }, index) => (
           <button
             key={id}
@@ -727,50 +739,39 @@ function StudioWorkspaceContent() {
               selectPanelSection(panelTabs[nextIndex]!.id);
               inspectorTabRefs.current[nextIndex]?.focus();
             }}
-            className={`min-h-[44px] shrink-0 whitespace-nowrap rounded-md px-1 py-1.5 text-xs font-semibold transition-colors wl-focus-ring-halo ${
-              activePanelSection === id
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            className="wl-studio-panel-tab wl-focus-ring-halo"
           >
             {label}
           </button>
         ))}
       </div>
-      <div className="ml-auto flex shrink-0 items-center">
+      <div className="wl-studio-panel-actions">
         {splitWorkspace ? (
           <button
+            ref={panelExpandRef}
             type="button"
             onClick={() => {
-              if (computerFocused) {
-                setPanelExpanded(false);
-                setRestingSection("computer");
-                setParams(
-                  (current) => {
-                    const next = new URLSearchParams(current);
-                    next.delete("focus");
-                    return next;
-                  },
-                  { replace: true },
-                );
-              } else setPanelExpanded((expanded) => !expanded);
+              if (panelFill) restoreSplitView();
+              else setPanelExpanded(true);
             }}
-            className="grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo"
-            aria-label="Full width"
+            className="wl-studio-panel-action wl-focus-ring-halo"
+            aria-label={panelFill ? "Restore split view" : "Expand panel"}
             aria-pressed={panelFill}
-            title={panelFill ? "Show the conversation" : "Full width"}
+            aria-controls="studio-inspector"
+            title={panelFill ? "Restore split view (Esc)" : "Expand panel"}
           >
             {panelFill ? (
               <Minimize2 className="size-4" aria-hidden="true" />
             ) : (
               <Maximize2 className="size-4" aria-hidden="true" />
             )}
+            {panelFill ? <span>Split view</span> : null}
           </button>
         ) : null}
         <button
           type="button"
           onClick={closeInspector}
-          className="grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo"
+          className="wl-studio-panel-action wl-focus-ring-halo"
           aria-label="Close panel"
           title="Close panel"
         >
@@ -802,6 +803,28 @@ function StudioWorkspaceContent() {
       id="studio-inspector"
       className="flex h-full min-h-0 w-full flex-col"
       aria-label="Workspace panel"
+      onKeyDown={(event) => {
+        if (
+          event.key !== "Escape" ||
+          !panelFill ||
+          event.defaultPrevented ||
+          document.fullscreenElement ||
+          event.nativeEvent.isComposing
+        )
+          return;
+        // A website, editor or open dialog owns Escape before workspace chrome.
+        if (
+          event.target instanceof Element &&
+          event.target.closest(
+            'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [role="menu"], .wl-computer-screen__viewport',
+          )
+        )
+          return;
+        event.preventDefault();
+        event.stopPropagation();
+        restoreSplitView();
+        panelExpandRef.current?.focus();
+      }}
     >
       {inspectorHeader}
       {inspectorBody}
@@ -813,7 +836,7 @@ function StudioWorkspaceContent() {
       {(
         [
           { id: "work", label: "Work" },
-          { id: "setup", label: "Set up" },
+          { id: "setup", label: "Configure" },
         ] as const
       ).map(({ id, label }) => (
         <button
@@ -926,9 +949,8 @@ function StudioWorkspaceContent() {
               else openPanelSection(panelSection);
             }}
             resizeHandleLabel="Resize workspace panel"
-            className={
-              panelOpen ? `${panelFill ? "" : "border-l border-border/70 "}bg-card/25` : undefined
-            }
+            controlsId="studio-inspector"
+            className={panelOpen ? "wl-studio-panel-surface" : undefined}
           >
             {({ collapsed }) => (collapsed ? null : inspector)}
           </WorkspaceResizablePanel>

@@ -30,16 +30,14 @@ export default function WorkspaceControlBand({
       data-embedded={embedded ? "true" : undefined}
       aria-label={ariaLabel}
       className={cn(
-        "flex flex-col gap-2 sm:flex-row sm:items-center",
+        "flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap",
         embedded ? "mb-0 border-b-0 pb-0" : "mb-3 border-b border-border/70 pb-3",
         className,
       )}
     >
       <div className="min-w-0 flex-1">{primary}</div>
       {secondary ? (
-        <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-0.5 sm:shrink-0 sm:justify-end sm:overflow-visible sm:pb-0">
-          {secondary}
-        </div>
+        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">{secondary}</div>
       ) : null}
     </div>
   );

@@ -55,8 +55,8 @@ describe("Workspace computer panel", () => {
   it("keeps checkpoint, owner stop and error recovery inside the expanded task", () => {
     const detail = computer.slice(computer.indexOf("function TaskDetail("));
     const fullscreenTarget = computer.slice(
-      computer.indexOf('aria-label={expanded ? "Exit expanded browser"'),
-      computer.indexOf("surface.requestFullscreen().catch"),
+      computer.indexOf('aria-label={expanded ? "Exit browser fullscreen"'),
+      computer.indexOf("await surface.requestFullscreen();"),
     );
     expect(fullscreenTarget).toContain('closest(".wl-computer-detail")');
     expect(fullscreenTarget).not.toContain('closest(".wl-computer-takeover")');

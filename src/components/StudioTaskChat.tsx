@@ -475,7 +475,7 @@ export default function StudioTaskChat({
               <Button
                 type="submit"
                 size="sm"
-                className="ml-auto size-10 rounded-full p-0"
+                className="wl-work-send ml-auto size-11 rounded-full p-0"
                 disabled={!canSend}
                 aria-label={
                   handoff ? "Give task to Bot" : awaitingReply ? "Reply to Bot" : "Start work"

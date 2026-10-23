@@ -7,8 +7,6 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
-import { GripVertical } from "lucide-react";
-
 import { cn } from "../../lib/utils";
 
 type WorkspaceResizablePanelRenderState = {
@@ -32,6 +30,8 @@ type WorkspaceResizablePanelProps = {
   fill?: boolean;
   className?: string;
   resizeHandleLabel: string;
+  /** Existing panel content region controlled by the separator. */
+  controlsId?: string;
   children: (state: WorkspaceResizablePanelRenderState) => ReactNode;
 };
 
@@ -39,6 +39,9 @@ type StoredPanelState = {
   size?: number;
   collapsed?: boolean;
 };
+
+// Only one divider can own the document's resize cursor/selection lock.
+let activeResizeCleanup: (() => void) | null = null;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -50,7 +53,7 @@ function readStoredState(storageKey: string): StoredPanelState {
     const raw = window.localStorage.getItem(storageKey);
     if (!raw) return {};
     const parsed = JSON.parse(raw) as StoredPanelState;
-    return parsed && typeof parsed === "object" ? parsed : {};
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
   } catch {
     return {};
   }
@@ -77,11 +80,18 @@ export default function WorkspaceResizablePanel({
   fill = false,
   className,
   resizeHandleLabel,
+  controlsId,
   children,
 }: WorkspaceResizablePanelProps) {
   const initial = readStoredState(storageKey);
   const [size, setSize] = useState(() =>
-    clamp(typeof initial.size === "number" ? initial.size : defaultSize, minSize, maxSize),
+    clamp(
+      typeof initial.size === "number" && Number.isFinite(initial.size)
+        ? initial.size
+        : defaultSize,
+      minSize,
+      maxSize,
+    ),
   );
   const [uncontrolledCollapsed, setUncontrolledCollapsed] = useState(
     typeof initial.collapsed === "boolean" ? initial.collapsed : defaultCollapsed,
@@ -95,7 +105,13 @@ export default function WorkspaceResizablePanel({
     [controlledCollapsed, onCollapsedChange],
   );
   const [resizing, setResizing] = useState(false);
-  const cleanupRef = useRef<(() => void) | null>(null);
+  const cleanupRef = useRef<((notify?: boolean) => void) | null>(null);
+  const helpId = `${encodeURIComponent(storageKey)}-resize-help`;
+  const stopResize = useCallback((notify = true) => {
+    const cleanup = cleanupRef.current;
+    cleanupRef.current = null;
+    cleanup?.(notify);
+  }, []);
 
   useEffect(() => {
     try {
@@ -107,16 +123,22 @@ export default function WorkspaceResizablePanel({
 
   useEffect(
     () => () => {
-      cleanupRef.current?.();
-      cleanupRef.current = null;
+      stopResize(false);
     },
-    [],
+    [stopResize],
   );
 
+  useEffect(() => {
+    if (collapsed || fill) stopResize();
+    // A changed layout invalidates the drag's starting geometry and bounds.
+    return () => stopResize();
+  }, [collapsed, fill, maxSize, minSize, side, stopResize, storageKey]);
+
   const resetSize = useCallback(() => {
+    stopResize();
     setSize(clamp(defaultSize, minSize, maxSize));
     setCollapsed(false);
-  }, [defaultSize, maxSize, minSize, setCollapsed]);
+  }, [defaultSize, maxSize, minSize, setCollapsed, stopResize]);
 
   const toggleCollapsed = useCallback(() => {
     setCollapsed(!collapsed);
@@ -125,26 +147,26 @@ export default function WorkspaceResizablePanel({
   const resizeBy = useCallback(
     (delta: number) => {
       setCollapsed(false);
-      setSize((current) => clamp(current + delta, minSize, maxSize));
+      setSize((current) => clamp(clamp(current, minSize, maxSize) + delta, minSize, maxSize));
     },
     [maxSize, minSize, setCollapsed],
   );
 
-  const stopResize = useCallback(() => {
-    const cleanup = cleanupRef.current;
-    cleanupRef.current = null;
-    cleanup?.();
-  }, []);
-
   const startResize = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
-      if (event.button !== 0) return;
+      if (event.button !== 0 || event.isPrimary === false || !Number.isFinite(event.clientX))
+        return;
       event.preventDefault();
+      activeResizeCleanup?.();
       stopResize();
 
       const startX = event.clientX;
-      const startSize = collapsed ? defaultSize : size;
+      const startSize = clamp(collapsed ? defaultSize : size, minSize, maxSize);
+      const originalSize = size;
+      const pointerId = event.pointerId;
+      const handle = event.currentTarget;
       const direction = side === "left" ? 1 : -1;
+      handle.focus({ preventScroll: true });
       setCollapsed(false);
       setResizing(true);
 
@@ -154,38 +176,79 @@ export default function WorkspaceResizablePanel({
       document.body.style.cursor = "col-resize";
 
       const onMove = (moveEvent: PointerEvent) => {
+        if (moveEvent.pointerId !== pointerId || !Number.isFinite(moveEvent.clientX)) return;
         const next = startSize + (moveEvent.clientX - startX) * direction;
         setSize(clamp(next, minSize, maxSize));
       };
 
-      const cleanup = () => {
+      let finished = false;
+      const cleanup = (notify = true) => {
+        if (finished) return;
+        finished = true;
         window.removeEventListener("pointermove", onMove);
-        window.removeEventListener("pointerup", cleanup);
-        window.removeEventListener("pointercancel", cleanup);
+        window.removeEventListener("pointerup", onEnd);
+        window.removeEventListener("pointercancel", onEnd);
+        window.removeEventListener("blur", onBlur);
+        window.removeEventListener("keydown", onKeyDown, true);
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+        handle.removeEventListener("lostpointercapture", onEnd);
         if (cleanupRef.current === cleanup) cleanupRef.current = null;
+        if (activeResizeCleanup === cleanup) activeResizeCleanup = null;
+        try {
+          if (handle.hasPointerCapture?.(pointerId)) handle.releasePointerCapture(pointerId);
+        } catch {
+          // Detached handles and webviews may no longer own pointer capture.
+        }
         document.body.style.userSelect = previousUserSelect;
         document.body.style.cursor = previousCursor;
-        setResizing(false);
+        if (notify) setResizing(false);
+      };
+      const onEnd = (endEvent: PointerEvent) => {
+        if (endEvent.pointerId === pointerId) cleanup();
+      };
+      const onBlur = () => cleanup();
+      const onVisibilityChange = () => {
+        if (document.visibilityState === "hidden") cleanup();
+      };
+      const onKeyDown = (keyEvent: globalThis.KeyboardEvent) => {
+        if (keyEvent.key !== "Escape") return;
+        keyEvent.preventDefault();
+        keyEvent.stopPropagation();
+        cleanup();
+        setSize(originalSize);
       };
 
       cleanupRef.current = cleanup;
+      activeResizeCleanup = cleanup;
       window.addEventListener("pointermove", onMove);
-      window.addEventListener("pointerup", cleanup, { once: true });
-      window.addEventListener("pointercancel", cleanup, { once: true });
+      window.addEventListener("pointerup", onEnd);
+      window.addEventListener("pointercancel", onEnd);
+      window.addEventListener("blur", onBlur);
+      window.addEventListener("keydown", onKeyDown, true);
+      document.addEventListener("visibilitychange", onVisibilityChange);
+      handle.addEventListener("lostpointercapture", onEnd);
+      try {
+        handle.setPointerCapture?.(pointerId);
+      } catch {
+        // Global listeners still finish the drag when capture is unavailable.
+      }
     },
     [collapsed, defaultSize, maxSize, minSize, setCollapsed, side, size, stopResize],
   );
 
   const handleResizeKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      stopResize();
       const logicalLeft = side === "left" ? -1 : 1;
       const logicalRight = side === "left" ? 1 : -1;
+      const step = event.shiftKey ? 64 : 16;
       if (event.key === "ArrowLeft") {
         event.preventDefault();
-        resizeBy(16 * logicalLeft);
+        resizeBy(step * logicalLeft);
       } else if (event.key === "ArrowRight") {
         event.preventDefault();
-        resizeBy(16 * logicalRight);
+        resizeBy(step * logicalRight);
       } else if (event.key === "Home") {
         event.preventDefault();
         setCollapsed(false);
@@ -196,7 +259,7 @@ export default function WorkspaceResizablePanel({
         setSize(maxSize);
       }
     },
-    [maxSize, minSize, resizeBy, setCollapsed, side],
+    [maxSize, minSize, resizeBy, setCollapsed, side, stopResize],
   );
 
   // A narrower window can lower maxSize below a saved width; render within bounds.
@@ -217,25 +280,38 @@ export default function WorkspaceResizablePanel({
         <div
           role="separator"
           aria-label={resizeHandleLabel}
+          aria-controls={controlsId}
+          aria-describedby={helpId}
           aria-orientation="vertical"
           aria-valuemin={minSize}
           aria-valuemax={maxSize}
           aria-valuenow={Math.round(renderedSize)}
+          aria-valuetext={`${Math.round(renderedSize)} pixels wide`}
+          title="Drag to resize. Double-click to reset."
           tabIndex={0}
           onPointerDown={startResize}
           onKeyDown={handleResizeKeyDown}
           onDoubleClick={resetSize}
+          onBlur={() => stopResize()}
           className={cn(
             "group absolute top-0 z-30 hidden h-full w-3 cursor-col-resize touch-none items-center justify-center outline-none lg:flex",
             edgeClass,
           )}
         >
-          <span className="h-full w-px bg-transparent transition-colors group-hover:bg-primary/35 group-focus-visible:bg-primary/55" />
-          <span className="absolute grid h-10 w-3 place-items-center rounded-full text-transparent transition-colors group-hover:bg-card group-hover:text-muted-foreground group-focus-visible:bg-card group-focus-visible:text-primary">
-            <GripVertical className="size-3" aria-hidden="true" />
-          </span>
+          <span className="h-full w-px bg-transparent transition-colors group-hover:bg-foreground/20 group-focus-visible:bg-ring/60" />
+          <span
+            aria-hidden="true"
+            className={cn(
+              "absolute h-8 w-0.5 rounded-full bg-muted-foreground/25 transition-colors group-hover:bg-muted-foreground/60 group-focus-visible:bg-ring",
+              resizing && "bg-muted-foreground/60",
+            )}
+          />
         </div>
       ) : null}
+      <span id={helpId} className="sr-only">
+        Drag to resize. Left and Right arrows move the divider; hold Shift for larger steps. Home
+        and End set the limits. Double-click to reset. Escape cancels a drag.
+      </span>
     </div>
   );
 }

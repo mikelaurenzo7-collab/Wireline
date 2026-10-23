@@ -74,6 +74,7 @@ async function mockComputer(
   const returns: string[] = [];
   const starts: unknown[] = [];
   let listReads = 0;
+  let taskReads = 0;
   let tasks = options.tasks;
   let frame = options.frame;
   let recoverLoad = false;
@@ -272,6 +273,7 @@ async function mockComputer(
     }
     const taskMatch = /^\/api\/computer\/tasks\/([^/]+)$/.exec(path);
     if (taskMatch) {
+      taskReads += 1;
       return route.fulfill({ json: { task: tasks.find((item) => item.id === taskMatch[1]) } });
     }
     return route.fulfill({
@@ -288,6 +290,9 @@ async function mockComputer(
     get listReads() {
       return listReads;
     },
+    get taskReads() {
+      return taskReads;
+    },
     addTask: (next: MockTask) => {
       tasks = [next, ...tasks];
     },
@@ -302,7 +307,7 @@ async function mockComputer(
   };
 }
 
-/** Nothing in the computer layout is wider than its box, and nothing scrolls sideways. */
+/** Page content fits; deliberate bounded tab/activity scrollers keep their own overflow. */
 async function expectNoHorizontalOverflow(page: Page) {
   await expect
     .poll(() =>
@@ -310,6 +315,22 @@ async function expectNoHorizontalOverflow(page: Page) {
         // The shell clips the page, so the root width alone can never fail.
         const content = document.querySelector(".wl-workspace-content");
         if (!content || content.scrollWidth > content.clientWidth + 1) return "workspace content";
+        const contentBounds = content.getBoundingClientRect();
+        const boundedTabRows = new Set<Element>();
+        for (const row of document.querySelectorAll(
+          ".wl-computer-layout .wl-computer-screen__tabs",
+        )) {
+          const bounds = row.getBoundingClientRect();
+          if (!row.getClientRects().length) continue;
+          if (!["auto", "scroll"].includes(getComputedStyle(row).overflowX))
+            return "browser tabs (not a horizontal scroller)";
+          if (
+            bounds.left < Math.max(0, contentBounds.left) - 1 ||
+            bounds.right > Math.min(document.documentElement.clientWidth, contentBounds.right) + 1
+          )
+            return "browser tabs (outside content or viewport)";
+          boundedTabRows.add(row);
+        }
         for (const element of document.querySelectorAll(".wl-computer-layout *")) {
           if (!(element instanceof HTMLElement)) continue;
           // Form fields scroll their own text, the activity log is a deliberate
@@ -317,6 +338,28 @@ async function expectNoHorizontalOverflow(page: Page) {
           if (element.matches("input, textarea, select")) continue;
           if (element.closest(".wl-computer-activity ol, .sr-only")) continue;
           const style = getComputedStyle(element);
+          const tabRow = element.closest(".wl-computer-screen__tabs");
+          if (tabRow && boundedTabRows.has(tabRow)) {
+            // The row clips its normal-flow children. Positioned descendants
+            // that can escape that clipping still face the ordinary checks.
+            let clippedByRow = true;
+            for (
+              let node: HTMLElement | null = element;
+              node && node !== tabRow;
+              node = node.parentElement
+            ) {
+              const position = getComputedStyle(node).position;
+              if (
+                position === "fixed" ||
+                (position === "absolute" &&
+                  (!node.offsetParent || !tabRow.contains(node.offsetParent)))
+              ) {
+                clippedByRow = false;
+                break;
+              }
+            }
+            if (clippedByRow) continue;
+          }
           if (style.textOverflow === "ellipsis") continue;
           if (element.scrollWidth > element.clientWidth + 1) {
             return `${element.tagName.toLowerCase()}.${element.className}`;
@@ -429,6 +472,92 @@ test("owner can switch back from a login popup on a narrow screen", async ({ pag
   );
   expect(ownerInputs).toContainEqual({ kind: "switch_tab", tabId: "tab-1" });
   await expectNoHorizontalOverflow(page);
+});
+
+test("late active tabs reveal horizontally without moving the page or resetting a manual tab scroll", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1024, height: 700 });
+  const mock = await mockComputer(page, {
+    status: READY,
+    frame: await fakeFrame(page),
+    tasks: [
+      task({
+        id: "task-late-tabs",
+        status: "needs_input",
+        ownerControl: true,
+        question: "Review the public directory tabs, then return control.",
+      }),
+    ],
+  });
+  await page.goto("/computer");
+  const detail = page.getByRole("region", { name: /Find three plumbers/ });
+  await expect(
+    detail.getByRole("img", { name: "Browser screen. Click or drag to interact with the page." }),
+  ).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  const row = detail.getByRole("group", { name: "Browser tabs", exact: true });
+  await expect(row).toHaveCount(0);
+  const ancestorScroll = (element: HTMLElement) => {
+    const scroll: Array<[number, number]> = [[window.scrollX, window.scrollY]];
+    for (let parent = element.parentElement; parent; parent = parent.parentElement)
+      scroll.push([parent.scrollLeft, parent.scrollTop]);
+    return scroll;
+  };
+  const ownerTabs = Array.from({ length: 8 }, (_, index) => ({
+    id: `public-tab-${index + 1}`,
+    label: `Public supplier directory research tab ${index + 1}`,
+    active: index === 7,
+  }));
+  mock.setTask("task-late-tabs", { ownerTabs, browserCapabilities: OWNER_BROWSER_CAPABILITIES });
+  await expect(row).toBeVisible();
+  const isHorizontallyVisible = (element: HTMLElement) => {
+    const selected = element.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!selected) return false;
+    const strip = element.getBoundingClientRect();
+    const button = selected.getBoundingClientRect();
+    return button.left >= strip.left - 1 && button.right <= strip.right + 1;
+  };
+  await expect(row.getByRole("button", { name: ownerTabs[7]!.label, exact: true })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await expect.poll(() => row.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  await expect.poll(() => row.evaluate(isHorizontallyVisible)).toBe(true);
+  await row.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+  await page.locator(".wl-workspace-content").evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await row.evaluate((element) => {
+    element.scrollLeft = 0;
+  });
+  const scrollBeforePoll = await row.evaluate(ancestorScroll);
+  const readsBeforePoll = mock.taskReads;
+  await expect.poll(() => mock.taskReads, { timeout: 7000 }).toBeGreaterThan(readsBeforePoll);
+  await row.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+  await expect.poll(() => row.evaluate((element) => element.scrollLeft)).toBe(0);
+  expect(await row.evaluate(ancestorScroll)).toEqual(scrollBeforePoll);
+
+  mock.setTask("task-late-tabs", {
+    ownerTabs: ownerTabs.map((tab, index) => ({ ...tab, active: index === 6 })),
+  });
+  await expect(row.getByRole("button", { name: ownerTabs[6]!.label, exact: true })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await expect.poll(() => row.evaluate(isHorizontallyVisible)).toBe(true);
+  await expect.poll(() => row.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+  expect(await row.evaluate(ancestorScroll)).toEqual(scrollBeforePoll);
 });
 
 for (const width of [390, 1024]) {
@@ -696,7 +825,7 @@ test("an idle visible Computer page discovers a new task on its next light refre
   expect(mock.listReads).toBe(readsBefore + 1);
 });
 
-test("expanded browser keeps controls below the screen and Activity on one line", async ({
+test("fullscreen browser keeps page input below the screen and Activity on one line", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1024, height: 900 });
@@ -732,7 +861,7 @@ test("expanded browser keeps controls below the screen and Activity on one line"
   });
   expect(textLines).toBe(1);
 
-  await detail.getByRole("button", { name: "Expand browser" }).click();
+  await detail.getByRole("button", { name: "Enter browser fullscreen" }).click();
   await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true);
   const screenBox = await detail.locator(".wl-computer-screen").boundingBox();
   const handoffBox = await detail.locator("#computer-handoff-goal").boundingBox();
@@ -740,6 +869,127 @@ test("expanded browser keeps controls below the screen and Activity on one line"
     screenBox && handoffBox && screenBox.y + screenBox.height <= handoffBox.y + 1,
     JSON.stringify({ screenBox, handoffBox }),
   ).toBe(true);
+});
+
+test("a rejected fullscreen request keeps owner controls and normal browsing usable", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(HTMLElement.prototype, "requestFullscreen", {
+      configurable: true,
+      value: () => Promise.reject(new DOMException("Fullscreen denied", "NotAllowedError")),
+    });
+  });
+  const { ownerInputs, returns } = await mockComputer(page, {
+    status: READY,
+    frame: await fakeFrame(page),
+    tasks: [
+      task({
+        id: "task-fullscreen-denied",
+        status: "needs_input",
+        ownerControl: true,
+        question: "Browse the public listing, then hand the browser back.",
+      }),
+    ],
+  });
+  await page.goto("/computer");
+  const detail = page.getByRole("region", { name: /Find three plumbers/ });
+  await expect(
+    detail.getByRole("img", { name: "Browser screen. Click or drag to interact with the page." }),
+  ).toBeVisible();
+  await detail.getByRole("button", { name: "Enter browser fullscreen", exact: true }).click();
+  const notice = detail.getByText(
+    "Fullscreen is unavailable here. You can keep using the browser in this view.",
+    { exact: true },
+  );
+  await expect(notice).toBeVisible();
+  await expect(notice).toHaveAttribute("role", "status");
+  expect(await page.evaluate(() => document.fullscreenElement)).toBeNull();
+  await expect(detail.getByRole("button", { name: "Exit browser fullscreen" })).toHaveCount(0);
+  await expect(detail.getByRole("button", { name: "Take control", exact: true })).toHaveCount(0);
+  const handoff = detail.getByRole("group", { name: "Browser control handoff", exact: true });
+  await expect(handoff.getByRole("button", { name: "Stop", exact: true })).toBeEnabled();
+  await detail.getByRole("button", { name: "Open browser tools", exact: true }).click();
+  const tools = page.getByRole("dialog", { name: "Browser tools", exact: true });
+  await expect(tools).toBeVisible();
+  await tools.getByRole("button", { name: "Close", exact: true }).click();
+  const address = detail.getByRole("textbox", { name: "Web address", exact: true });
+  await address.fill("https://directory.example/public-listing");
+  await detail.getByRole("button", { name: "Go to website", exact: true }).click();
+  await expect(address).toHaveValue("https://directory.example/public-listing");
+  expect(ownerInputs).toEqual([
+    { kind: "navigate", url: "https://directory.example/public-listing" },
+  ]);
+  await handoff.getByRole("button", { name: "Return control to Bot", exact: true }).click();
+  expect(returns).toEqual(["task-fullscreen-denied"]);
+  await expect(detail.getByText("Working", { exact: true })).toBeVisible();
+});
+
+test("fullscreen owner Return and Stop stay reachable after scrolling a long browser layout", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1024, height: 700 });
+  const goal = "Compare public supplier information and record source links. ".repeat(18).trim();
+  const { stops, setTask } = await mockComputer(page, {
+    status: READY,
+    frame: await fakeFrame(page),
+    tasks: [
+      task({
+        id: "task-sticky-owner",
+        status: "needs_input",
+        ownerControl: true,
+        goal,
+        question: "You can inspect the public listings before returning control.",
+      }),
+    ],
+  });
+  await page.goto("/computer");
+  const detail = page.getByRole("region", { name: goal, exact: true });
+  await expect(
+    detail.getByRole("img", { name: "Browser screen. Click or drag to interact with the page." }),
+  ).toBeVisible();
+  await expect(detail.getByRole("button", { name: "Take control", exact: true })).toHaveCount(0);
+  const handoff = detail.getByRole("group", { name: "Browser control handoff", exact: true });
+  const returnControl = handoff.getByRole("button", { name: "Return control to Bot", exact: true });
+  const stop = handoff.getByRole("button", { name: "Stop", exact: true });
+  await expect(returnControl).toBeEnabled();
+  await expect(stop).toBeEnabled();
+  const screen = detail.locator(".wl-computer-screen");
+  const actionBox = await handoff.boundingBox();
+  const screenBox = await screen.boundingBox();
+  expect(actionBox && screenBox && actionBox.y + actionBox.height <= screenBox.y).toBe(true);
+
+  await detail.getByRole("button", { name: "Enter browser fullscreen", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true);
+  await detail.getByText("Task brief", { exact: true }).click();
+  await detail.getByText("Keyboard controls", { exact: true }).click();
+  await detail.getByText("Privacy and browser input", { exact: true }).click();
+  await expect
+    .poll(() => detail.evaluate((element) => element.scrollHeight - element.clientHeight))
+    .toBeGreaterThan(200);
+  await detail.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await expect.poll(() => detail.evaluate((element) => element.scrollTop)).toBeGreaterThan(200);
+  // Viewport checks do not scroll the controls into view before measuring them.
+  await expect(returnControl).toBeInViewport({ ratio: 1 });
+  await expect(stop).toBeInViewport({ ratio: 1 });
+  await expect(returnControl).toBeEnabled();
+  await expect(stop).toBeEnabled();
+  await stop.click();
+  expect(stops).toEqual(["task-sticky-owner"]);
+  await expect(handoff.getByRole("button", { name: "Stopping…", exact: true })).toBeDisabled();
+  setTask("task-sticky-owner", {
+    status: "stopped",
+    stopping: false,
+    ownerControl: false,
+    liveView: false,
+    summary: "Stopped by the owner.",
+    finishedAt: new Date().toISOString(),
+  });
+  await expect(detail.getByText("Stopped by the owner.", { exact: true })).toBeVisible();
+  await expect(handoff).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(false);
 });
 
 for (const width of [390, 1024]) {
@@ -770,11 +1020,12 @@ for (const width of [390, 1024]) {
       name: "Browser screen. Click or drag to interact with the page.",
     });
     await expect(screen).toBeVisible();
-    const bounds = await screen.boundingBox();
-    expect(bounds).not.toBeNull();
-    if (bounds) {
-      await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
-    }
+    await detail
+      .getByRole("group", {
+        name: "Live browser. Click or drag on the screen to interact.",
+        exact: true,
+      })
+      .click();
     await detail
       .getByRole("textbox", { name: "Type into selected field" })
       .fill("owner@example.test");
@@ -787,9 +1038,9 @@ for (const width of [390, 1024]) {
     await expect(detail.getByRole("textbox", { name: "Type into selected field" })).toHaveValue("");
     await expect(detail.locator("#computer-owner-input")).toHaveAttribute("type", "password");
     const browserBar = detail.locator(".wl-computer-screen__bar");
-    await browserBar.getByRole("button", { name: "Expand browser" }).click();
+    await browserBar.getByRole("button", { name: "Enter browser fullscreen" }).click();
     await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true);
-    await browserBar.getByRole("button", { name: "Exit expanded browser" }).click();
+    await browserBar.getByRole("button", { name: "Exit browser fullscreen" }).click();
     await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(false);
     const address = browserBar.getByRole("textbox", { name: "Web address" });
     await address.fill("https://login.example.test");

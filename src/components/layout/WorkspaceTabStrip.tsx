@@ -38,7 +38,7 @@ function tabClassName(active: boolean, density: "default" | "compact") {
       ? "min-h-[44px] px-3 text-[13px] sm:min-h-10 sm:px-3.5"
       : "min-h-[44px] px-4 text-sm",
     active
-      ? "border-primary/35 bg-primary/15 text-primary shadow-none"
+      ? "border-transparent text-foreground shadow-none"
       : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
   );
 }

@@ -18,10 +18,10 @@
   height: 100%;
   min-height: 0;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 1rem;
+  padding: 0.75rem;
   scrollbar-gutter: stable;
 }
 
@@ -46,7 +46,7 @@
 
 .wl-computer-panel__toolbar {
   display: flex;
-  min-height: 2.25rem;
+  min-height: 2.75rem;
   align-items: center;
   justify-content: space-between;
   gap: var(--wireline-space-100);
@@ -262,6 +262,39 @@
   gap: var(--wireline-space-050);
 }
 
+.wl-computer-owner-actions {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--wireline-radius-md);
+  background: var(--wireline-color-surface-default);
+}
+
+.wl-computer-owner-actions > span {
+  min-width: 0;
+  flex: 1 1 10rem;
+  padding-inline: 0.25rem;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.wl-computer-owner-actions button {
+  min-width: 0;
+  min-height: 2.75rem;
+  max-width: 100%;
+  flex: 0 1 auto;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .wl-computer-detail__goal {
   margin: var(--wireline-space-075) 0 0;
   color: var(--wireline-color-text-primary);
@@ -336,7 +369,9 @@
 .wl-computer-screen__tabs .wl-browser-tab {
   display: flex;
   min-width: 0;
-  max-width: 14rem;
+  width: 11rem;
+  max-width: calc(100% - 2.75rem);
+  flex: 0 0 auto;
   align-items: center;
   border: 1px solid transparent;
   border-bottom: 0;
@@ -351,7 +386,7 @@
 .wl-computer-screen__tabs .wl-browser-tab > button {
   display: inline-flex;
   min-width: 0;
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.55rem;
@@ -386,8 +421,8 @@
 
 .wl-computer-screen__tabs .wl-browser-tab__new {
   display: grid;
-  min-width: 2.5rem;
-  min-height: 2.5rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   padding: 0;
   place-items: center;
   border: 0;
@@ -396,8 +431,8 @@
 
 .wl-computer-screen .wl-browser-icon-button {
   display: grid;
-  min-width: 2.25rem;
-  min-height: 2.25rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   padding: 0.5rem;
   place-items: center;
 }
@@ -531,7 +566,7 @@
 }
 
 .wl-computer-screen__tabs button[aria-current="page"] {
-  border-color: var(--wireline-color-action-primary-default);
+  border-color: transparent;
   color: var(--wireline-color-text-primary);
 }
 
@@ -615,8 +650,8 @@
 
 .wl-computer-screen__navigation button {
   display: grid;
-  width: 1.8rem;
-  height: 1.8rem;
+  width: 2.75rem;
+  height: 2.75rem;
   place-items: center;
   border-radius: var(--wireline-radius-sm);
   color: var(--wireline-color-text-secondary);
@@ -672,12 +707,14 @@
   font-size: 0.75rem;
 }
 .wl-computer-screen__address-form button {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   padding: 0.2rem 0.5rem;
   border-radius: var(--wireline-radius-sm);
-  background: var(--wireline-color-action-primary-default);
-  color: var(--wireline-color-text-onAction);
+  background: var(--wireline-color-surface-container);
+  color: var(--wireline-color-text-primary);
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 .wl-computer-screen__address-form button:disabled {
   opacity: 0.45;
@@ -688,11 +725,10 @@
   align-items: center;
   gap: 0.3rem;
   color: var(--wireline-color-text-secondary);
-  font-family: var(--wireline-font-family-mono);
+  font-family: inherit;
   font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: normal;
 }
 
 .wl-computer-screen__pan-hint {
@@ -703,18 +739,29 @@
 
 .wl-computer-screen__zoom {
   flex: 0 0 auto;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   padding: 0.3rem 0.55rem;
-  border: 1px solid var(--wireline-color-border-default);
+  border: 1px solid transparent;
   border-radius: var(--wireline-radius-sm);
-  background: var(--wireline-color-surface-default);
+  background: transparent;
   color: var(--wireline-color-text-primary);
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
 }
 
+.wl-computer-screen__notice {
+  margin: 0;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--wireline-color-border-default);
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
 .wl-computer-screen__zoom:hover {
-  border-color: var(--wireline-color-action-primary-default);
+  background: var(--wireline-color-surface-container);
 }
 
 .wl-computer-screen__zoom:focus-visible {

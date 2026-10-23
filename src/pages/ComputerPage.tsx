@@ -55,6 +55,7 @@ import BrowserSessionTools, {
   saveBrowserFile,
   type OwnerBrowserInput,
 } from "../components/computer/BrowserSessionTools";
+import useActiveBrowserTab from "../components/computer/useActiveBrowserTab";
 import {
   ACTIVE_COMPUTER_TASKS as ACTIVE,
   useComputerWorkspace,
@@ -198,7 +199,12 @@ function LiveScreen({
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [zoomed, setZoomed] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [fullscreenError, setFullscreenError] = useState<string | null>(null);
   const [toolsOpen, setToolsOpen] = useState(false);
+  const browserTabsRef = useActiveBrowserTab(
+    task.ownerTabs?.find((tab) => tab.active)?.id,
+    task.ownerTabs?.map((tab) => `${tab.id}:${tab.label}`).join("|"),
+  );
   const screenRef = useRef<HTMLElement | null>(null);
   const active = ACTIVE.includes(task.status) || task.liveView;
   const latest = useRef<string | null>(null);
@@ -301,9 +307,18 @@ function LiveScreen({
   return (
     <figure ref={screenRef} className="wl-computer-screen">
       {ownerControl && task.ownerTabs?.length ? (
-        <div className="wl-computer-screen__tabs" role="group" aria-label="Browser tabs">
+        <div
+          ref={browserTabsRef}
+          className="wl-computer-screen__tabs"
+          role="group"
+          aria-label="Browser tabs"
+        >
           {task.ownerTabs.map((tab) => (
-            <div key={tab.id} className={cn("wl-browser-tab", tab.active && "is-active")}>
+            <div
+              key={tab.id}
+              className={cn("wl-browser-tab", tab.active && "is-active")}
+              data-browser-tab-active={tab.active ? "true" : undefined}
+            >
               <button
                 type="button"
                 aria-current={tab.active ? "page" : undefined}
@@ -465,17 +480,21 @@ function LiveScreen({
           <button
             type="button"
             className="wl-computer-screen__zoom"
-            aria-label={expanded ? "Exit expanded browser" : "Expand browser"}
-            title={expanded ? "Exit expanded browser" : "Expand browser"}
-            onClick={(event) => {
-              if (document.fullscreenElement) {
-                void document.exitFullscreen();
-                return;
-              }
+            aria-label={expanded ? "Exit browser fullscreen" : "Enter browser fullscreen"}
+            title={expanded ? "Exit browser fullscreen" : "Enter browser fullscreen"}
+            onClick={async (event) => {
               const surface =
                 event.currentTarget.closest(".wl-computer-detail") ?? screenRef.current;
-              if (surface instanceof HTMLElement && surface.requestFullscreen) {
-                void surface.requestFullscreen().catch(() => undefined);
+              setFullscreenError(null);
+              try {
+                if (document.fullscreenElement) await document.exitFullscreen();
+                else if (surface instanceof HTMLElement && surface.requestFullscreen)
+                  await surface.requestFullscreen();
+                else throw new Error("Fullscreen unavailable");
+              } catch {
+                setFullscreenError(
+                  "Fullscreen is unavailable here. You can keep using the browser in this view.",
+                );
               }
             }}
           >
@@ -487,6 +506,11 @@ function LiveScreen({
           </button>
         ) : null}
       </div>
+      {fullscreenError ? (
+        <p className="wl-computer-screen__notice" role="status">
+          {fullscreenError}
+        </p>
+      ) : null}
       {active ? (
         <div className="wl-computer-screen__progress">
           {ownerControl ? (
@@ -955,7 +979,7 @@ function TaskDetail({
                   {chatControls ? "Open browser" : "New task"}
                 </Button>
               ) : null}
-              <Button type="button" variant="outline" size="sm" onClick={onOpenTasks}>
+              <Button type="button" variant="ghost" size="sm" onClick={onOpenTasks}>
                 <History aria-hidden="true" />
                 Tasks
               </Button>
@@ -963,7 +987,7 @@ function TaskDetail({
           ) : null}
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
             className="shrink-0 whitespace-nowrap"
             onClick={() => void openActivity()}
@@ -972,42 +996,6 @@ function TaskDetail({
             <PanelRightOpen aria-hidden="true" />
             Activity
           </Button>
-          {!viewportOwnsControls && task.status === "running" && !task.stopping ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="shrink-0 whitespace-nowrap"
-              onClick={() => void ownerAction("take")}
-              disabled={!task.liveView || busy !== null || task.controlRequested || refreshRequired}
-              aria-busy={busy === "take" || task.controlRequested}
-            >
-              {busy === "take" || task.controlRequested ? (
-                <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
-              ) : (
-                <MousePointer2 aria-hidden="true" />
-              )}
-              {busy === "take" || task.controlRequested ? "Pausing…" : "Take control"}
-            </Button>
-          ) : null}
-          {!viewportOwnsControls && active ? (
-            // Stop lands at the Bot's next checkpoint, which can follow a long
-            // thinking step: say so instead of looking like nothing happened.
-            <Button
-              variant="outline"
-              size="sm"
-              className="shrink-0"
-              onClick={() => void act("stop")}
-              aria-busy={busy === "stop" || task.stopping}
-              disabled={busy === "stop" || task.stopping || refreshRequired}
-            >
-              {task.stopping ? (
-                <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
-              ) : (
-                <Square aria-hidden="true" />
-              )}
-              {task.stopping ? "Stopping…" : "Stop"}
-            </Button>
-          ) : null}
         </div>
       </header>
 
@@ -1098,6 +1086,50 @@ function TaskDetail({
 
       {task.ownerControl ? (
         <div className="wl-computer-takeover">
+          <div
+            className="wl-computer-owner-actions"
+            role="group"
+            aria-label="Browser control handoff"
+          >
+            <span>
+              {task.preparingBrowser && chatControls
+                ? "Give your Bot its task in Work chat."
+                : "You’re in control"}
+            </span>
+            {!(task.preparingBrowser && chatControls) ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => void ownerAction("return")}
+                disabled={
+                  busy !== null ||
+                  refreshRequired ||
+                  (task.preparingBrowser && handoffGoal.trim().length < 4)
+                }
+                aria-busy={busy === "return"}
+              >
+                {busy === "return"
+                  ? "Handing browser to Bot…"
+                  : task.preparingBrowser
+                    ? "Give task to Bot"
+                    : "Return control to Bot"}
+              </Button>
+            ) : null}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => void act("stop")}
+              aria-busy={busy === "stop" || task.stopping}
+              disabled={busy === "stop" || task.stopping || refreshRequired}
+            >
+              {task.stopping ? (
+                <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+              ) : (
+                <Square aria-hidden="true" />
+              )}
+              {task.stopping ? "Stopping…" : "Stop"}
+            </Button>
+          </div>
           <LiveScreen
             task={task}
             ownerControl
@@ -1192,27 +1224,6 @@ function TaskDetail({
                 />
               </div>
             ) : null}
-            {task.preparingBrowser && chatControls ? (
-              <p className="text-sm text-muted-foreground">Give your Bot its task in Work chat.</p>
-            ) : (
-              <Button
-                className="w-full"
-                variant="secondary"
-                onClick={() => void ownerAction("return")}
-                disabled={
-                  busy !== null ||
-                  refreshRequired ||
-                  (task.preparingBrowser && handoffGoal.trim().length < 4)
-                }
-                aria-busy={busy === "return"}
-              >
-                {busy === "return"
-                  ? "Handing browser to Bot…"
-                  : task.preparingBrowser
-                    ? "Give task to Bot"
-                    : "Return control to Bot"}
-              </Button>
-            )}
             <details className="wl-computer-control__privacy">
               <summary>Privacy and browser input</summary>
               <p>

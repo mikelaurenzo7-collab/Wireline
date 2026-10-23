@@ -237,7 +237,7 @@ test.describe("wide screens", () => {
     await expect(panel.getByRole("button", { name: "Open browser", exact: true })).toBeVisible();
     await page
       .getByRole("group", { name: "Conversation mode" })
-      .getByRole("button", { name: "Set up", exact: true })
+      .getByRole("button", { name: "Configure", exact: true })
       .click();
     await panelTab(page, "Rehearse").click();
     await panel.getByRole("button", { name: "Typed", exact: true }).click();
@@ -259,14 +259,16 @@ test.describe("wide screens", () => {
 
     // Full width takes the Workspace and gives it back without losing a draft.
     await conversation(page).fill("Keep this unsent instruction.");
-    const fullWidth = page.getByRole("button", { name: "Full width", exact: true });
+    const fullWidth = page.getByRole("button", { name: /^(Expand panel|Restore split view)$/ });
     await fullWidth.click();
     await expect(fullWidth).toHaveAttribute("aria-pressed", "true");
     await expect(conversation(page)).toBeHidden();
     await expect(page.getByRole("separator", { name: "Resize workspace panel" })).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath("workspace-computer-full-width.png") });
-    await fullWidth.click();
+    await fullWidth.press("Escape");
     await expect(fullWidth).toHaveAttribute("aria-pressed", "false");
+    await expect(fullWidth).toHaveAccessibleName("Expand panel");
+    await expect(fullWidth).toBeFocused();
     await expect(conversation(page)).toHaveValue("Keep this unsent instruction.");
 
     // The panel returns to the last tab the owner used.
@@ -281,6 +283,55 @@ test.describe("wide screens", () => {
     await expect(page.getByRole("group", { name: "Set Up view" })).toBeVisible();
     await page.getByRole("button", { name: "Bot details", exact: true }).click();
     await expect(panelTab(page, "Set up")).toHaveAttribute("aria-selected", "true");
+  });
+
+  test("a focused browser restores split view even after a saved panel close", async ({ page }) => {
+    await mockWorkspace(page);
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "wireline:studio-panel:v3",
+        JSON.stringify({ size: 520, collapsed: true }),
+      );
+    });
+    await page.goto(`/studio?agent=${bots[0].id}&focus=computer`);
+    const panel = page.getByRole("complementary", { name: "Workspace panel", exact: true });
+    await expect(panel).toBeVisible({ timeout: 20_000 });
+    await expect(workConversation(page)).toBeHidden();
+    await panel.getByRole("button", { name: "Restore split view", exact: true }).click();
+    await expect(workConversation(page)).toBeVisible();
+    await expect(panel).toBeVisible();
+    await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("separator", { name: "Resize workspace panel" })).toHaveAttribute(
+      "aria-valuenow",
+      "520",
+    );
+    await expect(page).not.toHaveURL(/focus=computer/);
+  });
+
+  test("an expanded panel leaves Escape to an owner input field", async ({ page }) => {
+    const task = {
+      ...pastTask("owner-input", bots[0].id, "Inspect a synthetic sign-in page.", ""),
+      status: "needs_input",
+      ownerControl: true,
+      liveView: true,
+      question: "Sign in, then return control.",
+    };
+    await mockWorkspace(page, [task]);
+    await page.goto(`/studio?agent=${bots[0].id}`);
+    await page.getByRole("button", { name: "Expand panel", exact: true }).click();
+    const ownerInput = page.getByLabel("Type into selected field", { exact: true });
+    await ownerInput.fill("synthetic local draft");
+    await ownerInput.press("Escape");
+    await expect(ownerInput).toHaveValue("synthetic local draft");
+    await expect(
+      page.getByRole("button", { name: "Restore split view", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(workConversation(page)).toBeHidden();
+    await page.getByRole("tab", { name: "Browser", exact: true }).focus();
+    await page.getByRole("tab", { name: "Browser", exact: true }).press("Escape");
+    await expect(workConversation(page)).toBeVisible();
+    await expect(ownerInput).toHaveValue("synthetic local draft");
+    await expect(page.getByRole("button", { name: "Expand panel", exact: true })).toBeFocused();
   });
 
   test("the 384px inspector keeps normal tabs on one row and enlarged controls reachable", async ({
@@ -347,7 +398,7 @@ test.describe("wide screens", () => {
     await panelTab(page, "Summary").press("Home");
     await expect(panelTab(page, "Browser")).toBeFocused();
     await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true");
-    await expect(panel.getByRole("button", { name: "Full width", exact: true })).toBeVisible();
+    await expect(panel.getByRole("button", { name: "Expand panel", exact: true })).toBeVisible();
     await panel.getByRole("button", { name: "Close panel", exact: true }).focus();
     await expect(panel.getByRole("button", { name: "Close panel", exact: true })).toBeFocused();
     const enlarged = await geometry();
@@ -606,7 +657,7 @@ test.describe("wide screens", () => {
       .getByRole("button", { name: "Browser", exact: true })
       .click();
     await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true");
-    await expect(page.getByRole("button", { name: "Full width", exact: true })).toHaveAttribute(
+    await expect(page.getByRole("button", { name: "Expand panel", exact: true })).toHaveAttribute(
       "aria-pressed",
       "false",
     );

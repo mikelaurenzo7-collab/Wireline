@@ -245,7 +245,8 @@ describe("Studio settings-to-Test handoff", () => {
       }) => ReactNode;
       return elements(content({ collapsed: false }));
     };
-    panelNodes().find((node) => node.props["aria-label"] === "Full width")!.props.onClick!();
+    panelNodes().find((node) => node.props["aria-label"] === "Restore split view")!.props
+      .onClick!();
     expect(render().find((node) => node.type === "resizable-panel")?.props.fill).toBe(false);
     expect(
       panelNodes().find((node) => node.props.id === "studio-inspector-tab-computer")?.props[

@@ -110,7 +110,7 @@ function DesktopNavGroup({
     <nav className="wl-shell-nav-group" aria-label={label}>
       {!collapsed ? (
         <div className="wl-shell-nav-group-label">
-          <WiredEyebrow>{label}</WiredEyebrow>
+          <span className="wl-shell-nav-heading">{label}</span>
         </div>
       ) : null}
       {items.map((item) => (

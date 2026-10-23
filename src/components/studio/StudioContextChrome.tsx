@@ -42,10 +42,7 @@ export default function StudioContextChrome() {
   }
 
   return (
-    <header
-      className="shrink-0 border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90"
-      aria-label={`${language.singular} context`}
-    >
+    <header className="wl-studio-context shrink-0" aria-label={`${language.singular} context`}>
       <div className="wl-studio-context-row flex min-h-[56px] flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-5">
         <div className="flex min-w-0 flex-[1_1_10rem] items-center gap-2.5 md:max-w-[18rem] md:flex-none">
           {activeAgent ? null : (
@@ -64,7 +61,7 @@ export default function StudioContextChrome() {
                       value={activeAgent.id}
                       onChange={(event) => selectAgent(event.target.value)}
                       aria-label="Switch Bot"
-                      className="wl-preserve-case min-h-[44px] w-full appearance-none truncate rounded-lg border border-transparent bg-transparent pl-2 pr-8 text-base font-semibold text-foreground outline-none transition-colors hover:bg-muted/55 focus:border-border focus:bg-card sm:min-h-9 sm:text-sm"
+                      className="wl-studio-bot-switch wl-preserve-case w-full appearance-none truncate pl-2 pr-8 text-base font-semibold text-foreground sm:text-sm"
                     >
                       {agents.map((agent) => (
                         <option key={agent.id} value={agent.id}>
@@ -117,7 +114,7 @@ export default function StudioContextChrome() {
               }
             >
               <SlidersHorizontal className="size-4" aria-hidden="true" />
-              Set up
+              Details
             </Button>
           ) : null}
           {readyLabel ? (
@@ -142,7 +139,7 @@ export default function StudioContextChrome() {
               asChild
               variant="secondary"
               size="sm"
-              className="size-11 px-0 sm:h-9 sm:w-auto sm:px-3"
+              className="min-h-11 min-w-11 px-0 sm:w-auto sm:px-3"
             >
               <Link to="/studio?create=1" aria-label={language.createCta}>
                 <Plus className="size-4" aria-hidden="true" />
