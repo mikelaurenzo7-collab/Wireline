@@ -22,6 +22,9 @@ const record = (value: unknown): value is Record<string, unknown> =>
 const text = (value: unknown, max = 100_000): value is string =>
   typeof value === "string" && value.length <= max;
 const id = (value: unknown): value is string => text(value, 256) && /^[A-Za-z0-9_-]+$/.test(value);
+// Match the Computer route's Bot identifiers without widening task or browser path IDs.
+const agentId = (value: unknown): value is string =>
+  typeof value === "string" && /^[A-Za-z0-9_:-]{1,128}$/.test(value);
 const count = (value: unknown): value is number =>
   typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 const date = (value: unknown): value is string =>
@@ -69,7 +72,7 @@ export function readComputerTaskReceipt(
   if (
     !record(value) ||
     !id(value.id) ||
-    !id(value.agentId) ||
+    !agentId(value.agentId) ||
     (expected.taskId && value.id !== expected.taskId) ||
     (expected.agentId && value.agentId !== expected.agentId) ||
     (expected.goal !== undefined && value.goal !== expected.goal)

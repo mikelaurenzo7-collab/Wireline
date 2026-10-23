@@ -30,7 +30,24 @@ export function cloudComputerConnection(
       // hosted provider exposes its native Playwright WebSocket endpoint.
       const supportsRouting = endpoint.pathname.replace(/\/+$/, "").endsWith("/playwright");
       if (!(secure || local) || !supportsRouting) return null;
-      return { kind: "remote", wsEndpoint: remote };
+      // The provider's total session clock includes time waiting for the owner.
+      // Never assume the account's plan limit or request an unbounded session.
+      const override = env.CLOUD_COMPUTER_BROWSER_TIMEOUT_MS?.trim();
+      const existing = endpoint.searchParams.getAll("timeout");
+      if (!override && existing.length > 1) return null;
+      const configured = override || existing[0];
+      if (configured !== undefined) {
+        const timeout = Number(configured);
+        if (
+          !/^\d+$/.test(configured) ||
+          !Number.isSafeInteger(timeout) ||
+          timeout < 60_000 ||
+          timeout > 3_600_000
+        )
+          return null;
+        if (override) endpoint.searchParams.set("timeout", String(timeout));
+      }
+      return { kind: "remote", wsEndpoint: override ? endpoint.toString() : remote };
     } catch {
       return null;
     }

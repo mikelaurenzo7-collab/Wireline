@@ -1155,6 +1155,10 @@ test("browser toolbar manages tabs, screenshots, history and owner downloads", a
     ],
   });
   await page.goto("/computer");
+  await expect(
+    page.getByRole("button", { name: "Close Plumbing directory tab", exact: true }),
+  ).toBeDisabled();
+  expect(ownerInputs).toEqual([]);
   await expect(page.getByRole("button", { name: "Download browser screenshot" })).toBeEnabled();
   const screenshot = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download browser screenshot" }).click();
@@ -1169,6 +1173,12 @@ test("browser toolbar manages tabs, screenshots, history and owner downloads", a
   await expect(page.getByRole("button", { name: "Close New tab tab" })).toHaveCount(0);
   expect(ownerInputs).toContainEqual({ kind: "new_tab" });
   expect(ownerInputs).toContainEqual({ kind: "close_tab", tabId: "tab-new" });
+  await expect(
+    page.getByRole("button", { name: "Close Plumbing directory tab", exact: true }),
+  ).toBeDisabled();
+  expect(
+    ownerInputs.filter((input) => (input as { kind?: string }).kind === "close_tab"),
+  ).toHaveLength(1);
 
   await page.getByRole("button", { name: "Open browser tools" }).click();
   const tools = page.getByRole("dialog", { name: "Browser tools" });

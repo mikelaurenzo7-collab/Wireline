@@ -77,6 +77,7 @@ describe.skipIf(!available)("owner browser tools (real Chromium, synthetic sites
     await expect(
       session.executeOwnerInput({ kind: "new_tab", url: "http://127.0.0.1/" }),
     ).rejects.toThrow();
+    expect(session.unexpectedCloseReason).toBeNull();
   });
 
   it("keeps transient history free of bearer paths, query strings, and fragments", async () => {
@@ -451,7 +452,27 @@ describe.skipIf(!available)("owner browser tools (real Chromium, synthetic sites
     ).networkGuards;
     await [...guards][0].cdp.detach();
     await vi.waitFor(() => expect(session.isClosed).toBe(true));
+    expect(session.unexpectedCloseReason).toBe("network_guard_failed");
     await expect(session.activePage().evaluate(() => fetch("http://127.0.0.1/"))).rejects.toThrow();
+  });
+
+  it("distinguishes a provider disconnect from a network guard failure", async () => {
+    const browser = (session as unknown as { browser: { close(): Promise<void> } }).browser;
+    await browser.close();
+    expect(session.isClosed).toBe(true);
+    expect(session.unexpectedCloseReason).toBe("provider_disconnected");
+  });
+
+  it("classifies a new tab guard startup failure without retaining the provider error", async () => {
+    const context = (session as unknown as { context: { newCDPSession(): Promise<unknown> } })
+      .context;
+    vi.spyOn(context, "newCDPSession").mockRejectedValueOnce(
+      new Error("synthetic private provider detail"),
+    );
+    await expect(session.executeOwnerInput({ kind: "new_tab" })).rejects.toThrow();
+    await vi.waitFor(() => expect(session.isClosed).toBe(true));
+    expect(session.unexpectedCloseReason).toBe("guard_startup_failed");
+    expect(session.unexpectedCloseReason).not.toContain("private");
   });
 
   it("cancels a late native download event after owner hand-back without waiting for a Bot action", async () => {

@@ -216,16 +216,35 @@ export function isNonPublicAddress(address: string): boolean {
   return true;
 }
 
-/** Remove credentials and query/fragment noise before a URL reaches logs or the activity feed. */
+/** Keep a parseable site identity without credentials, query or fragment in activity metadata. */
 export function displayUrl(raw: string, maxLength = 160): string {
   try {
     const url = new URL(raw);
+    if (url.protocol !== "http:" && url.protocol !== "https:")
+      return url.href === "about:blank" ? "about:blank" : "";
     url.username = "";
     url.password = "";
     url.search = "";
     url.hash = "";
-    const value = url.toString();
-    return value.length > maxLength ? `${value.slice(0, maxLength - 1)}…` : value;
+    const origin = url.origin;
+    // A legal DNS origin can exceed the usual display budget. Retain it whole;
+    // truncating a hostname produces invalid or misleading task receipts.
+    if (origin.length + 1 > 500) return "";
+    const requested = Number.isFinite(maxLength) ? Math.max(0, Math.floor(maxLength)) : 160;
+    const budget = Math.max(origin.length + 1, Math.min(500, requested));
+    const value = `${origin}${url.pathname}`;
+    if (value.length <= budget) return value;
+    const pathBudget = budget - origin.length;
+    if (pathBudget < 4) return `${origin}/`;
+    let path = "";
+    for (const segment of url.pathname.split("/").slice(1)) {
+      const next = `${path}/${segment}`;
+      // Whole segments preserve encoded characters, including multibyte UTF-8,
+      // and the ASCII marker remains a valid path without decoding private data.
+      if (next.length + 4 > pathBudget) break;
+      path = next;
+    }
+    return `${origin}${path}/...`;
   } catch {
     return "";
   }

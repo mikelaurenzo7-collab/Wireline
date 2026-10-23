@@ -61,6 +61,7 @@ import {
   takeComputerControl,
   waitForComputerOwner,
 } from "../src/lib/cloud-computer/task-runner";
+import { log } from "../src/lib/server-context";
 
 type LiveTask = NonNullable<Parameters<typeof __resetCloudComputerRunnerForTests>[0]>[number];
 const id = "c745f1df-7f7d-43c4-974e-36a9af943c34";
@@ -147,6 +148,41 @@ afterEach(() => {
 });
 
 describe("owner-requested computer pause admission", () => {
+  it.each(["provider_disconnected", "network_guard_failed", "guard_startup_failed"])(
+    "logs only one safe %s category when an owned session unexpectedly ends",
+    async (reason) => {
+      vi.mocked(log.warn).mockClear();
+      const task = fixture("needs_input");
+      task.ownerControl = true;
+      task.reply = vi.fn();
+      Object.assign(task.session!, { isClosed: true, unexpectedCloseReason: reason });
+      const results = await Promise.allSettled([
+        sendComputerOwnerInput(userId, id, { kind: "new_tab" }),
+        sendComputerOwnerInput(userId, id, { kind: "new_tab" }),
+      ]);
+      expect(results.every((result) => result.status === "rejected")).toBe(true);
+      expect(log.warn).toHaveBeenCalledExactlyOnceWith(
+        "Cloud computer browser ended unexpectedly",
+        { taskId: id, reason },
+      );
+    },
+  );
+
+  it("does not log an unknown close detail as a diagnostic category", async () => {
+    vi.mocked(log.warn).mockClear();
+    const task = fixture("needs_input");
+    task.ownerControl = true;
+    task.reply = vi.fn();
+    Object.assign(task.session!, {
+      isClosed: true,
+      unexpectedCloseReason: "https://provider.example/?token=synthetic-private",
+    });
+    await expect(sendComputerOwnerInput(userId, id, { kind: "new_tab" })).rejects.toMatchObject({
+      code: "COMPUTER_BROWSER_EXPIRED",
+    });
+    expect(log.warn).not.toHaveBeenCalled();
+  });
+
   it("keeps files and saved-login actions behind tenant, owner-control, and live-session gates", async () => {
     const task = fixture("needs_input");
     task.reply = vi.fn();

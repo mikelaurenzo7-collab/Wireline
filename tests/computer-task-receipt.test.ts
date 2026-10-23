@@ -37,6 +37,22 @@ describe("Computer task receipts", () => {
     expect(readComputerTaskReceipt(task(), { taskId: "task-2" })).toBeNull();
     expect(readComputerTaskReceipt(task(), { agentId: "bot-2" })).toBeNull();
   });
+  it.each(["tenant:front-desk", "A:B_c-9", "a".repeat(128)])(
+    "accepts the server's Bot identifier shape: %s",
+    (agentId) => {
+      expect(readComputerTaskReceipt({ ...task(), agentId }, { agentId })).toMatchObject({
+        agentId,
+      });
+    },
+  );
+  it("keeps colon-containing Bot receipts bound to the expected Bot", () => {
+    expect(
+      readComputerTaskReceipt(
+        { ...task(), agentId: "tenant:front-desk" },
+        { agentId: "tenant:another-bot" },
+      ),
+    ).toBeNull();
+  });
   it("binds a normal start to the submitted goal as well as its Bot", () => {
     expect(
       readComputerTaskReceipt(task(), { agentId: "bot-1", goal: "A newer owner task." }),
@@ -49,6 +65,11 @@ describe("Computer task receipts", () => {
     { id: "" },
     { id: "../other-task" },
     { id: "task%2Fother" },
+    { id: "task:other" },
+    { agentId: "" },
+    { agentId: "a".repeat(129) },
+    { agentId: "tenant/bot" },
+    { agentId: "tenant%3Abot" },
     { agentId: "bot-1?other=1" },
     { status: "paid" },
     { actionCount: -1 },
@@ -77,6 +98,15 @@ describe("Computer task receipts", () => {
     expect(readComputerTaskListReceipt([task(), { success: true }])).toBeNull();
     expect(readComputerTaskListReceipt([task(), task()])).toBeNull();
     expect(readComputerTaskListReceipt([])).toEqual([]);
+  });
+  it("accepts mixed Bot identifier shapes without adopting malformed task paths", () => {
+    const colonTask = { ...task(), id: "task-2", agentId: "tenant:front-desk" };
+    expect(readComputerTaskListReceipt([task(), colonTask])?.map((entry) => entry.agentId)).toEqual(
+      ["bot-1", "tenant:front-desk"],
+    );
+    expect(
+      readComputerTaskListReceipt([colonTask, { ...task(), id: "../another-task" }]),
+    ).toBeNull();
   });
   it("requires truthful availability and positive finite limits", () => {
     const ready = { available: true, reason: "ready", limits: { maxMinutes: 15, maxSteps: 120 } };

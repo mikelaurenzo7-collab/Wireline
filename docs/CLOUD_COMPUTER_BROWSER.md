@@ -6,6 +6,20 @@ connects through the native Playwright WebSocket in
 development-only. The existing public-network, account, spend, lifetime,
 checkpoint, and tenant boundaries apply to every owner tool.
 
+The provider's total session lifetime includes owner-control and question waits;
+it is separate from the Bot's working-time limit. Operators can request a bounded
+deadline with `CLOUD_COMPUTER_BROWSER_TIMEOUT_MS` (60,000 to 3,600,000 milliseconds).
+It overrides a connection URL's `timeout`; an unset override preserves a valid
+existing URL timeout or the provider's default. Invalid explicit deadlines fail
+configuration closed. This setting does not upgrade a provider plan, override
+the account's maximum, or guarantee a browser's lifetime. Verify acceptance and
+a held session against the existing provider before changing production.
+
+Unexpected closure logs use only `provider_disconnected`, `network_guard_failed`
+or `guard_startup_failed`, once per task. They do not log provider error text,
+browser URLs or owner-entered values. A disconnected browser still ends the task
+with recoverable session-ended guidance; it never silently resumes a login.
+
 ## Current implementation
 
 | Capability                       | Behavior and boundary                                                                                                                                                                                                                                                                                                                                                                           |

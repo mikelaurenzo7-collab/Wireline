@@ -148,6 +148,7 @@ type LiveTask = {
 };
 
 const live = new Map<string, LiveTask>();
+const loggedBrowserClosures = new WeakSet<LiveTask>();
 /** Accounts with a start in flight: one start per account, counted against capacity. */
 const starting = new Set<string>();
 /** Cleared by the shutdown hook: a task started now would die with the process. */
@@ -200,9 +201,24 @@ function requestStop(task: LiveTask) {
 }
 
 function failExpiredBrowser(task: LiveTask): never {
+  logUnexpectedBrowserClosure(task);
   task.expiredBrowser = true;
   requestStop(task);
   throw new AppError(410, EXPIRED_BROWSER_OUTCOME.code, EXPIRED_BROWSER_OUTCOME.summary);
+}
+
+function logUnexpectedBrowserClosure(task: LiveTask): void {
+  const reason = task.session?.unexpectedCloseReason;
+  if (
+    !task.session?.isClosed ||
+    loggedBrowserClosures.has(task) ||
+    !["provider_disconnected", "network_guard_failed", "guard_startup_failed"].includes(
+      reason ?? "",
+    )
+  )
+    return;
+  loggedBrowserClosures.add(task);
+  log.warn("Cloud computer browser ended unexpectedly", { taskId: task.taskId, reason });
 }
 
 export type ComputerTaskView = {
@@ -1118,6 +1134,7 @@ async function executeTaskWithBrowser(
     }
   } finally {
     clearInterval(heartbeat);
+    logUnexpectedBrowserClosure(task);
     await closeSession(session);
   }
 
@@ -1172,6 +1189,7 @@ async function heartbeatTick(task: LiveTask, heartbeat: ReturnType<typeof setInt
     return;
   }
   if (decision === "expired_browser") {
+    logUnexpectedBrowserClosure(task);
     task.expiredBrowser = true;
     clearInterval(heartbeat);
     await forceFinish(task, terminalOutcome(EXPIRED_BROWSER_OUTCOME));

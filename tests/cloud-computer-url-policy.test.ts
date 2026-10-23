@@ -114,6 +114,44 @@ describe("cloud computer network policy", () => {
     );
     expect(displayUrl("not a url")).toBe("");
   });
+
+  it("preserves an entire legal long origin instead of truncating its hostname", () => {
+    const hostname = ["a".repeat(63), "b".repeat(63), "c".repeat(63), "d".repeat(61)].join(".");
+    expect(hostname).toHaveLength(253);
+    const origin = `https://${hostname}:8443`;
+    const displayed = displayUrl(`${origin}/reports/weekly?token=private#secret`);
+    expect(displayed).toBe(`${origin}/`);
+    expect(new URL(displayed).origin).toBe(origin);
+    expect(displayed.length).toBeLessThanOrEqual(500);
+  });
+
+  it("bounds only the path at whole encoded segments without exposing private URL components", () => {
+    const path = `/help%20center/\u20ac/reports/${"%E2%82%AC".repeat(30)}/details`;
+    const displayed = displayUrl(
+      `https://owner%40example.com:password@example.com${path}?token=secret#private`,
+    );
+    const parsed = new URL(displayed);
+    expect(displayed).toBe("https://example.com/help%20center/%E2%82%AC/reports/...");
+    expect(displayed.length).toBeLessThanOrEqual(160);
+    expect(parsed.username).toBe("");
+    expect(parsed.password).toBe("");
+    expect(parsed.search).toBe("");
+    expect(parsed.hash).toBe("");
+    expect(decodeURIComponent(parsed.pathname)).toBe("/help center/\u20ac/reports/...");
+  });
+
+  it("keeps display limits bounded and blank-page metadata canonical", () => {
+    const raw = `https://example.com/${"report/".repeat(150)}?token=secret#private`;
+    for (const limit of [1, 160, 500, 100_000, Number.NaN, Number.POSITIVE_INFINITY]) {
+      const displayed = displayUrl(raw, limit);
+      expect(displayed.length).toBeLessThanOrEqual(500);
+      expect(new URL(displayed).origin).toBe("https://example.com");
+      expect(displayed).not.toContain("token");
+      expect(displayed).not.toContain("private");
+    }
+    expect(displayUrl("about:blank")).toBe("about:blank");
+    expect(displayUrl("data:text/plain,private")).toBe("");
+  });
 });
 
 describe("cloud computer key translation", () => {

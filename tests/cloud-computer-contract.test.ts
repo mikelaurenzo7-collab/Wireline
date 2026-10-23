@@ -158,6 +158,95 @@ describe("cloud computer production gates", () => {
     ).toEqual({ kind: "local", executablePath: "/usr/bin/chromium" });
   });
 
+  it("overrides only the requested provider timeout while preserving the isolated endpoint", () => {
+    const remote =
+      "wss://browser.example/chromium/playwright?token=synthetic-secret&timeout=180000&launch=%7B%22headless%22%3Atrue%7D";
+    const configured = cloudComputerConnection(
+      {
+        CLOUD_COMPUTER_BROWSER_WS_URL: remote,
+        CLOUD_COMPUTER_BROWSER_TIMEOUT_MS: "900000",
+      },
+      true,
+    );
+    expect(configured?.kind).toBe("remote");
+    if (configured?.kind !== "remote") throw new Error("Remote connection missing");
+    const endpoint = new URL(configured.wsEndpoint);
+    expect(endpoint.origin).toBe("wss://browser.example");
+    expect(endpoint.pathname).toBe("/chromium/playwright");
+    expect(endpoint.searchParams.get("token")).toBe("synthetic-secret");
+    expect(endpoint.searchParams.get("launch")).toBe('{"headless":true}');
+    expect(endpoint.searchParams.getAll("timeout")).toEqual(["900000"]);
+    expect(cloudComputerConnection({ CLOUD_COMPUTER_BROWSER_WS_URL: remote }, true)).toEqual({
+      kind: "remote",
+      wsEndpoint: remote,
+    });
+  });
+
+  it.each(["0", "-1", "59999", "3600001", "Infinity", "NaN", "900000.5", "9e5"])(
+    "fails closed on an invalid provider session timeout %s",
+    (timeout) => {
+      const endpoint = "wss://browser.example/chromium/playwright?token=synthetic-secret";
+      expect(
+        cloudComputerConnection(
+          {
+            CLOUD_COMPUTER_BROWSER_WS_URL: endpoint,
+            CLOUD_COMPUTER_BROWSER_TIMEOUT_MS: timeout,
+          },
+          true,
+        ),
+      ).toBeNull();
+      expect(
+        cloudComputerConnection(
+          {
+            CLOUD_COMPUTER_BROWSER_WS_URL: `${endpoint}&timeout=${encodeURIComponent(timeout)}`,
+          },
+          true,
+        ),
+      ).toBeNull();
+      expect(
+        cloudComputerReadiness({
+          OPENAI_API_KEY: "synthetic-key",
+          CLOUD_COMPUTER_BROWSER_WS_URL: endpoint,
+          CLOUD_COMPUTER_BROWSER_TIMEOUT_MS: timeout,
+        }),
+      ).toEqual({ available: false, reason: "browser_unconfigured" });
+    },
+  );
+
+  it("preserves provider defaults when unset and accepts only bounded explicit deadlines", () => {
+    const endpoint = "wss://browser.example/chromium/playwright?token=synthetic-secret";
+    for (const value of [undefined, "", " "]) {
+      expect(
+        cloudComputerConnection(
+          {
+            CLOUD_COMPUTER_BROWSER_WS_URL: endpoint,
+            CLOUD_COMPUTER_BROWSER_TIMEOUT_MS: value,
+          },
+          true,
+        ),
+      ).toEqual({ kind: "remote", wsEndpoint: endpoint });
+    }
+    for (const timeout of [60_000, 900_000, 3_600_000]) {
+      expect(
+        cloudComputerConnection(
+          {
+            CLOUD_COMPUTER_BROWSER_WS_URL: endpoint,
+            CLOUD_COMPUTER_BROWSER_TIMEOUT_MS: String(timeout),
+          },
+          true,
+        ),
+      ).toEqual({ kind: "remote", wsEndpoint: `${endpoint}&timeout=${timeout}` });
+    }
+    expect(
+      cloudComputerConnection(
+        {
+          CLOUD_COMPUTER_BROWSER_WS_URL: `${endpoint}&timeout=60000&timeout=900000`,
+        },
+        true,
+      ),
+    ).toBeNull();
+  });
+
   it("only runs allow-listed OpenAI models and bounds process capacity", () => {
     expect(cloudComputerModel({})).toBe(OPENAI_MODELS.GPT_5_6_TERRA);
     expect(cloudComputerModel({ CLOUD_COMPUTER_MODEL: OPENAI_MODELS.GPT_5_6_LUNA })).toBe(

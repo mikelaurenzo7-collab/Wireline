@@ -42,6 +42,9 @@ import {
 
 export { modelBrowserUrl } from "./url-policy";
 
+export type BrowserUnexpectedCloseReason =
+  "provider_disconnected" | "network_guard_failed" | "guard_startup_failed";
+
 /**
  * One Bot's cloud computer: an isolated Chromium session driven through the
  * OpenAI computer tool. Production connects to a remote, sandboxed browser
@@ -349,6 +352,7 @@ export class CloudBrowserSession {
   private closed = false;
   private disconnected = false;
   private disconnectedAt: number | null = null;
+  private unexpectedClosureReason: BrowserUnexpectedCloseReason | null = null;
   private closePromise: Promise<void> | null = null;
   /** Set when a page tried to reach a private or non-web address. */
   blockedRequests = 0;
@@ -406,6 +410,7 @@ export class CloudBrowserSession {
       browser.on("disconnected", () => {
         session.disconnected = true;
         session.disconnectedAt ??= Date.now();
+        if (!session.closed) session.unexpectedClosureReason ??= "provider_disconnected";
       });
       await context.addInitScript(ISOLATION_INIT_SCRIPT);
       await context.route("**/*", (route) => session.guard(route));
@@ -459,7 +464,7 @@ export class CloudBrowserSession {
     const id = `tab-${this.nextTabNumber++}`;
     this.tabs.set(id, page);
     this.pageIds.set(page, id);
-    void this.ensureNetworkGuard(page).catch(() => this.close());
+    void this.ensureNetworkGuard(page).catch(() => this.closeUnexpectedly("guard_startup_failed"));
     page.on("dialog", (dialog) => {
       dialog.dismiss().catch(() => undefined);
     });
@@ -481,6 +486,7 @@ export class CloudBrowserSession {
       ready = (async () => {
         if (this.isClosed) throw new Error("Browser session closed.");
         const cdp = await withDeadline(this.context.newCDPSession(page), DNS_TIMEOUT_MS);
+        let started = false;
         const guard = new BrowserNetworkGuard(
           cdp,
           (url) => this.urlIsPublic(url),
@@ -488,7 +494,7 @@ export class CloudBrowserSession {
             this.blockedRequests += 1;
           },
           () => {
-            void this.close();
+            this.closeUnexpectedly(started ? "network_guard_failed" : "guard_startup_failed");
           },
           () => page.isClosed() || this.isClosed,
         );
@@ -498,6 +504,7 @@ export class CloudBrowserSession {
           this.networkGuards.delete(guard);
         });
         await guard.start();
+        started = true;
         if (this.isClosed) throw new Error("Browser session closed.");
       })();
       this.networkReady.set(page, ready);
@@ -669,6 +676,17 @@ export class CloudBrowserSession {
   /** True once the session was closed or the browser connection dropped. */
   get isClosed(): boolean {
     return this.closed || this.disconnected;
+  }
+
+  /** Allowlisted diagnostics only: never a provider error, URL or page content. */
+  get unexpectedCloseReason(): BrowserUnexpectedCloseReason | null {
+    return this.unexpectedClosureReason;
+  }
+
+  private closeUnexpectedly(reason: BrowserUnexpectedCloseReason): void {
+    if (this.closed) return;
+    this.unexpectedClosureReason ??= reason;
+    void this.close();
   }
 
   /** Browserless connection time; null for a local development browser. */

@@ -16,6 +16,26 @@ const bots = [
   { id: "bot-sales", name: "Sales Bot", role: "sales" },
 ];
 
+function pastTask(id: string, agentId: string, goal: string, summary: string) {
+  const now = new Date().toISOString();
+  return {
+    id,
+    agentId,
+    goal,
+    summary,
+    status: "completed",
+    question: null,
+    sources: [],
+    events: [],
+    turnCount: 1,
+    actionCount: 1,
+    startedAt: now,
+    finishedAt: now,
+    updatedAt: now,
+    liveView: false,
+  };
+}
+
 async function mockWorkspace(
   page: Page,
   tasks: Array<Record<string, unknown>> = [],
@@ -333,7 +353,7 @@ test.describe("wide screens", () => {
     await expect(goal).toHaveValue("Read the public Calls Regular monthly price.");
     await expect(url).toHaveValue("https://botbound.app/pricing");
     await page.getByLabel("Switch Bot", { exact: true }).selectOption(bots[1].id);
-    await page.getByRole("button", { name: "New task", exact: true }).click();
+    await expect(page.getByText("The previous task is complete.", { exact: true })).toHaveCount(0);
     await expect(goal).toHaveValue("");
     await expect(url).toHaveValue("");
     await page.getByLabel("Switch Bot", { exact: true }).selectOption(bots[0].id);
@@ -346,6 +366,152 @@ test.describe("wide screens", () => {
     await expect(url).toHaveValue("https://botbound.app/pricing");
     expect(taskStarts).toBe(0);
   });
+
+  for (const hasSalesHistory of [false, true]) {
+    test(`a pinned Browser uses its Bot's history after switching Bots (${hasSalesHistory ? "with" : "without"} history)`, async ({
+      page,
+    }) => {
+      const front = pastTask(
+        "front-history",
+        bots[0].id,
+        "Front Desk previous research",
+        "Front Desk's earlier result.",
+      );
+      const sales = pastTask(
+        "sales-history",
+        bots[1].id,
+        "Sales previous research",
+        "Sales Bot's earlier result.",
+      );
+      await mockWorkspace(page, hasSalesHistory ? [front, sales] : [front]);
+      await page.goto(`/studio?agent=${bots[0].id}`);
+      const browser = page.getByRole("complementary", { name: "Workspace panel", exact: true });
+      await expect(browser.getByRole("region", { name: front.goal, exact: true })).toBeVisible();
+      await page
+        .getByRole("combobox", { name: "Switch Bot", exact: true })
+        .selectOption(bots[1].id);
+      await expect(workConversation(page, "Sales Bot")).toBeVisible();
+      await expect(browser.getByRole("region", { name: front.goal, exact: true })).toHaveCount(0);
+      if (hasSalesHistory) {
+        await expect(browser.getByRole("region", { name: sales.goal, exact: true })).toBeVisible();
+        await expect(
+          page
+            .getByRole("log", { name: "Work conversation" })
+            .getByText(sales.summary, { exact: true }),
+        ).toBeVisible();
+      } else {
+        await expect(browser.getByRole("region")).toHaveCount(0);
+        await expect(
+          browser.getByRole("button", { name: "Open browser", exact: true }),
+        ).toBeEnabled();
+      }
+      await browser.getByRole("button", { name: "Tasks", exact: true }).click();
+      const history = page.getByRole("dialog", { name: "Recent Tasks", exact: true });
+      await expect(history.getByRole("button", { name: new RegExp(front.goal) })).toHaveCount(0);
+      if (hasSalesHistory)
+        await expect(history.getByRole("button", { name: new RegExp(sales.goal) })).toBeVisible();
+      else await expect(history.getByText("No tasks yet.", { exact: true })).toBeVisible();
+      await history.getByRole("button", { name: "Close", exact: true }).click();
+      await page
+        .getByRole("combobox", { name: "Switch Bot", exact: true })
+        .selectOption(bots[0].id);
+      await expect(browser.getByRole("region", { name: front.goal, exact: true })).toBeVisible();
+    });
+  }
+
+  test("another Bot's live browser is explicit and cannot become foreign history after completion", async ({
+    page,
+  }) => {
+    const front = {
+      ...pastTask("front-active", bots[0].id, "Front Desk active research", ""),
+      status: "running",
+      summary: null,
+      finishedAt: null,
+    };
+    const previousFront = pastTask(
+      "front-history",
+      bots[0].id,
+      "Front Desk old research",
+      "Front Desk's old result.",
+    );
+    const sales = pastTask(
+      "sales-history",
+      bots[1].id,
+      "Sales previous research",
+      "Sales Bot's earlier result.",
+    );
+    const fixture = await mockWorkspace(page, [front, previousFront, sales]);
+    await page.goto(`/studio?agent=${bots[0].id}`);
+    const browser = page.getByRole("complementary", { name: "Workspace panel", exact: true });
+    await expect(browser.getByRole("region", { name: front.goal, exact: true })).toBeVisible();
+    await page.getByRole("combobox", { name: "Switch Bot", exact: true }).selectOption(bots[1].id);
+    await expect(browser.getByText("Front Desk's active browser", { exact: true })).toBeVisible();
+    await expect(
+      browser.getByRole("link", { name: "Switch to Front Desk", exact: true }),
+    ).toHaveAttribute("href", `/studio?agent=${bots[0].id}&panel=computer`);
+    await expect(page.getByRole("button", { name: "Start work", exact: true })).toBeDisabled();
+    await browser.getByRole("link", { name: "Switch to Front Desk", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/studio\\?agent=${bots[0].id}&panel=computer$`));
+    await expect(browser).toBeVisible();
+    await expect(workConversation(page, "Front Desk")).toBeVisible();
+    await page.getByRole("combobox", { name: "Switch Bot", exact: true }).selectOption(bots[1].id);
+    await expect(browser.getByText("Front Desk's active browser", { exact: true })).toBeVisible();
+    await browser.getByRole("button", { name: "Tasks", exact: true }).click();
+    const history = page.getByRole("dialog", { name: "Recent Tasks", exact: true });
+    await expect(history.getByRole("button", { name: new RegExp(previousFront.goal) })).toHaveCount(
+      0,
+    );
+    await expect(history.getByRole("button", { name: new RegExp(front.goal) })).toBeVisible();
+    await history.getByRole("button", { name: new RegExp(sales.goal) }).click();
+    await expect(browser.getByRole("region", { name: sales.goal, exact: true })).toBeVisible();
+    await browser
+      .getByRole("button", { name: "View Front Desk's active task", exact: true })
+      .click();
+    await expect(browser.getByText("Front Desk's active browser", { exact: true })).toBeVisible();
+    fixture.setTask(front.id, {
+      status: "completed",
+      summary: "Front Desk finished.",
+      finishedAt: new Date().toISOString(),
+    });
+    await expect(browser.getByText("Front Desk's active browser", { exact: true })).toHaveCount(0);
+    await expect(browser.getByRole("region", { name: front.goal, exact: true })).toHaveCount(0);
+    await expect(browser.getByRole("region", { name: sales.goal, exact: true })).toBeVisible();
+  });
+
+  for (const expired of [false, true]) {
+    test(`the Browser offers ${expired ? "session-ended" : "generic"} recovery from a confirmed failure`, async ({
+      page,
+    }) => {
+      await mockWorkspace(page, [
+        {
+          ...pastTask(
+            "failed-browser",
+            bots[0].id,
+            "Read the public listing.",
+            "Diagnostic text is not recovery guidance.",
+          ),
+          status: "failed",
+          errorCode: expired ? "COMPUTER_BROWSER_EXPIRED" : "COMPUTER_UNKNOWN_FAILURE",
+        },
+      ]);
+      await page.goto(`/studio?agent=${bots[0].id}`);
+      const browser = page.getByRole("complementary", { name: "Workspace panel", exact: true });
+      const recovery = browser.locator(".wl-computer-recovery");
+      await expect(
+        recovery.getByText(
+          expired
+            ? "The browser session ended. Start a new task to continue."
+            : "This task stopped before it finished.",
+          { exact: true },
+        ),
+      ).toBeVisible();
+      await expect(recovery).not.toContainText("Diagnostic text");
+      await recovery.getByRole("button", { name: "New task", exact: true }).click();
+      await expect(
+        browser.getByRole("button", { name: "Open browser", exact: true }),
+      ).toBeEnabled();
+    });
+  }
 
   test("closing and reopening the browser preserves the conversation draft", async ({ page }) => {
     await mockWorkspace(page);

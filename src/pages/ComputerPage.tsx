@@ -319,8 +319,10 @@ function LiveScreen({
                   type="button"
                   className="wl-browser-tab__close"
                   aria-label={`Close ${tab.label} tab`}
-                  title="Close tab"
-                  disabled={ownerBusy}
+                  title={
+                    task.ownerTabs.length <= 1 ? "Keep at least one browser tab open" : "Close tab"
+                  }
+                  disabled={ownerBusy || task.ownerTabs.length <= 1}
                   onClick={() => onOwnerInput?.({ kind: "close_tab", tabId: tab.id })}
                 >
                   <X aria-hidden="true" />
@@ -1278,7 +1280,11 @@ function TaskDetail({
       {!active &&
       (task.status === "failed" || task.status === "blocked" || task.status === "interrupted") ? (
         <div className="wl-computer-recovery" role="status">
-          <p>This task stopped before it finished.</p>
+          <p>
+            {task.errorCode === "COMPUTER_BROWSER_EXPIRED"
+              ? "The browser session ended. Start a new task to continue."
+              : "This task stopped before it finished."}
+          </p>
           <div className="flex flex-wrap gap-2">
             {onStartAnother ? (
               <Button type="button" size="sm" variant="outline" onClick={onStartAnother}>
@@ -1442,9 +1448,8 @@ export function ComputerWorkbench({
     tasks,
     listFailed,
     setListFailed,
-    selectedId,
     setSelectedId,
-    selected,
+    selected: accountSelected,
     activeTask,
     anyActive,
     announcement,
@@ -1474,6 +1479,25 @@ export function ComputerWorkbench({
   const composerBot = degraded ? undefined : agents.find((agent) => agent.id === composerAgentId);
   const scopedAgentUnavailable =
     hasScopedAgent && !agentsLoading && !degraded && agents.length > 0 && !composerBot;
+  // A shared model remembers account-wide history. An explicitly scoped Bot
+  // may show its own history or the account's one live browser, never another
+  // Bot's historical task beneath this Bot's conversation and composer.
+  const visibleTasks = hasScopedAgent
+    ? tasks?.filter(
+        (task) => task.agentId === composerAgentId || (composerBot && task.id === activeTask?.id),
+      )
+    : tasks;
+  const selected = hasScopedAgent
+    ? (visibleTasks?.find((task) => task.id === accountSelected?.id) ??
+      visibleTasks?.find((task) => task.agentId === composerAgentId) ??
+      visibleTasks?.find((task) => task.id === activeTask?.id) ??
+      null)
+    : accountSelected;
+  const foreignActive =
+    selected && selected.id === activeTask?.id && selected.agentId !== composerAgentId;
+  const foreignActiveBotName = foreignActive
+    ? agents.find((agent) => agent.id === selected.agentId)?.name || "Another Bot"
+    : null;
   const start = async (prepareBrowser = false) => {
     if (!composerBot) return;
     setStartingMode(prepareBrowser ? "browser" : "task");
@@ -1625,7 +1649,7 @@ export function ComputerWorkbench({
 
       <div className={cn("wl-computer-layout", anyActive && "is-active")}>
         <div className="wl-computer-main">
-          {activeTask && selected?.id !== activeTask.id ? (
+          {activeTask && selected?.id !== activeTask.id && (!hasScopedAgent || composerBot) ? (
             <div className="flex justify-end">
               <Button
                 type="button"
@@ -1636,11 +1660,30 @@ export function ComputerWorkbench({
                   setShowComposer(false);
                 }}
               >
-                {activeTask.status === "needs_input"
-                  ? "Respond to active task"
-                  : "View active task"}
+                {hasScopedAgent && activeTask.agentId !== composerAgentId
+                  ? `View ${agents.find((agent) => agent.id === activeTask.agentId)?.name || "another Bot"}'s active task`
+                  : activeTask.status === "needs_input"
+                    ? "Respond to active task"
+                    : "View active task"}
               </Button>
             </div>
+          ) : null}
+          {hasScopedAgent && foreignActive && foreignActiveBotName ? (
+            <StatusNotice
+              tone="info"
+              title={`${foreignActiveBotName}'s active browser`}
+              action={
+                <Button asChild size="sm" variant="secondary">
+                  <Link
+                    to={`${layout === "panel" ? "/studio" : "/computer"}?agent=${encodeURIComponent(selected.agentId)}${layout === "panel" ? "&panel=computer" : ""}`}
+                  >
+                    Switch to {foreignActiveBotName}
+                  </Link>
+                </Button>
+              }
+            >
+              This task belongs to {foreignActiveBotName}. One browser task runs at a time.
+            </StatusNotice>
           ) : null}
           {anyActive ? taskDetail : null}
           {!anyActive && selected && !showComposer ? taskDetail : null}
@@ -1823,15 +1866,15 @@ export function ComputerWorkbench({
                   <Skeleton className="h-14 w-full" />
                   <Skeleton className="h-14 w-full" />
                 </div>
-              ) : tasks.length ? (
+              ) : visibleTasks?.length ? (
                 <ul>
-                  {tasks.map((task) => {
+                  {visibleTasks.map((task) => {
                     const copy = STATUS_COPY[task.status];
                     return (
                       <li key={task.id}>
                         <button
                           type="button"
-                          aria-current={task.id === selectedId ? "true" : undefined}
+                          aria-current={task.id === selected?.id ? "true" : undefined}
                           onClick={() => {
                             setSelectedId(task.id);
                             setShowComposer(false);
