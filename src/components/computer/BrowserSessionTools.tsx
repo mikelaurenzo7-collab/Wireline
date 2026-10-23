@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type RefObject } from "react";
 import {
   Camera,
   Download,
@@ -52,6 +52,7 @@ export function saveBrowserFile(url: string, name: string) {
 export default function BrowserSessionTools({
   open,
   onOpenChange,
+  returnFocusRef,
   taskId,
   ownerControl,
   ownerBusy,
@@ -69,6 +70,7 @@ export default function BrowserSessionTools({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  returnFocusRef?: RefObject<HTMLButtonElement | null>;
   taskId: string;
   ownerControl: boolean;
   ownerBusy: boolean;
@@ -160,7 +162,16 @@ export default function BrowserSessionTools({
         onOpenChange(next);
       }}
     >
-      <SheetContent side="right" className="wl-browser-tools">
+      <SheetContent
+        side="right"
+        className="wl-browser-tools"
+        onCloseAutoFocus={(event) => {
+          const opener = returnFocusRef?.current;
+          if (!opener?.isConnected) return;
+          event.preventDefault();
+          opener.focus({ preventScroll: true });
+        }}
+      >
         <SheetHeader>
           <SheetTitle>Browser tools</SheetTitle>
         </SheetHeader>

@@ -1349,7 +1349,10 @@ test("a page that did not load offers a retry instead of a dead form", async ({ 
   await expect(page.getByText("Your Bot's Computer Did Not Load")).toBeVisible();
   await expect(page.getByText("Tasks Could Not Load", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Retry tasks", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Tasks", exact: true }).click();
+  const tasksAction = page.getByRole("button", { name: "Tasks", exact: true });
+  await tasksAction.focus();
+  await expect(tasksAction).toBeFocused();
+  await tasksAction.press("Enter");
   const history = page.getByRole("dialog", { name: "Recent Tasks" });
   await expect(history.getByText("Recent tasks did not load.")).toBeVisible();
   await expect(page.getByText("The Task Did Not Start")).toHaveCount(0);
@@ -1357,12 +1360,15 @@ test("a page that did not load offers a retry instead of a dead form", async ({ 
 
   recoverLoad();
   await history.getByRole("button", { name: "Close" }).click();
+  await expect(tasksAction).toBeFocused();
   await page.getByRole("button", { name: "Retry", exact: true }).click();
   await page.getByRole("button", { name: "Retry tasks", exact: true }).click();
   await page.getByRole("button", { name: "Tasks", exact: true }).click();
   await expect(page.getByText("Your Bot's Computer Did Not Load")).toHaveCount(0);
   await expect(history.getByText("No tasks yet.")).toBeVisible();
-  await history.getByRole("button", { name: "Close" }).click();
+  await page.keyboard.press("Escape");
+  await expect(history).toHaveCount(0);
+  await expect(tasksAction).toBeFocused();
   await page
     .getByRole("textbox", { name: "What should your Bot do?" })
     .fill("Compare two supplier prices.");
@@ -1445,13 +1451,38 @@ test("browser toolbar manages tabs, screenshots, history and owner downloads", a
     ownerInputs.filter((input) => (input as { kind?: string }).kind === "close_tab"),
   ).toHaveLength(1);
 
-  await page.getByRole("button", { name: "Open browser tools" }).click();
+  const toolsAction = page.getByRole("button", { name: "Open browser tools" });
+  await page.getByRole("button", { name: "Enter browser fullscreen", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true);
+  await page.evaluate(() => {
+    Object.defineProperty(document, "exitFullscreen", {
+      configurable: true,
+      value: () => Promise.reject(new DOMException("Fullscreen exit denied", "NotAllowedError")),
+    });
+  });
+  await toolsAction.focus();
+  await expect(toolsAction).toBeFocused();
+  await toolsAction.press("Enter");
   const tools = page.getByRole("dialog", { name: "Browser tools" });
+  await expect(
+    page.getByText("Exit browser fullscreen to open browser tools.", { exact: true }),
+  ).toBeVisible();
+  await expect(tools).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true);
+  await page.evaluate(() => Reflect.deleteProperty(document, "exitFullscreen"));
+  await toolsAction.press("Enter");
+  await expect(tools).toBeVisible();
+  await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(false);
+  await page.keyboard.press("Escape");
+  await expect(tools).toHaveCount(0);
+  await expect(toolsAction).toBeFocused();
+  await toolsAction.press("Enter");
   const file = page.waitForEvent("download");
   await tools.getByRole("button", { name: /comparison.txt/ }).click();
   expect((await file).suggestedFilename()).toBe("comparison.txt");
   await tools.getByRole("button", { name: /Previous directory/ }).click();
   await expect(tools).toHaveCount(0);
+  await expect(toolsAction).toBeFocused();
   await expect(page.getByRole("textbox", { name: "Web address", exact: true })).toHaveValue(
     "https://previous.example/",
   );
@@ -1532,8 +1563,18 @@ test("session tools send explicit cookie and login actions without retaining sec
   await expect(
     tools.getByText("This isolated browser does not support installing extensions."),
   ).toBeVisible();
+  await tools.getByLabel("Username", { exact: true }).fill("unsaved-before-close");
+  await tools.getByLabel("Password", { exact: true }).fill("unsaved-close-secret");
   await page.keyboard.press("Escape");
   await expect(tools).toHaveCount(0);
+  const toolsAction = page.getByRole("button", { name: "Open browser tools" });
+  await expect(toolsAction).toBeFocused();
+  await toolsAction.press("Enter");
+  await expect(tools.getByLabel("Username", { exact: true })).toHaveValue("");
+  await expect(tools.getByLabel("Password", { exact: true })).toHaveValue("");
+  await tools.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(tools).toHaveCount(0);
+  await expect(toolsAction).toBeFocused();
 });
 
 test("delayed reads cannot undo confirmed take control, navigation, or pending Stop", async ({

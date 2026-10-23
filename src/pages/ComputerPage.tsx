@@ -203,6 +203,7 @@ function LiveScreen({
   const [expanded, setExpanded] = useState(false);
   const [fullscreenError, setFullscreenError] = useState<string | null>(null);
   const [toolsOpen, setToolsOpen] = useState(false);
+  const toolsButtonRef = useRef<HTMLButtonElement | null>(null);
   const browserTabsRef = useActiveBrowserTab(
     task.ownerTabs?.find((tab) => tab.active)?.id,
     task.ownerTabs?.map((tab) => `${tab.id}:${tab.label}`).join("|"),
@@ -448,11 +449,20 @@ function LiveScreen({
               type="button"
               className="wl-computer-screen__zoom wl-browser-icon-button"
               aria-label="Open browser tools"
+              ref={toolsButtonRef}
               title="History, downloads and session tools"
               onClick={async () => {
-                if (document.fullscreenElement)
-                  await document.exitFullscreen().catch(() => undefined);
-                setToolsOpen(true);
+                const opener = toolsButtonRef.current;
+                setFullscreenError(null);
+                if (document.fullscreenElement) {
+                  try {
+                    await document.exitFullscreen();
+                  } catch {
+                    setFullscreenError("Exit browser fullscreen to open browser tools.");
+                    return;
+                  }
+                }
+                if (opener?.isConnected) setToolsOpen(true);
               }}
             >
               <SlidersHorizontal className="size-3.5" aria-hidden="true" />
@@ -703,6 +713,7 @@ function LiveScreen({
       <BrowserSessionTools
         open={toolsOpen}
         onOpenChange={setToolsOpen}
+        returnFocusRef={toolsButtonRef}
         taskId={task.id}
         ownerControl={ownerControl}
         ownerBusy={ownerBusy}
@@ -796,7 +807,7 @@ function TaskDetail({
   task: ComputerTask;
   onChanged: (task: ComputerTask) => void;
   onStartAnother?: () => void;
-  onOpenTasks?: () => void;
+  onOpenTasks?: (opener: HTMLButtonElement) => void;
   onOpenBrowser?: () => void;
   openingBrowser?: boolean;
   canOpenBrowser?: boolean;
@@ -1184,7 +1195,21 @@ function TaskDetail({
                 variant="ghost"
                 size="sm"
                 className={compact ? "size-11 shrink-0 p-0" : undefined}
-                onClick={onOpenTasks}
+                onClick={async (event) => {
+                  const opener = event.currentTarget;
+                  if (document.fullscreenElement === detailRef.current) {
+                    try {
+                      await document.exitFullscreen();
+                    } catch {
+                      setFailure({
+                        message: "Exit the expanded browser to view recent tasks.",
+                        status: task.status,
+                      });
+                      return;
+                    }
+                  }
+                  if (opener.isConnected) onOpenTasks?.(opener);
+                }}
                 aria-label="Tasks"
                 title="Recent tasks"
               >
@@ -1450,13 +1475,13 @@ function TaskDetail({
               ? "The browser session ended. Start a new task to continue."
               : "This task stopped before it finished."}
           </p>
-          <div className="flex flex-wrap gap-2">
-            {onStartAnother ? (
+          {onStartAnother && (!compact || chatControls) ? (
+            <div className="flex flex-wrap gap-2">
               <Button type="button" size="sm" variant="outline" onClick={onStartAnother}>
                 New task
               </Button>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -1612,9 +1637,14 @@ export function ComputerWorkbench({
   } = useComputerWorkspace();
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyPreviewId, setHistoryPreviewId] = useState<string | null>(null);
+  const historyOpenerRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const [startingMode, setStartingMode] = useState<"browser" | "task" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const openHistory = (opener: HTMLButtonElement) => {
+    historyOpenerRef.current = opener;
+    setHistoryOpen(true);
+  };
 
   useEffect(() => {
     if (hasScopedAgent) return;
@@ -1724,7 +1754,7 @@ export function ComputerWorkbench({
             panelRef.current?.querySelector<HTMLTextAreaElement>("#computer-goal")?.focus(),
           );
       }}
-      onOpenTasks={layout === "panel" ? () => setHistoryOpen(true) : undefined}
+      onOpenTasks={layout === "panel" ? openHistory : undefined}
       onOpenBrowser={() => void start(true)}
       canOpenBrowser={canOpenBrowser}
       openingBrowser={startingMode === "browser"}
@@ -1750,7 +1780,12 @@ export function ComputerWorkbench({
           {showComposer ? "Back to task" : chatControls ? "Open browser" : "New task"}
         </Button>
       ) : null}
-      <Button type="button" variant="outline" size="sm" onClick={() => setHistoryOpen(true)}>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={(event) => openHistory(event.currentTarget)}
+      >
         <History aria-hidden="true" />
         Tasks
       </Button>
@@ -2042,7 +2077,16 @@ export function ComputerWorkbench({
             if (!open) setHistoryPreviewId(null);
           }}
         >
-          <SheetContent side="right" className="wl-computer-history-panel">
+          <SheetContent
+            side="right"
+            className="wl-computer-history-panel"
+            onCloseAutoFocus={(event) => {
+              const opener = historyOpenerRef.current;
+              if (!opener?.isConnected) return;
+              event.preventDefault();
+              opener.focus({ preventScroll: true });
+            }}
+          >
             <SheetHeader>
               <SheetTitle>Recent Tasks</SheetTitle>
             </SheetHeader>

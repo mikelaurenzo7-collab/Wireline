@@ -499,6 +499,8 @@ for (const status of ["stopped", "interrupted"] as const) {
     await expect(details.getByText(goal, { exact: true })).toBeVisible();
     await expect(detail.getByRole("figure", { name: "Ended browser", exact: true })).toBeVisible();
     await expect(detail.getByRole("img")).toHaveCount(0);
+    await expect(detail.getByRole("button", { name: "New task", exact: true })).toHaveCount(1);
+    await expect(detail.locator(".wl-computer-recovery").getByRole("button")).toHaveCount(0);
     await expect(detail.getByRole("button", { name: "Tasks", exact: true })).toBeVisible();
     await expect(
       detail.getByRole("button", { name: "Open task activity", exact: true }),
@@ -655,8 +657,21 @@ for (const width of [1206, 390, 320]) {
       expect(box.x + box.width).toBeLessThanOrEqual(width);
     }
     await proof(page, info, `browser-primary-live-${width}${width === 320 ? "-enlarged" : ""}`);
-    await detail.getByRole("button", { name: "Tasks", exact: true }).click();
+    const tasksAction = detail.getByRole("button", { name: "Tasks", exact: true });
+    if (width === 1206) {
+      await detail.getByRole("button", { name: "Enter browser fullscreen", exact: true }).click();
+      await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true);
+    }
+    await tasksAction.focus();
+    await expect(tasksAction).toBeFocused();
+    await tasksAction.press("Enter");
     const history = page.getByRole("dialog", { name: "Recent Tasks", exact: true });
+    await expect(history).toBeVisible();
+    await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(false);
+    await page.keyboard.press("Escape");
+    await expect(history).toHaveCount(0);
+    await expect(tasksAction).toBeFocused();
+    await tasksAction.press("Enter");
     await history.getByRole("button", { name: older.goal, exact: true }).click();
     const preview = history.getByRole("article", { name: older.goal, exact: true });
     await preview.locator("details > summary").press("Enter");
@@ -678,6 +693,7 @@ for (const width of [1206, 390, 320]) {
     await expect(backgroundImage).toHaveAttribute("src", /^blob:/);
     await expect(preview.getByRole("button", { name: "Stop", exact: true })).toHaveCount(0);
     await history.getByRole("button", { name: "Close", exact: true }).click();
+    await expect(tasksAction).toBeFocused();
     await image.scrollIntoViewIfNeeded();
     await expect(image).toBeInViewport({ ratio: 1 });
     expect(frameTaskIds.length).toBeGreaterThan(0);
