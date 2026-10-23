@@ -104,13 +104,13 @@ export function SupportPage() {
             to="/studio"
             className="wl-focus-ring-halo inline-flex min-h-11 items-center rounded-md px-2 font-medium text-muted-foreground hover:text-foreground"
           >
-            Studio
+            Open Workspace
           </Link>
           <Link
             to="/features"
             className="wl-focus-ring-halo inline-flex min-h-11 items-center rounded-md px-2 font-medium text-muted-foreground hover:text-foreground"
           >
-            Product Tour
+            How It Works
           </Link>
         </nav>
 

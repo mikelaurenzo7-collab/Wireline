@@ -60,9 +60,12 @@ describe("Workspace computer panel", () => {
     );
     expect(fullscreenTarget).toContain('closest(".wl-computer-detail")');
     expect(fullscreenTarget).not.toContain('closest(".wl-computer-takeover")');
-    expect(detail).toContain(
-      '<section ref={detailRef} className="wl-computer-detail" aria-labelledby="computer-task-title">',
-    );
+    const detailSection = detail.match(/<section\b[^>]*\bref=\{detailRef\}[^>]*>/)?.[0] ?? "";
+    expect(detailSection).not.toBe("");
+    expect(detailSection).toContain("ref={detailRef}");
+    const detailClass = detailSection.match(/\bclassName=(?:"[^"]*"|\{[^}]*\})/)?.[0] ?? "";
+    expect(detailClass).toMatch(/["'\s]wl-computer-detail["'\s]/);
+    expect(detailSection).toContain('aria-labelledby="computer-task-title"');
     expect(detail).toContain('className="wl-computer-question"');
     expect(detail).toContain('onClick={() => void act("stop")}');
     expect(detail).toContain('title="Something Went Wrong"');

@@ -14,10 +14,11 @@ describe("soft launch surfaces", () => {
     expect(computer).toContain("wl-computer-screen__controls");
     expect(computer).toContain("const browserStillOpen = !active && task.liveView");
     expect(computer).toContain("The browser screen was cleared after this task ended.");
-    const recovery = computer.slice(
-      computer.indexOf('className="wl-computer-recovery"'),
-      computer.indexOf("!active && task.summary"),
-    );
+    const recoveryStart = computer.indexOf('className="wl-computer-recovery"');
+    expect(recoveryStart).toBeGreaterThanOrEqual(0);
+    const recoveryEnd = computer.indexOf("<Sheet open={activityOpen}", recoveryStart);
+    expect(recoveryEnd).toBeGreaterThan(recoveryStart);
+    const recovery = computer.slice(recoveryStart, recoveryEnd);
     expect(recovery).toContain("onClick={onStartAnother}");
     expect(recovery).not.toContain('ownerAction("take")');
     expect(css).toContain(".wl-computer-screen__controls");
