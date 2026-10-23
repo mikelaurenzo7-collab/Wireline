@@ -84,7 +84,7 @@ export default function WireAgentLanding() {
               <span className="landing-prestige__title-line is-accent">REAL WORK.</span>
             </h1>
             <p className="landing-prestige__description">
-              YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER
+              YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER.
             </p>
             <p className="landing-prestige__channel-choice">Choose the channels you need.</p>
             <div className="landing-prestige__actions">

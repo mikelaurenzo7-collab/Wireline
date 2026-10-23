@@ -552,6 +552,8 @@ test("ended Configure browser keeps three actions and an unsent draft reachable 
   const ended = detail.getByRole("figure", { name: "Ended browser", exact: true });
   await expect(ended).toBeAttached();
   await expect(ended.getByRole("img")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Open browser", exact: true })).toHaveCount(1);
+  await expect(page.getByLabel("New browser", { exact: true })).toHaveCount(0);
   await expect(page.locator(".wl-computer-launch-browser__canvas")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Tasks", exact: true })).toHaveCount(1);
   const back = page.getByRole("button", { name: "Back to task", exact: true });
@@ -1154,7 +1156,7 @@ test.describe("wide screens", () => {
     test(`the Browser offers ${expired ? "session-ended" : "generic"} recovery from a confirmed failure`, async ({
       page,
     }) => {
-      await mockWorkspace(page, [
+      const fixture = await mockWorkspace(page, [
         {
           ...pastTask(
             "failed-browser",
@@ -1179,9 +1181,26 @@ test.describe("wide screens", () => {
       ).toBeVisible();
       await expect(recovery).not.toContainText("Diagnostic text");
       await recovery.getByRole("button", { name: "New task", exact: true }).click();
-      await expect(
-        browser.getByRole("button", { name: "Open browser", exact: true }),
-      ).toBeEnabled();
+      const ended = browser.getByRole("figure", { name: "Ended browser", exact: true });
+      await expect(ended).toBeVisible();
+      await expect(ended.getByRole("img")).toHaveCount(0);
+      const open = browser.getByRole("button", { name: "Open browser", exact: true });
+      await expect(open).toHaveCount(1);
+      await expect(open).toBeEnabled();
+      await expect(browser.getByLabel("New browser", { exact: true })).toHaveCount(0);
+      const address = browser.getByRole("textbox", { name: "Web address", exact: true });
+      await address.fill("https://directory.example/recovery");
+      expect(fixture.starts).toEqual([]);
+      await open.click();
+      await expect
+        .poll(() => fixture.starts)
+        .toEqual([
+          {
+            agentId: bots[0].id,
+            prepareBrowser: true,
+            startUrl: "https://directory.example/recovery",
+          },
+        ]);
     });
   }
 

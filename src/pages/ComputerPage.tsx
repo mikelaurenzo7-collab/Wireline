@@ -1768,6 +1768,24 @@ export function ComputerWorkbench({
     />
   ) : null;
 
+  const startAddressInput = (
+    <Input
+      id="computer-start-url"
+      value={startUrl}
+      onChange={(event) => updateComposerDraft({ startUrl: event.target.value })}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          if (canOpenBrowser) void start(true);
+        }
+      }}
+      placeholder="Enter a web address"
+      inputMode="url"
+      autoComplete="off"
+      maxLength={2048}
+    />
+  );
+
   const actions = (
     <div className="flex flex-wrap items-center justify-end gap-2">
       {!anyActive && selected ? (
@@ -1953,50 +1971,41 @@ export function ComputerWorkbench({
                   </NativeSelect>
                 </div>
               ) : null}
-              <div className="wl-computer-launch-browser" aria-label="New browser">
-                <div className="wl-computer-launch-browser__bar">
-                  <span className="wl-computer-screen__dots" aria-hidden="true">
-                    <i />
-                    <i />
-                    <i />
-                  </span>
-                  <Globe className="size-4 shrink-0" aria-hidden="true" />
-                  <label className="sr-only" htmlFor="computer-start-url">
-                    Web address
-                  </label>
-                  <Input
-                    id="computer-start-url"
-                    value={startUrl}
-                    onChange={(event) => updateComposerDraft({ startUrl: event.target.value })}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        if (canOpenBrowser) void start(true);
-                      }
-                    }}
-                    placeholder="Enter a web address"
-                    inputMode="url"
-                    autoComplete="off"
-                    maxLength={2048}
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => void start(true)}
-                    disabled={!canOpenBrowser}
-                    aria-busy={startingMode === "browser"}
-                  >
-                    {startingMode === "browser" ? "Opening…" : "Open browser"}
-                  </Button>
+              {layout === "panel" && selected ? (
+                <div className="wl-computer-field">
+                  <label htmlFor="computer-start-url">Web address</label>
+                  {startAddressInput}
                 </div>
-                {!(layout === "panel" && selected) ? (
+              ) : (
+                <div className="wl-computer-launch-browser" aria-label="New browser">
+                  <div className="wl-computer-launch-browser__bar">
+                    <span className="wl-computer-screen__dots" aria-hidden="true">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                    <Globe className="size-4 shrink-0" aria-hidden="true" />
+                    <label className="sr-only" htmlFor="computer-start-url">
+                      Web address
+                    </label>
+                    {startAddressInput}
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => void start(true)}
+                      disabled={!canOpenBrowser}
+                      aria-busy={startingMode === "browser"}
+                    >
+                      {startingMode === "browser" ? "Opening…" : "Open browser"}
+                    </Button>
+                  </div>
                   <div className="wl-computer-launch-browser__canvas">
                     <Globe className="size-8" aria-hidden="true" />
                     <strong>A fresh browser</strong>
                     <span>Open a site, or give your Bot a task.</span>
                   </div>
-                ) : null}
-              </div>
+                </div>
+              )}
               {!chatControls ? (
                 <div className="wl-computer-field">
                   <label htmlFor="computer-goal">What should your Bot do?</label>

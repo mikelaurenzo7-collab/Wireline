@@ -54,7 +54,7 @@ test("homepage promise and access path stay centered inside the desktop viewport
   await expect(headline).toBeVisible();
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
   await expect(page.locator(".landing-prestige__description")).toHaveText(
-    "YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER",
+    "YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER.",
   );
   await expect(page.locator(".landing-prestige__directions")).toHaveCount(0);
 
@@ -115,7 +115,7 @@ test("homepage channels stay clear and readable without decorative labels at 320
   const hero = page.locator(".landing-prestige__hero");
   const description = hero.locator(".landing-prestige__description");
   await expect(description).toHaveText(
-    "YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER",
+    "YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER.",
   );
   await expect(hero.getByText("Choose the channels you need.", { exact: true })).toBeVisible();
   await expect(hero.getByText("For life. For work.", { exact: true })).toHaveCount(0);
