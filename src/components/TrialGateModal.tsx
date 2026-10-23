@@ -597,9 +597,6 @@ export default function TrialGateModal() {
                         );
                       }}
                     />
-                    <p className="mt-3 text-sm text-muted-foreground">
-                      SMS is coming soon. Choose Calls, Email, or both.
-                    </p>
                   </details>
                 </>
               )}

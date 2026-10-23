@@ -1,5 +1,8 @@
 import { BOT_BRAND, BOT_PRODUCT_TYPES } from "./bot-product";
 
+/** Presentation only. Preserve messaging data and runtime gates for a later release. */
+export const SMS_LAUNCH_UI_ENABLED: boolean = false;
+
 /** Shared customer-facing product voice. Technical routes, schemas, events, and APIs retain `agent` for compatibility. */
 
 export const BRAND_SYSTEM = {

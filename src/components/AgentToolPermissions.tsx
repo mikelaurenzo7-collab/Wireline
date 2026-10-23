@@ -12,6 +12,7 @@ import {
 import { getAllIntegrationPlaybooks } from "../lib/integration-playbooks";
 import { resolveTenantToolIntegrationStatus } from "../lib/tenant-tool-integration-status";
 import { cn } from "../lib/utils";
+import { SMS_LAUNCH_UI_ENABLED } from "../lib/product-copy";
 import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 import { Checkbox } from "./ui/shadcn/Checkbox";
@@ -35,7 +36,10 @@ type AgentToolPermissionsProps = {
 };
 
 /** Tools with no merchant integration (platform capabilities like grounded search). */
-const PLATFORM_TOOLS = AGENT_TOOL_CATALOG.filter((tool) => !tool.integration);
+const VISIBLE_TOOLS = AGENT_TOOL_CATALOG.filter(
+  (tool) => SMS_LAUNCH_UI_ENABLED || tool.name !== "send_text_message",
+);
+const PLATFORM_TOOLS = VISIBLE_TOOLS.filter((tool) => !tool.integration);
 
 export default function AgentToolPermissions({
   agentId,
@@ -174,7 +178,7 @@ export default function AgentToolPermissions({
   const toggleGroup = (integration: string, enable: boolean) => {
     if (savingRef.current) return;
     setNotice(null);
-    const names = AGENT_TOOL_CATALOG.filter((tool) => tool.integration === integration).map(
+    const names = VISIBLE_TOOLS.filter((tool) => tool.integration === integration).map(
       (tool) => tool.name,
     );
     setEnabled((current) => {
@@ -315,7 +319,7 @@ export default function AgentToolPermissions({
             >
               <div className="divide-y divide-border">
                 {getAllIntegrationPlaybooks().map((playbook) => {
-                  const tools = AGENT_TOOL_CATALOG.filter(
+                  const tools = VISIBLE_TOOLS.filter(
                     (tool) => tool.integration === playbook.integration,
                   );
                   if (!tools.length) return null;

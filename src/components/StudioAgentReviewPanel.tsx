@@ -5,7 +5,7 @@ import { Link } from "react-router";
 import { Button, Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";
 import { authFetch } from "../lib/api";
-import { formatAgentRoleLabel } from "../lib/product-copy";
+import { formatAgentRoleLabel, SMS_LAUNCH_UI_ENABLED } from "../lib/product-copy";
 import { resolveVoiceLabel } from "../lib/voice-catalog";
 import { resolveAgentGreeting } from "../lib/agent-greeting";
 import { readSetupDeliveryTone } from "../lib/compose-setup-personality";
@@ -26,6 +26,8 @@ type AgentConfigResponse = {
     provider?: string | null;
     phoneVoiceId?: string | null;
     phoneVoiceProvider?: string | null;
+    phoneCall?: { provider: string; voice: string } | null;
+    phoneCallReady?: boolean | null;
   };
 };
 
@@ -247,11 +249,17 @@ export default function StudioAgentReviewPanel({
     };
   }, [agentId, reloadKey]);
 
-  const voiceName = resolveVoiceLabel(
+  const savedVoiceName = resolveVoiceLabel(
     config?.voice?.provider?.trim().toLowerCase() === "presenter"
       ? config.voice.phoneVoiceId
       : config?.voice?.voiceId,
   );
+  const phoneCallVoice = config?.voice?.phoneCall?.voice?.trim();
+  const voiceName = phoneCallVoice
+    ? config?.voice?.phoneCallReady === false
+      ? "Standard voice while registration finishes"
+      : phoneCallVoice.charAt(0).toUpperCase() + phoneCallVoice.slice(1)
+    : savedVoiceName;
   const role = formatAgentRoleLabel(config?.role ?? agentRole ?? null);
   const hasPhone = Boolean(phoneNumber);
   const contentClass = compact
@@ -349,6 +357,7 @@ export default function StudioAgentReviewPanel({
 
         {emailIncluded ? (
           <StatusNotice
+            stacked={compact}
             tone={
               visibleMailbox.status === "error" || visibleMailbox.status === "setup_error"
                 ? "warning"
@@ -442,7 +451,7 @@ export default function StudioAgentReviewPanel({
                   {hasPhone ? "Review Outcomes" : "Connect Phone"}
                 </Link>
               </Button>
-            ) : !emailIncluded && access.includes("sms") ? (
+            ) : SMS_LAUNCH_UI_ENABLED && !emailIncluded && access.includes("sms") ? (
               <Button
                 asChild
                 size={compact ? "sm" : undefined}

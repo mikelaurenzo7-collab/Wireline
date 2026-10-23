@@ -31,6 +31,7 @@ export interface StatusNoticeProps
   title?: React.ReactNode;
   icon?: React.ReactNode;
   action?: React.ReactNode;
+  stacked?: boolean;
 }
 
 function defaultIcon(tone: NonNullable<StatusNoticeProps["tone"]>) {
@@ -64,7 +65,7 @@ function defaultIcon(tone: NonNullable<StatusNoticeProps["tone"]>) {
 }
 
 const StatusNotice = React.forwardRef<HTMLDivElement, StatusNoticeProps>(
-  ({ tone = "info", title, icon, action, className, children, ...props }, ref) => {
+  ({ tone = "info", title, icon, action, stacked = false, className, children, ...props }, ref) => {
     const resolvedTone = tone ?? "info";
 
     return (
@@ -75,7 +76,12 @@ const StatusNotice = React.forwardRef<HTMLDivElement, StatusNoticeProps>(
         className={cn(statusNoticeVariants({ tone: resolvedTone }), className)}
         {...props}
       >
-        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div
+          className={cn(
+            "flex min-w-0 flex-col gap-3",
+            !stacked && "sm:flex-row sm:items-start sm:justify-between",
+          )}
+        >
           <div className="flex min-w-0 flex-1 items-start gap-3">
             {icon ?? defaultIcon(resolvedTone)}
             <div className="min-w-0 flex-1 break-words">
@@ -91,7 +97,12 @@ const StatusNotice = React.forwardRef<HTMLDivElement, StatusNoticeProps>(
             </div>
           </div>
           {action ? (
-            <div className="w-full min-w-0 pl-7 [&>*]:w-full sm:w-auto sm:shrink-0 sm:pl-0 sm:[&>*]:w-auto">
+            <div
+              className={cn(
+                "w-full min-w-0 pl-7 [&>*]:w-full",
+                !stacked && "sm:w-auto sm:shrink-0 sm:pl-0 sm:[&>*]:w-auto",
+              )}
+            >
               {action}
             </div>
           ) : null}

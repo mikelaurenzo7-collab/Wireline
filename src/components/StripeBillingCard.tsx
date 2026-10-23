@@ -659,9 +659,6 @@ function PlanPicker({
           );
         }}
       />
-      <p className="text-sm text-muted-foreground">
-        SMS is coming soon. Choose Calls, Email, or both.
-      </p>
       <ShadButton asChild disableAnimations variant="outline" className="w-full">
         <Link to="/studio">
           Continue Free <ArrowRight className="size-4" />

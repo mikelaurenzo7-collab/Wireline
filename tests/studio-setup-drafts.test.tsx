@@ -367,6 +367,32 @@ describe("Studio inspector draft lifecycle", () => {
     expect(button("Clear").props["aria-pressed"]).toBe(false);
   });
 
+  it.each([
+    [{ provider: "xai", voice: "eve" }, true, "Eve"],
+    [{ provider: "xai", voice: "eve" }, false, "Standard voice while registration finishes"],
+    [null, null, "Marin · Natural & Expressive"],
+  ])(
+    "shows the effective phone voice in the setup summary (%j, %s)",
+    async (phoneCall, phoneCallReady, label) => {
+      h.surface = "review";
+      h.fetch.mockImplementation(async (path: string) =>
+        path === "/api/emails/accounts"
+          ? json({ accounts: [] })
+          : json({
+              ...h.config,
+              voice: { provider: "openai", voiceId: "marin", phoneCall, phoneCallReady },
+            }),
+      );
+      await mount();
+      await vi.waitFor(() => {
+        const row = elements(render()).find(
+          (element) => element.type === "div" && text(element).startsWith("Phone voice"),
+        );
+        expect(row && text(row)).toBe(`Phone voice${label}`);
+      });
+    },
+  );
+
   it("falls back to a saved firstMessage from compatible config responses", async () => {
     h.config.firstMessage = "Welcome from the original setup.";
     await mount();

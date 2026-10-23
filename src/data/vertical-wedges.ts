@@ -339,7 +339,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Can I Start with Calls and Add Email Later?",
-        a: "Yes. Start with the channels you need. Email activation includes a setup review, then you can set up your Bot's managed mailbox from its setup page.",
+        a: "Yes. Start with Calls, then contact us for an email setup and plan review. Activate your Bot's managed mailbox after that review is complete.",
       },
       {
         q: "What Can't It Do?",

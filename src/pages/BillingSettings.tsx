@@ -29,6 +29,7 @@ import {
   updatePostCreateWizard,
 } from "../lib/wireline-create-flow";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
+import { SMS_LAUNCH_UI_ENABLED } from "../lib/product-copy";
 import {
   CONVERSATION_BALANCE_COPY,
   CONVERSATION_BALANCE_PRESETS_USD,
@@ -422,7 +423,7 @@ export default function BillingSettings() {
                   {CONVERSATION_BALANCE_COPY.title}
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                  {plan?.channels.includes("sms")
+                  {SMS_LAUNCH_UI_ENABLED && plan?.channels.includes("sms")
                     ? "Prepaid extra call minutes, SMS, and eligible live actions."
                     : "Prepaid extra call minutes and eligible live actions."}{" "}
                   Computer uses your managed AI allowance.

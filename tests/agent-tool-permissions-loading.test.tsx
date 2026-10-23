@@ -78,6 +78,33 @@ beforeEach(() => {
 });
 
 describe("agent action editor loading", () => {
+  it("hides unreleased messaging while retaining saved permissions on another edit", async () => {
+    h.fetch.mockImplementation((url: string) =>
+      Promise.resolve(
+        json(
+          url.startsWith("/api/agent-config/")
+            ? { enabledTools: ["send_text_message"] }
+            : { accounts: [] },
+        ),
+      ),
+    );
+    render();
+    toggle();
+    await flush();
+    expect(textOf(render())).not.toContain("SMS");
+    expect(textOf(render())).not.toContain("WhatsApp");
+    elements(render()).find((node) => node.type === "input")!.props.onChange!();
+    elements(render()).find(
+      (node) => node.type === "button" && textOf(node).includes("Save Actions"),
+    )!.props.onClick!();
+    const submitted = JSON.parse(
+      h.fetch.mock.calls.find(([, options]) => options?.method === "POST")![1].body,
+    ).enabled_tools;
+    expect(submitted).toContain("send_text_message");
+    expect(submitted).toHaveLength(2);
+    await flush();
+  });
+
   it.each([true, false])(
     "reflects saved native Calendar booking enabled=%s even with Google connected",
     async (enabled) => {

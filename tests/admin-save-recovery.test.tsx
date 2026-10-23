@@ -132,18 +132,18 @@ describe("launch SMS settings visibility", () => {
   ])("does not offer new SMS setup for $plan_id owner=$is_owner", (data) => {
     h.channelAccess.data = data;
     const text = textOf(renderCarrier());
-    expect(text).toContain("SMS is coming soon.");
+    expect(text).not.toContain("Text Messaging");
     expect(text).not.toContain("Customer texts");
   });
 
-  it("preserves controls for an existing SMS package", () => {
+  it("hides messaging controls for an existing SMS package during launch", () => {
     h.channelAccess.data = { plan_id: "sms", is_owner: false };
     const text = textOf(renderCarrier());
-    expect(text).toContain("Customer texts");
+    expect(text).not.toContain("Customer texts");
     expect(text).not.toContain("SMS is coming soon.");
   });
 
-  it("preserves saved SMS settings even without a current SMS package", () => {
+  it("does not expose messaging controls from saved SMS settings", () => {
     const text = textOf(
       renderCarrier({
         settings: {
@@ -151,7 +151,7 @@ describe("launch SMS settings visibility", () => {
         } as ComponentProps<typeof CarrierPanel>["settings"],
       }),
     );
-    expect(text).toContain("Customer texts");
+    expect(text).not.toContain("Customer texts");
     expect(text).not.toContain("SMS is coming soon.");
   });
 });

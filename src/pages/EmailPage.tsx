@@ -16,6 +16,7 @@ import { authFetch } from "../lib/api";
 import { useChannelEntitlements } from "../hooks/useChannelEntitlements";
 import ChannelAccessNotice from "../components/ChannelAccessNotice";
 import { planById } from "../lib/plan-catalog";
+import { SMS_LAUNCH_UI_ENABLED } from "../lib/product-copy";
 
 type InboxTabId = "email" | "sms" | "approvals";
 
@@ -55,29 +56,46 @@ export default function EmailPage() {
   const smsPaymentNeedsAttention =
     hasSmsPackage &&
     ["past_due", "unpaid", "incomplete"].includes(access.data?.subscription_status ?? "");
-  // Existing SMS access and direct history links remain usable during launch.
-  // New accounts discover Email and Approvals without an unavailable upsell.
+  // Hide the unreleased channel even for owner grants and old deep links.
+  // Backend entitlements and saved conversations remain unchanged.
   const visibleTabs = inboxTabs.filter(
-    (tab) => tab.id !== "sms" || hasSmsPackage || access.includes("sms") || requestedTab === "sms",
+    (tab) =>
+      tab.id !== "sms" ||
+      (SMS_LAUNCH_UI_ENABLED &&
+        (hasSmsPackage || access.includes("sms") || requestedTab === "sms")),
   );
   const hasExplicitConversationScope = ["agent", "account", "thread"].some((key) =>
     params.has(key),
   );
-  const activeTab: InboxTabId = inboxTabs.some((tab) => tab.id === requestedTab)
+  const activeTab: InboxTabId = visibleTabs.some((tab) => tab.id === requestedTab)
     ? (requestedTab as InboxTabId)
     : !hasExplicitConversationScope &&
         access.status === "ready" &&
         access.includes("voice") &&
         ["active", "trialing"].includes(access.data?.subscription_status ?? "") &&
         !access.includes("email") &&
-        !access.includes("sms")
+        !(SMS_LAUNCH_UI_ENABLED && access.includes("sms"))
       ? "approvals"
-      : (hasSmsPackage || access.includes("sms")) &&
+      : SMS_LAUNCH_UI_ENABLED &&
+          (hasSmsPackage || access.includes("sms")) &&
           !subscribedChannels.includes("email") &&
           !access.includes("email")
         ? "sms"
         : "email";
   useEffect(() => {
+    if (requestedTab === "sms" && !SMS_LAUNCH_UI_ENABLED) {
+      setParams(
+        (current) => {
+          const updated = new URLSearchParams(current);
+          updated.delete("tab");
+          updated.delete("account");
+          updated.delete("thread");
+          return updated;
+        },
+        { replace: true },
+      );
+      return;
+    }
     if (requestedTab !== "approvals" || !hasExplicitConversationScope) return;
     setParams(
       (current) => {
@@ -132,7 +150,10 @@ export default function EmailPage() {
     [activeAgentId, mailboxes],
   );
   const requestedAccountId = params.get("account")?.trim() || "";
-  const activeAccountId = activeTab === "email" ? requestedAccountId : "";
+  const activeAccountId =
+    activeTab === "email" && !(requestedTab === "sms" && !SMS_LAUNCH_UI_ENABLED)
+      ? requestedAccountId
+      : "";
   const hasRequestedAccount = availableMailboxes.some((mailbox) => mailbox.id === activeAccountId);
   const scopeLoading = Boolean(
     (activeAgentId && agentsLoading) || (activeAccountId && mailboxStatus === "loading"),
@@ -324,7 +345,9 @@ export default function EmailPage() {
               accountId={activeAccountId || null}
               channelEnabled={access.includes("email")}
               channelAccessResolved={access.status === "ready"}
-              initialThreadId={params.get("thread")}
+              initialThreadId={
+                requestedTab === "sms" && !SMS_LAUNCH_UI_ENABLED ? null : params.get("thread")
+              }
             />
           ) : activeTab === "sms" ? (
             <SmsThreads

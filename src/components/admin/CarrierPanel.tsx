@@ -21,6 +21,7 @@ import { OPS_ADMIN } from "../../lib/wireline-ops-design";
 import { useToast } from "../../contexts/ToastContext";
 import { useChannelEntitlements } from "../../hooks/useChannelEntitlements";
 import { planById } from "../../lib/plan-catalog";
+import { SMS_LAUNCH_UI_ENABLED } from "../../lib/product-copy";
 
 const CARRIER_AGENT_UNSET = "__unset__";
 
@@ -187,7 +188,9 @@ export function CarrierPanel({
               ["Phone runtime", "BotBound Voice"],
               ["PSTN + numbers", "Twilio"],
               ["Phone voices", "BotBound voices"],
-              ["SMS", showSmsSettings ? "Twilio" : "Coming soon"],
+              ...(SMS_LAUNCH_UI_ENABLED
+                ? [["SMS", showSmsSettings ? "Twilio" : "Coming soon"]]
+                : []),
             ].map(([label, value]) => (
               <div key={label} className="rounded-lg border border-border bg-background p-3">
                 <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
@@ -334,139 +337,144 @@ export function CarrierPanel({
         </div>
       </Panel>
 
-      <Panel
-        title="Text Messaging"
-        hint={showSmsSettings ? "FOLLOW UPS · ALERTS" : "COMING SOON"}
-        icon={MessageSquareText}
-        autoHeight
-      >
-        {showSmsSettings ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background p-3">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Customer texts</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  Send SMS and track replies and requests to stop.
-                </p>
+      {SMS_LAUNCH_UI_ENABLED ? (
+        <Panel
+          title="Text Messaging"
+          hint={showSmsSettings ? "FOLLOW UPS · ALERTS" : "COMING SOON"}
+          icon={MessageSquareText}
+          autoHeight
+        >
+          {showSmsSettings ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background p-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Customer texts</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    Send SMS and track replies and requests to stop.
+                  </p>
+                </div>
+                <Toggle
+                  checked={messagingEnabled}
+                  onClick={() => {
+                    const next = !messagingEnabled;
+                    if (next && !smsSendable) {
+                      // Opening the form (flag true) without claiming send-ready ON.
+                      onUpdateSettings({ ...settings, twilio_messaging_enabled: true });
+                      return;
+                    }
+                    onUpdateSettings({
+                      ...settings,
+                      twilio_messaging_enabled: next,
+                    });
+                  }}
+                  label="Toggle customer texts"
+                />
               </div>
-              <Toggle
-                checked={messagingEnabled}
-                onClick={() => {
-                  const next = !messagingEnabled;
-                  if (next && !smsSendable) {
-                    // Opening the form (flag true) without claiming send-ready ON.
-                    onUpdateSettings({ ...settings, twilio_messaging_enabled: true });
-                    return;
-                  }
-                  onUpdateSettings({
-                    ...settings,
-                    twilio_messaging_enabled: next,
-                  });
-                }}
-                label="Toggle customer texts"
-              />
-            </div>
 
-            {settings.twilio_messaging_enabled || messagingEnabled ? (
-              <div className="grid gap-3">
-                <label className="grid gap-1.5" htmlFor="twilio-sms-from">
-                  <span className="wl-label text-foreground/55">SMS sender number</span>
+              {settings.twilio_messaging_enabled || messagingEnabled ? (
+                <div className="grid gap-3">
+                  <label className="grid gap-1.5" htmlFor="twilio-sms-from">
+                    <span className="wl-label text-foreground/55">SMS sender number</span>
+                    <Input
+                      id="twilio-sms-from"
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      value={settings.twilio_sms_from_number || ""}
+                      onChange={(event) =>
+                        onUpdateSettings({
+                          ...settings,
+                          twilio_sms_from_number: event.target.value,
+                        })
+                      }
+                      placeholder="+1 800 555 0100"
+                      className="h-auto w-full rounded-md border border-input bg-muted px-3 py-2 font-mono text-sm"
+                    />
+                  </label>
+                  <label className="grid gap-1.5" htmlFor="twilio-messaging-sid">
+                    <span className="wl-label text-foreground/55">Messaging Service SID</span>
+                    <Input
+                      id="twilio-messaging-sid"
+                      value={settings.twilio_messaging_service_sid || ""}
+                      onChange={(event) =>
+                        onUpdateSettings({
+                          ...settings,
+                          twilio_messaging_service_sid: event.target.value,
+                        })
+                      }
+                      placeholder="MG••••••••••••••••••••••••••••••••"
+                      className="h-auto w-full rounded-md border border-input bg-muted px-3 py-2 font-mono text-sm"
+                    />
+                  </label>
+                </div>
+              ) : null}
+
+              <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background p-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Important event alerts</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    Text the account holder for hot leads, bookings, and human handoffs.
+                  </p>
+                </div>
+                <Toggle
+                  checked={managerAlertsEnabled}
+                  onClick={() => {
+                    const next = !managerAlertsEnabled;
+                    if (next && !managerAlertReady) {
+                      onUpdateSettings({ ...settings, twilio_manager_alerts_enabled: true });
+                      return;
+                    }
+                    onUpdateSettings({
+                      ...settings,
+                      twilio_manager_alerts_enabled: next,
+                    });
+                  }}
+                  label="Toggle important event alerts"
+                />
+              </div>
+
+              {settings.twilio_manager_alerts_enabled || managerAlertsEnabled ? (
+                <label className="grid gap-1.5" htmlFor="manager-alert-number">
+                  <span className="wl-label text-foreground/55">Your alert number</span>
                   <Input
-                    id="twilio-sms-from"
+                    id="manager-alert-number"
                     type="tel"
                     inputMode="tel"
                     autoComplete="tel"
-                    value={settings.twilio_sms_from_number || ""}
-                    onChange={(event) =>
-                      onUpdateSettings({ ...settings, twilio_sms_from_number: event.target.value })
-                    }
-                    placeholder="+1 800 555 0100"
-                    className="h-auto w-full rounded-md border border-input bg-muted px-3 py-2 font-mono text-sm"
-                  />
-                </label>
-                <label className="grid gap-1.5" htmlFor="twilio-messaging-sid">
-                  <span className="wl-label text-foreground/55">Messaging Service SID</span>
-                  <Input
-                    id="twilio-messaging-sid"
-                    value={settings.twilio_messaging_service_sid || ""}
+                    value={settings.twilio_manager_alert_number || ""}
                     onChange={(event) =>
                       onUpdateSettings({
                         ...settings,
-                        twilio_messaging_service_sid: event.target.value,
+                        twilio_manager_alert_number: event.target.value,
                       })
                     }
-                    placeholder="MG••••••••••••••••••••••••••••••••"
+                    placeholder="+1 555 555 0100"
                     className="h-auto w-full rounded-md border border-input bg-muted px-3 py-2 font-mono text-sm"
                   />
                 </label>
-              </div>
-            ) : null}
+              ) : null}
 
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background p-3">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Important event alerts</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  Text the account holder for hot leads, bookings, and human handoffs.
-                </p>
-              </div>
-              <Toggle
-                checked={managerAlertsEnabled}
-                onClick={() => {
-                  const next = !managerAlertsEnabled;
-                  if (next && !managerAlertReady) {
-                    onUpdateSettings({ ...settings, twilio_manager_alerts_enabled: true });
-                    return;
-                  }
-                  onUpdateSettings({
-                    ...settings,
-                    twilio_manager_alerts_enabled: next,
-                  });
-                }}
-                label="Toggle important event alerts"
+              {settings.byoc_enabled ? (
+                <div className="rounded-xl border border-primary/25 bg-primary/5 p-3 text-xs leading-5 text-muted-foreground">
+                  BYOC inbound SMS webhook:{" "}
+                  <code className="break-all text-foreground">
+                    https://botbound.app/api/twilio-webhook/sms
+                  </code>
+                </div>
+              ) : null}
+
+              <AdminSaveBar
+                onClick={onSaveSettings}
+                isSaving={isSaving}
+                label={OPS_ADMIN.saveLabels.carrierMessaging}
+                fullWidth
               />
             </div>
-
-            {settings.twilio_manager_alerts_enabled || managerAlertsEnabled ? (
-              <label className="grid gap-1.5" htmlFor="manager-alert-number">
-                <span className="wl-label text-foreground/55">Your alert number</span>
-                <Input
-                  id="manager-alert-number"
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  value={settings.twilio_manager_alert_number || ""}
-                  onChange={(event) =>
-                    onUpdateSettings({
-                      ...settings,
-                      twilio_manager_alert_number: event.target.value,
-                    })
-                  }
-                  placeholder="+1 555 555 0100"
-                  className="h-auto w-full rounded-md border border-input bg-muted px-3 py-2 font-mono text-sm"
-                />
-              </label>
-            ) : null}
-
-            {settings.byoc_enabled ? (
-              <div className="rounded-xl border border-primary/25 bg-primary/5 p-3 text-xs leading-5 text-muted-foreground">
-                BYOC inbound SMS webhook:{" "}
-                <code className="break-all text-foreground">
-                  https://botbound.app/api/twilio-webhook/sms
-                </code>
-              </div>
-            ) : null}
-
-            <AdminSaveBar
-              onClick={onSaveSettings}
-              isSaving={isSaving}
-              label={OPS_ADMIN.saveLabels.carrierMessaging}
-              fullWidth
-            />
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">SMS is coming soon.</p>
-        )}
-      </Panel>
+          ) : (
+            <p className="text-sm text-muted-foreground">SMS is coming soon.</p>
+          )}
+        </Panel>
+      ) : null}
     </div>
   );
 }

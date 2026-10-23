@@ -28,6 +28,7 @@ import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-
 import { activationBillingHref, getStoredSignupIntent } from "../../lib/signup-intent";
 import { useChannelEntitlements } from "../../hooks/useChannelEntitlements";
 import ChannelAccessNotice from "../ChannelAccessNotice";
+import { SMS_LAUNCH_UI_ENABLED } from "../../lib/product-copy";
 
 type WizardStep = PostCreateWizardStep | "complete";
 
@@ -398,7 +399,7 @@ export default function PostCreateActivationWizard({
                         </Link>
                       </Button>
                     ) : null}
-                    {access.includes("sms") ? (
+                    {SMS_LAUNCH_UI_ENABLED && access.includes("sms") ? (
                       <Button asChild size="sm">
                         <Link
                           to={`/phone?tab=setup&agent=${encodeURIComponent(payload.agentId)}`}
@@ -415,9 +416,7 @@ export default function PostCreateActivationWizard({
                   {checkoutAvailable === false ? (
                     <SoftOpenCheckoutNote />
                   ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Choose Calls, Email, or both. SMS is coming soon.
-                    </p>
+                    <p className="text-sm text-muted-foreground">Choose Calls, Email, or both.</p>
                   )}
                   <Button asChild size="sm">
                     <Link

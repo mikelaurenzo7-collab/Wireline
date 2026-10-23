@@ -282,6 +282,27 @@ beforeEach(() => {
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 
 describe("email inbox operation recovery", () => {
+  it("hides the SMS tab and clears a retired message link without losing Bot scope", async () => {
+    h.page = true;
+    h.params = new URLSearchParams({
+      tab: "sms",
+      agent: "bot-a",
+      thread: "sms-thread",
+      keep: "unchanged",
+    });
+    await settle();
+    const tabStrip = elements(tree).find((node) => Array.isArray(node.props.tabs));
+    expect(tabStrip?.props.tabs).toEqual([
+      { id: "email", label: "Email" },
+      { id: "approvals", label: "Approvals" },
+    ]);
+    expect(elements(tree).some((node) => node.type === "sms-threads")).toBe(false);
+    expect(h.params.has("thread")).toBe(false);
+    expect(h.params.has("tab")).toBe(false);
+    expect(h.params.get("agent")).toBe("bot-a");
+    expect(h.params.get("keep")).toBe("unchanged");
+  });
+
   it.each(["Bot", "mailbox", "clear"])(
     "removes a linked conversation when the user changes the %s filter",
     async (change) => {
