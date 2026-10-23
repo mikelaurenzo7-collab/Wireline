@@ -18,6 +18,11 @@ export function productionStaticHeaders(publicDirectory: string) {
     } else if (relative === "fonts.css") {
       res.setHeader("Cache-Control", "public, max-age=86400");
     }
+    // Public brand images are embedded in email and shared previews. Keep the
+    // default isolation for application code, pages, API data and missing files.
+    if (/^brand\/[a-z0-9-]+\.(?:png|webp)$/i.test(relative)) {
+      res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    }
   };
 }
 

@@ -21,6 +21,9 @@ beforeEach(async () => {
   mkdirSync(join(fixture, "legal"));
   mkdirSync(join(fixture, "assets"));
   mkdirSync(join(fixture, "fonts"));
+  mkdirSync(join(fixture, "brand"));
+  writeFileSync(join(fixture, "brand", "logo.png"), "public logo");
+  writeFileSync(join(fixture, "brand", "notes.txt"), "public text");
   writeFileSync(join(fixture, "assets", "app.js"), "browser bundle");
   writeFileSync(join(fixture, "fonts", "brand.woff2"), "font bytes");
   writeFileSync(join(fixture, "fonts.css"), "font styles");
@@ -164,6 +167,16 @@ describe("production public route compatibility", () => {
         const expected = globalHeaders.find((header: { key: string }) => header.key === key).value;
         expect(response.headers.get(key)).toBe(expected);
       }
+    }
+  });
+
+  it("allows email clients to embed resolved public brand images only", async () => {
+    const logo = await fetch(`${origin}/brand/logo.png`);
+    expect(logo.status).toBe(200);
+    expect(logo.headers.get("cross-origin-resource-policy")).toBe("cross-origin");
+    for (const path of ["/brand/notes.txt", "/brand/missing.png", "/api/test", "/studio"]) {
+      const response = await fetch(`${origin}${path}`);
+      expect(response.headers.get("cross-origin-resource-policy")).toBe("same-origin");
     }
   });
 });
