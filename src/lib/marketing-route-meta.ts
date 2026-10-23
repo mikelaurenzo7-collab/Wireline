@@ -52,9 +52,9 @@ function withBrand(title: string): string {
 
 const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/pricing": {
-    title: "Pricing | Build Free, Add Calls or Email",
+    title: "Pricing | Calls, Email, and a Computer",
     description:
-      "Build and rehearse a Bot for free. Compare Calls, Email, and combined plans, including their monthly usage and live activation options.",
+      "Personal is $12 a month for calls and a computer. Compare Calls, Email, and combined plans.",
   },
   "/features": {
     title: "Features",

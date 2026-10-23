@@ -123,9 +123,9 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
     response_template:
       "Totally fair. Usually when folks want to think it over, there's one specific thing on their mind: pricing, switching cost, or whether it'll actually work for their setup. Which one is closest for you?",
     follow_up_question:
-      "And in the meantime, want a free Bot with no card needed? You can shape what it knows, then rehearse a private conversation instead of imagining how it might work.",
+      "Personal is $12 a month for calls and a computer, and you can cancel anytime. Want me to send the signup link?",
     rationale:
-      "Surfaces the real blocker (almost never 'thinking'; it's a specific concern) and offers the lowest-friction next step (a free, no-card agent build).",
+      "Surfaces the real blocker and offers the cheapest paid plan instead of a free account.",
   },
   {
     id: "already_have_competitor",

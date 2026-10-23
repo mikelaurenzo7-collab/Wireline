@@ -113,8 +113,8 @@ export default function Pricing() {
   return (
     <MarketingPageFrame className="wl-pricing-page">
       <PageMeta
-        title="Pricing | Build Free, Add Calls or Email | BotBound"
-        description="Build and rehearse a Bot for free. Compare Calls, Email, and combined plans, including their monthly usage and live activation options."
+        title="Pricing | Calls, Email, and a Computer | BotBound"
+        description="Personal is $12 a month for calls and a computer. Compare Calls, Email, and combined plans."
         path="/pricing"
       />
       <script

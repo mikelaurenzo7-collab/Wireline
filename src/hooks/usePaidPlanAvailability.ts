@@ -74,12 +74,12 @@ export function usePaidPlanAvailability({
     status === "loading"
       ? "Checking activation availability…"
       : status === "unavailable"
-        ? "Activation status unavailable. Create a Bot for free and rehearse privately."
+        ? "Plan availability could not be checked. Refresh and try again."
         : available
-          ? "Create a Bot for free. Rehearse privately, then activate when ready."
+          ? "Choose a plan and check out. Cancel anytime."
           : emailSetupReview
-            ? "Email activation requires a setup review. Create a Bot for free, rehearse privately, then ask us about activation."
-            : "Paid activation is unavailable. Create a Bot for free and rehearse privately.";
+            ? "This email plan needs a setup review before checkout."
+            : "Checkout is unavailable right now. Try again shortly.";
 
   return { available, canActivate, emailSetupReview, needsEmailSetupReview, notice };
 }

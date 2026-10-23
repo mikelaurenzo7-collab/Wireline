@@ -64,18 +64,18 @@ test("paused activation stays explicit from the homepage through paid signup", a
   await mockPublicAccount(page, { ...paidPlans, checkout_available: false });
   await page.goto("/");
   await expect(page.locator(".landing-prestige__activation")).toHaveText(
-    "Paid activation is unavailable. Create a Bot for free and rehearse privately.",
+    "Checkout is unavailable right now. Try again shortly.",
   );
   const access = page.getByRole("region", { name: "Account access" });
   await page.getByRole("link", { name: "Set Up Calls", exact: true }).click();
   await expect(page).toHaveURL(/\/signup\?plan=voice/);
   await expect(access.getByRole("status")).toHaveText(
-    "Paid activation is unavailable. Create a Bot for free and rehearse privately.",
+    "Checkout is unavailable right now. Try again shortly.",
   );
   await expect(access).toContainText("$19/month");
   await page.getByRole("link", { name: "Pricing", exact: true }).click();
   await expect(
-    page.getByText("Paid activation is unavailable. Create a Bot for free and rehearse privately."),
+    page.getByText("Checkout is unavailable right now. Try again shortly."),
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Set Up These Channels", exact: true }),
@@ -93,7 +93,7 @@ for (const failure of ["http", "malformed"] as const) {
     );
     await page.goto("/");
     await expect(page.locator(".landing-prestige__activation")).toHaveText(
-      "Activation status unavailable. Create a Bot for free and rehearse privately.",
+      "Plan availability could not be checked. Refresh and try again.",
     );
     await expect(page.getByRole("link", { name: "Set Up Calls", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Choose Calls", exact: true })).toHaveCount(0);
@@ -111,7 +111,7 @@ test("signup checks the selected annual plan even when other paid plans are avai
   const access = page.getByRole("region", { name: "Account access" });
   await expect(access).toContainText("$199/year");
   await expect(access.getByRole("status")).toHaveText(
-    "Paid activation is unavailable. Create a Bot for free and rehearse privately.",
+    "Checkout is unavailable right now. Try again shortly.",
   );
   await page.getByRole("link", { name: "BotBound home", exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
@@ -119,11 +119,11 @@ test("signup checks the selected annual plan even when other paid plans are avai
   await expect(page).toHaveURL(/\/signup\?plan=voice&interval=year/);
   await expect(access).toContainText("$199/year");
   await expect(access.getByRole("status")).toHaveText(
-    "Paid activation is unavailable. Create a Bot for free and rehearse privately.",
+    "Checkout is unavailable right now. Try again shortly.",
   );
   await page.goto("/signup?plan=voice&interval=month");
   await expect(access.getByRole("status")).toHaveText(
-    "Create a Bot for free. Rehearse privately, then activate when ready.",
+    "Choose a plan and check out. Cancel anytime.",
   );
 });
 
@@ -135,9 +135,7 @@ test("mobile paid signup keeps activation status visible without adding it to fr
   await page.goto("/signup?plan=voice");
   const access = page.getByRole("region", { name: "Account access" });
   const notice = access.getByRole("status");
-  await expect(notice).toHaveText(
-    "Paid activation is unavailable. Create a Bot for free and rehearse privately.",
-  );
+  await expect(notice).toHaveText("Checkout is unavailable right now. Try again shortly.");
   await expect(notice).toBeVisible();
   await expect(
     access.getByRole("button", { name: "Create Account", exact: true }).last(),

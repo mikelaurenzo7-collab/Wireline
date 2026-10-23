@@ -70,8 +70,8 @@ export type ContactAgent = {
  */
 const ALL_ENCOMPASSING_SCOPE =
   "A BotBound front-line specialist who answers verified product, pricing, setup, " +
-  "onboarding, and general troubleshooting questions. Can email a Free Builder " +
-  "signup link or secure checkout link after confirmation, and can record a " +
+  "onboarding, and general troubleshooting questions. Can email a signup link " +
+  "for the current paid plans or a secure checkout link after confirmation, and can record a " +
   "callback or escalation request for team review. Does not create accounts, " +
   "issue refunds, change plans, alter billing, or promise a response time on the call.";
 

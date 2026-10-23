@@ -161,7 +161,7 @@ export default function Features() {
               to={signupHrefForPlan("personal")}
               className="marketing-btn-primary min-h-11 px-5"
             >
-              Create Your Bot Free <ArrowRight className="size-4" aria-hidden="true" />
+              Get Started <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
           </div>
         </div>

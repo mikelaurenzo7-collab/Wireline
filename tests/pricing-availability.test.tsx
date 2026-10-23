@@ -200,9 +200,7 @@ describe("public pricing activation availability", () => {
         ],
       }),
     );
-    expect(text(render())).toContain(
-      "Email activation requires a setup review. Create a Bot for free, rehearse privately, then ask us about activation.",
-    );
+    expect(text(render())).toContain("This email plan needs a setup review before checkout.");
     expect(text(planLink("voice-email-regular"))).toBe("Create Your Bot ");
     expect(planLink("voice-email-regular")?.props.to).toBe(
       "/signup?plan=voice-email-regular&interval=month",
@@ -244,9 +242,7 @@ describe("public pricing activation availability", () => {
     await load(response({ plans: [{ id: "voice-regular", ...flags }] }));
     expect(text(planLink("voice-regular"))).toBe("Set Up These Channels ");
     expect(planLink("voice-regular")?.props.to).toBe("/signup?plan=voice-regular&interval=month");
-    expect(text(render())).toContain(
-      "Paid activation is unavailable. Create a Bot for free and rehearse privately.",
-    );
+    expect(text(render())).toContain("Checkout is unavailable right now. Try again shortly.");
   });
 
   it.each([
@@ -346,7 +342,7 @@ describe("public pricing activation availability", () => {
     mount();
     await vi.waitFor(() => expect(harness.states[3]).toBe("unavailable"));
     expect(text(render())).toContain(
-      "Activation status unavailable. Create a Bot for free and rehearse privately.",
+      "Plan availability could not be checked. Refresh and try again.",
     );
     expect(text(planLink("voice-regular"))).toBe("Set Up These Channels ");
     expect(planLink("free")?.props.to).toBe("/signup?plan=free");
