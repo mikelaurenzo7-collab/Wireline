@@ -727,7 +727,7 @@ function StudioWorkspaceContent() {
               selectPanelSection(panelTabs[nextIndex]!.id);
               inspectorTabRefs.current[nextIndex]?.focus();
             }}
-            className={`min-h-[44px] shrink-0 whitespace-nowrap rounded-md px-2 py-1.5 text-xs font-semibold transition-colors wl-focus-ring-halo ${
+            className={`min-h-[44px] shrink-0 whitespace-nowrap rounded-md px-1 py-1.5 text-xs font-semibold transition-colors wl-focus-ring-halo ${
               activePanelSection === id
                 ? "bg-card text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"

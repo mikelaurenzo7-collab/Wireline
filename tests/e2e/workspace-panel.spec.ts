@@ -283,6 +283,83 @@ test.describe("wide screens", () => {
     await expect(panelTab(page, "Set up")).toHaveAttribute("aria-selected", "true");
   });
 
+  test("the 384px inspector keeps normal tabs on one row and enlarged controls reachable", async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await mockWorkspace(page);
+    await page.goto(`/studio?agent=${bots[0].id}`);
+    const panel = page.getByRole("complementary", { name: "Workspace panel", exact: true });
+    const separator = page.getByRole("separator", { name: "Resize workspace panel" });
+    await expect(separator).toBeVisible({ timeout: 20_000 });
+    await separator.focus();
+    await separator.press("Home");
+    await expect
+      .poll(
+        async () =>
+          (await page.locator('[data-wireline-resizable-panel="right"]').boundingBox())!.width,
+      )
+      .toBe(384);
+    await page.evaluate(() => document.fonts.ready);
+    const header = panel.locator(".wl-studio-panel-header");
+    const geometry = () =>
+      header.evaluate((element) => {
+        const controls = [...element.querySelectorAll<HTMLElement>("button")];
+        const bounds = element.getBoundingClientRect();
+        const rects = controls.map((control) => control.getBoundingClientRect());
+        return {
+          centers: rects.map((rect) => rect.top + rect.height / 2),
+          heights: rects.map((rect) => rect.height),
+          outsideHeader: rects.filter(
+            (rect) => rect.left < bounds.left - 1 || rect.right > bounds.right + 1,
+          ).length,
+          overflow: [element, ...element.querySelectorAll<HTMLElement>("[role='tablist'], button")]
+            .filter((control) => control.scrollWidth > control.clientWidth + 1)
+            .map((control) => control.textContent),
+        };
+      });
+    await expect
+      .poll(async () => {
+        const { centers } = await geometry();
+        return Math.max(...centers) - Math.min(...centers);
+      })
+      .toBeLessThanOrEqual(1);
+    const normal = await geometry();
+    expect(normal.centers).toHaveLength(6);
+    expect(normal.heights.every((height) => height >= 44)).toBe(true);
+    expect(normal.outsideHeader).toBe(0);
+    expect(normal.overflow).toEqual([]);
+    await page.screenshot({ path: info.outputPath("workspace-panel-384.png") });
+
+    await page.evaluate(() =>
+      document.documentElement.style.setProperty("font-size", "32px", "important"),
+    );
+    await expect
+      .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).fontSize))
+      .toBe("32px");
+    await page.evaluate(() => document.fonts.ready);
+    for (const name of ["Browser", "Rehearse", "Set up", "Summary"])
+      await expect(panelTab(page, name)).toBeVisible();
+    await panelTab(page, "Browser").focus();
+    await panelTab(page, "Browser").press("End");
+    await expect(panelTab(page, "Summary")).toBeFocused();
+    await expect(panelTab(page, "Summary")).toHaveAttribute("aria-selected", "true");
+    await panelTab(page, "Summary").press("Home");
+    await expect(panelTab(page, "Browser")).toBeFocused();
+    await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true");
+    await expect(panel.getByRole("button", { name: "Full width", exact: true })).toBeVisible();
+    await panel.getByRole("button", { name: "Close panel", exact: true }).focus();
+    await expect(panel.getByRole("button", { name: "Close panel", exact: true })).toBeFocused();
+    const enlarged = await geometry();
+    expect(enlarged.heights.every((height) => height >= 44)).toBe(true);
+    expect(enlarged.outsideHeader).toBe(0);
+    expect(enlarged.overflow).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({ path: info.outputPath("workspace-panel-384-enlarged.png") });
+  });
+
   test("dragging widens the panel but never squeezes the conversation", async ({ page }) => {
     await mockWorkspace(page);
     await page.goto(`/studio?agent=${bots[0].id}`);
