@@ -227,3 +227,11 @@ describe("clone discoverability and stock voice undo", () => {
     expect(picker).not.toContain("Saves automatically");
   });
 });
+
+describe("clone script stays channel-neutral", () => {
+  it("never promises a text message (SMS is not launching)", () => {
+    const quality = readFileSync("src/lib/voice/live-voice-quality.ts", "utf8");
+    expect(quality).not.toMatch(/text confirmation|\bSMS\b/i);
+    expect(quality).toContain("You'll get a confirmation shortly.");
+  });
+});
