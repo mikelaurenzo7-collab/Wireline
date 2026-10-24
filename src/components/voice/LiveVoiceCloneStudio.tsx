@@ -496,7 +496,7 @@ export default function LiveVoiceCloneStudio({
     }
   }
 
-  const header = (
+  const renderHeader = (subtitle: string) => (
     <div className="flex items-start gap-3">
       <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
         <Sparkles className="size-5" aria-hidden="true" />
@@ -505,11 +505,12 @@ export default function LiveVoiceCloneStudio({
         <h4 id={`${id}-title`} className="text-sm font-semibold text-foreground">
           Your voice, on every call
         </h4>
-        <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
-          Read a short script and {agentName} answers the phone sounding like you.
-        </p>
+        <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{subtitle}</p>
       </div>
     </div>
+  );
+  const header = renderHeader(
+    `Read a short script and ${agentName} answers the phone sounding like you.`,
   );
   const shellClass =
     "min-w-0 scroll-mt-24 space-y-3 outline-none rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background p-3 sm:p-4";
@@ -540,7 +541,11 @@ export default function LiveVoiceCloneStudio({
         aria-labelledby={`${id}-title`}
         className={shellClass}
       >
-        {header}
+        {renderHeader(
+          error
+            ? "Record a short script so callers hear you."
+            : `${agentName} can answer calls in your own voice once cloning is on for your account.`,
+        )}
         {error ? (
           <div className="space-y-2">
             <StatusNotice tone="destructive" title="Something needs a second try">
@@ -571,8 +576,8 @@ export default function LiveVoiceCloneStudio({
           </div>
         ) : (
           <p className="rounded-xl border border-border bg-background px-3 py-2.5 text-xs leading-5 text-muted-foreground">
-            Voice cloning isn't on for this account yet. {agentName} keeps answering with the stock
-            voice you pick, and this is where you'll record yours once it's available.
+            Voice cloning isn't on for this account yet. Until then, {agentName} keeps answering
+            with the stock voice you pick.
           </p>
         )}
       </section>
