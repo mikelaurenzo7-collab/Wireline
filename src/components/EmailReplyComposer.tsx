@@ -19,6 +19,8 @@ export type SentEmailReply = {
   role: "owner";
   content: string;
   createdAt: string;
+  /** The send endpoint only returns once the mailbox accepted the reply. */
+  deliveryStatus: "sent";
 };
 
 type ReplyResponse = {
@@ -181,6 +183,7 @@ export default function EmailReplyComposer({
         role: "owner",
         content: message.content,
         createdAt: typeof message.created_at === "string" ? message.created_at : "",
+        deliveryStatus: "sent",
       });
       setDraft("");
       operationKey.current = newOperationKey();

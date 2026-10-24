@@ -13,6 +13,7 @@ import {
 } from "../lib/api-validation";
 import {
   acknowledgeUnresolvedEmailThreadReply,
+  loadEmailThreadDelivery,
   sendEmailThreadReply,
 } from "../lib/email-thread-reply";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
@@ -312,7 +313,16 @@ router.get(
           }),
         );
 
-      res.json({ messages: mapObjectToSnake(messages || []) });
+      // Same ledger attachment as the thread detail surface, so a message
+      // shows its confirmed send state wherever the thread is read.
+      const delivery = await loadEmailThreadDelivery(req.user.id, threadId);
+      const sentMessageIds = new Set(delivery.sentMessageIds);
+      const messagesWithDelivery = (messages || []).map((message) => ({
+        ...message,
+        deliveryStatus: sentMessageIds.has(String(message.id)) ? "sent" : null,
+      }));
+
+      res.json({ messages: mapObjectToSnake(messagesWithDelivery) });
     } catch (e: any) {
       log.error("Failed to load email messages", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Failed to load email messages");

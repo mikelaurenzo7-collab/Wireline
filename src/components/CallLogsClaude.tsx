@@ -88,6 +88,9 @@ function reportHappened(call: Call): CallHappened {
 
 function statusTone(value: string | null | undefined) {
   const normalized = String(value || "").toLowerCase();
+  if (/pending/.test(normalized)) {
+    return "text-[var(--wireline-color-status-warning)]";
+  }
   if (/email|booked|message/.test(normalized)) {
     return "text-[var(--wireline-color-status-success)]";
   }

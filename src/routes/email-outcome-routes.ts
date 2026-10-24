@@ -10,6 +10,7 @@ import {
 } from "../lib/conversation-outcome";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
+import { loadEmailThreadDelivery } from "../lib/email-thread-reply";
 import { authenticateUser } from "../middleware/auth";
 import { validateBody } from "../lib/api-validation";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -248,10 +249,22 @@ router.get(
         )
         .limit(1);
 
+      // Delivery truth comes from the reply ledger, the same record the
+      // send path writes. Only messages the ledger confirms carry a status.
+      const delivery = await loadEmailThreadDelivery(req.user.id, thread.id);
+      const sentMessageIds = new Set(delivery.sentMessageIds);
+      const messagesWithDelivery = messages.map((message) => ({
+        ...message,
+        deliveryStatus: sentMessageIds.has(String(message.id)) ? "sent" : null,
+      }));
+
       res.json({
         thread: mapObjectToSnake(thread),
-        messages: mapObjectToSnake(messages),
+        messages: mapObjectToSnake(messagesWithDelivery),
         handoff: handoff ? mapObjectToSnake(handoff) : null,
+        reply_delivery: delivery.latestStatus
+          ? { status: delivery.latestStatus, at: delivery.latestAt }
+          : null,
       });
     } catch (err) {
       if (err instanceof AppError) throw err;
