@@ -7964,6 +7964,42 @@
           "primaryKey": false,
           "notNull": false
         },
+        "speaker_jurisdiction": {
+          "name": "speaker_jurisdiction",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "biometric_release_version": {
+          "name": "biometric_release_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "biometric_release_signed_name": {
+          "name": "biometric_release_signed_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "biometric_release_accepted_at": {
+          "name": "biometric_release_accepted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "retention_policy_version": {
+          "name": "retention_policy_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "deleted_at": {
           "name": "deleted_at",
           "type": "timestamp with time zone",
@@ -8019,6 +8055,22 @@
           "method": "btree",
           "with": {}
         },
+        "idx_live_voices_expiry_due": {
+          "name": "idx_live_voices_expiry_due",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"wireline_live_voices\".\"status\" = 'ready' AND \"wireline_live_voices\".\"expires_at\" IS NOT NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "uq_live_voices_provider_voice": {
           "name": "uq_live_voices_provider_voice",
           "columns": [
@@ -8067,15 +8119,15 @@
         },
         "wireline_live_voices_provider_check": {
           "name": "wireline_live_voices_provider_check",
-          "value": "\"wireline_live_voices\".\"provider\" = 'xai'"
+          "value": "\"wireline_live_voices\".\"provider\" IN ('xai', 'elevenlabs')"
         },
         "wireline_live_voices_voice_id_check": {
           "name": "wireline_live_voices_voice_id_check",
-          "value": "\"wireline_live_voices\".\"provider_voice_id\" IS NULL OR \"wireline_live_voices\".\"provider_voice_id\" ~ '^[A-Za-z0-9_-]{4,64}$'"
+          "value": "\"wireline_live_voices\".\"provider_voice_id\" IS NULL OR \"wireline_live_voices\".\"provider_voice_id\" ~ '^[A-Za-z0-9_-]{4,128}$'"
         },
         "wireline_live_voices_status_check": {
           "name": "wireline_live_voices_status_check",
-          "value": "(\"wireline_live_voices\".\"status\" = 'ready' AND \"wireline_live_voices\".\"provider_voice_id\" IS NOT NULL AND \"wireline_live_voices\".\"deleted_at\" IS NULL AND \"wireline_live_voices\".\"deleted_reason\" IS NULL) OR (\"wireline_live_voices\".\"status\" = 'deleted' AND \"wireline_live_voices\".\"deleted_at\" IS NOT NULL AND \"wireline_live_voices\".\"deleted_reason\" IN ('user_deleted', 'provider_missing'))"
+          "value": "(\"wireline_live_voices\".\"status\" = 'ready' AND \"wireline_live_voices\".\"provider_voice_id\" IS NOT NULL AND \"wireline_live_voices\".\"deleted_at\" IS NULL AND \"wireline_live_voices\".\"deleted_reason\" IS NULL) OR (\"wireline_live_voices\".\"status\" = 'deleted' AND \"wireline_live_voices\".\"deleted_at\" IS NOT NULL AND \"wireline_live_voices\".\"deleted_reason\" IN ('user_deleted', 'provider_missing', 'retention_expired'))"
         },
         "wireline_live_voices_consent_check": {
           "name": "wireline_live_voices_consent_check",
@@ -8088,6 +8140,18 @@
         "wireline_live_voices_quality_check": {
           "name": "wireline_live_voices_quality_check",
           "value": "\"wireline_live_voices\".\"quality_score\" IS NULL OR \"wireline_live_voices\".\"quality_score\" BETWEEN 0 AND 100"
+        },
+        "wireline_live_voices_jurisdiction_check": {
+          "name": "wireline_live_voices_jurisdiction_check",
+          "value": "\"wireline_live_voices\".\"speaker_jurisdiction\" = 'INTL' OR \"wireline_live_voices\".\"speaker_jurisdiction\" ~ '^US-[A-Z]{2}$'"
+        },
+        "wireline_live_voices_biometric_release_check": {
+          "name": "wireline_live_voices_biometric_release_check",
+          "value": "\"wireline_live_voices\".\"speaker_jurisdiction\" <> 'US-IL' OR (\"wireline_live_voices\".\"biometric_release_version\" = 'biometric-release-v1-2026-10-24' AND char_length(\"wireline_live_voices\".\"biometric_release_signed_name\") BETWEEN 3 AND 120 AND \"wireline_live_voices\".\"biometric_release_accepted_at\" IS NOT NULL AND \"wireline_live_voices\".\"retention_policy_version\" = 'biometric-retention-v1-2026-10-24' AND \"wireline_live_voices\".\"expires_at\" IS NOT NULL)"
+        },
+        "wireline_live_voices_retention_check": {
+          "name": "wireline_live_voices_retention_check",
+          "value": "(\"wireline_live_voices\".\"retention_policy_version\" IS NULL AND \"wireline_live_voices\".\"expires_at\" IS NULL) OR (\"wireline_live_voices\".\"retention_policy_version\" = 'biometric-retention-v1-2026-10-24' AND \"wireline_live_voices\".\"expires_at\" IS NOT NULL AND \"wireline_live_voices\".\"expires_at\" > \"wireline_live_voices\".\"created_at\")"
         },
         "wireline_live_voices_gender_check": {
           "name": "wireline_live_voices_gender_check",

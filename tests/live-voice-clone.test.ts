@@ -191,7 +191,7 @@ describe("clone studio copy", () => {
       "Retake",
       "Switch back to stock voice",
       "Use this voice on {agentName}",
-      "tel:${botPhone}",
+      "<TestCallLink",
       '"Stock voice"',
       'aria-live="polite"',
       "LIVE_VOICE_SCRIPT",

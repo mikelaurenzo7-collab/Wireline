@@ -4,7 +4,6 @@ import {
   Loader2,
   Mic,
   Pause,
-  Phone,
   Play,
   RotateCcw,
   Sparkles,
@@ -25,6 +24,13 @@ import {
 import { StatusNotice } from "../molecules";
 import { Checkbox } from "../ui/shadcn/Checkbox";
 import { encodeVoiceRecording } from "./voice-clone-recording";
+import TestCallLink from "./TestCallLink";
+import {
+  biometricReleaseText,
+  parseSignedLegalName,
+  US_STATE_CODES,
+  US_STATE_NAMES,
+} from "../../lib/voice/clone-engine-selection";
 
 /**
  * Clone a voice for live calls: consent, a guided read with a live level
@@ -39,6 +45,8 @@ type ClonedVoice = {
   sourceDurationSeconds: number;
   gender: "female" | "male" | null;
   createdAt: string;
+  expiresAt?: string | null;
+  speaksOnCalls?: boolean;
   inUseByAgentIds: string[];
 };
 
@@ -50,6 +58,8 @@ type Capabilities = {
   maxSeconds: number;
   maxBytes: number;
   maxVoices: number;
+  writtenReleaseJurisdictions?: string[];
+  biometricReleaseVersion?: string;
 };
 
 type Step = "idle" | "consent" | "record" | "review" | "creating" | "done";
@@ -128,6 +138,9 @@ export default function LiveVoiceCloneStudio({
   const [scope, setScope] = useState<"self" | "authorized_speaker">("self");
   const [gender, setGender] = useState<"" | "female" | "male">("");
   const [consent, setConsent] = useState(false);
+  const [jurisdiction, setJurisdiction] = useState("");
+  const [releaseAccepted, setReleaseAccepted] = useState(false);
+  const [signedName, setSignedName] = useState("");
   const [seconds, setSeconds] = useState(0);
   const [level, setLevel] = useState(0);
   const [recordingState, setRecordingState] = useState<"idle" | "requesting" | "recording">("idle");
@@ -145,6 +158,12 @@ export default function LiveVoiceCloneStudio({
   const generation = useRef(0);
   const fileInput = useRef<HTMLInputElement | null>(null);
 
+  const releaseRequired = Boolean(
+    jurisdiction && (capabilities?.writtenReleaseJurisdictions ?? ["US-IL"]).includes(jurisdiction),
+  );
+  const releaseReady =
+    !releaseRequired || (releaseAccepted && parseSignedLegalName(signedName) !== null);
+  const consentReady = consent && Boolean(name.trim()) && Boolean(jurisdiction) && releaseReady;
   const activeVoice = voices.find((voice) => voice.inUseByAgentIds.includes(agentId)) ?? null;
   const activeVoiceName = activeVoice?.name ?? null;
   useEffect(() => {
@@ -360,7 +379,7 @@ export default function LiveVoiceCloneStudio({
   }
 
   async function createVoice() {
-    if (!recording || !consent || !capabilities) return;
+    if (!recording || !consentReady || !capabilities) return;
     const current = generation.current;
     setStep("creating");
     setError(null);
@@ -372,9 +391,17 @@ export default function LiveVoiceCloneStudio({
         consentScope: scope,
       });
       if (gender) params.set("gender", gender);
+      params.set("speakerJurisdiction", jurisdiction);
+      const headers: Record<string, string> = { "Content-Type": "audio/wav" };
+      if (releaseRequired) {
+        params.set("biometricReleaseAccepted", "true");
+        params.set("biometricReleaseVersion", capabilities.biometricReleaseVersion ?? "");
+        // The signed name travels in a header so it stays out of URLs and access logs.
+        headers["X-Voice-Release-Signed-Name"] = encodeURIComponent(signedName.trim());
+      }
       const response = await authFetch(`/api/voice/live-voices?${params}`, {
         method: "POST",
-        headers: { "Content-Type": "audio/wav" },
+        headers,
         body: new Blob([new Uint8Array(recording.bytes).buffer], { type: "audio/wav" }),
         timeoutMs: 120_000,
       });
@@ -639,7 +666,16 @@ export default function LiveVoiceCloneStudio({
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2.5">
           <span className="min-w-0 text-sm text-foreground">
             <Check className="mr-1.5 inline size-4 text-primary" aria-hidden="true" />
-            Callers hear <strong>{activeVoice.name}</strong>
+            {activeVoice.speaksOnCalls === false ? (
+              <>
+                <strong>{activeVoice.name}</strong> is set for this Bot. Previews use it now; phone
+                calls use the closest stock voice until phone delivery for this voice is ready.
+              </>
+            ) : (
+              <>
+                Callers hear <strong>{activeVoice.name}</strong>
+              </>
+            )}
           </span>
           <button
             type="button"
@@ -673,6 +709,9 @@ export default function LiveVoiceCloneStudio({
                   <span className="block text-xs text-muted-foreground">
                     {inUse ? "On this Bot" : "Ready"}
                     {voice.qualityScore !== null ? ` · Quality ${voice.qualityScore}/100` : ""}
+                    {voice.expiresAt
+                      ? ` · Kept until ${new Date(voice.expiresAt).toLocaleDateString()} unless used`
+                      : ""}
                   </span>
                 </span>
                 <button
@@ -746,7 +785,7 @@ export default function LiveVoiceCloneStudio({
           className="space-y-3 rounded-xl border border-border bg-background p-3"
           onSubmit={(event) => {
             event.preventDefault();
-            if (consent && name.trim()) setStep("record");
+            if (consentReady) setStep("record");
           }}
         >
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -799,6 +838,67 @@ export default function LiveVoiceCloneStudio({
               Used as the backup voice so callers never hear a jarring change.
             </span>
           </label>
+          <label
+            className="block text-sm font-medium text-foreground"
+            htmlFor={`${id}-jurisdiction`}
+          >
+            Where does the speaker live?
+            <select
+              id={`${id}-jurisdiction`}
+              value={jurisdiction}
+              onChange={(event) => {
+                setJurisdiction(event.target.value);
+                setReleaseAccepted(false);
+              }}
+              className="mt-1 block min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm"
+            >
+              <option value="">Choose a state</option>
+              {US_STATE_CODES.map((code) => (
+                <option key={code} value={`US-${code}`}>
+                  {US_STATE_NAMES[code]}
+                </option>
+              ))}
+              <option value="INTL">Outside the United States</option>
+            </select>
+            <span className="mt-1 block text-xs font-normal text-muted-foreground">
+              We apply the privacy protections the speaker's state requires.
+            </span>
+          </label>
+          {releaseRequired ? (
+            <div
+              className="space-y-2 rounded-lg border border-border bg-muted/40 p-3"
+              data-testid="biometric-release"
+            >
+              <p className="text-sm font-semibold text-foreground">Voice data release</p>
+              <ul className="space-y-1.5 text-xs leading-5 text-foreground">
+                {biometricReleaseText(agentName).map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+              <label
+                className="block text-sm font-medium text-foreground"
+                htmlFor={`${id}-signature`}
+              >
+                Speaker's full legal name
+                <input
+                  id={`${id}-signature`}
+                  value={signedName}
+                  maxLength={120}
+                  autoComplete="name"
+                  onChange={(event) => setSignedName(event.target.value)}
+                  className="mt-1 block min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm"
+                />
+              </label>
+              <label className="flex items-start gap-2 text-sm leading-5 text-foreground">
+                <Checkbox
+                  checked={releaseAccepted}
+                  onChange={(event) => setReleaseAccepted(event.target.checked)}
+                  className="mt-0.5"
+                />
+                <span>The speaker has read this release and signs it by the name typed above.</span>
+              </label>
+            </div>
+          ) : null}
           <label className="flex items-start gap-2 text-sm leading-5 text-foreground">
             <Checkbox
               checked={consent}
@@ -813,7 +913,7 @@ export default function LiveVoiceCloneStudio({
           <div className="flex flex-wrap gap-2">
             <button
               type="submit"
-              disabled={!consent || !name.trim()}
+              disabled={!consentReady}
               className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 wl-focus-ring-halo disabled:opacity-50"
             >
               Continue
@@ -1075,15 +1175,7 @@ export default function LiveVoiceCloneStudio({
         </div>
       ) : null}
 
-      {activeVoice && botPhone ? (
-        <a
-          href={`tel:${botPhone}`}
-          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold text-foreground hover:bg-muted wl-focus-ring-halo sm:w-auto"
-        >
-          <Phone className="size-4" aria-hidden="true" />
-          Test call: dial {botPhone}
-        </a>
-      ) : null}
+      {activeVoice && botPhone ? <TestCallLink phone={botPhone} label="Test call" /> : null}
     </section>
   );
 }

@@ -362,6 +362,53 @@ export function createElevenLabsVoiceClient(input: {
     return value;
   }
 
+  /** One bounded line of speech (MP3) for an owner preview or A/B. */
+  async function renderPreview(id: string, line: { text: string }, options?: RequestOptions) {
+    const checked = checkedId(id, "preview");
+    const spoken = text(line?.text, 400);
+    if (!spoken) throw new ElevenLabsVoiceError("INVALID_INPUT", "preview", false);
+    return request(
+      "preview",
+      `/v1/text-to-speech/${checked}?output_format=${ELEVENLABS_VOICE_PREVIEW.outputFormat}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "audio/mpeg" },
+        body: JSON.stringify({
+          text: spoken,
+          model_id: ELEVENLABS_VOICE_PREVIEW.modelId,
+        }),
+      },
+      async (response, signal) => {
+        const mimeType = response.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
+        if (mimeType !== "audio/mpeg" && mimeType !== "application/octet-stream")
+          throw new Error("invalid audio type");
+        const bytes = await readBounded(response, MAX_PREVIEW_BYTES, signal);
+        if (
+          bytes.length < 3 ||
+          !(
+            (bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) ||
+            (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0)
+          )
+        )
+          throw new Error("invalid mp3");
+        // Official response metadata: /docs/api-reference/introduction.
+        // Character cost is not a USD price or a promise about billed credits.
+        const rawRequestId = response.headers.get("request-id");
+        const rawCharacterCost = response.headers.get("character-cost");
+        const requestId =
+          rawRequestId && /^[A-Za-z0-9._:-]{1,200}$/.test(rawRequestId) ? rawRequestId : null;
+        const characterCost =
+          rawCharacterCost &&
+          /^\d{1,16}$/.test(rawCharacterCost) &&
+          Number.isSafeInteger(Number(rawCharacterCost))
+            ? Number(rawCharacterCost)
+            : null;
+        return { bytes, contentType: "audio/mpeg" as const, requestId, characterCost };
+      },
+      options,
+    );
+  }
+
   return {
     /**
      * Read one atomic account response for provider workspace binding and
@@ -533,47 +580,9 @@ export function createElevenLabsVoiceClient(input: {
     },
 
     async renderFixedPreview(id: string, options?: RequestOptions) {
-      const checked = checkedId(id, "preview");
-      return request(
-        "preview",
-        `/v1/text-to-speech/${checked}?output_format=${ELEVENLABS_VOICE_PREVIEW.outputFormat}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Accept: "audio/mpeg" },
-          body: JSON.stringify({
-            text: ELEVENLABS_VOICE_PREVIEW.text,
-            model_id: ELEVENLABS_VOICE_PREVIEW.modelId,
-          }),
-        },
-        async (response, signal) => {
-          const mimeType = response.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
-          if (mimeType !== "audio/mpeg" && mimeType !== "application/octet-stream")
-            throw new Error("invalid audio type");
-          const bytes = await readBounded(response, MAX_PREVIEW_BYTES, signal);
-          if (
-            bytes.length < 3 ||
-            !(
-              (bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) ||
-              (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0)
-            )
-          )
-            throw new Error("invalid mp3");
-          // Official response metadata: /docs/api-reference/introduction.
-          // Character cost is not a USD price or a promise about billed credits.
-          const rawRequestId = response.headers.get("request-id");
-          const rawCharacterCost = response.headers.get("character-cost");
-          const requestId =
-            rawRequestId && /^[A-Za-z0-9._:-]{1,200}$/.test(rawRequestId) ? rawRequestId : null;
-          const characterCost =
-            rawCharacterCost &&
-            /^\d{1,16}$/.test(rawCharacterCost) &&
-            Number.isSafeInteger(Number(rawCharacterCost))
-              ? Number(rawCharacterCost)
-              : null;
-          return { bytes, contentType: "audio/mpeg" as const, requestId, characterCost };
-        },
-        options,
-      );
+      return renderPreview(id, { text: ELEVENLABS_VOICE_PREVIEW.text }, options);
     },
+
+    renderPreview,
   };
 }
