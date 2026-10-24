@@ -27,7 +27,7 @@ describe("legacy post-call review notes", () => {
     const outcomes = readFileSync("src/components/OutcomeLedger.tsx", "utf8");
     expect(outcomes).toContain("displayCallReviewNote(");
     expect(outcomes).toContain("isLegacyCallReviewFailure(");
-    expect(calls).toContain("callHappenedLabel(reportHappened(selected))");
+    expect(calls).toContain("callOutcomeLabel(reportHappened(selected))");
     expect(calls).not.toContain("selected.coaching_note");
     expect(calls).not.toContain("selected.coachingNote");
   });
