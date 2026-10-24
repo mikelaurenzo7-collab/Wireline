@@ -1,6 +1,6 @@
 /**
  * Canonical application schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0183_agent_knowledge_index.sql`.
+ * Latest committed migration: `drizzle/migrations/0184_agent_call_recording.sql`.
  * Runtime voice defaults remain defined by
  * `drizzle/migrations/0168_openai_realtime_voice_runtime.sql`; migrations 0169
  * and 0172 remove empty retired provider ledgers.
