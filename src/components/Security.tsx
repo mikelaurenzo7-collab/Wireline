@@ -117,7 +117,7 @@ const SECTIONS: SecurityTopic[] = [
     title: "Database Posture",
     technical: true,
     items: [
-      "Postgres on Supabase. Tenant isolation uses SET LOCAL ROLE wireline_server with app.current_user_id RLS policies for each request on tenant tables.",
+      "Postgres on Supabase. Every request runs under a restricted database role, and row-level security limits it to your account’s data.",
       "Foreign key constraints and server controlled deletion paths remove your downstream data.",
       "Backup and point in time recovery availability follow the active Supabase plan; recovery drills remain an operational responsibility.",
     ],
@@ -228,9 +228,7 @@ export default function Security() {
     : SECTIONS.filter((section) => SECURITY_PAGE_TITLES.has(section.title));
   // /security lists its topics flat: every security topic is technical, so
   // the overview/Technical Details split would bury the whole page.
-  const overviewSections = isTrustHub
-    ? sections.filter((section) => !section.technical)
-    : sections;
+  const overviewSections = isTrustHub ? sections.filter((section) => !section.technical) : sections;
   const technicalSections = isTrustHub ? sections.filter((section) => section.technical) : [];
   const renderSection = ({ icon: Icon, title, items }: SecurityTopic) => (
     <section key={title}>
@@ -322,16 +320,16 @@ export default function Security() {
 
           {technicalSections.length > 0 ? (
             <details className="group mt-10 border-y border-border py-2">
-            <summary className="wl-focus-ring-halo flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 rounded-md px-2 text-base font-semibold marker:hidden">
-              <span>Technical Details</span>
-              <span
-                aria-hidden="true"
-                className="text-xl text-muted-foreground group-open:rotate-45"
-              >
-                +
-              </span>
-            </summary>
-            <div className="space-y-7 py-6">{technicalSections.map(renderSection)}</div>
+              <summary className="wl-focus-ring-halo flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 rounded-md px-2 text-base font-semibold marker:hidden">
+                <span>Technical Details</span>
+                <span
+                  aria-hidden="true"
+                  className="text-xl text-muted-foreground group-open:rotate-45"
+                >
+                  +
+                </span>
+              </summary>
+              <div className="space-y-7 py-6">{technicalSections.map(renderSection)}</div>
             </details>
           ) : null}
 

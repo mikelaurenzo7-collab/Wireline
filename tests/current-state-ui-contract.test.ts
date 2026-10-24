@@ -59,8 +59,8 @@ describe("current-state UI contract", () => {
 
   it("keeps account-bound MCP apps public without overstating authority", () => {
     const developers = read("src/pages/Developers.tsx");
-    expect(developers).toContain("Connect Once");
-    expect(developers).toContain("View MCP Endpoint");
+    expect(developers).toContain("Connect once");
+    expect(developers).toContain("View MCP endpoint");
     expect(developers).toContain("https://botbound.app");
     expect(developers).toContain("Add to Cursor");
     expect(developers.replace(/\s+/g, " ")).toContain(

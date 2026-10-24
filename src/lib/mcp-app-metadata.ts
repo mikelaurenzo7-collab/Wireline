@@ -3,8 +3,8 @@ import { createHash } from "node:crypto";
 import { MCP_SCOPES } from "./chatgpt-mcp";
 import { mcpIssuer, mcpResourceUrl } from "./mcp-oauth-security";
 
-/** Stable protocol/package name retained for existing connected clients. */
-export const MCP_SERVER_NAME = "wireline";
+/** MCP serverInfo name. Legacy tool names stay callable as hidden aliases. */
+export const MCP_SERVER_NAME = "botbound";
 export const MCP_SERVER_TITLE = "BotBound";
 export const MCP_SERVER_VERSION = "2.6.0";
 

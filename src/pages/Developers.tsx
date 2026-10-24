@@ -13,29 +13,26 @@ import { PageMeta } from "../lib/page-meta";
  * retain agent where required by the existing API and data model.
  */
 
-const MCP_BOUNDARIES = [
+const MCP_TOOL_GROUPS = [
   {
-    path: "create_agent_draft / update_agent_draft",
-    description: "Create or refine a private Bot configuration draft in natural language.",
+    title: "Draft a bot",
+    description: "Describe what you need and refine it in plain language.",
+    tools: ["create_agent_draft", "update_agent_draft"],
   },
   {
-    path: "train_wireline_agent / get_agent_coaching_brief",
-    description:
-      "Coach the agent record behind a Bot: read owner authored training, then persist a confirmed fact or rule into BotBound after the Apps toggle is on.",
+    title: "Rehearse privately",
+    description: "Try a conversation or a voice run. No live calls are placed.",
+    tools: ["run_private_agent_turn", "start_private_voice_simulation"],
   },
   {
-    path: "list_wireline_agents / get_wireline_workspace_summary / get_wireline_agent_status",
-    description:
-      "Read account scoped agent records, Bot readiness, next steps, and a minimized workspace summary.",
+    title: "Check status",
+    description: "See your bots, what they need next, and a workspace summary.",
+    tools: ["list_botbound_agents", "get_botbound_agent_status", "get_botbound_workspace_summary"],
   },
   {
-    path: "start_private_voice_simulation / run_private_agent_turn",
-    description: "Private agent runtime rehearsal for a Bot, not a live customer call.",
-  },
-  {
-    path: "/api/openapi.json",
-    description:
-      "Machine readable map of the session authenticated product API used by the web app, not a public API key product.",
+    title: "Teach your bot",
+    description: "Add a fact or rule you confirm. Turn on Apps access first.",
+    tools: ["get_agent_coaching_brief", "train_botbound_agent"],
   },
 ] as const;
 
@@ -44,7 +41,7 @@ const MCP_CLIENTS = [
     title: "ChatGPT",
     description:
       "In ChatGPT web, add the endpoint below from Plugins using OAuth with CIMD. Full Bot actions require Business, Enterprise, or Edu access and workspace permission.",
-    action: "ChatGPT Setup Guide",
+    action: "ChatGPT setup guide",
     href: "https://help.openai.com/en/articles/12584461-connecting-custom-mcp-servers-in-chatgpt",
     icon: MessageSquareText,
   },
@@ -52,7 +49,7 @@ const MCP_CLIENTS = [
     title: "Claude",
     description:
       "Add BotBound as a custom connector in Claude with the MCP endpoint below, or run claude mcp add in Claude Code. Sign in, then build and privately rehearse your Bot.",
-    action: "Open Claude Connectors",
+    action: "Open Claude connectors",
     href: "https://claude.ai/settings/connectors",
     icon: Sparkles,
   },
@@ -104,8 +101,8 @@ export default function Developers() {
   return (
     <MarketingPageFrame className="wl-developers-page">
       <PageMeta
-        title="Developer Portal | BotBound"
-        description="Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first Phone Bot in the chat you already use, then continue in the same BotBound workspace. No public API keys."
+        title="Developers | BotBound"
+        description="Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first phone bot in the chat you already use, then continue in the same BotBound workspace. No public API keys."
         path="/developers"
       />
 
@@ -114,24 +111,24 @@ export default function Developers() {
         aria-labelledby="mcp-apps-heading"
       >
         <div className="mx-auto max-w-5xl text-center">
-          <h1 className="marketing-hero-title mx-auto">Work Where You Think</h1>
+          <h1 className="marketing-hero-title mx-auto">Build your bot where you already work</h1>
           <div className="marketing-hero__actions mt-7">
             <a
               href="#mcp-endpoint"
               className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
             >
-              View MCP Endpoint
+              View MCP endpoint
             </a>
             <a
               href={openApiUrl}
               className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
             >
-              OpenAPI Map
+              OpenAPI map
             </a>
           </div>
 
           <h2 id="mcp-apps-heading" className="mt-9 text-lg font-semibold text-foreground">
-            Connect Once
+            Connect once
           </h2>
 
           <div className="mt-4 grid gap-4 md:grid-cols-3">
@@ -179,7 +176,7 @@ export default function Developers() {
                   ? "Copied"
                   : copyState === "copying"
                     ? "Copying…"
-                    : "Copy Endpoint"}
+                    : "Copy endpoint"}
               </Button>
             </div>
             <p role="status" aria-live="polite" className="mt-2 text-sm text-muted-foreground">
@@ -197,20 +194,36 @@ export default function Developers() {
           </div>
 
           <ul className="mt-6 grid gap-2 sm:grid-cols-2">
-            {MCP_BOUNDARIES.map((endpoint) => (
+            {MCP_TOOL_GROUPS.map((group) => (
               <li
-                key={endpoint.path}
-                className="wl-stitch-card flex min-w-0 flex-col items-start gap-3 p-4 text-left"
+                key={group.title}
+                className="wl-stitch-card flex min-w-0 flex-col items-start gap-1.5 p-4 text-left"
               >
-                <code className="max-w-full whitespace-normal break-words rounded border border-brand/20 bg-brand/10 px-2 py-1 font-mono text-xs font-semibold leading-5 text-primary [overflow-wrap:anywhere]">
-                  {endpoint.path}
-                </code>
-                <span className="text-sm leading-6 text-muted-foreground">
-                  {endpoint.description}
-                </span>
+                <h3 className="text-sm font-semibold text-foreground">{group.title}</h3>
+                <p className="text-sm leading-6 text-muted-foreground">{group.description}</p>
+                <p className="mt-1 flex flex-wrap gap-1.5">
+                  {group.tools.map((tool) => (
+                    <code
+                      key={tool}
+                      className="rounded border border-border bg-muted/40 px-1.5 py-0.5 font-mono text-xs text-muted-foreground [overflow-wrap:anywhere]"
+                    >
+                      {tool}
+                    </code>
+                  ))}
+                </p>
               </li>
             ))}
           </ul>
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            Building against the web app?{" "}
+            <a
+              href={openApiUrl}
+              className="font-medium text-foreground underline underline-offset-4"
+            >
+              Read the OpenAPI map
+            </a>
+            .
+          </p>
         </div>
       </section>
     </MarketingPageFrame>

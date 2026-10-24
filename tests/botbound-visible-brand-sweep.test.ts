@@ -96,11 +96,7 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
   return false;
 }
 
-function isCompatibilityOnlyLine(
-  path: string,
-  line: string,
-  allowInternalLogs = true,
-): boolean {
+function isCompatibilityOnlyLine(path: string, line: string, allowInternalLogs = true): boolean {
   return (
     (allowInternalLogs && isInternalLogLine(line)) ||
     compatibilityLinePatterns.some((pattern) => pattern.test(line)) ||
@@ -200,9 +196,9 @@ describe("BotBound visible-brand sweep", () => {
 
     expect(brand).toContain('technicalNamespace: "wireline"');
     expect(brand).toContain('legacyName: "Wireline"');
-    expect(openapi).toContain('name: "X-Wireline-Key"');
+    expect(openapi).toContain('name: "X-BotBound-Key"');
     expect(brandText).toContain('"X-Wireline-Token"');
-    expect(webhooks).toContain("X-Wireline-Signature");
+    expect(webhooks).toContain("X-BotBound-Signature");
     expect(firefox).toContain('"id": "command@wireline.com"');
     expect(catalog).toContain('name: "BotBound Starter"');
     expect(catalog).not.toContain('name: "Wireline Starter"');
@@ -219,7 +215,7 @@ describe("BotBound visible-brand sweep", () => {
     const runtime = read("src/lib/openapi-managed-runtime.ts");
     const routes = read("src/routes/openapi-routes.ts");
     expect(runtime).toContain('import { normalizeCustomerBrandDeep } from "./brand-text"');
-    expect(runtime).toContain('preserve: ["X-Wireline-Key"]');
+    expect(runtime).toContain('preserve: ["X-BotBound-Key"]');
     expect(routes).toContain("normalizeOpenApiForManagedRuntime(getOpenApiSpec(");
   });
 

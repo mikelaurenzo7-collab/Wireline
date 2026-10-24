@@ -54,13 +54,13 @@ describe("BotBound ChatGPT App production contract", () => {
   });
 
   it("keeps connected-client identifiers stable beneath the BotBound presentation", () => {
-    expect(mcpMetadataSource).toContain('MCP_SERVER_NAME = "wireline"');
+    expect(mcpMetadataSource).toContain('MCP_SERVER_NAME = "botbound"');
     expect(mcpMetadataSource).toContain('name: "com.trywireline/mcp"');
     expect(mcpMetadataSource).toContain('"com.trywireline/docs"');
-    expect(accountRouteSource).toContain('name: "list_wireline_agents"');
-    expect(accountRouteSource).toContain('name: "train_wireline_agent"');
-    expect(accountRouteSource).toContain("open_in_wireline_url");
-    expect(accountRouteSource).toContain("landed_in_wireline");
+    expect(accountRouteSource).toContain('name: "list_botbound_agents"');
+    expect(accountRouteSource).toContain('name: "train_botbound_agent"');
+    expect(accountRouteSource).toContain("open_in_botbound_url");
+    expect(accountRouteSource).toContain("landed_in_botbound");
   });
 
   it("allows Cursor and Claude dynamic OAuth registration callbacks", () => {
@@ -79,7 +79,7 @@ describe("BotBound ChatGPT App production contract", () => {
     expect(accountRouteSource).toContain('name: "get_agent_draft"');
     expect(accountRouteSource).toContain('name: "update_agent_draft"');
     expect(accountRouteSource).toContain('name: "start_private_voice_simulation"');
-    expect(accountRouteSource).toContain('name: "get_wireline_workspace_summary"');
+    expect(accountRouteSource).toContain('name: "get_botbound_workspace_summary"');
     expect(accountRouteSource).toContain(
       'securitySchemes: [{ type: "oauth2", scopes: ["agents.write"] }]',
     );
@@ -94,7 +94,7 @@ describe("BotBound ChatGPT App production contract", () => {
     expect(accountRouteSource).toContain("chatgpt-private-simulation");
     const simulationDescriptor = accountRouteSource.slice(
       accountRouteSource.indexOf('name: "start_private_voice_simulation"'),
-      accountRouteSource.indexOf('name: "list_wireline_agents"'),
+      accountRouteSource.indexOf('name: "list_botbound_agents"'),
     );
     expect(simulationDescriptor).toContain("readOnlyHint: false");
     expect(simulationDescriptor).not.toContain("readOnlyHint: true");
@@ -110,7 +110,7 @@ describe("BotBound ChatGPT App production contract", () => {
   });
 
   it("exposes only aggregate, tenant-scoped workspace status", () => {
-    expect(accountRouteSource).toContain('name: "get_wireline_workspace_summary"');
+    expect(accountRouteSource).toContain('name: "get_botbound_workspace_summary"');
     expect(accountRouteSource).toContain("calls_last_30_days");
     expect(accountRouteSource).toContain("text_threads_last_30_days");
     expect(accountRouteSource).toContain("email_threads_last_30_days");
@@ -173,12 +173,12 @@ describe("BotBound ChatGPT App production contract", () => {
       "get_agent_draft",
       "update_agent_draft",
       "start_private_voice_simulation",
-      "list_wireline_agents",
-      "get_wireline_workspace_summary",
-      "get_wireline_agent_status",
+      "list_botbound_agents",
+      "get_botbound_workspace_summary",
+      "get_botbound_agent_status",
       "run_private_agent_turn",
       "get_agent_coaching_brief",
-      "train_wireline_agent",
+      "train_botbound_agent",
     ]);
     for (const tool of Object.values(submission.tools)) {
       expect(typeof tool.annotations.readOnlyHint).toBe("boolean");
@@ -206,7 +206,7 @@ describe("BotBound ChatGPT App production contract", () => {
     expect(submission.app_info.subtitle).toBe("Build your first Bot");
     expect(JSON.stringify(submission.test_cases)).toContain("create_agent_draft");
     expect(JSON.stringify(submission.test_cases)).toContain("get_agent_coaching_brief");
-    expect(JSON.stringify(submission.test_cases)).toContain("train_wireline_agent");
+    expect(JSON.stringify(submission.test_cases)).toContain("train_botbound_agent");
   });
 
   it("does not expose MCP tools that provision numbers, dial, or launch agents", () => {
@@ -224,7 +224,7 @@ describe("BotBound ChatGPT App production contract", () => {
     expect(accountRouteSource).toContain(
       "unlaunched Bot in the connected user’s BotBound workspace",
     );
-    expect(accountRouteSource).toContain('name: "train_wireline_agent"');
+    expect(accountRouteSource).toContain('name: "train_botbound_agent"');
     expect(accountRouteSource).toContain("readMcpCoachingWritesEnabled");
   });
 });

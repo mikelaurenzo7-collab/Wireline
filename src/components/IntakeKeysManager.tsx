@@ -533,9 +533,9 @@ export default function IntakeKeysManager() {
         </summary>
         <div className="mt-3 font-mono">
           <div className="wl-label text-brand-2 mb-2">Quick start · curl</div>
-          <pre className="whitespace-pre-wrap break-all">{`curl -X POST $WIRELINE_URL/api/intake/lead \\
+          <pre className="whitespace-pre-wrap break-all">{`curl -X POST https://botbound.app/api/intake/lead \\
   -H "Content-Type: application/json" \\
-  -H "X-Wireline-Key: wlk_..." \\
+  -H "X-BotBound-Key: wlk_..." \\
   -H "Idempotency-Key: form-submission-12345" \\
   -d '{"customer_name":"Jane Doe","customer_number":"+15551234567","context":"Filled out demo form","metadata":{"utm_source":"newsletter"}}'`}</pre>
         </div>

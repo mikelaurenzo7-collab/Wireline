@@ -145,7 +145,7 @@ describe("ChatGPT private voice simulation routing", () => {
 
     const simulationHandler = accountRoutes.slice(
       accountRoutes.indexOf('if (name === "start_private_voice_simulation")'),
-      accountRoutes.indexOf('if (name === "list_wireline_agents")'),
+      accountRoutes.indexOf('if (name === "list_botbound_agents")'),
     );
     expect(simulationHandler).toContain("createOpenAIRealtimeSimulationCall({");
     expect(simulationHandler).toContain("sdp: text(args.offer_sdp, 60_000)");

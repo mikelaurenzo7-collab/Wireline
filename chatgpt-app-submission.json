@@ -67,7 +67,7 @@
         "destructive_justification": "Does not delete, overwrite, charge, revoke access, or perform an irreversible action."
       }
     },
-    "list_wireline_agents": {
+    "list_botbound_agents": {
       "annotations": {
         "readOnlyHint": true,
         "openWorldHint": false,
@@ -79,7 +79,7 @@
         "destructive_justification": "Does not delete, overwrite, revoke access, launch agents, or perform an irreversible action."
       }
     },
-    "get_wireline_workspace_summary": {
+    "get_botbound_workspace_summary": {
       "annotations": {
         "readOnlyHint": true,
         "openWorldHint": false,
@@ -91,7 +91,7 @@
         "destructive_justification": "Does not change agents, billing, phone numbers, communications, integrations, credentials, or launch state."
       }
     },
-    "get_wireline_agent_status": {
+    "get_botbound_agent_status": {
       "annotations": {
         "readOnlyHint": true,
         "openWorldHint": false,
@@ -127,7 +127,7 @@
         "destructive_justification": "Does not delete, overwrite, launch, or perform an irreversible action."
       }
     },
-    "train_wireline_agent": {
+    "train_botbound_agent": {
       "annotations": {
         "readOnlyHint": false,
         "openWorldHint": false,
@@ -169,7 +169,7 @@
       "description": "List the connected user's BotBound agents.",
       "user_prompt": "List my BotBound agents and drafts so I can choose one to refine.",
       "file_attachment_urls": null,
-      "tools_triggered": "list_wireline_agents",
+      "tools_triggered": "list_botbound_agents",
       "expected_output": "Returns the connected user's agents and drafts with enough detail to choose the next action.",
       "expected_output_url": null
     },
@@ -177,7 +177,7 @@
       "description": "Inspect aggregate workspace operations without exposing customer content.",
       "user_prompt": "Give me a BotBound workspace summary: how many agents and assigned numbers do I have, what activity occurred in the last 30 days, and are text and email connected?",
       "file_attachment_urls": null,
-      "tools_triggered": "get_wireline_workspace_summary",
+      "tools_triggered": "get_botbound_workspace_summary",
       "expected_output": "Returns tenant-scoped aggregate counts, activation and subscription status, channel connection state, and a BotBound link without customer identities, message bodies, transcripts, recordings, or secrets.",
       "expected_output_url": null
     },
@@ -185,7 +185,7 @@
       "description": "Inspect one agent's next step without exposing a phone number.",
       "user_prompt": "What is the next step for this BotBound agent, and where do I continue in BotBound?",
       "file_attachment_urls": null,
-      "tools_triggered": "get_wireline_agent_status",
+      "tools_triggered": "get_botbound_agent_status",
       "expected_output": "Returns next-step copy and BotBound links without the phone number or customer content.",
       "expected_output_url": null
     },
@@ -217,7 +217,7 @@
       "description": "Save a confirmed Training fact after the Apps toggle is on.",
       "user_prompt": "Save this confirmed Training fact in BotBound: We serve residential HVAC in the 787xx ZIP codes.",
       "file_attachment_urls": null,
-      "tools_triggered": "train_wireline_agent",
+      "tools_triggered": "train_botbound_agent",
       "expected_output": "Persists the fact only after confirmation and the Apps toggle. If the toggle is off, the app sends the user to BotBound Apps instead of inventing a workaround.",
       "expected_output_url": null
     }

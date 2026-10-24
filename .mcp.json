@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "wireline": {
+    "botbound": {
       "url": "https://botbound.app/mcp"
     }
   }

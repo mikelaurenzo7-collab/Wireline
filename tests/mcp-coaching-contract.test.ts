@@ -13,11 +13,11 @@ describe("MCP coaching and first-agent contract", () => {
 
   it("keeps the private-voice slice contiguous for dual-voice and cost contracts", () => {
     const voice = account.indexOf('name: "start_private_voice_simulation"');
-    const list = account.indexOf('name: "list_wireline_agents"');
+    const list = account.indexOf('name: "list_botbound_agents"');
     expect(voice).toBeGreaterThan(-1);
     expect(list).toBeGreaterThan(voice);
     expect(account.slice(voice, list)).not.toContain('name: "get_agent_coaching_brief"');
-    expect(account.slice(voice, list)).not.toContain('name: "train_wireline_agent"');
+    expect(account.slice(voice, list)).not.toContain('name: "train_botbound_agent"');
   });
 
   it("fails Training writes closed until the Apps toggle is true", () => {

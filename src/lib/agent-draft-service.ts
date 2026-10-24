@@ -52,7 +52,7 @@ export interface AgentDraftView {
   escalationPolicy: AgentCustomizationProfile["behavior"]["escalationPolicy"];
   knowledgeSummary: string;
   lifecycle: "draft";
-  openInWirelinePath: string;
+  openInBotBoundPath: string;
 }
 
 function persistedBusinessVariables(profile: AgentCustomizationProfile): Record<string, unknown> {
@@ -118,7 +118,7 @@ function toView(id: string, profile: AgentCustomizationProfile): AgentDraftView 
     escalationPolicy: profile.behavior.escalationPolicy,
     knowledgeSummary: profile.knowledge.summary,
     lifecycle: "draft",
-    openInWirelinePath: `/studio?agent=${encodeURIComponent(id)}`,
+    openInBotBoundPath: `/studio?agent=${encodeURIComponent(id)}`,
   };
 }
 

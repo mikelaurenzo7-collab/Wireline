@@ -18,6 +18,14 @@ import type { AuthenticatedRequest } from "../types/auth";
 const router = express.Router();
 const INTAKE_KEY_PREFIX = "wlk_";
 
+/** X-BotBound-Key, with the pre-rename header still accepted for existing integrations. */
+function intakeKeyHeader(
+  headers: Record<string, string | string[] | undefined>,
+): string | undefined {
+  const value = headers["x-botbound-key"] ?? headers["x-wireline-key"];
+  return Array.isArray(value) ? value[0] : value;
+}
+
 async function sha256Hex(value: string): Promise<string> {
   const crypto = await import("node:crypto");
   return crypto.createHash("sha256").update(value).digest("hex");
@@ -379,9 +387,9 @@ router.post("/lead", async (req: Request, res: Response) => {
         ...(preAuthRate.status === 429 ? { retry_after_s: preAuthRate.retry_after_s } : {}),
       });
     }
-    const provided = req.headers["x-wireline-key"] as string | undefined;
+    const provided = intakeKeyHeader(req.headers);
     const key = await resolveIntakeKey(provided);
-    if (!key) throw AppError.fromHttpStatus(401, "Invalid or missing X-Wireline-Key.");
+    if (!key) throw AppError.fromHttpStatus(401, "Invalid or missing X-BotBound-Key.");
 
     const rate = await checkIntakeRate(key.id);
     if (isIntakeRateFailure(rate)) {
@@ -438,9 +446,9 @@ router.post("/leads", async (req: Request, res: Response) => {
         ...(preAuthRate.status === 429 ? { retry_after_s: preAuthRate.retry_after_s } : {}),
       });
     }
-    const provided = req.headers["x-wireline-key"] as string | undefined;
+    const provided = intakeKeyHeader(req.headers);
     const key = await resolveIntakeKey(provided);
-    if (!key) throw AppError.fromHttpStatus(401, "Invalid or missing X-Wireline-Key.");
+    if (!key) throw AppError.fromHttpStatus(401, "Invalid or missing X-BotBound-Key.");
 
     const leads = Array.isArray(req.body?.leads) ? req.body.leads : null;
     if (!leads || leads.length === 0) {

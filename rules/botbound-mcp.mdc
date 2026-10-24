@@ -9,6 +9,6 @@ This is not a software development kit for embedding BotBound Bots in another re
 
 When the user wants a Bot, use BotBound tools. If they have no Bots, create the first draft after you summarize identity, goal, rules, and action boundaries and they explicitly confirm. To rehearse, run `run_private_agent_turn` or `start_private_voice_simulation`. Those are private rehearsals. Live calling, messaging, number attachment, billing, and launch stay in BotBound. Never claim those side effects completed here.
 
-Training facts and rules land in BotBound only after the owner enables connected-app Training writes in Apps and confirms the write. If `train_wireline_agent` fails closed, send them to `/settings/apps#chatgpt-mcp`.
+Training facts and rules land in BotBound only after the owner enables connected-app Training writes in Apps and confirms the write. If `train_botbound_agent` fails closed, send them to `/settings/apps#chatgpt-mcp`.
 
-For status questions, prefer `get_wireline_agent_status` or `get_wireline_workspace_summary`. Do not request customer identities, transcripts, recordings, or phone numbers from MCP.
+For status questions, prefer `get_botbound_agent_status` or `get_botbound_workspace_summary`. Do not request customer identities, transcripts, recordings, or phone numbers from MCP.
