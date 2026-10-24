@@ -375,7 +375,11 @@ const repository: VoiceAssetRepository = {
           ),
         )
         .orderBy(voiceAssets.expiresAt)
-        .limit(limit),
+        .limit(limit)
+        // Drizzle builders are lazy: execute while the tenant scope is exited,
+        // otherwise the query would run after it is restored, under the caller's
+        // tenant (RLS would hide other owners' expired references).
+        .execute(),
     ),
 };
 

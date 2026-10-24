@@ -75,13 +75,21 @@ describe("round-4 audit fix contracts", () => {
     expect(jobs).toMatch(/DELETE FROM wireline_jobs[\s\S]{0,200}status IN \('done', 'dead'\)/);
   });
 
-  it("managed OpenAI inbound and outbound sessions persist transcripts, not recordings", () => {
+  it("managed OpenAI sessions persist transcripts and record only when the Bot opts in", () => {
+    // Per-Bot live-call recording (#1344) replaced the hard-coded
+    // `recordingEnabled: false`: the disclosure now follows the same per-Bot
+    // flag that enables carrier capture, and that flag defaults off.
     const factory = read("src/lib/voice/openai-phone-agent-runtime.ts");
     const session = read("src/lib/voice/openai-sip-session.ts");
+    const schemaBase = read("src/db/schema-base.ts");
     expect(factory).toContain("transcription: { model: OPENAI_REALTIME_DEFAULT_TRANSCRIBER }");
     expect(session).toContain("conversation.item.input_audio_transcription.completed");
     expect(session).toContain("response.output_audio_transcript.delta");
-    expect(session).toContain("recordingEnabled: false");
+    expect(session).toContain("recordingEnabled: input.callRecordingEnabled === true");
+    expect(session).toContain("if (input.callRecordingEnabled !== true) return greeting;");
+    expect(schemaBase).toContain(
+      'callRecordingEnabled: boolean("call_recording_enabled").default(false).notNull()',
+    );
     expect(`${factory}\n${session}`).not.toMatch(/recordingUrl|videoRecording|pcap/i);
   });
 
@@ -90,7 +98,7 @@ describe("round-4 audit fix contracts", () => {
     const session = read("src/lib/voice/openai-sip-session.ts");
     expect(session).toContain("complianceFirstMessagePrefix(");
     expect(session).toContain("outboundAiCall: true");
-    expect(session).toContain("recordingEnabled: false");
+    expect(session).toContain("recordingEnabled: input.callRecordingEnabled === true");
     expect(session).toContain("formatCallbackNumberForSpeech");
     expect(session).toContain("function buildOutboundOpening");
     expect(session).toContain("Say exactly these words and nothing else:");
