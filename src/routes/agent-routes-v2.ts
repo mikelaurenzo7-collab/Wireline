@@ -114,6 +114,7 @@ const BUSINESS_PROFILE_COLUMNS = {
   businessHours: schema.agents.businessHours,
   timezone: schema.agents.timezone,
   complianceMode: schema.agents.complianceMode,
+  callRecordingEnabled: schema.agents.callRecordingEnabled,
   disallowedTopics: schema.agents.disallowedTopics,
   escalationKeywords: schema.agents.escalationKeywords,
   escalationPhone: schema.agents.escalationPhone,
@@ -130,6 +131,7 @@ function businessProfileView(record: {
   businessHours: unknown;
   timezone: string | null;
   complianceMode: string | null;
+  callRecordingEnabled: boolean | null;
   disallowedTopics: string[] | null;
   escalationKeywords: string[] | null;
   escalationPhone: string | null;
@@ -145,6 +147,7 @@ function businessProfileView(record: {
     business_hours: record.businessHours || null,
     timezone: record.timezone || "UTC",
     compliance_mode: record.complianceMode || "none",
+    call_recording_enabled: record.callRecordingEnabled ?? false,
     disallowed_topics: record.disallowedTopics || [],
     escalation_keywords: record.escalationKeywords || [],
     escalation_phone: record.escalationPhone || null,
@@ -1209,6 +1212,9 @@ router.patch(
     }
     if (parsed.timezone !== undefined) patch.timezone = parsed.timezone;
     if (parsed.compliance_mode !== undefined) patch.complianceMode = parsed.compliance_mode;
+    if (parsed.call_recording_enabled !== undefined) {
+      patch.callRecordingEnabled = parsed.call_recording_enabled;
+    }
     if (parsed.disallowed_topics !== undefined) patch.disallowedTopics = parsed.disallowed_topics;
     if (parsed.escalation_keywords !== undefined) {
       patch.escalationKeywords = parsed.escalation_keywords;

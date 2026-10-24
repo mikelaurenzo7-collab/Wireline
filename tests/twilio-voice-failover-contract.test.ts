@@ -102,7 +102,7 @@ describe("Twilio voice failover contract", () => {
       /if \(!phoneVoiceRuntimeConfigured\(\)\) \{[\s\S]*?res\.status\(503\)\.send\(hangupTwiml\(\)\)/,
     );
     expect(inboundRoutes).toMatch(
-      /if \(!userId\) \{[\s\S]*?res\.status\(200\)\.send\(hangupTwiml\(\)\)/,
+      /if \(!owner \|\| !userId\) \{[\s\S]*?res\.status\(200\)\.send\(hangupTwiml\(\)\)/,
     );
     expect(inboundRoutes).toMatch(
       /if \(!environment\.allowed\) \{[\s\S]*?res\.status\(200\)\.send\(hangupTwiml\(\)\)/,

@@ -36,6 +36,7 @@ import {
   type RealtimeSipTarget,
 } from "../lib/voice/realtime-sip-target";
 import { trackVoiceMinutes } from "../lib/voice-usage";
+import { liveRecordingDialAttributes } from "../lib/voice/live-call-recording";
 import { readVoiceIdentityReceipt, resolveVoiceFundingId } from "../lib/voice-call-identity";
 import {
   handleFundedOutboundCarrierEvent,
@@ -90,15 +91,20 @@ function bridgeTwiml(input: {
   callerId: string;
   sip: RealtimeSipTarget;
   maxSeconds?: number | null;
+  recordCall: boolean;
 }): string {
   const timeLimit = input.maxSeconds ?? resolveOpenAISipSessionMaxSeconds();
+  // Recording is the Bot owner's per-Bot choice (default off): the flag adds
+  // carrier capture here and the recording notice to the spoken opening.
   return (
     '<?xml version="1.0" encoding="UTF-8"?>' +
     '<Response><Dial answerOnBridge="true" timeout="30" timeLimit="' +
     String(timeLimit) +
     '" callerId="' +
     escapeXml(input.callerId) +
-    '">' +
+    '"' +
+    liveRecordingDialAttributes(input.recordCall) +
+    ">" +
     renderSipNoun(input.sip) +
     "</Dial><Hangup/></Response>"
   );
@@ -222,7 +228,7 @@ async function loadCampaignMaxAttempts(
 }
 
 type BridgeDecision =
-  | { kind: "bridge"; callerId: string; sipUri: string }
+  | { kind: "bridge"; callerId: string; sipUri: string; callRecordingEnabled: boolean }
   | { kind: "drop"; answeredBy: string; userId: string }
   | { kind: "hangup"; userId: string; accountEnvironment: string | null };
 
@@ -252,6 +258,11 @@ async function resolveBridgeContext(
     }
     const metadata = asRecord(lead.metadata);
     const nativeVoice = asRecord(metadata.native_voice);
+    // The recording decision was snapshotted when this carrier placement was
+    // created. The bridge TwiML (carrier capture) and SIP admission (the
+    // spoken notice) both read that one immutable value, so a Bot flag toggle
+    // mid-call cannot make capture and disclosure disagree.
+    const callRecordingEnabled = nativeVoice.call_recording_enabled === true;
     if (!openAIOutboundPlacementMatches(nativeVoice, verification.claims)) {
       throw AppError.conflict("This outbound bridge belongs to an earlier placement.");
     }
@@ -287,7 +298,12 @@ async function resolveBridgeContext(
       return { kind: "drop", answeredBy: replay.answeredBy, userId: lead.userId };
     }
     if (replay?.kind === "bridge") {
-      return { kind: "bridge", callerId: replay.callerId, sipUri: replay.sipUri };
+      return {
+        kind: "bridge",
+        callerId: replay.callerId,
+        sipUri: replay.sipUri,
+        callRecordingEnabled,
+      };
     }
     if (!lead.agentId) throw AppError.notFound("Outbound lead not found.");
     const recoverableCompletedRace =
@@ -409,6 +425,7 @@ async function resolveBridgeContext(
       kind: "bridge",
       callerId,
       sipUri: buildOpenAIOutboundSipUri(token),
+      callRecordingEnabled,
     };
   });
 }
@@ -471,7 +488,14 @@ router.post(
       // The Bot answers on its own line: xAI when that number is registered
       // there, otherwise the OpenAI project URI the decision already carries.
       const sip = await resolveOutboundSipTarget({ callerId: decision.callerId, token });
-      res.status(200).send(bridgeTwiml({ callerId: decision.callerId, sip, maxSeconds }));
+      res.status(200).send(
+        bridgeTwiml({
+          callerId: decision.callerId,
+          sip,
+          maxSeconds,
+          recordCall: decision.callRecordingEnabled,
+        }),
+      );
     } catch (error) {
       const verification = verifyOpenAIOutboundToken(token);
       if (verification.ok && error instanceof AppError && error.status === 409) {

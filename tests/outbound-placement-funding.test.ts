@@ -80,6 +80,7 @@ function database() {
     wireline_account_operation_leases: [],
     wireline_call_logs: [],
     wireline_outbound_campaigns: [],
+    wireline_agents: [{ id: agentId, userId, callRecordingEnabled: false }],
     wireline_outbound_leads: [
       {
         id: leadId,

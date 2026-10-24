@@ -451,6 +451,13 @@ export const agents = pgTable(
      */
     systemPromptOverride: text("system_prompt_override"),
     complianceMode: text("compliance_mode").default("standard"),
+    /**
+     * Owner choice: record this Bot's live calls. Default OFF. The one flag
+     * drives both carrier capture on the Twilio bridges and the recording
+     * notice in the Bot's spoken opening, so the two can never disagree.
+     * Migration 0184.
+     */
+    callRecordingEnabled: boolean("call_recording_enabled").default(false).notNull(),
     disallowedTopics: text("disallowed_topics").array(),
     escalationKeywords: text("escalation_keywords").array(),
     /**
@@ -802,6 +809,14 @@ export const callLogs = pgTable(
     vapiCallId: text("vapi_call_id").unique(),
     /** Signed Twilio CallSid or outbound placement id; prevents SIP-token replay across OpenAI calls. */
     openaiSipSourceId: text("openai_sip_source_id"),
+    /**
+     * The exact Twilio parent call this row was created for, written once when
+     * the call log is created. Recording-completion callbacks correlate by this
+     * immutable SID instead of re-reading a lead's current placement metadata,
+     * so a redial cannot re-attribute a finished recording. Unique when set.
+     * Migration 0184.
+     */
+    twilioParentCallSid: text("twilio_parent_call_sid"),
     /** Durable pre-session state used to resume a webhook after a serverless crash. */
     openaiSipPhase: text("openai_sip_phase"),
     openaiSipOwnerToken: uuid("openai_sip_owner_token"),
@@ -868,6 +883,9 @@ export const callLogs = pgTable(
     openaiSipSourceUnique: uniqueIndex("uq_call_logs_openai_sip_source")
       .on(table.openaiSipSourceId)
       .where(sql`${table.openaiSipSourceId} IS NOT NULL`),
+    twilioParentCallSidUnique: uniqueIndex("uq_call_logs_twilio_parent_call_sid")
+      .on(table.twilioParentCallSid)
+      .where(sql`${table.twilioParentCallSid} IS NOT NULL`),
     userPhoneTailIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_phone_tail ON wireline_call_logs (user_id, right(regexp_replace(customer_number, '[^0-9]', '', 'g'), 10))`,
   }),
 );

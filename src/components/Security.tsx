@@ -70,7 +70,7 @@ const SECTIONS: SecurityTopic[] = [
     title: "What We Store, and What We Don't",
     items: [
       "Call transcripts are stored in the managed database with configurable retention per account (365 days by default; supported range 90 to 365 days).",
-      "Provider audio recording of full calls is disabled by default. Voicemail or message recording may create audio when intentionally used.",
+      "Provider audio recording of full calls is off by default. A Bot owner can turn it on for a Bot; callers hear a recording notice at the start of a recorded call, and recordings are available in the account. Voicemail or message recording may create audio when intentionally used.",
       "Credit card numbers are never stored, logged, or read by BotBound servers. PCI scope is reduced through Stripe Checkout.",
       "Healthcare runtime controls can reduce sensitive content in logs and restrict some exports. Do not process PHI unless BotBound confirms a signed BAA and approved configuration in writing.",
     ],
@@ -187,7 +187,7 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     items: [
       "Account deletion runs a server controlled workflow over your product data.",
       "GDPR/CCPA erasure requests follow the same workflow. Contact security@botbound.app for current privacy and security documentation.",
-      "Transcript retention defaults to 365 days and supports 90 to 365 days per account. Provider audio recording of full calls defaults off; intentionally used voicemail or message recording may still create audio.",
+      "Transcript retention defaults to 365 days and supports 90 to 365 days per account. Provider audio recording of full calls defaults off and is a per-Bot owner choice; when it is on, callers hear a recording notice at the start of the call. Intentionally used voicemail or message recording may still create audio.",
     ],
   },
   {

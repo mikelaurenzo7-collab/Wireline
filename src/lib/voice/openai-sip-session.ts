@@ -111,12 +111,20 @@ export type OpenAISipIncomingCall = {
   direction?: "inbound" | "outbound";
   leadId?: bigint;
   inboundTwilioCallSid?: string;
+  /**
+   * The exact Twilio parent call this SIP leg was bridged from. Persisted once
+   * on the call log so the recording-completion callback can correlate by SID
+   * rather than by a lead's latest placement metadata.
+   */
+  twilioParentCallSid?: string;
   outboundPlacementId?: string;
   customerName?: string | null;
   context?: string | null;
   callPurpose?: OutboundCallPurpose;
   businessName?: string | null;
   complianceMode?: string | null;
+  /** The Bot owner's per-Bot recording choice; drives the spoken recording notice. */
+  callRecordingEnabled?: boolean;
   admission?: NativeInboundAdmission;
   funding?: VoiceCallFunding;
   recoveredSession?: boolean;
@@ -277,7 +285,7 @@ function buildOutboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRun
     input.businessName || runtime.agentName,
     {
       outboundAiCall: true,
-      recordingEnabled: false,
+      recordingEnabled: input.callRecordingEnabled === true,
       telemarketing,
     },
   );
@@ -290,6 +298,22 @@ function buildOutboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRun
     ? ` You can call us back at ${callbackNumberSpoken}.`
     : "";
   return `${disclosure}${name ? `Hi ${name}, ` : "Hi, "}this is ${identity}.${callbackSentence}`.trim();
+}
+
+/**
+ * Inbound opening: the Bot's saved greeting, preceded by the recording
+ * notice when — and only when — the owner records this Bot's calls. The
+ * notice comes from the same compliance composer as the outbound opening
+ * and is driven by the same per-Bot flag that enables carrier capture on
+ * the Twilio bridge, so the spoken disclosure and the actual recording
+ * can never disagree. With recording off the greeting is byte-identical
+ * to before.
+ */
+function buildInboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRuntime): string {
+  const greeting = runtime.greeting.trim();
+  if (input.callRecordingEnabled !== true) return greeting;
+  const notice = complianceFirstMessagePrefix(null, null, { recordingEnabled: true });
+  return `${notice}${greeting}`.trim();
 }
 
 function buildOutboundInstructions(input: OpenAISipIncomingCall): string {
@@ -683,6 +707,14 @@ async function claimCall(input: OpenAISipIncomingCall) {
         ? `twilio:${input.inboundTwilioCallSid}`
         : null;
   if (!sourceId) throw AppError.conflict("The SIP call is missing its signed source identity.");
+  // The exact Twilio parent call is known before this row exists: inbound from
+  // the token minted at TwiML creation, outbound from the placement's persisted
+  // bridge marker. Persist it once so recording callbacks never depend on
+  // re-reading mutable lead metadata.
+  const twilioParentCallSid =
+    callDirection(input) === "outbound"
+      ? input.twilioParentCallSid?.trim() || null
+      : input.inboundTwilioCallSid?.trim() || null;
   return drizzle.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-sip:${sourceId}`}))`);
     const [existing] = await tx
@@ -819,6 +851,7 @@ async function claimCall(input: OpenAISipIncomingCall) {
         userId: input.userId,
         vapiCallId: id,
         openaiSipSourceId: sourceId,
+        twilioParentCallSid,
         openaiSipPhase: "claimed",
         openaiSipOwnerToken: ownerToken,
         openaiSipLeaseExpiresAt: leaseExpiresAt,
@@ -2441,7 +2474,9 @@ async function runRealtimeSession(
         }
         connectedAt = Date.now();
         const outbound = callDirection(input) === "outbound";
-        const opening = outbound ? buildOutboundOpening(input, runtime) : runtime.greeting.trim();
+        const opening = outbound
+          ? buildOutboundOpening(input, runtime)
+          : buildInboundOpening(input, runtime);
         const instructions = outbound
           ? `${runtime.session.instructions}\n\n${buildOutboundInstructions(input)}`
           : runtime.session.instructions;

@@ -206,7 +206,9 @@ export default function PrivacyPolicyPage() {
             <p>
               <strong>Conversation data</strong>: Phone numbers, message addresses, recordings,
               transcripts, summaries, message content, and operational metadata needed to provide
-              the calling, texting, and email service you configure.
+              the calling, texting, and email service you configure. Call recording is off by
+              default; if you turn it on for a Bot, callers hear a recording notice at the start
+              of the call, and the recording is available in your account.
             </p>
             <p>
               <strong>Usage and billing data</strong>: Feature usage, AI model consumption, plan and

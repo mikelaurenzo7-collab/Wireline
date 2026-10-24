@@ -147,6 +147,8 @@ export const AgentBusinessProfileSchema = z
       .optional(),
     escalation_email: z.string().trim().email("Enter a valid email").max(254).nullable().optional(),
     escalation_handoff_enabled: z.boolean().optional(),
+    /** Owner choice: record this Bot's live calls (default off). */
+    call_recording_enabled: z.boolean().optional(),
     business_variables: BusinessVariablesSchema.optional(),
     out_of_hours_message: z
       .string()

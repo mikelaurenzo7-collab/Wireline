@@ -27,7 +27,7 @@ import { Router, Request, Response } from "express";
 import { createHash } from "node:crypto";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, inArray, or, sql } from "drizzle-orm";
+import { eq, and, inArray, isNull, or, sql } from "drizzle-orm";
 import { sanitizePhone } from "../lib/agent-runtime-helpers";
 import { smsOutcomeAfterMessage } from "../lib/sms-thread-outcome";
 import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
@@ -671,6 +671,67 @@ router.post("/api/twilio-webhook/voice-fallback-status", async (req: Request, re
     return res.status(204).end();
   } catch (error) {
     log.error("Voice fallback child settlement requires retry", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(503).end();
+  }
+});
+
+/**
+ * Live-call recording completion. Both AI bridges are Twilio SIP legs into
+ * the AI provider; when the Bot owner has recording on, the bridge carries
+ * record-from-answer-dual and Twilio reports the finished recording here.
+ * The callback's CallSid is the Twilio parent call, and every call row is
+ * created with that exact parent SID in `wireline_call_logs.twilio_parent_call_sid`
+ * (inbound from the signed token, outbound from the placement's persisted
+ * bridge marker). Attribution therefore reads one immutable call-log identity;
+ * it never looks up a lead's latest placement metadata, so a redial that
+ * replaced that metadata before this callback lands cannot re-attribute the
+ * recording. The media URL lands on the same recording_url column voicemail
+ * uses, so the tenant-gated recording route and the player serve it unchanged.
+ * Only a completed recording is persisted, and never over an existing one.
+ */
+router.post("/api/twilio-webhook/live-recording-complete", async (req: Request, res: Response) => {
+  if (!verifyTwilioSignature(req)) {
+    log.warn("Twilio webhook signature verification failed", { path: req.path });
+    return res.status(403).end();
+  }
+
+  const status =
+    typeof req.body?.RecordingStatus === "string"
+      ? req.body.RecordingStatus.trim().toLowerCase()
+      : "";
+  const recordingUrl =
+    typeof req.body?.RecordingUrl === "string" ? req.body.RecordingUrl.trim() : "";
+  const callSid = typeof req.body?.CallSid === "string" ? req.body.CallSid.trim() : "";
+  if (status !== "completed" || !recordingUrl || !/^CA[a-f0-9]{32}$/i.test(callSid)) {
+    return res.status(204).end();
+  }
+
+  try {
+    const [stored] = await drizzle
+      .update(schema.callLogs)
+      .set({ recordingUrl })
+      .where(
+        and(eq(schema.callLogs.twilioParentCallSid, callSid), isNull(schema.callLogs.recordingUrl)),
+      )
+      .returning({ id: schema.callLogs.id });
+    if (!stored) {
+      const [correlated] = await drizzle
+        .select({ id: schema.callLogs.id })
+        .from(schema.callLogs)
+        .where(eq(schema.callLogs.twilioParentCallSid, callSid))
+        .limit(1);
+      if (!correlated) {
+        log.warn("Live recording callback matched no call", {
+          call_sid_suffix: opaqueIdSuffixForLog(callSid),
+        });
+      }
+      // A correlated row that already has a recording is an idempotent retry.
+    }
+    return res.status(204).end();
+  } catch (error) {
+    log.error("Live recording callback failed", {
       error: error instanceof Error ? error.message : String(error),
     });
     return res.status(503).end();

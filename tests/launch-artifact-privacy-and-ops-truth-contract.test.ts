@@ -8,10 +8,16 @@ const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
 describe("launch artifact privacy and operations truth", () => {
-  it("keeps OpenAI SIP calls transcript-only with no full-call audio artifact path", () => {
+  it("keeps OpenAI SIP call recording an owner choice: off by default, disclosure tied to the same flag", () => {
     const session = read("src/lib/voice/openai-sip-session.ts");
     const runtime = read("src/lib/voice/openai-live-agent-service.ts");
     expect(session).toContain("transcript: input.transcript || null");
+    // The session never stores audio itself. It only carries the Bot owner's
+    // per-Bot choice into the spoken opening: the recording notice is composed
+    // from input.callRecordingEnabled, the same flag that enables carrier
+    // capture on the Twilio bridges (see live-call-recording-contract).
+    expect(session).toContain("recordingEnabled: input.callRecordingEnabled === true");
+    expect(session).toContain("if (input.callRecordingEnabled !== true) return greeting;");
     expect(session).not.toMatch(/recordingUrl|recording_url|videoRecording|pcap/i);
     expect(runtime).not.toMatch(/api\.x\.ai|api\.vapi\.ai|elevenlabs|11labs/i);
   });
@@ -33,7 +39,8 @@ describe("launch artifact privacy and operations truth", () => {
   it("keeps public retention and recording claims aligned with runtime defaults", () => {
     const security = read("src/components/Security.tsx");
     expect(security).toContain("365 days by default; supported range 90 to 365 days");
-    expect(security).toContain("Provider audio recording of full calls is disabled by default");
+    expect(security).toContain("Provider audio recording of full calls is off by default");
+    expect(security).toContain("callers hear a recording notice at the start of a recorded call");
     expect(security).not.toContain("transcript retention defaults to 90 days");
   });
 

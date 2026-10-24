@@ -103,9 +103,11 @@ async function pipeAudio(upstream: globalThis.Response, res: Response): Promise<
 }
 
 /**
- * Authenticated recording boundary. OpenAI Realtime calls are transcript-only;
- * Twilio voicemail media is streamed with server-held credentials and its
- * persistent provider URL never crosses the tenant API.
+ * Authenticated recording boundary. Twilio media (failover voicemail, and
+ * live calls the Bot owner chose to record) is streamed with server-held
+ * credentials and its persistent provider URL never crosses the tenant API.
+ * A live call reaches the provider branch only when a recording URL was
+ * stored for it, which happens solely when that Bot's recording was on.
  */
 router.get(
   "/api/calls/:callId/recording",
@@ -139,11 +141,15 @@ router.get(
     }
 
     try {
-      if (call.providerCallId?.startsWith("twilio-voicemail:")) {
-        const mediaUrl = twilioMediaUrl(call.recordingUrl);
+      const mediaUrl = twilioMediaUrl(call.recordingUrl);
+      const isVoicemailRecording = call.providerCallId?.startsWith("twilio-voicemail:");
+      // Live SIP calls carry providerCallId "openai:…"; their Twilio media is
+      // served exactly like voicemail once the recording callback stored it.
+      const isLiveRecording = call.providerCallId?.startsWith("openai:");
+      if (mediaUrl && (isVoicemailRecording || isLiveRecording)) {
         const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
         const authToken = process.env.TWILIO_AUTH_TOKEN?.trim();
-        if (!mediaUrl || !accountSid || !authToken) {
+        if (!accountSid || !authToken) {
           return res.status(503).json({
             code: "RECORDING_PROVIDER_UNAVAILABLE",
             error: "This recording is temporarily unavailable.",

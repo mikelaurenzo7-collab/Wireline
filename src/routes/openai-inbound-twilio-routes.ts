@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from "express";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { liveExternalActionPolicyForUser } from "../lib/account-environment-policy";
@@ -21,6 +21,7 @@ import {
   type RealtimeSipTarget,
 } from "../lib/voice/realtime-sip-target";
 import { xaiSipConfigured } from "../lib/voice/xai-sip-config";
+import { liveRecordingDialAttributes } from "../lib/voice/live-call-recording";
 import { handleTwilioVoiceFallback } from "./twilio-webhook-base";
 
 const router = Router();
@@ -30,13 +31,15 @@ function hangupTwiml(): string {
   return '<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>';
 }
 
-function inboundBridgeTwiml(target: RealtimeSipTarget): string {
+function inboundBridgeTwiml(target: RealtimeSipTarget, recordCall: boolean): string {
   // Answer the parent before dialing SIP: Twilio rejects the funded REST
   // timeLimit update on an unanswered parent (21220). The worker must still
   // confirm that total carrier limit before reserving AI spend or accepting.
+  // Recording is the Bot owner's per-Bot choice (default off): the flag adds
+  // carrier capture here and the recording notice to the spoken opening.
   return (
     '<?xml version="1.0" encoding="UTF-8"?>' +
-    `<Response><Dial answerOnBridge="false" timeout="30" action="/api/twilio-webhook/openai-inbound-dial-complete" method="POST" timeLimit="${resolveOpenAISipSessionMaxSeconds()}">` +
+    `<Response><Dial answerOnBridge="false" timeout="30" action="/api/twilio-webhook/openai-inbound-dial-complete" method="POST" timeLimit="${resolveOpenAISipSessionMaxSeconds()}"${liveRecordingDialAttributes(recordCall)}>` +
     `${renderSipNoun(target)}</Dial><Hangup/></Response>`
   );
 }
@@ -46,13 +49,27 @@ function phoneVoiceRuntimeConfigured(): boolean {
   return openAISipConfigured() || (configuredPhoneVoiceProvider() === "xai" && xaiSipConfigured());
 }
 
-async function resolveInboundOwner(phoneNumber: string): Promise<string | null> {
+async function resolveInboundOwner(
+  phoneNumber: string,
+): Promise<{ userId: string; agentId: string } | null> {
   const [line] = await drizzle
     .select({ userId: schema.phoneNumbers.userId, agentId: schema.phoneNumbers.agentId })
     .from(schema.phoneNumbers)
     .where(eq(schema.phoneNumbers.phoneNumber, phoneNumber))
     .limit(1);
-  return line?.userId && line.agentId ? line.userId : null;
+  return line?.userId && line.agentId ? { userId: line.userId, agentId: line.agentId } : null;
+}
+
+async function inboundCallRecordingEnabled(owner: {
+  userId: string;
+  agentId: string;
+}): Promise<boolean> {
+  const [agent] = await drizzle
+    .select({ callRecordingEnabled: schema.agents.callRecordingEnabled })
+    .from(schema.agents)
+    .where(and(eq(schema.agents.id, owner.agentId), eq(schema.agents.userId, owner.userId)))
+    .limit(1);
+  return agent?.callRecordingEnabled ?? false;
 }
 
 router.post(
@@ -86,8 +103,9 @@ router.post(
     }
 
     try {
-      const userId = await resolveInboundOwner(calledNumber);
-      if (!userId) {
+      const owner = await resolveInboundOwner(calledNumber);
+      const userId = owner?.userId ?? null;
+      if (!owner || !userId) {
         log.warn("Twilio inbound OpenAI bridge found no assigned BotBound line", {
           calledSuffix: phoneSuffixForLog(calledNumber),
         });
@@ -111,13 +129,19 @@ router.post(
         return;
       }
 
+      // Decide recording once, here, and reuse the same immutable value for
+      // both carrier capture (the <Dial> below) and the spoken notice (the SIP
+      // token is checked at admission). Toggling the Bot flag after this
+      // response cannot make capture and disclosure disagree.
+      const callRecordingEnabled = await inboundCallRecordingEnabled(owner);
       const { token } = issueOpenAIInboundToken({
         twilioCallSid: String(req.body?.CallSid || ""),
         calledNumber,
         callerNumber,
+        callRecordingEnabled,
       });
       const target = await resolveInboundSipTarget({ calledNumber, token });
-      res.status(200).send(inboundBridgeTwiml(target));
+      res.status(200).send(inboundBridgeTwiml(target, callRecordingEnabled));
     } catch (error) {
       log.error("Twilio inbound OpenAI bridge failed closed", {
         calledSuffix: phoneSuffixForLog(calledNumber),

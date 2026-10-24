@@ -37,6 +37,7 @@ import {
   openAIOutboundPlacementMatches,
   verifyOpenAIOutboundToken,
 } from "../lib/voice/openai-outbound-token";
+import { resolveOpenAIOutboundParentCallSid } from "../lib/voice/openai-outbound-twiml-replay";
 import {
   OPENAI_INBOUND_SIP_TOKEN_HEADER,
   OPENAI_OUTBOUND_SIP_TOKEN_HEADER,
@@ -130,6 +131,7 @@ async function resolveInboundContext(
   callerNumber: string | null,
   callId: string,
   twilioCallSid: string,
+  callRecordingEnabled: boolean,
 ) {
   const [line] = await drizzle
     .select({
@@ -150,6 +152,9 @@ async function resolveInboundContext(
       calledNumber,
       direction: "inbound" as const,
       businessName: line.businessName,
+      // The admission notice uses the recording decision snapshotted at TwiML
+      // creation (signed into the inbound token), never the Bot's current flag.
+      callRecordingEnabled,
       admission: await tenantStore.run(line.userId, () =>
         resolveNativeInboundCallAdmission({
           userId: line.userId,
@@ -229,6 +234,19 @@ async function resolveOutboundContext(
     if (!calledNumber || calledNumber !== outboundLineNumber || !agentContext) {
       throw AppError.serviceUnavailable("The outbound Bot or Twilio line is not active.");
     }
+    // The spoken notice uses the recording decision snapshotted when this
+    // placement was created — the same immutable value that already decided
+    // carrier capture in the bridge TwiML. The agent row is never re-read.
+    const callRecordingEnabled = nativeVoice.call_recording_enabled === true;
+    // The parent Twilio CallSid persisted by this placement's bridge TwiML is
+    // the immutable identity the recording-completion callback correlates
+    // against. Phone tests never record, so they carry no bridge marker.
+    const twilioParentCallSid = resolveOpenAIOutboundParentCallSid(nativeVoice);
+    if (!twilioParentCallSid && lead.source !== "phone_test") {
+      log.warn("Outbound SIP call has no persisted parent CallSid", {
+        leadId: String(lead.id),
+      });
+    }
 
     return {
       call: {
@@ -245,6 +263,8 @@ async function resolveOutboundContext(
         callPurpose: outboundPurpose(nativeVoice.call_purpose),
         businessName: agentContext.businessName,
         complianceMode: agentContext.complianceMode,
+        callRecordingEnabled,
+        ...(twilioParentCallSid ? { twilioParentCallSid } : {}),
         ...(lead.source === "phone_test" ? { phoneTest: true as const } : {}),
       },
     };
@@ -403,6 +423,9 @@ async function admitRealtimeCall(
         callerNumber,
         callId,
         inboundVerification?.ok ? inboundVerification.claims.twilioCallSid : "",
+        // Recording capture and disclosure both read the decision signed into
+        // the token when the TwiML was created; the agent row is never re-read.
+        inboundVerification?.ok ? inboundVerification.claims.callRecordingEnabled : false,
       );
   if (!context) {
     log.warn("OpenAI incoming call rejected: no active BotBound line", {
