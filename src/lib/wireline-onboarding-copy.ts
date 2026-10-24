@@ -72,10 +72,15 @@ export const POST_CREATE_WIZARD_COPY = {
   },
 } as const;
 
-/** Phone setup, post-create, and Preview Voice CTAs while checkout stays closed. */
+/**
+ * Phone setup, post-create, and Preview Voice fallback shown only when the server
+ * reports self-serve checkout closed or the plan catalog cannot be reached (fail
+ * closed). With paid checkout open it never renders, so it must not imply that
+ * BotBound itself is paused.
+ */
 export const SOFT_OPEN_CHECKOUT_COPY = {
-  title: "Live activation is paused",
-  detail: "Use Set Up to try your Bot privately.",
+  title: "Live activation isn't available right now",
+  detail: "Keep trying your Bot privately in Set Up, then check back soon.",
   savedDetail: (agentName: string) => `${agentName} is saved. Preview Voice is ready in Set Up.`,
   allowanceDetail: "This month's Preview Voice is used. We'll restore it when you go live.",
   cta: "Contact support",

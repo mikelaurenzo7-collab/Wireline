@@ -128,7 +128,9 @@ test("a paid Bot's setup guide still opens number selection while new checkout i
   });
   await page.goto("/studio?agent=bot-front-desk");
   const guide = page.getByRole("dialog", { name: "Next Up for Front Desk" });
-  await expect(guide.getByText("Live activation is paused", { exact: true })).toHaveCount(0);
+  await expect(
+    guide.getByText("Live activation isn't available right now", { exact: true }),
+  ).toHaveCount(0);
   await guide.getByRole("button", { name: "Choose a number", exact: true }).click();
   await expect(page).toHaveURL(/\/phone\?tab=setup&agent=bot-front-desk$/);
   await expect(page.getByRole("button", { name: "Find Numbers", exact: true })).toBeVisible();

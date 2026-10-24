@@ -129,7 +129,7 @@ describe("Studio Preview Voice during a closed self-serve checkout", () => {
     const note = read("src/components/onboarding/SoftOpenCheckoutNote.tsx");
     const copy = read("src/lib/wireline-onboarding-copy.ts");
 
-    expect(copy).toContain('title: "Live activation is paused"');
+    expect(copy).toContain(`title: "Live activation isn't available right now"`);
     expect(copy).toContain('cta: "Contact support"');
     expect(note).toContain("SOFT_OPEN_CHECKOUT_COPY");
     expect(setup).toContain("SoftOpenCheckoutNote");
