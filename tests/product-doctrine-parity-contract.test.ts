@@ -49,10 +49,8 @@ describe("product doctrine parity", () => {
     expect(clientSurfaces).toMatch(/Launch status\s+\|\s+\*\*Retired\*\*/);
     expect(entitlements).toContain("Live talking-head video is no longer offered");
     expect(entitlements).toContain("addonOffered: false");
-    expect(liveVoice).toContain("BotBound uses one live-conversation runtime: OpenAI Realtime");
-    expect(liveVoice).toContain(
-      "No alternate voice provider or automatic model fallback is permitted",
-    );
+    expect(liveVoice).toContain("Telephone calls run on xAI voice");
+    expect(liveVoice).toContain("A call never moves between providers mid-flight.");
     expect(liveVoice).not.toMatch(/work-companion|Grok Bot companion/i);
     expect(existsSync(resolve(process.cwd(), "docs/GROK_BOT_COMPANION_RUNTIME.md"))).toBe(false);
 

@@ -50,15 +50,15 @@ describe("OpenAI Realtime voice routing contracts", () => {
     expect(routing).toContain('"degraded"');
   });
 
-  it("retains the governed default OpenAI PSTN lane and admission controls", () => {
+  it("retains the governed default xAI PSTN lane, OpenAI fallback, and admission controls", () => {
     const policy = read("src/lib/voice/runtime-policy.ts");
     const runtime = read("src/lib/voice/openai-phone-agent-runtime.ts");
     const inbound = read("src/routes/openai-inbound-twilio-routes.ts");
     const webhook = read("src/routes/openai-sip-routes.ts");
-    expect(policy).toContain('runtime: "openai_realtime"');
-    expect(policy).toContain('phoneTransport: "openai_sip"');
+    expect(policy).toContain('runtime: "xai_realtime"');
+    expect(policy).toContain('phoneTransport: "xai_sip"');
     expect(policy).toContain('carrier: "twilio"');
-    expect(policy).toContain("fallbackRuntime: null");
+    expect(policy).toContain('fallbackRuntime: "openai_realtime"');
     expect(runtime).toContain("buildOpenAIRealtimeAgentRuntime");
     expect(runtime).toContain("resolveOpenAIAgentVoiceSelection");
     expect(runtime).toContain('input.voiceProvider?.trim().toLowerCase() === "presenter"');

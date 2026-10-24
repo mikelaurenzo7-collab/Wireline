@@ -11,7 +11,7 @@ describe("production voice runtime policy", () => {
       "Twilio carrier/PSTN through signed BotBound routing to the admitted voice provider",
     );
     expect(policy).toContain(
-      "OpenAI Realtime by default; registered numbers use xAI only with explicit configuration.",
+      "xAI voice by default for every number; lines register with xAI automatically and OpenAI Realtime is the fallback.",
     );
     expect(policy).toContain("A new-call flag cannot switch an active call's provider.");
     expect(read("docs/OPENAI_REALTIME_VOICE.md")).toContain("`gpt-realtime-2.1`");
@@ -49,9 +49,9 @@ describe("production voice runtime policy", () => {
     const policy = read("docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md");
     const runtime = read("src/lib/voice/openai-phone-agent-runtime.ts");
     const catalog = read("src/lib/voice-catalog.ts");
-    expect(policy).toContain(
-      "BotBound has no customer-selectable external voice catalog or live-call cloning",
-    );
+    expect(policy).toContain("## Cloned live voices");
+    expect(policy).toContain("never the reference audio");
+    expect(policy).toContain("the call is never dropped");
     expect(policy).toContain(
       "The disabled platform-admin private-preview foundation and ElevenLabs",
     );
