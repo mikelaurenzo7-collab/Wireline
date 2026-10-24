@@ -13,6 +13,7 @@ import {
   assertLiveExternalActionAllowed,
 } from "../account-environment-policy";
 import { notifyInboundCall } from "../mobile-push";
+import { botDeletionHoldExists, lockBotAdmission } from "../bot-deletion-hold";
 import { hasInboundCapacityInTransaction } from "../inbound-concurrency";
 import { isMarketingCallPurpose, type OutboundCallPurpose } from "../outbound-call-purpose";
 import { LEAD_STATUS } from "../outbound-status";
@@ -781,6 +782,14 @@ async function claimCall(input: OpenAISipIncomingCall) {
     }
 
     const direction = callDirection(input);
+    if (direction === "inbound") {
+      // A Bot being deleted takes no new calls: its number is being released,
+      // and this claim's call and presence rows would outlive the Bot.
+      await lockBotAdmission(tx, input.agentId, "shared");
+      if (await botDeletionHoldExists(tx, input.userId, input.agentId)) {
+        throw new AppError(409, "BOT_BEING_DELETED", "This Bot is being deleted.");
+      }
+    }
     if (direction === "inbound" && !(await hasInboundCapacityInTransaction(tx, input.userId))) {
       throw new AppError(429, "VOICE_CONCURRENCY_EXCEEDED", "The line is at its live call limit.");
     }
