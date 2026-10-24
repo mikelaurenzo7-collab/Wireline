@@ -271,7 +271,9 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
     "href",
     "/signin",
   );
-  await expect(page.getByRole("heading", { name: "Make it yours.", exact: true })).toBeAttached();
+  await expect(
+    page.getByRole("heading", { name: "One Bot. Any role.", exact: true }),
+  ).toBeAttached();
 
   const metrics = await publicMetrics(page);
   expectNoHorizontalEscape(metrics, "desktop home");
