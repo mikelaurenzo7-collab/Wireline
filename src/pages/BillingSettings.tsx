@@ -9,6 +9,7 @@ import StripeBillingCard, {
   type CheckoutAvailability,
 } from "../components/StripeBillingCard";
 import SettingsTabs from "../components/settings/SettingsTabs";
+import UsageSpendCard from "../components/usage-billing/UsageSpendCard";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { authFetch } from "../lib/api";
@@ -407,6 +408,8 @@ export default function BillingSettings() {
           onRetry={retryBilling}
           onCheckoutAvailabilityChange={setCheckoutAvailability}
         />
+
+        <UsageSpendCard refreshKey={refreshKey} />
 
         {!loading && !statusUnavailable && paidPlan && plan ? (
           <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">

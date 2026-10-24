@@ -1,7 +1,8 @@
 import { and, eq, sql } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { AppError } from "./api-error";
-import { planById } from "./plan-catalog";
+import { isUsagePlanId, planById } from "./plan-catalog";
+import { usageBillingEnabled } from "./usage-billing-config";
 import { isOwnerEmail } from "./platform-owner-emails";
 import { drizzle } from "./server-context";
 import { VOICE_COMPLETION_GRACE_MINUTES } from "./voice-funding-policy";
@@ -211,7 +212,15 @@ export async function reserveVoiceCallFunding(
         "VOICE_PLAN_REQUIRED",
         "An active Calls package is required for phone tests.",
       );
-    if (!opts.phoneTest) return null;
+    if (!opts.phoneTest) {
+      // Usage billing: refuse new calls once the owner's monthly limit is spent.
+      // Work already admitted is clamped out of the meter report, never billed past the cap.
+      if (isUsagePlanId(plan.id) && usageBillingEnabled()) {
+        const { admitAccountUsage } = await import("./usage-billing-store");
+        await admitAccountUsage(opts.userId, "call_minutes");
+      }
+      return null;
+    }
   }
 
   // Also covers outbound claims and an earlier call awaiting metering. Unlike

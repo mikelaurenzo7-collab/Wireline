@@ -11,12 +11,13 @@ import { AppError } from "../api-error";
 import { getTenantChannelEntitlements } from "../channel-entitlements";
 import { getPostgresErrorCode } from "../pg-errors";
 import { isProductionDeployment } from "../deployment-environment";
-import { planById } from "../plan-catalog";
+import { isUsagePlanId, planById } from "../plan-catalog";
 import { runWithManagedAiSpend } from "../managed-ai-operation-spend";
 import { getAgentCoachingBrief } from "../mcp-agent-coaching";
 import { rateLimit } from "../rate-limit";
 import { drizzle, log, tenantStore } from "../server-context";
 import { getErrorMessage } from "../server-utils";
+import { usageBillingEnabled } from "../usage-billing-config";
 import {
   CLOUD_COMPUTER_LIMITS,
   CONTEXT_LIMIT_OUTCOME,
@@ -117,6 +118,8 @@ type LiveTask = {
   userId: string;
   agentId: string;
   startedAt: number;
+  /** Billed through usage meters (computer minutes) instead of the AI allowance. */
+  usageMetered: boolean;
   stop: boolean;
   /** The provider ended the browser while the owner was using it. */
   expiredBrowser: boolean;
@@ -569,6 +572,13 @@ async function admitComputerTask(
     if (task?.finished) await saveOutcome(task);
   }
   await enforceTaskLimits(userId);
+  // Usage billing: refuse at the monthly spending limit; otherwise the task is
+  // billed as computer minutes and stays off the managed AI allowance.
+  let usageMetered = false;
+  if (isUsagePlanId(entitlement.planId) && usageBillingEnabled()) {
+    const { admitAccountUsage } = await import("../usage-billing-store");
+    usageMetered = (await admitAccountUsage(userId, "computer_minutes")) !== null;
+  }
 
   const model = cloudComputerModel();
   // A row whose heartbeat stopped is a task that died with its process; settle
@@ -607,6 +617,7 @@ async function admitComputerTask(
     userId,
     agentId: brief.agent_id,
     startedAt: Date.now(),
+    usageMetered,
     stop: false,
     expiredBrowser: false,
     stopAt: null,
@@ -788,7 +799,29 @@ function finishTask(task: LiveTask, outcome: TerminalOutcome): boolean {
   // The final frame and its page stay on the finished task so the owner can
   // review the session in place; pruneFinished retires them with the task.
   pushEvent(task, FINAL_EVENTS[outcome.status]);
+  if (task.usageMetered) recordComputerMinutes(task);
   return true;
+}
+
+/** One idempotent computer-minutes event per task, billed by the second. */
+function recordComputerMinutes(task: LiveTask): void {
+  const elapsedMs = Math.min(Math.max(0, Date.now() - task.startedAt), MAX_TASK_LIFETIME_MS);
+  void import("../usage-billing-store")
+    .then(({ recordAccountUsage }) =>
+      recordAccountUsage({
+        userId: task.userId,
+        meter: "computer_minutes",
+        sourceType: "computer_task",
+        sourceId: task.taskId,
+        quantity: elapsedMs / 60_000,
+      }),
+    )
+    .catch((error: unknown) =>
+      log.error("Usage meter record failed for a computer task", {
+        taskId: task.taskId,
+        error: getErrorMessage(error),
+      }),
+    );
 }
 
 /** Write a finished task's stored outcome while its row is still active. */
@@ -890,6 +923,7 @@ async function executeTask(
       requestMeta: {
         agent_id: task.agentId,
         task_hash: createHash("sha256").update(task.taskId).digest("hex").slice(0, 24),
+        ...(task.usageMetered ? { usage_metered: true } : {}),
       },
       operation: async () => {
         try {
@@ -1069,7 +1103,13 @@ async function executeTaskWithBrowser(
                 model: input.model,
                 reserveUsd,
                 cacheReadQuotaWeight: CACHE_READ_QUOTA_WEIGHT,
-                requestMeta: { agent_id: task.agentId, task_hash: taskHash, turn, retry },
+                requestMeta: {
+                  agent_id: task.agentId,
+                  task_hash: taskHash,
+                  turn,
+                  retry,
+                  ...(task.usageMetered ? { usage_metered: true } : {}),
+                },
                 operation: async () => {
                   try {
                     return await operation();

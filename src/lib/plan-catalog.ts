@@ -1,5 +1,7 @@
 import { selfServeBillingEnabled } from "./billing-release";
 import { VOICE_COMPLETION_GRACE_MINUTES } from "./voice-funding-policy";
+import { BOT_MARK_IDENTITY_CAPACITY } from "./bot-mark";
+import { USAGE_BASE_USD_MONTHLY, USAGE_METERS } from "./usage-billing-catalog";
 
 /** Stripe-backed launch plan catalog. Public plan ids remain canonical. */
 
@@ -53,7 +55,7 @@ export type CapacityTier = "light" | "regular" | "high";
 export type ChannelPlanId =
   ChannelSelectionId | `${ChannelSelectionId}-regular` | `${ChannelSelectionId}-high`;
 export type StripePlanId =
-  "personal" | "starter" | "team" | "business" | "enterprise" | ChannelPlanId;
+  "personal" | "starter" | "team" | "business" | "enterprise" | "usage" | ChannelPlanId;
 export type CheckoutAvailability = "available" | "sms_readiness_required" | "legacy_only";
 
 export type StripePlan = {
@@ -103,6 +105,7 @@ type StripeCatalogPriceLike = {
 };
 
 const PLAN_ID_ALIASES: Record<string, StripePlanId> = {
+  usage: "usage",
   voice: "voice",
   email: "email",
   sms: "sms",
@@ -135,6 +138,7 @@ const PLAN_ID_ALIASES: Record<string, StripePlanId> = {
 };
 
 const PRICE_KEY_PLAN_PREFIXES: Record<string, StripePlanId> = {
+  usage: "usage",
   voice: "voice",
   email: "email",
   sms: "sms",
@@ -725,6 +729,8 @@ export function planExtraAgentPriceId(plan: StripePlan): string | null {
 
 export function planByPriceId(priceId: string | null | undefined): StripePlan | null {
   if (!priceId) return null;
+  const usageBase = process.env.STRIPE_USAGE_BASE_PRICE_ID?.trim();
+  if (usageBase && usageBase === priceId) return USAGE_PLAN;
   return (
     STRIPE_PLANS.find(
       (plan) =>
@@ -764,7 +770,43 @@ export function planByStripePrice(
 export function planById(id: string | null | undefined): StripePlan | null {
   const canonical = canonicalPlanId(id);
   if (!canonical) return null;
+  if (canonical === USAGE_PLAN.id) return USAGE_PLAN;
   return STRIPE_PLANS.find((plan) => plan.id === canonical) || null;
+}
+
+/**
+ * The usage plan (as many Bots as a workspace needs, billed by work done).
+ *
+ * Deliberately outside STRIPE_PLANS: package lineups, package economics and the
+ * founder Stripe catalog contract stay exactly as they are, while webhooks,
+ * entitlements and voice admission can still resolve a stored `usage` plan id.
+ * Prices live in `usage-billing-catalog.ts`; voice minutes are metered to Stripe
+ * (postpaid, spend-capped), so the prepaid wallet treats them as included.
+ * `max_agents` is the identity-mark ceiling enforced by the database, not a
+ * plan limit; `unlimitedBots` is what every surface shows.
+ */
+export const USAGE_PLAN: StripePlan & { unlimitedBots: true } = {
+  id: "usage",
+  name: "BotBound",
+  price_usd_monthly: USAGE_BASE_USD_MONTHLY,
+  price_usd_annual: 0,
+  max_agents: BOT_MARK_IDENTITY_CAPACITY,
+  voice_minutes_monthly: USAGE_METERS.call_minutes.included,
+  runtime_allowance_usd_monthly: 0,
+  ai_spend_allowance_usd_monthly: 2,
+  overage_per_min_usd: USAGE_METERS.call_minutes.tiers[0].unitUsd,
+  included_phone_numbers: 0,
+  included_mailboxes: 0,
+  channels: ["voice", "email"],
+  checkoutAvailability: "available",
+  features: [],
+  priceIdEnv: "STRIPE_USAGE_BASE_PRICE_ID",
+  public: false,
+  unlimitedBots: true,
+};
+
+export function isUsagePlanId(id: string | null | undefined): boolean {
+  return canonicalPlanId(id) === USAGE_PLAN.id;
 }
 
 /** Paid plans that include room for two independently configured Bots. */

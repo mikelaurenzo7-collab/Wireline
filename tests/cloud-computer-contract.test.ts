@@ -481,8 +481,8 @@ describe("cloud computer source contracts", () => {
   it("meters every provider attempt and keeps replayed cache reads from draining the quota", () => {
     const runner = read("src/lib/cloud-computer/task-runner.ts");
     expect(runner).toContain("const attempt = (retry: number)");
-    expect(runner).toContain(
-      "requestMeta: { agent_id: task.agentId, task_hash: taskHash, turn, retry }",
+    expect(runner).toMatch(
+      /requestMeta: \{\s*agent_id: task\.agentId,\s*task_hash: taskHash,\s*turn,\s*retry,/,
     );
     expect(runner).toContain(
       "provider_tool_call_cost_usd: computerToolCalls * CLOUD_COMPUTER_TOOL_CALL_USD",

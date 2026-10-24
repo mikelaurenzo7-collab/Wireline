@@ -2,7 +2,13 @@ import { Router, type Response } from "express";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
-import { FOUNDER_CATALOG_VERSION, planById, planPriceId } from "../lib/plan-catalog";
+import { FOUNDER_CATALOG_VERSION, isUsagePlanId, planById, planPriceId } from "../lib/plan-catalog";
+import { USAGE_CATALOG_VERSION } from "../lib/usage-billing-catalog";
+import {
+  usageBillingEnabled,
+  usageCheckoutConfigured,
+  usagePriceId,
+} from "../lib/usage-billing-config";
 import { drizzle, auditLogger, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import {
@@ -27,6 +33,43 @@ import { resolveOwnedStripeCustomer } from "../lib/stripe-customer-binding";
 import { findPotentiallyLiveStripeSubscription } from "../lib/stripe-subscription-safety";
 
 const router = Router();
+
+/** Most of one add-on a single checkout may buy; more is a support conversation. */
+const MAX_USAGE_ADDON_QUANTITY = 20;
+
+function usageAddonQuantity(value: unknown): number {
+  if (value === true) return 1;
+  const parsed = typeof value === "number" ? value : Number.NaN;
+  if (!Number.isInteger(parsed) || parsed < 0) return 0;
+  return Math.min(parsed, MAX_USAGE_ADDON_QUANTITY);
+}
+
+/**
+ * Usage plan line items: the base, one metered item per meter (no quantity),
+ * and only the add-ons the owner chose. A number exists only when calling is
+ * chosen; a BotBound email address only when the owner asks for one.
+ */
+export function usageCheckoutLineItems(
+  addons: { numbers: number; emailAddresses: number },
+  env: NodeJS.ProcessEnv = process.env,
+): Stripe.Checkout.SessionCreateParams.LineItem[] {
+  const required = (key: Parameters<typeof usagePriceId>[0]) => {
+    const id = usagePriceId(key, env);
+    if (!id) throw new Error(`Usage price ${key} is not configured`);
+    return id;
+  };
+  const items: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+    { price: required("base"), quantity: 1 },
+    { price: required("call_minutes") },
+    { price: required("emails_handled") },
+    { price: required("computer_minutes") },
+  ];
+  if (addons.numbers > 0) items.push({ price: required("number"), quantity: addons.numbers });
+  if (addons.emailAddresses > 0) {
+    items.push({ price: required("email_address"), quantity: addons.emailAddresses });
+  }
+  return items;
+}
 const CHECKOUT_TTL_MS = 24 * 60 * 60_000;
 const ACTIVE_OPERATION_STATES = ["creating", "open"];
 const LIVE_SUBSCRIPTION_STATUSES = new Set([
@@ -147,7 +190,38 @@ router.post(
     const interval = req.body?.interval === "year" ? "year" : "month";
     const plan = planById(requestedPlanId);
     if (!plan) throw AppError.fromHttpStatus(400, "Unknown plan_id.");
-    if (plan.public === false) {
+    const usageCheckout = isUsagePlanId(plan.id);
+    if (usageCheckout) {
+      // Dark until USAGE_BILLING_ENABLED and every usage price id are set.
+      if (!usageBillingEnabled() || !usageCheckoutConfigured()) {
+        return res.status(503).json({
+          code: "USAGE_CHECKOUT_UNAVAILABLE",
+          error: "This plan is not available for checkout yet.",
+        });
+      }
+      if (interval !== "month") {
+        return res.status(400).json({
+          code: "USAGE_PLAN_MONTHLY_ONLY",
+          error: "This plan is billed monthly.",
+        });
+      }
+    }
+    const usageAddons = usageCheckout
+      ? {
+          numbers: usageAddonQuantity(req.body?.addons?.number),
+          emailAddresses: usageAddonQuantity(req.body?.addons?.email_address),
+        }
+      : { numbers: 0, emailAddresses: 0 };
+    if (
+      (usageAddons.numbers > 0 && !usagePriceId("number")) ||
+      (usageAddons.emailAddresses > 0 && !usagePriceId("email_address"))
+    ) {
+      return res.status(503).json({
+        code: "USAGE_ADDON_UNAVAILABLE",
+        error: "That add-on is not available for checkout yet.",
+      });
+    }
+    if (!usageCheckout && plan.public === false) {
       return res.status(410).json({
         code: "LEGACY_PLAN_RETIRED",
         error:
@@ -245,7 +319,9 @@ router.post(
       }).filter(([, value]) => Boolean(value)),
     ) as Record<string, string>;
 
-    const priceId = await resolveStrictFounderPriceId(plan.id, interval);
+    const priceId = usageCheckout
+      ? usagePriceId("base")
+      : await resolveStrictFounderPriceId(plan.id, interval);
     if (!priceId) {
       return res.status(503).json({
         code: "SERVICE_UNAVAILABLE",
@@ -430,7 +506,9 @@ router.post(
           customer: customerId,
           customer_update: { address: "auto" },
           ...stripeCheckoutTaxConfig(),
-          line_items: [{ price: priceId, quantity: 1 }],
+          line_items: usageCheckout
+            ? usageCheckoutLineItems(usageAddons)
+            : [{ price: priceId, quantity: 1 }],
           success_url: `${appUrl.url}/settings/billing?billing=success&session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${appUrl.url}/settings/billing?billing=canceled`,
           allow_promotion_codes: true,
@@ -439,15 +517,26 @@ router.post(
             wireline_user_id: req.user.id,
             wireline_checkout_operation_id: operationId,
             wireline_plan: plan.id,
-            wireline_catalog_version: FOUNDER_CATALOG_VERSION,
+            wireline_catalog_version: usageCheckout
+              ? USAGE_CATALOG_VERSION
+              : FOUNDER_CATALOG_VERSION,
           },
           subscription_data: {
             metadata: {
               wireline_user_id: req.user.id,
               wireline_checkout_operation_id: operationId,
               wireline_plan: plan.id,
-              wireline_catalog_version: FOUNDER_CATALOG_VERSION,
-              overage_policy: "prepaid_balance_only",
+              wireline_catalog_version: usageCheckout
+                ? USAGE_CATALOG_VERSION
+                : FOUNDER_CATALOG_VERSION,
+              // Usage: metered work billed in arrears, never above the owner's limit.
+              overage_policy: usageCheckout ? "metered_with_customer_cap" : "prepaid_balance_only",
+              ...(usageCheckout
+                ? {
+                    usage_number_addons: String(usageAddons.numbers),
+                    usage_email_address_addons: String(usageAddons.emailAddresses),
+                  }
+                : {}),
               ...attributionMetadata,
             },
           },

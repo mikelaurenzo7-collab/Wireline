@@ -700,6 +700,20 @@ export async function handleJob(job: JobRow): Promise<void> {
     }
   }
 
+  if (job.type === "usage_meter_report") {
+    // Settles already-incurred usage only, so it is never paused by the
+    // provider-spend gate. Each event's identifier makes a retry a no-op at Stripe.
+    const { reportAllPendingUsage } = await import("./usage-billing-store");
+    const summary = await reportAllPendingUsage();
+    if (summary.accounts > 0) log.info("usage_meter_report completed", { ...summary });
+    if (summary.failed > 0) {
+      throw new Error(
+        `usage_meter_report left ${summary.failed} event(s) pending after a Stripe error`,
+      );
+    }
+    return;
+  }
+
   if (job.type === "margin_at_risk_alert") {
     const { countAtRiskTenants, listAtRiskTenants } = await import("./tenant-economics");
     const { sendEmail } = await import("./email-service");

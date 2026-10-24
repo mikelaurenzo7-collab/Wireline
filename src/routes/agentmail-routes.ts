@@ -35,6 +35,7 @@ import * as schema from "../db/schema";
 import { assertLiveExternalActionAllowed } from "../lib/account-environment-policy";
 import { requireTenantChannel } from "../lib/channel-entitlements";
 import { planById } from "../lib/plan-catalog";
+import { usageBillingEnabled } from "../lib/usage-billing-config";
 import { runTenantProviderWorkWithDeletionFence } from "../lib/tenant-provider-deletion-fence";
 import {
   existingManagedEmailDomain,
@@ -253,6 +254,16 @@ async function resolveManagedBotInbox(input: {
   }
 }
 
+/** Add-on slots when the owner is on the usage plan with the flag on, else null. */
+async function usageIdentitySlots(
+  userId: string,
+): Promise<{ numbers: number; emailAddresses: number } | null> {
+  if (!usageBillingEnabled()) return null;
+  const { isUsageBillingAccount, usageAddonSlots } = await import("../lib/usage-billing-store");
+  if (!(await isUsageBillingAccount(userId))) return null;
+  return usageAddonSlots(userId);
+}
+
 /** One server-owned sequence for automatic web setup and its idempotent retries. */
 router.post(
   "/api/agents/:agentId/managed-identity",
@@ -269,6 +280,21 @@ router.post(
     if (!agent) throw AppError.fromHttpStatus(404, "Bot not found.");
 
     try {
+      // Usage plan: a number or BotBound email address exists only as a chosen
+      // add-on. Without one there is nothing to set up, and that is not an error:
+      // Gmail, Outlook and calls-only Bots never get a BotBound inbox.
+      const usageSlots = await usageIdentitySlots(userId);
+      if (usageSlots && usageSlots.numbers === 0 && usageSlots.emailAddresses === 0) {
+        res.json({
+          ok: true,
+          phone_number: null,
+          email: null,
+          custom_domain: false,
+          phone_reused: false,
+          email_reused: false,
+        });
+        return;
+      }
       const identity = await ensurePaidBotIdentity({ userId, agentId });
       if (!identity.eligible) {
         throw new AppError(
@@ -280,8 +306,12 @@ router.post(
       const plan = planById(identity.planId);
       if (!plan)
         throw AppError.serviceUnavailable("This Bot's channel setup could not be verified.");
-      const needsPhone = plan.channels.some((channel) => channel === "voice" || channel === "sms");
-      const needsEmail = plan.channels.includes("email");
+      // Usage add-ons are shared across many Bots, so a Bot without its own
+      // number or address is a normal state, not an incomplete setup.
+      const needsPhone = usageSlots
+        ? Boolean(identity.selectionRequired)
+        : plan.channels.some((channel) => channel === "voice" || channel === "sms");
+      const needsEmail = usageSlots ? false : plan.channels.includes("email");
       if (needsPhone && !identity.phone && identity.selectionRequired) {
         throw new AppError(
           409,
@@ -290,7 +320,7 @@ router.post(
         );
       }
       if (
-        (!needsPhone && !needsEmail) ||
+        (!usageSlots && !needsPhone && !needsEmail) ||
         (needsPhone && !identity.phone) ||
         (needsEmail && !identity.email)
       ) {

@@ -70,7 +70,8 @@ export type JobType =
   | "sweep_orphan_supervisor_subs" // Daily janitor: delete subscription rows whose callId no longer references a call_log row
   | "reclaim_canceled_numbers" // Daily janitor: release carrier numbers held by long-canceled workspaces (lib/number-reclamation.ts)
   | "trial_ending_soon_email" // Notify trialing user when trial ends within 3 days
-  | "margin_at_risk_alert"; // Daily founder alert for thin-margin tenants
+  | "margin_at_risk_alert" // Daily founder alert for thin-margin tenants
+  | "usage_meter_report"; // Usage billing: report pending meter events to Stripe (USAGE_BILLING_ENABLED only)
 
 export interface JobPayload extends Record<string, unknown> {}
 

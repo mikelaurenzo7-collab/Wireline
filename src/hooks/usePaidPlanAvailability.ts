@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
 import { isSelfServeCheckoutAvailable } from "../lib/checkout-availability";
 import type { BillingPlansResponse } from "../types/api-billing";
+import { billingModelFromPayload } from "../lib/billing-model";
 
 export function usePaidPlanAvailability({
   interval = "month",
@@ -81,5 +82,15 @@ export function usePaidPlanAvailability({
             ? "This email plan needs a setup review before checkout."
             : "Checkout is unavailable right now. Try again shortly.";
 
-  return { available, canActivate, emailSetupReview, needsEmailSetupReview, notice };
+  // Read from the same /api/billing/plans payload, so no second request.
+  const billingModel = status === "ready" ? billingModelFromPayload(plans) : "plans";
+
+  return {
+    available,
+    billingModel,
+    canActivate,
+    emailSetupReview,
+    needsEmailSetupReview,
+    notice,
+  };
 }

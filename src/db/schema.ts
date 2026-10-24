@@ -1,6 +1,6 @@
 /**
  * Canonical application schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0186_live_voice_clones.sql`.
+ * Latest committed migration: `drizzle/migrations/0187_usage_billing.sql`.
  * Runtime voice defaults remain defined by
  * `drizzle/migrations/0168_openai_realtime_voice_runtime.sql`; migrations 0169
  * and 0172 remove empty retired provider ledgers.
@@ -25,6 +25,7 @@ export * from "./computer-task-schema";
 export * from "./voice-asset-schema";
 export * from "./live-voice-schema";
 export * from "./xai-phone-registration-schema";
+export * from "./usage-billing-schema";
 
 import {
   bigint,

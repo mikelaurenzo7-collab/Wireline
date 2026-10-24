@@ -16,7 +16,7 @@ export function ContactPage() {
   const [searchParams] = useSearchParams();
   const initialIntent = searchParams.get("intent") ?? searchParams.get("topic");
   const startsAsBilling = initialIntent?.toLowerCase() === "billing";
-  const startsAsSales = ["sales", "business", "enterprise"].includes(
+  const startsAsSales = ["sales", "business", "enterprise", "demo"].includes(
     initialIntent?.toLowerCase() ?? "",
   );
   const [inquiryType, setInquiryType] = useState<(typeof INQUIRY_TYPES)[number]["value"]>(
@@ -29,11 +29,13 @@ export function ContactPage() {
       ? "Billing Help"
       : initialIntent?.toLowerCase() === "enterprise"
         ? "Enterprise rollout"
-        : initialIntent?.toLowerCase() === "email"
-          ? "Email setup review"
-          : initialIntent?.toLowerCase() === "sms"
-            ? "Future SMS availability"
-            : "",
+        : initialIntent?.toLowerCase() === "demo"
+          ? "Hear a demo"
+          : initialIntent?.toLowerCase() === "email"
+            ? "Email setup review"
+            : initialIntent?.toLowerCase() === "sms"
+              ? "Future SMS availability"
+              : "",
   );
   const [phone, setPhone] = useState("");
   const [body, setBody] = useState("");

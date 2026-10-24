@@ -7,6 +7,7 @@ import { eq, and, lte, gte, or, inArray, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { jobsRateLimit, jobsSweepRateLimit } from "../middleware/api-rate-limits";
 import { getErrorMessage } from "../lib/server-utils";
+import { usageBillingEnabled } from "../lib/usage-billing-config";
 import {
   claimJobById,
   completeClaimedJob,
@@ -465,6 +466,34 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
           payload: {},
         }).catch((e: unknown) =>
           log.warn("margin_at_risk_alert enqueue failed", { error: getErrorMessage(e) }),
+        );
+      }
+    }
+
+    // Usage billing: report pending meter events about every five minutes.
+    if (
+      withinSweepBudget() &&
+      usageBillingEnabled() &&
+      (req._sweepMode === "cron" || !req._sweepMode)
+    ) {
+      const since5m = new Date(Date.now() - 5 * 60 * 1000);
+      const recentUsageReport = await drizzle
+        .select({ id: schema.jobs.id })
+        .from(schema.jobs)
+        .where(
+          and(
+            eq(schema.jobs.type, "usage_meter_report"),
+            sql`(${schema.jobs.createdAt} >= ${since5m} OR ${schema.jobs.status} IN ('pending', 'running'))`,
+          ),
+        )
+        .limit(1);
+      if (!recentUsageReport.length) {
+        await enqueueJob(drizzle, {
+          userId: SYSTEM_USER_ID,
+          type: "usage_meter_report",
+          payload: {},
+        }).catch((e: unknown) =>
+          log.warn("usage_meter_report enqueue failed", { error: getErrorMessage(e) }),
         );
       }
     }

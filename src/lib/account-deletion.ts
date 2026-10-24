@@ -42,6 +42,9 @@ export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   // Live cloned voices keep only provider voice ids; provider-side voices are
   // deleted first by deleteLiveVoicesForAccount (best effort, logged).
   { table: "wireline_live_voices", userColumns: ["user_id"] },
+  // Usage billing ledger and spend controls. Stripe keeps the invoice record.
+  { table: "wireline_usage_meter_events", userColumns: ["user_id"] },
+  { table: "wireline_usage_spend_controls", userColumns: ["user_id"] },
   { table: "wireline_audit_log", userColumns: ["user_id"] },
   { table: "wireline_signal_presence", userColumns: ["user_id"] },
   { table: "wireline_follow_up_tasks", userColumns: ["user_id"] },

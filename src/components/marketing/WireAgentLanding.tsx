@@ -27,6 +27,7 @@ import { HOME_PLAN_IDS } from "../../lib/public-plan-lineup";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { signupHrefForPlan } from "../../lib/signup-intent";
 import { usePaidPlanAvailability } from "../../hooks/usePaidPlanAvailability";
+import { USAGE_BASE_USD_MONTHLY, USAGE_NEVER_PAY_FOR } from "../../lib/usage-billing-catalog";
 import { useAuth } from "../../contexts/AuthContext";
 
 const FEATURED_TEMPLATE_KEYS = [
@@ -57,8 +58,11 @@ const PUBLIC_PLANS = HOME_PLAN_IDS.map((id) => {
 });
 
 export default function WireAgentLanding() {
-  const { available, canActivate, needsEmailSetupReview, notice } = usePaidPlanAvailability();
+  const { available, billingModel, canActivate, needsEmailSetupReview, notice } =
+    usePaidPlanAvailability();
   const signedIn = Boolean(useAuth().user);
+  // Many-Bots copy appears only once the server sells the usage plan.
+  const usageBilling = billingModel === "usage";
   useEffect(() => {
     emitProductEventOnce({
       event: "landing_viewed",
@@ -116,8 +120,22 @@ export default function WireAgentLanding() {
         <section id="solutions" className="landing-prestige__section landing-prestige__roles">
           <div className="landing-prestige__rail">
             <header className="landing-prestige__section-heading">
-              <h2>One Bot. Any role.</h2>
-              <span>Pick a starting role, then teach it your hours, services, and answers.</span>
+              {usageBilling ? (
+                <>
+                  <h2>As many Bots as you need. Pay only for the work they do.</h2>
+                  <span>
+                    Give every role its own Bot, then teach each one your hours, services, and
+                    answers.
+                  </span>
+                </>
+              ) : (
+                <>
+                  <h2>One Bot. Any role.</h2>
+                  <span>
+                    Pick a starting role, then teach it your hours, services, and answers.
+                  </span>
+                </>
+              )}
             </header>
             <div className="landing-prestige__role-grid">
               {FEATURED_TEMPLATES.map((template) => {
@@ -144,7 +162,40 @@ export default function WireAgentLanding() {
           </div>
         </section>
 
-        <section id="pricing" className="landing-prestige__section landing-prestige__pricing">
+        {usageBilling ? (
+          <section
+            id="pricing"
+            className="landing-prestige__section landing-prestige__pricing"
+            aria-label="Pricing"
+          >
+            <div className="landing-prestige__rail">
+              <header className="landing-prestige__section-heading">
+                <h2>{`From $${USAGE_BASE_USD_MONTHLY}/month. Usage included.`}</h2>
+                <span>
+                  {`You never pay for ${USAGE_NEVER_PAY_FOR.join(", ").toLowerCase()}. Set a monthly limit and your Bots pause there.`}
+                </span>
+              </header>
+              <div className="landing-prestige__actions">
+                <Link
+                  to="/pricing"
+                  className="landing-prestige__cta is-primary"
+                  onClick={() => trackSignupIntent("pricing", "Estimate Your Bill")}
+                >
+                  Estimate Your Bill <ArrowRight aria-hidden="true" />
+                </Link>
+                <Link to="/contact?topic=demo" className="landing-prestige__cta">
+                  Hear a Demo
+                </Link>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        <section
+          id={usageBilling ? undefined : "pricing"}
+          hidden={usageBilling}
+          className="landing-prestige__section landing-prestige__pricing"
+        >
           <div className="landing-prestige__rail">
             <header className="landing-prestige__section-heading">
               <h2>Calls, email, or both.</h2>

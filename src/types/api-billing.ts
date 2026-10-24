@@ -94,7 +94,27 @@ export interface BillingPlansResponse {
   stripe_configured: boolean;
   /** Platform checkout gates are open; plan/interval and tenant checks still apply. */
   checkout_available: boolean;
+  /** "usage" once USAGE_BILLING_ENABLED is on; absent from older servers. */
+  billing_model?: "usage" | "plans";
+  /** Usage plan checkout is configured end to end. */
+  usage_checkout_available?: boolean;
 }
+
+/** GET /api/billing/usage-spend */
+export type UsageSpendResponse =
+  | { enabled: false }
+  | { enabled: true; usage_account: false }
+  | {
+      enabled: true;
+      usage_account: true;
+      period: string;
+      spent_usd: number;
+      cap_usd: number;
+      pct: number;
+      at_cap: boolean;
+      headroom_usd: number;
+      max_cap_usd: number;
+    };
 
 /** GET /api/billing/usage — mirrors WorkspaceUsageSnapshot */
 export interface WorkspaceUsageResponse {

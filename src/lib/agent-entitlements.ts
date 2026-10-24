@@ -1,4 +1,4 @@
-import { planById } from "./plan-catalog";
+import { isUsagePlanId, planById } from "./plan-catalog";
 import { BOT_MARK_IDENTITY_CAPACITY } from "./bot-mark";
 import { clampAgentCapacity, clampExtraAgentAddons } from "./agent-capacity";
 
@@ -51,6 +51,18 @@ export function resolveAgentEntitlement(input: AgentEntitlementInput): AgentEnti
     };
   }
 
+  // Usage billing: Bots are never sold, so the workspace has no plan cap. The
+  // only ceiling is the identity namespace, which is far above any real team.
+  if (isUsagePlanId(input.planId)) {
+    return {
+      subscriptionStatus,
+      planAgents: BOT_MARK_IDENTITY_CAPACITY,
+      purchasedExtras: 0,
+      effectiveCap: BOT_MARK_IDENTITY_CAPACITY,
+      unlimited: true,
+    };
+  }
+
   // Active/trialing workspaces receive their catalog allowance, purchased
   // extras, and any deliberate platform grant stored above that catalog total.
   const plan = planById(input.planId) || planById("personal");
@@ -86,7 +98,10 @@ export function agentCapHit(agentCount: number, entitlement: AgentEntitlement): 
  * "agents" and so read "up to 1 agents" — the free-plan cap, and therefore the
  * wording most workspaces actually hit.
  */
-export function agentCapMessage(cap: number): string {
+export function agentCapMessage(cap: number, unlimited = false): string {
+  if (unlimited) {
+    return "This workspace has reached the most Bots one workspace can hold. Contact support to add more.";
+  }
   return cap === 1
     ? "Your plan includes 1 Bot. Change your current Bot in its Workspace to give it a new job."
     : `Your plan includes up to ${cap} Bots. Change an existing Bot in its Workspace to give it a new job.`;

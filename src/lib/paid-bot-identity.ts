@@ -24,7 +24,8 @@ import { assertLiveExternalActionAllowed } from "./account-environment-policy";
 import { findAgentPhoneLine } from "./agent-phone-lines";
 import { AppError } from "./api-error";
 import { beginBotIdentitySetup, endBotIdentitySetup } from "./bot-deletion-hold";
-import { planById } from "./plan-catalog";
+import { isUsagePlanId, planById } from "./plan-catalog";
+import { usageBillingEnabled } from "./usage-billing-config";
 import { getTenantChannelEntitlements, requireTenantChannel } from "./channel-entitlements";
 import { getIncludedPhoneLineSlots } from "./phone-line-entitlements";
 import { selectPaidBotIdentityAgents } from "./paid-bot-identity-capacity";
@@ -164,6 +165,17 @@ async function paidPlanForUser(
     Boolean(plan && plan.price_usd_monthly > 0);
   if (!paid)
     return { eligible: false, planId, agentIds: [], phoneAgentIds: [], mailboxAgentIds: [] };
+  // Usage plan: provision nothing while the flag is off, and afterwards only the
+  // add-ons the owner chose. Gmail, Outlook and calls-only accounts never get a
+  // BotBound inbox, because they never buy the email address add-on.
+  const usageSlots = isUsagePlanId(planId)
+    ? usageBillingEnabled()
+      ? await import("./usage-billing-store").then(({ usageAddonSlots }) => usageAddonSlots(userId))
+      : { numbers: 0, emailAddresses: 0 }
+    : null;
+  if (usageSlots && usageSlots.numbers === 0 && usageSlots.emailAddresses === 0) {
+    return { eligible: false, planId, agentIds: [], phoneAgentIds: [], mailboxAgentIds: [] };
+  }
 
   const includesPhone = entitlement.channels.some(
     (channel) => channel === "voice" || channel === "sms",
@@ -200,7 +212,7 @@ async function paidPlanForUser(
   // A paid active subscription includes at least one phone slot. Zero/invalid
   // live capacity indicates an inconsistent account projection, not an
   // intentionally private or over-capacity Bot. Surface it for retry/repair.
-  if (includesPhone && (!Number.isFinite(phoneSlots) || phoneSlots < 1)) {
+  if (!usageSlots && includesPhone && (!Number.isFinite(phoneSlots) || phoneSlots < 1)) {
     throw new Error(
       "PAID_IDENTITY_ENTITLEMENT_MISMATCH: Active paid subscription has no live phone entitlement. Reconcile subscription and account settings before provisioning.",
     );
@@ -210,9 +222,11 @@ async function paidPlanForUser(
   // the worker as well as at enqueue time so stale jobs cannot outlive a downgrade.
   const phoneAgentIds = selectPaidBotIdentityAgents(agents, lines, phoneSlots);
   const mailboxSlots = includesEmail
-    ? plan?.catalogFamily === "legacy"
-      ? phoneSlots
-      : (plan?.included_mailboxes ?? 0)
+    ? usageSlots
+      ? usageSlots.emailAddresses
+      : plan?.catalogFamily === "legacy"
+        ? phoneSlots
+        : (plan?.included_mailboxes ?? 0)
     : 0;
   const mailboxAgentIds = !includesEmail
     ? []

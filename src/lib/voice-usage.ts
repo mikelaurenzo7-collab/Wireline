@@ -11,7 +11,9 @@
  * - Channel packages reserve call funding before acceptance, with up to ten
  *   additional completion minutes within the durable session deadline. A
  *   completion debt pauses new calls and prepaid extras until paid.
- * - No Stripe meter event is emitted and no automatic overage invoice is created.
+ * - Package plans: No Stripe meter event is emitted and no automatic overage
+ *   invoice is created. The usage plan (behind USAGE_BILLING_ENABLED) records one idempotent meter
+ *   event per call instead, clamped to the owner's monthly spending limit.
  * - A provider call contributes to the monthly counter exactly once, while an
  *   unfinished Runtime Balance debit can be resumed safely on webhook retry.
  */
@@ -20,11 +22,12 @@ import { and, eq, sql } from "drizzle-orm";
 import { voiceUsageEvents } from "../db/voice-usage-schema";
 import { chargeCompletedVoiceUsage } from "./voice-completion-grace";
 import { getVoiceCallFundingInTransaction } from "./voice-call-funding";
-import { FLAT_OVERAGE_PER_MIN_USD, planById } from "./plan-catalog";
+import { FLAT_OVERAGE_PER_MIN_USD, isUsagePlanId, planById } from "./plan-catalog";
 import { drizzle, log } from "./server-context";
 import { dailyPeriodKey } from "./tenant-quotas";
 import * as schema from "../db/schema";
 import { resolveAllowanceWindow } from "./paid-allowance-period";
+import { usageBillingEnabled } from "./usage-billing-config";
 import { readVoiceIdentityReceipt, resolveVoiceFundingId } from "./voice-call-identity";
 
 const DIMENSION = "voice_minutes_monthly";
@@ -76,6 +79,8 @@ export function includedVoiceMinutes(
   included: number;
 } {
   const plan = planById(planId ?? "personal");
+  // Usage billing meters every second through Stripe; Runtime Balance never debits.
+  if (isUsagePlanId(planId)) return { plan, included: Number.MAX_SAFE_INTEGER };
   const safeExtraAgents = Math.max(0, Number(extraAgents ?? 0));
   const baseIncluded = Math.max(0, plan?.voice_minutes_monthly ?? 0);
   const extraIncluded = safeExtraAgents * Math.max(0, plan?.extra_agent_voice_minutes_monthly ?? 0);
@@ -370,6 +375,21 @@ export async function trackVoiceMinutes(opts: {
       periodKey,
       dailyKey,
     });
+
+    // Usage billing: one idempotent meter event per provider call, billed by the
+    // second. Replays insert nothing. Runs before the charged checkpoint so a
+    // retry after a partial failure still records the call.
+    if (prepared.minutes > 0 && usageBillingEnabled()) {
+      const { recordAccountUsage } = await import("./usage-billing-store");
+      await recordAccountUsage({
+        userId,
+        meter: "call_minutes",
+        sourceType: "voice_call",
+        sourceId: vapiCallId,
+        quantity: Math.max(0, durationSeconds) / 60,
+        occurredAt: now,
+      });
+    }
 
     if (prepared.chargedAt) return;
 

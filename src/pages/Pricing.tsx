@@ -17,6 +17,7 @@ import {
 import BillingIntervalControl from "../components/BillingIntervalControl";
 import ChannelPlanPicker from "../components/ChannelPlanPicker";
 import { usePaidPlanAvailability } from "../hooks/usePaidPlanAvailability";
+import UsagePricingPanel from "../components/usage-billing/UsagePricingPanel";
 
 const CHANNEL_PLANS = STRIPE_PLANS.filter(
   (plan) =>
@@ -76,6 +77,30 @@ const pricingJsonLd = {
   ],
 };
 
+/** Pricing while USAGE_BILLING_ENABLED is on: one plan, an estimator first. */
+function UsagePricing() {
+  return (
+    <MarketingPageFrame className="wl-pricing-page">
+      <PageMeta
+        title="Pricing | As Many Bots as You Need | BotBound"
+        description="Unlimited Bots. Pay only for the calls, emails, and computer time they use, up to a monthly limit you set."
+        path="/pricing"
+      />
+      <section id="plans" className="marketing-section marketing-section--screen">
+        <div className="wl-public-rail mx-auto max-w-5xl">
+          <div className="mx-auto mb-6 max-w-3xl text-center">
+            <h1 className="marketing-hero-title mx-auto">Pay Only for the Work Your Bots Do.</h1>
+            <p className="marketing-hero-lead mx-auto mt-4">
+              As many Bots as you need. Move the sliders to see your monthly bill.
+            </p>
+          </div>
+          <UsagePricingPanel signupHref="/signup" />
+        </div>
+      </section>
+    </MarketingPageFrame>
+  );
+}
+
 export default function Pricing() {
   const [billingInterval, setBillingInterval] = useState<"month" | "year">(
     () =>
@@ -105,10 +130,11 @@ export default function Pricing() {
     url.searchParams.set("interval", interval);
     window.history.replaceState(window.history.state, "", url);
   };
-  const { canActivate, emailSetupReview, notice } = usePaidPlanAvailability({
+  const { billingModel, canActivate, emailSetupReview, notice } = usePaidPlanAvailability({
     interval: billingInterval,
     planId: selectedPlanId,
   });
+  if (billingModel === "usage") return <UsagePricing />;
   const selectedHasCalls =
     CHANNEL_PLANS.find((plan) => plan.id === selectedPlanId)?.channels.includes("voice") === true;
   return (

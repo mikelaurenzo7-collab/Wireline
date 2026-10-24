@@ -30,6 +30,8 @@ import type { AuthenticatedRequest } from "../types/auth";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { selfServeBillingEnabled } from "../lib/billing-release";
+import { usageBillingEnabled, usageCheckoutConfigured } from "../lib/usage-billing-config";
+import { USAGE_MAX_MONTHLY_CAP_USD } from "../lib/usage-billing-catalog";
 import { isLaunchHardBlocked } from "../lib/launch-readiness";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { isLiveVideoCatalogReady } from "../lib/video-presenter/live-video-entitlements";
@@ -505,8 +507,68 @@ router.get("/billing/plans", (_req: Request, res: Response) => {
     plans: plansForClient(),
     stripe_configured: stripeConfigured,
     checkout_available: checkoutAvailable,
+    // Usage billing ships dark: "plans" until USAGE_BILLING_ENABLED is true.
+    billing_model: usageBillingEnabled() ? "usage" : "plans",
+    usage_checkout_available:
+      checkoutAvailable && usageBillingEnabled() && usageCheckoutConfigured(),
   });
 });
+
+// ─── Usage billing: monthly spending limit ─────────────────────────────────
+
+router.get(
+  "/billing/usage-spend",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    res.setHeader("Cache-Control", "no-store");
+    if (!usageBillingEnabled()) {
+      res.json({ enabled: false });
+      return;
+    }
+    const { accountUsageSpendState } = await import("../lib/usage-billing-store");
+    const state = await accountUsageSpendState(req.user!.id);
+    if (!state) {
+      res.json({ enabled: true, usage_account: false });
+      return;
+    }
+    res.json({
+      enabled: true,
+      usage_account: true,
+      period: state.periodKey,
+      spent_usd: state.spentUsd,
+      cap_usd: state.capUsd,
+      pct: state.pct,
+      at_cap: state.atCap,
+      headroom_usd: state.headroomUsd,
+      max_cap_usd: USAGE_MAX_MONTHLY_CAP_USD,
+    });
+  },
+);
+
+router.put(
+  "/billing/usage-spend",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!usageBillingEnabled()) throw AppError.notFound("Usage billing is not available.");
+    const raw = (req.body as { monthly_cap_usd?: unknown } | undefined)?.monthly_cap_usd;
+    const capUsd = typeof raw === "number" ? raw : Number.NaN;
+    if (!Number.isFinite(capUsd)) {
+      throw AppError.badRequest("monthly_cap_usd must be a number.");
+    }
+    const { isUsageBillingAccount, setUsageMonthlyCap, accountUsageSpendState } =
+      await import("../lib/usage-billing-store");
+    if (!(await isUsageBillingAccount(req.user!.id))) {
+      throw AppError.badRequest("This workspace is not on usage billing.");
+    }
+    await setUsageMonthlyCap(req.user!.id, Math.round(capUsd * 100) / 100);
+    log.info("Usage monthly limit updated", {
+      userId: req.user!.id,
+      monthlyCapUsd: Math.round(capUsd * 100) / 100,
+    });
+    const state = await accountUsageSpendState(req.user!.id);
+    res.json({ ok: true, cap_usd: state?.capUsd ?? capUsd, at_cap: state?.atCap ?? false });
+  },
+);
 
 router.get("/billing/usage", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {

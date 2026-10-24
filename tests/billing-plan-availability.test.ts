@@ -36,6 +36,8 @@ type PublicPlans = {
   plans: Array<{ id: string; configured: boolean; annual_configured: boolean }>;
   stripe_configured: boolean;
   checkout_available: boolean;
+  billing_model: "usage" | "plans";
+  usage_checkout_available: boolean;
 };
 type RouteLayer = {
   route?: {
@@ -73,8 +75,30 @@ describe("public billing checkout availability", () => {
     expect(body.checkout_available).toBe(true);
     expect(body.plans.find((plan) => plan.id === "voice")?.configured).toBe(true);
     expect(body.plans.find((plan) => plan.id === "starter")).toBeUndefined();
-    expect(Object.keys(body).sort()).toEqual(["checkout_available", "plans", "stripe_configured"]);
+    expect(Object.keys(body).sort()).toEqual([
+      "billing_model",
+      "checkout_available",
+      "plans",
+      "stripe_configured",
+      "usage_checkout_available",
+    ]);
+    // USAGE_BILLING_ENABLED is off by default, so the public model stays on plans.
+    expect(body.billing_model).toBe("plans");
+    expect(body.usage_checkout_available).toBe(false);
+    expect(body.plans.find((plan) => plan.id === "usage")).toBeUndefined();
     expect(setHeader).toHaveBeenCalledWith("Cache-Control", "no-store");
+  });
+
+  it("publishes the usage model only when the flag is on and its prices are configured", () => {
+    vi.stubEnv("USAGE_BILLING_ENABLED", "true");
+    expect(getPublicPlans().body.usage_checkout_available).toBe(false);
+    vi.stubEnv("STRIPE_USAGE_BASE_PRICE_ID", "price_usage_base_fixture");
+    vi.stubEnv("STRIPE_USAGE_CALL_MINUTES_PRICE_ID", "price_usage_calls_fixture");
+    vi.stubEnv("STRIPE_USAGE_EMAILS_PRICE_ID", "price_usage_emails_fixture");
+    vi.stubEnv("STRIPE_USAGE_COMPUTER_MINUTES_PRICE_ID", "price_usage_computer_fixture");
+    const { body } = getPublicPlans();
+    expect(body.billing_model).toBe("usage");
+    expect(body.usage_checkout_available).toBe(true);
   });
 
   it("reports unavailable when the same hard launch gate rejects checkout despite configured prices", () => {

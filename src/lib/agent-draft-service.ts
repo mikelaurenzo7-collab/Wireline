@@ -158,7 +158,11 @@ async function assertAgentCapacity(
     extraAgents: setting?.extraAgents,
   });
   if (entitlement.effectiveCap !== null && existingCount >= entitlement.effectiveCap) {
-    throw new AppError(402, AGENT_CAPACITY_REACHED, agentCapMessage(entitlement.effectiveCap));
+    throw new AppError(
+      402,
+      AGENT_CAPACITY_REACHED,
+      agentCapMessage(entitlement.effectiveCap, entitlement.unlimited),
+    );
   }
 }
 

@@ -19,7 +19,7 @@ import {
   reconciledStoredAgentCap,
 } from "../lib/extra-agent-billing";
 import { isLaunchHardBlocked, launchBlockResponse } from "../lib/launch-readiness";
-import { planById } from "../lib/plan-catalog";
+import { isUsagePlanId, planById } from "../lib/plan-catalog";
 import { getErrorMessage } from "../lib/server-utils";
 import { auditLogger, drizzle, log } from "../lib/server-context";
 import { stripe, stripeAvailable } from "../lib/stripe-helpers";
@@ -205,6 +205,15 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
       if (!row) throw AppError.fromHttpStatus(404, "Workspace billing settings not found");
       const plan = planById(row.planId || "personal");
       if (!plan) throw AppError.fromHttpStatus(400, "Plan not found");
+      if (isUsagePlanId(plan.id)) {
+        return {
+          status: 409,
+          body: {
+            code: "EXTRA_BOTS_NOT_NEEDED",
+            error: "Your plan already includes as many Bots as you need.",
+          },
+        };
+      }
       if (plan.catalogFamily === "channels") {
         return {
           status: 409,

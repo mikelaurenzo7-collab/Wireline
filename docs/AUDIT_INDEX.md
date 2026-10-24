@@ -8,6 +8,7 @@ This index preserves dated audits, launch passes, QA records, and superseded dec
 
 | Evidence | Scope |
 | --- | --- |
+| [USAGE_BILLING.md](./USAGE_BILLING.md) | October 24 usage billing design, rate card with margins, spend caps, Stripe objects and staged rollout. Dark behind `USAGE_BILLING_ENABLED`; moves to the canonical index once it ships. |
 | [BOTBOUND-DOMAIN-AUDIT-2026-08-31.md](./BOTBOUND-DOMAIN-AUDIT-2026-08-31.md) | August 31 domain-by-domain audit of `main` `bc2e32d6f`. Design-partner conditional GO. Complementary activation-truth and public-loop code. PR #1186 owns sender identity, public-stats retirement, founder PSTN quarantine, and metering. |
 | [BOTBOUND-LAUNCH-GAP-AUDIT-2026-08-20.md](./BOTBOUND-LAUNCH-GAP-AUDIT-2026-08-20.md) | August 20 adversarial, evidence-backed launch-gap audit across public conversion, auth, workspace, billing, security, data, communications, companion clients, analytics, SEO, campaign delivery, and release operations. |
 | [BOTBOUND-LAUNCH-SURFACE-TEST-MATRIX-2026-08-20.md](./BOTBOUND-LAUNCH-SURFACE-TEST-MATRIX-2026-08-20.md) | August 20 surface-by-surface execution matrix for package gates, live public probes, CI, extension, native, media, accessibility, recovery, and unresolved release evidence. |

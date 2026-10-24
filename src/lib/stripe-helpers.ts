@@ -6,6 +6,7 @@ import { eq, sql } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
 import {
   STRIPE_PLANS,
+  isUsagePlanId,
   planById,
   planExtraAgentPriceId,
   planLookupKey,
@@ -213,6 +214,8 @@ function basePlanByStripePrice(price: Stripe.Price | null | undefined): StripePl
 
   const metadataPlan = planById(price.metadata?.wireline_plan_id);
   if (metadataPlan) return metadataPlan;
+  // The usage plan's base price, by id, in case its metadata was edited.
+  if (price.id && isUsageBasePriceId(price.id)) return planById("usage");
 
   const lookupKey = price.lookup_key?.trim() || null;
   if (lookupKey) {
@@ -328,6 +331,29 @@ export function basePlanInvoiceShare(invoice: Stripe.Invoice): number | null {
   }
   if (baseCents <= 0 || totalCents <= 0) return null;
   return Math.min(1, baseCents / totalCents);
+}
+
+function isUsageBasePriceId(priceId: string): boolean {
+  const configured = process.env.STRIPE_USAGE_BASE_PRICE_ID?.trim();
+  return Boolean(configured) && configured === priceId;
+}
+
+/** Usage plan add-ons mirrored from the subscription items (by configured price id). */
+export function usageAddonQuantitiesFromSubscription(sub: Stripe.Subscription): {
+  numbers: number;
+  emailAddresses: number;
+} {
+  const numberPrice = process.env.STRIPE_USAGE_NUMBER_ADDON_PRICE_ID?.trim() || null;
+  const emailPrice = process.env.STRIPE_USAGE_EMAIL_ADDON_PRICE_ID?.trim() || null;
+  let numbers = 0;
+  let emailAddresses = 0;
+  for (const item of sub.items?.data ?? []) {
+    const id = typeof item.price === "string" ? item.price : item.price?.id;
+    const quantity = Math.max(0, Math.floor(item.quantity ?? 0));
+    if (numberPrice && id === numberPrice) numbers += quantity;
+    if (emailPrice && id === emailPrice) emailAddresses += quantity;
+  }
+  return { numbers: Math.min(numbers, 500), emailAddresses: Math.min(emailAddresses, 500) };
 }
 
 function extraAgentQuantityFromSubscription(sub: Stripe.Subscription): number {
@@ -903,6 +929,14 @@ async function syncSubscriptionFromStripeUnderLease(
       .insert(schema.subscriptions)
       .values({ userId, ...subscriptionMirror })
       .onConflictDoUpdate({ target: [schema.subscriptions.userId], set: subscriptionMirror });
+
+    if (plan && isUsagePlanId(plan.id)) {
+      // Add-on quantities drive lazy provisioning: no number or BotBound email
+      // address exists unless the owner bought one.
+      const { setUsageAddonQuantities } = await import("./usage-billing-store");
+      await assertSyncLease();
+      await setUsageAddonQuantities(userId, usageAddonQuantitiesFromSubscription(sub));
+    }
 
     const settingsMirror = {
       subscriptionStatus: localStatus,

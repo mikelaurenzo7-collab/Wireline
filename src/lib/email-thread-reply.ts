@@ -14,6 +14,7 @@ import { IntegrationService } from "./integrations";
 import { mailboxScopedExternalId } from "./mailbox-identity";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
+import { usageBillingEnabled } from "./usage-billing-config";
 
 export const EMAIL_REPLY_MAX_CHARS = 10_000;
 
@@ -291,6 +292,19 @@ export async function sendEmailThreadReply(input: {
   const digest = bodyDigest(body);
   const claim = await claimReply(input.userId, thread.id, key, digest);
   if (claim.kind === "sent") return claim.result;
+  if (claim.kind === "claimed" && usageBillingEnabled()) {
+    // Usage billing: no new handled email once the monthly limit is spent.
+    const { admitAccountUsage } = await import("./usage-billing-store");
+    try {
+      await admitAccountUsage(input.userId, "emails_handled");
+    } catch (error) {
+      await recordLedger(input.userId, key, "failed", {
+        bodyDigest: digest,
+        error: getErrorMessage(error).slice(0, 300),
+      }).catch(() => undefined);
+      throw error;
+    }
+  }
   if (claim.kind === "conflict") {
     throw new AppError(
       409,
@@ -341,6 +355,27 @@ export async function sendEmailThreadReply(input: {
   }
 
   const createdAt = new Date();
+  if (usageBillingEnabled()) {
+    // One handled email per delivered reply; the operation key makes replays no-ops.
+    try {
+      const { recordAccountUsage } = await import("./usage-billing-store");
+      await recordAccountUsage({
+        userId: input.userId,
+        meter: "emails_handled",
+        sourceType: "email_reply",
+        sourceId: key,
+        quantity: 1,
+        occurredAt: createdAt,
+      });
+    } catch (error) {
+      // The customer already has the reply; a metering miss is platform cost, never a resend.
+      log.error("Usage meter record failed for a delivered email reply", {
+        userId: input.userId,
+        threadId: thread.id,
+        error: getErrorMessage(error),
+      });
+    }
+  }
   let messageId = `reply-${key}`;
   try {
     const [saved] = await drizzle

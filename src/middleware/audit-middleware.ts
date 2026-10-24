@@ -671,7 +671,9 @@ export async function commitPlatformCostReservation(
   recordDailySpend(reservation.costUsd);
   // Live phone usage settles against included voice/Runtime Balance. Retain
   // provider COGS telemetry without publishing false managed-AI budget alerts.
-  if (reservation.meter === "live_voice") return;
+  // Usage-metered computer work is billed through Stripe meters and the owner's
+  // usage spending limit, not the managed-AI allowance.
+  if (reservation.meter === "live_voice" || reservation.meter === "usage_metered") return;
   await evaluateSpend(reservation.userId, reservation.costUsd).catch((error: unknown) =>
     log.error("Reserved platform cost spend evaluation failed", {
       userId: reservation.userId,

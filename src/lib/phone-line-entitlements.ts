@@ -6,7 +6,7 @@
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
-import { planById } from "./plan-catalog";
+import { isUsagePlanId, planById } from "./plan-catalog";
 import { getTenantChannelEntitlements } from "./channel-entitlements";
 
 /** Catalog-backed phone slots including purchased Extra Agent add-ons. */
@@ -37,6 +37,12 @@ export async function getIncludedPhoneLineSlots(
   const entitlement = await getTenantChannelEntitlements(userId, executor);
   if (entitlement.subscriptionStatus !== "active") return 0;
   const planId = entitlement.planId;
+  // Usage plan: a number exists only when the owner chose the number add-on.
+  if (isUsagePlanId(planId)) {
+    // Loaded on demand: the usage store is only needed for usage accounts.
+    const { usageAddonSlots } = await import("./usage-billing-store");
+    return (await usageAddonSlots(userId, executor)).numbers;
+  }
   const tier = planById(planId);
   const slots = includedPhoneSlotsForPlan(planId, settings?.extraAgents);
   // A resolved plan with zero included numbers is a real catalog answer

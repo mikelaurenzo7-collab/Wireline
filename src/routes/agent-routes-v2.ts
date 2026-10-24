@@ -573,7 +573,7 @@ router.post(
           throw new AppError(
             402,
             AGENT_CAPACITY_REACHED,
-            agentCapMessage(entitlement.effectiveCap),
+            agentCapMessage(entitlement.effectiveCap, entitlement.unlimited),
           );
         }
 

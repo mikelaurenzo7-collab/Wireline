@@ -646,3 +646,48 @@ function firstNameGreeting(fullName?: string | null): string {
   const first = fullName?.trim().split(/\s+/)[0];
   return first ? `Hi ${escapeHtml(first)},` : "Hi,";
 }
+
+/** Usage billing spend alert at 50, 80 or 100 percent of the owner's monthly limit. */
+export async function sendUsageSpendAlertEmail(opts: {
+  userId: string;
+  to: string;
+  thresholdPct: number;
+  spentUsd: number;
+  capUsd: number;
+  idempotencyKey?: string;
+}): Promise<SendResult> {
+  const blocked = await tenantEmailPolicyBlock(opts.userId, "usage_spend_alert_email");
+  if (blocked) return blocked;
+  const spent = `$${opts.spentUsd.toFixed(2)}`;
+  const cap = `$${opts.capUsd.toFixed(2)}`;
+  const atCap = opts.thresholdPct >= 100;
+  const subject = atCap
+    ? "Your BotBound Bots are paused at your monthly limit"
+    : `You have used ${opts.thresholdPct}% of your BotBound monthly limit`;
+  const lead = atCap
+    ? `Your Bots reached your monthly limit of ${cap} and are paused until you raise it or your next billing period starts. You will never be charged above your limit.`
+    : `Your Bots have used ${spent} of your ${cap} monthly limit (${opts.thresholdPct}%). Nothing changes until you reach the limit.`;
+  const text = [
+    "Hi,",
+    "",
+    lead,
+    "",
+    "You can change your limit any time in Billing.",
+    "",
+    "BotBound",
+  ].join("\n");
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1A1A23;">
+      <h2 style="margin: 0 0 16px; font-weight: 600;">${escapeHtml(subject)}</h2>
+      <p style="margin: 0 0 16px; line-height: 1.55;">${escapeHtml(lead)}</p>
+      <p style="margin: 0 0 16px; line-height: 1.55;">You can change your limit any time in Billing.</p>
+    </div>
+  `;
+  return await sendEmail({
+    to: opts.to,
+    subject,
+    text,
+    html,
+    idempotencyKey: opts.idempotencyKey,
+  });
+}

@@ -152,7 +152,9 @@ describe("agent capacity integrity", () => {
     // the two copies drift — which is how the pluralisation bug survived. Its
     // own code keeps the client from showing a payment prompt no plan answers.
     for (const file of ["src/routes/agent-routes-v2.ts", "src/lib/agent-draft-service.ts"]) {
-      expect(read(file)).toContain("agentCapMessage(entitlement.effectiveCap)");
+      expect(read(file)).toContain(
+        "agentCapMessage(entitlement.effectiveCap, entitlement.unlimited)",
+      );
       expect(read(file)).toContain("AGENT_CAPACITY_REACHED");
       expect(read(file)).not.toContain("Your plan allows up to ${entitlement.effectiveCap} agents");
     }
