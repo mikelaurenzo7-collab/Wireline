@@ -334,6 +334,14 @@ export default function StudioAgentReviewPanel({
           <StatusNotice
             tone={hasPhone ? "success" : "warning"}
             title={hasPhone ? "Phone connected" : "No phone connected"}
+            action={
+              <Button asChild size="sm" variant="secondary">
+                <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=setup#voice-clone`}>
+                  <Mic className="size-4" aria-hidden="true" />
+                  Clone your voice
+                </Link>
+              </Button>
+            }
           >
             {hasPhone
               ? `Call ${formatPhone(phoneNumber)} to hear ${agentName} before sharing the number.`

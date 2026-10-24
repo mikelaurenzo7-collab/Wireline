@@ -51,7 +51,7 @@ const CAPABILITIES: readonly { icon: LucideIcon; title: string; body: string }[]
   {
     icon: Sparkles,
     title: "Made Yours",
-    body: "Your knowledge, preferences, voice, and rules shape how your Bot works.",
+    body: "Your knowledge, preferences, voice, and rules shape how your Bot works. Where available, read a short script and callers hear your own voice.",
   },
   {
     icon: CalendarCheck,

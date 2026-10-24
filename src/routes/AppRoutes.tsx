@@ -97,6 +97,19 @@ function ToStudioRedirect() {
   return <Navigate to={`/studio${location.search}${location.hash}`} replace />;
 }
 
+/**
+ * Voice lives in the Bot's setup. /voice, /voices and /voice-clone open that
+ * panel and scroll to the picker or to cloning; `?agent=` still picks the Bot.
+ */
+function VoiceToStudioRedirect({ clone = false }: { clone?: boolean }) {
+  const location = useLocation();
+  const search = new URLSearchParams(location.search);
+  search.set("section", "setup");
+  return (
+    <Navigate to={`/studio?${search.toString()}${clone ? "#voice-clone" : "#voice"}`} replace />
+  );
+}
+
 /** Preserve historical email deep-link state while Inbox remains canonical. */
 function EmailToInboxRedirect() {
   const location = useLocation();
@@ -160,6 +173,9 @@ export default function AppRoutes() {
         <Route path="/studio" element={<AgentStudioHome />} />
         <Route path="/studio/*" element={<AgentStudioHome />} />
         <Route path="/agents" element={<ToStudioRedirect />} />
+        <Route path="/voice" element={<VoiceToStudioRedirect />} />
+        <Route path="/voices" element={<VoiceToStudioRedirect />} />
+        <Route path="/voice-clone" element={<VoiceToStudioRedirect clone />} />
         {/* The Workspace's canonical route stays /studio so saved links keep working. */}
         <Route path="/workspace" element={<ToStudioRedirect />} />
         <Route path="/templates" element={<TemplatesPage />} />

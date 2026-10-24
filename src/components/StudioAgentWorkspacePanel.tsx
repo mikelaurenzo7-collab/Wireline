@@ -157,6 +157,28 @@ export default function StudioAgentWorkspacePanel({
     setSetupNotice(null);
   }, [agentId, user?.id]);
 
+  // /voice and /voice-clone land here with a hash; the voice controls load
+  // after setup, so wait briefly for the target before scrolling to it.
+  useEffect(() => {
+    const target = window.location?.hash?.slice(1);
+    if (target !== "voice" && target !== "voice-clone") return;
+    if (typeof window.requestAnimationFrame !== "function") return;
+    let frame = 0;
+    let attempts = 0;
+    const seek = () => {
+      const element = document.getElementById(target);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (element.tabIndex >= 0 || element.hasAttribute("tabindex"))
+          element.focus({ preventScroll: true });
+        return;
+      }
+      if (++attempts < 180) frame = window.requestAnimationFrame(seek);
+    };
+    frame = window.requestAnimationFrame(seek);
+    return () => window.cancelAnimationFrame(frame);
+  }, [agentId]);
+
   useLayoutEffect(() => {
     activeAgentIdRef.current = agentId;
     activeUserIdRef.current = user?.id ?? null;
@@ -530,14 +552,23 @@ export default function StudioAgentWorkspacePanel({
           compact={compact}
         />
 
-        <section className={sectionClass} aria-labelledby="voice-heading">
+        <section
+          id="voice"
+          className={`${sectionClass} scroll-mt-24`}
+          aria-labelledby="voice-heading"
+        >
           <h3
             id="voice-heading"
             className={`${compact ? "mb-2 text-base" : "mb-3 text-lg"} font-semibold tracking-tight text-foreground`}
           >
             Phone Voice
           </h3>
-          <SimpleVoicePicker agentId={agentId} agentName={agentName} markKey={savedMarkKey} />
+          <SimpleVoicePicker
+            agentId={agentId}
+            agentName={agentName}
+            markKey={savedMarkKey}
+            botPhone={agents.find((agent) => agent.id === agentId)?.phone_number ?? null}
+          />
         </section>
 
         <BusinessHoursEditor agentId={agentId} compact={compact} />
@@ -586,4 +617,3 @@ export default function StudioAgentWorkspacePanel({
     </div>
   );
 }
-

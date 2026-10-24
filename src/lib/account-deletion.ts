@@ -842,10 +842,10 @@ async function releaseExternalResourcesOutsideTenantContext(
   // provider ids still exist; a failure defers the purge (voiceprints are
   // biometric data and have no separate orphan ledger). Already-missing
   // voices count as deleted.
-  if (await tableExists(db, "wireline_live_voices")) {
+  {
     const { deleteProviderLiveVoicesForAccount } = await import("./voice/live-voice-service");
     try {
-      await deleteProviderLiveVoicesForAccount(db as never, userId);
+      await deleteProviderLiveVoicesForAccount(db, userId);
     } catch (err) {
       log.error("cloned voice deletion failed, deferring account purge", {
         userId,
