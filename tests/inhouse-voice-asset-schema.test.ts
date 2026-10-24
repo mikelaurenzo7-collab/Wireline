@@ -6,21 +6,33 @@ import { describe, expect, it } from "vitest";
 
 import {
   voiceAssets,
+  voiceCloneEvents,
   VOICE_ASSET_CONSENT_VERSION,
   VOICE_ASSET_ENGINE_ID,
   VOICE_ASSET_MODEL_REVISION,
   VOICE_ASSET_SOURCE_REVISION,
   VOICE_ASSET_STATUSES,
   VOICE_ASSET_QUALITY_CHECK_VERSION,
+  VOICE_CLONE_DELETED_REASONS,
+  VOICE_CLONE_EVENT_KINDS,
+  VOICE_CLONE_RETENTION_DAYS_DEFAULT,
+  VOICE_CLONE_RETENTION_DAYS_MAX,
+  VOICE_CLONE_RETENTION_DAYS_MIN,
+  VOICE_CLONE_RETENTION_POLICY_VERSION,
 } from "../src/db/voice-asset-schema";
 import { redactAccountExportValue } from "../src/lib/account-export";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 const migration = read("drizzle/migrations/0179_inhouse_voice_assets.sql");
+const customerLaneMigration = read("drizzle/migrations/0185_voice_clone_customer_lane.sql");
 const table = getTableConfig(voiceAssets);
+const eventsTable = getTableConfig(voiceCloneEvents);
 const dialect = new PgDialect();
 const checks = Object.fromEntries(
   table.checks.map((check) => [check.name, dialect.sqlToQuery(check.value).sql]),
+);
+const eventChecks = Object.fromEntries(
+  eventsTable.checks.map((check) => [check.name, dialect.sqlToQuery(check.value).sql]),
 );
 
 describe("private in-house voice asset source schema", () => {
@@ -234,5 +246,226 @@ describe("private in-house voice asset source schema", () => {
       next.tables["public.wireline_voice_assets"].checkConstraints
         .wireline_voice_assets_consent_check.value,
     ).toContain(VOICE_ASSET_CONSENT_VERSION);
+  });
+});
+
+describe("customer voice clone preview lane schema", () => {
+  it("extends the asset registry with bounded-retention customer evidence", () => {
+    expect(customerLaneMigration).toContain("SET lock_timeout = '5s'");
+    const columns = Object.fromEntries(table.columns.map((column) => [column.name, column]));
+    expect(columns.retention_policy_version.notNull).toBe(false);
+    expect(columns.expires_at.notNull).toBe(false);
+    expect(columns.last_preview_at.notNull).toBe(false);
+    expect(columns.deleted_reason.notNull).toBe(false);
+    expect(columns.customer_visible.notNull).toBe(true);
+    expect(columns.customer_visible.default).toBe(false);
+    for (const name of [
+      "retention_policy_version",
+      "expires_at",
+      "last_preview_at",
+      "deleted_reason",
+      "customer_visible",
+    ]) {
+      expect(customerLaneMigration).toContain(`ADD COLUMN IF NOT EXISTS "${name}"`);
+    }
+    expect(checks.wireline_voice_assets_retention_check).toContain(
+      `'${VOICE_CLONE_RETENTION_POLICY_VERSION}'`,
+    );
+    expect(checks.wireline_voice_assets_retention_check).toContain(
+      '"expires_at" > "wireline_voice_assets"."created_at"',
+    );
+    expect(checks.wireline_voice_assets_deleted_reason_check).toContain("'user_deleted'");
+    expect(checks.wireline_voice_assets_deleted_reason_check).toContain("'retention_expired'");
+    expect(checks.wireline_voice_assets_customer_visible_check).toContain(
+      '"customer_visible" = false',
+    );
+    expect(VOICE_CLONE_DELETED_REASONS).toEqual(["user_deleted", "retention_expired"]);
+    expect(VOICE_CLONE_RETENTION_DAYS_DEFAULT).toBe(30);
+    expect(VOICE_CLONE_RETENTION_DAYS_MIN).toBe(1);
+    expect(VOICE_CLONE_RETENTION_DAYS_MAX).toBe(365);
+    for (const check of table.checks)
+      expect(dialect.sqlToQuery(check.value).params, check.name).toEqual([]);
+  });
+
+  it("indexes retention expiry partially so terminal rows drop out of the sweep", () => {
+    const index = table.indexes.find(
+      (candidate) => candidate.config.name === "idx_voice_assets_expiry_due",
+    );
+    expect(index?.config.unique).toBe(false);
+    expect(index?.config.columns.map((column) => ("name" in column ? column.name : null))).toEqual([
+      "expires_at",
+    ]);
+    expect(index?.config.where).toBeTruthy();
+    expect(customerLaneMigration).toContain(
+      'CREATE INDEX IF NOT EXISTS "idx_voice_assets_expiry_due" ON public."wireline_voice_assets" USING btree ("expires_at") WHERE "wireline_voice_assets"."deleted_at" IS NULL',
+    );
+  });
+
+  it("declares an append-only, tenant-owned event ledger with preview accounting", () => {
+    expect(eventsTable.name).toBe("wireline_voice_clone_events");
+    expect(eventsTable.enableRLS).toBe(true);
+    const columns = Object.fromEntries(eventsTable.columns.map((column) => [column.name, column]));
+    expect(columns.user_id.notNull).toBe(true);
+    expect(columns.asset_id.notNull).toBe(false);
+    expect(columns.kind.notNull).toBe(true);
+    expect(columns.source_sha256.notNull).toBe(true);
+    expect(columns.reserved_usd_micros.notNull).toBe(false);
+    expect(columns.committed_usd_micros.notNull).toBe(false);
+    expect(columns.engine_id.notNull).toBe(true);
+    expect(columns.model_revision.notNull).toBe(true);
+    expect(columns.source_revision.notNull).toBe(true);
+    expect(columns.created_at.notNull).toBe(true);
+    expect(VOICE_CLONE_EVENT_KINDS).toEqual([
+      "created",
+      "reviewed",
+      "preview",
+      "deleted",
+      "expired",
+    ]);
+    for (const kind of VOICE_CLONE_EVENT_KINDS)
+      expect(eventChecks.wireline_voice_clone_events_kind_check).toContain(`'${kind}'`);
+    expect(eventChecks.wireline_voice_clone_events_amounts_check).toContain(
+      '"committed_usd_micros" <= "wireline_voice_clone_events"."reserved_usd_micros"',
+    );
+    expect(eventChecks.wireline_voice_clone_events_engine_check).toContain(
+      VOICE_ASSET_MODEL_REVISION,
+    );
+    const index = eventsTable.indexes.find(
+      (candidate) => candidate.config.name === "idx_voice_clone_events_user_created",
+    );
+    expect(index?.config.columns.map((column) => ("name" in column ? column.name : null))).toEqual([
+      "user_id",
+      "created_at",
+    ]);
+    const fk = eventsTable.foreignKeys[0];
+    expect(fk.reference().columns.map((column) => column.name)).toEqual(["user_id"]);
+    expect(fk.onDelete).toBe("cascade");
+    for (const check of eventsTable.checks)
+      expect(dialect.sqlToQuery(check.value).params, check.name).toEqual([]);
+  });
+
+  it("guards customer state, preview stamping and terminal deletion reasons", () => {
+    expect(customerLaneMigration).toContain(
+      "CREATE OR REPLACE FUNCTION public.wireline_guard_voice_asset_state()",
+    );
+    expect(customerLaneMigration).toContain("NEW.retention_policy_version");
+    expect(customerLaneMigration).toContain("NEW.expires_at");
+    expect(customerLaneMigration).toContain("NEW.customer_visible");
+    expect(customerLaneMigration).toContain("NEW.last_preview_at");
+    expect(customerLaneMigration).toContain("NEW.deleted_reason");
+    expect(customerLaneMigration).toContain(
+      "A voice reference preview observation may only record last_preview_at",
+    );
+    expect(customerLaneMigration).toContain(
+      "A terminal voice reference deletion requires a deletion reason",
+    );
+    expect(customerLaneMigration).toContain(
+      "A customer-visible voice reference requires bounded private-preview retention",
+    );
+    expect(customerLaneMigration).toContain(
+      "Voice ownership, source, model, consent and retention evidence are immutable",
+    );
+    expect(customerLaneMigration).toContain("NEW.updated_at := clock_timestamp()");
+    expect(customerLaneMigration).toContain("USING ERRCODE = '23514'");
+    expect(customerLaneMigration).toContain(
+      'BEFORE INSERT OR UPDATE ON public."wireline_voice_assets"',
+    );
+  });
+
+  it("makes the ledger immutable to tenants but erasable by the terminal account purge", () => {
+    expect(customerLaneMigration).toContain(
+      "CREATE OR REPLACE FUNCTION public.wireline_guard_voice_clone_event_ledger()",
+    );
+    expect(customerLaneMigration).toContain("IF TG_OP = 'UPDATE' THEN");
+    expect(customerLaneMigration).toContain("Voice clone preview ledger rows are immutable");
+    expect(customerLaneMigration).toContain(
+      "NULLIF(current_setting('app.current_user_id', true), '') IS NOT NULL",
+    );
+    expect(customerLaneMigration).toContain(
+      "Voice clone preview ledger rows can only be erased by terminal account deletion",
+    );
+    expect(customerLaneMigration).toContain(
+      'BEFORE UPDATE OR DELETE ON public."wireline_voice_clone_events"',
+    );
+    expect(customerLaneMigration).toContain(
+      "GRANT SELECT, INSERT ON public.wireline_voice_clone_events TO wireline_server",
+    );
+    expect(customerLaneMigration).not.toMatch(
+      /GRANT[^;]*UPDATE[^;]*ON public\.wireline_voice_clone_events/,
+    );
+    expect(customerLaneMigration).not.toMatch(
+      /GRANT[^;]*DELETE[^;]*ON public\.wireline_voice_clone_events/,
+    );
+    expect(customerLaneMigration).toContain("ENABLE ROW LEVEL SECURITY");
+    expect(customerLaneMigration).toContain("FROM anon, authenticated, service_role");
+    expect(customerLaneMigration).toContain(
+      "USING (user_id = (SELECT public.wireline_current_user_id()))",
+    );
+    expect(customerLaneMigration).not.toContain("auth.uid()");
+    expect(customerLaneMigration).not.toContain("SECURITY DEFINER");
+  });
+
+  it("never touches the live-call runtime, plan catalog or provider selection", () => {
+    expect(customerLaneMigration).not.toMatch(/UPDATE\s+(?:public\.)?["']?wireline_agents/i);
+    expect(customerLaneMigration).not.toMatch(/UPDATE\s+(?:public\.)?["']?wireline_call_logs/i);
+    expect(customerLaneMigration).not.toContain("voice_provider =");
+    expect(customerLaneMigration).not.toContain("voice_id =");
+    expect(customerLaneMigration).not.toContain("DROP TABLE");
+    expect(customerLaneMigration).not.toMatch(/ALTER TABLE public\."?wireline_agents/i);
+    expect(customerLaneMigration).not.toMatch(/intended_use\s*=/);
+  });
+
+  it("journals the 0185 migration and keeps its snapshot chain linked to 0082", () => {
+    const journal = JSON.parse(read("drizzle/migrations/meta/_journal.json"));
+    expect(
+      journal.entries.find(
+        (entry: { tag: string }) => entry.tag === "0185_voice_clone_customer_lane",
+      ),
+    ).toMatchObject({
+      idx: 83,
+      tag: "0185_voice_clone_customer_lane",
+      version: "7",
+      breakpoints: true,
+    });
+    expect(
+      journal.entries.find((entry: { tag: string }) => entry.tag === "0184_agent_call_recording"),
+    ).toMatchObject({ idx: 82 });
+    const previous = JSON.parse(read("drizzle/migrations/meta/0082_snapshot.json"));
+    const next = JSON.parse(read("drizzle/migrations/meta/0083_snapshot.json"));
+    expect(next.prevId).toBe(previous.id);
+    expect(next.id).not.toBe(previous.id);
+    expect(Object.keys(next.tables).filter((name) => !previous.tables[name])).toEqual([
+      "public.wireline_voice_clone_events",
+    ]);
+    for (const [name, definition] of Object.entries(previous.tables))
+      if (name !== "public.wireline_voice_assets")
+        expect(next.tables[name], name).toEqual(definition);
+    expect(next.tables["public.wireline_voice_assets"].columns.customer_visible).toMatchObject({
+      type: "boolean",
+      notNull: true,
+      default: false,
+    });
+    expect(next.tables["public.wireline_voice_assets"].columns.expires_at).toMatchObject({
+      type: "timestamp with time zone",
+      notNull: false,
+    });
+    expect(next.tables["public.wireline_voice_assets"].checkConstraints).toHaveProperty(
+      "wireline_voice_assets_retention_check",
+    );
+    expect(next.tables["public.wireline_voice_assets"].indexes).toHaveProperty(
+      "idx_voice_assets_expiry_due",
+    );
+    expect(next.tables["public.wireline_voice_clone_events"].isRLSEnabled).toBe(true);
+    for (const field of ["enums", "schemas", "sequences", "roles", "policies", "views", "_meta"])
+      expect(next[field], field).toEqual(previous[field]);
+  });
+
+  it("purges ledger evidence with the account before its references", () => {
+    const source = read("src/lib/account-deletion.ts");
+    expect(source).toContain('{ table: "wireline_voice_clone_events", userColumns: ["user_id"] }');
+    expect(source).toContain('{ table: "wireline_voice_assets", userColumns: ["user_id"] }');
+    expect(source.indexOf('"wireline_voice_clone_events"')).toBeLessThan(
+      source.indexOf('"wireline_voice_assets"'),
+    );
   });
 });

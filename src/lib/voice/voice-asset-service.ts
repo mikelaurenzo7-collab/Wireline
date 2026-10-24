@@ -1,17 +1,23 @@
 import { Buffer } from "node:buffer";
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, getTableColumns, ne } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, isNotNull, isNull, lte, ne } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import {
   voiceAssets,
+  voiceCloneEvents,
   type VoiceAsset,
   type NewVoiceAsset,
+  type VoiceCloneEventKind,
   VOICE_ASSET_CONSENT_VERSION,
   VOICE_ASSET_ENGINE_ID,
   VOICE_ASSET_MODEL_REVISION,
   VOICE_ASSET_SOURCE_REVISION,
   VOICE_ASSET_QUALITY_CHECK_VERSION,
+  VOICE_CLONE_RETENTION_POLICY_VERSION,
+  VOICE_CLONE_RETENTION_DAYS_DEFAULT,
+  VOICE_CLONE_RETENTION_DAYS_MIN,
+  VOICE_CLONE_RETENTION_DAYS_MAX,
 } from "../../db/voice-asset-schema";
 import { isPlatformAdmin } from "../../middleware/platform-admin";
 import {
@@ -22,7 +28,7 @@ import {
   type PlatformCostReservationDecision,
 } from "../../middleware/audit-middleware";
 import { AppError } from "../api-error";
-import { drizzle, tenantStore } from "../server-context";
+import { drizzle, tenantStore, log } from "../server-context";
 import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import { createInhouseVoiceClient, InhouseVoiceError } from "./inhouse-voice-client";
 import {
@@ -36,10 +42,19 @@ import {
 
 export const VOICE_PREVIEW_RESERVE_SECONDS = 75;
 export const VOICE_ASSET_MAX_RETAINED = 5;
+/** Bounded per-tick batch for the retention sweep; later ticks drain the rest. */
+export const VOICE_CLONE_EXPIRY_BATCH = 25;
 const MAX_BASE64 = Math.ceil(VOICE_REFERENCE_MAX_BYTES / 3) * 4;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const DAY_MS = 86_400_000;
 type Actor = { id: string; email?: string };
+type Access = "admin" | "customer";
 type PublicRow = Omit<VoiceAsset, "secretEncrypted">;
+type EventAccounting = {
+  sourceSha256: string;
+  reservedUsdMicros: number | null;
+  committedUsdMicros: number | null;
+};
 type Update = Partial<
   Pick<
     VoiceAsset,
@@ -51,6 +66,7 @@ type Update = Partial<
     | "qualityCheckVersion"
     | "revokedAt"
     | "deletedAt"
+    | "deletedReason"
   >
 >;
 export type VoiceAssetRepository = {
@@ -62,8 +78,18 @@ export type VoiceAssetRepository = {
     id: string,
     version: number,
     patch: Update,
-    action: "approved" | "deleted",
+    action: "approved" | "deleted" | "expired",
   ): Promise<VoiceAsset | null>;
+  /** Stamp last_preview_at and append one immutable preview ledger row. */
+  recordPreview(
+    userId: string,
+    id: string,
+    version: number,
+    at: Date,
+    accounting: EventAccounting,
+  ): Promise<void>;
+  /** Root-scoped read of customer rows whose retention window elapsed. */
+  dueForExpiry(now: Date, limit: number): Promise<VoiceAsset[]>;
 };
 type Engine = {
   client: Pick<ReturnType<typeof createInhouseVoiceClient>, "getReadiness" | "synthesizePreview">;
@@ -71,7 +97,14 @@ type Engine = {
 };
 export type VoiceAssetDependencies = {
   repository: VoiceAssetRepository;
+  /** Platform-admin pilot flag; unchanged by the customer lane. */
   enabled(): boolean;
+  /** Default-off customer lane flag (VOICE_CLONE_CUSTOMER_ENABLED). */
+  customerEnabled(): boolean;
+  /** Canary allowlist check (emails and/or user UUIDs). */
+  customerAllowed(actor: Actor): boolean;
+  /** Bounded retention days, or null when the configured value is unsafe. */
+  retentionDays(): number | null;
   isAdmin(actor: Actor): Promise<boolean>;
   engine(): Engine | null;
   fenced<T>(userId: string, operation: string, perform: () => Promise<T>): Promise<T>;
@@ -83,6 +116,40 @@ export type VoiceAssetDependencies = {
   now(): Date;
   newId(): string;
 };
+
+/** Default 30, integer 1..365; any other configured value fails closed (null). */
+export function parseVoiceCloneRetentionDays(raw: string | undefined): number | null {
+  if (raw === undefined || raw.trim() === "") return VOICE_CLONE_RETENTION_DAYS_DEFAULT;
+  const value = raw.trim();
+  if (!/^\d+$/.test(value)) return null;
+  const days = Number(value);
+  if (
+    !Number.isSafeInteger(days) ||
+    days < VOICE_CLONE_RETENTION_DAYS_MIN ||
+    days > VOICE_CLONE_RETENTION_DAYS_MAX
+  )
+    return null;
+  return days;
+}
+
+/** Split the canary allowlist into lowercase emails and user UUIDs. */
+export function parseVoiceCloneAllowlist(raw: string | undefined): Set<string> {
+  return new Set(
+    (raw ?? "")
+      .split(",")
+      .map((value) => value.trim().toLowerCase())
+      .filter((value) => value.length > 0),
+  );
+}
+
+function usdMicros(usd: number): number {
+  return Math.ceil(usd * 1_000_000);
+}
+
+function ledgerKind(action: "approved" | "deleted" | "expired"): VoiceCloneEventKind {
+  if (action === "approved") return "reviewed";
+  return action;
+}
 
 function dto(row: PublicRow) {
   return {
@@ -96,6 +163,8 @@ function dto(row: PublicRow) {
     createdAt: row.createdAt.toISOString(),
     reviewedAt: row.reviewedAt?.toISOString() ?? null,
     revokedAt: row.revokedAt?.toISOString() ?? null,
+    expiresAt: row.expiresAt?.toISOString() ?? null,
+    lastPreviewAt: row.lastPreviewAt?.toISOString() ?? null,
   };
 }
 
@@ -150,6 +219,23 @@ function hasSqlState(error: unknown, code: string): boolean {
 
 const { secretEncrypted: privateColumn, ...publicColumns } = getTableColumns(voiceAssets);
 void privateColumn;
+function ledgerEntry(
+  asset: VoiceAsset,
+  kind: VoiceCloneEventKind,
+  accounting: EventAccounting | null,
+): schema.NewVoiceCloneEvent {
+  return {
+    userId: asset.userId,
+    assetId: asset.id,
+    kind,
+    sourceSha256: asset.sourceSha256,
+    reservedUsdMicros: accounting?.reservedUsdMicros ?? null,
+    committedUsdMicros: accounting?.committedUsdMicros ?? null,
+    engineId: asset.engineId,
+    modelRevision: asset.modelRevision,
+    sourceRevision: asset.sourceRevision,
+  };
+}
 const repository: VoiceAssetRepository = {
   list: (userId) =>
     tenantStore.run(userId, () =>
@@ -204,6 +290,10 @@ const repository: VoiceAssetRepository = {
           resourceId: saved.id,
           metadata: { consent_version: saved.consentVersion, scope: "private_preview" },
         });
+        // The ledger is customer-lane evidence only: the platform-admin pilot's
+        // operations keep their existing audit row and write no lane rows.
+        if (saved.customerVisible)
+          await tx.insert(voiceCloneEvents).values(ledgerEntry(saved, "created", null));
         return saved;
       }),
     ),
@@ -221,7 +311,7 @@ const repository: VoiceAssetRepository = {
             ),
           )
           .returning();
-        if (saved)
+        if (saved) {
           await tx.insert(schema.auditLog).values({
             userId,
             action: `voice.asset.${action}`,
@@ -231,14 +321,76 @@ const repository: VoiceAssetRepository = {
             resourceId: id,
             metadata: { version: saved.version, scope: "private_preview" },
           });
+          if (saved.customerVisible)
+            await tx.insert(voiceCloneEvents).values(ledgerEntry(saved, ledgerKind(action), null));
+        }
         return saved ?? null;
       }),
+    ),
+  recordPreview: (userId, id, version, at, accounting) =>
+    tenantStore.run(userId, () =>
+      drizzle.transaction(async (tx) => {
+        // The state guard permits exactly this non-lifecycle stamp without a
+        // version bump, so a completed preview cannot race a pending review.
+        await tx
+          .update(voiceAssets)
+          .set({ lastPreviewAt: at })
+          .where(
+            and(
+              eq(voiceAssets.userId, userId),
+              eq(voiceAssets.id, id),
+              eq(voiceAssets.version, version),
+              eq(voiceAssets.status, "approved"),
+              isNull(voiceAssets.deletedAt),
+            ),
+          );
+        // A preview whose compute was consumed is still ledger evidence even if
+        // a concurrent deletion removed the reference while the worker ran; the
+        // caller supplies the source hash it validated before inference.
+        await tx.insert(voiceCloneEvents).values({
+          userId,
+          assetId: id,
+          kind: "preview",
+          sourceSha256: accounting.sourceSha256,
+          reservedUsdMicros: accounting.reservedUsdMicros,
+          committedUsdMicros: accounting.committedUsdMicros,
+          engineId: VOICE_ASSET_ENGINE_ID,
+          modelRevision: VOICE_ASSET_MODEL_REVISION,
+          sourceRevision: VOICE_ASSET_SOURCE_REVISION,
+        });
+      }),
+    ),
+  dueForExpiry: (now, limit) =>
+    tenantStore.exit(() =>
+      drizzle
+        .select()
+        .from(voiceAssets)
+        .where(
+          and(
+            eq(voiceAssets.customerVisible, true),
+            ne(voiceAssets.status, "deleted"),
+            isNull(voiceAssets.deletedAt),
+            isNotNull(voiceAssets.expiresAt),
+            lte(voiceAssets.expiresAt, now),
+          ),
+        )
+        .orderBy(voiceAssets.expiresAt)
+        .limit(limit),
     ),
 };
 
 const production: VoiceAssetDependencies = {
   repository,
   enabled: () => process.env.VOICE_CLONE_PILOT_ENABLED === "true",
+  customerEnabled: () => process.env.VOICE_CLONE_CUSTOMER_ENABLED === "true",
+  customerAllowed: (actor) => {
+    const allowlist = parseVoiceCloneAllowlist(process.env.VOICE_CLONE_CUSTOMER_ALLOWLIST);
+    if (allowlist.size === 0) return false;
+    const email = actor.email?.trim().toLowerCase() ?? "";
+    const userId = actor.id.trim().toLowerCase();
+    return (email.length > 0 && allowlist.has(email)) || allowlist.has(userId);
+  },
+  retentionDays: () => parseVoiceCloneRetentionDays(process.env.VOICE_CLONE_RETENTION_DAYS),
   isAdmin: isPlatformAdmin,
   engine: () => {
     const baseUrl = process.env.VOICE_ENGINE_URL?.trim();
@@ -270,18 +422,41 @@ const production: VoiceAssetDependencies = {
   newId: randomUUID,
 };
 
-/** Private operator pilot only. No selection here changes a Bot's browser or phone voice. */
+/**
+ * Preview-only access control. The platform-admin pilot is unchanged; the
+ * customer lane is an independent, default-off canary that must also pass the
+ * explicit allowlist. Anything else fails closed.
+ */
 export function createVoiceAssetService(deps: VoiceAssetDependencies = production) {
-  async function allowed(actor: Actor) {
-    if (!deps.enabled())
+  function customerGate(actor: Actor): boolean {
+    return deps.customerEnabled() && deps.customerAllowed(actor);
+  }
+  async function access(actor: Actor): Promise<Access> {
+    if (deps.enabled() && (await deps.isAdmin(actor))) {
+      assetId(actor.id);
+      return "admin";
+    }
+    if (customerGate(actor)) {
+      assetId(actor.id);
+      return "customer";
+    }
+    if (deps.enabled()) throw AppError.forbidden("Private voice pilot access required.");
+    throw new AppError(
+      404,
+      "VOICE_CLONE_PILOT_UNAVAILABLE",
+      "Private voice previews are unavailable.",
+    );
+  }
+  /** Bounded retention is mandatory for customer rows; unsafe config fails closed. */
+  function customerExpiresAt(now: Date): Date {
+    const days = deps.retentionDays();
+    if (days === null)
       throw new AppError(
-        404,
-        "VOICE_CLONE_PILOT_UNAVAILABLE",
-        "Private voice previews are unavailable.",
+        503,
+        "VOICE_CLONE_RETENTION_UNAVAILABLE",
+        "Private preview retention is not configured safely.",
       );
-    if (!(await deps.isAdmin(actor)))
-      throw AppError.forbidden("Private voice pilot access required.");
-    assetId(actor.id);
+    return new Date(now.getTime() + days * DAY_MS);
   }
   async function stored<T>(operation: () => Promise<T>): Promise<T> {
     try {
@@ -320,6 +495,12 @@ export function createVoiceAssetService(deps: VoiceAssetDependencies = productio
   }
   function approved(row: VoiceAsset, version: number) {
     if (row.version !== version || row.status !== "approved") throw stale();
+    if (row.expiresAt && row.expiresAt.getTime() <= deps.now().getTime())
+      throw new AppError(
+        409,
+        "VOICE_REFERENCE_EXPIRED",
+        "This private preview reached the end of its retention window. Record a new reference to continue.",
+      );
     if (
       row.consentVersion !== VOICE_ASSET_CONSENT_VERSION ||
       row.consentAcceptedBy !== row.userId ||
@@ -344,38 +525,64 @@ export function createVoiceAssetService(deps: VoiceAssetDependencies = productio
 
   return {
     async capabilities(actor: Actor) {
-      if (!deps.enabled() || !(await deps.isAdmin(actor).catch(() => false)))
+      const pilotAdmin = deps.enabled() && (await deps.isAdmin(actor).catch(() => false));
+      if (pilotAdmin) {
+        let engineReady = false;
+        let previewReserveUsd: number | null = null;
+        try {
+          const engine = deps.engine();
+          if (engine) {
+            previewReserveUsd = reserveUsd(engine);
+            const readiness = await engine.client.getReadiness();
+            engineReady = readiness.ready && !readiness.busy;
+          }
+        } catch {
+          /* Configuration and engine failures never disclose service URLs or secrets. */
+        }
+        return {
+          available: true as const,
+          scope: "private_preview" as const,
+          engineReady,
+          consentVersion: VOICE_ASSET_CONSENT_VERSION,
+          qualityCheckVersion: VOICE_ASSET_QUALITY_CHECK_VERSION,
+          maxReferenceBytes: VOICE_REFERENCE_MAX_BYTES,
+          minReferenceSeconds: VOICE_REFERENCE_MIN_SECONDS,
+          maxReferenceSeconds: VOICE_REFERENCE_MAX_SECONDS,
+          previewReserveUsd,
+        };
+      }
+      if (!deps.customerEnabled() || !deps.customerAllowed(actor))
         return { available: false as const };
-      let engineReady = false;
+      // Customer-safe fields only: no engine readiness, provider config, service
+      // URL, token or internal pilot state is disclosed on this lane.
+      const days = deps.retentionDays();
+      if (days === null) return { available: false as const };
       let previewReserveUsd: number | null = null;
       try {
         const engine = deps.engine();
-        if (engine) {
-          previewReserveUsd = reserveUsd(engine);
-          const readiness = await engine.client.getReadiness();
-          engineReady = readiness.ready && !readiness.busy;
-        }
+        if (engine) previewReserveUsd = reserveUsd(engine);
       } catch {
-        /* Configuration and engine failures never disclose service URLs or secrets. */
+        /* Preview funding is optional for saving and deleting references. */
       }
       return {
         available: true as const,
         scope: "private_preview" as const,
-        engineReady,
+        lane: "customer_preview" as const,
         consentVersion: VOICE_ASSET_CONSENT_VERSION,
         qualityCheckVersion: VOICE_ASSET_QUALITY_CHECK_VERSION,
         maxReferenceBytes: VOICE_REFERENCE_MAX_BYTES,
         minReferenceSeconds: VOICE_REFERENCE_MIN_SECONDS,
         maxReferenceSeconds: VOICE_REFERENCE_MAX_SECONDS,
         previewReserveUsd,
+        retentionDays: days,
       };
     },
     async list(actor: Actor) {
-      await allowed(actor);
+      await access(actor);
       return { assets: (await stored(() => deps.repository.list(actor.id))).map(dto) };
     },
     async create(actor: Actor, body: unknown) {
-      await allowed(actor);
+      const lane = await access(actor);
       const input = object(body);
       const name = typeof input.name === "string" ? input.name.trim() : "";
       // eslint-disable-next-line no-control-regex
@@ -410,6 +617,9 @@ export function createVoiceAssetService(deps: VoiceAssetDependencies = productio
         }
         const id = deps.newId();
         const now = deps.now();
+        // Customer references always carry a bounded retention window; the
+        // platform-admin pilot keeps its existing unbounded preview record.
+        const expiresAt = lane === "customer" ? customerExpiresAt(now) : null;
         let sealed: string;
         try {
           sealed = encryptVoiceReference({
@@ -445,6 +655,13 @@ export function createVoiceAssetService(deps: VoiceAssetDependencies = productio
               version: 1,
               createdAt: now,
               updatedAt: now,
+              ...(expiresAt
+                ? {
+                    customerVisible: true,
+                    retentionPolicyVersion: VOICE_CLONE_RETENTION_POLICY_VERSION,
+                    expiresAt,
+                  }
+                : {}),
             }),
           ),
         );
@@ -454,7 +671,7 @@ export function createVoiceAssetService(deps: VoiceAssetDependencies = productio
       }
     },
     async review(actor: Actor, idInput: unknown, body: unknown) {
-      await allowed(actor);
+      await access(actor);
       const id = assetId(idInput);
       const input = object(body);
       const version = expectedVersion(input.expectedVersion);
@@ -499,7 +716,7 @@ export function createVoiceAssetService(deps: VoiceAssetDependencies = productio
       });
     },
     async remove(actor: Actor, idInput: unknown, body: unknown) {
-      await allowed(actor);
+      await access(actor);
       const id = assetId(idInput);
       const version = expectedVersion(object(body).expectedVersion);
       return deps.fenced(actor.id, "voice_asset_delete", async () => {
@@ -517,6 +734,7 @@ export function createVoiceAssetService(deps: VoiceAssetDependencies = productio
               secretEncrypted: null,
               revokedAt: row.revokedAt ?? now,
               deletedAt: now,
+              deletedReason: "user_deleted",
             },
             "deleted",
           ),
@@ -526,7 +744,7 @@ export function createVoiceAssetService(deps: VoiceAssetDependencies = productio
       });
     },
     async preview(actor: Actor, idInput: unknown, body: unknown, signal?: AbortSignal) {
-      await allowed(actor);
+      await access(actor);
       const id = assetId(idInput);
       const input = object(body);
       const version = expectedVersion(input.expectedVersion);
@@ -650,7 +868,17 @@ export function createVoiceAssetService(deps: VoiceAssetDependencies = productio
           }
           try {
             await accounting(() => deps.commit(reservation));
-            await allowed(actor);
+            // Only customer-lane previews write lane evidence; the admin pilot
+            // keeps its exact prior behavior and audit surface.
+            if (row.customerVisible)
+              await accounting(() =>
+                deps.repository.recordPreview(actor.id, id, version, deps.now(), {
+                  sourceSha256: row.sourceSha256,
+                  reservedUsdMicros: usdMicros(costUsd),
+                  committedUsdMicros: usdMicros(costUsd),
+                }),
+              );
+            await access(actor);
             approved(await owned(actor, id), version);
             if (signal?.aborted)
               throw new AppError(
@@ -667,6 +895,53 @@ export function createVoiceAssetService(deps: VoiceAssetDependencies = productio
           opened.bytes.fill(0);
         }
       });
+    },
+    /**
+     * Terminally expire customer references whose retention window elapsed.
+     *
+     * Runs from the jobs sweep (cron/system scope): candidates are read without
+     * tenant context, then each row is re-entered under its owner's tenant scope
+     * with the deletion fence, so RLS and the state guard still own the write.
+     */
+    async expireDue(now: Date = deps.now()) {
+      if (!deps.customerEnabled()) return 0;
+      const due = await stored(() => deps.repository.dueForExpiry(now, VOICE_CLONE_EXPIRY_BATCH));
+      let expired = 0;
+      for (const row of due) {
+        if (
+          row.customerVisible !== true ||
+          !row.expiresAt ||
+          row.expiresAt.getTime() > now.getTime() ||
+          row.deletedAt !== null ||
+          row.status === "deleted"
+        )
+          continue;
+        try {
+          const updated = await stored(() =>
+            deps.fenced(row.userId, "voice_asset_expire", () =>
+              deps.repository.update(
+                row.userId,
+                row.id,
+                row.version,
+                {
+                  status: "deleted",
+                  secretEncrypted: null,
+                  revokedAt: row.revokedAt ?? now,
+                  deletedAt: now,
+                  deletedReason: "retention_expired",
+                },
+                "expired",
+              ),
+            ),
+          );
+          if (updated) expired++;
+        } catch {
+          // A concurrent owner change or a transient storage failure leaves the
+          // row in place; the next sweep tick retries it. Never log user data.
+          log.warn("voice clone retention expiry skipped one row", { assetId: row.id });
+        }
+      }
+      return expired;
     },
   };
 }
