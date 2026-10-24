@@ -26,8 +26,12 @@
  *     rather than being forced into a wrong bucket.
  */
 
+import { ACTIVE_OPERATOR_TASK_STATUSES } from "./operator-work-status";
+
 export type CallOutcome =
   | "email_sent"
+  | "email_pending"
+  | "email_failed"
   | "booked"
   | "message_taken"
   | "follow_up"
@@ -41,6 +45,8 @@ export type CallOutcome =
 /** Display order for aggregated outcome buckets. */
 export const CALL_OUTCOMES: readonly CallOutcome[] = [
   "email_sent",
+  "email_pending",
+  "email_failed",
   "booked",
   "message_taken",
   "follow_up",
@@ -52,6 +58,50 @@ export const CALL_OUTCOMES: readonly CallOutcome[] = [
   "unclassified",
 ];
 
+/**
+ * What the account's own records prove about the email a call produced.
+ * Derived only from send records (the live tool audit, the send_email
+ * approval tasks, and the action execution ledger), never from anything
+ * the Bot said on the call.
+ */
+export type CallEmailState = "sent" | "pending" | "failed";
+
+export type CallEmailExecution = {
+  status?: string | null;
+  success?: boolean | null;
+  queued?: boolean | null;
+};
+
+const ACTIVE_TASK_STATUSES: readonly string[] = ACTIVE_OPERATOR_TASK_STATUSES;
+
+export function deriveCallEmailState(input: {
+  /** The live voice tool audit shows the sending service accepted an email. */
+  liveAccepted?: boolean;
+  /** Statuses of the call's send_email approval tasks. */
+  taskStatuses?: readonly (string | null | undefined)[];
+  /** Auto phase action executions for the call's send_email actions. */
+  executions?: readonly CallEmailExecution[];
+}): CallEmailState | null {
+  const taskStatuses = input.taskStatuses ?? [];
+  // An approval is still outstanding: an email from this call has not been
+  // sent, whatever an earlier send record says about a different attempt.
+  if (taskStatuses.some((status) => status != null && ACTIVE_TASK_STATUSES.includes(status))) {
+    return "pending";
+  }
+  const executions = input.executions ?? [];
+  const executedSend = executions.some(
+    (execution) =>
+      execution.status === "completed" && execution.success === true && execution.queued !== true,
+  );
+  if (input.liveAccepted || taskStatuses.some((status) => status === "completed") || executedSend) {
+    return "sent";
+  }
+  if (executions.some((execution) => execution.status === "failed")) {
+    return "failed";
+  }
+  return null;
+}
+
 export interface CallOutcomeInput {
   /** Stored digest tag on the call row (any writer's vocabulary). */
   outcomeTag?: string | null;
@@ -59,6 +109,11 @@ export interface CallOutcomeInput {
   endedReason?: string | null;
   /** A send-email tool call for this call completed with an accepted result. */
   emailAccepted?: boolean;
+  /**
+   * The call's email state derived from the send records (see
+   * deriveCallEmailState). When present it wins over emailAccepted.
+   */
+  emailState?: CallEmailState | null;
   /**
    * The caller's message text saved with this call, if any. Pass raw text;
    * the classifier only honours it when it is real content (isMessageContent).
@@ -121,7 +176,10 @@ export function messageContentFromTask(task: {
 
 export function classifyCallOutcome(input: CallOutcomeInput): CallOutcome {
   const tag = (input.outcomeTag || "").trim().toLowerCase();
-  if (input.emailAccepted) return "email_sent";
+  const emailState = input.emailState ?? (input.emailAccepted ? "sent" : null);
+  if (emailState === "pending") return "email_pending";
+  if (emailState === "failed") return "email_failed";
+  if (emailState === "sent") return "email_sent";
   if (tag === "booked") return "booked";
   if (isMessageContent(input.messageContent)) return "message_taken";
   // A voicemail is a message when its transcription was saved with the call.
@@ -155,6 +213,10 @@ export function callOutcomeLabel(outcome: CallOutcome): string {
   switch (outcome) {
     case "email_sent":
       return "Email sent";
+    case "email_pending":
+      return "Email pending";
+    case "email_failed":
+      return "Email failed";
     case "booked":
       return "Booked";
     case "message_taken":
@@ -180,6 +242,10 @@ export function callOutcomeDetail(outcome: CallOutcome): string {
   switch (outcome) {
     case "email_sent":
       return "The Bot sent the email during the call.";
+    case "email_pending":
+      return "An email from this call is waiting for approval. It has not been sent yet.";
+    case "email_failed":
+      return "The email from this call could not be sent.";
     case "booked":
       return "An appointment was booked.";
     case "message_taken":

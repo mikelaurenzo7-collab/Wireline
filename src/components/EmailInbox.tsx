@@ -27,12 +27,14 @@ type EmailMessage = {
   role: string;
   content: string;
   createdAt: string;
+  deliveryStatus: string | null;
 };
 
 type ThreadDetail = {
   thread: EmailThread;
   messages: EmailMessage[];
   handoff: { id: string; status: string } | null;
+  replyDelivery: { status: string; at: string | null } | null;
 };
 
 type ThreadsResponse = {
@@ -86,6 +88,7 @@ function normalizeMessage(row: Record<string, unknown>): EmailMessage {
     role: text(row.role, "user"),
     content: text(row.content, "No message body is available yet."),
     createdAt: text(row.created_at),
+    deliveryStatus: text(row.delivery_status) || null,
   };
 }
 
@@ -353,6 +356,7 @@ export default function EmailInbox({
           thread?: Record<string, unknown>;
           messages?: Array<Record<string, unknown>>;
           handoff?: { id: string; status: string } | null;
+          reply_delivery?: { status?: unknown; at?: unknown } | null;
           error?: string;
         } | null;
         if (!response.ok || !body?.thread || body.thread.id !== threadId)
@@ -364,6 +368,13 @@ export default function EmailInbox({
           thread,
           messages: Array.isArray(body.messages) ? body.messages.map(normalizeMessage) : [],
           handoff: body.handoff || null,
+          replyDelivery:
+            body.reply_delivery && typeof body.reply_delivery.status === "string"
+              ? {
+                  status: body.reply_delivery.status,
+                  at: typeof body.reply_delivery.at === "string" ? body.reply_delivery.at : null,
+                }
+              : null,
         });
         // A fetched but superseded conversation was never shown to the user.
         // Only the accepted detail clears its badge, without holding up the body.
@@ -957,6 +968,20 @@ export default function EmailInbox({
                 </StatusNotice>
               ) : null}
 
+              {detail?.replyDelivery?.status === "failed" ? (
+                <StatusNotice tone="warning" title="Reply Not Sent" className="m-3 sm:m-4">
+                  The most recent reply in this conversation was not accepted by the mailbox. It
+                  does not appear as sent above.
+                </StatusNotice>
+              ) : null}
+
+              {detail?.replyDelivery?.status === "unresolved" ? (
+                <StatusNotice tone="warning" title="Reply Status Unknown" className="m-3 sm:m-4">
+                  A reply in this conversation may already have been sent. Check the mailbox Sent
+                  folder before sending another.
+                </StatusNotice>
+              ) : null}
+
               <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-3 sm:p-5">
                 {detail?.messages.length ? (
                   <div className="space-y-3">
@@ -967,7 +992,11 @@ export default function EmailInbox({
                           key={message.id}
                           author={author}
                           label={label}
-                          timestamp={formatTimestamp(message.createdAt)}
+                          timestamp={
+                            message.deliveryStatus === "sent"
+                              ? `${formatTimestamp(message.createdAt)} · Sent`
+                              : formatTimestamp(message.createdAt)
+                          }
                           channel="email"
                         >
                           {message.content}
