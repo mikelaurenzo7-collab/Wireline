@@ -117,7 +117,11 @@ test("homepage channels stay clear and readable without decorative labels at 320
   await expect(description).toHaveText(
     "YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER.",
   );
-  await expect(hero.getByText("Choose calls, email, or both.", { exact: true })).toBeVisible();
+  await expect(
+    hero.getByText("It answers your calls and email, then sends you the summary.", {
+      exact: true,
+    }),
+  ).toBeVisible();
   await expect(hero.getByText("For life. For work.", { exact: true })).toHaveCount(0);
   await expect(page.locator("main").getByText("Life + work", { exact: true })).toHaveCount(0);
   await expect(

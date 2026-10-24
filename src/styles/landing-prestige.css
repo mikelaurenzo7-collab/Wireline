@@ -60,11 +60,13 @@
   text-wrap: balance;
 }
 .landing-prestige p.landing-prestige__channel-choice {
-  max-width: 30rem;
-  margin: 0.75rem 0 0;
-  color: var(--wireline-color-text-secondary);
-  font-size: 0.9375rem;
-  line-height: 1.6;
+  max-width: 34ch;
+  margin: 1rem 0 0;
+  color: var(--wireline-color-text-primary);
+  font-size: clamp(1.0625rem, 0.98rem + 0.35vw, 1.25rem);
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
   text-wrap: balance;
 }
 .landing-prestige__actions {
@@ -72,7 +74,7 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.75rem;
-  margin-top: 1.75rem;
+  margin-top: 2rem;
 }
 .landing-prestige__cta {
   display: inline-flex;
@@ -145,11 +147,11 @@
 }
 .landing-prestige__section-heading > span {
   display: block;
-  max-width: 34rem;
+  max-width: 40ch;
   margin: 1rem auto 0;
   color: var(--wireline-color-text-secondary);
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  line-height: 1.55;
   text-wrap: balance;
 }
 .landing-prestige__section-heading > .landing-prestige__activation {
@@ -159,7 +161,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
-  margin-top: 2rem;
+  margin-top: 2.5rem;
 }
 .landing-prestige__role-card {
   display: flex;
@@ -193,10 +195,12 @@
   text-wrap: balance;
 }
 .landing-prestige__role-card > p {
-  margin: 0.75rem 0 1rem;
+  max-width: 34ch;
+  margin: 0.625rem 0 1.25rem;
   color: var(--wireline-color-text-secondary);
   font-size: 0.9375rem;
-  line-height: 1.6;
+  line-height: 1.55;
+  text-wrap: pretty;
 }
 .landing-prestige__role-card > a {
   display: inline-flex;
@@ -222,7 +226,7 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
-  margin-top: 2rem;
+  margin-top: 2.5rem;
 }
 .landing-prestige__price-card {
   display: flex;
@@ -356,6 +360,14 @@
 }
 .landing-prestige__closing h2 > span {
   display: block;
+}
+.landing-prestige p.landing-prestige__closing-line {
+  max-width: 36ch;
+  margin: 1.25rem auto 0;
+  color: var(--wireline-color-text-secondary);
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  line-height: 1.55;
+  text-wrap: balance;
 }
 .landing-prestige__trust {
   border-top: 1px solid var(--wireline-color-border-default);

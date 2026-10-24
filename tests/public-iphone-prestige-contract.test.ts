@@ -127,7 +127,7 @@ describe("BotBound public iPhone prestige contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const product = read("src/lib/bot-product.ts");
 
-    expect(landing).toContain("<h2>Make it yours.</h2>");
+    expect(landing).toContain("<h2>One Bot. Any role.</h2>");
     expect(landing).toContain("template.summary");
     expect(landing).toContain("/signup?template=${encodeURIComponent(template.key)}");
     expect(landing).not.toContain('"For You"');

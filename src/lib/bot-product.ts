@@ -63,7 +63,7 @@ export const BOT_ROLE_TEMPLATES = [
     name: "Front Desk",
     category: "Operations" as const,
     direction: "inbound" as const,
-    summary: "Welcome callers, answer questions, and capture appointment requests.",
+    summary: "Greet every caller, answer questions, and take appointment requests.",
     outcomes: ["Route Calls", "Capture Intake", "Request Appointments"],
     moves: [
       "Intent + urgency + routing",
@@ -89,7 +89,7 @@ export const BOT_ROLE_TEMPLATES = [
     name: "Appointment Setter",
     category: "Operations" as const,
     direction: "inbound" as const,
-    summary: "Answer scheduling calls, collect preferences, and capture booking requests.",
+    summary: "Take scheduling calls, gather preferred times, and pass along booking requests.",
     outcomes: ["Collect Availability", "Confirm Details", "Request Appointments"],
     moves: [
       "Availability + preferred times",
@@ -102,7 +102,7 @@ export const BOT_ROLE_TEMPLATES = [
     name: "Customer Support",
     category: "Operations" as const,
     direction: "inbound" as const,
-    summary: "Resolve the repeatable work and make every escalation cleaner.",
+    summary: "Answer the everyday questions and hand off the rest with full context.",
     outcomes: ["Resolve Requests", "Collect Diagnostics", "Escalate With Context"],
     moves: [
       "Answers from your knowledge",
@@ -154,7 +154,7 @@ export const BOT_ROLE_TEMPLATES = [
     name: "Personal Assistant",
     category: "Everyday" as const,
     direction: "hybrid" as const,
-    summary: "Answer calls, organize email, and research the things on your list.",
+    summary: "Answer your calls, sort your email, and research what is on your list.",
     outcomes: ["Organize Plans", "Research Options", "Coordinate Tasks"],
     moves: ["Incoming calls + messages", "Research + concise briefs", "Email + next steps"],
   },
@@ -163,7 +163,7 @@ export const BOT_ROLE_TEMPLATES = [
     name: "Family Concierge",
     category: "Everyday" as const,
     direction: "hybrid" as const,
-    summary: "Keep household requests, plans, and useful information together.",
+    summary: "Keep household plans, requests, and details in one place.",
     outcomes: ["Coordinate Plans", "Research Services", "Track Household Tasks"],
     moves: ["Plans + shared details", "Household requests + owner review", "Email + next steps"],
   },
@@ -172,7 +172,7 @@ export const BOT_ROLE_TEMPLATES = [
     name: "Create Your Own",
     category: "Custom" as const,
     direction: "inbound" as const,
-    summary: "Build the exact job you wish somebody would just own.",
+    summary: "Describe any job you need covered and build a Bot around it.",
     outcomes: ["Define Any Job", "Connect the Right Tools", "Set the Rules"],
     moves: [
       "Trigger + goal + success condition",

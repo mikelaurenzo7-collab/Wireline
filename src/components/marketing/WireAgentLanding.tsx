@@ -90,7 +90,9 @@ export default function WireAgentLanding() {
             <p className="landing-prestige__description">
               YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER.
             </p>
-            <p className="landing-prestige__channel-choice">Choose calls, email, or both.</p>
+            <p className="landing-prestige__channel-choice">
+              It answers your calls and email, then sends you the summary.
+            </p>
             <div className="landing-prestige__actions">
               {signedIn ? (
                 <Link to="/studio" className="landing-prestige__cta is-primary">
@@ -117,8 +119,8 @@ export default function WireAgentLanding() {
         <section id="solutions" className="landing-prestige__section landing-prestige__roles">
           <div className="landing-prestige__rail">
             <header className="landing-prestige__section-heading">
-              <h2>Make it yours.</h2>
-              <span>Start with a role. Give it your way of doing things.</span>
+              <h2>One Bot. Any role.</h2>
+              <span>Pick a starting role, then teach it your hours, services, and answers.</span>
             </header>
             <div className="landing-prestige__role-grid">
               {FEATURED_TEMPLATES.map((template) => {
@@ -148,10 +150,9 @@ export default function WireAgentLanding() {
         <section id="pricing" className="landing-prestige__section landing-prestige__pricing">
           <div className="landing-prestige__rail">
             <header className="landing-prestige__section-heading">
-              <h2>Choose your setup.</h2>
+              <h2>Calls, email, or both.</h2>
               <span>
-                Every paid plan includes a cloud computer for web tasks, powered by its included AI
-                usage.
+                Every paid plan includes a cloud computer for web tasks, with AI usage built in.
               </span>
               {!available ? (
                 <span className="landing-prestige__activation" role="status">
@@ -230,8 +231,11 @@ export default function WireAgentLanding() {
         <section className="landing-prestige__closing" aria-labelledby="landing-prestige-closing">
           <div className="landing-prestige__rail">
             <h2 id="landing-prestige-closing">
-              <span>LESS BUSYWORK.</span> <span>MORE ROOM.</span>
+              <span>NEVER MISS</span> <span>A LEAD.</span>
             </h2>
+            <p className="landing-prestige__closing-line">
+              Every call answered. Every email handled. Every summary sent straight to you.
+            </p>
             <div className="landing-prestige__actions">
               {signedIn ? (
                 <Link to="/studio" className="landing-prestige__cta is-primary">
