@@ -191,8 +191,8 @@ export async function reserveVoiceCallFunding(
     .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.users.id))
     .where(eq(schema.users.id, opts.userId))
     .limit(1);
-  if (!opts.phoneTest && !opts.outboundPlacement && billing && isOwnerEmail(billing.email))
-    return null;
+  const ownerAccount = Boolean(billing && isOwnerEmail(billing.email));
+  if (!opts.phoneTest && !opts.outboundPlacement && ownerAccount) return null;
   const plan = planById(billing?.plan);
   if (
     !plan ||
@@ -202,13 +202,16 @@ export async function reserveVoiceCallFunding(
     throw new AppError(402, "VOICE_PLAN_REQUIRED", "An active Calls plan is required.");
   }
   if (plan.catalogFamily !== "channels") {
-    if (opts.phoneTest)
+    // The bounded owner phone test is an operator verification tool, so an owner
+    // identity may use it on a legacy capacity plan. It still runs the full funded
+    // reservation below; every other legacy plan path is unchanged.
+    if (opts.phoneTest && !ownerAccount)
       throw new AppError(
         402,
         "VOICE_PLAN_REQUIRED",
         "An active Calls package is required for phone tests.",
       );
-    return null;
+    if (!opts.phoneTest) return null;
   }
 
   // Also covers outbound claims and an earlier call awaiting metering. Unlike

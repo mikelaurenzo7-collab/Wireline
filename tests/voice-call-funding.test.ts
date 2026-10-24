@@ -216,6 +216,20 @@ describe("self-phone-test canonical funding", () => {
       includedMinutes: 1,
     });
   });
+  it("runs the funded owner phone test on a legacy capacity plan", async () => {
+    const owner = database({ email: "owner@example.test", plan: "enterprise", used: 0 });
+    expect(await reserveTest(owner)).toMatchObject({
+      maxSeconds: 120,
+      graceMinutes: 0,
+      prepaidHoldUsd: 0,
+    });
+    expect(owner.rows.filter((row) => row.refType === "voice_admission")).toHaveLength(1);
+  });
+  it("still refuses a legacy-plan phone test for a non-owner account", async () => {
+    const pilot = database({ plan: "enterprise", used: 0 });
+    await expect(reserveTest(pilot)).rejects.toMatchObject({ code: "VOICE_PLAN_REQUIRED" });
+    expect(pilot.rows.filter((row) => row.refType === "voice_admission")).toHaveLength(0);
+  });
   it("binds carrier and SIP to one funding hold and one settlement", async () => {
     const data = database({ used: 50, balance: 0.44 });
     await reserveTest(data);
