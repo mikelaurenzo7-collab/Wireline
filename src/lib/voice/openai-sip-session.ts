@@ -73,6 +73,11 @@ import {
 const WS_OPEN_TIMEOUT_MS = 15_000;
 const PROVIDER_REQUEST_TIMEOUT_MS = 10_000;
 const TOOL_CONFIRM_TIMEOUT_MS = 20_000;
+// A tool continuation is a response.create the provider must acknowledge with a
+// response.created carrying our metadata. xAI can drop that acknowledgement,
+// which used to leave the caller in silence until they spoke again.
+const CONTINUATION_ACK_TIMEOUT_MS = 4_000;
+const MAX_CONTINUATION_ATTEMPTS = 3;
 const HEARTBEAT_INTERVAL_MS = 25_000;
 const MAX_MISSED_PONGS = 2;
 const MAX_TRANSCRIPT_CHARS = 120_000;
@@ -1845,6 +1850,13 @@ async function runRealtimeSession(
   let callerSpeaking = false;
   let awaitingCallerResponse = false;
   let requestedContinuation: string | null = null;
+  let continuationWatchdog: ReturnType<typeof setTimeout> | null = null;
+  let continuationAttempts = 0;
+  const clearContinuationWatchdog = () => {
+    if (!continuationWatchdog) return;
+    clearTimeout(continuationWatchdog);
+    continuationWatchdog = null;
+  };
   let receivedFatalControl = false;
   const pendingToolOutputs = new Set<string>();
   const acknowledgedToolOutputs = new Set<string>();
@@ -1979,10 +1991,36 @@ async function runRealtimeSession(
     // Reserve before sending: repeated playback/done events cannot request a
     // second response while the provider has not acknowledged this one yet.
     requestedContinuation = randomUUID();
+    const continuationId = requestedContinuation;
     sendJson(ws, {
       type: "response.create",
       response: { metadata: { botbound_tool_continuation: requestedContinuation } },
     });
+    continuationAttempts += 1;
+    clearContinuationWatchdog();
+    continuationWatchdog = setTimeout(() => {
+      continuationWatchdog = null;
+      if (!ownsSession() || endedAt !== null || ws.readyState !== WebSocket.OPEN) return;
+      if (requestedContinuation !== continuationId) return;
+      // The provider dropped the acknowledgement. Leaving the reservation set
+      // would block every later continuation and leave the caller in silence
+      // until they spoke again, so release it and retry a bounded number of
+      // times while unconsumed tool results still exist.
+      requestedContinuation = null;
+      log.warn("Tool continuation was not acknowledged; retrying", {
+        userId: input.userId,
+        agentId: input.agentId,
+        callId: providerCallId(input.callId),
+        attempt: continuationAttempts,
+      });
+      if (continuationAttempts >= MAX_CONTINUATION_ATTEMPTS || !pendingToolOutputs.size) {
+        toolContinuationPending = false;
+        return;
+      }
+      toolContinuationPending = true;
+      requestToolContinuationWhenReady();
+    }, CONTINUATION_ACK_TIMEOUT_MS);
+    continuationWatchdog.unref?.();
   };
 
   const sendToolOutput = (callId: string, output: Record<string, unknown>) => {
@@ -2034,8 +2072,11 @@ async function runRealtimeSession(
       const ownsContinuation =
         requestedContinuation !== null &&
         metadata.botbound_tool_continuation === requestedContinuation;
-      if (ownsContinuation) requestedContinuation = null;
-      else awaitingCallerResponse = false;
+      if (ownsContinuation) {
+        requestedContinuation = null;
+        continuationAttempts = 0;
+        clearContinuationWatchdog();
+      } else awaitingCallerResponse = false;
       // Automatic responses consume only outputs acknowledged before they
       // started. Our own response follows its outputs on this ordered socket.
       responseToolOutputs.set(
