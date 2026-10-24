@@ -116,12 +116,12 @@ export default function UsageMeter({
     ? "Included work is paused after a payment reversal. Review Billing or contact support."
     : isBlocked
       ? completionDue > 0
-        ? `New live calls paused. Review Billing to clear $${completionDue.toFixed(2)} in completion credit.`
+        ? `New live calls paused. Review Billing to clear $${completionDue.toFixed(2)} due for extra call time.`
         : `New live calls paused. Review your plan and ${BALANCE_TITLE} in Billing.`
       : `${used} of ${included} included voice minutes used, current allowance through ${resetLabel}`;
   const compactUsageTitle =
     aiLimit > 0
-      ? `${compactTitle}. Managed AI: ${formatAiSpendUsd(aiUsed)} of ${formatAiSpendUsd(aiLimit)} used.`
+      ? `${compactTitle}. AI usage: ${formatAiSpendUsd(aiUsed)} of ${formatAiSpendUsd(aiLimit)} used.`
       : compactTitle;
 
   if (!includesVoice && !(aiLimit > 0)) return null;
@@ -157,53 +157,53 @@ export default function UsageMeter({
         </p>
       ) : null}
       {includesVoice ? (
-      <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-md flex items-center justify-center shadow-lg wl-accent-icon-box">
-            <Activity className="w-4.5 h-4.5 wl-accent-text" />
-          </div>
-          <div>
-            <h4 className="font-display text-lg text-foreground leading-tight font-bold">
-              Voice Minutes
-            </h4>
-            <p className="wl-label text-foreground/55 font-medium">
-              Current allowance · through {resetLabel}
-            </p>
-          </div>
-        </div>
-        {/* nowrap keeps the fraction whole in narrow admin columns — it used to
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-md flex items-center justify-center shadow-lg wl-accent-icon-box">
+                <Activity className="w-4.5 h-4.5 wl-accent-text" />
+              </div>
+              <div>
+                <h4 className="font-display text-lg text-foreground leading-tight font-bold">
+                  Voice Minutes
+                </h4>
+                <p className="wl-label text-foreground/55 font-medium">
+                  Current allowance · through {resetLabel}
+                </p>
+              </div>
+            </div>
+            {/* nowrap keeps the fraction whole in narrow admin columns — it used to
             break as "0 /" / "100" / "0%" on separate clipped lines at 390px. */}
-        <div className="shrink-0 whitespace-nowrap text-right">
-          <div className="text-[length:var(--wireline-typography-overline-size)] font-mono text-foreground/55">
-            <span className="text-foreground tabular-nums text-base font-bold">
-              {used.toLocaleString()}
-            </span>
-            <span className="text-foreground/55"> / {included.toLocaleString()}</span>
+            <div className="shrink-0 whitespace-nowrap text-right">
+              <div className="text-[length:var(--wireline-typography-overline-size)] font-mono text-foreground/55">
+                <span className="text-foreground tabular-nums text-base font-bold">
+                  {used.toLocaleString()}
+                </span>
+                <span className="text-foreground/55"> / {included.toLocaleString()}</span>
+              </div>
+              <p className="wl-label text-brand font-semibold mt-0.5">{pct}% used</p>
+            </div>
           </div>
-          <p className="wl-label text-brand font-semibold mt-0.5">{pct}% used</p>
-        </div>
-      </div>
 
-      <div className="relative">
-        <Progress
-          value={pct}
-          aria-label={`Voice minutes: ${used.toLocaleString()} of ${included.toLocaleString()} used (${pct}%)`}
-          className="h-2.5 bg-white/5 shadow-inner wl-accent-progress-glow"
-          indicatorClassName={cn(
-            "transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]",
-            isBlocked ? "bg-rose-500" : hasExtraUsage || isWarn ? "bg-amber-500" : "bg-brand",
-          )}
-        />
-      </div>
-      </>
+          <div className="relative">
+            <Progress
+              value={pct}
+              aria-label={`Voice minutes: ${used.toLocaleString()} of ${included.toLocaleString()} used (${pct}%)`}
+              className="h-2.5 bg-white/5 shadow-inner wl-accent-progress-glow"
+              indicatorClassName={cn(
+                "transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]",
+                isBlocked ? "bg-rose-500" : hasExtraUsage || isWarn ? "bg-amber-500" : "bg-brand",
+              )}
+            />
+          </div>
+        </>
       ) : null}
 
       {Number.isFinite(aiLimit) && aiLimit > 0 ? (
         <div className="space-y-2 border-t border-white/8 pt-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <div>
-              <p className="text-sm font-semibold text-foreground">Managed AI</p>
+              <p className="text-sm font-semibold text-foreground">AI usage</p>
               <p className="text-xs text-muted-foreground">Computer and other AI work</p>
             </div>
             <p className="shrink-0 text-sm tabular-nums text-muted-foreground">
@@ -213,7 +213,7 @@ export default function UsageMeter({
           </div>
           <Progress
             value={aiPct}
-            aria-label={`Managed AI allowance: ${formatAiSpendUsd(aiUsed)} of ${formatAiSpendUsd(aiLimit)} used (${aiPct}%)`}
+            aria-label={`Included AI usage: ${formatAiSpendUsd(aiUsed)} of ${formatAiSpendUsd(aiLimit)} used (${aiPct}%)`}
             className="h-2 bg-white/5"
             indicatorClassName={aiPct >= 80 ? "bg-amber-500" : "bg-brand"}
           />
@@ -251,7 +251,7 @@ export default function UsageMeter({
             </span>
             <span className="text-foreground/85">
               {completionDue > 0
-                ? `$${completionDue.toFixed(2)} in completion credit is due. Clear it in Billing and check your plan before starting another call.`
+                ? `$${completionDue.toFixed(2)} is due for extra call time. Clear it in Billing and check your plan before starting another call.`
                 : `Review your plan and ${BALANCE_TITLE} in Billing before starting another call.`}
             </span>
             <span className="block text-foreground/55 mt-1">

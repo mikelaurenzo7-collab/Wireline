@@ -9,13 +9,20 @@ export function setPublicIsolationHeaders(res: ServerResponse): void {
   res.setHeader("Origin-Agent-Cluster", "?1");
 }
 
+/** Root-level icons and the web manifest, not application code or pages. */
+const ROOT_BRAND_FILE =
+  /^(?:favicon\.(?:ico|png|svg)|botbound-icon(?:-\d+)?\.(?:svg|png)|site\.webmanifest)$/;
+
 /** Only successfully resolved, public static assets may override no-store. */
 export function productionStaticHeaders(publicDirectory: string) {
   return (res: ServerResponse, filePath: string): void => {
     const relative = path.relative(publicDirectory, filePath).split(path.sep).join("/");
     if (relative.startsWith("assets/") || relative.startsWith("fonts/")) {
       res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-    } else if (relative === "fonts.css") {
+    } else if (relative === "fonts.css" || ROOT_BRAND_FILE.test(relative)) {
+      // Favicons, the app icon and the manifest load on every page. A short
+      // public cache keeps a deploy's instance swap from surfacing as a broken
+      // icon, while a rebrand still propagates within a day.
       res.setHeader("Cache-Control", "public, max-age=86400");
     }
     // Public brand images are embedded in email and shared previews. Keep the

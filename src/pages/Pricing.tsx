@@ -4,6 +4,7 @@ import { ArrowRight, ChevronDown } from "lucide-react";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 import { FLAT_OVERAGE_PER_MIN_USD, STRIPE_PLANS } from "../lib/plan-catalog";
+import { PERSONAL_PLAN } from "../lib/public-plan-lineup";
 import {
   DEFAULT_ACTIVATION_PLAN_ID,
   getStoredSignupIntent,
@@ -37,7 +38,7 @@ const FAQ = [
   ],
   [
     "When Does Included Usage Reset?",
-    "Call minutes and managed AI allowances renew on your monthly subscription anniversary, including annual plans. Billing shows your next reset date. Unused included usage does not roll over.",
+    "Call minutes and included AI usage renew on your monthly subscription anniversary, including annual plans. Billing shows your next reset date. Unused included usage does not roll over.",
   ],
   [
     "Which Plans Include a Phone Number?",
@@ -45,7 +46,7 @@ const FAQ = [
   ],
   [
     "What Happens When Included Call Minutes Run Out?",
-    `Extra calling uses prepaid Runtime Balance at ${TOPUP_RATE}. Each call requires at least one funded minute and is limited by available coverage, plus a completion buffer of up to 10 minutes, within the session cap of 60 minutes. Unpaid completion usage pauses new calls and prepaid extras until you top up. Billing and saved records stay available. No automatic balance purchases or overage invoices.`,
+    `Extra calling uses Runtime Balance, money you add ahead of time, at ${TOPUP_RATE}. Each call requires at least one funded minute and is limited by available coverage, plus a completion buffer of up to 10 minutes so a conversation can wrap up, within the session cap of 60 minutes. Unpaid completion usage pauses new calls and prepaid extras until you top up. Billing and saved records stay available. No automatic balance purchases or overage invoices.`,
   ],
   [
     "How Long Can a Call Last?",
@@ -126,7 +127,8 @@ export default function Pricing() {
           <div className="mx-auto mb-6 max-w-3xl text-center">
             <h1 className="marketing-hero-title mx-auto">Your Bot. Your Plan.</h1>
             <p className="marketing-hero-lead mx-auto mt-4">
-              Choose your channels and capacity. Every paid plan includes a computer.
+              Choose your channels and capacity. Every paid plan includes a cloud computer for web
+              tasks.
             </p>
           </div>
           <div className="mx-auto max-w-2xl">
@@ -180,8 +182,9 @@ export default function Pricing() {
               {selectedHasCalls ? (
                 <>
                   {" "}
-                  Extra minutes cost {TOPUP_RATE}, using Runtime Balance or completion credit. Bots
-                  answer calls on their own number.
+                  Extra minutes are {TOPUP_RATE}, paid from balance you add ahead of time. A call
+                  that runs past your minutes can take up to 10 more to finish. Bots answer calls on
+                  their own number.
                 </>
               ) : null}
             </p>
@@ -189,8 +192,8 @@ export default function Pricing() {
               <div className="min-w-0 flex-1 text-left">
                 <h2 className="wl-preserve-case text-base font-semibold">Personal · $12/month</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Calls and a computer for lighter use. 20 call minutes. Connect Gmail or Outlook
-                  for the inbox you already use.
+                  Calls and a computer for lighter use. {PERSONAL_PLAN.voice_minutes_monthly} call
+                  minutes. Connect Gmail or Outlook for the inbox you already use.
                 </p>
               </div>
               <Link

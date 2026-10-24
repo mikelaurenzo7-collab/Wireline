@@ -426,7 +426,7 @@ export default function BillingSettings() {
                   {SMS_LAUNCH_UI_ENABLED && plan?.channels.includes("sms")
                     ? "Prepaid extra call minutes, SMS, and eligible live actions."
                     : "Prepaid extra call minutes and eligible live actions."}{" "}
-                  Computer uses your managed AI allowance.
+                  Computer tasks use your included AI usage.
                 </p>
               </div>
               <ShieldCheck className="size-5 shrink-0 text-primary" aria-hidden="true" />

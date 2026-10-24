@@ -19,7 +19,7 @@ export const CONVERSATION_BALANCE_COPY = {
   subtitle:
     "Your plan includes capacity for your selected channels. Add prepaid balance when you need more.",
   reassurance:
-    "No automatic charges or auto-refill. Calls have up to 10 minutes of completion credit; any amount due pauses new calls and prepaid extras until you top up.",
+    "No automatic charges or auto-refill. A call that runs past your minutes can take up to 10 more to finish; any amount due pauses new calls and prepaid extras until you top up.",
 } as const;
 
 export function isConversationBalanceAmount(amountUsd: number): boolean {

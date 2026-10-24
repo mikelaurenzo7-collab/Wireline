@@ -18,7 +18,12 @@ import LandingFooter from "./LandingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import { BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
-import { getPlanCapacityLabel, getPlanDisplayName } from "../../lib/plan-display";
+import {
+  getPlanCapacityLabel,
+  getPlanDisplayName,
+  PLAN_CAPACITY_LABELS,
+} from "../../lib/plan-display";
+import { HOME_PLAN_IDS } from "../../lib/public-plan-lineup";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { signupHrefForPlan } from "../../lib/signup-intent";
 import { usePaidPlanAvailability } from "../../hooks/usePaidPlanAvailability";
@@ -45,8 +50,7 @@ const ROLE_ICONS: Record<string, LucideIcon> = {
   "customer-support": Headphones,
   custom: WandSparkles,
 };
-const PUBLIC_PLAN_IDS = ["personal", "email", "voice", "voice-email"] as const;
-const PUBLIC_PLANS = PUBLIC_PLAN_IDS.map((id) => {
+const PUBLIC_PLANS = HOME_PLAN_IDS.map((id) => {
   const plan = STRIPE_PLANS.find((candidate) => candidate.id === id);
   if (!plan) throw new Error(`Missing public plan: ${id}`);
   return { id, plan };
@@ -86,7 +90,7 @@ export default function WireAgentLanding() {
             <p className="landing-prestige__description">
               YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER.
             </p>
-            <p className="landing-prestige__channel-choice">Choose the channels you need.</p>
+            <p className="landing-prestige__channel-choice">Choose calls, email, or both.</p>
             <div className="landing-prestige__actions">
               {signedIn ? (
                 <Link to="/studio" className="landing-prestige__cta is-primary">
@@ -146,7 +150,8 @@ export default function WireAgentLanding() {
             <header className="landing-prestige__section-heading">
               <h2>Choose your setup.</h2>
               <span>
-                Every paid plan includes Computer access. Usage comes from its AI allowance.
+                Every paid plan includes a cloud computer for web tasks, powered by its included AI
+                usage.
               </span>
               {!available ? (
                 <span className="landing-prestige__activation" role="status">
@@ -215,7 +220,7 @@ export default function WireAgentLanding() {
             </div>
             <div className="landing-prestige__pricing-more">
               <Link to="/pricing">
-                Compare all channels and usage
+                {`Compare ${PLAN_CAPACITY_LABELS.light}, ${PLAN_CAPACITY_LABELS.regular}, and ${PLAN_CAPACITY_LABELS.high}`}
                 <ArrowRight aria-hidden="true" />
               </Link>
             </div>

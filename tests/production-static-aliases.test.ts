@@ -27,6 +27,10 @@ beforeEach(async () => {
   writeFileSync(join(fixture, "assets", "app.js"), "browser bundle");
   writeFileSync(join(fixture, "fonts", "brand.woff2"), "font bytes");
   writeFileSync(join(fixture, "fonts.css"), "font styles");
+  writeFileSync(join(fixture, "botbound-icon.svg"), "<svg/>");
+  writeFileSync(join(fixture, "favicon.ico"), "icon bytes");
+  writeFileSync(join(fixture, "site.webmanifest"), "{}");
+  writeFileSync(join(fixture, "humans.txt"), "people");
   writeFileSync(
     join(fixture, "legal", "data-deletion.html"),
     "<!doctype html><title>Deletion confirmation</title>",
@@ -143,6 +147,10 @@ describe("production public route compatibility", () => {
     ["/assets/app.js", "public, max-age=31536000, immutable"],
     ["/fonts/brand.woff2", "public, max-age=31536000, immutable"],
     ["/fonts.css", "public, max-age=86400"],
+    ["/botbound-icon.svg", "public, max-age=86400"],
+    ["/favicon.ico", "public, max-age=86400"],
+    ["/site.webmanifest", "public, max-age=86400"],
+    ["/humans.txt", "no-store"],
     ["/studio", "no-store"],
     ["/api/test", "no-store"],
     ["/legal/data-deletion", "no-store"],

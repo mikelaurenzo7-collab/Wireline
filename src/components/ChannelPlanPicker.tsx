@@ -78,8 +78,8 @@ export function channelPlanHighlights(plan: ChannelPlanOption): string[] {
     );
   if (typeof plan.ai_spend_allowance_usd_monthly === "number")
     highlights.push(
-      `$${plan.ai_spend_allowance_usd_monthly.toFixed(2)} managed AI allowance each month`,
-      "Cloud computer for web tasks, billed to the AI allowance",
+      `$${plan.ai_spend_allowance_usd_monthly.toFixed(2)} of AI usage included each month`,
+      "Cloud computer for web tasks, paid from included AI usage",
     );
   if (
     typeof plan.runtime_allowance_usd_monthly === "number" &&
@@ -219,7 +219,7 @@ export default function ChannelPlanPicker({
                     <span className="text-xs tabular-nums">
                       {option.channels.includes("voice")
                         ? `${option.voice_minutes_monthly.toLocaleString()} min/month`
-                        : `$${(option.ai_spend_allowance_usd_monthly ?? 0).toFixed(2)} allowance/month`}
+                        : `$${(option.ai_spend_allowance_usd_monthly ?? 0).toFixed(2)} AI usage/month`}
                     </span>
                   </>
                 ) : null}
@@ -262,7 +262,7 @@ export default function ChannelPlanPicker({
         </ul>
         {plan.channels.includes("voice") ? (
           <p className="mb-3 text-sm text-muted-foreground">
-            Calls include up to 10 minutes of paid completion credit at $
+            If your minutes run out mid-call, the call can keep going for up to 10 more minutes at $
             {FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min.
           </p>
         ) : null}

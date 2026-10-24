@@ -1075,6 +1075,13 @@ button.wl-data-row:focus-visible {
   color: var(--wireline-color-action-primary-default);
 }
 
+/* Scroll room under the floating Privacy Choices notice (see CookieConsent). */
+html[data-privacy-choices="open"] body {
+  padding-bottom: calc(
+    var(--wl-privacy-choices-space, 0px) + var(--wl-fixed-overlay-bottom, 0px) + 1.25rem
+  );
+}
+
 .wl-recipe-icon {
   color: var(--wireline-color-action-primary-default);
 }

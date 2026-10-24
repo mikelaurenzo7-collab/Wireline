@@ -177,7 +177,7 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     title: "Billing & Spend Controls",
     items: [
       "Runtime Balance is a prepaid ledger. Paid plans draw overflow voice from funded balance after included minutes. Existing services retain their billing and verification requirements. Live voice requires an active eligible paid plan.",
-      "Paid plans include a managed AI allowance for AI, research, and enrichment funded by the platform. Calls can use up to 10 minutes of paid completion credit within their session limit. Any amount due pauses new calls and prepaid extras until topped up.",
+      "Paid plans include a monthly amount of AI usage for AI, research, and enrichment, funded by the platform. A call that runs past its minutes can take up to 10 more to finish, within its session limit. Any amount due pauses new calls and prepaid extras until topped up.",
       "Daily spend totals and cost alerts help you track your account's spending and catch unexpected charges early.",
     ],
   },

@@ -131,6 +131,29 @@ export default function CookieConsent() {
     return () => window.cancelAnimationFrame(frame);
   }, [explicitlyOpened, visible]);
 
+  // While the notice floats over the page, reserve the same space at the end of
+  // the document so visitors can still scroll the last content (e.g. a plan
+  // card on mobile pricing) fully above it.
+  useEffect(() => {
+    const root = typeof document === "undefined" ? null : document.documentElement;
+    const panel = privacyPanelRef.current;
+    if (!visible || !root?.style || !panel || typeof ResizeObserver === "undefined") return;
+    const reserve = () =>
+      root.style.setProperty(
+        "--wl-privacy-choices-space",
+        `${Math.ceil(panel.getBoundingClientRect().height)}px`,
+      );
+    reserve();
+    const observer = new ResizeObserver(reserve);
+    observer.observe(panel);
+    root.setAttribute("data-privacy-choices", "open");
+    return () => {
+      observer.disconnect();
+      root.removeAttribute("data-privacy-choices");
+      root.style.removeProperty("--wl-privacy-choices-space");
+    };
+  }, [visible]);
+
   useEffect(() => {
     if (!visible) return;
     const onKey = (e: KeyboardEvent) => {

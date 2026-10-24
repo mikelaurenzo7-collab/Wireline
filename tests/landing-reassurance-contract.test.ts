@@ -9,6 +9,7 @@ describe("home landing launch clarity", () => {
   const landing = read("src/components/marketing/WireAgentLanding.tsx");
   const product = read("src/lib/bot-product.ts");
   const css = read("src/styles/landing-prestige.css");
+  const lineup = read("src/lib/public-plan-lineup.ts");
 
   it("keeps a concise product entrance instead of a brochure stack", () => {
     expect(landing).not.toContain("REASSURANCES");
@@ -29,8 +30,9 @@ describe("home landing launch clarity", () => {
     expect(product).not.toContain("activationLine:");
     expect(landing).not.toContain("landing-prestige__directions");
     expect(landing).not.toContain("Build free. Put it on a number when it is ready.");
-    expect(landing).toContain(
-      'const PUBLIC_PLAN_IDS = ["personal", "email", "voice", "voice-email"]',
+    expect(landing).toContain("HOME_PLAN_IDS.map(");
+    expect(lineup).toContain(
+      'export const HOME_PLAN_IDS = ["personal", "email", "voice", "voice-email"]',
     );
     for (const id of ["email", "voice", "voice-email"]) {
       expect(planById(id)?.catalogFamily).toBe("channels");
@@ -50,7 +52,7 @@ describe("home landing launch clarity", () => {
     expect(landing).toContain("plan.price_usd_monthly");
     expect(landing).toContain('id === "email"');
     expect(landing).toContain("canActivate(id)");
-    expect(landing).toContain("Every paid plan includes Computer access.");
+    expect(landing).toContain("Every paid plan includes a cloud computer for web tasks");
     expect(landing).not.toContain("Personal is $12 a month. Cancel anytime.");
     expect(landing).toContain('className="landing-prestige__activation" role="status"');
     expect(landing).not.toMatch(/coming soon/i);
