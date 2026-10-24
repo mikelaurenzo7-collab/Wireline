@@ -108,7 +108,8 @@ export function createXAICloneEngine(env: Env = process.env): CloneEngine {
           name: input.name,
           wav: input.wav,
           gender: input.gender,
-          useCase: "customer_support",
+          // xAI documents use_case values; "conversational" fits a phone agent.
+          useCase: "conversational",
         });
         return { providerVoiceId: voiceId };
       }),

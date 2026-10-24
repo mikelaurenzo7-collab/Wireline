@@ -11,6 +11,7 @@ import { agentMutationRateLimit } from "../middleware/api-rate-limits";
 import { recordAmbiguousProviderAttempt, recordUsage } from "../lib/ai-audit";
 import { drizzle, log } from "../lib/server-context";
 import { phoneCallVoiceFor } from "../lib/voice/xai-voice-config";
+import { LIVE_CUSTOM_VOICE_KEY } from "../lib/voice/live-voice-service";
 import { xaiSipCredentialsFor } from "../lib/voice/xai-phone-registration";
 import { isVoiceSampleAvailable, synthesizeVoiceSample } from "../lib/voice/voice-sample";
 import {
@@ -1149,16 +1150,32 @@ router.patch(
     if (hasPhoneVoiceId && requestedPhoneVoiceId && !normalizedPhoneVoiceId) {
       throw AppError.fromHttpStatus(400, "Choose one of the built-in phone voices.");
     }
+    // Picking a built-in voice is the one-tap way back to stock: it also
+    // clears a cloned-voice selection, otherwise callers would keep hearing
+    // the clone right after we confirmed the stock voice.
+    const [current] = await drizzle
+      .select({ businessVariables: schema.agents.businessVariables })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+      .limit(1);
+    const variables =
+      current?.businessVariables && typeof current.businessVariables === "object"
+        ? { ...(current.businessVariables as Record<string, unknown>) }
+        : null;
+    const customVoiceCleared = Boolean(variables && LIVE_CUSTOM_VOICE_KEY in variables);
+    if (variables) delete variables[LIVE_CUSTOM_VOICE_KEY];
     const patch: {
       voiceId: string;
       voiceProvider: "openai";
       phoneVoiceId: null;
       phoneVoiceProvider: null;
+      businessVariables?: Record<string, unknown>;
     } = {
       voiceId,
       voiceProvider: "openai",
       phoneVoiceId: null,
       phoneVoiceProvider: null,
+      ...(customVoiceCleared && variables ? { businessVariables: variables } : {}),
     };
     const [savedVoice] = await drizzle
       .update(schema.agents)
@@ -1179,6 +1196,7 @@ router.patch(
         phoneVoiceProvider: savedVoice?.phoneVoiceProvider ?? null,
         phoneCall: phoneCallVoiceFor(savedVoice?.voiceId ?? voiceId),
       },
+      customVoiceCleared,
     });
   },
 );

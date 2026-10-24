@@ -39,7 +39,9 @@ describe("live call recording (owner choice) contract", () => {
     expect(helper).toContain('"/api/twilio-webhook/live-recording-complete"');
 
     const inbound = read("src/routes/openai-inbound-twilio-routes.ts");
-    expect(inbound).toContain("liveRecordingDialAttributes(recordCall)");
+    expect(read("src/lib/voice/inbound-bridge.ts")).toContain(
+      "liveRecordingDialAttributes(recordCall)",
+    );
     expect(inbound).toContain("inboundCallRecordingEnabled(owner)");
 
     const outbound = read("src/routes/openai-outbound-routes.ts");
@@ -146,10 +148,10 @@ describe("live call recording (owner choice) contract", () => {
     expect(session).toContain("recordingEnabled: input.callRecordingEnabled === true");
     // Inbound: with the flag off the greeting is returned untouched; with it
     // on, the composer's recording notice is prepended.
-    expect(session).toContain("if (input.callRecordingEnabled !== true) return greeting;");
-    expect(session).toContain(
-      "complianceFirstMessagePrefix(null, null, { recordingEnabled: true })",
+    expect(read("src/lib/voice/inbound-opening.ts")).toContain(
+      "this call may be recorded for quality and compliance",
     );
+    expect(read("src/lib/voice/inbound-opening.ts")).toContain("return input.recordingEnabled");
     // AI-identity disclosure composition stays flag-independent.
     expect(session).toContain("complianceFirstMessagePrefix(");
     expect(session).toContain("outboundAiCall: true");

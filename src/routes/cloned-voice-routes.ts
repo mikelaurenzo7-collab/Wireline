@@ -61,12 +61,23 @@ router.post(
   },
 );
 
-function releaseSignedName(raw: unknown): string | undefined {
-  if (typeof raw !== "string" || raw.length > 600) return undefined;
+/** Upper bound on the encoded clone-details header. */
+const CLONE_DETAILS_HEADER_MAX = 2_000;
+
+/**
+ * Personal clone details (voice name, typed legal name, where the speaker
+ * lives) ride in one URI-encoded JSON header, never the URL, so they stay out
+ * of access logs and browser history. The body stays the raw WAV.
+ */
+export function readCloneDetailsHeader(raw: unknown): Record<string, unknown> {
+  if (typeof raw !== "string" || !raw || raw.length > CLONE_DETAILS_HEADER_MAX) return {};
   try {
-    return decodeURIComponent(raw);
+    const parsed: unknown = JSON.parse(decodeURIComponent(raw));
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : {};
   } catch {
-    return undefined;
+    return {};
   }
 }
 
@@ -77,18 +88,18 @@ router.post(
   rawWav,
   async (req: AuthenticatedRequest, res) => {
     res.setHeader("Cache-Control", "no-store");
-    const query = req.query as Record<string, unknown>;
+    const details = readCloneDetailsHeader(req.headers["x-voice-clone-details"]);
     const result = await liveVoiceService.create(req.user, wavBody(req), {
-      name: query.name,
-      consentAccepted: query.consentAccepted === "true",
-      consentVersion: query.consentVersion,
-      consentScope: query.consentScope,
-      gender: query.gender,
-      speakerJurisdiction: query.speakerJurisdiction,
-      biometricReleaseAccepted: query.biometricReleaseAccepted === "true",
-      biometricReleaseVersion: query.biometricReleaseVersion,
-      // The signed legal name rides in a header, not the URL, so it stays out of access logs.
-      biometricReleaseSignedName: releaseSignedName(req.headers["x-voice-release-signed-name"]),
+      name: details.name,
+      consentAccepted: details.consentAccepted === true,
+      consentVersion: details.consentVersion,
+      consentScope: details.consentScope,
+      gender: details.gender,
+      speakerJurisdiction: details.speakerJurisdiction,
+      biometricReleaseAccepted: details.biometricReleaseAccepted === true,
+      biometricReleaseVersion: details.biometricReleaseVersion,
+      biometricReleaseSignedName: details.biometricReleaseSignedName,
+      agentName: details.agentName,
     });
     res.status(201).json(result);
   },

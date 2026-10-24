@@ -17,18 +17,20 @@ import { users } from "./schema-base";
  * Live cloned voices (migration 0186). A customer records a consented
  * reference in BotBound; the reference is uploaded once to the clone engine
  * chosen by eligibility (xAI or ElevenLabs) and only the engine's voice id is
- * kept here. BotBound never stores
- * the raw reference audio for this lane, so deleting the row plus the provider
+ * kept here. BotBound does not keep
+ * the raw reference audio for this lane (the voice provider keeps the voice model until deletion), so deleting the row plus the provider
  * voice removes every copy BotBound controls.
  *
  * Bots point at a clone through `businessVariables.wirelineLiveCustomVoice`
  * ({ cloneId }); live calls re-check status here at call start so a deleted
  * clone can never speak again.
  */
-export const LIVE_VOICE_CONSENT_VERSION = "live-voice-clone-consent-v1-2026-10-24" as const;
-export const LIVE_VOICE_STATUSES = ["ready", "deleted"] as const;
+export const LIVE_VOICE_CONSENT_VERSION = "live-voice-clone-consent-v2-2026-10-24" as const;
+/** `cleanup_pending`: a provider voice whose BotBound record failed; the sweep destroys it. */
+export const LIVE_VOICE_STATUSES = ["ready", "cleanup_pending", "deleted"] as const;
 export type LiveVoiceStatus = (typeof LIVE_VOICE_STATUSES)[number];
-export const LIVE_VOICE_CONSENT_SCOPES = ["self", "authorized_speaker"] as const;
+/** The speaker is always the signer: no cloning on someone else's behalf. */
+export const LIVE_VOICE_CONSENT_SCOPES = ["self"] as const;
 export type LiveVoiceConsentScope = (typeof LIVE_VOICE_CONSENT_SCOPES)[number];
 export const LIVE_VOICE_GENDERS = ["female", "male"] as const;
 export type LiveVoiceGender = (typeof LIVE_VOICE_GENDERS)[number];
@@ -36,6 +38,7 @@ export const LIVE_VOICE_DELETED_REASONS = [
   "user_deleted",
   "provider_missing",
   "retention_expired",
+  "create_failed",
 ] as const;
 export const LIVE_VOICE_PROVIDERS = ["xai", "elevenlabs"] as const;
 export type LiveVoiceProvider = (typeof LIVE_VOICE_PROVIDERS)[number];
@@ -57,6 +60,8 @@ export const liveVoices = pgTable(
     consentScope: text("consent_scope").$type<LiveVoiceConsentScope>().notNull(),
     consentAcceptedAt: timestamp("consent_accepted_at", { withTimezone: true }).notNull(),
     consentAcceptedBy: uuid("consent_accepted_by").notNull(),
+    /** The full release text exactly as shown and signed. */
+    consentNoticeText: text("consent_notice_text").notNull(),
     sourceSha256: text("source_sha256").notNull(),
     sourceDurationSeconds: doublePrecision("source_duration_seconds").notNull(),
     qualityScore: integer("quality_score"),
@@ -65,11 +70,11 @@ export const liveVoices = pgTable(
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
     /** Speaker's residence as declared at consent: `US-XX` or `INTL`. Drives engine and law. */
     speakerJurisdiction: text("speaker_jurisdiction").notNull(),
-    /** Written biometric release (required for US-IL): version, typed legal name, time. */
+    /** Written voice release (every speaker signs): version, typed legal name, time. */
     biometricReleaseVersion: text("biometric_release_version"),
     biometricReleaseSignedName: text("biometric_release_signed_name"),
     biometricReleaseAcceptedAt: timestamp("biometric_release_accepted_at", { withTimezone: true }),
-    /** Published destruction schedule; NULL keeps the voice until the owner deletes it. */
+    /** Published destruction schedule, applied to every voice. */
     retentionPolicyVersion: text("retention_policy_version"),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -100,11 +105,11 @@ export const liveVoices = pgTable(
     ),
     statusCheck: check(
       "wireline_live_voices_status_check",
-      sql`(${table.status} = 'ready' AND ${table.providerVoiceId} IS NOT NULL AND ${table.deletedAt} IS NULL AND ${table.deletedReason} IS NULL) OR (${table.status} = 'deleted' AND ${table.deletedAt} IS NOT NULL AND ${table.deletedReason} IN ('user_deleted', 'provider_missing', 'retention_expired'))`,
+      sql`(${table.status} = 'ready' AND ${table.providerVoiceId} IS NOT NULL AND ${table.deletedAt} IS NULL AND ${table.deletedReason} IS NULL) OR (${table.status} = 'deleted' AND ${table.deletedAt} IS NOT NULL AND ${table.deletedReason} IN ('user_deleted', 'provider_missing', 'retention_expired', 'create_failed')) OR (${table.status} = 'cleanup_pending' AND ${table.providerVoiceId} IS NOT NULL AND ${table.deletedAt} IS NULL)`,
     ),
     consentCheck: check(
       "wireline_live_voices_consent_check",
-      sql`${table.consentVersion} = 'live-voice-clone-consent-v1-2026-10-24' AND ${table.consentScope} IN ('self', 'authorized_speaker') AND ${table.consentAcceptedBy} = ${table.userId}`,
+      sql`${table.consentVersion} = 'live-voice-clone-consent-v2-2026-10-24' AND ${table.consentScope} = 'self' AND ${table.consentAcceptedBy} = ${table.userId}`,
     ),
     sourceCheck: check(
       "wireline_live_voices_source_check",
@@ -120,11 +125,11 @@ export const liveVoices = pgTable(
     ),
     biometricReleaseCheck: check(
       "wireline_live_voices_biometric_release_check",
-      sql`${table.speakerJurisdiction} <> 'US-IL' OR (${table.biometricReleaseVersion} = 'biometric-release-v1-2026-10-24' AND char_length(${table.biometricReleaseSignedName}) BETWEEN 3 AND 120 AND ${table.biometricReleaseAcceptedAt} IS NOT NULL AND ${table.retentionPolicyVersion} = 'biometric-retention-v1-2026-10-24' AND ${table.expiresAt} IS NOT NULL)`,
+      sql`${table.biometricReleaseVersion} = 'voice-release-v2-2026-10-24' AND char_length(${table.biometricReleaseSignedName}) BETWEEN 3 AND 120 AND ${table.biometricReleaseAcceptedAt} IS NOT NULL AND char_length(${table.consentNoticeText}) BETWEEN 200 AND 8000`,
     ),
     retentionCheck: check(
       "wireline_live_voices_retention_check",
-      sql`(${table.retentionPolicyVersion} IS NULL AND ${table.expiresAt} IS NULL) OR (${table.retentionPolicyVersion} = 'biometric-retention-v1-2026-10-24' AND ${table.expiresAt} IS NOT NULL AND ${table.expiresAt} > ${table.createdAt})`,
+      sql`${table.retentionPolicyVersion} = 'voice-retention-v2-2026-10-24' AND ${table.expiresAt} IS NOT NULL AND ${table.expiresAt} > ${table.createdAt}`,
     ),
     expiryDueIdx: index("idx_live_voices_expiry_due")
       .on(table.expiresAt)

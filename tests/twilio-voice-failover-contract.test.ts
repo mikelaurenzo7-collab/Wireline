@@ -77,9 +77,11 @@ describe("Twilio voice failover contract", () => {
   });
 
   it("transitions a failed OpenAI SIP Dial into signed continuity", () => {
-    expect(inboundRoutes).toContain(
-      'action="/api/twilio-webhook/openai-inbound-dial-complete" method="POST"',
+    const bridge = read("src/lib/voice/inbound-bridge.ts");
+    expect(bridge).toContain(
+      'INBOUND_DIAL_COMPLETE_PATH = "/api/twilio-webhook/openai-inbound-dial-complete"',
     );
+    expect(bridge).toContain('action="${action}" method="POST"');
     const complete = inboundRoutes.slice(
       inboundRoutes.indexOf('"/api/twilio-webhook/openai-inbound-dial-complete"'),
       inboundRoutes.indexOf('"/api/twilio-webhook/openai-inbound-fallback"'),
@@ -137,7 +139,7 @@ describe("Twilio voice failover contract", () => {
     expect(routes).toMatch(/\^\\\+\[1-9\]\\d\{7,14\}\$/);
     expect(routes).toContain("escapeTwimlValue(receipt.fallbackNumber)");
     // The SIP noun (URI and any digest credentials) is escaped in one place.
-    expect(inboundRoutes).toContain("renderSipNoun(target)");
+    expect(read("src/lib/voice/inbound-bridge.ts")).toContain("renderSipNoun(target)");
     expect(read("src/lib/voice/realtime-sip-target.ts")).toContain(
       "return `<Sip${auth}>${escapeXml(target.uri)}</Sip>`",
     );

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, asc, count, desc, eq, isNotNull, lte } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNotNull, lte, sql } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import {
@@ -35,6 +35,7 @@ import {
 } from "./clone-engines";
 import {
   BIOMETRIC_RELEASE_VERSION,
+  biometricReleaseRecord,
   BIOMETRIC_RETENTION_SUMMARY,
   BIOMETRIC_RETENTION_POLICY_VERSION,
   biometricExpiresAt,
@@ -46,6 +47,7 @@ import {
   resolvePreferredCloneEngine,
   resolveXAICustomVoiceTeamLimit,
   WRITTEN_BIOMETRIC_RELEASE_JURISDICTIONS,
+  noteXAICustomVoiceNotEntitled,
   xaiCustomVoiceApiEntitled,
   type SpeakerJurisdiction,
 } from "./clone-engine-selection";
@@ -93,8 +95,12 @@ function asRecord(value: unknown): Record<string, unknown> {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+/**
+ * Voice cloning is OFF by default: it turns on only with
+ * LIVE_VOICE_CLONE_ENABLED=true and at least one configured engine.
+ */
 export function liveVoiceCloneEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  if (env.LIVE_VOICE_CLONE_ENABLED === "false") return false;
+  if (env.LIVE_VOICE_CLONE_ENABLED !== "true") return false;
   return cloneEngine("xai").configured() || cloneEngine("elevenlabs").configured();
 }
 
@@ -123,7 +129,7 @@ const FRIENDLY_PROVIDER_ERRORS: Record<CloneEngineErrorCode, { status: number; m
     not_entitled: {
       status: 503,
       message:
-        "Voice cloning is warming up for your account. We'll let you know as soon as it's ready — your stock voice keeps working meanwhile.",
+        "Voice cloning is warming up for your account. We'll let you know as soon as it's ready. Your stock voice keeps working meanwhile.",
     },
     limit_reached: {
       status: 409,
@@ -138,7 +144,7 @@ const FRIENDLY_PROVIDER_ERRORS: Record<CloneEngineErrorCode, { status: number; m
     quota_exhausted: {
       status: 503,
       message:
-        "Voice cloning is at capacity right now. Your stock voice keeps working — please try again soon.",
+        "Voice cloning is at capacity right now. Your stock voice keeps working. Please try again soon.",
     },
     region_unavailable: {
       status: 451,
@@ -148,7 +154,7 @@ const FRIENDLY_PROVIDER_ERRORS: Record<CloneEngineErrorCode, { status: number; m
     provider_unavailable: {
       status: 503,
       message:
-        "We couldn't finish your voice just now. Nothing was charged — please try again in a minute.",
+        "We couldn't finish your voice just now. Nothing was charged. Please try again in a minute.",
     },
   };
 
@@ -236,10 +242,12 @@ export type CreateLiveVoiceInput = {
   gender?: unknown;
   /** Speaker's residence: `US-XX` or `INTL`. Decides engine and consent rules. */
   speakerJurisdiction?: unknown;
-  /** Written biometric release (required where the law asks for one, e.g. US-IL). */
+  /** Written voice release, signed by the speaker (required for every voice). */
   biometricReleaseAccepted?: unknown;
   biometricReleaseVersion?: unknown;
   biometricReleaseSignedName?: unknown;
+  /** Bot name shown in the release, so the stored text matches what was signed. */
+  agentName?: unknown;
 };
 
 /** Ready xAI voices across every BotBound account (one shared xAI team). */
@@ -286,6 +294,54 @@ async function destroyRow(
     .where(and(eq(liveVoices.userId, userId), eq(liveVoices.id, row.id)));
   // Any Bot that used it goes back to its stock voice immediately.
   await clearBotSelections(userId, row.id);
+}
+
+type LiveVoiceRecordValues = Omit<
+  typeof liveVoices.$inferInsert,
+  "provider" | "providerVoiceId" | "status"
+>;
+
+/**
+ * A provider voice exists but its BotBound record could not be saved. Delete
+ * it at the provider; if that also fails, keep durable cleanup evidence
+ * (a `cleanup_pending` row the retention sweep and account deletion destroy)
+ * and alert, so the voice can never be silently lost track of.
+ */
+async function discardOrphanedProviderVoice(
+  userId: string,
+  orphan: { engine: CloneEngine; providerVoiceId: string },
+  values: LiveVoiceRecordValues,
+): Promise<void> {
+  try {
+    await orphan.engine.remove(orphan.providerVoiceId);
+    return;
+  } catch {
+    // Fall through to durable evidence.
+  }
+  try {
+    await inTenant(userId, () =>
+      drizzle.insert(liveVoices).values({
+        ...values,
+        provider: orphan.engine.id,
+        providerVoiceId: orphan.providerVoiceId,
+        status: "cleanup_pending",
+        expiresAt: new Date(),
+      }),
+    );
+    log.warn("Live voice provider cleanup deferred to the retention sweep", {
+      userId,
+      engine: orphan.engine.id,
+    });
+  } catch {
+    log.error("Live voice provider voice orphaned; manual cleanup required", {
+      userId,
+      engine: orphan.engine.id,
+      providerVoiceId: orphan.providerVoiceId,
+    });
+    void alertCloneEngineCapacity(orphan.engine.id, "provider_unavailable", {
+      operation: "orphan_cleanup",
+    }).catch(() => {});
+  }
 }
 
 export const liveVoiceService = {
@@ -343,7 +399,7 @@ export const liveVoiceService = {
       throw new AppError(
         400,
         "LIVE_VOICE_CONSENT_REQUIRED",
-        "Please confirm you have permission to clone this voice before continuing.",
+        "Please confirm this is your own voice and you are recording it yourself.",
       );
     const jurisdiction: SpeakerJurisdiction | null = parseSpeakerJurisdiction(
       input.speakerJurisdiction,
@@ -354,21 +410,22 @@ export const liveVoiceService = {
         "LIVE_VOICE_JURISDICTION_REQUIRED",
         "Tell us where the speaker lives so we can apply the right privacy protections.",
       );
+    // Every speaker signs the written release; Illinois (BIPA) is covered by it.
     const writtenRelease = requiresWrittenBiometricRelease(jurisdiction);
-    const signedName = writtenRelease
-      ? parseSignedLegalName(input.biometricReleaseSignedName)
-      : null;
+    const signedName = parseSignedLegalName(input.biometricReleaseSignedName);
     if (
-      writtenRelease &&
-      (input.biometricReleaseAccepted !== true ||
-        input.biometricReleaseVersion !== BIOMETRIC_RELEASE_VERSION ||
-        !signedName)
+      input.biometricReleaseAccepted !== true ||
+      input.biometricReleaseVersion !== BIOMETRIC_RELEASE_VERSION ||
+      !signedName
     )
       throw new AppError(
         400,
         "LIVE_VOICE_WRITTEN_RELEASE_REQUIRED",
-        "Please read the voice data release and sign it with the speaker's full legal name.",
+        "Please read the voice release and sign it with your full legal name.",
       );
+    const agentName =
+      typeof input.agentName === "string" ? input.agentName.trim().slice(0, 80) : "";
+    const consentNoticeText = biometricReleaseRecord(agentName);
     if (wav.byteLength > LIVE_VOICE_MAX_BYTES)
       throw new AppError(413, "LIVE_VOICE_TOO_LARGE", "Keep the recording under two minutes.");
     const quality = this.inspect(wav);
@@ -379,7 +436,7 @@ export const liveVoiceService = {
       throw new AppError(
         422,
         "LIVE_VOICE_LENGTH",
-        "Record between 10 seconds and 2 minutes — about 90 seconds is ideal.",
+        "Record between 10 seconds and 2 minutes. About 90 seconds is ideal.",
         { quality },
       );
     if (quality.score < LIVE_VOICE_MIN_QUALITY_SCORE)
@@ -416,59 +473,84 @@ export const liveVoiceService = {
 
     return fenced(actor.id, "live_voice_create", async () => {
       let created: { engine: CloneEngine; providerVoiceId: string } | null = null;
-      let lastError: unknown = null;
-      for (const id of candidates) {
-        const engine = cloneEngine(id);
-        try {
-          const { providerVoiceId } = await engine.create({ name, wav, gender });
-          created = { engine, providerVoiceId };
-          break;
-        } catch (error) {
-          lastError = error;
-          const code = error instanceof CloneEngineError ? error.code : "provider_unavailable";
-          log.warn("Live voice clone failed at engine", {
-            userId: actor.id,
-            engine: id,
-            code,
-            status: error instanceof CloneEngineError ? error.status : null,
-          });
-          void alertCloneEngineCapacity(id, code, { jurisdiction }).catch(() => {});
-          if (!(CLONE_ENGINE_FALLTHROUGH_CODES as readonly string[]).includes(code)) break;
-        }
-      }
-      if (!created) throw friendlyProviderError(lastError);
-      const { engine, providerVoiceId } = created;
+      const now = new Date();
+      const values: LiveVoiceRecordValues = {
+        userId: actor.id,
+        name,
+        consentVersion: LIVE_VOICE_CONSENT_VERSION,
+        consentScope,
+        consentAcceptedAt: now,
+        consentAcceptedBy: actor.id,
+        consentNoticeText,
+        sourceSha256,
+        sourceDurationSeconds: Math.min(LIVE_VOICE_MAX_SECONDS, quality.durationSeconds),
+        qualityScore: quality.score,
+        voiceGender: gender ?? null,
+        speakerJurisdiction: jurisdiction,
+        biometricReleaseVersion: BIOMETRIC_RELEASE_VERSION,
+        biometricReleaseSignedName: signedName,
+        biometricReleaseAcceptedAt: now,
+        retentionPolicyVersion: BIOMETRIC_RETENTION_POLICY_VERSION,
+        expiresAt: biometricExpiresAt(now, null),
+        createdAt: now,
+      };
       try {
-        const now = new Date();
-        const [row] = await drizzle
-          .insert(liveVoices)
-          .values({
-            userId: actor.id,
-            name,
-            provider: engine.id,
-            providerVoiceId,
-            status: "ready",
-            consentVersion: LIVE_VOICE_CONSENT_VERSION,
-            consentScope,
-            consentAcceptedAt: now,
-            consentAcceptedBy: actor.id,
-            sourceSha256,
-            sourceDurationSeconds: Math.min(LIVE_VOICE_MAX_SECONDS, quality.durationSeconds),
-            qualityScore: quality.score,
-            voiceGender: gender ?? null,
-            speakerJurisdiction: jurisdiction,
-            biometricReleaseVersion: writtenRelease ? BIOMETRIC_RELEASE_VERSION : null,
-            biometricReleaseSignedName: writtenRelease ? signedName : null,
-            biometricReleaseAcceptedAt: writtenRelease ? now : null,
-            retentionPolicyVersion: writtenRelease ? BIOMETRIC_RETENTION_POLICY_VERSION : null,
-            expiresAt: writtenRelease ? biometricExpiresAt(now, null) : null,
-            createdAt: now,
-          })
-          .returning();
+        const row = await drizzle.transaction(async (tx) => {
+          // The per-account cap is reserved atomically BEFORE any provider is
+          // contacted: concurrent creates for one account serialize on this
+          // lock, and each re-counts under it.
+          await tx.execute(
+            sql`SELECT pg_advisory_xact_lock(hashtext(${`live_voice_cap:${actor.id}`}))`,
+          );
+          const [ready] = await tx
+            .select({ n: count() })
+            .from(liveVoices)
+            .where(and(eq(liveVoices.userId, actor.id), eq(liveVoices.status, "ready")));
+          if (Number(ready?.n ?? 0) >= LIVE_VOICE_MAX_PER_ACCOUNT)
+            throw new AppError(
+              409,
+              "LIVE_VOICE_ACCOUNT_LIMIT",
+              `You can keep ${LIVE_VOICE_MAX_PER_ACCOUNT} cloned voices. Remove one to add another.`,
+            );
+          let lastError: unknown = null;
+          for (const id of candidates) {
+            const engine = cloneEngine(id);
+            try {
+              const { providerVoiceId } = await engine.create({ name, wav, gender });
+              created = { engine, providerVoiceId };
+              break;
+            } catch (error) {
+              lastError = error;
+              const code = error instanceof CloneEngineError ? error.code : "provider_unavailable";
+              log.warn("Live voice clone failed at engine", {
+                userId: actor.id,
+                engine: id,
+                code,
+                status: error instanceof CloneEngineError ? error.status : null,
+              });
+              if (id === "xai" && code === "not_entitled") noteXAICustomVoiceNotEntitled();
+              // xAI without Enterprise is expected until it is enabled: not an alert.
+              if (!(id === "xai" && code === "not_entitled"))
+                void alertCloneEngineCapacity(id, code, { jurisdiction }).catch(() => {});
+              if (!(CLONE_ENGINE_FALLTHROUGH_CODES as readonly string[]).includes(code)) break;
+            }
+          }
+          if (!created) throw friendlyProviderError(lastError);
+          const [inserted] = await tx
+            .insert(liveVoices)
+            .values({
+              ...values,
+              provider: created.engine.id,
+              providerVoiceId: created.providerVoiceId,
+              status: "ready",
+            })
+            .returning();
+          return inserted;
+        });
         log.info("Live voice clone created", {
           userId: actor.id,
           cloneId: row.id,
-          engine: engine.id,
+          engine: row.provider,
           jurisdiction,
           writtenRelease,
           qualityScore: quality.score,
@@ -476,7 +558,8 @@ export const liveVoiceService = {
         return { voice: summarize(row, []), quality };
       } catch (error) {
         // Never leave an orphaned provider voice (or a used slot) behind a failed insert.
-        await engine.remove(providerVoiceId).catch(() => {});
+        const orphan = created as { engine: CloneEngine; providerVoiceId: string } | null;
+        if (orphan) await discardOrphanedProviderVoice(actor.id, orphan, values);
         throw error;
       }
     });
@@ -596,11 +679,12 @@ export const liveVoiceService = {
           userId: liveVoices.userId,
           provider: liveVoices.provider,
           providerVoiceId: liveVoices.providerVoiceId,
+          status: liveVoices.status,
         })
         .from(liveVoices)
         .where(
           and(
-            eq(liveVoices.status, "ready"),
+            inArray(liveVoices.status, ["ready", "cleanup_pending"]),
             isNotNull(liveVoices.expiresAt),
             lte(liveVoices.expiresAt, now),
           ),
@@ -613,7 +697,11 @@ export const liveVoiceService = {
     for (const row of due) {
       try {
         await fenced(row.userId, "live_voice_expire", () =>
-          destroyRow(row.userId, row, "retention_expired"),
+          destroyRow(
+            row.userId,
+            row,
+            row.status === "cleanup_pending" ? "create_failed" : "retention_expired",
+          ),
         );
         expired += 1;
         log.info("Live voice destroyed on retention schedule", {
@@ -687,7 +775,8 @@ export async function resolveRuntimeCustomVoice(
     if (!row || !isCloneEngineId(row.provider)) return null;
     const engine = cloneEngine(row.provider);
     if (!engine.isVoiceId(row.providerVoiceId)) return null;
-    void touchLastUsed(userId, row);
+    // lastUsedAt moves only when the clone is actually heard
+    // (markRuntimeCustomVoicePlayed), never on lookup alone.
     return {
       cloneId: row.id,
       engine: engine.id,
@@ -701,6 +790,36 @@ export async function resolveRuntimeCustomVoice(
       error: error instanceof Error ? error.message.slice(0, 200) : "unknown",
     });
     return null;
+  }
+}
+
+/**
+ * The live session calls this once, when the cloned voice's first audio plays
+ * on a call. It records use and pushes the idle-destruction date out.
+ */
+export async function markRuntimeCustomVoicePlayed(userId: string, cloneId: string): Promise<void> {
+  if (!UUID.test(cloneId)) return;
+  try {
+    await inTenant(userId, async () => {
+      const [row] = await drizzle
+        .select({
+          id: liveVoices.id,
+          createdAt: liveVoices.createdAt,
+          retentionPolicyVersion: liveVoices.retentionPolicyVersion,
+        })
+        .from(liveVoices)
+        .where(
+          and(
+            eq(liveVoices.userId, userId),
+            eq(liveVoices.id, cloneId),
+            eq(liveVoices.status, "ready"),
+          ),
+        )
+        .limit(1);
+      if (row) await touchLastUsed(userId, row);
+    });
+  } catch {
+    // Usage bookkeeping never affects a live call.
   }
 }
 
@@ -718,7 +837,12 @@ export async function deleteProviderLiveVoicesForAccount(
         providerVoiceId: liveVoices.providerVoiceId,
       })
       .from(liveVoices)
-      .where(and(eq(liveVoices.userId, userId), eq(liveVoices.status, "ready")));
+      .where(
+        and(
+          eq(liveVoices.userId, userId),
+          inArray(liveVoices.status, ["ready", "cleanup_pending"]),
+        ),
+      );
   } catch (err) {
     // Before migration 0186 reaches an environment there is nothing to delete.
     const code =

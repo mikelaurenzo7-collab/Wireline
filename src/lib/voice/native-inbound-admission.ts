@@ -41,6 +41,8 @@ export async function resolveNativeInboundCallAdmission(input: {
   callId: string;
   twilioCallSid: string;
   callerNumber: string | null;
+  /** The claim source id of this leg; defaults to the primary leg's. */
+  sourceId?: string;
 }): Promise<NativeInboundAdmission> {
   const [prior] = await drizzle
     .select({
@@ -64,7 +66,7 @@ export async function resolveNativeInboundCallAdmission(input: {
         eq(schema.callLogs.userId, input.userId),
         eq(schema.callLogs.agentId, input.agentId),
         eq(schema.callLogs.vapiCallId, `openai:${input.callId}`),
-        eq(schema.callLogs.openaiSipSourceId, `twilio:${input.twilioCallSid}`),
+        eq(schema.callLogs.openaiSipSourceId, input.sourceId ?? `twilio:${input.twilioCallSid}`),
         eq(schema.callLogs.direction, "inbound"),
         input.callerNumber === null
           ? isNull(schema.callLogs.customerNumber)

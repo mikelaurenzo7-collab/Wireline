@@ -107,12 +107,30 @@ export function resolveXAICustomVoiceTeamLimit(env: NodeJS.ProcessEnv = process.
 }
 
 /**
- * Operator switch for the Enterprise-gated xAI create endpoint. Unset means
- * "try xAI first": a 403/limit answer still falls through to the next engine.
- * Set to `false` to route every new clone to the fallback engine.
+ * Capability check for the Enterprise-gated xAI create endpoint.
+ * XAI_CUSTOM_VOICES_API_ENABLED=false never uses xAI for clones. Otherwise xAI
+ * is tried when eligible, and a 403 (no Enterprise) is remembered for six
+ * hours so new clones go straight to the next engine. Once Enterprise is on,
+ * xAI answers 200 and becomes the clone engine with no code or env change.
  */
-export function xaiCustomVoiceApiEntitled(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env.XAI_CUSTOM_VOICES_API_ENABLED !== "false";
+const XAI_NOT_ENTITLED_TTL_MS = 6 * 60 * 60 * 1000;
+let xaiNotEntitledUntil = 0;
+
+export function noteXAICustomVoiceNotEntitled(now: number = Date.now()): void {
+  xaiNotEntitledUntil = now + XAI_NOT_ENTITLED_TTL_MS;
+}
+
+export function resetXAICustomVoiceEntitlementForTests(): void {
+  xaiNotEntitledUntil = 0;
+}
+
+export function xaiCustomVoiceApiEntitled(
+  env: NodeJS.ProcessEnv = process.env,
+  now: number = Date.now(),
+): boolean {
+  if (env.XAI_CUSTOM_VOICES_API_ENABLED === "false") return false;
+  if (env.XAI_CUSTOM_VOICES_API_ENABLED === "true") return true;
+  return now >= xaiNotEntitledUntil;
 }
 
 export function resolvePreferredCloneEngine(
@@ -122,7 +140,7 @@ export function resolvePreferredCloneEngine(
   return raw === "xai" || raw === "elevenlabs" ? raw : null;
 }
 
-/** Errors that mean "this engine can't take the voice right now" — try the next one. */
+/** Errors that mean "this engine can't take the voice right now": try the next one. */
 export const CLONE_ENGINE_FALLTHROUGH_CODES = [
   "not_configured",
   "not_entitled",
@@ -173,13 +191,14 @@ export function selectCloneEngine(input: CloneEngineSelectionInput): CloneEngine
 }
 
 /**
- * Retention/destruction schedule (policy `biometric-retention-v1-2026-10-24`)
- * for jurisdictions that require one: a voice is destroyed at the earliest of
- * the owner deleting it, the account closing, 365 days without being used on a
- * call or preview, or 3 years after creation (BIPA's outer limit is 3 years
- * after the last interaction). Other jurisdictions keep a voice until deleted.
+ * Retention/destruction schedule (policy `voice-retention-v2-2026-10-24`),
+ * applied to every cloned voice in every jurisdiction: a voice is destroyed at
+ * the earliest of the owner deleting it, the account closing, 12 months
+ * without being played on a call or preview, or 3 years after creation
+ * (Illinois BIPA's outer limit is 3 years after the last interaction).
  */
-export const BIOMETRIC_RETENTION_POLICY_VERSION = "biometric-retention-v1-2026-10-24" as const;
+export const BIOMETRIC_RETENTION_POLICY_VERSION = "voice-retention-v2-2026-10-24" as const;
+export const BIOMETRIC_IDLE_MONTHS = 12;
 export const BIOMETRIC_IDLE_DAYS = 365;
 export const BIOMETRIC_MAX_DAYS = 365 * 3;
 const DAY_MS = 86_400_000;
@@ -190,8 +209,12 @@ export function biometricExpiresAt(createdAt: Date, lastUsedAt: Date | null): Da
   return new Date(Math.min(idle, max));
 }
 
-/** Written-release text version; the owner types the speaker's full legal name to sign. */
-export const BIOMETRIC_RELEASE_VERSION = "biometric-release-v1-2026-10-24" as const;
+/**
+ * Written voice release version. Every speaker signs it (not only Illinois):
+ * the speaker is always the signer, typing their own full legal name.
+ * Changing the text requires a new version.
+ */
+export const BIOMETRIC_RELEASE_VERSION = "voice-release-v2-2026-10-24" as const;
 
 export function parseSignedLegalName(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -224,23 +247,30 @@ export function cloneEngineCandidates(input: CloneEngineSelectionInput): CloneEn
 
 /** Plain-language destruction schedule shown with the written release. */
 export const BIOMETRIC_RETENTION_SUMMARY =
-  `We keep this voice only while you use it. It is permanently destroyed — in BotBound and at the voice service that holds it — ` +
-  `when you delete it, when you close your account, after ${BIOMETRIC_IDLE_DAYS} days without being used, ` +
+  "We keep this voice only while you use it. It is permanently destroyed, in BotBound and at the voice provider that holds it, " +
+  `when you delete it, when you close your account, after ${BIOMETRIC_IDLE_MONTHS} months without being used, ` +
   `or ${BIOMETRIC_MAX_DAYS / 365} years after it was created, whichever comes first.`;
 
 /**
- * Written release (BIPA 740 ILCS 14/15(b)): what is collected, the specific
- * purpose, how long it is kept, and a signed authorization. Versioned with
- * BIOMETRIC_RELEASE_VERSION; changing the text requires a new version.
+ * Written release (BIPA 740 ILCS 14/15(b) for Illinois; applied to everyone):
+ * what is collected, the specific purpose, who processes it, how long it is
+ * kept, and a signed authorization. The exact lines shown are stored with the
+ * voice as the consent record, together with the typed name and time.
  */
 export function biometricReleaseText(agentName: string): string[] {
   return [
-    "BotBound will create a voiceprint (a digital model of how this voice sounds) from the recording you make next.",
-    `Purpose: only to let ${agentName || "your Bot"} speak in this voice on your calls and previews. It is never sold, leased, traded, or used to identify anyone.`,
-    "It is stored by BotBound and by the voice service BotBound uses to produce the voice, and is shared with no one else unless the law requires it.",
+    "I am the person whose voice is in this recording, and I am recording it myself.",
+    "BotBound will create a voiceprint (a digital model of how my voice sounds) from this recording.",
+    `Purpose: only to let ${agentName || "my Bot"} speak in my voice on my business's calls and previews. It is never sold, leased, traded, or used to identify anyone.`,
+    "A third-party voice provider processes this recording to create the voice and keeps the voice model until it is deleted. BotBound does not keep the recording itself, only the voice, a fingerprint of the file, its length, and its quality score.",
     BIOMETRIC_RETENTION_SUMMARY,
-    "By typing the speaker's full legal name below, the speaker gives BotBound written permission to collect, store, and use this voiceprint as described.",
+    "By typing my full legal name below, I give BotBound and its voice provider written permission to collect, store, and use my voiceprint as described.",
   ];
+}
+
+/** The release exactly as signed, for the consent record. */
+export function biometricReleaseRecord(agentName: string): string {
+  return biometricReleaseText(agentName).join("\n");
 }
 
 export const US_STATE_NAMES: Record<UsStateCode, string> = {

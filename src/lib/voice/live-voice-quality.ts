@@ -37,13 +37,12 @@ export type LiveVoiceQualityReport = {
 
 /** Friendly, vendor-neutral coaching shown next to the meter and in errors. */
 export const LIVE_VOICE_COACHING_COPY: Record<LiveVoiceCoachingTip, string> = {
-  too_short: "Keep going — read at least 10 seconds. About 90 seconds sounds most like you.",
+  too_short: "Keep going and read at least 10 seconds. About 90 seconds sounds most like you.",
   short_but_ok: "That works. Reading closer to 90 seconds captures more of your natural style.",
   too_quiet: "We could barely hear you. Move a little closer to the mic or speak up a touch.",
   too_loud: "That's a bit hot. Lean back slightly so your voice doesn't distort.",
   clipping: "Some words distorted. Lean back a few inches and try that part again.",
-  long_silences:
-    "There were long pauses. Keep a relaxed, steady pace — like talking to a customer.",
+  long_silences: "There were long pauses. Keep a relaxed, steady pace, like talking to a customer.",
   noisy_room: "We picked up background noise. A quieter, softer room makes a cleaner voice.",
 };
 
@@ -194,12 +193,12 @@ export const LIVE_VOICE_SPOKEN_CONSENT_LINE =
 
 export const LIVE_VOICE_SCRIPT: readonly string[] = [
   LIVE_VOICE_SPOKEN_CONSENT_LINE,
-  "Hi, thanks for calling! You've reached the front desk — how can I help you today?",
+  "Hi, thanks for calling! You've reached the front desk. How can I help you today?",
   "Sure, I can take care of that for you. Can I get your name and the best number to reach you?",
   "Great, thanks. Give me just one second while I pull that up.",
   "Okay, I see it here. It looks like the earliest opening is Tuesday at ten, or Thursday right after lunch. Which works better for you?",
   "Perfect, you're all set. You'll get a confirmation shortly.",
-  "If anything changes, just call or text this number and we'll move it around — no problem at all.",
+  "If anything changes, just call this number and we'll move it around. No problem at all.",
   "Oh, and one quick tip: parking is right out front, and the entrance is next to the coffee shop.",
   "Is there anything else I can help you with while I have you?",
   "Alright then. Thanks so much for calling, and have a wonderful rest of your day!",

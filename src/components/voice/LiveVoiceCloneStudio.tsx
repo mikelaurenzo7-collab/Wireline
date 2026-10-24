@@ -80,7 +80,7 @@ export const LIVE_VOICE_ANCHOR_ID = "voice-clone";
 
 export const LIVE_VOICE_TIP_KEY = "botbound.liveVoiceTip.v1";
 export const LIVE_VOICE_TIP_COPY =
-  "Tip: stock voices are tuned for the fastest replies on high-volume lines.";
+  "Tip: you can switch any Bot back to a stock voice in one tap, anytime.";
 
 const CREATE_STAGES = [
   "Checking your recording…",
@@ -135,7 +135,6 @@ export default function LiveVoiceCloneStudio({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [name, setName] = useState("");
-  const [scope, setScope] = useState<"self" | "authorized_speaker">("self");
   const [gender, setGender] = useState<"" | "female" | "male">("");
   const [consent, setConsent] = useState(false);
   const [jurisdiction, setJurisdiction] = useState("");
@@ -158,14 +157,13 @@ export default function LiveVoiceCloneStudio({
   const generation = useRef(0);
   const fileInput = useRef<HTMLInputElement | null>(null);
 
-  const releaseRequired = Boolean(
-    jurisdiction && (capabilities?.writtenReleaseJurisdictions ?? ["US-IL"]).includes(jurisdiction),
-  );
-  const releaseReady =
-    !releaseRequired || (releaseAccepted && parseSignedLegalName(signedName) !== null);
+  // Every speaker signs the written release, in every state.
+  const releaseReady = releaseAccepted && parseSignedLegalName(signedName) !== null;
   const consentReady = consent && Boolean(name.trim()) && Boolean(jurisdiction) && releaseReady;
   const activeVoice = voices.find((voice) => voice.inUseByAgentIds.includes(agentId)) ?? null;
-  const activeVoiceName = activeVoice?.name ?? null;
+  // Only a voice that callers actually hear is reported as the call voice.
+  const activeVoiceName =
+    activeVoice && activeVoice.speaksOnCalls !== false ? activeVoice.name : null;
   useEffect(() => {
     onActiveVoiceChange?.(activeVoiceName);
   }, [activeVoiceName, onActiveVoiceChange]);
@@ -384,24 +382,25 @@ export default function LiveVoiceCloneStudio({
     setStep("creating");
     setError(null);
     try {
-      const params = new URLSearchParams({
+      // Personal details ride in one header, never the URL, so they stay out of access logs.
+      const details = {
         name: name.trim(),
-        consentAccepted: "true",
+        consentAccepted: true,
         consentVersion: capabilities.consentVersion,
-        consentScope: scope,
-      });
-      if (gender) params.set("gender", gender);
-      params.set("speakerJurisdiction", jurisdiction);
-      const headers: Record<string, string> = { "Content-Type": "audio/wav" };
-      if (releaseRequired) {
-        params.set("biometricReleaseAccepted", "true");
-        params.set("biometricReleaseVersion", capabilities.biometricReleaseVersion ?? "");
-        // The signed name travels in a header so it stays out of URLs and access logs.
-        headers["X-Voice-Release-Signed-Name"] = encodeURIComponent(signedName.trim());
-      }
-      const response = await authFetch(`/api/voice/live-voices?${params}`, {
+        consentScope: "self",
+        ...(gender ? { gender } : {}),
+        speakerJurisdiction: jurisdiction,
+        biometricReleaseAccepted: true,
+        biometricReleaseVersion: capabilities.biometricReleaseVersion ?? "",
+        biometricReleaseSignedName: signedName.trim(),
+        agentName,
+      };
+      const response = await authFetch("/api/voice/live-voices", {
         method: "POST",
-        headers,
+        headers: {
+          "Content-Type": "audio/wav",
+          "X-Voice-Clone-Details": encodeURIComponent(JSON.stringify(details)),
+        },
         body: new Blob([new Uint8Array(recording.bytes).buffer], { type: "audio/wav" }),
         timeoutMs: 120_000,
       });
@@ -801,26 +800,9 @@ export default function LiveVoiceCloneStudio({
               className="mt-1 block min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm"
             />
           </label>
-          <fieldset className="space-y-1.5">
-            <legend className="text-sm font-medium text-foreground">Whose voice is this?</legend>
-            {(
-              [
-                ["self", "My own voice"],
-                ["authorized_speaker", "Someone who gave me written permission"],
-              ] as const
-            ).map(([value, label]) => (
-              <label key={value} className="flex min-h-11 items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name={`${id}-scope`}
-                  checked={scope === value}
-                  onChange={() => setScope(value)}
-                  className="size-4"
-                />
-                {label}
-              </label>
-            ))}
-          </fieldset>
+          <p className="text-xs leading-5 text-muted-foreground">
+            Record your own voice. Each person clones their own voice and signs for it.
+          </p>
           <label className="block text-sm font-medium text-foreground" htmlFor={`${id}-gender`}>
             Closest stock voice{" "}
             <span className="font-normal text-muted-foreground">(optional)</span>
@@ -842,7 +824,7 @@ export default function LiveVoiceCloneStudio({
             className="block text-sm font-medium text-foreground"
             htmlFor={`${id}-jurisdiction`}
           >
-            Where does the speaker live?
+            Where do you live?
             <select
               id={`${id}-jurisdiction`}
               value={jurisdiction}
@@ -861,10 +843,10 @@ export default function LiveVoiceCloneStudio({
               <option value="INTL">Outside the United States</option>
             </select>
             <span className="mt-1 block text-xs font-normal text-muted-foreground">
-              We apply the privacy protections the speaker's state requires.
+              We apply the privacy protections your state requires.
             </span>
           </label>
-          {releaseRequired ? (
+          {jurisdiction ? (
             <div
               className="space-y-2 rounded-lg border border-border bg-muted/40 p-3"
               data-testid="biometric-release"
@@ -879,7 +861,7 @@ export default function LiveVoiceCloneStudio({
                 className="block text-sm font-medium text-foreground"
                 htmlFor={`${id}-signature`}
               >
-                Speaker's full legal name
+                Your full legal name
                 <input
                   id={`${id}-signature`}
                   value={signedName}
@@ -895,7 +877,7 @@ export default function LiveVoiceCloneStudio({
                   onChange={(event) => setReleaseAccepted(event.target.checked)}
                   className="mt-0.5"
                 />
-                <span>The speaker has read this release and signs it by the name typed above.</span>
+                <span>I have read this release and sign it by the name typed above.</span>
               </label>
             </div>
           ) : null}
@@ -906,8 +888,8 @@ export default function LiveVoiceCloneStudio({
               className="mt-0.5"
             />
             <span>
-              I confirm this is my voice, or I have the speaker's permission, to use it for{" "}
-              {agentName}'s calls. I can delete it anytime, and it's deleted with my account.
+              I confirm this is my own voice, recorded by me, for {agentName}'s calls. I can delete
+              it anytime, and it's deleted with my account.
             </span>
           </label>
           <div className="flex flex-wrap gap-2">
@@ -1026,9 +1008,9 @@ export default function LiveVoiceCloneStudio({
               ref={fileInput}
               type="file"
               accept="audio/wav,audio/x-wav,.wav"
-              className="sr-only"
-              tabIndex={-1}
-              aria-hidden="true"
+              // display:none removes it from the tab order and the a11y tree;
+              // the labelled "Upload a WAV" button above opens it.
+              hidden
               onChange={(event) => {
                 const file = event.currentTarget.files?.[0];
                 event.currentTarget.value = "";
@@ -1038,6 +1020,9 @@ export default function LiveVoiceCloneStudio({
             <button
               type="button"
               onClick={() => {
+                // Invalidate a pending microphone request so a late permission
+                // grant stops its stream instead of recording behind the panel.
+                generation.current += 1;
                 releaseCapture();
                 setRecordingState("idle");
                 setStep("idle");
