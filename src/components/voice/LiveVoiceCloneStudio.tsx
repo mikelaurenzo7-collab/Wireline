@@ -63,7 +63,11 @@ type Capabilities = {
 };
 
 type Step = "idle" | "consent" | "record" | "review" | "creating" | "done";
-type Recording = { bytes: Uint8Array; url: string; report: LiveVoiceQualityReport };
+type Recording = {
+  bytes: Uint8Array;
+  url: string;
+  report: LiveVoiceQualityReport;
+};
 type Capture = {
   stream: MediaStream;
   context: AudioContext;
@@ -90,7 +94,9 @@ const CREATE_STAGES = [
 ];
 
 async function errorMessage(response: Response, fallback: string): Promise<string> {
-  const body = (await response.json().catch(() => null)) as { error?: string } | null;
+  const body = (await response.json().catch(() => null)) as {
+    error?: string;
+  } | null;
   return body?.error || fallback;
 }
 
@@ -224,7 +230,9 @@ export default function LiveVoiceCloneStudio({
   const load = useCallback(async () => {
     const response = await authFetch("/api/voice/live-voices");
     if (!response.ok) throw new Error(await errorMessage(response, "Cloned voices didn't load."));
-    const body = (await response.json()) as Capabilities & { voices: ClonedVoice[] };
+    const body = (await response.json()) as Capabilities & {
+      voices: ClonedVoice[];
+    };
     setCapabilities(body);
     setVoices(body.voices ?? []);
   }, []);
@@ -305,7 +313,11 @@ export default function LiveVoiceCloneStudio({
       if (!navigator.mediaDevices?.getUserMedia)
         throw new Error("This browser can't record. Upload a WAV recording instead.");
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
+        audio: {
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
       });
       if (current !== generation.current) {
         stream.getTracks().forEach((track) => track.stop());
@@ -322,7 +334,15 @@ export default function LiveVoiceCloneStudio({
       const analyser = context.createAnalyser();
       analyser.fftSize = 1_024;
       source.connect(analyser);
-      const active: Capture = { stream, context, source, processor, sink, chunks: [], samples: 0 };
+      const active: Capture = {
+        stream,
+        context,
+        source,
+        processor,
+        sink,
+        chunks: [],
+        samples: 0,
+      };
       capture.current = active;
       processor.onaudioprocess = (event) => {
         if (capture.current !== active) return;
@@ -401,7 +421,9 @@ export default function LiveVoiceCloneStudio({
           "Content-Type": "audio/wav",
           "X-Voice-Clone-Details": encodeURIComponent(JSON.stringify(details)),
         },
-        body: new Blob([new Uint8Array(recording.bytes).buffer], { type: "audio/wav" }),
+        body: new Blob([new Uint8Array(recording.bytes).buffer], {
+          type: "audio/wav",
+        }),
         timeoutMs: 120_000,
       });
       if (!response.ok)
@@ -479,7 +501,9 @@ export default function LiveVoiceCloneStudio({
       );
       setNotice(
         voice
-          ? `${agentName} now answers calls as ${voice.name}.`
+          ? voice.speaksOnCalls === false
+            ? `${voice.name} is saved for ${agentName}. Phone setup still needs attention.`
+            : `${voice.name} is ready for ${agentName}'s next call. Try a test call to hear it.`
           : `${agentName} is back on its stock voice.`,
       );
       if (voice) setStep("idle");
@@ -667,12 +691,12 @@ export default function LiveVoiceCloneStudio({
             <Check className="mr-1.5 inline size-4 text-primary" aria-hidden="true" />
             {activeVoice.speaksOnCalls === false ? (
               <>
-                <strong>{activeVoice.name}</strong> is set for this Bot. Previews use it now; phone
-                calls use the closest stock voice until phone delivery for this voice is ready.
+                <strong>{activeVoice.name}</strong> is saved. Preview it below; phone setup needs
+                attention before callers can hear this voice.
               </>
             ) : (
               <>
-                Callers hear <strong>{activeVoice.name}</strong>
+                <strong>{activeVoice.name}</strong> is ready for calls
               </>
             )}
           </span>
@@ -689,6 +713,20 @@ export default function LiveVoiceCloneStudio({
             )}
             Switch back to stock voice
           </button>
+        </div>
+      ) : null}
+
+      {activeVoice && activeVoice.speaksOnCalls !== false ? (
+        <div className="rounded-xl border border-border bg-background p-4 text-sm leading-6">
+          <p className="font-semibold text-foreground">Your voice. Your Bot's work.</p>
+          <p className="mt-1 text-muted-foreground">
+            Your next incoming call, outgoing call, or phone test uses this voice. Callers can
+            interrupt naturally. If the voice service has a problem, a stock voice keeps the
+            conversation going.
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Switch back anytime. Deleting a voice removes it from every Bot that uses it.
+          </p>
         </div>
       ) : null}
 
@@ -1105,7 +1143,9 @@ export default function LiveVoiceCloneStudio({
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full bg-primary transition-[width] duration-700"
-                style={{ width: `${((createStage + 1) / CREATE_STAGES.length) * 90}%` }}
+                style={{
+                  width: `${((createStage + 1) / CREATE_STAGES.length) * 90}%`,
+                }}
               />
             </div>
           </div>
