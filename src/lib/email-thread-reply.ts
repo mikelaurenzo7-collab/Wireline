@@ -1,9 +1,14 @@
 import { createHash } from "node:crypto";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { AppError } from "./api-error";
+import {
+  EMPTY_EMAIL_THREAD_DELIVERY,
+  summarizeEmailReplyLedger,
+  type EmailThreadDelivery,
+} from "./email-delivery";
 import { replySubject } from "./imap-reply-target";
 import { IntegrationService } from "./integrations";
 import { mailboxScopedExternalId } from "./mailbox-identity";
@@ -382,4 +387,44 @@ export async function sendEmailThreadReply(input: {
     }),
   );
   return result;
+}
+
+/**
+ * Read the thread's reply delivery truth from the same ledger the send path
+ * writes. Delivery is an annotation on the conversation, never the payload,
+ * so a ledger read failure degrades to no status instead of failing the
+ * thread. Messages that did not come from this send path (mailbox sync,
+ * provider side sends) have no ledger row and report no status.
+ */
+export async function loadEmailThreadDelivery(
+  userId: string,
+  threadId: string,
+): Promise<EmailThreadDelivery> {
+  try {
+    const rows = await drizzle
+      .select({ resourceId: schema.auditLog.resourceId, metadata: schema.auditLog.metadata })
+      .from(schema.auditLog)
+      .where(
+        and(
+          eq(schema.auditLog.userId, userId),
+          eq(schema.auditLog.eventType, REPLY_EVENT_TYPE),
+          eq(schema.auditLog.resourceType, REPLY_RESOURCE_TYPE),
+          sql`${schema.auditLog.resourceId} like ${`${threadId}:%`}`,
+        ),
+      )
+      .orderBy(desc(schema.auditLog.id));
+    return summarizeEmailReplyLedger(
+      rows.map((row) => ({
+        resourceId: typeof row.resourceId === "string" ? row.resourceId : "",
+        metadata: row.metadata,
+      })),
+    );
+  } catch (error) {
+    log.warn("Inbox reply delivery state could not be loaded", {
+      userId,
+      threadId,
+      error: getErrorMessage(error),
+    });
+    return EMPTY_EMAIL_THREAD_DELIVERY;
+  }
 }

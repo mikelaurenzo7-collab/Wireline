@@ -28,3 +28,6 @@ export function classifyCallHappened(input: CallHappenedInput): CallOutcome {
 
 export { callOutcomeDetail as callHappenedDetail } from "./call-outcome";
 export { callOutcomeLabel as callHappenedLabel } from "./call-outcome";
+
+export { deriveCallEmailState } from "./call-outcome";
+export type { CallEmailState, CallEmailExecution } from "./call-outcome";
