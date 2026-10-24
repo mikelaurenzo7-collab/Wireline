@@ -3,6 +3,7 @@
  */
 
 import type { BotMarkKey } from "../lib/bot-mark";
+import type { CallOutcome } from "../lib/call-outcome";
 
 export interface InsightsFunnelStage {
   name: string;
@@ -111,6 +112,9 @@ export interface VoiceReliabilitySummaryResponse {
     failures: number;
     failureRatePct: number | null;
   };
+  /** Counts per shared call outcome (src/lib/call-outcome) — the same
+   *  categories the Calls list labels, so the two surfaces reconcile. */
+  outcomes: Record<CallOutcome, number>;
 }
 
 export interface VoiceReliabilityTrendPointResponse {
@@ -142,6 +146,8 @@ export interface VoiceLatencyRecentCallRow {
   pipelineError: string | null;
   sentiment: string | null;
   outcomeTag: string | null;
+  /** Shared outcome from src/lib/call-outcome; same label as Call History. */
+  outcome?: CallOutcome | null;
 }
 
 export interface InsightsAttributionRow {

@@ -9,12 +9,13 @@ import { AppError } from "../lib/api-error";
 import { z } from "zod";
 import { drizzle, log, requirePermission } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { insightsRateLimit } from "../middleware/api-rate-limits";
 import { validateQuery } from "../lib/api-validation";
 import { getLatencyTrends } from "../lib/voice-observability";
 import { getVoiceReliabilityPayload } from "../lib/voice-reliability";
+import { annotateCallsWithHappened } from "../lib/call-report";
 import { resolveOpenAISipSessionMaxSeconds } from "../lib/voice/openai-sip-config";
 import type { AuthenticatedRequest } from "../types/auth";
 
@@ -38,7 +39,7 @@ router.get(
         userId: req.user.id,
         days,
       });
-      const { windowDays, totalCalls, latency, hangups, toolCalls, escalations, webhooks } =
+      const { windowDays, totalCalls, latency, hangups, toolCalls, escalations, webhooks, outcomes } =
         payload.summary;
       // Internal unit economics inform operations, but are not tenant reliability metrics.
       res.json({
@@ -50,6 +51,7 @@ router.get(
           toolCalls,
           escalations,
           webhooks,
+          outcomes,
           healthy:
             latency.healthy &&
             hangups.abnormalRatePct <= 10 &&
@@ -126,13 +128,37 @@ router.get(
           pipelineError: schema.callLogs.pipelineError,
           sentiment: schema.callLogs.sentiment,
           outcomeTag: schema.callLogs.outcomeTag,
+          endedReason: schema.callLogs.endedReason,
+          hasTranscript: sql<boolean>`${schema.callLogs.transcript} is not null and ${schema.callLogs.transcript} <> ''`,
+          hasSummary: sql<boolean>`${schema.callLogs.summary} is not null and ${schema.callLogs.summary} <> ''`,
         })
         .from(schema.callLogs)
         .where(eq(schema.callLogs.userId, req.user.id))
         .orderBy(desc(schema.callLogs.createdAt))
         .limit(limit);
 
-      res.json({ calls: rows });
+      // Attach the shared outcome (src/lib/call-outcome) with the same
+      // annotation Call History uses, so this list labels calls identically.
+      const annotated = await annotateCallsWithHappened(
+        req.user.id,
+        rows.map((row) => ({
+          vapiCallId: row.providerCallId,
+          outcomeTag: row.outcomeTag,
+          endedReason: row.endedReason,
+          durationSeconds: row.durationSeconds,
+          hasTranscript: row.hasTranscript,
+          hasSummary: row.hasSummary,
+        })),
+      );
+
+      res.json({
+        calls: rows.map((row, index) => {
+          const { hasTranscript, hasSummary, ...rest } = row;
+          void hasTranscript;
+          void hasSummary;
+          return { ...rest, outcome: annotated[index].happened };
+        }),
+      });
     } catch (err) {
       if (err instanceof AppError) throw err;
       log.error("GET /insights/latency/recent failed", {

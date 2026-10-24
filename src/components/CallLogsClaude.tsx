@@ -11,11 +11,11 @@ import {
 
 import { authFetch } from "../lib/api";
 import {
-  callHappenedDetail,
-  callHappenedLabel,
-  classifyCallHappened,
-  type CallHappened,
-} from "../lib/call-happened";
+  callOutcomeDetail,
+  callOutcomeLabel,
+  classifyCallOutcome,
+  type CallOutcome,
+} from "../lib/call-outcome";
 import { formatPhone } from "../lib/safe-number";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { Button, EmptyState, Skeleton } from "./atoms";
@@ -36,7 +36,7 @@ type Call = {
   sentiment?: string | null;
   outcome_tag?: string | null;
   ended_reason?: string | null;
-  happened?: CallHappened | null;
+  happened?: CallOutcome | null;
   demo?: boolean | null;
   created_at?: string | null;
 };
@@ -78,11 +78,14 @@ function humanize(value: string | null | undefined, fallback = "Unclassified") {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function reportHappened(call: Call): CallHappened {
+function reportHappened(call: Call): CallOutcome {
   if (call.happened) return call.happened;
-  return classifyCallHappened({
+  return classifyCallOutcome({
     outcomeTag: call.outcome_tag,
     endedReason: call.ended_reason,
+    hasTranscript: Boolean(call.transcript?.trim()),
+    hasSummary: Boolean(call.summary?.trim()),
+    durationSeconds: call.duration_seconds,
   });
 }
 
@@ -91,7 +94,7 @@ function statusTone(value: string | null | undefined) {
   if (/email|booked|message/.test(normalized)) {
     return "text-[var(--wireline-color-status-success)]";
   }
-  if (/missed|failed|busy|unreachable|voicemail/.test(normalized)) {
+  if (/missed|failed|busy|unreachable|voicemail|do not call/.test(normalized)) {
     return "text-[var(--wireline-color-status-warning)]";
   }
   return "text-muted-foreground";
@@ -230,7 +233,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
         call.agent_name,
         call.summary,
         call.outcome_tag,
-        call.happened ? callHappenedLabel(call.happened) : null,
+        call.happened ? callOutcomeLabel(call.happened) : null,
         call.direction,
       ]
         .filter(Boolean)
@@ -342,9 +345,9 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
                           {formatTime(call.created_at)}
                         </span>
                         <span
-                          className={`mt-1 block text-[10px] font-semibold ${statusTone(callHappenedLabel(reportHappened(call)))}`}
+                          className={`mt-1 block text-[10px] font-semibold ${statusTone(callOutcomeLabel(reportHappened(call)))}`}
                         >
-                          {callHappenedLabel(reportHappened(call))}
+                          {callOutcomeLabel(reportHappened(call))}
                         </span>
                       </div>
                     </div>
@@ -398,8 +401,8 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {[
-            ["Outcome", callHappenedLabel(reportHappened(selected))],
-            ["What happened", callHappenedDetail(reportHappened(selected))],
+            ["Outcome", callOutcomeLabel(reportHappened(selected))],
+            ["What happened", callOutcomeDetail(reportHappened(selected))],
           ].map(([label, value]) => (
             <div key={label} className="rounded-xl border border-border bg-card p-3">
               <span className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
