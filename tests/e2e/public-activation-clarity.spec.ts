@@ -151,9 +151,9 @@ test("mobile paid signup includes Personal status and keeps generic signup neutr
   await expect(access.getByRole("status")).toHaveText(
     "Checkout is unavailable right now. Try again shortly.",
   );
-  await expect(access.getByText("Personal · Starter · $12/month")).toBeVisible();
+  await expect(access.getByText("Personal · $12/month")).toBeVisible();
   await page.goto("/signup");
-  await expect(access.getByText("Personal · Starter · $12/month")).toBeVisible();
+  await expect(access.getByText("Personal · $12/month")).toBeVisible();
   await expect(access.getByRole("status")).toHaveText(
     "Checkout is unavailable right now. Try again shortly.",
   );
