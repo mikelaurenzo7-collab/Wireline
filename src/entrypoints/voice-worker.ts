@@ -2,7 +2,11 @@ import "../lib/load-env";
 import "express-async-errors";
 import { sql } from "drizzle-orm";
 import { drizzle, log, tenantStore } from "../lib/server-context";
-import { drainBackgroundWork } from "../lib/background-work";
+import { activeBackgroundWorkCount, drainBackgroundWork } from "../lib/background-work";
+import {
+  reportVoiceShutdown,
+  resolveVoiceHostShutdownGraceSeconds,
+} from "../lib/voice/voice-worker-shutdown";
 import { tryResolveDatabaseConnection } from "../lib/database-connection";
 import { getCanonicalAppUrl } from "../lib/app-url";
 import {
@@ -70,6 +74,13 @@ async function startVoiceWorker() {
     if (stopping) return;
     stopping = true;
     beginDrain();
+    // Render kills the old instance maxShutdownDelaySeconds after SIGTERM.
+    // Make any call that outlives that grace visible instead of silent.
+    const cancelShutdownReport = reportVoiceShutdown({
+      load: () => ({ active: activeBackgroundWorkCount(), pending: 0 }),
+      log,
+      hostGraceSeconds: resolveVoiceHostShutdownGraceSeconds(),
+    });
     // The host must allow this grace, or use authenticated /drain and wait for
     // zero active calls BEFORE sending SIGTERM. A 30s host deadline is unsafe.
     const deadline = setTimeout(
@@ -81,6 +92,7 @@ async function startVoiceWorker() {
     await closed;
     await drainAdmissions();
     await drainBackgroundWork();
+    cancelShutdownReport();
     clearTimeout(deadline);
     process.exit(0);
   };

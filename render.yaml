@@ -4,8 +4,11 @@
 # Existing Supabase remains authoritative; there is no migration command.
 #
 # Release every service from the same reviewed commit on main. Auto-deploy is
-# ON (autoDeployTrigger: commit) for all four services: an independent full-diff
-# review is the merge gate, and every merge to main ships to Render. Release
+# ON (autoDeployTrigger: commit) for the API and both crons: an independent
+# full-diff review is the merge gate, and every merge to main ships to Render.
+# botbound-voice is OFF: every deploy SIGTERMs the live worker and Render kills
+# it 300s later, which would cut call control on any longer call. Release voice
+# by pre-draining (below), then a manual deploy of the same commit. Release
 # switches stay Dashboard-owned (sync: false); change them deliberately.
 #
 # IMPORT existing signing/encryption/provider values; do not rotate them during
@@ -392,7 +395,9 @@ projects:
             region: ohio
             plan: 0.5c-512mb
             numInstances: 1
-            autoDeployTrigger: commit
+            # Off: a deploy SIGTERMs this worker and Render kills it after
+            # 300s, shorter than a call. Pre-drain, then deploy by hand.
+            autoDeployTrigger: "off"
             buildCommand: node deploy/render/build.mjs voice
             startCommand: node deploy/render/start.mjs voice
             healthCheckPath: /livez

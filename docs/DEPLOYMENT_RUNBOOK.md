@@ -39,7 +39,14 @@ or every readiness gate has passed.
 two 0.5 CPU / 512 MB cron services. Creating these resources incurs Render
 charges; the initial web/voice compute is $14/month combined on the free Hobby workspace. Cron services have separate usage charges and a $1/month minimum each; create them only with an approved budget and keep execution disabled until scheduler cutover is verified. Validate memory, CPU and concurrent real calls before expanding traffic. No
 database is provisioned and no migration runs during build. Auto-deploy is on
-from main for all four services (`autoDeployTrigger: commit`). API traffic, voice admissions, checkout, number provisioning and schedules
+from main for the API and both cron services (`autoDeployTrigger: commit`).
+`botbound-voice` is off (`autoDeployTrigger: "off"`): a deploy sends SIGTERM to
+the live worker and Render kills it after `maxShutdownDelaySeconds` (300, the
+maximum), while a call can last an hour. Release voice by running
+`node deploy/render/drain-voice.mjs` against the old worker until it reports
+`active=0` and `pending=0`, then deploy the same commit manually. The worker
+logs its live-call count at SIGTERM and an error 20s before the host grace ends
+if calls remain. API traffic, voice admissions, checkout, number provisioning and schedules
 start disabled. Configure the existing credentials in Render's secret store;
 preserve JWT signing, vault encryption, OAuth and MCP secrets. Do not import
 Vercel environment metadata or AI Gateway credentials. Render disables the
