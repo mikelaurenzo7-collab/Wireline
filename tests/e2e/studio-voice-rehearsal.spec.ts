@@ -154,9 +154,10 @@ for (const width of [1440, 390]) {
     await expect(page.getByText("Ready for a Voice Rehearsal", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Call your live Bot", { exact: true })).toBeVisible();
     await expect(page.getByText("Actions enabled", { exact: true })).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: "Call connected line +13125550123" }),
-    ).toHaveAttribute("href", "tel:+13125550123");
+    // Desktop browsers get the number with a copy button instead of a tel: link.
+    const testCall = page.getByTestId("test-call-desktop");
+    await expect(testCall).toBeVisible();
+    await expect(testCall.getByRole("button", { name: /^Copy / })).toBeVisible();
     await page.getByRole("button", { name: "Start rehearsal", exact: true }).click();
     await expect(page.getByText("Listening", { exact: true })).toBeVisible();
     expect(sessions).toEqual(["bot-front-desk"]);
@@ -263,7 +264,7 @@ test("idle voice rehearsal fits 320px with enlarged text without starting a micr
     fullPage: true,
   });
   await expect(start).toBeInViewport();
-  const phone = page.getByRole("link", { name: "Call connected line +13125550123" });
+  const phone = page.getByTestId("test-call-desktop");
   await phone.scrollIntoViewIfNeeded();
   await expect(phone).toBeInViewport();
   expect((await microphoneCount(page)).microphones).toBe(0);

@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 455
-**Protected:** 368
+**Routes scanned:** 456
+**Protected:** 369
 **Public (allowlisted):** 87
 **Violations:** 0
 
@@ -558,5 +558,6 @@
 | webhook-test-routes.ts | POST | `/api/webhooks/:id/test` | inline | permission | — | Protected |
 | website-knowledge-routes.ts | POST | `/api/agent-config/:id/website` | inline | — | — | Protected |
 | workspace-knowledge-routes.ts | POST | `/api/workspace-knowledge/google-drive` | inline | — | — | Protected |
+| xai-voice-admin-routes.ts | POST | `/api/voice/xai/fallback-drill` | inline | platform_admin | — | Protected |
 | xai-voice-admin-routes.ts | POST | `/api/voice/xai/registrations/sync` | inline | platform_admin | — | Protected |
 | xai-voice-admin-routes.ts | GET | `/api/voice/xai/status` | inline | platform_admin | — | Protected |
