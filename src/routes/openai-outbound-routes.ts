@@ -258,16 +258,11 @@ async function resolveBridgeContext(
     }
     const metadata = asRecord(lead.metadata);
     const nativeVoice = asRecord(metadata.native_voice);
-    // The Bot owner's recording choice travels with every bridge decision
-    // (fresh or replayed) so TwiML serving never has to re-derive it.
-    const [bridgeAgent] = lead.agentId
-      ? await tx
-          .select({ callRecordingEnabled: schema.agents.callRecordingEnabled })
-          .from(schema.agents)
-          .where(and(eq(schema.agents.id, lead.agentId), eq(schema.agents.userId, lead.userId)))
-          .limit(1)
-      : [];
-    const callRecordingEnabled = bridgeAgent?.callRecordingEnabled ?? false;
+    // The recording decision was snapshotted when this carrier placement was
+    // created. The bridge TwiML (carrier capture) and SIP admission (the
+    // spoken notice) both read that one immutable value, so a Bot flag toggle
+    // mid-call cannot make capture and disclosure disagree.
+    const callRecordingEnabled = nativeVoice.call_recording_enabled === true;
     if (!openAIOutboundPlacementMatches(nativeVoice, verification.claims)) {
       throw AppError.conflict("This outbound bridge belongs to an earlier placement.");
     }
@@ -303,7 +298,12 @@ async function resolveBridgeContext(
       return { kind: "drop", answeredBy: replay.answeredBy, userId: lead.userId };
     }
     if (replay?.kind === "bridge") {
-      return { kind: "bridge", callerId: replay.callerId, sipUri: replay.sipUri, callRecordingEnabled };
+      return {
+        kind: "bridge",
+        callerId: replay.callerId,
+        sipUri: replay.sipUri,
+        callRecordingEnabled,
+      };
     }
     if (!lead.agentId) throw AppError.notFound("Outbound lead not found.");
     const recoverableCompletedRace =
@@ -488,16 +488,14 @@ router.post(
       // The Bot answers on its own line: xAI when that number is registered
       // there, otherwise the OpenAI project URI the decision already carries.
       const sip = await resolveOutboundSipTarget({ callerId: decision.callerId, token });
-      res
-        .status(200)
-        .send(
-          bridgeTwiml({
-            callerId: decision.callerId,
-            sip,
-            maxSeconds,
-            recordCall: decision.callRecordingEnabled,
-          }),
-        );
+      res.status(200).send(
+        bridgeTwiml({
+          callerId: decision.callerId,
+          sip,
+          maxSeconds,
+          recordCall: decision.callRecordingEnabled,
+        }),
+      );
     } catch (error) {
       const verification = verifyOpenAIOutboundToken(token);
       if (verification.ok && error instanceof AppError && error.status === 409) {

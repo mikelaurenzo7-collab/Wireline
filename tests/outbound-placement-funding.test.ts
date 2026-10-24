@@ -79,6 +79,7 @@ function database() {
     wireline_credit_ledger: [],
     wireline_call_logs: [],
     wireline_outbound_campaigns: [],
+    wireline_agents: [{ id: agentId, userId, callRecordingEnabled: false }],
     wireline_outbound_leads: [
       {
         id: leadId,

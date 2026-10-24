@@ -2,18 +2,26 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 import { normalizeOpenAIPhoneNumber } from "./openai-sip-config";
 
-const TOKEN_VERSION = "1" as const;
+const TOKEN_VERSION = "2" as const;
 const TOKEN_TTL_SECONDS = 5 * 60;
 const MAX_TOKEN_LENGTH = 220;
 const MAX_FUTURE_SKEW_SECONDS = 60;
 const TWILIO_CALL_SID_PATTERN = /^CA[a-fA-F0-9]{32}$/;
-const SIGNING_LABEL = "botbound/openai-inbound-sip/v1";
+const SIGNING_LABEL = "botbound/openai-inbound-sip/v2";
 
 export type OpenAIInboundTokenClaims = {
   v: typeof TOKEN_VERSION;
   twilioCallSid: string;
   calledNumber: string;
   callerNumber: string | null;
+  /**
+   * The Bot owner's recording choice as decided when the carrier TwiML was
+   * created. The token is the call-scoped, tamper-evident snapshot of that
+   * decision: the same value gates carrier capture on the <Dial> and the
+   * spoken recording notice at SIP admission, so toggling the Bot flag in
+   * between cannot make capture and disclosure disagree.
+   */
+  callRecordingEnabled: boolean;
   iat: number;
   exp: number;
 };
@@ -48,6 +56,7 @@ function encodeClaims(claims: OpenAIInboundTokenClaims): string {
       claims.twilioCallSid,
       claims.calledNumber,
       claims.callerNumber || "",
+      claims.callRecordingEnabled ? "1" : "0",
       String(claims.iat),
       String(claims.exp),
     ].join("|"),
@@ -58,8 +67,8 @@ function encodeClaims(claims: OpenAIInboundTokenClaims): string {
 function parseClaims(payload: string): OpenAIInboundTokenClaims | null {
   try {
     const fields = Buffer.from(payload, "base64url").toString("utf8").split("|");
-    if (fields.length !== 6) return null;
-    const [v, twilioCallSid, calledRaw, callerRaw, iatRaw, expRaw] = fields;
+    if (fields.length !== 7) return null;
+    const [v, twilioCallSid, calledRaw, callerRaw, recordingRaw, iatRaw, expRaw] = fields;
     const calledNumber = normalizeOpenAIPhoneNumber(calledRaw);
     const callerNumber = callerRaw ? normalizeOpenAIPhoneNumber(callerRaw) : null;
     const iat = Number(iatRaw);
@@ -69,6 +78,7 @@ function parseClaims(payload: string): OpenAIInboundTokenClaims | null {
       !TWILIO_CALL_SID_PATTERN.test(twilioCallSid || "") ||
       !calledNumber ||
       (Boolean(callerRaw) && !callerNumber) ||
+      (recordingRaw !== "0" && recordingRaw !== "1") ||
       !Number.isSafeInteger(iat) ||
       !Number.isSafeInteger(exp) ||
       exp <= iat ||
@@ -76,7 +86,15 @@ function parseClaims(payload: string): OpenAIInboundTokenClaims | null {
     ) {
       return null;
     }
-    return { v, twilioCallSid, calledNumber, callerNumber, iat, exp };
+    return {
+      v,
+      twilioCallSid,
+      calledNumber,
+      callerNumber,
+      callRecordingEnabled: recordingRaw === "1",
+      iat,
+      exp,
+    };
   } catch {
     return null;
   }
@@ -87,6 +105,8 @@ export function issueOpenAIInboundToken(input: {
   twilioCallSid: string;
   calledNumber: string;
   callerNumber?: string | null;
+  /** The recording decision captured in the same response that builds the TwiML. */
+  callRecordingEnabled?: boolean;
   nowMs?: number;
   env?: NodeJS.ProcessEnv;
 }): { token: string; claims: OpenAIInboundTokenClaims } {
@@ -108,6 +128,7 @@ export function issueOpenAIInboundToken(input: {
     twilioCallSid,
     calledNumber,
     callerNumber,
+    callRecordingEnabled: input.callRecordingEnabled === true,
     iat,
     exp: iat + TOKEN_TTL_SECONDS,
   };

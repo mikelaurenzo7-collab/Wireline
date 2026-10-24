@@ -65,6 +65,18 @@ export function persistOpenAIOutboundTwiMLReplay(input: {
 }
 
 /**
+ * The Twilio parent call this placement's bridge TwiML was served for. It is
+ * persisted with the replay marker at bridge creation and is the immutable
+ * identity the recording-completion callback correlates against, so a lead
+ * redialed before the callback lands cannot re-attribute the recording.
+ */
+export function resolveOpenAIOutboundParentCallSid(
+  nativeVoice: Record<string, unknown>,
+): string | null {
+  return validCallSid(asRecord(nativeVoice.twiml_replay).call_sid);
+}
+
+/**
  * Reconstruct a previously committed TwiML decision only when every durable
  * call-ownership marker agrees with the signed callback's CallSid. This lets a
  * Twilio read-timeout retry receive the same response without reopening a

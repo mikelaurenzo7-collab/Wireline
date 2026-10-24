@@ -30,6 +30,39 @@ describe("OpenAI inbound SIP correlation token", () => {
     expect(buildOpenAIInboundSipUri(issued.token, ENV).length).toBeLessThanOrEqual(255);
   });
 
+  it("carries the TwiML-time recording decision as a signed, immutable claim", () => {
+    const recordingOff = issueOpenAIInboundToken({
+      twilioCallSid: "CA0123456789abcdef0123456789abcdef",
+      calledNumber: "+13125550101",
+      nowMs: NOW,
+      env: ENV,
+    });
+    const recordingOn = issueOpenAIInboundToken({
+      twilioCallSid: "CA0123456789abcdef0123456789abcdef",
+      calledNumber: "+13125550101",
+      callRecordingEnabled: true,
+      nowMs: NOW,
+      env: ENV,
+    });
+
+    expect(recordingOff.claims.callRecordingEnabled).toBe(false);
+    expect(recordingOn.claims.callRecordingEnabled).toBe(true);
+    expect(
+      verifyOpenAIInboundToken(recordingOn.token, { nowMs: NOW + 1_000, env: ENV }),
+    ).toMatchObject({ ok: true, claims: { callRecordingEnabled: true } });
+
+    // Flipping the decision in the payload breaks the HMAC: admission can only
+    // ever observe the value minted alongside the carrier TwiML.
+    const [payload, signature] = recordingOn.token.split(".");
+    const fields = Buffer.from(payload, "base64url").toString("utf8").split("|");
+    expect(fields[4]).toBe("1");
+    fields[4] = "0";
+    const tamperedPayload = Buffer.from(fields.join("|"), "utf8").toString("base64url");
+    expect(
+      verifyOpenAIInboundToken(`${tamperedPayload}.${signature}`, { nowMs: NOW, env: ENV }),
+    ).toMatchObject({ ok: false, reason: "invalid_signature" });
+  });
+
   it("rejects tampering, expiration, and invalid Twilio identities", () => {
     const issued = issueOpenAIInboundToken({
       twilioCallSid: "CAabcdef0123456789abcdef0123456789",

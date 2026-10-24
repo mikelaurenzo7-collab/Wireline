@@ -129,13 +129,19 @@ router.post(
         return;
       }
 
+      // Decide recording once, here, and reuse the same immutable value for
+      // both carrier capture (the <Dial> below) and the spoken notice (the SIP
+      // token is checked at admission). Toggling the Bot flag after this
+      // response cannot make capture and disclosure disagree.
+      const callRecordingEnabled = await inboundCallRecordingEnabled(owner);
       const { token } = issueOpenAIInboundToken({
         twilioCallSid: String(req.body?.CallSid || ""),
         calledNumber,
         callerNumber,
+        callRecordingEnabled,
       });
       const target = await resolveInboundSipTarget({ calledNumber, token });
-      res.status(200).send(inboundBridgeTwiml(target, await inboundCallRecordingEnabled(owner)));
+      res.status(200).send(inboundBridgeTwiml(target, callRecordingEnabled));
     } catch (error) {
       log.error("Twilio inbound OpenAI bridge failed closed", {
         calledSuffix: phoneSuffixForLog(calledNumber),

@@ -105,6 +105,12 @@ export type OpenAISipIncomingCall = {
   direction?: "inbound" | "outbound";
   leadId?: bigint;
   inboundTwilioCallSid?: string;
+  /**
+   * The exact Twilio parent call this SIP leg was bridged from. Persisted once
+   * on the call log so the recording-completion callback can correlate by SID
+   * rather than by a lead's latest placement metadata.
+   */
+  twilioParentCallSid?: string;
   outboundPlacementId?: string;
   customerName?: string | null;
   context?: string | null;
@@ -695,6 +701,14 @@ async function claimCall(input: OpenAISipIncomingCall) {
         ? `twilio:${input.inboundTwilioCallSid}`
         : null;
   if (!sourceId) throw AppError.conflict("The SIP call is missing its signed source identity.");
+  // The exact Twilio parent call is known before this row exists: inbound from
+  // the token minted at TwiML creation, outbound from the placement's persisted
+  // bridge marker. Persist it once so recording callbacks never depend on
+  // re-reading mutable lead metadata.
+  const twilioParentCallSid =
+    callDirection(input) === "outbound"
+      ? input.twilioParentCallSid?.trim() || null
+      : input.inboundTwilioCallSid?.trim() || null;
   return drizzle.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-sip:${sourceId}`}))`);
     const [existing] = await tx
@@ -823,6 +837,7 @@ async function claimCall(input: OpenAISipIncomingCall) {
         userId: input.userId,
         vapiCallId: id,
         openaiSipSourceId: sourceId,
+        twilioParentCallSid,
         openaiSipPhase: "claimed",
         openaiSipOwnerToken: ownerToken,
         openaiSipLeaseExpiresAt: leaseExpiresAt,

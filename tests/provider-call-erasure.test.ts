@@ -100,6 +100,61 @@ describe("provider call erasure", () => {
     expect(fetchFn).toHaveBeenCalledTimes(5);
   });
 
+  it("erases live-call recordings by stored URL regardless of provider prefix", async () => {
+    const fetchFn = vi.fn(async (input: string, init?: RequestInit): Promise<Response> => {
+      if (input === RECORDING_METADATA_URL && !init?.method) {
+        return jsonResponse({ call_sid: CALL_SID });
+      }
+      if (
+        input ===
+        `https://api.twilio.com/2010-04-01/Accounts/${ACCOUNT_SID}/Recordings/${RECORDING_SID}/Transcriptions.json?PageSize=1000`
+      ) {
+        return jsonResponse({ transcriptions: [] });
+      }
+      if (input === `${RECORDING_URL}.json` && init?.method === "DELETE") {
+        return emptyResponse();
+      }
+      if (
+        input ===
+          `https://api.twilio.com/2010-04-01/Accounts/${ACCOUNT_SID}/Calls/${CALL_SID}.json` &&
+        init?.method === "DELETE"
+      ) {
+        return emptyResponse();
+      }
+      throw new Error(`Unexpected provider request: ${init?.method || "GET"} ${input}`);
+    });
+
+    const result = await eraseProviderCallArtifacts(
+      [
+        // A live call row names the AI runtime, not Twilio; its stored Twilio
+        // recording is still the tenant's provider-owned audio.
+        { providerCallId: "openai:xai:live-call-1", recordingUrl: RECORDING_URL },
+        // Non-Twilio media and foreign Twilio accounts cannot be addressed with
+        // this deployment's credentials: ignore them rather than block erasure.
+        {
+          providerCallId: "openai:xai:live-call-2",
+          recordingUrl: "https://media.example.test/recordings/abc.mp3",
+        },
+        {
+          providerCallId: "openai:xai:live-call-3",
+          recordingUrl: `https://api.twilio.com/2010-04-01/Accounts/${OTHER_ACCOUNT_SID}/Recordings/${RECORDING_SID}.json`,
+        },
+        { providerCallId: null, recordingUrl: null },
+      ],
+      {
+        fetchFn,
+        env: { TWILIO_ACCOUNT_SID: ACCOUNT_SID, TWILIO_AUTH_TOKEN: "twilio-test-token" },
+      },
+    );
+
+    expect(result).toEqual({
+      twilioRecordingsDeleted: 1,
+      twilioTranscriptionsDeleted: 0,
+      twilioCallsDeleted: 1,
+    });
+    expect(fetchFn).toHaveBeenCalledTimes(4);
+  });
+
   it("recovers the Call SID from soft-deleted recording metadata after a partial failure", async () => {
     let recordingDeleted = false;
     let callDeleteAttempts = 0;
