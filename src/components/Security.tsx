@@ -205,12 +205,33 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
   },
 ];
 
+/**
+ * /security carries only the security-specific topics below. The storage,
+ * healthcare, card-data, and GDPR/CCPA topics stay in SECTIONS because
+ * /trust renders them, but on /security they duplicated the Trust Center;
+ * the page points there instead.
+ */
+const SECURITY_PAGE_TITLES = new Set([
+  "Encryption Everywhere",
+  "Strict Browser Security Headers",
+  "Webhook Signature Verification",
+  "Operational Security",
+  "Database Posture",
+  "Responsible Disclosure",
+]);
+
 export default function Security() {
   const location = useLocation();
   const isTrustHub = location.pathname === "/trust";
-  const sections = isTrustHub ? [...SECTIONS, ...TRUST_PACK_SECTIONS] : SECTIONS;
-  const overviewSections = sections.filter((section) => !section.technical);
-  const technicalSections = sections.filter((section) => section.technical);
+  const sections = isTrustHub
+    ? [...SECTIONS, ...TRUST_PACK_SECTIONS]
+    : SECTIONS.filter((section) => SECURITY_PAGE_TITLES.has(section.title));
+  // /security lists its topics flat: every security topic is technical, so
+  // the overview/Technical Details split would bury the whole page.
+  const overviewSections = isTrustHub
+    ? sections.filter((section) => !section.technical)
+    : sections;
+  const technicalSections = isTrustHub ? sections.filter((section) => section.technical) : [];
   const renderSection = ({ icon: Icon, title, items }: SecurityTopic) => (
     <section key={title}>
       <div className="mb-4 flex flex-col items-center gap-2.5 text-center">
@@ -261,6 +282,15 @@ export default function Security() {
             <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
               <span className="whitespace-nowrap">Last updated · October 20, 2026</span>
             </p>
+            {!isTrustHub ? (
+              <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                Data rights, subprocessors, and billing controls live in the{" "}
+                <Link to="/trust" className="text-brand hover:underline">
+                  Trust Center
+                </Link>
+                .
+              </p>
+            ) : null}
           </div>
 
           <section className="mb-10" aria-labelledby="trust-packs-heading">
@@ -290,7 +320,8 @@ export default function Security() {
 
           <div className="space-y-7">{overviewSections.map(renderSection)}</div>
 
-          <details className="group mt-10 border-y border-border py-2">
+          {technicalSections.length > 0 ? (
+            <details className="group mt-10 border-y border-border py-2">
             <summary className="wl-focus-ring-halo flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 rounded-md px-2 text-base font-semibold marker:hidden">
               <span>Technical Details</span>
               <span
@@ -301,7 +332,8 @@ export default function Security() {
               </span>
             </summary>
             <div className="space-y-7 py-6">{technicalSections.map(renderSection)}</div>
-          </details>
+            </details>
+          ) : null}
 
           <div className="mt-12 border-t border-border pt-6 text-center">
             <h2 className="mb-2 text-sm font-semibold">Under active evaluation</h2>
