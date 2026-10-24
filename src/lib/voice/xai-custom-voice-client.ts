@@ -92,7 +92,13 @@ export function classifyXAICustomVoiceFailure(
 ): XAICustomVoiceErrorCode {
   const text = message.toLowerCase();
   if (status === 401) return "not_configured";
-  if (/region|country|illinois|not available in your/.test(text)) return "region_unavailable";
+  // 403 without Enterprise must never read as a region or audio problem.
+  if (status === 403 && /enterprise|plan|tier|entitle|permission|access/.test(text))
+    return "not_entitled";
+  // xAI answers 400 when the team reached its custom voice limit.
+  if (status === 400 && /limit|reached|maximum|too many/.test(text)) return "limit_reached";
+  if (/region|country|illinois|not available in your (state|region|country)/.test(text))
+    return "region_unavailable";
   if (status === 403) return "not_entitled";
   if (status === 404) return "not_found";
   if (status === 409 || status === 429 || /limit|quota|maximum/.test(text)) return "limit_reached";

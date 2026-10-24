@@ -59,6 +59,7 @@ export default function SimpleVoicePicker({
   const [phoneCall, setPhoneCall] = useState<PhoneCallVoice>(null);
   const [phoneCallReady, setPhoneCallReady] = useState<boolean | null>(null);
   const [clonedVoiceName, setClonedVoiceName] = useState<string | null>(null);
+  const [cloneCardEpoch, setCloneCardEpoch] = useState(0);
   // The voice that was live before the last pick, so a mis-tap is one tap to undo.
   const [undoVoice, setUndoVoice] = useState<VoiceOption | null>(null);
   const [sampleVoiceId, setSampleVoiceId] = useState<string | null>(null);
@@ -224,6 +225,7 @@ export default function SimpleVoicePicker({
       );
       const body = (await response.json().catch(() => null)) as {
         error?: string;
+        customVoiceCleared?: boolean;
         voice?: {
           phoneCallReady?: boolean | null;
           voiceId?: string | null;
@@ -253,6 +255,11 @@ export default function SimpleVoicePicker({
           : (savedPrimaryProvider ?? voice.provider),
       );
       setPreviewOpen(false);
+      if (body?.customVoiceCleared) {
+        // The server switched the Bot off its cloned voice; refresh the clone card.
+        setClonedVoiceName(null);
+        setCloneCardEpoch((epoch) => epoch + 1);
+      }
       const shortName = voice.name.split("·")[0].trim();
       if (options.undo) {
         setUndoVoice(null);
@@ -475,7 +482,7 @@ export default function SimpleVoicePicker({
       ) : null}
       {ownerId ? (
         <LiveVoiceCloneStudio
-          key={`live:${ownerId}:${agentId}`}
+          key={`live:${ownerId}:${agentId}:${cloneCardEpoch}`}
           agentId={agentId}
           agentName={agentName}
           stockVoiceId={phoneCall?.voice ?? selectedVoiceId}

@@ -1,3 +1,4 @@
+import { BOTBOUND_PRODUCTION_ORIGIN } from "../brand";
 import { resolveCanonicalAppUrl } from "../app-url";
 
 /**
@@ -13,7 +14,7 @@ export const LIVE_RECORDING_CALLBACK_PATH = "/api/twilio-webhook/live-recording-
 
 function liveRecordingCallbackUrl(): string {
   const canonical = resolveCanonicalAppUrl();
-  const baseUrl = "error" in canonical ? "https://botbound.app" : canonical.url;
+  const baseUrl = "error" in canonical ? BOTBOUND_PRODUCTION_ORIGIN : canonical.url;
   return new URL(LIVE_RECORDING_CALLBACK_PATH, `${baseUrl.replace(/\/+$/, "")}/`).toString();
 }
 

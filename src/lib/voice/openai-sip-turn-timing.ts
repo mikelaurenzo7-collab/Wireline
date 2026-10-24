@@ -42,6 +42,13 @@ export type TurnTimingOptions = {
 };
 
 /**
+ * What firstAudioMs measures: "playback" is the provider confirming the
+ * caller's audio buffer started playing (OpenAI); "generation" is the first
+ * audio chunk leaving the provider (xAI), a few tens of ms before playback.
+ */
+export type FirstAudioSignal = "playback" | "generation";
+
+/**
  * Measures the server-side interval after the provider declares the caller's
  * turn finished. The earlier semantic-VAD wait is not observable on a SIP
  * sideband. Only bounded numeric samples are retained; no audio or transcript
@@ -59,9 +66,15 @@ export class OpenAISipTurnTiming {
   private toolTimeouts = 0;
   private connectedAtMs: number | null = null;
   private firstAudioMs: number | null = null;
+  private readonly firstAudioSignal: FirstAudioSignal;
 
   constructor(options: TurnTimingOptions = {}) {
     this.audioStartEvents = new Set(options.audioStartEvents ?? OPENAI_TURN_AUDIO_START_EVENTS);
+    this.firstAudioSignal = [...this.audioStartEvents].every((type) =>
+      (OPENAI_TURN_AUDIO_START_EVENTS as readonly string[]).includes(type),
+    )
+      ? "playback"
+      : "generation";
   }
 
   /** Start the per-call time-to-first-audio clock (sideband open). */
@@ -138,6 +151,7 @@ export class OpenAISipTurnTiming {
   summary() {
     return {
       firstAudioMs: this.firstAudioMs,
+      firstAudioSignal: this.firstAudioSignal,
       turnsObserved: this.turnsObserved,
       turnsWithAudio: this.turnsWithAudio,
       stoppedToResponseP50Ms: percentile(this.stoppedToResponseMs, 0.5),

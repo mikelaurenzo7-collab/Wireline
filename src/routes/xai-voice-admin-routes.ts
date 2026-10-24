@@ -1,6 +1,16 @@
 import { Router, type RequestHandler, type Response } from "express";
 
-import { asyncHandler } from "../lib/api-error";
+import { eq } from "drizzle-orm";
+
+import { phoneNumbers } from "../db/schema";
+import { AppError, asyncHandler } from "../lib/api-error";
+import { drizzle } from "../lib/server-context";
+import {
+  FALLBACK_DRILL_MODES,
+  armFallbackDrill,
+  isFallbackDrillMode,
+} from "../lib/voice/fallback-drill";
+import { normalizeOpenAIPhoneNumber } from "../lib/voice/openai-sip-config";
 import { configuredPhoneVoiceProvider } from "../lib/voice/realtime-provider";
 import {
   syncXAIPhoneRegistrations,
@@ -57,6 +67,40 @@ router.post(
         ...(result.status === "failed" ? { reason: result.reason } : {}),
       })),
     });
+  }),
+);
+
+/**
+ * Arm a one-shot fallback drill on one BotBound number: the next inbound call
+ * to it (within 15 minutes) takes the chosen fallback path. No env change.
+ */
+router.post(
+  "/api/voice/xai/fallback-drill",
+  noStore,
+  authenticateUser,
+  requirePlatformAdmin,
+  registrationLimiter,
+  asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const phoneNumber = normalizeOpenAIPhoneNumber(req.body?.phoneNumber);
+    const mode = req.body?.mode;
+    if (!phoneNumber || !isFallbackDrillMode(mode)) {
+      throw AppError.badRequest(
+        `Send a BotBound phoneNumber and a mode: ${FALLBACK_DRILL_MODES.join(", ")}.`,
+      );
+    }
+    const [line] = await drizzle
+      .select({ userId: phoneNumbers.userId })
+      .from(phoneNumbers)
+      .where(eq(phoneNumbers.phoneNumber, phoneNumber))
+      .limit(1);
+    if (!line?.userId) throw AppError.notFound("That number is not an assigned BotBound line.");
+    const { expiresAt } = await armFallbackDrill({
+      userId: line.userId,
+      phoneNumber,
+      mode,
+      actorEmail: req.user?.email ?? null,
+    });
+    res.json({ armed: true, mode, phoneSuffix: phoneNumber.slice(-4), expiresAt });
   }),
 );
 

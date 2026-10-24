@@ -369,11 +369,11 @@ describe("native SIP opening delivery", () => {
       const opening = h.sent.find((event) => event.type === "response.create")?.response;
       expect(opening?.instructions).toContain("warm, natural speaking style");
       expect(opening?.instructions).toContain(
-        `Say exactly these words and nothing else: ${direction === "inbound" ? greeting : "I am an AI assistant. Hi, this is Nora with BOTBOUND LLC. You can call us back at the business."}`,
+        `Say exactly these words and nothing else: ${direction === "inbound" ? "Hi, you're speaking with an AI assistant for Nora at BOTBOUND LLC. How can I help you?" : "I am an AI assistant. Hi, this is Nora with BOTBOUND LLC. You can call us back at the business."}`,
       );
       if (direction === "inbound") {
-        expect(opening?.instructions).not.toContain("AI assistant");
-        expect(opening?.instructions).not.toContain("BOTBOUND LLC");
+        // Inbound discloses AI first; the owner's identity line is not repeated.
+        expect(opening?.instructions).not.toContain("this is Nora with BotBound");
       }
       expect(opening?.output_modalities).toEqual(["audio"]);
       h.sockets[0].close();

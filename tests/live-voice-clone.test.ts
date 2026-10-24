@@ -183,7 +183,7 @@ describe("clone studio copy", () => {
 
   it("shows one neutral, dismissible tip and the premium flow pieces", () => {
     expect(studio).toContain(
-      "Tip: stock voices are tuned for the fastest replies on high-volume lines.",
+      "Tip: you can switch any Bot back to a stock voice in one tap, anytime.",
     );
     expect(studio).toContain("localStorage");
     for (const piece of [
@@ -233,5 +233,6 @@ describe("clone script stays channel-neutral", () => {
     const quality = readFileSync("src/lib/voice/live-voice-quality.ts", "utf8");
     expect(quality).not.toMatch(/text confirmation|\bSMS\b/i);
     expect(quality).toContain("You'll get a confirmation shortly.");
+    expect(LIVE_VOICE_SCRIPT.join(" ")).not.toMatch(/\btext(s|ing|ed)?\b|\bSMS\b/i);
   });
 });

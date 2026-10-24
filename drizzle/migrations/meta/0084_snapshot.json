@@ -426,12 +426,8 @@
           "name": "wireline_settings_user_id_wireline_users_id_fk",
           "tableFrom": "wireline_settings",
           "tableTo": "wireline_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -441,9 +437,7 @@
         "wireline_settings_user_id_unique": {
           "name": "wireline_settings_user_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id"
-          ]
+          "columns": ["user_id"]
         }
       },
       "policies": {},
@@ -509,12 +503,8 @@
           "name": "wireline_spend_budgets_user_id_wireline_users_id_fk",
           "tableFrom": "wireline_spend_budgets",
           "tableTo": "wireline_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -612,12 +602,8 @@
           "name": "wireline_subscriptions_user_id_wireline_users_id_fk",
           "tableFrom": "wireline_subscriptions",
           "tableTo": "wireline_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -699,12 +685,8 @@
           "name": "wireline_account_operation_leases_user_id_wireline_users_id_fk",
           "tableFrom": "wireline_account_operation_leases",
           "tableTo": "wireline_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -777,12 +759,8 @@
           "name": "wireline_accounts_user_id_wireline_users_id_fk",
           "tableFrom": "wireline_accounts",
           "tableTo": "wireline_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -864,12 +842,8 @@
           "name": "wireline_agent_conversation_messages_agent_id_wireline_agents_id_fk",
           "tableFrom": "wireline_agent_conversation_messages",
           "tableTo": "wireline_agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -959,12 +933,8 @@
           "name": "wireline_agent_lessons_agent_id_wireline_agents_id_fk",
           "tableFrom": "wireline_agent_lessons",
           "tableTo": "wireline_agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -974,10 +944,7 @@
         "wireline_agent_lessons_agent_id_lesson_unique": {
           "name": "wireline_agent_lessons_agent_id_lesson_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "agent_id",
-            "lesson"
-          ]
+          "columns": ["agent_id", "lesson"]
         }
       },
       "policies": {},
@@ -1044,12 +1011,8 @@
           "name": "wireline_agent_team_members_team_id_wireline_agent_teams_id_fk",
           "tableFrom": "wireline_agent_team_members",
           "tableTo": "wireline_agent_teams",
-          "columnsFrom": [
-            "team_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["team_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1057,12 +1020,8 @@
           "name": "wireline_agent_team_members_agent_id_wireline_agents_id_fk",
           "tableFrom": "wireline_agent_team_members",
           "tableTo": "wireline_agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1529,12 +1488,8 @@
           "name": "wireline_agents_account_id_wireline_accounts_id_fk",
           "tableFrom": "wireline_agents",
           "tableTo": "wireline_accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1730,12 +1685,8 @@
           "name": "wireline_appointments_agent_id_wireline_agents_id_fk",
           "tableFrom": "wireline_appointments",
           "tableTo": "wireline_agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1964,12 +1915,8 @@
           "name": "wireline_audit_log_user_id_wireline_users_id_fk",
           "tableFrom": "wireline_audit_log",
           "tableTo": "wireline_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2191,10 +2138,7 @@
         "wireline_calendar_accounts_user_id_email_address_key": {
           "name": "wireline_calendar_accounts_user_id_email_address_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "email_address"
-          ]
+          "columns": ["user_id", "email_address"]
         }
       },
       "policies": {},
@@ -2276,12 +2220,8 @@
           "name": "wireline_calendar_events_account_id_wireline_calendar_accounts_id_fk",
           "tableFrom": "wireline_calendar_events",
           "tableTo": "wireline_calendar_accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2291,10 +2231,7 @@
         "wireline_calendar_events_account_id_external_event_id_unique": {
           "name": "wireline_calendar_events_account_id_external_event_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "account_id",
-            "external_event_id"
-          ]
+          "columns": ["account_id", "external_event_id"]
         }
       },
       "policies": {},
@@ -2601,12 +2538,8 @@
           "name": "wireline_call_logs_agent_id_wireline_agents_id_fk",
           "tableFrom": "wireline_call_logs",
           "tableTo": "wireline_agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2616,9 +2549,7 @@
         "wireline_call_logs_vapi_call_id_unique": {
           "name": "wireline_call_logs_vapi_call_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "vapi_call_id"
-          ]
+          "columns": ["vapi_call_id"]
         }
       },
       "policies": {},
@@ -2694,12 +2625,8 @@
           "name": "wireline_call_queues_team_id_wireline_agent_teams_id_fk",
           "tableFrom": "wireline_call_queues",
           "tableTo": "wireline_agent_teams",
-          "columnsFrom": [
-            "team_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["team_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2968,12 +2895,8 @@
           "name": "wireline_credit_ledger_user_id_wireline_users_id_fk",
           "tableFrom": "wireline_credit_ledger",
           "tableTo": "wireline_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2983,11 +2906,7 @@
         "wireline_credit_ledger_ref_key": {
           "name": "wireline_credit_ledger_ref_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "ref_type",
-            "ref_id"
-          ]
+          "columns": ["user_id", "ref_type", "ref_id"]
         }
       },
       "policies": {},
@@ -3094,10 +3013,7 @@
         "wireline_crm_connections_user_id_provider_key": {
           "name": "wireline_crm_connections_user_id_provider_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "provider"
-          ]
+          "columns": ["user_id", "provider"]
         }
       },
       "policies": {},
@@ -3348,10 +3264,7 @@
         "wireline_design_integrations_user_id_provider_key": {
           "name": "wireline_design_integrations_user_id_provider_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "provider"
-          ]
+          "columns": ["user_id", "provider"]
         }
       },
       "policies": {},
@@ -3465,12 +3378,8 @@
           "name": "wireline_directives_agent_id_wireline_agents_id_fk",
           "tableFrom": "wireline_directives",
           "tableTo": "wireline_agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3831,12 +3740,8 @@
           "name": "wireline_email_accounts_agent_id_wireline_agents_id_fk",
           "tableFrom": "wireline_email_accounts",
           "tableTo": "wireline_agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -3846,9 +3751,7 @@
         "wireline_email_accounts_email_address_unique": {
           "name": "wireline_email_accounts_email_address_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email_address"
-          ]
+          "columns": ["email_address"]
         }
       },
       "policies": {},
@@ -3920,12 +3823,8 @@
           "name": "wireline_email_messages_thread_id_wireline_email_threads_id_fk",
           "tableFrom": "wireline_email_messages",
           "tableTo": "wireline_email_threads",
-          "columnsFrom": [
-            "thread_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["thread_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4070,12 +3969,8 @@
           "name": "wireline_email_threads_account_id_wireline_email_accounts_id_fk",
           "tableFrom": "wireline_email_threads",
           "tableTo": "wireline_email_accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4083,12 +3978,8 @@
           "name": "wireline_email_threads_agent_id_wireline_agents_id_fk",
           "tableFrom": "wireline_email_threads",
           "tableTo": "wireline_agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -4149,9 +4040,7 @@
         "wireline_email_verification_tokens_token_hash_unique": {
           "name": "wireline_email_verification_tokens_token_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token_hash"
-          ]
+          "columns": ["token_hash"]
         }
       },
       "policies": {},
@@ -4263,12 +4152,8 @@
           "name": "wireline_follow_up_tasks_agent_id_wireline_agents_id_fk",
           "tableFrom": "wireline_follow_up_tasks",
           "tableTo": "wireline_agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -4336,10 +4221,7 @@
         "wireline_goals_user_id_metric_key": {
           "name": "wireline_goals_user_id_metric_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "metric"
-          ]
+          "columns": ["user_id", "metric"]
         }
       },
       "policies": {},
@@ -4429,9 +4311,7 @@
         "wireline_intake_keys_key_hash_unique": {
           "name": "wireline_intake_keys_key_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "key_hash"
-          ]
+          "columns": ["key_hash"]
         }
       },
       "policies": {},
@@ -4674,12 +4554,8 @@
           "name": "wireline_knowledge_agent_id_wireline_agents_id_fk",
           "tableFrom": "wireline_knowledge",
           "tableTo": "wireline_agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4781,12 +4657,8 @@
           "name": "wireline_lead_dossiers_lead_id_wireline_outbound_leads_id_fk",
           "tableFrom": "wireline_lead_dossiers",
           "tableTo": "wireline_outbound_leads",
-          "columnsFrom": [
-            "lead_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["lead_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4796,10 +4668,7 @@
         "wireline_lead_dossiers_user_id_customer_number_unique": {
           "name": "wireline_lead_dossiers_user_id_customer_number_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "customer_number"
-          ]
+          "columns": ["user_id", "customer_number"]
         }
       },
       "policies": {},
@@ -4888,12 +4757,8 @@
           "name": "wireline_mobile_devices_user_id_wireline_users_id_fk",
           "tableFrom": "wireline_mobile_devices",
           "tableTo": "wireline_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4903,10 +4768,7 @@
         "wireline_mobile_devices_user_device_key": {
           "name": "wireline_mobile_devices_user_device_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "device_id"
-          ]
+          "columns": ["user_id", "device_id"]
         }
       },
       "policies": {},
@@ -5104,12 +4966,8 @@
           "name": "wireline_outbound_campaigns_agent_id_wireline_agents_id_fk",
           "tableFrom": "wireline_outbound_campaigns",
           "tableTo": "wireline_agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -5286,12 +5144,8 @@
           "name": "wireline_outbound_leads_agent_id_wireline_agents_id_fk",
           "tableFrom": "wireline_outbound_leads",
           "tableTo": "wireline_agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -5299,12 +5153,8 @@
           "name": "wireline_outbound_leads_campaign_id_wireline_outbound_campaigns_id_fk",
           "tableFrom": "wireline_outbound_leads",
           "tableTo": "wireline_outbound_campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -5371,9 +5221,7 @@
         "wireline_password_reset_tokens_token_hash_unique": {
           "name": "wireline_password_reset_tokens_token_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token_hash"
-          ]
+          "columns": ["token_hash"]
         }
       },
       "policies": {},
@@ -5409,12 +5257,8 @@
           "name": "wireline_personality_agent_id_wireline_agents_id_fk",
           "tableFrom": "wireline_personality",
           "tableTo": "wireline_agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -5490,12 +5334,8 @@
           "name": "wireline_phone_numbers_agent_id_wireline_agents_id_fk",
           "tableFrom": "wireline_phone_numbers",
           "tableTo": "wireline_agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -5505,9 +5345,7 @@
         "wireline_phone_numbers_phone_number_unique": {
           "name": "wireline_phone_numbers_phone_number_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "phone_number"
-          ]
+          "columns": ["phone_number"]
         }
       },
       "policies": {},
@@ -5711,9 +5549,7 @@
         "wireline_recap_artifacts_slug_unique": {
           "name": "wireline_recap_artifacts_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         }
       },
       "policies": {},
@@ -5759,7 +5595,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false,
-          "default": "'Live \u00b7 Active'"
+          "default": "'Live · Active'"
         },
         "type": {
           "name": "type",
@@ -5794,12 +5630,8 @@
           "name": "wireline_signal_presence_agent_id_wireline_agents_id_fk",
           "tableFrom": "wireline_signal_presence",
           "tableTo": "wireline_agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -5881,12 +5713,8 @@
           "name": "wireline_sms_messages_thread_id_wireline_sms_threads_id_fk",
           "tableFrom": "wireline_sms_messages",
           "tableTo": "wireline_sms_threads",
-          "columnsFrom": [
-            "thread_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["thread_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -6021,12 +5849,8 @@
           "name": "wireline_sms_send_operations_user_id_wireline_users_id_fk",
           "tableFrom": "wireline_sms_send_operations",
           "tableTo": "wireline_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -6034,12 +5858,8 @@
           "name": "wireline_sms_send_operations_thread_id_wireline_sms_threads_id_fk",
           "tableFrom": "wireline_sms_send_operations",
           "tableTo": "wireline_sms_threads",
-          "columnsFrom": [
-            "thread_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["thread_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -6182,12 +6002,8 @@
           "name": "wireline_sms_threads_agent_id_wireline_agents_id_fk",
           "tableFrom": "wireline_sms_threads",
           "tableTo": "wireline_agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -6467,12 +6283,8 @@
           "name": "wireline_tenant_email_suppressions_user_id_wireline_users_id_fk",
           "tableFrom": "wireline_tenant_email_suppressions",
           "tableTo": "wireline_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -6482,10 +6294,7 @@
         "wireline_tenant_email_suppressions_user_email_key": {
           "name": "wireline_tenant_email_suppressions_user_email_key",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "email"
-          ]
+          "columns": ["user_id", "email"]
         }
       },
       "policies": {},
@@ -6557,12 +6366,8 @@
           "name": "wireline_user_preferences_user_id_wireline_users_id_fk",
           "tableFrom": "wireline_user_preferences",
           "tableTo": "wireline_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -6643,9 +6448,7 @@
         "wireline_users_email_unique": {
           "name": "wireline_users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -6757,12 +6560,8 @@
           "name": "wireline_webhook_deliveries_webhook_id_wireline_webhooks_id_fk",
           "tableFrom": "wireline_webhook_deliveries",
           "tableTo": "wireline_webhooks",
-          "columnsFrom": [
-            "webhook_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["webhook_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -6832,12 +6631,8 @@
           "name": "wireline_webhook_health_user_id_wireline_users_id_fk",
           "tableFrom": "wireline_webhook_health",
           "tableTo": "wireline_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -7041,12 +6836,8 @@
           "name": "wireline_voice_usage_events_user_id_wireline_users_id_fk",
           "tableFrom": "wireline_voice_usage_events",
           "tableTo": "wireline_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -7054,10 +6845,7 @@
       "compositePrimaryKeys": {
         "wireline_voice_usage_events_user_id_provider_call_id_pk": {
           "name": "wireline_voice_usage_events_user_id_provider_call_id_pk",
-          "columns": [
-            "user_id",
-            "provider_call_id"
-          ]
+          "columns": ["user_id", "provider_call_id"]
         }
       },
       "uniqueConstraints": {},
@@ -7347,12 +7135,8 @@
           "name": "wireline_computer_tasks_user_id_wireline_users_id_fk",
           "tableFrom": "wireline_computer_tasks",
           "tableTo": "wireline_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -7360,12 +7144,8 @@
           "name": "wireline_computer_tasks_agent_id_wireline_agents_id_fk",
           "tableFrom": "wireline_computer_tasks",
           "tableTo": "wireline_agents",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -7665,12 +7445,8 @@
           "name": "wireline_voice_assets_user_id_wireline_users_id_fk",
           "tableFrom": "wireline_voice_assets",
           "tableTo": "wireline_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -7834,12 +7610,8 @@
           "name": "wireline_voice_clone_events_user_id_wireline_users_id_fk",
           "tableFrom": "wireline_voice_clone_events",
           "tableTo": "wireline_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -7931,6 +7703,12 @@
         "consent_accepted_by": {
           "name": "consent_accepted_by",
           "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "consent_notice_text": {
+          "name": "consent_notice_text",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -8099,12 +7877,8 @@
           "name": "wireline_live_voices_user_id_wireline_users_id_fk",
           "tableFrom": "wireline_live_voices",
           "tableTo": "wireline_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -8127,11 +7901,11 @@
         },
         "wireline_live_voices_status_check": {
           "name": "wireline_live_voices_status_check",
-          "value": "(\"wireline_live_voices\".\"status\" = 'ready' AND \"wireline_live_voices\".\"provider_voice_id\" IS NOT NULL AND \"wireline_live_voices\".\"deleted_at\" IS NULL AND \"wireline_live_voices\".\"deleted_reason\" IS NULL) OR (\"wireline_live_voices\".\"status\" = 'deleted' AND \"wireline_live_voices\".\"deleted_at\" IS NOT NULL AND \"wireline_live_voices\".\"deleted_reason\" IN ('user_deleted', 'provider_missing', 'retention_expired'))"
+          "value": "(\"wireline_live_voices\".\"status\" = 'ready' AND \"wireline_live_voices\".\"provider_voice_id\" IS NOT NULL AND \"wireline_live_voices\".\"deleted_at\" IS NULL AND \"wireline_live_voices\".\"deleted_reason\" IS NULL) OR (\"wireline_live_voices\".\"status\" = 'deleted' AND \"wireline_live_voices\".\"deleted_at\" IS NOT NULL AND \"wireline_live_voices\".\"deleted_reason\" IN ('user_deleted', 'provider_missing', 'retention_expired', 'create_failed')) OR (\"wireline_live_voices\".\"status\" = 'cleanup_pending' AND \"wireline_live_voices\".\"provider_voice_id\" IS NOT NULL AND \"wireline_live_voices\".\"deleted_at\" IS NULL)"
         },
         "wireline_live_voices_consent_check": {
           "name": "wireline_live_voices_consent_check",
-          "value": "\"wireline_live_voices\".\"consent_version\" = 'live-voice-clone-consent-v1-2026-10-24' AND \"wireline_live_voices\".\"consent_scope\" IN ('self', 'authorized_speaker') AND \"wireline_live_voices\".\"consent_accepted_by\" = \"wireline_live_voices\".\"user_id\""
+          "value": "\"wireline_live_voices\".\"consent_version\" = 'live-voice-clone-consent-v2-2026-10-24' AND \"wireline_live_voices\".\"consent_scope\" = 'self' AND \"wireline_live_voices\".\"consent_accepted_by\" = \"wireline_live_voices\".\"user_id\""
         },
         "wireline_live_voices_source_check": {
           "name": "wireline_live_voices_source_check",
@@ -8147,11 +7921,11 @@
         },
         "wireline_live_voices_biometric_release_check": {
           "name": "wireline_live_voices_biometric_release_check",
-          "value": "\"wireline_live_voices\".\"speaker_jurisdiction\" <> 'US-IL' OR (\"wireline_live_voices\".\"biometric_release_version\" = 'biometric-release-v1-2026-10-24' AND char_length(\"wireline_live_voices\".\"biometric_release_signed_name\") BETWEEN 3 AND 120 AND \"wireline_live_voices\".\"biometric_release_accepted_at\" IS NOT NULL AND \"wireline_live_voices\".\"retention_policy_version\" = 'biometric-retention-v1-2026-10-24' AND \"wireline_live_voices\".\"expires_at\" IS NOT NULL)"
+          "value": "\"wireline_live_voices\".\"biometric_release_version\" = 'voice-release-v2-2026-10-24' AND char_length(\"wireline_live_voices\".\"biometric_release_signed_name\") BETWEEN 3 AND 120 AND \"wireline_live_voices\".\"biometric_release_accepted_at\" IS NOT NULL AND char_length(\"wireline_live_voices\".\"consent_notice_text\") BETWEEN 200 AND 8000"
         },
         "wireline_live_voices_retention_check": {
           "name": "wireline_live_voices_retention_check",
-          "value": "(\"wireline_live_voices\".\"retention_policy_version\" IS NULL AND \"wireline_live_voices\".\"expires_at\" IS NULL) OR (\"wireline_live_voices\".\"retention_policy_version\" = 'biometric-retention-v1-2026-10-24' AND \"wireline_live_voices\".\"expires_at\" IS NOT NULL AND \"wireline_live_voices\".\"expires_at\" > \"wireline_live_voices\".\"created_at\")"
+          "value": "\"wireline_live_voices\".\"retention_policy_version\" = 'voice-retention-v2-2026-10-24' AND \"wireline_live_voices\".\"expires_at\" IS NOT NULL AND \"wireline_live_voices\".\"expires_at\" > \"wireline_live_voices\".\"created_at\""
         },
         "wireline_live_voices_gender_check": {
           "name": "wireline_live_voices_gender_check",

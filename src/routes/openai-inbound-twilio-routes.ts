@@ -9,40 +9,22 @@ import { drizzle, log } from "../lib/server-context";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import { phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
 import { issueOpenAIInboundToken } from "../lib/voice/openai-inbound-token";
-import {
-  normalizeOpenAIPhoneNumber,
-  openAISipConfigured,
-  resolveOpenAISipSessionMaxSeconds,
-} from "../lib/voice/openai-sip-config";
+import { normalizeOpenAIPhoneNumber, openAISipConfigured } from "../lib/voice/openai-sip-config";
 import { configuredPhoneVoiceProvider } from "../lib/voice/realtime-provider";
-import {
-  renderSipNoun,
-  resolveInboundSipTarget,
-  type RealtimeSipTarget,
-} from "../lib/voice/realtime-sip-target";
+import { resolveInboundSipTarget } from "../lib/voice/realtime-sip-target";
 import { xaiSipConfigured } from "../lib/voice/xai-sip-config";
-import { liveRecordingDialAttributes } from "../lib/voice/live-call-recording";
+import {
+  hangupTwiml,
+  inboundBridgeTwiml,
+  INBOUND_SIP_REFER_PATH,
+  openAIFailoverTwiml,
+  referTransferTwiml,
+} from "../lib/voice/inbound-bridge";
+import { consumeFallbackDrill } from "../lib/voice/fallback-drill";
 import { handleTwilioVoiceFallback } from "./twilio-webhook-base";
 
 const router = Router();
 const INBOUND_DIAL_CONTINUITY_STATUSES = new Set(["failed", "busy", "no-answer"]);
-
-function hangupTwiml(): string {
-  return '<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>';
-}
-
-function inboundBridgeTwiml(target: RealtimeSipTarget, recordCall: boolean): string {
-  // Answer the parent before dialing SIP: Twilio rejects the funded REST
-  // timeLimit update on an unanswered parent (21220). The worker must still
-  // confirm that total carrier limit before reserving AI spend or accepting.
-  // Recording is the Bot owner's per-Bot choice (default off): the flag adds
-  // carrier capture here and the recording notice to the spoken opening.
-  return (
-    '<?xml version="1.0" encoding="UTF-8"?>' +
-    `<Response><Dial answerOnBridge="false" timeout="30" action="/api/twilio-webhook/openai-inbound-dial-complete" method="POST" timeLimit="${resolveOpenAISipSessionMaxSeconds()}"${liveRecordingDialAttributes(recordCall)}>` +
-    `${renderSipNoun(target)}</Dial><Hangup/></Response>`
-  );
-}
 
 /** Either live voice provider can answer; xAI needs its own configuration. */
 function phoneVoiceRuntimeConfigured(): boolean {
@@ -134,13 +116,36 @@ router.post(
       // token is checked at admission). Toggling the Bot flag after this
       // response cannot make capture and disclosure disagree.
       const callRecordingEnabled = await inboundCallRecordingEnabled(owner);
+      const twilioCallSid = String(req.body?.CallSid || "");
+      // A platform admin can arm one fallback drill per number (never an env
+      // change). It only ever exercises the same path a real outage takes.
+      const drill = await consumeFallbackDrill({ ...owner, phoneNumber: calledNumber });
       const { token } = issueOpenAIInboundToken({
-        twilioCallSid: String(req.body?.CallSid || ""),
+        twilioCallSid,
         calledNumber,
         callerNumber,
         callRecordingEnabled,
+        ...(drill && drill !== "xai_connect" ? { drill } : {}),
       });
       const target = await resolveInboundSipTarget({ calledNumber, token });
+      if (drill === "xai_connect" && target.provider === "xai") {
+        // Simulate xAI never answering: skip straight to the dial-complete
+        // failover, exactly as a failed xAI <Dial> would.
+        log.warn("Fallback drill: skipping the xAI leg for this call", {
+          calledSuffix: phoneSuffixForLog(calledNumber),
+        });
+        const failover = openAIFailoverTwiml({
+          twilioCallSid,
+          calledNumber,
+          callerNumber,
+          callRecordingEnabled,
+          leg: "failover",
+        });
+        if (failover) {
+          res.status(200).send(failover);
+          return;
+        }
+      }
       res.status(200).send(inboundBridgeTwiml(target, callRecordingEnabled));
     } catch (error) {
       log.error("Twilio inbound OpenAI bridge failed closed", {
@@ -153,6 +158,29 @@ router.post(
     }
   }),
 );
+
+function xaiConnectFailoverTwiml(req: Request): string | null {
+  const calledNumber = normalizeOpenAIPhoneNumber(req.body?.To);
+  const callerNumber = normalizeOpenAIPhoneNumber(req.body?.From);
+  const twilioCallSid = String(req.body?.CallSid || "");
+  if (!calledNumber || !openAISipConfigured()) return null;
+  try {
+    // The action URL is part of Twilio's signed request, so `rec` is the
+    // recording decision this response originally made, not caller input.
+    return openAIFailoverTwiml({
+      twilioCallSid,
+      calledNumber,
+      callerNumber,
+      callRecordingEnabled: req.query?.rec === "1",
+      leg: "failover",
+    });
+  } catch (error) {
+    log.error("xAI connect failover could not be prepared", {
+      errorClass: error instanceof Error ? error.name : typeof error,
+    });
+    return null;
+  }
+}
 
 router.post(
   "/api/twilio-webhook/openai-inbound-dial-complete",
@@ -171,6 +199,16 @@ router.post(
       res.status(200).send(hangupTwiml());
       return;
     }
+    if (INBOUND_DIAL_CONTINUITY_STATUSES.has(dialStatus) && req.query?.leg === "xai") {
+      // xAI did not connect within its short timeout. Answer the same caller
+      // on OpenAI Realtime before any human or missed-call fallback.
+      const failover = xaiConnectFailoverTwiml(req);
+      if (failover) {
+        log.warn("xAI voice did not connect; answering on OpenAI", { dialStatus });
+        res.status(200).send(failover);
+        return;
+      }
+    }
     if (INBOUND_DIAL_CONTINUITY_STATUSES.has(dialStatus)) {
       await handleTwilioVoiceFallback(req, res);
       return;
@@ -180,6 +218,30 @@ router.post(
     res.status(200).send(hangupTwiml());
   },
 );
+
+router.post(INBOUND_SIP_REFER_PATH, async (req: Request, res: Response) => {
+  res.setHeader("Content-Type", "text/xml");
+  if (!evaluateTwilioWebhookAuth(req).ok) {
+    res.status(403).send(hangupTwiml());
+    return;
+  }
+  // BotBound only REFERs after its own transfer checks (tenant, funding,
+  // inbound source), and the request is Twilio-signed, so the target here is
+  // the destination BotBound chose. Only a PSTN number is dialed.
+  const twiml = referTransferTwiml(
+    req.body?.ReferTransferTarget,
+    normalizeOpenAIPhoneNumber(req.body?.To) || null,
+  );
+  if (!twiml) {
+    log.warn("SIP REFER target was not a phone number; using the voice fallback");
+    await handleTwilioVoiceFallback(req, res);
+    return;
+  }
+  log.info("SIP REFER transfer to a person", {
+    to_suffix: phoneSuffixForLog(String(req.body?.To || "")),
+  });
+  res.status(200).send(twiml);
+});
 
 router.post("/api/twilio-webhook/openai-inbound-fallback", handleTwilioVoiceFallback);
 
