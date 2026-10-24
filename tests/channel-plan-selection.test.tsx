@@ -101,8 +101,8 @@ describe("channel package selection", () => {
       interval: "month",
       renderAction: () => null,
     });
-    expect(text(tree)).toContain("$2.50 allowance");
-    expect(text(tree)).not.toContain("$2.5 allowance");
+    expect(text(tree)).toContain("$2.50 AI usage/month");
+    expect(text(tree)).not.toContain("$2.5 AI usage/month");
   });
   it.each(plans)("preserves $id through signup, storage sanitization, and activation", (plan) => {
     const href = signupHrefForPlan(plan.id as SignupPlanId, { interval: "year" });

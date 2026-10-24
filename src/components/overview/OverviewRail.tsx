@@ -86,7 +86,7 @@ export function ConfigureCard({ bot }: { bot?: WorkspaceAgentSummary }) {
     : "/studio?create=1";
   const links = [
     {
-      label: "Playbook & Voice",
+      label: "Role & Voice",
       detail: "Role, behavior, tone, and voice",
       href: setupHref,
       icon: Bot,

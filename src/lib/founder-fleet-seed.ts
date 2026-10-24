@@ -286,7 +286,7 @@ export function wirelinePlanFacts(): string[] {
 const KNOWLEDGE_SNIPPETS: Record<string, string[]> = {
   default: [
     "Operators configure Bots via Create, Knowledge, Connections, and the Workspace.",
-    "Escalations route to the configured phone/email; use escalate_to_human when risk is high.",
+    "Escalations route to the configured phone or email. When risk is high, hand the conversation to a person.",
     "BotBound Bots handle calls, email, and computer tasks through their enabled channels and actions. Describe only the capabilities configured for this Bot.",
   ],
   sales: [

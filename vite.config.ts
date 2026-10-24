@@ -22,6 +22,12 @@ export default defineConfig(({ mode }) => {
         { find: "@/src", replacement: sourceRoot },
         { find: "@", replacement: sourceRoot },
         { find: "buffer", replacement: "buffer" },
+        // Radix scroll lock injects a <style> tag that strict style-src-elem
+        // blocks; the shim adopts a constructable stylesheet instead.
+        {
+          find: /^react-style-singleton$/,
+          replacement: path.join(sourceRoot, "lib/csp-safe-style-singleton.ts"),
+        },
       ],
     },
     optimizeDeps: {

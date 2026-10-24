@@ -468,13 +468,24 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
     <div className="flex h-full min-h-0 flex-col bg-background">
       <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5 sm:px-5">
         <span className="text-xs font-medium text-muted-foreground">
-          {query.trim()
-            ? `${visibleCalls.length} ${visibleCalls.length === 1 ? "match" : "matches"} in ${calls.length} loaded`
-            : total > calls.length
-              ? `${calls.length} of ${total} calls`
-              : agentId
-                ? `${calls.length} for this Bot`
-                : `${calls.length} calls`}
+          {loading && calls.length === 0 ? (
+            // Avoid flashing "0 calls" before the first page arrives.
+            <>
+              <span
+                className="inline-block h-3 w-14 animate-pulse rounded bg-muted align-middle"
+                aria-hidden="true"
+              />
+              <span className="sr-only">Loading calls</span>
+            </>
+          ) : query.trim() ? (
+            `${visibleCalls.length} ${visibleCalls.length === 1 ? "match" : "matches"} in ${calls.length} loaded`
+          ) : total > calls.length ? (
+            `${calls.length} of ${total} calls`
+          ) : agentId ? (
+            `${calls.length} for this Bot`
+          ) : (
+            `${calls.length} ${calls.length === 1 ? "call" : "calls"}`
+          )}
         </span>
         <div className="flex items-center gap-1.5">
           <Button

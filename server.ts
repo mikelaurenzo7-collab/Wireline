@@ -19,6 +19,7 @@ import { validateStartupEnv } from "./src/lib/startup";
 import { startMemoryCleanup } from "./src/lib/rate-limit";
 import { authenticateLiveOpsStream } from "./src/middleware/live-ops-stream";
 import { PRERENDERED_MARKETING_ROUTES } from "./src/lib/marketing-route-meta";
+import { isKnownSpaRoute } from "./src/lib/spa-route-roots";
 import { registerApiRoutes } from "./src/server/register-api-routes";
 import { registerMcpRoutes } from "./src/server/register-mcp-routes";
 import {
@@ -286,8 +287,11 @@ async function startServer() {
 
   // Always read the shell from disk — caching it at startup breaks SPA routes after
   // a rebuild when Playwright or local dev reuses the same Node process.
+  // Unknown paths still get the app shell (it renders the friendly 404 page),
+  // but with a real 404 status so crawlers do not index them as pages.
   app.get("*", (req, res) => {
     const normalizedPath = req.path.replace(/\/+$/, "") || "/";
+    if (!isKnownSpaRoute(normalizedPath)) res.status(404);
     res.type("html").sendFile(prerenderedShells.get(normalizedPath) ?? indexHtml);
   });
 }

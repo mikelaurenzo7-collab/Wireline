@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { ArrowRight, Check, ChevronDown, ExternalLink } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
+import { PUBLIC_ENTRY_PLANS, publicPriceSummary } from "../lib/public-plan-lineup";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 
 const DIFFERENCES = [
@@ -33,9 +34,8 @@ const DIFFERENCES = [
 const MARKET_OPTIONS = [
   {
     name: "BotBound",
-    price: "Personal $12/mo · Calls from $19/mo · Email from $9/mo",
-    usage:
-      "The entry Calls plan includes 50 minutes and one local number. Email and combined channel activation follow a setup review.",
+    price: publicPriceSummary(),
+    usage: `The entry Calls plan includes ${PUBLIC_ENTRY_PLANS.calls.voice_minutes_monthly} minutes and one local number. Email and combined channel activation follow a setup review.`,
     fit: "Owners who want a Bot with the channels they choose, connected tools, and logged outcomes",
     href: "/pricing",
     source: "BotBound pricing",

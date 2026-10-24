@@ -65,7 +65,7 @@ test("launch channel capacities retain exact annual signup intent in one readabl
     await expect(usageNote).toContainText("No automatic balance purchases or overage invoices.");
     if (plan.channels.includes("voice"))
       await expect(usageNote).toContainText(
-        "Extra minutes cost $0.22/min, using Runtime Balance or completion credit.",
+        "Extra minutes are $0.22/min, paid from balance you add ahead of time.",
       );
     else {
       await expect(usageNote).not.toContainText("Extra minutes");

@@ -89,7 +89,7 @@ describe("voice allowance boundary copy", () => {
   });
   it("shows managed AI usage and its cap separately from voice and Runtime Balance", () => {
     const content = text(UsageMeter({ showBalance: false }));
-    expect(content).toContain("Managed AI");
+    expect(content).toContain("AI usage");
     expect(content).toContain("Computer and other AI work");
     expect(content).toContain("$0.38 / $3.00 used");
     expect(content).not.toContain("$24.50");
@@ -162,7 +162,7 @@ describe("voice allowance boundary copy", () => {
     h.snapshot.live_voice_blocked = true;
     const content = text(UsageMeter({ showBalance: false }));
     expect(content).toContain("New calls paused");
-    expect(content).toContain("$3.50 in completion credit is due");
+    expect(content).toContain("$3.50 is due for extra call time");
     expect(content).toContain(
       "Clear it in Billing and check your plan before starting another call.",
     );

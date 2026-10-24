@@ -11,6 +11,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { BRAND } from "../../constants/brand-colors";
+import { publicPriceHint } from "../../lib/public-plan-lineup";
 
 /**
  * NotFound — context-aware 404. Detects whether the visitor is signed-in
@@ -109,7 +110,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
                 to="/pricing"
                 icon={Compass}
                 label="Pricing"
-                hint="Email from $9 · Calls from $19"
+                hint={publicPriceHint()}
                 accent={BRAND.colors.primary}
               />
             </>
