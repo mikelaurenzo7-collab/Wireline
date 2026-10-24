@@ -1,29 +1,34 @@
 /**
- * Default OpenAI lane descriptors retained for source-contract compatibility.
+ * Voice lane descriptors for diagnostics and source contracts.
  *
- * Browser rehearsal stays on OpenAI Realtime. Actual phone admission is owned
- * by realtime-sip-target.ts: OpenAI is the default, with xAI used only when
- * explicitly configured and the number is registered. realtime-provider.ts
- * binds later control and recovery to the provider encoded in the call id.
- * These descriptors do not choose or switch a running call's provider.
+ * xAI voice is the default for every phone call and every number. Browser
+ * rehearsals stay on OpenAI Realtime WebRTC (browserRuntime).
+ * Actual phone admission is owned by realtime-sip-target.ts: a number registers with xAI
+ * automatically, and OpenAI Realtime answers only when xAI is unavailable or a
+ * line is still finishing that registration (or when an operator sets
+ * WIRELINE_PHONE_VOICE_PROVIDER=openai). realtime-provider.ts binds later
+ * control and recovery to the provider encoded in the call id, so these
+ * descriptors never choose or switch a running call's provider.
  * Twilio supplies telephone numbers, PSTN/SIP transport, and SMS only.
  */
 export const VOICE_RUNTIME_POLICY = {
   founderShowcase: {
     owner: "botbound_founder",
-    runtime: "openai_realtime",
+    runtime: "xai_realtime",
     browserTransport: "webrtc",
-    phoneTransport: "openai_sip",
+    browserRuntime: "openai_realtime",
+    phoneTransport: "xai_sip",
     carrier: "twilio",
-    fallbackRuntime: null,
+    fallbackRuntime: "openai_realtime",
   },
   customer: {
-    runtime: "openai_realtime",
+    runtime: "xai_realtime",
     browserTransport: "webrtc",
-    phoneTransport: "openai_sip",
+    browserRuntime: "openai_realtime",
+    phoneTransport: "xai_sip",
     carrier: "twilio",
     sms: "twilio",
-    fallbackRuntime: null,
+    fallbackRuntime: "openai_realtime",
   },
 } as const;
 

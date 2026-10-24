@@ -17,14 +17,14 @@ export function getHealthModelTiering() {
       provider: phoneOnXAI ? ("xai_voice" as const) : ("openai_realtime" as const),
       model: phoneOnXAI ? resolveXAIGrokVoiceModel() : OPENAI_REALTIME_DEFAULT_MODEL,
       reason: phoneOnXAI
-        ? "xAI voice for Twilio-carried PSTN calls on registered numbers."
+        ? "xAI voice is the default for every Twilio-carried PSTN call; lines register with xAI automatically."
         : "OpenAI Realtime for browser and Twilio-carried PSTN calls.",
     },
     voice_fallback: {
       provider: phoneOnXAI ? ("openai_realtime" as const) : ("none" as const),
       model: phoneOnXAI ? OPENAI_REALTIME_DEFAULT_MODEL : null,
       reason: phoneOnXAI
-        ? "Numbers not yet registered with xAI, and browser rehearsals, use OpenAI Realtime."
+        ? "OpenAI Realtime answers only when xAI is unavailable or a line is still finishing its automatic xAI registration."
         : "No second live-voice provider; calls fail closed without cross-provider duplication.",
     },
     reasoning_layer: {
