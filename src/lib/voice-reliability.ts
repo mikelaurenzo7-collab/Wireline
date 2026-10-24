@@ -3,13 +3,15 @@
  */
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
-import { and, eq, gte } from "drizzle-orm";
+import { and, eq, gte, sql } from "drizzle-orm";
 import {
   TENANT_OBSERVED_COGS_HEADROOM_RATIO,
   VOICE_VARIABLE_COST_PER_MIN_USD,
   planById,
 } from "./plan-catalog";
 import { isAbnormalHangup } from "./call-reliability-capture";
+import { annotateCallsWithHappened } from "./call-report";
+import { CALL_OUTCOMES, type CallOutcome } from "./call-outcome";
 
 export { isAbnormalHangup } from "./call-reliability-capture";
 
@@ -48,6 +50,7 @@ export interface VoiceReliabilitySummary {
     failures: number;
     failureRatePct: number | null;
   };
+  outcomes: Record<CallOutcome, number>;
   economics: {
     cogsPerMinUsd: number | null;
     estimatedCogsPerMinUsd: number;
@@ -102,6 +105,8 @@ export async function getVoiceReliabilitySummary(opts: {
 
   const callRows = await drizzle
     .select({
+      vapiCallId: schema.callLogs.vapiCallId,
+      outcomeTag: schema.callLogs.outcomeTag,
       ttftMs: schema.callLogs.ttftMs,
       ttfAudioMs: schema.callLogs.ttfAudioMs,
       sttError: schema.callLogs.sttError,
@@ -115,6 +120,8 @@ export async function getVoiceReliabilitySummary(opts: {
       cost: schema.callLogs.cost,
       durationSeconds: schema.callLogs.durationSeconds,
       createdAt: schema.callLogs.createdAt,
+      hasTranscript: sql<boolean>`${schema.callLogs.transcript} is not null and ${schema.callLogs.transcript} <> ''`,
+      hasSummary: sql<boolean>`${schema.callLogs.summary} is not null and ${schema.callLogs.summary} <> ''`,
     })
     .from(schema.callLogs)
     .where(callWhere);
@@ -169,6 +176,16 @@ export async function getVoiceReliabilitySummary(opts: {
   const webhookTotal = webhookRows.length;
   const webhookFailures = webhookRows.filter((r) => r.outcome !== "success").length;
 
+  // Outcome buckets come from the same annotation Call History uses, so a
+  // bucket here is exactly the calls the Calls list labels with that outcome.
+  const outcomes = Object.fromEntries(
+    CALL_OUTCOMES.map((outcome) => [outcome, 0]),
+  ) as Record<CallOutcome, number>;
+  const annotatedCalls = await annotateCallsWithHappened(opts.userId, callRows);
+  for (const row of annotatedCalls) {
+    outcomes[row.happened]++;
+  }
+
   const totalMinutes = totalDurationSec / 60;
   const cogsPerMin = totalMinutes > 0 ? totalCost / totalMinutes : null;
   const revenuePerMin = await resolveRevenuePerMin(opts.userId);
@@ -222,6 +239,7 @@ export async function getVoiceReliabilitySummary(opts: {
       failures: webhookFailures,
       failureRatePct: webhookFailureRate,
     },
+    outcomes,
     economics: {
       cogsPerMinUsd: cogsPerMin != null ? Math.round(cogsPerMin * 10000) / 10000 : null,
       estimatedCogsPerMinUsd: VOICE_VARIABLE_COST_PER_MIN_USD,

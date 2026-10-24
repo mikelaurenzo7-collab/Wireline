@@ -13,6 +13,7 @@ import { cn } from "../../lib/utils";
 import type { VoiceLatencyRecentCallRow, VoiceReliabilityResponse } from "../../types/api";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
 import { callEndingLabel, recentCallIssueLabel } from "./voice-reliability-labels";
+import { CALL_OUTCOMES, callOutcomeLabel } from "../../lib/call-outcome";
 
 function formatPct(value: number | null, fallback = "N/A"): string {
   return value == null ? fallback : `${value.toFixed(1)}%`;
@@ -67,6 +68,11 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
     {},
   );
   const topHangups = Object.entries(hangupCounts).sort((a, b) => b[1] - a[1]);
+  const outcomeCounts = CALL_OUTCOMES.map(
+    (outcome) => [callOutcomeLabel(outcome), summary.outcomes?.[outcome] ?? 0] as const,
+  )
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1]);
 
   const tiles = [
     {
@@ -230,7 +236,28 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="rounded-md wl-panel border border-border p-5">
+          <p className="wl-insight-label text-brand/70 mb-4">Outcomes</p>
+          <div className="space-y-2">
+            {outcomeCounts.length === 0 ? (
+              <p className="text-sm text-muted">No call outcomes recorded yet.</p>
+            ) : (
+              outcomeCounts.map(([label, count]) => (
+                <div
+                  key={label}
+                  className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0"
+                >
+                  <span className="text-sm text-foreground/85 truncate">{label}</span>
+                  <span className="font-mono text-[length:var(--wireline-typography-overline-size)] text-muted shrink-0">
+                    {count}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
         <div className="rounded-md wl-panel border border-border p-5">
           <p className="wl-insight-label text-brand/70 mb-4">Call endings</p>
           <div className="space-y-2">
@@ -265,7 +292,9 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
                 >
                   <div className="min-w-0">
                     <p className="text-sm text-foreground/85 truncate">
-                      {call.outcomeTag || call.sentiment || "call"}
+                      {call.outcome
+                        ? callOutcomeLabel(call.outcome)
+                        : call.outcomeTag || call.sentiment || "call"}
                     </p>
                     <p className="text-[length:var(--wireline-typography-overline-size)] text-muted font-mono">
                       {call.ttftMs != null
