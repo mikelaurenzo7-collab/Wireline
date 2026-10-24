@@ -159,14 +159,21 @@ describe("same-call failover", () => {
 
   it("tool and rate-limit errors keep the session; others fail over", () => {
     expect(isRecoverableRealtimeError({ error: { type: "rate_limit_exceeded" } })).toBe(true);
-    expect(isRecoverableRealtimeError({ error: { param: "call_id", message: "bad" } })).toBe(true);
+    expect(
+      isRecoverableRealtimeError({
+        error: { param: "call_id", message: "bad" },
+      }),
+    ).toBe(true);
     expect(isRecoverableRealtimeError({ error: { type: "server_error" } })).toBe(false);
   });
 });
 
 describe("greeting discloses AI first", () => {
   it("weaves the recording notice into the disclosure", () => {
-    const line = inboundDisclosureLine({ agentName: "Ava", recordingEnabled: true });
+    const line = inboundDisclosureLine({
+      agentName: "Ava",
+      recordingEnabled: true,
+    });
     expect(line).toMatch(/^Hi, you're speaking with an AI assistant/);
     expect(line).toContain("may be recorded");
   });
@@ -197,12 +204,14 @@ describe("greeting discloses AI first", () => {
 describe("first-audio timing", () => {
   it("labels playback for OpenAI and generation for xAI", () => {
     expect(
-      new OpenAISipTurnTiming({ audioStartEvents: OPENAI_TURN_AUDIO_START_EVENTS }).summary()
-        .firstAudioSignal,
+      new OpenAISipTurnTiming({
+        audioStartEvents: OPENAI_TURN_AUDIO_START_EVENTS,
+      }).summary().firstAudioSignal,
     ).toBe("playback");
     expect(
-      new OpenAISipTurnTiming({ audioStartEvents: XAI_TURN_AUDIO_START_EVENTS }).summary()
-        .firstAudioSignal,
+      new OpenAISipTurnTiming({
+        audioStartEvents: XAI_TURN_AUDIO_START_EVENTS,
+      }).summary().firstAudioSignal,
     ).toBe("generation");
   });
 });
@@ -230,7 +239,12 @@ describe("clone engine selection", () => {
 
   it("ElevenLabs serves Illinois; xAI falls through to ElevenLabs elsewhere", () => {
     const base = {
-      xai: { configured: true, entitled: true, teamVoicesUsed: 0, teamLimit: 30 },
+      xai: {
+        configured: true,
+        entitled: true,
+        teamVoicesUsed: 0,
+        teamLimit: 30,
+      },
       elevenlabs: { configured: true },
     };
     expect(cloneEngineCandidates({ ...base, jurisdiction: "US-IL" })).toEqual(["elevenlabs"]);
@@ -247,9 +261,11 @@ describe("clone engine selection", () => {
     ).toBe("elevenlabs");
   });
 
-  it("live cloning is off by default", () => {
+  it("configured cloning is available by default, with an explicit kill switch", () => {
     vi.stubEnv("LIVE_VOICE_CLONE_ENABLED", "");
     vi.stubEnv("ELEVENLABS_API_KEY", "test-eleven-key");
+    expect(liveVoiceCloneEnabled()).toBe(true);
+    vi.stubEnv("LIVE_VOICE_CLONE_ENABLED", "false");
     expect(liveVoiceCloneEnabled()).toBe(false);
   });
 });
@@ -275,7 +291,11 @@ describe("consent and retention", () => {
   });
 
   it("clone details travel in a header, never the query string", () => {
-    const details = { name: "My voice", signedName: "Jane Q Public", consent: true };
+    const details = {
+      name: "My voice",
+      signedName: "Jane Q Public",
+      consent: true,
+    };
     expect(readCloneDetailsHeader(encodeURIComponent(JSON.stringify(details)))).toEqual(details);
     expect(readCloneDetailsHeader("%E0%A4%A")).toEqual({});
     expect(readCloneDetailsHeader("x".repeat(2_001))).toEqual({});
