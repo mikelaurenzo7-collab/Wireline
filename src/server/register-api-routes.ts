@@ -16,6 +16,7 @@ import publicHealthHandler from "../entrypoints/public-health-api";
 import aiStatusRouter from "../routes/ai-status-routes";
 import liveVoiceRouter from "../routes/live-voice-routes";
 import voiceAssetRouter from "../routes/voice-asset-routes";
+import clonedVoiceRouter from "../routes/cloned-voice-routes";
 import elevenLabsVoiceRouter from "../routes/elevenlabs-voice-routes";
 import openAIRealtimeRouter from "../routes/openai-realtime-routes";
 import openAISipRouter from "../routes/openai-sip-routes";
@@ -113,6 +114,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(aiStatusRouter);
   app.use(liveVoiceRouter);
   app.use(voiceAssetRouter);
+  app.use(clonedVoiceRouter);
   app.use(elevenLabsVoiceRouter);
   app.use(openAIRealtimeRouter);
   app.use(openAISipRouter);
