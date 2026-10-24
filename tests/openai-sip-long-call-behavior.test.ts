@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("../src/lib/voice/elevenlabs-media-bridge", () => ({
+  createClonedMediaSession: vi.fn(() => {
+    throw new Error("Unexpected media call in SIP test");
+  }),
+  controlMediaCall: vi.fn(),
+}));
+
 const h = vi.hoisted(() => ({
   sockets: [] as Array<{
     emit: (event: string, ...args: unknown[]) => boolean;
@@ -198,7 +205,9 @@ vi.mock("../src/lib/server-context", () => {
     log: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
   };
 });
-vi.mock("../src/lib/agent-tool-dispatch", () => ({ dispatchAgentToolCall: h.tool }));
+vi.mock("../src/lib/agent-tool-dispatch", () => ({
+  dispatchAgentToolCall: h.tool,
+}));
 vi.mock("../src/lib/agent-runtime", () => ({
   complianceFirstMessagePrefix: () => "I am an AI assistant. ",
   formatCallbackNumberForSpeech: () => "the business",
@@ -210,9 +219,13 @@ vi.mock("../src/lib/account-environment-policy", () => ({
 vi.mock("../src/lib/mobile-push", () => ({
   notifyInboundCall: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("../src/lib/outbound-call-purpose", () => ({ isMarketingCallPurpose: () => false }));
+vi.mock("../src/lib/outbound-call-purpose", () => ({
+  isMarketingCallPurpose: () => false,
+}));
 vi.mock("../src/lib/outbound-status", () => ({ LEAD_STATUS: {} }));
-vi.mock("../src/lib/post-call-digest", () => ({ enqueuePostCallDigest: h.digest }));
+vi.mock("../src/lib/post-call-digest", () => ({
+  enqueuePostCallDigest: h.digest,
+}));
 vi.mock("../src/lib/error-reporter", () => ({ reportError: h.reportError }));
 vi.mock("../src/lib/tcpa-consent", () => ({
   buildConsentLedgerRow: vi.fn(),
@@ -221,7 +234,9 @@ vi.mock("../src/lib/tcpa-consent", () => ({
   detectOptOut: () => ({ kind: "none" }),
   getConsentRuleForPhone: vi.fn(),
 }));
-vi.mock("../src/lib/call-dnc-suppression", () => ({ persistTranscriptDncSuppression: vi.fn() }));
+vi.mock("../src/lib/call-dnc-suppression", () => ({
+  persistTranscriptDncSuppression: vi.fn(),
+}));
 vi.mock("../src/lib/voice-usage", () => ({ trackVoiceMinutes: h.usage }));
 vi.mock("../src/lib/voice-call-funding", () => ({
   reserveVoiceCallFunding: async () => null,
@@ -244,7 +259,10 @@ vi.mock("../src/lib/realtime-spend-reservation", () => ({
   reconcileOpenAISipDurationSpend: vi.fn(),
 }));
 vi.mock("../src/lib/realtime-provider-usage", () => ({
-  createRealtimeUsageRecorder: () => ({ observe: h.providerUsage, flush: h.flushProviderUsage }),
+  createRealtimeUsageRecorder: () => ({
+    observe: h.providerUsage,
+    flush: h.flushProviderUsage,
+  }),
 }));
 vi.mock("../src/lib/voice/openai-phone-agent-runtime", () => ({
   buildOpenAIRealtimeAgentRuntime: vi.fn(),
@@ -274,8 +292,18 @@ const runtime = {
   greeting: "How can I help?",
   session: { type: "realtime", instructions: "Help the customer", tools: [] },
 };
-const claim = { callLogId: 1n, recoveryJobId: "job", ownerToken: "owner", resumed: false };
-const reservation = { auditId: 1n, userId: "tenant", costUsd: 1, adopted: false };
+const claim = {
+  callLogId: 1n,
+  recoveryJobId: "job",
+  ownerToken: "owner",
+  resumed: false,
+};
+const reservation = {
+  auditId: 1n,
+  userId: "tenant",
+  costUsd: 1,
+  adopted: false,
+};
 const start = () => runOpenAISipCallSession(call, runtime as any, 1n, claim, reservation);
 const emit = async (event: Record<string, unknown>) => {
   h.sockets[0].emit("message", Buffer.from(JSON.stringify(event)));
@@ -300,7 +328,10 @@ describe("funded inbound runtime construction", () => {
   it("limits legacy funded recovery to a tool-free 20-second notice", async () => {
     const recovering = {
       ...call,
-      admission: { mode: "recovery_notice" as const, reason: "recovery" as const },
+      admission: {
+        mode: "recovery_notice" as const,
+        reason: "recovery" as const,
+      },
     };
     const notice = applyInboundAdmission(runtime as any, recovering);
     expect(notice.session.tools).toEqual([]);
@@ -390,7 +421,10 @@ describe("native SIP semantic tool accounting", () => {
     await vi.advanceTimersByTimeAsync(0);
     try {
       await emit({ type: "output_audio_buffer.stopped" });
-      await emit({ type: "response.created", response: { id: "response-tool" } });
+      await emit({
+        type: "response.created",
+        response: { id: "response-tool" },
+      });
       await emit({
         type: "response.function_call_arguments.done",
         name: "search_agent_knowledge",
@@ -404,9 +438,18 @@ describe("native SIP semantic tool accounting", () => {
       expect(h.tool).toHaveBeenCalledOnce();
       const responsesBefore = h.sent.filter((event) => event.type === "response.create").length;
 
-      await emit({ type: "input_audio_buffer.speech_started", item_id: "caller-follow-up" });
-      await emit({ type: "input_audio_buffer.speech_stopped", item_id: "caller-follow-up" });
-      await emit({ type: "response.created", response: { id: "response-caller" } });
+      await emit({
+        type: "input_audio_buffer.speech_started",
+        item_id: "caller-follow-up",
+      });
+      await emit({
+        type: "input_audio_buffer.speech_stopped",
+        item_id: "caller-follow-up",
+      });
+      await emit({
+        type: "response.created",
+        response: { id: "response-caller" },
+      });
       await emit({
         type: "conversation.item.input_audio_transcription.completed",
         item_id: "caller-follow-up",
@@ -416,12 +459,17 @@ describe("native SIP semantic tool accounting", () => {
       await vi.advanceTimersByTimeAsync(0);
 
       expect(h.sent).toContainEqual(
-        expect.objectContaining({ item: expect.objectContaining({ call_id: "tool-held" }) }),
+        expect.objectContaining({
+          item: expect.objectContaining({ call_id: "tool-held" }),
+        }),
       );
       expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
         responsesBefore,
       );
-      await emit({ type: "output_audio_buffer.started", response_id: "response-caller" });
+      await emit({
+        type: "output_audio_buffer.started",
+        response_id: "response-caller",
+      });
       // An older done and playback stop cannot clear the newer response.
       await emit({
         type: "response.done",
@@ -431,7 +479,10 @@ describe("native SIP semantic tool accounting", () => {
         type: "response.done",
         response: { id: "response-tool", status: "cancelled" },
       });
-      await emit({ type: "output_audio_buffer.stopped", response_id: "response-tool" });
+      await emit({
+        type: "output_audio_buffer.stopped",
+        response_id: "response-tool",
+      });
       expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
         responsesBefore,
       );
@@ -442,12 +493,18 @@ describe("native SIP semantic tool accounting", () => {
       expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
         responsesBefore,
       );
-      await emit({ type: "output_audio_buffer.stopped", response_id: "response-caller" });
+      await emit({
+        type: "output_audio_buffer.stopped",
+        response_id: "response-caller",
+      });
       const responses = h.sent.filter((event) => event.type === "response.create");
       expect(responses).toHaveLength(responsesBefore + 1);
       const metadata = responses.at(-1)?.response.metadata;
       expect(metadata.botbound_tool_continuation).toEqual(expect.any(String));
-      await emit({ type: "output_audio_buffer.stopped", response_id: "response-caller" });
+      await emit({
+        type: "output_audio_buffer.stopped",
+        response_id: "response-caller",
+      });
       expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
         responsesBefore + 1,
       );
@@ -459,7 +516,10 @@ describe("native SIP semantic tool accounting", () => {
         type: "response.done",
         response: { id: "response-continuation", status: "completed" },
       });
-      await emit({ type: "output_audio_buffer.stopped", response_id: "response-continuation" });
+      await emit({
+        type: "output_audio_buffer.stopped",
+        response_id: "response-continuation",
+      });
       expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
         responsesBefore + 1,
       );
@@ -482,14 +542,20 @@ describe("native SIP semantic tool accounting", () => {
     await vi.advanceTimersByTimeAsync(0);
     try {
       await emit({ type: "output_audio_buffer.stopped" });
-      await emit({ type: "response.created", response: { id: "response-tool" } });
+      await emit({
+        type: "response.created",
+        response: { id: "response-tool" },
+      });
       await emit({
         type: "response.function_call_arguments.done",
         name: "search_agent_knowledge",
         call_id: "tool-unacknowledged",
         arguments: "{}",
       });
-      await emit({ type: "response.done", response: { id: "response-tool", status: "completed" } });
+      await emit({
+        type: "response.done",
+        response: { id: "response-tool", status: "completed" },
+      });
 
       const continuations = () =>
         h.sent.filter(
@@ -512,7 +578,10 @@ describe("native SIP semantic tool accounting", () => {
       // The retry is acknowledged: no further attempts.
       await emit({
         type: "response.created",
-        response: { id: "response-continuation-retry", metadata: retryMetadata },
+        response: {
+          id: "response-continuation-retry",
+          metadata: retryMetadata,
+        },
       });
       await emit({
         type: "response.done",
@@ -546,14 +615,23 @@ describe("native SIP semantic tool accounting", () => {
           response: { id: "response-tool", status: "completed" },
         });
         const responsesBefore = h.sent.filter((event) => event.type === "response.create").length;
-        await emit({ type: "input_audio_buffer.speech_started", item_id: "caller-follow-up" });
+        await emit({
+          type: "input_audio_buffer.speech_started",
+          item_id: "caller-follow-up",
+        });
         held.resolve({ result: "Approved knowledge found." });
         await vi.advanceTimersByTimeAsync(0);
         expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
           responsesBefore,
         );
-        await emit({ type: "input_audio_buffer.speech_stopped", item_id: "caller-follow-up" });
-        await emit({ type: "input_audio_buffer.committed", item_id: "caller-follow-up" });
+        await emit({
+          type: "input_audio_buffer.speech_stopped",
+          item_id: "caller-follow-up",
+        });
+        await emit({
+          type: "input_audio_buffer.committed",
+          item_id: "caller-follow-up",
+        });
         await emit({ type: "output_audio_buffer.stopped" });
         expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
           responsesBefore,
@@ -561,15 +639,24 @@ describe("native SIP semantic tool accounting", () => {
         for (const type of [ackType, "conversation.item.done"]) {
           await emit({
             type,
-            item: { type: "function_call_output", call_id: "tool-acknowledged" },
+            item: {
+              type: "function_call_output",
+              call_id: "tool-acknowledged",
+            },
           });
         }
-        await emit({ type: "response.created", response: { id: "response-with-result" } });
+        await emit({
+          type: "response.created",
+          response: { id: "response-with-result" },
+        });
         await emit({
           type: "response.done",
           response: { id: "response-with-result", status: "completed" },
         });
-        await emit({ type: "output_audio_buffer.stopped", response_id: "response-with-result" });
+        await emit({
+          type: "output_audio_buffer.stopped",
+          response_id: "response-with-result",
+        });
         expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
           responsesBefore,
         );
@@ -594,13 +681,25 @@ describe("native SIP semantic tool accounting", () => {
         call_id: "tool-not-acknowledged",
         arguments: "{}",
       });
-      await emit({ type: "response.done", response: { id: "response-tool", status: "completed" } });
-      await emit({ type: "input_audio_buffer.speech_started", item_id: "caller-follow-up" });
-      await emit({ type: "input_audio_buffer.committed", item_id: "caller-follow-up" });
+      await emit({
+        type: "response.done",
+        response: { id: "response-tool", status: "completed" },
+      });
+      await emit({
+        type: "input_audio_buffer.speech_started",
+        item_id: "caller-follow-up",
+      });
+      await emit({
+        type: "input_audio_buffer.committed",
+        item_id: "caller-follow-up",
+      });
       held.resolve({ result: "Approved knowledge found." });
       await vi.advanceTimersByTimeAsync(0);
       const responsesBefore = h.sent.filter((event) => event.type === "response.create").length;
-      await emit({ type: "response.created", response: { id: "response-in-flight" } });
+      await emit({
+        type: "response.created",
+        response: { id: "response-in-flight" },
+      });
       await emit({
         type: "response.done",
         response: { id: "response-in-flight", status: "completed" },
@@ -627,7 +726,10 @@ describe("native SIP semantic tool accounting", () => {
       call_id: "tool-closing",
       arguments: "{}",
     });
-    await emit({ type: "response.done", response: { id: "response-tool", status: "completed" } });
+    await emit({
+      type: "response.done",
+      response: { id: "response-tool", status: "completed" },
+    });
     const responsesBefore = h.sent.filter((event) => event.type === "response.create").length;
     h.sockets[0].close();
     held.resolve({ result: "Approved knowledge found." });
@@ -665,16 +767,34 @@ describe("native SIP semantic tool accounting", () => {
           type: "conversation.item.added",
           item: { type: "function_call_output", call_id: "tool-next-caller" },
         });
-        await emit({ type: "response.done", response: { id: "response-not-completed", status } });
-        await emit({ type: "output_audio_buffer.stopped", response_id: "response-not-completed" });
-        await emit({ type: "output_audio_buffer.stopped", response_id: "response-not-completed" });
+        await emit({
+          type: "response.done",
+          response: { id: "response-not-completed", status },
+        });
+        await emit({
+          type: "output_audio_buffer.stopped",
+          response_id: "response-not-completed",
+        });
+        await emit({
+          type: "output_audio_buffer.stopped",
+          response_id: "response-not-completed",
+        });
         expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
           responses.length,
         );
 
-        await emit({ type: "input_audio_buffer.speech_started", item_id: "caller-retry" });
-        await emit({ type: "input_audio_buffer.committed", item_id: "caller-retry" });
-        await emit({ type: "response.created", response: { id: "response-next-caller" } });
+        await emit({
+          type: "input_audio_buffer.speech_started",
+          item_id: "caller-retry",
+        });
+        await emit({
+          type: "input_audio_buffer.committed",
+          item_id: "caller-retry",
+        });
+        await emit({
+          type: "response.created",
+          response: { id: "response-next-caller" },
+        });
         await emit({
           type: "response.done",
           response: { id: "response-not-completed", status },
@@ -683,7 +803,10 @@ describe("native SIP semantic tool accounting", () => {
           type: "response.done",
           response: { id: "response-next-caller", status: "completed" },
         });
-        await emit({ type: "output_audio_buffer.stopped", response_id: "response-next-caller" });
+        await emit({
+          type: "output_audio_buffer.stopped",
+          response_id: "response-next-caller",
+        });
         expect(h.sent.filter((event) => event.type === "response.create")).toHaveLength(
           responses.length,
         );
@@ -696,7 +819,10 @@ describe("native SIP semantic tool accounting", () => {
 
   it.each([
     { type: "error", error: { type: "invalid_request_error" } },
-    { type: "response.done", response: { id: "response-fatal", status: "failed" } },
+    {
+      type: "response.done",
+      response: { id: "response-fatal", status: "failed" },
+    },
   ])("fences a continuation when $type arrives during a deferred tool", async (fatalEvent) => {
     const held = heldResult<{ result: string }>();
     h.tool.mockReturnValueOnce(held.promise);
@@ -710,7 +836,10 @@ describe("native SIP semantic tool accounting", () => {
         call_id: "tool-fatal",
         arguments: "{}",
       });
-      await emit({ type: "response.done", response: { id: "response-tool", status: "completed" } });
+      await emit({
+        type: "response.done",
+        response: { id: "response-tool", status: "completed" },
+      });
       const responsesBefore = h.sent.filter((event) => event.type === "response.create").length;
       await emit(fatalEvent);
       held.resolve({ result: "Approved knowledge found." });
@@ -847,7 +976,11 @@ describe("accepted SIP startup cleanup", () => {
   it("recovers a startup transition committed before its database response was lost", async () => {
     h.callPhase = "running";
     await expect(
-      settleOpenAISipPreSessionFailure({ call, claim, reason: "session_start_failed" }),
+      settleOpenAISipPreSessionFailure({
+        call,
+        claim,
+        reason: "session_start_failed",
+      }),
     ).resolves.toBe(true);
     expect(h.callPhase).toBe("terminal");
     expect(h.digest).toHaveBeenCalledWith(
@@ -863,7 +996,11 @@ describe("accepted SIP startup cleanup", () => {
     h.callPhase = "running";
     h.callOwner = "replacement-owner";
     await expect(
-      settleOpenAISipPreSessionFailure({ call, claim, reason: "session_start_failed" }),
+      settleOpenAISipPreSessionFailure({
+        call,
+        claim,
+        reason: "session_start_failed",
+      }),
     ).resolves.toBe(false);
     expect(h.callPhase).toBe("running");
     expect(h.digest).not.toHaveBeenCalled();
@@ -874,7 +1011,11 @@ describe("accepted SIP startup cleanup", () => {
   it("does not settle a running session from an earlier admission failure", async () => {
     h.callPhase = "running";
     await expect(
-      settleOpenAISipPreSessionFailure({ call, claim, reason: "spend_reservation_failed" }),
+      settleOpenAISipPreSessionFailure({
+        call,
+        claim,
+        reason: "spend_reservation_failed",
+      }),
     ).resolves.toBe(false);
     expect(h.digest).not.toHaveBeenCalled();
     expect(h.provider).not.toHaveBeenCalled();
@@ -883,7 +1024,11 @@ describe("accepted SIP startup cleanup", () => {
   it("keeps a definite pre-accept rejection terminal without post-call delivery", async () => {
     h.callPhase = "claimed";
     await expect(
-      settleOpenAISipPreSessionFailure({ call, claim, reason: "spend_reservation_failed" }),
+      settleOpenAISipPreSessionFailure({
+        call,
+        claim,
+        reason: "spend_reservation_failed",
+      }),
     ).resolves.toBe(true);
     expect(h.writes).toContainEqual(expect.objectContaining({ status: "done" }));
     expect(h.presenceStatus).toBeUndefined();
@@ -972,7 +1117,10 @@ describe("long business-call lifecycle", () => {
       deadlineAtMs: Date.now() + 1_700_000,
     };
     h.funding.mockResolvedValue(funding);
-    h.carrierDuration.mockResolvedValue({ durationSeconds: 120, unanswered: false });
+    h.carrierDuration.mockResolvedValue({
+      durationSeconds: 120,
+      unanswered: false,
+    });
     const session = runOpenAISipCallSession(
       { ...call, funding, recoveredSession: true },
       runtime as any,
@@ -1042,7 +1190,10 @@ describe("long business-call lifecycle", () => {
       const recorded = h.digest.mock.calls.at(-1)![0];
       expect(recorded).toMatchObject({
         durationSeconds: 10,
-        finalization: { providerHangupRequired: true, terminalStateReady: true },
+        finalization: {
+          providerHangupRequired: true,
+          terminalStateReady: true,
+        },
       });
       expect(h.presenceStatus).toBe("settling");
       expect(h.usage).not.toHaveBeenCalled();
@@ -1086,7 +1237,10 @@ describe("long business-call lifecycle", () => {
       const recorded = h.digest.mock.calls.at(-1)![0];
       expect(recorded).toMatchObject({
         endedReason: "provider-heartbeat-timeout",
-        finalization: { providerHangupRequired: true, terminalStateReady: true },
+        finalization: {
+          providerHangupRequired: true,
+          terminalStateReady: true,
+        },
       });
       const writesBeforeReplay = h.usage.mock.calls.length;
       await expect(replayOpenAISipPostCallFinalization(recorded)).rejects.toThrow();
@@ -1172,7 +1326,10 @@ describe("long business-call lifecycle", () => {
     expect(h.provider).toHaveBeenCalledOnce();
     expect(h.provider.mock.calls[0][0]).toContain("/hangup");
     const recorded = h.digest.mock.calls.at(-1)![0];
-    expect(recorded).toMatchObject({ endedReason: "provider-disconnected", pipelineError: null });
+    expect(recorded).toMatchObject({
+      endedReason: "provider-disconnected",
+      pipelineError: null,
+    });
     expect(recorded.finalization.providerHangupRequired).toBeFalsy();
     expect(h.usage).toHaveBeenCalledOnce();
     expect(h.carrierDuration).not.toHaveBeenCalled();
@@ -1183,13 +1340,19 @@ describe("long business-call lifecycle", () => {
     const session = start();
     await vi.advanceTimersByTimeAsync(1_000);
     h.provider.mockResolvedValueOnce({ ok: false, status: 409 });
-    h.carrierDuration.mockResolvedValueOnce({ durationSeconds: 1, unanswered: false });
+    h.carrierDuration.mockResolvedValueOnce({
+      durationSeconds: 1,
+      unanswered: false,
+    });
     h.sockets[0].readyState = 3;
     h.sockets[0].emit("close", 1006, Buffer.alloc(0));
     await session;
     expect(h.carrierDuration).toHaveBeenCalledWith("tenant", "openai:rtc_test");
     const recorded = h.digest.mock.calls.at(-1)![0];
-    expect(recorded).toMatchObject({ endedReason: "provider-disconnected", pipelineError: null });
+    expect(recorded).toMatchObject({
+      endedReason: "provider-disconnected",
+      pipelineError: null,
+    });
     expect(recorded.finalization.providerHangupRequired).toBeFalsy();
   });
 
@@ -1340,7 +1503,10 @@ describe("cross-process SIP transfers", () => {
       });
       await expect(
         remote.referOpenAISipCall(call.userId, call.callId, destination),
-      ).rejects.toMatchObject({ status: 409, code: "OUTBOUND_TRANSFER_UNSUPPORTED" });
+      ).rejects.toMatchObject({
+        status: 409,
+        code: "OUTBOUND_TRANSFER_UNSUPPORTED",
+      });
       expect(h.provider).not.toHaveBeenCalled();
       expect(h.presenceStatus).toBe("connected");
       expect(h.writes.some((value) => value.status === "transferred")).toBe(false);
@@ -1356,7 +1522,10 @@ describe("cross-process SIP transfers", () => {
       if (evidence === "canonical alias") h.canonicalFundingId.mockResolvedValue(canonical);
       await expect(
         remote.referOpenAISipCall(call.userId, call.callId, "+12025550103"),
-      ).rejects.toMatchObject({ status: 409, code: "OUTBOUND_TRANSFER_UNSUPPORTED" });
+      ).rejects.toMatchObject({
+        status: 409,
+        code: "OUTBOUND_TRANSFER_UNSUPPORTED",
+      });
       expect(h.provider).not.toHaveBeenCalled();
       expect(h.writes.some((value) => value.status === "transferred")).toBe(false);
     },
@@ -1434,7 +1603,10 @@ describe("cross-process SIP transfers", () => {
     expect(h.presenceStatus).toBe("settling");
     expect(h.usage).not.toHaveBeenCalled();
     expect(h.refundFunding).not.toHaveBeenCalled();
-    h.carrierDuration.mockResolvedValue({ durationSeconds: 150, unanswered: false });
+    h.carrierDuration.mockResolvedValue({
+      durationSeconds: 150,
+      unanswered: false,
+    });
     await replayOpenAISipPostCallFinalization(recorded);
     expect(h.usage).toHaveBeenCalledWith(expect.objectContaining({ durationSeconds: 150 }));
     expect(h.presenceStatus).toBeUndefined();
@@ -1498,7 +1670,10 @@ describe("cross-process SIP transfers", () => {
     await remote.referOpenAISipCall(call.userId, call.callId, "+12025550103");
     await session;
     expect(h.digest).toHaveBeenCalledWith(
-      expect.objectContaining({ endedReason: "transferred", durationSeconds: 10 }),
+      expect.objectContaining({
+        endedReason: "transferred",
+        durationSeconds: 10,
+      }),
       expect.anything(),
       expect.anything(),
     );
