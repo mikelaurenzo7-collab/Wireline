@@ -111,6 +111,8 @@ export type OpenAISipIncomingCall = {
   callPurpose?: OutboundCallPurpose;
   businessName?: string | null;
   complianceMode?: string | null;
+  /** The Bot owner's per-Bot recording choice; drives the spoken recording notice. */
+  callRecordingEnabled?: boolean;
   admission?: NativeInboundAdmission;
   funding?: VoiceCallFunding;
   recoveredSession?: boolean;
@@ -271,7 +273,7 @@ function buildOutboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRun
     input.businessName || runtime.agentName,
     {
       outboundAiCall: true,
-      recordingEnabled: false,
+      recordingEnabled: input.callRecordingEnabled === true,
       telemarketing,
     },
   );
@@ -284,6 +286,22 @@ function buildOutboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRun
     ? ` You can call us back at ${callbackNumberSpoken}.`
     : "";
   return `${disclosure}${name ? `Hi ${name}, ` : "Hi, "}this is ${identity}.${callbackSentence}`.trim();
+}
+
+/**
+ * Inbound opening: the Bot's saved greeting, preceded by the recording
+ * notice when — and only when — the owner records this Bot's calls. The
+ * notice comes from the same compliance composer as the outbound opening
+ * and is driven by the same per-Bot flag that enables carrier capture on
+ * the Twilio bridge, so the spoken disclosure and the actual recording
+ * can never disagree. With recording off the greeting is byte-identical
+ * to before.
+ */
+function buildInboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRuntime): string {
+  const greeting = runtime.greeting.trim();
+  if (input.callRecordingEnabled !== true) return greeting;
+  const notice = complianceFirstMessagePrefix(null, null, { recordingEnabled: true });
+  return `${notice}${greeting}`.trim();
 }
 
 function buildOutboundInstructions(input: OpenAISipIncomingCall): string {
@@ -2391,7 +2409,9 @@ async function runRealtimeSession(
         }
         connectedAt = Date.now();
         const outbound = callDirection(input) === "outbound";
-        const opening = outbound ? buildOutboundOpening(input, runtime) : runtime.greeting.trim();
+        const opening = outbound
+          ? buildOutboundOpening(input, runtime)
+          : buildInboundOpening(input, runtime);
         const instructions = outbound
           ? `${runtime.session.instructions}\n\n${buildOutboundInstructions(input)}`
           : runtime.session.instructions;
