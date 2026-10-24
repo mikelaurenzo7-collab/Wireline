@@ -47,6 +47,12 @@ const TAG_META: Record<EntryTag, { label: string; tone: string; icon: typeof Spa
 
 const ENTRIES: ChangelogEntry[] = [
   {
+    date: "Oct 24, 2026",
+    tag: "feature",
+    title: "Delete a Bot",
+    body: "Owners can delete a Bot they no longer need. Deleting asks you to type DELETE to confirm, and the Bot's call history, appointments, and leads stay in your account.",
+  },
+  {
     date: "Oct 19, 2026",
     tag: "feature",
     title: "Workspace and a More Natural Phone Voice",
