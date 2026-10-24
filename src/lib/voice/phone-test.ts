@@ -46,6 +46,7 @@ import {
   verifyOpenAIOutboundToken,
 } from "./openai-outbound-token";
 import { buildOpenAIOutboundSipUri, openAISipConfigured } from "./openai-sip-config";
+import { clonedCallTwiml } from "./cloned-call-routing";
 import {
   renderSipNoun,
   resolveOutboundSipTarget,
@@ -232,10 +233,16 @@ async function updateTest(
     .set({
       metadata: {
         ...record(lead.metadata),
-        native_voice: { ...native(lead), ...voicePatch, phone_test: updatedTest },
+        native_voice: {
+          ...native(lead),
+          ...voicePatch,
+          phone_test: updatedTest,
+        },
       },
       ...(phoneTestIsTerminal(updatedTest.status)
-        ? { status: updatedTest.status === "completed" ? "Completed" : "Failed" }
+        ? {
+            status: updatedTest.status === "completed" ? "Completed" : "Failed",
+          }
         : {}),
     })
     .where(and(eq(schema.outboundLeads.id, lead.id), eq(schema.outboundLeads.userId, lead.userId)))
@@ -312,7 +319,9 @@ export async function createPhoneTest(input: {
   if (cancelled) return cancelled;
   await assertPhoneTestAgentOwned(drizzle, input.userId, input.agentId);
   await assertLiveExternalActionAllowed(input.userId, "phone_test_create");
-  await assertExternalEntityActionAllowed(input.userId, "phone_test_create", { phone });
+  await assertExternalEntityActionAllowed(input.userId, "phone_test_create", {
+    phone,
+  });
   const gate = await evaluateOutboundDialGate({
     userId: input.userId,
     phone,
@@ -575,7 +584,10 @@ async function placePhoneTest(
     if (!current) throw AppError.notFound("Phone test not found.");
     const state = testOf(current);
     if (state.cancel_requested || Date.parse(state.expires_at) <= Date.now()) {
-      await updateTest(tx, current, { status: "cancelled", cancel_requested: true });
+      await updateTest(tx, current, {
+        status: "cancelled",
+        cancel_requested: true,
+      });
       await releaseVoiceCallFundingInTransaction(tx, {
         userId: lead.userId,
         providerCallId: phoneTestFundingId(test.request_id),
@@ -593,7 +605,10 @@ async function placePhoneTest(
     await releasePlatformCostReservation(spend);
     return getPhoneTest(lead.userId, lead.agentId!, test.request_id);
   }
-  const { token } = issueOpenAIOutboundToken({ leadId: lead.id, placementId: test.request_id });
+  const { token } = issueOpenAIOutboundToken({
+    leadId: lead.id,
+    placementId: test.request_id,
+  });
   let acceptedCallSid: string | null = null;
   try {
     // A short parent limit covers the verification phase too, independent of
@@ -708,7 +723,10 @@ export function phoneTestBridgeTwiml(input: {
 }): string {
   const seconds = Math.floor(input.remainingSeconds);
   if (seconds < 1 || seconds > PHONE_TEST_MAX_SECONDS) return phoneTestHangupTwiml();
-  const sip = input.sip ?? { provider: "openai", uri: buildOpenAIOutboundSipUri(input.token) };
+  const sip = input.sip ?? {
+    provider: "openai",
+    uri: buildOpenAIOutboundSipUri(input.token),
+  };
   return (
     '<?xml version="1.0" encoding="UTF-8"?><Response><Dial answerOnBridge="true" timeout="10" timeLimit="' +
     String(seconds) +
@@ -775,7 +793,16 @@ export async function handlePhoneTestAnswer(
     }
     // Resolved before the lock: the Bot answers on its own line, on xAI when
     // that number is registered there.
-    const sip = await resolveOutboundSipTarget({ callerId: input.from, token: input.token });
+    const sip = await resolveOutboundSipTarget({
+      callerId: input.from,
+      token: input.token,
+    });
+    const clonedTwiml = await clonedCallTwiml({
+      userId: found.userId,
+      agentId: found.agentId!,
+      token: input.token,
+      direction: "outbound",
+    });
     return drizzle.transaction(async (tx) => {
       const row = await lockedTest(tx, found.userId, testOf(found).request_id);
       if (!row) return phoneTestHangupTwiml();
@@ -789,12 +816,15 @@ export async function handlePhoneTestAnswer(
         return phoneTestHangupTwiml();
       if (test.verified_at) {
         if (native(lead).openai_call_id) return phoneTestHangupTwiml();
-        return phoneTestBridgeTwiml({
-          token: input.token,
-          from: input.from,
-          remainingSeconds: Math.floor((Date.parse(test.expires_at) - Date.now()) / 1000),
-          sip,
-        });
+        return (
+          clonedTwiml ??
+          phoneTestBridgeTwiml({
+            token: input.token,
+            from: input.from,
+            remainingSeconds: Math.floor((Date.parse(test.expires_at) - Date.now()) / 1000),
+            sip,
+          })
+        );
       }
       if (!gather) {
         await updateTest(tx, lead, { status: "verifying" });
@@ -864,12 +894,15 @@ export async function handlePhoneTestAnswer(
         { status: "creating", verified_at: new Date().toISOString() },
         { state: "bridging" },
       );
-      return phoneTestBridgeTwiml({
-        token: input.token,
-        from: input.from,
-        remainingSeconds: Math.floor((Date.parse(test.expires_at) - Date.now()) / 1000),
-        sip,
-      });
+      return (
+        clonedTwiml ??
+        phoneTestBridgeTwiml({
+          token: input.token,
+          from: input.from,
+          remainingSeconds: Math.floor((Date.parse(test.expires_at) - Date.now()) / 1000),
+          sip,
+        })
+      );
     });
   });
 }
@@ -1174,7 +1207,11 @@ export async function endPhoneTest(
         key,
         type: "phone_test_cancel",
         refId: requestKey,
-        metadata: { version: 1, agent_id: agentId, created_at: new Date().toISOString() },
+        metadata: {
+          version: 1,
+          agent_id: agentId,
+          created_at: new Date().toISOString(),
+        },
       });
     if (!row || phoneTestIsTerminal(testOf(row).status)) return row;
     const attempted = Boolean(testOf(row).provider_attempted_at);
