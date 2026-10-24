@@ -50,9 +50,11 @@ describe("xAI Grok Voice phone runtime", () => {
     expect(configuredPhoneVoiceProvider({})).toBe("xai");
     expect(configuredPhoneVoiceProvider({ WIRELINE_PHONE_VOICE_PROVIDER: " XAI " })).toBe("xai");
     expect(configuredPhoneVoiceProvider({ WIRELINE_PHONE_VOICE_PROVIDER: "grok" })).toBe("xai");
-    expect(configuredPhoneVoiceProvider({ WIRELINE_PHONE_VOICE_PROVIDER: " OpenAI " })).toBe(
-      "openai",
-    );
+    expect(
+      configuredPhoneVoiceProvider({
+        WIRELINE_PHONE_VOICE_PROVIDER: " OpenAI ",
+      }),
+    ).toBe("openai");
   });
 
   it("pins a versioned Grok Voice model and maps every saved voice", () => {
@@ -72,7 +74,10 @@ describe("xAI Grok Voice phone runtime", () => {
       provider: "xai",
       voice: "rex",
     });
-    expect(phoneCallVoiceFor("cedar", {})).toEqual({ provider: "xai", voice: "rex" });
+    expect(phoneCallVoiceFor("cedar", {})).toEqual({
+      provider: "xai",
+      voice: "rex",
+    });
     expect(phoneCallVoiceFor("cedar", { WIRELINE_PHONE_VOICE_PROVIDER: "openai" })).toBeNull();
   });
 
@@ -85,7 +90,12 @@ describe("xAI Grok Voice phone runtime", () => {
         truncation: { type: "retention_ratio" },
         tool_choice: "auto",
         tools: [
-          { type: "function", name: "book", description: "Book", parameters: { type: "object" } },
+          {
+            type: "function",
+            name: "book",
+            description: "Book",
+            parameters: { type: "object" },
+          },
           { type: "mcp", server_label: "x" },
         ],
         audio: {
@@ -107,11 +117,20 @@ describe("xAI Grok Voice phone runtime", () => {
       voice: "rex",
       reasoning: { effort: "high" },
       tools: [
-        { type: "function", name: "book", description: "Book", parameters: { type: "object" } },
+        {
+          type: "function",
+          name: "book",
+          description: "Book",
+          parameters: { type: "object" },
+        },
       ],
       tool_choice: "auto",
       turn_detection: { type: "server_vad" },
-      audio: { input: { transcription: { model: "grok-transcribe", keyterms: ["Front Desk"] } } },
+      audio: {
+        input: {
+          transcription: { model: "grok-transcribe", keyterms: ["Front Desk"] },
+        },
+      },
     });
   });
 
@@ -130,15 +149,28 @@ describe("xAI Grok Voice phone runtime", () => {
   });
 
   it("bridges Twilio to the registered number with digest credentials", () => {
-    const uri = buildXAISipUri("+13125550100", { name: "X-BB-Inbound", token: "a.b+c" });
+    const uri = buildXAISipUri("+13125550100", {
+      name: "X-BB-Inbound",
+      token: "a.b+c",
+    });
     expect(uri).toBe("sip:+13125550100@sip.voice.x.ai;transport=tls?X-BB-Inbound=a.b%2Bc");
     expect(() => buildXAISipUri("3125550100", { name: "X-BB-Inbound", token: "t" })).toThrow();
-    expect(renderSipNoun({ provider: "xai", uri, username: "bbuser", password: 'p"&<' })).toBe(
+    expect(
+      renderSipNoun({
+        provider: "xai",
+        uri,
+        username: "bbuser",
+        password: 'p"&<',
+      }),
+    ).toBe(
       '<Sip username="bbuser" password="p&quot;&amp;&lt;">sip:+13125550100@sip.voice.x.ai;transport=tls?X-BB-Inbound=a.b%2Bc</Sip>',
     );
-    expect(renderSipNoun({ provider: "openai", uri: "sip:proj_x@sip.api.openai.com" })).toBe(
-      "<Sip>sip:proj_x@sip.api.openai.com</Sip>",
-    );
+    expect(
+      renderSipNoun({
+        provider: "openai",
+        uri: "sip:proj_x@sip.api.openai.com",
+      }),
+    ).toBe("<Sip>sip:proj_x@sip.api.openai.com</Sip>");
     expect(phoneNumberFromSipHeader("<sip:+13125550100@sip.voice.x.ai>;tag=1")).toBe(
       "+13125550100",
     );
@@ -167,7 +199,11 @@ describe("xAI Grok Voice phone runtime", () => {
         phone_number: { phone_number_id: "pn_1" },
         webhook: { webhook_id: "wh_1", dispatch_signing_secret: "whsec_x" },
       }),
-    ).toEqual({ xaiPhoneNumberId: "pn_1", xaiWebhookId: "wh_1", signingSecret: "whsec_x" });
+    ).toEqual({
+      xaiPhoneNumberId: "pn_1",
+      xaiWebhookId: "wh_1",
+      signingSecret: "whsec_x",
+    });
     expect(() =>
       parseXAIPhoneRegistration({ phone_number: { phone_number_id: "pn_1" } }),
     ).toThrow();
@@ -179,11 +215,13 @@ describe("xAI Grok Voice phone runtime", () => {
     expect(routes).toContain("await xaiWebhookSecretFor(registeredNumber)");
     expect(routes).toContain("forwardOpenAISipWebhook(req, res, raw, XAI_SIP_WEBHOOK_PATH)");
     expect(routes).toContain("xaiCallId(nativeCallId)");
-    expect(routes.match(/await admitRealtimeCall\(/g)).toHaveLength(2);
+    expect(routes.match(/await admitRealtimeCall\(/g)).toHaveLength(3);
+    expect(routes).toContain("registeredMediaCall(callId, token)");
+    expect(routes).toContain("authorizeMediaCall(callId)");
     expect(read("src/middleware/same-origin.ts")).toContain('"/api/webhooks/xai/realtime"');
     expect(read("src/lib/body-parsers.ts")).toContain('"/api/webhooks/xai/realtime"');
     expect(read("src/lib/voice/openai-sip-worker-app.ts")).toContain(
-      "[OPENAI_SIP_WEBHOOK_PATH, XAI_SIP_WEBHOOK_PATH]",
+      "[OPENAI_SIP_WEBHOOK_PATH, XAI_SIP_WEBHOOK_PATH, CLONED_MEDIA_ADMIT_PATH]",
     );
   });
 
