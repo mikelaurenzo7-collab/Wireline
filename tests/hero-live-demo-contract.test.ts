@@ -11,6 +11,9 @@ describe("public voice-preview retirement contract", () => {
 
     expect(landing).toContain("YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER");
     expect(landing).not.toContain("landing-prestige__promise");
+    expect(landing).not.toContain("landing-prestige__channel-choice");
+    expect(landing).not.toContain("It answers your calls and email");
+    expect(landing).not.toContain("Choose calls, email, or both.");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo|\/api\/public\/demo-/);
     expect(botProduct).toContain('slogan: "For You. For Your Business."');
     expect(botProduct).toContain('supportingLine: "CALL · EMAIL · COMPUTER"');

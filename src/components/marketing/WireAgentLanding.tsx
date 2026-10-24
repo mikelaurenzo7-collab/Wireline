@@ -90,9 +90,6 @@ export default function WireAgentLanding() {
             <p className="landing-prestige__description">
               YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER.
             </p>
-            <p className="landing-prestige__channel-choice">
-              It answers your calls and email, then sends you the summary.
-            </p>
             <div className="landing-prestige__actions">
               {signedIn ? (
                 <Link to="/studio" className="landing-prestige__cta is-primary">

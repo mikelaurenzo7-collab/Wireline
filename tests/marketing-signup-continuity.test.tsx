@@ -113,7 +113,8 @@ describe("marketing signup continuity", () => {
     expect(renderedText).toContain(
       "YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER",
     );
-    expect(renderedText).toContain("It answers your calls and email, then sends you the summary.");
+    expect(renderedText).not.toContain("It answers your calls and email");
+    expect(renderedText).not.toContain("Choose calls, email, or both.");
     expect(renderedText).toContain("1 number + connected inbox");
     const roleLinks = elements(page).filter((element) =>
       element.props.to?.startsWith("/signup?template="),

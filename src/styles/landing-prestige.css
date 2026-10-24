@@ -59,22 +59,12 @@
   line-height: 1.6;
   text-wrap: balance;
 }
-.landing-prestige p.landing-prestige__channel-choice {
-  max-width: 34ch;
-  margin: 1rem 0 0;
-  color: var(--wireline-color-text-primary);
-  font-size: clamp(1.0625rem, 0.98rem + 0.35vw, 1.25rem);
-  font-weight: 500;
-  line-height: 1.5;
-  letter-spacing: -0.01em;
-  text-wrap: balance;
-}
 .landing-prestige__actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.75rem;
-  margin-top: 2rem;
+  margin-top: 2.5rem;
 }
 .landing-prestige__cta {
   display: inline-flex;
@@ -459,6 +449,7 @@
   .landing-prestige__actions {
     width: 100%;
     gap: 0.625rem;
+    margin-top: 2rem;
   }
   .landing-prestige__actions > .landing-prestige__cta {
     flex: 1 1 auto;
