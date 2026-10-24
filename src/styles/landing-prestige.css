@@ -357,13 +357,6 @@
 .landing-prestige__closing h2 > span {
   display: block;
 }
-.landing-prestige__closing p {
-  max-width: 30rem;
-  margin: 1.25rem auto 0;
-  color: var(--wireline-color-text-secondary);
-  line-height: 1.6;
-  text-wrap: balance;
-}
 .landing-prestige__trust {
   border-top: 1px solid var(--wireline-color-border-default);
 }

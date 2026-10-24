@@ -552,12 +552,12 @@ function LiveScreen({
           {fullscreenError}
         </p>
       ) : null}
-      {active ? (
+      {active && (!ownerControl || ownerBusy) ? (
         <div className="wl-computer-screen__progress">
           {ownerControl ? (
             <>
               <MousePointer2 className="size-3.5" aria-hidden="true" />
-              {ownerBusy ? "Applying your action…" : "You control the browser"}
+              Applying your action…
             </>
           ) : (
             <>
@@ -1521,7 +1521,7 @@ function TaskDetail({
         <div className="wl-computer-recovery" role="status">
           <p>
             {task.errorCode === "COMPUTER_BROWSER_EXPIRED"
-              ? "The browser session ended. Start a new task to continue."
+              ? "Session expired."
               : "This task stopped before it finished."}
           </p>
           {onStartAnother && (!compact || chatControls) ? (
@@ -1532,7 +1532,7 @@ function TaskDetail({
                 variant="outline"
                 onClick={(event) => onStartAnother?.(event.currentTarget)}
               >
-                New task
+                {chatControls ? "Set web address" : "New task"}
               </Button>
             </div>
           ) : null}

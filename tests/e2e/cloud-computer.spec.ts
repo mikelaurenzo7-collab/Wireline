@@ -657,7 +657,7 @@ test("a running task requests control honestly and keeps Stop available while pa
   await expect(
     detail.getByText("Your Bot is finishing its current step, then the browser is yours."),
   ).toBeVisible();
-  await expect(detail.getByText("You control the browser", { exact: true })).toHaveCount(0);
+  await expect(detail.getByText("You’re in control", { exact: true })).toHaveCount(0);
   expect(takeovers).toEqual(["task-live"]);
   await page.evaluate(() => {
     document.documentElement.style.fontSize = "200%";
@@ -670,7 +670,8 @@ test("a running task requests control honestly and keeps Stop available while pa
     ownerControl: true,
     question: "You paused your Bot. Browse, then return control when you’re ready.",
   });
-  await expect(detail.getByText("You control the browser", { exact: true })).toBeVisible();
+  await expect(detail.getByText("You’re in control", { exact: true })).toBeVisible();
+  await expect(detail.locator(".wl-computer-screen__progress")).toHaveCount(0);
   await detail.getByRole("button", { name: "Return control to Bot", exact: true }).click();
   expect(returns).toEqual(["task-live"]);
   await expect(detail.getByRole("button", { name: "Take control", exact: true })).toBeVisible();
@@ -1026,7 +1027,8 @@ for (const width of [390, 1024]) {
     const detail = page.getByRole("region", { name: /Find three plumbers/ });
     await expect(detail.getByText("Front Desk", { exact: true })).toBeVisible();
     await detail.getByRole("button", { name: "Take control" }).click();
-    await expect(detail.getByText("You control the browser")).toBeVisible();
+    await expect(detail.getByText("You’re in control", { exact: true })).toBeVisible();
+    await expect(detail.locator(".wl-computer-screen__progress")).toHaveCount(0);
     expect(takeovers).toEqual(["task-live"]);
 
     const screen = detail.getByRole("img", {
@@ -1149,10 +1151,14 @@ for (const width of [390, 1024]) {
     await tabKey.focus();
     await tabKey.press("Enter");
     await expect(tabKey).toHaveAttribute("aria-disabled", "true");
+    await expect(detail.locator(".wl-computer-screen__progress")).toHaveText(
+      "Applying your action…",
+    );
     await expect(tabKey).toBeFocused();
     await tabKey.press("Enter");
     await expect.poll(tabActions).toBe(1);
     await expect(tabKey).not.toHaveAttribute("aria-disabled", "true");
+    await expect(detail.locator(".wl-computer-screen__progress")).toHaveCount(0);
     await expect(tabKey).toBeFocused();
     await tabKey.press("Enter");
     await expect.poll(tabActions).toBe(2);
@@ -1184,7 +1190,8 @@ for (const width of [390, 1024]) {
     await page.getByRole("button", { name: "Open browser" }).click();
     expect(starts).toEqual([{ agentId: "design-bot", prepareBrowser: true }]);
     const detail = page.getByRole("region", { name: "Your browser is ready" });
-    await expect(detail.getByText("You control the browser")).toBeVisible();
+    await expect(detail.getByText("You’re in control", { exact: true })).toBeVisible();
+    await expect(detail.locator(".wl-computer-screen__progress")).toHaveCount(0);
     // A received real frame is never covered by a decorative new-tab overlay.
     await expect(detail.locator(".wl-computer-new-tab")).toHaveCount(0);
     await expect(

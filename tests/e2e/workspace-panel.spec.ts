@@ -1172,20 +1172,19 @@ test.describe("wide screens", () => {
       const browser = page.getByRole("complementary", { name: "Workspace panel", exact: true });
       const recovery = browser.locator(".wl-computer-recovery");
       await expect(
-        recovery.getByText(
-          expired
-            ? "The browser session ended. Start a new task to continue."
-            : "This task stopped before it finished.",
-          { exact: true },
-        ),
+        recovery.getByText(expired ? "Session expired." : "This task stopped before it finished.", {
+          exact: true,
+        }),
       ).toBeVisible();
       await expect(recovery).not.toContainText("Diagnostic text");
-      const newTask = recovery.getByRole("button", { name: "New task", exact: true });
-      await newTask.focus();
-      await expect(newTask).toBeFocused();
-      await newTask.press("Enter");
+      const addressAction = recovery.getByRole("button", { name: "Set web address", exact: true });
+      await addressAction.focus();
+      await expect(addressAction).toBeFocused();
+      await addressAction.press("Enter");
       const ended = browser.getByRole("figure", { name: "Ended browser", exact: true });
       await expect(ended).toBeVisible();
+      await expect(ended.getByText("Browser session ended", { exact: true })).toBeVisible();
+      await expect(ended.getByText("Screen cleared.", { exact: true })).toBeVisible();
       await expect(ended.getByRole("img")).toHaveCount(0);
       const open = browser.getByRole("button", { name: "Open browser", exact: true });
       await expect(open).toHaveCount(1);
@@ -1198,8 +1197,8 @@ test.describe("wide screens", () => {
       await back.focus();
       await back.press("Enter");
       await expect(address).toHaveCount(0);
-      await expect(newTask).toBeFocused();
-      await newTask.press("Enter");
+      await expect(addressAction).toBeFocused();
+      await addressAction.press("Enter");
       await expect(address).toHaveValue("https://directory.example/recovery");
       expect(fixture.starts).toEqual([]);
       await open.click();

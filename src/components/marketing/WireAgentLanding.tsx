@@ -227,7 +227,6 @@ export default function WireAgentLanding() {
             <h2 id="landing-prestige-closing">
               <span>LESS BUSYWORK.</span> <span>MORE ROOM.</span>
             </h2>
-            <p>Your next task is a good place to start.</p>
             <div className="landing-prestige__actions">
               {signedIn ? (
                 <Link to="/studio" className="landing-prestige__cta is-primary">

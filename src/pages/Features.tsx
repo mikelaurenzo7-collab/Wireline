@@ -10,7 +10,6 @@ import {
   PhoneOutgoing,
   ShieldCheck,
   Sparkles,
-  Waypoints,
   type LucideIcon,
 } from "lucide-react";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
@@ -65,11 +64,6 @@ const CAPABILITIES: readonly { icon: LucideIcon; title: string; body: string }[]
     body: "Sensitive work waits for your OK. A person gets the full context when a caller needs one.",
   },
   {
-    icon: Waypoints,
-    title: "One Workspace",
-    body: "Manage your Bot's calls, email, and computer tasks from one place.",
-  },
-  {
     icon: ClipboardCheck,
     title: "Clear Outcomes",
     body: "Review call records, approvals, and computer task results from your workspace.",
@@ -77,7 +71,7 @@ const CAPABILITIES: readonly { icon: LucideIcon; title: string; body: string }[]
   {
     icon: ShieldCheck,
     title: "Rehearse Before Launch",
-    body: "Choose Personal or the channels you need, then teach your Bot before it goes live.",
+    body: "Rehearse privately before activating live work.",
   },
 ];
 

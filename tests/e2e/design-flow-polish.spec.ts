@@ -143,7 +143,6 @@ for (const width of [320, 390, 1440]) {
       "Made Yours",
       "Native Calendar Booking",
       "Approvals and Handoffs",
-      "One Workspace",
       "Clear Outcomes",
       "Rehearse Before Launch",
     ]);
