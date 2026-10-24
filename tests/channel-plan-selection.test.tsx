@@ -66,6 +66,9 @@ describe("channel package selection", () => {
     expect(getPlanCapacityLabel({ id: "email-high" })).toBe("Pro");
     expect(getPlanDisplayName("free")).toBe("Personal");
     expect(getPlanDisplayLabel("starter")).toBe("Starter");
+    // Personal is one package; no "Starter" capacity suffix that reads like the legacy plan.
+    expect(getPlanDisplayLabel("personal")).toBe("Personal");
+    expect(getPlanDisplayLabel("free")).toBe("Personal");
     expect(getPlanDisplayLabel("team")).toBe("Starter Plus");
     expect(getPlanDisplayLabel("sms")).toBe("SMS · Starter");
     expect(getPlanDisplayLabel("omnichannel-high")).toBe("Calls + Email + SMS · Pro");

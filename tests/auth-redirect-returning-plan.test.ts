@@ -234,7 +234,7 @@ describe("post-auth destination", () => {
     expect(resolvePostAuthDestination("business", "")).toBe("/settings?tab=profile");
   });
 
-  it.each(["", "?plan=personal", "?plan=unknown", "?interval=weekly"])(
+  it.each(["", "?plan=unknown", "?interval=weekly"])(
     "does not create a billing redirect from %s",
     (search) => {
       localStorage.setItem(AUTH_REDIRECT_KEY, "/settings/billing?plan=business");
@@ -244,6 +244,17 @@ describe("post-auth destination", () => {
       expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBeNull();
     },
   );
+
+  it.each([
+    ["?plan=personal&interval=year", "/settings/billing?plan=personal&interval=year"],
+    ["?plan=personal", "/settings/billing?plan=personal"],
+    // Legacy public slug from older links and bookmarks.
+    ["?plan=free&interval=month", "/settings/billing?plan=personal&interval=month"],
+  ])("returns an existing account with Personal intent %s to billing", (search, destination) => {
+    persistOAuthReturnFromSearch(search);
+
+    expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBe(destination);
+  });
 
   it("never turns long-lived signup attribution into an unrelated OAuth redirect", () => {
     localStorage.setItem(

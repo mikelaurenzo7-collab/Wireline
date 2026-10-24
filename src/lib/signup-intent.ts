@@ -35,7 +35,7 @@ export const SIGNUP_PLAN_IDS = [
 export type SignupPlanId = (typeof SIGNUP_PLAN_IDS)[number];
 
 export const PUBLIC_SIGNUP_PLAN_SLUGS = {
-  personal: "free",
+  personal: "personal",
   voice: "voice",
   email: "email",
   sms: "sms",

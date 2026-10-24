@@ -190,7 +190,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /<h2[^>]*>Personal · \$12\/month<\/h2>[\s\S]*?to=\{signupHrefForPlan\("personal"\)\}/,
+    /<h2[^>]*>Personal · \$12\/month<\/h2>[\s\S]*?to=\{signupHrefForPlan\("personal", \{ interval: billingInterval \}\)\}/,
     "pricing must expose the paid Personal plan through its canonical signup destination",
   );
   const channelPicker = read("src/components/ChannelPlanPicker.tsx");

@@ -71,12 +71,16 @@ describe("signup intent contract", () => {
       "email-sms-high": "email-sms-high",
       "omnichannel-regular": "omnichannel-regular",
       "omnichannel-high": "omnichannel-high",
-      personal: "free",
+      personal: "personal",
       starter: "starter",
       team: "starter-plus",
       business: "pro",
     });
-    expect(signupHrefForPlan("personal")).toBe("/signup?plan=free");
+    expect(signupHrefForPlan("personal")).toBe("/signup?plan=personal");
+    expect(signupHrefForPlan("personal", { interval: "year" })).toBe(
+      "/signup?plan=personal&interval=year",
+    );
+    expect(parseSignupIntent("?plan=personal")?.preferredPlanId).toBe("personal");
     expect(signupHrefForPlan("team", { interval: "year" })).toBe(
       "/signup?plan=starter-plus&interval=year",
     );
@@ -113,7 +117,7 @@ describe("signup intent contract", () => {
 
   it("preserves a trusted role-template choice through signup", () => {
     expect(signupHrefForPlan("personal", { template: "front-desk" })).toBe(
-      "/signup?plan=free&template=front-desk",
+      "/signup?plan=personal&template=front-desk",
     );
     expect(parseSignupIntent("?plan=free&template=front-desk")).toMatchObject({
       preferredPlanId: "personal",
