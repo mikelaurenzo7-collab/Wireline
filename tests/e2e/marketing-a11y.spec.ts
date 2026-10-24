@@ -118,7 +118,7 @@ test("homepage channels stay clear and readable without decorative labels at 320
     "YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER.",
   );
   await expect(
-    hero.getByText("It answers your business calls and email, then sends you the summary.", {
+    hero.getByText("It answers your calls and email, then sends you the summary.", {
       exact: true,
     }),
   ).toBeVisible();
