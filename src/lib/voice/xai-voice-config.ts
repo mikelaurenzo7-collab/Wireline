@@ -64,7 +64,22 @@ export function phoneCallVoiceFor(
  * extra hop. If one ever fails mid-call (provider error or replies breaching
  * the latency budget), the call switches to this stock voice and continues.
  */
-export function stockFallbackVoiceFor(savedVoice: unknown): XAIGrokVoice {
+/** Stock voice that best matches a cloned speaker (salvaged from #1152). */
+export const LIVE_VOICE_BY_GENDER = { female: "ara", male: "rex" } as const satisfies Record<
+  "female" | "male",
+  XAIGrokVoice
+>;
+
+/**
+ * The stock voice a call switches to when a cloned voice steps aside. A known
+ * speaker gender keeps the caller from hearing a jarring change of voice;
+ * otherwise the Bot's own saved stock voice answers.
+ */
+export function stockFallbackVoiceFor(
+  savedVoice: unknown,
+  cloneGender?: "female" | "male" | null,
+): XAIGrokVoice {
+  if (cloneGender === "female" || cloneGender === "male") return LIVE_VOICE_BY_GENDER[cloneGender];
   return xaiVoiceForSavedVoice(savedVoice);
 }
 

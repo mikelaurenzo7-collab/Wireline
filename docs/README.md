@@ -31,7 +31,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 
 ## Product interface rules
 
-The optional voice-reference prototype is governed by [Voice cloning private pilot](./VOICE_CLONING_PILOT.md). It does not replace the ten built-in OpenAI voices or enable cloned live calls.
+The optional voice-reference prototype is governed by [Voice cloning private pilot](./VOICE_CLONING_PILOT.md). It does not replace the ten built-in OpenAI voices. Customer cloned voices on live xAI phone calls are covered in the runtime policy and the cloned voices help note.
 
 The isolated speech worker has its own [setup guide](../services/voice-engine/README.md) and [third-party notices](../services/voice-engine/THIRD_PARTY_NOTICES.md).
 
@@ -69,6 +69,7 @@ The isolated speech worker has its own [setup guide](../services/voice-engine/RE
 | [COMPANY_IDENTITY_PACK.md](./COMPANY_IDENTITY_PACK.md)                                           | Number, calling, SMS, and email identity boundaries.                                               |
 | [PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md](./PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md) | Production PSTN, realtime demo, presenter, and marketing-audio provider boundary.                  |
 | [OPENAI_REALTIME_VOICE.md](./OPENAI_REALTIME_VOICE.md)                                           | Canonical OpenAI Realtime browser and Twilio PSTN/SIP architecture.                                |
+| [HELP_CLONED_VOICES.md](./HELP_CLONED_VOICES.md)                                                 | Customer help note for cloning a voice and using it on calls.                                      |
 | [VENDOR_LAUNCH_MAP.md](./VENDOR_LAUNCH_MAP.md)                                                   | Vendor and surface status: live, beta, planned, or retire.                                         |
 | [ACCESSIBILITY.md](./ACCESSIBILITY.md)                                                           | Product accessibility commitment.                                                                  |
 | [design-system-responsive-roadmap.md](./design-system-responsive-roadmap.md)                     | Responsive, spacing, and component-containment rules.                                              |

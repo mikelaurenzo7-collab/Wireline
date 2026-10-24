@@ -5759,7 +5759,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false,
-          "default": "'Live · Active'"
+          "default": "'Live \u00b7 Active'"
         },
         "type": {
           "name": "type",
@@ -7952,6 +7952,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "voice_gender": {
+          "name": "voice_gender",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "last_used_at": {
           "name": "last_used_at",
           "type": "timestamp with time zone",
@@ -8082,6 +8088,10 @@
         "wireline_live_voices_quality_check": {
           "name": "wireline_live_voices_quality_check",
           "value": "\"wireline_live_voices\".\"quality_score\" IS NULL OR \"wireline_live_voices\".\"quality_score\" BETWEEN 0 AND 100"
+        },
+        "wireline_live_voices_gender_check": {
+          "name": "wireline_live_voices_gender_check",
+          "value": "\"wireline_live_voices\".\"voice_gender\" IS NULL OR \"wireline_live_voices\".\"voice_gender\" IN ('female', 'male')"
         }
       },
       "isRLSEnabled": true

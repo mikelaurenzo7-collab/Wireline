@@ -29,6 +29,8 @@ export const LIVE_VOICE_STATUSES = ["ready", "deleted"] as const;
 export type LiveVoiceStatus = (typeof LIVE_VOICE_STATUSES)[number];
 export const LIVE_VOICE_CONSENT_SCOPES = ["self", "authorized_speaker"] as const;
 export type LiveVoiceConsentScope = (typeof LIVE_VOICE_CONSENT_SCOPES)[number];
+export const LIVE_VOICE_GENDERS = ["female", "male"] as const;
+export type LiveVoiceGender = (typeof LIVE_VOICE_GENDERS)[number];
 export const LIVE_VOICE_DELETED_REASONS = ["user_deleted", "provider_missing"] as const;
 export type LiveVoiceDeletedReason = (typeof LIVE_VOICE_DELETED_REASONS)[number];
 
@@ -50,6 +52,8 @@ export const liveVoices = pgTable(
     sourceSha256: text("source_sha256").notNull(),
     sourceDurationSeconds: doublePrecision("source_duration_seconds").notNull(),
     qualityScore: integer("quality_score"),
+    /** Matches the stock fallback voice to the speaker if a clone misbehaves mid-call. */
+    voiceGender: text("voice_gender").$type<LiveVoiceGender | null>(),
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     deletedReason: text("deleted_reason").$type<LiveVoiceDeletedReason | null>(),
@@ -89,6 +93,10 @@ export const liveVoices = pgTable(
     qualityCheck: check(
       "wireline_live_voices_quality_check",
       sql`${table.qualityScore} IS NULL OR ${table.qualityScore} BETWEEN 0 AND 100`,
+    ),
+    genderCheck: check(
+      "wireline_live_voices_gender_check",
+      sql`${table.voiceGender} IS NULL OR ${table.voiceGender} IN ('female', 'male')`,
     ),
   }),
 ).enableRLS();

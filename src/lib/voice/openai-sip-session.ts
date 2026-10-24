@@ -1926,7 +1926,7 @@ async function runRealtimeSession(
     if (voiceKind !== "custom" || ws.readyState !== WebSocket.OPEN) return false;
     voiceKind = "stock";
     customVoiceFallback = reason;
-    const stockVoice = stockFallbackVoiceFor(runtime.voice);
+    const stockVoice = stockFallbackVoiceFor(runtime.voice, runtime.customVoice?.gender);
     sendJson(ws, xaiVoiceSwapUpdate(stockVoice));
     log.warn("Cloned voice switched to stock voice mid-call", {
       callId: providerCallId(input.callId),

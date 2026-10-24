@@ -46,12 +46,19 @@ export type LiveVoiceSummary = {
   status: "ready";
   qualityScore: number | null;
   sourceDurationSeconds: number;
+  gender: "female" | "male" | null;
   createdAt: string;
   lastUsedAt: string | null;
   inUseByAgentIds: string[];
 };
 
-export type RuntimeCustomVoice = { cloneId: string; voiceId: string; name: string };
+export type RuntimeCustomVoice = {
+  cloneId: string;
+  voiceId: string;
+  name: string;
+  /** Picks a same-gender stock voice if the clone has to step aside mid-call. */
+  gender: "female" | "male" | null;
+};
 
 type Actor = { id: string };
 
@@ -161,6 +168,7 @@ function summarize(
     status: "ready",
     qualityScore: row.qualityScore,
     sourceDurationSeconds: row.sourceDurationSeconds,
+    gender: row.voiceGender ?? null,
     createdAt: row.createdAt.toISOString(),
     lastUsedAt: row.lastUsedAt ? row.lastUsedAt.toISOString() : null,
     inUseByAgentIds: agents
@@ -305,6 +313,7 @@ export const liveVoiceService = {
             sourceSha256,
             sourceDurationSeconds: Math.min(LIVE_VOICE_MAX_SECONDS, quality.durationSeconds),
             qualityScore: quality.score,
+            voiceGender: gender ?? null,
           })
           .returning();
         log.info("Live voice clone created", {
@@ -372,7 +381,10 @@ export const liveVoiceService = {
     const row = await readyVoice(actor.id, id);
     const line = voiceSampleLine(input.agentName || "your Bot");
     const voiceId =
-      input.variant === "clone" ? row.providerVoiceId! : stockFallbackVoiceFor(input.stockVoice);
+      input.variant === "clone"
+        ? row.providerVoiceId!
+        : // The same stock voice a call would fall back to, so the A/B is honest.
+          stockFallbackVoiceFor(input.stockVoice, row.voiceGender);
     try {
       return await synthesizeXAIVoiceLine(voiceId, line);
     } catch (error) {
@@ -448,6 +460,7 @@ export async function resolveRuntimeCustomVoice(
         id: liveVoices.id,
         name: liveVoices.name,
         providerVoiceId: liveVoices.providerVoiceId,
+        voiceGender: liveVoices.voiceGender,
       })
       .from(liveVoices)
       .where(
@@ -464,7 +477,12 @@ export async function resolveRuntimeCustomVoice(
       .set({ lastUsedAt: new Date() })
       .where(and(eq(liveVoices.userId, userId), eq(liveVoices.id, row.id)))
       .catch(() => {});
-    return { cloneId: row.id, voiceId: row.providerVoiceId, name: row.name };
+    return {
+      cloneId: row.id,
+      voiceId: row.providerVoiceId,
+      name: row.name,
+      gender: row.voiceGender ?? null,
+    };
   } catch (error) {
     log.warn("Cloned voice lookup failed; using stock voice", {
       userId,
@@ -479,10 +497,20 @@ export async function deleteProviderLiveVoicesForAccount(
   db: typeof drizzle,
   userId: string,
 ): Promise<number> {
-  const rows = await db
-    .select({ id: liveVoices.id, providerVoiceId: liveVoices.providerVoiceId })
-    .from(liveVoices)
-    .where(and(eq(liveVoices.userId, userId), eq(liveVoices.status, "ready")));
+  let rows: Array<{ id: string; providerVoiceId: string | null }>;
+  try {
+    rows = await db
+      .select({ id: liveVoices.id, providerVoiceId: liveVoices.providerVoiceId })
+      .from(liveVoices)
+      .where(and(eq(liveVoices.userId, userId), eq(liveVoices.status, "ready")));
+  } catch (err) {
+    // Before migration 0186 reaches an environment there is nothing to delete.
+    const code =
+      (err as { code?: string; cause?: { code?: string } } | null)?.code ??
+      (err as { cause?: { code?: string } } | null)?.cause?.code;
+    if (code === "42P01") return 0;
+    throw err;
+  }
   let deleted = 0;
   for (const row of rows) {
     if (!row.providerVoiceId) continue;
