@@ -21,6 +21,7 @@ import {
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import { listAgentsForUser } from "../lib/agents-store";
+import { deleteBot, previewBotDeletion } from "../lib/bot-deletion";
 import { normalizeManagedOpenAIVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
 import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/liveavatar-service";
 import {
@@ -1400,6 +1401,38 @@ router.delete(
       throw AppError.fromHttpStatus(400, "Invalid configuration type");
     }
     res.json({ success: true });
+  },
+);
+
+// What deleting this Bot would release, and whether it is busy right now.
+router.get(
+  "/api/agents/:id/deletion",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const preview = await previewBotDeletion(req.user.id, req.params.id);
+    res.json({
+      name: preview.name,
+      phone_numbers: preview.phoneNumbers,
+      mailboxes: preview.mailboxes,
+      blocked_by: preview.blockedBy,
+    });
+  },
+);
+
+router.delete(
+  "/api/agents/:id",
+  authenticateUser,
+  agentMutationRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (req.body?.confirmation !== "DELETE") {
+      throw AppError.badRequest("Type DELETE to confirm deleting this Bot.");
+    }
+    const result = await deleteBot({ userId: req.user.id, agentId: req.params.id, ip: req.ip });
+    res.json({
+      deleted: true,
+      phone_numbers_released: result.phoneNumbersReleased,
+      mailboxes_released: result.mailboxesReleased,
+    });
   },
 );
 
