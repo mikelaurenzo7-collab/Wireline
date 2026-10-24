@@ -21,6 +21,7 @@ import {
   referTransferTwiml,
 } from "../lib/voice/inbound-bridge";
 import { consumeFallbackDrill } from "../lib/voice/fallback-drill";
+import { clonedCallTwiml } from "../lib/voice/cloned-call-routing";
 import { handleTwilioVoiceFallback } from "./twilio-webhook-base";
 
 const router = Router();
@@ -35,7 +36,10 @@ async function resolveInboundOwner(
   phoneNumber: string,
 ): Promise<{ userId: string; agentId: string } | null> {
   const [line] = await drizzle
-    .select({ userId: schema.phoneNumbers.userId, agentId: schema.phoneNumbers.agentId })
+    .select({
+      userId: schema.phoneNumbers.userId,
+      agentId: schema.phoneNumbers.agentId,
+    })
     .from(schema.phoneNumbers)
     .where(eq(schema.phoneNumbers.phoneNumber, phoneNumber))
     .limit(1);
@@ -119,7 +123,10 @@ router.post(
       const twilioCallSid = String(req.body?.CallSid || "");
       // A platform admin can arm one fallback drill per number (never an env
       // change). It only ever exercises the same path a real outage takes.
-      const drill = await consumeFallbackDrill({ ...owner, phoneNumber: calledNumber });
+      const drill = await consumeFallbackDrill({
+        ...owner,
+        phoneNumber: calledNumber,
+      });
       const { token } = issueOpenAIInboundToken({
         twilioCallSid,
         calledNumber,
@@ -127,6 +134,13 @@ router.post(
         callRecordingEnabled,
         ...(drill && drill !== "xai_connect" ? { drill } : {}),
       });
+      const clonedTwiml = !drill
+        ? await clonedCallTwiml({ ...owner, token, direction: "inbound" })
+        : null;
+      if (clonedTwiml) {
+        res.status(200).send(clonedTwiml);
+        return;
+      }
       const target = await resolveInboundSipTarget({ calledNumber, token });
       if (drill === "xai_connect" && target.provider === "xai") {
         // Simulate xAI never answering: skip straight to the dial-complete
@@ -204,7 +218,9 @@ router.post(
       // on OpenAI Realtime before any human or missed-call fallback.
       const failover = xaiConnectFailoverTwiml(req);
       if (failover) {
-        log.warn("xAI voice did not connect; answering on OpenAI", { dialStatus });
+        log.warn("xAI voice did not connect; answering on OpenAI", {
+          dialStatus,
+        });
         res.status(200).send(failover);
         return;
       }
@@ -214,7 +230,9 @@ router.post(
       return;
     }
 
-    log.warn("Twilio inbound OpenAI Dial returned an unhandled status", { dialStatus });
+    log.warn("Twilio inbound OpenAI Dial returned an unhandled status", {
+      dialStatus,
+    });
     res.status(200).send(hangupTwiml());
   },
 );
