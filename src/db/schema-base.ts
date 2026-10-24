@@ -451,6 +451,13 @@ export const agents = pgTable(
      */
     systemPromptOverride: text("system_prompt_override"),
     complianceMode: text("compliance_mode").default("standard"),
+    /**
+     * Owner choice: record this Bot's live calls. Default OFF. The one flag
+     * drives both carrier capture on the Twilio bridges and the recording
+     * notice in the Bot's spoken opening, so the two can never disagree.
+     * Migration 0184.
+     */
+    callRecordingEnabled: boolean("call_recording_enabled").default(false).notNull(),
     disallowedTopics: text("disallowed_topics").array(),
     escalationKeywords: text("escalation_keywords").array(),
     /**
