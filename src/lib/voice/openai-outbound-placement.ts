@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
+import { botDeletionHoldExists, lockBotAdmission } from "../bot-deletion-hold";
 import type { OutboundCallPurpose } from "../outbound-call-purpose";
 import {
   DEFAULT_LEAD_MAX_ATTEMPTS,
@@ -31,6 +32,7 @@ export const NATIVE_OUTBOUND_IN_FLIGHT_STATES = [
   "connected",
 ] as const;
 const IN_FLIGHT_STATES = new Set<string>(NATIVE_OUTBOUND_IN_FLIGHT_STATES);
+const BOT_BEING_DELETED = "This Bot is being deleted.";
 
 /** How long after its claim a placement can still be a live call. */
 export function nativeOutboundPlacementLeaseMs(): number {
@@ -384,6 +386,13 @@ export async function claimNativeOutboundPlacement(input: {
   if (requestedId === null) {
     return drizzle.transaction(async (tx) => {
       await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${input.userId}))`);
+      // Bot deletion releases the line this call dials from. Claim only
+      // while no deletion holds the Bot, under the lock deletion takes to
+      // check for calls — before any replay or receipt is honored.
+      await lockBotAdmission(tx, input.agentId, "shared");
+      if (await botDeletionHoldExists(tx, input.userId, input.agentId)) {
+        return { ok: false as const, status: 409, error: BOT_BEING_DELETED };
+      }
       const requestHash = outboundRequestHash(input);
       const idempotencyKey = `native-outbound:${input.requestKey?.toLowerCase() ?? placementId}`;
       const requestReceiptKey = `voice_outbound_request:${input.requestKey?.toLowerCase() ?? placementId}`;
@@ -511,6 +520,11 @@ export async function claimNativeOutboundPlacement(input: {
     await tx.execute(
       sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${String(requestedId)}`}))`,
     );
+    // Same deletion fence as the new-lead path, before the lead fetch.
+    await lockBotAdmission(tx, input.agentId, "shared");
+    if (await botDeletionHoldExists(tx, input.userId, input.agentId)) {
+      return { ok: false as const, status: 409, error: BOT_BEING_DELETED };
+    }
     const [lead] = await tx
       .select()
       .from(schema.outboundLeads)
