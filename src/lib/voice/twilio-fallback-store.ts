@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import * as schema from "../../db/schema";
 import { drizzle } from "../server-context";
 import { OPENAI_SIP_PROVIDER_MAX_SECONDS } from "./openai-sip-config";
+import { botDeletionHoldExists, lockBotAdmission } from "../bot-deletion-hold";
 import { hasInboundCapacityInTransaction } from "../inbound-concurrency";
 import { reserveVoiceCallFunding } from "../voice-call-funding";
 import {
@@ -163,6 +164,11 @@ export const twilioFallbackStore: TwilioFallbackStore = {
           throw new Error("Twilio fallback parent identity is already bound to another call.");
         }
         return receipt;
+      }
+      // A Bot being deleted takes no new calls; see bot-deletion-hold.ts.
+      if (input.agentId) {
+        await lockBotAdmission(tx, input.agentId, "shared");
+        if (await botDeletionHoldExists(tx, input.userId, input.agentId)) return null;
       }
       if (!(await hasInboundCapacityInTransaction(tx, input.userId))) return null;
       const funding = await reserveVoiceCallFunding(tx, {
