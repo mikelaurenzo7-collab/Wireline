@@ -3,10 +3,10 @@
 # before creating this Blueprint. It creates no database or other data store.
 # Existing Supabase remains authoritative; there is no migration command.
 #
-# Release every service from the same reviewed commit. Auto-deploy is OFF.
-# Keep API traffic, voice admission, billing, provisioning and cron switches
-# disabled until the direct Render domain, provider callbacks, revision/config parity,
-# scheduler handoff and release proofs are verified. Enable them deliberately.
+# Release every service from the same reviewed commit on main. Auto-deploy is
+# ON (autoDeployTrigger: commit) for all four services: an independent full-diff
+# review is the merge gate, and every merge to main ships to Render. Release
+# switches stay Dashboard-owned (sync: false); change them deliberately.
 #
 # IMPORT existing signing/encryption/provider values; do not rotate them during
 # hosting migration. sync:false prompts only on first creation; later additions
@@ -23,11 +23,12 @@
 # This single-voice-service proposal can pause new call admission during drain;
 # seamless admission during release needs a separately verified blue/green pair.
 #
-# After the old cron scheduler is disabled and outstanding executions settle,
-# enable each Render cron's RENDER_CRON_ENABLED separately. Daily-brief claims
-# do not expire on Render: inspect provider outcome and confirm the old process
-# stopped before operator recovery, preserving dailyBriefLastAttemptAt.
-# A cron HTTP timeout does not cancel API work. Never run both schedulers.
+# Render crons own scheduling (RENDER_CRON_ENABLED=true on both cron services).
+# The legacy Vercel project's deployments are disabled; keep its crons off and
+# never re-enable it while Render crons run. Never run both schedulers.
+# Daily-brief claims do not expire on Render: inspect provider outcome before
+# operator recovery, preserving dailyBriefLastAttemptAt.
+# A cron HTTP timeout does not cancel API work.
 #
 # CERTIFIED PRODUCTION POSTURE (2026-10-24): the Render Dashboard is
 # authoritative once this Blueprint has been synced. Release switches below are
@@ -40,8 +41,8 @@
 #   WIRELINE_AUTO_PROVISION_NUMBERS=true
 #   WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED=true (after /readyz + real-call proof)
 #   LAUNCH_HARD_GATE unset (launch readiness is 100)
-#   RENDER_CRON_ENABLED=false (legacy Vercel crons still own scheduling)
-# Keep botbound-api auto-deploy off; promote only a certified exact head.
+#   RENDER_CRON_ENABLED=true on both cron services (Render owns scheduling)
+# Auto-deploy is on from main for every service; QA re-runs after each deploy.
 previews:
   generation: off
 
@@ -106,7 +107,7 @@ projects:
             # Initial capacity: $7/month per service; validate call load before scaling.
             plan: 0.5c-512mb
             numInstances: 1
-            autoDeployTrigger: off
+            autoDeployTrigger: commit
             buildCommand: node deploy/render/build.mjs api
             startCommand: node deploy/render/start.mjs api
             healthCheckPath: /healthz
@@ -391,7 +392,7 @@ projects:
             region: ohio
             plan: 0.5c-512mb
             numInstances: 1
-            autoDeployTrigger: off
+            autoDeployTrigger: commit
             buildCommand: node deploy/render/build.mjs voice
             startCommand: node deploy/render/start.mjs voice
             healthCheckPath: /livez
@@ -814,7 +815,7 @@ projects:
             runtime: node
             region: ohio
             plan: 0.5c-512mb
-            autoDeployTrigger: off
+            autoDeployTrigger: commit
             schedule: "* * * * *"
             buildCommand: node deploy/render/build.mjs jobs-sweep
             startCommand: node deploy/render/start.mjs jobs-sweep
@@ -827,8 +828,8 @@ projects:
                 value: production
               - key: WIRELINE_DEPLOYMENT_ENVIRONMENT
                 value: production
-              # Dashboard-owned. Keep false while the legacy Vercel cron
-              # scheduler runs; enable only after that scheduler is retired.
+              # Certified production: true (Render owns scheduling).
+              # Dashboard-owned; never enable while another scheduler runs.
               - key: RENDER_CRON_ENABLED
                 sync: false
               - key: BOTBOUND_BACKEND_ORIGIN
@@ -847,7 +848,7 @@ projects:
             runtime: node
             region: ohio
             plan: 0.5c-512mb
-            autoDeployTrigger: off
+            autoDeployTrigger: commit
             schedule: "*/15 * * * *"
             buildCommand: node deploy/render/build.mjs daily-brief
             startCommand: node deploy/render/start.mjs daily-brief
@@ -860,8 +861,8 @@ projects:
                 value: production
               - key: WIRELINE_DEPLOYMENT_ENVIRONMENT
                 value: production
-              # Dashboard-owned. Keep false while the legacy Vercel cron
-              # scheduler runs; enable only after that scheduler is retired.
+              # Certified production: true (Render owns scheduling).
+              # Dashboard-owned; never enable while another scheduler runs.
               - key: RENDER_CRON_ENABLED
                 sync: false
               - key: BOTBOUND_BACKEND_ORIGIN
