@@ -526,6 +526,17 @@ export function planIncludesChannel(
   return planById(planId)?.channels.includes(channel) === true;
 }
 
+/** Whether any public package that includes this channel can be bought self-serve. */
+export function channelSoldSelfServe(channel: CommunicationChannel): boolean {
+  return STRIPE_PLANS.some(
+    (plan) =>
+      plan.public &&
+      plan.catalogFamily === "channels" &&
+      plan.channels.includes(channel) &&
+      plan.checkoutAvailability === "available",
+  );
+}
+
 /** Order and duplicate selections do not change the canonical package. */
 export function channelPlanForSelection(
   channels: readonly CommunicationChannel[],
