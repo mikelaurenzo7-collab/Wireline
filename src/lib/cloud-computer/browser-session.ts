@@ -33,6 +33,7 @@ import { ownerCookiesFrom } from "./owner-input";
 import { snapshotExpression, type SnapshotMode } from "./page-snapshot";
 import {
   checkUrlAllowed,
+  displayUrl,
   isNonPublicAddress,
   modelBrowserUrl,
   normalizeHostname,
@@ -1349,6 +1350,58 @@ export class CloudBrowserSession {
     return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   }
 
+  /**
+   * Owner-readable name of the control under a point, for the activity feed.
+   * Uses the same hit test and label chain as the activation check; clamped
+   * in the page and again on return, because the page realm can hand back
+   * anything.
+   */
+  private async labelAtPoint(page: Page, point: { x: number; y: number }): Promise<string> {
+    const raw = await page
+      .evaluate(({ x, y }) => {
+        let element: Element | null = document.elementFromPoint(x, y);
+        if (!element) return "";
+        // Open shadow roots expose the hit target. Closed roots stay unknown.
+        while (true) {
+          const root: ShadowRoot | null = element.shadowRoot;
+          if (!root) break;
+          const inner: Element | null = root.elementFromPoint(x, y);
+          if (!inner || inner === element) break;
+          element = inner;
+        }
+        const control =
+          element.closest(
+            "button,input,textarea,a,select,[role='button'],[role='link'],[role='textbox'],[role='menuitem'],[contenteditable],[onclick]",
+          ) ?? element;
+        return (
+          control.getAttribute("aria-label") ||
+          (control.getAttribute("aria-labelledby") || "")
+            .split(/\s+/)
+            .map((id) => document.getElementById(id)?.textContent || "")
+            .join(" ")
+            .trim() ||
+          ("labels" in control && control.labels
+            ? Array.from(control.labels as NodeListOf<HTMLLabelElement>)
+                .map((entry) => entry.textContent || "")
+                .join(" ")
+                .trim()
+            : "") ||
+          ("innerText" in control && typeof control.innerText === "string"
+            ? control.innerText
+            : "") ||
+          control.getAttribute("value") ||
+          control.getAttribute("title") ||
+          control.getAttribute("placeholder") ||
+          control.getAttribute("alt") ||
+          ""
+        )
+          .trim()
+          .slice(0, 60);
+      }, point)
+      .catch(() => "");
+    return typeof raw === "string" ? raw.replace(/\s+/g, " ").slice(0, 60) : "";
+  }
+
   /** Bot activations are checked at the browser boundary; owner input uses a separate path. */
   private async assertModelActivationSafe(
     page: Page,
@@ -1709,7 +1762,13 @@ export class CloudBrowserSession {
         }
         await this.afterNavigationCheck(page);
         const where = modelBrowserUrl(page.url());
-        return this.ok(`Navigated to ${where}`, `Opened ${where}`, [await this.browserState()]);
+        // The model-facing text keeps the origin only; the owner's activity
+        // feed names the actual page acted on (path kept, credentials, query
+        // and fragment stripped by displayUrl).
+        const activityWhere = displayUrl(page.url()) || where;
+        return this.ok(`Navigated to ${where}`, `Opened ${activityWhere}`, [
+          await this.browserState(),
+        ]);
       }
       case "screenshot": {
         const page = this.activePage(input.tab_id);
@@ -1757,7 +1816,8 @@ export class CloudBrowserSession {
       case "triple_click": {
         const page = this.activePage(input.tab_id);
         const target = parseTarget(input.target);
-        await this.assertModelActivationSafe(page, "click", await this.pointAt(page, target));
+        const point = await this.pointAt(page, target);
+        await this.assertModelActivationSafe(page, "click", point);
         if (token.cancelled || this.closed) fail("The click was stopped before it started.");
         const button =
           member === "right_click" ? "right" : member === "middle_click" ? "middle" : "left";
@@ -1778,6 +1838,9 @@ export class CloudBrowserSession {
             locator.click({ button, clickCount, timeout: ACTION_TIMEOUT_MS }),
           );
         } else {
+          // Name the control under the point before the click can change the
+          // page; otherwise the step logs as "Clicked on the page".
+          label = await this.labelAtPoint(page, point);
           await this.withModifiers(page, input.modifiers, () =>
             page.mouse.click(target.x, target.y, { button, clickCount }),
           );
@@ -1811,6 +1874,8 @@ export class CloudBrowserSession {
         await this.assertModelActivationSafe(page, "click", path[0]);
         await this.assertModelActivationSafe(page, "click", path[path.length - 1]);
         if (token.cancelled || this.closed) fail("The drag was stopped before it started.");
+        const startPoint = path[0];
+        const startLabel = startPoint ? await this.labelAtPoint(page, startPoint) : "";
         await this.withModifiers(page, input.modifiers, async () => {
           const [from, ...remaining] = path;
           if (!from) fail("The drag path is invalid.");
@@ -1822,7 +1887,10 @@ export class CloudBrowserSession {
             await page.mouse.up().catch(() => undefined);
           }
         });
-        return this.ok("Dragged.", "Dragged on the page");
+        return this.ok(
+          "Dragged.",
+          startLabel ? `Dragged "${startLabel.replace(/\s+/g, " ")}"` : "Dragged on the page",
+        );
       }
       case "left_mouse_down":
       case "left_mouse_up": {

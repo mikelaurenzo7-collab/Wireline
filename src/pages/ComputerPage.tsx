@@ -152,6 +152,18 @@ function hostOf(url: string): string {
   }
 }
 
+/** "botbound.app/pricing" — the actual page an activity entry acted on. */
+function urlTrail(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return parsed.pathname && parsed.pathname !== "/"
+      ? `${parsed.hostname.replace(/^www\./, "")}${parsed.pathname}`
+      : hostOf(url);
+  } catch {
+    return url;
+  }
+}
+
 function UnavailableNotice({ status }: { status: ComputerStatus }) {
   if (status.reason === "plan_required") {
     return (
@@ -206,6 +218,7 @@ function LiveScreen({
     screenKey: string;
     inputVersion: number;
   } | null>(null);
+  const [finalLoadDone, setFinalLoadDone] = useState(false);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [zoomed, setZoomed] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -218,6 +231,9 @@ function LiveScreen({
   );
   const screenRef = useRef<HTMLElement | null>(null);
   const active = ACTIVE.includes(task.status) || task.liveView;
+  // A finished task keeps its final frame on the server for review; this
+  // screen then shows that frame once, statically, instead of clearing.
+  const finalFrame = !active && Boolean(task.frameCapturedAt);
   const screenKey = JSON.stringify([
     task.id,
     task.ownerTabs?.find((tab) => tab.active)?.id ?? null,
@@ -241,7 +257,8 @@ function LiveScreen({
   useEffect(() => {
     pointerStart.current = null;
     setCursor(null);
-    if (!active || latest.current?.screenKey !== screenKey) {
+    if (finalFrame) setFinalLoadDone(false);
+    if ((!active && !finalFrame) || latest.current?.screenKey !== screenKey) {
       // A prior page/tab is never the current screen. Same-page scroll/type
       // may keep its pixels, but coordinate actions wait for the new frame.
       if (latest.current) URL.revokeObjectURL(latest.current.url);
@@ -249,7 +266,7 @@ function LiveScreen({
       setFrame(null);
       misses.current = 0;
     }
-    if (!active || ownerBusy) return;
+    if ((!active && !finalFrame) || ownerBusy) return;
     const controller = new AbortController();
     let timer: number | undefined;
     const load = async () => {
@@ -270,12 +287,14 @@ function LiveScreen({
           latest.current = { url, screenKey };
           setFrame({ url, screenKey, inputVersion: ownerInputVersion });
           misses.current = 0;
+          if (!active) setFinalLoadDone(true);
         } else {
           misses.current += 1;
           if (misses.current >= 2) {
             if (latest.current) URL.revokeObjectURL(latest.current.url);
             latest.current = null;
             setFrame(null);
+            if (!active) setFinalLoadDone(true);
           }
         }
       } catch {
@@ -285,16 +304,19 @@ function LiveScreen({
           if (latest.current) URL.revokeObjectURL(latest.current.url);
           latest.current = null;
           setFrame(null);
+          if (!active) setFinalLoadDone(true);
         }
       }
-      if (!controller.signal.aborted) timer = window.setTimeout(load, 1500);
+      // A live screen keeps polling; a final frame loads once (one retry).
+      if (!controller.signal.aborted && (active || misses.current < 2))
+        timer = window.setTimeout(load, 1500);
     };
     void load();
     return () => {
       controller.abort();
       if (timer) window.clearTimeout(timer);
     };
-  }, [task.id, active, screenKey, requestKey, ownerInputVersion, ownerBusy]);
+  }, [task.id, active, finalFrame, screenKey, requestKey, ownerInputVersion, ownerBusy]);
 
   useEffect(
     () => () => {
@@ -315,7 +337,9 @@ function LiveScreen({
   const latestEvent = [...task.events]
     .reverse()
     .find((event) => event.kind === "action" || event.kind === "note" || event.kind === "error");
-  const screenCurrent = !task.frameUrl || !lastUrl || task.frameUrl === lastUrl;
+  // The retained final frame is the session's end state by definition; the
+  // live-sync check only guards frames that can still change.
+  const screenCurrent = finalFrame || !task.frameUrl || !lastUrl || task.frameUrl === lastUrl;
   const newTab = ownerControl && !/^https?:\/\//i.test(task.currentUrl || "");
 
   const screenPoint = (
@@ -460,6 +484,7 @@ function LiveScreen({
           </span>
         )}
         {active ? <span className="wl-computer-screen__live">Latest screen</span> : null}
+        {finalFrame && src ? <span className="wl-computer-screen__live">Final screen</span> : null}
         {active ? (
           <>
             <button
@@ -674,7 +699,7 @@ function LiveScreen({
           });
         }}
       >
-        {active && src && screenCurrent ? (
+        {(active || finalFrame) && src && screenCurrent ? (
           <div className="wl-computer-screen__canvas">
             <img
               src={src}
@@ -719,6 +744,14 @@ function LiveScreen({
                       ? "The screen is temporarily unavailable. Retrying…"
                       : "Starting a secure browser…"}
                 </span>
+              </>
+            ) : finalFrame && !finalLoadDone ? (
+              <>
+                <Loader2
+                  className="size-5 animate-spin motion-reduce:animate-none"
+                  aria-hidden="true"
+                />
+                <span>Loading the final screen…</span>
               </>
             ) : (
               <>
@@ -776,7 +809,9 @@ function ActivityCard({ event, index }: { event: TaskEvent; index: number }) {
         <span className="wl-computer-action__kind">{EVENT_KIND_LABEL[event.kind]}</span>
         <span>
           {event.text}
-          {event.url ? <em> · {hostOf(event.url)}</em> : null}
+          {event.url && !event.text.includes(event.url) ? (
+            <em> · {urlTrail(event.url)}</em>
+          ) : null}
         </span>
       </div>
     </li>
@@ -1501,6 +1536,10 @@ function TaskDetail({
             ) : null
           }
         />
+      ) : task.frameCapturedAt ? (
+        // The task ended with its final frame retained: keep the completed
+        // session reviewable in place until a new task replaces it.
+        <LiveScreen task={task} />
       ) : compact ? (
         <EndedBrowserFrame
           onOpen={onOpenBrowser}
