@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ClipboardCheck, Mail, Monitor, PhoneCall } from "lucide-react";
 
-import {
-  useComputerWorkspace,
-  type ComputerTask,
-} from "../../contexts/ComputerWorkspaceContext";
+import { useComputerWorkspace, type ComputerTask } from "../../contexts/ComputerWorkspaceContext";
 import { usePresenceSignals } from "../../hooks/usePresenceSignals";
 import type { LiveSignalPresence } from "../LiveFloorPresence";
 import { authFetch } from "../../lib/api";
@@ -140,7 +137,13 @@ function approvalTitle(status: string | null | undefined): string {
 
 function FeedIcon({ kind }: { kind: FeedKind }) {
   const Icon =
-    kind === "call" ? PhoneCall : kind === "computer" ? Monitor : kind === "email" ? Mail : ClipboardCheck;
+    kind === "call"
+      ? PhoneCall
+      : kind === "computer"
+        ? Monitor
+        : kind === "email"
+          ? Mail
+          : ClipboardCheck;
   return (
     <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
       <Icon className="size-3.5" aria-hidden="true" />
@@ -354,7 +357,10 @@ export default function BotLivePanel({
     <section className={className} aria-label={`Live activity for ${agentName || "this Bot"}`}>
       <div className="flex items-center justify-between gap-3">
         <p className={WL_APP_CLASSES.wiredEyebrow}>Live</p>
-        <span className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground" role="status">
+        <span
+          className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground"
+          role="status"
+        >
           <span
             className={`size-2 rounded-full ${
               busy
@@ -370,7 +376,9 @@ export default function BotLivePanel({
       {liveCall ? (
         <p className={`${compact ? "mt-2" : "mt-3"} text-sm leading-6 text-foreground`}>
           <span className="font-semibold">{liveCall.customerNumber || "Caller"}</span>
-          {liveCall.label ? <span className="text-muted-foreground"> · {liveCall.label}</span> : null}
+          {liveCall.label ? (
+            <span className="text-muted-foreground"> · {liveCall.label}</span>
+          ) : null}
           {callElapsed ? <span className="text-muted-foreground"> · {callElapsed}</span> : null}
         </p>
       ) : null}
@@ -378,7 +386,7 @@ export default function BotLivePanel({
       {activeComputerTask ? (
         <p className={`${compact ? "mt-2" : "mt-3"} text-sm leading-6 text-foreground`}>
           <span className="font-semibold">
-            {activeComputerTask.status === "needs_input" ? "Needs your reply — " : "Working on — "}
+            {activeComputerTask.status === "needs_input" ? "Needs your reply: " : "Working on: "}
           </span>
           {preview(
             activeComputerTask.status === "needs_input" && activeComputerTask.question
@@ -387,7 +395,9 @@ export default function BotLivePanel({
             90,
           )}
           {latestComputerStep ? (
-            <span className="block text-muted-foreground">{preview(latestComputerStep.text, 110)}</span>
+            <span className="block text-muted-foreground">
+              {preview(latestComputerStep.text, 110)}
+            </span>
           ) : null}
         </p>
       ) : null}

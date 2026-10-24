@@ -131,6 +131,7 @@ function routeReached(base, requestedRoute, finalUrl) {
   const requestedPath = requestedRoute.split(/[?#]/)[0];
   const expectedRedirects = new Map([
     ["/overview", "/studio"],
+    ["/status", "/trust"],
     ["/studio/live-video", "/studio"],
     ["/settings/phone", "/phone"],
     ["/calls", "/phone"],
