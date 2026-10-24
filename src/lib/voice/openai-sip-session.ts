@@ -1,4 +1,7 @@
 import WebSocket from "ws";
+import { mediaCallSid } from "./cloned-media-config";
+import { controlMediaCall, createClonedMediaSession } from "./elevenlabs-media-bridge";
+import type { ElevenLabsMediaSession } from "./elevenlabs-media-session";
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray, or, sql } from "drizzle-orm";
 
@@ -228,7 +231,7 @@ function asRecord(value: unknown): Record<string, unknown> {
     : {};
 }
 
-function sendJson(ws: WebSocket, value: unknown): void {
+function sendJson(ws: WebSocket | ElevenLabsMediaSession, value: unknown): void {
   if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(value));
 }
 
@@ -458,6 +461,7 @@ async function openaiCallControl(
   action: "refer" | "hangup",
   body?: Record<string, unknown>,
 ): Promise<OpenAICallControlOutcome> {
+  if (mediaCallSid(callId)) return controlMediaCall(callId, action, String(body?.target_uri ?? ""));
   // The call id says which provider owns the call (xAI ids carry `xai:`).
   const provider = realtimeProviderForCallId(callId);
   const apiKey = realtimeApiKey(provider);
@@ -1981,7 +1985,8 @@ async function runRealtimeSession(
       cloneId: runtime.customVoice?.cloneId ?? null,
       stockVoice: standInStockVoice,
     });
-  let voiceKind: "custom" | "stock" = customVoiceId ? "custom" : "stock";
+  let voiceKind: "custom" | "stock" =
+    customVoiceId || mediaCallSid(input.callId) ? "custom" : "stock";
   let clonePlaybackRecorded = false;
   let customVoiceFallback: "provider_error" | "latency" | "drill" | null = null;
   let slowCustomVoiceReplies = 0;
@@ -2049,12 +2054,18 @@ async function runRealtimeSession(
       endedReason,
     );
 
-  const ws = new WebSocket(buildRealtimeSipSocketUrl(input.callId), {
-    headers: { Authorization: `Bearer ${apiKey}` },
-    // xAI's Dial gives up after XAI_CONNECT_TIMEOUT_SECONDS and fails over,
-    // so a slow xAI handshake must not hold the leg longer than that.
-    handshakeTimeout: provider === "xai" ? XAI_WS_OPEN_TIMEOUT_MS : WS_OPEN_TIMEOUT_MS,
-  });
+  const ws = mediaCallSid(input.callId)
+    ? createClonedMediaSession({
+        callId: input.callId,
+        userId: input.userId,
+        voice: runtime.customVoice ?? null,
+      })
+    : new WebSocket(buildRealtimeSipSocketUrl(input.callId), {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        // xAI's Dial gives up after XAI_CONNECT_TIMEOUT_SECONDS and fails over,
+        // so a slow xAI handshake must not hold the leg longer than that.
+        handshakeTimeout: provider === "xai" ? XAI_WS_OPEN_TIMEOUT_MS : WS_OPEN_TIMEOUT_MS,
+      });
 
   const ownsSession = () => !ownershipSignal?.aborted;
   const abortForLostOwnership = () => {
@@ -2070,7 +2081,10 @@ async function runRealtimeSession(
     }
   };
   if (ownershipSignal?.aborted) abortForLostOwnership();
-  else ownershipSignal?.addEventListener("abort", abortForLostOwnership, { once: true });
+  else
+    ownershipSignal?.addEventListener("abort", abortForLostOwnership, {
+      once: true,
+    });
 
   const notifyTransferred = () => {
     if (!ownsSession()) return;
@@ -2166,7 +2180,9 @@ async function runRealtimeSession(
     const continuationId = requestedContinuation;
     sendJson(ws, {
       type: "response.create",
-      response: { metadata: { botbound_tool_continuation: requestedContinuation } },
+      response: {
+        metadata: { botbound_tool_continuation: requestedContinuation },
+      },
     });
     continuationAttempts += 1;
     clearContinuationWatchdog();
@@ -2199,7 +2215,11 @@ async function runRealtimeSession(
     pendingToolOutputs.add(callId);
     sendJson(ws, {
       type: "conversation.item.create",
-      item: { type: "function_call_output", call_id: callId, output: boundedToolOutput(output) },
+      item: {
+        type: "function_call_output",
+        call_id: callId,
+        output: boundedToolOutput(output),
+      },
     });
   };
 
@@ -2208,6 +2228,11 @@ async function runRealtimeSession(
   const observeControlEvent = (event: Record<string, unknown>) => {
     if (!ownsSession() || endedAt !== null || ws.readyState !== WebSocket.OPEN) return;
     const type = String(event.type || "");
+    if (type === "botbound.voice_fallback") {
+      voiceKind = "stock";
+      customVoiceFallback = "provider_error";
+      return;
+    }
     const response = asRecord(event.response);
     const responseId = typeof response.id === "string" ? response.id : "";
     const playbackId = typeof event.response_id === "string" ? event.response_id : "";
@@ -2365,7 +2390,9 @@ async function runRealtimeSession(
           (result) => ({ kind: "completed" as const, result }),
           (error) => ({ kind: "failed" as const, error }),
         ),
-        delay(TOOL_CONFIRM_TIMEOUT_MS).then(() => ({ kind: "timeout" as const })),
+        delay(TOOL_CONFIRM_TIMEOUT_MS).then(() => ({
+          kind: "timeout" as const,
+        })),
       ]);
       turnTiming.observeToolConfirmation(
         Date.now() - toolConfirmationStartedAt,
@@ -2512,7 +2539,7 @@ async function runRealtimeSession(
       }
     }
     if (type === "input_audio_buffer.speech_stopped") toolRanThisTurn = false;
-    if (voiceKind === "custom" && turnAudioMs !== null && !toolRanThisTurn) {
+    if (provider === "xai" && voiceKind === "custom" && turnAudioMs !== null && !toolRanThisTurn) {
       if (turnAudioMs > customVoiceLatencyBudgetMs) slowCustomVoiceReplies += 1;
       else slowCustomVoiceReplies = 0;
       // Two slow replies in a row, not one. Tool turns are excluded above.
@@ -2583,7 +2610,11 @@ async function runRealtimeSession(
       const callId = typeof event.call_id === "string" ? event.call_id.trim() : "";
       if (name && callId) {
         toolRanThisTurn = true;
-        pendingTools.set(callId, { callId, name, arguments: safeToolArguments(event.arguments) });
+        pendingTools.set(callId, {
+          callId,
+          name,
+          arguments: safeToolArguments(event.arguments),
+        });
       }
       return;
     }
@@ -2725,7 +2756,10 @@ async function runRealtimeSession(
             fallbackDrillTimer = setTimeout(() => {
               fallbackDrillTimer = null;
               if (!ownsSession() || endedAt !== null || ws.readyState !== WebSocket.OPEN) return;
-              log.warn("Fallback drill firing", { callId: providerCallId(input.callId), drill });
+              log.warn("Fallback drill firing", {
+                callId: providerCallId(input.callId),
+                drill,
+              });
               if (drill === "clone_voice") {
                 fallBackToStockVoice("drill");
                 return;
@@ -2922,7 +2956,7 @@ async function runRealtimeSession(
             openingPlaybackConfirmed,
             providerEvents: Object.fromEntries(providerEventCounts),
             ...turnTiming.summary(),
-            voiceKind: customVoiceId ? "custom" : "stock",
+            voiceKind: customVoiceId || mediaCallSid(input.callId) ? "custom" : "stock",
             voiceAtClose: voiceKind,
             customVoiceFallback,
           });
@@ -3219,7 +3253,9 @@ export async function runOpenAISipCallSession(
                 callId: providerCallId(input.callId),
                 elapsedSeconds: Math.ceil(seconds),
               });
-              reportError(error, { tags: { surface: "sip-duration-accounting" } });
+              reportError(error, {
+                tags: { surface: "sip-duration-accounting" },
+              });
             }
           }
         : undefined;
