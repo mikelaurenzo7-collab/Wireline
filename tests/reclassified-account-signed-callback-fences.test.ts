@@ -129,7 +129,10 @@ describe("reclassified-account signed callback fences", () => {
       decision,
     );
     const hangup = bridgeRoute.indexOf("send(emptyTwiml())", decision);
-    const bridge = bridgeRoute.indexOf("send(bridgeTwiml", decision);
+    // Prettier may wrap the call as `send(\n bridgeTwiml({...}))`, so match the
+    // call shape rather than one formatting of it.
+    const bridgeOffset = bridgeRoute.slice(hangup).search(/send\(\s*bridgeTwiml\(/);
+    const bridge = bridgeOffset < 0 ? -1 : hangup + bridgeOffset;
     expect(decision).toBeGreaterThanOrEqual(0);
     expect(meter).toBeGreaterThan(decision);
     expect(hangup).toBeGreaterThan(meter);

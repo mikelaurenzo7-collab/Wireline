@@ -143,7 +143,16 @@ vi.mock("../src/lib/api-validation", () => ({
   emailThreadReplySchema: {},
   emailThreadsReadStateSchema: {},
 }));
-vi.mock("../src/lib/email-thread-reply", () => ({ sendEmailThreadReply: vi.fn() }));
+vi.mock("../src/lib/email-thread-reply", () => ({
+  sendEmailThreadReply: vi.fn(),
+  // Detail reads annotate messages from the reply ledger (email-send truth);
+  // this suite covers inbox scope and pagination, so the ledger is empty.
+  loadEmailThreadDelivery: vi.fn(async () => ({
+    sentMessageIds: [],
+    latestStatus: null,
+    latestAt: null,
+  })),
+}));
 vi.mock("../src/lib/server-utils", () => ({
   getErrorMessage: String,
   mapObjectToSnake: (value: unknown) => value,
@@ -352,6 +361,7 @@ describe("email detail follows the selected inbox scope", () => {
       expect(result.thread.id).toBe("older");
       expect(result.messages.map((message: TestRow) => message.id)).toEqual(["message"]);
       expect(result.handoff.id).toBe("handoff");
+      expect(result.reply_delivery).toBeNull();
       expect(h.queries.find((query) => query.table?.$table === "threads")?.where).toEqual([
         "and",
         ["eq", "threads.id", "older"],
