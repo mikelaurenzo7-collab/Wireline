@@ -95,13 +95,8 @@ Env vars (names only): `USAGE_BILLING_ENABLED`, `STRIPE_USAGE_BASE_PRICE_ID`,
 
 ## Known follow-ups before stage 2
 
-- Add `wireline_usage_meter_events` and `wireline_usage_spend_controls` to
-  `ACCOUNT_DELETION_TARGETS` in `src/lib/account-deletion.ts` once the voice-clone PR that owns that
-  file merges (both cascade on user deletion today; the export does not include them yet).
-- The migration journal idx 84 and `meta/0084_snapshot.json` collide with the voice-clone PR;
-  whichever merges second renumbers and regenerates its snapshot.
-- A call's maximum length is not yet bounded by cap headroom, so at most one call can run past the
-  cap; the clamp keeps it off the invoice.
+- A call's maximum length is not yet bounded by cap headroom, so calls already in progress can run
+  past the cap; the clamp keeps that time off the invoice.
 - Computer minutes count task wall time.
 - Turning the flag off while usage subscribers exist leaves their usage unreported.
 - Checkout dedupe compares plan and interval only, so a changed add-on choice can reuse an open

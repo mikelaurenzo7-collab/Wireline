@@ -98,10 +98,21 @@ export const USAGE_STRIPE_PLAN = {
 export function plannedObjects(plan = USAGE_STRIPE_PLAN) {
   return [
     { kind: "product", name: plan.product.name, metadata: plan.product.metadata },
-    { kind: "price", lookup_key: plan.base.lookup_key, unit_amount: plan.base.unit_amount, interval: "month" },
+    {
+      kind: "price",
+      lookup_key: plan.base.lookup_key,
+      unit_amount: plan.base.unit_amount,
+      interval: "month",
+    },
     ...plan.meters.flatMap((meter) => [
       { kind: "meter", event_name: meter.event_name, aggregation: "sum" },
-      { kind: "price", lookup_key: meter.lookup_key, billing_scheme: "tiered", tiers_mode: "graduated", tiers: meter.tiers },
+      {
+        kind: "price",
+        lookup_key: meter.lookup_key,
+        billing_scheme: "tiered",
+        tiers_mode: "graduated",
+        tiers: meter.tiers,
+      },
     ]),
     ...plan.addons.map((addon) => ({
       kind: "price",
@@ -207,7 +218,10 @@ async function apply(stripe, plan) {
           lookup_key: meterSpec.lookup_key,
           nickname: meterSpec.display_name,
           // Metered items never carry wireline_plan_id, so they never resolve as the base plan.
-          metadata: { wireline_usage_meter: meterSpec.key, wireline_catalog_version: CATALOG_VERSION },
+          metadata: {
+            wireline_usage_meter: meterSpec.key,
+            wireline_catalog_version: CATALOG_VERSION,
+          },
           tax_behavior: "exclusive",
         },
         { idempotencyKey: `usage-price-${meterSpec.lookup_key}` },
@@ -229,7 +243,10 @@ async function apply(stripe, plan) {
           recurring: { interval: "month", usage_type: "licensed" },
           lookup_key: addon.lookup_key,
           nickname: addon.nickname,
-          metadata: { wireline_addon_id: `usage_${addon.key}`, wireline_catalog_version: CATALOG_VERSION },
+          metadata: {
+            wireline_addon_id: `usage_${addon.key}`,
+            wireline_catalog_version: CATALOG_VERSION,
+          },
           tax_behavior: "exclusive",
         },
         { idempotencyKey: `usage-price-${addon.lookup_key}` },
@@ -260,7 +277,11 @@ async function main(argv = process.argv.slice(2)) {
   const stripe = new Stripe(flags.key);
   const result = await apply(stripe, USAGE_STRIPE_PLAN);
   console.log(`Mode: ${mode}`);
-  console.log(result.created.length ? `Created:\n  ${result.created.join("\n  ")}` : "Created nothing; all objects already exist.");
+  console.log(
+    result.created.length
+      ? `Created:\n  ${result.created.join("\n  ")}`
+      : "Created nothing; all objects already exist.",
+  );
   console.log("\nSet these env vars (ids are not secrets):");
   for (const [name, value] of Object.entries(result.env)) console.log(`  ${name}=${value}`);
   console.log("  USAGE_BILLING_ENABLED=false  # flip to true only at Stage 2");
