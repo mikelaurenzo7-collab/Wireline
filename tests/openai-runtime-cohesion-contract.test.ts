@@ -12,11 +12,11 @@ import {
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("OpenAI runtime cohesion", () => {
-  it("keeps founder and customer default OpenAI lane descriptors compatible", () => {
+  it("keeps founder and customer default xAI lane descriptors compatible", () => {
     const policy = read("src/lib/voice/runtime-policy.ts");
-    expect(policy.match(/runtime: "openai_realtime"/g)).toHaveLength(2);
+    expect(policy.match(/ runtime: "xai_realtime"/g)).toHaveLength(2);
     expect(policy.match(/carrier: "twilio"/g)).toHaveLength(2);
-    expect(policy.match(/fallbackRuntime: null/g)).toHaveLength(2);
+    expect(policy.match(/fallbackRuntime: "openai_realtime"/g)).toHaveLength(2);
     expect(policy).not.toMatch(/vapi/i);
     expect(policy).toContain("Actual phone admission is owned");
   });

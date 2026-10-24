@@ -167,7 +167,8 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     name: "WIRELINE_PHONE_VOICE_PROVIDER",
     group: "voice",
     required: false,
-    description: "Provider for new phone calls; unset keeps OpenAI Realtime",
+    description:
+      "Provider for new phone calls; unset (or xai) uses xAI voice, openai is the operator opt-out",
     validate: (value) => ["xai", "openai"].includes(value.trim().toLowerCase()),
     formatHint: "xai or openai",
   },
@@ -845,17 +846,33 @@ export function validateEnv(): EnvValidationResult {
     });
   }
 
-  // xAI Grok Voice carries phone calls only when explicitly selected, and then
-  // its key is required: registration and every bridged call depend on it.
+  // xAI voice carries phone calls by default. An explicit "xai" without its key
+  // is a broken deploy; the unset default only warns, because every call still
+  // answers on the OpenAI fallback while the key is missing.
   byGroup.voice.total++;
+  const phoneProviderExplicit = String(process.env.WIRELINE_PHONE_VOICE_PROVIDER || "")
+    .trim()
+    .toLowerCase();
   if (configuredPhoneVoiceProvider() === "xai" && !process.env.XAI_API_KEY?.trim()) {
-    result.valid = false;
-    byGroup.voice.invalid++;
-    result.errors.push({
-      var: "XAI_API_KEY",
-      group: "voice",
-      message: "WIRELINE_PHONE_VOICE_PROVIDER=xai requires XAI_API_KEY for xAI Grok Voice calls",
-    });
+    if (phoneProviderExplicit === "xai") {
+      result.valid = false;
+      byGroup.voice.invalid++;
+      result.errors.push({
+        var: "XAI_API_KEY",
+        group: "voice",
+        message: "WIRELINE_PHONE_VOICE_PROVIDER=xai requires XAI_API_KEY for xAI Grok Voice calls",
+      });
+    } else {
+      byGroup.voice.valid++;
+      if (isProd) {
+        result.warnings.push({
+          var: "XAI_API_KEY",
+          group: "voice",
+          message:
+            "Phone calls default to xAI voice but XAI_API_KEY is unset, so every call answers on the OpenAI fallback",
+        });
+      }
+    }
   } else {
     byGroup.voice.valid++;
   }

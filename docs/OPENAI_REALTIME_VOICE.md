@@ -1,33 +1,33 @@
 # OpenAI Realtime Voice — Browser and Twilio PSTN
 
 **Status:** Canonical production voice policy  
-**Updated:** October 19, 2026
+**Updated:** October 24, 2026
 
-BotBound uses one live-conversation runtime: OpenAI Realtime on
-`gpt-realtime-2.1` for browser rehearsals and as the default telephone runtime.
-This applies to customer Bots, founder-owned internal Bot profiles,
-authenticated Studio rehearsals, authenticated ChatGPT private simulation,
-inbound phone calls, and outbound phone calls. One explicit operator cutover
-exists for telephone calls only: with `WIRELINE_PHONE_VOICE_PROVIDER=xai`, calls
-on numbers registered with xAI run on xAI voice (`grok-voice-3.0`, SIP digest
-trunk, per-number signed webhooks) while unregistered numbers and every browser
-rehearsal stay on OpenAI Realtime. The provider travels with the call id, so
-hangup, transfer, and recovery always reach the provider that owns the call. See
-the xAI section of `docs/DEPLOYMENT_RUNBOOK.md` for the cutover and rollback.
+Telephone calls run on xAI voice (`grok-voice-3.0`, SIP digest trunk,
+per-number signed webhooks) by default for every number. A line registers with
+xAI when it is activated, and any line that reaches a call unregistered
+registers itself in the background; until that finishes, or whenever xAI is
+unavailable, the call answers on OpenAI Realtime (`gpt-realtime-2.1`).
+`WIRELINE_PHONE_VOICE_PROVIDER=openai` is the operator opt-out. Browser
+rehearsals (authenticated Studio and ChatGPT private simulation) stay on OpenAI
+Realtime WebRTC. The provider travels with the call id, so hangup, transfer,
+and recovery always reach the provider that owns the call. See the xAI section
+of `docs/DEPLOYMENT_RUNBOOK.md` for rollback.
 Public and guest audio/call demos are retired. Twilio owns carrier transport,
 phone numbers, PSTN/SIP, and SMS.
-No alternate voice provider or automatic model fallback is permitted: a call
-never moves between providers mid-flight, and each provider fails closed.
+A call never moves between providers mid-flight. Within an xAI call, a Bot's
+cloned voice that errors or misses the reply budget twice in a row switches to
+the Bot's stock voice for the rest of that call; the call is never dropped.
 Customer surfaces describe the voice as BotBound's and never name the vendor.
 
 ## Transport map
 
-| Surface                                           | Transport                                                                         | Runtime                                                                |
-| ------------------------------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Authenticated Studio / ChatGPT private simulation | Browser WebRTC offer sent to a same-origin BotBound route                         | OpenAI Realtime                                                        |
-| Inbound phone                                     | Twilio signed webhook → BotBound TwiML → OpenAI project SIP URI                   | OpenAI Realtime (xAI voice on registered numbers when the flag is set) |
-| Outbound phone                                    | Twilio customer leg + AMD → attempt-bound BotBound TwiML → OpenAI project SIP URI | OpenAI Realtime (xAI voice on registered numbers when the flag is set) |
-| SMS                                               | Twilio signed webhook and Messaging Service/number                                | BotBound messaging runtime                                             |
+| Surface                                           | Transport                                                                         | Runtime                              |
+| ------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------ |
+| Authenticated Studio / ChatGPT private simulation | Browser WebRTC offer sent to a same-origin BotBound route                         | OpenAI Realtime                      |
+| Inbound phone                                     | Twilio signed webhook → BotBound TwiML → OpenAI project SIP URI                   | xAI voice (OpenAI Realtime fallback) |
+| Outbound phone                                    | Twilio customer leg + AMD → attempt-bound BotBound TwiML → OpenAI project SIP URI | xAI voice (OpenAI Realtime fallback) |
+| SMS                                               | Twilio signed webhook and Messaging Service/number                                | BotBound messaging runtime           |
 
 The OpenAI project SIP URI is:
 

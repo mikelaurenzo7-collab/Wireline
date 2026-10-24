@@ -46,10 +46,13 @@ describe("xAI Grok Voice phone runtime", () => {
     expect(() => buildRealtimeSipSocketUrl("xai:bad id")).toThrow();
   });
 
-  it("keeps OpenAI the default until xAI is switched on", () => {
-    expect(configuredPhoneVoiceProvider({})).toBe("openai");
+  it("defaults every new phone call to xAI, with OpenAI only as the explicit opt-out", () => {
+    expect(configuredPhoneVoiceProvider({})).toBe("xai");
     expect(configuredPhoneVoiceProvider({ WIRELINE_PHONE_VOICE_PROVIDER: " XAI " })).toBe("xai");
-    expect(configuredPhoneVoiceProvider({ WIRELINE_PHONE_VOICE_PROVIDER: "grok" })).toBe("openai");
+    expect(configuredPhoneVoiceProvider({ WIRELINE_PHONE_VOICE_PROVIDER: "grok" })).toBe("xai");
+    expect(configuredPhoneVoiceProvider({ WIRELINE_PHONE_VOICE_PROVIDER: " OpenAI " })).toBe(
+      "openai",
+    );
   });
 
   it("pins a versioned Grok Voice model and maps every saved voice", () => {
@@ -69,7 +72,8 @@ describe("xAI Grok Voice phone runtime", () => {
       provider: "xai",
       voice: "rex",
     });
-    expect(phoneCallVoiceFor("cedar", {})).toBeNull();
+    expect(phoneCallVoiceFor("cedar", {})).toEqual({ provider: "xai", voice: "rex" });
+    expect(phoneCallVoiceFor("cedar", { WIRELINE_PHONE_VOICE_PROVIDER: "openai" })).toBeNull();
   });
 
   it("sends xAI only the session fields it documents", () => {

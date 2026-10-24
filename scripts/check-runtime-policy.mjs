@@ -49,13 +49,13 @@ requireText(
 );
 requireText(
   phoneProvider,
-  '? "xai"\n    : "openai"',
-  "OpenAI must remain the default new-call provider.",
+  '=== "openai"\n    ? "openai"\n    : "xai"',
+  "xAI must be the default new-call provider, with OpenAI only as the explicit opt-out.",
 );
 requireText(
   sipTarget,
   'configuredPhoneVoiceProvider() !== "xai" || !xaiSipConfigured()',
-  "xAI SIP targets must require explicit opt-in and configuration.",
+  "xAI SIP targets must honor the operator opt-out and require configuration.",
 );
 requireText(
   sipTarget,
@@ -66,6 +66,11 @@ requireText(
   sipTarget,
   "if (!credentials)",
   "Unregistered phone numbers must fall back before xAI admission.",
+);
+requireText(
+  sipTarget,
+  "registerNumberInBackground(ourNumber)",
+  "Unregistered phone numbers must self-register with xAI instead of needing manual registration.",
 );
 for (const uri of [
   "buildOpenAIInboundSipUri(input.token)",
@@ -165,5 +170,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  "Source runtime policy checked: OpenAI private rehearsal; default OpenAI or registered opt-in xAI phone routing over Twilio; call-id-bound control. Live workflow evidence remains separate.",
+  "Source runtime policy checked: OpenAI private rehearsal; default xAI phone routing with self-registration and OpenAI fallback over Twilio; call-id-bound control. Live workflow evidence remains separate.",
 );
