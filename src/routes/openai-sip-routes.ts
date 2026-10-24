@@ -1,4 +1,15 @@
-import { Router, type Request, type Response as ExpressResponse } from "express";
+import { Router, json, type Request, type Response as ExpressResponse } from "express";
+import { CLONED_MEDIA_ADMIT_PATH, mediaCallSid } from "../lib/voice/cloned-media-config";
+import {
+  authorizeMediaCall,
+  controlMediaCall,
+  prepareMediaRecording,
+  registeredMediaCall,
+} from "../lib/voice/elevenlabs-media-bridge";
+import {
+  verifyVoiceWorkerServiceAuth,
+  VOICE_WORKER_AUTH_HEADER,
+} from "../lib/voice/openai-sip-worker-dispatch";
 import { and, eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
@@ -178,7 +189,9 @@ async function resolveOutboundContext(
 ): Promise<{ call: OpenAISipIncomingCall }> {
   const verification = verifyOpenAIOutboundToken(token);
   if (!verification.ok) {
-    log.warn("OpenAI outbound SIP token rejected", { reason: verification.reason });
+    log.warn("OpenAI outbound SIP token rejected", {
+      reason: verification.reason,
+    });
     throw AppError.unauthorized("Invalid outbound voice correlation token.");
   }
   const leadId = BigInt(verification.claims.leadId);
@@ -245,7 +258,12 @@ async function resolveOutboundContext(
     // The parent Twilio CallSid persisted by this placement's bridge TwiML is
     // the immutable identity the recording-completion callback correlates
     // against. Phone tests never record, so they carry no bridge marker.
-    const twilioParentCallSid = resolveOpenAIOutboundParentCallSid(nativeVoice);
+    const twilioParentCallSid =
+      resolveOpenAIOutboundParentCallSid(nativeVoice) ??
+      (lead.source === "phone_test" &&
+      /^CA[a-f0-9]{32}$/i.test(String(nativeVoice.twilio_call_sid ?? ""))
+        ? String(nativeVoice.twilio_call_sid)
+        : null);
     if (!twilioParentCallSid && lead.source !== "phone_test") {
       log.warn("Outbound SIP call has no persisted parent CallSid", {
         leadId: String(lead.id),
@@ -300,6 +318,10 @@ async function callControl(
 }
 
 async function rejectCall(callId: string, statusCode = 603): Promise<void> {
+  if (mediaCallSid(callId)) {
+    await controlMediaCall(callId, "hangup");
+    return;
+  }
   if (realtimeProviderForCallId(callId) === "xai") {
     // xAI has no reject endpoint; a delivered call that BotBound will not run
     // is ended with hangup, and one never joined also times out on xAI's side.
@@ -311,13 +333,19 @@ async function rejectCall(callId: string, statusCode = 603): Promise<void> {
     });
     return;
   }
-  const response = await callControl(callId, "reject", { status_code: statusCode });
+  const response = await callControl(callId, "reject", {
+    status_code: statusCode,
+  });
   if (!response.ok && response.status !== 404 && response.status !== 409) {
     throw new Error(`OpenAI call rejection returned HTTP ${response.status}.`);
   }
 }
 
 async function hangupCall(callId: string): Promise<void> {
+  if (mediaCallSid(callId)) {
+    await controlMediaCall(callId, "hangup");
+    return;
+  }
   const response = await callControl(callId, "hangup");
   if (!response.ok && response.status !== 404 && response.status !== 409) {
     throw new Error(`OpenAI call hangup returned HTTP ${response.status}.`);
@@ -357,6 +385,7 @@ async function settleOwnedPreSessionFailure(input: {
 }
 
 async function acceptCall(callId: string, session: Record<string, unknown>): Promise<void> {
+  if (mediaCallSid(callId)) return;
   // xAI has no accept step: joining the call's socket answers it, and the
   // session runner sends xAI's own session.update there.
   if (realtimeProviderForCallId(callId) === "xai") return;
@@ -412,7 +441,9 @@ async function admitRealtimeCall(
 
   const inboundVerification = inboundToken ? verifyOpenAIInboundToken(inboundToken) : null;
   if (inboundVerification && !inboundVerification.ok) {
-    log.warn("OpenAI inbound SIP token rejected", { reason: inboundVerification.reason });
+    log.warn("OpenAI inbound SIP token rejected", {
+      reason: inboundVerification.reason,
+    });
     await rejectCall(callId, 403);
     res.status(202).json({ received: true, handled: false });
     return;
@@ -456,6 +487,13 @@ async function admitRealtimeCall(
       sessionInput.fallbackDrill = inboundVerification.claims.drill;
     }
   }
+  if (
+    mediaCallSid(callId) &&
+    mediaCallSid(callId) !== (sessionInput.inboundTwilioCallSid ?? sessionInput.twilioParentCallSid)
+  ) {
+    throw AppError.unauthorized("Media stream does not match the signed call.");
+  }
+  if (mediaCallSid(callId)) authorizeMediaCall(callId);
   if (sessionInput.direction === "inbound" && sessionInput.admission?.mode === "suspended") {
     // Coverage and capacity refusals are terminal for this new call. Do not
     // accept a paid AI session merely to explain that paid AI is unavailable.
@@ -510,7 +548,10 @@ async function admitRealtimeCall(
       {
         name: "account_lease_release",
         operation: () =>
-          releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId }),
+          releaseAccountOperationLease({
+            id: lease.id,
+            userId: sessionInput.userId,
+          }),
       },
       { name: "provider_reject", operation: () => rejectCall(callId, 603) },
     ]);
@@ -540,13 +581,19 @@ async function admitRealtimeCall(
     throw error;
   }
   if (callClaim === "retry") {
-    await releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId });
+    await releaseAccountOperationLease({
+      id: lease.id,
+      userId: sessionInput.userId,
+    });
     res.setHeader("Retry-After", "2");
     res.status(503).json({ received: true, handled: false, retry: true });
     return;
   }
   if (callClaim === null) {
-    await releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId });
+    await releaseAccountOperationLease({
+      id: lease.id,
+      userId: sessionInput.userId,
+    });
     log.info("Duplicate OpenAI incoming-call webhook suppressed before spend or acceptance", {
       calledSuffix: phoneSuffixForLog(calledNumber ?? ""),
     });
@@ -590,9 +637,19 @@ async function admitRealtimeCall(
       {
         name: "account_lease_release",
         operation: () =>
-          releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId }),
+          releaseAccountOperationLease({
+            id: lease.id,
+            userId: sessionInput.userId,
+          }),
       },
-      ...(owned ? [{ name: "provider_reject", operation: () => rejectCall(callId, 603) }] : []),
+      ...(owned
+        ? [
+            {
+              name: "provider_reject",
+              operation: () => rejectCall(callId, 603),
+            },
+          ]
+        : []),
     ]);
     if (
       error instanceof AppError &&
@@ -610,13 +667,18 @@ async function admitRealtimeCall(
   }
 
   try {
+    if (mediaCallSid(callId))
+      await prepareMediaRecording(callId, sessionInput.callRecordingEnabled === true);
     await acceptCall(callId, runtime.session as Record<string, unknown>);
   } catch (error) {
     const ambiguous = shouldRetainRealtimeReservation(error);
     let owned = false;
     if (ambiguous) {
       try {
-        await releaseOpenAISipClaimForRetry({ call: sessionInput, claim: callClaim });
+        await releaseOpenAISipClaimForRetry({
+          call: sessionInput,
+          claim: callClaim,
+        });
         owned = true;
       } catch (releaseError) {
         log.error("OpenAI SIP ambiguous accept could not release its claim for retry", {
@@ -635,7 +697,10 @@ async function admitRealtimeCall(
       {
         name: "account_lease_release",
         operation: () =>
-          releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId }),
+          releaseAccountOperationLease({
+            id: lease.id,
+            userId: sessionInput.userId,
+          }),
       },
       ...(owned
         ? [
@@ -663,7 +728,10 @@ async function admitRealtimeCall(
       {
         name: "account_lease_release",
         operation: () =>
-          releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId }),
+          releaseAccountOperationLease({
+            id: lease.id,
+            userId: sessionInput.userId,
+          }),
       },
       ...(owned ? [{ name: "provider_hangup", operation: () => hangupCall(callId) }] : []),
     ]);
@@ -690,7 +758,10 @@ async function admitRealtimeCall(
         reservation,
       );
     } finally {
-      await releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId });
+      await releaseAccountOperationLease({
+        id: lease.id,
+        userId: sessionInput.userId,
+      });
     }
   });
 
@@ -707,7 +778,10 @@ async function admitRealtimeCall(
       {
         name: "account_lease_release",
         operation: () =>
-          releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId }),
+          releaseAccountOperationLease({
+            id: lease.id,
+            userId: sessionInput.userId,
+          }),
       },
       ...(owned ? [{ name: "provider_hangup", operation: () => hangupCall(callId) }] : []),
     ]);
@@ -716,6 +790,52 @@ async function admitRealtimeCall(
   releaseSessionStartup(true);
   res.status(202).json({ received: true, handled: true });
 }
+
+router.post(
+  CLONED_MEDIA_ADMIT_PATH,
+  json({ limit: "8kb" }),
+  asyncHandler(async (req, res) => {
+    if (
+      process.env.WIRELINE_VOICE_WORKER !== "true" ||
+      !verifyVoiceWorkerServiceAuth(String(req.get(VOICE_WORKER_AUTH_HEADER) || ""))
+    ) {
+      throw AppError.unauthorized("Invalid voice worker authentication.");
+    }
+    const { callId, token, direction } = req.body ?? {};
+    if (
+      typeof callId !== "string" ||
+      !mediaCallSid(callId) ||
+      typeof token !== "string" ||
+      !["inbound", "outbound"].includes(direction) ||
+      !registeredMediaCall(callId, token)
+    ) {
+      throw AppError.unauthorized("Unregistered media stream.");
+    }
+    res.locals.voiceWorkerHandlerActive = true;
+    try {
+      await admitRealtimeCall(
+        req,
+        res,
+        {
+          data: {
+            sip_headers: [
+              {
+                name:
+                  direction === "inbound"
+                    ? OPENAI_INBOUND_SIP_TOKEN_HEADER
+                    : OPENAI_OUTBOUND_SIP_TOKEN_HEADER,
+                value: token,
+              },
+            ],
+          },
+        },
+        callId,
+      );
+    } finally {
+      res.locals.voiceWorkerAdmissionRelease?.();
+    }
+  }),
+);
 
 router.post(
   "/api/webhooks/openai/realtime",
@@ -730,7 +850,9 @@ router.post(
         signingSecret: String(process.env.OPENAI_WEBHOOK_SECRET || ""),
       });
       if (!verification.ok) {
-        log.warn("OpenAI Realtime webhook signature rejected", { reason: verification.reason });
+        log.warn("OpenAI Realtime webhook signature rejected", {
+          reason: verification.reason,
+        });
         throw AppError.unauthorized("Invalid OpenAI webhook signature.");
       }
       if (payload.type !== "realtime.call.incoming") {
