@@ -193,7 +193,7 @@ export const LIVE_VOICE_SCRIPT: readonly string[] = [
   "Sure, I can take care of that for you. Can I get your name and the best number to reach you?",
   "Great, thanks. Give me just one second while I pull that up.",
   "Okay, I see it here. It looks like the earliest opening is Tuesday at ten, or Thursday right after lunch. Which works better for you?",
-  "Perfect, you're all set. You'll get a text confirmation in a minute or two.",
+  "Perfect, you're all set. You'll get a confirmation shortly.",
   "If anything changes, just call or text this number and we'll move it around — no problem at all.",
   "Oh, and one quick tip: parking is right out front, and the entrance is next to the coffee shop.",
   "Is there anything else I can help you with while I have you?",
