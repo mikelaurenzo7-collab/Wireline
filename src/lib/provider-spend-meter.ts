@@ -16,6 +16,12 @@ export function providerSpendMeter(receipt: {
     typeof metadata === "object" &&
     !Array.isArray(metadata) &&
     (metadata as Record<string, unknown>).surface === "openai_sip") ||
+    (receipt.action === "voice.clone.synthesis" &&
+      (receipt.provider === "elevenlabs" || receipt.provider === "openai") &&
+      metadata !== null &&
+      typeof metadata === "object" &&
+      !Array.isArray(metadata) &&
+      (metadata as Record<string, unknown>).surface === "cloned_phone") ||
     (receipt.action === "voice.phone_test.carrier" &&
       receipt.provider === "twilio" &&
       metadata !== null &&
@@ -38,6 +44,9 @@ export function managedAiSpendPredicate() {
     ${auditLog.action} = 'voice.realtime.session'
     and ${auditLog.provider} = 'openai'
     and ${auditLog.metadata}->>'surface' = 'openai_sip'
+    or ${auditLog.action} = 'voice.clone.synthesis'
+    and ${auditLog.provider} in ('elevenlabs', 'openai')
+    and ${auditLog.metadata}->>'surface' = 'cloned_phone'
     or ${auditLog.action} = 'voice.phone_test.carrier'
     and ${auditLog.provider} = 'twilio'
     and ${auditLog.metadata}->>'surface' = 'phone_test'
