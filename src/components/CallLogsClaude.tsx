@@ -5,6 +5,7 @@ import {
   ChevronsRight,
   Download,
   Loader2,
+  Mic,
   Phone,
   RefreshCw,
 } from "lucide-react";
@@ -336,6 +337,12 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
                         <span className="wl-preserve-case mt-1 block truncate text-xs text-muted-foreground">
                           {meta || humanize(call.direction, "Call")}
                         </span>
+                        {call.recording_url ? (
+                          <span className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+                            <Mic className="size-3" aria-hidden="true" />
+                            Recording
+                          </span>
+                        ) : null}
                       </div>
                       <div className="shrink-0 text-right">
                         <span className="block text-[10px] text-muted-foreground">
@@ -424,11 +431,28 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
         ) : null}
 
         {selected.recording_url ? (
-          <Button asChild variant="secondary" size="sm">
-            <a href={selected.recording_url} target="_blank" rel="noreferrer">
-              Recording
-            </a>
-          </Button>
+          <section aria-label="Call recording">
+            <div className="flex items-center justify-between gap-3">
+              <h4 className="text-xs font-semibold tracking-[0.08em] text-muted-foreground">
+                Recording
+              </h4>
+              <a
+                href={selected.recording_url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-semibold text-primary"
+              >
+                Open
+              </a>
+            </div>
+            <audio
+              key={selected.id}
+              controls
+              preload="none"
+              src={selected.recording_url}
+              className="mt-2 w-full"
+            />
+          </section>
         ) : null}
       </div>
     </div>
