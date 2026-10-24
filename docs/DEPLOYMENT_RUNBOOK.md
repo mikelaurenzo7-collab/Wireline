@@ -448,6 +448,16 @@ Repository branch protection and required checks should be enabled as soon as th
 
 OpenAI Realtime is the managed browser voice runtime and the default telephone runtime. Twilio owns customer numbers, PSTN transport, and SMS. Vapi is retired.
 
+### ElevenLabs cloned phone voices
+
+Cloning is available when a clone provider is configured, unless `LIVE_VOICE_CLONE_ENABLED=false` explicitly disables it. For ElevenLabs calls, configure `ELEVENLABS_API_KEY`, `OPENAI_API_KEY`, and `LIVE_VOICE_CLONE_ENABLED=true` on both the API and persistent voice worker. Keep the existing Twilio credentials, worker service secret, and worker URL aligned. The worker can use its `RENDER_EXTERNAL_URL` for its own public origin. Never copy production keys into local development.
+
+An assigned ElevenLabs voice uses signed Twilio bidirectional Media Streams at `/api/voice/cloned-media`; the API must route that public WebSocket path directly to the worker. OpenAI Realtime handles caller audio, reasoning, and tools with text-only output; ElevenLabs streams telephone-format speech. The internal `/api/voice/cloned-media/admit` endpoint requires the worker service secret, a registered stream, a signed routing token, and a matching persisted parent call SID. Existing account/Bot deletion, funding, capacity, and call-duration gates still apply.
+
+Deploy the exact reviewed worker and API source together using the Render sequence above. No new migration is required beyond `0186_live_voice_clones.sql`. Confirm capabilities report call-ready, create a consented clone, compare both previews, assign it to a Bot, and run its verified phone test plus an inbound call. Verify interruption, a tool action, transfer, hangup, recording on/off, and a provider-failure drill: stock speech must continue on the same call, with the actual voice reported accurately. Browser rehearsal remains a separate stock-voice surface; the phone test proves the clone.
+
+The clone is rechecked before each utterance; expiry or deletion prevents further cloned speech. Provider deletion failures leave a durable cleanup task while assignments are removed immediately. A call recording, when enabled with disclosure, stays on the parent Twilio call across speech fallback. Synthesis attempts reserve provider cost before network work and belong to the live-voice cost meter. Do not certify production until the real provider calls and web/worker source parity are verified.
+
 ### xAI Grok Voice phone calls
 
 Phone calls can run on xAI Grok Voice (`grok-voice-3.0`) instead of OpenAI Realtime. The provider travels with each call: xAI call ids are stored as `xai:<id>`, so hangup, transfer, and recovery always reach the provider that owns the call.
