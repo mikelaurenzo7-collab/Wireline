@@ -23,13 +23,19 @@ import { AppError } from "../api-error";
 import { enqueue } from "../job-queue";
 
 const PLACEMENT_LEASE_GRACE_MS = 2 * 60 * 1_000;
-const IN_FLIGHT_STATES = new Set([
+export const NATIVE_OUTBOUND_IN_FLIGHT_STATES = [
   "creating",
   "accepted",
   "bridging",
   "customer_answered",
   "connected",
-]);
+] as const;
+const IN_FLIGHT_STATES = new Set<string>(NATIVE_OUTBOUND_IN_FLIGHT_STATES);
+
+/** How long after its claim a placement can still be a live call. */
+export function nativeOutboundPlacementLeaseMs(): number {
+  return resolveOpenAISipSessionMaxSeconds() * 1_000 + PLACEMENT_LEASE_GRACE_MS;
+}
 
 export type NativeOutboundPlacementClaim = {
   ok: true;
@@ -154,7 +160,7 @@ function numericLeadId(value: bigint | string | null | undefined): bigint | null
 
 function placementLeaseActive(nativeVoice: Record<string, unknown>, nowMs: number): boolean {
   const claimedAt = Date.parse(String(nativeVoice.placement_claimed_at || ""));
-  const leaseMs = resolveOpenAISipSessionMaxSeconds() * 1_000 + PLACEMENT_LEASE_GRACE_MS;
+  const leaseMs = nativeOutboundPlacementLeaseMs();
   return (
     IN_FLIGHT_STATES.has(String(nativeVoice.state || "")) &&
     Number.isFinite(claimedAt) &&
