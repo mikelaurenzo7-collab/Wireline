@@ -33,9 +33,9 @@ const DIFFERENCES = [
 const MARKET_OPTIONS = [
   {
     name: "BotBound",
-    price: "$0 to build · Calls from $19/mo · Email from $9/mo",
+    price: "Personal $12/mo · Calls from $19/mo · Email from $9/mo",
     usage:
-      "Calls Light includes 50 minutes and one local number. Email and combined channel activation follow a setup review.",
+      "The entry Calls plan includes 50 minutes and one local number. Email and combined channel activation follow a setup review.",
     fit: "Owners who want a Bot with the channels they choose, connected tools, and logged outcomes",
     href: "/pricing",
     source: "BotBound pricing",

@@ -24,6 +24,7 @@ import SimpleVoicePicker from "./voice/SimpleVoicePicker";
 import AgentToolPermissions from "./AgentToolPermissions";
 import BusinessHoursEditor from "./BusinessHoursEditor";
 import DeleteBotSection from "./studio/DeleteBotSection";
+import BotLivePanel from "./studio/BotLivePanel";
 import HumanHandoffEditor from "./HumanHandoffEditor";
 import PlaybookEditor from "./PlaybookEditor";
 
@@ -355,6 +356,13 @@ export default function StudioAgentWorkspacePanel({
           ) : null}
         </header>
 
+        <BotLivePanel
+          agentId={agentId}
+          agentName={agentName}
+          compact={compact}
+          className={sectionClass}
+        />
+
         <section className={sectionClass} aria-label="Tone and knowledge">
           {loadingSetup ? (
             <div className="flex min-h-32 items-center justify-center gap-2 text-sm text-muted-foreground">
@@ -578,3 +586,4 @@ export default function StudioAgentWorkspacePanel({
     </div>
   );
 }
+

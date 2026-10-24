@@ -44,15 +44,15 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
   {
     pathname: "/phone",
     defaultTab: "logs",
-    ariaLabel: "Phone sections",
+    ariaLabel: "Call sections",
     layoutIdPrefix: "phone-section",
     tabs: [
       { id: "logs", label: "History", icon: History },
       {
         id: "outbound",
-        label: "Reviewed calls",
-        shortLabel: "Reviewed",
-        ariaLabel: "Reviewed calls",
+        label: "Place a reviewed call",
+        shortLabel: "Place call",
+        ariaLabel: "Place a reviewed call",
         icon: PhoneOutgoing,
       },
     ],
