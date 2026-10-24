@@ -61,6 +61,9 @@ import {
 } from "./realtime-provider";
 import {
   toXAIRealtimeSession,
+  resolveCustomVoiceLatencyBudgetMs,
+  stockFallbackVoiceFor,
+  xaiVoiceSwapUpdate,
   xaiForcedMessagePlaybackMs,
   xaiForceMessage,
 } from "./xai-voice-config";
@@ -1911,6 +1914,31 @@ async function runRealtimeSession(
   const turnTiming = new OpenAISipTurnTiming(
     provider === "xai" ? { audioStartEvents: XAI_TURN_AUDIO_START_EVENTS } : {},
   );
+  // A cloned voice is spoken natively by xAI. If it ever errors or keeps
+  // breaching the reply budget, the call silently continues on the stock voice.
+  const customVoiceId = provider === "xai" ? (runtime.customVoice?.voiceId ?? null) : null;
+  let voiceKind: "custom" | "stock" = customVoiceId ? "custom" : "stock";
+  let customVoiceFallback: "provider_error" | "latency" | null = null;
+  let slowCustomVoiceReplies = 0;
+  let assistantAudioHeard = false;
+  const customVoiceLatencyBudgetMs = resolveCustomVoiceLatencyBudgetMs();
+  const fallBackToStockVoice = (reason: "provider_error" | "latency"): boolean => {
+    if (voiceKind !== "custom" || ws.readyState !== WebSocket.OPEN) return false;
+    voiceKind = "stock";
+    customVoiceFallback = reason;
+    const stockVoice = stockFallbackVoiceFor(runtime.voice);
+    sendJson(ws, xaiVoiceSwapUpdate(stockVoice));
+    log.warn("Cloned voice switched to stock voice mid-call", {
+      callId: providerCallId(input.callId),
+      provider,
+      reason,
+      stockVoice,
+      cloneId: runtime.customVoice?.cloneId ?? null,
+      slowReplies: slowCustomVoiceReplies,
+      latencyBudgetMs: customVoiceLatencyBudgetMs,
+    });
+    return true;
+  };
 
   const ws = new WebSocket(buildRealtimeSipSocketUrl(input.callId), {
     headers: { Authorization: `Bearer ${apiKey}` },
@@ -2347,8 +2375,17 @@ async function runRealtimeSession(
   const handleEvent = async (event: Record<string, unknown>, receivedAtMs: number) => {
     if (!ownsSession()) return;
     observeUsage?.(event);
-    turnTiming.observe(event, receivedAtMs);
+    const turnAudioMs = turnTiming.observe(event, receivedAtMs);
     const type = String(event.type || "");
+    if (type === "response.output_audio.delta" || type === "response.audio.delta") {
+      assistantAudioHeard = true;
+    }
+    if (voiceKind === "custom" && turnAudioMs !== null) {
+      if (turnAudioMs > customVoiceLatencyBudgetMs) slowCustomVoiceReplies += 1;
+      else slowCustomVoiceReplies = 0;
+      // Two slow replies in a row, not one: a single tool-heavy turn is normal.
+      if (slowCustomVoiceReplies >= 2) fallBackToStockVoice("latency");
+    }
     if (type === "output_audio_buffer.started") {
       return;
     }
@@ -2434,6 +2471,37 @@ async function runRealtimeSession(
       requestToolContinuationWhenReady();
       return;
     }
+    if (type === "error" && voiceKind === "custom") {
+      // xAI errors are recoverable and the session stays open. Swap to the
+      // stock voice once instead of dropping the caller; a later error after
+      // the swap takes the normal failure path below.
+      const detail = asRecord(event.error);
+      log.warn("Realtime provider reported an error on a cloned voice", {
+        callId: providerCallId(input.callId),
+        provider,
+        errorType: String(detail.type || "").slice(0, 80),
+        errorCode: String(detail.code || "").slice(0, 80),
+        message: String(detail.message || "").slice(0, 300),
+      });
+      if (fallBackToStockVoice("provider_error")) {
+        if (!assistantAudioHeard) {
+          if (xaiForcedOpening && awaitingExactOpeningPlayback) {
+            // Nothing has been heard yet: replay the exact opening in the
+            // stock voice and restart its playback estimate.
+            xaiOpeningResponseId = "";
+            sendJson(ws, xaiForceMessage(xaiForcedOpening));
+            if (xaiOpeningPlaybackTimer) clearTimeout(xaiOpeningPlaybackTimer);
+            xaiOpeningPlaybackTimer = setTimeout(() => {
+              xaiOpeningPlaybackTimer = null;
+              finishExactOpeningIfNeeded(true);
+            }, xaiForcedMessagePlaybackMs(xaiForcedOpening));
+          } else if (!xaiForcedOpening) {
+            sendJson(ws, { type: "response.create" });
+          }
+        }
+        return;
+      }
+    }
     if (type === "error") {
       pipelineError = "openai_realtime";
       const detail = asRecord(event.error);
@@ -2473,6 +2541,7 @@ async function runRealtimeSession(
           return;
         }
         connectedAt = Date.now();
+        turnTiming.markConnected(connectedAt);
         const outbound = callDirection(input) === "outbound";
         const opening = outbound
           ? buildOutboundOpening(input, runtime)
@@ -2487,6 +2556,7 @@ async function runRealtimeSession(
             session: toXAIRealtimeSession(runtime.session as Record<string, unknown>, {
               instructions,
               keyterms: [runtime.agentName, input.businessName ?? ""],
+              customVoiceId,
             }),
           });
           if (opening) {
@@ -2676,6 +2746,9 @@ async function runRealtimeSession(
             openingPlaybackConfirmed,
             providerEvents: Object.fromEntries(providerEventCounts),
             ...turnTiming.summary(),
+            voiceKind: customVoiceId ? "custom" : "stock",
+            voiceAtClose: voiceKind,
+            customVoiceFallback,
           });
         // Wait for already-received sideband events without adding another log
         // line for each turn or blocking the provider-close cleanup.

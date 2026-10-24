@@ -33,17 +33,19 @@ export function xaiCallId(nativeCallId: string): string {
 }
 
 /**
- * The provider new phone calls use. OpenAI stays the default until the owner
- * opts in, and it remains the fallback for any number not registered with xAI.
+ * The provider new phone calls use. xAI Grok Voice is the default for every
+ * customer and number; `WIRELINE_PHONE_VOICE_PROVIDER=openai` is the explicit
+ * operator opt-out. OpenAI Realtime stays the per-call fallback whenever xAI is
+ * not configured or a number has not finished registering with xAI.
  */
 export function configuredPhoneVoiceProvider(
   env: NodeJS.ProcessEnv = process.env,
 ): RealtimeVoiceProvider {
   return String(env.WIRELINE_PHONE_VOICE_PROVIDER || "")
     .trim()
-    .toLowerCase() === "xai"
-    ? "xai"
-    : "openai";
+    .toLowerCase() === "openai"
+    ? "openai"
+    : "xai";
 }
 
 export function realtimeApiKey(

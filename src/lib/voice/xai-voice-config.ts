@@ -59,6 +59,26 @@ export function phoneCallVoiceFor(
     : null;
 }
 
+/**
+ * Cloned voices are spoken natively by the realtime model, so they add no
+ * extra hop. If one ever fails mid-call (provider error or replies breaching
+ * the latency budget), the call switches to this stock voice and continues.
+ */
+export function stockFallbackVoiceFor(savedVoice: unknown): XAIGrokVoice {
+  return xaiVoiceForSavedVoice(savedVoice);
+}
+
+/** session.update that swaps only the voice; everything else stays as configured. */
+export function xaiVoiceSwapUpdate(voice: string): Record<string, unknown> {
+  return { type: "session.update", session: { voice } };
+}
+
+/** Per-reply latency budget for a cloned voice before the call moves to stock. */
+export function resolveCustomVoiceLatencyBudgetMs(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = Number(env.WIRELINE_CUSTOM_VOICE_LATENCY_BUDGET_MS);
+  return Number.isFinite(raw) && raw >= 800 && raw <= 10_000 ? Math.round(raw) : 2_500;
+}
+
 /** "high" (xAI's default) reasons before replying; "none" trades depth for speed. */
 export function resolveXAIReasoningEffort(env: NodeJS.ProcessEnv = process.env): "high" | "none" {
   return String(env.XAI_GROK_VOICE_REASONING_EFFORT || "")
@@ -82,7 +102,7 @@ function asRecord(value: unknown): Record<string, unknown> {
  */
 export function toXAIRealtimeSession(
   openAISession: Record<string, unknown>,
-  options: { instructions?: string; keyterms?: string[] } = {},
+  options: { instructions?: string; keyterms?: string[]; customVoiceId?: string | null } = {},
 ): Record<string, unknown> {
   const audio = asRecord(openAISession.audio);
   const output = asRecord(audio.output);
@@ -95,7 +115,7 @@ export function toXAIRealtimeSession(
   return {
     model: resolveXAIGrokVoiceModel(),
     instructions: options.instructions ?? String(openAISession.instructions || ""),
-    voice: xaiVoiceForSavedVoice(output.voice),
+    voice: options.customVoiceId || xaiVoiceForSavedVoice(output.voice),
     reasoning: { effort: resolveXAIReasoningEffort() },
     tools,
     tool_choice: openAISession.tool_choice === "none" ? "none" : "auto",
