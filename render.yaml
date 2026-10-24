@@ -28,6 +28,20 @@
 # do not expire on Render: inspect provider outcome and confirm the old process
 # stopped before operator recovery, preserving dailyBriefLastAttemptAt.
 # A cron HTTP timeout does not cancel API work. Never run both schedulers.
+#
+# CERTIFIED PRODUCTION POSTURE (2026-10-24): the Render Dashboard is
+# authoritative once this Blueprint has been synced. Release switches below are
+# declared with `sync: false` so a Blueprint update cannot silently revert the
+# certified posture. Certified values at that release:
+#   BOTBOUND_TRAFFIC_ENABLED=true
+#   BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED=true
+#   WIRELINE_SELF_SERVE_BILLING_ENABLED=true
+#   WIRELINE_LAUNCH_DEMO_MODE=false
+#   WIRELINE_AUTO_PROVISION_NUMBERS=true
+#   WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED=true (after /readyz + real-call proof)
+#   LAUNCH_HARD_GATE unset (launch readiness is 100)
+#   RENDER_CRON_ENABLED=false (legacy Vercel crons still own scheduling)
+# Keep botbound-api auto-deploy off; promote only a certified exact head.
 previews:
   generation: off
 
@@ -56,14 +70,19 @@ projects:
                 value: "https://botbound.app"
               - key: TWILIO_WEBHOOK_BASE_URL
                 value: "https://botbound.app"
+              # Certified production: true (paid checkout open). Dashboard-owned
+              # so a Blueprint sync cannot silently close or reopen billing.
               - key: WIRELINE_SELF_SERVE_BILLING_ENABLED
-                value: "false"
+                sync: false
+              # Certified production: false.
               - key: WIRELINE_LAUNCH_DEMO_MODE
-                value: "true"
+                sync: false
+              # Certified production leaves this unset (launch readiness is 100).
               - key: LAUNCH_HARD_GATE
-                value: "true"
+                sync: false
+              # Certified production: true.
               - key: WIRELINE_AUTO_PROVISION_NUMBERS
-                value: "false"
+                sync: false
               - key: OPENAI_SIP_MAX_CALL_SECONDS
                 value: "3600"
               - key: WIRELINE_OPENAI_REALTIME_SESSION_RESERVE_USD
@@ -94,8 +113,10 @@ projects:
             maxShutdownDelaySeconds: 300
             envVars:
               - fromGroup: botbound-runtime-config
+              # Certified production: true. Dashboard-owned release switch.
               - key: BOTBOUND_TRAFFIC_ENABLED
-                value: "false"
+                sync: false
+              # Certified production: true. Dashboard-owned release switch.
               - key: BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED
                 sync: false
               # Keep secrets server-side; never expose them through VITE_* values.
@@ -341,6 +362,28 @@ projects:
                 sync: false
               - key: SENTRY_DSN
                 sync: false
+              # In-house voice cloning (preview-only) pilot lane. Disabled until
+              # the hosted engine, retention/expiry job and consent review are
+              # certified; secrets stay in the Dashboard secret store.
+              - key: VOICE_CLONE_PILOT_ENABLED
+                value: "false"
+              - key: VOICE_ENGINE_URL
+                sync: false
+              - key: VOICE_ENGINE_SERVICE_TOKEN
+                sync: false
+              - key: VOICE_ENGINE_COMPUTE_USD_PER_MINUTE
+                sync: false
+              # ElevenLabs operator diagnostics only. This flag alone exposes no
+              # customer cloning or live-call voice; keep it false in production.
+              - key: BOTBOUND_ELEVENLABS_VOICE_ENABLED
+                value: "false"
+              - key: BOTBOUND_ELEVENLABS_VOICE_API_KEY
+                sync: false
+              - key: BOTBOUND_ELEVENLABS_WORKSPACE_ID
+                sync: false
+              # Enable only after recording-consent review and a live test.
+              - key: WIRELINE_MISSED_CALL_VOICEMAIL_ENABLED
+                value: "false"
 
           - type: web
             name: botbound-voice
@@ -359,8 +402,10 @@ projects:
                 value: "true"
               - key: WIRELINE_VOICE_WORKER_MAX_CALLS
                 value: "10"
+              # Certified production: true. Dashboard-owned; enable only after
+              # the authenticated /readyz proof and a real-call proof.
               - key: WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED
-                value: "false"
+                sync: false
               - key: BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED
                 fromService:
                   name: botbound-api
@@ -782,8 +827,10 @@ projects:
                 value: production
               - key: WIRELINE_DEPLOYMENT_ENVIRONMENT
                 value: production
+              # Dashboard-owned. Keep false while the legacy Vercel cron
+              # scheduler runs; enable only after that scheduler is retired.
               - key: RENDER_CRON_ENABLED
-                value: "false"
+                sync: false
               - key: BOTBOUND_BACKEND_ORIGIN
                 fromService:
                   name: botbound-api
@@ -813,8 +860,10 @@ projects:
                 value: production
               - key: WIRELINE_DEPLOYMENT_ENVIRONMENT
                 value: production
+              # Dashboard-owned. Keep false while the legacy Vercel cron
+              # scheduler runs; enable only after that scheduler is retired.
               - key: RENDER_CRON_ENABLED
-                value: "false"
+                sync: false
               - key: BOTBOUND_BACKEND_ORIGIN
                 fromService:
                   name: botbound-api
