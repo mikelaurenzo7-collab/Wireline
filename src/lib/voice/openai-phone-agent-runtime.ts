@@ -37,6 +37,7 @@ import {
   type OpenAIRealtimeVoice,
 } from "./openai-realtime-config";
 import { OPENAI_REALTIME_COST_TRUNCATION } from "./openai-realtime-pricing";
+import { customVoiceSelection, resolveRuntimeCustomVoice } from "./live-voice-service";
 
 const MAX_PROMPT_LINE_LENGTH = 700;
 const MAX_INITIAL_KNOWLEDGE_ITEMS = 8;
@@ -511,7 +512,10 @@ export async function buildOpenAIRealtimeAgentRuntime(input: {
   if (reviewRequired) {
     throw new AppError(409, "RUNTIME_REVIEW_REQUIRED", RUNTIME_REVIEW_REQUIRED_RESPONSE);
   }
-  const tools = await resolveTools(input.surface, runtime);
+  const [tools, customVoice] = await Promise.all([
+    resolveTools(input.surface, runtime),
+    resolveRuntimeCustomVoice(runtime.agent.userId, runtime.agent.businessVariables),
+  ]);
   const instructions = composeOpenAIRealtimeInstructions({
     ...runtime,
     surface: input.surface,
@@ -561,6 +565,8 @@ export async function buildOpenAIRealtimeAgentRuntime(input: {
     model: OPENAI_REALTIME_DEFAULT_MODEL,
     profile,
     voice,
+    /** A consented cloned voice, spoken natively on xAI; null means stock. */
+    customVoice,
     greeting: reviewRequired
       ? RUNTIME_REVIEW_REQUIRED_GREETING
       : resolveAgentGreeting(runtime.agent, runtime.directives),
@@ -586,7 +592,7 @@ export async function getOpenAIRealtimeVoiceProfile(userId: string, agentId: str
     profile,
     profiles: WIRELINE_LIVE_VOICE_PROFILES,
     voice: resolveWirelineOpenAIVoice(runtime.agent.role, profile),
-    customVoiceConfigured: false,
+    customVoiceConfigured: customVoiceSelection(runtime.agent.businessVariables) !== null,
   };
 }
 
