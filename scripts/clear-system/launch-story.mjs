@@ -183,7 +183,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /to=\{signupHrefForPlan\("personal"\)\}/,
+    /to=\{signupHrefForPlan\("personal", \{ interval: billingInterval \}\)\}/,
     "pricing must route Personal signup through the canonical plan destination",
   );
   mustInclude(

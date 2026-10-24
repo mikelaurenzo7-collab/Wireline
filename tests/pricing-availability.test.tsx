@@ -159,13 +159,14 @@ describe("public pricing activation availability", () => {
       capturedAt: "2026-09-27T12:00:00Z",
     });
     expect(planLink("email")?.props.to).toBe("/signup?plan=email&interval=year");
+    expect(planLink("personal")?.props.to).toBe("/signup?plan=personal&interval=year");
     harness.states = [];
     window.location.search = "?plan=voice&interval=month";
     expect(planLink("voice")?.props.to).toBe("/signup?plan=voice&interval=month");
   });
   it("keeps Personal and plan intent available while checking, without offering a purchase", () => {
     expect(text(render())).toContain("Checking activation availability…");
-    expect(text(planLink("free"))).toBe("Choose Personal ");
+    expect(text(planLink("personal"))).toBe("Choose Personal ");
     expect(text(planLink("voice-regular"))).toBe("Set Up These Channels ");
     expect(text(render())).not.toContain("Start for $19");
   });
@@ -345,7 +346,7 @@ describe("public pricing activation availability", () => {
       "Plan availability could not be checked. Refresh and try again.",
     );
     expect(text(planLink("voice-regular"))).toBe("Set Up These Channels ");
-    expect(planLink("free")?.props.to).toBe("/signup?plan=free");
+    expect(planLink("personal")?.props.to).toBe("/signup?plan=personal&interval=month");
   });
 
   it("aborts the request when the visitor leaves the page", () => {

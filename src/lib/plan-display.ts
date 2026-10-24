@@ -60,6 +60,9 @@ export function getPlanCapacityLabel(source?: PlanDisplaySource): string | null 
 /** Use when a single line must identify both the selected channels and capacity. */
 export function getPlanDisplayLabel(source?: PlanDisplaySource): string {
   const name = getPlanDisplayName(source);
+  // Personal is a single package; a capacity suffix ("Starter") reads like the
+  // separate legacy Starter plan.
+  if (displayPlan(source)?.id === "personal") return name;
   const capacity = getPlanCapacityLabel(source);
   return capacity ? `${name} · ${capacity}` : name;
 }

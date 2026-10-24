@@ -194,7 +194,7 @@ export default function Pricing() {
                 </p>
               </div>
               <Link
-                to={signupHrefForPlan("personal")}
+                to={signupHrefForPlan("personal", { interval: billingInterval })}
                 className="marketing-btn-secondary inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold"
               >
                 Choose Personal <ArrowRight className="size-4" aria-hidden="true" />

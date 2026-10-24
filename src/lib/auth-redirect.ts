@@ -92,7 +92,7 @@ export function persistAuthRedirect(value: string | null) {
 function returningPaidIntentDestination(search: string): string | null {
   const intent = parseSignupIntent(search);
   const plan = intent?.preferredPlanId;
-  if (!plan || plan === "personal") return null;
+  if (!plan) return null;
 
   const params = new URLSearchParams({ plan });
   if (intent.preferredBillingInterval) params.set("interval", intent.preferredBillingInterval);
