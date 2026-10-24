@@ -477,6 +477,55 @@ describe("native SIP semantic tool accounting", () => {
     );
   });
 
+  it("retries a tool continuation the provider never acknowledged instead of staying silent", async () => {
+    const session = start();
+    await vi.advanceTimersByTimeAsync(0);
+    try {
+      await emit({ type: "output_audio_buffer.stopped" });
+      await emit({ type: "response.created", response: { id: "response-tool" } });
+      await emit({
+        type: "response.function_call_arguments.done",
+        name: "search_agent_knowledge",
+        call_id: "tool-unacknowledged",
+        arguments: "{}",
+      });
+      await emit({ type: "response.done", response: { id: "response-tool", status: "completed" } });
+
+      const continuations = () =>
+        h.sent.filter(
+          (event) =>
+            event.type === "response.create" &&
+            typeof event.response?.metadata?.botbound_tool_continuation === "string",
+        );
+      expect(continuations()).toHaveLength(1);
+      const firstMetadata = continuations()[0].response.metadata;
+
+      // The provider never sends response.created with that metadata.
+      await vi.advanceTimersByTimeAsync(4_001);
+
+      expect(continuations()).toHaveLength(2);
+      const retryMetadata = continuations()[1].response.metadata;
+      expect(retryMetadata.botbound_tool_continuation).not.toBe(
+        firstMetadata.botbound_tool_continuation,
+      );
+
+      // The retry is acknowledged: no further attempts.
+      await emit({
+        type: "response.created",
+        response: { id: "response-continuation-retry", metadata: retryMetadata },
+      });
+      await emit({
+        type: "response.done",
+        response: { id: "response-continuation-retry", status: "completed" },
+      });
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(continuations()).toHaveLength(2);
+    } finally {
+      h.sockets[0].close();
+      await session;
+    }
+  });
+
   it.each(["conversation.item.created", "conversation.item.added", "conversation.item.done"])(
     "waits through caller speech and VAD admission, then consumes a result acknowledged by %s",
     async (ackType) => {
