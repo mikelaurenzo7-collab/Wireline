@@ -585,6 +585,20 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
       }
     }
 
+    // Live cloned voices on a published retention schedule (Illinois written
+    // release) are destroyed at their engine, then in BotBound, when due.
+    let liveVoicesExpired = 0;
+    if (withinSweepBudget() && (req._sweepMode === "cron" || !req._sweepMode)) {
+      try {
+        const { liveVoiceService } = await import("../lib/voice/live-voice-service");
+        liveVoicesExpired = await liveVoiceService.expireDue();
+      } catch (err: unknown) {
+        log.error("Live voice retention sweep failed; continuing sweep", {
+          error: getErrorMessage(err),
+        });
+      }
+    }
+
     if (withinSweepBudget() && (req._sweepMode === "cron" || !req._sweepMode)) {
       const now3d = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
       const trialsSoon = await drizzle
@@ -644,6 +658,7 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
       trials_expired: trialsExpired,
       expired_appointment_holds: expiredAppointmentHolds,
       voice_clone_assets_expired: voiceCloneAssetsExpired,
+      live_voices_expired: liveVoicesExpired,
     });
     if (processed > 0) {
       void auditLogger

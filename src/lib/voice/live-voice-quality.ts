@@ -188,7 +188,12 @@ export function analyzeLiveVoiceRecording(
 }
 
 /** A natural, phone-shaped read: greetings, a hold, a fix, a sign-off. */
+/** Spoken consent, read first, in the speaker's own voice. */
+export const LIVE_VOICE_SPOKEN_CONSENT_LINE =
+  "I'm the person speaking, and I agree to BotBound creating a voice from this recording for my Bot's calls.";
+
 export const LIVE_VOICE_SCRIPT: readonly string[] = [
+  LIVE_VOICE_SPOKEN_CONSENT_LINE,
   "Hi, thanks for calling! You've reached the front desk — how can I help you today?",
   "Sure, I can take care of that for you. Can I get your name and the best number to reach you?",
   "Great, thanks. Give me just one second while I pull that up.",

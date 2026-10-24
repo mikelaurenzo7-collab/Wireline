@@ -1916,7 +1916,25 @@ async function runRealtimeSession(
   );
   // A cloned voice is spoken natively by xAI. If it ever errors or keeps
   // breaching the reply budget, the call silently continues on the stock voice.
-  const customVoiceId = provider === "xai" ? (runtime.customVoice?.voiceId ?? null) : null;
+  const customVoiceId =
+    provider === "xai" && runtime.customVoice?.engine === "xai"
+      ? runtime.customVoice.voiceId
+      : null;
+  // A clone held by a text-to-speech engine (ElevenLabs) needs the media-stream
+  // bridge to speak on SIP calls. Until that runtime ships, the call opens on
+  // the closest stock voice from the first word, so the caller never hears a
+  // switch mid-sentence. Logged so ops can see how often this happens.
+  const standInStockVoice =
+    provider === "xai" && runtime.customVoice && runtime.customVoice.engine !== "xai"
+      ? stockFallbackVoiceFor(runtime.voice, runtime.customVoice.gender)
+      : null;
+  if (standInStockVoice)
+    log.info("Cloned voice answered by closest stock voice on this call", {
+      callId: providerCallId(input.callId),
+      engine: runtime.customVoice?.engine ?? null,
+      cloneId: runtime.customVoice?.cloneId ?? null,
+      stockVoice: standInStockVoice,
+    });
   let voiceKind: "custom" | "stock" = customVoiceId ? "custom" : "stock";
   let customVoiceFallback: "provider_error" | "latency" | null = null;
   let slowCustomVoiceReplies = 0;
@@ -2556,7 +2574,7 @@ async function runRealtimeSession(
             session: toXAIRealtimeSession(runtime.session as Record<string, unknown>, {
               instructions,
               keyterms: [runtime.agentName, input.businessName ?? ""],
-              customVoiceId,
+              customVoiceId: customVoiceId ?? standInStockVoice,
             }),
           });
           if (opening) {

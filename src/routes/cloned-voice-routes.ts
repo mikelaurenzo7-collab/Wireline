@@ -61,6 +61,15 @@ router.post(
   },
 );
 
+function releaseSignedName(raw: unknown): string | undefined {
+  if (typeof raw !== "string" || raw.length > 600) return undefined;
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return undefined;
+  }
+}
+
 router.post(
   "/api/voice/live-voices",
   authenticateUser,
@@ -75,6 +84,11 @@ router.post(
       consentVersion: query.consentVersion,
       consentScope: query.consentScope,
       gender: query.gender,
+      speakerJurisdiction: query.speakerJurisdiction,
+      biometricReleaseAccepted: query.biometricReleaseAccepted === "true",
+      biometricReleaseVersion: query.biometricReleaseVersion,
+      // The signed legal name rides in a header, not the URL, so it stays out of access logs.
+      biometricReleaseSignedName: releaseSignedName(req.headers["x-voice-release-signed-name"]),
     });
     res.status(201).json(result);
   },

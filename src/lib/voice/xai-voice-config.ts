@@ -79,9 +79,21 @@ export function stockFallbackVoiceFor(
   savedVoice: unknown,
   cloneGender?: "female" | "male" | null,
 ): XAIGrokVoice {
-  if (cloneGender === "female" || cloneGender === "male") return LIVE_VOICE_BY_GENDER[cloneGender];
-  return xaiVoiceForSavedVoice(savedVoice);
+  const saved = xaiVoiceForSavedVoice(savedVoice);
+  if (cloneGender !== "female" && cloneGender !== "male") return saved;
+  // Closest match: the Bot's own stock voice when it already matches the
+  // speaker (the caller hears the Bot they configured), else the gender default.
+  return XAI_STOCK_VOICE_GENDER[saved] === cloneGender ? saved : LIVE_VOICE_BY_GENDER[cloneGender];
 }
+
+/** Presented gender of each stock voice; `sal` is neutral and never a closest match. */
+export const XAI_STOCK_VOICE_GENDER: Record<XAIGrokVoice, "female" | "male" | "neutral"> = {
+  eve: "female",
+  ara: "female",
+  rex: "male",
+  leo: "male",
+  sal: "neutral",
+};
 
 /** session.update that swaps only the voice; everything else stays as configured. */
 export function xaiVoiceSwapUpdate(voice: string): Record<string, unknown> {
