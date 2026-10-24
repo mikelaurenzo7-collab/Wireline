@@ -167,7 +167,7 @@ export default function WireAgentLanding() {
                   >
                     <div>
                       <p>{planName}</p>
-                      <span>{getPlanCapacityLabel(plan)}</span>
+                      {id === "personal" ? null : <span>{getPlanCapacityLabel(plan)}</span>}
                       <div className="landing-prestige__price-number">
                         <strong>${plan.price_usd_monthly}</strong>
                         <span>/mo</span>
@@ -256,7 +256,6 @@ export default function WireAgentLanding() {
             </div>
             <nav aria-label="Trust links">
               <Link to="/security">Security</Link>
-              <Link to="/privacy">Privacy</Link>
               <Link to="/support">Support</Link>
             </nav>
           </div>

@@ -2,7 +2,11 @@ import { Link } from "react-router";
 import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 import type { useChannelEntitlements } from "../hooks/useChannelEntitlements";
-import type { CommunicationChannel } from "../lib/plan-catalog";
+import {
+  channelSoldSelfServe,
+  planIncludesChannel,
+  type CommunicationChannel,
+} from "../lib/plan-catalog";
 
 export default function ChannelAccessNotice({
   access,
@@ -40,6 +44,20 @@ export default function ChannelAccessNotice({
       : channel === "email"
         ? "Email Isn't in Your Plan"
         : "Texting Isn't in Your Plan";
+  // No package sells texting yet, so a package or payment prompt would lead
+  // nowhere unless the owner's own plan includes it. Texts sent to a Bot's
+  // number are still saved, and this tab shows them.
+  if (
+    channel === "sms" &&
+    !channelSoldSelfServe("sms") &&
+    !planIncludesChannel(access.data?.plan_id, "sms")
+  ) {
+    return (
+      <StatusNotice tone="info" title="Texting Isn't Available Yet" className="my-3">
+        Texts sent to your Bot&apos;s number appear here. No plan can send texts yet.
+      </StatusNotice>
+    );
+  }
   // A failed renewal suspends every channel. That is a payment to fix, not a
   // package the owner never bought.
   if (
