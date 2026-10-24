@@ -279,11 +279,13 @@ function toView(row: TaskRow): ComputerTaskView {
     finishedAt: row.finishedAt ? row.finishedAt.toISOString() : null,
     updatedAt: row.updatedAt.toISOString(),
     liveView: Boolean(task && !task.finished && task.frame && task.userId === row.userId),
+    // A finished task reports its retained final frame the same way, so the
+    // completed session stays reviewable in place until the task is pruned.
     frameCapturedAt:
-      task && !task.finished && task.frame && task.userId === row.userId
+      task && task.frame && task.userId === row.userId
         ? new Date(task.frameAt).toISOString()
         : null,
-    frameUrl: task && !task.finished && task.userId === row.userId ? task.frameUrl : null,
+    frameUrl: task && task.userId === row.userId ? task.frameUrl : null,
     currentUrl: task?.userId === row.userId && !task.finished ? task.currentUrl : null,
     agentPointer:
       task &&
@@ -741,7 +743,7 @@ export async function waitForComputerOwner(
 function terminalOutcome(outcome: CloudComputerOutcome): TerminalOutcome {
   return {
     status: outcome.status,
-    summary: cleanText(outcome.summary, 1_500, true),
+    summary: cleanText(outcome.summary, CLOUD_COMPUTER_LIMITS.reportChars, true),
     sources: "sources" in outcome ? outcome.sources.map((source) => cleanText(source, 500)) : [],
     errorCode: outcome.status === "failed" ? outcome.code : null,
     finishedAt: new Date(),
@@ -783,8 +785,8 @@ function finishTask(task: LiveTask, outcome: TerminalOutcome): boolean {
   task.currentUrl = null;
   task.reply?.(null);
   task.reply = null;
-  task.frame = null;
-  task.frameUrl = null;
+  // The final frame and its page stay on the finished task so the owner can
+  // review the session in place; pruneFinished retires them with the task.
   pushEvent(task, FINAL_EVENTS[outcome.status]);
   return true;
 }
@@ -957,6 +959,7 @@ async function executeTaskWithBrowser(
         // the owner to enter another address.
         const opened = await session.execute("navigate", { url: input.startUrl });
         task.currentUrl = displayUrl(session.activeUrl()) || null;
+        task.actions += 1;
         pushEvent(task, {
           kind: opened.ok ? "action" : "error",
           text: opened.ok
@@ -1008,6 +1011,7 @@ async function executeTaskWithBrowser(
       if (input.startUrl && !input.prepareBrowser && !task.stop) {
         const opened = await session.execute("navigate", { url: input.startUrl });
         task.currentUrl = displayUrl(session.activeUrl()) || null;
+        task.actions += 1;
         pushEvent(task, {
           kind: opened.ok ? "action" : "error",
           text: opened.activity,
@@ -1425,10 +1429,11 @@ export async function getComputerFrame(userId: string, taskId: string): Promise<
     await ownedRow(userId, taskId);
     return null;
   }
-  // The screen is cleared once a task ends; nothing is retained after it.
-  if (task.finished) return null;
+  // A finished task serves the final frame it retained at finish; it is
+  // never refreshed, because its browser is gone.
+  if (task.finished) return task.frame;
   await refreshComputerOwnerFrame(task);
-  return task.finished ? null : task.frame;
+  return task.frame;
 }
 
 export async function stopComputerTask(userId: string, taskId: string): Promise<ComputerTaskView> {

@@ -20,6 +20,7 @@ export const CLOUD_COMPUTER_LIMITS = {
   ownerWaitBudgetMs: 20 * 60_000,
   maxOwnerQuestions: 5,
   goalChars: 2_000,
+  reportChars: 6_000,
   imageBudgetBytes: 20_000_000,
   maxRequestBytes: 30_000_000,
   maxEstimatedInputTokens: 900_000,
@@ -79,7 +80,8 @@ const FINISH_TASK_TOOL = {
       outcome: { type: "string", enum: ["completed", "blocked"] },
       summary: {
         type: "string",
-        description: "Plain-language report for the owner, under 1200 characters.",
+        description:
+          "Plain-language report for the owner, up to 6000 characters. Give the complete findings; never cut a report short.",
       },
       sources: {
         type: "array",
@@ -1057,7 +1059,12 @@ export async function runCloudComputerAgent(input: {
             verifiedSources.add(result.verifiedLinkUrl);
             inspectedLinks.add(result.verifiedLinkUrl);
           }
-          await input.hooks.emit({ kind: result.ok ? "action" : "error", text: result.activity });
+          await input.hooks.emit({
+            kind: result.ok ? "action" : "error",
+            text: result.activity,
+            url: displayUrl(input.session.activeUrl()) || undefined,
+            ok: result.ok,
+          });
           toolOutputs.push({
             type: "function_call_output",
             call_id: callId,
@@ -1314,7 +1321,8 @@ export async function runCloudComputerAgent(input: {
         const proposedSources = cleanSources(finishCall.args.sources);
         const sources = proposedSources.filter((source) => verifiedSources.has(source));
         const report = sanitizeSummaryLinks(
-          clip(String(finishCall.args.summary ?? ""), 1_200) || "Task finished.",
+          clip(String(finishCall.args.summary ?? ""), CLOUD_COMPUTER_LIMITS.reportChars) ||
+            "Task finished.",
           verifiedSources,
         );
         const missingExactLinkEvidence =
