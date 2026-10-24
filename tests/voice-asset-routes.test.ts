@@ -1,12 +1,12 @@
 import { EventEmitter } from "node:events";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { afterEach, describe, expect, it, vi, beforeEach } from "vitest";
 
 type Handler = (req: unknown, res: unknown) => Promise<unknown>;
 const mock = vi.hoisted(() => ({
   routes: new Map<string, unknown[]>(),
   auth: vi.fn(),
-  admin: vi.fn(),
   limiter: vi.fn(),
+  admin: vi.fn(),
   service: {
     capabilities: vi.fn(),
     list: vi.fn(),
@@ -34,7 +34,7 @@ vi.mock("../src/middleware/api-rate-limits", () => ({
   },
 }));
 vi.mock("../src/lib/voice/voice-asset-service", () => ({ voiceAssetService: mock.service }));
-import "../src/routes/voice-asset-routes";
+import { requirePilotOrCustomerAccess } from "../src/routes/voice-asset-routes";
 
 function request(method: string, path: string) {
   const req = Object.assign(new EventEmitter(), {
@@ -55,15 +55,22 @@ function request(method: string, path: string) {
 beforeEach(() => {
   for (const fn of Object.values(mock.service)) fn.mockReset().mockResolvedValue({});
 });
+afterEach(() => vi.unstubAllEnvs());
 
 describe("private voice asset HTTP routes", () => {
-  it("authenticates and rate limits every route, with admin gates on all operations", () => {
+  it("authenticates and rate limits every route while the service owns lane authorization", () => {
     expect(mock.routes.size).toBe(6);
     for (const [path, handlers] of mock.routes) {
       expect(handlers[0]).toBe(mock.auth);
       expect(typeof handlers[1]).toBe("function");
-      if (path.includes("capabilities")) expect(handlers).not.toContain(mock.admin);
-      else expect(handlers).toContain(mock.admin);
+      if (path.includes("capabilities")) {
+        expect(handlers).toHaveLength(3);
+      } else {
+        // The pilot's audited admin middleware stays in the chain; when the
+        // customer flag is on the gateway defers to the service instead.
+        expect(handlers).toHaveLength(4);
+        expect(handlers[2]).toBe(requirePilotOrCustomerAccess);
+      }
     }
     expect(mock.limiter).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -72,7 +79,40 @@ describe("private voice asset HTTP routes", () => {
         failClosedOnError: true,
       }),
     );
+    expect(mock.limiter).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bucket: "api:voice-assets-write",
+        max: 8,
+        failClosedOnError: true,
+      }),
+    );
+    expect(mock.limiter).toHaveBeenCalledWith(
+      expect.objectContaining({ bucket: "api:voice-assets-read", max: 20 }),
+    );
   });
+
+  it("keeps the audited platform-admin gate on the admin pilot path while the customer flag is off", () => {
+    vi.stubEnv("VOICE_CLONE_CUSTOMER_ENABLED", "false");
+    const req = {} as never;
+    const res = {} as never;
+    const next = vi.fn();
+    mock.admin.mockImplementation((_req: unknown, _res: unknown, forward: () => void) => forward());
+    requirePilotOrCustomerAccess(req, res, next);
+    expect(mock.admin).toHaveBeenCalledWith(req, res, next);
+    expect(next).toHaveBeenCalledOnce();
+  });
+
+  it("defers operation authorization to the service when the customer canary is on", () => {
+    vi.stubEnv("VOICE_CLONE_CUSTOMER_ENABLED", "true");
+    const req = {} as never;
+    const res = {} as never;
+    const next = vi.fn();
+    mock.admin.mockClear();
+    requirePilotOrCustomerAccess(req, res, next);
+    expect(mock.admin).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledOnce();
+  });
+
   it("returns closed capability responses without caching", async () => {
     mock.service.capabilities.mockResolvedValue({ available: false });
     const { run, req, res } = request("get", "/api/voice/assets/capabilities");

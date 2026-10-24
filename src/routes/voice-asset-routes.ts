@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-import { Router } from "express";
+import { Router, type NextFunction, type Request, type Response } from "express";
 
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
@@ -22,6 +22,25 @@ const previews = createRateLimiter({
   failClosedOnError: true,
 });
 
+/**
+ * Preserve the platform-admin pilot exactly while the customer lane is off:
+ * the audited `requirePlatformAdmin` middleware still runs on every operation.
+ * When the canary flag is on, authorization moves into the service so an
+ * allowlisted customer reaches the same route; the service re-checks the admin
+ * pilot itself before serving it.
+ */
+export function requirePilotOrCustomerAccess(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  if (process.env.VOICE_CLONE_CUSTOMER_ENABLED === "true") {
+    next();
+    return;
+  }
+  void requirePlatformAdmin(req, res, next);
+}
+
 router.get(
   "/api/voice/assets/capabilities",
   authenticateUser,
@@ -35,7 +54,7 @@ router.get(
   "/api/voice/assets",
   authenticateUser,
   reads,
-  requirePlatformAdmin,
+  requirePilotOrCustomerAccess,
   async (req: AuthenticatedRequest, res) => {
     res.setHeader("Cache-Control", "no-store");
     res.json(await voiceAssetService.list(req.user));
@@ -45,7 +64,7 @@ router.post(
   "/api/voice/assets",
   authenticateUser,
   writes,
-  requirePlatformAdmin,
+  requirePilotOrCustomerAccess,
   async (req: AuthenticatedRequest, res) => {
     res.setHeader("Cache-Control", "no-store");
     res.status(201).json(await voiceAssetService.create(req.user, req.body));
@@ -55,7 +74,7 @@ router.post(
   "/api/voice/assets/:assetId/review",
   authenticateUser,
   writes,
-  requirePlatformAdmin,
+  requirePilotOrCustomerAccess,
   async (req: AuthenticatedRequest, res) => {
     res.setHeader("Cache-Control", "no-store");
     res.json(await voiceAssetService.review(req.user, req.params.assetId, req.body));
@@ -65,7 +84,7 @@ router.delete(
   "/api/voice/assets/:assetId",
   authenticateUser,
   writes,
-  requirePlatformAdmin,
+  requirePilotOrCustomerAccess,
   async (req: AuthenticatedRequest, res) => {
     res.setHeader("Cache-Control", "no-store");
     res.json(await voiceAssetService.remove(req.user, req.params.assetId, req.body));
@@ -75,7 +94,7 @@ router.post(
   "/api/voice/assets/:assetId/preview",
   authenticateUser,
   previews,
-  requirePlatformAdmin,
+  requirePilotOrCustomerAccess,
   async (req: AuthenticatedRequest, res) => {
     res.setHeader("Cache-Control", "no-store");
     const controller = new AbortController();

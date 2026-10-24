@@ -567,6 +567,24 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
       expiredAppointmentHolds = await releaseExpiredAppointmentHolds();
     }
 
+    // Customer voice-clone preview lane is default-off: expiry is a separate
+    // sweep step that stays inert unless the canary flag is explicitly on.
+    let voiceCloneAssetsExpired = 0;
+    if (
+      withinSweepBudget() &&
+      (req._sweepMode === "cron" || !req._sweepMode) &&
+      process.env.VOICE_CLONE_CUSTOMER_ENABLED === "true"
+    ) {
+      try {
+        const { voiceAssetService } = await import("../lib/voice/voice-asset-service");
+        voiceCloneAssetsExpired = await voiceAssetService.expireDue();
+      } catch (err: unknown) {
+        log.error("Voice clone retention sweep failed; continuing sweep", {
+          error: getErrorMessage(err),
+        });
+      }
+    }
+
     if (withinSweepBudget() && (req._sweepMode === "cron" || !req._sweepMode)) {
       const now3d = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
       const trialsSoon = await drizzle
@@ -625,6 +643,7 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
       mode,
       trials_expired: trialsExpired,
       expired_appointment_holds: expiredAppointmentHolds,
+      voice_clone_assets_expired: voiceCloneAssetsExpired,
     });
     if (processed > 0) {
       void auditLogger

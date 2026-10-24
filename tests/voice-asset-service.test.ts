@@ -23,10 +23,15 @@ import {
   VOICE_ASSET_MODEL_REVISION,
   VOICE_ASSET_SOURCE_REVISION,
   VOICE_ASSET_QUALITY_CHECK_VERSION,
+  VOICE_CLONE_RETENTION_DAYS_DEFAULT,
+  VOICE_CLONE_RETENTION_POLICY_VERSION,
 } from "../src/db/voice-asset-schema";
 import {
   createVoiceAssetService,
+  parseVoiceCloneAllowlist,
+  parseVoiceCloneRetentionDays,
   type VoiceAssetDependencies,
+  VOICE_CLONE_EXPIRY_BATCH,
   VOICE_PREVIEW_RESERVE_SECONDS,
 } from "../src/lib/voice/voice-asset-service";
 import {
@@ -90,6 +95,11 @@ function row(): VoiceAsset {
     qualityCheckVersion: null,
     revokedAt: null,
     deletedAt: null,
+    retentionPolicyVersion: null,
+    expiresAt: null,
+    lastPreviewAt: null,
+    deletedReason: null,
+    customerVisible: false,
     createdAt: now,
     updatedAt: now,
   };
@@ -149,10 +159,19 @@ function setup(seed = true) {
       rows.set(assetId, updated);
       return updated;
     }),
+    recordPreview: vi.fn(async (userId, assetId, _version, at) => {
+      const current = rows.get(assetId);
+      if (current && current.userId === userId)
+        Object.assign(current, { lastPreviewAt: at, updatedAt: at });
+    }),
+    dueForExpiry: vi.fn(async (_now: Date, _limit: number) => [] as VoiceAsset[]),
   };
   const deps: VoiceAssetDependencies = {
     repository: repo,
     enabled: vi.fn(() => true),
+    customerEnabled: vi.fn(() => false),
+    customerAllowed: vi.fn(() => false),
+    retentionDays: vi.fn(() => VOICE_CLONE_RETENTION_DAYS_DEFAULT),
     isAdmin: vi.fn().mockResolvedValue(true),
     engine: vi.fn(() => ({
       client: { synthesizePreview: speech, getReadiness: readiness },
@@ -178,6 +197,21 @@ function setup(seed = true) {
     });
   };
   return { service, deps, rows, repo, speech, readiness, approve };
+}
+const DAY_MS = 86_400_000;
+function customerFields(expiresAt: Date | null = new Date(now.getTime() + 30 * DAY_MS)) {
+  return {
+    customerVisible: true,
+    retentionPolicyVersion: VOICE_CLONE_RETENTION_POLICY_VERSION,
+    expiresAt,
+  };
+}
+function customerSetup(seed = false) {
+  const harness = setup(seed);
+  vi.mocked(harness.deps.enabled).mockReturnValue(false);
+  vi.mocked(harness.deps.customerEnabled).mockReturnValue(true);
+  vi.mocked(harness.deps.customerAllowed).mockReturnValue(true);
+  return harness;
 }
 beforeEach(() => vi.stubEnv("WIRELINE_DATA_KEY", Buffer.alloc(32, 7).toString("base64")));
 afterEach(() => vi.unstubAllEnvs());
@@ -242,6 +276,9 @@ describe("private operator voice asset service", () => {
     expect(saved.status).toBe("pending_review");
     expect(saved.reviewedAt).toBeNull();
     expect(saved.intendedUse).toBe("private_preview");
+    expect(saved.customerVisible).toBe(false);
+    expect(saved.retentionPolicyVersion).toBeNull();
+    expect(saved.expiresAt).toBeNull();
     for (const value of [result, await service.list(actor)]) {
       const serialized = JSON.stringify(value);
       expect(serialized).not.toContain("vref1");
@@ -407,6 +444,8 @@ describe("private operator voice asset service", () => {
     );
     expect(deps.commit).toHaveBeenCalledOnce();
     expect(deps.release).not.toHaveBeenCalled();
+    // The platform-admin pilot writes no customer-lane ledger rows.
+    expect(deps.repository.recordPreview).not.toHaveBeenCalled();
     const plaintext = speech.mock.calls[0][0] as Uint8Array;
     expect(plaintext.every((value) => value === 0)).toBe(true);
     await service.preview(actor, id, { expectedVersion: 2, expectedReserveUsd: 0.125 });
@@ -600,5 +639,195 @@ describe("private operator voice asset service", () => {
     ).rejects.toMatchObject({ code: "VOICE_PREVIEW_CANCELLED" });
     expect(deps.reserve).not.toHaveBeenCalled();
     expect(speech).not.toHaveBeenCalled();
+  });
+});
+
+describe("customer voice clone preview lane", () => {
+  it("fails closed unless the customer flag and allowlist both pass", async () => {
+    const { service, deps, repo } = setup();
+    vi.mocked(deps.enabled).mockReturnValue(false);
+    vi.mocked(deps.customerEnabled).mockReturnValue(false);
+    vi.mocked(deps.customerAllowed).mockReturnValue(true);
+    expect(await service.capabilities(actor)).toEqual({ available: false });
+    await expect(service.list(actor)).rejects.toMatchObject({
+      status: 404,
+      code: "VOICE_CLONE_PILOT_UNAVAILABLE",
+    });
+    expect(repo.list).not.toHaveBeenCalled();
+
+    vi.mocked(deps.customerEnabled).mockReturnValue(true);
+    vi.mocked(deps.customerAllowed).mockReturnValue(false);
+    expect(await service.capabilities(actor)).toEqual({ available: false });
+    await expect(service.create(actor, createBody())).rejects.toMatchObject({ status: 404 });
+    expect(repo.create).not.toHaveBeenCalled();
+  });
+
+  it("keeps the admin pilot denial unchanged when the customer lane is open", async () => {
+    const { service, deps } = setup();
+    vi.mocked(deps.isAdmin).mockResolvedValue(false);
+    vi.mocked(deps.customerEnabled).mockReturnValue(true);
+    vi.mocked(deps.customerAllowed).mockReturnValue(false);
+    await expect(service.create(actor, createBody())).rejects.toMatchObject({
+      status: 403,
+      message: "Private voice pilot access required.",
+    });
+  });
+
+  it("reports only customer-safe capabilities and stamps bounded retention on create", async () => {
+    const { service, deps, rows, repo } = customerSetup();
+    const caps = await service.capabilities(actor);
+    expect(caps).toEqual({
+      available: true,
+      scope: "private_preview",
+      lane: "customer_preview",
+      consentVersion: VOICE_ASSET_CONSENT_VERSION,
+      qualityCheckVersion: VOICE_ASSET_QUALITY_CHECK_VERSION,
+      maxReferenceBytes: 2_000_000,
+      minReferenceSeconds: 6,
+      maxReferenceSeconds: 20,
+      previewReserveUsd: 0.125,
+      retentionDays: 30,
+    });
+    expect(JSON.stringify(caps)).not.toMatch(/engineReady|serviceToken|VOICE_/);
+    expect(deps.isAdmin).not.toHaveBeenCalled();
+
+    const created = await service.create(actor, createBody());
+    expect(created.asset).toMatchObject({
+      status: "pending_review",
+      expiresAt: new Date(now.getTime() + 30 * DAY_MS).toISOString(),
+      lastPreviewAt: null,
+    });
+    expect(rows.get(id)).toMatchObject({
+      ...customerFields(),
+      intendedUse: "private_preview",
+      customerVisible: true,
+    });
+    expect(repo.create).toHaveBeenCalledOnce();
+  });
+
+  it("fails closed when the configured retention is unsafe", async () => {
+    const { service, deps, repo } = customerSetup();
+    vi.mocked(deps.retentionDays).mockReturnValue(null);
+    expect(await service.capabilities(actor)).toEqual({ available: false });
+    await expect(service.create(actor, createBody())).rejects.toMatchObject({
+      status: 503,
+      code: "VOICE_CLONE_RETENTION_UNAVAILABLE",
+    });
+    expect(repo.create).not.toHaveBeenCalled();
+  });
+
+  it("lets an allowlisted customer review, preview and delete their own reference", async () => {
+    const { service, deps, rows, repo } = customerSetup();
+    const created = await service.create(actor, createBody());
+    expect(created.asset.status).toBe("pending_review");
+    const sourceSha256 = rows.get(id)!.sourceSha256;
+    const reviewed = await service.review(actor, id, {
+      expectedVersion: 1,
+      sourceSha256,
+      qualityCheckVersion: VOICE_ASSET_QUALITY_CHECK_VERSION,
+    });
+    expect(reviewed.asset.status).toBe("approved");
+    const preview = await service.preview(actor, id, {
+      expectedVersion: 2,
+      expectedReserveUsd: 0.125,
+    });
+    expect(preview.reserveUsd).toBe(0.125);
+    expect(repo.recordPreview).toHaveBeenCalledWith(actor.id, id, 2, now, {
+      sourceSha256,
+      reservedUsdMicros: 125_000,
+      committedUsdMicros: 125_000,
+    });
+    expect(rows.get(id)!.lastPreviewAt).toEqual(now);
+    const removed = await service.remove(actor, id, { expectedVersion: 2 });
+    expect(removed.asset).toMatchObject({ status: "deleted", version: 3 });
+    expect(rows.get(id)).toMatchObject({
+      secretEncrypted: null,
+      deletedReason: "user_deleted",
+    });
+    expect(deps.reserve).toHaveBeenCalledOnce();
+  });
+
+  it("refuses an expired customer reference before reserving compute", async () => {
+    const { service, deps, rows, approve } = customerSetup(true);
+    Object.assign(rows.get(id)!, customerFields(new Date(now.getTime() - 1)));
+    approve();
+    await expect(
+      service.preview(actor, id, { expectedVersion: 2, expectedReserveUsd: 0.125 }),
+    ).rejects.toMatchObject({ code: "VOICE_REFERENCE_EXPIRED" });
+    expect(deps.reserve).not.toHaveBeenCalled();
+  });
+
+  it("expires due customer assets through the fenced, versioned terminal deletion path", async () => {
+    const { service, deps, rows, repo } = customerSetup(true);
+    const due = {
+      ...rows.get(id)!,
+      ...customerFields(new Date(now.getTime() - 1_000)),
+    };
+    vi.mocked(repo.dueForExpiry).mockResolvedValue([due]);
+    expect(await service.expireDue(now)).toBe(1);
+    expect(repo.dueForExpiry).toHaveBeenCalledWith(now, VOICE_CLONE_EXPIRY_BATCH);
+    expect(VOICE_CLONE_EXPIRY_BATCH).toBe(25);
+    expect(deps.fenced).toHaveBeenCalledWith(
+      due.userId,
+      "voice_asset_expire",
+      expect.any(Function),
+    );
+    expect(repo.update).toHaveBeenCalledWith(
+      due.userId,
+      due.id,
+      due.version,
+      {
+        status: "deleted",
+        secretEncrypted: null,
+        revokedAt: now,
+        deletedAt: now,
+        deletedReason: "retention_expired",
+      },
+      "expired",
+    );
+  });
+
+  it("keeps the retention sweep inert while the customer lane is off", async () => {
+    const { service, repo } = setup();
+    expect(await service.expireDue(now)).toBe(0);
+    expect(repo.dueForExpiry).not.toHaveBeenCalled();
+  });
+
+  it("skips rows that are not due or were concurrently changed without failing the batch", async () => {
+    const { service, rows, repo } = customerSetup(true);
+    const future = { ...rows.get(id)!, ...customerFields(new Date(now.getTime() + DAY_MS)) };
+    vi.mocked(repo.dueForExpiry).mockResolvedValue([future]);
+    expect(await service.expireDue(now)).toBe(0);
+    expect(repo.update).not.toHaveBeenCalled();
+
+    const due = { ...rows.get(id)!, ...customerFields(new Date(now.getTime() - DAY_MS)) };
+    vi.mocked(repo.dueForExpiry).mockResolvedValue([due]);
+    vi.mocked(repo.update).mockResolvedValueOnce(null);
+    expect(await service.expireDue(now)).toBe(0);
+  });
+});
+
+describe("customer lane configuration", () => {
+  it("defaults retention to 30 days and rejects unsafe values", () => {
+    expect(parseVoiceCloneRetentionDays(undefined)).toBe(VOICE_CLONE_RETENTION_DAYS_DEFAULT);
+    expect(parseVoiceCloneRetentionDays("")).toBe(VOICE_CLONE_RETENTION_DAYS_DEFAULT);
+    expect(parseVoiceCloneRetentionDays(" 30 ")).toBe(30);
+    expect(parseVoiceCloneRetentionDays("1")).toBe(1);
+    expect(parseVoiceCloneRetentionDays("365")).toBe(365);
+    for (const value of ["0", "366", "-1", "1.5", "30d", "abc", "1e2"])
+      expect(parseVoiceCloneRetentionDays(value), value).toBeNull();
+  });
+
+  it("normalizes the canary allowlist to lowercase emails and UUIDs", () => {
+    const allowlist = parseVoiceCloneAllowlist(
+      " Owner@Example.ORG , ABCDEF12-3456-4789-8ABC-DEF123456789 ,, owner2@example.org ",
+    );
+    expect([...allowlist]).toEqual([
+      "owner@example.org",
+      "abcdef12-3456-4789-8abc-def123456789",
+      "owner2@example.org",
+    ]);
+    expect(parseVoiceCloneAllowlist(undefined).size).toBe(0);
+    expect(parseVoiceCloneAllowlist(" , ").size).toBe(0);
   });
 });

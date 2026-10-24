@@ -33,6 +33,10 @@ type AccountDeletionTarget = {
  *   outlive the deleted tenant until carrier teardown completes)
  */
 export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
+  // Append-only customer voice-clone ledger. Tenant access can only INSERT/
+  // SELECT; the guard trigger permits erasure only from this terminal purge,
+  // which runs outside tenant context. Delete evidence before its references.
+  { table: "wireline_voice_clone_events", userColumns: ["user_id"] },
   // Private reference audio is encrypted and must disappear with its tenant.
   { table: "wireline_voice_assets", userColumns: ["user_id"] },
   { table: "wireline_audit_log", userColumns: ["user_id"] },
