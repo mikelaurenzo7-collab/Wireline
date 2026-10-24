@@ -53,25 +53,39 @@ vi.mock("../src/lib/google-apis", () => ({
   }),
 }));
 vi.mock("../src/lib/csp", () => ({ buildCSP: () => "csp", generateCspNonce: () => "nonce" }));
-vi.mock("../src/lib/oauth-helpers", () => ({
-  SCOPES: [
+vi.mock("../src/lib/oauth-helpers", () => {
+  const SCOPES = [
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/gmail.send",
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/calendar.events",
     "https://www.googleapis.com/auth/drive.readonly",
-  ],
-  MS_SCOPES: "offline_access User.Read Mail.Send Mail.Read Calendars.ReadWrite Files.Read.All",
-  getGoogleOAuthClient: async () => ({
-    generateAuthUrl: h.generateUrl,
-    getToken: h.token,
-    setCredentials: h.credentials,
-  }),
-  getMicrosoftRedirectUri: () => "https://app.example.test/callback",
-  generateOAuthState: () => "signed-state",
-  verifyAndClaimOAuthState: async () => ({ ok: true, userId: "tenant-a" }),
-  resolveLinkedOAuthUserId: async () => "tenant-a",
-}));
+    "https://www.googleapis.com/auth/drive.file",
+  ];
+  const MS_SCOPES =
+    "offline_access User.Read Mail.Send Mail.Read Calendars.ReadWrite Files.Read.All";
+  return {
+    SCOPES,
+    MS_SCOPES,
+    googleConnectScopes: (emailIncluded: boolean) =>
+      emailIncluded ? [...SCOPES] : SCOPES.filter((scope) => !scope.includes("/gmail.")),
+    microsoftConnectScopes: (emailIncluded: boolean) =>
+      emailIncluded
+        ? MS_SCOPES
+        : MS_SCOPES.split(" ")
+            .filter((scope) => !scope.startsWith("Mail."))
+            .join(" "),
+    getGoogleOAuthClient: async () => ({
+      generateAuthUrl: h.generateUrl,
+      getToken: h.token,
+      setCredentials: h.credentials,
+    }),
+    getMicrosoftRedirectUri: () => "https://app.example.test/callback",
+    generateOAuthState: () => "signed-state",
+    verifyAndClaimOAuthState: async () => ({ ok: true, userId: "tenant-a" }),
+    resolveLinkedOAuthUserId: async () => "tenant-a",
+  };
+});
 import google from "../src/routes/oauth/google";
 import microsoft from "../src/routes/oauth/microsoft";
 import icloud from "../src/routes/icloud-mail-routes";
@@ -152,6 +166,7 @@ describe("mail connection channel boundary", () => {
     const scopes = h.generateUrl.mock.calls[0][0].scope as string[];
     expect(scopes).toContain("https://www.googleapis.com/auth/calendar.events");
     expect(scopes).toContain("https://www.googleapis.com/auth/drive.readonly");
+    expect(scopes).toContain("https://www.googleapis.com/auth/drive.file");
     expect(scopes.some((scope) => scope.includes("gmail"))).toBe(false);
   });
   it("keeps Microsoft calendar and files authorization while omitting Mail scopes for Calls", async () => {

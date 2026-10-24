@@ -26,7 +26,25 @@ export const SCOPES = [
   "https://www.googleapis.com/auth/calendar.events",
   "https://www.googleapis.com/auth/calendar.readonly",
   "https://www.googleapis.com/auth/drive.readonly",
+  // Least-privilege write scope for files this app creates (Drive artifact
+  // exports). drive.readonly alone cannot call files.create. Existing Google
+  // grants created before this scope existed keep working for read-only Drive
+  // imports; they must reconnect to grant Drive write access.
+  "https://www.googleapis.com/auth/drive.file",
 ];
+
+/**
+ * OAuth scope list for the Google workspace connection (Gmail + Calendar +
+ * Drive). The Email channel entitlement gates Gmail only: Calendar and Drive
+ * stay available on every plan. Filter specific scopes instead of slicing the
+ * array by position so a future non-mail scope can never be dropped by the
+ * entitlement check. Registrations live in docs/OAUTH_PROVIDER_SETUP.md.
+ */
+export function googleConnectScopes(emailTransportIncluded: boolean): string[] {
+  return emailTransportIncluded
+    ? [...SCOPES]
+    : SCOPES.filter((scope) => !scope.includes("/gmail."));
+}
 
 function getAppOrigin(req: express.Request): string {
   if (process.env.APP_URL) return new URL(process.env.APP_URL).origin;
@@ -75,6 +93,20 @@ export const MS_SCOPES = [
   "Calendars.ReadWrite",
   "Files.Read.All",
 ].join(" ");
+
+/**
+ * Delegated scope line for the Microsoft 365 connection (Outlook mail +
+ * Calendar). The Email channel entitlement gates Mail.* only: Calendar and
+ * Files stay available on every plan. Mirrors googleConnectScopes() so a
+ * future non-mail scope cannot be removed by the entitlement check.
+ */
+export function microsoftConnectScopes(emailTransportIncluded: boolean): string {
+  return emailTransportIncluded
+    ? MS_SCOPES
+    : MS_SCOPES.split(" ")
+        .filter((scope) => !scope.startsWith("Mail."))
+        .join(" ");
+}
 
 export function getMicrosoftRedirectUri(req: express.Request): string {
   const baseUrl = getAppOrigin(req);

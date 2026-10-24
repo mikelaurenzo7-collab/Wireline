@@ -11,7 +11,7 @@ import {
 import { oauthRateLimiter } from "../../middleware/rate-limit-middleware";
 import { authenticateUser } from "../../middleware/auth";
 import {
-  MS_SCOPES,
+  microsoftConnectScopes,
   getMicrosoftRedirectUri,
   generateOAuthState,
   verifyAndClaimOAuthState,
@@ -43,16 +43,14 @@ router.get(
     const tenantId = await assertOAuthProviderConnectAllowed(uid, "Microsoft");
     const emailIncluded = emailTransportAllowed(await getTenantChannelEntitlements(tenantId));
     const redirectUri = getMicrosoftRedirectUri(req);
+    // The Email entitlement drops Mail.* scopes only; Calendar and Files must
+    // survive so Outlook calendar booking and connected storage stay usable.
     const params = new URLSearchParams({
       client_id: process.env.MICROSOFT_CLIENT_ID!,
       response_type: "code",
       redirect_uri: redirectUri,
       response_mode: "query",
-      scope: emailIncluded
-        ? MS_SCOPES
-        : MS_SCOPES.split(" ")
-            .filter((scope) => !scope.startsWith("Mail."))
-            .join(" "),
+      scope: microsoftConnectScopes(emailIncluded),
       state: generateOAuthState(uid ? { userId: uid } : undefined),
     });
 

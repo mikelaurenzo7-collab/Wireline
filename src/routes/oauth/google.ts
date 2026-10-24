@@ -12,7 +12,7 @@ import {
 import { oauthRateLimiter } from "../../middleware/rate-limit-middleware";
 import { authenticateUser } from "../../middleware/auth";
 import {
-  SCOPES,
+  googleConnectScopes,
   getGoogleOAuthClient,
   generateOAuthState,
   verifyAndClaimOAuthState,
@@ -42,10 +42,13 @@ router.get(
     const uid = req.user?.id as string | undefined;
     const tenantId = await assertOAuthProviderConnectAllowed(uid, "Google");
     const emailIncluded = emailTransportAllowed(await getTenantChannelEntitlements(tenantId));
+    // Calendar/Drive remain usable without buying the Email channel. The
+    // entitlement filter drops Gmail scopes only; it must never remove the
+    // calendar/Drive scopes the connector needs for booking and exports.
     const oauth2Client = await getGoogleOAuthClient(req);
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: "offline",
-      scope: emailIncluded ? SCOPES : SCOPES.filter((scope) => !scope.includes("/gmail.")),
+      scope: googleConnectScopes(emailIncluded),
       prompt: "consent",
       state: generateOAuthState(uid ? { userId: uid } : undefined),
     });
