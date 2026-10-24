@@ -23,6 +23,7 @@ import { StatusNotice } from "./molecules";
 import SimpleVoicePicker from "./voice/SimpleVoicePicker";
 import AgentToolPermissions from "./AgentToolPermissions";
 import BusinessHoursEditor from "./BusinessHoursEditor";
+import DeleteBotSection from "./studio/DeleteBotSection";
 import HumanHandoffEditor from "./HumanHandoffEditor";
 import PlaybookEditor from "./PlaybookEditor";
 
@@ -571,6 +572,8 @@ export default function StudioAgentWorkspacePanel({
             </Link>
           </Button>
         </div>
+
+        <DeleteBotSection agentId={agentId} agentName={agentName} compact={compact} />
       </div>
     </div>
   );

@@ -177,8 +177,11 @@ function database(initialPresence: number, interleave = true) {
         insert: (table: any) => query("insert", getTableName(table)),
         update: (table: any) => query("update", getTableName(table)),
         execute: async (sql: any) => {
-          const key = String(dialect.sqlToQuery(sql).params[0]);
+          const statement = dialect.sqlToQuery(sql);
+          const key = String(statement.params[0]);
           lockKeys.push(key);
+          // Shared advisory locks never wait for one another.
+          if (statement.sql.includes("pg_advisory_xact_lock_shared")) return [];
           const prior = locks.get(key) ?? Promise.resolve();
           let unlock!: () => void;
           const held = new Promise<void>((resolve) => {
@@ -252,6 +255,23 @@ describe("atomic inbound capacity across provider paths", () => {
     expect(d.lockKeys.filter((key) => key === `inbound-capacity:${userId}`)).toHaveLength(2);
     expect(d.rows.get("wireline_signal_presence")).toHaveLength(10);
     expect(d.rows.get("wireline_call_logs")).toHaveLength(1);
+  });
+
+  it("refuses a new SIP call for a Bot that is being deleted, before any row or spend", async () => {
+    const d = database(0, false);
+    d.rows.set("wireline_account_operation_leases", [
+      {
+        id: "hold",
+        userId,
+        operation: "bot_deletion:bot",
+        expiresAt: new Date(Date.now() + 60_000),
+      },
+    ]);
+    await expect(claimOpenAISipCall(call)).rejects.toMatchObject({ code: "BOT_BEING_DELETED" });
+    expect(h.fund).not.toHaveBeenCalled();
+    expect(d.rows.get("wireline_call_logs")).toHaveLength(0);
+    expect(d.rows.get("wireline_signal_presence")).toHaveLength(0);
+    expect(d.lockKeys).toContain("bot-admission:bot");
   });
 
   it("also enforces a tenant ceiling below the global worker limit for concurrent SIP calls", async () => {
