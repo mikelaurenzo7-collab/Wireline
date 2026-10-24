@@ -79,7 +79,7 @@ const SECTIONS: SecurityTopic[] = [
     icon: HeartPulse,
     title: "Healthcare Data Controls",
     items: [
-      "The compliance_mode = 'hipaa' setting for each Bot tightens runtime behavior and data handling defaults. This setting is not a certification or compliance determination.",
+      "Each Bot has a healthcare compliance mode that, when turned on, tightens runtime behavior and data handling defaults. This setting is not a certification or compliance determination.",
       "Do not send, store, or process PHI unless BotBound confirms both a signed BAA and an approved configuration in writing.",
       "A SOC 2 Type II attestation is not currently available. BotBound does not display an unearned badge or imply that planning equals proof.",
     ],
@@ -178,7 +178,7 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     items: [
       "Runtime Balance is a prepaid ledger. Paid plans draw overflow voice from funded balance after included minutes. Existing services retain their billing and verification requirements. Live voice requires an active eligible paid plan.",
       "Paid plans include a managed AI allowance for AI, research, and enrichment funded by the platform. Calls can use up to 10 minutes of paid completion credit within their session limit. Any amount due pauses new calls and prepaid extras until topped up.",
-      "Daily spend totals and cost alerts help the platform owner catch margin leaks early.",
+      "Daily spend totals and cost alerts help you track your account's spending and catch unexpected charges early.",
     ],
   },
   {
