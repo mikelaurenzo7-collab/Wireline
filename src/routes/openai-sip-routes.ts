@@ -136,9 +136,17 @@ async function resolveInboundContext(
       userId: schema.phoneNumbers.userId,
       agentId: schema.phoneNumbers.agentId,
       businessName: schema.settings.businessName,
+      callRecordingEnabled: schema.agents.callRecordingEnabled,
     })
     .from(schema.phoneNumbers)
     .leftJoin(schema.settings, eq(schema.settings.userId, schema.phoneNumbers.userId))
+    .leftJoin(
+      schema.agents,
+      and(
+        eq(schema.agents.id, schema.phoneNumbers.agentId),
+        eq(schema.agents.userId, schema.phoneNumbers.userId),
+      ),
+    )
     .where(eq(schema.phoneNumbers.phoneNumber, calledNumber))
     .limit(1);
   if (!line?.userId || !line.agentId) return null;
@@ -150,6 +158,7 @@ async function resolveInboundContext(
       calledNumber,
       direction: "inbound" as const,
       businessName: line.businessName,
+      callRecordingEnabled: line.callRecordingEnabled ?? false,
       admission: await tenantStore.run(line.userId, () =>
         resolveNativeInboundCallAdmission({
           userId: line.userId,
@@ -220,6 +229,7 @@ async function resolveOutboundContext(
       .select({
         businessName: schema.settings.businessName,
         complianceMode: schema.agents.complianceMode,
+        callRecordingEnabled: schema.agents.callRecordingEnabled,
       })
       .from(schema.agents)
       .leftJoin(schema.settings, eq(schema.settings.userId, schema.agents.userId))
@@ -245,6 +255,7 @@ async function resolveOutboundContext(
         callPurpose: outboundPurpose(nativeVoice.call_purpose),
         businessName: agentContext.businessName,
         complianceMode: agentContext.complianceMode,
+        callRecordingEnabled: agentContext.callRecordingEnabled ?? false,
         ...(lead.source === "phone_test" ? { phoneTest: true as const } : {}),
       },
     };
