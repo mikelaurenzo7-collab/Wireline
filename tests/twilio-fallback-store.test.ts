@@ -103,7 +103,7 @@ beforeEach(() => {
 
 describe("fallback durable receipt repository", () => {
   it("persists the original funded bound with admission inside the same transaction", async () => {
-    const d = database([[{ agentId: "bot-1" }], [], [{ live: "0" }]]);
+    const d = database([[{ agentId: "bot-1" }], [], [], [{ live: "0" }]]);
     h.fund.mockResolvedValue({ maxSeconds: 40, deadlineAtMs: 1800000000000 });
     const { completion: _completion, ...input } = receipt;
     const result = await twilioFallbackStore.claim(input);
@@ -120,11 +120,12 @@ describe("fallback durable receipt repository", () => {
     });
   });
   it("claims an exact line under lock and persists admission with pending presence atomically", async () => {
-    const d = database([[{ agentId: "bot-1" }], [], [{ live: "0" }]]);
+    const d = database([[{ agentId: "bot-1" }], [], [], [{ live: "0" }]]);
     const { completion: _completion, ...input } = receipt;
     await expect(twilioFallbackStore.claim(input)).resolves.toEqual(receipt);
     expect(d.db.transaction).toHaveBeenCalledOnce();
-    expect(d.db.execute).toHaveBeenCalledOnce();
+    // The Bot's admission lock, then the tenant's capacity lock.
+    expect(d.db.execute).toHaveBeenCalledTimes(2);
     expect(d.locks).toEqual(["update", "update"]);
     expect(d.predicates[0]).toContain(owner);
     expect(d.predicates[0]).toContain(receipt.calledNumber);
@@ -152,9 +153,17 @@ describe("fallback durable receipt repository", () => {
       expect(await twilioFallbackStore.claim(input)).toBeNull();
       expect(d.values).toEqual([]);
     }
-    const d = database([[{ agentId: "bot-1" }], [], [{ live: "10" }]]);
+    const d = database([[{ agentId: "bot-1" }], [], [], [{ live: "10" }]]);
     expect(await twilioFallbackStore.claim(input)).toBeNull();
     expect(d.values).toEqual([]);
+  });
+
+  it("does not admit a fallback for a Bot that is being deleted", async () => {
+    const { completion: _completion, ...input } = receipt;
+    const d = database([[{ agentId: "bot-1" }], [], [{ id: "deletion-hold" }]]);
+    expect(await twilioFallbackStore.claim(input)).toBeNull();
+    expect(d.values).toEqual([]);
+    expect(h.fund).not.toHaveBeenCalled();
   });
 
   it("preserves actual overrun and holds capacity until customer usage is settled", async () => {

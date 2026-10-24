@@ -335,7 +335,8 @@ export default function PrivacyPolicyPage() {
             <p>
               Depending on where you live, you may have rights to access, correct, delete, restrict
               or object to processing, withdraw consent, and receive a portable copy of personal
-              data. To exercise a right, use Delete Account in Settings or contact
+              data. To download a portable copy, use Download My Data in Settings → Compliance. To
+              delete your data, use Delete Account in Settings. For any other request, contact
               <strong> support@botbound.app</strong>. Where processing relies on consent,
               withdrawing consent does not affect processing completed before withdrawal.
             </p>
