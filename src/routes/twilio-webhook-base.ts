@@ -678,16 +678,18 @@ router.post("/api/twilio-webhook/voice-fallback-status", async (req: Request, re
 });
 
 /**
- * Live-call recording completion. Both AI bridges are Twilio <Dial><Sip>
- * legs; when the Bot owner has recording on, the Dial carries
+ * Live-call recording completion. Both AI bridges are Twilio SIP legs into
+ * the AI provider; when the Bot owner has recording on, the bridge carries
  * record-from-answer-dual and Twilio reports the finished recording here.
- * The callback's CallSid is the Twilio parent call: inbound it keys the
- * call row by openaiSipSourceId "twilio:<CallSid>"; outbound the parent
- * SID is the placement's stored twilio_call_sid and the row is keyed
- * "outbound:<placementId>". The media URL lands on the same recording_url
- * column voicemail uses, so the tenant-gated recording route and the
- * player serve it unchanged. Only a completed recording is persisted, and
- * never over an existing one.
+ * The callback's CallSid is the Twilio parent call, and every call row is
+ * created with that exact parent SID in `wireline_call_logs.twilio_parent_call_sid`
+ * (inbound from the signed token, outbound from the placement's persisted
+ * bridge marker). Attribution therefore reads one immutable call-log identity;
+ * it never looks up a lead's latest placement metadata, so a redial that
+ * replaced that metadata before this callback lands cannot re-attribute the
+ * recording. The media URL lands on the same recording_url column voicemail
+ * uses, so the tenant-gated recording route and the player serve it unchanged.
+ * Only a completed recording is persisted, and never over an existing one.
  */
 router.post("/api/twilio-webhook/live-recording-complete", async (req: Request, res: Response) => {
   if (!verifyTwilioSignature(req)) {
@@ -707,49 +709,25 @@ router.post("/api/twilio-webhook/live-recording-complete", async (req: Request, 
   }
 
   try {
-    const [inbound] = await drizzle
+    const [stored] = await drizzle
       .update(schema.callLogs)
       .set({ recordingUrl })
       .where(
-        and(
-          eq(schema.callLogs.openaiSipSourceId, `twilio:${callSid}`),
-          isNull(schema.callLogs.recordingUrl),
-        ),
+        and(eq(schema.callLogs.twilioParentCallSid, callSid), isNull(schema.callLogs.recordingUrl)),
       )
       .returning({ id: schema.callLogs.id });
-    if (!inbound) {
-      const [lead] = await drizzle
-        .select({ metadata: schema.outboundLeads.metadata })
-        .from(schema.outboundLeads)
-        .where(sql`${schema.outboundLeads.metadata} -> 'native_voice' ->> 'twilio_call_sid' = ${callSid}`)
+    if (!stored) {
+      const [correlated] = await drizzle
+        .select({ id: schema.callLogs.id })
+        .from(schema.callLogs)
+        .where(eq(schema.callLogs.twilioParentCallSid, callSid))
         .limit(1);
-      const leadMetadata =
-        lead?.metadata && typeof lead.metadata === "object" && !Array.isArray(lead.metadata)
-          ? (lead.metadata as Record<string, unknown>)
-          : {};
-      const nativeVoice =
-        leadMetadata.native_voice &&
-        typeof leadMetadata.native_voice === "object" &&
-        !Array.isArray(leadMetadata.native_voice)
-          ? (leadMetadata.native_voice as Record<string, unknown>)
-          : {};
-      const placementId =
-        typeof nativeVoice.placement_id === "string" ? nativeVoice.placement_id : "";
-      if (placementId) {
-        await drizzle
-          .update(schema.callLogs)
-          .set({ recordingUrl })
-          .where(
-            and(
-              eq(schema.callLogs.openaiSipSourceId, `outbound:${placementId}`),
-              isNull(schema.callLogs.recordingUrl),
-            ),
-          );
-      } else {
+      if (!correlated) {
         log.warn("Live recording callback matched no call", {
           call_sid_suffix: opaqueIdSuffixForLog(callSid),
         });
       }
+      // A correlated row that already has a recording is an idempotent retry.
     }
     return res.status(204).end();
   } catch (error) {

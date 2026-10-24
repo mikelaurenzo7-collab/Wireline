@@ -2340,6 +2340,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "twilio_parent_call_sid": {
+          "name": "twilio_parent_call_sid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "openai_sip_phase": {
           "name": "openai_sip_phase",
           "type": "text",
@@ -2569,6 +2575,22 @@
           ],
           "isUnique": true,
           "where": "\"wireline_call_logs\".\"openai_sip_source_id\" IS NOT NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "uq_call_logs_twilio_parent_call_sid": {
+          "name": "uq_call_logs_twilio_parent_call_sid",
+          "columns": [
+            {
+              "expression": "twilio_parent_call_sid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"wireline_call_logs\".\"twilio_parent_call_sid\" IS NOT NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}

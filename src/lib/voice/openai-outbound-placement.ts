@@ -323,6 +323,26 @@ export async function cancelMissingNativeOutboundRequest(userId: string, request
   return readNativeOutboundRequestStatus(userId, requestKey);
 }
 
+type PlacementTransaction = Parameters<Parameters<typeof drizzle.transaction>[0]>[0];
+
+/**
+ * Snapshot the Bot owner's recording choice when the carrier placement is
+ * created. The stored value is immutable for this placement: the bridge TwiML
+ * (carrier capture) and SIP admission (spoken notice) both read it, so a flag
+ * toggle mid-placement cannot make capture and disclosure disagree.
+ */
+async function readCallRecordingEnabled(
+  tx: PlacementTransaction,
+  input: { userId: string; agentId: string },
+): Promise<boolean> {
+  const [agent] = await tx
+    .select({ callRecordingEnabled: schema.agents.callRecordingEnabled })
+    .from(schema.agents)
+    .where(and(eq(schema.agents.id, input.agentId), eq(schema.agents.userId, input.userId)))
+    .limit(1);
+  return agent?.callRecordingEnabled === true;
+}
+
 /**
  * Start each carrier placement with a fresh attempt record. Lead-level metadata
  * survives, but no CallSid, OpenAI id, AMD outcome, bridge marker, or TwiML replay
@@ -336,6 +356,7 @@ export function resetNativeOutboundPlacementMetadata(
     placementId: string;
     claimedAt: Date;
     created: boolean;
+    callRecordingEnabled: boolean;
   },
 ): Record<string, unknown> {
   const claimedAt = input.claimedAt.toISOString();
@@ -347,6 +368,10 @@ export function resetNativeOutboundPlacementMetadata(
       outbound_line_number: input.outboundLineNumber,
       placement_id: input.placementId,
       placement_claimed_at: claimedAt,
+      // The one recording decision for this placement: the bridge TwiML reads
+      // it for carrier capture and SIP admission reads it for the spoken
+      // notice, so the two cannot disagree if the Bot flag changes mid-call.
+      call_recording_enabled: input.callRecordingEnabled,
       state: "creating",
       do_not_retry: false,
       ...(input.created ? { created_at: claimedAt } : {}),
@@ -449,6 +474,7 @@ export async function claimNativeOutboundPlacement(input: {
         placementId,
         claimedAt: now,
         created: true,
+        callRecordingEnabled: await readCallRecordingEnabled(tx, input),
       });
       asRecord(metadata.native_voice).request_hash = requestHash;
       const [lead] = await tx
@@ -554,6 +580,7 @@ export async function claimNativeOutboundPlacement(input: {
           (LEAD_PROCESSABLE_STATUSES as readonly unknown[]).includes(input.priorLeadStatus)
         ? input.priorLeadStatus
         : null;
+    const callRecordingEnabled = await readCallRecordingEnabled(tx, input);
 
     const [claimed] = await tx
       .update(schema.outboundLeads)
@@ -569,6 +596,7 @@ export async function claimNativeOutboundPlacement(input: {
           placementId,
           claimedAt: now,
           created: false,
+          callRecordingEnabled,
         }),
       })
       .where(

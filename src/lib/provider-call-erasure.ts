@@ -53,6 +53,28 @@ function twilioResourceUrl(accountSid: string, resource: string): string {
   return `${TWILIO_API_ORIGIN}/2010-04-01/Accounts/${accountSid}/${resource}`;
 }
 
+const TWILIO_RECORDING_PATH_RE =
+  /^\/2010-04-01\/Accounts\/(AC[0-9a-fA-F]{32})\/Recordings\/(RE[0-9a-fA-F]{32})(?:\.(?:json|mp3|wav))?$/;
+
+/**
+ * Non-throwing structural match used to decide which stored pointers are
+ * Twilio recordings. Unlike parseTwilioRecordingRef it does not compare the
+ * URL's account to configuration, so callers can classify first and validate
+ * against the configured account only for pointers they can actually erase.
+ */
+function twilioRecordingRefFromUrl(recordingUrl: string): TwilioRecordingRef | null {
+  let url: URL;
+  try {
+    url = new URL(recordingUrl);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:" || url.hostname !== "api.twilio.com") return null;
+  const match = url.pathname.match(TWILIO_RECORDING_PATH_RE);
+  if (!match) return null;
+  return { accountSid: match[1], recordingSid: match[2] };
+}
+
 export function parseTwilioRecordingRef(
   recordingUrl: string,
   expectedAccountSid: string,
@@ -72,19 +94,16 @@ export function parseTwilioRecordingRef(
     throw new Error("Stored Twilio recording URL is not an authenticated Twilio API URL.");
   }
 
-  const match = url.pathname.match(
-    /^\/2010-04-01\/Accounts\/(AC[0-9a-fA-F]{32})\/Recordings\/(RE[0-9a-fA-F]{32})(?:\.(?:json|mp3|wav))?$/,
-  );
-  if (!match) {
+  const ref = twilioRecordingRefFromUrl(recordingUrl);
+  if (!ref) {
     throw new Error("Stored Twilio recording URL cannot be mapped to a Recording resource.");
   }
 
-  const [, accountSid, recordingSid] = match;
-  if (accountSid !== expectedAccountSid) {
+  if (ref.accountSid !== expectedAccountSid) {
     throw new Error("Stored Twilio recording belongs to a different Twilio account.");
   }
 
-  return { accountSid, recordingSid };
+  return ref;
 }
 
 async function readJson<T>(response: Response, context: string): Promise<T> {
@@ -126,17 +145,17 @@ async function eraseTwilioRecording(
       `Twilio recording lookup failed with HTTP ${metadataResponse.status}; deferring account purge.`,
     );
   }
-  const metadata = await readJson<TwilioRecordingMetadata>(metadataResponse, "Twilio recording lookup");
+  const metadata = await readJson<TwilioRecordingMetadata>(
+    metadataResponse,
+    "Twilio recording lookup",
+  );
   const callSid = metadata.call_sid?.trim() || "";
   if (callSid && !TWILIO_CALL_SID_RE.test(callSid)) {
     throw new Error("Twilio recording metadata returned an invalid Call SID.");
   }
 
   const transcriptionListResponse = await fetchFn(
-    twilioResourceUrl(
-      accountSid,
-      `Recordings/${recordingSid}/Transcriptions.json?PageSize=1000`,
-    ),
+    twilioResourceUrl(accountSid, `Recordings/${recordingSid}/Transcriptions.json?PageSize=1000`),
     {
       headers: { Authorization: auth },
       signal: AbortSignal.timeout(15_000),
@@ -214,7 +233,19 @@ async function eraseTwilioRecording(
   return { recordingDeleted, transcriptionsDeleted, callDeleted };
 }
 
-async function eraseTwilioVoicemails(
+/**
+ * Erases every Twilio recording a tenant's call rows still point at. Failover
+ * voicemail pointers are identified by their provider id; live-call recordings
+ * (bridged SIP calls) are identified by the stored recording URL itself,
+ * because they live on ordinary call rows whose provider id names the AI
+ * runtime (`openai:…`), not Twilio. A pointer is included when its URL is a
+ * well-formed recording URL for the configured Twilio account; URLs that are
+ * not Twilio recordings, or that belong to a different Twilio account, are
+ * ignored rather than blocking account erasure forever. Voicemail pointer
+ * behavior is unchanged, including deferring the purge when its stored URL is
+ * not addressable.
+ */
+async function eraseTwilioRecordings(
   pointers: readonly CallArtifactPointer[],
   fetchFn: ProviderFetch,
   env: NodeJS.ProcessEnv,
@@ -223,18 +254,33 @@ async function eraseTwilioVoicemails(
   transcriptionsDeleted: number;
   callsDeleted: number;
 }> {
-  const recordingUrls = new Set(
+  const voicemailRecordingUrls = new Set(
     pointers
       .filter(({ providerCallId }) => providerCallId?.startsWith(TWILIO_VOICEMAIL_PREFIX))
       .map(({ recordingUrl }) => recordingUrl?.trim() || "")
       .filter(Boolean),
   );
-  if (!recordingUrls.size) {
+  const liveRecordingUrls = [
+    ...new Set(
+      pointers
+        .filter(({ providerCallId }) => !providerCallId?.startsWith(TWILIO_VOICEMAIL_PREFIX))
+        .map(({ recordingUrl }) => recordingUrl?.trim() || "")
+        .filter(Boolean),
+    ),
+  ].filter((recordingUrl) => twilioRecordingRefFromUrl(recordingUrl) !== null);
+
+  if (!voicemailRecordingUrls.size && !liveRecordingUrls.length) {
     return { recordingsDeleted: 0, transcriptionsDeleted: 0, callsDeleted: 0 };
   }
 
   const accountSid = requiredEnv(env, "TWILIO_ACCOUNT_SID");
   const authToken = requiredEnv(env, "TWILIO_AUTH_TOKEN");
+  const recordingUrls = new Set([
+    ...voicemailRecordingUrls,
+    ...liveRecordingUrls.filter(
+      (recordingUrl) => twilioRecordingRefFromUrl(recordingUrl)?.accountSid === accountSid,
+    ),
+  ]);
   let recordingsDeleted = 0;
   let transcriptionsDeleted = 0;
   let callsDeleted = 0;
@@ -263,7 +309,7 @@ export async function eraseProviderCallArtifacts(
   const fetchFn = options.fetchFn ?? fetch;
   const env = options.env ?? process.env;
 
-  const twilio = await eraseTwilioVoicemails(pointers, fetchFn, env);
+  const twilio = await eraseTwilioRecordings(pointers, fetchFn, env);
 
   return {
     twilioRecordingsDeleted: twilio.recordingsDeleted,
