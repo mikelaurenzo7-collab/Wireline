@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS public."wireline_live_voices" (
 	"source_sha256" text NOT NULL,
 	"source_duration_seconds" double precision NOT NULL,
 	"quality_score" integer,
+	"voice_gender" text,
 	"last_used_at" timestamp with time zone,
 	"deleted_at" timestamp with time zone,
 	"deleted_reason" text,
@@ -27,7 +28,8 @@ CREATE TABLE IF NOT EXISTS public."wireline_live_voices" (
 	CONSTRAINT "wireline_live_voices_status_check" CHECK (("wireline_live_voices"."status" = 'ready' AND "wireline_live_voices"."provider_voice_id" IS NOT NULL AND "wireline_live_voices"."deleted_at" IS NULL AND "wireline_live_voices"."deleted_reason" IS NULL) OR ("wireline_live_voices"."status" = 'deleted' AND "wireline_live_voices"."deleted_at" IS NOT NULL AND "wireline_live_voices"."deleted_reason" IN ('user_deleted', 'provider_missing'))),
 	CONSTRAINT "wireline_live_voices_consent_check" CHECK ("wireline_live_voices"."consent_version" = 'live-voice-clone-consent-v1-2026-10-24' AND "wireline_live_voices"."consent_scope" IN ('self', 'authorized_speaker') AND "wireline_live_voices"."consent_accepted_by" = "wireline_live_voices"."user_id"),
 	CONSTRAINT "wireline_live_voices_source_check" CHECK ("wireline_live_voices"."source_sha256" ~ '^[0-9a-f]{64}$' AND "wireline_live_voices"."source_duration_seconds" BETWEEN 10 AND 120),
-	CONSTRAINT "wireline_live_voices_quality_check" CHECK ("wireline_live_voices"."quality_score" IS NULL OR "wireline_live_voices"."quality_score" BETWEEN 0 AND 100)
+	CONSTRAINT "wireline_live_voices_quality_check" CHECK ("wireline_live_voices"."quality_score" IS NULL OR "wireline_live_voices"."quality_score" BETWEEN 0 AND 100),
+	CONSTRAINT "wireline_live_voices_gender_check" CHECK ("wireline_live_voices"."voice_gender" IS NULL OR "wireline_live_voices"."voice_gender" IN ('female', 'male'))
 );
 --> statement-breakpoint
 ALTER TABLE public."wireline_live_voices" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
