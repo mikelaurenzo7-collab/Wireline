@@ -126,6 +126,7 @@ export default function ChannelPlanPicker({
         Plan options are unavailable. Please try again.
       </p>
     );
+  const channelHintId = `${id}-channel-hint`;
   const choose = (channel: CommunicationChannel) => {
     const next = plan.channels.includes(channel)
       ? plan.channels.filter((item) => item !== channel)
@@ -151,15 +152,18 @@ export default function ChannelPlanPicker({
         >
           {channelChoices.map(({ id, label, icon: Icon }) => {
             const checked = plan.channels.includes(id);
+            const isLastChannel = checked && plan.channels.length === 1;
             return (
               <label
                 key={id}
+                title={isLastChannel ? "At least one channel is required" : undefined}
                 className={`flex min-h-14 min-w-0 cursor-pointer flex-wrap items-center justify-center gap-2 rounded-xl border px-2 py-3 text-sm font-semibold ${checked ? "border-primary bg-primary/10 text-foreground" : "border-border bg-card text-muted-foreground"}`}
               >
                 <Checkbox
                   checked={checked}
                   onChange={() => choose(id)}
-                  disabled={disabled || lockChannels || (checked && plan.channels.length === 1)}
+                  disabled={disabled || lockChannels || isLastChannel}
+                  aria-describedby={isLastChannel ? channelHintId : undefined}
                 />
                 <Icon className="size-4 shrink-0" aria-hidden="true" />
                 <span>{label}</span>
@@ -167,6 +171,11 @@ export default function ChannelPlanPicker({
             );
           })}
         </div>
+        {plan.channels.length === 1 ? (
+          <p id={channelHintId} className="mt-2 text-xs text-muted-foreground">
+            At least one channel is required.
+          </p>
+        ) : null}
       </fieldset>
       <fieldset disabled={disabled} className="min-w-0">
         <legend className="mb-2 text-sm font-medium text-foreground">Choose your plan</legend>

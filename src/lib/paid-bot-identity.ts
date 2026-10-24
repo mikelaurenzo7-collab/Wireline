@@ -22,6 +22,8 @@ import {
 } from "./owned-email-account";
 import { assertLiveExternalActionAllowed } from "./account-environment-policy";
 import { findAgentPhoneLine } from "./agent-phone-lines";
+import { AppError } from "./api-error";
+import { beginBotIdentitySetup, endBotIdentitySetup } from "./bot-deletion-hold";
 import { planById } from "./plan-catalog";
 import { getTenantChannelEntitlements, requireTenantChannel } from "./channel-entitlements";
 import { getIncludedPhoneLineSlots } from "./phone-line-entitlements";
@@ -512,6 +514,22 @@ async function ensurePaidBotMailbox(
  * inactive/canceled plans exit without allocating provider resources.
  */
 export async function ensurePaidBotIdentity(input: {
+  userId: string;
+  agentId: string;
+}): Promise<PaidBotIdentityResult> {
+  // Deletion releases this Bot's number and mailbox, and setup running beside
+  // it would recreate them. The marker makes deletion wait for this setup; a
+  // deletion already under way refuses it, and a queued retry runs afterwards.
+  const marker = await beginBotIdentitySetup(input.userId, input.agentId);
+  if (!marker) throw new AppError(409, "BOT_BEING_DELETED", "This Bot is being deleted.");
+  try {
+    return await reconcilePaidBotIdentity(input);
+  } finally {
+    await endBotIdentitySetup(input.userId, marker);
+  }
+}
+
+async function reconcilePaidBotIdentity(input: {
   userId: string;
   agentId: string;
 }): Promise<PaidBotIdentityResult> {
