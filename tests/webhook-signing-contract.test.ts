@@ -16,7 +16,7 @@ describe("tenant webhook delivery signing", () => {
     expect(helpers).toContain("secretEncrypted: string | null");
     expect(helpers).toContain("decryptSecret(hook.secretEncrypted)");
     expect(helpers).toContain('createHmac("sha256", signingSecret)');
-    expect(helpers).toContain('headers["x-wireline-signature"] = `sha256=${digest}`');
+    expect(helpers).toContain('headers["x-botbound-signature"] = `sha256=${digest}`');
   });
 
   it("fails closed instead of delivering unsigned when decryption breaks", () => {
@@ -25,9 +25,15 @@ describe("tenant webhook delivery signing", () => {
   });
 
   it("publishes stable identifiers recipients can use for at-least-once deduplication", () => {
-    expect(helpers).toContain('"x-wireline-delivery-id"');
-    expect(helpers).toContain('"x-wireline-delivery-attempt"');
-    expect(helpers).toContain('"x-wireline-event"');
-    expect(helpers).toContain('headers["x-wireline-timestamp"]');
+    expect(helpers).toContain('"x-botbound-delivery-id"');
+    expect(helpers).toContain('"x-botbound-delivery-attempt"');
+    expect(helpers).toContain('"x-botbound-event"');
+    expect(helpers).toContain('headers["x-botbound-timestamp"]');
+  });
+
+  it("mirrors every BotBound header under the legacy names existing integrations verify", () => {
+    expect(helpers).toContain(
+      'if (header.startsWith("x-botbound-")) headers[`x-wireline-${header.slice(11)}`] = value;',
+    );
   });
 });

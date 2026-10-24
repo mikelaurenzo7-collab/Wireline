@@ -47,35 +47,35 @@ The isolated speech worker has its own [setup guide](../services/voice-engine/RE
 
 ## Canonical repository and system documents
 
-| Document                                                                                         | Role                                                                              |
-| ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| [README.md](../README.md)                                                                        | Repository entry point, current product map, setup, and verification.             |
-| [CONTRIBUTING.md](../CONTRIBUTING.md)                                                            | Branch, review, migration, validation, and release workflow.                      |
-| [CODEBASE_HEALTH.md](../CODEBASE_HEALTH.md)                                                      | Source-control boundaries, deletion policy, and maintainability standards.        |
-| [ARCHITECTURE.md](../ARCHITECTURE.md)                                                            | Runtime boundaries, data flow, provider posture, and security invariants.         |
-| [CUSTOMER_TERMINOLOGY.md](./CUSTOMER_TERMINOLOGY.md)                                             | One-product customer-language contract and compatibility boundary.                |
-| [ONE-AGENT-STRATEGY.md](./ONE-AGENT-STRATEGY.md)                                                 | Unified Bot positioning and roster-compatible launch framing.                     |
-| [CLIENT_SURFACES.md](./CLIENT_SURFACES.md)                                                       | Web, browser, native, ChatGPT, and presenter ownership and release boundaries.    |
+| Document                                                                                         | Role                                                                                               |
+| ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| [README.md](../README.md)                                                                        | Repository entry point, current product map, setup, and verification.                              |
+| [CONTRIBUTING.md](../CONTRIBUTING.md)                                                            | Branch, review, migration, validation, and release workflow.                                       |
+| [CODEBASE_HEALTH.md](../CODEBASE_HEALTH.md)                                                      | Source-control boundaries, deletion policy, and maintainability standards.                         |
+| [ARCHITECTURE.md](../ARCHITECTURE.md)                                                            | Runtime boundaries, data flow, provider posture, and security invariants.                          |
+| [CUSTOMER_TERMINOLOGY.md](./CUSTOMER_TERMINOLOGY.md)                                             | One-product customer-language contract and compatibility boundary.                                 |
+| [ONE-AGENT-STRATEGY.md](./ONE-AGENT-STRATEGY.md)                                                 | Unified Bot positioning and roster-compatible launch framing.                                      |
+| [CLIENT_SURFACES.md](./CLIENT_SURFACES.md)                                                       | Web, browser, native, ChatGPT, and presenter ownership and release boundaries.                     |
 | [CLOUD_COMPUTER_BROWSER.md](./CLOUD_COMPUTER_BROWSER.md)                                         | Owner browser tools, session privacy, provider limits, and extension/password implementation path. |
-| [CHATGPT_APP.md](./CHATGPT_APP.md)                                                               | ChatGPT App behavior, OAuth, tool boundaries, and release verification.           |
-| [CLAUDE_CONNECTOR.md](./CLAUDE_CONNECTOR.md)                                                     | Claude Connector Directory and MCP App behavior for the shared `/mcp` server.     |
-| [CURSOR_PLUGIN.md](./CURSOR_PLUGIN.md)                                                           | Cursor Directory plugin package and account-bound MCP behavior.                   |
-| [business-usage-pricing-decision.md](./business-usage-pricing-decision.md)                       | Canonical billing model and Runtime Balance posture.                              |
-| [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md)                                                       | Checkout, entitlement, webhook, cancellation, and reconciliation proof.           |
-| [PRODUCT_SHOWCASE_MATRIX.md](./PRODUCT_SHOWCASE_MATRIX.md)                                       | Whole-product feature and commercial-status matrix.                               |
-| [TRUST_CONVERSION_PACK.md](./TRUST_CONVERSION_PACK.md)                                           | Customer-facing trust, compliance, and proof posture.                             |
-| [LAUNCH_READINESS_AND_MARGIN.md](./LAUNCH_READINESS_AND_MARGIN.md)                               | Launch readiness and account-level margin operating model.                        |
-| [RECAP_AND_PROPOSAL_ARTIFACTS.md](./RECAP_AND_PROPOSAL_ARTIFACTS.md)                             | Shareable recap/proposal artifact contract and entitlement boundaries.            |
-| [COMPANY_IDENTITY_PACK.md](./COMPANY_IDENTITY_PACK.md)                                           | Number, calling, SMS, and email identity boundaries.                              |
-| [PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md](./PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md) | Production PSTN, realtime demo, presenter, and marketing-audio provider boundary. |
-| [OPENAI_REALTIME_VOICE.md](./OPENAI_REALTIME_VOICE.md)                                           | Canonical OpenAI Realtime browser and Twilio PSTN/SIP architecture.               |
-| [VENDOR_LAUNCH_MAP.md](./VENDOR_LAUNCH_MAP.md)                                                   | Vendor and surface status: live, beta, planned, or retire.                        |
-| [ACCESSIBILITY.md](./ACCESSIBILITY.md)                                                           | Product accessibility commitment.                                                 |
-| [design-system-responsive-roadmap.md](./design-system-responsive-roadmap.md)                     | Responsive, spacing, and component-containment rules.                             |
-| [AGENT_CUSTOMIZATION_ARCHITECTURE.md](./AGENT_CUSTOMIZATION_ARCHITECTURE.md)                     | Agent customization client/domain boundary.                                       |
-| [security/auth-password-controls.md](./security/auth-password-controls.md)                       | Custom scrypt and HIBP password-control posture.                                  |
-| [soc2-policies.md](./soc2-policies.md)                                                           | SOC 2 control-policy map and evidence ownership.                                  |
-| [AUTHZ_MATRIX.md](./AUTHZ_MATRIX.md)                                                             | Generated authorization-coverage artifact.                                        |
+| [CHATGPT_APP.md](./CHATGPT_APP.md)                                                               | ChatGPT App behavior, OAuth, tool boundaries, and release verification.                            |
+| [CLAUDE_CONNECTOR.md](./CLAUDE_CONNECTOR.md)                                                     | Claude Connector Directory and MCP App behavior for the shared `/mcp` server.                      |
+| [CURSOR_PLUGIN.md](./CURSOR_PLUGIN.md)                                                           | Cursor Directory plugin package and account-bound MCP behavior.                                    |
+| [business-usage-pricing-decision.md](./business-usage-pricing-decision.md)                       | Canonical billing model and Runtime Balance posture.                                               |
+| [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md)                                                       | Checkout, entitlement, webhook, cancellation, and reconciliation proof.                            |
+| [PRODUCT_SHOWCASE_MATRIX.md](./PRODUCT_SHOWCASE_MATRIX.md)                                       | Whole-product feature and commercial-status matrix.                                                |
+| [TRUST_CONVERSION_PACK.md](./TRUST_CONVERSION_PACK.md)                                           | Customer-facing trust, compliance, and proof posture.                                              |
+| [LAUNCH_READINESS_AND_MARGIN.md](./LAUNCH_READINESS_AND_MARGIN.md)                               | Launch readiness and account-level margin operating model.                                         |
+| [RECAP_AND_PROPOSAL_ARTIFACTS.md](./RECAP_AND_PROPOSAL_ARTIFACTS.md)                             | Shareable recap/proposal artifact contract and entitlement boundaries.                             |
+| [COMPANY_IDENTITY_PACK.md](./COMPANY_IDENTITY_PACK.md)                                           | Number, calling, SMS, and email identity boundaries.                                               |
+| [PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md](./PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md) | Production PSTN, realtime demo, presenter, and marketing-audio provider boundary.                  |
+| [OPENAI_REALTIME_VOICE.md](./OPENAI_REALTIME_VOICE.md)                                           | Canonical OpenAI Realtime browser and Twilio PSTN/SIP architecture.                                |
+| [VENDOR_LAUNCH_MAP.md](./VENDOR_LAUNCH_MAP.md)                                                   | Vendor and surface status: live, beta, planned, or retire.                                         |
+| [ACCESSIBILITY.md](./ACCESSIBILITY.md)                                                           | Product accessibility commitment.                                                                  |
+| [design-system-responsive-roadmap.md](./design-system-responsive-roadmap.md)                     | Responsive, spacing, and component-containment rules.                                              |
+| [AGENT_CUSTOMIZATION_ARCHITECTURE.md](./AGENT_CUSTOMIZATION_ARCHITECTURE.md)                     | Agent customization client/domain boundary.                                                        |
+| [security/auth-password-controls.md](./security/auth-password-controls.md)                       | Custom scrypt and HIBP password-control posture.                                                   |
+| [soc2-policies.md](./soc2-policies.md)                                                           | SOC 2 control-policy map and evidence ownership.                                                   |
+| [AUTHZ_MATRIX.md](./AUTHZ_MATRIX.md)                                                             | Generated authorization-coverage artifact.                                                         |
 
 ## Operating and release runbooks
 
@@ -198,8 +198,8 @@ These files stay outside `docs/` because a development tool, compatibility path,
 | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | [AGENTS.md](../AGENTS.md)                                                                     | Cursor Cloud discovery instructions at the required root path.                                                              |
 | [CLAUDE.md](../CLAUDE.md)                                                                     | Claude Code discovery instructions at the required root path.                                                               |
-| [agents/wireline.md](../agents/wireline.md)                                                   | Cursor Directory agent discovery path for the BotBound MCP plugin.                                                          |
-| [skills/wireline-voice-agent/SKILL.md](../skills/wireline-voice-agent/SKILL.md)               | Cursor Directory / Open Plugins skill discovery path.                                                                       |
+| [agents/botbound.md](../agents/botbound.md)                                                   | Cursor Directory agent discovery path for the BotBound MCP plugin.                                                          |
+| [skills/botbound-voice-agent/SKILL.md](../skills/botbound-voice-agent/SKILL.md)               | Cursor Directory / Open Plugins skill discovery path.                                                                       |
 | [DATABASE_SETUP.md](../DATABASE_SETUP.md)                                                     | Narrow compatibility pointer to the canonical database runbook.                                                             |
 | [DEPLOY.md](../DEPLOY.md)                                                                     | Narrow compatibility pointer retained for legacy links, development-tool discovery, and regression contracts.               |
 | [apps/browser-extension/README.md](../apps/browser-extension/README.md)                       | Browser-extension entry point beside its source and build script.                                                           |

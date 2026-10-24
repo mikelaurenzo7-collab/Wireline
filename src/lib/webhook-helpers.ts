@@ -362,9 +362,9 @@ async function attemptWebhookDeliveryAfterDeletionFence(
     // Delivery is deliberately at-least-once. These stable headers let a
     // recipient suppress a replay after an acknowledged send whose local
     // success update was interrupted.
-    "x-wireline-delivery-id": deliveryIdBig.toString(),
-    "x-wireline-delivery-attempt": String(nextAttempts),
-    "x-wireline-event": String(deliveryWithHook.event),
+    "x-botbound-delivery-id": deliveryIdBig.toString(),
+    "x-botbound-delivery-attempt": String(nextAttempts),
+    "x-botbound-event": String(deliveryWithHook.event),
   };
   const payloadTimestamp =
     deliveryWithHook.payload &&
@@ -373,10 +373,15 @@ async function attemptWebhookDeliveryAfterDeletionFence(
     typeof (deliveryWithHook.payload as Record<string, unknown>).timestamp === "string"
       ? String((deliveryWithHook.payload as Record<string, unknown>).timestamp)
       : null;
-  if (payloadTimestamp) headers["x-wireline-timestamp"] = payloadTimestamp;
+  if (payloadTimestamp) headers["x-botbound-timestamp"] = payloadTimestamp;
   if (signingSecret) {
     const digest = createHmac("sha256", signingSecret).update(body).digest("hex");
-    headers["x-wireline-signature"] = `sha256=${digest}`;
+    headers["x-botbound-signature"] = `sha256=${digest}`;
+  }
+  // Integrations built before the BotBound rename read the legacy header
+  // names. Mirror every BotBound header so they keep verifying deliveries.
+  for (const [header, value] of Object.entries(headers)) {
+    if (header.startsWith("x-botbound-")) headers[`x-wireline-${header.slice(11)}`] = value;
   }
 
   let statusCode: number | null = null;

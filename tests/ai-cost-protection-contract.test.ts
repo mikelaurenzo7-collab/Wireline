@@ -250,7 +250,7 @@ describe("AI cost-protection contract", () => {
     const mcpAccount = read("src/routes/chatgpt-mcp-account-routes.ts");
     const mcpSimulation = mcpAccount.slice(
       mcpAccount.indexOf('name === "start_private_voice_simulation"'),
-      mcpAccount.indexOf('name === "list_wireline_agents"'),
+      mcpAccount.indexOf('name === "list_botbound_agents"'),
     );
     expect(mcpSimulation).toContain(
       'checkAndIncrement(authed.userId, "simulation_minutes_daily", 5)',

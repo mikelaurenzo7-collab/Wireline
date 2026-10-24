@@ -271,13 +271,13 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   mustInclude(
     "src/pages/Developers.tsx",
     developersPage,
-    /create_agent_draft \/ update_agent_draft/,
+    /"create_agent_draft", "update_agent_draft"/,
     "developer API identifiers must remain stable",
   );
   mustInclude(
     "src/pages/Developers.tsx",
     developersPage,
-    /Create or refine a private Bot configuration draft/,
+    /title: "Draft a bot"/,
     "developer surface must call customer objects Bots",
   );
 }

@@ -115,9 +115,9 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
       "A concise starting point for security, procurement, and operations teams evaluating BotBound.",
   },
   "/developers": {
-    title: "Developer Portal | BotBound",
+    title: "Developers | BotBound",
     description:
-      "Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first Phone Bot in the chat you already use, then continue in the same BotBound workspace. No public API keys.",
+      "Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first phone bot in the chat you already use, then continue in the same BotBound workspace. No public API keys.",
   },
   "/changelog": {
     title: "Changelog | BotBound",

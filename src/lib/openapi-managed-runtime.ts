@@ -168,6 +168,6 @@ export function normalizeOpenApiForManagedRuntime<T>(document: T): T {
 
   // The raw spec predates the rename and also owns compatibility protocol
   // identifiers. Normalize the delivered document at this final public
-  // boundary while preserving the exact X-Wireline-Key header contract.
-  return normalizeCustomerBrandDeep(normalized, { preserve: ["X-Wireline-Key"] });
+  // boundary while preserving the exact API-key header contract.
+  return normalizeCustomerBrandDeep(normalized, { preserve: ["X-BotBound-Key"] });
 }

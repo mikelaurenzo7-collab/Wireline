@@ -243,7 +243,7 @@ describe("MCP terminal account lifecycle", () => {
     "rejects %s before account tool reads and draft writes",
     async (_name, state) => {
       h.deletionStates = [state];
-      for (const name of ["list_wireline_agents", "get_agent_draft", "create_agent_draft"]) {
+      for (const name of ["list_botbound_agents", "get_agent_draft", "create_agent_draft"]) {
         const res = await invoke("POST /mcp", {
           id: 1,
           method: "tools/call",
@@ -274,11 +274,26 @@ describe("MCP terminal account lifecycle", () => {
     const res = await invoke("POST /mcp", {
       id: 1,
       method: "tools/call",
-      params: { name: "list_wireline_agents", arguments: {} },
+      params: { name: "list_botbound_agents", arguments: {} },
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.result.structuredContent).toEqual({ agents: [] });
     expect(h.selectedTables).toContain("wireline_agents");
+  });
+
+  it("accepts legacy tool names as hidden aliases without listing them", async () => {
+    const res = await invoke("POST /mcp", {
+      id: 1,
+      method: "tools/call",
+      params: { name: "list_wireline_agents", arguments: {} },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.result.structuredContent).toEqual({ agents: [] });
+    const listed = await invoke("POST /mcp", { id: 2, method: "tools/list", params: {} });
+    const names = listed.body.result.tools.map((tool: { name: string }) => tool.name);
+    expect(names).toContain("list_botbound_agents");
+    expect(names.join(" ")).not.toMatch(/wireline/i);
+    expect(JSON.stringify(listed.body.result.tools)).not.toMatch(/wireline/i);
   });
 
   it("rejects an orphaned bearer grant without reading account data", async () => {

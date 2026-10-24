@@ -591,7 +591,7 @@ const IntegrationsReport: JsonSchema = {
 const WebhookDelivery: JsonSchema = {
   type: "object",
   description:
-    "Outbound webhook delivery envelope. The HTTP request body posted to your endpoint is `{ event, data, delivery_id, timestamp }`. Verify the `X-Wireline-Signature` header with HMAC-SHA256(body, your_signing_secret).",
+    "Outbound webhook delivery envelope. The HTTP request body posted to your endpoint is `{ event, data, delivery_id, timestamp }`. Verify the `X-BotBound-Signature` header with HMAC-SHA256(body, your_signing_secret).",
   required: ["event", "data", "delivery_id", "timestamp"],
   properties: {
     event: { type: "string", enum: [...WEBHOOK_EVENTS] },
@@ -746,7 +746,7 @@ const PATHS: Record<string, PathItem> = {
     post: {
       summary: "Submit a single inbound lead",
       description:
-        "Public, authenticated by the `X-Wireline-Key` header. Inserts the lead into the tenant's queue (source=`inbound`) and fires a `lead.received` webhook event. Honors `Idempotency-Key` so retries are safe.",
+        "Public, authenticated by the `X-BotBound-Key` header. Inserts the lead into the tenant's queue (source=`inbound`) and fires a `lead.received` webhook event. Honors `Idempotency-Key` so retries are safe.",
       operationId: "postIntakeLead",
       tags: ["Intake"],
       security: auth.intakeKey,
@@ -1353,7 +1353,7 @@ function buildWebhookEntries(): Record<string, PathItem> {
     entries[event] = {
       post: {
         summary: `Outbound webhook: ${event}`,
-        description: `POST sent to the URL you registered. Verify the \`X-Wireline-Signature\` header with HMAC-SHA256(body, your_signing_secret).`,
+        description: `POST sent to the URL you registered. Verify the \`X-BotBound-Signature\` header with HMAC-SHA256(body, your_signing_secret).`,
         operationId: `webhook_${event.replace(/\W+/g, "_")}`,
         tags: ["Webhooks"],
         security: auth.none,
@@ -1398,7 +1398,7 @@ export function getOpenApiSpec(serverUrl?: string): OpenApiDocument {
         "Authentication:",
         "",
         "- `bearerAuth`: BotBound session JWT in `Authorization: Bearer <jwt>`. Used by tenant-scoped endpoints.",
-        "- `intakeKeyAuth`: BotBound-issued API key in `X-Wireline-Key: wlk_…`. Used only by `POST /api/intake/lead[s]`.",
+        "- `intakeKeyAuth`: BotBound-issued API key in `X-BotBound-Key: wlk_…`. Used only by `POST /api/intake/lead[s]`.",
         "",
         "Outbound webhook deliveries are documented under `webhooks:`. Each entry shows the body shape your receiver will get.",
       ].join("\n"),
@@ -1446,7 +1446,7 @@ export function getOpenApiSpec(serverUrl?: string): OpenApiDocument {
         intakeKeyAuth: {
           type: "apiKey",
           in: "header",
-          name: "X-Wireline-Key",
+          name: "X-BotBound-Key",
           description: "BotBound-issued intake API key. Manage in Admin → Intake Keys.",
         },
       },

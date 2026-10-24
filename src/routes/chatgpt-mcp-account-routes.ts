@@ -13,6 +13,7 @@ import { prepareCall, preparedCallStatus } from "../lib/prepared-call";
 import { OUTBOUND_REQUEST_ID_PATTERN } from "../lib/outbound-dial-recovery";
 import {
   CHATGPT_ACCOUNT_WIDGET_URI,
+  LEGACY_CHATGPT_ACCOUNT_WIDGET_URI,
   buildAccountBoundWidgetHtml,
 } from "../lib/chatgpt-mcp-account";
 import {
@@ -211,7 +212,7 @@ const draftOutputSchema = {
     escalation_policy: { type: "string" },
     knowledge_summary: { type: "string" },
     lifecycle: { const: "draft" },
-    open_in_wireline_url: { type: "string" },
+    open_in_botbound_url: { type: "string" },
   },
   required: [
     "agent_id",
@@ -220,7 +221,7 @@ const draftOutputSchema = {
     "business_name",
     "primary_goal",
     "lifecycle",
-    "open_in_wireline_url",
+    "open_in_botbound_url",
   ],
   additionalProperties: false,
 };
@@ -240,7 +241,7 @@ const workspaceSummaryOutputSchema = {
     texting_configured: { type: "boolean" },
     email_connected: { type: "boolean" },
     latest_activity_at: { type: "string" },
-    open_in_wireline_url: { type: "string" },
+    open_in_botbound_url: { type: "string" },
   },
   required: [
     "agent_count",
@@ -255,7 +256,7 @@ const workspaceSummaryOutputSchema = {
     "texting_configured",
     "email_connected",
     "latest_activity_at",
-    "open_in_wireline_url",
+    "open_in_botbound_url",
   ],
   additionalProperties: false,
 };
@@ -269,7 +270,7 @@ const agentStatusOutputSchema = {
     channel: { type: "string" },
     on_phone_network: { type: "boolean" },
     next_step: { type: "string" },
-    open_in_wireline_url: { type: "string" },
+    open_in_botbound_url: { type: "string" },
     training_url: { type: "string" },
     wire_url: { type: "string" },
   },
@@ -280,7 +281,7 @@ const agentStatusOutputSchema = {
     "channel",
     "on_phone_network",
     "next_step",
-    "open_in_wireline_url",
+    "open_in_botbound_url",
     "training_url",
     "wire_url",
   ],
@@ -320,7 +321,7 @@ const coachingBriefOutputSchema = {
       },
     },
     next_step: { type: "string" },
-    open_in_wireline_url: { type: "string" },
+    open_in_botbound_url: { type: "string" },
   },
   required: [
     "agent_id",
@@ -333,7 +334,7 @@ const coachingBriefOutputSchema = {
     "training_facts",
     "operating_rules",
     "next_step",
-    "open_in_wireline_url",
+    "open_in_botbound_url",
   ],
   additionalProperties: false,
 };
@@ -345,16 +346,16 @@ const trainingWriteOutputSchema = {
     kind: { type: "string", enum: ["fact", "rule"] },
     item_id: { type: "string" },
     content: { type: "string" },
-    landed_in_wireline: { const: true },
-    open_in_wireline_url: { type: "string" },
+    landed_in_botbound: { const: true },
+    open_in_botbound_url: { type: "string" },
   },
   required: [
     "agent_id",
     "kind",
     "item_id",
     "content",
-    "landed_in_wireline",
-    "open_in_wireline_url",
+    "landed_in_botbound",
+    "open_in_botbound_url",
   ],
   additionalProperties: false,
 };
@@ -385,7 +386,7 @@ function toStructuredDraft(view: Awaited<ReturnType<typeof getAgentDraft>>["view
     escalation_policy: view.escalationPolicy,
     knowledge_summary: view.knowledgeSummary,
     lifecycle: view.lifecycle,
-    open_in_wireline_url: `${issuer(req)}${view.openInWirelinePath}`,
+    open_in_botbound_url: `${issuer(req)}${view.openInBotBoundPath}`,
   };
 }
 
@@ -625,7 +626,7 @@ function toolDefinitions() {
       _meta: toolMeta([{ type: "oauth2", scopes: ["demo.voice"] }], ["app"]),
     },
     {
-      name: "list_wireline_agents",
+      name: "list_botbound_agents",
       title: "List BotBound agents",
       description:
         "Lists the connected user’s BotBound agents and drafts. Use this for status or configuration questions about that user’s workspace.",
@@ -658,7 +659,7 @@ function toolDefinitions() {
       _meta: toolMeta([{ type: "oauth2", scopes: ["agents.read"] }]),
     },
     {
-      name: "get_wireline_workspace_summary",
+      name: "get_botbound_workspace_summary",
       title: "Get BotBound workspace summary",
       description:
         "Returns aggregate operational status for the connected BotBound workspace: agents, assigned phone numbers, recent call/text/email activity, unread counts, channel connection state, activation, and subscription status. It never returns customer identities, message bodies, transcripts, recordings, credentials, or provider secrets.",
@@ -669,7 +670,7 @@ function toolDefinitions() {
       _meta: toolMeta([{ type: "oauth2", scopes: ["agents.read"] }]),
     },
     {
-      name: "get_wireline_agent_status",
+      name: "get_botbound_agent_status",
       title: "Get BotBound agent status",
       description:
         "Returns one connected user’s agent: whether it is on the phone network, the next BotBound step, and deep links into the Workspace, Knowledge, and Connections. It never returns phone numbers, customer identities, transcripts, or message bodies.",
@@ -728,7 +729,7 @@ function toolDefinitions() {
       _meta: toolMeta([{ type: "oauth2", scopes: ["agents.read"] }]),
     },
     {
-      name: "train_wireline_agent",
+      name: "train_botbound_agent",
       title: "Train a BotBound agent",
       description:
         "Saves a confirmed Training fact or operating rule into the connected user’s BotBound workspace so it is live in Training. The account holder must enable connected-app Training writes in BotBound Apps first. This does not launch the agent, attach a number, or contact a customer.",
@@ -757,6 +758,21 @@ function toolDefinitions() {
       _meta: toolMeta([{ type: "oauth2", scopes: ["agents.write"] }]),
     },
   ];
+}
+
+/**
+ * Pre-BotBound tool names. Existing MCP clients may still call them, so
+ * tools/call accepts them, but tools/list only advertises the BotBound names.
+ */
+const LEGACY_MCP_TOOL_ALIASES: Readonly<Record<string, string>> = {
+  list_wireline_agents: "list_botbound_agents",
+  get_wireline_workspace_summary: "get_botbound_workspace_summary",
+  get_wireline_agent_status: "get_botbound_agent_status",
+  train_wireline_agent: "train_botbound_agent",
+};
+
+export function canonicalMcpToolName(name: string): string {
+  return Object.hasOwn(LEGACY_MCP_TOOL_ALIASES, name) ? LEGACY_MCP_TOOL_ALIASES[name]! : name;
 }
 
 function resourceMeta(req: Request) {
@@ -807,11 +823,11 @@ const MCP_PROMPT_MESSAGES: Record<(typeof MCP_PROMPTS)[number]["name"], string> 
 
 Workflow:
 1. If tools require Connect, wait for me to finish OAuth. New users sign up and return to consent.
-2. Call list_wireline_agents once. If the workspace is empty, this is a first-agent session.
+2. Call list_botbound_agents once. If the workspace is empty, this is a first-agent session.
 3. Ask what the agent should handle: receptionist, scheduler, sales, or support.
 4. Summarize identity, goal, rules, prohibited topics, and escalation. Call create_agent_draft only after I explicitly confirm.
 5. Privately rehearse with run_private_agent_turn or start_private_voice_simulation.
-6. Point me to open_in_wireline_url for a number and launch. Do not place a live call or claim a customer was contacted.`,
+6. Point me to open_in_botbound_url for a number and launch. Do not place a live call or claim a customer was contacted.`,
   create_after_hours_receptionist: `Create a confirmed private BotBound draft that answers after hours, captures ZIP and urgency, and never quotes prices.
 
 Summarize the proposed identity, goal, rules, and boundaries first. Call create_agent_draft only after I confirm. Then offer a private rehearsal. Do not place a live call.`,
@@ -820,13 +836,13 @@ Summarize the proposed identity, goal, rules, and boundaries first. Call create_
 Summarize the changes, then call update_agent_draft only after I confirm. Do not launch the agent.`,
   inspect_workspace_status: `Ask for a privacy-minimized BotBound workspace summary: agents, assigned numbers, recent activity, and whether text and email are connected.
 
-Use get_wireline_workspace_summary. Never ask for or repeat customer identities, transcripts, recordings, or phone numbers.`,
+Use get_botbound_workspace_summary. Never ask for or repeat customer identities, transcripts, recordings, or phone numbers.`,
   rehearse_agent_reply: `Trigger a private text rehearsal of a saved BotBound agent with a hypothetical customer line.
 
 Ask me for the line if I have not given one. Call run_private_agent_turn only after I confirm. State that this is not a live call.`,
   coach_agent_training: `Read the coaching brief for a BotBound agent, then add a confirmed Training fact or operating rule that lands in BotBound.
 
-Use get_agent_coaching_brief first. If train_wireline_agent says the Apps toggle is off, send me to BotBound Apps. Do not invent a workaround or claim a live call happened.`,
+Use get_agent_coaching_brief first. If train_botbound_agent says the Apps toggle is off, send me to BotBound Apps. Do not invent a workaround or claim a live call happened.`,
 };
 
 function inputFromArgs(args: Record<string, unknown>): AgentCustomizationInput {
@@ -906,7 +922,11 @@ router.post("/mcp", async (req, res) => {
       });
     if (method === "resources/read") {
       const requestedUri = text(params.uri);
-      if (requestedUri !== CHATGPT_ACCOUNT_WIDGET_URI && requestedUri !== CHATGPT_MCP_RESOURCE_URI)
+      if (
+        requestedUri !== CHATGPT_ACCOUNT_WIDGET_URI &&
+        requestedUri !== LEGACY_CHATGPT_ACCOUNT_WIDGET_URI &&
+        requestedUri !== CHATGPT_MCP_RESOURCE_URI
+      )
         return jsonRpcError(res, id, -32002, "Resource not found.");
       return jsonRpc(res, id, {
         contents: [
@@ -921,7 +941,7 @@ router.post("/mcp", async (req, res) => {
     }
     if (method !== "tools/call") return jsonRpcError(res, id, -32601, "Method not found.");
 
-    const name = text(params.name, 128);
+    const name = canonicalMcpToolName(text(params.name, 128));
     const args =
       params.arguments && typeof params.arguments === "object"
         ? (params.arguments as Record<string, unknown>)
@@ -1170,7 +1190,7 @@ router.post("/mcp", async (req, res) => {
       });
     }
 
-    if (name === "list_wireline_agents") {
+    if (name === "list_botbound_agents") {
       const authed = requireScope(principal, "agents.read");
       const agents = await tenantStore.run(authed.userId, async () => {
         const rows = await drizzle
@@ -1207,7 +1227,7 @@ router.post("/mcp", async (req, res) => {
       });
     }
 
-    if (name === "get_wireline_workspace_summary") {
+    if (name === "get_botbound_workspace_summary") {
       const authed = requireScope(principal, "agents.read");
       const summary = await tenantStore.run(authed.userId, async () => {
         const result = (await drizzle.execute(sql`
@@ -1263,7 +1283,7 @@ router.post("/mcp", async (req, res) => {
           texting_configured: row?.texting_configured === true,
           email_connected: row?.email_connected === true,
           latest_activity_at: isoDateOrEmpty(row?.latest_activity_at),
-          open_in_wireline_url: `${issuer(req)}/studio`,
+          open_in_botbound_url: `${issuer(req)}/studio`,
         };
       });
       const recentTotal =
@@ -1278,11 +1298,11 @@ router.post("/mcp", async (req, res) => {
           },
         ],
         structuredContent: summary,
-        _meta: { open_in_wireline_url: summary.open_in_wireline_url },
+        _meta: { open_in_botbound_url: summary.open_in_botbound_url },
       });
     }
 
-    if (name === "get_wireline_agent_status") {
+    if (name === "get_botbound_agent_status") {
       const authed = requireScope(principal, "agents.read");
       const agentId = text(args.agent_id, 256);
       const status = await tenantStore.run(authed.userId, async () => {
@@ -1319,7 +1339,7 @@ router.post("/mcp", async (req, res) => {
           next_step: onPhoneNetwork
             ? "This agent is on the phone network. Open its BotBound Workspace to operate live work. You can still run a private rehearsal from this client."
             : "This agent is still a private draft. Open BotBound Connections to attach a number and launch. You can privately rehearse it from this client.",
-          open_in_wireline_url: `${origin}/studio?agent=${encoded}`,
+          open_in_botbound_url: `${origin}/studio?agent=${encoded}`,
           training_url: `${origin}/knowledge?agent=${encoded}`,
           wire_url: `${origin}/connections?agent=${encoded}`,
         };
@@ -1332,7 +1352,7 @@ router.post("/mcp", async (req, res) => {
           },
         ],
         structuredContent: status,
-        _meta: { agent_id: status.agent_id, open_in_wireline_url: status.open_in_wireline_url },
+        _meta: { agent_id: status.agent_id, open_in_botbound_url: status.open_in_botbound_url },
       });
     }
 
@@ -1426,12 +1446,12 @@ router.post("/mcp", async (req, res) => {
             text: `${brief.agent_name}: ${brief.training_fact_count} Training fact${brief.training_fact_count === 1 ? "" : "s"}, ${brief.operating_rule_count} operating rule${brief.operating_rule_count === 1 ? "" : "s"}. ${brief.next_step}`,
           },
         ],
-        structuredContent: { ...brief, open_in_wireline_url: openInBotBoundUrl },
-        _meta: { agent_id: brief.agent_id, open_in_wireline_url: openInBotBoundUrl },
+        structuredContent: { ...brief, open_in_botbound_url: openInBotBoundUrl },
+        _meta: { agent_id: brief.agent_id, open_in_botbound_url: openInBotBoundUrl },
       });
     }
 
-    if (name === "train_wireline_agent") {
+    if (name === "train_botbound_agent") {
       const authed = requireScope(principal, "agents.write");
       assertTrainingConfirmation(args.confirmed);
       const kind = text(args.kind, 16);
@@ -1469,10 +1489,10 @@ router.post("/mcp", async (req, res) => {
         ],
         structuredContent: {
           ...saved,
-          landed_in_wireline: true as const,
-          open_in_wireline_url: openInBotBoundUrl,
+          landed_in_botbound: true as const,
+          open_in_botbound_url: openInBotBoundUrl,
         },
-        _meta: { agent_id: saved.agent_id, open_in_wireline_url: openInBotBoundUrl },
+        _meta: { agent_id: saved.agent_id, open_in_botbound_url: openInBotBoundUrl },
       });
     }
 

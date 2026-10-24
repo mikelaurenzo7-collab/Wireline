@@ -15,13 +15,10 @@ try {
   throw new Error("APP_URL must be a valid absolute URL.");
 }
 
-const accountWidgetUri = "ui://widget/wireline-agent-draft-v2.html";
+const accountWidgetUri = "ui://widget/botbound-agent-draft-v3.html";
 const expectedAnnotations = new Map([
   ["prepare_call", { readOnlyHint: false, openWorldHint: false, destructiveHint: false }],
-  [
-    "get_call_status",
-    { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
-  ],
+  ["get_call_status", { readOnlyHint: true, openWorldHint: false, destructiveHint: false }],
   ["create_agent_draft", { readOnlyHint: false, openWorldHint: false, destructiveHint: false }],
   ["get_agent_draft", { readOnlyHint: true, openWorldHint: false, destructiveHint: false }],
   ["update_agent_draft", { readOnlyHint: false, openWorldHint: false, destructiveHint: false }],
@@ -29,13 +26,13 @@ const expectedAnnotations = new Map([
     "start_private_voice_simulation",
     { readOnlyHint: false, openWorldHint: false, destructiveHint: false },
   ],
-  ["list_wireline_agents", { readOnlyHint: true, openWorldHint: false, destructiveHint: false }],
+  ["list_botbound_agents", { readOnlyHint: true, openWorldHint: false, destructiveHint: false }],
   [
-    "get_wireline_workspace_summary",
+    "get_botbound_workspace_summary",
     { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
   ],
   [
-    "get_wireline_agent_status",
+    "get_botbound_agent_status",
     { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
   ],
   ["run_private_agent_turn", { readOnlyHint: false, openWorldHint: false, destructiveHint: false }],
@@ -43,7 +40,7 @@ const expectedAnnotations = new Map([
     "get_agent_coaching_brief",
     { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
   ],
-  ["train_wireline_agent", { readOnlyHint: false, openWorldHint: false, destructiveHint: false }],
+  ["train_botbound_agent", { readOnlyHint: false, openWorldHint: false, destructiveHint: false }],
 ]);
 
 function assert(condition, message) {
@@ -95,8 +92,7 @@ assert(
 const privacy = await request("/chatgpt-app-privacy.html", { headers: { Accept: "text/html" } });
 assert(privacy.response.status === 200, "ChatGPT app privacy notice must return HTTP 200.");
 assert(
-  typeof privacy.body === "string" &&
-    privacy.body.includes("Information Returned to ChatGPT"),
+  typeof privacy.body === "string" && privacy.body.includes("Information Returned to ChatGPT"),
   "Privacy notice must disclose information returned to ChatGPT.",
 );
 assert(
@@ -246,7 +242,7 @@ const initialized = await jsonRpc("initialize", {
   clientInfo: { name: "wireline-release-probe", version: "1.0.0" },
 });
 assert(
-  initialized.result.serverInfo?.name === "wireline",
+  initialized.result.serverInfo?.name === "botbound",
   "MCP server identity is not the stable wireline technical namespace.",
 );
 
@@ -302,10 +298,10 @@ const lazyAuthCalls = [
     { agent_id: "draft", customer_message: "Do you have Saturday appointments?" },
   ],
   [
-    "train_wireline_agent",
+    "train_botbound_agent",
     { agent_id: "draft", kind: "fact", content: "We serve residential HVAC." },
   ],
-  ["list_wireline_agents", {}],
+  ["list_botbound_agents", {}],
 ];
 for (const [name, args] of lazyAuthCalls) {
   const { response, body } = await request("/mcp", {

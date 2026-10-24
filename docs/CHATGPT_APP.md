@@ -34,17 +34,17 @@ ChatGPT conversation
 
 ## Public endpoints
 
-| Endpoint | Purpose |
-| --- | --- |
-| `https://botbound.app/mcp` | Streamable HTTP MCP endpoint |
-| `https://botbound.app/.well-known/oauth-protected-resource` | OAuth protected-resource metadata |
-| `https://botbound.app/.well-known/oauth-authorization-server` | BotBound authorization-server metadata |
-| `https://botbound.app/mcp/oauth/authorize` | OAuth authorization and consent screen |
-| `https://botbound.app/mcp/oauth/token` | OAuth authorization-code and refresh-token exchange |
-| `https://botbound.app/chatgpt-app-privacy.html` | App-specific public privacy notice |
-| `https://botbound.app/mcp-privacy.html` | Shared MCP connector privacy notice (Claude, ChatGPT, Cursor) |
-| `https://botbound.app/claude-connector.html` | Claude Connector public documentation |
-| `https://botbound.app/cursor-plugin.html` | Cursor plugin public documentation |
+| Endpoint                                                      | Purpose                                                       |
+| ------------------------------------------------------------- | ------------------------------------------------------------- |
+| `https://botbound.app/mcp`                                    | Streamable HTTP MCP endpoint                                  |
+| `https://botbound.app/.well-known/oauth-protected-resource`   | OAuth protected-resource metadata                             |
+| `https://botbound.app/.well-known/oauth-authorization-server` | BotBound authorization-server metadata                        |
+| `https://botbound.app/mcp/oauth/authorize`                    | OAuth authorization and consent screen                        |
+| `https://botbound.app/mcp/oauth/token`                        | OAuth authorization-code and refresh-token exchange           |
+| `https://botbound.app/chatgpt-app-privacy.html`               | App-specific public privacy notice                            |
+| `https://botbound.app/mcp-privacy.html`                       | Shared MCP connector privacy notice (Claude, ChatGPT, Cursor) |
+| `https://botbound.app/claude-connector.html`                  | Claude Connector public documentation                         |
+| `https://botbound.app/cursor-plugin.html`                     | Cursor plugin public documentation                            |
 
 ## Customization profile
 
@@ -62,20 +62,20 @@ See `docs/AGENT_CUSTOMIZATION_ARCHITECTURE.md` for the client/domain boundary.
 
 ## Tool contract
 
-| Tool | Scope | Effect |
-| --- | --- | --- |
-| `prepare_call` | `calls.prepare` | Saves an immutable, tenant-owned non-marketing service/callback proposal. Returns an authenticated review link; does not dispatch. |
-| `get_call_status` | `calls.read` | Reads that proposal's placement receipt without recipient details or transcripts. |
-| `create_agent_draft` | `agents.write` | Creates a confirmed, private, unlaunched draft. |
-| `get_agent_draft` | `agents.read` | Reads a private draft. |
-| `update_agent_draft` | `agents.write` | Applies a confirmed private customization update. |
-| `start_private_voice_simulation` | `demo.voice` | Starts a short, tool-free private simulation. |
-| `list_wireline_agents` | `agents.read` | Lists the connected user's agents. |
-| `get_wireline_workspace_summary` | `agents.read` | Returns tenant-scoped aggregate agent, phone-number, recent activity, unread, connection, activation, and subscription status without raw customer content. |
-| `get_wireline_agent_status` | `agents.read` | Returns one agent's next step and BotBound links without phone numbers or customer content. |
-| `run_private_agent_turn` | `demo.voice` | Confirmed private text rehearsal of an owned agent. Not a live call. |
-| `get_agent_coaching_brief` | `agents.read` | Owner-authored Training facts and rules. Never customer communications. |
-| `train_wireline_agent` | `agents.write` | Confirmed fact or rule that lands in Training after the Apps toggle. |
+| Tool                             | Scope           | Effect                                                                                                                                                      |
+| -------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `prepare_call`                   | `calls.prepare` | Saves an immutable, tenant-owned non-marketing service/callback proposal. Returns an authenticated review link; does not dispatch.                          |
+| `get_call_status`                | `calls.read`    | Reads that proposal's placement receipt without recipient details or transcripts.                                                                           |
+| `create_agent_draft`             | `agents.write`  | Creates a confirmed, private, unlaunched draft.                                                                                                             |
+| `get_agent_draft`                | `agents.read`   | Reads a private draft.                                                                                                                                      |
+| `update_agent_draft`             | `agents.write`  | Applies a confirmed private customization update.                                                                                                           |
+| `start_private_voice_simulation` | `demo.voice`    | Starts a short, tool-free private simulation.                                                                                                               |
+| `list_botbound_agents`           | `agents.read`   | Lists the connected user's agents.                                                                                                                          |
+| `get_botbound_workspace_summary` | `agents.read`   | Returns tenant-scoped aggregate agent, phone-number, recent activity, unread, connection, activation, and subscription status without raw customer content. |
+| `get_botbound_agent_status`      | `agents.read`   | Returns one agent's next step and BotBound links without phone numbers or customer content.                                                                 |
+| `run_private_agent_turn`         | `demo.voice`    | Confirmed private text rehearsal of an owned agent. Not a live call.                                                                                        |
+| `get_agent_coaching_brief`       | `agents.read`   | Owner-authored Training facts and rules. Never customer communications.                                                                                     |
+| `train_botbound_agent`           | `agents.write`  | Confirmed fact or rule that lands in Training after the Apps toggle.                                                                                        |
 
 ### Non-goals for this transport
 
@@ -139,7 +139,7 @@ Run the public, unauthenticated protocol probe against the deployed environment:
 node scripts/check-chatgpt-app-release.mjs --url https://botbound.app
 ```
 
-The probe verifies protected-resource discovery, authorization-server discovery, PKCE S256 and CIMD support, MCP initialization identity `wireline`, the tool inventory, prompts, the account-bound widget resource, Claude host domain metadata, privacy pages, Cursor plugin docs, and the widget's explicit realtime CSP domain. It does not substitute for a real OAuth reviewer flow.
+The probe verifies protected-resource discovery, authorization-server discovery, PKCE S256 and CIMD support, MCP initialization identity `botbound`, the tool inventory, prompts, the account-bound widget resource, Claude host domain metadata, privacy pages, Cursor plugin docs, and the widget's explicit realtime CSP domain. It does not substitute for a real OAuth reviewer flow.
 
 ## Private rollout and App Directory readiness
 
@@ -151,4 +151,4 @@ The probe verifies protected-resource discovery, authorization-server discovery,
 6. Capture evidence of OAuth, draft creation, customization, simulation, workspace visibility, and the unlaunched state.
 7. Submit the account-bound version for review only after production checks pass.
 
-The `wireline` server and tool identifiers remain stable technical namespaces. `https://trywireline.com/mcp` remains compatibility-only for existing registrations during issuer migration and is not published for new connections.
+The server identity and tool names use `botbound`. Legacy `*_wireline_*` tool names stay callable as hidden aliases for existing clients and are not listed. `https://trywireline.com/mcp` remains compatibility-only for existing registrations during issuer migration and is not published for new connections.

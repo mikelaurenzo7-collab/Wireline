@@ -14,14 +14,14 @@ describe("Cursor Directory plugin contract", () => {
     author?: { name?: string; email?: string; url?: string };
   };
   const openPlugins = JSON.parse(read("mcp.json")) as {
-    mcpServers: { wireline: { type: string; url: string } };
+    mcpServers: { botbound: { type: string; url: string } };
   };
   const directoryMcp = JSON.parse(read(".mcp.json")) as {
-    mcpServers: { wireline: { url: string; headers?: unknown; auth?: unknown } };
+    mcpServers: { botbound: { url: string; headers?: unknown; auth?: unknown } };
   };
-  const skill = read("skills/wireline-voice-agent/SKILL.md");
-  const rule = read("rules/wireline-mcp.mdc");
-  const agent = read("agents/wireline.md");
+  const skill = read("skills/botbound-voice-agent/SKILL.md");
+  const rule = read("rules/botbound-mcp.mdc");
+  const agent = read("agents/botbound.md");
   const docs = read("docs/CURSOR_PLUGIN.md");
   const packet = read("docs/CURSOR_PLUGIN_SUBMISSION.md");
   const publicDocs = read("public/cursor-plugin.html");
@@ -29,7 +29,7 @@ describe("Cursor Directory plugin contract", () => {
   const panel = read("src/components/settings/McpCoachingPanel.tsx");
 
   it("publishes a closed Open Plugins manifest without secrets", () => {
-    expect(plugin.name).toBe("wireline");
+    expect(plugin.name).toBe("botbound");
     expect(plugin.homepage).toBe("https://botbound.app/cursor-plugin.html");
     expect(plugin.repository).toBe("https://github.com/mikelaurenzo7-collab/Wireline");
     expect(plugin.author?.name).toBe("BotBound");
@@ -54,12 +54,12 @@ describe("Cursor Directory plugin contract", () => {
   });
 
   it("points only at the remote Streamable HTTP server", () => {
-    expect(openPlugins.mcpServers.wireline).toEqual({
+    expect(openPlugins.mcpServers.botbound).toEqual({
       type: "streamable-http",
       url: "https://botbound.app/mcp",
     });
     expect(directoryMcp.mcpServers).toEqual({
-      wireline: { url: "https://botbound.app/mcp" },
+      botbound: { url: "https://botbound.app/mcp" },
     });
     expect(JSON.stringify(directoryMcp)).not.toMatch(
       /sk-|api[_-]?key|client_secret|Authorization/i,
@@ -120,7 +120,7 @@ describe("Cursor Directory plugin contract", () => {
 
   it("requires the Apps Training toggle before writes land", () => {
     expect(skill).toContain("Apps");
-    expect(skill).toContain("train_wireline_agent");
+    expect(skill).toContain("train_botbound_agent");
     expect(panel).toContain("/api/mcp/connections");
     expect(panel).toContain("/api/mcp/coaching-writes");
     expect(panel).toContain("Save Training");

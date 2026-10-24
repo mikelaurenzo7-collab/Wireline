@@ -1,5 +1,5 @@
 ---
-name: wireline-voice-agent
+name: botbound-voice-agent
 description: Help a new user create a BotBound account and build their first Bot through the remote MCP server at https://botbound.app/mcp. Use when the user wants a receptionist, scheduler, sales, or support Bot from Cursor, ChatGPT, or Claude.
 ---
 
@@ -18,10 +18,10 @@ This plugin is not a software development kit for embedding BotBound Bots in ano
 ## First-agent workflow
 
 1. Discover the job in conversation: receptionist, scheduler, sales, or support.
-2. Call `list_wireline_agents` once. If the workspace is empty, this is a first-agent session.
+2. Call `list_botbound_agents` once. If the workspace is empty, this is a first-agent session.
 3. Summarize identity, goal, rules, prohibited topics, and escalation. Call `create_agent_draft` only after explicit confirmation.
 4. Privately rehearse with `run_private_agent_turn` or `start_private_voice_simulation`.
-5. Point the user at `open_in_wireline_url` to attach a number and launch in BotBound.
+5. Point the user at `open_in_botbound_url` to attach a number and launch in BotBound.
 
 ## Tools
 
@@ -30,11 +30,11 @@ This plugin is not a software development kit for embedding BotBound Bots in ano
 | `create_agent_draft`             | User confirmed their first (or next) private, unlaunched draft.                                    |
 | `get_agent_draft`                | Read one private draft. Fails if the agent is already on the phone network.                        |
 | `update_agent_draft`             | User confirmed a private draft change.                                                             |
-| `list_wireline_agents`           | See whether the workspace already has an agent.                                                    |
-| `get_wireline_agent_status`      | Next step, whether a number is attached, and BotBound deep links. Never returns the number itself. |
-| `get_wireline_workspace_summary` | Aggregate counts only. No customer identities or message bodies.                                   |
+| `list_botbound_agents`           | See whether the workspace already has an agent.                                                    |
+| `get_botbound_agent_status`      | Next step, whether a number is attached, and BotBound deep links. Never returns the number itself. |
+| `get_botbound_workspace_summary` | Aggregate counts only. No customer identities or message bodies.                                   |
 | `get_agent_coaching_brief`       | Read owner-authored Training facts and rules to gameplan.                                          |
-| `train_wireline_agent`           | Persist a confirmed fact or rule into BotBound Training. Requires the Apps toggle.                 |
+| `train_botbound_agent`           | Persist a confirmed fact or rule into BotBound Training. Requires the Apps toggle.                 |
 | `start_private_voice_simulation` | Short tool-free voice rehearsal of a saved draft.                                                  |
 | `run_private_agent_turn`         | Private text rehearsal. No live call or customer message.                                          |
 
@@ -42,7 +42,7 @@ Create, update, rehearsal, and Training writes require `confirmed: true` only af
 
 ## Training that lands in BotBound
 
-`train_wireline_agent` fails closed until the account holder enables **Allow connected apps to save Training** in BotBound Apps. If the tool says the toggle is off, send the user to `/settings/apps#chatgpt-mcp`. Do not invent a workaround.
+`train_botbound_agent` fails closed until the account holder enables **Allow connected apps to save Training** in BotBound Apps. If the tool says the toggle is off, send the user to `/settings/apps#chatgpt-mcp`. Do not invent a workaround.
 
 ## Triggering an agent
 

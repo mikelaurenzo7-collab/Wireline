@@ -213,7 +213,7 @@ describe("account-environment AI and provider-spend admission", () => {
   it("blocks account-bound ChatGPT voice simulation before limiter, quota, reserve, or OpenAI", () => {
     const route = read("src/routes/chatgpt-mcp-account-routes.ts");
     const start = route.indexOf('if (name === "start_private_voice_simulation")');
-    const end = route.indexOf('if (name === "list_wireline_agents")', start);
+    const end = route.indexOf('if (name === "list_botbound_agents")', start);
     const simulation = route.slice(start, end);
     const environment = simulation.indexOf("assertLiveExternalActionAllowed(");
 

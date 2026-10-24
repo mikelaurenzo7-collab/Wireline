@@ -1,6 +1,8 @@
 import { buildWirelineMcpWidgetCss } from "./wireline-mcp-widget-styles";
 
-export const CHATGPT_ACCOUNT_WIDGET_URI = "ui://widget/wireline-agent-draft-v2.html";
+export const CHATGPT_ACCOUNT_WIDGET_URI = "ui://widget/botbound-agent-draft-v3.html";
+/** Previous widget URI; still readable so clients with a cached template keep rendering. */
+export const LEGACY_CHATGPT_ACCOUNT_WIDGET_URI = "ui://widget/wireline-agent-draft-v2.html";
 
 /**
  * Account-bound widget. It intentionally has no create/save action: creation
@@ -188,7 +190,7 @@ export function buildAccountBoundWidgetHtml(): string {
     if (content.primary_goal) $("summary").textContent = content.primary_goal;
     if (content.role) $("role").textContent = String(content.role).replace(/_/g, " ");
     if (content.business_name) $("business").textContent = content.business_name;
-    if (content.open_in_wireline_url) $("open").href = content.open_in_wireline_url;
+    if (content.open_in_botbound_url) $("open").href = content.open_in_botbound_url;
     if (content.agent_id) {
       status("Draft saved to your BotBound workspace. You can safely simulate it here or continue configuration in BotBound.");
     }
@@ -240,7 +242,7 @@ export function buildAccountBoundWidgetHtml(): string {
     id: "wireline-ui-init",
     method: "ui/initialize",
     params: {
-      appInfo: { name: "wireline", version: "2.4.0" },
+      appInfo: { name: "botbound", version: "2.4.0" },
       appCapabilities: {
         availableDisplayModes: ["inline"],
         openLinks: true,

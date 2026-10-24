@@ -263,7 +263,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
         <label className="app-section-title">
           Signing Secret{" "}
           <span className="text-muted/70">
-            (optional, when set, body is signed as X-Wireline-Signature: sha256=&lt;hex&gt;)
+            (optional, when set, body is signed as X-BotBound-Signature: sha256=&lt;hex&gt;)
           </span>
         </label>
         <Input

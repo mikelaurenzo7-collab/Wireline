@@ -37,9 +37,9 @@ cursor.directory auto-detects Open Plugins paths from the public GitHub reposito
 | Plugin manifest  | `plugin.json`                          |
 | Open Plugins MCP | `mcp.json` (`type: streamable-http`)   |
 | Directory MCP    | `.mcp.json` (`url` only, no secrets)   |
-| Skill            | `skills/wireline-voice-agent/SKILL.md` |
-| Rule             | `rules/wireline-mcp.mdc`               |
-| Agent            | `agents/wireline.md`                   |
+| Skill            | `skills/botbound-voice-agent/SKILL.md` |
+| Rule             | `rules/botbound-mcp.mdc`               |
+| Agent            | `agents/botbound.md`                   |
 
 Submit the public GitHub repository at [cursor.directory/plugins/new](https://cursor.directory/plugins/new). Follow [CURSOR_PLUGIN_SUBMISSION.md](./CURSOR_PLUGIN_SUBMISSION.md). Do not put API keys, `headers`, or `auth` client secrets in the plugin files. Cursor handles OAuth.
 
@@ -55,20 +55,20 @@ Public documentation: `https://botbound.app/cursor-plugin.html`.
 
 Same tools as ChatGPT and Claude:
 
-| Tool                             | Scope          | Effect                                                               |
-| -------------------------------- | -------------- | -------------------------------------------------------------------- |
-| `create_agent_draft`             | `agents.write` | Confirmed private unlaunched draft. First-agent conversion.          |
-| `get_agent_draft`                | `agents.read`  | Reads a private draft.                                               |
-| `update_agent_draft`             | `agents.write` | Confirmed private draft update.                                      |
-| `start_private_voice_simulation` | `demo.voice`   | Tool-free private voice rehearsal.                                   |
-| `list_wireline_agents`           | `agents.read`  | Lists the connected user's agents.                                   |
-| `get_wireline_workspace_summary` | `agents.read`  | Aggregate counts only.                                               |
-| `get_wireline_agent_status`      | `agents.read`  | Next step and BotBound links. No phone numbers or customer content.  |
-| `run_private_agent_turn`         | `demo.voice`   | Confirmed private text rehearsal. Not a live call.                   |
-| `get_agent_coaching_brief`       | `agents.read`  | Owner-authored Training facts and rules.                             |
-| `train_wireline_agent`           | `agents.write` | Confirmed fact or rule that lands in Training after the Apps toggle. |
-| `prepare_call` | `calls.prepare` | Saves a non-marketing service/callback proposal for the user to review and place in BotBound. |
-| `get_call_status` | `calls.read` | Reads the prepared call's placement status without recipient details or transcripts. |
+| Tool                             | Scope           | Effect                                                                                        |
+| -------------------------------- | --------------- | --------------------------------------------------------------------------------------------- |
+| `create_agent_draft`             | `agents.write`  | Confirmed private unlaunched draft. First-agent conversion.                                   |
+| `get_agent_draft`                | `agents.read`   | Reads a private draft.                                                                        |
+| `update_agent_draft`             | `agents.write`  | Confirmed private draft update.                                                               |
+| `start_private_voice_simulation` | `demo.voice`    | Tool-free private voice rehearsal.                                                            |
+| `list_botbound_agents`           | `agents.read`   | Lists the connected user's agents.                                                            |
+| `get_botbound_workspace_summary` | `agents.read`   | Aggregate counts only.                                                                        |
+| `get_botbound_agent_status`      | `agents.read`   | Next step and BotBound links. No phone numbers or customer content.                           |
+| `run_private_agent_turn`         | `demo.voice`    | Confirmed private text rehearsal. Not a live call.                                            |
+| `get_agent_coaching_brief`       | `agents.read`   | Owner-authored Training facts and rules.                                                      |
+| `train_botbound_agent`           | `agents.write`  | Confirmed fact or rule that lands in Training after the Apps toggle.                          |
+| `prepare_call`                   | `calls.prepare` | Saves a non-marketing service/callback proposal for the user to review and place in BotBound. |
+| `get_call_status`                | `calls.read`    | Reads the prepared call's placement status without recipient details or transcripts.          |
 
 Non-marketing calling uses the same server, explicit new OAuth scopes, and authenticated browser
 review as Claude and ChatGPT. No Cursor-specific widget is required. The proposal is not
@@ -100,4 +100,4 @@ node scripts/check-chatgpt-app-release.mjs --url https://botbound.app
 
 The shared probe checks discovery, the tool inventory, privacy pages, and `https://botbound.app/cursor-plugin.html`. It does not substitute for a real OAuth flow in Cursor.
 
-The `wireline` package, server, tool, and file identifiers are stable technical namespaces. `https://trywireline.com/mcp` remains a compatibility endpoint for existing registrations during the issuer migration; do not publish it for new installs.
+The plugin, MCP server key, and tool names use `botbound`. The legacy tool names (`list_wireline_agents`, `get_wireline_workspace_summary`, `get_wireline_agent_status`, `train_wireline_agent`) are still accepted by `tools/call` as hidden aliases for existing clients but are no longer listed. `https://trywireline.com/mcp` remains a compatibility endpoint for existing registrations during the issuer migration; do not publish it for new installs.

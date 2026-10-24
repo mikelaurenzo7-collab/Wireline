@@ -35,8 +35,8 @@ describe("Claude Connector Directory contract", () => {
     use_cases?: string[];
   };
 
-  it("keeps a shared remote MCP server named wireline", () => {
-    expect(MCP_SERVER_NAME).toBe("wireline");
+  it("keeps a shared remote MCP server named botbound", () => {
+    expect(MCP_SERVER_NAME).toBe("botbound");
     expect(account).toContain("serverInfo: { name: MCP_SERVER_NAME");
     expect(account).toContain('title: "Create a BotBound agent draft"');
     expect(account).toContain("prompts/list");
@@ -59,7 +59,7 @@ describe("Claude Connector Directory contract", () => {
       ],
       [
         "start_private_voice_simulation",
-        "list_wireline_agents",
+        "list_botbound_agents",
         "assertRehearsalConfirmation",
         "demo.voice",
       ],
@@ -69,7 +69,7 @@ describe("Claude Connector Directory contract", () => {
         "assertRehearsalConfirmation",
         "demo.voice",
       ],
-      ["train_wireline_agent", "return jsonRpcError", "assertTrainingConfirmation", "agents.write"],
+      ["train_botbound_agent", "return jsonRpcError", "assertTrainingConfirmation", "agents.write"],
     ] as const;
     for (const [name, next, confirm, scope] of confirmationGated) {
       const start = account.indexOf(`if (name === "${name}")`);
@@ -124,7 +124,7 @@ describe("Claude Connector Directory contract", () => {
     expect(listing.listing.name).toBe("BotBound");
     expect(listing.listing.tagline.length).toBeLessThanOrEqual(55);
     expect(listing.listing.description.length).toBeLessThanOrEqual(2000);
-    expect(listing.listing.slug).toBe("wireline");
+    expect(listing.listing.slug).toBe("botbound");
     expect(listing.listing.icon_url).toBe("https://botbound.app/botbound-icon-512.png");
     expect(mcpServerCard().icons[0]?.mimeType).toBe("image/png");
     expect(listing.listing.website_url).toBe("https://botbound.app");

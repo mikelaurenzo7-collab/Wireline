@@ -2,7 +2,7 @@
   "schema_version": 1,
   "listing": {
     "name": "BotBound",
-    "slug": "wireline",
+    "slug": "botbound",
     "tagline": "Build your first Bot",
     "description": "BotBound lets a new Claude user create a BotBound account, build their first Bot in that conversation, privately rehearse it, and inspect privacy-minimized workspace status. Phone numbers, live calls, messaging, billing, and launch stay in BotBound.",
     "categories": ["business", "productivity"],
@@ -54,7 +54,7 @@
     },
     {
       "prompt": "Give me a BotBound workspace summary: how many agents and assigned numbers do I have, what activity occurred in the last 30 days, and are text and email connected?",
-      "tools": ["get_wireline_workspace_summary"],
+      "tools": ["get_botbound_workspace_summary"],
       "screenshot_subject": "Workspace summary card with aggregate counts only"
     },
     {
@@ -69,7 +69,7 @@
     },
     {
       "prompt": "Show me the coaching brief for this BotBound agent, then save a confirmed Training fact if Apps writes are on.",
-      "tools": ["get_agent_coaching_brief", "train_wireline_agent"],
+      "tools": ["get_agent_coaching_brief", "train_botbound_agent"],
       "screenshot_subject": "Coaching brief and fail-closed Training write guidance"
     }
   ],

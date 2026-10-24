@@ -77,6 +77,7 @@ const phone = "+13125550101",
 function database() {
   const rows: Record<string, any[]> = {
     wireline_credit_ledger: [],
+    wireline_account_operation_leases: [],
     wireline_call_logs: [],
     wireline_outbound_campaigns: [],
     wireline_outbound_leads: [
