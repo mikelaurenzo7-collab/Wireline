@@ -452,10 +452,12 @@ describe("Bot context across workspace pages", () => {
       ),
     );
     await button("Find Numbers").props.onClick!();
-    await vi.waitFor(() => expect(text(phone())).toContain("Live activation is paused"));
+    await vi.waitFor(() =>
+      expect(text(phone())).toContain("Live activation isn't available right now"),
+    );
     const tree = phone();
-    expect(text(tree)).toContain("Live activation is paused");
-    expect(text(tree)).toContain("Use Set Up to try your Bot privately.");
+    expect(text(tree)).toContain("Live activation isn't available right now");
+    expect(text(tree)).toContain("Keep trying your Bot privately in Set Up, then check back soon.");
     expect(
       elements(tree).some((node) => node.type === "button" && text(node) === "Activate Line"),
     ).toBe(false);

@@ -254,8 +254,8 @@ describe("setup guide requires confirmed calling", () => {
     await mount();
     const tree = render();
     expect(button("Choose a number")).toBeUndefined();
-    expect(text(tree)).toContain("Live activation is paused");
-    expect(text(tree)).toContain("Use Set Up to try your Bot privately.");
+    expect(text(tree)).toContain("Live activation isn't available right now");
+    expect(text(tree)).toContain("Keep trying your Bot privately in Set Up, then check back soon.");
     expect(text(tree)).not.toContain("Every paid plan includes a US number");
     expect(text(tree)).not.toContain("Choose your plan");
     expect(text(tree)).not.toContain("Starter begins at $19/mo");
@@ -280,7 +280,7 @@ describe("setup guide requires confirmed calling", () => {
       (element) => element.type === "a" && text(element) === "Choose your plan",
     );
     expect(plan?.props.to).toBe("/settings/billing");
-    expect(text(render())).not.toContain("Live activation is paused");
+    expect(text(render())).not.toContain("Live activation isn't available right now");
   });
 });
 
