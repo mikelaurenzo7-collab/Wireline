@@ -59,6 +59,53 @@ export function phoneCallVoiceFor(
     : null;
 }
 
+/**
+ * Cloned voices are spoken natively by the realtime model, so they add no
+ * extra hop. If one ever fails mid-call (provider error or replies breaching
+ * the latency budget), the call switches to this stock voice and continues.
+ */
+/** Stock voice that best matches a cloned speaker (salvaged from #1152). */
+export const LIVE_VOICE_BY_GENDER = { female: "ara", male: "rex" } as const satisfies Record<
+  "female" | "male",
+  XAIGrokVoice
+>;
+
+/**
+ * The stock voice a call switches to when a cloned voice steps aside. A known
+ * speaker gender keeps the caller from hearing a jarring change of voice;
+ * otherwise the Bot's own saved stock voice answers.
+ */
+export function stockFallbackVoiceFor(
+  savedVoice: unknown,
+  cloneGender?: "female" | "male" | null,
+): XAIGrokVoice {
+  const saved = xaiVoiceForSavedVoice(savedVoice);
+  if (cloneGender !== "female" && cloneGender !== "male") return saved;
+  // Closest match: the Bot's own stock voice when it already matches the
+  // speaker (the caller hears the Bot they configured), else the gender default.
+  return XAI_STOCK_VOICE_GENDER[saved] === cloneGender ? saved : LIVE_VOICE_BY_GENDER[cloneGender];
+}
+
+/** Presented gender of each stock voice; `sal` is neutral and never a closest match. */
+export const XAI_STOCK_VOICE_GENDER: Record<XAIGrokVoice, "female" | "male" | "neutral"> = {
+  eve: "female",
+  ara: "female",
+  rex: "male",
+  leo: "male",
+  sal: "neutral",
+};
+
+/** session.update that swaps only the voice; everything else stays as configured. */
+export function xaiVoiceSwapUpdate(voice: string): Record<string, unknown> {
+  return { type: "session.update", session: { voice } };
+}
+
+/** Per-reply latency budget for a cloned voice before the call moves to stock. */
+export function resolveCustomVoiceLatencyBudgetMs(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = Number(env.WIRELINE_CUSTOM_VOICE_LATENCY_BUDGET_MS);
+  return Number.isFinite(raw) && raw >= 800 && raw <= 10_000 ? Math.round(raw) : 2_500;
+}
+
 /** "high" (xAI's default) reasons before replying; "none" trades depth for speed. */
 export function resolveXAIReasoningEffort(env: NodeJS.ProcessEnv = process.env): "high" | "none" {
   return String(env.XAI_GROK_VOICE_REASONING_EFFORT || "")
@@ -82,7 +129,7 @@ function asRecord(value: unknown): Record<string, unknown> {
  */
 export function toXAIRealtimeSession(
   openAISession: Record<string, unknown>,
-  options: { instructions?: string; keyterms?: string[] } = {},
+  options: { instructions?: string; keyterms?: string[]; customVoiceId?: string | null } = {},
 ): Record<string, unknown> {
   const audio = asRecord(openAISession.audio);
   const output = asRecord(audio.output);
@@ -95,7 +142,7 @@ export function toXAIRealtimeSession(
   return {
     model: resolveXAIGrokVoiceModel(),
     instructions: options.instructions ?? String(openAISession.instructions || ""),
-    voice: xaiVoiceForSavedVoice(output.voice),
+    voice: options.customVoiceId || xaiVoiceForSavedVoice(output.voice),
     reasoning: { effort: resolveXAIReasoningEffort() },
     tools,
     tool_choice: openAISession.tool_choice === "none" ? "none" : "auto",

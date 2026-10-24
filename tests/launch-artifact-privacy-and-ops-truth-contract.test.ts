@@ -17,7 +17,9 @@ describe("launch artifact privacy and operations truth", () => {
     // from input.callRecordingEnabled, the same flag that enables carrier
     // capture on the Twilio bridges (see live-call-recording-contract).
     expect(session).toContain("recordingEnabled: input.callRecordingEnabled === true");
-    expect(session).toContain("if (input.callRecordingEnabled !== true) return greeting;");
+    expect(read("src/lib/voice/inbound-opening.ts")).toContain(
+      "this call may be recorded for quality and compliance",
+    );
     expect(session).not.toMatch(/recordingUrl|recording_url|videoRecording|pcap/i);
     expect(runtime).not.toMatch(/api\.x\.ai|api\.vapi\.ai|elevenlabs|11labs/i);
   });

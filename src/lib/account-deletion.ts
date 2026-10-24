@@ -39,6 +39,9 @@ export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   { table: "wireline_voice_clone_events", userColumns: ["user_id"] },
   // Private reference audio is encrypted and must disappear with its tenant.
   { table: "wireline_voice_assets", userColumns: ["user_id"] },
+  // Live cloned voices keep only provider voice ids; provider-side voices are
+  // deleted first by deleteLiveVoicesForAccount (best effort, logged).
+  { table: "wireline_live_voices", userColumns: ["user_id"] },
   { table: "wireline_audit_log", userColumns: ["user_id"] },
   { table: "wireline_signal_presence", userColumns: ["user_id"] },
   { table: "wireline_follow_up_tasks", userColumns: ["user_id"] },
@@ -833,6 +836,23 @@ async function releaseExternalResourcesOutsideTenantContext(
       userId,
       error: getErrorMessage(err),
     });
+  }
+
+  // Cloned voices live at the realtime voice provider. Delete them while the
+  // provider ids still exist; a failure defers the purge (voiceprints are
+  // biometric data and have no separate orphan ledger). Already-missing
+  // voices count as deleted.
+  {
+    const { deleteProviderLiveVoicesForAccount } = await import("./voice/live-voice-service");
+    try {
+      await deleteProviderLiveVoicesForAccount(db, userId);
+    } catch (err) {
+      log.error("cloned voice deletion failed, deferring account purge", {
+        userId,
+        error: getErrorMessage(err),
+      });
+      throw err;
+    }
   }
 
   return {

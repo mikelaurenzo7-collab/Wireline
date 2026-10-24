@@ -168,7 +168,7 @@ describe("OpenAI inbound carrier continuity", () => {
     const result = await invokePrimary({});
     expect(result.captured.statusCode).toBe(200);
     expect(String(result.captured.body)).toContain(
-      '<Dial answerOnBridge="false" timeout="30" action="/api/twilio-webhook/openai-inbound-dial-complete" method="POST" timeLimit="300">',
+      '<Dial answerOnBridge="false" timeout="30" action="/api/twilio-webhook/openai-inbound-dial-complete?leg=openai&amp;rec=0" method="POST" referUrl="/api/twilio-webhook/sip-refer" referMethod="POST" timeLimit="300">',
     );
     expect(String(result.captured.body)).toContain(
       "<Sip>sip:+12025550140@sip.api.openai.com;transport=tls</Sip></Dial><Hangup/>",

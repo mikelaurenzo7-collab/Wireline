@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, Loader2, Play, Square, Volume2 } from "lucide-react";
+import { Check, ChevronDown, Loader2, Mic, Play, RotateCcw, Square, Volume2 } from "lucide-react";
 
 import { authFetch } from "../../lib/api";
 import { useAuth } from "../../contexts/AuthContext";
@@ -7,12 +7,15 @@ import type { BotMarkKey } from "../../lib/bot-mark";
 import { OPENAI_REALTIME_VOICES, type VoiceOption } from "../../lib/voice-catalog";
 import OpenAILiveVoiceSandbox from "../OpenAILiveVoiceSandbox";
 import { StatusNotice } from "../molecules";
+import LiveVoiceCloneStudio, { LIVE_VOICE_ANCHOR_ID } from "./LiveVoiceCloneStudio";
 import VoiceClonePanel from "./VoiceClonePanel";
 
 type SimpleVoicePickerProps = {
   agentId: string;
   agentName: string;
   markKey?: BotMarkKey | null;
+  /** The Bot's phone number, so owners can place a test call after cloning. */
+  botPhone?: string | null;
 };
 
 /** The voice callers actually hear when phone calls run on another provider. */
@@ -34,7 +37,12 @@ function phoneCallVoiceName(phoneCall: PhoneCallVoice): string | null {
   return phoneCall.voice.charAt(0).toUpperCase() + phoneCall.voice.slice(1);
 }
 
-export default function SimpleVoicePicker({ agentId, agentName, markKey }: SimpleVoicePickerProps) {
+export default function SimpleVoicePicker({
+  agentId,
+  agentName,
+  markKey,
+  botPhone,
+}: SimpleVoicePickerProps) {
   const { user } = useAuth();
   const ownerId = user?.id ?? null;
   const includedVoices = useMemo(() => {
@@ -50,6 +58,10 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
   const [choicesOpen, setChoicesOpen] = useState(false);
   const [phoneCall, setPhoneCall] = useState<PhoneCallVoice>(null);
   const [phoneCallReady, setPhoneCallReady] = useState<boolean | null>(null);
+  const [clonedVoiceName, setClonedVoiceName] = useState<string | null>(null);
+  const [cloneCardEpoch, setCloneCardEpoch] = useState(0);
+  // The voice that was live before the last pick, so a mis-tap is one tap to undo.
+  const [undoVoice, setUndoVoice] = useState<VoiceOption | null>(null);
   const [sampleVoiceId, setSampleVoiceId] = useState<string | null>(null);
   const [sampleLoading, setSampleLoading] = useState(false);
   const sampleAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -70,6 +82,7 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
     setSelectedVoiceId(null);
     setSelectedProvider(null);
     setNotice(null);
+    setUndoVoice(null);
     setChoicesOpen(false);
     setPhoneCall(null);
     if (!agentId || !ownerId) {
@@ -185,8 +198,12 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
     }
   }
 
-  async function selectVoice(voice: VoiceOption) {
+  async function selectVoice(voice: VoiceOption, options: { undo?: boolean } = {}) {
     if (!agentId || !ownerId || savingVoiceId) return;
+    const previousVoice =
+      includedVoices.find(
+        (candidate) => candidate.id === selectedVoiceId && candidate.provider === selectedProvider,
+      ) ?? null;
     const requestedAgentId = agentId;
     const requestedOwnerId = ownerId;
     const saveOperation = ++saveOperationRef.current;
@@ -208,6 +225,7 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
       );
       const body = (await response.json().catch(() => null)) as {
         error?: string;
+        customVoiceCleared?: boolean;
         voice?: {
           phoneCallReady?: boolean | null;
           voiceId?: string | null;
@@ -237,7 +255,19 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
           : (savedPrimaryProvider ?? voice.provider),
       );
       setPreviewOpen(false);
-      setNotice(`${voice.name} is ready for ${agentName}.`);
+      if (body?.customVoiceCleared) {
+        // The server switched the Bot off its cloned voice; refresh the clone card.
+        setClonedVoiceName(null);
+        setCloneCardEpoch((epoch) => epoch + 1);
+      }
+      const shortName = voice.name.split("·")[0].trim();
+      if (options.undo) {
+        setUndoVoice(null);
+        setNotice(`Switched back to ${shortName}. Saved for ${agentName}.`);
+      } else {
+        setUndoVoice(previousVoice && previousVoice.id !== voice.id ? previousVoice : null);
+        setNotice(`Saved. ${shortName} answers ${agentName}'s next call.`);
+      }
     } catch (reason) {
       if (isCurrentSave()) {
         setError(reason instanceof Error ? reason.message : "Voice could not be saved.");
@@ -245,6 +275,13 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
     } finally {
       if (isCurrentSave()) setSavingVoiceId(null);
     }
+  }
+
+  function scrollToClone() {
+    const target = document.getElementById(LIVE_VOICE_ANCHOR_ID);
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    target.focus({ preventScroll: true });
   }
 
   function renderVoice(voice: VoiceOption) {
@@ -318,7 +355,44 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
 
   return (
     <div className="min-w-0 space-y-3">
-      {notice ? <StatusNotice tone="success">{notice}</StatusNotice> : null}
+      {ownerId && !clonedVoiceName ? (
+        <button
+          type="button"
+          onClick={scrollToClone}
+          className="flex min-h-11 w-full items-center gap-2 rounded-xl border border-primary/25 bg-primary/5 px-3 py-2 text-left text-sm font-semibold text-foreground transition-colors hover:bg-primary/10 wl-focus-ring-halo"
+        >
+          <Mic className="size-4 shrink-0 text-primary" aria-hidden="true" />
+          <span className="min-w-0 flex-1">
+            Clone your voice
+            <span className="block text-xs font-normal text-muted-foreground">
+              Callers hear you instead of a stock voice.
+            </span>
+          </span>
+        </button>
+      ) : null}
+      <div aria-live="polite">
+        {notice ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <StatusNotice tone="success">{notice}</StatusNotice>
+            </div>
+            {undoVoice ? (
+              <button
+                type="button"
+                onClick={() => void selectVoice(undoVoice, { undo: true })}
+                disabled={Boolean(savingVoiceId)}
+                className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted wl-focus-ring-halo disabled:cursor-wait disabled:opacity-70"
+              >
+                <RotateCcw className="size-4" aria-hidden="true" />
+                Undo
+                <span className="sr-only">
+                  , switch back to {undoVoice.name.split("·")[0].trim()}
+                </span>
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
       {error ? (
         <StatusNotice tone="destructive" title="Voice Unavailable">
           {error}
@@ -365,7 +439,7 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
                 {includedVoices.length} built-in voices
                 {phoneCall ? ". Tap play to hear one as callers will." : ""}
               </span>
-              <span>Saves automatically</span>
+              <span>Saves when you pick. Undo anytime.</span>
             </div>
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-2">
               {includedVoices.map(renderVoice)}
@@ -379,11 +453,13 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
       ) : null}
 
       <p className="text-xs leading-5 text-muted-foreground">
-        {phoneCall && phoneCallReady === false
-          ? "Phone voice registration is pending. Callers hear the standard voice until it finishes."
-          : phoneCallVoiceName(phoneCall)
-            ? `Callers hear ${phoneCallVoiceName(phoneCall)}, the closest phone voice to your rehearsal voice.`
-            : "Used for phone calls and browser rehearsals."}
+        {clonedVoiceName
+          ? `Callers hear ${clonedVoiceName}, your cloned voice. Browser rehearsals use your stock voice.`
+          : phoneCall && phoneCallReady === false
+            ? "Phone voice registration is pending. Callers hear the standard voice until it finishes."
+            : phoneCallVoiceName(phoneCall)
+              ? `Callers hear ${phoneCallVoiceName(phoneCall)}, the closest phone voice to your rehearsal voice.`
+              : "Used for phone calls and browser rehearsals."}
       </p>
       <button
         type="button"
@@ -402,6 +478,16 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
           agentId={agentId}
           agentName={agentName}
           markKey={markKey}
+        />
+      ) : null}
+      {ownerId ? (
+        <LiveVoiceCloneStudio
+          key={`live:${ownerId}:${agentId}:${cloneCardEpoch}`}
+          agentId={agentId}
+          agentName={agentName}
+          stockVoiceId={phoneCall?.voice ?? selectedVoiceId}
+          botPhone={botPhone}
+          onActiveVoiceChange={setClonedVoiceName}
         />
       ) : null}
       {ownerId ? (

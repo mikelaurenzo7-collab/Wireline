@@ -2,6 +2,7 @@ import { OPENAI_STRUCTURED_PRIMARY_MODEL, STRUCTURED_PRIMARY_MODEL } from "./ai-
 import { OPENAI_REALTIME_DEFAULT_MODEL } from "./voice/openai-realtime-config";
 import { configuredPhoneVoiceProvider } from "./voice/realtime-provider";
 import { resolveXAIGrokVoiceModel } from "./voice/xai-voice-config";
+import { xaiSipConfigured } from "./voice/xai-sip-config";
 
 /**
  * Model/provider policy exposed by authenticated health diagnostics.
@@ -11,20 +12,24 @@ import { resolveXAIGrokVoiceModel } from "./voice/xai-voice-config";
  * second configuration source.
  */
 export function getHealthModelTiering() {
-  const phoneOnXAI = configuredPhoneVoiceProvider() === "xai";
+  // The runtime calls actually use: xAI is chosen, but without its SIP
+  // configuration every call answers on OpenAI, and health says so.
+  const xaiChosen = configuredPhoneVoiceProvider() === "xai";
+  const phoneOnXAI = xaiChosen && xaiSipConfigured();
   return {
     voice_runtime: {
+      configured_provider: xaiChosen ? ("xai_voice" as const) : ("openai_realtime" as const),
       provider: phoneOnXAI ? ("xai_voice" as const) : ("openai_realtime" as const),
       model: phoneOnXAI ? resolveXAIGrokVoiceModel() : OPENAI_REALTIME_DEFAULT_MODEL,
       reason: phoneOnXAI
-        ? "xAI voice for Twilio-carried PSTN calls on registered numbers."
+        ? "xAI voice is the default for every Twilio-carried PSTN call; lines register with xAI automatically."
         : "OpenAI Realtime for browser and Twilio-carried PSTN calls.",
     },
     voice_fallback: {
       provider: phoneOnXAI ? ("openai_realtime" as const) : ("none" as const),
       model: phoneOnXAI ? OPENAI_REALTIME_DEFAULT_MODEL : null,
       reason: phoneOnXAI
-        ? "Numbers not yet registered with xAI, and browser rehearsals, use OpenAI Realtime."
+        ? "OpenAI Realtime answers only when xAI is unavailable or a line is still finishing its automatic xAI registration."
         : "No second live-voice provider; calls fail closed without cross-provider duplication.",
     },
     reasoning_layer: {

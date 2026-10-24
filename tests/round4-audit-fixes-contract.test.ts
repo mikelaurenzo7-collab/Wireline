@@ -86,7 +86,9 @@ describe("round-4 audit fix contracts", () => {
     expect(session).toContain("conversation.item.input_audio_transcription.completed");
     expect(session).toContain("response.output_audio_transcript.delta");
     expect(session).toContain("recordingEnabled: input.callRecordingEnabled === true");
-    expect(session).toContain("if (input.callRecordingEnabled !== true) return greeting;");
+    expect(read("src/lib/voice/inbound-opening.ts")).toContain(
+      "this call may be recorded for quality and compliance",
+    );
     expect(schemaBase).toContain(
       'callRecordingEnabled: boolean("call_recording_enabled").default(false).notNull()',
     );
@@ -178,7 +180,10 @@ describe("round-4 audit fix contracts", () => {
     );
     expect(sipConfig).toContain("OPENAI_SIP_DEFAULT_MAX_SECONDS = 3_600");
     expect(sipSession).toContain("resolveOpenAISipSessionMaxSeconds() * 1_000");
-    expect(inbound).toContain('timeLimit="${resolveOpenAISipSessionMaxSeconds()}"');
+    expect(inbound).toContain("inboundBridgeTwiml(");
+    expect(read("src/lib/voice/inbound-bridge.ts")).toContain(
+      'timeLimit="${resolveOpenAISipSessionMaxSeconds()}"',
+    );
   });
 
   it("transferPhone backs up the escalation warm-transfer destination", () => {

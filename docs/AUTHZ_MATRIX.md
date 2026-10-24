@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 447
-**Protected:** 361
-**Public (allowlisted):** 86
+**Routes scanned:** 456
+**Protected:** 369
+**Public (allowlisted):** 87
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -89,6 +89,7 @@
 | `POST /api/webhooks/resend` | Resend/Svix timestamped HMAC-SHA256 signature + replay window |
 | `GET /recap/:slug` | Signed shareable call/weekly recap; opaque slug + bearer token verified against stored SHA-256 hash, timing-safe; per-IP + per-slug rate limits |
 | `POST /api/support/ticket` | Public support/contact form; strict validation + 5/15min IP rate limit |
+| `POST /api/twilio-webhook/live-recording-complete` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/singing-receptionist` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/sms` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/voice-fallback` | Twilio signature validation; valid provider retries are never IP-throttled |
@@ -220,6 +221,13 @@
 | campaign-routes.ts | GET | `/api/campaigns/:id/leads` | inline | — | — | Protected |
 | campaign-routes.ts | POST | `/api/campaigns/:id/retry-failed` | inline | — | — | Protected |
 | campaign-routes.ts | POST | `/api/campaigns/:id/stop` | inline | — | — | Protected |
+| cloned-voice-routes.ts | POST | `/api/agents/:agentId/live-voice` | inline | — | — | Protected |
+| cloned-voice-routes.ts | DELETE | `/api/agents/:agentId/live-voice` | inline | — | — | Protected |
+| cloned-voice-routes.ts | GET | `/api/voice/live-voices` | inline | — | — | Protected |
+| cloned-voice-routes.ts | POST | `/api/voice/live-voices` | inline | — | — | Protected |
+| cloned-voice-routes.ts | DELETE | `/api/voice/live-voices/:voiceId` | inline | — | — | Protected |
+| cloned-voice-routes.ts | GET | `/api/voice/live-voices/:voiceId/preview` | inline | — | — | Protected |
+| cloned-voice-routes.ts | POST | `/api/voice/live-voices/check` | inline | — | — | Protected |
 | company-identity-routes.ts | GET | `/api/company-identity` | inline | — | — | Protected |
 | company-identity-routes.ts | POST | `/api/company-identity` | inline | — | — | Protected |
 | company-identity-routes.ts | POST | `/api/company-identity/review-request` | inline | — | — | Protected |
@@ -519,6 +527,7 @@
 | team-routes.ts | POST | `/api/team/invite` | inline | permission | — | Protected |
 | team-routes.ts | GET | `/api/team/workspaces` | inline | — | — | Protected |
 | team-routes.ts | POST | `/api/team/workspaces/:tenantId/select` | inline | — | — | Protected |
+| twilio-webhook-base.ts | POST | `/api/twilio-webhook/live-recording-complete` | — | — | yes | Public (allowlisted) |
 | twilio-webhook-base.ts | POST | `/api/twilio-webhook/singing-receptionist` | — | — | yes | Public (allowlisted) |
 | twilio-webhook-base.ts | POST | `/api/twilio-webhook/sms` | — | — | yes | Public (allowlisted) |
 | twilio-webhook-base.ts | POST | `/api/twilio-webhook/voice-fallback` | — | — | yes | Public (allowlisted) |
@@ -530,11 +539,11 @@
 | twilio-webhook.ts | POST | `/api/twilio-webhook/sms` | — | — | yes | Public (allowlisted) |
 | twilio-webhook.ts | POST | `/api/twilio-webhook/usage-alert` | — | — | yes | Public (allowlisted) |
 | user-preference-guard-routes.ts | POST | `/api/user-preferences` | inline | — | — | Protected |
-| voice-asset-routes.ts | GET | `/api/voice/assets` | inline | platform_admin | — | Protected |
-| voice-asset-routes.ts | POST | `/api/voice/assets` | inline | platform_admin | — | Protected |
-| voice-asset-routes.ts | DELETE | `/api/voice/assets/:assetId` | inline | platform_admin | — | Protected |
-| voice-asset-routes.ts | POST | `/api/voice/assets/:assetId/preview` | inline | platform_admin | — | Protected |
-| voice-asset-routes.ts | POST | `/api/voice/assets/:assetId/review` | inline | platform_admin | — | Protected |
+| voice-asset-routes.ts | GET | `/api/voice/assets` | inline | — | — | Protected |
+| voice-asset-routes.ts | POST | `/api/voice/assets` | inline | — | — | Protected |
+| voice-asset-routes.ts | DELETE | `/api/voice/assets/:assetId` | inline | — | — | Protected |
+| voice-asset-routes.ts | POST | `/api/voice/assets/:assetId/preview` | inline | — | — | Protected |
+| voice-asset-routes.ts | POST | `/api/voice/assets/:assetId/review` | inline | — | — | Protected |
 | voice-asset-routes.ts | GET | `/api/voice/assets/capabilities` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/latency` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/latency/recent` | inline | — | — | Protected |
@@ -549,5 +558,6 @@
 | webhook-test-routes.ts | POST | `/api/webhooks/:id/test` | inline | permission | — | Protected |
 | website-knowledge-routes.ts | POST | `/api/agent-config/:id/website` | inline | — | — | Protected |
 | workspace-knowledge-routes.ts | POST | `/api/workspace-knowledge/google-drive` | inline | — | — | Protected |
+| xai-voice-admin-routes.ts | POST | `/api/voice/xai/fallback-drill` | inline | platform_admin | — | Protected |
 | xai-voice-admin-routes.ts | POST | `/api/voice/xai/registrations/sync` | inline | platform_admin | — | Protected |
 | xai-voice-admin-routes.ts | GET | `/api/voice/xai/status` | inline | platform_admin | — | Protected |

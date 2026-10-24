@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { eq, isNotNull } from "drizzle-orm";
+import { eq, isNotNull, sql } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import { decryptSecret, encryptSecret } from "../secret-vault";
@@ -114,8 +114,43 @@ function newSipCredentials(): XAISipCredentials {
   };
 }
 
-async function listXAIPhoneNumbers(): Promise<Array<{ id: string; phoneNumber: string }>> {
-  const found: Array<{ id: string; phoneNumber: string }> = [];
+type ListedXAIPhoneNumber = { id: string; phoneNumber: string; createdAtMs: number | null };
+
+/** A registration younger than this is never treated as stale: another process may own it. */
+export const XAI_REGISTRATION_MIN_STALE_AGE_MS = 60_000;
+
+function createdAtMs(record: Record<string, unknown>): number | null {
+  for (const key of ["created_at", "create_time", "createdAt", "created"]) {
+    const value = record[key];
+    if (typeof value === "number" && Number.isFinite(value))
+      return value < 1e12 ? value * 1000 : value;
+    if (typeof value === "string" && value) {
+      const parsed = Date.parse(value);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+  return null;
+}
+
+/**
+ * On a 409/400, only registrations at least 60 s old may be replaced. One
+ * without a creation time is replaced only when BotBound holds no row for the
+ * number (checked under the registration lock by the caller).
+ */
+export function staleXAIRegistrations(
+  rows: ListedXAIPhoneNumber[],
+  phoneNumber: string,
+  now: number = Date.now(),
+): ListedXAIPhoneNumber[] {
+  return rows.filter(
+    (row) =>
+      row.phoneNumber === phoneNumber &&
+      (row.createdAtMs === null || now - row.createdAtMs >= XAI_REGISTRATION_MIN_STALE_AGE_MS),
+  );
+}
+
+async function listXAIPhoneNumbers(): Promise<ListedXAIPhoneNumber[]> {
+  const found: ListedXAIPhoneNumber[] = [];
   let token = "";
   for (let page = 0; page < 20; page += 1) {
     const url = new URL(XAI_PHONE_NUMBERS_URL);
@@ -133,7 +168,7 @@ async function listXAIPhoneNumbers(): Promise<Array<{ id: string; phoneNumber: s
       const record = asRecord(row);
       const id = stringField(record.phone_number_id);
       const phoneNumber = stringField(record.phone_number);
-      if (id && phoneNumber) found.push({ id, phoneNumber });
+      if (id && phoneNumber) found.push({ id, phoneNumber, createdAtMs: createdAtMs(record) });
     }
     token = stringField(body.pagination_token);
     if (!token) break;
@@ -181,11 +216,35 @@ export async function registerXAIPhoneNumber(
   }
   if (!xaiSipConfigured()) return { phoneNumber, status: "failed", reason: "xai_not_configured" };
   if (await findRegistration(phoneNumber)) return { phoneNumber, status: "already_registered" };
+  // One registration per number at a time across every process (api and
+  // voice services): the loser waits, then sees the winner's row, so no
+  // process can delete a registration another one is about to store.
+  return outsideTenant(() =>
+    drizzle.transaction(async (tx) => {
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtext(${`xai_phone_registration:${phoneNumber}`}))`,
+      );
+      const [existing] = await tx
+        .select({ phoneNumber: schema.xaiPhoneRegistrations.phoneNumber })
+        .from(schema.xaiPhoneRegistrations)
+        .where(eq(schema.xaiPhoneRegistrations.phoneNumber, phoneNumber))
+        .limit(1);
+      if (existing) return { phoneNumber, status: "already_registered" as const };
+      return registerXAIPhoneNumberLocked(phoneNumber, (values) =>
+        tx.insert(schema.xaiPhoneRegistrations).values(values),
+      );
+    }),
+  );
+}
 
+async function registerXAIPhoneNumberLocked(
+  phoneNumber: string,
+  insert: (values: typeof schema.xaiPhoneRegistrations.$inferInsert) => PromiseLike<unknown>,
+): Promise<XAIRegistrationResult> {
   const credentials = newSipCredentials();
   let response = await createXAIRegistration(phoneNumber, credentials);
   if (response.status === 409 || response.status === 400) {
-    const stale = (await listXAIPhoneNumbers()).filter((row) => row.phoneNumber === phoneNumber);
+    const stale = staleXAIRegistrations(await listXAIPhoneNumbers(), phoneNumber);
     if (stale.length) {
       for (const row of stale) await deleteXAIPhoneNumber(row.id);
       log.info("Replaced a stale xAI phone registration", { phoneSuffix: phoneNumber.slice(-4) });
@@ -220,16 +279,14 @@ export async function registerXAIPhoneNumber(
     throw error;
   }
   try {
-    await outsideTenant(() =>
-      drizzle.insert(schema.xaiPhoneRegistrations).values({
-        phoneNumber,
-        xaiPhoneNumberId: registration.xaiPhoneNumberId,
-        xaiWebhookId: registration.xaiWebhookId,
-        webhookSecretEncrypted: encryptSecret(registration.signingSecret),
-        sipUsername: credentials.username,
-        sipPasswordEncrypted: encryptSecret(credentials.password),
-      }),
-    );
+    await insert({
+      phoneNumber,
+      xaiPhoneNumberId: registration.xaiPhoneNumberId,
+      xaiWebhookId: registration.xaiWebhookId,
+      webhookSecretEncrypted: encryptSecret(registration.signingSecret),
+      sipUsername: credentials.username,
+      sipPasswordEncrypted: encryptSecret(credentials.password),
+    });
   } catch (error) {
     // Without the stored secret the registration can never verify a call.
     // Remove it so a retry starts clean instead of colliding.

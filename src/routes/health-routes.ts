@@ -191,15 +191,16 @@ router.get(
   authenticateUser,
   async (_req: AuthenticatedRequest, res) => {
     const db = await probeDatabase();
+    const llmTiering = getHealthModelTiering();
     res.json({
       status: db.ok ? "ok" : "degraded",
       uptime_s: Math.round((process as any).uptime?.() || 0),
       db,
       capabilities: getHealthCapabilities(),
       app_model: STRUCTURED_PRIMARY_MODEL,
-      voice_agent_model: OPENAI_REALTIME_DEFAULT_MODEL,
-      voice_runtime_provider: "openai_realtime",
-      llm_tiering: getHealthModelTiering(),
+      voice_agent_model: llmTiering.voice_runtime.model,
+      voice_runtime_provider: llmTiering.voice_runtime.provider,
+      llm_tiering: llmTiering,
       timestamp: new Date().toISOString(),
     });
   },

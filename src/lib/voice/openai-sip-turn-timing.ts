@@ -42,6 +42,13 @@ export type TurnTimingOptions = {
 };
 
 /**
+ * What firstAudioMs measures: "playback" is the provider confirming the
+ * caller's audio buffer started playing (OpenAI); "generation" is the first
+ * audio chunk leaving the provider (xAI), a few tens of ms before playback.
+ */
+export type FirstAudioSignal = "playback" | "generation";
+
+/**
  * Measures the server-side interval after the provider declares the caller's
  * turn finished. The earlier semantic-VAD wait is not observable on a SIP
  * sideband. Only bounded numeric samples are retained; no audio or transcript
@@ -57,23 +64,47 @@ export class OpenAISipTurnTiming {
   private turnsWithAudio = 0;
   private toolConfirmations = 0;
   private toolTimeouts = 0;
+  private connectedAtMs: number | null = null;
+  private firstAudioMs: number | null = null;
+  private readonly firstAudioSignal: FirstAudioSignal;
 
   constructor(options: TurnTimingOptions = {}) {
     this.audioStartEvents = new Set(options.audioStartEvents ?? OPENAI_TURN_AUDIO_START_EVENTS);
+    this.firstAudioSignal = [...this.audioStartEvents].every((type) =>
+      (OPENAI_TURN_AUDIO_START_EVENTS as readonly string[]).includes(type),
+    )
+      ? "playback"
+      : "generation";
   }
 
-  observe(event: Record<string, unknown>, nowMs = Date.now()): void {
+  /** Start the per-call time-to-first-audio clock (sideband open). */
+  markConnected(nowMs = Date.now()): void {
+    if (this.connectedAtMs === null) this.connectedAtMs = nowMs;
+  }
+
+  /**
+   * Returns the stopped-to-audio latency when this event completed a caller
+   * turn, so callers can act on a single slow reply; otherwise null.
+   */
+  observe(event: Record<string, unknown>, nowMs = Date.now()): number | null {
     const type = eventId(event.type);
+    if (
+      this.firstAudioMs === null &&
+      this.connectedAtMs !== null &&
+      this.audioStartEvents.has(type)
+    ) {
+      this.firstAudioMs = Math.max(0, Math.round(nowMs - this.connectedAtMs));
+    }
     if (type === "input_audio_buffer.speech_stopped") {
       this.beginTurn(eventId(event.item_id), nowMs);
-      return;
+      return null;
     }
     if (type === "input_audio_buffer.committed") {
       const itemId = eventId(event.item_id);
       if (!this.pending || (itemId && this.pending.itemId && this.pending.itemId !== itemId)) {
         this.beginTurn(itemId, nowMs);
       }
-      return;
+      return null;
     }
     if (type === "response.created" && this.pending) {
       const response = event.response;
@@ -81,19 +112,22 @@ export class OpenAISipTurnTiming {
         response && typeof response === "object" && !Array.isArray(response)
           ? eventId((response as Record<string, unknown>).id)
           : "";
-      if (!responseId) return;
+      if (!responseId) return null;
       this.pending.responseIds.add(responseId);
       if (!this.pending.responseObserved) {
         addSample(this.stoppedToResponseMs, nowMs - this.pending.stoppedAtMs);
         this.pending.responseObserved = true;
       }
-      return;
+      return null;
     }
     if (this.audioStartEvents.has(type) && this.pending && this.belongsToPending(event)) {
-      addSample(this.stoppedToAudioMs, nowMs - this.pending.stoppedAtMs);
+      const latency = Math.max(0, Math.round(nowMs - this.pending.stoppedAtMs));
+      addSample(this.stoppedToAudioMs, latency);
       this.turnsWithAudio += 1;
       this.pending = null;
+      return latency;
     }
+    return null;
   }
 
   /**
@@ -116,6 +150,8 @@ export class OpenAISipTurnTiming {
 
   summary() {
     return {
+      firstAudioMs: this.firstAudioMs,
+      firstAudioSignal: this.firstAudioSignal,
       turnsObserved: this.turnsObserved,
       turnsWithAudio: this.turnsWithAudio,
       stoppedToResponseP50Ms: percentile(this.stoppedToResponseMs, 0.5),

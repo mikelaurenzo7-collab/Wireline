@@ -47,6 +47,9 @@ import {
   type NativeInboundAdmissionMode,
 } from "./native-inbound-admission";
 import { buildOpenAIRealtimeAgentRuntime } from "./openai-phone-agent-runtime";
+import type { InboundFallbackDrill, OpenAIInboundLeg } from "./openai-inbound-token";
+import { composeInboundOpening } from "./inbound-opening";
+import { inboundSourceId, redirectInboundCallToOpenAI } from "./inbound-bridge";
 import { OpenAISipTurnTiming, XAI_TURN_AUDIO_START_EVENTS } from "./openai-sip-turn-timing";
 import { enforceFundedCarrierCallLimit, readTerminalCarrierDuration } from "./funded-carrier-call";
 import { adoptPhoneTestSipFunding } from "./phone-test-funding";
@@ -61,6 +64,9 @@ import {
 } from "./realtime-provider";
 import {
   toXAIRealtimeSession,
+  resolveCustomVoiceLatencyBudgetMs,
+  stockFallbackVoiceFor,
+  xaiVoiceSwapUpdate,
   xaiForcedMessagePlaybackMs,
   xaiForceMessage,
 } from "./xai-voice-config";
@@ -71,6 +77,24 @@ import {
 } from "./ai-disclosure-evidence";
 
 const WS_OPEN_TIMEOUT_MS = 15_000;
+const XAI_WS_OPEN_TIMEOUT_MS = 5_000;
+const FALLBACK_DRILL_DELAY_MS = 8_000;
+
+/**
+ * Errors after which the realtime session is still usable: rate limits and
+ * errors about a tool call or its output. Everything else is treated as a
+ * session failure.
+ */
+export function isRecoverableRealtimeError(event: Record<string, unknown>): boolean {
+  const detail =
+    event.error && typeof event.error === "object" && !Array.isArray(event.error)
+      ? (event.error as Record<string, unknown>)
+      : {};
+  const text = [detail.type, detail.code, detail.param, detail.message]
+    .map((value) => String(value ?? "").toLowerCase())
+    .join(" ");
+  return /rate[_ ]?limit|function_call|tool[_ ]|tool$|call_id/.test(text);
+}
 const PROVIDER_REQUEST_TIMEOUT_MS = 10_000;
 const TOOL_CONFIRM_TIMEOUT_MS = 20_000;
 // A tool continuation is a response.create the provider must acknowledge with a
@@ -111,6 +135,13 @@ export type OpenAISipIncomingCall = {
   direction?: "inbound" | "outbound";
   leadId?: bigint;
   inboundTwilioCallSid?: string;
+  /**
+   * Set when this OpenAI leg replaces an xAI leg on the same Twilio call:
+   * "failover" when xAI never connected, "resume" when xAI failed mid-call.
+   */
+  inboundLeg?: OpenAIInboundLeg;
+  /** A platform-admin, one-shot fallback drill carried in the signed token. */
+  fallbackDrill?: InboundFallbackDrill;
   /**
    * The exact Twilio parent call this SIP leg was bridged from. Persisted once
    * on the call log so the recording-completion callback can correlate by SID
@@ -301,19 +332,19 @@ function buildOutboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRun
 }
 
 /**
- * Inbound opening: the Bot's saved greeting, preceded by the recording
- * notice when — and only when — the owner records this Bot's calls. The
- * notice comes from the same compliance composer as the outbound opening
- * and is driven by the same per-Bot flag that enables carrier capture on
- * the Twilio bridge, so the spoken disclosure and the actual recording
- * can never disagree. With recording off the greeting is byte-identical
- * to before.
+ * Inbound opening. The first line always says this is an AI assistant, with
+ * the recording notice woven in when the owner records this Bot's calls (the
+ * same per-Bot flag that enables carrier capture on the Twilio bridge, so the
+ * spoken disclosure and the actual recording can never disagree).
  */
 function buildInboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRuntime): string {
-  const greeting = runtime.greeting.trim();
-  if (input.callRecordingEnabled !== true) return greeting;
-  const notice = complianceFirstMessagePrefix(null, null, { recordingEnabled: true });
-  return `${notice}${greeting}`.trim();
+  return composeInboundOpening({
+    greeting: runtime.greeting,
+    agentName: runtime.agentName,
+    businessName: input.businessName,
+    recordingEnabled: input.callRecordingEnabled === true,
+    leg: input.inboundLeg,
+  });
 }
 
 function buildOutboundInstructions(input: OpenAISipIncomingCall): string {
@@ -704,19 +735,31 @@ async function claimCall(input: OpenAISipIncomingCall) {
         ? `outbound:${input.outboundPlacementId}`
         : null
       : input.inboundTwilioCallSid
-        ? `twilio:${input.inboundTwilioCallSid}`
+        ? inboundSourceId(input.inboundTwilioCallSid, input.inboundLeg)
         : null;
   if (!sourceId) throw AppError.conflict("The SIP call is missing its signed source identity.");
   // The exact Twilio parent call is known before this row exists: inbound from
   // the token minted at TwiML creation, outbound from the placement's persisted
   // bridge marker. Persist it once so recording callbacks never depend on
   // re-reading mutable lead metadata.
-  const twilioParentCallSid =
+  const parentCallSid =
     callDirection(input) === "outbound"
       ? input.twilioParentCallSid?.trim() || null
       : input.inboundTwilioCallSid?.trim() || null;
   return drizzle.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-sip:${sourceId}`}))`);
+    // A failover leg shares the Twilio parent call with the xAI leg it
+    // replaces. The parent SID is unique per call row, so the failover row
+    // takes it only when the xAI leg never claimed one.
+    let twilioParentCallSid = parentCallSid;
+    if (parentCallSid && input.inboundLeg) {
+      const [holder] = await tx
+        .select({ id: schema.callLogs.id })
+        .from(schema.callLogs)
+        .where(eq(schema.callLogs.twilioParentCallSid, parentCallSid))
+        .limit(1);
+      if (holder) twilioParentCallSid = null;
+    }
     const [existing] = await tx
       .select({
         id: schema.callLogs.id,
@@ -827,7 +870,13 @@ async function claimCall(input: OpenAISipIncomingCall) {
         throw new AppError(409, "BOT_BEING_DELETED", "This Bot is being deleted.");
       }
     }
-    if (direction === "inbound" && !(await hasInboundCapacityInTransaction(tx, input.userId))) {
+    // A failover leg replaces a call that already passed admission; the xAI
+    // leg may still hold its slot for a moment while it finalizes.
+    if (
+      direction === "inbound" &&
+      !input.inboundLeg &&
+      !(await hasInboundCapacityInTransaction(tx, input.userId))
+    ) {
       throw new AppError(429, "VOICE_CONCURRENCY_EXCEEDED", "The line is at its live call limit.");
     }
     const admissionMaxSeconds =
@@ -1911,10 +1960,100 @@ async function runRealtimeSession(
   const turnTiming = new OpenAISipTurnTiming(
     provider === "xai" ? { audioStartEvents: XAI_TURN_AUDIO_START_EVENTS } : {},
   );
+  // A cloned voice is spoken natively by xAI. If it ever errors or keeps
+  // breaching the reply budget, the call silently continues on the stock voice.
+  const customVoiceId =
+    provider === "xai" && runtime.customVoice?.engine === "xai"
+      ? runtime.customVoice.voiceId
+      : null;
+  // A clone held by a streaming-synthesis clone engine needs the media-stream
+  // bridge to speak on SIP calls. Until that runtime ships, the call opens on
+  // the closest stock voice from the first word, so the caller never hears a
+  // switch mid-sentence. Logged so ops can see how often this happens.
+  const standInStockVoice =
+    provider === "xai" && runtime.customVoice && runtime.customVoice.engine !== "xai"
+      ? stockFallbackVoiceFor(runtime.voice, runtime.customVoice.gender)
+      : null;
+  if (standInStockVoice)
+    log.info("Cloned voice answered by closest stock voice on this call", {
+      callId: providerCallId(input.callId),
+      engine: runtime.customVoice?.engine ?? null,
+      cloneId: runtime.customVoice?.cloneId ?? null,
+      stockVoice: standInStockVoice,
+    });
+  let voiceKind: "custom" | "stock" = customVoiceId ? "custom" : "stock";
+  let clonePlaybackRecorded = false;
+  let customVoiceFallback: "provider_error" | "latency" | "drill" | null = null;
+  let slowCustomVoiceReplies = 0;
+  let assistantAudioHeard = false;
+  // Whether a tool ran since the caller last spoke: such a turn's latency is
+  // tool time, not voice time, and never counts against the clone budget.
+  let toolRanThisTurn = false;
+  let pendingStockVoice: string | null = null;
+  // The full xAI session as sent at open, so a voice swap re-sends the
+  // complete session (instructions, tools, keyterms) with only the voice changed.
+  let xaiSessionOptions: { instructions: string; keyterms: string[] } | null = null;
+  // Set when an xAI failure on an inbound call should move the caller to
+  // OpenAI Realtime on the same call instead of ending it.
+  let xaiFailoverReason: string | null = null;
+  let xaiFailedOver = false;
+  let fallbackDrillTimer: ReturnType<typeof setTimeout> | null = null;
+  const customVoiceLatencyBudgetMs = resolveCustomVoiceLatencyBudgetMs();
+  const applyStockVoice = (stockVoice: string) => {
+    pendingStockVoice = null;
+    if (ws.readyState !== WebSocket.OPEN) return;
+    sendJson(
+      ws,
+      xaiSessionOptions
+        ? {
+            type: "session.update",
+            session: toXAIRealtimeSession(runtime.session as Record<string, unknown>, {
+              ...xaiSessionOptions,
+              customVoiceId: stockVoice,
+            }),
+          }
+        : xaiVoiceSwapUpdate(stockVoice),
+    );
+  };
+  const fallBackToStockVoice = (reason: "provider_error" | "latency" | "drill"): boolean => {
+    if (voiceKind !== "custom" || ws.readyState !== WebSocket.OPEN) return false;
+    voiceKind = "stock";
+    customVoiceFallback = reason;
+    const stockVoice = stockFallbackVoiceFor(runtime.voice, runtime.customVoice?.gender);
+    // Never change voice mid-sentence: a latency swap waits for the reply in
+    // flight to finish. A provider error swaps now (the clone is not speaking).
+    const deferred = reason === "latency" && activeResponseIds.size > 0;
+    if (deferred) pendingStockVoice = stockVoice;
+    else applyStockVoice(stockVoice);
+    log.warn("Cloned voice switched to stock voice mid-call", {
+      callId: providerCallId(input.callId),
+      provider,
+      reason,
+      stockVoice,
+      deferredToTurnEnd: deferred,
+      cloneId: runtime.customVoice?.cloneId ?? null,
+      slowReplies: slowCustomVoiceReplies,
+      latencyBudgetMs: customVoiceLatencyBudgetMs,
+    });
+    return true;
+  };
+  const xaiFailoverEligible = () =>
+    provider === "xai" &&
+    callDirection(input) === "inbound" &&
+    Boolean(input.inboundTwilioCallSid) &&
+    !input.phoneTest &&
+    !input.inboundLeg &&
+    connectedAt !== null &&
+    (input.admission?.mode ?? "full") !== "recovery_notice" &&
+    !["transferred", "caller-dnc", "botbound-max-duration", "claim-lease-lost"].includes(
+      endedReason,
+    );
 
   const ws = new WebSocket(buildRealtimeSipSocketUrl(input.callId), {
     headers: { Authorization: `Bearer ${apiKey}` },
-    handshakeTimeout: WS_OPEN_TIMEOUT_MS,
+    // xAI's Dial gives up after XAI_CONNECT_TIMEOUT_SECONDS and fails over,
+    // so a slow xAI handshake must not hold the leg longer than that.
+    handshakeTimeout: provider === "xai" ? XAI_WS_OPEN_TIMEOUT_MS : WS_OPEN_TIMEOUT_MS,
   });
 
   const ownsSession = () => !ownershipSignal?.aborted;
@@ -2072,6 +2211,15 @@ async function runRealtimeSession(
     const response = asRecord(event.response);
     const responseId = typeof response.id === "string" ? response.id : "";
     const playbackId = typeof event.response_id === "string" ? event.response_id : "";
+    if (
+      type === "error" &&
+      provider === "xai" &&
+      (voiceKind === "custom" || isRecoverableRealtimeError(event))
+    ) {
+      // Recoverable on xAI: a cloned-voice error swaps to stock, and a tool
+      // or rate-limit error leaves the session usable. Do not fence responses.
+      return;
+    }
     if (type === "error" || (type === "response.done" && response.status === "failed")) {
       // Fatal cleanup remains serialized; fence new responses immediately even
       // when that cleanup is queued behind an already-running business tool.
@@ -2347,8 +2495,29 @@ async function runRealtimeSession(
   const handleEvent = async (event: Record<string, unknown>, receivedAtMs: number) => {
     if (!ownsSession()) return;
     observeUsage?.(event);
-    turnTiming.observe(event, receivedAtMs);
+    const turnAudioMs = turnTiming.observe(event, receivedAtMs);
     const type = String(event.type || "");
+    if (type === "response.output_audio.delta" || type === "response.audio.delta") {
+      assistantAudioHeard = true;
+      // Usage (and the idle-retention clock) moves only when the clone is heard.
+      if (voiceKind === "custom" && !clonePlaybackRecorded && runtime.customVoice) {
+        clonePlaybackRecorded = true;
+        const { cloneId } = runtime.customVoice;
+        // Loaded lazily: the clone store is not part of the call hot path.
+        void import("./live-voice-service")
+          .then(({ markRuntimeCustomVoicePlayed }) =>
+            markRuntimeCustomVoicePlayed(runtime.userId, cloneId),
+          )
+          .catch(() => undefined);
+      }
+    }
+    if (type === "input_audio_buffer.speech_stopped") toolRanThisTurn = false;
+    if (voiceKind === "custom" && turnAudioMs !== null && !toolRanThisTurn) {
+      if (turnAudioMs > customVoiceLatencyBudgetMs) slowCustomVoiceReplies += 1;
+      else slowCustomVoiceReplies = 0;
+      // Two slow replies in a row, not one. Tool turns are excluded above.
+      if (slowCustomVoiceReplies >= 2) fallBackToStockVoice("latency");
+    }
     if (type === "output_audio_buffer.started") {
       return;
     }
@@ -2413,6 +2582,7 @@ async function runRealtimeSession(
       const name = typeof event.name === "string" ? event.name.trim() : "";
       const callId = typeof event.call_id === "string" ? event.call_id.trim() : "";
       if (name && callId) {
+        toolRanThisTurn = true;
         pendingTools.set(callId, { callId, name, arguments: safeToolArguments(event.arguments) });
       }
       return;
@@ -2420,9 +2590,12 @@ async function runRealtimeSession(
     if (type === "response.done") {
       flushAssistantTurn();
       capturingOpeningTranscript = false;
+      // A deferred clone-to-stock swap lands between replies, never mid-sentence.
+      if (pendingStockVoice) applyStockVoice(pendingStockVoice);
       const response = asRecord(event.response);
       if (String(response.status || "").toLowerCase() === "failed") {
         pipelineError = "openai_response";
+        if (xaiFailoverEligible()) xaiFailoverReason = "xai_response_failed";
         throw new Error("OPENAI_REALTIME_RESPONSE_FAILED");
       }
       if (awaitingExactOpeningPlayback || hangupAfterOpening) {
@@ -2434,6 +2607,35 @@ async function runRealtimeSession(
       requestToolContinuationWhenReady();
       return;
     }
+    if (type === "error" && provider === "xai" && isRecoverableRealtimeError(event)) {
+      // Tool and rate-limit errors leave the xAI session usable: log them and
+      // keep the caller on the line rather than swapping voice or failing over.
+      const detail = asRecord(event.error);
+      log.warn("Realtime provider reported a recoverable error", {
+        callId: providerCallId(input.callId),
+        provider,
+        errorType: String(detail.type || "").slice(0, 80),
+        errorCode: String(detail.code || "").slice(0, 80),
+      });
+      return;
+    }
+    if (type === "error" && voiceKind === "custom") {
+      // xAI errors on a clone are recoverable and the session stays open.
+      // Re-send the full session on the closest stock voice; a later error
+      // after the swap takes the normal failure path below.
+      const detail = asRecord(event.error);
+      log.warn("Realtime provider reported an error on a cloned voice", {
+        callId: providerCallId(input.callId),
+        provider,
+        errorType: String(detail.type || "").slice(0, 80),
+        errorCode: String(detail.code || "").slice(0, 80),
+        message: String(detail.message || "").slice(0, 300),
+      });
+      if (fallBackToStockVoice("provider_error")) {
+        resumeAfterVoiceSwap();
+        return;
+      }
+    }
     if (type === "error") {
       pipelineError = "openai_realtime";
       const detail = asRecord(event.error);
@@ -2444,7 +2646,30 @@ async function runRealtimeSession(
         errorCode: String(detail.code || "").slice(0, 80),
         message: String(detail.message || "").slice(0, 300),
       });
+      // On xAI the caller moves to OpenAI on the same call instead of hanging up.
+      if (xaiFailoverEligible()) xaiFailoverReason = "xai_error";
       throw new Error("OPENAI_REALTIME_EVENT_ERROR");
+    }
+  };
+
+  /**
+   * After a clone error swaps to stock: never replay a greeting the caller
+   * may already have heard. The forced opening is re-sent only when xAI never
+   * started it (no response.created and no audio), so the disclosure is still
+   * spoken exactly once; otherwise a turn resumes only if nothing played.
+   */
+  const resumeAfterVoiceSwap = () => {
+    if (assistantAudioHeard) return;
+    if (xaiForcedOpening && awaitingExactOpeningPlayback) {
+      if (xaiOpeningResponseId) return;
+      sendJson(ws, xaiForceMessage(xaiForcedOpening));
+      if (xaiOpeningPlaybackTimer) clearTimeout(xaiOpeningPlaybackTimer);
+      xaiOpeningPlaybackTimer = setTimeout(() => {
+        xaiOpeningPlaybackTimer = null;
+        finishExactOpeningIfNeeded(true);
+      }, xaiForcedMessagePlaybackMs(xaiForcedOpening));
+    } else if (!xaiForcedOpening && activeResponseIds.size === 0) {
+      sendJson(ws, { type: "response.create" });
     }
   };
 
@@ -2473,6 +2698,7 @@ async function runRealtimeSession(
           return;
         }
         connectedAt = Date.now();
+        turnTiming.markConnected(connectedAt);
         const outbound = callDirection(input) === "outbound";
         const opening = outbound
           ? buildOutboundOpening(input, runtime)
@@ -2482,13 +2708,33 @@ async function runRealtimeSession(
           : runtime.session.instructions;
 
         if (provider === "xai") {
+          xaiSessionOptions = {
+            instructions,
+            keyterms: [runtime.agentName, input.businessName ?? ""],
+          };
           sendJson(ws, {
             type: "session.update",
             session: toXAIRealtimeSession(runtime.session as Record<string, unknown>, {
-              instructions,
-              keyterms: [runtime.agentName, input.businessName ?? ""],
+              ...xaiSessionOptions,
+              customVoiceId: customVoiceId ?? standInStockVoice,
             }),
           });
+          if (input.fallbackDrill) {
+            // Platform-admin drill: exercise the real fallback path once.
+            const drill = input.fallbackDrill;
+            fallbackDrillTimer = setTimeout(() => {
+              fallbackDrillTimer = null;
+              if (!ownsSession() || endedAt !== null || ws.readyState !== WebSocket.OPEN) return;
+              log.warn("Fallback drill firing", { callId: providerCallId(input.callId), drill });
+              if (drill === "clone_voice") {
+                fallBackToStockVoice("drill");
+                return;
+              }
+              pipelineError = "openai_realtime";
+              if (xaiFailoverEligible()) xaiFailoverReason = "drill";
+              rejectOnce(new Error("FALLBACK_DRILL_XAI_SESSION"));
+            }, FALLBACK_DRILL_DELAY_MS);
+          }
           if (opening) {
             // force_message speaks the compliance opening verbatim and owns its
             // playback; no model turn starts until that audio drains. It becomes
@@ -2676,6 +2922,9 @@ async function runRealtimeSession(
             openingPlaybackConfirmed,
             providerEvents: Object.fromEntries(providerEventCounts),
             ...turnTiming.summary(),
+            voiceKind: customVoiceId ? "custom" : "stock",
+            voiceAtClose: voiceKind,
+            customVoiceFallback,
           });
         // Wait for already-received sideband events without adding another log
         // line for each turn or blocking the provider-close cleanup.
@@ -2703,6 +2952,22 @@ async function runRealtimeSession(
   } catch (error) {
     if (!pipelineError) pipelineError = "connection";
     if (endedReason === "provider-disconnected") endedReason = "runtime-error";
+    // A heartbeat loss on an answered xAI leg means the AI went silent while
+    // the caller is still connected: that is a failover too.
+    if (!xaiFailoverReason && pipelineError === "heartbeat" && xaiFailoverEligible()) {
+      xaiFailoverReason = "xai_heartbeat";
+    }
+    if (xaiFailoverReason && xaiFailoverEligible()) {
+      xaiFailedOver = await redirectInboundCallToOpenAI({
+        callId: providerCallId(input.callId),
+        reason: xaiFailoverReason,
+        twilioCallSid: input.inboundTwilioCallSid!,
+        calledNumber: input.calledNumber,
+        callerNumber: input.callerNumber,
+        callRecordingEnabled: input.callRecordingEnabled === true,
+        leg: assistantAudioHeard || openingPlaybackConfirmed ? "resume" : "failover",
+      });
+    }
     let hangupOutcome: OpenAICallControlOutcome | undefined;
     let hangupConfirmed = true;
     try {
@@ -2722,7 +2987,11 @@ async function runRealtimeSession(
             () => true,
             () => false,
           ))));
-    if (sidebandEndedWithCall) {
+    if (xaiFailedOver) {
+      // The caller is now on OpenAI; this xAI leg ends as a handled fallback.
+      pipelineError = null;
+      endedReason = "failed-over-to-openai";
+    } else if (sidebandEndedWithCall) {
       // OpenAI can drop an opened sideband without a close frame (1006) as its
       // SIP call ends. A provider that reports the call gone, or a conflict the
       // carrier confirms as terminal, establishes an ordinary ending; a live
@@ -2766,6 +3035,7 @@ async function runRealtimeSession(
     if (maxDurationTimer) clearTimeout(maxDurationTimer);
     if (durationWarningTimer) clearTimeout(durationWarningTimer);
     if (xaiOpeningPlaybackTimer) clearTimeout(xaiOpeningPlaybackTimer);
+    if (fallbackDrillTimer) clearTimeout(fallbackDrillTimer);
     if (accountingTimer) clearInterval(accountingTimer);
     if (heartbeat) clearInterval(heartbeat);
     if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {

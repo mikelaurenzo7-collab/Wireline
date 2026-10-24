@@ -9,6 +9,8 @@ import {
 } from "../src/lib/health-model-probe";
 import { STRUCTURED_PRIMARY_MODEL } from "../src/lib/ai-models";
 import { OPENAI_REALTIME_DEFAULT_MODEL } from "../src/lib/voice/openai-realtime-config";
+import { resolveXAIGrokVoiceModel } from "../src/lib/voice/xai-voice-config";
+import { xaiSipConfigured } from "../src/lib/voice/xai-sip-config";
 import { evaluatePlatformOperationalSlos } from "../src/lib/platform-operational-slos";
 
 const root = process.cwd();
@@ -116,15 +118,19 @@ describe("health surfaces contract", () => {
 
   it("derives authenticated model/provider health from canonical runtime policy", () => {
     const tiering = getHealthModelTiering();
-    // Without the xAI phone switch, calls stay on OpenAI Realtime with no second lane.
-    expect(tiering.voice_runtime).toMatchObject({
-      provider: "openai_realtime",
-      model: OPENAI_REALTIME_DEFAULT_MODEL,
-    });
-    expect(tiering.voice_fallback).toMatchObject({
-      provider: "none",
-      model: null,
-    });
+    // xAI voice is the configured default phone runtime; OpenAI Realtime is
+    // the fallback lane. `provider` reports the runtime calls actually use.
+    expect(tiering.voice_runtime).toMatchObject({ configured_provider: "xai_voice" });
+    expect(tiering.voice_runtime).toMatchObject(
+      xaiSipConfigured()
+        ? { provider: "xai_voice", model: resolveXAIGrokVoiceModel() }
+        : { provider: "openai_realtime", model: OPENAI_REALTIME_DEFAULT_MODEL },
+    );
+    expect(tiering.voice_fallback).toMatchObject(
+      xaiSipConfigured()
+        ? { provider: "openai_realtime", model: OPENAI_REALTIME_DEFAULT_MODEL }
+        : { provider: "none", model: null },
+    );
     expect(tiering.reasoning_layer).toMatchObject({
       provider: "xai",
       model: STRUCTURED_PRIMARY_MODEL,
@@ -132,8 +138,10 @@ describe("health surfaces contract", () => {
     expect(tiering.reasoning_fallback).toMatchObject({ provider: "openai" });
 
     const routeSource = read("src/routes/health-routes.ts");
-    expect(routeSource).toContain("llm_tiering: getHealthModelTiering()");
-    expect(routeSource).toContain("voice_agent_model: OPENAI_REALTIME_DEFAULT_MODEL");
+    expect(routeSource).toContain("const llmTiering = getHealthModelTiering();");
+    expect(routeSource).toContain("llm_tiering: llmTiering");
+    expect(routeSource).toContain("voice_agent_model: llmTiering.voice_runtime.model");
+    expect(routeSource).toContain("voice_runtime_provider: llmTiering.voice_runtime.provider");
     expect(routeSource).toContain(
       "probeOpenAIRealtimeControlPlaneDiagnostic(OPENAI_REALTIME_DEFAULT_MODEL)",
     );

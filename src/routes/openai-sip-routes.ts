@@ -24,6 +24,8 @@ import { verifyStandardWebhook } from "../lib/standard-webhook-auth";
 import { phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
 import { isOutboundCallPurpose, type OutboundCallPurpose } from "../lib/outbound-call-purpose";
 import { LEAD_STATUS } from "../lib/outbound-status";
+import { inboundSourceId } from "../lib/voice/inbound-bridge";
+import type { OpenAIInboundLeg } from "../lib/voice/openai-inbound-token";
 import { resolveNativeInboundCallAdmission } from "../lib/voice/native-inbound-admission";
 import { recordMissedCall, type MissedCallReason } from "../lib/voice/missed-calls";
 import { enforceFundedCarrierCallLimit } from "../lib/voice/funded-carrier-call";
@@ -132,6 +134,7 @@ async function resolveInboundContext(
   callId: string,
   twilioCallSid: string,
   callRecordingEnabled: boolean,
+  leg?: OpenAIInboundLeg,
 ) {
   const [line] = await drizzle
     .select({
@@ -162,6 +165,7 @@ async function resolveInboundContext(
           callId,
           twilioCallSid,
           callerNumber,
+          sourceId: inboundSourceId(twilioCallSid, leg),
         }),
       ),
     },
@@ -426,6 +430,7 @@ async function admitRealtimeCall(
         // Recording capture and disclosure both read the decision signed into
         // the token when the TwiML was created; the agent row is never re-read.
         inboundVerification?.ok ? inboundVerification.claims.callRecordingEnabled : false,
+        inboundVerification?.ok ? inboundVerification.claims.leg : undefined,
       );
   if (!context) {
     log.warn("OpenAI incoming call rejected: no active BotBound line", {
@@ -446,6 +451,10 @@ async function admitRealtimeCall(
   const sessionInput: OpenAISipIncomingCall = { callId, ...context.call };
   if (inboundVerification?.ok) {
     sessionInput.inboundTwilioCallSid = inboundVerification.claims.twilioCallSid;
+    if (inboundVerification.claims.leg) sessionInput.inboundLeg = inboundVerification.claims.leg;
+    if (inboundVerification.claims.drill) {
+      sessionInput.fallbackDrill = inboundVerification.claims.drill;
+    }
   }
   if (sessionInput.direction === "inbound" && sessionInput.admission?.mode === "suspended") {
     // Coverage and capacity refusals are terminal for this new call. Do not

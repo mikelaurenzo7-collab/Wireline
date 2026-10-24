@@ -22,9 +22,45 @@ export type OpenAIInboundTokenClaims = {
    * between cannot make capture and disclosure disagree.
    */
   callRecordingEnabled: boolean;
+  /**
+   * Which leg of the inbound call this token admits. Absent for the primary
+   * leg. "failover" is an OpenAI leg after xAI never connected (the caller
+   * has heard nothing yet); "resume" is an OpenAI leg that replaces an xAI
+   * leg that failed mid-call (the caller already heard the greeting).
+   */
+  leg?: OpenAIInboundLeg;
+  /** A platform-admin, one-shot fallback drill armed for this call. */
+  drill?: InboundFallbackDrill;
   iat: number;
   exp: number;
 };
+
+export type OpenAIInboundLeg = "failover" | "resume";
+export type InboundFallbackDrill = "xai_session" | "clone_voice";
+
+const EXTENSION_CODES = {
+  failover: "f",
+  resume: "r",
+  xai_session: "s",
+  clone_voice: "c",
+} as const;
+
+function encodeExtension(claims: OpenAIInboundTokenClaims): string {
+  if (claims.leg) return EXTENSION_CODES[claims.leg];
+  if (claims.drill) return EXTENSION_CODES[claims.drill];
+  return "";
+}
+
+function parseExtension(
+  raw: string | undefined,
+): { leg?: OpenAIInboundLeg; drill?: InboundFallbackDrill } | null {
+  if (raw === undefined) return {};
+  if (raw === "f") return { leg: "failover" };
+  if (raw === "r") return { leg: "resume" };
+  if (raw === "s") return { drill: "xai_session" };
+  if (raw === "c") return { drill: "clone_voice" };
+  return null;
+}
 
 export type OpenAIInboundTokenVerification =
   | { ok: true; claims: OpenAIInboundTokenClaims }
@@ -50,25 +86,29 @@ function safeEqual(left: string, right: string): boolean {
 }
 
 function encodeClaims(claims: OpenAIInboundTokenClaims): string {
-  return Buffer.from(
-    [
-      claims.v,
-      claims.twilioCallSid,
-      claims.calledNumber,
-      claims.callerNumber || "",
-      claims.callRecordingEnabled ? "1" : "0",
-      String(claims.iat),
-      String(claims.exp),
-    ].join("|"),
-    "utf8",
-  ).toString("base64url");
+  const fields = [
+    claims.v,
+    claims.twilioCallSid,
+    claims.calledNumber,
+    claims.callerNumber || "",
+    claims.callRecordingEnabled ? "1" : "0",
+    String(claims.iat),
+    String(claims.exp),
+  ];
+  // The primary leg keeps the original seven-field shape byte for byte.
+  const extension = encodeExtension(claims);
+  if (extension) fields.push(extension);
+  return Buffer.from(fields.join("|"), "utf8").toString("base64url");
 }
 
 function parseClaims(payload: string): OpenAIInboundTokenClaims | null {
   try {
     const fields = Buffer.from(payload, "base64url").toString("utf8").split("|");
-    if (fields.length !== 7) return null;
-    const [v, twilioCallSid, calledRaw, callerRaw, recordingRaw, iatRaw, expRaw] = fields;
+    if (fields.length !== 7 && fields.length !== 8) return null;
+    const [v, twilioCallSid, calledRaw, callerRaw, recordingRaw, iatRaw, expRaw, extensionRaw] =
+      fields;
+    const extension = parseExtension(extensionRaw);
+    if (!extension) return null;
     const calledNumber = normalizeOpenAIPhoneNumber(calledRaw);
     const callerNumber = callerRaw ? normalizeOpenAIPhoneNumber(callerRaw) : null;
     const iat = Number(iatRaw);
@@ -92,6 +132,7 @@ function parseClaims(payload: string): OpenAIInboundTokenClaims | null {
       calledNumber,
       callerNumber,
       callRecordingEnabled: recordingRaw === "1",
+      ...extension,
       iat,
       exp,
     };
@@ -107,6 +148,8 @@ export function issueOpenAIInboundToken(input: {
   callerNumber?: string | null;
   /** The recording decision captured in the same response that builds the TwiML. */
   callRecordingEnabled?: boolean;
+  leg?: OpenAIInboundLeg;
+  drill?: InboundFallbackDrill;
   nowMs?: number;
   env?: NodeJS.ProcessEnv;
 }): { token: string; claims: OpenAIInboundTokenClaims } {
@@ -129,6 +172,8 @@ export function issueOpenAIInboundToken(input: {
     calledNumber,
     callerNumber,
     callRecordingEnabled: input.callRecordingEnabled === true,
+    ...(input.leg ? { leg: input.leg } : {}),
+    ...(!input.leg && input.drill ? { drill: input.drill } : {}),
     iat,
     exp: iat + TOKEN_TTL_SECONDS,
   };

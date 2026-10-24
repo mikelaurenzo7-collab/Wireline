@@ -6,7 +6,14 @@ import {
 export const VOICE_RECORDING_SAMPLE_RATE = 24_000;
 
 /** Encode bounded microphone samples to the same portable WAV accepted by the API. */
-export function encodeVoiceRecording(chunks: readonly Float32Array[], inputSampleRate: number) {
+export function encodeVoiceRecording(
+  chunks: readonly Float32Array[],
+  inputSampleRate: number,
+  bounds: { minSeconds: number; maxSeconds: number } = {
+    minSeconds: VOICE_REFERENCE_MIN_SECONDS,
+    maxSeconds: VOICE_REFERENCE_MAX_SECONDS,
+  },
+) {
   if (
     !Number.isSafeInteger(inputSampleRate) ||
     inputSampleRate < 8_000 ||
@@ -16,11 +23,10 @@ export function encodeVoiceRecording(chunks: readonly Float32Array[], inputSampl
   )
     throw new Error("The microphone recording could not be read. Record it again.");
   const length = chunks.reduce((total, chunk) => total + chunk.length, 0);
-  if (
-    length < VOICE_REFERENCE_MIN_SECONDS * inputSampleRate ||
-    length > VOICE_REFERENCE_MAX_SECONDS * inputSampleRate
-  )
-    throw new Error("Record between 6 and 20 seconds of your own voice.");
+  if (length < bounds.minSeconds * inputSampleRate || length > bounds.maxSeconds * inputSampleRate)
+    throw new Error(
+      `Record between ${bounds.minSeconds} and ${bounds.maxSeconds} seconds of your own voice.`,
+    );
   const input = new Float32Array(length);
   let offset = 0;
   for (const chunk of chunks) {
