@@ -60,7 +60,7 @@ export function formatResendApiError(status: number, body: string): string {
 
   if (status === 403 || /sending domain|domain (?:is )?not verified|verify (?:the |your )?domain/i.test(detail)) {
     const domain = extractFromDomain(resolveResendFromAddress());
-    return `Resend ${status}: ${detail}. Sending domain must be verified in Resend for "${domain}". Set RESEND_FROM_EMAIL or RESEND_FROM_DOMAIN in Vercel to match your verified domain, then redeploy.`;
+    return `Resend ${status}: ${detail}. Sending domain must be verified in Resend for "${domain}". Set RESEND_FROM_EMAIL or RESEND_FROM_DOMAIN in Render to match your verified domain, then redeploy.`;
   }
   return `Resend ${status}: ${detail}`;
 }
