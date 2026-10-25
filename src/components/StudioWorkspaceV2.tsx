@@ -170,6 +170,7 @@ function StudioWorkspaceContent() {
   const workroomRef = useRef<StudioWorkroomHandle>(null);
   const tryWorkroomRef = useRef<StudioWorkroomHandle>(null);
   const inspectorTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const computerRouteApplied = useRef(false);
   const panelExpandRef = useRef<HTMLButtonElement | null>(null);
   const splitWorkspace = useMediaQuery("(min-width: 1180px)");
   // Wide screens open Work chat beside its browser. Rehearsal and setup share
@@ -388,7 +389,10 @@ function StudioWorkspaceContent() {
         setParams(
           (current) => {
             const next = clearStudioInspectorSectionParams(current);
-            if (section !== "computer") next.delete("focus");
+            if (section !== "computer") {
+              next.delete("focus");
+              next.delete("panel");
+            }
             return next;
           },
           { replace: true },
@@ -402,17 +406,17 @@ function StudioWorkspaceContent() {
 
   useEffect(() => {
     // The Computer destination and the optional side panel share one workbench.
-    if (requestedAgentUnavailable || panelParam !== "computer" || !splitWorkspace) return;
+    // Keep its explicit route so the rail and reload retain the same destination.
+    if (panelParam !== "computer" || !splitWorkspace) {
+      computerRouteApplied.current = false;
+      return;
+    }
+    if (requestedAgentUnavailable || computerRouteApplied.current) return;
+    // Apply each explicit route once; local panel changes can render before the
+    // router commits their URL update and must not reopen the previous panel.
+    computerRouteApplied.current = true;
     openPanelSection("computer");
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current);
-        next.delete("panel");
-        return next;
-      },
-      { replace: true },
-    );
-  }, [openPanelSection, panelParam, requestedAgentUnavailable, setParams, splitWorkspace]);
+  }, [openPanelSection, panelParam, requestedAgentUnavailable, splitWorkspace]);
 
   const closeInspector = useCallback(() => {
     setPanelExpanded(false);
@@ -426,6 +430,7 @@ function StudioWorkspaceContent() {
             "configure",
           );
           next.delete("focus");
+          next.delete("panel");
           return next;
         },
         { replace: true },
@@ -435,6 +440,7 @@ function StudioWorkspaceContent() {
         (current) => {
           const next = clearStudioInspectorSectionParams(current);
           next.delete("focus");
+          next.delete("panel");
           return next;
         },
         { replace: true },

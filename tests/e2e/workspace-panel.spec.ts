@@ -533,8 +533,10 @@ test("ended Configure browser keeps three actions and an unsent draft reachable 
   for (const name of ["New task", "Tasks", "Open task activity"]) {
     const control = detail.getByRole("button", { name, exact: true });
     await control.scrollIntoViewIfNeeded();
-    await expect(control).toBeInViewport({ ratio: 1 });
     const box = (await control.boundingBox())!;
+    // Chromium rounds nested scroll offsets to whole pixels. Allow at most
+    // half a vertical pixel (observed: 0.109px), not a clipped control.
+    await expect(control).toBeInViewport({ ratio: 1 - 0.5 / box.height });
     expect(box.width).toBeGreaterThanOrEqual(44);
     expect(box.height).toBeGreaterThanOrEqual(44);
     expect(box.x).toBeGreaterThanOrEqual(0);
@@ -559,7 +561,8 @@ test("ended Configure browser keeps three actions and an unsent draft reachable 
   const back = page.getByRole("button", { name: "Back to task", exact: true });
   await expect(back).toHaveCount(1);
   await back.scrollIntoViewIfNeeded();
-  await expect(back).toBeInViewport({ ratio: 1 });
+  const backBox = (await back.boundingBox())!;
+  await expect(back).toBeInViewport({ ratio: 1 - 0.5 / backBox.height });
   await back.click();
   await expect(input).toHaveCount(0);
   await expect(newTask).toBeFocused();
@@ -733,6 +736,17 @@ test.describe("wide screens", () => {
     await expect(page.getByRole("combobox", { name: "Switch Bot", exact: true })).toHaveValue(
       bots[1].id,
     );
+    await page.reload();
+    await expect(rail.getByRole("link", { name: "Computer", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await panelTabs(page).getByRole("tab", { name: "Rehearse", exact: true }).click();
+    await expect(rail.getByRole("link", { name: "Workspace", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await expect(rail.locator('[aria-current="page"]')).toHaveCount(1);
     expect(fixture.starts).toEqual([]);
   });
 

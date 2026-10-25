@@ -234,7 +234,7 @@ describe("Studio settings-to-Test handoff", () => {
     expect(nodes.find((node) => node.type === "workroom")?.props.mode).toBe("configure");
     expect(h.params.get("agent")).toBe("bot-a");
     expect(h.params.get("focus")).toBe("computer");
-    expect(h.params.has("panel")).toBe(false);
+    expect(h.params.get("panel")).toBe("computer");
 
     h.params = new URLSearchParams("agent=bot-a");
     expect(render().find((node) => node.type === "resizable-panel")?.props.fill).toBe(false);
