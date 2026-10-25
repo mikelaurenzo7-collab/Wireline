@@ -411,14 +411,9 @@ export default function BillingSettings() {
           onCheckoutAvailabilityChange={setCheckoutAvailability}
         />
 
-        <UsageSpendCard
-          refreshKey={refreshKey}
-          hasSubscription={Boolean(subscription?.has_subscription)}
-        />
-
         {!loading && !statusUnavailable && paidPlan && !usagePlan && plan ? (
           <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-            Plan capacity · {plan.included_phone_numbers} live number
+            Current Plan Capacity · {plan.included_phone_numbers} live number
             {plan.included_phone_numbers === 1 ? "" : "s"} included
           </p>
         ) : null}
@@ -516,6 +511,21 @@ export default function BillingSettings() {
             </article>
           </section>
         )}
+
+        <UsageSpendCard
+          refreshKey={refreshKey}
+          hasSubscription={Boolean(subscription?.has_subscription)}
+          grantedPlanName={
+            !loading &&
+            !statusUnavailable &&
+            !subscription?.has_subscription &&
+            paidPlan &&
+            !usagePlan &&
+            (subscription?.status === "active" || subscription?.status === "trialing")
+              ? plan?.name
+              : undefined
+          }
+        />
 
         {actionError ? (
           <StatusNotice tone="destructive" title="Billing Action Unavailable" className="mt-4">

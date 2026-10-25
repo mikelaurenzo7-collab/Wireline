@@ -23,9 +23,11 @@ import type { UsageSpendResponse } from "../../types/api-billing";
 export default function UsageSpendCard({
   refreshKey = 0,
   hasSubscription = false,
+  grantedPlanName,
 }: {
   refreshKey?: number;
   hasSubscription?: boolean;
+  grantedPlanName?: string;
 }) {
   const [state, setState] = useState<UsageSpendResponse | null>(null);
   const [capDraft, setCapDraft] = useState("");
@@ -138,11 +140,22 @@ export default function UsageSpendCard({
     // as an active allowance or lead an existing subscriber to a dead end.
     if (hasSubscription) return null;
     if (!canActivate("usage")) return null;
+    const Offer = grantedPlanName ? "details" : "div";
     return (
-      <section className="mt-6" aria-label="Pay for what you use">
-        <article className="wl-paper wl-paper-elevated space-y-4 p-5 sm:p-6">
+      <section className="mt-6" aria-label="Optional Subscription">
+        <Offer className="wl-paper wl-paper-elevated space-y-4 p-5 sm:p-6">
+          {grantedPlanName ? (
+            <summary className="cursor-pointer text-sm font-semibold wl-focus-ring-halo">
+              Explore Shared Work Plans
+            </summary>
+          ) : null}
           <div>
-            <h2 className="text-base font-semibold">Shared Work Plan</h2>
+            <h2 className="text-base font-semibold">Start a Subscription</h2>
+            {grantedPlanName ? (
+              <p className="mt-1 text-sm text-muted-foreground">
+                Optional. Your current {grantedPlanName} access is granted separately.
+              </p>
+            ) : null}
             <label className="mt-3 block text-sm font-semibold">
               Plan
               <select
@@ -194,7 +207,7 @@ export default function UsageSpendCard({
               {message}
             </p>
           ) : null}
-        </article>
+        </Offer>
       </section>
     );
   }

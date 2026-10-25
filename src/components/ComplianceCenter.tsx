@@ -5,6 +5,7 @@ import { Download, ExternalLink, Loader2, Shield } from "lucide-react";
 import DncManager from "./DncManager";
 import DncRegistrationCard, { DNC_REGISTRATION_STATE_LABEL } from "./DncRegistrationCard";
 import { authFetch } from "../lib/api";
+import { formatPhone } from "../lib/safe-number";
 import type { DncSellerRegistrationState } from "../lib/dnc-seller-registration-rules";
 import type { ConsentLedgerEvent } from "../lib/tcpa-consent";
 import { Button, Skeleton } from "./atoms";
@@ -256,7 +257,7 @@ export default function ComplianceCenter() {
                       </span>
                     </div>
                     <p className="mt-1 truncate text-xs text-muted-foreground">
-                      {entry.customer_number || "Unknown number"}
+                      {formatPhone(entry.customer_number, "Unknown Number")}
                       {entry.state ? ` · ${entry.state}` : ""}
                     </p>
                   </div>

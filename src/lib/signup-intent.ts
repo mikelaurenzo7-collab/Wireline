@@ -111,7 +111,7 @@ function setUsageAddonParams(params: URLSearchParams, addons: UsageSignupAddons)
 
 export function usageAddonsFromIntent(intent: SignupIntent | null | undefined): UsageSignupAddons {
   return {
-    number: intent?.preferredUsageAddons?.number !== false,
+    number: intent?.preferredUsageAddons?.number === true,
     emailAddress: intent?.preferredUsageAddons?.emailAddress === true,
   };
 }
@@ -316,7 +316,7 @@ export function parseSignupIntent(search: string): SignupIntent | null {
     if (isUsageTierId(tier)) intent.preferredUsageTier = tier;
     if (params.has("number") || params.has("email_address")) {
       intent.preferredUsageAddons = {
-        number: params.get("number") !== "0",
+        number: params.get("number") === "1",
         emailAddress: params.get("email_address") === "1",
       };
     }

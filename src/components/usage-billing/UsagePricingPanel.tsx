@@ -255,7 +255,7 @@ export default function UsagePricingPanel({
             label="Average Call Length"
             value={avgCallMinutes}
             min={1}
-            max={15}
+            max={60}
             step={1}
             suffix="min"
             onChange={setAvgCallMinutes}

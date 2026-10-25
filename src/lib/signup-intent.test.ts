@@ -7,9 +7,27 @@ import {
   recommendedPlanFromIntent,
   sanitizeSignupIntent,
   signupTemplateLabel,
+  usageAddonsFromIntent,
 } from "./signup-intent";
 
 describe("signup-intent", () => {
+  it("never adds a paid number without an explicit selection", () => {
+    expect(usageAddonsFromIntent(null)).toEqual({ number: false, emailAddress: false });
+    expect(usageAddonsFromIntent(parseSignupIntent("?plan=usage&tier=standard"))).toEqual({
+      number: false,
+      emailAddress: false,
+    });
+    expect(usageAddonsFromIntent(parseSignupIntent("?plan=usage&email_address=1"))).toEqual({
+      number: false,
+      emailAddress: true,
+    });
+    expect(
+      usageAddonsFromIntent(parseSignupIntent("?plan=usage&number=1&email_address=0")),
+    ).toEqual({
+      number: true,
+      emailAddress: false,
+    });
+  });
   it("normalizes retired plan ids into the current commercial model", () => {
     expect(parseSignupIntent("?plan=personal-plus")?.preferredPlanId).toBe("team");
     expect(parseSignupIntent("?plan=business-starter")?.preferredPlanId).toBe("starter");

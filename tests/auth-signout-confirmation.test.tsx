@@ -8,6 +8,7 @@ const h = vi.hoisted(() => ({
   refs: [] as Array<{ current: unknown }>,
   stateCursor: 0,
   refCursor: 0,
+  pathname: "/accept-invite",
   fetch: vi.fn(),
   setRecoveryOwner: vi.fn(),
   clearLastAgent: vi.fn(),
@@ -33,7 +34,7 @@ vi.mock("react", async (importOriginal) => ({
   useMemo: (factory: () => unknown) => factory(),
   useEffect: (effect: () => void | (() => void)) => h.effects.push(effect),
 }));
-vi.mock("react-router", () => ({ useLocation: () => ({ pathname: "/accept-invite" }) }));
+vi.mock("react-router", () => ({ useLocation: () => ({ pathname: h.pathname }) }));
 vi.mock("../src/lib/api", () => ({
   AUTH_SESSION_EXPIRED_EVENT: "session-expired",
   refreshSessionIfNeeded: vi.fn(),
@@ -79,6 +80,7 @@ beforeEach(() => {
   h.states = [];
   h.refs = [];
   h.effects = [];
+  h.pathname = "/accept-invite";
   h.fetch.mockReset();
   h.setRecoveryOwner.mockReset();
   h.clearLastAgent.mockReset();
@@ -277,4 +279,46 @@ describe("cookie authentication with restricted browser storage", () => {
     expect(h.setRecoveryOwner).toHaveBeenCalledWith(null);
     expect(h.clearLastAgent).toHaveBeenCalledOnce();
   });
+});
+
+describe("public page session hydration", () => {
+  it.each(["/", "/pricing", "/support", "/sms-consent"])(
+    "recognizes the cookie session on %s without delaying public content",
+    async (pathname) => {
+      h.states = [];
+      h.refs = [];
+      h.effects = [];
+      h.pathname = pathname;
+      stored.clear();
+      let finish!: (response: Response) => void;
+      h.fetch.mockReturnValueOnce(new Promise<Response>((resolve) => (finish = resolve)));
+      render();
+      h.effects[0]();
+      expect(render().loading).toBe(false);
+      expect(render().user).toBeNull();
+      await vi.waitFor(() => expect(h.fetch).toHaveBeenCalledOnce());
+      finish(new Response(JSON.stringify({ user: owner }), { status: 200 }));
+      await vi.waitFor(() => expect(render().user).toEqual(owner));
+      expect(render().sessionUnavailable).toBe(false);
+    },
+  );
+
+  it.each([401, 503])(
+    "keeps public content available after a %s session response",
+    async (status) => {
+      h.states = [];
+      h.refs = [];
+      h.effects = [];
+      h.pathname = "/pricing";
+      stored.clear();
+      h.fetch.mockResolvedValueOnce(new Response("{}", { status }));
+      render();
+      h.effects[0]();
+      expect(render().loading).toBe(false);
+      await vi.waitFor(() => expect(h.fetch).toHaveBeenCalledOnce());
+      await vi.waitFor(() => expect(vi.getTimerCount()).toBe(0));
+      expect(render().user).toBeNull();
+      expect(render().sessionUnavailable).toBe(status === 503);
+    },
+  );
 });

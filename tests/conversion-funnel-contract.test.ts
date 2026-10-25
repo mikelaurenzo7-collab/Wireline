@@ -117,17 +117,16 @@ describe("signup consent recovers at the control that needs attention", () => {
 });
 
 describe("account entry recognizes an existing session without blocking first paint", () => {
-  it("hydrates auth routes in the background while keeping marketing routes probe-free", () => {
+  it("hydrates public and auth routes in the background without blocking first paint", () => {
     const auth = read("src/contexts/AuthContext.tsx");
     const access = read("src/components/auth/AuthAccessPanel.tsx");
     expect(auth).toContain(
       'import { isAuthPortalPath, isSessionOptionalPublicPath } from "../lib/public-routes";',
     );
-    expect(auth).toMatch(
-      /if \(sessionOptional\) \{[\s\S]{0,500}setLoading\(false\);[\s\S]{0,500}if \(!isAuthPortalPath\(pathname\)\) return;/,
-    );
+    expect(auth).toMatch(/if \(sessionOptional\) \{[\s\S]{0,500}setLoading\(false\);/);
+    expect(auth).not.toContain("if (!isAuthPortalPath(pathname)) return;");
 
-    const backgroundGate = auth.indexOf("if (!isAuthPortalPath(pathname)) return;");
+    const backgroundGate = auth.indexOf("if (sessionOptional) {");
     const hydrate = auth.indexOf("await migrateLegacyLocalStorage();");
     expect(backgroundGate).toBeGreaterThan(-1);
     expect(hydrate).toBeGreaterThan(backgroundGate);

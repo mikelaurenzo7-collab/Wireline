@@ -403,7 +403,9 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
 
       <div className="space-y-5 py-5">
         <section>
-          <h4 className="text-xs font-semibold tracking-[0.08em] text-muted-foreground">Summary</h4>
+          <h4 className="text-xs font-semibold tracking-[0.08em] text-muted-foreground">
+            {selected.summary?.trim().startsWith("Caller:") ? "Caller Excerpt" : "Summary"}
+          </h4>
           <p className="wl-preserve-case mt-2 text-sm leading-6 text-foreground">
             {readableCallSummary(selected.summary, selected.transcript)}
           </p>

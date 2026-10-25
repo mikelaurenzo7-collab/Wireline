@@ -14,6 +14,7 @@ import { WorkspaceOperateIntro, WorkspacePageFrame } from "../components/layout/
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import { useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
+import { buildAgentOptionLabels } from "../lib/agent-option-labels";
 import { useChannelEntitlements } from "../hooks/useChannelEntitlements";
 import ChannelAccessNotice from "../components/ChannelAccessNotice";
 import {
@@ -115,6 +116,7 @@ export default function PhonePage() {
   if (rawTabParam === "analytics") {
     return <Navigate to="/insights?tab=performance&view=calls" replace />;
   }
+  const agentLabels = buildAgentOptionLabels(agents);
   const agentScope = showAgentScope ? (
     <select
       value={activeAgentId}
@@ -136,7 +138,7 @@ export default function PhonePage() {
       ) : null}
       {agents.map((agent) => (
         <option key={agent.id} value={agent.id}>
-          {agent.name}
+          {agentLabels.get(agent.id) || agent.name}
         </option>
       ))}
     </select>
