@@ -464,7 +464,7 @@ export default function SimpleVoicePicker({
 
       {!loading && ownerId ? (
         <PhoneVoiceCatalog
-          key={`${ownerId}:${agentId}`}
+          key={`catalog:${ownerId}:${agentId}`}
           agentId={agentId}
           selected={catalogVoice}
           onSelected={(voice) => {
