@@ -271,24 +271,8 @@
   max-width: 90rem;
 }
 
-.wl-pricing-page #plans article {
-  border-radius: 1.05rem;
-  box-shadow: none;
-  padding: clamp(0.95rem, 0.75rem + 0.5vw, 1.25rem);
-}
-
-.wl-pricing-page #plans article:has(.marketing-btn-primary) {
-  border-color: color-mix(
-    in srgb,
-    var(--wireline-color-action-primary-default) 46%,
-    var(--wireline-color-border-default)
-  );
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-action-primary-default) 5%,
-    var(--wireline-color-surface-default)
-  );
-}
+/* Pricing components own their card geometry and selection state. A primary
+ * button inside a panel does not make the whole panel a selected plan. */
 
 .marketing-surface.wl-features-page .wl-stitch-card {
   min-height: 100%;

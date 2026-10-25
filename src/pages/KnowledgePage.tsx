@@ -1,39 +1,18 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router";
 import { BookOpen, Mic } from "lucide-react";
 
 import { Button, EmptyState, NativeSelect } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import WorkspaceControlBand from "../components/layout/WorkspaceControlBand";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
-import WorkspaceSectionNav from "../components/layout/WorkspaceSectionNav";
-import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import WorkspaceShell from "../components/WorkspaceShell";
 import WorkspaceRecovery from "../components/WorkspaceRecovery";
 import KnowledgeBaseClaude from "../components/KnowledgeBaseClaude";
-import ReportingPreferences from "../components/training/ReportingPreferences";
-import RecentCallArtifactRequests from "../components/training/RecentCallArtifactRequests";
 import KnowledgeQuickAdd from "../components/training/KnowledgeQuickAdd";
 import WebsiteKnowledgeImport from "../components/training/WebsiteKnowledgeImport";
 import { useAgents } from "../contexts/AgentsContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
-
-type KnowledgeTabId = "knowledge" | "reports";
-
-const knowledgeTabs: Array<{
-  id: KnowledgeTabId;
-  label: string;
-  shortLabel?: string;
-  ariaLabel?: string;
-}> = [
-  {
-    id: "knowledge",
-    label: "Knowledge",
-    shortLabel: "Knowledge",
-    ariaLabel: "Bot knowledge",
-  },
-  { id: "reports", label: "Reports" },
-];
 
 function EmptyKnowledge() {
   return (
@@ -96,10 +75,6 @@ export default function KnowledgePage() {
   );
   const agentId = requestedAgentUnavailable ? "" : resolvedId || "";
   const rawRequestedTab = params.get("tab");
-  const requestedTab = rawRequestedTab as KnowledgeTabId | null;
-  const activeTab = knowledgeTabs.some((tab) => tab.id === requestedTab)
-    ? requestedTab!
-    : "knowledge";
   const populated = !loading && agents.length > 0;
 
   useEffect(() => {
@@ -113,16 +88,9 @@ export default function KnowledgePage() {
     navigate(`/studio?${studioParams.toString()}`, { replace: true });
   }, [agentId, navigate, rawRequestedTab, requestedId]);
 
-  function setActiveTab(tab: KnowledgeTabId) {
-    setParams(
-      (current) => {
-        const updated = new URLSearchParams(current);
-        updated.set("tab", tab);
-        if (agentId) updated.set("agent", agentId);
-        return updated;
-      },
-      { replace: true },
-    );
+  // Keep bookmarked report links useful while Calls becomes their single owner.
+  if (rawRequestedTab === "reports") {
+    return <Navigate to={`/phone?${params.toString()}`} replace />;
   }
 
   const secondaryControls = (
@@ -135,7 +103,7 @@ export default function KnowledgePage() {
           </Link>
         </Button>
       ) : null}
-      {populated && (activeTab === "knowledge" || requestedAgentUnavailable) ? (
+      {populated ? (
         <NativeSelect
           value={agentId}
           onChange={(event) =>
@@ -143,7 +111,7 @@ export default function KnowledgePage() {
               (current) => {
                 const updated = new URLSearchParams(current);
                 updated.set("agent", event.target.value);
-                updated.set("tab", activeTab);
+                updated.delete("tab");
                 return updated;
               },
               { replace: true },
@@ -176,22 +144,9 @@ export default function KnowledgePage() {
         </WorkspacePageFrame>
       ) : (
         <WorkspacePageFrame mode="standard">
-          <WorkspacePageIntro title="Knowledge" titleHidden />
-          <WorkspaceSectionNav />
           <WorkspaceControlBand
             ariaLabel="Knowledge controls"
-            primary={
-              <WorkspaceTabStrip
-                ariaLabel="Knowledge sections"
-                tabs={knowledgeTabs}
-                activeId={activeTab}
-                onSelect={(id) => setActiveTab(id as KnowledgeTabId)}
-                density="compact"
-                align="start"
-                wrap
-                className="mb-0 border-b-0 pb-0"
-              />
-            }
+            primary={<h1 className="text-lg font-semibold text-foreground">Knowledge</h1>}
             secondary={secondaryControls}
           />
 
@@ -212,15 +167,7 @@ export default function KnowledgePage() {
                 : "The Bot in this link is no longer available. Choose a Bot above before adding knowledge."}
             </StatusNotice>
           ) : null}
-          {activeTab === "knowledge" && !requestedAgentUnavailable ? (
-            <KnowledgeEditor key={agentId} agentId={agentId} />
-          ) : null}
-          {activeTab === "reports" ? (
-            <div className="space-y-5">
-              <ReportingPreferences />
-              <RecentCallArtifactRequests />
-            </div>
-          ) : null}
+          {!requestedAgentUnavailable ? <KnowledgeEditor key={agentId} agentId={agentId} /> : null}
         </WorkspacePageFrame>
       )}
     </WorkspaceShell>

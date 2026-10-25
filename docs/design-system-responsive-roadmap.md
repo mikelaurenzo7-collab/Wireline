@@ -18,6 +18,8 @@ The canonical design doctrine is [the design system](../.superdesign/design-syst
 | Generated CSS, TypeScript, extension and native token outputs | `scripts/build-design-tokens.mjs`; never edit generated outputs by hand                              |
 | Web light appearance                                          | `src/styles/theme-light.css`                                                                         |
 | CSS entry and cascade order                                   | `src/index.css`                                                                                      |
+| Neutral page canvases                                         | `src/styles/botbound-master-polish.css`; homepage composition in `src/styles/landing-prestige.css`   |
+| Supporting public page composition                            | `src/styles/public-design-system.css`                                                                |
 | Shared controls                                               | `src/components/atoms/` and `src/components/molecules/`                                              |
 | Workspace navigation and shell                                | `src/constants/navigation.ts`, `src/components/WorkspaceShell.tsx`, `src/styles/workspace-shell.css` |
 | Public navigation                                             | `src/components/marketing/PrecisionPublicHeader.tsx`                                                 |
@@ -37,13 +39,13 @@ Refine a component in its owner. Remove a competing override only after comparin
 
 ### Breakpoints
 
-| Viewport         | Mode          | Primary behavior                                                                                                |
-| ---------------- | ------------- | --------------------------------------------------------------------------------------------------------------- |
-| 320 to 479px     | Compact phone | Single column, compact utility actions with accessible names, 44px touch targets                                |
-| 480 to 767px     | Phone         | Single column, full width primary actions where useful; public navigation uses its menu                         |
-| 768 to 1023px    | Tablet        | Public navigation shows its links; workspace keeps its dock and More sheet; columns only where content fits     |
-| 1024 to 1279px   | Laptop        | Persistent workspace rail, initially collapsed to icons unless a saved preference exists; restrained page rails |
-| 1280px and wider | Desktop       | More working space within the same content rails; no additional navigation hierarchy                            |
+| Viewport         | Mode          | Primary behavior                                                                                            |
+| ---------------- | ------------- | ----------------------------------------------------------------------------------------------------------- |
+| 320 to 479px     | Compact phone | Single column, compact utility actions with accessible names, 44px touch targets                            |
+| 480 to 767px     | Phone         | Single column, full width primary actions where useful; public navigation uses its menu                     |
+| 768 to 1023px    | Tablet        | Public navigation shows its links; workspace keeps its dock and More sheet; columns only where content fits |
+| 1024 to 1279px   | Laptop        | Persistent workspace rail with labels, optional collapse and a saved width; restrained page rails           |
+| 1280px and wider | Desktop       | More working space within the same content rails; no additional navigation hierarchy                        |
 
 ### Spacing Tokens
 
@@ -89,9 +91,10 @@ For narrow mobile headers:
 
 ### Navigation
 
-- Supporting public pages expose Features, Pricing and account entry. Below 768px, the canonical menu button exposes the secondary links. The homepage keeps its dedicated entrance.
-- Workspace: the desktop rail appears from 1024px, defaults to icons, and preserves the customer's expanded state and width. Collapsed items retain accessible names and labels on hover and keyboard focus.
+- Public pages expose Product, Pricing and account entry. Below 768px, the canonical menu button exposes the secondary links.
+- Workspace: the desktop rail appears from 1024px, starts expanded, and preserves the customer's collapsed state and width. Collapsed items retain accessible names and labels on hover and keyboard focus.
 - Below 1024px, the workspace uses its task dock and grouped More sheet. Keep one active destination for every route; do not add a duplicate drawer or navigation array.
+- Knowledge and Computer are direct desktop rail destinations and grouped More links on compact screens. Do not repeat a Workspace/Knowledge section strip above the content. Reports and call files belong to Calls, with old Knowledge report URLs redirected without losing Bot scope.
 - Dialogs, menus and sheets manage focus, close with Escape where appropriate, and return focus to their trigger. Switching layout must preserve the current Bot, route, pending drafts and selected tab.
 
 ### Cards

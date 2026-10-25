@@ -7,29 +7,25 @@ import {
   OPERATE_NAV,
   PAGE_TITLES,
   WORKSPACE_NAV,
-  WORKSPACE_SECTIONS,
   desktopNavParentHref,
   isMobileMoreActive,
   isMobilePrimaryActive,
   isNavActive,
+  scopedWorkspaceHref,
   workspacePageTitle,
-  workspaceSectionForPath,
 } from "../src/constants/navigation";
 
 describe("BotBound workspace information architecture", () => {
   it("keeps daily desktop work focused and ordered", () => {
     expect(WORKSPACE_NAV.map((item) => item.href)).toEqual([
       "/studio",
+      "/computer",
       "/inbox",
       "/phone",
       "/calendar",
     ]);
-    expect(WORKSPACE_SECTIONS.map((section) => [section.href, section.label])).toEqual([
-      ["/studio", "Workspace"],
-      ["/knowledge", "Knowledge"],
-      ["/computer", "Computer"],
-    ]);
     expect(OPERATE_NAV.map((item) => item.href)).toEqual([
+      "/knowledge",
       "/insights",
       "/connections",
       "/settings",
@@ -67,17 +63,14 @@ describe("BotBound workspace information architecture", () => {
 
   it("keeps contextual children under their natural parent", () => {
     for (const section of ["/knowledge", "/computer"]) {
-      expect(desktopNavParentHref(section), section).toBe("/studio");
+      expect(desktopNavParentHref(section), section).toBeNull();
       expect(
-        WORKSPACE_NAV.filter((item) => isNavActive(section, item.href)).map((item) => item.href),
+        [...WORKSPACE_NAV, ...OPERATE_NAV]
+          .filter((item) => isNavActive(section, item.href))
+          .map((item) => item.href),
         section,
-      ).toEqual(["/studio"]);
+      ).toEqual([section]);
     }
-    expect(workspaceSectionForPath("/studio")).toBe("setup");
-    expect(workspaceSectionForPath("/templates")).toBe("setup");
-    expect(workspaceSectionForPath("/knowledge")).toBe("knowledge");
-    expect(workspaceSectionForPath("/computer/task-1")).toBe("computer");
-    expect(workspaceSectionForPath("/inbox")).toBeNull();
     expect(desktopNavParentHref("/templates")).toBe("/studio");
     expect(desktopNavParentHref("/approvals")).toBe("/inbox");
     expect(desktopNavParentHref("/apps")).toBe("/settings");
@@ -90,21 +83,31 @@ describe("BotBound workspace information architecture", () => {
     expect(isMobileMoreActive("/settings/team")).toBe(true);
     expect(isMobileMoreActive("/apps")).toBe(true);
 
-    // Workspace sections and Inbox tabs stay with their dock owner.
-    for (const pathname of ["/templates", "/knowledge", "/computer"]) {
-      expect(isMobileMoreActive(pathname), pathname).toBe(false);
-      expect(isMobilePrimaryActive(pathname, "/studio"), pathname).toBe(true);
+    for (const pathname of ["/knowledge", "/computer"]) {
+      expect(isMobileMoreActive(pathname), pathname).toBe(true);
+      expect(isMobilePrimaryActive(pathname, "/studio"), pathname).toBe(false);
     }
+    expect(isMobilePrimaryActive("/templates", "/studio")).toBe(true);
     expect(isMobileMoreActive("/approvals")).toBe(false);
     expect(isMobilePrimaryActive("/approvals", "/inbox")).toBe(true);
   });
 
   it("groups the More sheet by task instead of exposing a flat admin list", () => {
-    expect(MOBILE_MORE_GROUPS.map((group) => group.label)).toEqual(["Operate", "System"]);
+    expect(MOBILE_MORE_GROUPS.map((group) => group.label)).toEqual(["Build", "Operate", "System"]);
     expect(MOBILE_MORE_GROUPS.map((group) => group.items.map((item) => item.href))).toEqual([
-      ["/calendar"],
+      ["/knowledge"],
+      ["/computer", "/calendar"],
       ["/connections", "/settings"],
     ]);
+  });
+
+  it("preserves explicit Bot scope without narrowing account-wide destinations", () => {
+    for (const href of ["/studio", "/knowledge", "/computer"]) {
+      expect(scopedWorkspaceHref(href, "missing/bot")).toBe(`${href}?agent=missing%2Fbot`);
+      expect(scopedWorkspaceHref(href, " ")).toBe(href);
+    }
+    expect(scopedWorkspaceHref("/inbox", "bot-a")).toBe("/inbox");
+    expect(scopedWorkspaceHref("/phone", "bot-a")).toBe("/phone");
   });
 
   it("keeps deep page titles and intuitive keyboard ownership", () => {

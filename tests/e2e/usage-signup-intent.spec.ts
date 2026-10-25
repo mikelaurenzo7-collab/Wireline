@@ -129,6 +129,13 @@ for (const [tier, name, price] of [
     const offer = page.getByRole("region", { name: "Pay for what you use" });
     await expect(offer.getByRole("checkbox", { name: /^Extra Number/ })).not.toBeChecked();
     await expect(offer.getByRole("checkbox", { name: /^Extra Email Address/ })).toBeChecked();
+    // Returning signed-in visitors must keep the same tier through the auth redirect.
+    await page.goto(`/signup?plan=usage&interval=month&tier=${tier}&number=0&email_address=1`);
+    await expect(page).toHaveURL(
+      new RegExp(
+        `/settings/billing\\?plan=usage&interval=month&number=0&email_address=1&tier=${tier}$`,
+      ),
+    );
     await offer.getByRole("button", { name: "Review Plan", exact: true }).click();
     await expect
       .poll(() => purchases)

@@ -87,41 +87,11 @@ export const MOBILE_MORE_HREF = "__more__" as const;
  * { href: "/insights", label: "Insights" }
  * { href: "/connections", label: "Connections" }
  * { route: "/templates", parentHref: "/studio" }
- * { route: "/knowledge", parentHref: "/studio" }
- * { route: "/computer", parentHref: "/studio" }
  * { route: "/approvals", parentHref: "/inbox" }
  * { route: "/apps", parentHref: "/settings" }
  * { "/apps": "Apps" }
  * target === "/studio"
  */
-
-/**
- * The Workspace is everything about one Bot: how it is set up and tried
- * (Set Up), what it knows (Knowledge), and the live work it does on its own
- * computer (Computer). Those three share one rail destination and a section
- * strip instead of competing for top-level positions.
- */
-export const WORKSPACE_SECTIONS = [
-  { id: "setup", href: "/studio", label: "Workspace" },
-  { id: "knowledge", href: "/knowledge", label: "Knowledge" },
-  { id: "computer", href: "/computer", label: "Computer" },
-] as const;
-
-export type WorkspaceSectionId = (typeof WORKSPACE_SECTIONS)[number]["id"];
-
-export function workspaceSectionForPath(pathname: string): WorkspaceSectionId | null {
-  const current = pathname.replace(/\/+$/, "") || "/";
-  if (current === "/knowledge" || current.startsWith("/knowledge/")) return "knowledge";
-  if (current === "/computer" || current.startsWith("/computer/")) return "computer";
-  if (
-    current === "/studio" ||
-    current.startsWith("/studio/") ||
-    current === "/templates" ||
-    current.startsWith("/templates/")
-  )
-    return "setup";
-  return null;
-}
 
 /**
  * One registry owns the workspace IA. Contextual children deliberately remain
@@ -183,7 +153,8 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     eyebrow: "Operate",
     description: "Give your Bot web tasks on its own secure cloud computer.",
     icon: "Monitor",
-    parentHref: "/studio",
+    desktop: { group: "work", order: 15 },
+    mobile: { placement: "more", group: "Operate", order: 10 },
     shortcut: { key: "M", hint: "g m" },
   },
   {
@@ -203,7 +174,8 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     eyebrow: "Build",
     description: "Ground your Bot in trusted business information.",
     icon: "GraduationCap",
-    parentHref: "/studio",
+    desktop: { group: "manage", order: 5 },
+    mobile: { placement: "more", group: "Build", order: 5 },
     shortcut: { key: "T", hint: "g t" },
   },
   {
@@ -348,7 +320,7 @@ function byMobilePlacement(placement: MobileNavPlacement) {
 
 /** The Bot's Workspace and the channels it works in share the primary rail. */
 export const WORKSPACE_NAV: ShellNavItem[] = byDesktopOrder("work");
-/* Derived order: href: "/studio"; href: "/inbox"; href: "/phone"; href: "/calendar". */
+/* Derived order: href: "/studio"; href: "/computer"; href: "/inbox"; href: "/phone"; href: "/calendar". */
 
 /** Lower-frequency visibility and setup destinations stay secondary. */
 export const OPERATE_NAV: ShellNavItem[] = byDesktopOrder("manage");
@@ -364,7 +336,7 @@ export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
   {
     href: MOBILE_MORE_HREF,
     label: "More",
-    description: "Calendar, connections, and settings.",
+    description: "Knowledge, Computer, Calendar, Connections, and Settings.",
     icon: "MoreHorizontal",
     section: "System",
   },
@@ -404,6 +376,12 @@ export const SIDEBAR_NAV_ITEMS = NAV_GROUPS.flatMap((group) => group.items);
 
 export function cleanNavPath(pathname: string) {
   return pathname.replace(/\/+$/, "") || "/";
+}
+
+/** Carry explicit Bot scope, including stale IDs, across Bot-specific surfaces. */
+export function scopedWorkspaceHref(href: string, agentId?: string | null) {
+  if (!["/studio", "/knowledge", "/computer"].includes(href) || !agentId?.trim()) return href;
+  return `${href}?agent=${encodeURIComponent(agentId.trim())}`;
 }
 
 function matchLength(pathname: string, route: WorkspaceRouteMeta) {

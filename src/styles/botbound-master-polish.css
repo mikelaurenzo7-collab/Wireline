@@ -36,20 +36,17 @@
 /* -------------------------------------------------------------------------- */
 
 .marketing-surface,
-.wl-workspace-shell {
+.wl-workspace-shell,
+.wl-stitch-auth-shell {
+  /* Page canvases stay neutral. Brand color belongs to actions and selection,
+   * never a glow behind unrelated content. Keep a quiet light falloff so the
+   * warm canvas has depth without grain or a flat white fill. */
   background-color: var(--wireline-color-canvas-default);
-  background-image:
-    radial-gradient(
-      circle at 12% -10%,
-      color-mix(in srgb, var(--wireline-color-action-primary-default) 7%, transparent),
-      transparent 30rem
-    ),
-    radial-gradient(
-      circle at 94% 8%,
-      color-mix(in srgb, var(--wireline-color-action-secondary-default) 4%, transparent),
-      transparent 26rem
-    );
-  background-attachment: fixed;
+  background-image: radial-gradient(
+    ellipse at 50% 0%,
+    color-mix(in srgb, var(--wireline-color-surface-default) 72%, transparent),
+    transparent 46rem
+  );
 }
 
 /* Copy is either one whole line or evenly spread across a few; never one word

@@ -42,31 +42,8 @@
     0 30px 76px -46px rgba(0, 0, 0, 0.9);
 }
 
-body {
-  background-image:
-    radial-gradient(
-      circle at 50% -18rem,
-      color-mix(in srgb, var(--wireline-color-action-primary-default) 7%, transparent),
-      transparent 42rem
-    ),
-    linear-gradient(var(--wireline-color-canvas-default), var(--wireline-color-canvas-default));
-}
-
 /* Public presentation ------------------------------------------------------ */
-.marketing-surface {
-  background:
-    radial-gradient(
-      circle at 18% 0%,
-      color-mix(in srgb, var(--wireline-color-action-primary-default) 4%, transparent),
-      transparent 32rem
-    ),
-    radial-gradient(
-      circle at 82% 6%,
-      color-mix(in srgb, var(--wireline-color-action-secondary-default) 3%, transparent),
-      transparent 30rem
-    ),
-    var(--wireline-color-canvas-default);
-}
+/* Shared canvas presentation is owned by botbound-master-polish.css. */
 
 .marketing-surface > header {
   border-color: var(--wl-prestige-hairline);
@@ -247,18 +224,6 @@ body {
   height: 100dvh;
   max-height: 100dvh;
   overflow: hidden;
-  background:
-    radial-gradient(
-      circle at 50% 0%,
-      color-mix(in srgb, var(--wireline-color-action-primary-default) 9%, transparent),
-      transparent 32rem
-    ),
-    radial-gradient(
-      circle at 8% 100%,
-      color-mix(in srgb, var(--wireline-color-action-secondary-default) 4%, transparent),
-      transparent 28rem
-    ),
-    var(--wireline-color-canvas-default);
 }
 
 .wl-stitch-auth-shell::before {

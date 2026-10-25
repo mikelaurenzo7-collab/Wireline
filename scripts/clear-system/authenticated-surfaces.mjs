@@ -20,6 +20,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   const studioWorkspace = read("src/components/StudioWorkspaceV2.tsx");
   const studioWorkroom = read("src/components/StudioWorkroom.tsx");
   const trainingPage = read("src/pages/KnowledgePage.tsx");
+  const phonePage = read("src/pages/PhonePage.tsx");
   const knowledgeBase = read("src/components/KnowledgeBaseClaude.tsx");
   const productCopy = read("src/lib/product-copy.ts");
   const designVision = read("src/lib/wireline-design-vision.ts");
@@ -247,8 +248,14 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/pages/KnowledgePage.tsx",
     trainingPage,
-    /id: "knowledge"[\s\S]*id: "reports"/,
-    "Knowledge must expose knowledge and reports under the managed runtime",
+    /rawRequestedTab === "reports"[\s\S]*<Navigate to=\{`\/phone\?\$\{params\.toString\(\)\}`\} replace/,
+    "legacy Knowledge report links must preserve their Bot scope when moving to Calls",
+  );
+  mustInclude(
+    "src/pages/PhonePage.tsx",
+    phonePage,
+    /primaryTab === "reports" && !scopeBlocked[\s\S]*<ReportingPreferences[\s\S]*<RecentCallArtifactRequests key=\{activeAgentId\} agentId=\{activeAgentId \|\| null\}/,
+    "Calls must own reporting preferences and Bot-scoped call files",
   );
   mustInclude(
     "src/components/KnowledgeBaseClaude.tsx",

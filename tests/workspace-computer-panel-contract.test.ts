@@ -10,16 +10,12 @@ const read = (path: string) => readFileSync(path, "utf8");
 describe("Workspace computer panel", () => {
   const studio = read("src/components/StudioWorkspaceV2.tsx");
   const computer = read("src/pages/ComputerPage.tsx");
-  const sections = read("src/components/layout/WorkspaceSectionNav.tsx");
   const panel = read("src/components/layout/WorkspaceResizablePanel.tsx");
 
   it("opens Computer beside chat without creating a second workbench", () => {
     expect(computer).toContain('const SIDE_BY_SIDE_QUERY = "(min-width: 1180px)";');
     expect(computer).toContain('new URLSearchParams({ panel: "computer" })');
     expect(computer).toContain("<Navigate to={`/studio?${next.toString()}`} replace />");
-    expect(sections).toContain('useMediaQuery("(min-width: 1180px)")');
-    expect(sections).toContain("panel=computer");
-    expect(sections).not.toContain("panel=computer&focus=computer");
     expect(studio).toContain('useMediaQuery("(min-width: 1180px)")');
     expect(studio).toContain(
       'requestedAgentUnavailable || panelParam !== "computer" || !splitWorkspace',

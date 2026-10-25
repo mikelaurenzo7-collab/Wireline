@@ -126,6 +126,9 @@ describe("auth-redirect", () => {
       expect(resolvePostAuthDestination("personal", "?plan=starter&interval=year")).toBe(
         "/settings/billing?plan=starter&interval=year",
       );
+      expect(
+        resolvePostAuthDestination("personal", "?plan=usage&tier=plus&number=0&email_address=1"),
+      ).toBe("/settings/billing?plan=usage&interval=month&number=0&email_address=1&tier=plus");
       expect(resolvePostAuthDestination("personal", "?redirect=https%3A%2F%2Fevil.example")).toBe(
         "/studio",
       );

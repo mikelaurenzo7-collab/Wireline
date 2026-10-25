@@ -32,7 +32,10 @@ export const STUDIO_CANVAS_FORBIDDEN = {
     { id: "duplicate-rail", pattern: /aria-label="Workspace navigation"/ },
     { id: "agent-switcher", pattern: /StudioAgentBar/ },
   ],
-  studioChrome: [{ id: "full-roster-copy", pattern: /Your agents|All Bots/ }],
+  studioChrome: [
+    { id: "full-roster-copy", pattern: /Your agents|All Bots/ },
+    { id: "duplicate-workspace-sections", pattern: /WorkspaceSectionNav/ },
+  ],
   canvas: [
     { id: "agent-roster-grid", pattern: /Your agents/ },
     { id: "spatial-canvas", pattern: /StudioAgentCanvas/ },
@@ -85,7 +88,7 @@ export const STUDIO_CANVAS_REQUIRED = {
   navigation: [
     { id: "studio-route", pattern: /target === "\/studio"/ },
     { id: "studio-label", pattern: /label: "Workspace"/ },
-    { id: "workspace-sections", pattern: /WORKSPACE_SECTIONS/ },
+    { id: "scoped-workspace-navigation", pattern: /scopedWorkspaceHref/ },
     {
       id: "daily-work-order",
       pattern: /href: "\/studio"[\s\S]*href: "\/inbox"[\s\S]*href: "\/phone"/,

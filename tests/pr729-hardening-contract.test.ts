@@ -83,9 +83,11 @@ describe("PR 729 hardening contract", () => {
   });
 
   it("exposes manual special-file requests from Training", () => {
-    const training = read("src/pages/KnowledgePage.tsx");
+    const training = read("src/pages/PhonePage.tsx");
     const requests = read("src/components/training/RecentCallArtifactRequests.tsx");
-    expect(training).toContain("<RecentCallArtifactRequests />");
+    expect(training).toContain(
+      "<RecentCallArtifactRequests key={activeAgentId} agentId={activeAgentId || null} />",
+    );
     expect(requests).toContain("/api/call-logs/${encodeURIComponent(callId)}/artifact");
     expect(requests).toContain("/api/jobs/${encodeURIComponent(jobId)}/run");
   });

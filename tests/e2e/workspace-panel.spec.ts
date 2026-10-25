@@ -709,6 +709,33 @@ for (const width of [1206, 390, 320]) {
 test.describe("wide screens", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
+  test("direct Knowledge and Computer navigation retains the selected Bot", async ({ page }) => {
+    const fixture = await mockWorkspace(page);
+    await page.goto(`/studio?agent=${bots[1].id}`);
+    const rail = page.getByRole("complementary", { name: "Workspace navigation", exact: true });
+    await rail.getByRole("link", { name: "Knowledge", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/knowledge\\?agent=${bots[1].id}$`));
+    await expect(page.getByRole("combobox", { name: "Choose Bot", exact: true })).toHaveValue(
+      bots[1].id,
+    );
+    await expect(rail.locator('[aria-current="page"]')).toHaveCount(1);
+    await expect(rail.getByRole("link", { name: "Knowledge", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await rail.getByRole("link", { name: "Computer", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/studio\\?panel=computer&agent=${bots[1].id}$`));
+    await expect(rail.getByRole("link", { name: "Computer", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await expect(rail.locator('[aria-current="page"]')).toHaveCount(1);
+    await expect(page.getByRole("combobox", { name: "Switch Bot", exact: true })).toHaveValue(
+      bots[1].id,
+    );
+    expect(fixture.starts).toEqual([]);
+  });
+
   test("navigation starts readable and remembers the owner's compact preference", async ({
     page,
   }, testInfo) => {
@@ -753,9 +780,11 @@ test.describe("wide screens", () => {
     await mockWorkspace(page);
     await page.goto(`/studio?agent=${bots[0].id}`);
 
-    await expect(page.getByRole("navigation", { name: "Workspace sections" })).toBeVisible({
+    const rail = page.getByRole("complementary", { name: "Workspace navigation", exact: true });
+    await expect(rail.getByRole("link", { name: "Knowledge", exact: true })).toBeVisible({
       timeout: 20_000,
     });
+    await expect(page.getByRole("navigation", { name: "Workspace sections" })).toBeHidden();
     await expect(panelTabs(page).getByRole("tab")).toHaveText([
       "Browser",
       "Rehearse",
@@ -1260,6 +1289,20 @@ test.describe("wide screens", () => {
 
 test.describe("phones", () => {
   test.use({ viewport: { width: 390, height: 844 } });
+
+  test("Knowledge lives in More and preserves the Bot without a duplicate workspace tab", async ({
+    page,
+  }) => {
+    const run = await mockWorkspace(page);
+    await page.goto(`/studio?agent=${bots[0].id}`);
+    await expect(page.getByRole("navigation", { name: "Workspace sections" })).toHaveCount(0);
+    await page.getByRole("button", { name: "More destinations" }).click();
+    await page.getByRole("link", { name: "Knowledge", exact: true }).click();
+    await expect(page).toHaveURL(`/knowledge?agent=${bots[0].id}`);
+    await expect(page.getByRole("heading", { name: "Knowledge", exact: true })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Workspace sections" })).toHaveCount(0);
+    expect(run.starts).toEqual([]);
+  });
 
   test("mobile Configure and Browser preserve both drafts without starting work", async ({
     page,

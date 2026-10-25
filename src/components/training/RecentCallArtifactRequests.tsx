@@ -76,7 +76,7 @@ async function fetchArtifactPreferences(): Promise<ArtifactPreferences | null> {
   return body.preferences || null;
 }
 
-export default function RecentCallArtifactRequests() {
+export default function RecentCallArtifactRequests({ agentId }: { agentId?: string | null }) {
   const [preferences, setPreferences] = useState<ArtifactPreferences | null>(null);
   const [calls, setCalls] = useState<Call[]>([]);
   const [requests, setRequests] = useState<Record<string, RequestState>>({});
@@ -88,7 +88,11 @@ export default function RecentCallArtifactRequests() {
     let active = true;
     void Promise.all([
       fetchArtifactPreferences(),
-      authFetch("/api/calls?limit=12").then(async (response) => {
+      authFetch(
+        agentId
+          ? `/api/agents/${encodeURIComponent(agentId)}/calls?limit=12`
+          : "/api/calls?limit=12",
+      ).then(async (response) => {
         const body = (await response.json()) as { calls?: Call[]; error?: string };
         if (!response.ok) throw new Error(body.error || "Could not load recent calls.");
         return Array.isArray(body.calls) ? body.calls : [];
@@ -130,7 +134,7 @@ export default function RecentCallArtifactRequests() {
       for (const timer of timers.values()) window.clearTimeout(timer);
       timers.clear();
     };
-  }, []);
+  }, [agentId]);
 
   const enabled =
     preferences?.artifact_mode === "manual" && Boolean(preferences.artifact_destination);

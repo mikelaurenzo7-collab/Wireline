@@ -26,26 +26,28 @@ describe("legacy account-type navigation compatibility", () => {
     const groups = accountNavGroups("personal");
     expect(groups).toEqual(accountNavGroups("business"));
     expect(groups.map((group) => group.label)).toEqual(["Work", "Manage"]);
-    // Knowledge and Computer are Workspace sections, reached from /studio.
+    // Frequent Bot surfaces are directly reachable from the shared rail.
     expect(groups.find((group) => group.label === "Work")?.items.map((item) => item.path)).toEqual([
       "/studio",
+      "/computer",
       "/inbox",
       "/phone",
       "/calendar",
     ]);
     expect(
       groups.find((group) => group.label === "Manage")?.items.map((item) => item.path),
-    ).toEqual(["/insights", "/connections", "/settings"]);
+    ).toEqual(["/knowledge", "/insights", "/connections", "/settings"]);
   });
 
   it("keeps secondary tools out of the primary rail", () => {
     const paths = accountSidebarItems("personal").map((item) => item.path);
     expect(paths).not.toContain("/approvals");
     expect(paths).not.toContain("/apps");
-    expect(paths).not.toContain("/knowledge");
-    expect(paths).not.toContain("/computer");
-    // Approvals is an Inbox tab, so More carries only calendar and system routes.
+    expect(paths).toContain("/knowledge");
+    expect(paths).toContain("/computer");
     expect(MOBILE_MORE_NAV.map((item) => item.href)).toEqual([
+      "/knowledge",
+      "/computer",
       "/calendar",
       "/connections",
       "/settings",

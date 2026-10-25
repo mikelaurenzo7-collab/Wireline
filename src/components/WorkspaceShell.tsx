@@ -23,6 +23,7 @@ import {
   desktopNavParentHref,
   isMobilePrimaryActive,
   isNavActive,
+  scopedWorkspaceHref,
   type ShellNavItem,
 } from "../constants/navigation";
 import { navIcon } from "./nav-icons";
@@ -65,11 +66,13 @@ function RailLink({
   pathname,
   activeOverride,
   collapsed = false,
+  agentId,
 }: {
   item: ShellNavItem;
   pathname: string;
   activeOverride?: boolean;
   collapsed?: boolean;
+  agentId?: string | null;
 }) {
   const active = activeOverride ?? isNavActive(pathname, item.href);
   const Icon = navIcon(item.icon);
@@ -78,7 +81,7 @@ function RailLink({
   return (
     <RailHint label={item.label} enabled={collapsed}>
       <Link
-        to={item.href}
+        to={scopedWorkspaceHref(item.href, agentId)}
         aria-label={collapsed ? item.label : undefined}
         aria-current={active ? "page" : undefined}
         title={!collapsed && hint ? `${item.label} · ${hint}` : undefined}
@@ -99,12 +102,14 @@ function DesktopNavGroup({
   pathname,
   collapsed,
   secondaryRouteParent,
+  agentId,
 }: {
   label: string;
   items: ShellNavItem[];
   pathname: string;
   collapsed: boolean;
   secondaryRouteParent: string | null;
+  agentId?: string | null;
 }) {
   return (
     <nav className="wl-shell-nav-group" aria-label={label}>
@@ -119,6 +124,7 @@ function DesktopNavGroup({
           item={item}
           pathname={pathname}
           collapsed={collapsed}
+          agentId={agentId}
           activeOverride={secondaryRouteParent === item.href ? true : undefined}
         />
       ))}
@@ -192,13 +198,19 @@ function DesktopRail({
   onToggleCollapsed: () => void;
 }) {
   const { user } = useAuth();
-  const { agents, resolvedId } = useStudioActiveAgentId();
+  const { agents, requestedId, resolvedId } = useStudioActiveAgentId();
+  const { search } = useLocation();
+  const scopedAgentId = requestedId?.trim() || resolvedId;
+  const navPathname =
+    pathname === "/studio" && new URLSearchParams(search).get("panel") === "computer"
+      ? "/computer"
+      : pathname;
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
   const searchShortcut =
     typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform)
       ? "⌘K"
       : "Ctrl K";
-  const secondaryRouteParent = desktopNavParentHref(pathname);
+  const secondaryRouteParent = desktopNavParentHref(navPathname);
   const agent = resolvedId ? agents.find((candidate) => candidate.id === resolvedId) : undefined;
   const settingsActive = isNavActive(pathname, "/settings");
 
@@ -282,18 +294,20 @@ function DesktopRail({
         <DesktopNavGroup
           label="Work"
           items={WORKSPACE_NAV}
-          pathname={pathname}
+          pathname={navPathname}
           collapsed={collapsed}
           secondaryRouteParent={secondaryRouteParent}
+          agentId={scopedAgentId}
         />
 
         <div className="wl-shell-nav-divider" />
         <DesktopNavGroup
           label="Manage"
           items={OPERATE_NAV.filter((item) => item.href !== "/settings")}
-          pathname={pathname}
+          pathname={navPathname}
           collapsed={collapsed}
           secondaryRouteParent={secondaryRouteParent}
+          agentId={scopedAgentId}
         />
 
         <div className="wl-shell-rail-spacer" />
