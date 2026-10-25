@@ -184,6 +184,50 @@ test("Studio opens Computer for the Bot currently selected", async ({ page }) =>
   await expect(page.getByRole("button", { name: "Open browser", exact: true })).toBeVisible();
 });
 
+test("mobile Work, Configure, and Browser share one row without losing a task draft", async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockWorkspace(page);
+  await page.goto(`/studio?agent=${bots[1].id}`);
+  const views = page.getByRole("navigation", { name: "Workspace view" });
+  const draft = page.getByRole("textbox", { name: /^Task for / });
+  await expect(draft).toBeVisible();
+  expect(
+    await draft.evaluate((element) => element.getBoundingClientRect().height),
+  ).toBeLessThanOrEqual(54);
+  await draft.fill("Keep this unsent task while I inspect my Bot.");
+  await views.getByRole("button", { name: "Browser", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Open browser", exact: true })).toBeVisible();
+  await views.getByRole("button", { name: "Configure", exact: true }).click();
+  await expect(views.getByRole("button", { name: "Configure", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await views.getByRole("button", { name: "Work", exact: true }).click();
+  await expect(draft).toHaveValue("Keep this unsent task while I inspect my Bot.");
+  await expect(page.getByRole("button", { name: "Work", exact: true })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Configure", exact: true })).toHaveCount(1);
+  await draft.fill("");
+  await page.evaluate(() =>
+    document.documentElement.style.setProperty("font-size", "32px", "important"),
+  );
+  const inputMetrics = await draft.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      height: element.getBoundingClientRect().height,
+      line:
+        parseFloat(style.lineHeight) +
+        parseFloat(style.paddingTop) +
+        parseFloat(style.paddingBottom),
+    };
+  });
+  expect(inputMetrics.height).toBeGreaterThanOrEqual(inputMetrics.line);
+  await draft.scrollIntoViewIfNeeded();
+  await expect(draft).toBeInViewport();
+  await page.screenshot({ path: info.outputPath("work-composer-enlarged.png"), fullPage: true });
+});
+
 async function expectContentFits(container: Locator) {
   await expect
     .poll(() =>

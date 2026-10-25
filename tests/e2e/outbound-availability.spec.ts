@@ -75,9 +75,9 @@ for (const width of [320, 1280]) {
     await page.goto("/phone?tab=outbound");
     await expect(page.getByRole("combobox", { name: "Outbound section" })).toHaveCount(0);
     await expect(page.getByRole("tab", { name: /Lead Hunt|Sequences|Callbacks/ })).toHaveCount(0);
-    const opener = page.getByRole("button", { name: "New call", exact: true }).first();
+    const opener = page.getByRole("button", { name: "New Call", exact: true }).first();
     await opener.click();
-    const dialog = page.getByRole("dialog", { name: "New call", exact: true });
+    const dialog = page.getByRole("dialog", { name: "New Call", exact: true });
     await expect(dialog).toBeVisible();
     if (width === 320) {
       // Raw controls in the portalled dialog need the same mobile type floor
@@ -123,9 +123,9 @@ for (const width of [320, 1280]) {
     expect(outboundWrites).toEqual([]);
     await page.goto("/phone?tab=outbound&view=campaigns");
     await expect(
-      page.getByRole("heading", { name: "Campaign Calling Is Not in This Launch", exact: true }),
+      page.getByRole("heading", { name: "Campaign Calling Unavailable", exact: true }),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: "New call", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "New Call", exact: true })).toHaveCount(0);
     expect(outboundWrites).toEqual([]);
   });
 }

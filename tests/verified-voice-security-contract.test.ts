@@ -56,12 +56,13 @@ describe("retired private-voice provider contract", () => {
     expect(picker).toContain("OPENAI_REALTIME_VOICES");
   });
 
-  it("separates existing live-call voices from explicitly consented private previews", () => {
-    expect(terms).toContain("does not enable it");
-    expect(terms).toContain("separate, explicit permission");
+  it("discloses consent, live-call assignment, and provider deletion boundaries", () => {
+    expect(terms).toContain("enables it for supported live calls");
+    expect(terms).toContain("written release");
     expect(terms).toContain("artificial voices from its managed voice roster");
-    expect(privacy).toContain("Private voice previews require separate speaker permission");
-    expect(privacy).toContain("Delete the saved voice to revoke future use");
-    expect(`${terms}\n${privacy}`).not.toMatch(/ElevenLabs receives|source sample.*provider/i);
+    expect(privacy).toContain("With your separate consent and written");
+    expect(privacy).toContain("we send your voice recording to the speech provider");
+    expect(privacy).toContain("requests provider deletion");
+    expect(privacy).toContain("does not confirm erasure of every provider-held log or backup");
   });
 });

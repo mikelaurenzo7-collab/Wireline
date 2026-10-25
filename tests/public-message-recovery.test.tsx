@@ -126,7 +126,7 @@ describe.each([
   {
     name: "Support",
     component: SupportPage,
-    emailLabel: "Your email",
+    emailLabel: "Your Email",
     bodyLabel: "Details",
     success: "Request Received",
   },
@@ -202,7 +202,7 @@ describe.each([
     change(emailLabel, "updated+reply@example.com");
     change("Subject", "Updated & urgent?");
     change(bodyLabel, "Updated note with & punctuation\nand another line.");
-    const topic = name === "Contact" ? "General" : "Billing or refund";
+    const topic = name === "Contact" ? "General" : "Billing or Refund";
     elements(tree)
       .find((node) => node.type === "button" && text(node) === topic)
       ?.props.onClick?.();

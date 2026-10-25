@@ -1,6 +1,7 @@
 /**
  * PublicChangelog.tsx — public-facing changelog at /changelog.
  */
+import { useState } from "react";
 import { Rocket, Shield, Sparkles, Wrench, Zap } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingChrome from "./marketing/MarketingChrome";
@@ -173,6 +174,7 @@ const SORTED_ENTRIES = [...ENTRIES].sort(
 );
 
 export default function PublicChangelog() {
+  const [showEarlier, setShowEarlier] = useState(false);
   return (
     <>
       <PageMeta
@@ -187,7 +189,7 @@ export default function PublicChangelog() {
           </div>
 
           <ol className="space-y-6">
-            {SORTED_ENTRIES.map((entry) => {
+            {(showEarlier ? SORTED_ENTRIES : SORTED_ENTRIES.slice(0, 3)).map((entry) => {
               const meta = TAG_META[entry.tag];
               const Icon = meta.icon;
               return (
@@ -220,18 +222,14 @@ export default function PublicChangelog() {
             })}
           </ol>
 
-          <div className="mt-12 pt-6 border-t border-border">
-            <h2 className="mb-2 text-sm font-semibold">Under active evaluation</h2>
-            <ul className="marketing-body space-y-1 list-disc pl-5">
-              <li>Mobile controls for monitoring, coaching, and approvals on the go.</li>
-              <li>Reusable workflow recipes with clearer review and publishing controls.</li>
-              <li>Annual performance recaps built from each account's verified activity.</li>
-            </ul>
-            <p className="mt-3 text-caption">
-              Roadmap items are not commitments; scope and timing may change as customer evidence
-              improves.
-            </p>
-          </div>
+          <button
+            type="button"
+            aria-expanded={showEarlier}
+            onClick={() => setShowEarlier((value) => !value)}
+            className="wl-focus-ring-halo mt-6 inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-sm font-medium"
+          >
+            {showEarlier ? "Show Recent Updates" : "Earlier Updates"}
+          </button>
         </div>
       </MarketingChrome>
     </>

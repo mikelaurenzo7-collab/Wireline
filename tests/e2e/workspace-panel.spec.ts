@@ -313,7 +313,7 @@ test("Configure with history keeps a usable composer and actions at 320px with e
   expect(inputBox?.width, JSON.stringify(inputBox)).toBeGreaterThanOrEqual(120);
   const views = page.getByRole("navigation", { name: "Workspace view" });
   const conversationBox = await views
-    .getByRole("button", { name: "Conversation", exact: true })
+    .getByRole("button", { name: "Configure", exact: true })
     .boundingBox();
   const browserBox = await views
     .getByRole("button", { name: "Browser", exact: true })
@@ -1261,7 +1261,7 @@ test.describe("wide screens", () => {
 test.describe("phones", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("mobile Conversation and Browser preserve both drafts without starting work", async ({
+  test("mobile Configure and Browser preserve both drafts without starting work", async ({
     page,
   }) => {
     await mockWorkspace(page);
@@ -1285,7 +1285,7 @@ test.describe("phones", () => {
     await page.getByLabel("What should your Bot do?").fill("Compare suppliers.");
     await page
       .getByRole("navigation", { name: "Workspace view" })
-      .getByRole("button", { name: "Conversation", exact: true })
+      .getByRole("button", { name: "Configure", exact: true })
       .click();
     await expect(conversation(page)).toHaveValue("Keep this instruction while I browse.");
     await page
@@ -1334,7 +1334,7 @@ for (const width of [1440, 390]) {
     if (width < 1000)
       await page
         .getByRole("navigation", { name: "Workspace view" })
-        .getByRole("button", { name: "Conversation", exact: true })
+        .getByRole("button", { name: "Work", exact: true })
         .click();
     await expect(page.locator(".wl-work-current-step")).toContainText(
       "Reading the public directory.",
@@ -1355,7 +1355,7 @@ for (const width of [1440, 390]) {
       await proof(page, info, `work-browser-${width}`);
       await page
         .getByRole("navigation", { name: "Workspace view" })
-        .getByRole("button", { name: "Conversation", exact: true })
+        .getByRole("button", { name: "Work", exact: true })
         .click();
     }
     await page.getByRole("combobox", { name: "Switch Bot", exact: true }).selectOption(bots[1].id);
@@ -1420,7 +1420,7 @@ for (const width of [1440, 390]) {
     if (width < 1000)
       await page
         .getByRole("navigation", { name: "Workspace view" })
-        .getByRole("button", { name: "Conversation", exact: true })
+        .getByRole("button", { name: "Work", exact: true })
         .click();
     await expect(reply).toBeVisible();
     // Hold a pre-reply poll: its older checkpoint must not overwrite the confirmed reply.
@@ -1444,7 +1444,7 @@ for (const width of [1440, 390]) {
     if (width < 1000)
       await page
         .getByRole("navigation", { name: "Workspace view" })
-        .getByRole("button", { name: "Conversation", exact: true })
+        .getByRole("button", { name: "Work", exact: true })
         .click();
     await expect(reply).toHaveCount(0);
     await expect(page.locator(".wl-work-current-step")).toBeVisible();

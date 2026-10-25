@@ -211,7 +211,7 @@
   text-wrap: pretty;
 }
 
-.marketing-surface.wl-developers-page ul > li:last-child {
+.marketing-surface.wl-developers-page ul > li:last-child:nth-child(odd) {
   grid-column: 1 / -1;
   width: 100%;
   max-width: none;

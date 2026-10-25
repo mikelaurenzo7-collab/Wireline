@@ -1,6 +1,51 @@
 import { expect, test } from "@playwright/test";
 import { USAGE_PLAN } from "../../src/lib/plan-catalog";
 
+test("a retired signup link adopts shared usage without losing its use case", async ({ page }) => {
+  await page.route("**/api/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    await route.fulfill({
+      json:
+        path === "/api/billing/plans"
+          ? {
+              stripe_configured: true,
+              checkout_available: true,
+              usage_checkout_available: true,
+              billing_model: "usage",
+              plans: [
+                {
+                  ...USAGE_PLAN,
+                  configured: true,
+                  annual_configured: false,
+                  contact_sales: false,
+                  checkout_availability: "available",
+                  pricing_model: "usage",
+                },
+              ],
+            }
+          : { user: null },
+    });
+  });
+  await page.goto(
+    "/signup?plan=personal&interval=year&template=personal-assistant&utm_source=returning",
+  );
+  await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
+  await expect(page.getByText(/\$19\/month plus usage/)).toBeVisible();
+  await expect(page.getByText(/\$12\/month/)).toHaveCount(0);
+  await expect
+    .poll(() =>
+      page.evaluate(() => JSON.parse(localStorage.getItem("wireline_signup_intent_v1") || "{}")),
+    )
+    .toMatchObject({
+      preferredPlanId: "usage",
+      preferredBillingInterval: "month",
+      preferredTemplateId: "personal-assistant",
+      utmSource: "returning",
+    });
+  await page.reload();
+  await expect(page.getByText(/\$19\/month plus usage/)).toBeVisible();
+});
+
 test("selected usage identities survive the signup page and reach checkout", async ({ page }) => {
   let authenticated = false;
   const purchases: unknown[] = [];
@@ -56,8 +101,8 @@ test("selected usage identities survive the signup page and reach checkout", asy
   const privacy = page.getByRole("region", { name: "Privacy Choices" });
   await privacy.getByRole("button", { name: "Essential Only", exact: true }).click();
   const estimate = page.getByRole("article", { name: "Monthly estimate" });
-  await estimate.getByRole("checkbox", { name: /^BotBound number/ }).uncheck();
-  await estimate.getByRole("checkbox", { name: /^BotBound email address/ }).check();
+  await estimate.getByRole("checkbox", { name: /^BotBound number/i }).uncheck();
+  await estimate.getByRole("checkbox", { name: /^BotBound email address/i }).check();
   await estimate.getByRole("link", { name: "Get Started", exact: true }).click();
   await expect(page).toHaveURL(/\/signup\?plan=usage&interval=month&number=0&email_address=1$/);
   await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
@@ -68,7 +113,7 @@ test("selected usage identities survive the signup page and reach checkout", asy
   const offer = page.getByRole("region", { name: "Pay for what you use" });
   await expect(offer.getByRole("checkbox", { name: /^BotBound number/ })).not.toBeChecked();
   await expect(offer.getByRole("checkbox", { name: /^BotBound email address/ })).toBeChecked();
-  await offer.getByRole("button", { name: "Get Started", exact: true }).click();
+  await offer.getByRole("button", { name: "Review Plan", exact: true }).click();
   await expect
     .poll(() => purchases)
     .toEqual([{ plan_id: "usage", interval: "month", addons: { number: 0, email_address: 1 } }]);

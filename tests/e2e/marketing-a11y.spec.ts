@@ -236,6 +236,7 @@ test("public titles retain authored title case and heading semantics", async ({ 
 
   await page.goto("/changelog");
   await expect(page.getByRole("heading", { level: 1 })).toHaveCSS("text-transform", "none");
+  await page.getByRole("button", { name: "Earlier Updates", exact: true }).click();
   const monitoring = page.getByRole("heading", {
     name: "BotBound Runtime Monitoring",
     level: 2,

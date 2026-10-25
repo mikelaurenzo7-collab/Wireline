@@ -74,9 +74,9 @@ export default function StudioTaskChat({
     const textarea = input.current;
     if (!textarea) return;
     const resize = () => {
-      textarea.style.minHeight = "52px";
+      textarea.style.minHeight = "3.25rem";
       textarea.style.height = "0px";
-      textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 52), 160)}px`;
+      textarea.style.height = `${draft ? Math.min(Math.max(textarea.scrollHeight, 52), 160) : 52}px`;
     };
     resize();
     if (typeof ResizeObserver === "undefined") return;

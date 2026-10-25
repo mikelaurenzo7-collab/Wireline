@@ -91,7 +91,7 @@ test("a recipient can sign while session hydration hangs, without loading third-
   }));
   await page.route("**/api/auth/session", () => new Promise<void>(() => {}));
   await page.goto(`/voice-permission#token=${token}`, { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Call permission", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Call Permission", exact: true })).toBeVisible();
   await page.getByLabel("Your phone number", { exact: true }).fill("3125550100");
   await page.getByLabel("Your full name", { exact: true }).fill("Taylor Example");
   await expectPendingFormToFit(page);
@@ -122,7 +122,7 @@ test("recipient confirmation preserves its exact unknown-result draft at 320px a
       : { json: { ...view, permission: { ...permission, status: "granted" } } };
   });
   await page.goto(`/voice-permission#token=${token}`);
-  await expect(page.getByRole("heading", { name: "Call permission", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Call Permission", exact: true })).toBeVisible();
   await expect(page.getByText("Example LLC", { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/voice-permission$/);
   await page.evaluate(() => {

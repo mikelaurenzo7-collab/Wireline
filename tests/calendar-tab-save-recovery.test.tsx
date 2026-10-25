@@ -189,7 +189,7 @@ describe("Calendar pending saves across tabs", () => {
       false,
     );
     expect(
-      elements(page).find((node) => node.type === "button" && text(node) === "New appointment")
+      elements(page).find((node) => node.type === "button" && text(node) === "New Appointment")
         ?.props.disabled,
     ).toBe(false);
   });

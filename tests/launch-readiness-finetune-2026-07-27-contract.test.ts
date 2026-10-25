@@ -125,7 +125,7 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     expect(apps).toContain("Build your Bot from your editor.");
     expect(apps).not.toContain("first voice agent");
     expect(privacy).toMatch(
-      /operates a Bot platform for calls,\s+email, and computer tasks, with SMS for existing activated services/,
+      /operates a Bot platform for calls,\s+email, computer tasks, and activated SMS services/,
     );
     // BotBound is the product: AI vendors are a disclosed category, never named.
     expect(privacy).toContain("<strong>AI model providers</strong>");

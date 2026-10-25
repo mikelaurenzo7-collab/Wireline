@@ -122,7 +122,7 @@ export default function UsageSpendCard({ refreshKey = 0 }: { refreshKey?: number
       <section className="mt-6" aria-label="Pay for what you use">
         <article className="wl-paper wl-paper-elevated space-y-4 p-5 sm:p-6">
           <div>
-            <h2 className="text-base font-semibold">Your Shared Work Allowance</h2>
+            <h2 className="text-base font-semibold">Shared Work Plan</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               ${USAGE_BASE_USD_MONTHLY}/month includes ${USAGE_INCLUDED_WORK_USD} of work shared
               across calls, email and Computer. Your allowance resets monthly without rollover.
@@ -144,7 +144,7 @@ export default function UsageSpendCard({ refreshKey = 0 }: { refreshKey?: number
             </label>
           </div>
           <Button type="button" disabled={busy} onClick={() => void startCheckout()}>
-            Get Started
+            Review Plan
           </Button>
           {message ? (
             <p role="status" className="text-sm text-muted-foreground">

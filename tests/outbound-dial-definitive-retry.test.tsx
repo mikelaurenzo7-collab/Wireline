@@ -156,7 +156,7 @@ it("opens the reviewed call dialog with the Bot selected in Calls", () => {
   let hub = renderHub();
   expect(hub.find((node) => node.type === OutboundDialDialog)?.props.open).toBe(false);
   const newCall = hub.find(
-    (node) => node.type === "button" && node.props["aria-label"] === "New call",
+    (node) => node.type === "button" && node.props["aria-label"] === "New Call",
   );
   expect(newCall).toBeDefined();
   newCall!.props.onClick!();

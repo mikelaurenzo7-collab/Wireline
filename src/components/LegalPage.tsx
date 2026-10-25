@@ -123,12 +123,11 @@ export function TermsOfService() {
 
       <Section title="2. Service Description">
         <p>
-          BotBound provides voice, email, and computer tools for conversations and workflows.
-          Current offerings focus on inbound calls, reviewed personal calls, reviewed business
-          service and appointment calls, email, Bot configuration, and analytics. Email activation
-          requires a setup review. SMS and campaign calling are not part of the current launch for
-          new customers. Existing channel services remain subject to their plan, sender
-          verification, and permission requirements.
+          BotBound provides voice, email, and computer tools for conversations and workflows. These
+          include inbound calls, reviewed outbound calls, email, supported SMS workflows, Bot
+          configuration, and analytics. Channel availability depends on your plan, setup, sender
+          verification, recipient permission, and provider approval. Campaign calling is unavailable
+          unless explicitly enabled for your account.
         </p>
       </Section>
 
@@ -184,11 +183,12 @@ export function TermsOfService() {
       <Section title="5. Synthetic Voice Use">
         <p>
           BotBound provides artificial voices from its managed voice roster for phone calls and
-          browser rehearsals. An optional private operator pilot accepts a recording of your own
-          voice only after separate, explicit permission, for private synthetic voice previews.
-          Saving or approving a recording does not enable it for live calls. Do not upload another
-          person's voice or use a clone to impersonate anyone. You remain responsible for every
-          identification, disclosure, and consent required for the calls and messages you configure.
+          browser rehearsals. You may create a clone of your own voice after providing the separate
+          speaker consent and written release shown during setup. Assigning a ready clone to a Bot
+          enables it for supported live calls. Browser rehearsals may use the built-in voice, as
+          identified in the interface. Do not upload another person's voice or use a clone to
+          impersonate anyone. You remain responsible for every identification, disclosure, and
+          consent required for the calls and messages you configure.
         </p>
         <p>
           You may not use synthetic speech for fraud, deception, harassment, impersonation, identity
@@ -247,18 +247,29 @@ export function TermsOfService() {
           cancellation takes effect at the end of the current billing period.
         </p>
         <p>
-          Plans include only the channels selected at checkout. Calls use included minutes first,
-          then prepaid Runtime Balance at $0.22 per minute, rounded up per call. A funded call may
-          use up to 10 additional minutes of paid completion credit ($2.20), within its admitted
-          duration and the session limit of 60 minutes. This buffer does not permit an unfunded new
-          call. Only one call may be active or awaiting settlement on a channel package.
+          Shared Work subscriptions include the allowance shown at checkout. Calls, delivered email
+          replies, and Computer work draw from one monthly allowance, with additional usage invoiced
+          through Stripe at the published rates. Calls and Computer time are measured by the second.
+          Optional phone numbers and email addresses carry separate recurring charges. Included work
+          resets each subscription month without rollover. Your spending limit is pretax; applicable
+          tax is added separately. Live work pauses when the available spending limit is reached,
+          subject to settlement of work already admitted.
         </p>
         <p>
-          We reserve available prepaid funds when a call starts and return unused funds after
-          settlement. Completion credit appears as an amount due in Runtime Balance. New calls and
-          prepaid extras pause until you top up; billing and saved records remain accessible. We do
-          not automatically charge your payment method for this usage or issue an automatic usage
-          invoice. A monthly allowance reset does not erase an amount due.
+          <strong>Existing prepaid channel plans.</strong> These plans retain the channels and
+          allowances selected at checkout. Calls use included minutes first, then prepaid Runtime
+          Balance at $0.22 per minute, rounded up per call. A funded call may use up to 10
+          additional minutes of paid completion credit ($2.20), within its admitted duration and the
+          session limit of 60 minutes. This buffer does not permit an unfunded new call. Only one
+          call may be active or awaiting settlement on a channel package.
+        </p>
+        <p>
+          For those prepaid plans, we reserve available funds when a call starts and return unused
+          funds after settlement. Completion credit appears as an amount due in Runtime Balance. New
+          calls and prepaid extras pause until you top up; billing and saved records remain
+          accessible. We do not automatically charge your payment method for prepaid-plan usage or
+          issue an automatic usage invoice for those plans. A monthly allowance reset does not erase
+          an amount due.
         </p>
         <p>
           <strong>Money back guarantee for 30 days.</strong> Submit a request to{" "}

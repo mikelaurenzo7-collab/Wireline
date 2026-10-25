@@ -24,7 +24,7 @@ import {
 // call log, outbound work, and the lines themselves.
 const PHONE_TABS = [
   { id: "logs", label: "History" },
-  { id: "outbound", label: "Place a reviewed call" },
+  { id: "outbound", label: "Reviewed Calls" },
   { id: "setup", label: "Lines" },
 ] as const;
 

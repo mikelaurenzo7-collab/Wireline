@@ -157,7 +157,7 @@ describe("developer endpoint copying", () => {
       }),
     );
     mount();
-    const copying = button("Copy endpoint")!.props.onClick!();
+    const copying = button("Copy Endpoint")!.props.onClick!();
     expect(writeText).toHaveBeenCalledWith("https://botbound.app/mcp");
     expect(button("Copying…")?.props.disabled).toBe(true);
     expect(text(render())).not.toContain("Endpoint copied.");
@@ -165,7 +165,7 @@ describe("developer endpoint copying", () => {
     await copying;
     expect(button("Copied")).toBeDefined();
     vi.advanceTimersByTime(2000);
-    expect(button("Copy endpoint")).toBeDefined();
+    expect(button("Copy Endpoint")).toBeDefined();
   });
 
   it.each(["rejected", "unavailable"])(
@@ -174,7 +174,7 @@ describe("developer endpoint copying", () => {
       if (failure === "rejected") writeText.mockRejectedValueOnce(new Error("Permission denied"));
       else vi.stubGlobal("navigator", {});
       mount();
-      await button("Copy endpoint")!.props.onClick!();
+      await button("Copy Endpoint")!.props.onClick!();
       const notice = elements(render()).find((node) => node.props.role === "status");
       expect(text(notice)).toBe("Couldn't copy. Select the endpoint to copy it manually.");
       expect(button("Copied")).toBeUndefined();
@@ -184,7 +184,7 @@ describe("developer endpoint copying", () => {
   it("clears the feedback timer when the page unmounts", async () => {
     writeText.mockResolvedValueOnce(undefined);
     mount();
-    await button("Copy endpoint")!.props.onClick!();
+    await button("Copy Endpoint")!.props.onClick!();
     expect(vi.getTimerCount()).toBe(1);
     cleanups.forEach((cleanup) => cleanup());
     expect(vi.getTimerCount()).toBe(0);
@@ -198,7 +198,7 @@ describe("developer endpoint copying", () => {
       }),
     );
     mount();
-    const copying = button("Copy endpoint")!.props.onClick!();
+    const copying = button("Copy Endpoint")!.props.onClick!();
     cleanups.forEach((cleanup) => cleanup());
     finish();
     await copying;

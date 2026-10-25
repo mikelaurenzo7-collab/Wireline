@@ -1,4 +1,4 @@
-import { Globe, Maximize2, MessageCircle, Minimize2, Plus, Sparkles, Users, X } from "lucide-react";
+import { Globe, Maximize2, Minimize2, Plus, Sparkles, Users, X } from "lucide-react";
 import { Link, Navigate, useSearchParams } from "react-router";
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 
@@ -678,7 +678,7 @@ function StudioWorkspaceContent() {
     ) : null;
 
   // Wide screens offer Browser, Rehearse, Set up and Summary in one pane.
-  // Phones switch Conversation/Browser in place and open setup details explicitly.
+  // Phones keep Work, Configure, and Browser in one row.
   const panelTabs = splitWorkspace
     ? PANEL_TABS
     : PANEL_TABS.filter((tab) => tab.id !== "try" && tab.id !== "computer");
@@ -843,11 +843,12 @@ function StudioWorkspaceContent() {
         <button
           key={id}
           type="button"
-          aria-pressed={(id === "setup") === setupChat}
+          aria-pressed={!mobileBrowserOpen && (id === "setup") === setupChat}
           onClick={() => {
             setParams(
               (current) => {
                 const next = setStudioWorkroomModeParams(current, "configure");
+                next.delete("panel");
                 if (id === "setup") next.set("chat", "setup");
                 else {
                   next.delete("chat");
@@ -874,24 +875,7 @@ function StudioWorkspaceContent() {
     <div className="wl-studio-workspace flex h-full min-h-0 flex-col overflow-hidden bg-background">
       {(!splitWorkspace || !panelOpen) && !inspectorOpen ? (
         <nav className="wl-studio-surface-nav" aria-label="Workspace view">
-          <button
-            type="button"
-            aria-pressed={!mobileBrowserOpen}
-            onClick={() => {
-              setParams(
-                (current) => {
-                  const next = new URLSearchParams(current);
-                  next.delete("panel");
-                  next.delete("focus");
-                  return next;
-                },
-                { replace: true },
-              );
-            }}
-          >
-            <MessageCircle className="size-4" aria-hidden="true" />
-            Conversation
-          </button>
+          {chatModes}
           <button
             type="button"
             aria-pressed={mobileBrowserOpen}
@@ -921,7 +905,9 @@ function StudioWorkspaceContent() {
           className={`${(!splitWorkspace && inspectorOpen) || mobileBrowserOpen || panelFill ? "hidden" : "block"} min-h-0 min-w-0 flex-1 overflow-hidden`}
         >
           <div className="flex h-full min-h-0 flex-col">
-            <header className="wl-studio-mode-header">{chatModes}</header>
+            {splitWorkspace && panelOpen ? (
+              <header className="wl-studio-mode-header">{chatModes}</header>
+            ) : null}
             <div hidden={!setupChat} className="min-h-0 flex-1">
               {workroom}
             </div>

@@ -333,23 +333,6 @@ export default function Security() {
             </details>
           ) : null}
 
-          <div className="mt-12 border-t border-border pt-6 text-center">
-            <h2 className="mb-2 text-sm font-semibold">Under active evaluation</h2>
-            <ul className="mx-auto max-w-2xl space-y-1 pl-5 text-left marketing-body">
-              <li>Independent SOC 2 readiness work and audit planning.</li>
-              <li>Continuous regression coverage for tenant isolation and public data exposure.</li>
-              <li>
-                Additional data regions based on contractual demand and operational readiness.
-              </li>
-              <li>Hardware backed MFA and enterprise identity controls.</li>
-              <li>A structured vulnerability disclosure or bounty program with written scope.</li>
-            </ul>
-            <p className="mx-auto mt-3 max-w-2xl text-xs leading-5 text-muted-foreground">
-              Evaluation is not a delivery commitment. Contractual requirements apply only when
-              BotBound confirms them in writing.
-            </p>
-          </div>
-
           <div className="mt-10 text-caption text-center space-y-2">
             <p>
               Questions?{" "}

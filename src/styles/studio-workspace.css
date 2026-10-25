@@ -474,11 +474,15 @@
   border-bottom: 1px solid var(--studio-rule);
 }
 
+.wl-studio-surface-nav .wl-studio-chat-modes {
+  display: contents;
+}
+
 .wl-studio-surface-nav button {
   display: inline-flex;
   min-width: 0;
   min-height: 2.75rem;
-  flex: 1 1 9rem;
+  flex: 1 1 5rem;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
@@ -581,9 +585,7 @@
   /* Enlarged context and view controls must scroll away before they leave the
    * conversation shorter than a single action. Keep this scrollport inside the
    * shell's existing mobile-dock clearance, and preserve a usable workbench. */
-  [data-wireline-route="/studio"]
-    .wl-workspace-content-inner
-    > :has(> .wl-studio-context) {
+  [data-wireline-route="/studio"] .wl-workspace-content-inner > :has(> .wl-studio-context) {
     overflow-y: auto;
   }
 

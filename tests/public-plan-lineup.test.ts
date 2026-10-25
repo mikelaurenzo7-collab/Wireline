@@ -40,10 +40,10 @@ describe("public plan lineup", () => {
     expect(pricing).toContain(`Personal · $${PERSONAL_PLAN.price_usd_monthly}/month`);
   });
 
-  it("feeds Compare and the 404 hints instead of hardcoded prices", () => {
+  it("feeds Compare from the active catalog and keeps 404 navigation price-neutral", () => {
     expect(readFileSync("src/pages/Compare.tsx", "utf8")).toContain("price: publicPriceSummary()");
     expect(readFileSync("src/components/layout/NotFound.tsx", "utf8")).toContain(
-      "hint={publicPriceHint()}",
+      'hint="Plans And Usage"',
     );
   });
 });

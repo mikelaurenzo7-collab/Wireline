@@ -45,7 +45,8 @@ describe("launch truth contract", () => {
     expect(trust).toContain("BotBound does not claim HIPAA compliance or certification.");
     expect(trust).toContain("SSO, residency, DPA, BAA, support, and other enterprise terms");
     expect(trust).toContain("Important Boundary");
-    expect(trust).toContain("reserve spend before the provider runs");
+    expect(trust).toContain("reserve estimated spend before live work");
+    expect(trust).toContain("pretax spending limit");
     expect(trust).toContain("call transcripts, and a server controlled deletion workflow");
     expect(trust).not.toContain("always-on hard cap");
     expect(trust).not.toContain("opt-in recordings");

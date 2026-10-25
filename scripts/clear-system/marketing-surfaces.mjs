@@ -280,7 +280,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   mustInclude(
     "src/pages/Developers.tsx",
     developersPage,
-    /title: "Draft a bot"/,
+    /title: "Draft a Bot"/,
     "developer surface must call customer objects Bots",
   );
 }

@@ -66,8 +66,7 @@ function DirectOutboundDialDialog({
   const { agents, loading, degraded, phoneLookupDegraded } = useAgents();
   const { toast } = useToast();
   const voiceAgents = useMemo(
-    () =>
-      agents.filter((agent) => isReviewedOutboundCandidate(agent)),
+    () => agents.filter((agent) => isReviewedOutboundCandidate(agent)),
     [agents],
   );
 
@@ -426,7 +425,7 @@ function DirectOutboundDialDialog({
         <DialogHeader className="shrink-0 border-b border-border px-6 py-5">
           <DialogTitle className="flex items-center gap-2 font-[var(--wireline-font-family-display)] text-xl font-normal tracking-[-0.02em]">
             <Phone className="h-4 w-4 text-primary" aria-hidden />
-            {preparedCall ? "Review call" : "New call"}
+            {preparedCall ? "Review call" : "New Call"}
           </DialogTitle>
           <DialogDescription className="sr-only">
             Review the Bot, recipient, and task before placing a call.

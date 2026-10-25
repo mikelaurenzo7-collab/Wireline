@@ -7,12 +7,12 @@ import MarketingPageFrame from "./layout/MarketingPageFrame";
 import { Input } from "./ui/shadcn/Input";
 
 const ISSUE_TYPES = [
-  { value: "billing", label: "Billing or refund" },
-  { value: "tech", label: "Technical issue" },
-  { value: "feature", label: "Feature request" },
-  { value: "agent", label: "Call quality" },
-  { value: "account", label: "Account access" },
-  { value: "other", label: "Something else" },
+  { value: "billing", label: "Billing or Refund" },
+  { value: "tech", label: "Technical Issue" },
+  { value: "feature", label: "Feature Request" },
+  { value: "agent", label: "Call Quality" },
+  { value: "account", label: "Account Access" },
+  { value: "other", label: "Something Else" },
 ] as const;
 
 export function SupportPage() {
@@ -171,7 +171,7 @@ export function SupportPage() {
                 </div>
               </fieldset>
               <label className="grid gap-2 text-sm font-semibold text-foreground">
-                Your email
+                Your Email
                 <Input
                   required
                   type="email"

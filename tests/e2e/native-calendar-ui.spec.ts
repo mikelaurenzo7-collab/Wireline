@@ -139,7 +139,7 @@ for (const width of [320, 1440]) {
       const dock = (await page.locator(".wl-shell-dock").boundingBox())!;
       expect(action.y + action.height).toBeLessThanOrEqual(dock.y);
     }
-    const accepting = page.getByRole("switch", { name: "Accept bookings", exact: true });
+    const accepting = page.getByRole("switch", { name: "Accept Bookings", exact: true });
     await accepting.uncheck();
     await expect(accepting).not.toBeChecked();
     await save.click();

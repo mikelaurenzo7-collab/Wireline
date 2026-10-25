@@ -11,7 +11,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { BRAND } from "../../constants/brand-colors";
-import { publicPriceHint } from "../../lib/public-plan-lineup";
 
 /**
  * NotFound — context-aware 404. Detects whether the visitor is signed-in
@@ -102,7 +101,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               <NotFoundCard
                 to="/features"
                 icon={LayoutGrid}
-                label="Features"
+                label="Product"
                 hint="See how BotBound works"
                 accent={BRAND.colors.primary}
               />
@@ -110,7 +109,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
                 to="/pricing"
                 icon={Compass}
                 label="Pricing"
-                hint={publicPriceHint()}
+                hint="Plans And Usage"
                 accent={BRAND.colors.primary}
               />
             </>

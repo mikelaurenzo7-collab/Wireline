@@ -150,7 +150,7 @@ export default function CalendarAvailabilityPanel({
                 htmlFor="calendar-enabled"
                 className="min-w-0 break-words text-sm font-semibold"
               >
-                Accept bookings
+                Accept Bookings
               </label>
               <Switch
                 id="calendar-enabled"
@@ -221,7 +221,7 @@ export default function CalendarAvailabilityPanel({
                           value={hours.start}
                           onChange={(event) => setDay(day, { ...hours, start: event.target.value })}
                           required
-                          className="min-w-0 basis-full grow px-2 sm:basis-32"
+                          className="min-w-0 basis-32 grow px-2"
                         />
                         <span className="text-xs text-muted-foreground">to</span>
                         <Input
@@ -230,7 +230,7 @@ export default function CalendarAvailabilityPanel({
                           value={hours.end}
                           onChange={(event) => setDay(day, { ...hours, end: event.target.value })}
                           required
-                          className="min-w-0 basis-full grow px-2 sm:basis-32"
+                          className="min-w-0 basis-32 grow px-2"
                         />
                       </div>
                     ) : (

@@ -174,8 +174,8 @@ describe("billing plan decisions", () => {
     window.location.search = "?plan=usage&interval=month&number=0&email_address=1";
     render("usage");
     h.effects[0]();
-    await vi.waitFor(() => expect(button("usage", "Get Started")).toBeTruthy());
-    await button("usage", "Get Started").props.onClick?.();
+    await vi.waitFor(() => expect(button("usage", "Review Plan")).toBeTruthy());
+    await button("usage", "Review Plan").props.onClick?.();
     await vi.waitFor(() =>
       expect(h.fetch).toHaveBeenCalledWith(
         "/api/billing/checkout",

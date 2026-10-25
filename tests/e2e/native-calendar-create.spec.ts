@@ -128,7 +128,7 @@ for (const width of [320, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     const writes = await mockCalendar(page);
     await page.goto("/calendar");
-    await page.getByRole("button", { name: "New appointment", exact: true }).click();
+    await page.getByRole("button", { name: "New Appointment", exact: true }).click();
     const dialog = page.getByRole("dialog");
     await expect(page.getByLabel("Customer name", { exact: true })).toBeFocused();
     if (process.env.BOTBOUND_WORKSPACE_PROOF_DIR) {
@@ -225,7 +225,7 @@ test("a definite slot conflict preserves the draft and allows a different availa
 }) => {
   const writes = await mockCalendar(page, true, true);
   await page.goto("/calendar");
-  await page.getByRole("button", { name: "New appointment", exact: true }).click();
+  await page.getByRole("button", { name: "New Appointment", exact: true }).click();
   await page.getByLabel("Customer name", { exact: true }).fill("QA Conflict Draft");
   await page.getByLabel("Available time", { exact: true }).selectOption("09:00");
   await page.getByRole("button", { name: "Request appointment", exact: true }).click();
@@ -273,7 +273,7 @@ test("pending creation ignores repeated clicks and cannot be dismissed", async (
     });
   });
   await page.goto("/calendar");
-  await page.getByRole("button", { name: "New appointment", exact: true }).click();
+  await page.getByRole("button", { name: "New Appointment", exact: true }).click();
   await page.getByLabel("Customer name", { exact: true }).fill("QA Pending");
   await page.getByLabel("Available time", { exact: true }).selectOption("09:00");
   const create = page.getByRole("button", { name: "Request appointment", exact: true });
@@ -301,7 +301,7 @@ test("a conflict after an uncertain write retains the original frozen request", 
 }) => {
   const writes = await mockCalendar(page, true, false, true);
   await page.goto("/calendar");
-  await page.getByRole("button", { name: "New appointment", exact: true }).click();
+  await page.getByRole("button", { name: "New Appointment", exact: true }).click();
   await page.getByLabel("Customer name", { exact: true }).fill("QA Original Request");
   await page.getByLabel("Available time", { exact: true }).selectOption("09:00");
   await page.getByRole("button", { name: "Request appointment", exact: true }).click();

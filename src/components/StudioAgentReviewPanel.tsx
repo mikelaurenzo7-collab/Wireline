@@ -294,13 +294,6 @@ export default function StudioAgentReviewPanel({
           </StatusNotice>
         ) : null}
 
-        <BotLivePanel
-          agentId={agentId}
-          agentName={agentName}
-          compact={compact}
-          className={sectionClass}
-        />
-
         <section hidden={Boolean(error)} className={sectionClass} aria-label="Setup summary">
           {loading ? (
             <div className="divide-y divide-border" aria-busy="true">
@@ -325,7 +318,9 @@ export default function StudioAgentReviewPanel({
                       config?.directives,
                     ),
                 },
-                ...(access.includes("voice") ? [{ label: "Phone voice", value: voiceName }] : []),
+                ...(access.includes("voice")
+                  ? [{ label: "Built-In Voice", value: voiceName }]
+                  : []),
               ].map((item) => (
                 <div key={item.label} className="py-3 first:pt-0 last:pb-0">
                   <dt className="text-xs font-medium text-muted-foreground">{item.label}</dt>
@@ -537,6 +532,16 @@ export default function StudioAgentReviewPanel({
             </div>
           </details>
         </section>
+        <details className="group rounded-xl border border-border bg-card p-4">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium wl-focus-ring-halo">
+            Recent Activity
+            <ChevronDown
+              className="size-4 transition-transform group-open:rotate-180"
+              aria-hidden="true"
+            />
+          </summary>
+          <BotLivePanel agentId={agentId} agentName={agentName} compact={compact} />
+        </details>
       </div>
     </div>
   );

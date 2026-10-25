@@ -15,22 +15,22 @@ import { PageMeta } from "../lib/page-meta";
 
 const MCP_TOOL_GROUPS = [
   {
-    title: "Draft a bot",
+    title: "Draft a Bot",
     description: "Describe what you need and refine it in plain language.",
     tools: ["create_agent_draft", "update_agent_draft"],
   },
   {
-    title: "Rehearse privately",
+    title: "Rehearse Privately",
     description: "Try a conversation or a voice run. No live calls are placed.",
     tools: ["run_private_agent_turn", "start_private_voice_simulation"],
   },
   {
-    title: "Check status",
+    title: "Check Status",
     description: "See your bots, what they need next, and a workspace summary.",
     tools: ["list_botbound_agents", "get_botbound_agent_status", "get_botbound_workspace_summary"],
   },
   {
-    title: "Teach your bot",
+    title: "Teach Your Bot",
     description: "Add a fact or rule you confirm. Turn on Apps access first.",
     tools: ["get_agent_coaching_brief", "train_botbound_agent"],
   },
@@ -41,7 +41,7 @@ const MCP_CLIENTS = [
     title: "ChatGPT",
     description:
       "In ChatGPT web, add the endpoint below from Plugins using OAuth with CIMD. Full Bot actions require Business, Enterprise, or Edu access and workspace permission.",
-    action: "ChatGPT setup guide",
+    action: "ChatGPT Setup Guide",
     href: "https://help.openai.com/en/articles/12584461-connecting-custom-mcp-servers-in-chatgpt",
     icon: MessageSquareText,
   },
@@ -49,7 +49,7 @@ const MCP_CLIENTS = [
     title: "Claude",
     description:
       "Add BotBound as a custom connector in Claude with the MCP endpoint below, or run claude mcp add in Claude Code. Sign in, then build and privately rehearse your Bot.",
-    action: "Open Claude connectors",
+    action: "Open Claude Connectors",
     href: "https://claude.ai/settings/connectors",
     icon: Sparkles,
   },
@@ -111,24 +111,24 @@ export default function Developers() {
         aria-labelledby="mcp-apps-heading"
       >
         <div className="mx-auto max-w-5xl text-center">
-          <h1 className="marketing-hero-title mx-auto">Build your bot where you already work</h1>
+          <h1 className="marketing-hero-title mx-auto">Build Your Bot Where You Work</h1>
           <div className="marketing-hero__actions mt-7">
             <a
               href="#mcp-endpoint"
               className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
             >
-              View MCP endpoint
+              View MCP Endpoint
             </a>
             <a
               href={openApiUrl}
               className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
             >
-              OpenAPI map
+              OpenAPI Map
             </a>
           </div>
 
           <h2 id="mcp-apps-heading" className="mt-9 text-lg font-semibold text-foreground">
-            Connect once
+            Connect Once
           </h2>
 
           <div className="mt-4 grid gap-4 md:grid-cols-3">
@@ -176,7 +176,7 @@ export default function Developers() {
                   ? "Copied"
                   : copyState === "copying"
                     ? "Copying…"
-                    : "Copy endpoint"}
+                    : "Copy Endpoint"}
               </Button>
             </div>
             <p role="status" aria-live="polite" className="mt-2 text-sm text-muted-foreground">
@@ -220,7 +220,7 @@ export default function Developers() {
               href={openApiUrl}
               className="font-medium text-foreground underline underline-offset-4"
             >
-              Read the OpenAPI map
+              Read the OpenAPI Map
             </a>
             .
           </p>

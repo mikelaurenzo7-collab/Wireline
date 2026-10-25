@@ -7,7 +7,7 @@ import { Input } from "./ui/shadcn/Input";
 
 const INQUIRY_TYPES = [
   { value: "personal", label: "Build a Bot" },
-  { value: "sales", label: "Team rollout" },
+  { value: "sales", label: "Team Rollout" },
   { value: "partnership", label: "Partnership" },
   { value: "general", label: "General" },
 ] as const;
@@ -194,7 +194,7 @@ export function ContactPage() {
             to="/pricing"
             className="wl-focus-ring-halo inline-flex min-h-11 items-center rounded-md px-2 font-medium text-muted-foreground hover:text-foreground"
           >
-            See Plans
+            See Pricing
           </Link>
         </nav>
 
@@ -225,7 +225,7 @@ export function ContactPage() {
             <form onSubmit={onSubmit} noValidate className="mt-7 space-y-5">
               <fieldset>
                 <legend id={inquiryLabelId} className="mb-2 block wl-stitch-label">
-                  What can we help with?
+                  What Can We Help With?
                 </legend>
                 <select
                   aria-labelledby={inquiryLabelId}
@@ -287,7 +287,7 @@ export function ContactPage() {
                     setSubject(event.target.value);
                     clearFieldError("subject");
                   }}
-                  placeholder="What can we help with?"
+                  placeholder="What Can We Help With?"
                 />
               </label>
               <label className="grid gap-2 text-sm font-semibold text-foreground">
@@ -383,7 +383,7 @@ export function ContactPage() {
         <p className="mt-7 text-center text-sm text-muted-foreground">
           Need product help instead?{" "}
           <Link to="/support" className="font-semibold text-primary underline underline-offset-4">
-            Visit support <ArrowRight className="inline h-4 w-4" />
+            Visit Support <ArrowRight className="inline h-4 w-4" />
           </Link>
         </p>
       </section>

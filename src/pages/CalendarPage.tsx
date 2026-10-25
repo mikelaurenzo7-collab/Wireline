@@ -113,7 +113,7 @@ export default function CalendarPage() {
                   {bookingRecovery
                     ? "Check booking"
                     : configured && savedSettings?.enabled
-                      ? "New appointment"
+                      ? "New Appointment"
                       : "Set availability"}
                 </Button>
               }

@@ -86,6 +86,7 @@ export function usePaidPlanAvailability({
   const billingModel = status === "ready" ? billingModelFromPayload(plans) : "plans";
 
   return {
+    status,
     available,
     billingModel,
     canActivate,

@@ -213,7 +213,7 @@ export default function OverviewPage() {
                   onClick={() => setShowOutboundDial(true)}
                 >
                   <Phone size={15} aria-hidden="true" />
-                  New call
+                  New Call
                 </Button>
               ) : (
                 <Button asChild className="justify-center">

@@ -195,7 +195,7 @@ export default function VoicePermissionPage() {
   const status = view?.permission.status;
   return (
     <MarketingChrome authCanvas footer={false}>
-      <PageMeta title="Call permission" path="/voice-permission" noIndex />
+      <PageMeta title="Call Permission" path="/voice-permission" noIndex />
       <section className="mx-auto flex w-full min-w-0 max-w-xl flex-1 flex-col justify-center px-[12px] py-10 sm:px-6">
         <div className="mb-6 flex justify-center">
           <WirelineLockup />
@@ -204,7 +204,7 @@ export default function VoicePermissionPage() {
           <div className="mb-4 flex min-w-0 flex-wrap items-center gap-2">
             <ShieldCheck className="size-5 shrink-0 text-primary" aria-hidden="true" />
             <h1 className="min-w-0 text-xl font-semibold tracking-tight [overflow-wrap:anywhere] sm:text-2xl">
-              Call permission
+              Call Permission
             </h1>
           </div>
           {loading ? (

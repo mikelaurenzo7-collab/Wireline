@@ -77,21 +77,21 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
   const tiles = [
     {
       icon: Gauge,
-      label: "Response time",
+      label: "Response Time",
       value: summary.latency.ttftP95Ms != null ? `${summary.latency.ttftP95Ms}ms` : "N/A",
       sub: "95th percentile · goal under 1.2s",
       healthy: summary.latency.healthy,
     },
     {
       icon: PhoneOff,
-      label: "Flagged abnormal hangups",
+      label: "Flagged Hangups",
       value: formatPct(summary.hangups.abnormalRatePct, "0.0%"),
       sub: `${summary.hangups.abnormalCount} calls`,
       healthy: summary.hangups.abnormalRatePct <= 10,
     },
     {
       icon: Wrench,
-      label: "Bot actions",
+      label: "Bot Actions",
       value: formatPct(summary.toolCalls.successRatePct),
       sub:
         summary.toolCalls.total > 0
@@ -112,7 +112,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
     },
     {
       icon: Activity,
-      label: "Delivery errors",
+      label: "Delivery Errors",
       value: formatPct(summary.webhooks.failureRatePct),
       sub: `${summary.webhooks.failures}/${summary.webhooks.total || 0} events`,
       healthy: summary.webhooks.failureRatePct == null || summary.webhooks.failureRatePct <= 5,
@@ -144,7 +144,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
               <tile.icon
                 className={cn("w-3.5 h-3.5", tile.healthy ? "text-brand" : "text-amber-600")}
               />
-              <p className="font-mono wl-label text-muted">{tile.label}</p>
+              <p className="text-sm font-medium text-muted-foreground">{tile.label}</p>
             </div>
             <p
               className={cn(
@@ -162,7 +162,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
       {trends.length > 1 && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <div className="rounded-md wl-panel border border-border p-5">
-            <p className="wl-insight-label text-brand/70 mb-4">Response time trend</p>
+            <p className="wl-insight-label text-brand/70 mb-4">Response Time Trend</p>
             <div className="h-52 min-h-44">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trends}>
@@ -194,7 +194,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
           </div>
 
           <div className="rounded-md wl-panel border border-border p-5">
-            <p className="wl-insight-label text-brand/70 mb-4">Failure rates</p>
+            <p className="wl-insight-label text-brand/70 mb-4">Failure Rates</p>
             <div className="h-52 min-h-44">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trends}>
@@ -259,7 +259,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
         </div>
 
         <div className="rounded-md wl-panel border border-border p-5">
-          <p className="wl-insight-label text-brand/70 mb-4">Call endings</p>
+          <p className="wl-insight-label text-brand/70 mb-4">Call Endings</p>
           <div className="space-y-2">
             {topHangups.length === 0 ? (
               <p className="text-sm text-muted">No call endings recorded yet.</p>
@@ -280,7 +280,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
         </div>
 
         <div className="rounded-md wl-panel border border-border p-5">
-          <p className="wl-insight-label text-brand/70 mb-4">Recent calls</p>
+          <p className="wl-insight-label text-brand/70 mb-4">Recent Calls</p>
           <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
             {recent.length === 0 ? (
               <p className="text-sm text-muted">No recent calls with metrics.</p>

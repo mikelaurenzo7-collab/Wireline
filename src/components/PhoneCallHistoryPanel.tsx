@@ -146,7 +146,7 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
           title: agentId ? "No Calls for This Bot" : "No Calls Yet",
           action: { label: "Call the Line", to: `tel:${livePhone}` },
           secondary: {
-            label: "New call",
+            label: "New Call",
             to: agentId
               ? `/phone?tab=outbound&agent=${encodeURIComponent(agentId)}`
               : "/phone?tab=outbound",

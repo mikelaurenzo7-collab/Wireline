@@ -25,23 +25,23 @@ function usd(value: number): string {
 /** Plain-language rate lines, built from the catalog so copy never drifts. */
 export const USAGE_RATE_LINES: ReadonlyArray<readonly [string, string]> = [
   [
-    "Call minutes",
+    "Call Minutes",
     `${usd(CALLS.tiers[0].unitUsd)}/min from your shared work allowance, billed by the second.`,
   ],
   [
-    "Emails handled",
+    "Emails Handled",
     `${usd(EMAILS.tiers[0].unitUsd)} per delivered reply from the same allowance.`,
   ],
   [
-    "Computer minutes",
+    "Computer Minutes",
     `${usd(COMPUTER.tiers[0].unitUsd)}/min from the same allowance. Heavy tasks may pause at a processing limit.`,
   ],
   [
-    "BotBound number",
+    "BotBound Number",
     `${usd(USAGE_ADDONS.number.usdMonthly)}/month, only if your Bots take calls.`,
   ],
   [
-    "BotBound email address",
+    "BotBound Email Address",
     `${usd(USAGE_ADDONS.email_address.usdMonthly)}/month, only if you want one. Gmail and Outlook connect at no extra cost.`,
   ],
 ];
@@ -171,7 +171,7 @@ export default function UsagePricingPanel() {
         <div className="space-y-5">
           <Slider
             id="usage-calls"
-            label="Calls per month"
+            label="Calls per Month"
             value={callsPerMonth}
             min={0}
             max={2000}
@@ -181,7 +181,7 @@ export default function UsagePricingPanel() {
           />
           <Slider
             id="usage-minutes"
-            label="Average call length"
+            label="Average Call Length"
             value={avgCallMinutes}
             min={1}
             max={15}
@@ -191,7 +191,7 @@ export default function UsagePricingPanel() {
           />
           <Slider
             id="usage-emails"
-            label="Emails per month"
+            label="Emails per Month"
             value={emailsPerMonth}
             min={0}
             max={5000}
@@ -201,7 +201,7 @@ export default function UsagePricingPanel() {
           />
           <Slider
             id="usage-computer"
-            label="Computer time per month"
+            label="Computer Time per Month"
             value={computerMinutes}
             min={0}
             max={500}
@@ -212,14 +212,14 @@ export default function UsagePricingPanel() {
           <div className="grid gap-2 sm:grid-cols-2">
             <Toggle
               id="usage-number"
-              label={`BotBound number, ${usd(USAGE_ADDONS.number.usdMonthly)}/mo`}
+              label={`BotBound Number, ${usd(USAGE_ADDONS.number.usdMonthly)}/mo`}
               detail="A local number your Bots answer."
               checked={number}
               onChange={setNumber}
             />
             <Toggle
               id="usage-email-address"
-              label={`BotBound email address, ${usd(USAGE_ADDONS.email_address.usdMonthly)}/mo`}
+              label={`BotBound Email Address, ${usd(USAGE_ADDONS.email_address.usdMonthly)}/mo`}
               detail="Or connect the Gmail or Outlook you already use."
               checked={emailAddress}
               onChange={setEmailAddress}
@@ -229,7 +229,7 @@ export default function UsagePricingPanel() {
         <div className="flex flex-col justify-between gap-4 rounded-lg bg-muted/40 p-4">
           <div>
             <p className="text-sm font-semibold text-muted-foreground">
-              Monthly estimate before tax
+              Monthly Estimate Before Tax
             </p>
             <p className="mt-1 text-4xl font-semibold tabular-nums" aria-live="polite">
               {formatUsdCents(estimate.totalUsd)}
@@ -294,9 +294,12 @@ export default function UsagePricingPanel() {
         </p>
       </section>
 
-      <dl className="grid gap-3 sm:grid-cols-2">
-        {USAGE_RATE_LINES.map(([term, detail]) => (
-          <div key={term} className="rounded-xl border border-border bg-card px-4 py-3">
+      <dl className="grid gap-3 sm:grid-cols-6">
+        {USAGE_RATE_LINES.map(([term, detail], index) => (
+          <div
+            key={term}
+            className={`rounded-xl border border-border bg-card px-4 py-3 ${index < 3 ? "sm:col-span-2" : "sm:col-span-3"}`}
+          >
             <dt className="text-sm font-semibold">{term}</dt>
             <dd className="mt-1 text-sm text-muted-foreground">{detail}</dd>
           </div>

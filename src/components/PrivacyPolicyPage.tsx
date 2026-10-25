@@ -99,7 +99,7 @@ export default function PrivacyPolicyPage() {
           {[
             "We do not sell personal information.",
             "Optional advertising measurement stays off unless you allow it.",
-            "Phone calls use BotBound's managed voices. Private voice previews require separate speaker permission.",
+            "Voice cloning requires separate speaker consent and a written release.",
           ].map((item) => (
             <div
               key={item}
@@ -170,8 +170,8 @@ export default function PrivacyPolicyPage() {
           <Section title="1. Who We Are">
             <p>
               <strong>BotBound</strong> ("we", "our", or "us") operates a Bot platform for calls,
-              email, and computer tasks, with SMS for existing activated services. Questions about
-              this policy can be sent to <strong>support@botbound.app</strong>.
+              email, computer tasks, and activated SMS services. Questions about this policy can be
+              sent to <strong>support@botbound.app</strong>.
             </p>
           </Section>
 
@@ -185,15 +185,19 @@ export default function PrivacyPolicyPage() {
               connected tools, and voice settings you create for your Bots.
             </p>
             <p>
-              <strong>Optional private voice previews</strong>: In the private operator pilot, you
-              may explicitly submit a recording of your own voice. We encrypt the saved recording
-              and retain its permission, review, and processing metadata. A separate speech service
-              processes the recording to generate a private preview; it does not replace your Bot's
-              live call voice. Delete the saved voice to revoke future use and remove its active
-              encrypted recording. Generated previews are temporary and are not saved in the voice
-              library. Backup copies follow our account data retention practices. We do not use
-              these recordings to identify or authenticate people, train a shared model, or create a
-              public voice library.
+              <strong>Optional voice cloning</strong>: With your separate consent and written
+              release, we send your voice recording to the speech provider identified during setup
+              to create a private voice. BotBound stores its provider reference, name, recording
+              hash, quality and duration measurements, consent evidence, and retention dates.
+              Assigning the voice to a Bot enables supported live calls; the provider processes text
+              and generates speech for those calls. Deleting a clone disables its use on your Bots
+              and requests provider deletion. Failed provider cleanup is retained for retry;
+              deletion in BotBound does not confirm erasure of every provider-held log or backup.
+              The voice release describes the retention schedule. Earlier private previews may also
+              have an encrypted source recording, which is removed from active storage when deleted.
+              We do not use voice recordings to identify or authenticate people, train our own
+              shared model, or create a public voice library. Provider data handling follows the
+              disclosures shown before upload.
             </p>
             <p>
               <strong>Computer task data</strong>: We save task instructions, activity, questions,
@@ -207,8 +211,8 @@ export default function PrivacyPolicyPage() {
               <strong>Conversation data</strong>: Phone numbers, message addresses, recordings,
               transcripts, summaries, message content, and operational metadata needed to provide
               the calling, texting, and email service you configure. Call recording is off by
-              default; if you turn it on for a Bot, callers hear a recording notice at the start
-              of the call, and the recording is available in your account.
+              default; if you turn it on for a Bot, callers hear a recording notice at the start of
+              the call, and the recording is available in your account.
             </p>
             <p>
               <strong>Usage and billing data</strong>: Feature usage, AI model consumption, plan and

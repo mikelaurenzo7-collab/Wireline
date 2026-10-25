@@ -172,7 +172,7 @@ export const BUSINESS_MARKETING_VOICE = {
   beforeStrip: OUTBOUND_WEDGE.beforeStrip,
 } as const;
 
-export const CAMPAIGN_CALLING_TITLE = "Campaign Calling Is Not in This Launch" as const;
+export const CAMPAIGN_CALLING_TITLE = "Campaign Calling Unavailable" as const;
 
 export const WORKSPACE_VOICE = {
   createHeadline: "Create Your Bot",

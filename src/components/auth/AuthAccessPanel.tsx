@@ -273,11 +273,33 @@ export default function AuthAccessPanel({
     signupIntent?.preferredPlanId && publicSignupPlan(signupIntent.preferredPlanId)
       ? signupIntent.preferredPlanId
       : undefined;
-  const { notice } = usePaidPlanAvailability({
+  const {
+    notice,
+    billingModel,
+    status: planStatus,
+  } = usePaidPlanAvailability({
     enabled: isSignUp && Boolean(paidSignupPlan),
     interval: signupIntent?.preferredBillingInterval === "year" ? "year" : "month",
     planId: paidSignupPlan,
   });
+  useEffect(() => {
+    if (
+      !isSignUp ||
+      !signupIntent ||
+      billingModel !== "usage" ||
+      !paidSignupPlan ||
+      paidSignupPlan === "usage"
+    )
+      return;
+    // A returning visitor can carry a retired offer in browser storage or an old link.
+    // Keep their use case while moving unpaid signup intent to the current offer.
+    const currentOffer = persistSignupIntent({
+      ...signupIntent,
+      preferredPlanId: "usage",
+      preferredBillingInterval: "month",
+    });
+    setSignupIntent(currentOffer);
+  }, [isSignUp, billingModel, paidSignupPlan, signupIntent]);
   const oauthProviders = availableProviders
     ? PROVIDERS.filter((provider) => availableProviders[provider.id] === true)
     : [];
@@ -607,7 +629,7 @@ export default function AuthAccessPanel({
             </div>
           ) : null}
           {isReset ? <p>We’ll send a secure reset link.</p> : null}
-          {isSignUp && intentLabel ? (
+          {isSignUp && intentLabel && (!paidSignupPlan || planStatus === "ready") ? (
             <span className="wl-access-panel__intent">{intentLabel}</span>
           ) : null}
           {isSignUp && paidSignupPlan ? <p role="status">{notice}</p> : null}

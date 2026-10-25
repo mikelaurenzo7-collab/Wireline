@@ -372,7 +372,7 @@ describe("Studio inspector draft lifecycle", () => {
     [{ provider: "xai", voice: "eve" }, false, "Standard voice while registration finishes"],
     [null, null, "Marin · Natural & Expressive"],
   ])(
-    "shows the effective phone voice in the setup summary (%j, %s)",
+    "labels the built-in phone voice separately from a custom voice (%j, %s)",
     async (phoneCall, phoneCallReady, label) => {
       h.surface = "review";
       h.fetch.mockImplementation(async (path: string) =>
@@ -386,9 +386,9 @@ describe("Studio inspector draft lifecycle", () => {
       await mount();
       await vi.waitFor(() => {
         const row = elements(render()).find(
-          (element) => element.type === "div" && text(element).startsWith("Phone voice"),
+          (element) => element.type === "div" && text(element).startsWith("Built-In Voice"),
         );
-        expect(row && text(row)).toBe(`Phone voice${label}`);
+        expect(row && text(row)).toBe(`Built-In Voice${label}`);
       });
     },
   );

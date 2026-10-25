@@ -25,12 +25,12 @@ export default function OutboundHub({
         <EmptyState
           icon={Phone}
           title={CAMPAIGN_CALLING_TITLE}
-          description="Lead lists, sequences, and marketing calls stay closed. Personal coordination and specific business service calls stay on Reviewed calls."
+          description="Use Reviewed Calls for individual service calls with recipient permission."
           framed
           density="compact"
           withHalo={false}
           actions={[
-            { label: "Reviewed calls", onClick: () => onViewChange("dispatch"), primary: true },
+            { label: "Reviewed Calls", onClick: () => onViewChange("dispatch"), primary: true },
           ]}
         />
       </div>
@@ -40,9 +40,9 @@ export default function OutboundHub({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center justify-end border-b border-border px-3 py-2 sm:px-4">
-        <Button type="button" size="sm" onClick={() => setShowDial(true)} aria-label="New call">
+        <Button type="button" size="sm" onClick={() => setShowDial(true)} aria-label="New Call">
           <Phone className="h-3.5 w-3.5" aria-hidden="true" />
-          New call
+          New Call
         </Button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4">

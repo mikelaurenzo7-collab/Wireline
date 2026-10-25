@@ -3,6 +3,8 @@ import { ArrowRight, Check, ChevronDown, ExternalLink } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import { PUBLIC_ENTRY_PLANS, publicPriceSummary } from "../lib/public-plan-lineup";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
+import { usePaidPlanAvailability } from "../hooks/usePaidPlanAvailability";
+import { USAGE_BASE_USD_MONTHLY, USAGE_INCLUDED_WORK_USD } from "../lib/usage-billing-catalog";
 
 const DIFFERENCES = [
   {
@@ -98,6 +100,16 @@ const TABLE_ROWS = [
 ] as const;
 
 export default function Compare() {
+  const { billingModel } = usePaidPlanAvailability({ planId: "usage" });
+  const marketOptions = MARKET_OPTIONS.map((option) =>
+    option.internal && billingModel === "usage"
+      ? {
+          ...option,
+          price: `$${USAGE_BASE_USD_MONTHLY}/month + usage`,
+          usage: `$${USAGE_INCLUDED_WORK_USD} of shared work included across calls, email, and Computer. Optional phone number and email address billed separately.`,
+        }
+      : option,
+  );
   return (
     <MarketingPageFrame className="wl-compare-page">
       <PageMeta
@@ -128,7 +140,7 @@ export default function Compare() {
           <h2 className="sr-only">Compare Pricing Models</h2>
 
           <div className="mt-8 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card lg:hidden">
-            {MARKET_OPTIONS.map((option) => (
+            {marketOptions.map((option) => (
               <article
                 key={option.name}
                 className={`p-5 ${option.internal ? "bg-primary/[0.06]" : ""}`}
@@ -181,7 +193,7 @@ export default function Compare() {
                 </tr>
               </thead>
               <tbody>
-                {MARKET_OPTIONS.map((option, index) => (
+                {marketOptions.map((option, index) => (
                   <tr
                     className={
                       (index ? "border-t border-border " : "") +

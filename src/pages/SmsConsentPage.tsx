@@ -14,7 +14,7 @@ export default function SmsConsentPage() {
       />
       <article className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-6 sm:py-14">
         <h1 className="marketing-hero-title mb-5 text-3xl sm:text-4xl">
-          Permission before a text.
+          Permission Before a Text.
         </h1>
         <p className="mb-4 text-base text-muted-foreground">BotBound Customer Care</p>
         <p className="text-base leading-7 text-muted-foreground">
@@ -30,7 +30,7 @@ export default function SmsConsentPage() {
 
         <section className="mt-10 space-y-4" aria-labelledby="verbal-consent">
           <h2 id="verbal-consent" className="text-xl font-semibold">
-            How we ask
+            How We Ask
           </h2>
           <p className="leading-7 text-muted-foreground">
             When a caller requests information by text, the Bot confirms the destination and asks
@@ -52,7 +52,7 @@ export default function SmsConsentPage() {
 
         <section className="mt-10 space-y-4" aria-labelledby="message-example">
           <h2 id="message-example" className="text-xl font-semibold">
-            Example message
+            Example Message
           </h2>
           <blockquote className="rounded-lg border border-border bg-muted/30 p-5 text-base leading-7">
             BotBound: Here is the information you requested during your call:
@@ -63,7 +63,7 @@ export default function SmsConsentPage() {
 
         <section className="mt-10 space-y-4" aria-labelledby="recipient-choice">
           <h2 id="recipient-choice" className="text-xl font-semibold">
-            Your choice, every time
+            Your Choice, Every Time
           </h2>
           <p className="leading-7 text-muted-foreground">
             Reply <strong className="text-foreground">STOP</strong> to stop further messages from
@@ -83,7 +83,7 @@ export default function SmsConsentPage() {
 
         <section className="mt-10 space-y-4" aria-labelledby="activation-records">
           <h2 id="activation-records" className="text-xl font-semibold">
-            Before activation
+            Before Activation
           </h2>
           <p className="leading-7 text-muted-foreground">
             The sender must be verified and the Bot must use this permission flow. Each recipient’s
