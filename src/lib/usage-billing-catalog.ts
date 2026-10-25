@@ -1,10 +1,9 @@
 /**
  * Usage billing rate card (client-safe, no env or server imports).
  *
- * One public plan: no per-Bot or role charge, a small
- * monthly base with included work, and metered call minutes, emails handled and
- * cloud computer minutes. A BotBound number and a BotBound email address are
- * optional flat add-ons, provisioned and billed only when the owner chooses one.
+ * Shared work across calls, emails and Computer, with identities included in
+ * each public plan. Extra identities are flat add-ons. The original offer is
+ * retained for existing subscriptions and historical billing periods only.
  *
  * Design and margin math: /workspace/launch/usage-billing-design.md (mirrored in
  * docs/USAGE_BILLING.md). Every number here must match the Stripe objects the
@@ -15,6 +14,57 @@ export const USAGE_PLAN_ID = "usage" as const;
 export const USAGE_CATALOG_VERSION = "2026-10-usage-v2" as const;
 /** One allowance across all three kinds of work. Resets each subscription month. */
 export const USAGE_INCLUDED_WORK_USD = 12;
+export const USAGE_TIERS = {
+  starter: {
+    id: "starter",
+    name: "Original",
+    monthlyUsd: 19,
+    includedWorkUsd: 12,
+    includedNumbers: 0,
+    includedEmailAddresses: 0,
+    computerBudgetUsd: 3,
+  },
+  lite: {
+    id: "lite",
+    name: "Lite",
+    monthlyUsd: 12,
+    includedWorkUsd: 4,
+    includedNumbers: 1,
+    includedEmailAddresses: 1,
+    computerBudgetUsd: 1,
+  },
+  standard: {
+    id: "standard",
+    name: "Starter",
+    monthlyUsd: 24,
+    includedWorkUsd: 14,
+    includedNumbers: 1,
+    includedEmailAddresses: 1,
+    computerBudgetUsd: 3.5,
+  },
+  plus: {
+    id: "plus",
+    name: "Plus",
+    monthlyUsd: 49,
+    includedWorkUsd: 36,
+    includedNumbers: 2,
+    includedEmailAddresses: 2,
+    computerBudgetUsd: 9,
+  },
+} as const;
+export type UsageTierId = keyof typeof USAGE_TIERS;
+export const PUBLIC_USAGE_TIERS = ["lite", "standard", "plus"] as const;
+export const DEFAULT_PUBLIC_USAGE_TIER: UsageTierId = "standard";
+export function publicUsageTierId(value: unknown): UsageTierId {
+  return PUBLIC_USAGE_TIERS.find((tier) => tier === value) ?? DEFAULT_PUBLIC_USAGE_TIER;
+}
+export function isUsageTierId(value: unknown): value is UsageTierId {
+  return typeof value === "string" && Object.hasOwn(USAGE_TIERS, value);
+}
+/** Missing historical values belong to the original $19 offer. */
+export function usageTier(value: UsageTierId = "starter") {
+  return USAGE_TIERS[value];
+}
 /** Stripe meters cents of work; native quantities remain in the local ledger. */
 export const USAGE_WORK_EVENT_NAME = "botbound_work_credits_v2";
 
@@ -147,8 +197,11 @@ export function pooledWorkUsd(totals: Record<UsageMeterKey, number>): number {
   );
 }
 
-export function pooledOverageUsd(totals: Record<UsageMeterKey, number>): number {
-  return Math.max(0, pooledWorkUsd(totals) - USAGE_INCLUDED_WORK_USD);
+export function pooledOverageUsd(
+  totals: Record<UsageMeterKey, number>,
+  tier: UsageTierId = "starter",
+): number {
+  return Math.max(0, pooledWorkUsd(totals) - usageTier(tier).includedWorkUsd);
 }
 
 export function workCredits(key: UsageMeterKey, quantity: number): number {
@@ -158,9 +211,10 @@ export function workCredits(key: UsageMeterKey, quantity: number): number {
 /** Fixed monthly charges: base plus chosen add-ons. */
 export function fixedMonthlyUsd(
   addons: Pick<UsageQuantities, "numbers" | "emailAddresses">,
+  tier: UsageTierId = "starter",
 ): number {
   return cents(
-    USAGE_BASE_USD_MONTHLY +
+    usageTier(tier).monthlyUsd +
       Math.floor(safeQuantity(addons.numbers)) * USAGE_ADDONS.number.usdMonthly +
       Math.floor(safeQuantity(addons.emailAddresses)) * USAGE_ADDONS.email_address.usdMonthly,
   );
@@ -168,16 +222,21 @@ export function fixedMonthlyUsd(
 
 export function minimumMonthlyCapUsd(
   addons: Pick<UsageQuantities, "numbers" | "emailAddresses">,
+  tier: UsageTierId = "starter",
 ): number {
-  return cents(fixedMonthlyUsd(addons) + USAGE_MIN_CAP_HEADROOM_USD);
+  return cents(fixedMonthlyUsd(addons, tier) + USAGE_MIN_CAP_HEADROOM_USD);
 }
 
 /** Live estimate shared by the pricing estimator, billing UI and cap math. */
-export function estimateUsageBill(input: UsageQuantities): UsageBillEstimate {
+export function estimateUsageBill(
+  input: UsageQuantities,
+  tier: UsageTierId = "starter",
+): UsageBillEstimate {
+  const plan = usageTier(tier);
   const numbers = Math.floor(safeQuantity(input.numbers));
   const emailAddresses = Math.floor(safeQuantity(input.emailAddresses));
   const lines: UsageBillLine[] = [
-    { key: "base", label: "Monthly base", quantity: 1, amountUsd: USAGE_BASE_USD_MONTHLY },
+    { key: "base", label: plan.name, quantity: 1, amountUsd: plan.monthlyUsd },
     {
       key: "call_minutes",
       label: USAGE_METERS.call_minutes.label,
@@ -213,7 +272,7 @@ export function estimateUsageBill(input: UsageQuantities): UsageBillEstimate {
       amountUsd: cents(emailAddresses * USAGE_ADDONS.email_address.usdMonthly),
     });
   }
-  const fixedUsd = fixedMonthlyUsd({ numbers, emailAddresses });
+  const fixedUsd = fixedMonthlyUsd({ numbers, emailAddresses }, tier);
   // Stripe rounds the single shared meter once. Rounding each channel first
   // can add a cent when two fractional channels each contribute half a cent.
   const workUsd = cents(
@@ -223,8 +282,8 @@ export function estimateUsageBill(input: UsageQuantities): UsageBillEstimate {
       computer_minutes: safeQuantity(input.computerMinutes),
     }),
   );
-  const includedUsedUsd = Math.min(USAGE_INCLUDED_WORK_USD, workUsd);
-  const meteredUsd = cents(Math.max(0, workUsd - USAGE_INCLUDED_WORK_USD));
+  const includedUsedUsd = Math.min(plan.includedWorkUsd, workUsd);
+  const meteredUsd = cents(Math.max(0, workUsd - plan.includedWorkUsd));
   lines.push({
     key: "included_work",
     label: "Shared work allowance",
@@ -237,7 +296,7 @@ export function estimateUsageBill(input: UsageQuantities): UsageBillEstimate {
     meteredUsd,
     workUsd,
     includedUsedUsd,
-    includedRemainingUsd: cents(USAGE_INCLUDED_WORK_USD - includedUsedUsd),
+    includedRemainingUsd: cents(plan.includedWorkUsd - includedUsedUsd),
     lines,
   };
 }

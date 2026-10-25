@@ -2,12 +2,16 @@
 import { and, eq, sql } from "drizzle-orm";
 import { usageMeterEvents } from "../db/usage-billing-schema";
 import { createUsageStore } from "./usage-billing-store";
-import { priceMeterExact, USAGE_INCLUDED_WORK_USD } from "./usage-billing-catalog";
+import { priceMeterExact, usageTier, type UsageTierId } from "./usage-billing-catalog";
 
-/** Reserve $3 of the base for Computer, then at most 40% of its extra earned work. */
-export function computerProviderBudgetUsd(computerWorkUsd: number): number {
+/** Reserve the plan's Computer budget, then at most 40% of its extra earned work. */
+export function computerProviderBudgetUsd(
+  computerWorkUsd: number,
+  tier: UsageTierId = "starter",
+): number {
   if (!Number.isFinite(computerWorkUsd) || computerWorkUsd < 0) return 0;
-  return 3 + 0.4 * Math.max(0, computerWorkUsd - USAGE_INCLUDED_WORK_USD);
+  const plan = usageTier(tier);
+  return plan.computerBudgetUsd + 0.4 * Math.max(0, computerWorkUsd - plan.includedWorkUsd);
 }
 
 export async function usageComputerCostWindow(
@@ -48,6 +52,6 @@ export async function usageComputerCostWindow(
     start: period.startsAt,
     end: period.endsAt,
     key: identity.periodKey,
-    limitUsd: computerProviderBudgetUsd(workUsd),
+    limitUsd: computerProviderBudgetUsd(workUsd, period.tier),
   };
 }

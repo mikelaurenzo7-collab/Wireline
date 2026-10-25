@@ -5,6 +5,11 @@ import type { InsightsAttributionResponse, InsightsAttributionRow } from "../../
 import { fetchInsight, InsightSkeleton, ErrCard, Stat, InsightEmpty } from "./shared";
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 
+function sourceLabel(source: string) {
+  if (source === "twilio-openai-realtime") return "Phone Calls";
+  return source === "(untagged)" ? "No Campaign" : source;
+}
+
 export default function AttributionView({ days }: { days: number }) {
   const [rows, setRows] = useState<InsightsAttributionRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,10 +56,11 @@ export default function AttributionView({ days }: { days: number }) {
             const conv = calls > 0 ? ((booked / calls) * 100).toFixed(1) : "0.0";
             return (
               <div key={`sr-attr-${r.source}-${i}`}>
-                <dt>Campaign: {r.source}</dt>
+                <dt>Source: {sourceLabel(r.source)}</dt>
                 <dd>
-                  Calls: {calls}, Minutes: {Math.round((Number(r.total_seconds) || 0) / 60)},
-                  Booked: {booked}, Qualified: {Number(r.qualified) || 0}, Conversion: {conv}%
+                  Calls: {calls}, Minutes: {Math.round((Number(r.total_seconds) || 0) / 60)}, Calls
+                  With Bookings: {booked}, Qualified: {Number(r.qualified) || 0}, Conversion: {conv}
+                  %
                 </dd>
               </div>
             );
@@ -62,13 +68,13 @@ export default function AttributionView({ days }: { days: number }) {
         </dl>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Tagged sources" value={rows.filter((r) => r.source !== "(untagged)").length} />
-        <Stat label="Total calls" value={totalCalls} highlight />
-        <Stat label="Booked" value={totalBooked} />
+        <Stat label="Sources" value={rows.length} />
+        <Stat label="Total Calls" value={totalCalls} highlight />
+        <Stat label="Calls With Bookings" value={totalBooked} />
         <Stat
-          label="Conv. rate"
+          label="Booking Rate"
           value={`${totalCalls > 0 ? ((totalBooked / totalCalls) * 100).toFixed(1) : "0.0"}%`}
-          highlight
+          highlight={totalBooked > 0}
         />
       </div>
       <div
@@ -80,7 +86,7 @@ export default function AttributionView({ days }: { days: number }) {
         <table className="w-full min-w-[38rem] text-sm">
           <thead className="bg-black/[0.03] dark:bg-white/[0.02]">
             <tr className="text-left wl-insight-label">
-              <th className="px-3 py-2.5 font-medium">Campaign</th>
+              <th className="px-3 py-2.5 font-medium">Source</th>
               <th className="px-3 py-2.5 font-medium text-right">Calls</th>
               <th className="px-3 py-2.5 font-medium text-right">Minutes</th>
               <th className="px-3 py-2.5 font-medium text-right">Booked</th>
@@ -105,7 +111,7 @@ export default function AttributionView({ days }: { days: number }) {
                         isUntagged ? "text-muted/80 italic" : "text-foreground font-medium"
                       }
                     >
-                      {r.source}
+                      {sourceLabel(r.source)}
                     </span>
                   </td>
                   <td className="px-3 py-2.5 text-right tabular-nums text-foreground/90">
@@ -114,19 +120,33 @@ export default function AttributionView({ days }: { days: number }) {
                   <td className="px-3 py-2.5 text-right tabular-nums text-muted/80">
                     {Math.round((Number(r.total_seconds) || 0) / 60)}
                   </td>
-                  <td className="px-3 py-2.5 text-right tabular-nums wl-text-success">{booked}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums text-brand">
+                  <td
+                    className={cn(
+                      "px-3 py-2.5 text-right tabular-nums",
+                      booked > 0 ? "wl-text-success" : "text-muted-foreground",
+                    )}
+                  >
+                    {booked}
+                  </td>
+                  <td
+                    className={cn(
+                      "px-3 py-2.5 text-right tabular-nums",
+                      Number(r.qualified) > 0 ? "text-brand" : "text-muted-foreground",
+                    )}
+                  >
                     {Number(r.qualified) || 0}
                   </td>
                   <td className="px-3 py-2.5 text-right">
                     <span
                       className={cn(
                         "inline-block px-1.5 py-0.5 rounded-full wl-micro-badge font-medium border",
-                        Number(conv) >= 30
-                          ? "wl-status-success wl-text-success border"
-                          : Number(conv) >= 15
-                            ? "bg-brand/10 text-brand border-brand/20"
-                            : "bg-destructive/10 text-destructive border-destructive/20",
+                        Number(conv) === 0
+                          ? "bg-muted text-muted-foreground border-border"
+                          : Number(conv) >= 30
+                            ? "wl-status-success wl-text-success border"
+                            : Number(conv) >= 15
+                              ? "bg-brand/10 text-brand border-brand/20"
+                              : "bg-destructive/10 text-destructive border-destructive/20",
                       )}
                     >
                       {conv}%
@@ -137,12 +157,9 @@ export default function AttributionView({ days }: { days: number }) {
             })}
           </tbody>
         </table>
-        {rows.some((row) => row.source === "(untagged)") ? (
-          <p className="border-t border-border px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
-            Calls without a campaign tag appear as{" "}
-            <span className="font-medium text-foreground/80">(untagged)</span>.
-          </p>
-        ) : null}
+        <p className="border-t border-border px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
+          Bookings here count call outcomes. Activity Totals counts calendar appointments.
+        </p>
       </div>
     </div>
   );

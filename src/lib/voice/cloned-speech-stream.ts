@@ -87,6 +87,9 @@ export function clonedSpeechStreams(input: {
   reserve: (provider: "elevenlabs" | "openai", text: string) => Promise<void>;
 }): { cloneSpeech: SpeechStream; stockSpeech: SpeechStream } {
   const request = input.fetchImpl ?? fetch;
+  // Keep audio continuity within this call and utterance. Text context alone
+  // cannot carry the preceding generation's actual cadence or voice delivery.
+  let completedSpeech = { text: "", requestIds: [] as string[] };
   const stream = (provider: "elevenlabs" | "openai"): SpeechStream =>
     async function* (text, signal, context) {
       if (signal.aborted) return;
@@ -96,6 +99,13 @@ export function clonedSpeechStreams(input: {
       const firstByte = new AbortController();
       const firstByteTimer = setTimeout(() => firstByte.abort(), 4_000);
       const combined = AbortSignal.any([signal, deadline, firstByte.signal]);
+      const previousText = context?.previousText ?? "";
+      if (provider === "elevenlabs" && !previousText)
+        completedSpeech = { text: "", requestIds: [] };
+      const previousRequestIds =
+        provider === "elevenlabs" && previousText && completedSpeech.text === previousText
+          ? completedSpeech.requestIds
+          : [];
       try {
         const response =
           provider === "elevenlabs"
@@ -112,7 +122,11 @@ export function clonedSpeechStreams(input: {
                     text,
                     model_id: ELEVENLABS_SPEECH_MODEL,
                     voice_settings: ELEVENLABS_SPEECH_SETTINGS,
-                    ...(context?.previousText ? { previous_text: context.previousText } : {}),
+                    ...(previousRequestIds.length
+                      ? { previous_request_ids: previousRequestIds }
+                      : previousText
+                        ? { previous_text: previousText }
+                        : {}),
                   }),
                 },
               )
@@ -132,9 +146,20 @@ export function clonedSpeechStreams(input: {
               });
         const bytes =
           provider === "openai" ? pcm24ToMulaw(responseBytes(response)) : responseBytes(response);
+        let receivedBytes = 0;
         for await (const chunk of bytes) {
           if (chunk.length) clearTimeout(firstByteTimer);
+          receivedBytes += chunk.length;
           yield chunk;
+        }
+        // Stitch only fully consumed, successful generations. An interrupted
+        // or failed response must never become the next utterance's reference.
+        const requestId = response.headers.get("request-id");
+        if (provider === "elevenlabs" && !signal.aborted && receivedBytes && requestId) {
+          completedSpeech = {
+            text: (previousText + " " + text).trim().slice(-1_000),
+            requestIds: [...previousRequestIds, requestId].slice(-3),
+          };
         }
       } finally {
         clearTimeout(firstByteTimer);

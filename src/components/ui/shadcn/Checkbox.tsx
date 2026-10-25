@@ -34,7 +34,7 @@ const Checkbox = React.forwardRef<
     ref={ref}
     data-slot="checkbox"
     className={cn(
-      "h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-[var(--wireline-radius-xs)] border border-muted-foreground/70 bg-card align-middle transition-colors",
+      "h-5 w-5 shrink-0 cursor-pointer appearance-none rounded-[var(--wireline-radius-xs)] border border-muted-foreground/70 bg-card align-middle transition-colors",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
       "disabled:cursor-not-allowed disabled:opacity-50",
       className,

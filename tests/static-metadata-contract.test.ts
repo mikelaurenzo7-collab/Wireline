@@ -24,7 +24,7 @@ describe("BotBound static marketing metadata", () => {
     expect(index).toContain('<link rel="canonical" href="https://botbound.app/" />');
     expect(index).toContain('<meta property="og:url" content="https://botbound.app/" />');
     expect(index).toContain(
-      '<meta property="og:image" content="https://botbound.app/og-image.png" />',
+      '<meta property="og:image" content="https://botbound.app/og-image.png?v=20261025" />',
     );
     expect(index).not.toContain("https://trywireline.com");
     expect(index).not.toContain("support@trywireline.com");
@@ -87,9 +87,11 @@ describe("BotBound static marketing metadata", () => {
     const ogImage = read("public/og-image.svg");
 
     expect(ogImage).toContain("BotBound");
-    expect(ogImage).toContain("Give Your Bot a Goal");
-    expect(ogImage).toContain("Incoming calls, email, and computer tasks.");
-    expect(ogImage).toContain("Answer calls. Handle email. Work online.");
+    expect(ogImage).toContain("YOUR VOICE BOT");
+    expect(ogImage).toContain("FOR YOUR WORK.");
+    expect(ogImage).toContain("AI Bots With Their Own Phone Number,");
+    expect(ogImage).toContain("Email Address, And Computer.");
+    expect(ogImage).not.toContain("Start Free");
     expect(ogImage).not.toContain("ONE BOT");
     expect(ogImage).not.toContain("Find. Call. Book");
     expect(ogImage).toMatch(/phone|Phone/);
@@ -97,11 +99,11 @@ describe("BotBound static marketing metadata", () => {
     expect(ogImage).not.toContain("PUT YOUR BOT ON THE LINE");
   });
 
-  it("ships the reviewed wide creative as the 1200 by 630 OG raster", () => {
+  it("ships the approved Bot mark in the warm 1200 by 630 OG raster", () => {
     const source = read("public/og-image.svg");
     const encodedImage = source.match(/href="data:image\/png;base64,([^"]+)"/)?.[1];
     const canonicalImage = readFileSync(
-      resolve(process.cwd(), "public/brand/botbound-current-offer-og.png"),
+      resolve(process.cwd(), "public/brand/botbound-operator-polished.png"),
     );
     expect(encodedImage).toBeTruthy();
     expect(Buffer.from(encodedImage!, "base64").equals(canonicalImage)).toBe(true);

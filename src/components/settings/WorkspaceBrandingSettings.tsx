@@ -59,7 +59,7 @@ export default function WorkspaceBrandingSettings() {
         );
       }
       updateBranding(form);
-      toastSuccess("Brand saved", "Brand name, logo, and color updated.");
+      toastSuccess("Brand Saved", "Email identity and artifact preferences updated.");
     } catch (error) {
       failure = error instanceof Error ? error.message : "Brand settings could not be saved.";
       toastError("Save failed", failure);

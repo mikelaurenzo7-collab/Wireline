@@ -58,7 +58,10 @@ vi.mock("../src/lib/signup-intent", async (original) => ({
   billingIntervalFromIntent: () => "month",
 }));
 vi.mock("../src/hooks/usePaidPlanAvailability", () => ({
-  usePaidPlanAvailability: () => ({ canActivate: () => true }),
+  usePaidPlanAvailability: () => ({
+    canActivate: () => true,
+    usageTiers: ["lite", "standard", "plus"],
+  }),
 }));
 vi.mock("../src/lib/product-event-client", () => ({ emitProductEvent: vi.fn() }));
 vi.mock("../src/lib/use-body-scroll-lock", () => ({ useBodyScrollLock: vi.fn() }));
@@ -182,6 +185,7 @@ describe("billing plan decisions", () => {
         expect.objectContaining({
           body: JSON.stringify({
             plan_id: "usage",
+            usage_tier: "standard",
             interval: "month",
             addons: { number: 0, email_address: 1 },
           }),

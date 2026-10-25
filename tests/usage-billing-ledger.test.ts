@@ -581,3 +581,49 @@ describe("usage spend alerts", () => {
     expect(await evaluateUsageSpendAlerts(store, USER, notify)).toEqual([50]);
   });
 });
+
+describe("Plus period accounting", () => {
+  it("admits its allowance and clamps the invoice at the same owner cap", async () => {
+    const { store } = memoryStore({ control: { tier: "plus", capUsd: 100 } });
+    expect((await admitUsage(store, USER, "call_minutes")).maxUnits).toBe(348);
+    await recordUsageEvent(store, event("call_minutes", "plus-call", 144));
+    expect(await usageSpendState(store, USER)).toMatchObject({
+      tier: "plus",
+      includedWorkUsd: 36,
+      includedRemainingUsd: 0,
+      spentUsd: 49,
+    });
+    expect(clampBillableQuantity("call_minutes", 0, 1000, 51, emptyMeterTotals(), "plus")).toBe(
+      348,
+    );
+    expect(
+      periodSpendUsd(
+        {
+          tier: "plus",
+          capUsd: 100,
+          numbers: 0,
+          emailAddresses: 0,
+          alertPeriodKey: null,
+          alertLevelPct: 0,
+        },
+        { call_minutes: 348, emails_handled: 0, computer_minutes: 0 },
+      ),
+    ).toBe(100);
+  });
+  it("does not let the lower Starter minimum override Plus fixed charges", () => {
+    expect(() =>
+      validateUsageMonthlyCap(
+        {
+          tier: "plus",
+          capUsd: 100,
+          numbers: 0,
+          emailAddresses: 0,
+          alertPeriodKey: null,
+          alertLevelPct: 0,
+        },
+        49,
+        24,
+      ),
+    ).toThrow();
+  });
+});

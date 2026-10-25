@@ -42,7 +42,7 @@ export async function assertUsageStripeAccount(stripe, { mode = "live", sandboxA
 export const USAGE_STRIPE_PLAN = {
   product: {
     name: "BotBound",
-    description: "One monthly plan with a shared work allowance for calls, emails, and Computer.",
+    description: "Shared work plans for calls, emails, and Computer.",
     // Plan identity lives on the base price only, so no other item resolves as the plan.
     metadata: { wireline_product: "usage", wireline_catalog_version: CATALOG_VERSION },
   },
@@ -84,6 +84,38 @@ export const USAGE_STRIPE_PLAN = {
       env: "STRIPE_USAGE_EMAIL_ADDON_PRICE_ID",
     },
   ],
+};
+
+function bundledPlan(tier, name, monthlyCents, workCents, identities, envPrefix) {
+  return {
+    ...USAGE_STRIPE_PLAN,
+    base: {
+      ...USAGE_STRIPE_PLAN.base,
+      lookup_key: `usage_${tier}_monthly_2026_10_v1`,
+      nickname: `BotBound ${name}: $${workCents / 100} shared work, ${identities} number(s) and email address(es)`,
+      unit_amount: monthlyCents,
+      metadata: { ...USAGE_STRIPE_PLAN.base.metadata, wireline_usage_tier: tier },
+      env: `STRIPE_USAGE_${envPrefix}_BASE_PRICE_ID`,
+    },
+    meters: [
+      {
+        ...USAGE_STRIPE_PLAN.meters[0],
+        lookup_key: `usage_${tier}_work_2026_10_v1`,
+        tiers: [
+          { up_to: workCents, unit_amount_decimal: "0" },
+          { up_to: "inf", unit_amount_decimal: "1" },
+        ],
+        priceEnv: `STRIPE_USAGE_${envPrefix}_WORK_PRICE_ID`,
+      },
+    ],
+  };
+}
+
+export const USAGE_STRIPE_PLANS = {
+  starter: USAGE_STRIPE_PLAN,
+  lite: bundledPlan("lite", "Lite", 1200, 400, 1, "LITE"),
+  standard: bundledPlan("standard", "Starter", 2400, 1400, 1, "STARTER"),
+  plus: bundledPlan("plus", "Plus", 4900, 3600, 2, "PLUS"),
 };
 
 export function plannedObjects(plan = USAGE_STRIPE_PLAN) {
@@ -220,6 +252,12 @@ export async function applyUsageCatalog(stripe, plan = USAGE_STRIPE_PLAN) {
   if (existingBase) validateUsagePrice(existingBase, plan.base);
   let productId =
     typeof existingBase?.product === "string" ? existingBase.product : existingBase?.product?.id;
+  if (!productId && plan !== USAGE_STRIPE_PLAN) {
+    const starter = await findPrice(stripe, USAGE_STRIPE_PLAN.base.lookup_key);
+    if (!starter) throw new Error("Create the original usage catalog before bundled plans.");
+    validateUsagePrice(starter, USAGE_STRIPE_PLAN.base);
+    productId = typeof starter.product === "string" ? starter.product : starter.product?.id;
+  }
   if (!productId) {
     const product = await stripe.products.create(plan.product, {
       idempotencyKey: `usage-product-${CATALOG_VERSION}`,
@@ -321,6 +359,9 @@ export async function applyUsageCatalog(stripe, plan = USAGE_STRIPE_PLAN) {
 }
 
 async function main(argv = process.argv.slice(2)) {
+  const tier = argv.find((arg) => arg.startsWith("--tier="))?.slice(7) ?? "starter";
+  if (!Object.hasOwn(USAGE_STRIPE_PLANS, tier)) throw new Error("Unknown usage tier.");
+  const plan = USAGE_STRIPE_PLANS[tier];
   const flags = {
     apply: argv.includes("--apply"),
     live: argv.includes("--live"),
@@ -330,9 +371,9 @@ async function main(argv = process.argv.slice(2)) {
   const { mode } = applyGuard(flags);
   if (mode === "dry-run") {
     console.log("DRY RUN. Nothing is created. Objects this script would create (or reuse):");
-    for (const object of plannedObjects()) console.log(JSON.stringify(object));
+    for (const object of plannedObjects(plan)) console.log(JSON.stringify(object));
     console.log("\nEnv vars to set after --apply (values are printed by --apply):");
-    for (const name of envVarNames()) console.log(`  ${name}`);
+    for (const name of envVarNames(plan)) console.log(`  ${name}`);
     console.log("  USAGE_BILLING_ENABLED stays false until Stage 2.");
     return;
   }
@@ -341,7 +382,7 @@ async function main(argv = process.argv.slice(2)) {
     mode,
     sandboxAccountId: process.env.STRIPE_USAGE_SANDBOX_ACCOUNT_ID,
   });
-  const result = await applyUsageCatalog(stripe, USAGE_STRIPE_PLAN);
+  const result = await applyUsageCatalog(stripe, plan);
   console.log(`Mode: ${mode}`);
   console.log(
     result.created.length

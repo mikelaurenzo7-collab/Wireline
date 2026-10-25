@@ -5,9 +5,12 @@ import { Checkbox } from "../ui/shadcn/Checkbox";
 import { signupHrefForPlan } from "../../lib/signup-intent";
 import {
   USAGE_ADDONS,
-  USAGE_BASE_USD_MONTHLY,
   USAGE_DEFAULT_MONTHLY_CAP_USD,
-  USAGE_INCLUDED_WORK_USD,
+  USAGE_TIERS,
+  PUBLIC_USAGE_TIERS,
+  DEFAULT_PUBLIC_USAGE_TIER,
+  usageTier,
+  type UsageTierId,
   USAGE_METERS,
   USAGE_NEVER_PAY_FOR,
   estimateUsageBill,
@@ -34,32 +37,41 @@ export const USAGE_RATE_LINES: ReadonlyArray<readonly [string, string]> = [
     `${usd(COMPUTER.tiers[0].unitUsd)}/min from the same allowance. Heavy tasks may pause at a processing limit.`,
   ],
   [
-    "BotBound Number",
-    `${usd(USAGE_ADDONS.number.usdMonthly)}/month, only if your Bots take calls.`,
+    "Extra Number",
+    `${usd(USAGE_ADDONS.number.usdMonthly)}/month beyond your plan's included local numbers.`,
   ],
   [
-    "BotBound Email Address",
-    `${usd(USAGE_ADDONS.email_address.usdMonthly)}/month, only if you want one. Gmail and Outlook connect at no extra cost.`,
+    "Extra Email Address",
+    `${usd(USAGE_ADDONS.email_address.usdMonthly)}/month beyond your included addresses. Gmail and Outlook connect at no extra cost.`,
   ],
 ];
 
 export interface UsageEstimatorInput {
+  tier?: UsageTierId;
   callsPerMonth: number;
   avgCallMinutes: number;
   emailsPerMonth: number;
   computerMinutes?: number;
   number: boolean;
   emailAddress: boolean;
+  extraNumbers?: number;
+  extraEmailAddresses?: number;
 }
 
 export function estimateFromSliders(input: UsageEstimatorInput) {
-  return estimateUsageBill({
-    callMinutes: Math.max(0, input.callsPerMonth) * Math.max(0, input.avgCallMinutes),
-    emailsHandled: Math.max(0, input.emailsPerMonth),
-    computerMinutes: Math.max(0, input.computerMinutes ?? 0),
-    numbers: input.number ? 1 : 0,
-    emailAddresses: input.emailAddress ? 1 : 0,
-  });
+  const plan = usageTier(input.tier);
+  return estimateUsageBill(
+    {
+      callMinutes: Math.max(0, input.callsPerMonth) * Math.max(0, input.avgCallMinutes),
+      emailsHandled: Math.max(0, input.emailsPerMonth),
+      computerMinutes: Math.max(0, input.computerMinutes ?? 0),
+      numbers: input.extraNumbers ?? Math.max(0, Number(input.number) - plan.includedNumbers),
+      emailAddresses:
+        input.extraEmailAddresses ??
+        Math.max(0, Number(input.emailAddress) - plan.includedEmailAddresses),
+    },
+    input.tier,
+  );
 }
 
 function Slider({
@@ -135,7 +147,16 @@ function Toggle({
 }
 
 /** Usage pricing: estimator first, then what is never billed, then the rates. */
-export default function UsagePricingPanel() {
+export default function UsagePricingPanel({
+  availableTiers = PUBLIC_USAGE_TIERS,
+}: {
+  availableTiers?: readonly UsageTierId[];
+}) {
+  const [selectedTier, setTier] = useState<UsageTierId>(DEFAULT_PUBLIC_USAGE_TIER);
+  const tier = availableTiers.includes(selectedTier)
+    ? selectedTier
+    : (availableTiers[0] ?? DEFAULT_PUBLIC_USAGE_TIER);
+  const plan = usageTier(tier);
   const [callsPerMonth, setCallsPerMonth] = useState(0);
   const [avgCallMinutes, setAvgCallMinutes] = useState(3);
   const [emailsPerMonth, setEmailsPerMonth] = useState(0);
@@ -145,21 +166,53 @@ export default function UsagePricingPanel() {
   const estimate = useMemo(
     () =>
       estimateFromSliders({
+        tier,
         callsPerMonth,
         avgCallMinutes,
         emailsPerMonth,
         computerMinutes,
-        number,
-        emailAddress,
+        number: false,
+        emailAddress: false,
+        extraNumbers: Number(number),
+        extraEmailAddresses: Number(emailAddress),
       }),
-    [callsPerMonth, avgCallMinutes, emailsPerMonth, computerMinutes, number, emailAddress],
+    [tier, callsPerMonth, avgCallMinutes, emailsPerMonth, computerMinutes, number, emailAddress],
   );
 
+  if (availableTiers.length === 0) return null;
   return (
     <div className="mx-auto max-w-4xl space-y-8">
+      <div className="grid gap-4 sm:grid-cols-3" aria-label="Choose a Plan">
+        {availableTiers.map((id) => {
+          const option = USAGE_TIERS[id];
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={tier === id}
+              onClick={() => setTier(id)}
+              className={`rounded-2xl border p-6 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary ${tier === id ? "border-primary bg-primary/5" : "border-border bg-card"}`}
+            >
+              <span className="block text-lg font-semibold">{option.name}</span>
+              <span className="mt-3 block">
+                <strong className="text-4xl font-semibold">${option.monthlyUsd}</strong>
+                <span className="text-sm text-muted-foreground"> / Month</span>
+              </span>
+              <span className="mt-4 block text-sm font-semibold">
+                ${option.includedWorkUsd} Shared Work
+              </span>
+              <span className="mt-2 block text-sm text-muted-foreground">
+                {option.includedNumbers} {option.includedNumbers === 1 ? "Number" : "Numbers"}
+                {" + "}
+                {option.includedEmailAddresses}{" "}
+                {option.includedEmailAddresses === 1 ? "Email Address" : "Email Addresses"}
+              </span>
+            </button>
+          );
+        })}
+      </div>
       <p className="text-center text-sm text-muted-foreground">
-        ${USAGE_BASE_USD_MONTHLY}/month includes ${USAGE_INCLUDED_WORK_USD} of work shared across
-        calls, email and Computer. Use it in any mix. It resets monthly without rollover.
+        Calls, email and Computer share one allowance. Use any mix. Resets monthly; no rollover.
       </p>
       <article
         aria-label="Monthly estimate"
@@ -209,15 +262,15 @@ export default function UsagePricingPanel() {
           <div className="grid gap-2 sm:grid-cols-2">
             <Toggle
               id="usage-number"
-              label={`BotBound Number, ${usd(USAGE_ADDONS.number.usdMonthly)}/mo`}
-              detail="A local number your Bots answer."
+              label={`Extra Number, ${usd(USAGE_ADDONS.number.usdMonthly)}/mo`}
+              detail={`${plan.includedNumbers} included with ${plan.name}.`}
               checked={number}
               onChange={setNumber}
             />
             <Toggle
               id="usage-email-address"
-              label={`BotBound Email Address, ${usd(USAGE_ADDONS.email_address.usdMonthly)}/mo`}
-              detail="Or connect the Gmail or Outlook you already use."
+              label={`Extra Email Address, ${usd(USAGE_ADDONS.email_address.usdMonthly)}/mo`}
+              detail={`${plan.includedEmailAddresses} included with ${plan.name}.`}
               checked={emailAddress}
               onChange={setEmailAddress}
             />
@@ -234,10 +287,10 @@ export default function UsagePricingPanel() {
             <dl className="my-5 space-y-2 border-y border-border py-4 text-sm">
               {(
                 [
-                  ["Plan", USAGE_BASE_USD_MONTHLY],
+                  [plan.name, plan.monthlyUsd],
                   ["Work", estimate.workUsd],
                   ["Included Work Used", -estimate.includedUsedUsd],
-                  ["Optional Add-Ons", estimate.fixedUsd - USAGE_BASE_USD_MONTHLY],
+                  ["Optional Add-Ons", estimate.fixedUsd - plan.monthlyUsd],
                 ] as const
               ).map(([label, value]) => (
                 <div key={label} className="flex justify-between gap-3">
@@ -256,10 +309,16 @@ export default function UsagePricingPanel() {
           </div>
           <div className="space-y-2">
             <Link
-              to={signupHrefForPlan("usage", { usageAddons: { number, emailAddress } })}
+              to={signupHrefForPlan("usage", {
+                usageTier: tier,
+                usageAddons: {
+                  number,
+                  emailAddress,
+                },
+              })}
               className="marketing-btn-primary inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold"
             >
-              Get Started <ArrowRight className="size-4" aria-hidden="true" />
+              Get {plan.name} <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
             <Link
               to="/contact?topic=demo"

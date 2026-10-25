@@ -14,6 +14,8 @@ import {
 } from "../data/wireline-knowledge";
 import { UNVERIFIED_LIVE_TOOL_NAMES } from "./unverified-live-tools";
 import type { AgentToolName } from "./agent-capabilities";
+import { usageBillingEnabled } from "./usage-billing-config";
+import { PUBLIC_USAGE_TIERS, usageTier } from "./usage-billing-catalog";
 export type ShowcaseKind = "cs" | "demo";
 
 export const SHOWCASE_TOOL_NAMES = [
@@ -133,7 +135,7 @@ function buildAgentEnergyHint(agent: ContactAgent): string {
   const byName: Record<string, string> = {
     Sarah:
       "You are BotBound's flagship support voice, refined, patient, unhurried. Make callers feel like they reached a real person who actually works there.",
-    Liam: "You are BotBound's sharpest generalist, upbeat, ROI-minded, curious. Ask one sharp question, then move toward Personal at $12 a month, another paid plan, or the right answer fast.",
+    Liam: "You are BotBound's sharpest generalist, upbeat, ROI-minded, curious. Ask one sharp question, then suggest the current plan that fits their needs or give the right answer fast.",
     Jordan:
       "You are the best front desk they've ever called, warm, efficient, zero hold music energy. Capture the reason for the call in one turn.",
     Jake: "You are a top SDR on a live call, confident opener, respects their time, earns the next question. Never sound like a robodialer.",
@@ -362,6 +364,14 @@ function normalizeShowcasePhone(phoneNumber?: string | null): string | null {
 }
 
 function buildCompactPricingSummary(): string {
+  if (usageBillingEnabled())
+    return (
+      PUBLIC_USAGE_TIERS.map((id) => {
+        const plan = usageTier(id);
+        return `${plan.name} $${plan.monthlyUsd}/month, $${plan.includedWorkUsd} shared work, ${plan.includedNumbers} local number(s) and ${plan.includedEmailAddresses} email address(es)`;
+      }).join("; ") +
+      ". Calls $0.25/minute, sent replies $0.02, Computer $0.20/minute; use any mix from one monthly pool. Additional numbers $3/month, email addresses $4/month. Extra work is spend-capped. No annual offer or unlimited usage"
+    );
   return WIRELINE_PLANS.map((plan) => `${plan.name} ${plan.price}`).join(", ");
 }
 
@@ -624,7 +634,7 @@ function buildCompactBotBoundKnowledgeSection(kind: ShowcaseKind): string[] {
     "BOTBOUND KNOWLEDGE:",
     modeLead,
     `- ${WIRELINE_ONE_LINER}`,
-    "- Core capabilities: inbound calls, reviewed personal calls, specific business service and appointment calls, request capture, native calendar booking, email, and cloud computer tasks. No CRM is required. SMS is coming soon; business outbound campaigns are outside the launch offer.",
+    "- Core capabilities: calls, SMS, email, native calendar booking, and supervised Computer work. No CRM is required. Explain the relevant capability first. SMS and outbound activation depend on provider approval, recipient permission, account configuration and the supported call purpose. Never claim a channel is active unless its tools confirm it. Do not recite an activation checklist unless asked.",
     `- Small business use: ${WIRELINE_GROWTH_ENGINE}`,
     `- Pricing: ${buildCompactPricingSummary()}.`,
     `- Optional connections: ${WIRELINE_INTEGRATIONS.join(", ")}. The native calendar and inbox do not require a CRM.`,
@@ -649,7 +659,7 @@ function buildDemoClosingPlaybook(): string[] {
     "CLOSE THE DEMO (sales instinct, you are selling BotBound):",
     "- Once you have demonstrated the skill well, you have earned the pitch. Do NOT just end politely. Turn into BotBound's salesperson.",
     "- Name the value the caller just watched you deliver, tie it directly to the problem or goal they told you about, then make ONE clear ask.",
-    "- Default ask: offer to email a signup link for Personal, $12 a month for calls and a computer. Then capture their email, read it back, get an explicit yes, and call send_signup_link.",
+    "- Default ask: offer to email a signup link for the current plan that fits the caller's needs. Then capture their email, read it back, get an explicit yes, and call send_signup_link.",
     "- If they are eager to start now, send the signup link. If they are ready to buy, use send_payment_link. Match the tool to their readiness.",
     "- Handle at most one objection with a short, honest answer (price, 'it sounds like AI', 'I need to think about it'), then re-ask for the micro-commitment.",
     "- Stay warm and confident, never pushy: one clear ask, not three. If they decline, leave the door open and offer the signup link for whenever they are ready.",
@@ -658,7 +668,7 @@ function buildDemoClosingPlaybook(): string[] {
 
 function buildBotBoundEmployeePrompt(agent: ContactAgent): string {
   return [
-    `You are ${agent.name}, a real BotBound employee on a real BotBound line.`,
+    `You are ${agent.name}, BotBound's AI assistant on a real BotBound line.`,
     `Role: ${agent.role}. Scope: ${agent.scope}`,
     `Topics you handle: ${agent.handles}.`,
     "IDENTITY RULES:",
@@ -680,7 +690,7 @@ function buildBotBoundEmployeePrompt(agent: ContactAgent): string {
     "- For every email tool, ask for the email, read the full address back, and get an explicit yes before calling the tool.",
     "TRUTH RULES:",
     "- If asked whether you are AI, say yes clearly and keep helping.",
-    "- Never promise a free plan or a time-boxed trial. Personal is $12 a month. Live numbers require a paid plan.",
+    "- Never promise a free plan or a time-boxed trial. Quote the current pricing knowledge above. Live numbers require an active paid plan.",
     "- Never promise compliance, integrations, or pricing beyond the knowledge above.",
     "- Never claim an account, refund, plan change, billing change, calendar slot, or live transfer completed; these public-line tools do not perform those actions.",
     "- Only say an email was submitted when send_signup_link or send_payment_link returns SUBMISSION_OK. Inbox delivery is unverified; never promise an arrival time. If it says DELIVERY_FAILED, follow its guidance and offer a URL only when the result provides one.",

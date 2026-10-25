@@ -118,7 +118,7 @@ describe("marketing metadata contract", () => {
     expect(planById("email")?.price_usd_monthly).toBe(9);
     expect(pricing).not.toContain("Plans from $");
     expect(pricing).toContain("Choose your channels and capacity.");
-    expect(pricing).toContain("Compare Calls, Email, and combined plans");
+    expect(pricing).toContain("Compare included numbers, email addresses and shared work.");
     expect(pricing).toContain("CHANNEL_PLANS = STRIPE_PLANS.filter");
     expect(pricing).toContain("plans={CHANNEL_PLANS}");
     expect(pricing).not.toContain('"@type": "OfferCatalog"');

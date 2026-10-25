@@ -4,6 +4,7 @@ import {
   USAGE_BASE_USD_MONTHLY,
   USAGE_CATALOG_VERSION,
   USAGE_INCLUDED_WORK_USD,
+  USAGE_TIERS,
   USAGE_WORK_EVENT_NAME,
   USAGE_NEVER_PAY_FOR,
   crossedAlertThresholds,
@@ -31,6 +32,7 @@ import {
   assertUsageStripeAccount,
   BOTBOUND_STRIPE_ACCOUNT_ID,
   USAGE_STRIPE_PLAN,
+  USAGE_STRIPE_PLANS,
   applyGuard,
   envVarNames,
   plannedObjects,
@@ -142,7 +144,7 @@ describe("usage rate card", () => {
   it("writes rate lines from the catalog in plain words", () => {
     const copy = USAGE_RATE_LINES.flat().join(" ");
     expect(copy).toContain("$0.25/min from your shared work allowance");
-    expect(copy).toContain("$3/month, only if your Bots take calls");
+    expect(copy).toContain("$3/month beyond your plan's included local numbers");
     expect(copy).toContain("Gmail and Outlook connect at no extra cost");
     expect(copy).not.toMatch(/free|text|sms|—|wireline/i);
   });
@@ -251,7 +253,9 @@ describe("Stripe setup script parity", () => {
   });
 
   it("prints exactly the env vars the server reads, names only", () => {
-    expect([...envVarNames()].sort()).toEqual([...USAGE_BILLING_ENV_VARS].sort());
+    expect([...new Set(Object.values(USAGE_STRIPE_PLANS).flatMap(envVarNames))].sort()).toEqual(
+      [...USAGE_BILLING_ENV_VARS].sort(),
+    );
     expect(JSON.stringify(plannedObjects())).not.toMatch(/(?:sk|rk)_(?:test|live)_/);
   });
 
@@ -283,5 +287,54 @@ describe("Stripe setup script parity", () => {
     expect(() =>
       applyGuard({ apply: true, live: false, ratesApproved: false, key: "pk_test_x" }),
     ).toThrow();
+  });
+});
+
+describe("shared work plans", () => {
+  it("matches all Stripe allowances and prices while preserving the original offer", () => {
+    for (const tier of ["starter", "lite", "standard", "plus"] as const) {
+      expect(USAGE_STRIPE_PLANS[tier].base.unit_amount).toBe(USAGE_TIERS[tier].monthlyUsd * 100);
+      expect(USAGE_STRIPE_PLANS[tier].meters[0].tiers[0].up_to).toBe(
+        USAGE_TIERS[tier].includedWorkUsd * 100,
+      );
+    }
+    expect(USAGE_STRIPE_PLANS.plus.addons).toEqual(USAGE_STRIPE_PLAN.addons);
+  });
+  it("uses Plus once across mixed work and includes its identities once", () => {
+    const bill = estimateFromSliders({
+      tier: "plus",
+      callsPerMonth: 25,
+      avgCallMinutes: 4,
+      emailsPerMonth: 500,
+      computerMinutes: 5,
+      number: true,
+      emailAddress: true,
+    });
+    expect(bill).toMatchObject({ fixedUsd: 49, workUsd: 36, includedUsedUsd: 36, totalUsd: 49 });
+    const fractional = estimateUsageBill(
+      {
+        callMinutes: 144.02,
+        emailsHandled: 0,
+        computerMinutes: 0.025,
+        numbers: 0,
+        emailAddresses: 0,
+      },
+      "plus",
+    );
+    expect(fractional.totalUsd).toBe(49.01);
+    expect(
+      estimateUsageBill(
+        { callMinutes: 0, emailsHandled: 0, computerMinutes: 0, numbers: 1, emailAddresses: 1 },
+        "plus",
+      ).totalUsd,
+    ).toBe(56);
+  });
+  it("never opens Plus checkout with only Starter configuration", () => {
+    const env = Object.fromEntries(
+      Object.values(USAGE_PRICE_ENV).map((key) => [key, "price_test"]),
+    );
+    env.USAGE_BILLING_ENABLED = "true";
+    expect(usageCheckoutConfigured(env, "starter")).toBe(true);
+    expect(usageCheckoutConfigured(env, "plus")).toBe(false);
   });
 });

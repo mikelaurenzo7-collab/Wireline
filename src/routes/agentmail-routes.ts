@@ -254,7 +254,7 @@ async function resolveManagedBotInbox(input: {
   }
 }
 
-/** Add-on slots when the owner is on the usage plan with the flag on, else null. */
+/** Included and extra identity slots on an enabled usage plan, else null. */
 async function usageIdentitySlots(
   userId: string,
 ): Promise<{ numbers: number; emailAddresses: number } | null> {
@@ -280,9 +280,8 @@ router.post(
     if (!agent) throw AppError.fromHttpStatus(404, "Bot not found.");
 
     try {
-      // Usage plan: a number or BotBound email address exists only as a chosen
-      // add-on. Without one there is nothing to set up, and that is not an error:
-      // Gmail, Outlook and calls-only Bots never get a BotBound inbox.
+      // Historical usage offers could have no included or purchased identities.
+      // A zero-capacity account has nothing to provision and is not an error.
       const usageSlots = await usageIdentitySlots(userId);
       if (usageSlots && usageSlots.numbers === 0 && usageSlots.emailAddresses === 0) {
         res.json({

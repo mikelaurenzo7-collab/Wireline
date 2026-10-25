@@ -39,7 +39,7 @@ describe("workspace brand preview", () => {
     (draft) => {
       const markup = render(draft);
       expect(markup).toMatch(
-        new RegExp(`aria-label="Primary color hex value"[^>]*value="${draft}"`),
+        new RegExp(`aria-label="Artifact accent hex value"[^>]*value="${draft}"`),
       );
       expect(markup).toMatch(new RegExp(`type="color"[^>]*value="${BRAND.colors.primary}"`));
       expect(markup).toContain(`background:${BRAND.colors.primary}`);

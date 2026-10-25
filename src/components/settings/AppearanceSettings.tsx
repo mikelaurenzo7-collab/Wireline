@@ -52,7 +52,9 @@ export default function AppearanceSettings() {
         })}
       </div>
       <p id={helpId} className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        System uses your device’s theme.
+        {theme === "system"
+          ? "Matches your device’s theme."
+          : `${theme === "light" ? "Light" : "Dark"} appearance.`}
       </p>
     </section>
   );

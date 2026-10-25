@@ -568,7 +568,7 @@ export const OPS_INSIGHTS_GROUPS = [
   },
   {
     id: "revenue",
-    label: "Revenue",
+    label: "Sources & Spend",
     tabs: ["attribution", "topics", "spend"] as const,
   },
 ] as const;

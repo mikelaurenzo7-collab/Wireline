@@ -735,7 +735,9 @@ export default function LiveVoiceCloneStudio({
                   </span>
                   <span className="block text-xs text-muted-foreground">
                     {inUse ? "On this Bot" : "Ready"}
-                    {voice.qualityScore !== null ? ` · Quality ${voice.qualityScore}/100` : ""}
+                    {voice.qualityScore !== null
+                      ? ` · Recording Quality ${voice.qualityScore}/100`
+                      : ""}
                     {voice.expiresAt
                       ? ` · Kept until ${new Date(voice.expiresAt).toLocaleDateString()} unless used`
                       : ""}

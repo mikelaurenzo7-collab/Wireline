@@ -48,7 +48,7 @@ try {
     const boundaryOverlap = rows.some((row) => row.periodKey !== periodKey);
     const meters = [];
     for (const key of ["work"] as const) {
-      const priceId = usagePriceId(key);
+      const priceId = usagePriceId(key, process.env, period.tier);
       if (!priceId) throw new Error(`The ${key} price is not configured.`);
       const price = await stripe.prices.retrieve(priceId);
       const meterId = price.recurring?.meter;

@@ -411,7 +411,10 @@ export default function BillingSettings() {
           onCheckoutAvailabilityChange={setCheckoutAvailability}
         />
 
-        <UsageSpendCard refreshKey={refreshKey} />
+        <UsageSpendCard
+          refreshKey={refreshKey}
+          hasSubscription={Boolean(subscription?.has_subscription)}
+        />
 
         {!loading && !statusUnavailable && paidPlan && !usagePlan && plan ? (
           <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">

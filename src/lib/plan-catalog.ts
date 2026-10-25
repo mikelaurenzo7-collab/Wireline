@@ -731,6 +731,13 @@ export function planByPriceId(priceId: string | null | undefined): StripePlan | 
   if (!priceId) return null;
   const usageBase = process.env.STRIPE_USAGE_BASE_PRICE_ID?.trim();
   if (usageBase && usageBase === priceId) return USAGE_PLAN;
+  for (const envName of [
+    "STRIPE_USAGE_LITE_BASE_PRICE_ID",
+    "STRIPE_USAGE_STARTER_BASE_PRICE_ID",
+    "STRIPE_USAGE_PLUS_BASE_PRICE_ID",
+  ]) {
+    if (process.env[envName]?.trim() === priceId) return USAGE_PLAN;
+  }
   return (
     STRIPE_PLANS.find(
       (plan) =>

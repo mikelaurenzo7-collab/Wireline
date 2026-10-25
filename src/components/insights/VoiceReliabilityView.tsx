@@ -19,6 +19,13 @@ function formatPct(value: number | null, fallback = "N/A"): string {
   return value == null ? fallback : `${value.toFixed(1)}%`;
 }
 
+function trendDate(value: string): string {
+  const date = new Date(`${value.slice(0, 10)}T12:00:00Z`);
+  return Number.isFinite(date.getTime())
+    ? date.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })
+    : value;
+}
+
 export default function VoiceReliabilityView({ days }: { days: number }) {
   const [data, setData] = useState<VoiceReliabilityResponse | null>(null);
   const [recent, setRecent] = useState<VoiceLatencyRecentCallRow[]>([]);
@@ -79,7 +86,10 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
       icon: Gauge,
       label: "Response Time",
       value: summary.latency.ttftP95Ms != null ? `${summary.latency.ttftP95Ms}ms` : "N/A",
-      sub: "95th percentile · goal under 1.2s",
+      sub:
+        summary.latency.ttftP95Ms == null
+          ? "No timing data yet"
+          : "95th percentile · goal under 1.2s",
       healthy: summary.latency.healthy,
     },
     {
@@ -106,7 +116,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
       sub:
         summary.escalations.attempted > 0
           ? `${summary.escalations.succeeded}/${summary.escalations.attempted}`
-          : "no escalations yet",
+          : "No transfers yet",
       healthy:
         summary.escalations.successRatePct == null || summary.escalations.successRatePct >= 90,
     },
@@ -114,7 +124,9 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
       icon: Activity,
       label: "Delivery Errors",
       value: formatPct(summary.webhooks.failureRatePct),
-      sub: `${summary.webhooks.failures}/${summary.webhooks.total || 0} events`,
+      sub: summary.webhooks.total
+        ? `${summary.webhooks.failures}/${summary.webhooks.total} events`
+        : "No delivery events yet",
       healthy: summary.webhooks.failureRatePct == null || summary.webhooks.failureRatePct <= 5,
     },
   ];
@@ -131,7 +143,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
         {tiles.map((tile) => (
           <div
             key={tile.label}
@@ -163,34 +175,43 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <div className="rounded-md wl-panel border border-border p-5">
             <p className="wl-insight-label text-brand/70 mb-4">Response Time Trend</p>
-            <div className="h-52 min-h-44">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trends}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--wireline-color-border-soft)" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} unit="ms" />
-                  <Tooltip />
-                  <Area
-                    type="monotone"
-                    dataKey="avgTtftMs"
-                    name="Average response time"
-                    stroke="var(--wireline-color-action-primary-default)"
-                    strokeWidth={2}
-                    fill="var(--wireline-color-action-primary-default)"
-                    fillOpacity={0.08}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="p95TtftMs"
-                    name="95th percentile response time"
-                    stroke="var(--muted-foreground)"
-                    strokeWidth={2}
-                    fill="var(--muted-foreground)"
-                    fillOpacity={0.08}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            {trends.some((row) => row.avgTtftMs != null || row.p95TtftMs != null) ? (
+              <div className="h-52 min-h-44">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={trends}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="var(--wireline-color-border-soft)"
+                    />
+                    <XAxis dataKey="date" tickFormatter={trendDate} tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 10 }} unit="ms" />
+                    <Tooltip labelFormatter={(value) => trendDate(String(value))} />
+                    <Area
+                      type="monotone"
+                      dataKey="avgTtftMs"
+                      name="Average response time"
+                      stroke="var(--wireline-color-action-primary-default)"
+                      strokeWidth={2}
+                      fill="var(--wireline-color-action-primary-default)"
+                      fillOpacity={0.08}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="p95TtftMs"
+                      name="95th percentile response time"
+                      stroke="var(--muted-foreground)"
+                      strokeWidth={2}
+                      fill="var(--muted-foreground)"
+                      fillOpacity={0.08}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <p className="py-12 text-center text-sm text-muted-foreground">
+                No response time data yet.
+              </p>
+            )}
           </div>
 
           <div className="rounded-md wl-panel border border-border p-5">
@@ -199,9 +220,9 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trends}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--wireline-color-border-soft)" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                  <XAxis dataKey="date" tickFormatter={trendDate} tick={{ fontSize: 12 }} />
                   <YAxis tick={{ fontSize: 10 }} unit="%" />
-                  <Tooltip />
+                  <Tooltip labelFormatter={(value) => trendDate(String(value))} />
                   <Area
                     type="monotone"
                     dataKey="abnormalHangupRate"

@@ -6,9 +6,12 @@ import { captureSignupIntentFromLocation, usageAddonsFromIntent } from "../../li
 import { usePaidPlanAvailability } from "../../hooks/usePaidPlanAvailability";
 import {
   USAGE_ADDONS,
-  USAGE_BASE_USD_MONTHLY,
   USAGE_DEFAULT_MONTHLY_CAP_USD,
   USAGE_INCLUDED_WORK_USD,
+  USAGE_TIERS,
+  publicUsageTierId,
+  usageTier,
+  type UsageTierId,
   formatUsdCents,
 } from "../../lib/usage-billing-catalog";
 import type { UsageSpendResponse } from "../../types/api-billing";
@@ -17,15 +20,25 @@ import type { UsageSpendResponse } from "../../types/api-billing";
  * Usage billing in Settings > Billing. Renders nothing while the server flag is
  * off, so the current plans page is unchanged until launch.
  */
-export default function UsageSpendCard({ refreshKey = 0 }: { refreshKey?: number }) {
+export default function UsageSpendCard({
+  refreshKey = 0,
+  hasSubscription = false,
+}: {
+  refreshKey?: number;
+  hasSubscription?: boolean;
+}) {
   const [state, setState] = useState<UsageSpendResponse | null>(null);
   const [capDraft, setCapDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [addons] = useState(() => usageAddonsFromIntent(captureSignupIntentFromLocation()));
+  const [tier, setTier] = useState<UsageTierId>(() =>
+    publicUsageTierId(captureSignupIntentFromLocation()?.preferredUsageTier),
+  );
+  const plan = usageTier(tier);
   const [number, setNumber] = useState(addons.number);
   const [emailAddress, setEmailAddress] = useState(addons.emailAddress);
-  const { canActivate } = usePaidPlanAvailability({ planId: "usage" });
+  const { canActivate, usageTiers } = usePaidPlanAvailability({ planId: "usage" });
 
   useEffect(() => {
     let active = true;
@@ -55,8 +68,12 @@ export default function UsageSpendCard({ refreshKey = 0 }: { refreshKey?: number
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           plan_id: "usage",
+          usage_tier: tier,
           interval: "month",
-          addons: { number: number ? 1 : 0, email_address: emailAddress ? 1 : 0 },
+          addons: {
+            number: number ? 1 : 0,
+            email_address: emailAddress ? 1 : 0,
+          },
         }),
       });
       const body = (await response.json().catch(() => null)) as {
@@ -117,33 +134,59 @@ export default function UsageSpendCard({ refreshKey = 0 }: { refreshKey?: number
   }
 
   if (!state.usage_account) {
+    // Checkout refuses a second live subscription. Do not present its offer
+    // as an active allowance or lead an existing subscriber to a dead end.
+    if (hasSubscription) return null;
     if (!canActivate("usage")) return null;
     return (
       <section className="mt-6" aria-label="Pay for what you use">
         <article className="wl-paper wl-paper-elevated space-y-4 p-5 sm:p-6">
           <div>
             <h2 className="text-base font-semibold">Shared Work Plan</h2>
+            <label className="mt-3 block text-sm font-semibold">
+              Plan
+              <select
+                value={tier}
+                onChange={(event) => setTier(event.target.value as UsageTierId)}
+                className="ml-3 min-h-11 rounded-lg border border-border bg-background px-3"
+              >
+                {usageTiers.map((id) => (
+                  <option value={id} key={id}>
+                    {USAGE_TIERS[id].name} · ${USAGE_TIERS[id].monthlyUsd}/Month
+                  </option>
+                ))}
+              </select>
+            </label>
             <p className="mt-1 text-sm text-muted-foreground">
-              ${USAGE_BASE_USD_MONTHLY}/month includes ${USAGE_INCLUDED_WORK_USD} of work shared
-              across calls, email and Computer. Your allowance resets monthly without rollover.
-              Extra work stays within a monthly limit you set (default $
-              {USAGE_DEFAULT_MONTHLY_CAP_USD}) before tax. Applicable tax is added separately.
+              ${plan.monthlyUsd}/month includes ${plan.includedWorkUsd} of work shared across calls,
+              email and Computer. Your allowance resets monthly without rollover. Extra work stays
+              within a monthly limit you set (default ${USAGE_DEFAULT_MONTHLY_CAP_USD}) before tax.
+              Applicable tax is added separately.
             </p>
           </div>
+          <p className="text-sm">
+            {plan.includedNumbers} {plan.includedNumbers === 1 ? "Number" : "Numbers"} +{" "}
+            {plan.includedEmailAddresses}{" "}
+            {plan.includedEmailAddresses === 1 ? "Email Address" : "Email Addresses"} Included
+          </p>
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="flex min-h-11 items-center gap-3 text-sm">
               <Checkbox checked={number} onChange={(e) => setNumber(e.target.checked)} />
-              BotBound number, ${USAGE_ADDONS.number.usdMonthly}/month
+              Extra Number, ${USAGE_ADDONS.number.usdMonthly}/Month
             </label>
             <label className="flex min-h-11 items-center gap-3 text-sm">
               <Checkbox
                 checked={emailAddress}
                 onChange={(e) => setEmailAddress(e.target.checked)}
               />
-              BotBound email address, ${USAGE_ADDONS.email_address.usdMonthly}/month
+              Extra Email Address, ${USAGE_ADDONS.email_address.usdMonthly}/Month
             </label>
           </div>
-          <Button type="button" disabled={busy} onClick={() => void startCheckout()}>
+          <Button
+            type="button"
+            disabled={busy || !usageTiers.includes(tier)}
+            onClick={() => void startCheckout()}
+          >
             Review Plan
           </Button>
           {message ? (
@@ -161,7 +204,9 @@ export default function UsageSpendCard({ refreshKey = 0 }: { refreshKey?: number
     <section className="mt-6" aria-label="Usage this period">
       <article className="wl-paper wl-paper-elevated space-y-4 p-5 sm:p-6">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-base font-semibold">Usage This Period</h2>
+          <h2 className="text-base font-semibold">
+            {usageTier(state.tier).name} · Usage This Period
+          </h2>
           <p className="text-sm tabular-nums">
             {formatUsdCents(state.spent_usd)} of {formatUsdCents(state.cap_usd)}
           </p>
@@ -191,9 +236,10 @@ export default function UsageSpendCard({ refreshKey = 0 }: { refreshKey?: number
           </p>
         )}
         <p className="text-sm text-muted-foreground">
-          {formatUsdCents(state.included_remaining_usd ?? 0)} of your ${USAGE_INCLUDED_WORK_USD}{" "}
-          shared work allowance remains. Calls, email and Computer use the same pool. It resets
-          monthly without rollover. Heavy Computer tasks may reach a separate processing limit.
+          {formatUsdCents(state.included_remaining_usd ?? 0)} of your $
+          {state.included_work_usd ?? USAGE_INCLUDED_WORK_USD} shared work allowance remains. Calls,
+          email and Computer use the same pool. It resets monthly without rollover. Heavy Computer
+          tasks may reach a separate processing limit.
         </p>
         <p className="text-sm text-muted-foreground">
           Your limit covers BotBound charges before tax. Applicable tax is added separately. Active

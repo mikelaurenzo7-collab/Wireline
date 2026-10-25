@@ -38,6 +38,7 @@ type PublicPlans = {
   checkout_available: boolean;
   billing_model: "usage" | "plans";
   usage_checkout_available: boolean;
+  usage_tiers: string[];
 };
 type RouteLayer = {
   route?: {
@@ -81,6 +82,7 @@ describe("public billing checkout availability", () => {
       "plans",
       "stripe_configured",
       "usage_checkout_available",
+      "usage_tiers",
     ]);
     // USAGE_BILLING_ENABLED is off by default, so the public model stays on plans.
     expect(body.billing_model).toBe("plans");
@@ -92,14 +94,15 @@ describe("public billing checkout availability", () => {
   it("publishes the usage model only when the flag is on and its prices are configured", () => {
     vi.stubEnv("USAGE_BILLING_ENABLED", "true");
     expect(getPublicPlans().body.usage_checkout_available).toBe(false);
-    vi.stubEnv("STRIPE_USAGE_BASE_PRICE_ID", "price_usage_base_fixture");
-    vi.stubEnv("STRIPE_USAGE_WORK_PRICE_ID", "price_usage_work_fixture");
+    vi.stubEnv("STRIPE_USAGE_STARTER_BASE_PRICE_ID", "price_usage_base_fixture");
+    vi.stubEnv("STRIPE_USAGE_STARTER_WORK_PRICE_ID", "price_usage_work_fixture");
     expect(getPublicPlans().body.usage_checkout_available).toBe(false);
     vi.stubEnv("STRIPE_USAGE_NUMBER_ADDON_PRICE_ID", "price_usage_number_fixture");
     vi.stubEnv("STRIPE_USAGE_EMAIL_ADDON_PRICE_ID", "price_usage_mailbox_fixture");
     const { body } = getPublicPlans();
     expect(body.billing_model).toBe("usage");
     expect(body.usage_checkout_available).toBe(true);
+    expect(body.usage_tiers).toEqual(["standard"]);
     expect(body.plans.find((plan) => plan.id === "usage")).toMatchObject({
       configured: true,
       annual_configured: false,
@@ -110,6 +113,7 @@ describe("public billing checkout availability", () => {
     vi.stubEnv("OPENAI_API_KEY", "");
     const blocked = getPublicPlans().body;
     expect(blocked.usage_checkout_available).toBe(false);
+    expect(blocked.usage_tiers).toEqual([]);
     expect(blocked.plans.find((plan) => plan.id === "usage")).toBeUndefined();
   });
 

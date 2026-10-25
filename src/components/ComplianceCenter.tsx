@@ -142,16 +142,16 @@ export default function ComplianceCenter() {
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-4 sm:block">
-                <dt className="shrink-0 text-xs font-medium text-muted-foreground">Federal DNC</dt>
+                <dt className="shrink-0 text-xs font-medium text-muted-foreground">
+                  Call Screening
+                </dt>
                 <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">
-                  {summary.federal_dnc_configured
-                    ? "Platform screening is configured"
-                    : "Platform screening is not configured"}
+                  {summary.federal_dnc_configured ? "Connected" : "Setup Required"}
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-4 sm:block">
                 <dt className="shrink-0 text-xs font-medium text-muted-foreground">
-                  Workspace DNC
+                  Blocked Numbers
                 </dt>
                 <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">
                   {summary.dnc_entry_count ?? 0} blocked{" "}
@@ -167,6 +167,15 @@ export default function ComplianceCenter() {
                 </dd>
               </div>
             </dl>
+            {!summary.federal_dnc_configured ? (
+              <p className="text-sm text-muted-foreground">
+                Campaign calls need Do Not Call screening.{" "}
+                <a className="underline underline-offset-4" href="mailto:support@botbound.app">
+                  Contact Support
+                </a>{" "}
+                to connect it.
+              </p>
+            ) : null}
           </div>
         ) : null}
 
@@ -197,9 +206,9 @@ export default function ComplianceCenter() {
       <div className="grid gap-4">
         <details>
           <summary className="wl-paper wl-paper-elevated wl-focus-ring-halo min-h-11 cursor-pointer p-4 text-sm font-semibold text-foreground">
-            DNC Registration
+            Do Not Call Registration
             <span className="mt-1 block text-xs font-normal text-muted-foreground">
-              Campaign calling is not in this launch.
+              Register Before Campaign Calls
             </span>
           </summary>
           <div className="mt-3">
