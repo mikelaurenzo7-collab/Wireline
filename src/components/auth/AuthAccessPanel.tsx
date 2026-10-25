@@ -31,6 +31,7 @@ import {
 } from "../../lib/email-verification-return";
 import { clearFreshSignupSession, markFreshSignupSession } from "../../lib/post-signup-onboarding";
 import { STRIPE_PLANS, USAGE_PLAN } from "../../lib/plan-catalog";
+import { usageTier, publicUsageTierId, type UsageTierId } from "../../lib/usage-billing-catalog";
 import { getPlanDisplayLabel } from "../../lib/plan-display";
 import {
   captureDemoSourceFromLocation,
@@ -123,12 +124,14 @@ function publicSignupPlan(planId: SignupPlanId | null | undefined) {
 function signupPlanLabel(
   planId: SignupPlanId,
   interval: SignupIntent["preferredBillingInterval"],
+  tier?: UsageTierId,
 ): string | null {
   // Retired plans stay valid in old links but are never shown as an ID.
   const plan = publicSignupPlan(planId);
   if (!plan) return null;
   const name = getPlanDisplayLabel(plan);
-  if (plan.id === "usage") return `${name} · $${plan.price_usd_monthly}/month plus usage`;
+  if (plan.id === "usage")
+    return `${usageTier(publicUsageTierId(tier)).name} · $${usageTier(publicUsageTierId(tier)).monthlyUsd}/month plus usage`;
   if (plan.price_usd_monthly === 0) return name;
   return interval === "year"
     ? `${name} · $${plan.price_usd_annual}/year`
@@ -139,7 +142,11 @@ function signupIntentLabel(intent: SignupIntent | null): string | null {
   if (!intent?.preferredPlanId && !intent?.preferredTemplateId && !intent?.signupWedge) return null;
   const parts: string[] = [];
   const planLabel = intent.preferredPlanId
-    ? signupPlanLabel(intent.preferredPlanId, intent.preferredBillingInterval)
+    ? signupPlanLabel(
+        intent.preferredPlanId,
+        intent.preferredBillingInterval,
+        intent.preferredUsageTier,
+      )
     : null;
   if (planLabel) parts.push(planLabel);
   if (intent.preferredTemplateId) {

@@ -17,7 +17,12 @@ import {
 import { AppError } from "./api-error";
 import { drizzle, log } from "./server-context";
 import { isUsagePlanId } from "./plan-catalog";
-import { USAGE_DEFAULT_MONTHLY_CAP_USD, type UsageMeterKey } from "./usage-billing-catalog";
+import {
+  USAGE_DEFAULT_MONTHLY_CAP_USD,
+  usageTier,
+  type UsageTierId,
+  type UsageMeterKey,
+} from "./usage-billing-catalog";
 import { usageBillingEnabled } from "./usage-billing-config";
 import {
   admitUsage,
@@ -147,6 +152,7 @@ export function createUsageStore(
         .limit(1);
       return {
         capUsd: row ? Number(row.monthlyCapUsd) : USAGE_DEFAULT_MONTHLY_CAP_USD,
+        tier: row?.tier ?? "starter",
         numbers: row?.numberAddons ?? 0,
         emailAddresses: row?.emailAddressAddons ?? 0,
         alertPeriodKey: row?.alertPeriodKey ?? null,
@@ -183,6 +189,7 @@ export function createUsageStore(
       return row
         ? {
             capUsd: Number(row.monthlyCapUsd),
+            tier: row.tier,
             numbers: row.numberAddons,
             emailAddresses: row.emailAddressAddons,
             alertPeriodKey: null,
@@ -639,6 +646,7 @@ export async function setUsageAddonQuantities(
   userId: string,
   quantities: { numbers: number; emailAddresses: number },
   period: {
+    tier?: UsageTierId;
     stripeCustomerId: string;
     stripeSubscriptionId: string;
     startsAt: Date | null;
@@ -656,6 +664,7 @@ export async function setUsageAddonQuantities(
       .values({
         userId,
         periodKey,
+        tier: period.tier ?? "starter",
         stripeCustomerId: period.stripeCustomerId,
         stripeSubscriptionId: period.stripeSubscriptionId,
         startsAt: period.startsAt!,
@@ -670,6 +679,7 @@ export async function setUsageAddonQuantities(
           // Proration cannot be reconstructed from the latest quantities. Keep the
           // original snapshot and require invoice reconciliation if they change.
           blockedReason: sql`CASE WHEN ${usageBillingPeriods.numberAddons} <> ${quantities.numbers}
+        OR ${usageBillingPeriods.tier} <> ${period.tier ?? "starter"}
         OR ${usageBillingPeriods.emailAddressAddons} <> ${quantities.emailAddresses}
         OR ${usageBillingPeriods.startsAt} <> ${period.startsAt}
         OR ${usageBillingPeriods.stripeCustomerId} <> ${period.stripeCustomerId}
@@ -682,12 +692,14 @@ export async function setUsageAddonQuantities(
         userId,
         numberAddons: quantities.numbers,
         emailAddressAddons: quantities.emailAddresses,
+        tier: period.tier ?? "starter",
       })
       .onConflictDoUpdate({
         target: usageSpendControls.userId,
         set: {
           numberAddons: quantities.numbers,
           emailAddressAddons: quantities.emailAddresses,
+          tier: period.tier ?? "starter",
           updatedAt: new Date(),
         },
       });
@@ -695,8 +707,8 @@ export async function setUsageAddonQuantities(
 }
 
 /**
- * Paid identity slots on the usage plan. Numbers and BotBound email addresses
- * exist only as add-ons the owner chose, so nothing is provisioned without one.
+ * Paid identity slots combine the verified plan's included capacity and extras.
+ * No billing mirror means no capacity; historical periods retain their offer.
  * Zero while the flag is off, so a dark launch never provisions anything.
  */
 export async function usageAddonSlots(
@@ -708,12 +720,16 @@ export async function usageAddonSlots(
     .select({
       numbers: usageSpendControls.numberAddons,
       emailAddresses: usageSpendControls.emailAddressAddons,
+      tier: usageSpendControls.tier,
     })
     .from(usageSpendControls)
     .where(eq(usageSpendControls.userId, userId))
     .limit(1);
   return {
-    numbers: Math.max(0, Number(row?.numbers ?? 0)),
-    emailAddresses: Math.max(0, Number(row?.emailAddresses ?? 0)),
+    numbers:
+      Math.max(0, Number(row?.numbers ?? 0)) + (row ? usageTier(row.tier).includedNumbers : 0),
+    emailAddresses:
+      Math.max(0, Number(row?.emailAddresses ?? 0)) +
+      (row ? usageTier(row.tier).includedEmailAddresses : 0),
   };
 }

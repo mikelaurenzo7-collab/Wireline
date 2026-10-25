@@ -3,7 +3,12 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { FOUNDER_CATALOG_VERSION, isUsagePlanId, planById, planPriceId } from "../lib/plan-catalog";
-import { USAGE_CATALOG_VERSION } from "../lib/usage-billing-catalog";
+import {
+  USAGE_CATALOG_VERSION,
+  isUsageTierId,
+  DEFAULT_PUBLIC_USAGE_TIER,
+  type UsageTierId,
+} from "../lib/usage-billing-catalog";
 import {
   checkoutConfigurationKey,
   validateUsageCheckoutAddons,
@@ -57,9 +62,10 @@ function usageAddonQuantity(value: unknown): number {
 export function usageCheckoutLineItems(
   addons: { numbers: number; emailAddresses: number },
   env: NodeJS.ProcessEnv = process.env,
+  tier: UsageTierId = "starter",
 ): Stripe.Checkout.SessionCreateParams.LineItem[] {
   const required = (key: Parameters<typeof usagePriceId>[0]) => {
-    const id = usagePriceId(key, env);
+    const id = usagePriceId(key, env, tier);
     if (!id) throw new Error(`Usage price ${key} is not configured`);
     return id;
   };
@@ -194,9 +200,15 @@ router.post(
     const plan = planById(requestedPlanId);
     if (!plan) throw AppError.fromHttpStatus(400, "Unknown plan_id.");
     const usageCheckout = isUsagePlanId(plan.id);
+    const tier: UsageTierId = req.body?.usage_tier ?? DEFAULT_PUBLIC_USAGE_TIER;
     if (usageCheckout) {
+      if (!isUsageTierId(tier)) throw AppError.badRequest("Choose a valid plan.");
+      if (tier === "starter")
+        throw AppError.badRequest(
+          "This offer has been replaced. Choose a current plan on Pricing.",
+        );
       // Dark until USAGE_BILLING_ENABLED and every usage price id are set.
-      if (!usageBillingEnabled() || !usageCheckoutConfigured()) {
+      if (!usageBillingEnabled() || !usageCheckoutConfigured(process.env, tier)) {
         return res.status(503).json({
           code: "USAGE_CHECKOUT_UNAVAILABLE",
           error: "This plan is not available for checkout yet.",
@@ -215,7 +227,7 @@ router.post(
           emailAddresses: usageAddonQuantity(req.body?.addons?.email_address),
         }
       : { numbers: 0, emailAddresses: 0 };
-    if (usageCheckout) validateUsageCheckoutAddons(usageAddons);
+    if (usageCheckout) validateUsageCheckoutAddons(usageAddons, tier);
     if (
       (usageAddons.numbers > 0 && !usagePriceId("number")) ||
       (usageAddons.emailAddresses > 0 && !usagePriceId("email_address"))
@@ -324,7 +336,7 @@ router.post(
     ) as Record<string, string>;
 
     const priceId = usageCheckout
-      ? usagePriceId("base")
+      ? usagePriceId("base", process.env, tier)
       : await resolveStrictFounderPriceId(plan.id, interval);
     if (!priceId) {
       return res.status(503).json({
@@ -342,7 +354,7 @@ router.post(
 
     if (usageCheckout) {
       try {
-        await validateUsageCheckoutCatalog(stripe);
+        await validateUsageCheckoutCatalog(stripe, process.env, tier);
       } catch {
         log.error("Usage checkout refused: Stripe catalog validation failed");
         throw AppError.serviceUnavailable(
@@ -351,7 +363,7 @@ router.post(
       }
     }
     const lineItems = usageCheckout
-      ? usageCheckoutLineItems(usageAddons)
+      ? usageCheckoutLineItems(usageAddons, process.env, tier)
       : [{ price: priceId, quantity: 1 }];
     const configurationKey = usageCheckout
       ? checkoutConfigurationKey(plan.id, interval, lineItems)
@@ -559,6 +571,7 @@ router.post(
               ...(usageCheckout
                 ? {
                     usage_number_addons: String(usageAddons.numbers),
+                    usage_tier: tier,
                     usage_email_address_addons: String(usageAddons.emailAddresses),
                   }
                 : {}),

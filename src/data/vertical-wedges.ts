@@ -110,7 +110,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How Much Does It Cost Compared with an Answering Service?",
-        a: "Calls plans start at $19/month with included minutes and prepaid Runtime Balance for additional calls. Add Email when you need it. Compare the workflow, connected tools, and logged outcomes against your answering service.",
+        a: "Compare the current monthly plans on Pricing. Each plan includes a local number, email address and shared work, with a spending limit you control.",
       },
     ],
   },

@@ -104,7 +104,11 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
       );
     `);
     for (let replay = 0; replay < 2; replay++) {
-      for (const name of ["0187_usage_billing", "0189_usage_billing_periods"])
+      for (const name of [
+        "0187_usage_billing",
+        "0189_usage_billing_periods",
+        "0190_usage_plan_tiers",
+      ])
         await pool.query(
           readFileSync(new URL(`../drizzle/migrations/${name}.sql`, import.meta.url), "utf8"),
         );
@@ -173,7 +177,7 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
     ).toBe("reported");
   });
 
-  it("keeps old period caps and add-ons unchanged after renewal", async () => {
+  it("keeps old period caps, tier and add-ons unchanged after renewal", async () => {
     await setUsageMonthlyCap(USER, 30);
     const end = new Date(END.getTime() + 30 * 86400_000);
     await pool.query("UPDATE wireline_subscriptions SET current_period_end = $1", [end]);
@@ -181,6 +185,7 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
       USER,
       { numbers: 2, emailAddresses: 1 },
       {
+        tier: "plus",
         stripeCustomerId: "cus_review",
         stripeSubscriptionId: "sub_review",
         startsAt: END,
@@ -190,14 +195,58 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
     // Cap editing is allowed only in the actual current period, not a future one.
     const rows = (
       await pool.query(
-        "SELECT monthly_cap_usd, number_addons, email_address_addons FROM wireline_usage_billing_periods ORDER BY starts_at",
+        "SELECT tier, monthly_cap_usd, number_addons, email_address_addons FROM wireline_usage_billing_periods ORDER BY starts_at",
       )
     ).rows;
     expect(rows).toEqual([
-      { monthly_cap_usd: "30.00", number_addons: 1, email_address_addons: 0 },
-      { monthly_cap_usd: "30.00", number_addons: 2, email_address_addons: 1 },
+      { tier: "starter", monthly_cap_usd: "30.00", number_addons: 1, email_address_addons: 0 },
+      { tier: "plus", monthly_cap_usd: "30.00", number_addons: 2, email_address_addons: 1 },
     ]);
   });
+
+  it("blocks a midperiod plan change without rewriting the earned allowance", async () => {
+    await setUsageAddonQuantities(
+      USER,
+      { numbers: 1, emailAddresses: 0 },
+      {
+        tier: "plus",
+        stripeCustomerId: "cus_review",
+        stripeSubscriptionId: "sub_review",
+        startsAt: START,
+        endsAt: END,
+      },
+    );
+    await expect(admitAccountUsage(USER, "call_minutes")).rejects.toMatchObject({
+      statusCode: 503,
+    });
+    const row = (
+      await pool.query("SELECT tier, blocked_reason FROM wireline_usage_billing_periods")
+    ).rows[0];
+    expect(row).toEqual({
+      tier: "starter",
+      blocked_reason: "subscription_change_requires_invoice_reconciliation",
+    });
+  });
+
+  it.each(["lite", "standard", "plus"] as const)(
+    "uses the %s allowance and rejects unknown SQL tiers",
+    async (tier) => {
+      const { usageTier } = await import("../src/lib/usage-billing-catalog");
+      const plan = usageTier(tier);
+      await pool.query("UPDATE wireline_usage_billing_periods SET tier = $1, number_addons = 0", [
+        tier,
+      ]);
+      await pool.query("UPDATE wireline_usage_spend_controls SET tier = $1, number_addons = 0", [
+        tier,
+      ]);
+      expect(await admitAccountUsage(USER, "call_minutes")).toMatchObject({
+        maxUnits: (100 - plan.monthlyUsd + plan.includedWorkUsd) / 0.25,
+      });
+      await expect(
+        pool.query("UPDATE wireline_usage_billing_periods SET tier = 'unlimited'"),
+      ).rejects.toThrow(/check constraint/);
+    },
+  );
 
   it("blocks a mid-period quantity change instead of guessing prorated fixed charges", async () => {
     await setUsageAddonQuantities(

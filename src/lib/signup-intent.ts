@@ -1,4 +1,5 @@
 import { BOT_ROLE_TEMPLATES } from "./bot-product";
+import { isUsageTierId, type UsageTierId } from "./usage-billing-catalog";
 
 export const SIGNUP_INTENT_STORAGE_KEY = "wireline_signup_intent_v1";
 export const DEFAULT_ACTIVATION_PLAN_ID = "voice-regular";
@@ -70,13 +71,19 @@ export function publicSignupPlanSlug(planId: SignupPlanId): string {
 
 export function signupHrefForPlan(
   planId: SignupPlanId,
-  options: { interval?: "month" | "year"; template?: string; usageAddons?: UsageSignupAddons } = {},
+  options: {
+    interval?: "month" | "year";
+    template?: string;
+    usageAddons?: UsageSignupAddons;
+    usageTier?: UsageTierId;
+  } = {},
 ): string {
   const params = new URLSearchParams({ plan: publicSignupPlanSlug(planId) });
   if (options.interval) params.set("interval", options.interval);
   if (options.template) params.set("template", options.template);
   if (planId === "usage") {
     params.set("interval", "month");
+    if (options.usageTier) params.set("tier", options.usageTier);
     if (options.usageAddons) setUsageAddonParams(params, options.usageAddons);
   }
   return `/signup?${params.toString()}`;
@@ -110,6 +117,7 @@ export function usageAddonsFromIntent(intent: SignupIntent | null | undefined): 
 }
 
 export type SignupIntent = {
+  preferredUsageTier?: UsageTierId;
   preferredPlanId?: SignupPlanId;
   preferredUsageAddons?: UsageSignupAddons;
   preferredBillingInterval?: "month" | "year";
@@ -258,6 +266,8 @@ export function sanitizeSignupIntent(intent: SignupIntent | null | undefined): S
   }
   if (normalizedPlan === "usage") {
     out.preferredBillingInterval = "month";
+    if (isUsageTierId(intent.preferredUsageTier))
+      out.preferredUsageTier = intent.preferredUsageTier;
     if (intent.preferredUsageAddons) out.preferredUsageAddons = usageAddonsFromIntent(intent);
   }
 
@@ -302,6 +312,8 @@ export function parseSignupIntent(search: string): SignupIntent | null {
   }
   if (normalizedPlan === "usage") {
     intent.preferredBillingInterval = "month";
+    const tier = params.get("tier");
+    if (isUsageTierId(tier)) intent.preferredUsageTier = tier;
     if (params.has("number") || params.has("email_address")) {
       intent.preferredUsageAddons = {
         number: params.get("number") !== "0",
@@ -422,7 +434,10 @@ export function activationBillingHref(intent: SignupIntent | null | undefined): 
     plan,
     interval: plan === "usage" ? "month" : billingIntervalFromIntent(intent),
   });
-  if (plan === "usage") setUsageAddonParams(params, usageAddonsFromIntent(intent));
+  if (plan === "usage") {
+    setUsageAddonParams(params, usageAddonsFromIntent(intent));
+    if (isUsageTierId(intent?.preferredUsageTier)) params.set("tier", intent.preferredUsageTier);
+  }
   return `/settings/billing?${params.toString()}`;
 }
 

@@ -148,10 +148,10 @@ describe("product documentation and compatibility contract", () => {
     expect(head).not.toContain("—");
 
     expect(ogImage).toContain("BotBound");
-    expect(ogImage).toContain("Give Your Bot a Goal");
-    expect(ogImage).toContain(
-      "For You. For Your Business. Answer calls. Handle email. Work online.",
-    );
+    expect(ogImage).toContain("YOUR VOICE BOT");
+    expect(ogImage).toContain("FOR YOUR WORK.");
+    expect(ogImage).toContain("AI Bots With Their Own Phone Number,");
+    expect(ogImage).toContain("Email Address, And Computer.");
     expect(ogImage).not.toContain("ONE BOT.");
     expect(ogImage).not.toContain("Find. Call. Book");
     expect(ogImage).toMatch(/phone|Phone/);

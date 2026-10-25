@@ -90,9 +90,9 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
       { id: "quality", label: "Quality", shortLabel: "Quality", ariaLabel: "Quality", icon: Star },
       {
         id: "revenue",
-        label: "Revenue",
-        shortLabel: "Revenue",
-        ariaLabel: "Revenue",
+        label: "Sources & Spend",
+        shortLabel: "Sources",
+        ariaLabel: "Sources & Spend",
         icon: Receipt,
       },
     ],

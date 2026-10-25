@@ -181,6 +181,8 @@
 
 .wl-access-panel__terms a {
   color: var(--wireline-color-text-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 
 .wl-access-panel__oauth {
@@ -320,7 +322,8 @@
 
 .wl-access-panel__field:focus-within {
   border-color: var(--wireline-color-focus-default);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wireline-color-focus-default) 16%, transparent);
+  outline: 2px solid var(--wireline-color-focus-default);
+  outline-offset: 2px;
 }
 
 .wl-access-panel__field > svg {

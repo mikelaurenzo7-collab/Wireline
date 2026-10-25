@@ -489,4 +489,107 @@ describe("speech provider transport", () => {
     }).rejects.toThrow("cap");
     expect(requests).toBe(0);
   });
+
+  it("stitches completed audio within an utterance and keeps only three request ids", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const stream = clonedSpeechStreams({
+      voiceId: "clone1",
+      elevenLabsKey: "test",
+      openAIKey: "test",
+      stockVoice: "nova",
+      reserve: async () => {},
+      fetchImpl: async (_input, init) => {
+        bodies.push(JSON.parse(String(init?.body)));
+        return new Response(new Uint8Array([255]), {
+          headers: { "request-id": `speech-${bodies.length}` },
+        });
+      },
+    });
+    let previousText = "";
+    for (const text of [
+      "Hello.",
+      "Here is your answer.",
+      "One more detail.",
+      "Almost done.",
+      "Goodbye.",
+    ]) {
+      for await (const _chunk of stream.cloneSpeech(text, new AbortController().signal, {
+        previousText,
+      })) {
+        /* consume */
+      }
+      previousText = (previousText + " " + text).trim();
+    }
+    expect(bodies[0]).not.toHaveProperty("previous_request_ids");
+    expect(bodies[1]?.previous_request_ids).toEqual(["speech-1"]);
+    expect(bodies[4]?.previous_request_ids).toEqual(["speech-2", "speech-3", "speech-4"]);
+    expect(bodies[4]).not.toHaveProperty("previous_text");
+    for await (const _chunk of stream.cloneSpeech("A new turn.", new AbortController().signal, {
+      previousText: "",
+    })) {
+      /* consume */
+    }
+    expect(bodies[5]).not.toHaveProperty("previous_request_ids");
+  });
+
+  it("does not stitch interrupted audio into the next generation", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const stream = clonedSpeechStreams({
+      voiceId: "clone1",
+      elevenLabsKey: "test",
+      openAIKey: "test",
+      stockVoice: "nova",
+      reserve: async () => {},
+      fetchImpl: async (_input, init) => {
+        bodies.push(JSON.parse(String(init?.body)));
+        return new Response(new Uint8Array([255]), { headers: { "request-id": "interrupted" } });
+      },
+    });
+    const controller = new AbortController();
+    for await (const _chunk of stream.cloneSpeech("Hello.", controller.signal)) controller.abort();
+    for await (const _chunk of stream.cloneSpeech("Next.", new AbortController().signal, {
+      previousText: "Hello.",
+    })) {
+      /* consume */
+    }
+    expect(bodies[1]).not.toHaveProperty("previous_request_ids");
+    expect(bodies[1]?.previous_text).toBe("Hello.");
+  });
+
+  it("does not keep a failed provider response or share stitching across calls", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    let fail = true;
+    const makeStream = () =>
+      clonedSpeechStreams({
+        voiceId: "clone1",
+        elevenLabsKey: "test",
+        openAIKey: "test",
+        stockVoice: "nova",
+        reserve: async () => {},
+        fetchImpl: async (_input, init) => {
+          bodies.push(JSON.parse(String(init?.body)));
+          if (fail)
+            return new Response("failed", { status: 500, headers: { "request-id": "failed" } });
+          return new Response(new Uint8Array([255]), { headers: { "request-id": "completed" } });
+        },
+      });
+    const firstCall = makeStream();
+    const consume = async (
+      stream: ReturnType<typeof makeStream>,
+      text: string,
+      previousText: string,
+    ) => {
+      for await (const _chunk of stream.cloneSpeech(text, new AbortController().signal, {
+        previousText,
+      })) {
+        /* consume */
+      }
+    };
+    await expect(consume(firstCall, "Hello.", "")).rejects.toThrow("500");
+    fail = false;
+    await consume(firstCall, "Next.", "Hello.");
+    expect(bodies[1]).not.toHaveProperty("previous_request_ids");
+    await consume(makeStream(), "Another call.", "Hello. Next.");
+    expect(bodies[2]).not.toHaveProperty("previous_request_ids");
+  });
 });

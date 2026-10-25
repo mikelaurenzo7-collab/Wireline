@@ -77,23 +77,45 @@ function writeStripeLogoSource(appIcon) {
   return source;
 }
 
-function writeOgSource(ogImage) {
-  const embeddedImage = ogImage.toString("base64");
+function writeOgSource(brandMark) {
+  const embeddedImage = brandMark.toString("base64");
   const source = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
-  <title id="title">BotBound | Give Your Bot a Goal</title>
-  <desc id="description">The BotBound robot holds a violet phone beside the words Give Your Bot a Goal. For You. For Your Business. Answer calls. Handle email. Work online.</desc>
-  <metadata>BotBound | Incoming calls, email, and computer tasks. Canonical source /brand/botbound-current-offer-og.png.</metadata>
-  <rect width="1200" height="630" fill="#0A0A0E"/>
-  <image href="data:image/png;base64,${embeddedImage}" width="1200" height="630"/>
+  <title id="title">BotBound | Your Voice Bot for Your Work</title>
+  <desc id="description">Your Voice Bot for Your Work. AI Bots with their own phone number, email address, and computer.</desc>
+  <metadata>BotBound launch identity. Generated from code and the approved phone Bot mark.</metadata>
+  <defs><radialGradient id="wash"><stop stop-color="#eee7fc"/><stop offset="1" stop-color="#f7f7f3"/></radialGradient></defs>
+  <rect width="1200" height="630" fill="#f7f7f3"/>
+  <ellipse cx="1070" cy="100" rx="450" ry="440" fill="url(#wash)"/>
+  <image href="data:image/png;base64,${embeddedImage}" x="936" y="52" width="184" height="184"/>
+  <g font-family="Inter, sans-serif">
+    <text x="76" y="108" fill="#19191d" font-size="38" font-weight="800" letter-spacing="-1.8">Bot<tspan fill="#7040d7">Bound</tspan></text>
+    <text x="76" y="280" fill="#19191d" font-size="78" font-weight="800" letter-spacing="-3">YOUR VOICE BOT</text>
+    <text x="76" y="372" fill="#7040d7" font-size="78" font-weight="800" letter-spacing="-3">FOR YOUR WORK.</text>
+    <text x="80" y="449" fill="#626268" font-size="28">AI Bots With Their Own Phone Number,</text>
+    <text x="80" y="488" fill="#626268" font-size="28">Email Address, And Computer.</text>
+    <text x="80" y="568" fill="#626268" font-size="22">botbound.app</text>
+  </g>
 </svg>\n`;
   writeFileSync(resolve(root, "public/og-image.svg"), source, "utf8");
   return source;
 }
 
-const ogImage = readFileSync(resolve(root, "public/brand/botbound-current-offer-og.png"));
+const ogImage = readFileSync(resolve(root, "public/brand/botbound-operator-polished.png"));
 const ogImageSource = writeOgSource(ogImage);
 if (process.argv.includes("--og-only")) {
-  const png = new Resvg(ogImageSource, { fitTo: { mode: "width", value: 1200 } }).render().asPng();
+  const png = new Resvg(ogImageSource, {
+    fitTo: { mode: "width", value: 1200 },
+    font: {
+      fontFiles: [
+        resolve(root, "brand-work/fonts/Inter-Regular.ttf"),
+        resolve(root, "brand-work/fonts/Inter-ExtraBold.ttf"),
+      ],
+      loadSystemFonts: false,
+      defaultFontFamily: "Inter",
+    },
+  })
+    .render()
+    .asPng();
   writeFileSync(resolve(publicDir, "og-image.png"), png);
   console.log(`✔ rendered public/og-image.png (${png.length} bytes)`);
   process.exit(0);

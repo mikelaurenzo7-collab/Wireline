@@ -59,8 +59,11 @@ export default function WorkspaceBrandEditor({
     <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
       <div className="mb-5">
         <h2 className="font-[var(--wireline-font-family-display)] text-xl tracking-[-0.02em] text-foreground">
-          Brand
+          Business Brand
         </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          For your email identity and shared artifacts.
+        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -93,13 +96,13 @@ export default function WorkspaceBrandEditor({
           </div>
           <div>
             <label htmlFor={colorId} className="app-field-label">
-              Primary color
+              Artifact Accent
             </label>
             <div className="flex gap-2.5">
               <Input
                 id={colorId}
                 type="color"
-                aria-label="Primary color swatch"
+                aria-label="Artifact accent swatch"
                 className="h-11 w-11 cursor-pointer rounded-md border-input bg-transparent p-0"
                 value={primary}
                 onChange={(event) => onUpdate({ ...settings, primary_color: event.target.value })}
@@ -107,7 +110,7 @@ export default function WorkspaceBrandEditor({
               <Input
                 id={colorTextId}
                 type="text"
-                aria-label="Primary color hex value"
+                aria-label="Artifact accent hex value"
                 aria-invalid={!validColor}
                 aria-describedby={validColor ? undefined : colorErrorId}
                 className="app-input-soft h-auto flex-1 py-3 font-mono"

@@ -33,7 +33,7 @@ type WorkspaceTabStripProps = {
 
 function tabClassName(active: boolean, density: "default" | "compact") {
   return cn(
-    "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-lg border font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/60",
+    "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-lg border font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
     density === "compact"
       ? "min-h-[44px] px-3 text-[13px] sm:min-h-10 sm:px-3.5"
       : "min-h-[44px] px-4 text-sm",
@@ -191,7 +191,7 @@ export function WorkspaceTabStrip({
       >
         <div
           className={cn(
-            "flex items-center",
+            "flex items-center p-1",
             wrapAlways
               ? "w-full min-w-0 flex-wrap"
               : wrapAtLarge

@@ -105,8 +105,8 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
   mustInclude(
     "public/og-image.svg",
     ogImage,
-    /#08080D|#0A0A0E/,
-    "OG image must use the dark canvas",
+    /<rect[^>]+fill="#f7f7f3"/,
+    "OG image must use the approved warm light canvas",
   );
   mustInclude(
     "android/app/src/main/res/drawable/ic_launcher_background.xml",

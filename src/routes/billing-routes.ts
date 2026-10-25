@@ -31,7 +31,7 @@ import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { selfServeBillingEnabled } from "../lib/billing-release";
 import { usageBillingEnabled, usageCheckoutConfigured } from "../lib/usage-billing-config";
-import { USAGE_MAX_MONTHLY_CAP_USD } from "../lib/usage-billing-catalog";
+import { USAGE_MAX_MONTHLY_CAP_USD, PUBLIC_USAGE_TIERS } from "../lib/usage-billing-catalog";
 import { isLaunchHardBlocked } from "../lib/launch-readiness";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { isLiveVideoCatalogReady } from "../lib/video-presenter/live-video-entitlements";
@@ -502,8 +502,10 @@ router.get("/billing/plans", (_req: Request, res: Response) => {
   // blockers, provider configuration, or tenant-specific eligibility publicly.
   // Clients must also check the selected plan and interval's catalog flags.
   const checkoutAvailable = stripeConfigured && selfServeBillingEnabled() && !isLaunchHardBlocked();
-  const usageCheckoutAvailable =
-    checkoutAvailable && usageBillingEnabled() && usageCheckoutConfigured();
+  const usageTiers = PUBLIC_USAGE_TIERS.filter((tier) =>
+    usageCheckoutConfigured(process.env, tier),
+  );
+  const usageCheckoutAvailable = checkoutAvailable && usageTiers.length > 0;
   res.setHeader("Cache-Control", "no-store");
   res.json({
     plans: plansForClient({ usageCheckoutAvailable }),
@@ -512,6 +514,7 @@ router.get("/billing/plans", (_req: Request, res: Response) => {
     // Usage billing ships dark: "plans" until USAGE_BILLING_ENABLED is true.
     billing_model: usageBillingEnabled() ? "usage" : "plans",
     usage_checkout_available: usageCheckoutAvailable,
+    usage_tiers: usageCheckoutAvailable ? usageTiers : [],
   });
 });
 
@@ -531,6 +534,8 @@ router.get(
     res.json({
       enabled: true,
       usage_account: true,
+      tier: state.tier,
+      included_work_usd: state.includedWorkUsd,
       period: state.periodKey,
       spent_usd: state.spentUsd,
       cap_usd: state.capUsd,

@@ -1,38 +1,47 @@
 # Usage billing
 
-Status: **release candidate; production enrollment stays off until final verification and promotion.**
+Status: **bundled-plan release candidate; new tiers open after final verification and promotion.**
+The original shared-work offer is already enabled in production. Keep its immutable prices and
+historical periods intact during this additive rollout.
 Michael authorized selecting sustainable pricing, completing billing and cloning, merging to main,
 deploying to Render and enabling the proven features. No further generic approval is required.
 The required release evidence remains a condition of that authorization.
 
-## Rate card (catalog `2026-10-usage-v2`, monthly only)
+## Public plans (shared meter catalog `2026-10-usage-v2`, monthly only)
 
-| Charge                          | Price                                        |
-| ------------------------------- | -------------------------------------------- |
-| Monthly base                    | $19, including one $12 shared work allowance |
-| Calls                           | $0.25/minute, measured by the second         |
-| Sent email replies              | $0.02 each                                   |
-| Computer task time              | $0.20/minute                                 |
-| Optional BotBound number        | $3/month each                                |
-| Optional BotBound email address | $4/month each                                |
+| Plan    | Monthly | Shared Work | Local Numbers | Email Addresses |
+| ------- | ------: | ----------: | ------------: | --------------: |
+| Lite    |     $12 |          $4 |             1 |               1 |
+| Starter |     $24 |         $14 |             1 |               1 |
+| Plus    |     $49 |         $36 |             2 |               2 |
 
-All three channels draw from the same $12 allowance. For example, 24 call minutes,
-100 sent replies and 20 Computer minutes together use $12. The allowance resets
-on the subscription billing cycle and does not roll over. Fixed add-ons are separate.
-The customer sees dollars of work, native quantities, estimated charges and a pretax cap.
-Stripe receives one weighted meter: 100 credits = $1 of work; its first 1,200 credits
-are free and subsequent credits cost one cent. Keep native quantities in the ledger.
+Calls cost $0.25/minute, sent email replies $0.02 each, and Computer $0.20/minute.
+Calls and Computer are measured by the second. Every plan has the same core capabilities.
+Additional identities cost $3/local number/month and $4/email address/month. These quantities
+are extras beyond included capacity; an included identity must never become a paid line item.
+Provisioning uses the verified base/work price pair, not user-editable Stripe metadata.
+
+All three kinds of work use one allowance, reset on the subscription billing cycle without
+rollover. SMS uses its separate existing funding and activation requirements. Customer-owned
+domains need verification; international/toll-free numbers are not promised at the local rate.
+Stripe receives one weighted meter: 100 credits = $1 of work. The first 400/1,400/3,600 credits
+cost zero for Lite/Starter/Plus, then one cent per credit. Native quantities remain in the ledger.
 Round the combined meter once, not each channel before summation.
 
-The rate card is in `src/lib/usage-billing-catalog.ts`; the setup script and checkout
-validator must match it. The previous v1 separate allowances and graduated call prices
-are superseded for new enrollment. Existing package subscriptions are not migrated.
+The original $19/$12 offer is retained internally as `starter`; the new public Starter is
+`standard`. This deliberate distinction preserves historical invoices and immutable Stripe
+objects. New checkout rejects the original offer. Existing package subscriptions are unchanged.
+Each billing period freezes its tier. A midperiod tier or add-on change holds new work for
+invoice reconciliation rather than retroactively changing accrued usage.
+
+The rate card is in `src/lib/usage-billing-catalog.ts`; the setup script, checkout validator,
+UI and estimator must match. No annual or unlimited-use offer is introduced.
 
 ## Cost controls and evidence
 
 A retail spending cap does not itself cap provider costs. Computer reserves provider
-cost atomically against a separate $3 included processing envelope plus 40% of completed
-Computer work above $12. Expensive tasks may pause before the retail allowance is used;
+cost atomically against a separate included processing envelope ($1 Lite, $3.50 Starter,
+$9 Plus; original offer $3), plus 40% of completed Computer work above that plan's allowance. Expensive tasks may pause before the retail allowance is used;
 the product discloses this and preserves the remaining allowance for other work. Review
 actual token, browser and retry costs before expanding that processing policy. Do not
 advertise 60 guaranteed Computer minutes or unlimited processing.
@@ -42,7 +51,11 @@ There is no per-Bot charge, but the current identity namespace supports 120 Bots
 human workspace sharing requires its own supported permissions. Do not promise unlimited
 identities or imply this release proves shared-human tenancy.
 
-Verified v2 sandbox renewal totals on October 25: $19.00 for mixed included work,
+Verified bundled-plan sandbox renewal totals on October 25: $12.00 for Lite's exact mixed
+allowance, $24.01 for Starter's fractional overage, and $100.00 for Plus with both extra
+identities and capped work. Duplicate submissions aggregated once; no live charge was made.
+
+Earlier original-offer v2 sandbox renewal totals on October 25: $19.00 for mixed included work,
 $40.68 for fractional work with both add-ons, and $19.01 for cross-channel fractional
 rounding. Duplicate requests aggregated once. These provider proofs do not replace
 application webhook, entitlement, cancellation, payment-failure and final-release checks.
@@ -67,11 +80,11 @@ support time. The earlier v1 margin percentages are retired; do not reuse them f
 | Flag and env names                          | `src/lib/usage-billing-config.ts`                                                                                                                           |
 | Ledger rules (record, admit, alert, report) | `src/lib/usage-billing-ledger.ts` (pure, unit tested)                                                                                                       |
 | Postgres store and Stripe meter client      | `src/lib/usage-billing-store.ts`                                                                                                                            |
-| Tables                                      | `src/db/usage-billing-schema.ts`, migrations `0187_usage_billing.sql` through `0189_usage_billing_periods.sql`                                              |
+| Tables                                      | `src/db/usage-billing-schema.ts`, migrations `0187_usage_billing.sql` through `0190_usage_plan_tiers.sql`                                                   |
 | Plan                                        | `USAGE_PLAN` / `isUsagePlanId` in `src/lib/plan-catalog.ts` (outside `STRIPE_PLANS`)                                                                        |
 | Bots                                        | `resolveAgentEntitlement` returns `unlimited: true` for an active usage subscription; the only ceiling is the 120-mark identity namespace                   |
-| Checkout                                    | `plan_id: "usage"`: base, one shared metered price, and only the chosen add-ons; monthly only                                                               |
-| Add-on slots                                | mirrored from the Stripe subscription into `wireline_usage_spend_controls`; numbers and BotBound email addresses are provisioned only up to what was bought |
+| Checkout                                    | `plan_id: "usage"`, `usage_tier`: selected base/work pair and optional extras; monthly only                                                                 |
+| Add-on slots                                | mirrored from the Stripe subscription into `wireline_usage_spend_controls`; included identities plus paid extras determine provisionable capacity           |
 | Reporting                                   | `usage_meter_report` job; Stripe meter events carry the idempotency key as `identifier`                                                                     |
 | Public copy                                 | `/api/billing/plans` returns `billing_model` and `usage_checkout_available`; the landing and pricing pages switch on it, so copy is never ahead of checkout |
 
@@ -81,7 +94,7 @@ Each records once per source id, so retries and replays never double count.
 
 ## Stripe objects and env vars
 
-Run `node scripts/stripe-usage-billing-setup.mjs` for the dry run. `--apply` needs a test key;
+Run `node scripts/stripe-usage-billing-setup.mjs --tier=lite` (or `standard`, `plus`) for the dry run. The default retains the original offer for reconciliation. `--apply` needs a test key;
 a live key also needs `--live --rates-approved`. The script reuses existing objects by lookup key
 or meter event name and never modifies or archives anything.
 
@@ -94,20 +107,22 @@ or meter event name and never modifies or archives anything.
 
 Environment names: `USAGE_BILLING_ENABLED`, `STRIPE_USAGE_BASE_PRICE_ID`,
 `STRIPE_USAGE_WORK_PRICE_ID`, `STRIPE_USAGE_WORK_METER_EVENT`,
-`STRIPE_USAGE_NUMBER_ADDON_PRICE_ID`, `STRIPE_USAGE_EMAIL_ADDON_PRICE_ID`.
+`STRIPE_USAGE_NUMBER_ADDON_PRICE_ID`, `STRIPE_USAGE_EMAIL_ADDON_PRICE_ID`. Bundled offers additionally need `STRIPE_USAGE_{LITE,STARTER,PLUS}_{BASE,WORK}_PRICE_ID`. The API only advertises configured public tiers.
 
 ## Rollout
 
 | Stage | What                                                                                                                                                                                                                                                                  |
 | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0     | Validate with the flag off. Migrations 0187, 0188 and 0189 must be installed through the reviewed release path before deploying this source, including the new nullable fields used by existing checkout/task queries.                                                |
+| 0     | Validate with the flag off. Migrations 0187 through 0190 must be installed through the reviewed release path before deploying this source, including the new nullable fields used by existing checkout/task queries.                                                  |
 | 1     | Use the approved rates in the BotBound Stripe account (`acct_1TkyXL8e6If87QKm`), test mode only: dry run, then `--apply`, staging configuration and an isolated database, then prove a test-clock invoice (base, mixed shared work, add-ons, rounding and cap clamp). |
 | 2     | After the proof: `--apply --live --rates-approved`, set env vars, flip `USAGE_BILLING_ENABLED=true`, redeploy.                                                                                                                                                        |
 | 3     | Lift the 120-mark ceiling per workspace.                                                                                                                                                                                                                              |
 
-## Known follow-ups before stage 2
+## Settlement Verification And Operating Limits
 
-- Computer minutes count task wall time.
+- Computer minutes count task wall time. This remains disclosed in the product.
+- Self-service changes between usage tiers are not introduced by this release. Preserve the
+  frozen period and reconcile invoices for any operator-managed midperiod change.
 - Prove final settlement for cancellation, delayed provider receipts, mid-period add-on changes
   and invoice finalization. These cases retain their receipts as `reconciliation_required` and
   do not automatically submit an amount to a possibly finalized invoice. Enabling live billing
@@ -221,3 +236,15 @@ local `botbound_usage_review` database. It never falls back to production connec
 Use a disposable local PostgreSQL 17 container and run this suite with that URL; its fixture
 setup truncates only this dedicated database. The regular test suite skips it when the explicit
 local URL is absent. This validates database behavior, not an actual Stripe invoice.
+
+## October 25 bundled-offer rehearsal
+
+The isolated, claimed BotBound sandbox completed paid test-clock renewal invoices at $12.00
+for Lite's fully shared allowance; $24.01 for Starter cross-channel fractional rounding; and
+$100.00 for Plus with one additional number/mailbox pair and work exactly at the default cap.
+Each channel event was replayed with its idempotency key and aggregated once. These are
+sandbox invoice proofs, not live customer revenue or final application release certification.
+
+The economic analysis in the BotBound business hub records full-use sensitivities, founder
+time, fixed-overhead break-even and current official vendor sources. No net-profit guarantee
+is made. All paid plans include identities; additional capacity remains optional.

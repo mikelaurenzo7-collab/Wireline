@@ -41,9 +41,9 @@ export const buttonVariants = cva(
       size: {
         default: "h-auto px-4 py-2",
         md: "h-auto px-4 py-2",
-        sm: "h-auto min-h-9 px-3 py-1.5 text-sm",
+        sm: "h-auto min-h-10 px-3 py-1.5 text-sm",
         lg: "h-auto min-h-12 px-6 py-3",
-        icon: "h-9 w-9 px-0 [&_svg]:size-5",
+        icon: "h-10 w-10 px-0 [&_svg]:size-5",
       },
     },
     defaultVariants: {

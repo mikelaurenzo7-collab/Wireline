@@ -617,6 +617,13 @@
       "when": 1792900000002,
       "tag": "0189_usage_billing_periods",
       "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1792942000000,
+      "tag": "0190_usage_plan_tiers",
+      "breakpoints": true
     }
   ]
 }

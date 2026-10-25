@@ -56,7 +56,13 @@ export default function FunnelView({ days }: { days: number }) {
             className="rounded-xl border border-border bg-background/40 p-3 sm:p-4"
           >
             <dt className="text-sm text-muted-foreground">
-              {item.name === "Queued" ? "Queued leads" : item.name}
+              {item.name === "Queued"
+                ? "Queued Leads"
+                : item.name === "Booked"
+                  ? "Appointments"
+                  : item.name === "Completed"
+                    ? "Completed Appointments"
+                    : item.name}
             </dt>
             <dd className="mt-2 font-display text-2xl tabular-nums leading-none text-brand-display">
               {item.count.toLocaleString()}

@@ -25,7 +25,8 @@ import {
   pooledWorkUsd,
   pooledOverageUsd,
   workCredits,
-  USAGE_INCLUDED_WORK_USD,
+  usageTier,
+  type UsageTierId,
   type UsageMeterKey,
 } from "./usage-billing-catalog";
 
@@ -69,6 +70,7 @@ export interface UsageReportAttempt {
 }
 
 export interface UsageSpendControl {
+  tier?: UsageTierId;
   capUsd: number;
   numbers: number;
   emailAddresses: number;
@@ -159,8 +161,10 @@ function cents(value: number): number {
 /** Period spend: fixed charges plus every meter priced at its period total. */
 export function periodSpendUsd(control: UsageSpendControl, totals: MeterTotals): number {
   return cents(
-    fixedMonthlyUsd({ numbers: control.numbers, emailAddresses: control.emailAddresses }) +
-      pooledOverageUsd(totals),
+    fixedMonthlyUsd(
+      { numbers: control.numbers, emailAddresses: control.emailAddresses },
+      control.tier,
+    ) + pooledOverageUsd(totals, control.tier),
   );
 }
 
@@ -174,15 +178,17 @@ export function clampBillableQuantity(
   quantity: number,
   headroomUsd: number,
   totals: MeterTotals = { ...emptyMeterTotals(), [meter]: alreadyBilled },
+  tier: UsageTierId = "starter",
 ): number {
   if (!(quantity > 0)) return 0;
   const incremental = (q: number) =>
-    pooledOverageUsd({ ...totals, [meter]: alreadyBilled + q }) - pooledOverageUsd(totals);
+    pooledOverageUsd({ ...totals, [meter]: alreadyBilled + q }, tier) -
+    pooledOverageUsd(totals, tier);
   if (incremental(quantity) <= headroomUsd + 1e-9) return round4(quantity);
   if (headroomUsd <= 0) {
     // Units still inside the included bucket cost nothing and never breach a cap.
     const freeUnits =
-      Math.max(0, USAGE_INCLUDED_WORK_USD - pooledWorkUsd(totals)) /
+      Math.max(0, usageTier(tier).includedWorkUsd - pooledWorkUsd(totals)) /
       marginalUnitUsd(meter, alreadyBilled);
     return round4(Math.min(quantity, freeUnits));
   }
@@ -214,6 +220,8 @@ export async function recordUsageEvent(
 }
 
 export interface UsageSpendState {
+  tier: UsageTierId;
+  includedWorkUsd: number;
   periodKey: string;
   spentUsd: number;
   capUsd: number;
@@ -239,6 +247,8 @@ export async function usageSpendState(store: UsageStore, userId: string): Promis
   );
   const pct = control.capUsd > 0 ? Math.floor((spentUsd / control.capUsd) * 100) : 100;
   return {
+    tier: control.tier ?? "starter",
+    includedWorkUsd: usageTier(control.tier).includedWorkUsd,
     periodKey: identity.periodKey,
     spentUsd,
     capUsd: control.capUsd,
@@ -246,7 +256,9 @@ export async function usageSpendState(store: UsageStore, userId: string): Promis
     atCap: spentUsd >= control.capUsd,
     headroomUsd: cents(Math.max(0, control.capUsd - spentUsd)),
     workUsd: cents(pooledWorkUsd(totals)),
-    includedRemainingUsd: cents(Math.max(0, USAGE_INCLUDED_WORK_USD - pooledWorkUsd(totals))),
+    includedRemainingUsd: cents(
+      Math.max(0, usageTier(control.tier).includedWorkUsd - pooledWorkUsd(totals)),
+    ),
     reconciliationRequired: Boolean(control.blockedReason),
   };
 }
@@ -267,7 +279,7 @@ export function validateUsageMonthlyCap(
   spentUsd: number,
   capUsd: number,
 ): void {
-  const minUsd = Math.max(minimumMonthlyCapUsd(control), spentUsd);
+  const minUsd = Math.max(minimumMonthlyCapUsd(control, control.tier), spentUsd);
   if (!Number.isFinite(capUsd) || capUsd < minUsd || capUsd > USAGE_MAX_MONTHLY_CAP_USD) {
     throw new AppError(
       400,
@@ -303,7 +315,8 @@ export async function admitUsage(
   if (state.atCap) throw new UsageSpendCapReachedError();
   const totals = await store.recordedTotals(userId, state.periodKey);
   const rate = marginalUnitUsd(meter, totals[meter]);
-  const includedLeft = Math.max(0, USAGE_INCLUDED_WORK_USD - pooledWorkUsd(totals)) / rate;
+  const includedLeft =
+    Math.max(0, usageTier(period.tier).includedWorkUsd - pooledWorkUsd(totals)) / rate;
   // Price the first paid unit, not the current one: inside the included bucket
   // the current unit costs nothing, which must not read as unbounded headroom.
   const maxUnits = rate > 0 ? includedLeft + state.headroomUsd / rate : null;
@@ -393,6 +406,7 @@ export async function reportPendingUsageForUser(
         event.quantity,
         control.capUsd - periodSpendUsd(control, totals),
         totals,
+        control.tier,
       );
       if (billable <= 0) {
         await locked.markSkipped(event.id, "spend_cap");

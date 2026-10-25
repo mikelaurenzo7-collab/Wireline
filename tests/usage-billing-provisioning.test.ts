@@ -58,6 +58,22 @@ afterEach(() => {
 });
 
 describe("usage add-on slots", () => {
+  it.each([
+    ["lite", 1, 1],
+    ["standard", 1, 1],
+    ["plus", 2, 2],
+  ])(
+    "includes the %s identities and adds only purchased extras",
+    async (tier, numbers, emailAddresses) => {
+      vi.stubEnv("USAGE_BILLING_ENABLED", "true");
+      expect(
+        await usageAddonSlots("user-1", executor([{ tier, numbers: 0, emailAddresses: 0 }])),
+      ).toEqual({ numbers, emailAddresses });
+      expect(
+        await usageAddonSlots("user-1", executor([{ tier, numbers: 2, emailAddresses: 1 }])),
+      ).toEqual({ numbers: Number(numbers) + 2, emailAddresses: Number(emailAddresses) + 1 });
+    },
+  );
   it("returns no slots and reads nothing while the flag is off", async () => {
     const db = executor([{ numbers: 3, emailAddresses: 2 }]);
     expect(await usageAddonSlots("user-1", db)).toEqual({ numbers: 0, emailAddresses: 0 });
@@ -165,7 +181,7 @@ describe("usage provisioning source contracts", () => {
   it("keeps usage checkout dark, monthly only, and add-ons explicit", () => {
     const source = read("src/routes/launch-billing-checkout-atomic-routes.ts");
     expect(source).toMatch(
-      /if \(!usageBillingEnabled\(\) \|\| !usageCheckoutConfigured\(\)\) \{\s*return res\.status\(503\)\.json\(\{\s*code: "USAGE_CHECKOUT_UNAVAILABLE"/,
+      /if \(!usageBillingEnabled\(\) \|\| !usageCheckoutConfigured\(process.env, tier\)\) \{\s*return res\.status\(503\)\.json\(\{\s*code: "USAGE_CHECKOUT_UNAVAILABLE"/,
     );
     expect(source).toContain('code: "USAGE_PLAN_MONTHLY_ONLY"');
     expect(source).toContain("if (value === true) return 1;");

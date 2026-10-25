@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto";
 import { AppError } from "./api-error";
-import { minimumMonthlyCapUsd, USAGE_DEFAULT_MONTHLY_CAP_USD } from "./usage-billing-catalog";
+import {
+  minimumMonthlyCapUsd,
+  USAGE_DEFAULT_MONTHLY_CAP_USD,
+  type UsageTierId,
+} from "./usage-billing-catalog";
 
 /** A retry may resume only the exact purchase whose durable operation it owns. */
 export function checkoutConfigurationKey(
@@ -15,11 +19,14 @@ export function checkoutConfigurationKey(
 }
 
 /** Checkout starts with the disclosed default cap; fixed charges must fit it. */
-export function validateUsageCheckoutAddons(addons: {
-  numbers: number;
-  emailAddresses: number;
-}): void {
-  if (minimumMonthlyCapUsd(addons) > USAGE_DEFAULT_MONTHLY_CAP_USD) {
+export function validateUsageCheckoutAddons(
+  addons: {
+    numbers: number;
+    emailAddresses: number;
+  },
+  tier: UsageTierId = "starter",
+): void {
+  if (minimumMonthlyCapUsd(addons, tier) > USAGE_DEFAULT_MONTHLY_CAP_USD) {
     throw new AppError(
       400,
       "USAGE_ADDONS_EXCEED_CAP",

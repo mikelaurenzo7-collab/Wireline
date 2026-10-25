@@ -9,6 +9,7 @@ import {
   USAGE_WORK_EVENT_NAME,
   type UsageAddonKey,
   type UsageMeterKey,
+  type UsageTierId,
 } from "./usage-billing-catalog";
 
 export const USAGE_BILLING_FLAG = "USAGE_BILLING_ENABLED";
@@ -24,6 +25,16 @@ export const USAGE_PRICE_ENV = {
   email_address: "STRIPE_USAGE_EMAIL_ADDON_PRICE_ID",
 } as const satisfies Record<"base" | "work" | UsageAddonKey, string>;
 
+export const USAGE_TIER_PRICE_ENV = {
+  starter: { base: USAGE_PRICE_ENV.base, work: USAGE_PRICE_ENV.work },
+  lite: { base: "STRIPE_USAGE_LITE_BASE_PRICE_ID", work: "STRIPE_USAGE_LITE_WORK_PRICE_ID" },
+  standard: {
+    base: "STRIPE_USAGE_STARTER_BASE_PRICE_ID",
+    work: "STRIPE_USAGE_STARTER_WORK_PRICE_ID",
+  },
+  plus: { base: "STRIPE_USAGE_PLUS_BASE_PRICE_ID", work: "STRIPE_USAGE_PLUS_WORK_PRICE_ID" },
+} as const;
+
 export const USAGE_METER_EVENT_ENV: Record<UsageMeterKey, string> = {
   call_minutes: "STRIPE_USAGE_WORK_METER_EVENT",
   emails_handled: "STRIPE_USAGE_WORK_METER_EVENT",
@@ -32,16 +43,22 @@ export const USAGE_METER_EVENT_ENV: Record<UsageMeterKey, string> = {
 
 /** Every env var the usage path needs, names only. */
 export const USAGE_BILLING_ENV_VARS = [
-  USAGE_BILLING_FLAG,
-  ...Object.values(USAGE_PRICE_ENV),
-  ...new Set(Object.values(USAGE_METER_EVENT_ENV)),
-] as const;
+  ...new Set([
+    USAGE_BILLING_FLAG,
+    ...Object.values(USAGE_PRICE_ENV),
+    ...Object.values(USAGE_TIER_PRICE_ENV).flatMap(Object.values),
+    ...new Set(Object.values(USAGE_METER_EVENT_ENV)),
+  ]),
+];
 
 export function usagePriceId(
   key: keyof typeof USAGE_PRICE_ENV,
   env: NodeJS.ProcessEnv = process.env,
+  tier: UsageTierId = "starter",
 ): string | null {
-  return env[USAGE_PRICE_ENV[key]]?.trim() || null;
+  const name =
+    key === "base" || key === "work" ? USAGE_TIER_PRICE_ENV[tier][key] : USAGE_PRICE_ENV[key];
+  return env[name]?.trim() || null;
 }
 
 export function usageMeterEventName(
@@ -52,12 +69,15 @@ export function usageMeterEventName(
 }
 
 /** Every price offered by the public form must exist before checkout opens. */
-export function usageCheckoutConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
+export function usageCheckoutConfigured(
+  env: NodeJS.ProcessEnv = process.env,
+  tier: UsageTierId = "starter",
+): boolean {
   return (
     usageBillingEnabled(env) &&
     Boolean(
-      usagePriceId("base", env) &&
-      usagePriceId("work", env) &&
+      usagePriceId("base", env, tier) &&
+      usagePriceId("work", env, tier) &&
       usagePriceId("number", env) &&
       usagePriceId("email_address", env),
     )
@@ -67,8 +87,11 @@ export function usageCheckoutConfigured(env: NodeJS.ProcessEnv = process.env): b
 /** Usage price ids, used to recognize a usage subscription from its items. */
 export function usagePriceIds(env: NodeJS.ProcessEnv = process.env): Set<string> {
   return new Set(
-    (Object.keys(USAGE_PRICE_ENV) as Array<keyof typeof USAGE_PRICE_ENV>)
-      .map((key) => usagePriceId(key, env))
+    [
+      ...Object.values(USAGE_PRICE_ENV),
+      ...Object.values(USAGE_TIER_PRICE_ENV).flatMap(Object.values),
+    ]
+      .map((key) => env[key]?.trim())
       .filter((value): value is string => Boolean(value)),
   );
 }

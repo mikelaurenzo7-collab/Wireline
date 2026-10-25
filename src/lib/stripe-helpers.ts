@@ -31,6 +31,11 @@ import {
   clampExtraAgentAddons,
 } from "./agent-capacity";
 
+import { USAGE_TIERS } from "./usage-billing-catalog";
+import { usagePriceId } from "./usage-billing-config";
+import { usageTierFromSubscription } from "./usage-subscription-tier";
+export { usageTierFromSubscription } from "./usage-subscription-tier";
+
 export { STRIPE_API_VERSION };
 
 const configuredStripeSecret = String(process.env.STRIPE_SECRET_KEY || "").trim();
@@ -334,8 +339,9 @@ export function basePlanInvoiceShare(invoice: Stripe.Invoice): number | null {
 }
 
 function isUsageBasePriceId(priceId: string): boolean {
-  const configured = process.env.STRIPE_USAGE_BASE_PRICE_ID?.trim();
-  return Boolean(configured) && configured === priceId;
+  return Object.keys(USAGE_TIERS).some(
+    (tier) => usagePriceId("base", process.env, tier as keyof typeof USAGE_TIERS) === priceId,
+  );
 }
 
 /** Usage plan add-ons mirrored from the subscription items (by configured price id). */
@@ -937,6 +943,7 @@ async function syncSubscriptionFromStripeUnderLease(
       await assertSyncLease();
       const period = subscriptionPeriod(sub);
       await setUsageAddonQuantities(userId, usageAddonQuantitiesFromSubscription(sub), {
+        tier: usageTierFromSubscription(sub),
         stripeCustomerId: customerId,
         stripeSubscriptionId: sub.id,
         startsAt: period.start ? new Date(period.start * 1000) : null,

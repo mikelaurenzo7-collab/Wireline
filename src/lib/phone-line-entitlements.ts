@@ -37,7 +37,7 @@ export async function getIncludedPhoneLineSlots(
   const entitlement = await getTenantChannelEntitlements(userId, executor);
   if (entitlement.subscriptionStatus !== "active") return 0;
   const planId = entitlement.planId;
-  // Usage plan: a number exists only when the owner chose the number add-on.
+  // Usage capacity includes the verified tier's numbers and paid extras.
   if (isUsagePlanId(planId)) {
     // Loaded on demand: the usage store is only needed for usage accounts.
     const { usageAddonSlots } = await import("./usage-billing-store");

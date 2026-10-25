@@ -18,6 +18,7 @@ import BillingIntervalControl from "../components/BillingIntervalControl";
 import ChannelPlanPicker from "../components/ChannelPlanPicker";
 import { usePaidPlanAvailability } from "../hooks/usePaidPlanAvailability";
 import UsagePricingPanel from "../components/usage-billing/UsagePricingPanel";
+import type { UsageTierId } from "../lib/usage-billing-catalog";
 
 const CHANNEL_PLANS = STRIPE_PLANS.filter(
   (plan) =>
@@ -77,24 +78,24 @@ const pricingJsonLd = {
   ],
 };
 
-/** Pricing while USAGE_BILLING_ENABLED is on: one plan, an estimator first. */
-function UsagePricing() {
+/** Public shared-work plans, followed by one estimator and the common rates. */
+function UsagePricing({ availableTiers }: { availableTiers: readonly UsageTierId[] }) {
   return (
     <MarketingPageFrame className="wl-pricing-page">
       <PageMeta
         title="Pricing | Shared Work Allowance | BotBound"
-        description="One monthly plan with a shared allowance for calls, emails, and Computer. Set a spending limit for extra work."
+        description="Monthly plans for calls, email and Computer. Compare included numbers, email addresses and shared work."
         path="/pricing"
       />
       <section id="plans" className="marketing-section marketing-section--screen">
         <div className="wl-public-rail mx-auto max-w-5xl">
           <div className="mx-auto mb-6 max-w-3xl text-center">
-            <h1 className="marketing-hero-title mx-auto">One Plan. Room to Do More.</h1>
+            <h1 className="marketing-hero-title mx-auto">Room to Do More.</h1>
             <p className="marketing-hero-lead mx-auto mt-4">
               Calls, email, and Computer. One shared allowance.
             </p>
           </div>
-          <UsagePricingPanel />
+          <UsagePricingPanel availableTiers={availableTiers} />
         </div>
       </section>
     </MarketingPageFrame>
@@ -130,18 +131,19 @@ export default function Pricing() {
     url.searchParams.set("interval", interval);
     window.history.replaceState(window.history.state, "", url);
   };
-  const { billingModel, canActivate, emailSetupReview, notice } = usePaidPlanAvailability({
-    interval: billingInterval,
-    planId: selectedPlanId,
-  });
-  if (billingModel === "usage") return <UsagePricing />;
+  const { billingModel, canActivate, emailSetupReview, notice, usageTiers } =
+    usePaidPlanAvailability({
+      interval: billingInterval,
+      planId: selectedPlanId,
+    });
+  if (billingModel === "usage") return <UsagePricing availableTiers={usageTiers} />;
   const selectedHasCalls =
     CHANNEL_PLANS.find((plan) => plan.id === selectedPlanId)?.channels.includes("voice") === true;
   return (
     <MarketingPageFrame className="wl-pricing-page">
       <PageMeta
         title="Pricing | Calls, Email, and a Computer | BotBound"
-        description="Personal is $12 a month for calls and a computer. Compare Calls, Email, and combined plans."
+        description="Monthly plans for calls, email and Computer. Compare included numbers, email addresses and shared work."
         path="/pricing"
       />
       <script

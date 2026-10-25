@@ -86,6 +86,7 @@ export function usePaidPlanAvailability({
   const billingModel = status === "ready" ? billingModelFromPayload(plans) : "plans";
 
   return {
+    usageTiers: plans?.usage_tiers ?? [],
     status,
     available,
     billingModel,

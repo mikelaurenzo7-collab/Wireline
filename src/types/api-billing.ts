@@ -98,6 +98,7 @@ export interface BillingPlansResponse {
   billing_model?: "usage" | "plans";
   /** Usage plan checkout is configured end to end. */
   usage_checkout_available?: boolean;
+  usage_tiers?: Array<import("../lib/usage-billing-catalog").UsageTierId>;
 }
 
 /** GET /api/billing/usage-spend */
@@ -107,6 +108,8 @@ export type UsageSpendResponse =
   | {
       enabled: true;
       usage_account: true;
+      tier?: import("../lib/usage-billing-catalog").UsageTierId;
+      included_work_usd?: number;
       period: string;
       spent_usd: number;
       cap_usd: number;

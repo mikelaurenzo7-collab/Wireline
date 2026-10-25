@@ -14,6 +14,7 @@ import { sql } from "drizzle-orm";
 
 import { users } from "./schema-base";
 import type { UsageReportAttempt } from "../lib/usage-billing-ledger";
+import type { UsageTierId } from "../lib/usage-billing-catalog";
 
 export const USAGE_METER_EVENT_STATUSES = [
   "admitted",
@@ -92,6 +93,7 @@ export const usageBillingPeriods = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     periodKey: text("period_key").notNull(),
     stripeCustomerId: text("stripe_customer_id").notNull(),
+    tier: text("tier").$type<UsageTierId>().notNull().default("starter"),
     stripeSubscriptionId: text("stripe_subscription_id").notNull(),
     startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
     endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
@@ -107,6 +109,10 @@ export const usageBillingPeriods = pgTable(
       table.periodKey,
     ),
     periodCheck: check("wireline_usage_billing_periods_period_check", sql`ends_at > starts_at`),
+    tierCheck: check(
+      "wireline_usage_billing_periods_tier_check",
+      sql`tier IN ('starter', 'lite', 'standard', 'plus')`,
+    ),
     capCheck: check(
       "wireline_usage_billing_periods_cap_check",
       sql`monthly_cap_usd > 0 AND monthly_cap_usd <= 25000`,
@@ -125,6 +131,7 @@ export const usageBillingPeriods = pgTable(
 export const usageSpendControls = pgTable(
   "wireline_usage_spend_controls",
   {
+    tier: text("tier").$type<UsageTierId>().notNull().default("starter"),
     userId: uuid("user_id")
       .primaryKey()
       .references(() => users.id, { onDelete: "cascade" }),
@@ -140,6 +147,10 @@ export const usageSpendControls = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   () => ({
+    tierCheck: check(
+      "wireline_usage_spend_controls_tier_check",
+      sql`tier IN ('starter', 'lite', 'standard', 'plus')`,
+    ),
     capCheck: check(
       "wireline_usage_spend_controls_cap_check",
       sql`monthly_cap_usd > 0 AND monthly_cap_usd <= 25000`,

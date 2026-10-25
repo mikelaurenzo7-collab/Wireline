@@ -165,9 +165,8 @@ async function paidPlanForUser(
     Boolean(plan && plan.price_usd_monthly > 0);
   if (!paid)
     return { eligible: false, planId, agentIds: [], phoneAgentIds: [], mailboxAgentIds: [] };
-  // Usage plan: provision nothing while the flag is off, and afterwards only the
-  // add-ons the owner chose. Gmail, Outlook and calls-only accounts never get a
-  // BotBound inbox, because they never buy the email address add-on.
+  // Usage plan: provision nothing while the flag is off. Once enabled, capacity
+  // comes from the verified tier's included identities and purchased extras.
   const usageSlots = isUsagePlanId(planId)
     ? usageBillingEnabled()
       ? await import("./usage-billing-store").then(({ usageAddonSlots }) => usageAddonSlots(userId))
