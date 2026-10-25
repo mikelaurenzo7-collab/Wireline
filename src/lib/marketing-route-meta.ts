@@ -54,7 +54,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/pricing": {
     title: "Pricing | Calls, Email, and a Computer",
     description:
-      "Monthly plans for calls, email and Computer. Compare included numbers, email addresses and shared work.",
+      "Monthly plans for calls, SMS, email and Computer. Compare included numbers, email addresses and shared work.",
   },
   "/features": {
     title: "Product",

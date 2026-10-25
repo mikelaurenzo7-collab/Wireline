@@ -12,15 +12,27 @@ export async function withStripeSubscriptionSyncLease<T>(
   customerId: string,
   perform: (assertOwned: () => Promise<void>) => Promise<T>,
 ): Promise<T> {
+  return withBillingSyncLease(`stripe:subscription-sync:${customerId}`, perform);
+}
+
+/** Serialize founder grants and Stripe projections for the same workspace. */
+export async function withBillingEntitlementLease<T>(
+  userId: string,
+  perform: (assertOwned: () => Promise<void>) => Promise<T>,
+): Promise<T> {
+  return withBillingSyncLease(`billing:entitlements:${userId}`, perform);
+}
+
+async function withBillingSyncLease<T>(
+  key: string,
+  perform: (assertOwned: () => Promise<void>) => Promise<T>,
+): Promise<T> {
   const acquiredAt = Date.now();
-  const decision = await acquireDistributedLease(
-    `stripe:subscription-sync:${customerId}`,
-    SYNC_LEASE_MS,
-  );
+  const decision = await acquireDistributedLease(key, SYNC_LEASE_MS);
   if (decision.status !== "acquired") {
     throw AppError.serviceUnavailable(
       decision.status === "held"
-        ? "This customer's billing update is already running. Please retry."
+        ? "This billing update is already running. Please retry."
         : "Billing synchronization is temporarily unavailable. Please retry.",
     );
   }

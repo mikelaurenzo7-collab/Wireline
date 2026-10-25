@@ -1,9 +1,23 @@
 # Usage billing
 
-Status: **shared-work release candidate includes US SMS.**
-Lite, Starter and Plus are deployed. BOTBOUND LLC runtime permissions and the matching
-live usage catalog were verified on October 25. Promotion still requires the committed
-SMS migration, webhook activation and audited founder/demo binding reconciliation.
+Status: **Lite, Starter and Plus shared-work billing is deployed; the authorized merchant switch is staged, not yet verified.**
+Michael subsequently selected the older BotBound Stripe account
+(`acct_1TkyXL8e6If87QKm`) as the production target. Complete the matching catalog,
+credentials, webhook, founder/demo binding reconciliation and exact-source deployment
+before recording the switch as live. The account name does not establish its legal
+entity or tax classification; provider verification is a separate check.
+
+Earlier on October 25, the release switched new production billing to BOTBOUND LLC
+(`acct_1UQBcs6Ph5cHChCS`), verified its runtime permissions and live catalog, activated
+the matching lifecycle webhook, and reconciled migration 0191 and the founder/demo
+bindings. See [release PR #1382](https://github.com/mikelaurenzo7-collab/Wireline/pull/1382).
+Those are dated receipts for that merchant, not proof of the subsequent switch.
+Sandbox renewal invoices and the earlier live hosted-checkout handoff are verified;
+checkout on the selected merchant and an ordinary new subscription's production
+recurring settlement remain separate acceptance work. SMS execution still requires
+carrier approval, consent and the existing runtime gates. DNCScrub purchase is deferred
+by the founder; marketing calls requiring federal screening remain blocked until
+vendor access and the seller's registration are configured and verified.
 Keep existing immutable prices and historical periods intact during this rollout.
 Michael authorized selecting sustainable pricing, completing billing and cloning, merging to main,
 deploying to Render and enabling the proven features. No further generic approval is required.
@@ -107,12 +121,14 @@ Run `node scripts/stripe-usage-billing-setup.mjs --tier=lite` (or `standard`, `p
 a live key also needs `--live --rates-approved`. The script reuses existing objects by lookup key
 or meter event name and never modifies or archives anything.
 
-| Object                        | Lookup key or event                                             |
-| ----------------------------- | --------------------------------------------------------------- |
-| Base, $19 licensed monthly    | `usage_base_monthly_2026_10_v2`                                 |
-| Sum meter, by Stripe customer | `botbound_work_credits_v2`                                      |
-| Shared graduated meter price  | `usage_work_2026_10_v2`                                         |
-| Add-on prices                 | `usage_addon_number_2026_10_v2`, `usage_addon_email_2026_10_v2` |
+| Object                          | Lookup key or event                                             |
+| ------------------------------- | --------------------------------------------------------------- |
+| Lite / Starter / Plus bases     | `usage_{lite,standard,plus}_monthly_2026_10_v1`                 |
+| Lite / Starter / Plus work      | `usage_{lite,standard,plus}_work_2026_10_v1`                    |
+| Original $19 base, historical   | `usage_base_monthly_2026_10_v2`                                 |
+| Sum meter, by Stripe customer   | `botbound_work_credits_v2`                                      |
+| Original work price, historical | `usage_work_2026_10_v2`                                         |
+| Add-on prices                   | `usage_addon_number_2026_10_v2`, `usage_addon_email_2026_10_v2` |
 
 Environment names: `USAGE_BILLING_ENABLED`, `STRIPE_USAGE_BASE_PRICE_ID`,
 `STRIPE_USAGE_WORK_PRICE_ID`, `STRIPE_USAGE_WORK_METER_EVENT`,
@@ -120,12 +136,12 @@ Environment names: `USAGE_BILLING_ENABLED`, `STRIPE_USAGE_BASE_PRICE_ID`,
 
 ## Rollout
 
-| Stage | What                                                                                                                                                                                                                                                                  |
-| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0     | Validate with the flag off. Migrations 0187 through 0190 must be installed through the reviewed release path before deploying this source, including the new nullable fields used by existing checkout/task queries.                                                  |
-| 1     | Use the approved rates in the BotBound Stripe account (`acct_1TkyXL8e6If87QKm`), test mode only: dry run, then `--apply`, staging configuration and an isolated database, then prove a test-clock invoice (base, mixed shared work, add-ons, rounding and cap clamp). |
-| 2     | After the proof: `--apply --live --rates-approved`, set env vars, flip `USAGE_BILLING_ENABLED=true`, redeploy.                                                                                                                                                        |
-| 3     | Lift the 120-mark ceiling per workspace.                                                                                                                                                                                                                              |
+| Stage | What                                                                                                                                                                                                                                                        |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0     | For a new environment, validate with the flag off. Install migrations 0187 through 0191 through the reviewed release path, verifying the ledger and actual schema before promotion. Never replay them blindly on production.                                |
+| 1     | The selected production target is BotBound (`acct_1TkyXL8e6If87QKm`). Use an explicitly selected isolated test sandbox for invoice proof. Audit the target's existing catalog before applying each public tier; reuse passing proof when source and conditions still match. |
+| 2     | After proof and authorization, use `--apply --live --rates-approved` as needed, configure matching merchant prices, meter, webhook and runtime permissions, reconcile exact founder/demo bindings, and deploy the reviewed source. The selected-account switch is staged, not yet verified. |
+| 3     | Verify deployed checkout, webhook ownership, entitlement and settlement against the same merchant. Preserve historical merchant bindings and invoices unless an exact, audited reconciliation explicitly changes them.                                      |
 
 ## Settlement Verification And Operating Limits
 
@@ -186,7 +202,9 @@ selected with `STRIPE_USAGE_SANDBOX_ACCOUNT_ID`; that override is ignored for li
 5. Resolve only the exact reviewed period and receipts through a reviewed repair. Recheck
    invoice totals and customer-visible state. Releasing a hold must never erase historical
    events, fixed charges, or the original request. Prove this procedure in the sandbox
-   before live enrollment; the production release flag remains off until that proof passes.
+   before enabling a new rollout. Existing reconciliation holds remain in place until
+   their exact receipts and invoice effects are resolved; an enabled release flag does
+   not clear them.
 
 ## Purchase and settlement safeguards
 

@@ -458,6 +458,20 @@ Deploy the exact reviewed worker and API source together using the Render sequen
 
 The clone is rechecked before each utterance; expiry or deletion prevents further cloned speech. Provider deletion failures leave a durable cleanup task while assignments are removed immediately. A call recording, when enabled with disclosure, stays on the parent Twilio call across speech fallback. Synthesis attempts reserve provider cost before network work and belong to the live-voice cost meter. Do not certify production until the real provider calls and web/worker source parity are verified.
 
+This integration uses direct Instant Voice Cloning and streamed TTS API requests; it
+does not require an ElevenAgents post-call or asynchronous-transcription webhook.
+The current application has no `/api/webhooks/elevenlabs` receiver. Do not repoint a
+legacy `trywireline.com` webhook to that nonexistent path on `botbound.app`. Inspect
+its product/event dependencies before disabling an unused endpoint, and retain a
+dated provider receipt of the actual change. A future receiver needs raw-body HMAC
+and timestamp validation, idempotency, tenant ownership and delivery proof before
+activation. Shared-library removal notices are not a dependency of the current
+prepared-only ElevenLabs catalog. API credentials remain server-side; an SDK or
+service account does not replace those controls. ElevenLabs service accounts are
+currently a multi-seat feature, so they are not a prerequisite for the solo-founder
+integration. See [webhooks](https://elevenlabs.io/docs/eleven-api/resources/webhooks)
+and [service accounts](https://elevenlabs.io/docs/overview/administration/workspaces/service-accounts).
+
 ### xAI Grok Voice phone calls
 
 Phone calls can run on xAI Grok Voice (`grok-voice-3.0`) instead of OpenAI Realtime. The provider travels with each call: xAI call ids are stored as `xai:<id>`, so hangup, transfer, and recovery always reach the provider that owns the call.

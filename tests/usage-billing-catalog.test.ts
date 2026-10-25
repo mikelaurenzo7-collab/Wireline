@@ -218,6 +218,7 @@ describe("usage billing flag and payload", () => {
 
 describe("Stripe setup script parity", () => {
   it("refuses a key from another account before catalog setup", async () => {
+    expect(BOTBOUND_STRIPE_ACCOUNT_ID).toBe("acct_1TkyXL8e6If87QKm");
     await expect(
       assertUsageStripeAccount({ accounts: { retrieve: async () => ({ id: "acct_wrong" }) } }),
     ).rejects.toThrow("requires the BotBound Stripe account");
@@ -226,6 +227,12 @@ describe("Stripe setup script parity", () => {
         accounts: { retrieve: async () => ({ id: BOTBOUND_STRIPE_ACCOUNT_ID }) },
       }),
     ).resolves.toBeUndefined();
+    await expect(
+      assertUsageStripeAccount(
+        { accounts: { retrieve: async () => ({ id: "acct_1UQBcs6Ph5cHChCS" }) } },
+        { mode: "live", sandboxAccountId: "acct_1UQBcs6Ph5cHChCS" },
+      ),
+    ).rejects.toThrow("requires the BotBound Stripe account");
   });
   it("uses the catalog version", () => {
     expect(CATALOG_VERSION).toBe(USAGE_CATALOG_VERSION);

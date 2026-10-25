@@ -91,7 +91,7 @@ export async function settleSmsUsage(
       quantity: String(segments),
       status: segments === 0 ? "skipped" : "pending",
       ...(segments === 0
-        ? { billableQuantity: "0", lastError: "Carrier attempt definitively not accepted" }
+        ? { billableQuantity: "0", lastError: "No SMS segments sent; reservation released" }
         : {}),
       updatedAt: new Date(),
     })

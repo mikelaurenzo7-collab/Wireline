@@ -4,12 +4,14 @@ import { PageMeta } from "../lib/page-meta";
 import { PUBLIC_ENTRY_PLANS, publicPriceSummary } from "../lib/public-plan-lineup";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { usePaidPlanAvailability } from "../hooks/usePaidPlanAvailability";
-import { USAGE_BASE_USD_MONTHLY, USAGE_INCLUDED_WORK_USD } from "../lib/usage-billing-catalog";
+import { PUBLIC_USAGE_TIERS, USAGE_TIERS } from "../lib/usage-billing-catalog";
+
+const entryUsageTier = USAGE_TIERS[PUBLIC_USAGE_TIERS[0]];
 
 const DIFFERENCES = [
   {
     title: "Works Across Channels",
-    copy: "Handles calls, email, and computer tasks with your knowledge and rules. Outcomes stay in one workspace.",
+    copy: "Handles calls, SMS, email, and Computer tasks with your knowledge and rules. Outcomes stay in one workspace.",
   },
   {
     title: "Plain Instructions",
@@ -105,8 +107,8 @@ export default function Compare() {
     option.internal && billingModel === "usage"
       ? {
           ...option,
-          price: `$${USAGE_BASE_USD_MONTHLY}/month + usage`,
-          usage: `$${USAGE_INCLUDED_WORK_USD} of shared work included across calls, email, and Computer. Optional phone number and email address billed separately.`,
+          price: `From $${entryUsageTier.monthlyUsd}/month + usage`,
+          usage: `$${entryUsageTier.includedWorkUsd} of shared work included across calls, SMS, email, and Computer. One phone number and email address included.`,
         }
       : option,
   );

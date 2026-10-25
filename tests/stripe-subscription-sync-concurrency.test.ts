@@ -5,26 +5,33 @@ const h = vi.hoisted(() => {
   process.env.STRIPE_SECRET_KEY = "sk_test_sync_concurrency";
   return {
     authoritative: null as Stripe.Subscription | null,
+    addon: null as Stripe.Subscription | null,
     mirror: {} as Record<string, unknown>,
     settings: {} as Record<string, unknown>,
     writes: [] as string[],
     invoice: vi.fn(),
     webhook: vi.fn(),
     audit: vi.fn(),
+    recordReceipt: vi.fn(),
+    grantAllowance: vi.fn(),
+    reconcileIdentity: vi.fn(),
+    spendBudget: vi.fn(),
+    updateSubscription: vi.fn(),
+    missingBinding: false,
   };
 });
 vi.mock("stripe", () => ({
   default: class {
     subscriptions = {
       list: () => {
-        const data = h.authoritative ? [h.authoritative] : [];
+        const data = [...(h.authoritative ? [h.authoritative] : []), ...(h.addon ? [h.addon] : [])];
         return Object.assign(Promise.resolve({ data }), {
           async *[Symbol.asyncIterator]() {
             yield* data;
           },
         });
       },
-      update: vi.fn(),
+      update: h.updateSubscription,
     };
     invoices = { retrieve: h.invoice };
   },
@@ -32,15 +39,25 @@ vi.mock("stripe", () => ({
 vi.mock("../src/lib/server-context", () => ({
   drizzle: {
     select: () => ({
-      from: () => ({ where: () => ({ limit: async () => [{ ...h.mirror }] }) }),
+      from: () => ({
+        where: () => ({
+          limit: async () => {
+            if (h.missingBinding) {
+              h.missingBinding = false;
+              return [];
+            }
+            return [{ ...h.mirror }];
+          },
+        }),
+      }),
     }),
     insert: (table: unknown) => ({
       values: () => ({
         onConflictDoUpdate: async ({ set }: { set: Record<string, unknown> }) => {
           if (table === schema.subscriptions) {
             h.mirror = { ...h.mirror, ...set };
-            h.writes.push(String(set.status));
-          } else if (table === schema.settings) h.settings = { ...set };
+            if (set.status) h.writes.push(String(set.status));
+          } else if (table === schema.settings) h.settings = { ...h.settings, ...set };
         },
       }),
     }),
@@ -54,23 +71,41 @@ vi.mock("../src/lib/stripe-owner-liveness", () => ({ stripeOwnerUserExists: asyn
 vi.mock("../src/lib/webhook-helpers", () => ({ dispatchWebhook: h.webhook }));
 vi.mock("../src/lib/dashboard-cache", () => ({ invalidateDashboard: vi.fn() }));
 vi.mock("../src/lib/subscription-welcome-credit", () => ({
-  grantSubscriptionRuntimeAllowance: vi.fn(),
+  grantSubscriptionRuntimeAllowance: h.grantAllowance,
 }));
-vi.mock("../src/lib/paid-allowance-period", () => ({
-  verifiedPaidAllowanceReceipt: () => null,
-  recordPaidAllowanceReceipt: vi.fn(),
+vi.mock("../src/lib/paid-allowance-period", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/lib/paid-allowance-period")>()),
+  recordPaidAllowanceReceipt: h.recordReceipt,
 }));
 vi.mock("../src/lib/stripe-capacity-upgrade", () => ({
   paidCapacityPlan: async (_subscription: unknown, plan: unknown) => plan,
 }));
-vi.mock("../src/lib/workspace-usage-snapshot", () => ({ ensureDefaultAiSpendBudget: vi.fn() }));
-vi.mock("../src/lib/paid-bot-identity", () => ({
-  enqueuePaidBotIdentityReconciliation: async () => ({ queued: true }),
+vi.mock("../src/lib/workspace-usage-snapshot", () => ({
+  ensureDefaultAiSpendBudget: h.spendBudget,
 }));
+vi.mock("../src/lib/paid-bot-identity", () => ({
+  enqueuePaidBotIdentityReconciliation: h.reconcileIdentity,
+}));
+vi.mock("../src/lib/auth-service", () => ({ isOwnerEmail: () => true }));
+vi.mock("../src/lib/founder-fleet-seed", () => ({
+  FOUNDER_FLEET_SEED_CONTRACT_VERSION: 1,
+  founderFleetSeedNeedsRefresh: () => false,
+  seedFounderAssistant: vi.fn(),
+}));
+vi.mock("../src/lib/founder-showcase-seed", () => ({ ensureFounderShowcaseBots: vi.fn() }));
 
 import * as schema from "../src/db/schema";
 import { syncSubscriptionFromStripe } from "../src/lib/stripe-helpers";
 import { resetDistributedLeasesForTests } from "../src/lib/distributed-lease";
+import { ensureFounderEnterpriseSubscription } from "../src/lib/founder-bootstrap";
+
+function deferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
 
 function subscription(status: "active" | "canceled"): Stripe.Subscription {
   return {
@@ -92,7 +127,7 @@ function subscription(status: "active" | "canceled"): Stripe.Subscription {
           price: {
             id: "price_owned",
             metadata: { wireline_plan_id: "voice" },
-            recurring: { interval: "month" },
+            recurring: { interval: "month", interval_count: 1 },
           },
         },
       ],
@@ -106,6 +141,7 @@ beforeEach(() => {
   vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "");
   resetDistributedLeasesForTests();
   h.writes = [];
+  h.missingBinding = false;
   h.mirror = {
     userId: "tenant-owned",
     stripeSubscriptionId: "sub_owned",
@@ -115,9 +151,195 @@ beforeEach(() => {
   };
   h.settings = { subscriptionStatus: "active" };
   h.authoritative = subscription("active");
+  h.addon = null;
   h.webhook.mockResolvedValue(undefined);
   h.audit.mockResolvedValue(undefined);
   h.invoice.mockResolvedValue({ id: "in_owned" });
+  h.recordReceipt.mockResolvedValue(undefined);
+  h.grantAllowance.mockResolvedValue(undefined);
+  h.reconcileIdentity.mockResolvedValue({ queued: true });
+  h.spendBudget.mockResolvedValue(undefined);
+});
+
+describe("explicit founder grant during Stripe reconciliation", () => {
+  function grant() {
+    h.mirror = {
+      ...h.mirror,
+      stripeSubscriptionId: null,
+      plan: "enterprise",
+      status: "active",
+      entitlementSource: "demo",
+      grantReason: "founder_dogfood",
+      currentPeriodEnd: new Date(Date.now() + 86_400_000),
+    };
+    h.settings = { subscriptionStatus: "active", maxAgents: 100, extraAgents: 0 };
+    h.addon = {
+      ...subscription("active"),
+      id: "sub_live_video",
+      metadata: { purpose: "live_video_addon" },
+    };
+  }
+
+  function expectNoEntitlementSideEffects() {
+    expect(h.writes).toEqual([]);
+    expect(h.updateSubscription).not.toHaveBeenCalled();
+    expect(h.grantAllowance).not.toHaveBeenCalled();
+    expect(h.reconcileIdentity).not.toHaveBeenCalled();
+    expect(h.spendBudget).not.toHaveBeenCalled();
+    expect(h.webhook).not.toHaveBeenCalled();
+  }
+
+  it.each([
+    ["renewal", "active", false],
+    ["scheduled cancellation", "active", true],
+    ["terminal cancellation", "canceled", false],
+  ] as const)(
+    "preserves access and limits after a legacy %s and its replay",
+    async (_, status, cancel) => {
+      grant();
+      const before = { ...h.mirror };
+      const settingsBefore = { ...h.settings };
+      h.authoritative = { ...subscription(status), cancel_at_period_end: cancel };
+
+      await syncSubscriptionFromStripe(h.authoritative);
+      await syncSubscriptionFromStripe(h.authoritative);
+
+      expect(h.mirror).toEqual(before);
+      expect(h.settings).toEqual(settingsBefore);
+      expectNoEntitlementSideEffects();
+    },
+  );
+
+  it("retains verified paid invoice history without converting the founder grant", async () => {
+    grant();
+    const sub = h.authoritative!;
+    const item = sub.items.data[0];
+    h.invoice.mockResolvedValue({
+      id: "in_owned",
+      customer: "cus_owned",
+      status: "paid",
+      amount_remaining: 0,
+      parent: { subscription_details: { subscription: sub.id } },
+      lines: {
+        has_more: false,
+        data: [
+          {
+            amount: 1900,
+            pricing: { price_details: { price: item.price.id } },
+            period: { start: item.current_period_start, end: item.current_period_end },
+          },
+        ],
+      },
+    });
+
+    // invoice.payment_succeeded routes the freshly retrieved subscription here.
+    await syncSubscriptionFromStripe(sub);
+
+    expect(h.recordReceipt).toHaveBeenCalledWith(
+      "tenant-owned",
+      expect.objectContaining({
+        subscription_id: "sub_owned",
+        customer_id: "cus_owned",
+        invoice_id: "in_owned",
+        plan_id: "voice",
+      }),
+    );
+    expectNoEntitlementSideEffects();
+    expect(h.mirror.plan).toBe("enterprise");
+  });
+
+  it("preserves grant provenance when repairing a missing customer binding", async () => {
+    grant();
+    h.missingBinding = true;
+    await syncSubscriptionFromStripe(h.authoritative!);
+    expect(h.mirror.stripeCustomerId).toBe("cus_owned");
+    expect(h.mirror.plan).toBe("enterprise");
+    expect(h.mirror.grantReason).toBe("founder_dogfood");
+    expectNoEntitlementSideEffects();
+  });
+
+  it.each(["expired founder", "ordinary paid"])(
+    "preserves a grant refreshed during a provider wait from an %s snapshot",
+    async (prior) => {
+      if (prior === "expired founder") {
+        grant();
+        h.mirror.currentPeriodEnd = new Date(0);
+      }
+      const entered = deferred();
+      const proceed = deferred();
+      h.invoice.mockImplementationOnce(async () => {
+        entered.resolve();
+        await proceed.promise;
+        return { id: "in_owned" };
+      });
+      const syncing = syncSubscriptionFromStripe(h.authoritative!);
+      await entered.promise;
+      let refreshed!: Record<string, unknown>;
+      let refreshedSettings!: Record<string, unknown>;
+      try {
+        await ensureFounderEnterpriseSubscription("tenant-owned");
+        refreshed = { ...h.mirror };
+        refreshedSettings = { ...h.settings };
+        h.writes = [];
+      } finally {
+        proceed.resolve();
+        await syncing;
+      }
+      expect(h.mirror).toEqual(refreshed);
+      expect(h.settings).toEqual(refreshedSettings);
+      expect(h.mirror).toMatchObject({ plan: "enterprise", grantReason: "founder_dogfood" });
+      expectNoEntitlementSideEffects();
+    },
+  );
+
+  it("serializes founder refresh against Stripe's mutation phase and permits retry", async () => {
+    const entered = deferred();
+    const proceed = deferred();
+    h.spendBudget.mockImplementationOnce(async () => {
+      entered.resolve();
+      await proceed.promise;
+    });
+    const syncing = syncSubscriptionFromStripe(h.authoritative!);
+    await entered.promise;
+    try {
+      await expect(ensureFounderEnterpriseSubscription("tenant-owned")).rejects.toMatchObject({
+        statusCode: 503,
+      });
+      expect(h.mirror.plan).toBe("voice");
+    } finally {
+      proceed.resolve();
+      await syncing;
+    }
+    await ensureFounderEnterpriseSubscription("tenant-owned");
+    expect(h.mirror).toMatchObject({
+      plan: "enterprise",
+      status: "active",
+      grantReason: "founder_dogfood",
+    });
+    expect(h.settings.subscriptionStatus).toBe("active");
+  });
+
+  it.each([
+    ["expired", { currentPeriodEnd: new Date(0) }],
+    ["unbounded", { currentPeriodEnd: null }],
+    ["inactive", { status: "canceled" }],
+    ["ordinary demo", { grantReason: "demo_account" }],
+    ["ordinary manual", { entitlementSource: "manual", grantReason: "support_grant" }],
+    ["Stripe-owned", { entitlementSource: "stripe" }],
+  ])("allows normal checkout/subscription sync for an %s grant", async (_, override) => {
+    grant();
+    h.mirror = { ...h.mirror, ...(override as Record<string, unknown>) };
+    await syncSubscriptionFromStripe(h.authoritative!);
+    expect(h.mirror).toMatchObject({
+      plan: "voice",
+      status: "active",
+      stripeSubscriptionId: "sub_owned",
+    });
+    expect(h.writes).toEqual(["active"]);
+    expect(h.grantAllowance).toHaveBeenCalledOnce();
+    expect(h.reconcileIdentity).toHaveBeenCalledOnce();
+    expect(h.webhook).toHaveBeenCalledOnce();
+  });
 });
 afterEach(() => {
   vi.useRealTimers();

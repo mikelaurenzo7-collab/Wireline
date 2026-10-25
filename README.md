@@ -30,7 +30,7 @@ optional live-transfer destination without using setup chat.
 
 ### Current Shared Work Offer
 
-New enrollment uses $19/month with $12 of shared work: calls $0.25/minute, sent email replies $0.02 each, and Computer $0.20/minute. A number is $3/month and a managed mailbox is $4/month. The default monthly pretax cap is $100. Usage, provider processing, identity capacity, and activation remain bounded; see `docs/USAGE_BILLING.md`. Existing subscriptions are not automatically migrated.
+New enrollment offers Lite at $12/month with $4 of shared work, Starter at $24/month with $14, and Plus at $49/month with $36. Lite and Starter each include one local number and one managed email address; Plus includes two of each. Inbound and outbound calls cost $0.25/minute, sent US SMS $0.04/segment, sent email replies $0.02 each, and Computer $0.20/minute, all using the same monthly allowance without rollover. Additional numbers are $3/month and email addresses $4/month. The default monthly pretax cap is $100. Usage, provider processing, identity capacity, and activation remain bounded; see `docs/USAGE_BILLING.md` and `src/lib/usage-billing-catalog.ts`. Existing subscriptions are not automatically migrated.
 
 ### Legacy Package Compatibility
 

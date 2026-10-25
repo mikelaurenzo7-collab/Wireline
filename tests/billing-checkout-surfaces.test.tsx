@@ -553,6 +553,66 @@ it("keeps existing subscription management available while new purchases are pau
   expect(h.fetch).toHaveBeenCalledWith("/api/billing/portal", { method: "POST" });
 });
 
+it("manages a granted workspace's linked billing without inventing a renewal", async () => {
+  h.catalog.checkout_available = false;
+  h.subscription = {
+    has_subscription: false,
+    has_customer: true,
+    status: "active",
+    plan: "enterprise",
+    plan_name: "Scale",
+    max_agents: 100,
+    current_period_end: "2027-10-25T00:00:00Z",
+    cancel_at_period_end: false,
+  };
+  await mount("card");
+  const copy = render("card").map(text).join(" ");
+  expect(copy).toContain("Granted access");
+  expect(copy).not.toContain("No recurring invoice");
+  expect(copy).not.toContain("Renews");
+  const pending = deferred<unknown>();
+  const usualFetch = h.fetch.getMockImplementation()!;
+  h.fetch.mockImplementation((path: string) =>
+    path === "/api/billing/portal" ? pending.promise : usualFetch(path),
+  );
+  const portal = button("card", "Manage Billing");
+  const opening = portal.props.onClick?.();
+  await portal.props.onClick?.();
+  expect(button("card", "Manage Billing").props.disabled).toBe(true);
+  expect(h.fetch.mock.calls.filter(([path]) => path === "/api/billing/portal")).toHaveLength(1);
+  pending.resolve({ ok: false, json: async () => ({ error: "Please retry billing." }) });
+  await opening;
+  expect(button("card", "Manage Billing").props.disabled).toBe(false);
+  expect(render("card").map(text).join(" ")).toContain("Please retry billing.");
+  h.fetch.mockImplementation(usualFetch);
+  await button("card", "Manage Billing").props.onClick?.();
+  expect(window.location.href).toBe("https://checkout.example.test/session");
+  expect(h.fetch.mock.calls.some(([path]) => path === "/api/billing/checkout")).toBe(false);
+});
+
+it.each([false, undefined, "true"])(
+  "does not offer a granted workspace portal for an unverified customer flag %s",
+  async (hasCustomer) => {
+    h.subscription = {
+      has_subscription: false,
+      has_customer: hasCustomer,
+      status: "active",
+      plan: "enterprise",
+      plan_name: "Scale",
+      max_agents: 100,
+    };
+    render("card");
+    h.effects[0]();
+    await vi.waitFor(() => expect(render("card").map(text).join(" ")).toContain("Granted access"));
+    expect(
+      render("card").some(
+        (element) => element.type === "button" && text(element).includes("Manage Billing"),
+      ),
+    ).toBe(false);
+    expect(h.fetch.mock.calls.some(([path]) => path === "/api/billing/portal")).toBe(false);
+  },
+);
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (reason: Error) => void;

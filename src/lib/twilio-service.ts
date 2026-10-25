@@ -824,8 +824,10 @@ export async function sendTenantMessage(
       // Twilio accepted the provider request. From this point onward, reporting a
       // send failure would invite a duplicate customer retry. Local history and
       // segment true-up failures therefore move to idempotent durable recovery.
-      const actualSegments =
-        channel === "sms" ? Math.max(1, Number(message.numSegments) || segments) : 1;
+      const reportedSegments = Number(message.numSegments);
+      const segmentCountPending =
+        channel === "sms" && (!Number.isSafeInteger(reportedSegments) || reportedSegments < 1);
+      const actualSegments = channel === "sms" ? (segmentCountPending ? 0 : reportedSegments) : 1;
       const actualCost =
         channel === "sms"
           ? money(
@@ -850,6 +852,7 @@ export async function sendTenantMessage(
           : requiredBalance,
         actualUsd: actualCost,
         actualSegments,
+        ...(segmentCountPending ? { segmentCountPending: true } : {}),
         fundingModel,
       });
 

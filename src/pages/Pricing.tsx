@@ -84,7 +84,7 @@ function UsagePricing({ availableTiers }: { availableTiers: readonly UsageTierId
     <MarketingPageFrame className="wl-pricing-page">
       <PageMeta
         title="Pricing | Shared Work Allowance | BotBound"
-        description="Monthly plans for calls, email and Computer. Compare included numbers, email addresses and shared work."
+        description="Monthly plans for calls, SMS, email and Computer. Compare included numbers, email addresses and shared work."
         path="/pricing"
       />
       <section id="plans" className="marketing-section marketing-section--screen">

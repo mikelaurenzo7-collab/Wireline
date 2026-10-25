@@ -247,13 +247,14 @@ export function TermsOfService() {
           cancellation takes effect at the end of the current billing period.
         </p>
         <p>
-          Shared Work subscriptions include the allowance shown at checkout. Calls, sent email
-          replies, and Computer work draw from one monthly allowance, with additional usage invoiced
-          through Stripe at the published rates. Calls and Computer time are measured by the second.
-          Optional phone numbers and email addresses carry separate recurring charges. Included work
-          resets each subscription month without rollover. Your spending limit is pretax; applicable
-          tax is added separately. Live work pauses when the available spending limit is reached,
-          subject to settlement of work already admitted.
+          Shared Work subscriptions include the allowance shown at checkout. Calls, sent US SMS
+          segments, sent email replies, and Computer work draw from one monthly allowance, with
+          additional usage invoiced through Stripe at the published rates. Calls and Computer time
+          are measured by the second. Included phone numbers and email addresses are shown at
+          checkout; extra numbers and email addresses carry separate recurring charges. Included
+          work resets each subscription month without rollover. Your spending limit is pretax;
+          applicable tax is added separately. Live work pauses when the available spending limit is
+          reached, subject to settlement of work already admitted.
         </p>
         <p>
           <strong>Existing prepaid channel plans.</strong> These plans retain the channels and
