@@ -12,13 +12,13 @@ describe("self-service calling setup", () => {
     expect(phonePage).toContain('defaultTab: "logs"');
     expect(phonePage).toContain('primaryTab === "logs"');
     expect(phonePage).toContain("<PhoneCallHistoryPanel");
-    expect(phonePage).toContain('{ id: "outbound", label: "Reviewed Calls" }');
+    expect(phonePage).toContain('{ id: "outbound", label: "Outbound" }');
     expect(phonePage).toContain('{ id: "setup", label: "Lines" }');
     expect(phonePage).toContain('primaryTab === "setup"');
     expect(phonePage).toMatch(/<PhoneSetupPanel\s+initialAgentId=\{activeAgentId\}/);
     expect(phonePage).toContain('voiceEnabled={access.includes("voice")}');
     expect(phonePage).toContain('"Choose Bot for Lines"');
-    expect(phonePage).toContain('"Choose Bot for Reviewed calls"');
+    expect(phonePage).toContain('"Choose Bot for Outbound"');
     expect(phonePage).toContain('"Filter call history by Bot"');
     const history = read("src/components/PhoneCallHistoryPanel.tsx");
     expect(history).toContain("`/phone?tab=setup&agent=${encodeURIComponent(agentId)}`");

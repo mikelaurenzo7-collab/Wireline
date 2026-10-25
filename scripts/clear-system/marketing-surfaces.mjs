@@ -72,7 +72,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   for (const [pattern, description] of [
     [/signedIn \? "\/studio" : "\/signup"/, "root landing must offer plan-neutral account access"],
     [
-      /AI Bots With Their Own Phone Number, Email Address, And Computer\./,
+      /A Phone Number\. An Email Address\. A Computer\./,
       "root landing must describe the product family together",
     ],
     [/<PrecisionPublicHeader \/>/, "root landing must share the public header"],

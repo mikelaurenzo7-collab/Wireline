@@ -129,7 +129,7 @@ export interface UsageMeterClient {
 }
 
 export function emptyMeterTotals(): MeterTotals {
-  return { call_minutes: 0, emails_handled: 0, computer_minutes: 0 };
+  return { call_minutes: 0, emails_handled: 0, computer_minutes: 0, sms_segments: 0 };
 }
 
 export function usageIdempotencyKey(

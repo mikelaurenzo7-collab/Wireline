@@ -27,7 +27,7 @@ import {
 const PHONE_TABS = [
   { id: "logs", label: "History" },
   { id: "reports", label: "Reports" },
-  { id: "outbound", label: "Reviewed Calls" },
+  { id: "outbound", label: "Outbound" },
   { id: "setup", label: "Lines" },
 ] as const;
 
@@ -123,7 +123,7 @@ export default function PhonePage() {
         primaryTab === "setup"
           ? "Choose Bot for Lines"
           : primaryTab === "outbound"
-            ? "Choose Bot for Reviewed calls"
+            ? "Choose Bot for Outbound"
             : "Filter call history by Bot"
       }
       className="min-h-[44px] max-w-full shrink-0 rounded-lg border border-border bg-card px-3 text-base font-semibold text-foreground sm:min-h-9 sm:max-w-[10rem] sm:px-2 sm:text-xs wl-focus-ring-halo"

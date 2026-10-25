@@ -21,7 +21,7 @@ describe("launch readiness quintuple-pass 2026-07-27", () => {
     const entitlementCall = twilio.indexOf(
       "const entitlement = await assertLiveWorkEntitlementForUser(userId)",
     );
-    const reserveCall = twilio.indexOf("const reservation = await reserveRuntimeUsage({");
+    const reserveCall = twilio.indexOf("await reserveSmsUsage(userId");
     expect(entitlementCall).toBeGreaterThan(-1);
     expect(reserveCall).toBeGreaterThan(-1);
     expect(entitlementCall).toBeLessThan(reserveCall);

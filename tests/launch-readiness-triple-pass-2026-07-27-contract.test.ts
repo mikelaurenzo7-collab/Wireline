@@ -68,9 +68,10 @@ describe("launch readiness triple-pass 2026-07-27", () => {
     expect(checkout).toContain("wireline-customer-recovery-${req.user.id}");
   });
 
-  it("keeps Runtime Balance naming in agent knowledge plans", () => {
+  it("quotes the current shared-work offer in agent knowledge plans", () => {
     const knowledge = read("src/data/wireline-knowledge.ts");
-    expect(knowledge).toContain('name: "Runtime Balance"');
+    expect(knowledge).toContain("PUBLIC_USAGE_TIERS.map");
+    expect(knowledge).toContain("one shared allowance");
     expect(knowledge).not.toContain('name: "Conversation Balance"');
   });
 

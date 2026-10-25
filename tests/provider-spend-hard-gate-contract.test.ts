@@ -57,7 +57,7 @@ describe("provider spend launch kill switch", () => {
     );
     expect(twilio).toContain("if (isLaunchHardBlocked())");
     expect(twilio.indexOf("if (isLaunchHardBlocked())")).toBeLessThan(
-      twilio.indexOf("const reservation = await reserveRuntimeUsage"),
+      twilio.indexOf("await reserveSmsUsage(userId"),
     );
     const chatgpt = read("src/routes/chatgpt-mcp-account-routes.ts");
     expect(chatgpt).toContain("if (isLaunchHardBlocked())");

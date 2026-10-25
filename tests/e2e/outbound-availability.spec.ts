@@ -8,6 +8,7 @@ for (const width of [320, 1280]) {
   }) => {
     await page.setViewportSize({ width, height: 740 });
     const outboundWrites: string[] = [];
+    const campaignDrafts: Array<Record<string, unknown>> = [];
     await page.route("**/api/**", async (route) => {
       const request = route.request();
       const path = new URL(request.url()).pathname;
@@ -29,6 +30,11 @@ for (const width of [320, 1280]) {
         /^\/api\/(?:outbound|campaigns|cadences|callbacks)(?:\/|$)/.test(path)
       )
         outboundWrites.push(path);
+      if (request.method() === "POST" && path === "/api/campaigns") {
+        campaignDrafts.push(request.postDataJSON());
+        await route.fulfill({ json: { campaign: { id: "review-draft", status: "draft" } } });
+        return;
+      }
       const json =
         path === "/api/auth/session"
           ? {
@@ -121,11 +127,25 @@ for (const width of [320, 1280]) {
     await expect(dialog).not.toBeVisible();
     await expect(opener).toBeFocused();
     expect(outboundWrites).toEqual([]);
-    await page.goto("/phone?tab=outbound&view=campaigns");
-    await expect(
-      page.getByRole("heading", { name: "Campaign Calling Unavailable", exact: true }),
-    ).toBeVisible();
+    await page.goto("/phone?tab=outbound&view=campaigns&agent=business-bot");
+    await expect(page.getByRole("button", { name: "Campaigns", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     await expect(page.getByRole("button", { name: "New Call", exact: true })).toHaveCount(0);
-    expect(outboundWrites).toEqual([]);
+    await page.getByRole("button", { name: "Create Campaign", exact: true }).click();
+    await page.getByRole("textbox", { name: "Campaign name" }).fill("Requested Follow-up");
+    await page.getByRole("combobox", { name: "Assign Bot" }).click();
+    await expect(page.getByRole("option", { name: "Business Front Desk" })).toBeVisible();
+    await expect(
+      page.getByRole("option", { name: /Personal Assistant|No Bot Assigned/ }),
+    ).toHaveCount(0);
+    await page.getByRole("option", { name: "Business Front Desk" }).click();
+    await page.getByRole("button", { name: "Create Draft", exact: true }).click();
+    await expect(page.getByRole("textbox", { name: "Campaign name" })).toHaveCount(0);
+    expect(campaignDrafts).toEqual([
+      expect.objectContaining({ name: "Requested Follow-up", agent_id: "business-bot" }),
+    ]);
+    expect(outboundWrites).toEqual(["/api/campaigns"]);
   });
 }

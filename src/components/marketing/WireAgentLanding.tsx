@@ -74,7 +74,10 @@ export default function WireAgentLanding() {
               </span>
             </h1>
             <p className="landing-prestige__description">
-              AI Bots With Their Own Phone Number, Email Address, And Computer.
+              Find Prospects. Start Conversations. Close Deals.
+            </p>
+            <p className="landing-prestige__identity-line">
+              A Phone Number. An Email Address. A Computer.
             </p>
             <div className="landing-prestige__actions">
               <Link

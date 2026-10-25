@@ -139,9 +139,9 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
     noIndex: true,
   },
   "/solutions/sales": {
-    title: "Every Inquiry. A Next Step. | BotBound",
+    title: "Your Next Sales Bot. | BotBound",
     description:
-      "Answer incoming questions, capture what the customer needs, and offer an available appointment. Keep the conversation and next step in BotBound.",
+      "Research prospects, make outbound calls, qualify interest, and move deals forward with SMS and email.",
   },
   "/solutions/support": {
     title: "Meet Your Front Desk | BotBound",

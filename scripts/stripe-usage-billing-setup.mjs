@@ -22,7 +22,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 export const CATALOG_VERSION = "2026-10-usage-v2";
-export const BOTBOUND_STRIPE_ACCOUNT_ID = "acct_1TkyXL8e6If87QKm";
+export const BOTBOUND_STRIPE_ACCOUNT_ID = "acct_1UQBcs6Ph5cHChCS";
 
 /** Verify the selected account before creating any billing objects. */
 export async function assertUsageStripeAccount(stripe, { mode = "live", sandboxAccountId } = {}) {
@@ -42,7 +42,7 @@ export async function assertUsageStripeAccount(stripe, { mode = "live", sandboxA
 export const USAGE_STRIPE_PLAN = {
   product: {
     name: "BotBound",
-    description: "Shared work plans for calls, emails, and Computer.",
+    description: "Shared work plans for inbound and outbound calls, SMS, email, and Computer.",
     // Plan identity lives on the base price only, so no other item resolves as the plan.
     metadata: { wireline_product: "usage", wireline_catalog_version: CATALOG_VERSION },
   },

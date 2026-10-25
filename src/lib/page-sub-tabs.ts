@@ -51,9 +51,9 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
       { id: "reports", label: "Reports", icon: BookOpen },
       {
         id: "outbound",
-        label: "Reviewed Calls",
-        shortLabel: "Reviewed Calls",
-        ariaLabel: "Reviewed Calls",
+        label: "Outbound",
+        shortLabel: "Outbound",
+        ariaLabel: "Outbound",
         icon: PhoneOutgoing,
       },
       { id: "setup", label: "Lines", icon: Phone },

@@ -7,6 +7,11 @@ function installTwilioMocks(
     durableRefundEvidence?: boolean;
   } = {},
 ) {
+  vi.doMock("../src/lib/sms-usage-billing", () => ({
+    reserveSmsUsage: vi.fn(async () => null),
+    settleSmsUsage: vi.fn(async () => false),
+    hasReleasedSmsUsage: vi.fn(async () => false),
+  }));
   const createMessage = vi.fn(async () => ({
     sid: "SM-should-not-be-created",
     status: "queued",
@@ -152,7 +157,7 @@ describe("post-call CSAT pre-provider refund", () => {
           throw new Error("checkpoint unavailable");
         },
       }),
-    ).rejects.toThrow(/refund could not be recorded/i);
+    ).rejects.toThrow(/billing reservation could not be released/i);
 
     expect(mocks.createMessage).not.toHaveBeenCalled();
     expect(mocks.log.error).toHaveBeenCalledWith(

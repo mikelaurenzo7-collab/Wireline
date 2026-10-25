@@ -5,68 +5,39 @@
  *   3. Referenced by public-facing demo and marketing surfaces.
  */
 
-import { STRIPE_PLANS, FLAT_OVERAGE_PER_MIN_USD } from "../lib/plan-catalog";
+import {
+  PUBLIC_USAGE_TIERS,
+  USAGE_ADDONS,
+  USAGE_METERS,
+  USAGE_TIERS,
+} from "../lib/usage-billing-catalog";
 
 export const WIRELINE_URL = "https://botbound.app";
 export const WIRELINE_SUPPORT_EMAIL = "support@botbound.app";
 
 export const WIRELINE_ONE_LINER =
-  "BotBound gives your voice Bots a computer, phone number, and email address to answer calls, handle requests, and get everyday work done.";
+  "BotBound gives your voice Bots a phone number, email address, and Computer to find prospects, start conversations, close deals, and support customers.";
 
 export const WIRELINE_VOICE_STACK =
   "Live calls and private browser rehearsals run on separate BotBound managed voice paths, so a rehearsal cannot take over a customer phone Bot.";
 
-export const WIRELINE_PLANS = [
-  ...STRIPE_PLANS.filter(
-    (plan) => plan.catalogFamily === "channels" && !plan.channels.includes("sms"),
-  ).map((plan) => ({
+export const WIRELINE_PLANS = PUBLIC_USAGE_TIERS.map((id) => {
+  const plan = USAGE_TIERS[id];
+  return {
     name: plan.name,
-    price: `$${plan.price_usd_monthly}/mo or $${plan.price_usd_annual}/year`,
-    bestFor: `One Bot with ${plan.channels.map((channel) => (channel === "voice" ? "Calls" : channel === "email" ? "Email" : "SMS")).join(" + ")} at ${plan.capacityTier} monthly capacity.`,
+    price: `$${plan.monthlyUsd}/mo`,
+    bestFor: "Inbound and outbound calls, SMS, email, and Computer with one shared allowance.",
     includes: [
-      "1 Bot; only selected channels are included",
-      ...(plan.channels.includes("voice")
-        ? [
-            `${plan.voice_minutes_monthly} call minutes/month; extra minutes $${FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min`,
-          ]
-        : []),
-      ...(plan.included_phone_numbers
-        ? [`${plan.included_phone_numbers} local number included, selected by the customer`]
-        : []),
-      ...(plan.included_mailboxes
-        ? [`${plan.included_mailboxes} managed Bot mailbox included`]
-        : []),
-      `$${plan.ai_spend_allowance_usd_monthly.toFixed(2)} managed AI allowance/month`,
-      "Managed AI and any included call minutes renew on the monthly subscription anniversary, including annual plans; no rollover",
-      ...(plan.runtime_allowance_usd_monthly
-        ? [`$${plan.runtime_allowance_usd_monthly.toFixed(2)} Runtime Allowance/month`]
-        : []),
-      "Activation depends on live checkout availability",
+      `$${plan.includedWorkUsd} of shared work each month`,
+      `${plan.includedNumbers} phone number${plan.includedNumbers === 1 ? "" : "s"} included`,
+      `${plan.includedEmailAddresses} email address${plan.includedEmailAddresses === 1 ? "" : "es"} included`,
+      `Inbound and outbound calls $${USAGE_METERS.call_minutes.tiers[0].unitUsd.toFixed(2)}/minute; US SMS $${USAGE_METERS.sms_segments.tiers[0].unitUsd.toFixed(2)}/sent segment; email $${USAGE_METERS.emails_handled.tiers[0].unitUsd.toFixed(2)}/sent reply; Computer $${USAGE_METERS.computer_minutes.tiers[0].unitUsd.toFixed(2)}/minute`,
+      `Extra numbers $${USAGE_ADDONS.number.usdMonthly}/month; extra email addresses $${USAGE_ADDONS.email_address.usdMonthly}/month`,
+      "The allowance resets monthly with no rollover. A configurable monthly spending limit controls extra usage.",
+      "SMS and outbound activation require approved senders and recipient permission. Registration fees may apply.",
     ],
-  })),
-  {
-    name: "BotBound Enterprise",
-    price: "Custom committed usage",
-    bestFor: "Governed rollout for organizations that need 25 or more Bots.",
-    includes: [
-      "Custom Bot and production number capacity",
-      "SSO, security review, retention controls, and implementation support",
-      "Custom integrations, channel economics, and service commitments",
-      "Guided scoping with the founder",
-    ],
-  },
-  {
-    name: "Runtime Balance",
-    price: "Optional prepaid funding for usage beyond your plan",
-    bestFor: "Customers who want direct control over usage funding.",
-    includes: [
-      "Web checkout only",
-      "One time balance purchases",
-      "Ledger backed funding for calls and eligible live actions beyond included capacity",
-      "Calls can use up to 10 minutes of completion credit within their session limit. Any amount due pauses new calls and prepaid extras until topped up",
-    ],
-  },
-] as const;
+  };
+});
 
 export const WIRELINE_FEATURES = [
   {
@@ -94,18 +65,17 @@ export const WIRELINE_FEATURES = [
     blurb: "Keep calls, email, tasks, and next steps in one workspace.",
   },
   {
-    title: "SMS Coming Soon",
+    title: "SMS",
     blurb:
-      "Texting is not part of the current launch offer. Sender registration and approval must be complete before activation.",
+      "Follow up, send reminders, and continue conversations by text from your business number. Sender registration, recipient permission, and opt-out controls apply.",
   },
 ] as const;
 
 /**
- * Compatibility export for product-help prompts. Describe the current launch
- * offer rather than promoting the retained outbound campaign implementation.
+ * Product-help prompts describe the full offer while preserving activation requirements.
  */
 export const WIRELINE_GROWTH_ENGINE =
-  "BotBound helps small businesses answer incoming calls, place reviewed service and appointment calls, capture requests, book available times, and send approved email recaps. Business outbound campaigns are not part of the current launch offer. Marketing calls still require consent rules, federal DNC screening, and provider approval; they are unavailable today.";
+  "BotBound helps businesses research prospects, qualify leads, follow up on deals, answer incoming calls, and book available times. Sales Bots use calls, SMS, email, and Computer work together, with records and owner handoffs. Outbound marketing requires consent rules, federal DNC screening, and provider approval. A Bot must check its account's current activation status before promising or placing a live call or text; a paid plan alone does not clear those requirements.";
 
 /**
  * Pain -> capability map. When a caller names a problem, the Bot should

@@ -5,34 +5,28 @@ import {
   WIRELINE_OBJECTIONS,
 } from "../src/lib/wireline-agent-objections";
 import { WIRELINE_PERSONAS } from "../src/lib/wireline-agent-personas";
-import { STRIPE_PLANS } from "../src/lib/plan-catalog";
+import { PUBLIC_USAGE_TIERS, USAGE_TIERS } from "../src/lib/usage-billing-catalog";
 
 describe("founder agent prompt truth contract", () => {
-  it("quotes launch channel capacities and exact annual prices without promoting SMS or retired benefits", () => {
+  it("quotes current shared-work plans and preserves channel activation requirements", () => {
     const sales = WIRELINE_PERSONAS.sales.systemPrompt;
-    const current = STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels");
-    expect(current).toHaveLength(22);
-    const launch = current.filter((plan) => !plan.channels.includes("sms"));
-    expect(launch).toHaveLength(10);
-    for (const plan of launch) {
-      expect(sales).toContain(
-        `${plan.name}: $${plan.price_usd_monthly}/mo or $${plan.price_usd_annual}/year`,
-      );
+    for (const id of PUBLIC_USAGE_TIERS) {
+      const plan = USAGE_TIERS[id];
+      expect(sales).toContain(`${plan.name}: $${plan.monthlyUsd}/mo`);
+      expect(sales).toContain(`$${plan.includedWorkUsd} of shared work each month`);
+      expect(sales).toContain(`${plan.includedNumbers} phone number`);
     }
-    for (const plan of current.filter((plan) => plan.channels.includes("sms"))) {
-      expect(sales).not.toContain(`${plan.name}: $`);
-    }
-    expect(sales).toContain("Annual savings vary by package and capacity");
+    expect(sales).toContain("Do not offer an annual plan");
     expect(sales).toContain("never promise SMS activation or outbound calling while unavailable");
-    expect(sales).toContain("only selected channels are included");
+    expect(sales).toContain("US SMS $0.04/sent segment");
     const prompts = Object.values(WIRELINE_PERSONAS)
       .map((persona) => persona.systemPrompt)
       .join("\n");
     expect(prompts).not.toMatch(
-      /BotBound (?:Starter|Pro|Scale)|Annual pricing saves two months|Pro and Scale|beyond Pro/,
+      /BotBound (?:Pro|Scale)|Annual savings|Annual pricing saves two months|Pro and Scale|beyond Pro|All channel plans currently include one Bot|Personal is \$12|activated Calls package|activated Email package/,
     );
     expect(WIRELINE_PERSONAS.success.systemPrompt).toContain(
-      "All channel plans currently include one Bot",
+      "There is no per-Bot charge on shared-work plans",
     );
     expect(WIRELINE_PERSONAS.technical.systemPrompt).toContain("PDF, Word, Excel");
   });

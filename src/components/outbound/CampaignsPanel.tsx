@@ -40,7 +40,7 @@ const STATUS_LABEL: Record<string, string> = {
   stopped: "Stopped",
 };
 
-export default function CampaignsPanel() {
+export default function CampaignsPanel({ initialAgentId }: { initialAgentId?: string } = {}) {
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -50,7 +50,7 @@ export default function CampaignsPanel() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [playbookId, setPlaybookId] = useState<SalesPlaybookId>("speed-to-lead");
-  const [agentId, setAgentId] = useState("");
+  const [agentId, setAgentId] = useState(initialAgentId || "");
   const [creating, setCreating] = useState(false);
   const campaignNameRef = useRef<HTMLInputElement>(null);
   const createTriggerRef = useRef<HTMLButtonElement>(null);
@@ -72,29 +72,43 @@ export default function CampaignsPanel() {
     setShowCreate(false);
   }
 
-  const load = useCallback(async (withLoadingState = true) => {
-    if (withLoadingState) setLoading(true);
-    setError(null);
-    try {
-      const [campRes, agentRes] = await Promise.all([
-        authFetch("/api/campaigns"),
-        authFetch("/api/agents"),
-      ]);
-      if (!campRes.ok) throw new Error("Failed to load campaigns");
-      const campBody = await campRes.json();
-      setCampaigns(Array.isArray(campBody.campaigns) ? campBody.campaigns : []);
-      if (agentRes.ok) {
-        const agentBody = await agentRes.json();
-        const list = Array.isArray(agentBody.agents) ? agentBody.agents : [];
-        setAgents(list.map((a: { id: string; name: string }) => ({ id: a.id, name: a.name })));
+  const load = useCallback(
+    async (withLoadingState = true) => {
+      if (withLoadingState) setLoading(true);
+      setError(null);
+      try {
+        const [campRes, agentRes] = await Promise.all([
+          authFetch("/api/campaigns"),
+          authFetch("/api/agents"),
+        ]);
+        if (!campRes.ok) throw new Error("Failed to load campaigns");
+        const campBody = await campRes.json();
+        const campaignList: Campaign[] = Array.isArray(campBody.campaigns)
+          ? campBody.campaigns
+          : [];
+        setCampaigns(
+          initialAgentId
+            ? campaignList.filter((campaign) => campaign.agent_id === initialAgentId)
+            : campaignList,
+        );
+        if (agentRes.ok) {
+          const agentBody = await agentRes.json();
+          const list = Array.isArray(agentBody.agents) ? agentBody.agents : [];
+          setAgents(
+            list
+              .filter((a: Agent) => !initialAgentId || a.id === initialAgentId)
+              .map((a: Agent) => ({ id: a.id, name: a.name })),
+          );
+        }
+      } catch (e) {
+        logFetchError("CampaignsPanel.load", e);
+        setError("Couldn't load campaigns. Try again in a moment.");
+      } finally {
+        if (withLoadingState) setLoading(false);
       }
-    } catch (e) {
-      logFetchError("CampaignsPanel.load", e);
-      setError("Couldn't load campaigns. Try again in a moment.");
-    } finally {
-      if (withLoadingState) setLoading(false);
-    }
-  }, []);
+    },
+    [initialAgentId],
+  );
 
   useEffect(() => {
     void load();
@@ -110,7 +124,7 @@ export default function CampaignsPanel() {
         body: JSON.stringify({
           name: name.trim(),
           goal: playbookGoalTag(playbookId),
-          agent_id: agentId || undefined,
+          agent_id: initialAgentId || agentId || undefined,
         }),
       });
       if (!res.ok) {
@@ -121,7 +135,7 @@ export default function CampaignsPanel() {
       closeCreate();
       setName("");
       setPlaybookId("speed-to-lead");
-      setAgentId("");
+      setAgentId(initialAgentId || "");
       await load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to create campaign");
@@ -284,7 +298,7 @@ export default function CampaignsPanel() {
               <SelectValue placeholder="Assign Bot" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none__">No Bot assigned</SelectItem>
+              {!initialAgentId ? <SelectItem value="__none__">No Bot Assigned</SelectItem> : null}
               {agents.map((a) => (
                 <SelectItem key={a.id} value={a.id}>
                   {a.name}

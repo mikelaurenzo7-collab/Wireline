@@ -1,7 +1,7 @@
 /**
  * Usage billing rate card (client-safe, no env or server imports).
  *
- * Shared work across calls, emails and Computer, with identities included in
+ * Shared work across calls, SMS, emails and Computer, with identities included in
  * each public plan. Extra identities are flat add-ons. The original offer is
  * retained for existing subscriptions and historical billing periods only.
  *
@@ -12,7 +12,7 @@
 
 export const USAGE_PLAN_ID = "usage" as const;
 export const USAGE_CATALOG_VERSION = "2026-10-usage-v2" as const;
-/** One allowance across all three kinds of work. Resets each subscription month. */
+/** One allowance across all kinds of work. Resets each subscription month. */
 export const USAGE_INCLUDED_WORK_USD = 12;
 export const USAGE_TIERS = {
   starter: {
@@ -68,7 +68,7 @@ export function usageTier(value: UsageTierId = "starter") {
 /** Stripe meters cents of work; native quantities remain in the local ledger. */
 export const USAGE_WORK_EVENT_NAME = "botbound_work_credits_v2";
 
-export type UsageMeterKey = "call_minutes" | "emails_handled" | "computer_minutes";
+export type UsageMeterKey = "call_minutes" | "emails_handled" | "computer_minutes" | "sms_segments";
 export type UsageAddonKey = "number" | "email_address";
 
 export interface UsageTier {
@@ -91,6 +91,14 @@ export interface UsageMeterRate {
 export const USAGE_BASE_USD_MONTHLY = 19;
 
 export const USAGE_METERS: Record<UsageMeterKey, UsageMeterRate> = {
+  sms_segments: {
+    key: "sms_segments",
+    label: "SMS sent",
+    unitLabel: "segment",
+    included: 0,
+    tiers: [{ upTo: null, unitUsd: 0.04 }],
+    defaultEventName: USAGE_WORK_EVENT_NAME,
+  },
   call_minutes: {
     key: "call_minutes",
     label: "Call minutes",
@@ -136,6 +144,7 @@ export const USAGE_MAX_MONTHLY_CAP_USD = 25_000;
 export const USAGE_NEVER_PAY_FOR = ["Bots", "Roles", "Summaries"] as const;
 
 export interface UsageQuantities {
+  smsSegments?: number;
   callMinutes: number;
   emailsHandled: number;
   computerMinutes: number;
@@ -164,8 +173,8 @@ function cents(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-function safeQuantity(value: number): number {
-  return Number.isFinite(value) && value > 0 ? value : 0;
+function safeQuantity(value: number | undefined): number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : 0;
 }
 
 /** Gross work value before the shared allowance, never a separate free bucket. */
@@ -190,15 +199,15 @@ export function priceMeterExact(key: UsageMeterKey, periodQuantity: number): num
   return total;
 }
 
-export function pooledWorkUsd(totals: Record<UsageMeterKey, number>): number {
+export function pooledWorkUsd(totals: Partial<Record<UsageMeterKey, number>>): number {
   return (Object.keys(USAGE_METERS) as UsageMeterKey[]).reduce(
-    (sum, key) => sum + priceMeterExact(key, totals[key]),
+    (sum, key) => sum + priceMeterExact(key, totals[key] ?? 0),
     0,
   );
 }
 
 export function pooledOverageUsd(
-  totals: Record<UsageMeterKey, number>,
+  totals: Partial<Record<UsageMeterKey, number>>,
   tier: UsageTierId = "starter",
 ): number {
   return Math.max(0, pooledWorkUsd(totals) - usageTier(tier).includedWorkUsd);
@@ -237,6 +246,12 @@ export function estimateUsageBill(
   const emailAddresses = Math.floor(safeQuantity(input.emailAddresses));
   const lines: UsageBillLine[] = [
     { key: "base", label: plan.name, quantity: 1, amountUsd: plan.monthlyUsd },
+    {
+      key: "sms_segments",
+      label: USAGE_METERS.sms_segments.label,
+      quantity: Math.floor(safeQuantity(input.smsSegments)),
+      amountUsd: priceMeter("sms_segments", Math.floor(safeQuantity(input.smsSegments))),
+    },
     {
       key: "call_minutes",
       label: USAGE_METERS.call_minutes.label,
@@ -277,6 +292,7 @@ export function estimateUsageBill(
   // can add a cent when two fractional channels each contribute half a cent.
   const workUsd = cents(
     pooledWorkUsd({
+      sms_segments: Math.floor(safeQuantity(input.smsSegments)),
       call_minutes: safeQuantity(input.callMinutes),
       emails_handled: safeQuantity(input.emailsHandled),
       computer_minutes: safeQuantity(input.computerMinutes),

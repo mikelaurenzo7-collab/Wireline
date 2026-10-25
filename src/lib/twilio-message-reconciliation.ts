@@ -6,6 +6,7 @@ import { refundRuntimeUsage, reserveRuntimeUsage } from "./runtime-usage-billing
 import { drizzle, log, tenantStore } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { smsOutcomeAfterMessage } from "./sms-thread-outcome";
+import { settleSmsUsage } from "./sms-usage-billing";
 import type { TwilioMessageChannel } from "./twilio-service-base";
 
 export type TwilioMessageReconciliationStep = "billing_adjustment" | "outbound_persistence";
@@ -23,6 +24,8 @@ export interface AcceptedTwilioMessageInput {
   estimatedUsd: number;
   actualUsd: number;
   actualSegments: number;
+  /** Missing on historical jobs, which must retain prepaid-wallet accounting. */
+  fundingModel?: "shared_work" | "runtime_balance";
 }
 
 interface TwilioMessageReconciliationPayload extends AcceptedTwilioMessageInput {
@@ -143,8 +146,17 @@ export async function adjustAcceptedTwilioReservation(
     | "channel"
     | "sid"
     | "actualSegments"
+    | "fundingModel"
   >,
 ): Promise<void> {
+  if (input.fundingModel === "shared_work") {
+    if (
+      input.channel !== "sms" ||
+      !(await settleSmsUsage(input.userId, input.reservationReference, input.actualSegments))
+    )
+      throw new Error("Accepted SMS has no shared-work reservation.");
+    return;
+  }
   const difference = money(input.actualUsd - input.estimatedUsd);
   if (difference === 0) return;
   const adjustmentReference = `${input.reservationReference}:actual`;
@@ -313,6 +325,9 @@ function parseReconciliationPayload(job: JobRow): TwilioMessageReconciliationPay
     !Number.isFinite(payload.estimatedUsd) ||
     !Number.isFinite(payload.actualUsd) ||
     !Number.isFinite(payload.actualSegments) ||
+    (payload.fundingModel !== undefined &&
+      payload.fundingModel !== "shared_work" &&
+      payload.fundingModel !== "runtime_balance") ||
     steps.length === 0
   ) {
     throw new Error("Twilio reconciliation job contains an invalid accepted-message payload.");

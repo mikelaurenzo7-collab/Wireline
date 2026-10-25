@@ -20,6 +20,7 @@ import {
 const CALLS = USAGE_METERS.call_minutes;
 const EMAILS = USAGE_METERS.emails_handled;
 const COMPUTER = USAGE_METERS.computer_minutes;
+const SMS = USAGE_METERS.sms_segments;
 
 function usd(value: number): string {
   return Number.isInteger(value) ? `$${value}` : `$${value.toFixed(2)}`;
@@ -28,10 +29,14 @@ function usd(value: number): string {
 /** Plain-language rate lines, built from the catalog so copy never drifts. */
 export const USAGE_RATE_LINES: ReadonlyArray<readonly [string, string]> = [
   [
-    "Call Minutes",
+    "Inbound & Outbound Calls",
     `${usd(CALLS.tiers[0].unitUsd)}/min from your shared work allowance, billed by the second.`,
   ],
   ["Emails Handled", `${usd(EMAILS.tiers[0].unitUsd)} per sent reply from the same allowance.`],
+  [
+    "SMS",
+    `${usd(SMS.tiers[0].unitUsd)} per sent US SMS segment from the same allowance. Long texts use multiple segments.`,
+  ],
   [
     "Computer Minutes",
     `${usd(COMPUTER.tiers[0].unitUsd)}/min from the same allowance. Heavy tasks may pause at a processing limit.`,
@@ -52,6 +57,7 @@ export interface UsageEstimatorInput {
   avgCallMinutes: number;
   emailsPerMonth: number;
   computerMinutes?: number;
+  smsSegments?: number;
   number: boolean;
   emailAddress: boolean;
   extraNumbers?: number;
@@ -65,6 +71,7 @@ export function estimateFromSliders(input: UsageEstimatorInput) {
       callMinutes: Math.max(0, input.callsPerMonth) * Math.max(0, input.avgCallMinutes),
       emailsHandled: Math.max(0, input.emailsPerMonth),
       computerMinutes: Math.max(0, input.computerMinutes ?? 0),
+      smsSegments: Math.max(0, input.smsSegments ?? 0),
       numbers: input.extraNumbers ?? Math.max(0, Number(input.number) - plan.includedNumbers),
       emailAddresses:
         input.extraEmailAddresses ??
@@ -161,6 +168,7 @@ export default function UsagePricingPanel({
   const [avgCallMinutes, setAvgCallMinutes] = useState(3);
   const [emailsPerMonth, setEmailsPerMonth] = useState(0);
   const [computerMinutes, setComputerMinutes] = useState(0);
+  const [smsSegments, setSmsSegments] = useState(0);
   const [number, setNumber] = useState(false);
   const [emailAddress, setEmailAddress] = useState(false);
   const estimate = useMemo(
@@ -171,12 +179,22 @@ export default function UsagePricingPanel({
         avgCallMinutes,
         emailsPerMonth,
         computerMinutes,
+        smsSegments,
         number: false,
         emailAddress: false,
         extraNumbers: Number(number),
         extraEmailAddresses: Number(emailAddress),
       }),
-    [tier, callsPerMonth, avgCallMinutes, emailsPerMonth, computerMinutes, number, emailAddress],
+    [
+      tier,
+      callsPerMonth,
+      avgCallMinutes,
+      emailsPerMonth,
+      computerMinutes,
+      smsSegments,
+      number,
+      emailAddress,
+    ],
   );
 
   if (availableTiers.length === 0) return null;
@@ -215,7 +233,7 @@ export default function UsagePricingPanel({
         })}
       </div>
       <p className="text-center text-sm text-muted-foreground">
-        Calls, email and Computer share one allowance. Use any mix. Resets monthly; no rollover.
+        Inbound, Outbound, SMS, Email & Computer. One allowance, any mix. Resets monthly.
       </p>
       <article
         aria-label="Monthly estimate"
@@ -224,7 +242,7 @@ export default function UsagePricingPanel({
         <div className="space-y-5">
           <Slider
             id="usage-calls"
-            label="Calls per Month"
+            label="Inbound & Outbound Calls"
             value={callsPerMonth}
             min={0}
             max={2000}
@@ -251,6 +269,16 @@ export default function UsagePricingPanel({
             step={50}
             suffix="emails"
             onChange={setEmailsPerMonth}
+          />
+          <Slider
+            id="usage-sms"
+            label="SMS Segments per Month"
+            value={smsSegments}
+            min={0}
+            max={5000}
+            step={25}
+            suffix="segments"
+            onChange={setSmsSegments}
           />
           <Slider
             id="usage-computer"
@@ -354,10 +382,10 @@ export default function UsagePricingPanel({
       </section>
 
       <dl className="grid gap-3 sm:grid-cols-6">
-        {USAGE_RATE_LINES.map(([term, detail], index) => (
+        {USAGE_RATE_LINES.map(([term, detail]) => (
           <div
             key={term}
-            className={`rounded-xl border border-border bg-card px-4 py-3 ${index < 3 ? "sm:col-span-2" : "sm:col-span-3"}`}
+            className="rounded-xl border border-border bg-card px-4 py-3 sm:col-span-2"
           >
             <dt className="text-sm font-semibold">{term}</dt>
             <dd className="mt-1 text-sm text-muted-foreground">{detail}</dd>
@@ -365,8 +393,8 @@ export default function UsagePricingPanel({
         ))}
       </dl>
       <p className="text-center text-xs text-muted-foreground">
-        Calls and Computer are measured by the second. Email is billed per sent reply. Limit alerts
-        at 50%, 80%, and 100%.
+        No rollover. Limit alerts at 50%, 80%, and 100%. SMS and outbound require sender approval
+        and recipient permission. Registration fees may apply.
       </p>
     </div>
   );

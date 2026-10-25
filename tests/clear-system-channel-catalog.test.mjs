@@ -29,7 +29,7 @@ describe("Clear System channel catalog guard", () => {
       "src/components/marketing/WireAgentLanding.tsx",
       (source) =>
         source.replace(
-          "AI Bots With Their Own Phone Number, Email Address, And Computer.",
+          "A Phone Number. An Email Address. A Computer.",
           "Calling.",
         ),
       "describe the product family together",
@@ -65,8 +65,8 @@ describe("Clear System channel catalog guard", () => {
     ],
     [
       "src/data/wireline-knowledge.ts",
-      (source) => source.replace('plan.catalogFamily === "channels"', "plan.public"),
-      "derive current launch offers",
+      (source) => source.replace("PUBLIC_USAGE_TIERS.map", "ALL_USAGE_TIERS.map"),
+      "derive public offers",
     ],
     [
       "src/data/wireline-knowledge.ts",

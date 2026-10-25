@@ -8,6 +8,9 @@ import * as schema from "../db/schema";
 import { resolveAgentSmsFromNumber } from "./agent-phone-lines";
 import { refundRuntimeUsage, reserveRuntimeUsage } from "./runtime-usage-billing";
 import { SMS_COST_PER_SEGMENT_USD } from "./sms-billing";
+import { USAGE_METERS } from "./usage-billing-catalog";
+import { hasReleasedSmsUsage, reserveSmsUsage, settleSmsUsage } from "./sms-usage-billing";
+import { AppError } from "./api-error";
 import { drizzle, log, tenantStore } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
@@ -133,6 +136,7 @@ export async function refundReservedTenantMessageAttempt(input: {
     idempotencyKey: input.idempotencyKey,
     reservationAttempt: input.reservationAttempt,
   });
+  if (channel === "sms" && (await settleSmsUsage(input.userId, referenceId, 0))) return true;
   const [burn] = await drizzle
     .select({
       id: schema.creditLedger.id,
@@ -188,6 +192,7 @@ export async function hasDurableTenantMessageAttemptRefund(input: {
     idempotencyKey: input.idempotencyKey,
     reservationAttempt: input.reservationAttempt,
   });
+  if (channel === "sms" && (await hasReleasedSmsUsage(input.userId, referenceId))) return true;
   const [refund] = await drizzle
     .select({ id: schema.creditLedger.id, entryKind: schema.creditLedger.entryKind })
     .from(schema.creditLedger)
@@ -572,20 +577,31 @@ export async function sendTenantMessage(
         idempotencyKey: params.idempotencyKey,
         reservationAttempt: params.reservationAttempt,
       });
-      const reservation = await reserveRuntimeUsage({
-        userId,
-        amountUsd: requiredBalance,
-        referenceId: reservationReference,
-        reason: channel === "sms" ? "Outbound SMS" : "Outbound WhatsApp message",
-        provider: "twilio",
-        source: "twilio",
-        metadata: {
-          channel,
-          estimated_segments: segments,
-          estimated_usd: requiredBalance,
-          destination_suffix: phone.slice(-4),
-        },
-      });
+      const sharedWork =
+        channel === "sms" ? await reserveSmsUsage(userId, reservationReference, segments) : null;
+      const fundingModel = sharedWork ? "shared_work" : "runtime_balance";
+      const refundMessage = async (input: Parameters<typeof refundRuntimeUsage>[0]) => {
+        if (sharedWork) {
+          if (!(await settleSmsUsage(userId, reservationReference, 0)))
+            throw new Error("SMS shared-work reservation is missing.");
+        } else await refundRuntimeUsage(input);
+      };
+      const reservation = sharedWork
+        ? { reserved: true }
+        : await reserveRuntimeUsage({
+            userId,
+            amountUsd: requiredBalance,
+            referenceId: reservationReference,
+            reason: channel === "sms" ? "Outbound SMS" : "Outbound WhatsApp message",
+            provider: "twilio",
+            source: "twilio",
+            metadata: {
+              channel,
+              estimated_segments: segments,
+              estimated_usd: requiredBalance,
+              destination_suffix: phone.slice(-4),
+            },
+          });
       if (!reservation.reserved) {
         return {
           ok: false,
@@ -601,6 +617,17 @@ export async function sendTenantMessage(
       // the provider catch: a failed durable claim proves Twilio was never called,
       // so refund this attempt's reserve and reject for a safe queue retry.
       try {
+        if (sharedWork) {
+          // The public SMS rate covers US text only. Basic Lookup has no paid
+          // fields; never charge a domestic rate for international SMS or MMS.
+          if (mediaUrls.length > 0)
+            throw AppError.badRequest(
+              "Shared Work includes text SMS. Media messages need separate pricing.",
+            );
+          const destination = await client.lookups.v2.phoneNumbers(phone).fetch();
+          if (destination.valid !== true || destination.countryCode !== "US")
+            throw AppError.badRequest("Shared Work SMS requires a valid US destination.");
+        }
         await params.beforeProviderAttempt?.();
       } catch (error) {
         if (error instanceof SmsProviderAttemptAlreadyClaimedError) {
@@ -613,7 +640,7 @@ export async function sendTenantMessage(
           throw error;
         }
         try {
-          await refundRuntimeUsage({
+          await refundMessage({
             userId,
             amountUsd: requiredBalance,
             referenceId: reservationReference,
@@ -631,7 +658,7 @@ export async function sendTenantMessage(
             refundError: getErrorMessage(refundError),
           });
           const accountingError = new Error(
-            "Twilio was not called, but its pre-provider Runtime Balance refund could not be recorded.",
+            "Twilio was not called, but its billing reservation could not be released.",
           );
           (accountingError as Error & { cause?: unknown }).cause = refundError;
           throw accountingError;
@@ -661,7 +688,7 @@ export async function sendTenantMessage(
           // The message has not started. Its debit can be released, but the
           // separately funded Lookup receipt must remain: validation itself
           // may have consumed provider money, including invalid destinations.
-          await refundRuntimeUsage({
+          await refundMessage({
             userId,
             amountUsd: requiredBalance,
             referenceId: reservationReference,
@@ -709,7 +736,7 @@ export async function sendTenantMessage(
             // Refund is idempotent on reservationReference, including redelivered
             // or already-reserved attempts. Never hide a failed accounting write
             // behind the ordinary provider-rejection response.
-            await refundRuntimeUsage({
+            await refundMessage({
               userId,
               amountUsd: requiredBalance,
               referenceId: reservationReference,
@@ -728,7 +755,7 @@ export async function sendTenantMessage(
               refundError: getErrorMessage(refundError),
             });
             const accountingError = new Error(
-              "Twilio rejected the message, but its Runtime Balance refund could not be recorded.",
+              "Twilio rejected the message, but its billing reservation could not be released.",
             );
             (accountingError as Error & { cause?: unknown }).cause = refundError;
             throw accountingError;
@@ -800,7 +827,12 @@ export async function sendTenantMessage(
       const actualSegments =
         channel === "sms" ? Math.max(1, Number(message.numSegments) || segments) : 1;
       const actualCost =
-        channel === "sms" ? money(SMS_COST_PER_SEGMENT_USD * actualSegments) : requiredBalance;
+        channel === "sms"
+          ? money(
+              (sharedWork ? USAGE_METERS.sms_segments.tiers[0].unitUsd : SMS_COST_PER_SEGMENT_USD) *
+                actualSegments,
+            )
+          : requiredBalance;
       const local = await finalizeAcceptedTwilioMessage({
         userId,
         customerNumber: phone,
@@ -813,9 +845,12 @@ export async function sendTenantMessage(
         channel,
         agentId: params.agentId,
         reservationReference,
-        estimatedUsd: requiredBalance,
+        estimatedUsd: sharedWork
+          ? USAGE_METERS.sms_segments.tiers[0].unitUsd * segments
+          : requiredBalance,
         actualUsd: actualCost,
         actualSegments,
+        fundingModel,
       });
 
       return {

@@ -1,5 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("../src/lib/sms-usage-billing", () => {
+  const unexpected = () => {
+    throw new Error("Unexpected SMS billing in SIP test");
+  };
+  return {
+    reserveSmsUsage: unexpected,
+    settleSmsUsage: unexpected,
+    hasReleasedSmsUsage: unexpected,
+  };
+});
+
 vi.mock("../src/lib/voice/elevenlabs-media-bridge", () => ({
   createClonedMediaSession: vi.fn(() => {
     throw new Error("Unexpected media call in SIP test");

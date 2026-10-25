@@ -30,6 +30,7 @@ import {
   reportPendingUsageForUser,
   USAGE_REPORT_RETRY_WINDOW_MS,
 } from "../src/lib/usage-billing-ledger";
+import { reserveSmsUsage, settleSmsUsage, hasReleasedSmsUsage } from "../src/lib/sms-usage-billing";
 vi.mock("../src/lib/usage-billing-reconciliation", () => ({ reconcileStripeMeterErrors: vi.fn() }));
 vi.mock("../src/lib/spend-guards", () => ({
   clearBudgetCache: vi.fn(),
@@ -108,6 +109,7 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
         "0187_usage_billing",
         "0189_usage_billing_periods",
         "0190_usage_plan_tiers",
+        "0191_shared_sms_usage",
       ])
         await pool.query(
           readFileSync(new URL(`../drizzle/migrations/${name}.sql`, import.meta.url), "utf8"),
@@ -154,6 +156,67 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
       quantity,
       occurredAt: NOW,
     });
+
+  it("serializes SMS admission against the shared allowance and releases only proven failures", async () => {
+    await setUsageMonthlyCap(USER, 27);
+    await record("calls-before-sms", 67.84);
+    const admissions = await Promise.allSettled([
+      reserveSmsUsage(USER, "sms-one", 1),
+      reserveSmsUsage(USER, "sms-two", 1),
+    ]);
+    expect(admissions.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    expect(admissions.filter((result) => result.status === "rejected")).toHaveLength(1);
+    const sourceId = admissions[0].status === "fulfilled" ? "sms-one" : "sms-two";
+    expect(await hasReleasedSmsUsage(USER, sourceId)).toBe(false);
+    expect(await settleSmsUsage(OTHER, sourceId, 0)).toBe(false);
+    expect(await settleSmsUsage(USER, sourceId, 0)).toBe(true);
+    expect(await settleSmsUsage(USER, sourceId, 0)).toBe(true);
+    expect(await hasReleasedSmsUsage(USER, sourceId)).toBe(true);
+    await expect(reserveSmsUsage(USER, sourceId, 1)).rejects.toMatchObject({
+      code: "SMS_FUNDING_SETTLED",
+    });
+    await expect(reserveSmsUsage(USER, "fresh-attempt", 1)).resolves.toEqual({ periodKey: PERIOD });
+  });
+
+  it("preserves settled SMS for final-invoice reconciliation after cancellation and a release pause", async () => {
+    await reserveSmsUsage(USER, "accepted-sms", 3);
+    await reserveSmsUsage(USER, "accepted-sms", 3);
+    await pool.query("UPDATE wireline_subscriptions SET status = 'canceled'");
+    vi.stubEnv("USAGE_BILLING_ENABLED", "false");
+    await settleSmsUsage(USER, "accepted-sms", 2);
+    await settleSmsUsage(USER, "accepted-sms", 2);
+    await expect(settleSmsUsage(USER, "accepted-sms", 0)).rejects.toThrow(
+      "different definitive outcome",
+    );
+    const send = vi.fn().mockResolvedValue(undefined);
+    expect(await reportPendingUsageForUser(createUsageStore(), { send }, USER, new Date())).toEqual(
+      {
+        reported: 0,
+        skipped: 0,
+        failed: 1,
+      },
+    );
+    expect(send).not.toHaveBeenCalled();
+    const rows = await pool.query(
+      "SELECT period_key, quantity, status FROM wireline_usage_meter_events",
+    );
+    expect(rows.rows).toEqual([
+      { period_key: PERIOD, quantity: "2.0000", status: "reconciliation_required" },
+    ]);
+  });
+
+  it("reports accepted SMS exactly once as shared work credits during its open period", async () => {
+    await reserveSmsUsage(USER, "accepted-sms", 3);
+    await settleSmsUsage(USER, "accepted-sms", 2);
+    const send = vi.fn().mockResolvedValue(undefined);
+    await reportPendingUsageForUser(createUsageStore(), { send }, USER, new Date());
+    await settleSmsUsage(USER, "accepted-sms", 2);
+    await reportPendingUsageForUser(createUsageStore(), { send }, USER, new Date());
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({ meter: "sms_segments", value: 8, stripeCustomerId: "cus_review" }),
+    );
+  });
 
   it("commits the frozen request before Stripe I/O and retries the same amount after a cap increase", async () => {
     await setUsageMonthlyCap(USER, 30);

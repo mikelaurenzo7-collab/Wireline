@@ -36,6 +36,7 @@ export const USAGE_TIER_PRICE_ENV = {
 } as const;
 
 export const USAGE_METER_EVENT_ENV: Record<UsageMeterKey, string> = {
+  sms_segments: "STRIPE_USAGE_WORK_METER_EVENT",
   call_minutes: "STRIPE_USAGE_WORK_METER_EVENT",
   emails_handled: "STRIPE_USAGE_WORK_METER_EVENT",
   computer_minutes: "STRIPE_USAGE_WORK_METER_EVENT",

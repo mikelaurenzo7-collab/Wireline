@@ -26,7 +26,7 @@ const PILLARS: readonly Pillar[] = [
     id: "calls",
     icon: Phone,
     label: "Calls",
-    body: "Answer questions, capture requests, book appointments, and make approved follow-up calls. Choose a voice or clone your own.",
+    body: "Prospect, qualify leads, follow up on deals, and answer incoming calls. Choose a voice or clone your own.",
     note: "Outbound calls require recipient permission and an eligible line.",
   },
   {

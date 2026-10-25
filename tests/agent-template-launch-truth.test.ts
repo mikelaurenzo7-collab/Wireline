@@ -15,20 +15,22 @@ function template(id: string) {
 }
 
 describe("agent template launch truth", () => {
-  it("offers inbound business and personal starters while retaining deferred definitions", () => {
+  it("offers sales, marketing, inbound and personal starters while deferring collections", () => {
     const launchIds = new Set<string>(LAUNCH_AGENT_TEMPLATES.map((candidate) => candidate.id));
-    for (const id of [
-      "sales-sdr",
-      "sales-closer",
-      "collections-soft",
-      "collections-hard",
-      "marketing-reengagement",
-      "marketing-survey",
-    ]) {
+    for (const id of ["collections-soft", "collections-hard"]) {
       expect(template(id)).toBeDefined();
       expect(launchIds.has(id)).toBe(false);
     }
-    for (const id of ["support-tier1", "support-email", "personal-errand", "personal-negotiator"]) {
+    for (const id of [
+      "sales-sdr",
+      "sales-closer",
+      "marketing-reengagement",
+      "marketing-survey",
+      "support-tier1",
+      "support-email",
+      "personal-errand",
+      "personal-negotiator",
+    ]) {
       expect(launchIds.has(id)).toBe(true);
     }
     expect(template("scheduler-realestate").firstMessage).toContain("Thanks for calling");

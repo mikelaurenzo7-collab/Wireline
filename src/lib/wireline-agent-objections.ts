@@ -122,10 +122,9 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
     ],
     response_template:
       "Totally fair. Usually when folks want to think it over, there's one specific thing on their mind: pricing, switching cost, or whether it'll actually work for their setup. Which one is closest for you?",
-    follow_up_question:
-      "Personal is $12 a month for calls and a computer, and you can cancel anytime. Want me to send the signup link?",
+    follow_up_question: "Want to compare the plans against one job you'd use your Bot for?",
     rationale:
-      "Surfaces the real blocker and offers the cheapest paid plan instead of a free account.",
+      "Connect the plan choice to the customer's intended work without quoting a stale price.",
   },
   {
     id: "already_have_competitor",

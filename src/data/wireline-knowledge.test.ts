@@ -1,44 +1,28 @@
 import { describe, expect, it } from "vitest";
-
 import {
   WIRELINE_FEATURES,
   WIRELINE_GROWTH_ENGINE,
   WIRELINE_ONE_LINER,
   WIRELINE_PLANS,
 } from "./wireline-knowledge";
-import { STRIPE_PLANS } from "../lib/plan-catalog";
+import { PUBLIC_USAGE_TIERS, USAGE_TIERS } from "../lib/usage-billing-catalog";
 
 describe("BotBound knowledge", () => {
-  it("keeps public offer naming aligned with the launch catalog and brand law", () => {
-    expect(WIRELINE_PLANS.map((plan) => plan.name)).toEqual([
-      ...STRIPE_PLANS.filter(
-        (plan) => plan.catalogFamily === "channels" && !plan.channels.includes("sms"),
-      ).map((plan) => plan.name),
-      "BotBound Enterprise",
-      "Runtime Balance",
-    ]);
-
-    expect(WIRELINE_PLANS.map((plan) => plan.price).join(" ")).not.toContain("Legacy");
-    expect(WIRELINE_PLANS.map((plan) => plan.name)).not.toContain("BotBound Business");
-    for (const plan of STRIPE_PLANS.filter(
-      (plan) => plan.catalogFamily === "channels" && !plan.channels.includes("sms"),
-    )) {
-      const knowledge = WIRELINE_PLANS.find((item) => item.name === plan.name)!;
-      expect(knowledge.price).toContain(`$${plan.price_usd_monthly}/mo`);
-      expect(knowledge.price).toContain(`$${plan.price_usd_annual}/year`);
-      if (!plan.channels.includes("email"))
-        expect(knowledge.includes.join(" ")).not.toContain("mailbox included");
-      if (!plan.channels.includes("voice"))
-        expect(knowledge.includes.join(" ")).not.toContain("call minutes/month");
-    }
-  });
-
-  it("keeps Personal paid and includes a number, email, and calls", () => {
-    expect(WIRELINE_PLANS[0].name).toBe("BotBound Personal");
-    expect(WIRELINE_PLANS[0].price).toContain("$12/mo");
-    expect(WIRELINE_PLANS[0].includes.join(" ")).toMatch(/call minutes/);
-    expect(WIRELINE_PLANS[0].includes.join(" ")).not.toMatch(/mailbox included/);
-    expect(WIRELINE_PLANS.at(-1)?.name).toBe("Runtime Balance");
+  it("quotes only the current public plans and their included identities", () => {
+    expect(WIRELINE_PLANS).toHaveLength(PUBLIC_USAGE_TIERS.length);
+    PUBLIC_USAGE_TIERS.forEach((id, index) => {
+      const plan = USAGE_TIERS[id];
+      const knowledge = WIRELINE_PLANS[index];
+      expect(knowledge.name).toBe(plan.name);
+      expect(knowledge.price).toBe(`$${plan.monthlyUsd}/mo`);
+      expect(knowledge.includes).toContain(`$${plan.includedWorkUsd} of shared work each month`);
+      expect(knowledge.includes.join(" ")).toContain(`${plan.includedNumbers} phone number`);
+      expect(knowledge.includes.join(" ")).toContain(
+        `${plan.includedEmailAddresses} email address`,
+      );
+      expect(knowledge.bestFor).toContain("one shared allowance");
+    });
+    expect(JSON.stringify(WIRELINE_PLANS)).not.toMatch(/Enterprise|Runtime Balance|annual/);
   });
 
   it("keeps shared product knowledge Bot-forward", () => {
@@ -47,31 +31,23 @@ describe("BotBound knowledge", () => {
       WIRELINE_GROWTH_ENGINE,
       ...WIRELINE_FEATURES.map((feature) => feature.blurb),
     ].join(" ");
-
-    expect(combined).not.toMatch(/\bAssistants\b/);
-    expect(combined).not.toMatch(/\bagents\b/i);
+    expect(combined).not.toMatch(/\bAssistants\b|\bagents\b/i);
     expect(combined).toMatch(/\bBots?\b/);
     expect(combined).toContain("BotBound");
   });
 
-  it("describes the focused launch offer without promoting business campaigns", () => {
-    const combined = [
-      WIRELINE_GROWTH_ENGINE,
-      ...WIRELINE_FEATURES.map((feature) => feature.blurb),
-    ].join(" ");
-
+  it("describes sales and SMS without claiming that a subscription clears activation checks", () => {
+    expect(WIRELINE_GROWTH_ENGINE).toContain("qualify leads");
     expect(WIRELINE_GROWTH_ENGINE).toContain("consent rules, federal DNC screening");
-    expect(WIRELINE_GROWTH_ENGINE).toContain(
-      "Business outbound campaigns are not part of the current launch offer",
+    expect(WIRELINE_GROWTH_ENGINE).toContain("check its account's current activation status");
+    expect(WIRELINE_FEATURES.find((feature) => feature.title === "SMS")?.blurb).toContain(
+      "Sender registration, recipient permission, and opt-out controls",
     );
     expect(
       WIRELINE_FEATURES.find((feature) => feature.title === "Personal Calls")?.blurb,
     ).toContain("Recipient permission is required");
-    expect(
-      WIRELINE_FEATURES.find((feature) => feature.title === "SMS Coming Soon")?.blurb,
-    ).toContain("not part of the current launch offer");
-    expect(combined).not.toContain("stays gated");
-    expect(combined).not.toContain("launch outbound campaigns");
-    expect(combined).not.toContain("campaigns that dial and qualify leads");
+    expect(JSON.stringify(WIRELINE_FEATURES)).not.toMatch(
+      /Coming Soon|not part of the current launch offer/,
+    );
   });
 });

@@ -159,9 +159,9 @@ export default function UsageSpendCard({
             </label>
             <p className="mt-1 text-sm text-muted-foreground">
               ${plan.monthlyUsd}/month includes ${plan.includedWorkUsd} of work shared across calls,
-              email and Computer. Your allowance resets monthly without rollover. Extra work stays
-              within a monthly limit you set (default ${USAGE_DEFAULT_MONTHLY_CAP_USD}) before tax.
-              Applicable tax is added separately.
+              SMS, email and Computer. Your allowance resets monthly without rollover. Extra work
+              stays within a monthly limit you set (default ${USAGE_DEFAULT_MONTHLY_CAP_USD}) before
+              tax. Applicable tax is added separately.
             </p>
           </div>
           <p className="text-sm">
