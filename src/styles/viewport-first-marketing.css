@@ -250,17 +250,7 @@
 .marketing-surface .marketing-section--screen:first-child {
   position: relative;
   isolation: isolate;
-  background:
-    radial-gradient(
-      ellipse 60% 42% at 50% 8%,
-      color-mix(in srgb, var(--wireline-color-action-primary-default) 7%, transparent),
-      transparent 70%
-    ),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--wireline-color-canvas-warmer) 22%, transparent),
-      transparent 72%
-    );
+  /* The shared neutral canvas owns page depth; sections add no color wash. */
 }
 
 /*
