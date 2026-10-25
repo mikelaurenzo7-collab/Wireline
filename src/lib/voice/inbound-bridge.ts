@@ -44,13 +44,22 @@ export function referTargetPhone(target: unknown): string | null {
 }
 
 /** TwiML that completes a provider REFER by dialing the human on the PSTN. */
-export function referTransferTwiml(target: string, callerId: string | null): string | null {
+export function referTransferTwiml(
+  target: string,
+  callerId: string | null,
+  options: { absoluteAction?: boolean } = {},
+): string | null {
   const phone = referTargetPhone(target);
   if (!phone) return null;
+  const canonical = options.absoluteAction ? resolveCanonicalAppUrl() : null;
+  if (canonical && "error" in canonical) return null;
+  const action = canonical
+    ? new URL(INBOUND_DIAL_COMPLETE_PATH, canonical.url).toString()
+    : INBOUND_DIAL_COMPLETE_PATH;
   const caller = callerId && /^\+[1-9]\d{7,14}$/.test(callerId) ? ` callerId="${callerId}"` : "";
   return (
     '<?xml version="1.0" encoding="UTF-8"?>' +
-    `<Response><Dial${caller} timeout="${TRANSFER_RING_TIMEOUT_SECONDS}" action="${INBOUND_DIAL_COMPLETE_PATH}?leg=transfer" method="POST">` +
+    `<Response><Dial${caller} timeout="${TRANSFER_RING_TIMEOUT_SECONDS}" action="${action}?leg=transfer" method="POST">` +
     `<Number>${phone}</Number></Dial><Hangup/></Response>`
   );
 }

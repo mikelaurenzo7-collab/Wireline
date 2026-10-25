@@ -1,5 +1,24 @@
 import { createHash } from "node:crypto";
-import { and, asc, count, desc, eq, inArray, isNotNull, lte, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gt,
+  inArray,
+  isNotNull,
+  isNull,
+  lte,
+  or,
+  sql,
+} from "drizzle-orm";
+import { elevenLabsCallsConfigured } from "./cloned-media-config";
+import { renderClonedStockPreview } from "./cloned-speech-stream";
+import {
+  reservePlatformCostRecord,
+  commitPlatformCostReservation,
+} from "../../middleware/audit-middleware";
 
 import * as schema from "../../db/schema";
 import {
@@ -96,17 +115,28 @@ function asRecord(value: unknown): Record<string, unknown> {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
- * Voice cloning is OFF by default: it turns on only with
- * LIVE_VOICE_CLONE_ENABLED=true and at least one configured engine.
+ * Provider credentials do not grant rollout approval. Cloning stays off until
+ * explicitly enabled; consent and ownership checks always apply.
  */
 export function liveVoiceCloneEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
   if (env.LIVE_VOICE_CLONE_ENABLED !== "true") return false;
   return cloneEngine("xai").configured() || cloneEngine("elevenlabs").configured();
 }
 
-/** Engines whose voices the phone runtime can speak natively today. */
+/** Engines available to the native or streaming phone runtime. */
 export function engineSpeaksOnCalls(engine: CloneEngineId): boolean {
-  return cloneEngine(engine).liveMode === "native_realtime";
+  return (
+    cloneEngine(engine).liveMode === "native_realtime" ||
+    (engine === "elevenlabs" && elevenLabsCallsConfigured())
+  );
+}
+
+function voiceNotExpired() {
+  return or(isNull(liveVoices.expiresAt), gt(liveVoices.expiresAt, new Date()));
+}
+
+function validBotId(value: string): boolean {
+  return typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9_-]{0,199}$/.test(value);
 }
 
 function engineFor(row: Pick<LiveVoice, "provider">): CloneEngine {
@@ -173,7 +203,7 @@ async function readyVoices(userId: string): Promise<LiveVoice[]> {
     drizzle
       .select()
       .from(liveVoices)
-      .where(and(eq(liveVoices.userId, userId), eq(liveVoices.status, "ready")))
+      .where(and(eq(liveVoices.userId, userId), eq(liveVoices.status, "ready"), voiceNotExpired()))
       .orderBy(desc(liveVoices.createdAt))
       .limit(20),
   );
@@ -186,7 +216,12 @@ async function readyVoice(userId: string, id: string): Promise<LiveVoice> {
       .select()
       .from(liveVoices)
       .where(
-        and(eq(liveVoices.userId, userId), eq(liveVoices.id, id), eq(liveVoices.status, "ready")),
+        and(
+          eq(liveVoices.userId, userId),
+          eq(liveVoices.id, id),
+          eq(liveVoices.status, "ready"),
+          voiceNotExpired(),
+        ),
       )
       .limit(1),
   );
@@ -197,7 +232,10 @@ async function readyVoice(userId: string, id: string): Promise<LiveVoice> {
 async function ownedAgents(userId: string) {
   return inTenant(userId, () =>
     drizzle
-      .select({ id: schema.agents.id, businessVariables: schema.agents.businessVariables })
+      .select({
+        id: schema.agents.id,
+        businessVariables: schema.agents.businessVariables,
+      })
       .from(schema.agents)
       .where(eq(schema.agents.userId, userId)),
   );
@@ -286,11 +324,27 @@ async function destroyRow(
   row: Pick<LiveVoice, "id" | "provider" | "providerVoiceId">,
   reason: LiveVoiceDeletedReason,
 ): Promise<void> {
+  // Revoke locally first. Provider outages must never leave a revoked or
+  // expired voice selectable; cleanup_pending retains durable retry evidence.
+  await drizzle
+    .update(liveVoices)
+    .set({
+      status: "cleanup_pending",
+      deletedReason: reason,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(liveVoices.userId, userId), eq(liveVoices.id, row.id)));
+  await clearBotSelections(userId, row.id);
   if (row.providerVoiceId) await engineFor(row).remove(row.providerVoiceId);
   const now = new Date();
   await drizzle
     .update(liveVoices)
-    .set({ status: "deleted", deletedAt: now, deletedReason: reason, updatedAt: now })
+    .set({
+      status: "deleted",
+      deletedAt: now,
+      deletedReason: reason,
+      updatedAt: now,
+    })
     .where(and(eq(liveVoices.userId, userId), eq(liveVoices.id, row.id)));
   // Any Bot that used it goes back to its stock voice immediately.
   await clearBotSelections(userId, row.id);
@@ -365,7 +419,10 @@ export const liveVoiceService = {
 
   async list(actor: Actor) {
     const [rows, agents] = await Promise.all([readyVoices(actor.id), ownedAgents(actor.id)]);
-    return { voices: rows.map((row) => summarize(row, agents)), ...this.capabilities(actor) };
+    return {
+      voices: rows.map((row) => summarize(row, agents)),
+      ...this.capabilities(actor),
+    };
   },
 
   /** Server-side quality gate; returns the report so the UI can coach. */
@@ -516,7 +573,11 @@ export const liveVoiceService = {
           for (const id of candidates) {
             const engine = cloneEngine(id);
             try {
-              const { providerVoiceId } = await engine.create({ name, wav, gender });
+              const { providerVoiceId } = await engine.create({
+                name,
+                wav,
+                gender,
+              });
               created = { engine, providerVoiceId };
               break;
             } catch (error) {
@@ -558,7 +619,10 @@ export const liveVoiceService = {
         return { voice: summarize(row, []), quality };
       } catch (error) {
         // Never leave an orphaned provider voice (or a used slot) behind a failed insert.
-        const orphan = created as { engine: CloneEngine; providerVoiceId: string } | null;
+        const orphan = created as {
+          engine: CloneEngine;
+          providerVoiceId: string;
+        } | null;
         if (orphan) await discardOrphanedProviderVoice(actor.id, orphan, values);
         throw error;
       }
@@ -591,7 +655,11 @@ export const liveVoiceService = {
   async preview(
     actor: Actor,
     id: string,
-    input: { variant: "clone" | "stock"; agentName?: string; stockVoice?: string },
+    input: {
+      variant: "clone" | "stock";
+      agentName?: string;
+      stockVoice?: string;
+    },
   ): Promise<Buffer> {
     const row = await readyVoice(actor.id, id);
     const line = voiceSampleLine(input.agentName || "your Bot");
@@ -602,25 +670,52 @@ export const liveVoiceService = {
         return audio;
       }
       // The same stock voice a call would fall back to, so the A/B is honest.
+      if (engineFor(row).id === "elevenlabs") {
+        const reservation = await reservePlatformCostRecord({
+          userId: actor.id,
+          action: "voice.clone.preview",
+          provider: "openai",
+          model: "tts-1",
+          costUsd: Math.max(0.000001, (Array.from(line).length * 0.015) / 1_000),
+          requestMeta: {
+            surface: "clone_preview",
+            characters: Array.from(line).length,
+            estimate: true,
+          },
+        });
+        if (!reservation.reserved)
+          throw AppError.serviceUnavailable(
+            "The preview could not reserve its audio cost. Try again shortly.",
+          );
+        await commitPlatformCostReservation(reservation.reservation);
+        return renderClonedStockPreview({
+          text: line,
+          gender: row.voiceGender ?? null,
+          apiKey: process.env.OPENAI_API_KEY ?? "",
+        });
+      }
       return await cloneEngine("xai").preview(
         stockFallbackVoiceFor(input.stockVoice, row.voiceGender),
         line,
       );
     } catch (error) {
       if (error instanceof CloneEngineError)
-        void alertCloneEngineCapacity(error.engine, error.code, { operation: "preview" }).catch(
-          () => {},
-        );
+        void alertCloneEngineCapacity(error.engine, error.code, {
+          operation: "preview",
+        }).catch(() => {});
       throw friendlyProviderError(error);
     }
   },
 
   async useOnBot(actor: Actor, id: string, agentId: string) {
     const row = await readyVoice(actor.id, id);
-    if (!UUID.test(agentId)) throw AppError.notFound("Bot not found.");
+    if (!validBotId(agentId)) throw AppError.notFound("Bot not found.");
     const [agent] = await inTenant(actor.id, () =>
       drizzle
-        .select({ id: schema.agents.id, businessVariables: schema.agents.businessVariables })
+        .select({
+          id: schema.agents.id,
+          businessVariables: schema.agents.businessVariables,
+        })
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, actor.id)))
         .limit(1),
@@ -645,10 +740,13 @@ export const liveVoiceService = {
 
   /** One tap back to the Bot's stock voice. Idempotent. */
   async useStock(actor: Actor, agentId: string) {
-    if (!UUID.test(agentId)) throw AppError.notFound("Bot not found.");
+    if (!validBotId(agentId)) throw AppError.notFound("Bot not found.");
     const [agent] = await inTenant(actor.id, () =>
       drizzle
-        .select({ id: schema.agents.id, businessVariables: schema.agents.businessVariables })
+        .select({
+          id: schema.agents.id,
+          businessVariables: schema.agents.businessVariables,
+        })
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, actor.id)))
         .limit(1),
@@ -667,9 +765,8 @@ export const liveVoiceService = {
 
   /**
    * Destroy voices whose published retention schedule has run out, at the
-   * engine that holds them first, then in BotBound. A provider failure leaves
-   * the row ready so the next sweep retries; a voice already gone at the
-   * provider counts as destroyed.
+   * provider with durable retries. Local revocation takes effect before the
+   * provider request; a voice already gone at the provider counts as destroyed.
    */
   async expireDue(now: Date = new Date()): Promise<number> {
     const due = await tenantStore.exit(() =>
@@ -680,13 +777,16 @@ export const liveVoiceService = {
           provider: liveVoices.provider,
           providerVoiceId: liveVoices.providerVoiceId,
           status: liveVoices.status,
+          deletedReason: liveVoices.deletedReason,
         })
         .from(liveVoices)
         .where(
           and(
             inArray(liveVoices.status, ["ready", "cleanup_pending"]),
-            isNotNull(liveVoices.expiresAt),
-            lte(liveVoices.expiresAt, now),
+            or(
+              eq(liveVoices.status, "cleanup_pending"),
+              and(isNotNull(liveVoices.expiresAt), lte(liveVoices.expiresAt, now)),
+            ),
           ),
         )
         .orderBy(asc(liveVoices.expiresAt))
@@ -700,7 +800,8 @@ export const liveVoiceService = {
           destroyRow(
             row.userId,
             row,
-            row.status === "cleanup_pending" ? "create_failed" : "retention_expired",
+            row.deletedReason ??
+              (row.status === "cleanup_pending" ? "create_failed" : "retention_expired"),
           ),
         );
         expired += 1;
@@ -734,7 +835,14 @@ function touchLastUsed(
       lastUsedAt: now,
       ...(row.retentionPolicyVersion ? { expiresAt: biometricExpiresAt(row.createdAt, now) } : {}),
     })
-    .where(and(eq(liveVoices.userId, userId), eq(liveVoices.id, row.id)))
+    .where(
+      and(
+        eq(liveVoices.userId, userId),
+        eq(liveVoices.id, row.id),
+        eq(liveVoices.status, "ready"),
+        voiceNotExpired(),
+      ),
+    )
     .then(
       () => undefined,
       () => undefined,
@@ -769,6 +877,7 @@ export async function resolveRuntimeCustomVoice(
           eq(liveVoices.userId, userId),
           eq(liveVoices.id, selection.cloneId),
           eq(liveVoices.status, "ready"),
+          voiceNotExpired(),
         ),
       )
       .limit(1);
@@ -828,7 +937,11 @@ export async function deleteProviderLiveVoicesForAccount(
   db: typeof drizzle,
   userId: string,
 ): Promise<number> {
-  let rows: Array<{ id: string; provider: string; providerVoiceId: string | null }>;
+  let rows: Array<{
+    id: string;
+    provider: string;
+    providerVoiceId: string | null;
+  }>;
   try {
     rows = await db
       .select({

@@ -596,13 +596,11 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
       expiredAppointmentHolds = await releaseExpiredAppointmentHolds();
     }
 
-    // Customer voice-clone preview lane is default-off: expiry is a separate
-    // sweep step that stays inert unless the canary flag is explicitly on.
+    // Retention cleanup continues even when new customer previews are disabled.
     let voiceCloneAssetsExpired = 0;
     if (
       withinSweepBudget() &&
-      (req._sweepMode === "cron" || !req._sweepMode) &&
-      process.env.VOICE_CLONE_CUSTOMER_ENABLED === "true"
+      (req._sweepMode === "cron" || !req._sweepMode)
     ) {
       try {
         const { voiceAssetService } = await import("../lib/voice/voice-asset-service");

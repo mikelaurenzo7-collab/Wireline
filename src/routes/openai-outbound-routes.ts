@@ -37,6 +37,7 @@ import {
 } from "../lib/voice/realtime-sip-target";
 import { trackVoiceMinutes } from "../lib/voice-usage";
 import { liveRecordingDialAttributes } from "../lib/voice/live-call-recording";
+import { clonedCallTwiml } from "../lib/voice/cloned-call-routing";
 import { readVoiceIdentityReceipt, resolveVoiceFundingId } from "../lib/voice-call-identity";
 import {
   handleFundedOutboundCarrierEvent,
@@ -163,12 +164,19 @@ async function meterNativeCarrierAttempt(userId: string, callSid: string): Promi
 async function fundedCallback(
   req: Request,
   status: string,
-): Promise<{ handled: boolean; userId: string | null; placementId: string | null }> {
+): Promise<{
+  handled: boolean;
+  userId: string | null;
+  placementId: string | null;
+}> {
   const verification = verifyOpenAIOutboundToken(tokenFromRequest(req));
   if (!verification.ok) throw AppError.unauthorized("Invalid outbound callback token.");
   const leadId = BigInt(verification.claims.leadId);
   const [lead] = await drizzle
-    .select({ userId: schema.outboundLeads.userId, metadata: schema.outboundLeads.metadata })
+    .select({
+      userId: schema.outboundLeads.userId,
+      metadata: schema.outboundLeads.metadata,
+    })
     .from(schema.outboundLeads)
     .where(eq(schema.outboundLeads.id, leadId))
     .limit(1);
@@ -228,7 +236,14 @@ async function loadCampaignMaxAttempts(
 }
 
 type BridgeDecision =
-  | { kind: "bridge"; callerId: string; sipUri: string; callRecordingEnabled: boolean }
+  | {
+      kind: "bridge";
+      userId: string;
+      agentId: string;
+      callerId: string;
+      sipUri: string;
+      callRecordingEnabled: boolean;
+    }
   | { kind: "drop"; answeredBy: string; userId: string }
   | { kind: "hangup"; userId: string; accountEnvironment: string | null };
 
@@ -295,11 +310,18 @@ async function resolveBridgeContext(
       // Compatibility with durable decisions written before carrier synthesis
       // was retired. Preserve that stored decision as historical evidence, but
       // never replay its message through Twilio or rewrite what previously ran.
-      return { kind: "drop", answeredBy: replay.answeredBy, userId: lead.userId };
+      return {
+        kind: "drop",
+        answeredBy: replay.answeredBy,
+        userId: lead.userId,
+      };
     }
     if (replay?.kind === "bridge") {
+      if (!lead.agentId) throw AppError.notFound("Outbound Bot not found.");
       return {
         kind: "bridge",
+        userId: lead.userId,
+        agentId: lead.agentId,
         callerId: replay.callerId,
         sipUri: replay.sipUri,
         callRecordingEnabled,
@@ -423,6 +445,8 @@ async function resolveBridgeContext(
 
     return {
       kind: "bridge",
+      userId: lead.userId,
+      agentId: lead.agentId,
       callerId,
       sipUri: buildOpenAIOutboundSipUri(token),
       callRecordingEnabled,
@@ -487,7 +511,20 @@ router.post(
       }
       // The Bot answers on its own line: xAI when that number is registered
       // there, otherwise the OpenAI project URI the decision already carries.
-      const sip = await resolveOutboundSipTarget({ callerId: decision.callerId, token });
+      const clonedTwiml = await clonedCallTwiml({
+        userId: decision.userId,
+        agentId: decision.agentId,
+        token,
+        direction: "outbound",
+      });
+      if (clonedTwiml) {
+        res.status(200).send(clonedTwiml);
+        return;
+      }
+      const sip = await resolveOutboundSipTarget({
+        callerId: decision.callerId,
+        token,
+      });
       res.status(200).send(
         bridgeTwiml({
           callerId: decision.callerId,

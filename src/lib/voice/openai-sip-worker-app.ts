@@ -14,6 +14,7 @@ import {
 import { getDeploymentIdentity } from "../deployment-environment";
 import { log } from "../server-logger";
 import { safeVoiceAdmissionError } from "./voice-admission-diagnostics";
+import { CLONED_MEDIA_ADMIT_PATH } from "./cloned-media-config";
 
 export function createVoiceWorkerApp(
   router: Router,
@@ -90,7 +91,9 @@ export function createVoiceWorkerApp(
     res.setHeader("Cache-Control", "no-store");
     const expected = req.get("x-botbound-expected-source-revision");
     if (expected && expected !== drainState().source_revision) {
-      res.status(409).json({ error: "Worker revision does not match the selected drain target." });
+      res.status(409).json({
+        error: "Worker revision does not match the selected drain target.",
+      });
       return;
     }
     beginDrain();
@@ -101,50 +104,69 @@ export function createVoiceWorkerApp(
     res.json(drainState());
   });
   // Both live voice providers deliver incoming calls through the same admission gate.
-  app.post([OPENAI_SIP_WEBHOOK_PATH, XAI_SIP_WEBHOOK_PATH], (_req, res, next) => {
+  const canAdmit = () => {
     const identity = getDeploymentIdentity();
-    const renderAdmissionBlocked =
-      (identity.provider === "render" || identity.provider === "conflict") &&
-      (identity.provider !== "render" ||
-        identity.environment !== "production" ||
-        identity.branch !== "main" ||
-        !identity.sourceCommit ||
-        process.env.WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED !== "true");
-    if (
-      renderAdmissionBlocked ||
-      process.env.WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED === "false" ||
-      draining ||
-      activeBackgroundWorkCount() + pendingRequests >= maxCalls
-    ) {
-      res.setHeader("Retry-After", "5");
-      res.status(503).json({ error: "Voice worker is temporarily unavailable." });
-      return;
-    }
-    pendingRequests += 1;
-    let finished = false;
-    const finish = () => {
-      if (finished) return;
-      finished = true;
-      pendingRequests -= 1;
-      if (pendingRequests === 0) {
-        for (const resolve of admissionDrainWaiters) resolve();
-        admissionDrainWaiters.clear();
+    return (
+      !draining &&
+      process.env.WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED !== "false" &&
+      !(
+        (identity.provider === "render" || identity.provider === "conflict") &&
+        (identity.provider !== "render" ||
+          identity.environment !== "production" ||
+          identity.branch !== "main" ||
+          !identity.sourceCommit ||
+          process.env.WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED !== "true")
+      ) &&
+      activeBackgroundWorkCount() + pendingRequests < maxCalls
+    );
+  };
+  app.post(
+    [OPENAI_SIP_WEBHOOK_PATH, XAI_SIP_WEBHOOK_PATH, CLONED_MEDIA_ADMIT_PATH],
+    (_req, res, next) => {
+      const identity = getDeploymentIdentity();
+      const renderAdmissionBlocked =
+        (identity.provider === "render" || identity.provider === "conflict") &&
+        (identity.provider !== "render" ||
+          identity.environment !== "production" ||
+          identity.branch !== "main" ||
+          !identity.sourceCommit ||
+          process.env.WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED !== "true");
+      if (
+        renderAdmissionBlocked ||
+        process.env.WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED === "false" ||
+        draining ||
+        activeBackgroundWorkCount() + pendingRequests >= maxCalls
+      ) {
+        res.setHeader("Retry-After", "5");
+        res.status(503).json({ error: "Voice worker is temporarily unavailable." });
+        return;
       }
-    };
-    res.locals.voiceWorkerAdmissionRelease = finish;
-    // A rate limiter/body parser may finish after the client has disconnected,
-    // when "finish" is no longer emitted. End is still the terminal decision;
-    // an active call handler retains ownership until its finally block.
-    const originalEnd = res.end;
-    res.end = ((...args: unknown[]) => {
-      if (!res.locals.voiceWorkerHandlerActive) finish();
-      return Reflect.apply(originalEnd, res, args);
-    }) as typeof originalEnd;
-    res.once("finish", () => {
-      if (!res.locals.voiceWorkerHandlerActive) finish();
-    });
-    next();
-  });
+      pendingRequests += 1;
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        pendingRequests -= 1;
+        if (pendingRequests === 0) {
+          for (const resolve of admissionDrainWaiters) resolve();
+          admissionDrainWaiters.clear();
+        }
+      };
+      res.locals.voiceWorkerAdmissionRelease = finish;
+      // A rate limiter/body parser may finish after the client has disconnected,
+      // when "finish" is no longer emitted. End is still the terminal decision;
+      // an active call handler retains ownership until its finally block.
+      const originalEnd = res.end;
+      res.end = ((...args: unknown[]) => {
+        if (!res.locals.voiceWorkerHandlerActive) finish();
+        return Reflect.apply(originalEnd, res, args);
+      }) as typeof originalEnd;
+      res.once("finish", () => {
+        if (!res.locals.voiceWorkerHandlerActive) finish();
+      });
+      next();
+    },
+  );
   installWebhookBodyParsers(app);
   app.use(router);
   app.use((_req, res) => {
@@ -159,5 +181,5 @@ export function createVoiceWorkerApp(
     });
   };
   app.use(errorHandler);
-  return { app, beginDrain, drainAdmissions };
+  return { app, beginDrain, drainAdmissions, canAdmit };
 }

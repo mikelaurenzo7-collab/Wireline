@@ -3,6 +3,11 @@ import { PgDialect } from "drizzle-orm/pg-core";
 import { managedAiSpendPredicate, providerSpendMeter } from "../src/lib/provider-spend-meter";
 
 describe("managed AI versus live phone accounting", () => {
+  it.each(["elevenlabs", "openai"])("meters %s cloned-call speech as live voice, keeping previews on managed AI", (provider) => {
+    expect(providerSpendMeter({ action: "voice.clone.synthesis", provider, metadata: { surface: "cloned_phone" } })).toBe("live_voice");
+    expect(providerSpendMeter({ action: "voice.clone.synthesis", provider, metadata: { surface: "preview" } })).toBe("managed_ai");
+    expect(providerSpendMeter({ action: "voice.clone.preview", provider, metadata: { surface: "cloned_phone" } })).toBe("managed_ai");
+  });
   it("recognizes existing server-owned PSTN receipts without a migration", () => {
     expect(
       providerSpendMeter({
@@ -97,3 +102,4 @@ describe("managed AI versus live phone accounting", () => {
     ).toBe("managed_ai");
   });
 });
+

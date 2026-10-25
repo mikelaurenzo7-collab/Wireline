@@ -116,7 +116,7 @@ describe("reclassified-account signed callback fences", () => {
     expect(replay).toBeGreaterThan(environment);
     expect(stateWrite).toBeGreaterThan(replay);
     expect(resolver).toMatch(
-      /replay\?\.kind === "voicemail"[\s\S]*Preserve that stored decision as historical evidence[\s\S]*return \{ kind: "drop", answeredBy: replay\.answeredBy/,
+      /replay\?\.kind === "voicemail"[\s\S]*Preserve that stored decision as historical evidence[\s\S]*return\s*\{\s*kind: "drop",\s*answeredBy: replay\.answeredBy/,
     );
 
     const bridgeRoute = source.slice(

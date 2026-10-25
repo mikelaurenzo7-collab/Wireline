@@ -76,9 +76,12 @@ describe("runtime integration operations", () => {
     expect(envValidator).toContain('name: "WIRELINE_PHONE_VOICE_PROVIDER"');
     expect(envValidator).toContain('name: "OPENAI_API_KEY"');
     expect(envValidator).toContain('name: "AI_GATEWAY_API_KEY"');
-    expect(envValidator).not.toContain('name: "ELEVENLABS_API_KEY"');
+    expect(envValidator).toContain('name: "ELEVENLABS_API_KEY"');
+    expect(envValidator).toContain('name: "LIVE_VOICE_CLONE_ENABLED"');
     expect(envValidator).toContain("const retiredVoiceEnv");
-    expect(envValidator).toContain('"ELEVENLABS_API_KEY",');
+    expect(envValidator.slice(envValidator.indexOf("const retiredVoiceEnv = ["))).not.toContain(
+      '"ELEVENLABS_API_KEY",',
+    );
     expect(envValidator).toContain("const managedRuntime");
     expect(envValidator).toContain("Managed structured reasoning and OpenAI Realtime credential");
     expect(envValidator).toContain("Unset keeps the managed xAI default");

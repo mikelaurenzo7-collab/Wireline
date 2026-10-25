@@ -20,14 +20,19 @@ it everywhere.
 
 ## What to expect
 
-- Each voice card shows whether that voice speaks on live calls today. When it
-  does not yet, the closest stock voice answers calls and your voice is used
-  for previews.
+- Each voice card shows whether the voice is ready for live calls. A ready
+  voice is used for incoming calls, outgoing calls, and verified owner phone
+  tests. Make a test call after selecting it so you can hear the complete experience.
+- You can interrupt naturally. Your Bot stops speaking and listens, then
+  continues the conversation without repeating a tool action.
 - Browser rehearsals use the stock voice, and the rehearsal screen says so.
-- If your cloned voice is ever unavailable during a call, the call continues on
-  the closest stock voice. Calls are never dropped for this reason.
+- If cloned speech is unavailable during a call, BotBound attempts to continue
+  in the stock voice. The comparison preview uses that same fallback voice.
+  An outage affecting both speech services can still end a call.
 - Each account can keep two cloned voices.
 - Tip: you can switch any Bot back to a stock voice in one tap, anytime.
+- Recording remains a separate, per-Bot choice. When enabled, its disclosure
+  is spoken and the same recording continues if the voice changes to stock.
 
 ## Your recording and your privacy
 

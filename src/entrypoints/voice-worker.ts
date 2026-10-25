@@ -15,6 +15,7 @@ import {
 } from "../lib/voice/openai-sip-config";
 import { voiceWorkerServiceSecret } from "../lib/voice/openai-sip-worker-config";
 import { createVoiceWorkerApp } from "../lib/voice/openai-sip-worker-app";
+import { installClonedMediaServer } from "../lib/voice/elevenlabs-media-bridge";
 import openAISipRouter from "../routes/openai-sip-routes";
 import {
   readVoiceWorkerReadiness,
@@ -59,8 +60,10 @@ async function startVoiceWorker() {
   const maxCalls = Number(process.env.WIRELINE_VOICE_WORKER_MAX_CALLS || 10);
   const port = Number(process.env.PORT || 8080);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid worker PORT.");
-  const { app, beginDrain, drainAdmissions } = createVoiceWorkerApp(openAISipRouter, maxCalls, () =>
-    readVoiceWorkerReadiness(checkWorkerDatabase),
+  const { app, beginDrain, drainAdmissions, canAdmit } = createVoiceWorkerApp(
+    openAISipRouter,
+    maxCalls,
+    () => readVoiceWorkerReadiness(checkWorkerDatabase),
   );
   const server = app.listen(port, "0.0.0.0", () => {
     log.info("Persistent voice worker ready", {
@@ -70,6 +73,7 @@ async function startVoiceWorker() {
     });
   });
   let stopping = false;
+  installClonedMediaServer(server, { port, maxCalls, canAdmit });
   const stop = async () => {
     if (stopping) return;
     stopping = true;

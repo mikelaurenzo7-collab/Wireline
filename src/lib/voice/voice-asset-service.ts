@@ -908,7 +908,6 @@ export function createVoiceAssetService(deps: VoiceAssetDependencies = productio
      * with the deletion fence, so RLS and the state guard still own the write.
      */
     async expireDue(now: Date = deps.now()) {
-      if (!deps.customerEnabled()) return 0;
       const due = await stored(() => deps.repository.dueForExpiry(now, VOICE_CLONE_EXPIRY_BATCH));
       let expired = 0;
       for (const row of due) {
