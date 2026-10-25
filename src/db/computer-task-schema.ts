@@ -68,6 +68,11 @@ export const computerTasks = pgTable(
     actionCount: integer("action_count").notNull().default(0),
     startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
     finishedAt: timestamp("finished_at", { withTimezone: true }),
+    usageReceipt: jsonb("usage_receipt").$type<{
+      periodKey: string;
+      quantity: number;
+      occurredAt: string;
+    }>(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },

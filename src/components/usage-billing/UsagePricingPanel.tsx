@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { ArrowRight } from "lucide-react";
 import { Checkbox } from "../ui/shadcn/Checkbox";
+import { signupHrefForPlan } from "../../lib/signup-intent";
 import {
   USAGE_ADDONS,
   USAGE_BASE_USD_MONTHLY,
@@ -132,7 +133,7 @@ function Toggle({
 }
 
 /** Usage pricing: estimator first, then what is never billed, then the rates. */
-export default function UsagePricingPanel({ signupHref }: { signupHref: string }) {
+export default function UsagePricingPanel() {
   const [callsPerMonth, setCallsPerMonth] = useState(100);
   const [avgCallMinutes, setAvgCallMinutes] = useState(3);
   const [emailsPerMonth, setEmailsPerMonth] = useState(300);
@@ -200,19 +201,21 @@ export default function UsagePricingPanel({ signupHref }: { signupHref: string }
         </div>
         <div className="flex flex-col justify-between gap-4 rounded-lg bg-muted/40 p-4">
           <div>
-            <p className="text-sm font-semibold text-muted-foreground">Estimated monthly bill</p>
+            <p className="text-sm font-semibold text-muted-foreground">
+              Monthly estimate before tax
+            </p>
             <p className="mt-1 text-4xl font-semibold tabular-nums" aria-live="polite">
               {formatUsdCents(estimate.totalUsd)}
             </p>
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
               Starts at {usd(USAGE_BASE_USD_MONTHLY)}/month with usage included. You set a monthly
-              limit (default {usd(USAGE_DEFAULT_MONTHLY_CAP_USD)}). Bots pause at your limit, so the
-              bill never goes past it.
+              limit (default {usd(USAGE_DEFAULT_MONTHLY_CAP_USD)}) for BotBound charges before tax.
+              Bots pause at your limit. Applicable tax is added separately.
             </p>
           </div>
           <div className="space-y-2">
             <Link
-              to={signupHref}
+              to={signupHrefForPlan("usage", { usageAddons: { number, emailAddress } })}
               className="marketing-btn-primary inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold"
             >
               Get Started <ArrowRight className="size-4" aria-hidden="true" />

@@ -110,7 +110,7 @@ test("unknown anonymous path renders the public 404 instead of sign-in", async (
   const response = await page.goto("/this-route-does-not-exist", {
     waitUntil: "domcontentloaded",
   });
-  expect(response!.status()).toBeLessThan(400);
+  expect(response!.status()).toBe(404);
   await expect(page.getByRole("heading", { name: "Page Not Found" })).toBeVisible({
     timeout: 15_000,
   });

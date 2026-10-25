@@ -68,6 +68,6 @@ describe("product organization truth contracts", () => {
     expect(stripeCard).toContain("Paid-plan access is granted directly to this workspace");
     expect(stripeCard.replace(/\s+/g, " ")).toContain("No recurring invoice is scheduled");
     expect(stripeCard).not.toContain("Stripe invoice");
-    expect(stripeCard).toContain("!hasPlanAccess ? (");
+    expect(stripeCard).toContain('!hasPlanAccess && billingModel !== "usage" ? (');
   });
 });

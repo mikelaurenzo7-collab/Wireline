@@ -30,7 +30,7 @@ import {
   readEmailVerificationReturn,
 } from "../../lib/email-verification-return";
 import { clearFreshSignupSession, markFreshSignupSession } from "../../lib/post-signup-onboarding";
-import { STRIPE_PLANS } from "../../lib/plan-catalog";
+import { STRIPE_PLANS, USAGE_PLAN } from "../../lib/plan-catalog";
 import { getPlanDisplayLabel } from "../../lib/plan-display";
 import {
   captureDemoSourceFromLocation,
@@ -114,6 +114,7 @@ function cleanThrownMessage(error: unknown): string | null {
 }
 
 function publicSignupPlan(planId: SignupPlanId | null | undefined) {
+  if (planId === "usage") return USAGE_PLAN;
   return planId
     ? STRIPE_PLANS.find((candidate) => candidate.id === planId && candidate.public !== false)
     : undefined;
@@ -127,6 +128,7 @@ function signupPlanLabel(
   const plan = publicSignupPlan(planId);
   if (!plan) return null;
   const name = getPlanDisplayLabel(plan);
+  if (plan.id === "usage") return `${name} · $${plan.price_usd_monthly}/month plus usage`;
   if (plan.price_usd_monthly === 0) return name;
   return interval === "year"
     ? `${name} · $${plan.price_usd_annual}/year`

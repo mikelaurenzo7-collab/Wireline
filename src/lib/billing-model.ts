@@ -9,5 +9,8 @@ export type BillingModel = "usage" | "plans";
  */
 export function billingModelFromPayload(payload: unknown): BillingModel {
   if (!payload || typeof payload !== "object") return "plans";
-  return (payload as BillingPlansResponse).billing_model === "usage" ? "usage" : "plans";
+  const plans = payload as BillingPlansResponse;
+  return plans.billing_model === "usage" && plans.usage_checkout_available === true
+    ? "usage"
+    : "plans";
 }

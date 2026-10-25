@@ -11,14 +11,16 @@
  *    (meter, source type, source id) and is the Stripe meter `identifier`;
  *  - new metered work is refused once the period's spend reaches the cap;
  *  - work that was already admitted when the cap was crossed is clamped out of
- *    the Stripe report, so the invoice never exceeds the owner's cap.
+ *    the Stripe report, keeping pre-tax BotBound charges within the cap.
  */
 import { AppError } from "./api-error";
 import {
   USAGE_METERS,
+  USAGE_MAX_MONTHLY_CAP_USD,
   crossedAlertThresholds,
   fixedMonthlyUsd,
   marginalUnitUsd,
+  minimumMonthlyCapUsd,
   priceMeter,
   priceMeterExact,
   type UsageMeterKey,
@@ -188,9 +190,16 @@ export async function usageSpendState(store: UsageStore, userId: string): Promis
     store.billingIdentity(userId),
     store.spendControl(userId),
   ]);
-  const totals = await store.recordedTotals(userId, identity.periodKey);
-  // The invoice is clamped at the cap, so recorded spend above it is never billed.
-  const spentUsd = Math.min(periodSpendUsd(control, totals), control.capUsd);
+  const [totals, reported] = await Promise.all([
+    store.recordedTotals(userId, identity.periodKey),
+    store.reportedTotals(userId, identity.periodKey),
+  ]);
+  // Pending work is capped. Fixed charges and usage already accepted by Stripe
+  // cannot be hidden by an older/invalid limit in the local projection.
+  const spentUsd = Math.max(
+    periodSpendUsd(control, reported),
+    Math.min(periodSpendUsd(control, totals), control.capUsd),
+  );
   const pct = control.capUsd > 0 ? Math.floor((spentUsd / control.capUsd) * 100) : 100;
   return {
     periodKey: identity.periodKey,
@@ -208,6 +217,22 @@ export class UsageSpendCapReachedError extends AppError {
       402,
       "USAGE_SPEND_CAP_REACHED",
       "Your monthly spending limit is reached. Raise it in Billing to resume.",
+    );
+  }
+}
+
+/** Validate a change against this period's accrued charges, including pending work. */
+export function validateUsageMonthlyCap(
+  control: UsageSpendControl,
+  spentUsd: number,
+  capUsd: number,
+): void {
+  const minUsd = Math.max(minimumMonthlyCapUsd(control), spentUsd);
+  if (!Number.isFinite(capUsd) || capUsd < minUsd || capUsd > USAGE_MAX_MONTHLY_CAP_USD) {
+    throw new AppError(
+      400,
+      "USAGE_CAP_OUT_OF_RANGE",
+      `Choose a monthly limit between $${minUsd.toFixed(2)} and $${USAGE_MAX_MONTHLY_CAP_USD.toLocaleString("en-US")}. Your limit cannot be lower than charges already accrued this period.`,
     );
   }
 }
@@ -249,9 +274,10 @@ export async function evaluateUsageSpendAlerts(
   const crossed = crossedAlertThresholds(previous, state.pct);
   if (crossed.length === 0) return [];
   const highest = crossed[crossed.length - 1];
-  await store.setAlertLevel(userId, state.periodKey, highest, highest >= 100);
   // One message for the highest threshold: an owner never gets 50 and 80 at once.
   await notify({ thresholdPct: highest, spentUsd: state.spentUsd, capUsd: state.capUsd });
+  // Advance only after transport acceptance. A retry uses the same delivery key.
+  await store.setAlertLevel(userId, state.periodKey, highest, highest >= 100);
   return crossed;
 }
 

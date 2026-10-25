@@ -665,8 +665,8 @@ export async function sendUsageSpendAlertEmail(opts: {
     ? "Your BotBound Bots are paused at your monthly limit"
     : `You have used ${opts.thresholdPct}% of your BotBound monthly limit`;
   const lead = atCap
-    ? `Your Bots reached your monthly limit of ${cap} and are paused until you raise it or your next billing period starts. You will never be charged above your limit.`
-    : `Your Bots have used ${spent} of your ${cap} monthly limit (${opts.thresholdPct}%). Nothing changes until you reach the limit.`;
+    ? `Your Bots reached your monthly limit of ${cap} before tax and are paused until you raise it or your next billing period starts. Applicable tax is added separately.`
+    : `Your Bots have used ${spent} of your ${cap} monthly limit before tax (${opts.thresholdPct}%). Applicable tax is added separately. Nothing changes until you reach the limit.`;
   const text = [
     "Hi,",
     "",

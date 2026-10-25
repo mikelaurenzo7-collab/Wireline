@@ -2,6 +2,7 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import StripeBillingCard from "../src/components/StripeBillingCard";
 import TrialGateModal from "../src/components/TrialGateModal";
+import UsageSpendCard from "../src/components/usage-billing/UsageSpendCard";
 import { Checkbox } from "../src/components/ui/shadcn/Checkbox";
 import { STRIPE_PLANS } from "../src/lib/plan-catalog";
 
@@ -41,19 +42,23 @@ vi.mock("react-router", () => ({ Link: "a" }));
 vi.mock("motion/react", () => ({ motion: { div: "div" }, AnimatePresence: "div" }));
 vi.mock("../src/components/UsageMeter", () => ({ default: "usage-meter" }));
 vi.mock("../src/components/ui/shadcn/ShadButton", () => ({ ShadButton: "button" }));
-vi.mock("../src/components/atoms", () => ({ Chip: "span" }));
+vi.mock("../src/components/atoms", () => ({ Chip: "span", Button: "button" }));
 vi.mock("../src/lib/api", () => ({
   authFetch: (...args: unknown[]) => h.fetch(...args),
   safeJson: (response: Response) => response.json(),
   TRIAL_GATE_EVENT: "trial-gate",
 }));
-vi.mock("../src/lib/signup-intent", () => ({
+vi.mock("../src/lib/signup-intent", async (original) => ({
+  ...(await original<typeof import("../src/lib/signup-intent")>()),
   DEFAULT_ACTIVATION_PLAN_ID: "voice-regular",
   getStoredSignupIntent: () => h.signupIntent,
   recommendedPlanFromIntent: () => h.signupIntent?.preferredPlanId ?? "voice-regular",
   persistSignupIntent: vi.fn(),
   mergeSignupIntent: (_previous: unknown, next: unknown) => next,
   billingIntervalFromIntent: () => "month",
+}));
+vi.mock("../src/hooks/usePaidPlanAvailability", () => ({
+  usePaidPlanAvailability: () => ({ canActivate: () => true }),
 }));
 vi.mock("../src/lib/product-event-client", () => ({ emitProductEvent: vi.fn() }));
 vi.mock("../src/lib/use-body-scroll-lock", () => ({ useBodyScrollLock: vi.fn() }));
@@ -70,7 +75,7 @@ type Props = {
   "aria-label"?: string;
 };
 type Element = ReactElement<Props>;
-type Surface = "card" | "modal";
+type Surface = "card" | "modal" | "usage";
 function descendants(node: ReactNode): Element[] {
   if (Array.isArray(node)) return node.flatMap(descendants);
   if (!isValidElement<Props>(node)) return [];
@@ -95,7 +100,9 @@ function render(surface: Surface, cardProps: Parameters<typeof StripeBillingCard
   return descendants(
     surface === "card"
       ? StripeBillingCard({ onCheckoutAvailabilityChange: h.checkoutAvailability, ...cardProps })
-      : TrialGateModal(),
+      : surface === "usage"
+        ? UsageSpendCard({})
+        : TrialGateModal(),
   );
 }
 function button(surface: Surface, label: string) {
@@ -148,10 +155,12 @@ beforeEach(() => {
         ? { stripe_configured: true, subscription: h.subscription, agent_count: 1 }
         : path === "/api/billing/plans"
           ? h.catalog
-          : { url: "https://checkout.example.test/session" },
+          : path === "/api/billing/usage-spend"
+            ? { enabled: true, usage_account: false }
+            : { url: "https://checkout.example.test/session" },
   }));
   vi.stubGlobal("window", {
-    location: { search: "", href: "https://botbound.app/settings/billing" },
+    location: { search: "", href: "https://botbound.app/settings/billing", assign: vi.fn() },
     history: { state: null, replaceState: vi.fn() },
     addEventListener: (_name: string, listener: typeof h.listener) => {
       h.listener = listener;
@@ -161,6 +170,64 @@ beforeEach(() => {
 });
 
 describe("billing plan decisions", () => {
+  it("sends the selected usage identities from signup to Checkout", async () => {
+    window.location.search = "?plan=usage&interval=month&number=0&email_address=1";
+    render("usage");
+    h.effects[0]();
+    await vi.waitFor(() => expect(button("usage", "Get Started")).toBeTruthy());
+    await button("usage", "Get Started").props.onClick?.();
+    await vi.waitFor(() =>
+      expect(h.fetch).toHaveBeenCalledWith(
+        "/api/billing/checkout",
+        expect.objectContaining({
+          body: JSON.stringify({
+            plan_id: "usage",
+            interval: "month",
+            addons: { number: 0, email_address: 1 },
+          }),
+        }),
+      ),
+    );
+  });
+
+  it("routes usage activation to the usage offer instead of the package picker", async () => {
+    h.catalog = {
+      stripe_configured: true,
+      checkout_available: true,
+      usage_checkout_available: true,
+      billing_model: "usage",
+      plans: [paidPlan({ id: "usage", catalog_family: "usage" }), paidPlan()],
+    };
+    render("modal");
+    h.effects[0]();
+    h.listener?.({ detail: { code: "ACTIVATION_REQUIRED" } });
+    render("modal");
+    h.effects[1]();
+    await vi.waitFor(() =>
+      expect(
+        render("modal").some(
+          (element) =>
+            element.props.to ===
+            "/settings/billing?plan=usage&interval=month&number=1&email_address=0",
+        ),
+      ).toBe(true),
+    );
+    expect(render("modal").some((element) => text(element) === "Continue to Checkout")).toBe(false);
+  });
+
+  it("hides package checkout when the usage offer is available", async () => {
+    h.catalog = {
+      stripe_configured: true,
+      checkout_available: true,
+      usage_checkout_available: true,
+      billing_model: "usage",
+      plans: [paidPlan({ id: "usage", catalog_family: "usage" }), paidPlan()],
+    };
+    render("card");
+    h.effects[0]();
+    await vi.waitFor(() => expect(h.checkoutAvailability).toHaveBeenCalledWith("available"));
+    expect(render("card").some((element) => text(element) === "Continue to Checkout")).toBe(false);
+  });
   it("shows authoritative usage and allowances before optional full plan details", async () => {
     const originalFeatures = [
       "Voice, text, and email under your Bot's identity",

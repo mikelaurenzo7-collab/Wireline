@@ -6,6 +6,7 @@ export const DEFAULT_ACTIVATION_PLAN_ID = "voice-regular";
 // Signup attribution stores stable billing ids. Customer-facing URLs use the
 // clean launch names below, while old links remain resolver-compatible.
 export const SIGNUP_PLAN_IDS = [
+  "usage",
   "personal",
   "voice",
   "email",
@@ -35,6 +36,7 @@ export const SIGNUP_PLAN_IDS = [
 export type SignupPlanId = (typeof SIGNUP_PLAN_IDS)[number];
 
 export const PUBLIC_SIGNUP_PLAN_SLUGS = {
+  usage: "usage",
   personal: "personal",
   voice: "voice",
   email: "email",
@@ -68,11 +70,15 @@ export function publicSignupPlanSlug(planId: SignupPlanId): string {
 
 export function signupHrefForPlan(
   planId: SignupPlanId,
-  options: { interval?: "month" | "year"; template?: string } = {},
+  options: { interval?: "month" | "year"; template?: string; usageAddons?: UsageSignupAddons } = {},
 ): string {
   const params = new URLSearchParams({ plan: publicSignupPlanSlug(planId) });
   if (options.interval) params.set("interval", options.interval);
   if (options.template) params.set("template", options.template);
+  if (planId === "usage") {
+    params.set("interval", "month");
+    if (options.usageAddons) setUsageAddonParams(params, options.usageAddons);
+  }
   return `/signup?${params.toString()}`;
 }
 
@@ -89,8 +95,23 @@ export const SIGNUP_WEDGE_KEYS = [
 ] as const;
 export type SignupWedgeKey = (typeof SIGNUP_WEDGE_KEYS)[number];
 
+export type UsageSignupAddons = { number: boolean; emailAddress: boolean };
+
+function setUsageAddonParams(params: URLSearchParams, addons: UsageSignupAddons): void {
+  params.set("number", addons.number ? "1" : "0");
+  params.set("email_address", addons.emailAddress ? "1" : "0");
+}
+
+export function usageAddonsFromIntent(intent: SignupIntent | null | undefined): UsageSignupAddons {
+  return {
+    number: intent?.preferredUsageAddons?.number !== false,
+    emailAddress: intent?.preferredUsageAddons?.emailAddress === true,
+  };
+}
+
 export type SignupIntent = {
   preferredPlanId?: SignupPlanId;
+  preferredUsageAddons?: UsageSignupAddons;
   preferredBillingInterval?: "month" | "year";
   preferredTemplateId?: string;
   signupWedge?: SignupWedgeKey;
@@ -235,6 +256,10 @@ export function sanitizeSignupIntent(intent: SignupIntent | null | undefined): S
   if (intent.preferredBillingInterval === "year" || intent.preferredBillingInterval === "month") {
     out.preferredBillingInterval = intent.preferredBillingInterval;
   }
+  if (normalizedPlan === "usage") {
+    out.preferredBillingInterval = "month";
+    if (intent.preferredUsageAddons) out.preferredUsageAddons = usageAddonsFromIntent(intent);
+  }
 
   const normalizedTemplate = normalizeTemplateId(intent.preferredTemplateId);
   if (normalizedTemplate) out.preferredTemplateId = normalizedTemplate;
@@ -274,6 +299,15 @@ export function parseSignupIntent(search: string): SignupIntent | null {
   const rawInterval = params.get("interval")?.trim().toLowerCase();
   if (rawInterval === "year" || rawInterval === "month") {
     intent.preferredBillingInterval = rawInterval;
+  }
+  if (normalizedPlan === "usage") {
+    intent.preferredBillingInterval = "month";
+    if (params.has("number") || params.has("email_address")) {
+      intent.preferredUsageAddons = {
+        number: params.get("number") !== "0",
+        emailAddress: params.get("email_address") === "1",
+      };
+    }
   }
 
   const normalizedTemplate = normalizeTemplateId(params.get("template"));
@@ -384,7 +418,11 @@ export function activationBillingHref(intent: SignupIntent | null | undefined): 
   const plan = ["starter", "team", "business"].includes(recommended)
     ? DEFAULT_ACTIVATION_PLAN_ID
     : recommended;
-  const params = new URLSearchParams({ plan, interval: billingIntervalFromIntent(intent) });
+  const params = new URLSearchParams({
+    plan,
+    interval: plan === "usage" ? "month" : billingIntervalFromIntent(intent),
+  });
+  if (plan === "usage") setUsageAddonParams(params, usageAddonsFromIntent(intent));
   return `/settings/billing?${params.toString()}`;
 }
 

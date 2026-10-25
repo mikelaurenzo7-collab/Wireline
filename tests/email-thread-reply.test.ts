@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const h = vi.hoisted(() => ({
   thread: null as null | {
@@ -13,6 +13,8 @@ const h = vi.hoisted(() => ({
   messages: [] as Array<Record<string, unknown>>,
   threadUpdates: 0,
   sendThreadReply: vi.fn(),
+  admitUsage: vi.fn(),
+  recordReceipt: vi.fn(),
 }));
 
 vi.mock("../src/lib/server-context", async (importOriginal) => {
@@ -88,6 +90,10 @@ vi.mock("../src/lib/integrations", () => ({
     sendThreadReply = h.sendThreadReply;
   },
 }));
+vi.mock("../src/lib/usage-billing-store", () => ({
+  admitAccountUsage: (...args: unknown[]) => h.admitUsage(...args),
+  recordSettledUsageReceipt: (...args: unknown[]) => h.recordReceipt(...args),
+}));
 
 import { AppError } from "../src/lib/api-error";
 import {
@@ -113,6 +119,9 @@ async function rejectionCode(promise: Promise<unknown>) {
 }
 
 beforeEach(() => {
+  vi.stubEnv("USAGE_BILLING_ENABLED", "false");
+  h.admitUsage.mockReset().mockResolvedValue({ maxUnits: 10, periodKey: "pe:2026-11-01" });
+  h.recordReceipt.mockReset().mockResolvedValue(undefined);
   h.thread = {
     id: THREAD,
     accountId: "00000000-0000-4000-8000-0000000000cc",
@@ -124,6 +133,7 @@ beforeEach(() => {
   h.threadUpdates = 0;
   h.sendThreadReply.mockReset().mockResolvedValue({ sent: true, threaded: true });
 });
+afterEach(() => vi.unstubAllEnvs());
 
 describe("reply recipient", () => {
   it("takes the one address from a bare or named sender", () => {
@@ -144,6 +154,23 @@ describe("reply recipient", () => {
 });
 
 describe("sending an inbox reply", () => {
+  it("retains a billing receipt when metering fails without resending the accepted reply", async () => {
+    vi.stubEnv("USAGE_BILLING_ENABLED", "true");
+    h.recordReceipt.mockRejectedValueOnce(new Error("temporary storage failure"));
+    expect((await send()).status).toBe("sent");
+    const sent = h.ledger.find((row) => (row.metadata as { status: string }).status === "sent")!;
+    expect(sent.metadata).toMatchObject({
+      usageReceipt: { periodKey: "pe:2026-11-01", quantity: 1, occurredAt: expect.any(String) },
+    });
+    expect(h.recordReceipt).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceId: `${THREAD}:${KEY}`,
+        receipt: expect.objectContaining({ periodKey: "pe:2026-11-01", quantity: 1 }),
+      }),
+    );
+    expect((await send()).duplicate).toBe(true);
+    expect(h.sendThreadReply).toHaveBeenCalledTimes(1);
+  });
   it("replies once from the conversation's mailbox and adds it to the transcript", async () => {
     const result = await send();
 

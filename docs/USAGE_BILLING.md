@@ -1,6 +1,6 @@
 # Usage billing (dark launch)
 
-Status: **built, off by default, rates awaiting approval.** Nothing here changes production until
+Status: **built, off by default, rates approved; activation pending validation.** Nothing here changes production until
 `USAGE_BILLING_ENABLED=true` is set on the server and the Stripe objects below exist. No live Stripe
 object has been created, changed or archived by this work, and no env var has been set.
 
@@ -43,7 +43,8 @@ measured cost per active minute exceeds $0.105.
 - Alerts at 50%, 80% and 100%, each once per period, the highest crossed threshold only.
 - At the cap, admission refuses new metered work with `402 USAGE_SPEND_CAP_REACHED`, and Bots pause.
 - Work already admitted when the cap is crossed is clamped out of the Stripe report
-  (`clampBillableQuantity`, unrounded pricing), so the invoice never exceeds the cap.
+  (`clampBillableQuantity`, unrounded pricing). The limit covers pre-tax BotBound charges;
+  tax-exclusive prices can produce a higher final invoice when tax applies.
 
 ## How it works
 
@@ -86,12 +87,12 @@ Env vars (names only): `USAGE_BILLING_ENABLED`, `STRIPE_USAGE_BASE_PRICE_ID`,
 
 ## Rollout
 
-| Stage | What                                                                                                                                                                                  |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0     | Merge with the flag off. Production billing, checkout, caps and packages are unchanged.                                                                                               |
-| 1     | After rate approval: dry run, then `--apply` in Stripe test mode, env vars in staging, promote migration 0187, prove a test-clock invoice (base, tiered minutes, add-ons, cap clamp). |
-| 2     | After the proof: `--apply --live --rates-approved`, set env vars, flip `USAGE_BILLING_ENABLED=true`, redeploy.                                                                        |
-| 3     | Lift the 120-mark ceiling per workspace.                                                                                                                                              |
+| Stage | What                                                                                                                                                                                                                                                  |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0     | Validate with the flag off. Migrations 0187 and 0188 must be installed through the reviewed release path before deploying this source, including the new nullable fields used by existing checkout/task queries.                                      |
+| 1     | Use the approved rates in the BotBound Stripe account (`acct_1TkyXL8e6If87QKm`), test mode only: dry run, then `--apply`, staging configuration and an isolated database, then prove a test-clock invoice (base, tiered minutes, add-ons, cap clamp). |
+| 2     | After the proof: `--apply --live --rates-approved`, set env vars, flip `USAGE_BILLING_ENABLED=true`, redeploy.                                                                                                                                        |
+| 3     | Lift the 120-mark ceiling per workspace.                                                                                                                                                                                                              |
 
 ## Known follow-ups before stage 2
 
@@ -99,5 +100,29 @@ Env vars (names only): `USAGE_BILLING_ENABLED`, `STRIPE_USAGE_BASE_PRICE_ID`,
   past the cap; the clamp keeps that time off the invoice.
 - Computer minutes count task wall time.
 - Turning the flag off while usage subscribers exist leaves their usage unreported.
-- Checkout dedupe compares plan and interval only, so a changed add-on choice can reuse an open
-  session.
+- Snapshot each billing period's approved cap and add-ons before enabling live billing. The
+  reporter still uses the current control for late events from earlier periods; cap changes
+  and renewal must not change an earlier period's charges.
+- Prove final settlement for cancellation, delayed provider receipts, and invoice finalization.
+  The current inactive-subscription path skips pending events; this needs an explicit final-bill policy.
+- Include applicable tax in invoice proof. Pricing, Billing and spend-alert copy disclose
+  that the limit covers pre-tax BotBound charges, with tax added separately.
+
+## Purchase and settlement safeguards
+
+Public usage links preserve the monthly plan and optional number/mailbox choices through signup
+and activation. Public usage copy requires checkout availability, including all six offered prices.
+Checkout operations persist a purchase fingerprint covering prices and quantities. Changed purchases
+retire an old payable session before replacement; an unresolved creation cannot be resumed with
+different parameters. Fixed charges must fit the disclosed default cap.
+
+Cap changes serialize with meter reporting and cannot go below accrued charges, including pending
+work. Spend displays never hide Stripe-accepted usage or fixed charges behind a lower local limit.
+Alerts advance their checkpoint only after email transport acceptance; the scheduled sweep retries
+failed alerts even if no further usage occurs.
+
+Completed computer tasks store their duration receipt with their terminal outcome. Accepted email
+replies store their receipt with the sent ledger entry. Immediate metering is backed by reconciliation
+from those durable records, using the same idempotency key and captured admission period/time.
+Retrying metering never resends email or reruns a task. Work whose provider outcome or terminal
+duration is unknown remains a reconciliation case; it must not be guessed into an invoice.

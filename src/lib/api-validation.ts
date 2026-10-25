@@ -31,6 +31,7 @@ const publicSignupPlanIdSchema = z.preprocess(
     return ["enterprise", "scale", "custom"].includes(normalized) ? "business" : normalized;
   },
   z.enum([
+    "usage",
     "personal",
     "voice",
     "email",

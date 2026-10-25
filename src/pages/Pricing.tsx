@@ -94,7 +94,7 @@ function UsagePricing() {
               As many Bots as you need. Move the sliders to see your monthly bill.
             </p>
           </div>
-          <UsagePricingPanel signupHref="/signup" />
+          <UsagePricingPanel />
         </div>
       </section>
     </MarketingPageFrame>

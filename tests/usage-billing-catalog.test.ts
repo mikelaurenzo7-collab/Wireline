@@ -28,6 +28,8 @@ import {
 } from "../src/components/usage-billing/UsagePricingPanel";
 import {
   CATALOG_VERSION,
+  assertUsageStripeAccount,
+  BOTBOUND_STRIPE_ACCOUNT_ID,
   USAGE_STRIPE_PLAN,
   applyGuard,
   envVarNames,
@@ -142,19 +144,28 @@ describe("usage billing flag and payload", () => {
     expect(usageBillingEnabled({ USAGE_BILLING_ENABLED: " TRUE " })).toBe(true);
   });
 
-  it("opens checkout only with the flag and all four required prices", () => {
+  it("opens checkout only with the flag and all six offered prices", () => {
     const prices = {
       [USAGE_PRICE_ENV.base]: "price_base",
       [USAGE_PRICE_ENV.call_minutes]: "price_calls",
       [USAGE_PRICE_ENV.emails_handled]: "price_emails",
       [USAGE_PRICE_ENV.computer_minutes]: "price_computer",
+      [USAGE_PRICE_ENV.number]: "price_number",
+      [USAGE_PRICE_ENV.email_address]: "price_mailbox",
     };
     expect(usageCheckoutConfigured(prices)).toBe(false);
     expect(usageCheckoutConfigured({ ...prices, USAGE_BILLING_ENABLED: "true" })).toBe(true);
     const { [USAGE_PRICE_ENV.computer_minutes]: _omitted, ...missingOne } = prices;
     expect(usageCheckoutConfigured({ ...missingOne, USAGE_BILLING_ENABLED: "true" })).toBe(false);
     expect([...usagePriceIds(prices)].sort()).toEqual(
-      ["price_base", "price_calls", "price_computer", "price_emails"].sort(),
+      [
+        "price_base",
+        "price_calls",
+        "price_computer",
+        "price_emails",
+        "price_number",
+        "price_mailbox",
+      ].sort(),
     );
   });
 
@@ -166,7 +177,13 @@ describe("usage billing flag and payload", () => {
   });
 
   it("reads the billing model from /api/billing/plans and falls back to plans", () => {
-    expect(billingModelFromPayload({ billing_model: "usage" })).toBe("usage");
+    expect(
+      billingModelFromPayload({ billing_model: "usage", usage_checkout_available: true }),
+    ).toBe("usage");
+    expect(
+      billingModelFromPayload({ billing_model: "usage", usage_checkout_available: false }),
+    ).toBe("plans");
+    expect(billingModelFromPayload({ billing_model: "usage" })).toBe("plans");
     expect(billingModelFromPayload({ billing_model: "plans" })).toBe("plans");
     expect(billingModelFromPayload({})).toBe("plans");
     expect(billingModelFromPayload(null)).toBe("plans");
@@ -174,6 +191,16 @@ describe("usage billing flag and payload", () => {
 });
 
 describe("Stripe setup script parity", () => {
+  it("refuses a key from another account before catalog setup", async () => {
+    await expect(
+      assertUsageStripeAccount({ accounts: { retrieve: async () => ({ id: "acct_wrong" }) } }),
+    ).rejects.toThrow("requires the BotBound Stripe account");
+    await expect(
+      assertUsageStripeAccount({
+        accounts: { retrieve: async () => ({ id: BOTBOUND_STRIPE_ACCOUNT_ID }) },
+      }),
+    ).resolves.toBeUndefined();
+  });
   it("uses the catalog version", () => {
     expect(CATALOG_VERSION).toBe(USAGE_CATALOG_VERSION);
   });

@@ -93,7 +93,8 @@ vi.mock("../src/lib/wireline-create-flow", () => ({
   readPostCreateWizardStep: () => null,
   updatePostCreateWizard: vi.fn(),
 }));
-vi.mock("../src/lib/signup-intent", () => ({
+vi.mock("../src/lib/signup-intent", async (original) => ({
+  ...(await original<typeof import("../src/lib/signup-intent")>()),
   DEFAULT_ACTIVATION_PLAN_ID: "voice-regular",
   getStoredSignupIntent: () => null,
   recommendedPlanFromIntent: () => "voice",
@@ -101,6 +102,9 @@ vi.mock("../src/lib/signup-intent", () => ({
   mergeSignupIntent: (_previous: unknown, next: unknown) => next,
   billingIntervalFromIntent: () =>
     new URLSearchParams(window.location.search).get("interval") === "year" ? "year" : "month",
+}));
+vi.mock("../src/hooks/usePaidPlanAvailability", () => ({
+  usePaidPlanAvailability: () => ({ canActivate: () => false }),
 }));
 
 type Props = {

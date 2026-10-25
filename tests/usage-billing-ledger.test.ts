@@ -11,6 +11,7 @@ import {
   reportPendingUsageForUser,
   usageIdempotencyKey,
   usageSpendState,
+  validateUsageMonthlyCap,
   type MeterTotals,
   type UsageBillingIdentity,
   type UsageEventRow,
@@ -84,7 +85,7 @@ function memoryStore(
           row.userId === userId &&
           row.periodKey === periodKey &&
           (row.status === "pending" || row.status === "reported"),
-        (row) => row.quantity,
+        (row) => row.billable ?? row.quantity,
       );
     },
     async spendControl() {
@@ -251,6 +252,29 @@ describe("usage skip reasons", () => {
 });
 
 describe("usage spend caps", () => {
+  it("refuses a cap below accrued usage and never conceals already-reported charges", async () => {
+    const { store, control } = memoryStore();
+    const { client } = recordingClient();
+    await recordUsageEvent(store, event("call_minutes", "call-344", 344));
+    let state = await usageSpendState(store, USER);
+    expect(state.spentUsd).toBe(90);
+    expect(() => validateUsageMonthlyCap(control, state.spentUsd, 24)).toThrow("already accrued");
+    expect(() => validateUsageMonthlyCap(control, state.spentUsd, 90)).not.toThrow();
+    await reportPendingUsageForUser(store, client, USER, NOW);
+    // Even an old invalid cap must not hide Stripe-accepted charges.
+    control.capUsd = 24;
+    state = await usageSpendState(store, USER);
+    expect(state).toMatchObject({ spentUsd: 90, capUsd: 24, atCap: true, headroomUsd: 0 });
+  });
+
+  it("shows fixed charges even if an inconsistent add-on projection exceeds the cap", async () => {
+    const { store } = memoryStore({ control: { numbers: 20, emailAddresses: 20 } });
+    expect(await usageSpendState(store, USER)).toMatchObject({
+      spentUsd: 159,
+      capUsd: 100,
+      atCap: true,
+    });
+  });
   it("prices fixed charges plus every meter at its period total", () => {
     const control = {
       capUsd: 100,
@@ -332,6 +356,19 @@ describe("usage spend caps", () => {
 });
 
 describe("usage spend alerts", () => {
+  it("retries a failed delivery without requiring any additional usage", async () => {
+    const { store, control } = memoryStore({ control: { capUsd: 40 } });
+    await recordUsageEvent(store, event("call_minutes", "call-alert", 64));
+    const notify = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("transport down"))
+      .mockResolvedValue(undefined);
+    await expect(evaluateUsageSpendAlerts(store, USER, notify)).rejects.toThrow("transport down");
+    expect(control.alertLevelPct).toBe(0);
+    expect(await evaluateUsageSpendAlerts(store, USER, notify)).toEqual([50]);
+    expect(await evaluateUsageSpendAlerts(store, USER, notify)).toEqual([]);
+    expect(notify).toHaveBeenCalledTimes(2);
+  });
   it("sends each threshold once per period, the highest only, and pauses at 100%", async () => {
     const { store, paused } = memoryStore({ control: { capUsd: 40 } });
     const notify = vi.fn().mockResolvedValue(undefined);

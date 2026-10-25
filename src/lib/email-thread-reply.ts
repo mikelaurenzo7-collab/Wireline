@@ -292,11 +292,18 @@ export async function sendEmailThreadReply(input: {
   const digest = bodyDigest(body);
   const claim = await claimReply(input.userId, thread.id, key, digest);
   if (claim.kind === "sent") return claim.result;
+  let usageReceipt: { periodKey: string; quantity: number; occurredAt: string } | null = null;
   if (claim.kind === "claimed" && usageBillingEnabled()) {
     // Usage billing: no new handled email once the monthly limit is spent.
     const { admitAccountUsage } = await import("./usage-billing-store");
     try {
-      await admitAccountUsage(input.userId, "emails_handled");
+      const admission = await admitAccountUsage(input.userId, "emails_handled");
+      if (admission)
+        usageReceipt = {
+          periodKey: admission.periodKey,
+          quantity: 1,
+          occurredAt: new Date().toISOString(),
+        };
     } catch (error) {
       await recordLedger(input.userId, key, "failed", {
         bodyDigest: digest,
@@ -355,27 +362,6 @@ export async function sendEmailThreadReply(input: {
   }
 
   const createdAt = new Date();
-  if (usageBillingEnabled()) {
-    // One handled email per delivered reply; the operation key makes replays no-ops.
-    try {
-      const { recordAccountUsage } = await import("./usage-billing-store");
-      await recordAccountUsage({
-        userId: input.userId,
-        meter: "emails_handled",
-        sourceType: "email_reply",
-        sourceId: key,
-        quantity: 1,
-        occurredAt: createdAt,
-      });
-    } catch (error) {
-      // The customer already has the reply; a metering miss is platform cost, never a resend.
-      log.error("Usage meter record failed for a delivered email reply", {
-        userId: input.userId,
-        threadId: thread.id,
-        error: getErrorMessage(error),
-      });
-    }
-  }
   let messageId = `reply-${key}`;
   try {
     const [saved] = await drizzle
@@ -415,12 +401,32 @@ export async function sendEmailThreadReply(input: {
     threaded: outcome.threaded,
     message: { id: messageId, role: "owner", content: body, created_at: createdAt.toISOString() },
   };
-  await recordLedger(input.userId, key, "sent", { bodyDigest: digest, result }).catch((error) =>
-    log.warn("Inbox reply ledger could not record the sent state", {
-      userId: input.userId,
-      error: getErrorMessage(error),
-    }),
+  // The sent receipt and billing intent share one durable row. The sweep can
+  // replay billing without ever sending the customer another email.
+  await recordLedger(input.userId, key, "sent", { bodyDigest: digest, result, usageReceipt }).catch(
+    (error) =>
+      log.warn("Inbox reply ledger could not record the sent state", {
+        userId: input.userId,
+        error: getErrorMessage(error),
+      }),
   );
+  if (usageReceipt) {
+    try {
+      const { recordSettledUsageReceipt } = await import("./usage-billing-store");
+      await recordSettledUsageReceipt({
+        userId: input.userId,
+        meter: "emails_handled",
+        sourceType: "email_reply",
+        sourceId: key,
+        receipt: usageReceipt,
+      });
+    } catch (error) {
+      log.warn("Email usage receipt will be retried by the sweep", {
+        userId: input.userId,
+        error: getErrorMessage(error),
+      });
+    }
+  }
   return result;
 }
 

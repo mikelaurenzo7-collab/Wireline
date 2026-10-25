@@ -826,49 +826,53 @@ export function planLookupKey(plan: StripePlan, interval: "month" | "year"): str
  * presence of a Stripe price id. This keeps every client surface fail-closed
  * until the audited production release channel is authorized.
  */
-export function plansForClient() {
+export function plansForClient({ usageCheckoutAvailable = false } = {}) {
   const checkoutReleased = selfServeBillingEnabled();
+  const plans = usageCheckoutAvailable ? [...STRIPE_PLANS, USAGE_PLAN] : STRIPE_PLANS;
+  return plans
+    .filter((plan) => plan.public !== false || isUsagePlanId(plan.id))
+    .map((plan) => {
+      const usage = isUsagePlanId(plan.id);
+      const isFree = plan.price_usd_monthly === 0;
+      const monthlyConfigured = usage ? usageCheckoutAvailable : !!configuredPriceId(plan, "month");
+      const annualConfigured = !usage && !!configuredPriceId(plan, "year");
+      const packageAvailable = plan.checkoutAvailability === "available";
+      const paidCheckoutAvailable = checkoutReleased && packageAvailable && monthlyConfigured;
+      const annualCheckoutAvailable = checkoutReleased && packageAvailable && annualConfigured;
 
-  return STRIPE_PLANS.filter((plan) => plan.public !== false).map((plan) => {
-    const isFree = plan.price_usd_monthly === 0;
-    const monthlyConfigured = !!configuredPriceId(plan, "month");
-    const annualConfigured = !!configuredPriceId(plan, "year");
-    const packageAvailable = plan.checkoutAvailability === "available";
-    const paidCheckoutAvailable = checkoutReleased && packageAvailable && monthlyConfigured;
-    const annualCheckoutAvailable = checkoutReleased && packageAvailable && annualConfigured;
-
-    return {
-      id: plan.id,
-      name: plan.name,
-      price_usd_monthly: plan.price_usd_monthly,
-      price_usd_annual: plan.price_usd_annual,
-      max_agents: plan.max_agents,
-      voice_minutes_monthly: plan.voice_minutes_monthly,
-      runtime_allowance_usd_monthly: plan.runtime_allowance_usd_monthly,
-      ai_spend_allowance_usd_monthly: plan.ai_spend_allowance_usd_monthly,
-      overage_per_min_usd: plan.overage_per_min_usd,
-      included_phone_numbers: plan.included_phone_numbers,
-      included_mailboxes: plan.included_mailboxes,
-      channels: plan.channels,
-      catalog_family: plan.catalogFamily ?? null,
-      capacity_tier: plan.capacityTier ?? null,
-      checkout_availability: plan.checkoutAvailability,
-      extra_agent_price_usd: plan.extra_agent_price_usd ?? null,
-      extra_agent_voice_minutes_monthly: plan.extra_agent_voice_minutes_monthly ?? 0,
-      extra_agent_included_phone_numbers: plan.extra_agent_included_phone_numbers ?? 0,
-      extra_agent_configured: !isFree && checkoutReleased && !!configuredExtraAgentPriceId(plan),
-      features: plan.features,
-      // These flags describe Stripe Checkout availability. Free Builder is
-      // active without Stripe and must use the Studio path instead.
-      configured: !isFree && paidCheckoutAvailable,
-      annual_configured: !isFree && annualCheckoutAvailable,
-      contact_sales: !isFree && !paidCheckoutAvailable && !annualCheckoutAvailable,
-      is_free: isFree,
-      public: true,
-      pricing_model:
-        plan.catalogFamily === "channels"
-          ? ("channel_package" as const)
-          : ("guaranteed_voice_plus_flexible_runtime" as const),
-    };
-  });
+      return {
+        id: plan.id,
+        name: plan.name,
+        price_usd_monthly: plan.price_usd_monthly,
+        price_usd_annual: plan.price_usd_annual,
+        max_agents: plan.max_agents,
+        voice_minutes_monthly: plan.voice_minutes_monthly,
+        runtime_allowance_usd_monthly: plan.runtime_allowance_usd_monthly,
+        ai_spend_allowance_usd_monthly: plan.ai_spend_allowance_usd_monthly,
+        overage_per_min_usd: plan.overage_per_min_usd,
+        included_phone_numbers: plan.included_phone_numbers,
+        included_mailboxes: plan.included_mailboxes,
+        channels: plan.channels,
+        catalog_family: plan.catalogFamily ?? null,
+        capacity_tier: plan.capacityTier ?? null,
+        checkout_availability: plan.checkoutAvailability,
+        extra_agent_price_usd: plan.extra_agent_price_usd ?? null,
+        extra_agent_voice_minutes_monthly: plan.extra_agent_voice_minutes_monthly ?? 0,
+        extra_agent_included_phone_numbers: plan.extra_agent_included_phone_numbers ?? 0,
+        extra_agent_configured: !isFree && checkoutReleased && !!configuredExtraAgentPriceId(plan),
+        features: plan.features,
+        // These flags describe Stripe Checkout availability. Free Builder is
+        // active without Stripe and must use the Studio path instead.
+        configured: !isFree && paidCheckoutAvailable,
+        annual_configured: !isFree && annualCheckoutAvailable,
+        contact_sales: !isFree && !paidCheckoutAvailable && !annualCheckoutAvailable,
+        is_free: isFree,
+        public: true,
+        pricing_model: usage
+          ? ("usage" as const)
+          : plan.catalogFamily === "channels"
+            ? ("channel_package" as const)
+            : ("guaranteed_voice_plus_flexible_runtime" as const),
+      };
+    });
 }

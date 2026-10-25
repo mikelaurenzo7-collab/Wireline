@@ -14,7 +14,8 @@ import { authFetch } from "../lib/api";
 import BillingIntervalControl from "./BillingIntervalControl";
 import ChannelPlanPicker, { hasChannelPlanDetails } from "./ChannelPlanPicker";
 import CapacityUpgradeCard from "./CapacityUpgradeCard";
-import { STRIPE_PLANS } from "../lib/plan-catalog";
+import { STRIPE_PLANS, isUsagePlanId } from "../lib/plan-catalog";
+import { billingModelFromPayload, type BillingModel } from "../lib/billing-model";
 import { getPlanDisplayLabel } from "../lib/plan-display";
 import { safeDate, formatDate } from "../lib/safe-date";
 import UsageMeter from "./UsageMeter";
@@ -114,6 +115,7 @@ export default function StripeBillingCard({
     }
     return "month";
   });
+  const [billingModel, setBillingModel] = useState<BillingModel>("plans");
 
   const portalPendingRef = useRef(false);
   const refreshGeneration = useRef(0);
@@ -142,6 +144,7 @@ export default function StripeBillingCard({
       const configured =
         statusRes.stripe_configured === true && plansRes.stripe_configured === true;
       setStripeConfigured(configured);
+      setBillingModel(billingModelFromPayload(plansRes));
       const checkoutAvailable =
         configured &&
         plansRes.checkout_available === true &&
@@ -157,7 +160,10 @@ export default function StripeBillingCard({
       const urlPlan = new URLSearchParams(window.location.search).get("plan");
       const explicitPaidPlan =
         urlPlan &&
-        livePlans.some((plan) => plan.id === urlPlan && plan.catalog_family === "channels")
+        livePlans.some(
+          (plan) =>
+            plan.id === urlPlan && (plan.catalog_family === "channels" || isUsagePlanId(plan.id)),
+        )
           ? urlPlan
           : null;
       const storedIntent = getStoredSignupIntent();
@@ -379,6 +385,7 @@ export default function StripeBillingCard({
     (sub.status === "active" || sub.status === "trialing");
   const hasPlanAccess = hasActiveSubscription || hasGrantedPlanAccess;
   const canAddBalance =
+    !isUsagePlanId(sub?.plan) &&
     selfServeBillingReleased &&
     !!sub?.has_subscription &&
     (sub.status === "active" || sub.status === "trialing");
@@ -407,7 +414,7 @@ export default function StripeBillingCard({
       ) : hasGrantedPlanAccess ? (
         <GrantedPlanAccessCard sub={sub} agentCount={agentCount} />
       ) : null}
-      {hasActiveSubscription ? (
+      {hasActiveSubscription && !isUsagePlanId(sub?.plan) ? (
         <UsageMeter
           onUpgrade={openPortal}
           upgradePending={busy === "portal"}
@@ -450,7 +457,7 @@ export default function StripeBillingCard({
           </ShadButton>
         </div>
       )}
-      {!hasPlanAccess ? (
+      {!hasPlanAccess && billingModel !== "usage" ? (
         <PlanPicker
           plans={plans}
           signupPlanInterest={signupPlanInterest}
@@ -730,7 +737,9 @@ function GrantedPlanAccessCard({
             </p>
             {sub.max_agents ? (
               <p className="font-mono text-[11px] uppercase tracking-[.08em] text-muted-foreground">
-                {agentCount} / {sub.max_agents} {sub.max_agents === 1 ? "Bot" : "Bots"} in use
+                {isUsagePlanId(sub.plan)
+                  ? `${agentCount} Bots in use`
+                  : `${agentCount} / ${sub.max_agents} ${sub.max_agents === 1 ? "Bot" : "Bots"} in use`}
               </p>
             ) : null}
           </div>
@@ -798,12 +807,14 @@ function ActiveSubCard({
               {sub.max_agents ? (
                 <span
                   className={
-                    agentCount >= sub.max_agents - 1
+                    !isUsagePlanId(sub.plan) && agentCount >= sub.max_agents - 1
                       ? "text-[var(--wireline-color-status-warning)]"
                       : ""
                   }
                 >
-                  {agentCount} / {sub.max_agents} {sub.max_agents === 1 ? "Bot" : "Bots"} in use
+                  {isUsagePlanId(sub.plan)
+                    ? `${agentCount} Bots in use`
+                    : `${agentCount} / ${sub.max_agents} ${sub.max_agents === 1 ? "Bot" : "Bots"} in use`}
                 </span>
               ) : (
                 ""
@@ -815,7 +826,10 @@ function ActiveSubCard({
                 </>
               )}
             </p>
-            {sub.max_agents && sub.max_agents > 1 && agentCount >= sub.max_agents - 1 ? (
+            {!isUsagePlanId(sub.plan) &&
+            sub.max_agents &&
+            sub.max_agents > 1 &&
+            agentCount >= sub.max_agents - 1 ? (
               <p className="text-sm text-[var(--wireline-color-status-warning)]">
                 {agentCount >= sub.max_agents ? "All Bot slots in use." : "Near capacity."}
               </p>

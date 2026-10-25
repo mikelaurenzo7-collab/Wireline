@@ -59,6 +59,7 @@ export const checkoutOperations = pgTable("wireline_checkout_operations", {
   userId: uuid("user_id").notNull(),
   planId: text("plan_id").notNull(),
   billingInterval: text("billing_interval").notNull(),
+  configurationKey: text("configuration_key"),
   status: text("status").notNull().default("creating"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeCheckoutSessionId: text("stripe_checkout_session_id"),

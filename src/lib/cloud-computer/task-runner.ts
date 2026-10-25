@@ -120,6 +120,7 @@ type LiveTask = {
   startedAt: number;
   /** Billed through usage meters (computer minutes) instead of the AI allowance. */
   usageMetered: boolean;
+  usagePeriodKey: string | null;
   stop: boolean;
   /** The provider ended the browser while the owner was using it. */
   expiredBrowser: boolean;
@@ -575,9 +576,12 @@ async function admitComputerTask(
   // Usage billing: refuse at the monthly spending limit; otherwise the task is
   // billed as computer minutes and stays off the managed AI allowance.
   let usageMetered = false;
+  let usagePeriodKey: string | null = null;
   if (isUsagePlanId(entitlement.planId) && usageBillingEnabled()) {
     const { admitAccountUsage } = await import("../usage-billing-store");
-    usageMetered = (await admitAccountUsage(userId, "computer_minutes")) !== null;
+    const admission = await admitAccountUsage(userId, "computer_minutes");
+    usageMetered = admission !== null;
+    usagePeriodKey = admission?.periodKey ?? null;
   }
 
   const model = cloudComputerModel();
@@ -618,6 +622,7 @@ async function admitComputerTask(
     agentId: brief.agent_id,
     startedAt: Date.now(),
     usageMetered,
+    usagePeriodKey,
     stop: false,
     expiredBrowser: false,
     stopAt: null,
@@ -799,35 +804,44 @@ function finishTask(task: LiveTask, outcome: TerminalOutcome): boolean {
   // The final frame and its page stay on the finished task so the owner can
   // review the session in place; pruneFinished retires them with the task.
   pushEvent(task, FINAL_EVENTS[outcome.status]);
-  if (task.usageMetered) recordComputerMinutes(task);
   return true;
-}
-
-/** One idempotent computer-minutes event per task, billed by the second. */
-function recordComputerMinutes(task: LiveTask): void {
-  const elapsedMs = Math.min(Math.max(0, Date.now() - task.startedAt), MAX_TASK_LIFETIME_MS);
-  void import("../usage-billing-store")
-    .then(({ recordAccountUsage }) =>
-      recordAccountUsage({
-        userId: task.userId,
-        meter: "computer_minutes",
-        sourceType: "computer_task",
-        sourceId: task.taskId,
-        quantity: elapsedMs / 60_000,
-      }),
-    )
-    .catch((error: unknown) =>
-      log.error("Usage meter record failed for a computer task", {
-        taskId: task.taskId,
-        error: getErrorMessage(error),
-      }),
-    );
 }
 
 /** Write a finished task's stored outcome while its row is still active. */
 async function saveOutcome(task: LiveTask): Promise<boolean> {
   if (!task.outcome) return false;
-  if ((await persist(task, terminalPatch(task.outcome))) === "error") return false;
+  // Persist the billing receipt with the outcome. Retrying a terminal write
+  // cannot extend the charged duration, and process exit cannot lose the meter.
+  const usageReceipt = task.usagePeriodKey
+    ? {
+        periodKey: task.usagePeriodKey,
+        quantity:
+          Math.min(
+            Math.max(0, task.outcome.finishedAt.getTime() - task.startedAt),
+            MAX_TASK_LIFETIME_MS,
+          ) / 60_000,
+        occurredAt: new Date(task.startedAt).toISOString(),
+      }
+    : null;
+  const saved = await persist(task, { ...terminalPatch(task.outcome), usageReceipt });
+  if (saved === "error") return false;
+  if (usageReceipt && saved === "written") {
+    try {
+      const { recordSettledUsageReceipt } = await import("../usage-billing-store");
+      await recordSettledUsageReceipt({
+        userId: task.userId,
+        meter: "computer_minutes",
+        sourceType: "computer_task",
+        sourceId: task.taskId,
+        receipt: usageReceipt,
+      });
+    } catch (error) {
+      log.warn("Computer usage receipt will be retried by the sweep", {
+        taskId: task.taskId,
+        error: getErrorMessage(error),
+      });
+    }
+  }
   // Written, or the row was already ended by another writer: nothing is left to save.
   task.outcomeSaved = true;
   return true;

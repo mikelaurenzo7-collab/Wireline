@@ -20,6 +20,17 @@
 import Stripe from "stripe";
 
 export const CATALOG_VERSION = "2026-10-usage-v1";
+export const BOTBOUND_STRIPE_ACCOUNT_ID = "acct_1TkyXL8e6If87QKm";
+
+/** Verify the selected account before creating any billing objects. */
+export async function assertUsageStripeAccount(stripe) {
+  const account = await stripe.accounts.retrieve();
+  if (account.id !== BOTBOUND_STRIPE_ACCOUNT_ID) {
+    throw new Error(
+      `Usage billing setup requires the BotBound Stripe account (${BOTBOUND_STRIPE_ACCOUNT_ID}); the supplied key belongs to another account.`,
+    );
+  }
+}
 
 /** Cents as decimal strings; Stripe graduated tiers apply to the period total. */
 export const USAGE_STRIPE_PLAN = {
@@ -275,6 +286,7 @@ async function main(argv = process.argv.slice(2)) {
     return;
   }
   const stripe = new Stripe(flags.key);
+  await assertUsageStripeAccount(stripe);
   const result = await apply(stripe, USAGE_STRIPE_PLAN);
   console.log(`Mode: ${mode}`);
   console.log(

@@ -96,9 +96,23 @@ describe("public billing checkout availability", () => {
     vi.stubEnv("STRIPE_USAGE_CALL_MINUTES_PRICE_ID", "price_usage_calls_fixture");
     vi.stubEnv("STRIPE_USAGE_EMAILS_PRICE_ID", "price_usage_emails_fixture");
     vi.stubEnv("STRIPE_USAGE_COMPUTER_MINUTES_PRICE_ID", "price_usage_computer_fixture");
+    expect(getPublicPlans().body.usage_checkout_available).toBe(false);
+    vi.stubEnv("STRIPE_USAGE_NUMBER_ADDON_PRICE_ID", "price_usage_number_fixture");
+    vi.stubEnv("STRIPE_USAGE_EMAIL_ADDON_PRICE_ID", "price_usage_mailbox_fixture");
     const { body } = getPublicPlans();
     expect(body.billing_model).toBe("usage");
     expect(body.usage_checkout_available).toBe(true);
+    expect(body.plans.find((plan) => plan.id === "usage")).toMatchObject({
+      configured: true,
+      annual_configured: false,
+      contact_sales: false,
+      pricing_model: "usage",
+    });
+    vi.stubEnv("LAUNCH_HARD_GATE", "true");
+    vi.stubEnv("OPENAI_API_KEY", "");
+    const blocked = getPublicPlans().body;
+    expect(blocked.usage_checkout_available).toBe(false);
+    expect(blocked.plans.find((plan) => plan.id === "usage")).toBeUndefined();
   });
 
   it("reports unavailable when the same hard launch gate rejects checkout despite configured prices", () => {

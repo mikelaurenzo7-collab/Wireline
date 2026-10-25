@@ -16,6 +16,7 @@ import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import {
   getStoredSignupIntent,
+  activationBillingHref,
   DEFAULT_ACTIVATION_PLAN_ID,
   recommendedPlanFromIntent,
   persistSignupIntent,
@@ -244,6 +245,8 @@ export default function TrialGateModal() {
       (plan) => plan.catalogFamily === "channels" && !plan.channels.includes("sms"),
     );
   const selectedTier = checkoutTiers.find((tier) => tier.id === selectedPlanId);
+  const usageAvailable =
+    checkoutAvailable && livePlans?.some((plan) => plan.id === "usage" && plan.configured === true);
   const catalogPending = livePlans === null;
   const checkoutUnavailable =
     !catalogPending &&
@@ -533,7 +536,21 @@ export default function TrialGateModal() {
                   </a>
                 </div>
               )}
-              {showPlanCheckout && (
+              {showPlanCheckout && usageAvailable && (
+                <ShadButton asChild disableAnimations className="h-11 rounded-md px-5">
+                  <Link
+                    to={activationBillingHref({
+                      ...getStoredSignupIntent(),
+                      preferredPlanId: "usage",
+                      capturedAt: new Date().toISOString(),
+                    })}
+                    onClick={closeModal}
+                  >
+                    Choose Usage and Add-ons
+                  </Link>
+                </ShadButton>
+              )}
+              {showPlanCheckout && !usageAvailable && (
                 <>
                   {catalogPending && (
                     <p className="mb-3 inline-flex items-center gap-2 text-xs leading-relaxed text-foreground/65">

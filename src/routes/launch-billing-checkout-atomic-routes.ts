@@ -5,6 +5,10 @@ import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { FOUNDER_CATALOG_VERSION, isUsagePlanId, planById, planPriceId } from "../lib/plan-catalog";
 import { USAGE_CATALOG_VERSION } from "../lib/usage-billing-catalog";
 import {
+  checkoutConfigurationKey,
+  validateUsageCheckoutAddons,
+} from "../lib/checkout-configuration";
+import {
   usageBillingEnabled,
   usageCheckoutConfigured,
   usagePriceId,
@@ -212,6 +216,7 @@ router.post(
           emailAddresses: usageAddonQuantity(req.body?.addons?.email_address),
         }
       : { numbers: 0, emailAddresses: 0 };
+    if (usageCheckout) validateUsageCheckoutAddons(usageAddons);
     if (
       (usageAddons.numbers > 0 && !usagePriceId("number")) ||
       (usageAddons.emailAddresses > 0 && !usagePriceId("email_address"))
@@ -336,6 +341,13 @@ router.post(
       });
     }
 
+    const lineItems = usageCheckout
+      ? usageCheckoutLineItems(usageAddons)
+      : [{ price: priceId, quantity: 1 }];
+    const configurationKey = usageCheckout
+      ? checkoutConfigurationKey(plan.id, interval, lineItems)
+      : null;
+
     await drizzle
       .update(checkoutOperations)
       .set({ status: "expired", updatedAt: new Date() })
@@ -353,6 +365,7 @@ router.post(
         userId: req.user.id,
         planId: plan.id,
         billingInterval: interval,
+        configurationKey,
         status: "creating",
         expiresAt: new Date(Date.now() + CHECKOUT_TTL_MS),
       })
@@ -369,6 +382,7 @@ router.post(
           id: checkoutOperations.id,
           planId: checkoutOperations.planId,
           billingInterval: checkoutOperations.billingInterval,
+          configurationKey: checkoutOperations.configurationKey,
           status: checkoutOperations.status,
           stripeCustomerId: checkoutOperations.stripeCustomerId,
           stripeCheckoutSessionId: checkoutOperations.stripeCheckoutSessionId,
@@ -382,7 +396,10 @@ router.post(
           ),
         )
         .limit(1);
-      const samePlan = active?.planId === plan.id && active?.billingInterval === interval;
+      const samePlan =
+        active?.planId === plan.id &&
+        active?.billingInterval === interval &&
+        (!usageCheckout || active.configurationKey === configurationKey);
       if (active?.status === "open" && active.checkoutUrl) {
         // Ask Stripe whether the cached session is still payable before
         // deciding anything. The webhook now completes operations, but a
@@ -438,6 +455,7 @@ router.post(
             userId: req.user.id,
             planId: plan.id,
             billingInterval: interval,
+            configurationKey,
             status: "creating",
             expiresAt: new Date(Date.now() + CHECKOUT_TTL_MS),
           })
@@ -506,9 +524,7 @@ router.post(
           customer: customerId,
           customer_update: { address: "auto" },
           ...stripeCheckoutTaxConfig(),
-          line_items: usageCheckout
-            ? usageCheckoutLineItems(usageAddons)
-            : [{ price: priceId, quantity: 1 }],
+          line_items: lineItems,
           success_url: `${appUrl.url}/settings/billing?billing=success&session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${appUrl.url}/settings/billing?billing=canceled`,
           allow_promotion_codes: true,

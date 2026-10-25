@@ -21,8 +21,43 @@ const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("signup intent contract", () => {
+  it("carries usage and optional identities through signup, storage and activation", () => {
+    const href = signupHrefForPlan("usage", {
+      interval: "year",
+      usageAddons: { number: false, emailAddress: true },
+    });
+    const intent = sanitizeSignupIntent(parseSignupIntent(href.split("?")[1]));
+    expect(intent).toMatchObject({
+      preferredPlanId: "usage",
+      preferredBillingInterval: "month",
+      preferredUsageAddons: { number: false, emailAddress: true },
+    });
+    expect(activationBillingHref(intent)).toBe(
+      "/settings/billing?plan=usage&interval=month&number=0&email_address=1",
+    );
+    expect(parseSignupIntent(activationBillingHref(intent).split("?")[1])).toMatchObject({
+      preferredUsageAddons: { number: false, emailAddress: true },
+    });
+    expect(
+      signupSchema.parse({
+        email: "usage@example.com",
+        password: "ValidPass1",
+        preferredPlanId: "usage",
+        termsAccepted: true,
+        termsVersion: ACCOUNT_TERMS_VERSION,
+        privacyVersion: ACCOUNT_PRIVACY_VERSION,
+      }).preferredPlanId,
+    ).toBe("usage");
+    expect(
+      mergeSignupIntent(intent, {
+        preferredPlanId: "personal",
+        capturedAt: new Date().toISOString(),
+      })?.preferredUsageAddons,
+    ).toBeUndefined();
+  });
   it("keeps retired pricing aliases aligned with the current public launch catalog", () => {
     expect(SIGNUP_PLAN_IDS).toEqual([
+      "usage",
       "personal",
       "voice",
       "email",
@@ -50,6 +85,7 @@ describe("signup intent contract", () => {
       "business",
     ]);
     expect(PUBLIC_SIGNUP_PLAN_SLUGS).toEqual({
+      usage: "usage",
       voice: "voice",
       email: "email",
       sms: "sms",

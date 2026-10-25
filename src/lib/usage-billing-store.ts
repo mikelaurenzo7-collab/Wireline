@@ -1,9 +1,9 @@
 /**
  * Postgres store and Stripe meter client for the usage billing ledger.
  *
- * Every exported entry point is a no-op unless `USAGE_BILLING_ENABLED` is true
- * and the account holds an active usage subscription, so with the flag off no
- * new table is touched and no meter event is sent.
+ * New usage admission and reporting require `USAGE_BILLING_ENABLED`. Receipts
+ * from previously admitted work retain their original billing identity and
+ * remain recoverable independently of the task/email process.
  */
 import { and, asc, eq, sql } from "drizzle-orm";
 
@@ -11,13 +11,7 @@ import * as schema from "../db/schema";
 import { usageMeterEvents, usageSpendControls } from "../db/usage-billing-schema";
 import { drizzle, log } from "./server-context";
 import { isUsagePlanId } from "./plan-catalog";
-import { AppError } from "./api-error";
-import {
-  USAGE_DEFAULT_MONTHLY_CAP_USD,
-  USAGE_MAX_MONTHLY_CAP_USD,
-  minimumMonthlyCapUsd,
-  type UsageMeterKey,
-} from "./usage-billing-catalog";
+import { USAGE_DEFAULT_MONTHLY_CAP_USD, type UsageMeterKey } from "./usage-billing-catalog";
 import { usageBillingEnabled, usageMeterEventName } from "./usage-billing-config";
 import {
   admitUsage,
@@ -26,6 +20,7 @@ import {
   recordUsageEvent,
   reportPendingUsageForUser,
   usageSpendState,
+  validateUsageMonthlyCap,
   type MeterTotals,
   type UsageEventRow,
   type UsageMeterClient,
@@ -280,18 +275,8 @@ export async function recordAccountUsage(input: {
     quantity: input.quantity,
     occurredAt: input.occurredAt ?? new Date(),
   });
-  if (recorded) {
-    try {
-      await evaluateUsageSpendAlerts(store, input.userId, (alert) =>
-        sendUsageSpendAlert(input.userId, identity.periodKey, alert),
-      );
-    } catch (error) {
-      log.warn("Usage spend alert evaluation failed", {
-        userId: input.userId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }
+  // The recurring sweep evaluates alerts from durable receipts. A delivery
+  // failure must be retried even when this account produces no further usage.
   return { recorded };
 }
 
@@ -299,15 +284,87 @@ export async function recordAccountUsage(input: {
 export async function admitAccountUsage(
   userId: string,
   meter: UsageMeterKey,
-): Promise<{ maxUnits: number | null } | null> {
+): Promise<{ maxUnits: number | null; periodKey: string } | null> {
   if (!(await usageAccount(userId))) return null;
-  const { maxUnits } = await admitUsage(createUsageStore(), userId, meter);
-  return { maxUnits };
+  const { maxUnits, state } = await admitUsage(createUsageStore(), userId, meter);
+  return { maxUnits, periodKey: state.periodKey };
 }
 
 export async function accountUsageSpendState(userId: string) {
   if (!(await usageAccount(userId))) return null;
   return usageSpendState(createUsageStore(), userId);
+}
+
+export type DurableUsageReceipt = { periodKey: string; quantity: number; occurredAt: string };
+
+/** A receipt captures admission identity and time; settlement must not reclassify it. */
+export async function recordSettledUsageReceipt(input: {
+  userId: string;
+  meter: UsageMeterKey;
+  sourceType: string;
+  sourceId: string;
+  receipt: DurableUsageReceipt;
+}): Promise<void> {
+  await recordUsageEvent(createUsageStore(), {
+    userId: input.userId,
+    meter: input.meter,
+    sourceType: input.sourceType,
+    sourceId: input.sourceId,
+    periodKey: input.receipt.periodKey,
+    quantity: input.receipt.quantity,
+    occurredAt: new Date(input.receipt.occurredAt),
+  });
+}
+
+/** Repair receipts whose immediate meter write failed or died with the process. */
+export async function reconcileUsageReceipts(
+  limit = 200,
+  reader: Pick<Reader, "select"> = drizzle,
+  recordReceipt = recordSettledUsageReceipt,
+): Promise<void> {
+  const computers = await reader
+    .select({
+      userId: schema.computerTasks.userId,
+      sourceId: schema.computerTasks.id,
+      receipt: schema.computerTasks.usageReceipt,
+    })
+    .from(schema.computerTasks)
+    .where(
+      sql`${schema.computerTasks.usageReceipt} IS NOT NULL AND NOT EXISTS (SELECT 1 FROM ${usageMeterEvents} WHERE ${usageMeterEvents.idempotencyKey} = 'usage:computer_minutes:computer_task:' || ${schema.computerTasks.id}::text)`,
+    )
+    .orderBy(asc(schema.computerTasks.finishedAt))
+    .limit(limit);
+  for (const row of computers) {
+    if (row.receipt)
+      await recordReceipt({
+        ...row,
+        receipt: row.receipt,
+        meter: "computer_minutes",
+        sourceType: "computer_task",
+      });
+  }
+  const emails = await reader
+    .select({
+      userId: schema.auditLog.userId,
+      sourceId: schema.auditLog.resourceId,
+      receipt: sql<DurableUsageReceipt>`${schema.auditLog.metadata}->'usageReceipt'`,
+    })
+    .from(schema.auditLog)
+    .where(
+      sql`${schema.auditLog.userId} IS NOT NULL AND ${schema.auditLog.resourceId} IS NOT NULL AND ${schema.auditLog.eventType} = 'email.thread_reply' AND ${schema.auditLog.metadata}->>'status' = 'sent' AND ${schema.auditLog.metadata}->'usageReceipt' IS NOT NULL AND ${schema.auditLog.metadata}->'usageReceipt' <> 'null'::jsonb AND NOT EXISTS (SELECT 1 FROM ${usageMeterEvents} WHERE ${usageMeterEvents.idempotencyKey} = 'usage:emails_handled:email_reply:' || ${schema.auditLog.resourceId})`,
+    )
+    .orderBy(asc(schema.auditLog.createdAt))
+    .limit(limit);
+  for (const row of emails) {
+    if (row.userId && row.sourceId && row.receipt)
+      await recordReceipt({
+        userId: row.userId,
+        sourceId: row.sourceId,
+        receipt: row.receipt,
+        meter: "emails_handled",
+        sourceType: "email_reply",
+      });
+  }
 }
 
 async function sendUsageSpendAlert(
@@ -320,9 +377,9 @@ async function sendUsageSpendAlert(
     .from(schema.users)
     .where(eq(schema.users.id, userId))
     .limit(1);
-  if (!user?.email) return;
+  if (!user?.email) throw new Error("Usage spend alert recipient is unavailable");
   const { sendUsageSpendAlertEmail } = await import("./email-service");
-  await sendUsageSpendAlertEmail({
+  const result = await sendUsageSpendAlertEmail({
     userId,
     to: user.email,
     thresholdPct: alert.thresholdPct,
@@ -330,6 +387,8 @@ async function sendUsageSpendAlert(
     capUsd: alert.capUsd,
     idempotencyKey: `usage-spend-alert:${userId}:${periodKey}:${alert.thresholdPct}`,
   });
+  if (!result.ok || result.disposition !== "accepted")
+    throw new Error("Usage spend alert was not accepted by the email service");
 }
 
 /** Report every account with pending usage. Serialized per account by advisory lock. */
@@ -341,6 +400,7 @@ export async function reportAllPendingUsage(limitAccounts = 200): Promise<{
 }> {
   const totals = { accounts: 0, reported: 0, skipped: 0, failed: 0 };
   if (!usageBillingEnabled()) return totals;
+  await reconcileUsageReceipts();
   const users = await drizzle
     .selectDistinct({ userId: usageMeterEvents.userId })
     .from(usageMeterEvents)
@@ -360,42 +420,71 @@ export async function reportAllPendingUsage(limitAccounts = 200): Promise<{
       totals.failed += result.failed;
     });
   }
+  // Include accounts with fully reported receipts: a failed alert cannot rely
+  // on another purchase or meter event to become eligible for retry.
+  const alertUsers = await drizzle
+    .select({ userId: usageSpendControls.userId })
+    .from(usageSpendControls)
+    .innerJoin(schema.subscriptions, eq(schema.subscriptions.userId, usageSpendControls.userId))
+    .where(
+      and(
+        eq(schema.subscriptions.plan, "usage"),
+        sql`${schema.subscriptions.status} IN ('active', 'trialing')`,
+      ),
+    )
+    .orderBy(asc(usageSpendControls.updatedAt))
+    .limit(limitAccounts);
+  for (const { userId } of alertUsers) {
+    await drizzle.transaction(async (tx) => {
+      const lock = (await tx.execute(
+        sql`SELECT pg_try_advisory_xact_lock(hashtext(${`usage-report:${userId}`})) AS locked`,
+      )) as unknown as { rows?: Array<{ locked: boolean }> };
+      if (lock.rows?.[0]?.locked === false) return;
+      const store = createUsageStore(tx);
+      const identity = await store.billingIdentity(userId);
+      try {
+        await evaluateUsageSpendAlerts(store, userId, (alert) =>
+          sendUsageSpendAlert(userId, identity.periodKey, alert),
+        );
+      } catch (error) {
+        totals.failed += 1;
+        log.warn("Usage spend alert delivery will retry", {
+          userId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+      // Rotate the bounded sweep fairly, including transport failures.
+      await tx
+        .update(usageSpendControls)
+        .set({ updatedAt: new Date() })
+        .where(eq(usageSpendControls.userId, userId));
+    });
+  }
   return totals;
 }
 
-export class UsageCapOutOfRangeError extends AppError {
-  constructor(minUsd: number, maxUsd: number) {
-    super(
-      400,
-      "USAGE_CAP_OUT_OF_RANGE",
-      `Choose a monthly limit between $${minUsd.toFixed(2)} and $${maxUsd.toLocaleString("en-US")}.`,
-    );
-  }
-}
-
-/** Owner cap update, never below base plus add-ons plus headroom. */
+/** Serialize cap changes with Stripe reports; never erase accrued charges. */
 export async function setUsageMonthlyCap(userId: string, capUsd: number): Promise<void> {
-  const control = await createUsageStore().spendControl(userId);
-  const minUsd = minimumMonthlyCapUsd({
-    numbers: control.numbers,
-    emailAddresses: control.emailAddresses,
+  await drizzle.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`usage-report:${userId}`}))`);
+    const store = createUsageStore(tx);
+    const control = await store.spendControl(userId);
+    const state = await usageSpendState(store, userId);
+    validateUsageMonthlyCap(control, state.spentUsd, capUsd);
+    await tx
+      .insert(usageSpendControls)
+      .values({ userId, monthlyCapUsd: capUsd.toFixed(2) })
+      .onConflictDoUpdate({
+        target: usageSpendControls.userId,
+        set: {
+          monthlyCapUsd: capUsd.toFixed(2),
+          // Raising the cap clears the pause; the next alert re-evaluates the level.
+          pausedAt: null,
+          alertLevelPct: sql`CASE WHEN ${usageSpendControls.alertLevelPct} >= 100 THEN 80 ELSE ${usageSpendControls.alertLevelPct} END`,
+          updatedAt: new Date(),
+        },
+      });
   });
-  if (!Number.isFinite(capUsd) || capUsd < minUsd || capUsd > USAGE_MAX_MONTHLY_CAP_USD) {
-    throw new UsageCapOutOfRangeError(minUsd, USAGE_MAX_MONTHLY_CAP_USD);
-  }
-  await drizzle
-    .insert(usageSpendControls)
-    .values({ userId, monthlyCapUsd: capUsd.toFixed(2) })
-    .onConflictDoUpdate({
-      target: usageSpendControls.userId,
-      set: {
-        monthlyCapUsd: capUsd.toFixed(2),
-        // Raising the cap clears the pause; the next alert re-evaluates the level.
-        pausedAt: null,
-        alertLevelPct: sql`CASE WHEN ${usageSpendControls.alertLevelPct} >= 100 THEN 80 ELSE ${usageSpendControls.alertLevelPct} END`,
-        updatedAt: new Date(),
-      },
-    });
 }
 
 /** Mirror add-on quantities from the Stripe subscription items. */
@@ -403,21 +492,24 @@ export async function setUsageAddonQuantities(
   userId: string,
   quantities: { numbers: number; emailAddresses: number },
 ): Promise<void> {
-  await drizzle
-    .insert(usageSpendControls)
-    .values({
-      userId,
-      numberAddons: quantities.numbers,
-      emailAddressAddons: quantities.emailAddresses,
-    })
-    .onConflictDoUpdate({
-      target: usageSpendControls.userId,
-      set: {
+  await drizzle.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`usage-report:${userId}`}))`);
+    await tx
+      .insert(usageSpendControls)
+      .values({
+        userId,
         numberAddons: quantities.numbers,
         emailAddressAddons: quantities.emailAddresses,
-        updatedAt: new Date(),
-      },
-    });
+      })
+      .onConflictDoUpdate({
+        target: usageSpendControls.userId,
+        set: {
+          numberAddons: quantities.numbers,
+          emailAddressAddons: quantities.emailAddresses,
+          updatedAt: new Date(),
+        },
+      });
+  });
 }
 
 /**

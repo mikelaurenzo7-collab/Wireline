@@ -10,7 +10,7 @@ execFileSync(process.execPath, ["scripts/materialize-drizzle-meta.mjs"], {
 
 const MIGRATIONS_DIR = resolve(process.cwd(), "drizzle/migrations");
 
-type JournalEntry = { idx: number; tag: string };
+type JournalEntry = { idx: number; tag: string; when: number };
 
 const journal = JSON.parse(readFileSync(resolve(MIGRATIONS_DIR, "meta/_journal.json"), "utf8")) as {
   entries: JournalEntry[];
@@ -46,6 +46,14 @@ const numericPrefix = (tag: string): number => {
  * mistake: a NEW migration authored today, committed, and never journaled.
  */
 describe("migration journal integrity contract", () => {
+  it("gives the newest migration a timestamp after every earlier migration", () => {
+    // Drizzle compares timestamps with its applied ledger, not just array order.
+    // A generated timestamp before a future-dated parent would silently skip DDL.
+    const head = journal.entries.at(-1)!;
+    expect(head.when).toBeGreaterThan(
+      Math.max(...journal.entries.slice(0, -1).map((entry) => entry.when)),
+    );
+  });
   it("has a committed .sql file for every journal entry", () => {
     // The inverse direction is a hard production failure rather than a silent
     // one: drizzle-kit aborts the build when a journalled tag has no file, which

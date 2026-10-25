@@ -29,7 +29,7 @@ import {
   readPostCreateWizardStep,
   updatePostCreateWizard,
 } from "../lib/wireline-create-flow";
-import { STRIPE_PLANS } from "../lib/plan-catalog";
+import { isUsagePlanId, planById } from "../lib/plan-catalog";
 import { SMS_LAUNCH_UI_ENABLED } from "../lib/product-copy";
 import {
   CONVERSATION_BALANCE_COPY,
@@ -302,16 +302,18 @@ export default function BillingSettings() {
   }
 
   const plan = useMemo(
-    () => STRIPE_PLANS.find((item) => item.id === subscription?.plan_id) ?? null,
+    () => planById(subscription?.plan_id ?? "") ?? null,
     [subscription?.plan_id],
   );
   const paidPlan = isPaidPlan(subscription?.plan_id) && Boolean(plan && plan.id !== "personal");
+  const usagePlan = isUsagePlanId(subscription?.plan_id);
   const canAddBalance =
     !loading &&
     billingReady &&
     checkoutAvailability === "available" &&
     !statusUnavailable &&
     paidPlan &&
+    !usagePlan &&
     (subscription?.status === "active" || subscription?.status === "trialing");
   const balanceDue = Math.max(0, -(balanceUsd ?? 0));
   const balanceMinuteEstimates = conversationBalanceMinuteEstimates();
@@ -411,101 +413,106 @@ export default function BillingSettings() {
 
         <UsageSpendCard refreshKey={refreshKey} />
 
-        {!loading && !statusUnavailable && paidPlan && plan ? (
+        {!loading && !statusUnavailable && paidPlan && !usagePlan && plan ? (
           <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
             Plan capacity · {plan.included_phone_numbers} live number
             {plan.included_phone_numbers === 1 ? "" : "s"} included
           </p>
         ) : null}
 
-        <section className="mt-6">
-          <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <h2 className="text-base font-semibold leading-6 text-foreground">
-                  {CONVERSATION_BALANCE_COPY.title}
-                </h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                  {SMS_LAUNCH_UI_ENABLED && plan?.channels.includes("sms")
-                    ? "Prepaid extra call minutes, SMS, and eligible live actions."
-                    : "Prepaid extra call minutes and eligible live actions."}{" "}
-                  Computer tasks use your included AI usage.
-                </p>
+        {!usagePlan && (
+          <section className="mt-6">
+            <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-base font-semibold leading-6 text-foreground">
+                    {CONVERSATION_BALANCE_COPY.title}
+                  </h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                    {SMS_LAUNCH_UI_ENABLED && plan?.channels.includes("sms")
+                      ? "Prepaid extra call minutes, SMS, and eligible live actions."
+                      : "Prepaid extra call minutes and eligible live actions."}{" "}
+                    Computer tasks use your included AI usage.
+                  </p>
+                </div>
+                <ShieldCheck className="size-5 shrink-0 text-primary" aria-hidden="true" />
               </div>
-              <ShieldCheck className="size-5 shrink-0 text-primary" aria-hidden="true" />
-            </div>
 
-            {loading ? (
-              <div className="mt-6 flex items-center gap-2 text-muted-foreground" aria-busy="true">
-                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                <span className="text-sm">Loading balance…</span>
-              </div>
-            ) : (
-              <>
-                <p
-                  className={`wl-display-3 mt-6 ${balanceDue > 0 ? "text-destructive" : "text-foreground"}`}
+              {loading ? (
+                <div
+                  className="mt-6 flex items-center gap-2 text-muted-foreground"
+                  aria-busy="true"
                 >
-                  {balanceDue > 0 ? `$${balanceDue.toFixed(2)} due` : formatUsd(balanceUsd)}
-                </p>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                  {statusUnavailable
-                    ? "Billing status could not be verified. No balance action is available until it reloads."
-                    : checkoutAvailability === "loading"
-                      ? "Checking top-up availability…"
-                      : checkoutAvailability === "unavailable"
-                        ? "Top-up status is unavailable. Refresh this page to retry."
-                        : checkoutAvailability === "paused"
-                          ? "Balance top-ups are paused. Check back later."
-                          : !canAddBalance
-                            ? "Available after a live plan is active."
-                            : balanceDue > 0
-                              ? "A previous live action finished after coverage ran out. Restore this amount before another paid action."
-                              : "Eligible extra usage draws only from this balance, never an automatic overage invoice."}
-                </p>
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  <span className="text-sm">Loading balance…</span>
+                </div>
+              ) : (
+                <>
+                  <p
+                    className={`wl-display-3 mt-6 ${balanceDue > 0 ? "text-destructive" : "text-foreground"}`}
+                  >
+                    {balanceDue > 0 ? `$${balanceDue.toFixed(2)} due` : formatUsd(balanceUsd)}
+                  </p>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                    {statusUnavailable
+                      ? "Billing status could not be verified. No balance action is available until it reloads."
+                      : checkoutAvailability === "loading"
+                        ? "Checking top-up availability…"
+                        : checkoutAvailability === "unavailable"
+                          ? "Top-up status is unavailable. Refresh this page to retry."
+                          : checkoutAvailability === "paused"
+                            ? "Balance top-ups are paused. Check back later."
+                            : !canAddBalance
+                              ? "Available after a live plan is active."
+                              : balanceDue > 0
+                                ? "A previous live action finished after coverage ran out. Restore this amount before another paid action."
+                                : "Eligible extra usage draws only from this balance, never an automatic overage invoice."}
+                  </p>
 
-                {canAddBalance ? (
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    {CONVERSATION_BALANCE_PRESETS_USD.map((amount) => {
-                      const minutes =
-                        balanceMinuteEstimates.find((row) => row.amountUsd === amount)?.minutes ??
-                        0;
-                      return (
-                        <Button
-                          key={amount}
-                          type="button"
-                          disableAnimations
-                          variant="outline"
-                          size="sm"
-                          onClick={() => void addBalance(amount)}
-                          disabled={topUpBusy !== null}
-                          className="gap-1.5"
-                          title={
-                            minutes > 0
-                              ? `Approximately ${minutes.toLocaleString()} additional voice minutes at the published blended rate`
-                              : undefined
-                          }
-                        >
-                          {topUpBusy === amount ? (
-                            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-                          ) : (
-                            <Plus className="size-3.5" aria-hidden="true" />
-                          )}
-                          ${amount}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                ) : null}
-              </>
-            )}
-            <RuntimeBalanceActivity
-              entries={balanceEntries}
-              loading={loading}
-              unavailable={activityUnavailable}
-              onRetry={retryBilling}
-            />
-          </article>
-        </section>
+                  {canAddBalance ? (
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      {CONVERSATION_BALANCE_PRESETS_USD.map((amount) => {
+                        const minutes =
+                          balanceMinuteEstimates.find((row) => row.amountUsd === amount)?.minutes ??
+                          0;
+                        return (
+                          <Button
+                            key={amount}
+                            type="button"
+                            disableAnimations
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void addBalance(amount)}
+                            disabled={topUpBusy !== null}
+                            className="gap-1.5"
+                            title={
+                              minutes > 0
+                                ? `Approximately ${minutes.toLocaleString()} additional voice minutes at the published blended rate`
+                                : undefined
+                            }
+                          >
+                            {topUpBusy === amount ? (
+                              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                            ) : (
+                              <Plus className="size-3.5" aria-hidden="true" />
+                            )}
+                            ${amount}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </>
+              )}
+              <RuntimeBalanceActivity
+                entries={balanceEntries}
+                loading={loading}
+                unavailable={activityUnavailable}
+                onRetry={retryBilling}
+              />
+            </article>
+          </section>
+        )}
 
         {actionError ? (
           <StatusNotice tone="destructive" title="Billing Action Unavailable" className="mt-4">

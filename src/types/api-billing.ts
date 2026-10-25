@@ -85,7 +85,7 @@ export interface ClientPlan {
   contact_sales: boolean;
   is_free: boolean;
   public: boolean;
-  pricing_model: "guaranteed_voice_plus_flexible_runtime" | "channel_package";
+  pricing_model: "guaranteed_voice_plus_flexible_runtime" | "channel_package" | "usage";
 }
 
 /** GET /api/billing/plans response envelope */

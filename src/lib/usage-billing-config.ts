@@ -49,7 +49,7 @@ export function usageMeterEventName(
   return env[USAGE_METER_EVENT_ENV[key]]?.trim() || USAGE_METERS[key].defaultEventName;
 }
 
-/** The base and all three metered prices must exist before checkout opens. */
+/** Every price offered by the public form must exist before checkout opens. */
 export function usageCheckoutConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
   return (
     usageBillingEnabled(env) &&
@@ -57,7 +57,9 @@ export function usageCheckoutConfigured(env: NodeJS.ProcessEnv = process.env): b
       usagePriceId("base", env) &&
       usagePriceId("call_minutes", env) &&
       usagePriceId("emails_handled", env) &&
-      usagePriceId("computer_minutes", env),
+      usagePriceId("computer_minutes", env) &&
+      usagePriceId("number", env) &&
+      usagePriceId("email_address", env),
     )
   );
 }

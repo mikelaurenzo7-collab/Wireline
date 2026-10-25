@@ -502,15 +502,16 @@ router.get("/billing/plans", (_req: Request, res: Response) => {
   // blockers, provider configuration, or tenant-specific eligibility publicly.
   // Clients must also check the selected plan and interval's catalog flags.
   const checkoutAvailable = stripeConfigured && selfServeBillingEnabled() && !isLaunchHardBlocked();
+  const usageCheckoutAvailable =
+    checkoutAvailable && usageBillingEnabled() && usageCheckoutConfigured();
   res.setHeader("Cache-Control", "no-store");
   res.json({
-    plans: plansForClient(),
+    plans: plansForClient({ usageCheckoutAvailable }),
     stripe_configured: stripeConfigured,
     checkout_available: checkoutAvailable,
     // Usage billing ships dark: "plans" until USAGE_BILLING_ENABLED is true.
     billing_model: usageBillingEnabled() ? "usage" : "plans",
-    usage_checkout_available:
-      checkoutAvailable && usageBillingEnabled() && usageCheckoutConfigured(),
+    usage_checkout_available: usageCheckoutAvailable,
   });
 });
 
@@ -566,7 +567,14 @@ router.put(
       monthlyCapUsd: Math.round(capUsd * 100) / 100,
     });
     const state = await accountUsageSpendState(req.user!.id);
-    res.json({ ok: true, cap_usd: state?.capUsd ?? capUsd, at_cap: state?.atCap ?? false });
+    res.json({
+      ok: true,
+      cap_usd: state?.capUsd ?? capUsd,
+      at_cap: state?.atCap ?? false,
+      spent_usd: state?.spentUsd,
+      pct: state?.pct,
+      headroom_usd: state?.headroomUsd,
+    });
   },
 );
 

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Button } from "../atoms";
 import { Checkbox } from "../ui/shadcn/Checkbox";
 import { authFetch } from "../../lib/api";
+import { captureSignupIntentFromLocation, usageAddonsFromIntent } from "../../lib/signup-intent";
+import { usePaidPlanAvailability } from "../../hooks/usePaidPlanAvailability";
 import {
   USAGE_ADDONS,
   USAGE_BASE_USD_MONTHLY,
@@ -19,8 +21,10 @@ export default function UsageSpendCard({ refreshKey = 0 }: { refreshKey?: number
   const [capDraft, setCapDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [number, setNumber] = useState(true);
-  const [emailAddress, setEmailAddress] = useState(false);
+  const [addons] = useState(() => usageAddonsFromIntent(captureSignupIntentFromLocation()));
+  const [number, setNumber] = useState(addons.number);
+  const [emailAddress, setEmailAddress] = useState(addons.emailAddress);
+  const { canActivate } = usePaidPlanAvailability({ planId: "usage" });
 
   useEffect(() => {
     let active = true;
@@ -83,6 +87,9 @@ export default function UsageSpendCard({ refreshKey = 0 }: { refreshKey?: number
       const body = (await response.json().catch(() => null)) as {
         cap_usd?: number;
         at_cap?: boolean;
+        spent_usd?: number;
+        pct?: number;
+        headroom_usd?: number;
         error?: string;
         message?: string;
       } | null;
@@ -90,7 +97,14 @@ export default function UsageSpendCard({ refreshKey = 0 }: { refreshKey?: number
         throw new Error(body?.error || body?.message || "Limit could not be saved.");
       setState((current) =>
         current && current.enabled && current.usage_account
-          ? { ...current, cap_usd: body?.cap_usd ?? value, at_cap: body?.at_cap ?? current.at_cap }
+          ? {
+              ...current,
+              cap_usd: body?.cap_usd ?? value,
+              at_cap: body?.at_cap ?? current.at_cap,
+              spent_usd: body?.spent_usd ?? current.spent_usd,
+              pct: body?.pct ?? current.pct,
+              headroom_usd: body?.headroom_usd ?? current.headroom_usd,
+            }
           : current,
       );
       setMessage("Monthly limit saved.");
@@ -102,6 +116,7 @@ export default function UsageSpendCard({ refreshKey = 0 }: { refreshKey?: number
   }
 
   if (!state.usage_account) {
+    if (!canActivate("usage")) return null;
     return (
       <section className="mt-6" aria-label="Pay for what you use">
         <article className="wl-paper wl-paper-elevated space-y-4 p-5 sm:p-6">
@@ -110,7 +125,7 @@ export default function UsageSpendCard({ refreshKey = 0 }: { refreshKey?: number
             <p className="mt-1 text-sm text-muted-foreground">
               ${USAGE_BASE_USD_MONTHLY}/month with usage included. Pay only for the calls, emails,
               and computer time your Bots use, up to a monthly limit you set (default $
-              {USAGE_DEFAULT_MONTHLY_CAP_USD}).
+              {USAGE_DEFAULT_MONTHLY_CAP_USD}) before tax. Applicable tax is added separately.
             </p>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -166,10 +181,12 @@ export default function UsageSpendCard({ refreshKey = 0 }: { refreshKey?: number
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">
-            We email you at 50%, 80%, and 100%. Your Bots pause at your limit, so your bill never
-            goes past it.
+            We email you at 50%, 80%, and 100%. Your Bots pause at your limit.
           </p>
         )}
+        <p className="text-sm text-muted-foreground">
+          Your limit covers BotBound charges before tax. Applicable tax is added separately.
+        </p>
         <div className="flex flex-wrap items-end gap-3">
           <label className="text-sm font-semibold" htmlFor="usage-monthly-cap">
             Monthly limit (USD)
