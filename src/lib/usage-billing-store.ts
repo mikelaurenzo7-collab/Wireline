@@ -133,7 +133,7 @@ export function createUsageStore(
           and(
             eq(usageMeterEvents.userId, userId),
             eq(usageMeterEvents.periodKey, periodKey),
-            sql`${usageMeterEvents.status} IN ('pending', 'reported', 'reconciliation_required')`,
+            sql`${usageMeterEvents.status} IN ('admitted', 'pending', 'reported', 'reconciliation_required')`,
           ),
         )
         .groupBy(usageMeterEvents.meter);
@@ -207,7 +207,7 @@ export function createUsageStore(
         .update(usageMeterEvents)
         .set({
           reportAttempt: attempt,
-          billableQuantity: String(attempt.value),
+          billableQuantity: String(attempt.nativeQuantity),
           updatedAt: new Date(),
         })
         .where(
@@ -289,8 +289,8 @@ export function createStripeMeterClient(): UsageMeterClient {
   return {
     async send(event) {
       const { stripe } = await import("./stripe-helpers");
-      try {
-        await stripe.billing.meterEvents.create({
+      await stripe.billing.meterEvents.create(
+        {
           event_name: event.eventName,
           identifier: event.identifier,
           timestamp: Math.floor(event.timestamp.getTime() / 1000),
@@ -298,13 +298,9 @@ export function createStripeMeterClient(): UsageMeterClient {
             stripe_customer_id: event.stripeCustomerId,
             value: String(event.value),
           },
-        });
-      } catch (error) {
-        // A duplicate identifier means Stripe already has this exact event.
-        const message = error instanceof Error ? error.message : String(error);
-        if (/identifier/i.test(message) && /already/i.test(message)) return;
-        throw error;
-      }
+        },
+        { idempotencyKey: event.identifier },
+      );
     },
   };
 }
@@ -345,20 +341,43 @@ export async function admitVoiceUsage(
   reader: Reader,
   userId: string,
   sourceId: string,
-): Promise<void> {
+  requestedSeconds = 3600,
+): Promise<{ periodKey: string; maxSeconds: number }> {
+  if (!Number.isSafeInteger(requestedSeconds) || requestedSeconds <= 0)
+    throw AppError.badRequest("A valid call duration is required.");
+  // Admission, cap edits and report preparation share one lock. The reservation
+  // remains until definitive settlement; a timeout is not proof of non-delivery.
+  await reader.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`usage-report:${userId}`}))`);
   const key = usageIdempotencyKey("call_minutes", "voice_call", sourceId);
   const [existing] = await reader
-    .select({ status: usageMeterEvents.status })
+    .select({
+      status: usageMeterEvents.status,
+      periodKey: usageMeterEvents.periodKey,
+      quantity: usageMeterEvents.quantity,
+    })
     .from(usageMeterEvents)
     .where(and(eq(usageMeterEvents.userId, userId), eq(usageMeterEvents.idempotencyKey, key)))
     .limit(1);
   if (existing) {
     if (existing.status !== "admitted")
       throw new AppError(409, "VOICE_FUNDING_SETTLED", "This call has already been settled.");
-    return;
+    const maxSeconds = Math.floor(Number(existing.quantity) * 60);
+    if (maxSeconds <= 0)
+      throw AppError.serviceUnavailable("This call's duration reservation needs reconciliation.");
+    return { periodKey: existing.periodKey, maxSeconds };
   }
   const admission = await admitAccountUsage(userId, "call_minutes", reader);
   if (!admission) throw AppError.serviceUnavailable("Call billing could not be confirmed.");
+  const maxSeconds = Math.min(
+    requestedSeconds,
+    Math.floor((admission.maxUnits ?? requestedSeconds / 60) * 60),
+  );
+  if (maxSeconds < 1)
+    throw new AppError(
+      402,
+      "USAGE_SPEND_CAP_REACHED",
+      "Your monthly spending limit cannot fund another call.",
+    );
   await reader
     .insert(usageMeterEvents)
     .values({
@@ -368,11 +387,12 @@ export async function admitVoiceUsage(
       sourceType: "voice_call",
       sourceId,
       idempotencyKey: key,
-      quantity: "0",
+      quantity: String(Math.ceil((maxSeconds / 60) * 10_000) / 10_000),
       status: "admitted",
       occurredAt: new Date(),
     })
     .onConflictDoNothing({ target: usageMeterEvents.idempotencyKey });
+  return { periodKey: admission.periodKey, maxSeconds };
 }
 
 /** First terminal duration wins, even after cancellation, renewal or an emergency pause. */
@@ -380,9 +400,12 @@ export async function settleVoiceUsageReceipt(
   userId: string,
   sourceId: string,
   seconds: number,
-  reader: Reader = drizzle,
+  reader?: Reader,
 ): Promise<boolean> {
   if (!Number.isFinite(seconds) || seconds < 0) throw new Error("Invalid call duration.");
+  if (!reader)
+    return drizzle.transaction((tx) => settleVoiceUsageReceipt(userId, sourceId, seconds, tx));
+  await reader.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`usage-report:${userId}`}))`);
   const key = usageIdempotencyKey("call_minutes", "voice_call", sourceId);
   const [existing] = await reader
     .select({ id: usageMeterEvents.id })
@@ -511,6 +534,8 @@ export async function reportAllPendingUsage(limitAccounts = 200): Promise<{
 }> {
   const totals = { accounts: 0, reported: 0, skipped: 0, failed: 0 };
   await reconcileUsageReceipts();
+  const { reconcileStripeMeterErrors } = await import("./usage-billing-reconciliation");
+  await reconcileStripeMeterErrors();
   const users = await drizzle
     .selectDistinct({ userId: usageMeterEvents.userId })
     .from(usageMeterEvents)

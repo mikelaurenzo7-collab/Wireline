@@ -3,7 +3,7 @@
  * Usage billing Stripe setup. DRY RUN BY DEFAULT: prints every product, meter
  * and price it would create and the env vars to set, and calls nothing.
  *
- * Nothing here runs until Michael approves the rates. Then:
+ * Dry run first; apply only after the authorized offer passes invoice validation:
  *   node scripts/stripe-usage-billing-setup.mjs                    # dry run (default)
  *   STRIPE_SECRET_KEY=sk_test_... node scripts/stripe-usage-billing-setup.mjs --apply
  *   STRIPE_SECRET_KEY=sk_live_... node scripts/stripe-usage-billing-setup.mjs --apply --live --rates-approved
@@ -13,19 +13,25 @@
  * lookup key or meter event name already exists it reuses that object and
  * reports it. It never writes env vars; it prints them for the operator.
  *
- * Rates mirror src/lib/usage-billing-catalog.ts (catalog 2026-10-usage-v1).
- * The included units are a $0 first tier on each graduated metered price, so
+ * Rates mirror src/lib/usage-billing-catalog.ts (catalog 2026-10-usage-v2).
+ * The shared allowance is a $0 first tier on the single weighted meter, so
  * Stripe and the in-app estimator price a period total identically.
  */
 import Stripe from "stripe";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
-export const CATALOG_VERSION = "2026-10-usage-v1";
+export const CATALOG_VERSION = "2026-10-usage-v2";
 export const BOTBOUND_STRIPE_ACCOUNT_ID = "acct_1TkyXL8e6If87QKm";
 
 /** Verify the selected account before creating any billing objects. */
-export async function assertUsageStripeAccount(stripe) {
+export async function assertUsageStripeAccount(stripe, { mode = "live", sandboxAccountId } = {}) {
   const account = await stripe.accounts.retrieve();
-  if (account.id !== BOTBOUND_STRIPE_ACCOUNT_ID) {
+  const expected =
+    mode === "test" && /^acct_[A-Za-z0-9]+$/.test(sandboxAccountId ?? "")
+      ? sandboxAccountId
+      : BOTBOUND_STRIPE_ACCOUNT_ID;
+  if (account.id !== expected) {
     throw new Error(
       `Usage billing setup requires the BotBound Stripe account (${BOTBOUND_STRIPE_ACCOUNT_ID}); the supplied key belongs to another account.`,
     );
@@ -36,12 +42,12 @@ export async function assertUsageStripeAccount(stripe) {
 export const USAGE_STRIPE_PLAN = {
   product: {
     name: "BotBound",
-    description: "As many Bots as you need. Pay only for the work they do.",
+    description: "One monthly plan with a shared work allowance for calls, emails, and Computer.",
     // Plan identity lives on the base price only, so no other item resolves as the plan.
     metadata: { wireline_product: "usage", wireline_catalog_version: CATALOG_VERSION },
   },
   base: {
-    lookup_key: "usage_base_monthly_2026_10_v1",
+    lookup_key: "usage_base_monthly_2026_10_v2",
     nickname: "Monthly base",
     unit_amount: 1900,
     // basePlanByStripePrice resolves the subscription plan from this metadata.
@@ -50,56 +56,30 @@ export const USAGE_STRIPE_PLAN = {
   },
   meters: [
     {
-      key: "call_minutes",
-      display_name: "Call minutes",
-      event_name: "botbound_call_minutes",
-      lookup_key: "usage_call_minutes_2026_10_v1",
+      key: "work",
+      display_name: "Shared work (100 credits = $1)",
+      event_name: "botbound_work_credits_v2",
+      lookup_key: "usage_work_2026_10_v2",
       tiers: [
-        { up_to: 60, unit_amount_decimal: "0" },
-        { up_to: 560, unit_amount_decimal: "25" },
-        { up_to: 2060, unit_amount_decimal: "22" },
-        { up_to: "inf", unit_amount_decimal: "20" },
+        { up_to: 1200, unit_amount_decimal: "0" },
+        { up_to: "inf", unit_amount_decimal: "1" },
       ],
-      priceEnv: "STRIPE_USAGE_CALL_MINUTES_PRICE_ID",
-      eventEnv: "STRIPE_USAGE_CALL_MINUTES_METER_EVENT",
-    },
-    {
-      key: "emails_handled",
-      display_name: "Emails handled",
-      event_name: "botbound_emails_handled",
-      lookup_key: "usage_emails_2026_10_v1",
-      tiers: [
-        { up_to: 100, unit_amount_decimal: "0" },
-        { up_to: "inf", unit_amount_decimal: "2" },
-      ],
-      priceEnv: "STRIPE_USAGE_EMAILS_PRICE_ID",
-      eventEnv: "STRIPE_USAGE_EMAILS_METER_EVENT",
-    },
-    {
-      key: "computer_minutes",
-      display_name: "Computer minutes",
-      event_name: "botbound_computer_minutes",
-      lookup_key: "usage_computer_minutes_2026_10_v1",
-      tiers: [
-        { up_to: 15, unit_amount_decimal: "0" },
-        { up_to: "inf", unit_amount_decimal: "15" },
-      ],
-      priceEnv: "STRIPE_USAGE_COMPUTER_MINUTES_PRICE_ID",
-      eventEnv: "STRIPE_USAGE_COMPUTER_MINUTES_METER_EVENT",
+      priceEnv: "STRIPE_USAGE_WORK_PRICE_ID",
+      eventEnv: "STRIPE_USAGE_WORK_METER_EVENT",
     },
   ],
   addons: [
     {
       key: "number",
       nickname: "BotBound number",
-      lookup_key: "usage_addon_number_2026_10_v1",
+      lookup_key: "usage_addon_number_2026_10_v2",
       unit_amount: 300,
       env: "STRIPE_USAGE_NUMBER_ADDON_PRICE_ID",
     },
     {
       key: "email_address",
       nickname: "BotBound email address",
-      lookup_key: "usage_addon_email_2026_10_v1",
+      lookup_key: "usage_addon_email_2026_10_v2",
       unit_amount: 400,
       env: "STRIPE_USAGE_EMAIL_ADDON_PRICE_ID",
     },
@@ -149,7 +129,7 @@ export function applyGuard({ apply, live, ratesApproved, key }) {
   if (!apply) return { mode: "dry-run" };
   if (!key) throw new Error("--apply needs STRIPE_SECRET_KEY in the operator environment.");
   const isLive = /^(?:sk|rk)_live_/.test(key);
-  const isTest = /^(?:sk|rk)_test_/.test(key);
+  const isTest = /^(?:sk|rk|rkcs)_test_/.test(key);
   if (!isLive && !isTest) throw new Error("STRIPE_SECRET_KEY is not a Stripe secret key.");
   if (isLive && !(live && ratesApproved)) {
     throw new Error("Live mode needs --live and --rates-approved, after the rates are approved.");
@@ -159,8 +139,71 @@ export function applyGuard({ apply, live, ratesApproved, key }) {
 }
 
 async function findPrice(stripe, lookupKey) {
-  const result = await stripe.prices.list({ lookup_keys: [lookupKey], limit: 1 });
+  const result = await stripe.prices.list({
+    lookup_keys: [lookupKey],
+    limit: 1,
+    expand: ["data.tiers"],
+  });
   return result.data[0] ?? null;
+}
+
+/** A lookup key is a name, not proof that the object still matches our rate card. */
+export function validateUsagePrice(price, spec, { productId, meterId } = {}) {
+  const product = typeof price.product === "string" ? price.product : price.product?.id;
+  const expectedMetadata =
+    spec.metadata ??
+    (spec.tiers
+      ? { wireline_usage_meter: spec.key, wireline_catalog_version: CATALOG_VERSION }
+      : { wireline_addon_id: `usage_${spec.key}`, wireline_catalog_version: CATALOG_VERSION });
+  const common =
+    price.active === true &&
+    price.currency === "usd" &&
+    price.type === "recurring" &&
+    price.tax_behavior === "exclusive" &&
+    price.lookup_key === spec.lookup_key &&
+    !price.transform_quantity &&
+    price.recurring?.interval === "month" &&
+    price.recurring?.interval_count === 1 &&
+    (!productId || product === productId) &&
+    Object.entries(expectedMetadata).every(([key, value]) => price.metadata?.[key] === value);
+  const rates = spec.tiers
+    ? price.billing_scheme === "tiered" &&
+      price.tiers_mode === "graduated" &&
+      price.recurring?.usage_type === "metered" &&
+      price.recurring?.meter === meterId &&
+      price.tiers?.length === spec.tiers.length &&
+      spec.tiers.every((tier, i) => {
+        const actual = price.tiers[i];
+        return (
+          (tier.up_to === "inf" ? actual.up_to == null : actual.up_to === tier.up_to) &&
+          Number(actual.unit_amount_decimal ?? actual.unit_amount) ===
+            Number(tier.unit_amount_decimal) &&
+          Number(actual.flat_amount_decimal ?? actual.flat_amount ?? 0) === 0
+        );
+      })
+    : price.billing_scheme === "per_unit" &&
+      price.recurring?.usage_type === "licensed" &&
+      !price.recurring?.meter &&
+      Number(price.unit_amount_decimal ?? price.unit_amount) === spec.unit_amount;
+  if (!common || !rates)
+    throw new Error(
+      `Usage price ${spec.lookup_key} does not match the approved catalog. No automatic repair is allowed.`,
+    );
+}
+
+export function validateUsageMeter(meter, spec) {
+  if (
+    meter.status !== "active" ||
+    meter.event_name !== spec.event_name ||
+    meter.default_aggregation?.formula !== "sum" ||
+    meter.customer_mapping?.type !== "by_id" ||
+    meter.customer_mapping?.event_payload_key !== "stripe_customer_id" ||
+    meter.value_settings?.event_payload_key !== "value" ||
+    meter.event_time_window != null
+  )
+    throw new Error(
+      `Usage meter ${spec.event_name} has incompatible aggregation or payload settings.`,
+    );
 }
 
 async function findMeter(stripe, eventName) {
@@ -170,10 +213,11 @@ async function findMeter(stripe, eventName) {
   return null;
 }
 
-async function apply(stripe, plan) {
+export async function applyUsageCatalog(stripe, plan = USAGE_STRIPE_PLAN) {
   const env = {};
   const created = [];
   const existingBase = await findPrice(stripe, plan.base.lookup_key);
+  if (existingBase) validateUsagePrice(existingBase, plan.base);
   let productId =
     typeof existingBase?.product === "string" ? existingBase.product : existingBase?.product?.id;
   if (!productId) {
@@ -182,6 +226,10 @@ async function apply(stripe, plan) {
     });
     productId = product.id;
     created.push(`product ${product.id}`);
+  } else {
+    const product = await stripe.products.retrieve(productId);
+    if (product.deleted || !product.active || product.metadata?.wireline_product !== "usage")
+      throw new Error("The existing usage product is inactive or belongs to another catalog.");
   }
   const base =
     existingBase ??
@@ -216,7 +264,9 @@ async function apply(stripe, plan) {
       );
       created.push(`meter ${meter.id} (${meterSpec.event_name})`);
     }
+    validateUsageMeter(meter, meterSpec);
     let price = await findPrice(stripe, meterSpec.lookup_key);
+    if (price) validateUsagePrice(price, meterSpec, { productId, meterId: meter.id });
     if (!price) {
       price = await stripe.prices.create(
         {
@@ -245,6 +295,7 @@ async function apply(stripe, plan) {
 
   for (const addon of plan.addons) {
     let price = await findPrice(stripe, addon.lookup_key);
+    if (price) validateUsagePrice(price, addon, { productId });
     if (!price) {
       price = await stripe.prices.create(
         {
@@ -286,8 +337,11 @@ async function main(argv = process.argv.slice(2)) {
     return;
   }
   const stripe = new Stripe(flags.key);
-  await assertUsageStripeAccount(stripe);
-  const result = await apply(stripe, USAGE_STRIPE_PLAN);
+  await assertUsageStripeAccount(stripe, {
+    mode,
+    sandboxAccountId: process.env.STRIPE_USAGE_SANDBOX_ACCOUNT_ID,
+  });
+  const result = await applyUsageCatalog(stripe, USAGE_STRIPE_PLAN);
   console.log(`Mode: ${mode}`);
   console.log(
     result.created.length
@@ -299,7 +353,8 @@ async function main(argv = process.argv.slice(2)) {
   console.log("  USAGE_BILLING_ENABLED=false  # flip to true only at Stage 2");
 }
 
-const invokedDirectly = import.meta.url === `file://${process.argv[1]}`;
+const invokedDirectly =
+  Boolean(process.argv[1]) && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
 if (invokedDirectly) {
   main().catch((error) => {
     console.error(error instanceof Error ? error.message : error);

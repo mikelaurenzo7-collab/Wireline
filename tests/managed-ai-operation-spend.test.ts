@@ -28,6 +28,19 @@ const known = () =>
   recordUsage("gpt-5.6-terra", { usage: { input_tokens: 100, output_tokens: 10 } }, 20);
 
 describe("shared setup spend lifecycle", () => {
+  it("stops metered Computer before a provider call when its processing reserve is exhausted", async () => {
+    const operation = vi.fn();
+    await expect(
+      runWithManagedAiSpend(
+        { ...input, action: "computer.browse", requestMeta: { usage_metered: true }, operation },
+        setup(0),
+      ),
+    ).rejects.toMatchObject({
+      code: "COMPUTER_PROCESSING_LIMIT",
+      statusCode: 402,
+    });
+    expect(operation).not.toHaveBeenCalled();
+  });
   it("admits only the operation that reserved enough remaining allowance during concurrent requests", async () => {
     const deps = setup();
     const provider = vi.fn(async () => {

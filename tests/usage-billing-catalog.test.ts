@@ -3,14 +3,14 @@ import {
   USAGE_ADDONS,
   USAGE_BASE_USD_MONTHLY,
   USAGE_CATALOG_VERSION,
-  USAGE_METERS,
+  USAGE_INCLUDED_WORK_USD,
+  USAGE_WORK_EVENT_NAME,
   USAGE_NEVER_PAY_FOR,
   crossedAlertThresholds,
   estimateUsageBill,
   marginalUnitUsd,
   minimumMonthlyCapUsd,
   priceMeter,
-  type UsageMeterKey,
 } from "../src/lib/usage-billing-catalog";
 import {
   USAGE_BILLING_ENV_VARS,
@@ -37,22 +37,33 @@ import {
 } from "../scripts/stripe-usage-billing-setup.mjs";
 
 describe("usage rate card", () => {
+  it("rounds the pooled invoice once across fractional channels", () => {
+    expect(
+      estimateUsageBill({
+        callMinutes: 48.02,
+        emailsHandled: 0,
+        computerMinutes: 0.025,
+        numbers: 0,
+        emailAddresses: 0,
+      }).totalUsd,
+    ).toBe(19.01);
+  });
   it("prices call minutes with included units, then graduated tiers", () => {
     expect(priceMeter("call_minutes", 0)).toBe(0);
-    expect(priceMeter("call_minutes", 60)).toBe(0);
-    expect(priceMeter("call_minutes", 61)).toBe(0.25);
-    expect(priceMeter("call_minutes", 560)).toBe(125);
-    expect(priceMeter("call_minutes", 2_060)).toBe(125 + 330);
-    expect(priceMeter("call_minutes", 2_061)).toBe(455.2);
+    expect(priceMeter("call_minutes", 60)).toBe(15);
+    expect(priceMeter("call_minutes", 61)).toBe(15.25);
+    expect(priceMeter("call_minutes", 560)).toBe(140);
+    expect(priceMeter("call_minutes", 2_060)).toBe(515);
+    expect(priceMeter("call_minutes", 2_061)).toBe(515.25);
     expect(priceMeter("call_minutes", -5)).toBe(0);
     expect(priceMeter("call_minutes", Number.NaN)).toBe(0);
   });
 
   it("prices emails and computer minutes after their included units", () => {
-    expect(priceMeter("emails_handled", 100)).toBe(0);
-    expect(priceMeter("emails_handled", 300)).toBe(4);
-    expect(priceMeter("computer_minutes", 15)).toBe(0);
-    expect(priceMeter("computer_minutes", 20)).toBe(0.75);
+    expect(priceMeter("emails_handled", 100)).toBe(2);
+    expect(priceMeter("emails_handled", 300)).toBe(6);
+    expect(priceMeter("computer_minutes", 15)).toBe(3);
+    expect(priceMeter("computer_minutes", 20)).toBe(4);
   });
 
   it("reproduces the example bills in the design doc", () => {
@@ -77,24 +88,25 @@ describe("usage rate card", () => {
       numbers: 3,
       emailAddresses: 3,
     });
-    expect(solo.totalUsd).toBe(52);
-    expect(salon.totalUsd).toBe(252.55);
-    expect(multiLocation.totalUsd).toBe(2_136.75);
+    expect(solo.totalUsd).toBe(56.8);
+    expect(salon.totalUsd).toBe(274);
+    expect(multiLocation.totalUsd).toBe(2_592);
     expect(solo.lines.map((line) => line.key)).toEqual([
       "base",
       "call_minutes",
       "emails_handled",
       "computer_minutes",
       "number",
+      "included_work",
     ]);
     expect(salon.fixedUsd).toBe(26);
   });
 
   it("prices the next unit at the tier the period total is in", () => {
-    expect(marginalUnitUsd("call_minutes", 10)).toBe(0);
+    expect(marginalUnitUsd("call_minutes", 10)).toBe(0.25);
     expect(marginalUnitUsd("call_minutes", 60)).toBe(0.25);
-    expect(marginalUnitUsd("call_minutes", 600)).toBe(0.22);
-    expect(marginalUnitUsd("call_minutes", 5_000)).toBe(0.2);
+    expect(marginalUnitUsd("call_minutes", 600)).toBe(0.25);
+    expect(marginalUnitUsd("call_minutes", 5_000)).toBe(0.25);
   });
 
   it("keeps the minimum cap above fixed charges and alerts at 50/80/100", () => {
@@ -103,7 +115,7 @@ describe("usage rate card", () => {
     expect(crossedAlertThresholds(0, 49)).toEqual([]);
     expect(crossedAlertThresholds(0, 85)).toEqual([50, 80]);
     expect(crossedAlertThresholds(80, 100)).toEqual([100]);
-    expect(USAGE_NEVER_PAY_FOR).toEqual(["Bots", "Roles", "Seats", "Summaries"]);
+    expect(USAGE_NEVER_PAY_FOR).toEqual(["Bots", "Roles", "Summaries"]);
   });
 
   it("estimates from the pricing sliders with optional add-ons", () => {
@@ -115,7 +127,7 @@ describe("usage rate card", () => {
         number: true,
         emailAddress: false,
       }).totalUsd,
-    ).toBe(52);
+    ).toBe(55.8);
     expect(
       estimateFromSliders({
         callsPerMonth: 0,
@@ -129,7 +141,7 @@ describe("usage rate card", () => {
 
   it("writes rate lines from the catalog in plain words", () => {
     const copy = USAGE_RATE_LINES.flat().join(" ");
-    expect(copy).toContain("60 included, then $0.25/min");
+    expect(copy).toContain("$0.25/min from your shared work allowance");
     expect(copy).toContain("$3/month, only if your Bots take calls");
     expect(copy).toContain("Gmail and Outlook connect at no extra cost");
     expect(copy).not.toMatch(/free|text|sms|—|wireline/i);
@@ -144,33 +156,24 @@ describe("usage billing flag and payload", () => {
     expect(usageBillingEnabled({ USAGE_BILLING_ENABLED: " TRUE " })).toBe(true);
   });
 
-  it("opens checkout only with the flag and all six offered prices", () => {
+  it("opens checkout only with the flag and all four offered prices", () => {
     const prices = {
       [USAGE_PRICE_ENV.base]: "price_base",
-      [USAGE_PRICE_ENV.call_minutes]: "price_calls",
-      [USAGE_PRICE_ENV.emails_handled]: "price_emails",
-      [USAGE_PRICE_ENV.computer_minutes]: "price_computer",
+      [USAGE_PRICE_ENV.work]: "price_work",
       [USAGE_PRICE_ENV.number]: "price_number",
       [USAGE_PRICE_ENV.email_address]: "price_mailbox",
     };
     expect(usageCheckoutConfigured(prices)).toBe(false);
     expect(usageCheckoutConfigured({ ...prices, USAGE_BILLING_ENABLED: "true" })).toBe(true);
-    const { [USAGE_PRICE_ENV.computer_minutes]: _omitted, ...missingOne } = prices;
+    const { [USAGE_PRICE_ENV.work]: _omitted, ...missingOne } = prices;
     expect(usageCheckoutConfigured({ ...missingOne, USAGE_BILLING_ENABLED: "true" })).toBe(false);
     expect([...usagePriceIds(prices)].sort()).toEqual(
-      [
-        "price_base",
-        "price_calls",
-        "price_computer",
-        "price_emails",
-        "price_number",
-        "price_mailbox",
-      ].sort(),
+      ["price_base", "price_work", "price_number", "price_mailbox"].sort(),
     );
   });
 
   it("defaults meter event names to the catalog and allows an override", () => {
-    expect(usageMeterEventName("call_minutes", {})).toBe("botbound_call_minutes");
+    expect(usageMeterEventName("call_minutes", {})).toBe(USAGE_WORK_EVENT_NAME);
     expect(
       usageMeterEventName("call_minutes", { [USAGE_METER_EVENT_ENV.call_minutes]: "custom" }),
     ).toBe("custom");
@@ -216,24 +219,40 @@ describe("Stripe setup script parity", () => {
     }
   });
 
-  it("encodes included units as a $0 first tier, then the catalog tiers", () => {
-    for (const meter of USAGE_STRIPE_PLAN.meters) {
-      const rate = USAGE_METERS[meter.key as UsageMeterKey];
-      expect(meter.event_name).toBe(rate.defaultEventName);
-      const expected = [
-        { up_to: rate.included, unit_amount_decimal: "0" },
-        ...rate.tiers.map((tier) => ({
-          up_to: tier.upTo === null ? "inf" : rate.included + tier.upTo,
-          unit_amount_decimal: String(Math.round(tier.unitUsd * 100)),
-        })),
-      ];
-      expect(meter.tiers).toEqual(expected);
+  it("grants the shared allowance once through a single Stripe meter", () => {
+    expect(USAGE_STRIPE_PLAN.meters).toHaveLength(1);
+    expect(USAGE_STRIPE_PLAN.meters[0].event_name).toBe(USAGE_WORK_EVENT_NAME);
+    expect(USAGE_STRIPE_PLAN.meters[0].tiers).toEqual([
+      { up_to: USAGE_INCLUDED_WORK_USD * 100, unit_amount_decimal: "0" },
+      { up_to: "inf", unit_amount_decimal: "1" },
+    ]);
+  });
+
+  it("lets any mix consume the same allowance exactly once", () => {
+    const bill = (callMinutes: number, emailsHandled: number, computerMinutes: number) =>
+      estimateUsageBill({
+        callMinutes,
+        emailsHandled,
+        computerMinutes,
+        numbers: 0,
+        emailAddresses: 0,
+      });
+    for (const args of [
+      [48, 0, 0],
+      [0, 600, 0],
+      [0, 0, 60],
+      [24, 100, 20],
+    ]) {
+      expect(bill(...(args as [number, number, number])).totalUsd).toBe(19);
     }
+    expect(bill(48, 600, 60).totalUsd).toBe(43);
+    expect(bill(24, 100, 21).totalUsd).toBe(19.2);
+    expect(bill(0, 0, 0).includedRemainingUsd).toBe(12);
   });
 
   it("prints exactly the env vars the server reads, names only", () => {
     expect([...envVarNames()].sort()).toEqual([...USAGE_BILLING_ENV_VARS].sort());
-    expect(JSON.stringify(plannedObjects())).not.toMatch(/sk_|rk_/);
+    expect(JSON.stringify(plannedObjects())).not.toMatch(/(?:sk|rk)_(?:test|live)_/);
   });
 
   it("dry-runs by default and refuses a live key without approval flags", () => {

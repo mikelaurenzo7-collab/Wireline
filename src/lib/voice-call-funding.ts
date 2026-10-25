@@ -94,7 +94,9 @@ function savedFunding(row: FundingReceipt): VoiceCallFunding {
     typeof planId !== "string" ||
     !planId ||
     typeof periodKey !== "string" ||
-    !/^(?:\d{4}-\d{2}|paid:[A-Za-z0-9_]+:\d{1,16})$/.test(periodKey)
+    !/^(?:\d{4}-\d{2}|paid:[A-Za-z0-9_]+:\d{1,16}|sub_[A-Za-z0-9]+:pe:\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)$/.test(
+      periodKey,
+    )
   ) {
     throw AppError.serviceUnavailable("The call funding receipt could not be verified.");
   }
@@ -205,21 +207,13 @@ export async function reserveVoiceCallFunding(
     // The bounded owner phone test is an operator verification tool, so an owner
     // identity may use it on a legacy capacity plan. It still runs the full funded
     // reservation below; every other legacy plan path is unchanged.
-    if (opts.phoneTest && !ownerAccount)
+    if (opts.phoneTest && !ownerAccount && !isUsagePlanId(plan.id))
       throw new AppError(
         402,
         "VOICE_PLAN_REQUIRED",
         "An active Calls package is required for phone tests.",
       );
-    if (!opts.phoneTest) {
-      // Usage billing: refuse new calls once the owner's monthly limit is spent.
-      // Work already admitted is clamped out of the meter report, never billed past the cap.
-      if (isUsagePlanId(plan.id)) {
-        const { admitVoiceUsage } = await import("./usage-billing-store");
-        await admitVoiceUsage(tx, opts.userId, opts.providerCallId);
-      }
-      return null;
-    }
+    if (!opts.phoneTest && !isUsagePlanId(plan.id)) return null;
   }
 
   // Also covers outbound claims and an earlier call awaiting metering. Unlike
@@ -246,6 +240,71 @@ export async function reserveVoiceCallFunding(
       "VOICE_FUNDING_IN_USE",
       "Another call is active or awaiting settlement. Please try again shortly.",
     );
+  }
+
+  if (isUsagePlanId(plan.id)) {
+    const { admitVoiceUsage } = await import("./usage-billing-store");
+    const admission = await admitVoiceUsage(tx, opts.userId, opts.providerCallId, opts.maxSeconds);
+    const startedAtMs = Date.now();
+    const funding: VoiceCallFunding = {
+      maxSeconds: admission.maxSeconds,
+      prepaidHoldUsd: 0,
+      graceMinutes: 0,
+      startedAtMs,
+      deadlineAtMs: startedAtMs + admission.maxSeconds * 1000,
+      includedMinutes: 0,
+      rateUsd: 0.25,
+      planId: plan.id,
+      periodKey: admission.periodKey,
+      ...(opts.phoneTest ? { phoneTest: true } : {}),
+      ...(opts.outboundPlacement ? { outboundPlacement: true } : {}),
+    };
+    // Reuse the durable call identity/deadline protocol without debiting Runtime
+    // Balance. Carrier and AI phases settle the same usage receipt once.
+    await tx.insert(schema.creditLedger).values({
+      userId: opts.userId,
+      deltaUsd: "0",
+      balanceAfterUsd: String(await balanceUsd(tx, opts.userId)),
+      entryKind: "adjustment",
+      reason: "voice_admission",
+      customerReason: "Usage call duration reserved",
+      refType: "voice_admission",
+      refId: opts.providerCallId,
+      idempotencyKey: admissionKey(opts.providerCallId),
+      source: "voice",
+      providerObjectId: opts.providerCallId,
+      metadata: {
+        funding_version: 1,
+        billing_mode: "usage",
+        plan_id: plan.id,
+        period_key: admission.periodKey,
+        max_seconds: funding.maxSeconds,
+        prepaid_hold_usd: 0,
+        grace_minutes: 0,
+        included_minutes: 0,
+        rate_usd: funding.rateUsd,
+        started_at_ms: startedAtMs,
+        deadline_at_ms: funding.deadlineAtMs,
+        ...(opts.phoneTest
+          ? {
+              phone_test_version: 1,
+              agent_id: opts.phoneTest.agentId,
+              phone_fingerprint: voicePhoneFingerprint(opts.phoneTest.phone),
+              from_fingerprint: voicePhoneFingerprint(opts.phoneTest.from),
+            }
+          : {}),
+        ...(opts.outboundPlacement
+          ? {
+              outbound_placement_version: 1,
+              agent_id: opts.outboundPlacement.agentId,
+              lead_id: opts.outboundPlacement.leadId,
+              phone_fingerprint: voicePhoneFingerprint(opts.outboundPlacement.phone),
+              from_fingerprint: voicePhoneFingerprint(opts.outboundPlacement.from),
+            }
+          : {}),
+      },
+    });
+    return funding;
   }
 
   const balance = await balanceUsd(tx, opts.userId);
@@ -430,6 +489,11 @@ export async function releaseVoiceCallFundingInTransaction(
     )
     .limit(1);
   if (usage) return;
+  if (scope.billing_mode === "usage") {
+    const { settleVoiceUsageReceipt } = await import("./usage-billing-store");
+    if (!(await settleVoiceUsageReceipt(userId, providerCallId, 0, tx)))
+      throw AppError.serviceUnavailable("The usage reservation could not be released.");
+  }
   const { prepaidHoldUsd } = savedFunding(admission);
   const balance = await balanceUsd(tx, userId);
   await tx.insert(schema.creditLedger).values({

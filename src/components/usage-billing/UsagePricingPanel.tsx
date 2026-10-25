@@ -7,6 +7,7 @@ import {
   USAGE_ADDONS,
   USAGE_BASE_USD_MONTHLY,
   USAGE_DEFAULT_MONTHLY_CAP_USD,
+  USAGE_INCLUDED_WORK_USD,
   USAGE_METERS,
   USAGE_NEVER_PAY_FOR,
   estimateUsageBill,
@@ -25,12 +26,15 @@ function usd(value: number): string {
 export const USAGE_RATE_LINES: ReadonlyArray<readonly [string, string]> = [
   [
     "Call minutes",
-    `${CALLS.included} included, then ${usd(CALLS.tiers[0].unitUsd)}/min. ${usd(CALLS.tiers[1].unitUsd)} after ${CALLS.tiers[0].upTo?.toLocaleString("en-US")} more, ${usd(CALLS.tiers[2].unitUsd)} after ${CALLS.tiers[1].upTo?.toLocaleString("en-US")}.`,
+    `${usd(CALLS.tiers[0].unitUsd)}/min from your shared work allowance, billed by the second.`,
   ],
-  ["Emails handled", `${EMAILS.included} included, then ${usd(EMAILS.tiers[0].unitUsd)} each.`],
+  [
+    "Emails handled",
+    `${usd(EMAILS.tiers[0].unitUsd)} per delivered reply from the same allowance.`,
+  ],
   [
     "Computer minutes",
-    `${COMPUTER.included} included, then ${usd(COMPUTER.tiers[0].unitUsd)}/min.`,
+    `${usd(COMPUTER.tiers[0].unitUsd)}/min from the same allowance. Heavy tasks may pause at a processing limit.`,
   ],
   [
     "BotBound number",
@@ -46,6 +50,7 @@ export interface UsageEstimatorInput {
   callsPerMonth: number;
   avgCallMinutes: number;
   emailsPerMonth: number;
+  computerMinutes?: number;
   number: boolean;
   emailAddress: boolean;
 }
@@ -54,7 +59,7 @@ export function estimateFromSliders(input: UsageEstimatorInput) {
   return estimateUsageBill({
     callMinutes: Math.max(0, input.callsPerMonth) * Math.max(0, input.avgCallMinutes),
     emailsHandled: Math.max(0, input.emailsPerMonth),
-    computerMinutes: 0,
+    computerMinutes: Math.max(0, input.computerMinutes ?? 0),
     numbers: input.number ? 1 : 0,
     emailAddresses: input.emailAddress ? 1 : 0,
   });
@@ -137,16 +142,28 @@ export default function UsagePricingPanel() {
   const [callsPerMonth, setCallsPerMonth] = useState(100);
   const [avgCallMinutes, setAvgCallMinutes] = useState(3);
   const [emailsPerMonth, setEmailsPerMonth] = useState(300);
+  const [computerMinutes, setComputerMinutes] = useState(15);
   const [number, setNumber] = useState(true);
   const [emailAddress, setEmailAddress] = useState(false);
   const estimate = useMemo(
     () =>
-      estimateFromSliders({ callsPerMonth, avgCallMinutes, emailsPerMonth, number, emailAddress }),
-    [callsPerMonth, avgCallMinutes, emailsPerMonth, number, emailAddress],
+      estimateFromSliders({
+        callsPerMonth,
+        avgCallMinutes,
+        emailsPerMonth,
+        computerMinutes,
+        number,
+        emailAddress,
+      }),
+    [callsPerMonth, avgCallMinutes, emailsPerMonth, computerMinutes, number, emailAddress],
   );
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
+      <p className="text-center text-sm text-muted-foreground">
+        ${USAGE_BASE_USD_MONTHLY}/month includes ${USAGE_INCLUDED_WORK_USD} of work shared across
+        calls, email and Computer. Use it in any mix. It resets monthly without rollover.
+      </p>
       <article
         aria-label="Monthly estimate"
         className="grid gap-6 rounded-xl border border-border bg-card p-5 md:grid-cols-[1fr_15rem]"
@@ -181,6 +198,16 @@ export default function UsagePricingPanel() {
             step={50}
             suffix="emails"
             onChange={setEmailsPerMonth}
+          />
+          <Slider
+            id="usage-computer"
+            label="Computer time per month"
+            value={computerMinutes}
+            min={0}
+            max={500}
+            step={5}
+            suffix="min"
+            onChange={setComputerMinutes}
           />
           <div className="grid gap-2 sm:grid-cols-2">
             <Toggle
@@ -246,7 +273,7 @@ export default function UsagePricingPanel() {
           ))}
         </ul>
         <p className="mt-3 text-xs text-muted-foreground">
-          Add as many Bots, roles, and teammates as you need. Call and email summaries are included.
+          No per-Bot or role charge. Call and email summaries are included.
         </p>
       </section>
 

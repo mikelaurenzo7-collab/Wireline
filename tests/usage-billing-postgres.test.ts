@@ -30,6 +30,12 @@ import {
   reportPendingUsageForUser,
   USAGE_REPORT_RETRY_WINDOW_MS,
 } from "../src/lib/usage-billing-ledger";
+vi.mock("../src/lib/usage-billing-reconciliation", () => ({ reconcileStripeMeterErrors: vi.fn() }));
+vi.mock("../src/lib/spend-guards", () => ({
+  clearBudgetCache: vi.fn(),
+  recordDailySpend: vi.fn(),
+  evaluateSpend: vi.fn(),
+}));
 
 const connectionString = process.env.USAGE_BILLING_TEST_DATABASE_URL;
 const USER = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -76,6 +82,26 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
         id bigserial PRIMARY KEY, user_id uuid, resource_id text, event_type text,
         metadata jsonb, created_at timestamptz DEFAULT now()
       );
+      ALTER TABLE wireline_audit_log
+        ADD COLUMN IF NOT EXISTS action text,
+        ADD COLUMN IF NOT EXISTS provider text,
+        ADD COLUMN IF NOT EXISTS model text,
+        ADD COLUMN IF NOT EXISTS input_tokens integer DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS output_tokens integer DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS cache_read_tokens integer DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS cache_create_tokens integer DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS cost_usd numeric(12,6) DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS latency_ms integer,
+        ADD COLUMN IF NOT EXISTS severity text DEFAULT 'info',
+        ADD COLUMN IF NOT EXISTS actor_email text,
+        ADD COLUMN IF NOT EXISTS resource_type text,
+        ADD COLUMN IF NOT EXISTS ip_address text,
+        ADD COLUMN IF NOT EXISTS user_agent text,
+        ADD COLUMN IF NOT EXISTS idempotency_key text;
+      CREATE TABLE IF NOT EXISTS wireline_spend_budgets (
+        user_id uuid PRIMARY KEY, monthly_limit_usd numeric(12,2),
+        hard_cap boolean, enabled boolean
+      );
     `);
     for (let replay = 0; replay < 2; replay++) {
       for (const name of ["0187_usage_billing", "0189_usage_billing_periods"])
@@ -89,7 +115,7 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
     vi.stubEnv("USAGE_BILLING_ENABLED", "true");
     await pool.query(`TRUNCATE wireline_usage_meter_events, wireline_usage_spend_controls,
       wireline_usage_billing_periods, wireline_subscriptions, wireline_computer_tasks,
-      wireline_audit_log, wireline_users CASCADE`);
+      wireline_audit_log, wireline_spend_budgets, wireline_users CASCADE`);
     await pool.query("INSERT INTO wireline_users(id) VALUES ($1), ($2)", [USER, OTHER]);
     await pool.query(
       `INSERT INTO wireline_subscriptions VALUES ($1, 'cus_review', 'sub_review', 'usage', 'active', $2)`,
@@ -133,15 +159,15 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
       const result = await pool.query(
         "SELECT report_attempt, billable_quantity FROM wireline_usage_meter_events",
       );
-      expect(result.rows[0].report_attempt.value).toBe(92); // $22 fixed + $8 headroom
-      expect(Number(result.rows[0].billable_quantity)).toBe(92);
+      expect(result.rows[0].report_attempt.value).toBe(2000); // $22 fixed + $8 headroom
+      expect(Number(result.rows[0].billable_quantity)).toBe(80);
       throw new Error("Stripe response lost");
     });
     await reportPendingUsageForUser(createUsageStore(), { send }, USER, NOW);
     await setUsageMonthlyCap(USER, 100);
     const retry = vi.fn().mockResolvedValue(undefined);
     await reportPendingUsageForUser(createUsageStore(), { send: retry }, USER, NOW);
-    expect(retry).toHaveBeenCalledWith(expect.objectContaining({ value: 92 }));
+    expect(retry).toHaveBeenCalledWith(expect.objectContaining({ value: 2000 }));
     expect(
       (await pool.query("SELECT status FROM wireline_usage_meter_events")).rows[0].status,
     ).toBe("reported");
@@ -271,7 +297,68 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
       reportPendingUsageForUser(createUsageStore(), { send }, USER, NOW),
       reportPendingUsageForUser(createUsageStore(), { send }, USER, NOW),
     ]);
-    expect([...accepted.values()].reduce((sum, value) => sum + value, 0)).toBe(92);
+    expect([...accepted.values()].reduce((sum, value) => sum + value, 0)).toBe(2000);
+  });
+
+  it("reserves each admitted call's affordable duration and returns unused headroom on settlement", async () => {
+    await setUsageMonthlyCap(USER, 30);
+    // $22 fixed, 60 included minutes, and $8 at $0.25/minute = 92 minutes.
+    const first = await db.transaction((tx) => admitVoiceUsage(tx, USER, "duration-a", 3600));
+    expect(first.maxSeconds).toBe(3600);
+    const second = await db.transaction((tx) => admitVoiceUsage(tx, USER, "duration-b", 3600));
+    expect(second.maxSeconds).toBe(1200);
+    await expect(
+      db.transaction((tx) => admitVoiceUsage(tx, USER, "duration-c", 60)),
+    ).rejects.toMatchObject({ statusCode: 402 });
+    await settleVoiceUsageReceipt(USER, "duration-a", 60);
+    const next = await db.transaction((tx) => admitVoiceUsage(tx, USER, "duration-c", 3600));
+    expect(next.maxSeconds).toBe(3540);
+  });
+
+  it("freezes asynchronously rejected usage without letting a delayed HTTP success reopen it", async () => {
+    await record("async-rejected", 75);
+    const { holdStripeMeterError } = await vi.importActual<
+      typeof import("../src/lib/usage-billing-reconciliation")
+    >("../src/lib/usage-billing-reconciliation");
+    await reportPendingUsageForUser(
+      createUsageStore(),
+      {
+        send: async (event) => {
+          await holdStripeMeterError(
+            {
+              id: "evt_async",
+              type: "v1.billing.meter.error_report_triggered",
+              data: {
+                reason: {
+                  error_count: 1,
+                  error_types: [
+                    {
+                      code: "invalid_value",
+                      error_count: 1,
+                      sample_errors: [{ request: { identifier: event.identifier } }],
+                    },
+                  ],
+                },
+              },
+            },
+            "botbound_work_credits_v2",
+          );
+        },
+      },
+      USER,
+      NOW,
+    );
+    const row = (
+      await pool.query("SELECT status, billable_quantity FROM wireline_usage_meter_events")
+    ).rows[0];
+    expect(row).toEqual({ status: "reconciliation_required", billable_quantity: "75.0000" });
+    await expect(admitAccountUsage(USER, "emails_handled")).rejects.toMatchObject({
+      statusCode: 503,
+    });
+    expect(
+      (await pool.query("SELECT blocked_reason FROM wireline_usage_billing_periods")).rows[0]
+        .blocked_reason,
+    ).toBe("stripe_meter_error_requires_reconciliation");
   });
 
   it("reserves an unresolved request before an older receipt arrives", async () => {
@@ -298,7 +385,7 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
     expect(send).toHaveBeenCalledWith(
       expect.objectContaining({
         identifier: "usage:call_minutes:voice_call:already-attempted",
-        value: 92,
+        value: 2000,
       }),
     );
     const row = (
@@ -334,5 +421,41 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
     expect(
       (await pool.query("SELECT count(*) FROM wireline_usage_billing_periods")).rows[0].count,
     ).toBe("0");
+  });
+
+  it("serializes wholesale Computer reservations even when the legacy AI cap is disabled", async () => {
+    const { reservePlatformCostRecord } = await import("../src/middleware/audit-middleware");
+    await pool.query("INSERT INTO wireline_spend_budgets VALUES ($1, 9999, false, false)", [USER]);
+    const reserve = (key: string) =>
+      reservePlatformCostRecord({
+        userId: USER,
+        action: "computer.browse",
+        provider: "openai",
+        model: "test",
+        costUsd: 2,
+        idempotencyKey: key,
+        requestMeta: { usage_metered: true },
+      });
+    const results = await Promise.all([reserve("computer-a"), reserve("computer-b")]);
+    expect(results.filter((result) => result.reserved)).toHaveLength(1);
+    expect(results.filter((result) => !result.reserved)).toEqual([
+      expect.objectContaining({ reason: "cap_reached", monthlyLimitUsd: 3 }),
+    ]);
+    const acceptedKey = results[0].reserved ? "computer-a" : "computer-b";
+    expect(await reserve(acceptedKey)).toMatchObject({
+      reserved: true,
+      reservation: { adopted: true },
+    });
+    expect(
+      (await pool.query("SELECT sum(cost_usd) AS total FROM wireline_audit_log")).rows[0].total,
+    ).toBe("2.000000");
+    await pool.query(
+      "UPDATE wireline_usage_billing_periods SET blocked_reason='review' WHERE user_id=$1",
+      [USER],
+    );
+    expect(await reserve("computer-after-hold")).toMatchObject({
+      reserved: false,
+      reason: "unavailable",
+    });
   });
 });

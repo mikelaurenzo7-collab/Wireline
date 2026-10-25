@@ -775,7 +775,7 @@ export function planById(id: string | null | undefined): StripePlan | null {
 }
 
 /**
- * The usage plan (as many Bots as a workspace needs, billed by work done).
+ * The usage plan (no per-Bot charge, shared work allowance and metered extras).
  *
  * Deliberately outside STRIPE_PLANS: package lineups, package economics and the
  * founder Stripe catalog contract stay exactly as they are, while webhooks,

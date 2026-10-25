@@ -14,16 +14,18 @@
  *    the Stripe report, keeping pre-tax BotBound charges within the cap.
  */
 import { AppError } from "./api-error";
+import { createHash } from "node:crypto";
 import { usageMeterEventName } from "./usage-billing-config";
 import {
-  USAGE_METERS,
   USAGE_MAX_MONTHLY_CAP_USD,
   crossedAlertThresholds,
   fixedMonthlyUsd,
   marginalUnitUsd,
   minimumMonthlyCapUsd,
-  priceMeter,
-  priceMeterExact,
+  pooledWorkUsd,
+  pooledOverageUsd,
+  workCredits,
+  USAGE_INCLUDED_WORK_USD,
   type UsageMeterKey,
 } from "./usage-billing-catalog";
 
@@ -59,6 +61,8 @@ export interface UsageReportAttempt {
   eventName: string;
   stripeCustomerId: string;
   value: number;
+  /** Native minutes/email count; value is the weighted shared-pool credit amount. */
+  nativeQuantity: number;
   identifier: string;
   timestamp: string;
   preparedAt: string;
@@ -139,6 +143,11 @@ export function usageIdempotencyKey(
   return `usage:${meter}:${type}:${id}`;
 }
 
+/** Stripe identifiers are limited to 100 characters; source receipts can be longer. */
+export function stripeUsageIdentifier(key: string): string {
+  return key.length <= 100 ? key : `usage:sha256:${createHash("sha256").update(key).digest("hex")}`;
+}
+
 function round4(value: number): number {
   return Math.floor(value * 10_000) / 10_000;
 }
@@ -151,10 +160,7 @@ function cents(value: number): number {
 export function periodSpendUsd(control: UsageSpendControl, totals: MeterTotals): number {
   return cents(
     fixedMonthlyUsd({ numbers: control.numbers, emailAddresses: control.emailAddresses }) +
-      (Object.keys(USAGE_METERS) as UsageMeterKey[]).reduce(
-        (sum, meter) => sum + priceMeter(meter, totals[meter]),
-        0,
-      ),
+      pooledOverageUsd(totals),
   );
 }
 
@@ -167,14 +173,17 @@ export function clampBillableQuantity(
   alreadyBilled: number,
   quantity: number,
   headroomUsd: number,
+  totals: MeterTotals = { ...emptyMeterTotals(), [meter]: alreadyBilled },
 ): number {
   if (!(quantity > 0)) return 0;
   const incremental = (q: number) =>
-    priceMeterExact(meter, alreadyBilled + q) - priceMeterExact(meter, alreadyBilled);
+    pooledOverageUsd({ ...totals, [meter]: alreadyBilled + q }) - pooledOverageUsd(totals);
   if (incremental(quantity) <= headroomUsd + 1e-9) return round4(quantity);
   if (headroomUsd <= 0) {
     // Units still inside the included bucket cost nothing and never breach a cap.
-    const freeUnits = Math.max(0, USAGE_METERS[meter].included - alreadyBilled);
+    const freeUnits =
+      Math.max(0, USAGE_INCLUDED_WORK_USD - pooledWorkUsd(totals)) /
+      marginalUnitUsd(meter, alreadyBilled);
     return round4(Math.min(quantity, freeUnits));
   }
   let low = 0;
@@ -211,6 +220,9 @@ export interface UsageSpendState {
   pct: number;
   atCap: boolean;
   headroomUsd: number;
+  reconciliationRequired: boolean;
+  includedRemainingUsd: number;
+  workUsd: number;
 }
 
 export async function usageSpendState(store: UsageStore, userId: string): Promise<UsageSpendState> {
@@ -233,6 +245,9 @@ export async function usageSpendState(store: UsageStore, userId: string): Promis
     pct,
     atCap: spentUsd >= control.capUsd,
     headroomUsd: cents(Math.max(0, control.capUsd - spentUsd)),
+    workUsd: cents(pooledWorkUsd(totals)),
+    includedRemainingUsd: cents(Math.max(0, USAGE_INCLUDED_WORK_USD - pooledWorkUsd(totals))),
+    reconciliationRequired: Boolean(control.blockedReason),
   };
 }
 
@@ -287,10 +302,10 @@ export async function admitUsage(
   const state = await usageSpendState(store, userId);
   if (state.atCap) throw new UsageSpendCapReachedError();
   const totals = await store.recordedTotals(userId, state.periodKey);
-  const includedLeft = Math.max(0, USAGE_METERS[meter].included - totals[meter]);
+  const rate = marginalUnitUsd(meter, totals[meter]);
+  const includedLeft = Math.max(0, USAGE_INCLUDED_WORK_USD - pooledWorkUsd(totals)) / rate;
   // Price the first paid unit, not the current one: inside the included bucket
   // the current unit costs nothing, which must not read as unbounded headroom.
-  const rate = marginalUnitUsd(meter, Math.max(totals[meter], USAGE_METERS[meter].included));
   const maxUnits = rate > 0 ? includedLeft + state.headroomUsd / rate : null;
   return { maxUnits, state };
 }
@@ -354,6 +369,12 @@ export async function reportPendingUsageForUser(
         hold = "older_than_meter_window";
       else if (
         event.reportAttempt &&
+        (!Number.isFinite(event.reportAttempt.nativeQuantity) ||
+          event.reportAttempt.eventName !== usageMeterEventName(event.meter))
+      )
+        hold = "report_catalog_requires_reconciliation";
+      else if (
+        event.reportAttempt &&
         now.getTime() - new Date(event.reportAttempt.preparedAt).getTime() >=
           USAGE_REPORT_RETRY_WINDOW_MS
       )
@@ -371,6 +392,7 @@ export async function reportPendingUsageForUser(
         totals[event.meter],
         event.quantity,
         control.capUsd - periodSpendUsd(control, totals),
+        totals,
       );
       if (billable <= 0) {
         await locked.markSkipped(event.id, "spend_cap");
@@ -380,8 +402,9 @@ export async function reportPendingUsageForUser(
         meter: event.meter,
         eventName: usageMeterEventName(event.meter),
         stripeCustomerId: control.stripeCustomerId,
-        value: billable,
-        identifier: event.idempotencyKey,
+        value: workCredits(event.meter, billable),
+        nativeQuantity: billable,
+        identifier: stripeUsageIdentifier(event.idempotencyKey),
         timestamp: event.occurredAt.toISOString(),
         preparedAt: now.toISOString(),
       };
@@ -413,7 +436,7 @@ export async function reportPendingUsageForUser(
       // Stop this account's batch so later events never jump ahead of the cap math.
       break;
     }
-    await store.markReported(event.id, attempt.value);
+    await store.markReported(event.id, attempt.nativeQuantity);
     result.reported += 1;
   }
   return result;

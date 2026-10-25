@@ -2,7 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getTableName } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 
-const h = vi.hoisted(() => ({ db: null as any }));
+const h = vi.hoisted(() => ({ db: null as any, admitUsage: vi.fn(), settleUsage: vi.fn() }));
+vi.mock("../src/lib/usage-billing-store", () => ({
+  admitVoiceUsage: h.admitUsage,
+  settleVoiceUsageReceipt: h.settleUsage,
+}));
 vi.mock("../src/lib/server-context", () => ({
   get drizzle() {
     return h.db;
@@ -189,6 +193,62 @@ function database(
 }
 
 afterEach(() => vi.useRealTimers());
+
+describe("usage plan call funding", () => {
+  beforeEach(() => {
+    h.admitUsage
+      .mockReset()
+      .mockResolvedValue({ periodKey: "sub_usage:pe:2026-11-25T00:00:00.000Z", maxSeconds: 73 });
+    h.settleUsage.mockReset().mockResolvedValue(true);
+  });
+  it("funds a customer's self-phone test without prepaid balance and preserves its bounded deadline on replay", async () => {
+    const data = database({ plan: "usage", balance: 0 });
+    const request = {
+      ...call(),
+      maxSeconds: 120,
+      phoneTest: { agentId: "owned", phone: "+13125550123", from: "+13125550124" },
+    };
+    const first = await data.db.transaction((tx) => reserveVoiceCallFunding(tx, request));
+    const replay = await data.db.transaction((tx) => reserveVoiceCallFunding(tx, request));
+    expect(first).toEqual(replay);
+    expect(first).toMatchObject({
+      maxSeconds: 73,
+      phoneTest: true,
+      prepaidHoldUsd: 0,
+      graceMinutes: 0,
+    });
+    expect(first!.deadlineAtMs - first!.startedAtMs).toBe(73_000);
+    expect(h.admitUsage).toHaveBeenCalledTimes(1);
+    expect(data.balance()).toBe(0);
+  });
+  it("retains one call's reservation until settlement and returns it only after definitive failure", async () => {
+    const data = database({ plan: "usage" });
+    await data.reserve();
+    await expect(data.reserve(call("openai:other"))).rejects.toThrow("Another call");
+    await releaseVoiceCallFunding(userId, "openai:first");
+    expect(h.settleUsage).toHaveBeenCalledWith(userId, "openai:first", 0, expect.anything());
+    expect(data.balance()).toBe(0);
+    await expect(data.reserve(call("openai:other"))).resolves.toMatchObject({ maxSeconds: 73 });
+  });
+  it("does not charge the prepaid wallet when usage metering owns the completed call", async () => {
+    const data = database({ plan: "usage", balance: 12 });
+    await data.reserve();
+    await settleVoiceCallFunding({
+      userId,
+      providerCallId: "openai:first",
+      costUsd: 5,
+      billableMinutes: 20,
+      rateUsd: 0.25,
+    });
+    expect(data.balance()).toBe(12);
+  });
+  it("fails before admission if the usage cap cannot fund the requested work", async () => {
+    const data = database({ plan: "usage" });
+    h.admitUsage.mockRejectedValueOnce(new Error("Monthly cap reached"));
+    await expect(data.reserve()).rejects.toThrow("Monthly cap reached");
+    expect(data.rows).toEqual([]);
+  });
+});
 
 describe("self-phone-test canonical funding", () => {
   const id = "12345678-1234-4234-8234-123456789012";

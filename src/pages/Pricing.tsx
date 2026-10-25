@@ -82,16 +82,16 @@ function UsagePricing() {
   return (
     <MarketingPageFrame className="wl-pricing-page">
       <PageMeta
-        title="Pricing | As Many Bots as You Need | BotBound"
-        description="Unlimited Bots. Pay only for the calls, emails, and computer time they use, up to a monthly limit you set."
+        title="Pricing | Shared Work Allowance | BotBound"
+        description="One monthly plan with a shared allowance for calls, emails, and Computer. Set a spending limit for extra work."
         path="/pricing"
       />
       <section id="plans" className="marketing-section marketing-section--screen">
         <div className="wl-public-rail mx-auto max-w-5xl">
           <div className="mx-auto mb-6 max-w-3xl text-center">
-            <h1 className="marketing-hero-title mx-auto">Pay Only for the Work Your Bots Do.</h1>
+            <h1 className="marketing-hero-title mx-auto">One Plan. One Shared Work Allowance.</h1>
             <p className="marketing-hero-lead mx-auto mt-4">
-              As many Bots as you need. Move the sliders to see your monthly bill.
+              No per-Bot charge. Move the sliders to see your monthly bill.
             </p>
           </div>
           <UsagePricingPanel />

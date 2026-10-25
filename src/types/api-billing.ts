@@ -113,6 +113,9 @@ export type UsageSpendResponse =
       pct: number;
       at_cap: boolean;
       headroom_usd: number;
+      reconciliation_required?: boolean;
+      included_remaining_usd?: number;
+      work_usd?: number;
       max_cap_usd: number;
     };
 

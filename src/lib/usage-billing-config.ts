@@ -5,7 +5,11 @@
  * Receipts and reports for work already admitted continue settling after a
  * pause. Apply the usage migrations before deploying even with enrollment off.
  */
-import { USAGE_METERS, type UsageAddonKey, type UsageMeterKey } from "./usage-billing-catalog";
+import {
+  USAGE_WORK_EVENT_NAME,
+  type UsageAddonKey,
+  type UsageMeterKey,
+} from "./usage-billing-catalog";
 
 export const USAGE_BILLING_FLAG = "USAGE_BILLING_ENABLED";
 
@@ -15,24 +19,22 @@ export function usageBillingEnabled(env: NodeJS.ProcessEnv = process.env): boole
 
 export const USAGE_PRICE_ENV = {
   base: "STRIPE_USAGE_BASE_PRICE_ID",
-  call_minutes: "STRIPE_USAGE_CALL_MINUTES_PRICE_ID",
-  emails_handled: "STRIPE_USAGE_EMAILS_PRICE_ID",
-  computer_minutes: "STRIPE_USAGE_COMPUTER_MINUTES_PRICE_ID",
+  work: "STRIPE_USAGE_WORK_PRICE_ID",
   number: "STRIPE_USAGE_NUMBER_ADDON_PRICE_ID",
   email_address: "STRIPE_USAGE_EMAIL_ADDON_PRICE_ID",
-} as const satisfies Record<"base" | UsageMeterKey | UsageAddonKey, string>;
+} as const satisfies Record<"base" | "work" | UsageAddonKey, string>;
 
 export const USAGE_METER_EVENT_ENV: Record<UsageMeterKey, string> = {
-  call_minutes: "STRIPE_USAGE_CALL_MINUTES_METER_EVENT",
-  emails_handled: "STRIPE_USAGE_EMAILS_METER_EVENT",
-  computer_minutes: "STRIPE_USAGE_COMPUTER_MINUTES_METER_EVENT",
+  call_minutes: "STRIPE_USAGE_WORK_METER_EVENT",
+  emails_handled: "STRIPE_USAGE_WORK_METER_EVENT",
+  computer_minutes: "STRIPE_USAGE_WORK_METER_EVENT",
 };
 
 /** Every env var the usage path needs, names only. */
 export const USAGE_BILLING_ENV_VARS = [
   USAGE_BILLING_FLAG,
   ...Object.values(USAGE_PRICE_ENV),
-  ...Object.values(USAGE_METER_EVENT_ENV),
+  ...new Set(Object.values(USAGE_METER_EVENT_ENV)),
 ] as const;
 
 export function usagePriceId(
@@ -46,7 +48,7 @@ export function usageMeterEventName(
   key: UsageMeterKey,
   env: NodeJS.ProcessEnv = process.env,
 ): string {
-  return env[USAGE_METER_EVENT_ENV[key]]?.trim() || USAGE_METERS[key].defaultEventName;
+  return env[USAGE_METER_EVENT_ENV[key]]?.trim() || USAGE_WORK_EVENT_NAME;
 }
 
 /** Every price offered by the public form must exist before checkout opens. */
@@ -55,9 +57,7 @@ export function usageCheckoutConfigured(env: NodeJS.ProcessEnv = process.env): b
     usageBillingEnabled(env) &&
     Boolean(
       usagePriceId("base", env) &&
-      usagePriceId("call_minutes", env) &&
-      usagePriceId("emails_handled", env) &&
-      usagePriceId("computer_minutes", env) &&
+      usagePriceId("work", env) &&
       usagePriceId("number", env) &&
       usagePriceId("email_address", env),
     )

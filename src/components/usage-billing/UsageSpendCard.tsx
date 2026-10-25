@@ -8,6 +8,7 @@ import {
   USAGE_ADDONS,
   USAGE_BASE_USD_MONTHLY,
   USAGE_DEFAULT_MONTHLY_CAP_USD,
+  USAGE_INCLUDED_WORK_USD,
   formatUsdCents,
 } from "../../lib/usage-billing-catalog";
 import type { UsageSpendResponse } from "../../types/api-billing";
@@ -121,10 +122,11 @@ export default function UsageSpendCard({ refreshKey = 0 }: { refreshKey?: number
       <section className="mt-6" aria-label="Pay for what you use">
         <article className="wl-paper wl-paper-elevated space-y-4 p-5 sm:p-6">
           <div>
-            <h2 className="text-base font-semibold">As Many Bots as You Need</h2>
+            <h2 className="text-base font-semibold">Your Shared Work Allowance</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              ${USAGE_BASE_USD_MONTHLY}/month with usage included. Pay only for the calls, emails,
-              and computer time your Bots use, up to a monthly limit you set (default $
+              ${USAGE_BASE_USD_MONTHLY}/month includes ${USAGE_INCLUDED_WORK_USD} of work shared
+              across calls, email and Computer. Your allowance resets monthly without rollover.
+              Extra work stays within a monthly limit you set (default $
               {USAGE_DEFAULT_MONTHLY_CAP_USD}) before tax. Applicable tax is added separately.
             </p>
           </div>
@@ -174,7 +176,11 @@ export default function UsageSpendCard({ refreshKey = 0 }: { refreshKey?: number
         >
           <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
         </div>
-        {state.at_cap ? (
+        {state.reconciliation_required ? (
+          <p role="status" className="text-sm font-semibold">
+            New work is paused while we verify your usage charges. Contact support for an update.
+          </p>
+        ) : state.at_cap ? (
           <p role="status" className="text-sm font-semibold">
             Your Bots are paused for new calls, emails, and computer tasks until you raise your
             limit or the next period starts.
@@ -185,7 +191,13 @@ export default function UsageSpendCard({ refreshKey = 0 }: { refreshKey?: number
           </p>
         )}
         <p className="text-sm text-muted-foreground">
-          Your limit covers BotBound charges before tax. Applicable tax is added separately.
+          {formatUsdCents(state.included_remaining_usd ?? 0)} of your ${USAGE_INCLUDED_WORK_USD}{" "}
+          shared work allowance remains. Calls, email and Computer use the same pool. It resets
+          monthly without rollover. Heavy Computer tasks may reach a separate processing limit.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Your limit covers BotBound charges before tax. Applicable tax is added separately. Active
+          calls reserve time under your limit. Unused time is released when the call ends.
         </p>
         <div className="flex flex-wrap items-end gap-3">
           <label className="text-sm font-semibold" htmlFor="usage-monthly-cap">
@@ -202,7 +214,12 @@ export default function UsageSpendCard({ refreshKey = 0 }: { refreshKey?: number
               className="mt-1 block min-h-11 w-40 rounded-lg border border-border bg-background px-3 text-sm"
             />
           </label>
-          <Button type="button" variant="secondary" disabled={busy} onClick={() => void saveCap()}>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={busy || state.reconciliation_required}
+            onClick={() => void saveCap()}
+          >
             Save Limit
           </Button>
         </div>

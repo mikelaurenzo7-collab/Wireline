@@ -525,12 +525,18 @@ describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)
     const button = await original.locator("#blocked-popup").boundingBox();
     expect(button).toBeTruthy();
     const before = session.blockedRequests;
+    const popupAnnounced = original.waitForEvent("popup");
     await session
       .executeOwnerInput({ kind: "click", x: button!.x + 3, y: button!.y + 3 })
       .catch(() => undefined);
+    // A rejected popup can be announced after the input promise settles.
+    // Finish its lifecycle before later tests reuse this browser session.
+    const rejectedPopup = await popupAnnounced;
+    session.cancelCurrentInput();
     expect(session.blockedRequests).toBeGreaterThan(before);
     expect(probeHits).toBe(0);
     expect(session.ownerTabs().every((tab) => !tab.label.includes("127.0.0.1"))).toBe(true);
+    await rejectedPopup.close();
     for (const tab of session.ownerTabs()) {
       if (tab.id === originalId) continue;
       await session.executeOwnerInput({ kind: "switch_tab", tabId: originalId });
@@ -624,7 +630,7 @@ describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)
     const navigation = await session.execute("left_click", {
       target: { type: "coordinate", x: pricing!.x + 3, y: pricing!.y + 3 },
     });
-    expect(navigation.ok).toBe(true);
+    expect(navigation.ok, JSON.stringify(navigation)).toBe(true);
     expect(navigation.ownerCheckpoint).toBeUndefined();
     expect(await page.locator("body").getAttribute("data-nav")).toBe("yes");
     await session.executeOwnerInput({ kind: "click", x: send!.x + 3, y: send!.y + 3 });

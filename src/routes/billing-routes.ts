@@ -537,6 +537,9 @@ router.get(
       pct: state.pct,
       at_cap: state.atCap,
       headroom_usd: state.headroomUsd,
+      reconciliation_required: state.reconciliationRequired,
+      included_remaining_usd: state.includedRemainingUsd,
+      work_usd: state.workUsd,
       max_cap_usd: USAGE_MAX_MONTHLY_CAP_USD,
     });
   },

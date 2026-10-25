@@ -230,7 +230,11 @@ export class ElevenLabsMediaSession extends EventEmitter {
       // Speak complete clauses as they arrive; bound long unpunctuated replies.
       let end: number;
       while ((end = this.text.search(/[.!?;:\n](?:\s|$)/u)) >= 0 || this.text.length >= 240) {
-        const length = end >= 0 ? end + 1 : Math.max(1, this.text.lastIndexOf(" ", 240));
+        // Punctuation can be much later than the limit, and a long word may
+        // have no spaces. Neither case should create an unbounded request or
+        // hundreds of one-character provider calls.
+        const wordBoundary = this.text.lastIndexOf(" ", 240);
+        const length = end >= 0 && end < 240 ? end + 1 : wordBoundary > 0 ? wordBoundary : 240;
         const chunk = this.text.slice(0, length);
         this.text = this.text.slice(length);
         this.enqueueSpeech(chunk);

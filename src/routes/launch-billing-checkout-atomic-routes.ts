@@ -35,6 +35,7 @@ import { fulfillStripeCheckoutSession } from "../lib/stripe-checkout-fulfillment
 import { resolveStrictFounderPriceId } from "../lib/stripe-founder-price";
 import { resolveOwnedStripeCustomer } from "../lib/stripe-customer-binding";
 import { findPotentiallyLiveStripeSubscription } from "../lib/stripe-subscription-safety";
+import { validateUsageCheckoutCatalog } from "../lib/usage-stripe-validation";
 
 const router = Router();
 
@@ -64,9 +65,7 @@ export function usageCheckoutLineItems(
   };
   const items: Stripe.Checkout.SessionCreateParams.LineItem[] = [
     { price: required("base"), quantity: 1 },
-    { price: required("call_minutes") },
-    { price: required("emails_handled") },
-    { price: required("computer_minutes") },
+    { price: required("work") },
   ];
   if (addons.numbers > 0) items.push({ price: required("number"), quantity: addons.numbers });
   if (addons.emailAddresses > 0) {
@@ -341,6 +340,16 @@ router.post(
       });
     }
 
+    if (usageCheckout) {
+      try {
+        await validateUsageCheckoutCatalog(stripe);
+      } catch {
+        log.error("Usage checkout refused: Stripe catalog validation failed");
+        throw AppError.serviceUnavailable(
+          "Usage billing configuration is being verified. Please try again later.",
+        );
+      }
+    }
     const lineItems = usageCheckout
       ? usageCheckoutLineItems(usageAddons)
       : [{ price: priceId, quantity: 1 }];

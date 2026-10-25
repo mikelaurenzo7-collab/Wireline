@@ -210,7 +210,7 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
           status: 409,
           body: {
             code: "EXTRA_BOTS_NOT_NEEDED",
-            error: "Your plan already includes as many Bots as you need.",
+            error: "Your plan already includes Bots without a per-Bot charge.",
           },
         };
       }

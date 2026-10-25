@@ -1,7 +1,7 @@
 /**
  * Usage billing rate card (client-safe, no env or server imports).
  *
- * One public plan: as many Bots, roles and seats as a business needs, a small
+ * One public plan: no per-Bot or role charge, a small
  * monthly base with included work, and metered call minutes, emails handled and
  * cloud computer minutes. A BotBound number and a BotBound email address are
  * optional flat add-ons, provisioned and billed only when the owner chooses one.
@@ -12,7 +12,11 @@
  */
 
 export const USAGE_PLAN_ID = "usage" as const;
-export const USAGE_CATALOG_VERSION = "2026-10-usage-v1" as const;
+export const USAGE_CATALOG_VERSION = "2026-10-usage-v2" as const;
+/** One allowance across all three kinds of work. Resets each subscription month. */
+export const USAGE_INCLUDED_WORK_USD = 12;
+/** Stripe meters cents of work; native quantities remain in the local ledger. */
+export const USAGE_WORK_EVENT_NAME = "botbound_work_credits_v2";
 
 export type UsageMeterKey = "call_minutes" | "emails_handled" | "computer_minutes";
 export type UsageAddonKey = "number" | "email_address";
@@ -41,29 +45,25 @@ export const USAGE_METERS: Record<UsageMeterKey, UsageMeterRate> = {
     key: "call_minutes",
     label: "Call minutes",
     unitLabel: "minute",
-    included: 60,
-    tiers: [
-      { upTo: 500, unitUsd: 0.25 },
-      { upTo: 2_000, unitUsd: 0.22 },
-      { upTo: null, unitUsd: 0.2 },
-    ],
-    defaultEventName: "botbound_call_minutes",
+    included: 0,
+    tiers: [{ upTo: null, unitUsd: 0.25 }],
+    defaultEventName: USAGE_WORK_EVENT_NAME,
   },
   emails_handled: {
     key: "emails_handled",
     label: "Emails handled",
     unitLabel: "email",
-    included: 100,
+    included: 0,
     tiers: [{ upTo: null, unitUsd: 0.02 }],
-    defaultEventName: "botbound_emails_handled",
+    defaultEventName: USAGE_WORK_EVENT_NAME,
   },
   computer_minutes: {
     key: "computer_minutes",
     label: "Computer minutes",
     unitLabel: "minute",
-    included: 15,
-    tiers: [{ upTo: null, unitUsd: 0.15 }],
-    defaultEventName: "botbound_computer_minutes",
+    included: 0,
+    tiers: [{ upTo: null, unitUsd: 0.2 }],
+    defaultEventName: USAGE_WORK_EVENT_NAME,
   },
 };
 
@@ -83,7 +83,7 @@ export const USAGE_MIN_CAP_HEADROOM_USD = 5;
 export const USAGE_MAX_MONTHLY_CAP_USD = 25_000;
 
 /** What every account gets without a meter. */
-export const USAGE_NEVER_PAY_FOR = ["Bots", "Roles", "Seats", "Summaries"] as const;
+export const USAGE_NEVER_PAY_FOR = ["Bots", "Roles", "Summaries"] as const;
 
 export interface UsageQuantities {
   callMinutes: number;
@@ -94,7 +94,7 @@ export interface UsageQuantities {
 }
 
 export interface UsageBillLine {
-  key: UsageMeterKey | UsageAddonKey | "base";
+  key: UsageMeterKey | UsageAddonKey | "base" | "included_work";
   label: string;
   quantity: number;
   amountUsd: number;
@@ -104,6 +104,9 @@ export interface UsageBillEstimate {
   totalUsd: number;
   fixedUsd: number;
   meteredUsd: number;
+  workUsd: number;
+  includedUsedUsd: number;
+  includedRemainingUsd: number;
   lines: UsageBillLine[];
 }
 
@@ -115,7 +118,7 @@ function safeQuantity(value: number): number {
   return Number.isFinite(value) && value > 0 ? value : 0;
 }
 
-/** Price one meter's period total (included units first, then graduated tiers). */
+/** Gross work value before the shared allowance, never a separate free bucket. */
 export function priceMeter(key: UsageMeterKey, periodQuantity: number): number {
   return cents(priceMeterExact(key, periodQuantity));
 }
@@ -135,6 +138,21 @@ export function priceMeterExact(key: UsageMeterKey, periodQuantity: number): num
     if (tier.upTo !== null) previousBound = tier.upTo;
   }
   return total;
+}
+
+export function pooledWorkUsd(totals: Record<UsageMeterKey, number>): number {
+  return (Object.keys(USAGE_METERS) as UsageMeterKey[]).reduce(
+    (sum, key) => sum + priceMeterExact(key, totals[key]),
+    0,
+  );
+}
+
+export function pooledOverageUsd(totals: Record<UsageMeterKey, number>): number {
+  return Math.max(0, pooledWorkUsd(totals) - USAGE_INCLUDED_WORK_USD);
+}
+
+export function workCredits(key: UsageMeterKey, quantity: number): number {
+  return Math.round(priceMeterExact(key, quantity) * 100 * 10_000) / 10_000;
 }
 
 /** Fixed monthly charges: base plus chosen add-ons. */
@@ -196,10 +214,32 @@ export function estimateUsageBill(input: UsageQuantities): UsageBillEstimate {
     });
   }
   const fixedUsd = fixedMonthlyUsd({ numbers, emailAddresses });
-  const meteredUsd = cents(
-    lines.filter((line) => line.key in USAGE_METERS).reduce((sum, line) => sum + line.amountUsd, 0),
+  // Stripe rounds the single shared meter once. Rounding each channel first
+  // can add a cent when two fractional channels each contribute half a cent.
+  const workUsd = cents(
+    pooledWorkUsd({
+      call_minutes: safeQuantity(input.callMinutes),
+      emails_handled: safeQuantity(input.emailsHandled),
+      computer_minutes: safeQuantity(input.computerMinutes),
+    }),
   );
-  return { totalUsd: cents(fixedUsd + meteredUsd), fixedUsd, meteredUsd, lines };
+  const includedUsedUsd = Math.min(USAGE_INCLUDED_WORK_USD, workUsd);
+  const meteredUsd = cents(Math.max(0, workUsd - USAGE_INCLUDED_WORK_USD));
+  lines.push({
+    key: "included_work",
+    label: "Shared work allowance",
+    quantity: 1,
+    amountUsd: -includedUsedUsd,
+  });
+  return {
+    totalUsd: cents(fixedUsd + meteredUsd),
+    fixedUsd,
+    meteredUsd,
+    workUsd,
+    includedUsedUsd,
+    includedRemainingUsd: cents(USAGE_INCLUDED_WORK_USD - includedUsedUsd),
+    lines,
+  };
 }
 
 /** Marginal price of the next unit at a period total, used for cap headroom. */

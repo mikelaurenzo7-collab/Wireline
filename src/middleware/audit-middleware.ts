@@ -503,12 +503,22 @@ export async function reservePlatformCostRecord(opts: {
       }
 
       const reservedAt = new Date();
+      const usageWindow =
+        meter === "usage_metered"
+          ? await (
+              await import("../lib/usage-provider-cost-guard")
+            ).usageComputerCostWindow(tx, opts.userId, reservedAt)
+          : null;
+      if (meter === "usage_metered" && !usageWindow)
+        return { reserved: false, reason: "unavailable" } as const;
       const window =
-        meter === "managed_ai"
+        usageWindow ??
+        (meter === "managed_ai"
           ? await resolveAllowanceWindow(tx, opts.userId, reservedAt)
-          : calendarAllowanceWindow(reservedAt);
-      const monthlyLimitUsd = Number(budget.monthlyLimitUsd || 0);
-      const hardCapEnabled = budget.enabled !== false && budget.hardCap === true;
+          : calendarAllowanceWindow(reservedAt));
+      const monthlyLimitUsd = usageWindow?.limitUsd ?? Number(budget.monthlyLimitUsd || 0);
+      const hardCapEnabled =
+        meter === "usage_metered" || (budget.enabled !== false && budget.hardCap === true);
       if (meter === "managed_ai" && hardCapEnabled && !(monthlyLimitUsd > 0)) {
         return { reserved: false, reason: "unavailable" } as const;
       }
@@ -523,12 +533,14 @@ export async function reservePlatformCostRecord(opts: {
             eq(schema.auditLog.userId, opts.userId),
             gte(schema.auditLog.createdAt, window.start),
             lt(schema.auditLog.createdAt, window.end),
-            managedAiSpendPredicate(),
+            meter === "usage_metered"
+              ? sql`${schema.auditLog.action} IN ('computer.browse', 'computer.browser') AND ${schema.auditLog.metadata}->>'usage_metered' = 'true'`
+              : managedAiSpendPredicate(),
           ),
         );
       const monthToDateUsd = Number(mtd?.costUsd || 0);
       if (
-        meter === "managed_ai" &&
+        meter !== "live_voice" &&
         hardCapEnabled &&
         monthToDateUsd + opts.costUsd > monthlyLimitUsd
       ) {

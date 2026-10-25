@@ -295,7 +295,16 @@ export async function runWithManagedAiSpend<T>(
       ...(input.hostname ? { hostname: input.hostname } : {}),
     },
   });
-  if (!decision.reserved) throw reservationError(decision, input.reserveUsd);
+  if (!decision.reserved) {
+    if (input.requestMeta?.usage_metered === true && decision.reason === "cap_reached") {
+      throw new AppError(
+        402,
+        "COMPUTER_PROCESSING_LIMIT",
+        "Computer paused at its processing limit. Your shared work balance is preserved for calls and email. Contact support to review this task.",
+      );
+    }
+    throw reservationError(decision, input.reserveUsd);
+  }
 
   const reservation = decision.reservation;
   const auditContext = createAuditContext();

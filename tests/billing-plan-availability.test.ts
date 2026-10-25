@@ -93,9 +93,7 @@ describe("public billing checkout availability", () => {
     vi.stubEnv("USAGE_BILLING_ENABLED", "true");
     expect(getPublicPlans().body.usage_checkout_available).toBe(false);
     vi.stubEnv("STRIPE_USAGE_BASE_PRICE_ID", "price_usage_base_fixture");
-    vi.stubEnv("STRIPE_USAGE_CALL_MINUTES_PRICE_ID", "price_usage_calls_fixture");
-    vi.stubEnv("STRIPE_USAGE_EMAILS_PRICE_ID", "price_usage_emails_fixture");
-    vi.stubEnv("STRIPE_USAGE_COMPUTER_MINUTES_PRICE_ID", "price_usage_computer_fixture");
+    vi.stubEnv("STRIPE_USAGE_WORK_PRICE_ID", "price_usage_work_fixture");
     expect(getPublicPlans().body.usage_checkout_available).toBe(false);
     vi.stubEnv("STRIPE_USAGE_NUMBER_ADDON_PRICE_ID", "price_usage_number_fixture");
     vi.stubEnv("STRIPE_USAGE_EMAIL_ADDON_PRICE_ID", "price_usage_mailbox_fixture");

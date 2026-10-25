@@ -5,7 +5,12 @@
 import { eq } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { isOwnerEmail } from "./auth-service";
-import { FREE_BUILDER_AI_ALLOWANCE_USD, planById, type StripePlanId } from "./plan-catalog";
+import {
+  FREE_BUILDER_AI_ALLOWANCE_USD,
+  isUsagePlanId,
+  planById,
+  type StripePlanId,
+} from "./plan-catalog";
 import { drizzle } from "./server-context";
 import type { PlanTier } from "./tenant-quotas";
 
@@ -25,6 +30,7 @@ export const FREE_BUILDER_SIMULATION_ALLOWANCE_USD = FREE_BUILDER_AI_ALLOWANCE_U
 
 /** Map wireline_subscriptions.plan → runtime quota tier. */
 export function subscriptionPlanToTier(planId: string | null | undefined): PlanTier {
+  if (isUsagePlanId(planId)) return "personal";
   if (planById(planId)?.catalogFamily === "channels") return "personal";
   switch (planId) {
     case "enterprise":
@@ -135,6 +141,9 @@ export function voiceMinutesDailyQuotaForTier(tier: PlanTier): number {
 
 /** Capacity changes minutes, never Bot count or concurrent-call permissions. */
 export function voiceMinutesDailyQuotaForPlan(planId: string | null | undefined): number {
+  // Usage has no separate free-minute bucket. The durable spend reservation
+  // funds every call; retain a finite daily abuse ceiling and normal concurrency.
+  if (isUsagePlanId(planId)) return 1_000;
   const plan = planById(planId);
   if (plan?.catalogFamily !== "channels")
     return voiceMinutesDailyQuotaForTier(subscriptionPlanToTier(planId));

@@ -88,6 +88,27 @@ function setup(cloneSpeech: SpeechStream = audio, markTimeoutMs = 1000, initialS
 }
 
 describe("cloned phone media", () => {
+  it.each(["x".repeat(600), `${"x".repeat(600)}.`])(
+    "bounds unbroken text and distant punctuation into a few synthesis calls",
+    async (text) => {
+      const clauses: string[] = [];
+      const s = setup(async function* (clause) {
+        clauses.push(clause);
+        yield new Uint8Array([255]);
+      });
+      s.speak(text);
+      for (let i = 0; i < 3; i++) {
+        await tick();
+        s.acknowledge();
+      }
+      await tick();
+      expect(clauses).toHaveLength(3);
+      expect(clauses.every((clause) => clause.length <= 240)).toBe(true);
+      expect(clauses.join("")).toBe(text);
+      expect(s.played()).toBe(3);
+      s.session.close();
+    },
+  );
   it("uses stock speech when the clone was revoked between routing and admission", async () => {
     let cloneRequests = 0;
     const clone: SpeechStream = async function* () {

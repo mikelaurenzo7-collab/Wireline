@@ -122,7 +122,7 @@ export default function WireAgentLanding() {
             <header className="landing-prestige__section-heading">
               {usageBilling ? (
                 <>
-                  <h2>As many Bots as you need. Pay only for the work they do.</h2>
+                  <h2>One plan. One shared work allowance.</h2>
                   <span>
                     Give every role its own Bot, then teach each one your hours, services, and
                     answers.

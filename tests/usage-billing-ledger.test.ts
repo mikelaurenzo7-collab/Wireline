@@ -135,7 +135,7 @@ function memoryStore(
     async prepareReport(id, attempt) {
       const row = rows.find((candidate) => candidate.id === id)!;
       row.reportAttempt = { ...attempt };
-      row.billable = attempt.value;
+      row.billable = attempt.nativeQuantity;
     },
     async holdForReconciliation(id, reason) {
       const row = rows.find((candidate) => candidate.id === id)!;
@@ -233,9 +233,9 @@ describe("usage metering idempotency", () => {
     expect(sent).toEqual([
       {
         meter: "call_minutes",
-        eventName: "botbound_call_minutes",
+        eventName: "botbound_work_credits_v2",
         stripeCustomerId: "cus_test_owner",
-        value: 70,
+        value: 1750,
         identifier: "usage:call_minutes:voice_call:call-1",
         timestamp: NOW,
       },
@@ -275,7 +275,7 @@ describe("usage reconciliation holds", () => {
     const { store, rows, period } = memoryStore({ control: { capUsd: 25 } });
     await recordUsageEvent(store, event("call_minutes", "ambiguous", 100));
     const send = vi.fn(async (payload) => {
-      expect(rows[0].reportAttempt).toMatchObject({ value: 84, identifier: payload.identifier });
+      expect(rows[0].reportAttempt).toMatchObject({ value: 1800, identifier: payload.identifier });
       throw new Error("response lost");
     });
     await reportPendingUsageForUser(store, { send }, USER, NOW);
@@ -283,7 +283,7 @@ describe("usage reconciliation holds", () => {
     const { client, sent } = recordingClient();
     await reportPendingUsageForUser(store, client, USER, new Date(NOW.getTime() + 60_000));
     expect(sent).toEqual([send.mock.calls[0][0]]);
-    expect(rows[0].billable).toBe(84);
+    expect(rows[0].billable).toBe(72);
   });
 
   it("never contacts Stripe when request preparation fails", async () => {
@@ -317,7 +317,7 @@ describe("usage reconciliation holds", () => {
     expect(result).toEqual({ reported: 0, skipped: 1, failed: 1 });
     expect(rows[0]).toMatchObject({
       status: "reconciliation_required",
-      billable: 84,
+      billable: 72,
       reason: "ambiguous_report_beyond_deduplication_window",
     });
     expect(rows[1].reason).toBe("spend_cap");
@@ -419,20 +419,40 @@ describe("usage reconciliation holds", () => {
 });
 
 describe("usage spend caps", () => {
+  it("consumes one pool across channels and clamps concurrent mixed work to the same cap", async () => {
+    const { store, rows } = memoryStore({ control: { capUsd: 24 } });
+    const { client, sent } = recordingClient();
+    // $6 calls + $2 email + $4 Computer exhaust exactly the shared $12.
+    await recordUsageEvent(store, event("call_minutes", "mixed-call", 24));
+    await recordUsageEvent(store, event("emails_handled", "mixed-email", 100));
+    await recordUsageEvent(store, event("computer_minutes", "mixed-computer", 20));
+    await reportPendingUsageForUser(store, client, USER, NOW);
+    expect((await usageSpendState(store, USER)).spentUsd).toBe(19);
+    expect(sent.reduce((sum, item) => sum + item.value, 0)).toBe(1200);
+    await recordUsageEvent(store, event("computer_minutes", "extra-computer", 50));
+    await recordUsageEvent(store, event("call_minutes", "extra-call", 5));
+    await Promise.all([
+      reportPendingUsageForUser(store, client, USER, NOW),
+      reportPendingUsageForUser(store, client, USER, NOW),
+    ]);
+    expect(rows.find((row) => row.sourceId === "extra-computer")?.billable).toBe(25);
+    expect(rows.find((row) => row.sourceId === "extra-call")?.status).toBe("skipped");
+    expect((await usageSpendState(store, USER)).spentUsd).toBe(24);
+  });
   it("refuses a cap below accrued usage and never conceals already-reported charges", async () => {
     const { store, control, period } = memoryStore();
     const { client } = recordingClient();
     await recordUsageEvent(store, event("call_minutes", "call-344", 344));
     let state = await usageSpendState(store, USER);
-    expect(state.spentUsd).toBe(90);
+    expect(state.spentUsd).toBe(93);
     expect(() => validateUsageMonthlyCap(control, state.spentUsd, 24)).toThrow("already accrued");
-    expect(() => validateUsageMonthlyCap(control, state.spentUsd, 90)).not.toThrow();
+    expect(() => validateUsageMonthlyCap(control, state.spentUsd, 93)).not.toThrow();
     await reportPendingUsageForUser(store, client, USER, NOW);
     // Even an old invalid cap must not hide Stripe-accepted charges.
     control.capUsd = 24;
     period.capUsd = 24;
     state = await usageSpendState(store, USER);
-    expect(state).toMatchObject({ spentUsd: 90, capUsd: 24, atCap: true, headroomUsd: 0 });
+    expect(state).toMatchObject({ spentUsd: 93, capUsd: 24, atCap: true, headroomUsd: 0 });
   });
 
   it("shows fixed charges even if an inconsistent add-on projection exceeds the cap", async () => {
@@ -454,14 +474,14 @@ describe("usage spend caps", () => {
     expect(periodSpendUsd(control, emptyMeterTotals())).toBe(26);
     expect(
       periodSpendUsd(control, { call_minutes: 160, emails_handled: 150, computer_minutes: 25 }),
-    ).toBe(26 + 25 + 1 + 1.5);
+    ).toBe(26 + 40 + 3 + 5 - 12);
   });
 
   it("clamps a report to what the remaining headroom pays for", () => {
     // 60 minutes are included, so 70 minutes from zero cost $2.50.
     expect(clampBillableQuantity("call_minutes", 0, 70, 100)).toBe(70);
     expect(clampBillableQuantity("call_minutes", 60, 10, 1)).toBe(4);
-    expect(clampBillableQuantity("call_minutes", 0, 70, 0)).toBe(60);
+    expect(clampBillableQuantity("call_minutes", 0, 70, 0)).toBe(48);
     expect(clampBillableQuantity("call_minutes", 80, 10, 0)).toBe(0);
     expect(clampBillableQuantity("emails_handled", 0, 0, 10)).toBe(0);
   });
@@ -484,9 +504,9 @@ describe("usage spend caps", () => {
     );
     const result = await reportPendingUsageForUser(store, client, USER, NOW);
     expect(result).toEqual({ reported: 2, skipped: 1, failed: 0 });
-    expect(sent.map((payload) => payload.value)).toEqual([50, 34]);
+    expect(sent.map((payload) => payload.value)).toEqual([1250, 550]);
     expect(rows[2].reason).toBe("spend_cap");
-    const billedMinutes = sent.reduce((total, payload) => total + payload.value, 0);
+    const billedMinutes = sent.reduce((total, payload) => total + payload.value / 25, 0);
     expect(
       periodSpendUsd(
         { ...(await store.spendControl(USER)) },
@@ -501,8 +521,8 @@ describe("usage spend caps", () => {
   it("admits work with the headroom it can pay for, and refuses at the cap with a 402", async () => {
     const { store } = memoryStore({ control: { capUsd: 25 } });
     const admitted = await admitUsage(store, USER, "call_minutes");
-    expect(admitted.maxUnits).toBeCloseTo(60 + 6 / 0.25, 6);
-    await recordUsageEvent(store, event("call_minutes", "call-1", 84));
+    expect(admitted.maxUnits).toBeCloseTo(48 + 6 / 0.25, 6);
+    await recordUsageEvent(store, event("call_minutes", "call-1", 72));
     const state = await usageSpendState(store, USER);
     expect(state).toMatchObject({
       spentUsd: 25,
@@ -526,7 +546,7 @@ describe("usage spend caps", () => {
 describe("usage spend alerts", () => {
   it("retries a failed delivery without requiring any additional usage", async () => {
     const { store, control } = memoryStore({ control: { capUsd: 40 } });
-    await recordUsageEvent(store, event("call_minutes", "call-alert", 64));
+    await recordUsageEvent(store, event("call_minutes", "call-alert", 52));
     const notify = vi
       .fn()
       .mockRejectedValueOnce(new Error("transport down"))
@@ -542,7 +562,7 @@ describe("usage spend alerts", () => {
     const notify = vi.fn().mockResolvedValue(undefined);
     // $19 base of a $40 cap is 47%.
     expect(await evaluateUsageSpendAlerts(store, USER, notify)).toEqual([]);
-    await recordUsageEvent(store, event("call_minutes", "call-1", 64)); // $20 = 50%
+    await recordUsageEvent(store, event("call_minutes", "call-1", 52)); // $20 = 50%
     expect(await evaluateUsageSpendAlerts(store, USER, notify)).toEqual([50]);
     expect(await evaluateUsageSpendAlerts(store, USER, notify)).toEqual([]);
     await recordUsageEvent(store, event("call_minutes", "call-2", 100)); // past 100%
@@ -557,7 +577,7 @@ describe("usage spend alerts", () => {
       control: { capUsd: 30, alertPeriodKey: "2026-10-01", alertLevelPct: 100 },
     });
     const notify = vi.fn().mockResolvedValue(undefined);
-    await recordUsageEvent(store, event("call_minutes", "call-1", 64)); // $20 of $30
+    await recordUsageEvent(store, event("call_minutes", "call-1", 52)); // $20 of $30
     expect(await evaluateUsageSpendAlerts(store, USER, notify)).toEqual([50]);
   });
 });
