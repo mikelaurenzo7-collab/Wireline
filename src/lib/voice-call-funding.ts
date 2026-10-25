@@ -2,7 +2,6 @@ import { and, eq, sql } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { AppError } from "./api-error";
 import { isUsagePlanId, planById } from "./plan-catalog";
-import { usageBillingEnabled } from "./usage-billing-config";
 import { isOwnerEmail } from "./platform-owner-emails";
 import { drizzle } from "./server-context";
 import { VOICE_COMPLETION_GRACE_MINUTES } from "./voice-funding-policy";
@@ -215,9 +214,9 @@ export async function reserveVoiceCallFunding(
     if (!opts.phoneTest) {
       // Usage billing: refuse new calls once the owner's monthly limit is spent.
       // Work already admitted is clamped out of the meter report, never billed past the cap.
-      if (isUsagePlanId(plan.id) && usageBillingEnabled()) {
-        const { admitAccountUsage } = await import("./usage-billing-store");
-        await admitAccountUsage(opts.userId, "call_minutes");
+      if (isUsagePlanId(plan.id)) {
+        const { admitVoiceUsage } = await import("./usage-billing-store");
+        await admitVoiceUsage(tx, opts.userId, opts.providerCallId);
       }
       return null;
     }

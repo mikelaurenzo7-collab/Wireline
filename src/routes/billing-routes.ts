@@ -522,14 +522,10 @@ router.get(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     res.setHeader("Cache-Control", "no-store");
-    if (!usageBillingEnabled()) {
-      res.json({ enabled: false });
-      return;
-    }
     const { accountUsageSpendState } = await import("../lib/usage-billing-store");
     const state = await accountUsageSpendState(req.user!.id);
     if (!state) {
-      res.json({ enabled: true, usage_account: false });
+      res.json({ enabled: usageBillingEnabled(), usage_account: false });
       return;
     }
     res.json({
@@ -550,7 +546,6 @@ router.put(
   "/billing/usage-spend",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!usageBillingEnabled()) throw AppError.notFound("Usage billing is not available.");
     const raw = (req.body as { monthly_cap_usd?: unknown } | undefined)?.monthly_cap_usd;
     const capUsd = typeof raw === "number" ? raw : Number.NaN;
     if (!Number.isFinite(capUsd)) {

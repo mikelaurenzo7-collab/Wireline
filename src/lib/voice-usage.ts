@@ -27,7 +27,6 @@ import { drizzle, log } from "./server-context";
 import { dailyPeriodKey } from "./tenant-quotas";
 import * as schema from "../db/schema";
 import { resolveAllowanceWindow } from "./paid-allowance-period";
-import { usageBillingEnabled } from "./usage-billing-config";
 import { readVoiceIdentityReceipt, resolveVoiceFundingId } from "./voice-call-identity";
 
 const DIMENSION = "voice_minutes_monthly";
@@ -103,6 +102,7 @@ async function prepareVoiceUsage(opts: {
   minutes: number;
   periodKey: string;
   dailyKey: string;
+  usageMetered: boolean;
 }): Promise<PreparedVoiceUsage> {
   const { userId, providerCallId, dailyKey } = opts;
 
@@ -187,7 +187,10 @@ async function prepareVoiceUsage(opts: {
         .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
         .where(eq(schema.settings.userId, userId))
         .limit(1);
-      const { plan } = includedVoiceMinutes(billing?.plan ?? null, billing?.extraAgents);
+      const { plan } = includedVoiceMinutes(
+        opts.usageMetered ? "usage" : (billing?.plan ?? null),
+        billing?.extraAgents,
+      );
 
       return {
         newlyCounted: false,
@@ -262,7 +265,7 @@ async function prepareVoiceUsage(opts: {
           .where(eq(schema.settings.userId, userId))
           .limit(1);
 
-    const planId = funding?.planId ?? billing?.plan ?? null;
+    const planId = funding?.planId ?? (opts.usageMetered ? "usage" : (billing?.plan ?? null));
     const { plan, included } = includedVoiceMinutes(planId, billing?.extraAgents);
     const previousOverage = Math.max(0, previousUsed - included);
     const newOverageTotal = Math.max(0, newUsed - included);
@@ -367,6 +370,14 @@ export async function trackVoiceMinutes(opts: {
         (terminal.metadata as Record<string, unknown>)?.unanswered_confirmed === true &&
         seconds === 0;
     }
+    // The admission receipt owns the billing period and survives a flag pause,
+    // renewal or cancellation. Terminal replay cannot replace its first duration.
+    const { settleVoiceUsageReceipt } = await import("./usage-billing-store");
+    const usageMetered = await settleVoiceUsageReceipt(
+      userId,
+      vapiCallId,
+      Math.max(0, durationSeconds),
+    );
     const minutes = confirmedUnanswered ? 0 : billableVoiceMinutes(durationSeconds);
     const prepared = await prepareVoiceUsage({
       userId,
@@ -374,22 +385,8 @@ export async function trackVoiceMinutes(opts: {
       minutes,
       periodKey,
       dailyKey,
+      usageMetered,
     });
-
-    // Usage billing: one idempotent meter event per provider call, billed by the
-    // second. Replays insert nothing. Runs before the charged checkpoint so a
-    // retry after a partial failure still records the call.
-    if (prepared.minutes > 0 && usageBillingEnabled()) {
-      const { recordAccountUsage } = await import("./usage-billing-store");
-      await recordAccountUsage({
-        userId,
-        meter: "call_minutes",
-        sourceType: "voice_call",
-        sourceId: vapiCallId,
-        quantity: Math.max(0, durationSeconds) / 60,
-        occurredAt: now,
-      });
-    }
 
     if (prepared.chargedAt) return;
 

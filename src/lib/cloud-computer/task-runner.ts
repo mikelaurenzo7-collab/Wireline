@@ -17,7 +17,6 @@ import { getAgentCoachingBrief } from "../mcp-agent-coaching";
 import { rateLimit } from "../rate-limit";
 import { drizzle, log, tenantStore } from "../server-context";
 import { getErrorMessage } from "../server-utils";
-import { usageBillingEnabled } from "../usage-billing-config";
 import {
   CLOUD_COMPUTER_LIMITS,
   CONTEXT_LIMIT_OUTCOME,
@@ -577,7 +576,7 @@ async function admitComputerTask(
   // billed as computer minutes and stays off the managed AI allowance.
   let usageMetered = false;
   let usagePeriodKey: string | null = null;
-  if (isUsagePlanId(entitlement.planId) && usageBillingEnabled()) {
+  if (isUsagePlanId(entitlement.planId)) {
     const { admitAccountUsage } = await import("../usage-billing-store");
     const admission = await admitAccountUsage(userId, "computer_minutes");
     usageMetered = admission !== null;

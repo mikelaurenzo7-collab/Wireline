@@ -1,9 +1,9 @@
 /**
  * Server-only usage billing release flag and Stripe object configuration.
  *
- * `USAGE_BILLING_ENABLED` defaults off. Every usage path checks this flag first,
- * so with the flag off no new table is read, no meter event is sent and every
- * existing package checkout, cap and copy surface behaves exactly as before.
+ * `USAGE_BILLING_ENABLED` defaults off and gates checkout and new metered work.
+ * Receipts and reports for work already admitted continue settling after a
+ * pause. Apply the usage migrations before deploying even with enrollment off.
  */
 import { USAGE_METERS, type UsageAddonKey, type UsageMeterKey } from "./usage-billing-catalog";
 

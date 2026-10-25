@@ -14,6 +14,7 @@
  *    the Stripe report, keeping pre-tax BotBound charges within the cap.
  */
 import { AppError } from "./api-error";
+import { usageMeterEventName } from "./usage-billing-config";
 import {
   USAGE_METERS,
   USAGE_MAX_MONTHLY_CAP_USD,
@@ -29,6 +30,8 @@ import {
 /** Stripe accepts meter event timestamps up to 35 days old; keep a margin. */
 export const USAGE_REPORT_MAX_AGE_MS = 34 * 24 * 60 * 60 * 1000;
 export const USAGE_REPORT_BATCH = 100;
+/** Stripe guarantees identifier uniqueness for at least 24 hours. Keep a margin. */
+export const USAGE_REPORT_RETRY_WINDOW_MS = 23 * 60 * 60 * 1000;
 
 export type MeterTotals = Record<UsageMeterKey, number>;
 
@@ -45,8 +48,20 @@ export interface UsageEventInput {
 export interface UsageEventRow extends UsageEventInput {
   id: string;
   idempotencyKey: string;
-  status: "pending" | "reported" | "skipped";
+  status: "admitted" | "pending" | "reported" | "skipped" | "reconciliation_required";
   attempts: number;
+  reportAttempt: UsageReportAttempt | null;
+}
+
+/** The exact request is committed before Stripe is called, including its first attempt time. */
+export interface UsageReportAttempt {
+  meter: UsageMeterKey;
+  eventName: string;
+  stripeCustomerId: string;
+  value: number;
+  identifier: string;
+  timestamp: string;
+  preparedAt: string;
 }
 
 export interface UsageSpendControl {
@@ -63,16 +78,28 @@ export interface UsageBillingIdentity {
   usagePlanActive: boolean;
 }
 
+export interface UsageBillingPeriod extends UsageSpendControl {
+  stripeCustomerId: string;
+  startsAt: Date;
+  endsAt: Date;
+  blockedReason: string | null;
+}
+
 export interface UsageStore {
   /** Insert once; returns false when the idempotency key already exists. */
   insertEvent(event: UsageEventInput & { idempotencyKey: string }): Promise<boolean>;
   pendingEvents(userId: string, limit: number): Promise<UsageEventRow[]>;
-  /** Sum of `billable_quantity` already reported per meter for the period. */
+  /** Accepted or durably reserved quantities, including unresolved attempts. */
   reportedTotals(userId: string, periodKey: string): Promise<MeterTotals>;
   /** Sum of recorded `quantity` (pending and reported) per meter for the period. */
   recordedTotals(userId: string, periodKey: string): Promise<MeterTotals>;
   spendControl(userId: string): Promise<UsageSpendControl>;
   billingIdentity(userId: string): Promise<UsageBillingIdentity>;
+  billingPeriod(userId: string, periodKey: string): Promise<UsageBillingPeriod | null>;
+  /** Commit a short preparation transaction before performing any external I/O. */
+  withReportLock<T>(userId: string, work: (locked: UsageStore) => Promise<T>): Promise<T>;
+  prepareReport(id: string, attempt: UsageReportAttempt): Promise<void>;
+  holdForReconciliation(id: string, reason: string): Promise<void>;
   markReported(id: string, billableQuantity: number): Promise<void>;
   markSkipped(id: string, reason: string): Promise<void>;
   markFailed(id: string, error: string): Promise<void>;
@@ -87,6 +114,7 @@ export interface UsageStore {
 export interface UsageMeterClient {
   send(event: {
     meter: UsageMeterKey;
+    eventName: string;
     stripeCustomerId: string;
     value: number;
     identifier: string;
@@ -186,14 +214,11 @@ export interface UsageSpendState {
 }
 
 export async function usageSpendState(store: UsageStore, userId: string): Promise<UsageSpendState> {
-  const [identity, control] = await Promise.all([
-    store.billingIdentity(userId),
-    store.spendControl(userId),
-  ]);
-  const [totals, reported] = await Promise.all([
-    store.recordedTotals(userId, identity.periodKey),
-    store.reportedTotals(userId, identity.periodKey),
-  ]);
+  const identity = await store.billingIdentity(userId);
+  const control = await store.billingPeriod(userId, identity.periodKey);
+  if (!control) throw AppError.serviceUnavailable("Your billing period is still being confirmed.");
+  const totals = await store.recordedTotals(userId, identity.periodKey);
+  const reported = await store.reportedTotals(userId, identity.periodKey);
   // Pending work is capped. Fixed charges and usage already accepted by Stripe
   // cannot be hidden by an older/invalid limit in the local projection.
   const spentUsd = Math.max(
@@ -246,6 +271,18 @@ export async function admitUsage(
   userId: string,
   meter: UsageMeterKey,
 ): Promise<{ maxUnits: number | null; state: UsageSpendState }> {
+  const identity = await store.billingIdentity(userId);
+  const period = await store.billingPeriod(userId, identity.periodKey);
+  const now = Date.now();
+  if (
+    !identity.usagePlanActive ||
+    !period ||
+    period.blockedReason ||
+    now < period.startsAt.getTime() ||
+    now >= period.endsAt.getTime()
+  ) {
+    throw AppError.serviceUnavailable("Your billing period is still being confirmed.");
+  }
   const state = await usageSpendState(store, userId);
   if (state.atCap) throw new UsageSpendCapReachedError();
   const totals = await store.recordedTotals(userId, state.periodKey);
@@ -266,10 +303,8 @@ export async function evaluateUsageSpendAlerts(
   userId: string,
   notify: (alert: { thresholdPct: number; spentUsd: number; capUsd: number }) => Promise<void>,
 ): Promise<number[]> {
-  const [state, control] = await Promise.all([
-    usageSpendState(store, userId),
-    store.spendControl(userId),
-  ]);
+  const state = await usageSpendState(store, userId);
+  const control = await store.spendControl(userId);
   const previous = control.alertPeriodKey === state.periodKey ? control.alertLevelPct : 0;
   const crossed = crossedAlertThresholds(previous, state.pct);
   if (crossed.length === 0) return [];
@@ -282,10 +317,10 @@ export async function evaluateUsageSpendAlerts(
 }
 
 /**
- * Report pending events for one account, oldest first. Callers serialize per
- * account (advisory lock or single worker). Reported rows are never resent; a
- * crash between the Stripe call and `markReported` resends the same
- * `identifier`, which Stripe dedupes.
+ * Freeze one request under the account lock, commit, then contact Stripe.
+ * Concurrent workers can retry that identical request, but cannot prepare a
+ * later event until it settles. Ambiguous outcomes beyond Stripe's deduplication
+ * window need reconciliation; they must never be guessed into another invoice.
  */
 export async function reportPendingUsageForUser(
   store: UsageStore,
@@ -294,48 +329,82 @@ export async function reportPendingUsageForUser(
   now: Date = new Date(),
 ): Promise<{ reported: number; skipped: number; failed: number }> {
   const result = { reported: 0, skipped: 0, failed: 0 };
-  const identity = await store.billingIdentity(userId);
-  const pending = await store.pendingEvents(userId, USAGE_REPORT_BATCH);
-  if (pending.length === 0) return result;
-  if (!identity.stripeCustomerId || !identity.usagePlanActive) {
-    for (const event of pending) {
-      await store.markSkipped(event.id, "no_active_usage_subscription");
-      result.skipped += 1;
-    }
-    return result;
-  }
-  const control = await store.spendControl(userId);
-  const totalsByPeriod = new Map<string, MeterTotals>();
-  for (const event of pending) {
-    if (now.getTime() - event.occurredAt.getTime() > USAGE_REPORT_MAX_AGE_MS) {
-      await store.markSkipped(event.id, "older_than_meter_window");
-      result.skipped += 1;
-      continue;
-    }
-    let totals = totalsByPeriod.get(event.periodKey);
-    if (!totals) {
-      totals = await store.reportedTotals(userId, event.periodKey);
-      totalsByPeriod.set(event.periodKey, totals);
-    }
-    const headroom = control.capUsd - periodSpendUsd(control, totals);
-    const billable = clampBillableQuantity(
-      event.meter,
-      totals[event.meter],
-      event.quantity,
-      headroom,
-    );
-    if (billable <= 0) {
-      await store.markSkipped(event.id, "spend_cap");
-      result.skipped += 1;
-      continue;
-    }
-    try {
-      await client.send({
+  for (let index = 0; index < USAGE_REPORT_BATCH; index += 1) {
+    const next = await store.withReportLock(userId, async (locked) => {
+      const [event] = await locked.pendingEvents(userId, 1);
+      if (!event) return null;
+      const identity = await locked.billingIdentity(userId);
+      const period = await locked.billingPeriod(userId, event.periodKey);
+      let hold: string | null = null;
+      if (!identity.stripeCustomerId || !identity.usagePlanActive)
+        hold = "inactive_subscription_requires_final_invoice_reconciliation";
+      else if (!period || period.stripeCustomerId !== identity.stripeCustomerId)
+        hold = "billing_period_identity_unverified";
+      else if (period.blockedReason) hold = period.blockedReason;
+      else if (
+        event.periodKey !== identity.periodKey ||
+        now < period.startsAt ||
+        now >= period.endsAt
+      )
+        hold = "closed_period_requires_invoice_reconciliation";
+      else if (event.occurredAt < period.startsAt || event.occurredAt >= period.endsAt)
+        hold = "event_outside_admitted_period";
+      else if (now.getTime() - event.occurredAt.getTime() > USAGE_REPORT_MAX_AGE_MS)
+        hold = "older_than_meter_window";
+      else if (
+        event.reportAttempt &&
+        now.getTime() - new Date(event.reportAttempt.preparedAt).getTime() >=
+          USAGE_REPORT_RETRY_WINDOW_MS
+      )
+        hold = "ambiguous_report_beyond_deduplication_window";
+      if (hold) {
+        await locked.holdForReconciliation(event.id, hold);
+        return { kind: "held" as const };
+      }
+      if (event.reportAttempt)
+        return { kind: "send" as const, event, attempt: event.reportAttempt };
+      const totals = await locked.reportedTotals(userId, event.periodKey);
+      const control = period!;
+      const billable = clampBillableQuantity(
+        event.meter,
+        totals[event.meter],
+        event.quantity,
+        control.capUsd - periodSpendUsd(control, totals),
+      );
+      if (billable <= 0) {
+        await locked.markSkipped(event.id, "spend_cap");
+        return { kind: "skipped" as const };
+      }
+      const attempt: UsageReportAttempt = {
         meter: event.meter,
-        stripeCustomerId: identity.stripeCustomerId,
+        eventName: usageMeterEventName(event.meter),
+        stripeCustomerId: control.stripeCustomerId,
         value: billable,
         identifier: event.idempotencyKey,
-        timestamp: event.occurredAt,
+        timestamp: event.occurredAt.toISOString(),
+        preparedAt: now.toISOString(),
+      };
+      await locked.prepareReport(event.id, attempt);
+      return { kind: "send" as const, event, attempt };
+    });
+    if (!next) break;
+    if (next.kind === "held") {
+      result.failed += 1;
+      continue;
+    }
+    if (next.kind === "skipped") {
+      result.skipped += 1;
+      continue;
+    }
+    const { event, attempt } = next;
+    try {
+      await client.send({
+        meter: attempt.meter,
+        eventName: attempt.eventName,
+        stripeCustomerId: attempt.stripeCustomerId,
+        value: attempt.value,
+        identifier: attempt.identifier,
+        timestamp: new Date(attempt.timestamp),
       });
     } catch (error) {
       await store.markFailed(event.id, error instanceof Error ? error.message : String(error));
@@ -343,8 +412,7 @@ export async function reportPendingUsageForUser(
       // Stop this account's batch so later events never jump ahead of the cap math.
       break;
     }
-    await store.markReported(event.id, billable);
-    totals[event.meter] += billable;
+    await store.markReported(event.id, attempt.value);
     result.reported += 1;
   }
   return result;

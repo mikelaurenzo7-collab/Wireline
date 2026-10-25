@@ -173,9 +173,10 @@ describe("usage provisioning source contracts", () => {
     expect(source).toContain('code: "USAGE_ADDON_UNAVAILABLE"');
   });
 
-  it("reports meter events only through the flagged usage_meter_report job", () => {
+  it("keeps settlement scheduled when new usage work is paused", () => {
     expect(read("src/lib/job-queue-base.ts")).toContain('| "usage_meter_report"');
     expect(read("src/lib/job-worker-base.ts")).toContain('job.type === "usage_meter_report"');
-    expect(read("src/routes/job-routes.ts")).toMatch(/usageBillingEnabled\(\) &&/);
+    expect(read("src/routes/job-routes.ts")).not.toMatch(/usageBillingEnabled\(\) &&/);
+    expect(read("src/routes/job-routes.ts")).toContain('type: "usage_meter_report"');
   });
 });

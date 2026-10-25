@@ -7,7 +7,6 @@ import { eq, and, lte, gte, or, inArray, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { jobsRateLimit, jobsSweepRateLimit } from "../middleware/api-rate-limits";
 import { getErrorMessage } from "../lib/server-utils";
-import { usageBillingEnabled } from "../lib/usage-billing-config";
 import {
   claimJobById,
   completeClaimedJob,
@@ -473,7 +472,6 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
     // Usage billing: report pending meter events about every five minutes.
     if (
       withinSweepBudget() &&
-      usageBillingEnabled() &&
       (req._sweepMode === "cron" || !req._sweepMode)
     ) {
       const since5m = new Date(Date.now() - 5 * 60 * 1000);

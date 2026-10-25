@@ -1,8 +1,10 @@
 # Usage billing (dark launch)
 
-Status: **built, off by default, rates approved; activation pending validation.** Nothing here changes production until
-`USAGE_BILLING_ENABLED=true` is set on the server and the Stripe objects below exist. No live Stripe
-object has been created, changed or archived by this work, and no env var has been set.
+Status: **built, off by default, rates approved; activation pending invoice validation.**
+`USAGE_BILLING_ENABLED=true` and the configured Stripe objects are required for new checkout and
+metered work. Turning the flag off pauses new work; receipts from prior admissions still settle.
+Apply the committed migrations before deploying even with enrollment off. No live Stripe object
+or production configuration has been changed by this review.
 
 Source of truth for every number: `src/lib/usage-billing-catalog.ts`. The Stripe setup script
 (`scripts/stripe-usage-billing-setup.mjs`) mirrors it, and `tests/usage-billing-catalog.test.ts`
@@ -53,7 +55,7 @@ measured cost per active minute exceeds $0.105.
 | Flag and env names                          | `src/lib/usage-billing-config.ts`                                                                                                                           |
 | Ledger rules (record, admit, alert, report) | `src/lib/usage-billing-ledger.ts` (pure, unit tested)                                                                                                       |
 | Postgres store and Stripe meter client      | `src/lib/usage-billing-store.ts`                                                                                                                            |
-| Tables                                      | `src/db/usage-billing-schema.ts`, migration `0187_usage_billing.sql`                                                                                        |
+| Tables                                      | `src/db/usage-billing-schema.ts`, migrations `0187_usage_billing.sql` through `0189_usage_billing_periods.sql`                                                                                        |
 | Plan                                        | `USAGE_PLAN` / `isUsagePlanId` in `src/lib/plan-catalog.ts` (outside `STRIPE_PLANS`)                                                                        |
 | Bots                                        | `resolveAgentEntitlement` returns `unlimited: true` for an active usage subscription; the only ceiling is the 120-mark identity namespace                   |
 | Checkout                                    | `plan_id: "usage"`: base, three metered prices, and only the chosen add-ons; monthly only                                                                   |
@@ -89,7 +91,7 @@ Env vars (names only): `USAGE_BILLING_ENABLED`, `STRIPE_USAGE_BASE_PRICE_ID`,
 
 | Stage | What                                                                                                                                                                                                                                                  |
 | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0     | Validate with the flag off. Migrations 0187 and 0188 must be installed through the reviewed release path before deploying this source, including the new nullable fields used by existing checkout/task queries.                                      |
+| 0     | Validate with the flag off. Migrations 0187, 0188 and 0189 must be installed through the reviewed release path before deploying this source, including the new nullable fields used by existing checkout/task queries.                                      |
 | 1     | Use the approved rates in the BotBound Stripe account (`acct_1TkyXL8e6If87QKm`), test mode only: dry run, then `--apply`, staging configuration and an isolated database, then prove a test-clock invoice (base, tiered minutes, add-ons, cap clamp). |
 | 2     | After the proof: `--apply --live --rates-approved`, set env vars, flip `USAGE_BILLING_ENABLED=true`, redeploy.                                                                                                                                        |
 | 3     | Lift the 120-mark ceiling per workspace.                                                                                                                                                                                                              |
@@ -99,12 +101,14 @@ Env vars (names only): `USAGE_BILLING_ENABLED`, `STRIPE_USAGE_BASE_PRICE_ID`,
 - A call's maximum length is not yet bounded by cap headroom, so calls already in progress can run
   past the cap; the clamp keeps that time off the invoice.
 - Computer minutes count task wall time.
-- Turning the flag off while usage subscribers exist leaves their usage unreported.
-- Snapshot each billing period's approved cap and add-ons before enabling live billing. The
-  reporter still uses the current control for late events from earlier periods; cap changes
-  and renewal must not change an earlier period's charges.
-- Prove final settlement for cancellation, delayed provider receipts, and invoice finalization.
-  The current inactive-subscription path skips pending events; this needs an explicit final-bill policy.
+- The bounded "test my phone" flow still requires prepaid call funding. Add usage-plan
+  funding support and prove that flow before offering the usage plan to customers.
+- Prove final settlement for cancellation, delayed provider receipts, mid-period add-on changes
+  and invoice finalization. These cases retain their receipts as `reconciliation_required` and
+  do not automatically submit an amount to a possibly finalized invoice. Enabling live billing
+  requires an operator reconciliation procedure and a tested final-invoice policy.
+- Prove provider meter aggregation and invoice payment in BotBound test mode. A successful paid
+  signup on the earlier package plans does not validate this usage catalog or its meter cycle.
 - Include applicable tax in invoice proof. Pricing, Billing and spend-alert copy disclose
   that the limit covers pre-tax BotBound charges, with tax added separately.
 
@@ -126,3 +130,43 @@ replies store their receipt with the sent ledger entry. Immediate metering is ba
 from those durable records, using the same idempotency key and captured admission period/time.
 Retrying metering never resends email or reruns a task. Work whose provider outcome or terminal
 duration is unknown remains a reconciliation case; it must not be guessed into an invoice.
+
+
+## Period and retry integrity
+
+Each Stripe subscription period stores its exact customer, subscription, start/end, add-ons and
+cap. The period key includes the subscription ID and full timestamp. Missing or stale period
+identity prevents admission; no calendar-month fallback guesses the billing window. Owner cap
+changes update the current period and the default for future periods under the reporter lock.
+Renewal creates a new snapshot. Changed add-ons in the same period preserve the original values
+and pause new work until their prorated invoice is reconciled.
+
+Calls persist an admission row before provider acceptance. The first terminal duration changes
+that row from `admitted` to `pending`; subsequent callbacks keep the original duration and period,
+even after cancellation or a flag pause. Computer and email receipts retain their existing
+terminal reconciliation paths. Ordinary package calls do not create usage receipts.
+
+Reporting commits the complete Stripe request under a short per-account lock before making a
+network call. Retries keep its customer, event name, timestamp, identifier and amount. There is
+no open database transaction spanning the provider request. Stripe currently supports decimal
+meter values and guarantees identifier uniqueness for at least 24 hours; ambiguous requests stop
+automatic retry after 23 hours. Their reserved billable quantities remain in spend-cap accounting.
+
+Rows requiring reconciliation keep their original quantity and any frozen request. They are
+excluded from automatic retry, rather than marked as zero-cost work. Inspect `last_error` and
+match the identifier to Stripe meter and invoice evidence before any manual disposition; never
+clear an attempt or resend it beyond the deduplication window on an assumption. Stale `admitted`
+rows also require provider terminal evidence before settlement.
+
+Sources: [recording usage](https://docs.stripe.com/billing/subscriptions/usage-based/recording-usage-api)
+and [meter event identifiers](https://docs.stripe.com/api/billing/meter-event/create).
+
+## Disposable PostgreSQL validation
+
+`tests/usage-billing-postgres.test.ts` executes the committed migrations twice and tests real
+transaction visibility, concurrent reporters, cap/period snapshots, flag pauses, call replay,
+RLS and deletion cascade. It only connects when `USAGE_BILLING_TEST_DATABASE_URL` names the
+local `botbound_usage_review` database. It never falls back to production connection variables.
+Use a disposable local PostgreSQL 17 container and run this suite with that URL; its fixture
+setup truncates only this dedicated database. The regular test suite skips it when the explicit
+local URL is absent. This validates database behavior, not an actual Stripe invoice.

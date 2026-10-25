@@ -1,18 +1,24 @@
 /**
  * Postgres store and Stripe meter client for the usage billing ledger.
  *
- * New usage admission and reporting require `USAGE_BILLING_ENABLED`. Receipts
+ * New usage admission requires `USAGE_BILLING_ENABLED`. Settlement continues
+ * when enrollment/work is paused. Receipts
  * from previously admitted work retain their original billing identity and
  * remain recoverable independently of the task/email process.
  */
 import { and, asc, eq, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
-import { usageMeterEvents, usageSpendControls } from "../db/usage-billing-schema";
+import {
+  usageBillingPeriods,
+  usageMeterEvents,
+  usageSpendControls,
+} from "../db/usage-billing-schema";
+import { AppError } from "./api-error";
 import { drizzle, log } from "./server-context";
 import { isUsagePlanId } from "./plan-catalog";
 import { USAGE_DEFAULT_MONTHLY_CAP_USD, type UsageMeterKey } from "./usage-billing-catalog";
-import { usageBillingEnabled, usageMeterEventName } from "./usage-billing-config";
+import { usageBillingEnabled } from "./usage-billing-config";
 import {
   admitUsage,
   emptyMeterTotals,
@@ -21,6 +27,7 @@ import {
   reportPendingUsageForUser,
   usageSpendState,
   validateUsageMonthlyCap,
+  usageIdempotencyKey,
   type MeterTotals,
   type UsageEventRow,
   type UsageMeterClient,
@@ -28,6 +35,7 @@ import {
 } from "./usage-billing-ledger";
 
 type Reader = Pick<typeof drizzle, "select" | "insert" | "update" | "execute">;
+type ReportTransaction = <T>(work: (reader: Reader) => Promise<T>) => Promise<T>;
 
 function totalsFromRows(
   rows: Array<{ meter: string; total: string | number | null }>,
@@ -39,17 +47,20 @@ function totalsFromRows(
   return totals;
 }
 
-/** Usage period: the Stripe billing period end when known, else the calendar month. */
+/** Subscription identity plus the exact Stripe boundary. Never invent a calendar period. */
 export function usagePeriodKey(
   currentPeriodEnd: Date | null | undefined,
-  now = new Date(),
+  stripeSubscriptionId: string | null | undefined,
 ): string {
-  return currentPeriodEnd && currentPeriodEnd.getTime() > now.getTime() - 86_400_000
-    ? `pe:${currentPeriodEnd.toISOString().slice(0, 10)}`
-    : `cal:${now.toISOString().slice(0, 7)}`;
+  return currentPeriodEnd && Number.isFinite(currentPeriodEnd.getTime()) && stripeSubscriptionId
+    ? `${stripeSubscriptionId}:pe:${currentPeriodEnd.toISOString()}`
+    : "";
 }
 
-export function createUsageStore(reader: Reader = drizzle): UsageStore {
+export function createUsageStore(
+  reader: Reader = drizzle,
+  reportTransaction: ReportTransaction = (work) => drizzle.transaction(work),
+): UsageStore {
   return {
     async insertEvent(event) {
       const rows = await reader
@@ -73,7 +84,11 @@ export function createUsageStore(reader: Reader = drizzle): UsageStore {
         .select()
         .from(usageMeterEvents)
         .where(and(eq(usageMeterEvents.userId, userId), eq(usageMeterEvents.status, "pending")))
-        .orderBy(asc(usageMeterEvents.occurredAt), asc(usageMeterEvents.createdAt))
+        .orderBy(
+          asc(usageMeterEvents.occurredAt),
+          asc(usageMeterEvents.createdAt),
+          asc(usageMeterEvents.id),
+        )
         .limit(limit);
       return rows.map((row): UsageEventRow => ({
         id: row.id,
@@ -87,6 +102,7 @@ export function createUsageStore(reader: Reader = drizzle): UsageStore {
         occurredAt: row.occurredAt,
         status: row.status,
         attempts: row.attempts,
+        reportAttempt: row.reportAttempt,
       }));
     },
     async reportedTotals(userId, periodKey) {
@@ -100,7 +116,7 @@ export function createUsageStore(reader: Reader = drizzle): UsageStore {
           and(
             eq(usageMeterEvents.userId, userId),
             eq(usageMeterEvents.periodKey, periodKey),
-            eq(usageMeterEvents.status, "reported"),
+            sql`${usageMeterEvents.status} IN ('pending', 'reported', 'reconciliation_required')`,
           ),
         )
         .groupBy(usageMeterEvents.meter);
@@ -117,7 +133,7 @@ export function createUsageStore(reader: Reader = drizzle): UsageStore {
           and(
             eq(usageMeterEvents.userId, userId),
             eq(usageMeterEvents.periodKey, periodKey),
-            sql`${usageMeterEvents.status} IN ('pending', 'reported')`,
+            sql`${usageMeterEvents.status} IN ('pending', 'reported', 'reconciliation_required')`,
           ),
         )
         .groupBy(usageMeterEvents.meter);
@@ -141,6 +157,7 @@ export function createUsageStore(reader: Reader = drizzle): UsageStore {
       const [row] = await reader
         .select({
           customerId: schema.subscriptions.stripeCustomerId,
+          subscriptionId: schema.subscriptions.stripeSubscriptionId,
           plan: schema.subscriptions.plan,
           status: schema.subscriptions.status,
           periodEnd: schema.subscriptions.currentPeriodEnd,
@@ -150,10 +167,66 @@ export function createUsageStore(reader: Reader = drizzle): UsageStore {
         .limit(1);
       return {
         stripeCustomerId: row?.customerId ?? null,
-        periodKey: usagePeriodKey(row?.periodEnd ?? null),
+        periodKey: usagePeriodKey(row?.periodEnd, row?.subscriptionId),
         usagePlanActive:
           isUsagePlanId(row?.plan) && ["active", "trialing"].includes(row?.status ?? ""),
       };
+    },
+    async billingPeriod(userId, periodKey) {
+      const [row] = await reader
+        .select()
+        .from(usageBillingPeriods)
+        .where(
+          and(eq(usageBillingPeriods.userId, userId), eq(usageBillingPeriods.periodKey, periodKey)),
+        )
+        .limit(1);
+      return row
+        ? {
+            capUsd: Number(row.monthlyCapUsd),
+            numbers: row.numberAddons,
+            emailAddresses: row.emailAddressAddons,
+            alertPeriodKey: null,
+            alertLevelPct: 0,
+            stripeCustomerId: row.stripeCustomerId,
+            startsAt: row.startsAt,
+            endsAt: row.endsAt,
+            blockedReason: row.blockedReason,
+          }
+        : null;
+    },
+    async withReportLock(userId, work) {
+      // Never call this from another open transaction: the returned preparation
+      // must already be committed before the caller contacts Stripe.
+      return reportTransaction(async (tx) => {
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`usage-report:${userId}`}))`);
+        return work(createUsageStore(tx, reportTransaction));
+      });
+    },
+    async prepareReport(id, attempt) {
+      await reader
+        .update(usageMeterEvents)
+        .set({
+          reportAttempt: attempt,
+          billableQuantity: String(attempt.value),
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(usageMeterEvents.id, id),
+            eq(usageMeterEvents.status, "pending"),
+            sql`${usageMeterEvents.reportAttempt} IS NULL`,
+          ),
+        );
+    },
+    async holdForReconciliation(id, reason) {
+      await reader
+        .update(usageMeterEvents)
+        .set({
+          status: "reconciliation_required",
+          lastError: reason,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(usageMeterEvents.id, id), eq(usageMeterEvents.status, "pending")));
     },
     async markReported(id, billableQuantity) {
       await reader
@@ -187,7 +260,7 @@ export function createUsageStore(reader: Reader = drizzle): UsageStore {
           lastError: error.slice(0, 500),
           updatedAt: new Date(),
         })
-        .where(eq(usageMeterEvents.id, id));
+        .where(and(eq(usageMeterEvents.id, id), eq(usageMeterEvents.status, "pending")));
     },
     async setAlertLevel(userId, periodKey, levelPct, paused) {
       await reader
@@ -211,14 +284,14 @@ export function createUsageStore(reader: Reader = drizzle): UsageStore {
   };
 }
 
-/** Stripe Billing meter events. `identifier` makes a resend a no-op at Stripe. */
+/** Retries use a frozen request and stay inside Stripe's identifier retention window. */
 export function createStripeMeterClient(): UsageMeterClient {
   return {
     async send(event) {
       const { stripe } = await import("./stripe-helpers");
       try {
         await stripe.billing.meterEvents.create({
-          event_name: usageMeterEventName(event.meter),
+          event_name: event.eventName,
           identifier: event.identifier,
           timestamp: Math.floor(event.timestamp.getTime() / 1000),
           payload: {
@@ -236,9 +309,12 @@ export function createStripeMeterClient(): UsageMeterClient {
   };
 }
 
-async function usageAccount(userId: string): Promise<boolean> {
-  if (!usageBillingEnabled() || !userId) return false;
-  const [row] = await drizzle
+async function usageAccount(
+  userId: string,
+  reader: Pick<Reader, "select"> = drizzle,
+): Promise<boolean> {
+  if (!userId) return false;
+  const [row] = await reader
     .select({ plan: schema.subscriptions.plan, status: schema.subscriptions.status })
     .from(schema.subscriptions)
     .where(eq(schema.subscriptions.userId, userId))
@@ -251,43 +327,78 @@ export async function isUsageBillingAccount(userId: string): Promise<boolean> {
   return usageAccount(userId);
 }
 
-/**
- * Record completed work for a usage account. Replays are no-ops. Callers in
- * settlement paths let errors escape so the provider retry records it later.
- */
-export async function recordAccountUsage(input: {
-  userId: string;
-  meter: UsageMeterKey;
-  sourceType: string;
-  sourceId: string;
-  quantity: number;
-  occurredAt?: Date;
-}): Promise<{ recorded: boolean } | null> {
-  if (!(await usageAccount(input.userId))) return null;
-  const store = createUsageStore();
-  const identity = await store.billingIdentity(input.userId);
-  const { recorded } = await recordUsageEvent(store, {
-    userId: input.userId,
-    periodKey: identity.periodKey,
-    meter: input.meter,
-    sourceType: input.sourceType,
-    sourceId: input.sourceId,
-    quantity: input.quantity,
-    occurredAt: input.occurredAt ?? new Date(),
-  });
-  // The recurring sweep evaluates alerts from durable receipts. A delivery
-  // failure must be retried even when this account produces no further usage.
-  return { recorded };
-}
-
 /** Admission for new metered work on a usage account; null means not a usage account. */
 export async function admitAccountUsage(
   userId: string,
   meter: UsageMeterKey,
+  reader: Reader = drizzle,
 ): Promise<{ maxUnits: number | null; periodKey: string } | null> {
-  if (!(await usageAccount(userId))) return null;
-  const { maxUnits, state } = await admitUsage(createUsageStore(), userId, meter);
+  if (!(await usageAccount(userId, reader))) return null;
+  if (!usageBillingEnabled())
+    throw AppError.serviceUnavailable("Usage work is temporarily paused.");
+  const { maxUnits, state } = await admitUsage(createUsageStore(reader), userId, meter);
   return { maxUnits, periodKey: state.periodKey };
+}
+
+/** Persist the call's period before accepting the provider. No wallet debit is involved. */
+export async function admitVoiceUsage(
+  reader: Reader,
+  userId: string,
+  sourceId: string,
+): Promise<void> {
+  const key = usageIdempotencyKey("call_minutes", "voice_call", sourceId);
+  const [existing] = await reader
+    .select({ status: usageMeterEvents.status })
+    .from(usageMeterEvents)
+    .where(and(eq(usageMeterEvents.userId, userId), eq(usageMeterEvents.idempotencyKey, key)))
+    .limit(1);
+  if (existing) {
+    if (existing.status !== "admitted")
+      throw new AppError(409, "VOICE_FUNDING_SETTLED", "This call has already been settled.");
+    return;
+  }
+  const admission = await admitAccountUsage(userId, "call_minutes", reader);
+  if (!admission) throw AppError.serviceUnavailable("Call billing could not be confirmed.");
+  await reader
+    .insert(usageMeterEvents)
+    .values({
+      userId,
+      periodKey: admission.periodKey,
+      meter: "call_minutes",
+      sourceType: "voice_call",
+      sourceId,
+      idempotencyKey: key,
+      quantity: "0",
+      status: "admitted",
+      occurredAt: new Date(),
+    })
+    .onConflictDoNothing({ target: usageMeterEvents.idempotencyKey });
+}
+
+/** First terminal duration wins, even after cancellation, renewal or an emergency pause. */
+export async function settleVoiceUsageReceipt(
+  userId: string,
+  sourceId: string,
+  seconds: number,
+  reader: Reader = drizzle,
+): Promise<boolean> {
+  if (!Number.isFinite(seconds) || seconds < 0) throw new Error("Invalid call duration.");
+  const key = usageIdempotencyKey("call_minutes", "voice_call", sourceId);
+  const [existing] = await reader
+    .select({ id: usageMeterEvents.id })
+    .from(usageMeterEvents)
+    .where(and(eq(usageMeterEvents.userId, userId), eq(usageMeterEvents.idempotencyKey, key)))
+    .limit(1);
+  if (!existing) return false;
+  await reader
+    .update(usageMeterEvents)
+    .set({
+      quantity: String(Math.floor((seconds / 60) * 10_000) / 10_000),
+      status: "pending",
+      updatedAt: new Date(),
+    })
+    .where(and(eq(usageMeterEvents.id, existing.id), eq(usageMeterEvents.status, "admitted")));
+  return true;
 }
 
 export async function accountUsageSpendState(userId: string) {
@@ -399,7 +510,6 @@ export async function reportAllPendingUsage(limitAccounts = 200): Promise<{
   failed: number;
 }> {
   const totals = { accounts: 0, reported: 0, skipped: 0, failed: 0 };
-  if (!usageBillingEnabled()) return totals;
   await reconcileUsageReceipts();
   const users = await drizzle
     .selectDistinct({ userId: usageMeterEvents.userId })
@@ -408,17 +518,11 @@ export async function reportAllPendingUsage(limitAccounts = 200): Promise<{
     .limit(limitAccounts);
   const client = createStripeMeterClient();
   for (const { userId } of users) {
-    await drizzle.transaction(async (tx) => {
-      const lock = (await tx.execute(
-        sql`SELECT pg_try_advisory_xact_lock(hashtext(${`usage-report:${userId}`})) AS locked`,
-      )) as unknown as { rows?: Array<{ locked: boolean }> };
-      if (lock.rows?.[0]?.locked === false) return;
-      const result = await reportPendingUsageForUser(createUsageStore(tx), client, userId);
-      totals.accounts += 1;
-      totals.reported += result.reported;
-      totals.skipped += result.skipped;
-      totals.failed += result.failed;
-    });
+    const result = await reportPendingUsageForUser(createUsageStore(), client, userId);
+    totals.accounts += 1;
+    totals.reported += result.reported;
+    totals.skipped += result.skipped;
+    totals.failed += result.failed;
   }
   // Include accounts with fully reported receipts: a failed alert cannot rely
   // on another purchase or meter event to become eligible for retry.
@@ -468,9 +572,27 @@ export async function setUsageMonthlyCap(userId: string, capUsd: number): Promis
   await drizzle.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`usage-report:${userId}`}))`);
     const store = createUsageStore(tx);
-    const control = await store.spendControl(userId);
+    const identity = await store.billingIdentity(userId);
+    const control = await store.billingPeriod(userId, identity.periodKey);
+    if (
+      !control ||
+      !identity.usagePlanActive ||
+      control.blockedReason ||
+      new Date() < control.startsAt ||
+      new Date() >= control.endsAt
+    )
+      throw AppError.serviceUnavailable("Your billing period is still being confirmed.");
     const state = await usageSpendState(store, userId);
     validateUsageMonthlyCap(control, state.spentUsd, capUsd);
+    await tx
+      .update(usageBillingPeriods)
+      .set({ monthlyCapUsd: capUsd.toFixed(2) })
+      .where(
+        and(
+          eq(usageBillingPeriods.userId, userId),
+          eq(usageBillingPeriods.periodKey, identity.periodKey),
+        ),
+      );
     await tx
       .insert(usageSpendControls)
       .values({ userId, monthlyCapUsd: capUsd.toFixed(2) })
@@ -491,9 +613,44 @@ export async function setUsageMonthlyCap(userId: string, capUsd: number): Promis
 export async function setUsageAddonQuantities(
   userId: string,
   quantities: { numbers: number; emailAddresses: number },
+  period: {
+    stripeCustomerId: string;
+    stripeSubscriptionId: string;
+    startsAt: Date | null;
+    endsAt: Date | null;
+  },
 ): Promise<void> {
+  if (!period.startsAt || !period.endsAt || !(period.endsAt > period.startsAt))
+    throw AppError.serviceUnavailable("The Stripe billing period is unavailable.");
+  const periodKey = usagePeriodKey(period.endsAt, period.stripeSubscriptionId);
   await drizzle.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`usage-report:${userId}`}))`);
+    const control = await createUsageStore(tx).spendControl(userId);
+    await tx
+      .insert(usageBillingPeriods)
+      .values({
+        userId,
+        periodKey,
+        stripeCustomerId: period.stripeCustomerId,
+        stripeSubscriptionId: period.stripeSubscriptionId,
+        startsAt: period.startsAt!,
+        endsAt: period.endsAt!,
+        monthlyCapUsd: control.capUsd.toFixed(2),
+        numberAddons: quantities.numbers,
+        emailAddressAddons: quantities.emailAddresses,
+      })
+      .onConflictDoUpdate({
+        target: [usageBillingPeriods.userId, usageBillingPeriods.periodKey],
+        set: {
+          // Proration cannot be reconstructed from the latest quantities. Keep the
+          // original snapshot and require invoice reconciliation if they change.
+          blockedReason: sql`CASE WHEN ${usageBillingPeriods.numberAddons} <> ${quantities.numbers}
+        OR ${usageBillingPeriods.emailAddressAddons} <> ${quantities.emailAddresses}
+        OR ${usageBillingPeriods.startsAt} <> ${period.startsAt}
+        OR ${usageBillingPeriods.stripeCustomerId} <> ${period.stripeCustomerId}
+        THEN 'subscription_change_requires_invoice_reconciliation' ELSE ${usageBillingPeriods.blockedReason} END`,
+        },
+      });
     await tx
       .insert(usageSpendControls)
       .values({

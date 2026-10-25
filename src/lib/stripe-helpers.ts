@@ -935,7 +935,13 @@ async function syncSubscriptionFromStripeUnderLease(
       // address exists unless the owner bought one.
       const { setUsageAddonQuantities } = await import("./usage-billing-store");
       await assertSyncLease();
-      await setUsageAddonQuantities(userId, usageAddonQuantitiesFromSubscription(sub));
+      const period = subscriptionPeriod(sub);
+      await setUsageAddonQuantities(userId, usageAddonQuantitiesFromSubscription(sub), {
+        stripeCustomerId: customerId,
+        stripeSubscriptionId: sub.id,
+        startsAt: period.start ? new Date(period.start * 1000) : null,
+        endsAt: period.end ? new Date(period.end * 1000) : null,
+      });
     }
 
     const settingsMirror = {

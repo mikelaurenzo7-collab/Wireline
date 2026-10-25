@@ -14,7 +14,6 @@ import { IntegrationService } from "./integrations";
 import { mailboxScopedExternalId } from "./mailbox-identity";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
-import { usageBillingEnabled } from "./usage-billing-config";
 
 export const EMAIL_REPLY_MAX_CHARS = 10_000;
 
@@ -293,7 +292,7 @@ export async function sendEmailThreadReply(input: {
   const claim = await claimReply(input.userId, thread.id, key, digest);
   if (claim.kind === "sent") return claim.result;
   let usageReceipt: { periodKey: string; quantity: number; occurredAt: string } | null = null;
-  if (claim.kind === "claimed" && usageBillingEnabled()) {
+  if (claim.kind === "claimed") {
     // Usage billing: no new handled email once the monthly limit is spent.
     const { admitAccountUsage } = await import("./usage-billing-store");
     try {

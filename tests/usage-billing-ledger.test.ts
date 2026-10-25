@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   USAGE_REPORT_MAX_AGE_MS,
+  USAGE_REPORT_RETRY_WINDOW_MS,
   UsageSpendCapReachedError,
   admitUsage,
   clampBillableQuantity,
@@ -14,6 +15,7 @@ import {
   validateUsageMonthlyCap,
   type MeterTotals,
   type UsageBillingIdentity,
+  type UsageBillingPeriod,
   type UsageEventRow,
   type UsageMeterClient,
   type UsageSpendControl,
@@ -49,6 +51,15 @@ function memoryStore(
     ...options.identity,
   };
   const paused: boolean[] = [];
+  const period: UsageBillingPeriod = {
+    ...control,
+    stripeCustomerId: "cus_test_owner",
+    startsAt: new Date("2026-10-01T00:00:00Z"),
+    endsAt: new Date("2026-11-01T00:00:00Z"),
+    blockedReason: null,
+  };
+  const periods = new Map([[PERIOD, period]]);
+  let lock = Promise.resolve();
   const sum = (filter: (row: Row) => boolean, value: (row: Row) => number): MeterTotals => {
     const totals = emptyMeterTotals();
     for (const row of rows.filter(filter)) totals[row.meter] += value(row);
@@ -64,6 +75,7 @@ function memoryStore(
         attempts: 0,
         billable: null,
         reason: null,
+        reportAttempt: null,
       });
       return true;
     },
@@ -75,7 +87,10 @@ function memoryStore(
     },
     async reportedTotals(userId, periodKey) {
       return sum(
-        (row) => row.userId === userId && row.periodKey === periodKey && row.status === "reported",
+        (row) =>
+          row.userId === userId &&
+          row.periodKey === periodKey &&
+          ["pending", "reported", "reconciliation_required"].includes(row.status),
         (row) => row.billable ?? 0,
       );
     },
@@ -84,7 +99,7 @@ function memoryStore(
         (row) =>
           row.userId === userId &&
           row.periodKey === periodKey &&
-          (row.status === "pending" || row.status === "reported"),
+          ["pending", "reported", "reconciliation_required"].includes(row.status),
         (row) => row.billable ?? row.quantity,
       );
     },
@@ -93,6 +108,32 @@ function memoryStore(
     },
     async billingIdentity() {
       return { ...identity };
+    },
+    async billingPeriod(_userId, key) {
+      return periods.get(key) ?? null;
+    },
+    async withReportLock(_userId, work) {
+      const previous = lock;
+      let release!: () => void;
+      lock = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await previous;
+      try {
+        return await work(store);
+      } finally {
+        release();
+      }
+    },
+    async prepareReport(id, attempt) {
+      const row = rows.find((candidate) => candidate.id === id)!;
+      row.reportAttempt = { ...attempt };
+      row.billable = attempt.value;
+    },
+    async holdForReconciliation(id, reason) {
+      const row = rows.find((candidate) => candidate.id === id)!;
+      row.status = "reconciliation_required";
+      row.reason = reason;
     },
     async markReported(id, billable) {
       const row = rows.find((candidate) => candidate.id === id)!;
@@ -113,7 +154,7 @@ function memoryStore(
       paused.push(isPaused);
     },
   };
-  return { store, rows, control, paused };
+  return { store, rows, control, paused, identity, period, periods };
 }
 
 function event(meter: UsageMeterKey, sourceId: string, quantity: number, occurredAt = NOW) {
@@ -185,6 +226,7 @@ describe("usage metering idempotency", () => {
     expect(sent).toEqual([
       {
         meter: "call_minutes",
+        eventName: "botbound_call_minutes",
         stripeCustomerId: "cus_test_owner",
         value: 70,
         identifier: "usage:call_minutes:voice_call:call-1",
@@ -221,27 +263,137 @@ describe("usage metering idempotency", () => {
   });
 });
 
-describe("usage skip reasons", () => {
-  it("skips everything without an active usage subscription", async () => {
-    const { store, rows } = memoryStore({ identity: { usagePlanActive: false } });
+describe("usage reconciliation holds", () => {
+  it("freezes the entire report before I/O and keeps it unchanged after a timeout and cap change", async () => {
+    const { store, rows, period } = memoryStore({ control: { capUsd: 25 } });
+    await recordUsageEvent(store, event("call_minutes", "ambiguous", 100));
+    const send = vi.fn(async (payload) => {
+      expect(rows[0].reportAttempt).toMatchObject({ value: 84, identifier: payload.identifier });
+      throw new Error("response lost");
+    });
+    await reportPendingUsageForUser(store, { send }, USER, NOW);
+    period.capUsd = 100;
+    const { client, sent } = recordingClient();
+    await reportPendingUsageForUser(store, client, USER, new Date(NOW.getTime() + 60_000));
+    expect(sent).toEqual([send.mock.calls[0][0]]);
+    expect(rows[0].billable).toBe(84);
+  });
+
+  it("never contacts Stripe when request preparation fails", async () => {
+    const { store } = memoryStore();
+    await recordUsageEvent(store, event("emails_handled", "storage-failure", 5));
+    vi.spyOn(store, "prepareReport").mockRejectedValueOnce(new Error("commit unavailable"));
     const { client } = recordingClient();
-    await recordUsageEvent(store, event("emails_handled", "m-1", 1));
-    expect((await reportPendingUsageForUser(store, client, USER, NOW)).skipped).toBe(1);
-    expect(rows[0].reason).toBe("no_active_usage_subscription");
+    await expect(reportPendingUsageForUser(store, client, USER, NOW)).rejects.toThrow(
+      "commit unavailable",
+    );
     expect(client.send).not.toHaveBeenCalled();
   });
 
-  it("skips everything without a Stripe customer", async () => {
+  it("preserves possibly accepted charges after the retry window and reserves their cap headroom", async () => {
+    const { store, rows } = memoryStore({ control: { capUsd: 25 } });
+    await recordUsageEvent(store, event("call_minutes", "timeout", 100));
+    await recordUsageEvent(store, event("call_minutes", "next", 10, new Date(NOW.getTime() + 1)));
+    await reportPendingUsageForUser(
+      store,
+      { send: vi.fn().mockRejectedValue(new Error("timeout")) },
+      USER,
+      NOW,
+    );
+    const { client } = recordingClient();
+    const result = await reportPendingUsageForUser(
+      store,
+      client,
+      USER,
+      new Date(NOW.getTime() + USAGE_REPORT_RETRY_WINDOW_MS),
+    );
+    expect(result).toEqual({ reported: 0, skipped: 1, failed: 1 });
+    expect(rows[0]).toMatchObject({
+      status: "reconciliation_required",
+      billable: 84,
+      reason: "ambiguous_report_beyond_deduplication_window",
+    });
+    expect(rows[1].reason).toBe("spend_cap");
+    expect(client.send).not.toHaveBeenCalled();
+  });
+
+  it("holds late prior-period work without applying the new period's higher cap or blocking its report", async () => {
+    const { store, rows, period, periods, identity } = memoryStore({ control: { capUsd: 25 } });
+    period.endsAt = NOW;
+    const nextPeriod = "new-subscription-period";
+    periods.set(nextPeriod, {
+      ...period,
+      startsAt: NOW,
+      endsAt: new Date("2026-11-24T12:00:00Z"),
+      capUsd: 100,
+    });
+    identity.periodKey = nextPeriod;
+    await recordUsageEvent(
+      store,
+      event("call_minutes", "late", 100, new Date(NOW.getTime() - 60_000)),
+    );
+    await recordUsageEvent(store, {
+      ...event("call_minutes", "current", 100),
+      periodKey: nextPeriod,
+    });
+    const { client, sent } = recordingClient();
+    await reportPendingUsageForUser(store, client, USER, NOW);
+    expect(rows[0]).toMatchObject({
+      status: "reconciliation_required",
+      quantity: 100,
+      reason: "closed_period_requires_invoice_reconciliation",
+    });
+    expect(sent.map((request) => request.identifier)).toEqual([
+      "usage:call_minutes:voice_call:current",
+    ]);
+    expect(period.capUsd).toBe(25);
+  });
+
+  it("refuses new work and preserves receipts when an add-on change requires proration reconciliation", async () => {
+    const { store, period, rows } = memoryStore();
+    period.blockedReason = "subscription_change_requires_invoice_reconciliation";
+    await expect(admitUsage(store, USER, "call_minutes")).rejects.toMatchObject({
+      statusCode: 503,
+    });
+    await recordUsageEvent(store, event("call_minutes", "prior-admission", 2));
+    const { client } = recordingClient();
+    await reportPendingUsageForUser(store, client, USER, NOW);
+    expect(rows[0].reason).toBe(period.blockedReason);
+    expect(client.send).not.toHaveBeenCalled();
+  });
+
+  it("never guesses a period when the Stripe snapshot is missing", async () => {
+    const { store, periods } = memoryStore();
+    periods.clear();
+    await expect(admitUsage(store, USER, "call_minutes")).rejects.toMatchObject({
+      statusCode: 503,
+    });
+  });
+  it("preserves pending receipts after cancellation for final invoice reconciliation", async () => {
+    const { store, rows } = memoryStore({ identity: { usagePlanActive: false } });
+    const { client } = recordingClient();
+    await recordUsageEvent(store, event("emails_handled", "m-1", 1));
+    expect((await reportPendingUsageForUser(store, client, USER, NOW)).failed).toBe(1);
+    expect(rows[0]).toMatchObject({
+      status: "reconciliation_required",
+      quantity: 1,
+      reason: "inactive_subscription_requires_final_invoice_reconciliation",
+    });
+    expect(client.send).not.toHaveBeenCalled();
+  });
+
+  it("retains receipts without a Stripe customer", async () => {
     const { store, rows } = memoryStore({ identity: { stripeCustomerId: null } });
     const { client } = recordingClient();
     await recordUsageEvent(store, event("emails_handled", "m-1", 1));
     await reportPendingUsageForUser(store, client, USER, NOW);
-    expect(rows[0].reason).toBe("no_active_usage_subscription");
+    expect(rows[0].reason).toBe("inactive_subscription_requires_final_invoice_reconciliation");
     expect(client.send).not.toHaveBeenCalled();
   });
 
-  it("skips events older than the Stripe meter window", async () => {
-    const { store, rows } = memoryStore();
+  it("retains events older than the Stripe meter window", async () => {
+    const { store, rows, period } = memoryStore();
+    period.startsAt = new Date("2026-09-01T00:00:00Z");
     const { client } = recordingClient();
     const stale = new Date(NOW.getTime() - USAGE_REPORT_MAX_AGE_MS - 1);
     await recordUsageEvent(store, event("emails_handled", "m-1", 1, stale));
@@ -253,7 +405,7 @@ describe("usage skip reasons", () => {
 
 describe("usage spend caps", () => {
   it("refuses a cap below accrued usage and never conceals already-reported charges", async () => {
-    const { store, control } = memoryStore();
+    const { store, control, period } = memoryStore();
     const { client } = recordingClient();
     await recordUsageEvent(store, event("call_minutes", "call-344", 344));
     let state = await usageSpendState(store, USER);
@@ -263,6 +415,7 @@ describe("usage spend caps", () => {
     await reportPendingUsageForUser(store, client, USER, NOW);
     // Even an old invalid cap must not hide Stripe-accepted charges.
     control.capUsd = 24;
+    period.capUsd = 24;
     state = await usageSpendState(store, USER);
     expect(state).toMatchObject({ spentUsd: 90, capUsd: 24, atCap: true, headroomUsd: 0 });
   });

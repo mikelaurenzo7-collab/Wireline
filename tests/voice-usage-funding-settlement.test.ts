@@ -70,6 +70,7 @@ function database(ledger: any[] = []) {
               return [{ plan: "voice", extraAgents: 0 }];
             }
             if (table === "wireline_voice_usage_events") return [event];
+            if (table === "wireline_usage_meter_events") return [];
             if (table === "wireline_credit_ledger")
               return ledger.filter(
                 (row) =>
