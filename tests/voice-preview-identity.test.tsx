@@ -44,6 +44,9 @@ vi.mock("react", async (original) => {
     useMemo(factory: () => unknown) {
       return factory();
     },
+    useCallback(callback: unknown) {
+      return callback;
+    },
     useLayoutEffect: useEffect,
     useEffect,
   };

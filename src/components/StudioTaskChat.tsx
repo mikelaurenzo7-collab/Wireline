@@ -319,7 +319,7 @@ export default function StudioTaskChat({
                 ) : null}
                 {selected.summary ? (
                   <>
-                    <div className="wl-work-result-heading">
+                    <div className="wl-work-result-heading flex-wrap">
                       {selected.status === "completed" ? (
                         <CheckCircle2 className="size-4" aria-hidden="true" />
                       ) : null}
@@ -330,6 +330,19 @@ export default function StudioTaskChat({
                             ? "Needs your help"
                             : "Task outcome"}
                       </span>
+                      {selected.finishedAt ? (
+                        <time
+                          dateTime={selected.finishedAt}
+                          className="text-xs font-normal text-muted-foreground"
+                        >
+                          {new Date(selected.finishedAt).toLocaleString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
+                        </time>
+                      ) : null}
                     </div>
                     <TaskResultText>{selected.summary}</TaskResultText>
                   </>

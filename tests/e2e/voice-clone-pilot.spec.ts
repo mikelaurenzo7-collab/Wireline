@@ -239,7 +239,7 @@ async function openVoice(page: Page) {
   await page.goto("/studio?agent=voice-pilot-bot&section=setup");
   const voice = page.getByRole("region", { name: "Phone Voice", exact: true });
   await expect(voice).toBeVisible();
-  await expect(voice.locator("summary")).toContainText("Marin");
+  await expect(voice.locator("summary").filter({ hasText: "Change Voice" })).toContainText("Marin");
   return voice;
 }
 
@@ -313,7 +313,7 @@ test("closed custom-voice pilot stays hidden while all ten OpenAI calling voices
   const state = await mockPilot(page, { available: false });
   const voice = await openVoice(page);
   await expect(voice.getByRole("region", { name: "Private custom voice previews" })).toHaveCount(0);
-  await voice.locator("summary").click();
+  await voice.locator("summary").filter({ hasText: "Change Voice" }).click();
   await expect(voice.getByText("10 Built-In Voices", { exact: true })).toBeVisible();
   await expect(voice.locator("button[aria-pressed]")).toHaveCount(10);
   await expect(voice.getByRole("button", { name: "Marin Selected", exact: true })).toHaveAttribute(
@@ -388,7 +388,7 @@ test("native voice pilot uploads, reviews, previews, and deletes without changin
   }).toEqual({ creates: 1, reviews: 1, previews: 1, deletes: 1 });
   expect(state.callingVoiceChanges).toBe(0);
   expect(await microphones(page)).toBe(0);
-  await expect(voice.locator("summary")).toContainText("Marin");
+  await expect(voice.locator("summary").filter({ hasText: "Change Voice" })).toContainText("Marin");
 });
 
 for (const enlarged of [false, true]) {

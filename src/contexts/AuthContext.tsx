@@ -162,11 +162,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const locationRef = useRef(location);
   locationRef.current = location;
 
-  // Whether the current path needs a session probe. Public marketing surfaces
-  // do not; workspace and account-entry routes do. Depending on this boolean
-  // (instead of the raw pathname) means intra-portal navigation between, say,
-  // /signin and /signup no longer re-fires the hydration effect, while crossing
-  // from a public page into the portal still hydrates once.
+  // Public surfaces hydrate in the background. Recheck when entering account
+  // or workspace routes, without probing again on every marketing navigation.
   const needsAuthProbe =
     !isSessionOptionalPublicPath(location.pathname) || isAuthPortalPath(location.pathname);
 
@@ -182,13 +179,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (sessionOptional) {
-        // Public and account-entry routes must paint without waiting on the
-        // session endpoint. Account-entry routes still hydrate in the
-        // background, though: otherwise a signed-in customer who refreshed
-        // /signin or /signup was rendered as anonymous forever and could start
-        // a second account flow instead of returning to their workspace.
+        // Paint immediately, then recognize an existing cookie session in the
+        // header and account-entry routes without trusting browser storage.
         if (!cancelled) setLoading(false);
-        if (!isAuthPortalPath(pathname)) return;
       }
 
       if (!sessionOptional && !cancelled) setLoading(true);

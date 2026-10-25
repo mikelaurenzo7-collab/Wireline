@@ -13,6 +13,7 @@ import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
+import { buildAgentOptionLabels } from "../lib/agent-option-labels";
 import { useChannelEntitlements } from "../hooks/useChannelEntitlements";
 import ChannelAccessNotice from "../components/ChannelAccessNotice";
 import { planById } from "../lib/plan-catalog";
@@ -225,6 +226,7 @@ export default function EmailPage() {
   }
 
   const showBotFilter = activeTab !== "approvals" && (agents.length > 1 || Boolean(activeAgentId));
+  const agentLabels = buildAgentOptionLabels(agents);
   const showMailboxFilter =
     activeTab === "email" && (availableMailboxes.length > 1 || Boolean(activeAccountId));
   const scopeControls =
@@ -245,7 +247,7 @@ export default function EmailPage() {
             ) : null}
             {agents.map((agent) => (
               <option key={agent.id} value={agent.id}>
-                {agent.name}
+                {agentLabels.get(agent.id) || agent.name}
               </option>
             ))}
           </select>
