@@ -1,22 +1,35 @@
-# Help: your own voice on calls
+# Help: Your Own Voice On Calls
 
-Last updated: October 24, 2026
+Last updated: October 25, 2026
 
 Your Bot can speak in your own voice.
 
 ## Create it
 
-1. Open your Bot, then **Voice**, then **Clone my voice**.
+1. Open your Bot, then **Voice**, then **Clone Voice**.
 2. Choose the state you live in, read the voice release, and sign it by typing
    your full legal name. Only you can clone your voice.
 3. Read the on-screen script in a quiet room for about 90 seconds (10 seconds
    minimum, 2 minutes maximum). The meter shows your level as you go.
 4. Review the quality check. If it suggests a retake, follow the tip and record
    again.
-5. Compare your voice with the stock voice, then choose **Use this voice**.
+5. Compare your voice with the stock voice, then choose **Use This Voice**.
 
 **Switch back to stock voice** reverts in one tap, and deleting a voice removes
 it everywhere.
+
+## Prepared Phone Voices
+
+Open **More Phone Voices** to search and preview public Cartesia voices and
+ElevenLabs' prepared voices. Selecting one saves it for that Bot's incoming and
+outgoing calls. Selecting a clone or a built-in voice replaces that selection.
+Your browser rehearsal continues to use its built-in voice.
+
+This catalog excludes private workspace voices and ElevenLabs marketplace
+voices with separate rates. It does not upload your recording to Cartesia.
+Provider outages can trigger the same stock-speech fallback used by cloned
+calls. A preview confirms sample playback; test a real call to assess telephone
+quality and interruption behavior.
 
 ## What to expect
 

@@ -2059,6 +2059,7 @@ async function runRealtimeSession(
         callId: input.callId,
         userId: input.userId,
         voice: runtime.customVoice ?? null,
+        catalogVoice: runtime.catalogVoice ?? null,
       })
     : new WebSocket(buildRealtimeSipSocketUrl(input.callId), {
         headers: { Authorization: `Bearer ${apiKey}` },

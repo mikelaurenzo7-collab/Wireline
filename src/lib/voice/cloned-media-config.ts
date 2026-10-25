@@ -23,3 +23,17 @@ export function elevenLabsCallsConfigured(env: NodeJS.ProcessEnv = process.env):
     return false;
   }
 }
+
+export function catalogCallsConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
+  if (
+    !env.OPENAI_API_KEY?.trim() ||
+    !(env.CARTESIA_API_KEY?.trim() || env.ELEVENLABS_API_KEY?.trim())
+  )
+    return false;
+  try {
+    clonedMediaOrigin(env);
+    return true;
+  } catch {
+    return false;
+  }
+}

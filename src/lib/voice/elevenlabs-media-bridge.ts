@@ -28,6 +28,8 @@ import {
   type RuntimeCustomVoice,
 } from "./live-voice-service";
 import { referTransferTwiml } from "./inbound-bridge";
+import { PHONE_CATALOG_VOICE_KEY, type CatalogPhoneVoice } from "../phone-voice-catalog";
+import { phoneCatalogService, CARTESIA_SPEECH_MODEL } from "./phone-catalog-service";
 
 type RegisteredStream = {
   carrier: WebSocket;
@@ -138,6 +140,7 @@ export function createClonedMediaSession(input: {
   callId: string;
   userId: string;
   voice: RuntimeCustomVoice | null;
+  catalogVoice?: CatalogPhoneVoice | null;
 }): ElevenLabsMediaSession {
   const entry = streams.get(input.callId);
   if (!entry || entry.claimed || entry.carrier.readyState !== WebSocket.OPEN)
@@ -146,6 +149,7 @@ export function createClonedMediaSession(input: {
   entry.carrier.off("message", entry.buffer);
   const openAIKey = process.env.OPENAI_API_KEY?.trim() ?? "";
   const elevenLabsKey = process.env.ELEVENLABS_API_KEY?.trim() ?? "";
+  const cartesiaKey = process.env.CARTESIA_API_KEY?.trim() ?? "";
   if (!openAIKey) throw new Error("Cloned speech is not configured");
   const model = new WebSocket(
     `wss://api.openai.com/v1/realtime?model=${encodeURIComponent(OPENAI_REALTIME_DEFAULT_MODEL)}`,
@@ -157,28 +161,45 @@ export function createClonedMediaSession(input: {
   );
   let played = false;
   let synthesisSequence = 0;
+  const catalogVoice = input.voice ? null : input.catalogVoice;
+  const speechProvider = catalogVoice?.provider ?? "elevenlabs";
   const speech = clonedSpeechStreams({
-    voiceId: input.voice?.voiceId ?? "",
+    voiceId: input.voice?.voiceId ?? catalogVoice?.id ?? "",
     elevenLabsKey,
+    cartesiaKey,
+    speechProvider,
     openAIKey,
-    stockVoice: clonedStockVoice(input.voice?.gender ?? null),
+    stockVoice: clonedStockVoice(input.voice?.gender ?? catalogVoice?.gender ?? null),
     reserve: async (provider, text) => {
       if (
         provider === "elevenlabs" &&
+        input.voice &&
         !(await resolveRuntimeCustomVoice(input.userId, {
           [LIVE_CUSTOM_VOICE_KEY]: { cloneId: input.voice!.cloneId },
         }))
       )
         throw new Error("Cloned voice was revoked or expired");
+      if (
+        provider !== "openai" &&
+        catalogVoice &&
+        !(await phoneCatalogService.resolve({ [PHONE_CATALOG_VOICE_KEY]: catalogVoice }))
+      )
+        throw new Error("Catalog phone voice is no longer available");
       // Conservative character-based reservation, separate from the Realtime
       // reasoning/input-audio reservation. Attempts retain their debit when
       // the provider outcome is ambiguous; cancellation never refunds work.
-      const usdPerThousand = provider === "elevenlabs" ? 0.3 : 0.015;
+      const usdPerThousand =
+        provider === "elevenlabs" ? 0.3 : provider === "cartesia" ? 0.08 : 0.015;
       const reservation = await reservePlatformCostRecord({
         userId: input.userId,
-        action: "voice.clone.synthesis",
+        action: catalogVoice ? "voice.catalog.synthesis" : "voice.clone.synthesis",
         provider,
-        model: provider === "elevenlabs" ? "eleven_flash_v2_5" : "tts-1",
+        model:
+          provider === "elevenlabs"
+            ? "eleven_flash_v2_5"
+            : provider === "cartesia"
+              ? CARTESIA_SPEECH_MODEL
+              : "tts-1",
         costUsd: Math.max(0.000001, (Array.from(text).length * usdPerThousand) / 1_000),
         idempotencyKey: `clone-speech:${input.callId}:${synthesisSequence++}:${randomUUID()}`,
         requestMeta: {
@@ -196,7 +217,9 @@ export function createClonedMediaSession(input: {
     carrier: entry.carrier,
     model,
     streamSid: entry.streamSid,
-    initialStock: input.voice?.engine !== "elevenlabs" || !elevenLabsKey,
+    initialStock: catalogVoice
+      ? !(speechProvider === "cartesia" ? cartesiaKey : elevenLabsKey)
+      : input.voice?.engine !== "elevenlabs" || !elevenLabsKey,
     ...speech,
     onClonePlayed: async () => {
       if (played || !cloneId) return;
@@ -204,10 +227,16 @@ export function createClonedMediaSession(input: {
       await markRuntimeCustomVoicePlayed(input.userId, cloneId);
     },
     onFallback: () =>
-      log.warn("Cloned phone voice switched to stock speech", {
-        callId: input.callId,
-        cloneId,
-      }),
+      log.warn(
+        catalogVoice
+          ? "Catalog phone voice switched to stock speech"
+          : "Cloned phone voice switched to stock speech",
+        {
+          callId: input.callId,
+          cloneId,
+          catalogProvider: catalogVoice?.provider,
+        },
+      ),
   });
   for (const frame of entry.earlyFrames) entry.carrier.emit("message", frame);
   entry.earlyFrames = [];

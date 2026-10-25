@@ -7,7 +7,7 @@ import { OPENAI_REALTIME_VOICE_IDS, OPENAI_REALTIME_VOICES } from "../src/lib/vo
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("voice catalog", () => {
-  it("exposes only the ten OpenAI live choices in the customer picker", () => {
+  it("keeps ten managed OpenAI choices for browser rehearsal", () => {
     const catalog = read("src/lib/voice-catalog.ts");
     expect(catalog).toContain("WIRELINE_LIVE_VOICES");
     expect(catalog).toContain("OPENAI_REALTIME_VOICES");
@@ -17,7 +17,7 @@ describe("voice catalog", () => {
     expect(OPENAI_REALTIME_VOICES.map((voice) => voice.id).sort()).toEqual(
       [...OPENAI_REALTIME_VOICE_IDS].sort(),
     );
-    // The customer picker is exactly the managed OpenAI catalog.
+    // Rehearsal keeps its managed choices alongside the separate phone catalog.
     const picker = read("src/components/voice/SimpleVoicePicker.tsx");
     expect(picker).toContain("OPENAI_REALTIME_VOICES");
     expect(picker).not.toContain('authFetch("/api/voices")');

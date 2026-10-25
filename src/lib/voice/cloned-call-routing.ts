@@ -2,10 +2,12 @@ import { and, eq } from "drizzle-orm";
 import * as schema from "../../db/schema";
 import { drizzle, tenantStore } from "../server-context";
 import { resolveRuntimeCustomVoice } from "./live-voice-service";
+import { phoneCatalogService } from "./phone-catalog-service";
 import {
   CLONED_MEDIA_PATH,
   clonedMediaOrigin,
   elevenLabsCallsConfigured,
+  catalogCallsConfigured,
 } from "./cloned-media-config";
 
 const xml = (value: string) =>
@@ -23,16 +25,20 @@ export async function clonedCallTwiml(input: {
   token: string;
   direction: "inbound" | "outbound";
 }): Promise<string | null> {
-  if (!elevenLabsCallsConfigured()) return null;
+  if (!elevenLabsCallsConfigured() && !catalogCallsConfigured()) return null;
   const voice = await tenantStore.run(input.userId, async () => {
     const [agent] = await drizzle
       .select({ variables: schema.agents.businessVariables })
       .from(schema.agents)
       .where(and(eq(schema.agents.id, input.agentId), eq(schema.agents.userId, input.userId)))
       .limit(1);
-    return agent ? resolveRuntimeCustomVoice(input.userId, agent.variables) : null;
+    if (!agent) return null;
+    const custom = await resolveRuntimeCustomVoice(input.userId, agent.variables);
+    if (custom) return custom.engine === "elevenlabs" ? custom : null;
+    const catalog = await phoneCatalogService.resolve(agent.variables);
+    return catalog ? { engine: catalog.provider } : null;
   });
-  if (voice?.engine !== "elevenlabs") return null;
+  if (voice?.engine !== "elevenlabs" && voice?.engine !== "cartesia") return null;
   const url = new URL(CLONED_MEDIA_PATH, clonedMediaOrigin());
   url.protocol = "wss:";
   return (

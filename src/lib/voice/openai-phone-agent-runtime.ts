@@ -38,6 +38,7 @@ import {
 } from "./openai-realtime-config";
 import { OPENAI_REALTIME_COST_TRUNCATION } from "./openai-realtime-pricing";
 import { customVoiceSelection, resolveRuntimeCustomVoice } from "./live-voice-service";
+import { phoneCatalogService } from "./phone-catalog-service";
 
 const MAX_PROMPT_LINE_LENGTH = 700;
 const MAX_INITIAL_KNOWLEDGE_ITEMS = 8;
@@ -512,9 +513,10 @@ export async function buildOpenAIRealtimeAgentRuntime(input: {
   if (reviewRequired) {
     throw new AppError(409, "RUNTIME_REVIEW_REQUIRED", RUNTIME_REVIEW_REQUIRED_RESPONSE);
   }
-  const [tools, customVoice] = await Promise.all([
+  const [tools, customVoice, catalogVoice] = await Promise.all([
     resolveTools(input.surface, runtime),
     resolveRuntimeCustomVoice(runtime.agent.userId, runtime.agent.businessVariables),
+    phoneCatalogService.resolve(runtime.agent.businessVariables),
   ]);
   const instructions = composeOpenAIRealtimeInstructions({
     ...runtime,
@@ -567,6 +569,7 @@ export async function buildOpenAIRealtimeAgentRuntime(input: {
     voice,
     /** A consented cloned voice, spoken natively on xAI; null means stock. */
     customVoice,
+    catalogVoice: customVoice ? null : catalogVoice,
     greeting: reviewRequired
       ? RUNTIME_REVIEW_REQUIRED_GREETING
       : resolveAgentGreeting(runtime.agent, runtime.directives),

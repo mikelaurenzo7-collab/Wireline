@@ -12,6 +12,14 @@ import { recordAmbiguousProviderAttempt, recordUsage } from "../lib/ai-audit";
 import { drizzle, log } from "../lib/server-context";
 import { phoneCallVoiceFor } from "../lib/voice/xai-voice-config";
 import { LIVE_CUSTOM_VOICE_KEY } from "../lib/voice/live-voice-service";
+import { PHONE_CATALOG_VOICE_KEY } from "../lib/phone-voice-catalog";
+import { phoneCatalogService, CARTESIA_SPEECH_MODEL } from "../lib/voice/phone-catalog-service";
+import { catalogCallsConfigured } from "../lib/voice/cloned-media-config";
+import {
+  reservePlatformCostRecord,
+  commitPlatformCostReservation,
+} from "../middleware/audit-middleware";
+import { voiceSampleLine } from "../lib/voice/voice-sample";
 import { xaiSipCredentialsFor } from "../lib/voice/xai-phone-registration";
 import { isVoiceSampleAvailable, synthesizeVoiceSample } from "../lib/voice/voice-sample";
 import {
@@ -785,9 +793,12 @@ router.get(
       },
     );
     const record = agentRows[0];
-    const phoneCall = phoneCallVoiceFor(
-      record?.voiceProvider === "presenter" ? record?.phoneVoiceId : record?.voiceId,
-    );
+    const catalogVoice = await phoneCatalogService.resolve(record?.businessVariables);
+    const phoneCall = catalogVoice
+      ? { provider: catalogVoice.provider, voice: catalogVoice.name }
+      : phoneCallVoiceFor(
+          record?.voiceProvider === "presenter" ? record?.phoneVoiceId : record?.voiceId,
+        );
     let phoneCallReady: boolean | null = null;
     if (phoneCall) {
       const [line] = await drizzle
@@ -801,6 +812,7 @@ router.get(
         )
         .limit(1);
       if (!line?.phoneNumber) phoneCallReady = false;
+      else if (catalogVoice) phoneCallReady = catalogCallsConfigured();
       else {
         try {
           phoneCallReady = Boolean(await xaiSipCredentialsFor(line.phoneNumber));
@@ -842,6 +854,7 @@ router.get(
         phoneVoiceProvider: record?.phoneVoiceProvider || null,
         phoneCall,
         phoneCallReady,
+        catalogVoice,
       },
       personality: personalities[0]?.content || "",
       directives,
@@ -1092,6 +1105,46 @@ router.get(
       .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
       .limit(1);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
+    const sampleProvider = typeof req.query.provider === "string" ? req.query.provider : "openai";
+    if (sampleProvider === "cartesia" || sampleProvider === "elevenlabs") {
+      const voice = await phoneCatalogService.resolve({
+        [PHONE_CATALOG_VOICE_KEY]: { provider: sampleProvider, id: req.query.voice },
+      });
+      if (!voice)
+        throw AppError.fromHttpStatus(
+          409,
+          "That phone voice is unavailable. Choose another voice.",
+        );
+      const line = voiceSampleLine(agent.name);
+      const reservation = await reservePlatformCostRecord({
+        userId: req.user.id,
+        action: "voice.catalog.preview",
+        provider: voice.provider,
+        model: voice.provider === "cartesia" ? CARTESIA_SPEECH_MODEL : "eleven_flash_v2_5",
+        costUsd: Math.max(
+          0.000001,
+          (Array.from(line).length * (voice.provider === "cartesia" ? 0.08 : 0.3)) / 1000,
+        ),
+        requestMeta: {
+          surface: "catalog_preview",
+          characters: Array.from(line).length,
+          estimate: true,
+        },
+      });
+      if (!reservation.reserved)
+        throw AppError.fromHttpStatus(429, "Voice preview limit reached. Try again later.");
+      await commitPlatformCostReservation(reservation.reservation);
+      try {
+        const result = await phoneCatalogService.preview(voice, line);
+        res.setHeader("Content-Type", result.mime);
+        res.setHeader("Cache-Control", "private, max-age=86400");
+        res.send(result.audio);
+      } catch {
+        throw AppError.fromHttpStatus(503, "That sample could not play. Try another voice.");
+      }
+      return;
+    }
+    if (sampleProvider !== "openai") throw AppError.badRequest("Invalid voice provider.");
     const voiceId = normalizeManagedOpenAIVoiceId(
       cleanText(typeof req.query.voice === "string" ? req.query.voice : "", 40),
     );
@@ -1110,6 +1163,45 @@ router.get(
     res.setHeader("Content-Type", "audio/mpeg");
     res.setHeader("Cache-Control", "private, max-age=86400");
     res.send(audio);
+  },
+);
+
+router.get(
+  "/api/agent-config/:id/phone-voices",
+  authenticateUser,
+  agentMutationRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const agent = await owned(req.params.id, req.user.id);
+    if (!agent) throw AppError.notFound("Bot not found.");
+    res.setHeader("Cache-Control", "private, no-store");
+    res.json(await phoneCatalogService.all());
+  },
+);
+
+router.patch(
+  "/api/agent-config/:id/phone-voice",
+  authenticateUser,
+  agentMutationRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const agent = await owned(req.params.id, req.user.id);
+    if (!agent) throw AppError.notFound("Bot not found.");
+    const voice = await phoneCatalogService.resolve({ [PHONE_CATALOG_VOICE_KEY]: req.body });
+    if (!voice)
+      throw AppError.fromHttpStatus(409, "That phone voice is unavailable. Choose another voice.");
+    if (!catalogCallsConfigured())
+      throw AppError.fromHttpStatus(
+        503,
+        "Phone voices are temporarily unavailable. Try again later.",
+      );
+    // One atomic JSON update preserves concurrent changes to unrelated Bot setup.
+    const selection = JSON.stringify({ id: voice.id, provider: voice.provider });
+    await drizzle
+      .update(schema.agents)
+      .set({
+        businessVariables: sql`jsonb_set(COALESCE(${schema.agents.businessVariables}, '{}'::jsonb) - ${LIVE_CUSTOM_VOICE_KEY}, ARRAY[${PHONE_CATALOG_VOICE_KEY}], ${selection}::jsonb)`,
+      })
+      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
+    res.json({ success: true, catalogVoice: voice });
   },
 );
 
@@ -1162,8 +1254,13 @@ router.patch(
       current?.businessVariables && typeof current.businessVariables === "object"
         ? { ...(current.businessVariables as Record<string, unknown>) }
         : null;
-    const customVoiceCleared = Boolean(variables && LIVE_CUSTOM_VOICE_KEY in variables);
-    if (variables) delete variables[LIVE_CUSTOM_VOICE_KEY];
+    const customVoiceCleared = Boolean(
+      variables && (LIVE_CUSTOM_VOICE_KEY in variables || PHONE_CATALOG_VOICE_KEY in variables),
+    );
+    if (variables) {
+      delete variables[LIVE_CUSTOM_VOICE_KEY];
+      delete variables[PHONE_CATALOG_VOICE_KEY];
+    }
     const patch: {
       voiceId: string;
       voiceProvider: "openai";
