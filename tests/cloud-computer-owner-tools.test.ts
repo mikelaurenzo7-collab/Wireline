@@ -220,18 +220,31 @@ describe.skipIf(!available)("owner browser tools (real Chromium, synthetic sites
     ]);
   });
 
-  it("retains actual owner downloads and cancels a subsequent Bot-triggered download", async () => {
+  it("retains actual owner downloads and erases a subsequent Bot-triggered download", async () => {
     const box = await session.activePage().locator("#download").boundingBox();
     await session.executeOwnerInput({ kind: "click", x: box!.x + 2, y: box!.y + 2 });
     await vi.waitFor(() => expect(session.ownerDownloads()).toHaveLength(1));
     const metadata = session.ownerDownloads()[0];
     expect(metadata).toMatchObject({ name: "report.txt", bytes: 16 });
     expect(session.ownerDownload(metadata.id)?.data.toString()).toBe("synthetic report");
+    const capture = vi.spyOn(
+      session as unknown as {
+        captureOwnerDownload(download: Download): Promise<void>;
+      },
+      "captureOwnerDownload",
+    );
     const botDownload = session.activePage().waitForEvent("download");
     await session.execute("left_click", {
       target: { type: "coordinate", x: box!.x + 2, y: box!.y + 2 },
     });
-    expect(await (await botDownload).failure()).toBe("canceled");
+    const rejected = await botDownload;
+    await vi.waitFor(() => expect(capture).toHaveBeenCalledWith(rejected));
+    await capture.mock.results[0].value;
+    // A tiny blob may finish before cancel reaches Chromium. Erasure and lack
+    // of readable bytes are the requirement, regardless of its failure label.
+    await expect(rejected.createReadStream()).rejects.toThrow(/canceled|deleted|has been closed/i);
+    expect(session.isClosed).toBe(false);
+    expect(await session.activePage().locator("#download").count()).toBe(1);
     expect(session.ownerDownloads()).toHaveLength(1);
     await session.close();
     expect(session.ownerDownload(metadata.id)).toBeNull();
@@ -475,11 +488,22 @@ describe.skipIf(!available)("owner browser tools (real Chromium, synthetic sites
     expect(session.unexpectedCloseReason).not.toContain("private");
   });
 
-  it("cancels a late native download event after owner hand-back without waiting for a Bot action", async () => {
+  it("erases a late native download event after owner hand-back without waiting for a Bot action", async () => {
     session.cancelCurrentInput();
+    const capture = vi.spyOn(
+      session as unknown as {
+        captureOwnerDownload(download: Download): Promise<void>;
+      },
+      "captureOwnerDownload",
+    );
     const pending = session.activePage().waitForEvent("download");
     await session.activePage().locator("#download").click();
-    expect(await (await pending).failure()).toBe("canceled");
+    const rejected = await pending;
+    await vi.waitFor(() => expect(capture).toHaveBeenCalledWith(rejected));
+    await capture.mock.results[0].value;
+    await expect(rejected.createReadStream()).rejects.toThrow(/canceled|deleted|has been closed/i);
+    expect(session.isClosed).toBe(false);
+    expect(await session.activePage().locator("#download").count()).toBe(1);
     expect(session.ownerDownloads()).toEqual([]);
   });
 

@@ -71,7 +71,9 @@ export class BrowserNetworkGuard {
   private fail(): void {
     if (this.stopped) return;
     this.stop();
-    this.onFailure();
+    // Closing a page also cancels guard setup/commands for that page. A live
+    // page losing interception still closes the entire owned context.
+    if (!this.pageClosed()) this.onFailure();
   }
 
   private bounded<T>(work: Promise<T>, endpoint: Endpoint): Promise<T> {

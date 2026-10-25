@@ -466,6 +466,7 @@ describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)
     expect(button).toBeTruthy();
 
     await session.executeOwnerInput({ kind: "click", x: button!.x + 3, y: button!.y + 3 });
+    await vi.waitFor(() => expect(session.activePage()).not.toBe(original));
     const popup = session.activePage();
     expect(popup).not.toBe(original);
     expect(await popup.locator("#email").count()).toBe(1);
@@ -490,6 +491,28 @@ describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)
     await popup.close();
     expect(session.activePage()).toBe(original);
     await original.setContent(FIXTURE);
+  });
+
+  it("focuses a popup announced after owner input, but never after hand-back", async () => {
+    const original = session.activePage();
+    await session.executeOwnerInput({ kind: "click", x: 1, y: 1 });
+    const first = original.waitForEvent("popup");
+    await original.evaluate(() => {
+      window.open("about:blank");
+    });
+    const popup = await first;
+    await vi.waitFor(() => expect(session.activePage()).toBe(popup));
+    session.cancelCurrentInput();
+    const second = original.waitForEvent("popup");
+    await original.evaluate(() => {
+      window.open("about:blank");
+    });
+    const late = await second;
+    await vi.waitFor(() => expect(session.ownerTabs()).toHaveLength(3));
+    expect(session.activePage()).toBe(popup);
+    await late.close();
+    await popup.close();
+    expect(session.activePage()).toBe(original);
   });
 
   it("still blocks an owner popup that tries to reach loopback", async () => {

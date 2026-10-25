@@ -2,7 +2,7 @@ import type { CDPSession } from "playwright-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BrowserNetworkGuard } from "../src/lib/cloud-computer/browser-network-guard";
 
-function fixture(allowed = vi.fn(async (_url: string) => true)) {
+function fixture(allowed = vi.fn(async (_url: string) => true), pageClosed = () => false) {
   const events = new Map<string, (event: Record<string, unknown>) => void>();
   const send = vi.fn(async (_method: string, _params?: Record<string, unknown>) => ({}));
   const cdp = {
@@ -11,7 +11,13 @@ function fixture(allowed = vi.fn(async (_url: string) => true)) {
   };
   const blocked = vi.fn();
   const failed = vi.fn();
-  const guard = new BrowserNetworkGuard(cdp as unknown as CDPSession, allowed, blocked, failed);
+  const guard = new BrowserNetworkGuard(
+    cdp as unknown as CDPSession,
+    allowed,
+    blocked,
+    failed,
+    pageClosed,
+  );
   const pause = (url: string, requestId = "request-1") =>
     events.get("Fetch.requestPaused")!({ requestId, request: { url } });
   return { guard, send, allowed, failed, blocked, pause, events };
@@ -20,6 +26,18 @@ function fixture(allowed = vi.fn(async (_url: string) => true)) {
 afterEach(() => vi.useRealTimers());
 
 describe("Chromium request-stage network guard", () => {
+  it("does not close other pages when an owned page closes during guard setup", async () => {
+    let closed = false;
+    const f = fixture(undefined, () => closed);
+    f.send.mockImplementation(async () => {
+      closed = true;
+      throw new Error("Target page closed");
+    });
+    await expect(f.guard.start()).rejects.toThrow("cannot enforce safe network");
+    expect(f.failed).not.toHaveBeenCalled();
+    f.pause("https://example.com/");
+    expect(f.allowed).not.toHaveBeenCalled();
+  });
   it("requires interception and child-target pause support before reporting ready", async () => {
     const f = fixture();
     f.send.mockRejectedValueOnce(new Error("unsupported"));

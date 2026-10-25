@@ -335,6 +335,8 @@ export class CloudBrowserSession {
   /** Tabs that loaded something from a private address the guard could not stop. */
   private readonly tainted = new WeakSet<Page>();
   private activeToken: MemberToken | null = null;
+  private ownerControlActive = false;
+  private ownerFocusEpoch = 0;
   /** Owner-entered text stays in memory for screenshot/text redaction only. */
   private readonly ownerEnteredValues: string[] = [];
   /** Cookie/login values are never evicted while a page could still echo them. */
@@ -465,7 +467,14 @@ export class CloudBrowserSession {
     const id = `tab-${this.nextTabNumber++}`;
     this.tabs.set(id, page);
     this.pageIds.set(page, id);
-    void this.ensureNetworkGuard(page).catch(() => this.closeUnexpectedly("guard_startup_failed"));
+    void this.ensureNetworkGuard(page).catch(() => {
+      if (!page.isClosed()) this.closeUnexpectedly("guard_startup_failed");
+    });
+    // Chromium can announce a login popup after the input response has already
+    // returned. Keep following owner popups until control or the action changes.
+    if (this.ownerControlActive) {
+      void this.focusOwnerPopup(page, id, this.ownerFocusEpoch).catch(() => undefined);
+    }
     page.on("dialog", (dialog) => {
       dialog.dismiss().catch(() => undefined);
     });
@@ -479,6 +488,23 @@ export class CloudBrowserSession {
     });
     if (this.tabs.size > MAX_TABS) page.close().catch(() => undefined);
     return id;
+  }
+
+  private async focusOwnerPopup(page: Page, id: string, epoch: number): Promise<void> {
+    const opener = await page.opener();
+    if (!opener || !this.pageIds.has(opener)) return;
+    await this.ensureNetworkGuard(page);
+    const blocked = await this.enforcePublicTabs();
+    if (
+      this.closed ||
+      !this.ownerControlActive ||
+      epoch !== this.ownerFocusEpoch ||
+      page.isClosed() ||
+      blocked.has(id)
+    )
+      return;
+    this.activeTabId = id;
+    await page.bringToFront().catch(() => undefined);
   }
 
   private ensureNetworkGuard(page: Page): Promise<void> {
@@ -1088,6 +1114,8 @@ export class CloudBrowserSession {
   async executeOwnerInput(input: OwnerControlInput): Promise<Buffer> {
     const token: MemberToken = { cancelled: false };
     this.activeToken = token;
+    this.ownerControlActive = true;
+    this.ownerFocusEpoch += 1;
     try {
       if (this.disconnected || this.closed) fail("The cloud computer is no longer connected.");
       if ((await withDeadline(this.enforcePublicTabs(), MEMBER_DEADLINE_MS)).size) {
@@ -1296,6 +1324,8 @@ export class CloudBrowserSession {
   }
 
   private revokeOwnerDownloads(): void {
+    this.ownerControlActive = false;
+    this.ownerFocusEpoch += 1;
     this.downloadAllowedUntil = 0;
     this.downloadPermissionEpoch += 1;
     for (const download of this.pendingDownloads) {
