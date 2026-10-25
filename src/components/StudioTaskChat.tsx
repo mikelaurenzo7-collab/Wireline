@@ -441,7 +441,7 @@ export default function StudioTaskChat({
                   ? "Reply to your Bot…"
                   : handoff
                     ? "What should your Bot do from here?"
-                    : "Give your Bot a task…"
+                    : "Your Task…"
               }
               className="wl-composer-dock__input"
               onKeyDown={(event) => {
