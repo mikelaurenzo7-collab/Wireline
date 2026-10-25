@@ -17,6 +17,7 @@ import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import { publicAiStreamFailureMessage } from "../lib/ai-stream-errors";
 import { findOwnedAgentProfile } from "../lib/agent-ownership";
+import { loadPromptKnowledge } from "../lib/agent-knowledge-search";
 import {
   planWorkspace,
   buildWorkspaceStreamContext,
@@ -130,7 +131,7 @@ async function markProposalSaved(
 }
 
 /** Both composer routes plan against the same saved, tenant-owned configuration. */
-async function loadPlanningAgent(agentId: string, userId: string) {
+async function loadPlanningAgent(agentId: string, userId: string, userMessage: string) {
   const [agentRows, personalities, directives] = await drizzle.transaction((tx) =>
     serialQueryBatch([
       tx
@@ -178,6 +179,13 @@ async function loadPlanningAgent(agentId: string, userId: string) {
         firstMessage: resolveAgentGreeting(agent, directives),
         personality: personalities[0]?.content || "",
         directives,
+        knowledge: await loadPromptKnowledge(drizzle, {
+          userId,
+          agentId,
+          text: userMessage,
+          relevant: 8,
+          total: 12,
+        }),
       }
     : null;
 }
@@ -274,7 +282,7 @@ router.post(
 
       // Load agent + current config (the planner proposes changes against
       // the live values) + recent call context.
-      const agent = await loadPlanningAgent(agentId, req.user.id);
+      const agent = await loadPlanningAgent(agentId, req.user.id, userMessage);
       if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
       const recentCalls = await drizzle
@@ -396,7 +404,7 @@ router.post(
         throw AppError.fromHttpStatus(503, "LLM not configured");
       }
 
-      const agent = await loadPlanningAgent(agentId, req.user.id);
+      const agent = await loadPlanningAgent(agentId, req.user.id, userMessage);
       if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
       const { createSseStream, writeSseBootstrap } = await import("../lib/sse-stream");
