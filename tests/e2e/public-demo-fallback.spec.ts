@@ -48,7 +48,7 @@ test("showcase redirects to account creation without selecting a plan or request
   expect(await page.evaluate(() => window.__botboundMicRequests ?? 0)).toBe(0);
 });
 
-test("home preserves role intent without selecting a plan or exposing a public audio control", async ({
+test("home offers neutral signup without selecting a plan or exposing a public audio control", async ({
   page,
 }) => {
   await installMicrophoneProbe(page);
@@ -60,15 +60,16 @@ test("home preserves role intent without selecting a plan or exposing a public a
   await page.setViewportSize({ width: 390, height: 844 });
   await openPage(page, "/");
 
-  const roles = page.locator("#solutions");
-  const business = roles.getByRole("link", {
-    name: /Use this role\s*:\s*Front Desk/i,
-  });
-  const personal = roles.getByRole("link", {
-    name: /Use this role\s*:\s*Personal Assistant/i,
-  });
-  await expect(business).toHaveAttribute("href", "/signup?template=front-desk");
-  await expect(personal).toHaveAttribute("href", "/signup?template=personal-assistant");
+  const hero = page.locator(".landing-prestige__hero");
+  await expect(hero.getByRole("link", { name: "Get Started", exact: true })).toHaveAttribute(
+    "href",
+    "/signup",
+  );
+  await page.getByRole("tab", { name: "Calls", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Explore Calls", exact: true })).toHaveAttribute(
+    "href",
+    "/features#calls",
+  );
   await expect(page.getByRole("button", { name: /talk to/i })).toHaveCount(0);
   await expect(page.locator("audio, video")).toHaveCount(0);
   expect(publicVoiceRequests).toEqual([]);

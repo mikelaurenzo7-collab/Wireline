@@ -6,7 +6,7 @@ import { randomBytes } from "node:crypto";
 // excluded from this allowlist.
 export const INLINE_SCRIPT_HASHES = [
   // Theme-init boot script.
-  "'sha256-rYWQCFq+3047ZWkDO1YafD8wzUpLv9aVQVarfGpJ1y4='",
+  "'sha256-+0K22Pi05pW1Xo84/hg0oXlIQOxJky/HLx56GrxZnDg='",
   // Plausible analytics stub.
   "'sha256-DW2NBe3Fz6FPszNbns1IMdj7fIvsXZ5h3KkiKEoUbYc='",
 ] as const;

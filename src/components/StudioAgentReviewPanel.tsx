@@ -1,3 +1,4 @@
+import BotLivePanel from "./studio/BotLivePanel";
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, ChevronDown, Mic, PhoneCall, Settings2 } from "lucide-react";
 import { Link } from "react-router";
@@ -293,6 +294,13 @@ export default function StudioAgentReviewPanel({
           </StatusNotice>
         ) : null}
 
+        <BotLivePanel
+          agentId={agentId}
+          agentName={agentName}
+          compact={compact}
+          className={sectionClass}
+        />
+
         <section hidden={Boolean(error)} className={sectionClass} aria-label="Setup summary">
           {loading ? (
             <div className="divide-y divide-border" aria-busy="true">
@@ -338,7 +346,7 @@ export default function StudioAgentReviewPanel({
               <Button asChild size="sm" variant="secondary">
                 <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=setup#voice-clone`}>
                   <Mic className="size-4" aria-hidden="true" />
-                  Clone your voice
+                  Clone Voice
                 </Link>
               </Button>
             }

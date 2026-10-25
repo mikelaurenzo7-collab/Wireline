@@ -87,11 +87,11 @@ describe("current-state UI contract", () => {
     const authPortal = read("src/components/AuthPortal.tsx");
     const authAccess = read("src/components/auth/AuthAccessPanel.tsx");
 
-    expect(landing).toContain("STRIPE_PLANS");
-    expect(landing).toContain("price_usd_monthly");
-    expect(landing).toContain("to={signupHrefForPlan(id)}");
-    expect(landing).toContain('to="/signup"');
-    expect(landing).toContain("/signup?template=${encodeURIComponent(template.key)}");
+    expect(landing).not.toContain("STRIPE_PLANS");
+    expect(landing).not.toContain("price_usd_monthly");
+    expect(landing).not.toContain("to={signupHrefForPlan(id)}");
+    expect(landing).toContain('signedIn ? "/studio" : "/signup"');
+    expect(landing).not.toContain("/signup?template=");
     expect(hero).toContain("marketing-hero__title");
     expect(hero).toContain("marketing-hero__actions");
     expect(authPortal).toContain('location.pathname.startsWith("/signup/")');

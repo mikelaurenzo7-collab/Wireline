@@ -229,7 +229,7 @@ describe("BotBound product voice", () => {
       expect(template.summary.length).toBeGreaterThan(24);
     }
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
-    expect(landing).toContain("{template.summary}");
+    expect(landing).not.toContain("{template.summary}");
     expect(landing).not.toContain("template.category");
   });
 
@@ -254,15 +254,15 @@ describe("BotBound product voice", () => {
     }
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
     expect(landing).not.toContain("<AuthAccessPanel");
-    expect(landing).toContain("YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER");
-    expect(landing).toContain('to="/signup"');
+    expect(landing).toContain("AI Bots With Their Own Phone Number, Email Address, And Computer.");
+    expect(landing).toContain('signedIn ? "/studio" : "/signup"');
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toContain("landing-prestige__directions");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).not.toContain("HERO_CHANNELS.map");
-    expect(landing).toContain("FEATURED_TEMPLATES.map");
-    expect(landing).toContain("{template.summary}");
-    expect(landing).toContain("STRIPE_PLANS");
+    expect(landing).not.toContain("FEATURED_TEMPLATES.map");
+    expect(landing).not.toContain("{template.summary}");
+    expect(landing).not.toContain("STRIPE_PLANS");
     expect(landing).toContain("LandingFooter");
     expect(landing).toContain("<PrecisionPublicHeader />");
     expect(landing).not.toContain("Runtime Balance");

@@ -13,6 +13,7 @@
  * https://elevenlabs.io/docs/api-reference/user/subscription/get
  */
 import { Buffer } from "node:buffer";
+import { ELEVENLABS_SPEECH_MODEL, ELEVENLABS_SPEECH_SETTINGS } from "./elevenlabs-speech-settings";
 
 const ORIGIN = "https://api.elevenlabs.io";
 const MAX_JSON_BYTES = 256 * 1_024;
@@ -30,7 +31,7 @@ const SAMPLE_EXTENSIONS: Readonly<Record<string, string>> = {
 
 export const ELEVENLABS_VOICE_PREVIEW = {
   text: "Hello, thanks for calling. How can I help your business today?",
-  modelId: "eleven_flash_v2_5",
+  modelId: ELEVENLABS_SPEECH_MODEL,
   outputFormat: "mp3_44100_128",
 } as const;
 
@@ -376,6 +377,7 @@ export function createElevenLabsVoiceClient(input: {
         body: JSON.stringify({
           text: spoken,
           model_id: ELEVENLABS_VOICE_PREVIEW.modelId,
+          voice_settings: ELEVENLABS_SPEECH_SETTINGS,
         }),
       },
       async (response, signal) => {

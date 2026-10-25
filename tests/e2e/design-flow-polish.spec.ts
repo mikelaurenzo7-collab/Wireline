@@ -104,16 +104,16 @@ test("Studio setup edits survive Review and closing the inspector without saving
   await page.setViewportSize({ width: 1440, height: 1000 });
   await mockWorkspace(page);
   await page.goto("/studio?agent=design-bot&section=setup");
-  await page.getByLabel("Opening greeting").fill("Welcome to the repair desk.");
+  await page.getByLabel("Opening Greeting").fill("Welcome to the repair desk.");
   await page.getByLabel(/Add facts or rules/).fill("Ask for the appliance model before booking.");
   await page.getByRole("button", { name: "Warm", exact: true }).click();
   await page.getByRole("tab", { name: "Summary", exact: true }).click();
-  await page.getByRole("tab", { name: "Set up", exact: true }).click();
-  await expect(page.getByLabel("Opening greeting")).toHaveValue("Welcome to the repair desk.");
+  await page.getByRole("tab", { name: "Set Up", exact: true }).click();
+  await expect(page.getByLabel("Opening Greeting")).toHaveValue("Welcome to the repair desk.");
   await expect(page.getByText("Unsaved changes", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Close panel", exact: true }).click();
-  await page.getByRole("button", { name: "Bot details", exact: true }).click();
-  await expect(page.getByLabel("Opening greeting")).toHaveValue("Welcome to the repair desk.");
+  await page.getByRole("button", { name: "Set Up Bot", exact: true }).click();
+  await expect(page.getByLabel("Opening Greeting")).toHaveValue("Welcome to the repair desk.");
   await capture(page, info, "studio-draft-desktop");
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByLabel(/Add facts or rules/)).toHaveValue(
@@ -133,18 +133,17 @@ for (const width of [320, 390, 1440]) {
     await page.evaluate(() => document.fonts.ready);
     const pillars = page.getByRole("list", { name: "Available Bot capabilities" });
     await expect(pillars.getByRole("heading", { level: 2 })).toHaveText([
-      "Phone Number",
-      "Email Address",
+      "Calls",
+      "SMS",
+      "Email",
       "Cloud Computer",
     ]);
     const features = page.getByRole("list", { name: "Built Around You" });
     await expect(features.getByRole("heading", { level: 3 })).toHaveText([
-      "Reviewed Calls",
       "Made Yours",
       "Native Calendar Booking",
       "Approvals and Handoffs",
       "Clear Outcomes",
-      "Rehearse Before Launch",
     ]);
     if (width >= 1024) {
       const geometry = await page.evaluate(() => {
@@ -169,7 +168,7 @@ for (const width of [320, 390, 1440]) {
         };
       });
       // One centered column: title, actions, and section heading share an axis.
-      expect(geometry.case).toBe("uppercase");
+      expect(geometry.case).toBe("none");
       expect(geometry.lines.length).toBeGreaterThanOrEqual(1);
       for (const line of geometry.lines) {
         expect(line.left).toBeGreaterThanOrEqual(0);
@@ -212,7 +211,7 @@ test("Studio settings and navigation reflow at 320px with enlarged text", async 
   await expect
     .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).fontSize))
     .toBe("32px");
-  await expect(page.getByRole("heading", { name: "Tone & Knowledge" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bot Setup", exact: true })).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
   const inspectorOverflows = () =>
     page.evaluate(() =>
@@ -266,13 +265,13 @@ test("Studio settings and navigation reflow at 320px with enlarged text", async 
     "aria-pressed",
     "true",
   );
-  await page.getByLabel("Opening greeting").fill("Welcome to the repair desk.");
+  await page.getByLabel("Opening Greeting").fill("Welcome to the repair desk.");
   await page.getByRole("tab", { name: "Summary", exact: true }).click();
-  await page.getByRole("tab", { name: "Set up", exact: true }).click();
-  await expect(page.getByLabel("Opening greeting")).toHaveValue("Welcome to the repair desk.");
+  await page.getByRole("tab", { name: "Set Up", exact: true }).click();
+  await expect(page.getByLabel("Opening Greeting")).toHaveValue("Welcome to the repair desk.");
   await capture(page, info, "studio-320-enlarged-text");
   await page.getByRole("button", { name: "Close panel", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Bot details", exact: true })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Set Up Bot", exact: true })).toBeFocused();
   const workroom = page.getByRole("region", { name: "Front Desk workroom", exact: true });
   await expect(workroom).toBeVisible();
   expect(

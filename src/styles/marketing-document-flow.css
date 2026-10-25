@@ -124,7 +124,7 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
 
 .marketing-surface.wl-features-page .wl-features-pillars {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.9rem;
   margin: 0;
   padding: 0;
@@ -223,7 +223,7 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
 
 .marketing-surface.wl-features-page .wl-features-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem;
   margin: 1.75rem 0 0;
   padding: 0;

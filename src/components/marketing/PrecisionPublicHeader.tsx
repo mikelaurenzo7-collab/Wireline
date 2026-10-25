@@ -34,7 +34,7 @@ export default function PrecisionPublicHeader() {
 
         <nav className="ml-auto hidden items-center gap-1 md:flex" aria-label="Explore BotBound">
           {[
-            { to: "/features", label: "Features" },
+            { to: "/features", label: "Product" },
             { to: "/pricing", label: "Pricing" },
           ].map(({ to, label }) => (
             <NavLink
@@ -93,7 +93,7 @@ export default function PrecisionPublicHeader() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="z-[100] w-44 min-w-0">
               <DropdownMenuItem asChild className="min-h-11 px-3">
-                <NavLink to="/features">Features</NavLink>
+                <NavLink to="/features">Product</NavLink>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="min-h-11 px-3">
                 <NavLink to="/pricing">Pricing</NavLink>

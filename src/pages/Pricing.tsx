@@ -89,9 +89,9 @@ function UsagePricing() {
       <section id="plans" className="marketing-section marketing-section--screen">
         <div className="wl-public-rail mx-auto max-w-5xl">
           <div className="mx-auto mb-6 max-w-3xl text-center">
-            <h1 className="marketing-hero-title mx-auto">One Plan. One Shared Work Allowance.</h1>
+            <h1 className="marketing-hero-title mx-auto">One Plan. Room to Do More.</h1>
             <p className="marketing-hero-lead mx-auto mt-4">
-              No per-Bot charge. Move the sliders to see your monthly bill.
+              Calls, email, and Computer. One shared allowance.
             </p>
           </div>
           <UsagePricingPanel />

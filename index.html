@@ -7,9 +7,11 @@
         try {
           var stored = localStorage.getItem("wireline-theme");
           var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-          var useLight = stored === "light" || (stored === "system" && !systemDark);
+          var useLight = stored !== "dark" && (stored !== "system" || !systemDark);
           if (useLight) document.documentElement.classList.add("light");
-        } catch (e) {}
+        } catch (e) {
+          document.documentElement.classList.add("light");
+        }
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -59,7 +61,7 @@
       name="domain-verification"
       content="065fb511902f953df797eb5a33a6ca3db2ece86475cb39d0f48abdabe0088b61"
     />
-    <meta name="theme-color" content="#0A0A0E" />
+    <meta name="theme-color" content="#F7F7F3" />
     <meta name="msapplication-TileColor" content="#0A0A0E" />
     <meta name="apple-mobile-web-app-title" content="BotBound" />
     <meta name="apple-mobile-web-app-capable" content="yes" />

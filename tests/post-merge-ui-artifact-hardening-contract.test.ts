@@ -12,7 +12,7 @@ describe("post-merge UI and artifact hardening", () => {
     expect(theme).toContain('updateMetaContent("color-scheme", resolved)');
     expect(theme).toContain('updateMetaContent("theme-color", THEME_COLORS[resolved])');
     expect(theme).toContain('updateMetaContent("msapplication-TileColor", THEME_COLORS[resolved])');
-    expect(theme).toContain('light: "#F6F5FA"');
+    expect(theme).toContain('light: "#F7F7F3"');
     expect(theme).toContain('dark: "#0A0A0E"');
   });
 
@@ -20,7 +20,9 @@ describe("post-merge UI and artifact hardening", () => {
     const env = read(".env.example");
 
     expect(env).toContain("Usage draws from prepaid Runtime Balance.");
-    expect(env).toContain("No Stripe meter event is configured.");
+    expect(env).toContain(
+      "Legacy packages do not use the separate pooled-usage Stripe meter above.",
+    );
     expect(env).not.toContain("STRIPE_VOICE_OVERAGE_METER_EVENT_NAME");
     expect(env).not.toContain("tenant overages bill through Stripe");
     expect(env).not.toContain("Cadence AI Stripe");

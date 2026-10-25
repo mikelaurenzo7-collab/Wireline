@@ -154,7 +154,8 @@ const FRIENDLY_PROVIDER_ERRORS: Record<CloneEngineErrorCode, { status: number; m
   {
     not_configured: {
       status: 503,
-      message: "Voice cloning is temporarily unavailable. Your stock voice is still working.",
+      message:
+        "Voice cloning could not connect. Keep this page open and try again. Your built-in voice still works.",
     },
     not_entitled: {
       status: 503,

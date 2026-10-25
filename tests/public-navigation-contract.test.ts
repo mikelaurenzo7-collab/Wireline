@@ -29,7 +29,7 @@ describe("public navigation contract", () => {
     expect(header).not.toContain("SITE_NAV");
     expect(header).not.toContain('aria-label="Site"');
     expect(header).not.toContain('label: "Solutions"');
-    expect(header).toContain('label: "Features"');
+    expect(header).toContain('label: "Product"');
     expect(header).toContain('label: "Pricing"');
     expect(header).toContain('aria-label="Open navigation"');
     const destinations = new Set(

@@ -1,4 +1,5 @@
 import type { SpeechStream } from "./elevenlabs-media-session";
+import { ELEVENLABS_SPEECH_MODEL, ELEVENLABS_SPEECH_SETTINGS } from "./elevenlabs-speech-settings";
 
 export const clonedStockVoice = (gender: "female" | "male" | null): "nova" | "onyx" =>
   gender === "male" ? "onyx" : "nova";
@@ -87,7 +88,7 @@ export function clonedSpeechStreams(input: {
 }): { cloneSpeech: SpeechStream; stockSpeech: SpeechStream } {
   const request = input.fetchImpl ?? fetch;
   const stream = (provider: "elevenlabs" | "openai"): SpeechStream =>
-    async function* (text, signal) {
+    async function* (text, signal, context) {
       if (signal.aborted) return;
       await input.reserve(provider, text);
       if (signal.aborted) return;
@@ -109,12 +110,9 @@ export function clonedSpeechStreams(input: {
                   },
                   body: JSON.stringify({
                     text,
-                    model_id: "eleven_flash_v2_5",
-                    voice_settings: {
-                      stability: 0.5,
-                      similarity_boost: 0.75,
-                      use_speaker_boost: false,
-                    },
+                    model_id: ELEVENLABS_SPEECH_MODEL,
+                    voice_settings: ELEVENLABS_SPEECH_SETTINGS,
+                    ...(context?.previousText ? { previous_text: context.previousText } : {}),
                   }),
                 },
               )

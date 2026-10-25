@@ -71,7 +71,7 @@ for (const route of PUBLIC_ROUTES) {
  */
 const PRERENDERED_HEAD = [
   { route: "/pricing", title: "Pricing | Calls, Email, and a Computer | BotBound" },
-  { route: "/features", title: "Features | BotBound" },
+  { route: "/features", title: "Product | BotBound" },
   { route: "/sms-consent", title: "SMS Consent | BotBound" },
   {
     route: "/for/legal",

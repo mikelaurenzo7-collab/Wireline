@@ -1,7 +1,7 @@
 /**
  * Post-signup onboarding copy — Account Holder-facing, BotBound-native.
  * Public marketing uses capability and outcome copy, without a setup sequence.
- * After create, the setup guide is Train → Try It → Launch.
+ * After create, the setup guide is Train → Voice → Try It → Launch.
  */
 
 /** Shown after Fast Start — Bot exists but activation (first useful call) pending. */
@@ -27,7 +27,7 @@ export const ACTIVATION_NUDGE_COPY = {
   cta: "Call your Bot",
 } as const;
 
-/** Guided steps after create — Train → Try It → Launch. */
+/** Guided steps after create — Train → Voice → Try It → Launch. */
 export const POST_CREATE_WIZARD_COPY = {
   eyebrow: "Setup",
   title: "Next Up for",
@@ -38,12 +38,18 @@ export const POST_CREATE_WIZARD_COPY = {
       detail: "Review its instructions. Add a site, document, or policy when needed.",
       salesHint: "Train what matters on day one, hear it privately, then put it on a live number.",
       primary: "Open training",
-      secondary: "Continue to Try It",
+      secondary: "Choose Voice",
+    },
+    voice: {
+      label: "Voice",
+      title: "Choose Voice",
+      detail: "Pick a voice or clone your own. Change it anytime.",
+      primary: "Continue to Try It",
     },
     launch: {
       label: "Launch",
       title: "Put It on the Line",
-      detail: "Every paid plan includes a US number. Callers reach this Bot directly.",
+      detail: "Connect a dedicated number so callers can reach this Bot directly.",
       primary: "Choose a number",
       skip: "Launch later",
       activationRequired: "Your Bot is created. A live number needs a plan.",
@@ -55,7 +61,7 @@ export const POST_CREATE_WIZARD_COPY = {
       label: "Try It",
       title: "Hear It First",
       detail:
-        "Try a private conversation before anyone else hears it. Practice calls do not count as going live.",
+        "Practice privately with your built-in voice. To hear a cloned voice in a conversation, connect a number and make a real test call.",
       primary: "Continue to launch",
       skip: "Skip for now",
     },

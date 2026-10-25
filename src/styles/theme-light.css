@@ -1,34 +1,34 @@
 /* BotBound Design System — light appearance.
- * The generated semantic base tokens provide the dark first-visit default.
- * index.html applies `.light` before first paint for saved light preferences
- * and saved system preferences that currently resolve to light.
- * Light uses a cool off-white canvas rather than stark white and keeps the same
+ * The generated base tokens provide dark mode; this is the default light appearance.
+ * index.html applies `.light` before first paint on first visit, for saved light preferences,
+ * and for saved system preferences that resolve to light.
+ * Light uses a warm off-white canvas without grain and keeps the same
  * violet/platinum identity as dark mode, inverted for contrast. */
 
 :root.light {
   color-scheme: light;
 
-  --wireline-color-canvas-default: #f6f5fa;
-  --wireline-color-canvas-deeper: #eae8f2;
-  --wireline-color-canvas-warmer: #fbfafd;
+  --wireline-color-canvas-default: #f7f7f3;
+  --wireline-color-canvas-deeper: #eeeef2;
+  --wireline-color-canvas-warmer: #ffffff;
   --wireline-color-surface-default: #ffffff;
-  --wireline-color-surface-subtle: #f1eff7;
-  --wireline-color-surface-container: #e9e6f1;
-  --wireline-color-surface-strong: #dedaea;
+  --wireline-color-surface-subtle: #f5f5f7;
+  --wireline-color-surface-container: #ededf1;
+  --wireline-color-surface-strong: #e0e0e6;
   --wireline-color-surface-raised: #ffffff;
-  --wireline-color-surface-recessed: #eceaf3;
+  --wireline-color-surface-recessed: #f0f0f4;
 
-  --wireline-color-text-primary: #171426;
-  --wireline-color-text-secondary: #5b5770;
+  --wireline-color-text-primary: #19191d;
+  --wireline-color-text-secondary: #626268;
   /* At least 4.62:1 across the standard surfaces, including surface-strong. */
-  --wireline-color-text-tertiary: #625c76;
+  --wireline-color-text-tertiary: #606066;
   --wireline-color-text-onAction: #ffffff;
 
-  --wireline-color-action-primary-default: #6d28d9;
-  --wireline-color-action-primary-pressed: #5b21b6;
-  --wireline-color-action-primary-hover: #7c3aed;
-  --wireline-color-action-primary-container: #ede7fb;
-  --wireline-color-action-primary-containerStrong: #dcd0f7;
+  --wireline-color-action-primary-default: #7040d7;
+  --wireline-color-action-primary-pressed: #5e2fbd;
+  --wireline-color-action-primary-hover: #6333c5;
+  --wireline-color-action-primary-container: #f0eafb;
+  --wireline-color-action-primary-containerStrong: #e3d8f6;
 
   /* Wire-action labels stay readable on both default and hover containers. */
   --wireline-color-action-secondary-default: #596170;
@@ -37,11 +37,11 @@
   --wireline-color-action-secondary-container: #eef0f3;
   --wireline-color-action-secondary-containerStrong: #dfe3e8;
 
-  --wireline-color-border-default: #e1deea;
-  --wireline-color-border-soft: #eceaf3;
-  --wireline-color-border-strong: #c9c4d9;
+  --wireline-color-border-default: #e5e5eb;
+  --wireline-color-border-soft: #f0f0f4;
+  --wireline-color-border-strong: #c8c8d1;
 
-  --wireline-color-focus-default: #6d28d9;
+  --wireline-color-focus-default: #7040d7;
   --wireline-color-focus-wire: #596170;
 
   --wireline-color-overlay-scrim: rgba(23, 20, 38, 0.42);
@@ -69,7 +69,7 @@
 
   --wireline-color-glow-primary: rgba(109, 40, 217, 0.12);
   --wireline-color-glow-primarySoft: rgba(109, 40, 217, 0.06);
-  --wireline-color-glow-wire: rgba(107, 114, 128, 0.10);
+  --wireline-color-glow-wire: rgba(107, 114, 128, 0.1);
   --wireline-color-glow-wireSoft: rgba(107, 114, 128, 0.04);
 
   --wireline-color-pressHighlight: rgba(23, 20, 38, 0.04);
@@ -80,10 +80,14 @@
   --wireline-elevation-md: 0 14px 34px -26px rgba(23, 20, 38, 0.14);
   --wireline-elevation-lg: 0 28px 70px -44px rgba(23, 20, 38, 0.18);
   --wireline-elevation-raised: 0 2px 8px -3px rgba(23, 20, 38, 0.08);
-  --wireline-elevation-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(23, 20, 38, 0.06);
-  --wireline-elevation-insetRaised: inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 -1px 0 rgba(23, 20, 38, 0.08);
-  --wireline-elevation-wirelineRing: 0 0 0 1px rgba(109, 40, 217, 0.12), 0 8px 30px -12px rgba(109, 40, 217, 0.10);
-  --wireline-elevation-wireGlow: 0 0 0 1px rgba(107, 114, 128, 0.14), 0 8px 30px -12px rgba(107, 114, 128, 0.12);
+  --wireline-elevation-inset:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(23, 20, 38, 0.06);
+  --wireline-elevation-insetRaised:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 -1px 0 rgba(23, 20, 38, 0.08);
+  --wireline-elevation-wirelineRing:
+    0 0 0 1px rgba(109, 40, 217, 0.12), 0 8px 30px -12px rgba(109, 40, 217, 0.1);
+  --wireline-elevation-wireGlow:
+    0 0 0 1px rgba(107, 114, 128, 0.14), 0 8px 30px -12px rgba(107, 114, 128, 0.12);
 
   --background: var(--wireline-color-canvas-default);
   --foreground: var(--wireline-color-text-primary);

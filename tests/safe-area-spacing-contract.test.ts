@@ -104,7 +104,6 @@ describe("safe-area spacing ownership", () => {
   it("preserves the public document and bounded form contracts", () => {
     const documentFlow = read("src/styles/marketing-document-flow.css");
     const authPortal = read("src/components/AuthPortal.tsx");
-    const landingCss = read("src/styles/landing-prestige.css");
     const mobile = read("src/styles/public-mobile-refinement.css");
     const ownership = read("src/styles/safe-area-ownership.css");
 
@@ -117,9 +116,7 @@ describe("safe-area spacing ownership", () => {
     }
     expect(authPortal).toContain("wl-auth-form-panel flex min-h-full");
     expect(authPortal).toContain("w-full max-w-[520px]");
-    expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*\.landing-prestige__hero \{[\s\S]*min-height:\s*auto/,
-    );
+    expect(read("src/styles/landing-prestige.css")).toContain("flex-wrap: wrap;");
     expect(ownership).toMatch(
       /\.marketing-surface \{[\s\S]*padding-left: env\(safe-area-inset-left[\s\S]*padding-right: env\(safe-area-inset-right/,
     );

@@ -1,5 +1,5 @@
 /* Tiny first-paint layer. React owns all product layout after hydration.
- * Dark is the first-visit WIRELINE appearance; explicit Light/System choices
+ * Light is the first-visit BotBound appearance; explicit Dark/System choices
  * are applied synchronously by index.html before this stylesheet paints. */
 :root {
   background: var(--wireline-color-canvas-default, #0A0A0E);
@@ -7,7 +7,7 @@
 }
 
 :root.light {
-  background: #F6F5FA;
+  background: #F7F7F3;
   color-scheme: light;
 }
 
@@ -21,6 +21,6 @@ body {
 }
 
 :root.light body {
-  background: #F6F5FA;
-  color: #171426;
+  background: #F7F7F3;
+  color: #19191d;
 }

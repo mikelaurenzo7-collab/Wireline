@@ -49,7 +49,7 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(studio).not.toContain("Good morning");
     expect(studio).not.toContain("dayGreeting");
     expect(chrome).toContain('aria-label="Switch Bot"');
-    expect(chrome).toContain('aria-label="Bot details"');
+    expect(chrome).toContain('aria-label="Set Up Bot"');
     expect(chrome).toContain('aria-controls={inspectorOpen ? "studio-inspector" : undefined}');
     expect(chrome).toContain('to="/studio?create=1"');
   });

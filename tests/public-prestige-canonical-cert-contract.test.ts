@@ -18,8 +18,8 @@ describe("canonical BotBound public prestige certification", () => {
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).not.toContain("<AuthAccessPanel");
-    expect(landing).toContain('to="/signup"');
-    expect(landing).toContain("to={signupHrefForPlan(id)}");
+    expect(landing).toContain('signedIn ? "/studio" : "/signup"');
+    expect(landing).not.toContain("to={signupHrefForPlan(id)}");
     expect(landing).not.toContain("template.category");
     expect(landing).not.toContain("ONE WORKSPACE");
 
@@ -27,11 +27,9 @@ describe("canonical BotBound public prestige certification", () => {
     expect(botMark).toContain("MOTIF_ICONS");
 
     expect(landingCss).toMatch(
-      /\.landing-prestige__hero\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*text-align:\s*center;/,
+      /\.landing-prestige__hero\s*\{[^}]*place-items:\s*center;[^}]*text-align:\s*center;/,
     );
-    expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?min-height:\s*auto/,
-    );
+    expect(read("src/styles/landing-prestige.css")).toContain("flex-wrap: wrap;");
     expect(landingCss).not.toMatch(/\.landing-prestige__(?:auth|entrance|desktop-only)\b/);
 
     expect(designVision).toContain("BotBound Design System");

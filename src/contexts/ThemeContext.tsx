@@ -7,7 +7,7 @@ const STORAGE_KEY = "wireline-theme";
 const DEFAULT_THEME = WIRELINE_DESIGN_VISION.appearance.default;
 const THEME_COLORS = {
   dark: "#0A0A0E",
-  light: "#F6F5FA",
+  light: "#F7F7F3",
 } as const;
 
 interface ThemeContextValue {

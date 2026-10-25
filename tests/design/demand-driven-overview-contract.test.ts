@@ -73,7 +73,7 @@ describe("demand-driven authenticated experience", () => {
     expect(studio).toContain('{ id: "work", label: "Work" }');
     expect(studio).toContain('{ id: "computer", label: "Browser" }');
     expect(studio).toContain('{ id: "try", label: "Rehearse" }');
-    expect(studio).toContain('{ id: "setup", label: "Set up" }');
+    expect(studio).toContain('{ id: "setup", label: "Set Up" }');
     expect(studio).toContain("<StudioTaskChat");
     expect(studio).toContain("<ComputerWorkspaceProvider>");
     expect(studio).toContain("StudioAgentReviewPanel");
@@ -101,7 +101,7 @@ describe("demand-driven authenticated experience", () => {
   });
 
   it("keeps voice choice customer-facing rather than narrating provider topology", () => {
-    expect(voice).toContain("Preview Voice");
+    expect(voice).toContain("Rehearse");
     expect(voice).toContain("OpenAILiveVoiceSandbox");
     expect(voice).not.toContain("Browser tests the words");
     expect(voice).not.toContain("Speech-to-Speech");

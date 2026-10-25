@@ -4,7 +4,7 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-/* WIRELINE is dark-by-default: ThemeProvider (src/contexts/ThemeContext.tsx)
+/* BotBound defaults to light: ThemeProvider (src/contexts/ThemeContext.tsx)
  * only ever toggles a `.light` class on <html> for the light/system-resolved-
  * light appearance; there is no `.dark` class and dark is simply the absence
  * of `.light`. Without this override, Tailwind's `dark:` variant defaults to

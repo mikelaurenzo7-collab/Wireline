@@ -116,13 +116,13 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /to="\/signup"/,
+    /signedIn \? "\/studio" : "\/signup"/,
     "landing must route its primary action to plan-neutral account creation",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER/,
+    /AI Bots With Their Own Phone Number, Email Address, And Computer\./,
     "landing must describe the calling, email and Computer product family",
   );
   mustExclude(
@@ -140,14 +140,14 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /FEATURED_TEMPLATE_KEYS[\s\S]*BOT_ROLE_TEMPLATES\.find/,
-    "landing must curate shared role starters",
+    /role="tablist"[\s\S]*role="tabpanel"/,
+    "landing must expose accessible capability navigation",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /template\.summary/,
-    "role cards must describe the job without repeating playbook details",
+    /to=\{`\/features#\$\{example\.id\}`\}/,
+    "capability selection must link to the matching product section",
   );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",

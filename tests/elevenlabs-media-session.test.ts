@@ -88,6 +88,111 @@ function setup(cloneSpeech: SpeechStream = audio, markTimeoutMs = 1000, initialS
 }
 
 describe("cloned phone media", () => {
+  it("prepares only one clause ahead while preserving carrier playback order", async () => {
+    const requested: string[] = [];
+    const previous: string[] = [];
+    const s = setup(async function* (text, _signal, context) {
+      requested.push(text);
+      previous.push(context?.previousText ?? "");
+      yield new Uint8Array([requested.length]);
+    });
+    s.speak("First sentence. Second sentence. Third sentence.");
+    await tick();
+    expect(requested).toEqual(["First sentence.", "Second sentence."]);
+    expect(s.carrier.sent.filter((e) => e.event === "media")).toHaveLength(1);
+    expect(s.played()).toBe(0);
+    s.acknowledge();
+    await tick();
+    expect(requested).toHaveLength(3);
+    expect(s.carrier.sent.filter((e) => e.event === "media")).toHaveLength(2);
+    s.acknowledge();
+    await tick();
+    s.acknowledge();
+    await tick();
+    expect(previous).toEqual(["", "First sentence.", "First sentence. Second sentence."]);
+    expect(s.played()).toBe(3);
+    expect(s.events.filter((e) => e.type === "response.done")).toHaveLength(1);
+    s.session.close();
+  });
+
+  it("discards prepared audio after interruption and resets continuity for the next turn", async () => {
+    const requested: Array<{ text: string; previous: string }> = [];
+    const s = setup(async function* (text, _signal, context) {
+      requested.push({ text, previous: context?.previousText ?? "" });
+      yield new Uint8Array([1]);
+    });
+    s.speak("First sentence. Do not play this.");
+    await tick();
+    expect(requested).toHaveLength(2);
+    s.model.receive({ type: "input_audio_buffer.speech_started" });
+    s.acknowledge();
+    await tick();
+    expect(s.carrier.sent.filter((e) => e.event === "media")).toHaveLength(1);
+    expect(s.played()).toBe(0);
+    s.speak("New reply.", "r2");
+    await tick();
+    expect(requested.at(-1)).toEqual({ text: "New reply.", previous: "" });
+    s.acknowledge();
+    await tick();
+    s.session.close();
+  });
+
+  it("falls back once when a prefetched clause fails without replaying the preceding clause", async () => {
+    const requested: string[] = [];
+    const s = setup(async function* (text) {
+      requested.push(text);
+      if (text === "Second sentence.") throw new Error("provider unavailable");
+      yield new Uint8Array([1]);
+    });
+    s.speak("First sentence. Second sentence. Third sentence.");
+    await tick();
+    expect(s.fallback()).toBe(0);
+    s.acknowledge();
+    await tick();
+    expect(s.fallback()).toBe(1);
+    expect(s.played()).toBe(1);
+    s.acknowledge();
+    await tick();
+    s.acknowledge();
+    await tick();
+    expect(requested).toEqual(["First sentence.", "Second sentence."]);
+    expect(
+      s.events
+        .filter((e) => e.type === "response.output_audio_transcript.delta")
+        .map((e) => e.delta),
+    ).toEqual(["First sentence. ", "Second sentence. ", "Third sentence. "]);
+    expect(s.events.filter((e) => e.type === "response.done")).toHaveLength(1);
+    s.session.close();
+  });
+
+  it("does not split decimal prices, URLs or titles at token boundaries", async () => {
+    const clauses: string[] = [];
+    const s = setup(async function* (text) {
+      clauses.push(text);
+      yield new Uint8Array([1]);
+    });
+    s.model.receive({ type: "response.created", response: { id: "r1" } });
+    for (const delta of ["Dr.", " Smith pays $19.", "50 at https:", "//botbound.", "app."]) {
+      s.model.receive({ type: "response.output_text.delta", response_id: "r1", delta });
+    }
+    await tick();
+    expect(clauses).toEqual([]);
+    s.model.receive({ type: "response.output_text.done", response_id: "r1" });
+    s.model.receive({ type: "response.done", response: { id: "r1", status: "completed" } });
+    await tick();
+    expect(clauses).toEqual(["Dr. Smith pays $19.50 at https://botbound.app."]);
+    s.acknowledge();
+    await tick();
+    s.session.close();
+  });
+
+  it("does not clear the phone buffer when a caller speaks into an idle session", () => {
+    const s = setup();
+    s.model.receive({ type: "input_audio_buffer.speech_started" });
+    expect(s.carrier.sent).toEqual([]);
+    expect(s.events.some((e) => e.type === "output_audio_buffer.cleared")).toBe(false);
+    s.session.close();
+  });
   it.each(["x".repeat(600), `${"x".repeat(600)}.`])(
     "bounds unbroken text and distant punctuation into a few synthesis calls",
     async (text) => {
@@ -327,6 +432,7 @@ describe("speech provider transport", () => {
   it("reserves spend before provider contact and requests raw telephone audio", async () => {
     const order: string[] = [];
     let url = "";
+    let body: Record<string, unknown> = {};
     const stream = clonedSpeechStreams({
       voiceId: "clone1",
       elevenLabsKey: "test",
@@ -335,17 +441,31 @@ describe("speech provider transport", () => {
       reserve: async () => {
         order.push("reserve");
       },
-      fetchImpl: async (input) => {
+      fetchImpl: async (input, init) => {
         order.push("fetch");
         url = String(input);
+        body = JSON.parse(String(init?.body));
         return new Response(new Uint8Array([255]));
       },
     });
-    for await (const _chunk of stream.cloneSpeech("Hello", new AbortController().signal)) {
+    for await (const _chunk of stream.cloneSpeech("Hello", new AbortController().signal, {
+      previousText: "Good morning.",
+    })) {
       /* consume */
     }
     expect(order).toEqual(["reserve", "fetch"]);
     expect(url).toContain("output_format=ulaw_8000");
+    expect(body).toMatchObject({
+      previous_text: "Good morning.",
+      model_id: "eleven_flash_v2_5",
+      voice_settings: {
+        stability: 0.5,
+        similarity_boost: 0.75,
+        style: 0,
+        speed: 1,
+        use_speaker_boost: false,
+      },
+    });
   });
   it("never contacts a provider when cost admission fails", async () => {
     let requests = 0;

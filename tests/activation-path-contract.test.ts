@@ -26,7 +26,7 @@ describe("activation path contract", () => {
 
     expect(overview).toContain("ActivationChecklist");
     expect(studioSetup).not.toContain("ActivationChecklist");
-    expect(studioSetup).toContain("Tone & Knowledge");
+    expect(studioSetup).toContain("Bot Setup");
     expect(studioSetup).toContain('{applyingSetup ? "Saving…" : "Save Changes"}');
     expect(overview).toContain("FirstRunWorkspace");
     expect(overview).toContain("degraded && !hasBots");
@@ -82,7 +82,7 @@ describe("activation path contract", () => {
     expect(wizard).toContain('value === "test"');
     expect(wizard).toContain('value === "launch"');
     expect(wizard).toContain(
-      'const stepOrder: WizardStep[] = ["train", "test", "launch", "complete"]',
+      'const stepOrder: WizardStep[] = ["train", "voice", "test", "launch", "complete"]',
     );
     expect(wizard).toContain('if (stored === "channels") return "test"');
     expect(wizard).toContain('if (stored === "wire") return "launch"');

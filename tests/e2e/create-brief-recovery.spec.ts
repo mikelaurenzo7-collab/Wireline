@@ -103,7 +103,7 @@ for (const sessionFailure of ["unavailable", "offline"] as const) {
     await page.getByRole("tab", { name: "Summary", exact: true }).click();
     await expect(page.getByText("Warm and natural", { exact: true })).toBeVisible();
     expect(configReadsAfterSave).toBeGreaterThan(0);
-    await page.getByRole("tab", { name: "Set up", exact: true }).click();
+    await page.getByRole("tab", { name: "Set Up", exact: true }).click();
     await page.reload();
     await expect(knowledge).toBeVisible({ timeout: 15_000 });
     await expect(knowledge).toHaveValue("");

@@ -139,11 +139,11 @@ function Toggle({
 
 /** Usage pricing: estimator first, then what is never billed, then the rates. */
 export default function UsagePricingPanel() {
-  const [callsPerMonth, setCallsPerMonth] = useState(100);
+  const [callsPerMonth, setCallsPerMonth] = useState(0);
   const [avgCallMinutes, setAvgCallMinutes] = useState(3);
-  const [emailsPerMonth, setEmailsPerMonth] = useState(300);
-  const [computerMinutes, setComputerMinutes] = useState(15);
-  const [number, setNumber] = useState(true);
+  const [emailsPerMonth, setEmailsPerMonth] = useState(0);
+  const [computerMinutes, setComputerMinutes] = useState(0);
+  const [number, setNumber] = useState(false);
   const [emailAddress, setEmailAddress] = useState(false);
   const estimate = useMemo(
     () =>
@@ -159,14 +159,14 @@ export default function UsagePricingPanel() {
   );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-8">
       <p className="text-center text-sm text-muted-foreground">
         ${USAGE_BASE_USD_MONTHLY}/month includes ${USAGE_INCLUDED_WORK_USD} of work shared across
         calls, email and Computer. Use it in any mix. It resets monthly without rollover.
       </p>
       <article
         aria-label="Monthly estimate"
-        className="grid gap-6 rounded-xl border border-border bg-card p-5 md:grid-cols-[1fr_15rem]"
+        className="grid gap-8 rounded-2xl border border-border bg-card p-5 sm:p-8 md:grid-cols-[1fr_17rem]"
       >
         <div className="space-y-5">
           <Slider
@@ -234,10 +234,27 @@ export default function UsagePricingPanel() {
             <p className="mt-1 text-4xl font-semibold tabular-nums" aria-live="polite">
               {formatUsdCents(estimate.totalUsd)}
             </p>
+            <dl className="my-5 space-y-2 border-y border-border py-4 text-sm">
+              {(
+                [
+                  ["Plan", USAGE_BASE_USD_MONTHLY],
+                  ["Work", estimate.workUsd],
+                  ["Included Work Used", -estimate.includedUsedUsd],
+                  ["Optional Add-Ons", estimate.fixedUsd - USAGE_BASE_USD_MONTHLY],
+                ] as const
+              ).map(([label, value]) => (
+                <div key={label} className="flex justify-between gap-3">
+                  <dt className="text-muted-foreground">{label}</dt>
+                  <dd className="tabular-nums">
+                    {value < 0 ? "-" : ""}
+                    {usd(Math.abs(value))}
+                  </dd>
+                </div>
+              ))}
+            </dl>
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              Starts at {usd(USAGE_BASE_USD_MONTHLY)}/month with usage included. You set a monthly
-              limit (default {usd(USAGE_DEFAULT_MONTHLY_CAP_USD)}) for BotBound charges before tax.
-              Bots pause at your limit. Applicable tax is added separately.
+              Set your monthly limit (default {usd(USAGE_DEFAULT_MONTHLY_CAP_USD)} before tax). Bots
+              pause at your limit. Tax is added separately.
             </p>
           </div>
           <div className="space-y-2">
@@ -261,7 +278,7 @@ export default function UsagePricingPanel() {
         aria-label="Never billed"
         className="rounded-xl border border-border p-4 text-center"
       >
-        <h2 className="text-sm font-semibold uppercase tracking-wide">You never pay for</h2>
+        <h2 className="text-sm font-semibold">Included With Every Bot</h2>
         <ul className="mt-3 flex flex-wrap justify-center gap-2">
           {USAGE_NEVER_PAY_FOR.map((item) => (
             <li
@@ -286,7 +303,8 @@ export default function UsagePricingPanel() {
         ))}
       </dl>
       <p className="text-center text-xs text-muted-foreground">
-        Billed monthly, by the second. Alerts at 50%, 80%, and 100% of your limit.
+        Calls and Computer are measured by the second. Email is billed per delivered reply. Limit
+        alerts at 50%, 80%, and 100%.
       </p>
     </div>
   );

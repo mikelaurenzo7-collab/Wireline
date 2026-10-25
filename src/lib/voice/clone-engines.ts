@@ -143,7 +143,7 @@ export const ELEVENLABS_CREDIT_FLOOR = 500;
 function elevenLabsCode(error: unknown): CloneEngineErrorCode {
   if (!(error instanceof ElevenLabsVoiceError)) return "provider_unavailable";
   if (error.code === "INVALID_INPUT") return "rejected_audio";
-  if (error.providerStatus === 401) return "not_configured";
+  if (error.providerStatus === 401 || error.providerStatus === 403) return "not_configured";
   // ElevenLabs answers 402/429-class errors for exhausted credits or concurrency.
   if (error.providerStatus === 402) return "quota_exhausted";
   if (error.providerStatus === 404) return "not_found";

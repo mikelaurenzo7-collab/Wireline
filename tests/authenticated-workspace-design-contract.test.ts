@@ -147,7 +147,7 @@ describe("authenticated workspace design architecture", () => {
     expect(studio.match(/compact=\{splitWorkspace\}/g)).toHaveLength(2);
     expect(studio).toContain('layout={splitWorkspace ? "split" : "standalone"}');
     expect(setup).toContain('data-wireline-studio-setup-density={compact ? "inspector" : "page"}');
-    expect(setup).toContain("Tone & Knowledge");
+    expect(setup).toContain("Bot Setup");
     expect(review).toContain("Setup Summary");
     expect(setup).not.toContain("one clear job");
     const setupHeading = setup.match(/<h2\b[\s\S]*?<\/h2>/)?.[0];

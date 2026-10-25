@@ -64,7 +64,7 @@ describe("voice samples", () => {
     expect(routes).toContain("eq(schema.agents.userId, req.user.id)");
     const picker = read("src/components/voice/SimpleVoicePicker.tsx");
     expect(picker).toContain("/voice/sample?voice=");
-    expect(picker).toContain("Tap play to hear one as callers will.");
+    expect(picker).toContain("Saves when you pick.");
     expect(picker).not.toMatch(/Grok|xAI/);
   });
 });

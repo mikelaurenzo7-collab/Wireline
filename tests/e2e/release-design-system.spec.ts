@@ -335,11 +335,11 @@ test("Studio retains a draft and exposes the final action after text enlargement
   await mockWorkspace(page);
   await page.goto("/studio?agent=design-bot&section=setup");
   await expect(page.getByText(/Couldn't check your email status/)).toBeVisible();
-  const greeting = page.getByRole("textbox", { name: "Opening greeting", exact: true });
+  const greeting = page.getByRole("textbox", { name: "Opening Greeting", exact: true });
   const draft = "Welcome to the repair desk. How can I help?";
   await greeting.fill(draft);
   await page.getByRole("tab", { name: "Summary", exact: true }).click();
-  await page.getByRole("tab", { name: "Set up", exact: true }).click();
+  await page.getByRole("tab", { name: "Set Up", exact: true }).click();
   await expect(greeting).toHaveValue(draft);
   await page.setViewportSize({ width: 320, height: 800 });
   await enlargeText(page);

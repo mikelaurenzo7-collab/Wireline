@@ -27,6 +27,11 @@
 
 .marketing-surface .wl-public-header {
   border-color: color-mix(in srgb, var(--wireline-color-border-default) 70%, transparent);
+  box-shadow: none;
+}
+
+.marketing-surface .wl-public-header::after {
+  display: none;
 }
 
 .marketing-surface :is(.text-eyebrow, .wl-overline, .wl-eyebrow) {
@@ -46,7 +51,7 @@
       .wl-billing-plan *
     )
   ) {
-  text-transform: uppercase;
+  text-transform: none;
   text-wrap: balance;
   word-break: normal;
   hyphens: none;

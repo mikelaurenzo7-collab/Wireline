@@ -14,11 +14,11 @@ export const WIRELINE_DESIGN_VISION = {
     rule: "BotBound Design System is the only customer-facing system name. Describe visual decisions by function: light, dark, canvas, surface, raised, recessed, ink, violet, wire, signal, and status. Do not create named sub-systems, material themes, or palette codenames.",
   },
   appearance: {
-    default: "dark",
+    default: "light",
     modes: ["light", "dark", "system"] as const,
-    lightCanvas: "#F6F5FA",
+    lightCanvas: "#F7F7F3",
     darkCanvas: "#0A0A0E",
-    rule: "Dark is the first-visit appearance. Saved customer preference always wins. Light and dark are appearances of the same BotBound Design System, never separate visual systems.",
+    rule: "Light is the first-visit appearance. Saved customer preference always wins. Light and dark are appearances of the same BotBound Design System, never separate visual systems.",
   },
   tone: ["clean", "precise", "confident"] as const,
   references: [
@@ -28,7 +28,7 @@ export const WIRELINE_DESIGN_VISION = {
     "Claude conversation readability",
   ],
   principles: [
-    "Near-black dark canvas is the first-visit default; off-white light remains a first-class appearance.",
+    "Warm off-white is the first-visit default; near-black dark remains a first-class appearance.",
     "Electric violet identifies BotBound and active focus. Neutral ink carries conversation actions; semantic colors carry status. Platinum is the wire.",
     "There is one BotBound visual language across public, authenticated, extension, MCP, and native surfaces.",
     "Visual vocabulary is semantic, not thematic: light, dark, canvas, surface, elevation, ink, action, wire, signal, and status.",
@@ -48,7 +48,7 @@ export const WIRELINE_DESIGN_VISION = {
     "Route load → RouteFallback; panel load → skeleton presets; sole empty → EmptyState; errors → StatusNotice.",
     "Primary actions use atoms/Button, not HaloButton, VoidButton, or hand-rolled gradient CTAs on app surfaces.",
     "Navigation IA lives in constants/navigation.ts, never duplicate nav arrays in shell components.",
-    "Soft launch work is inbound calls, reviewed personal calls, specific business service calls, email, and computer tasks. SMS and campaign calling stay out of the launch interface.",
+    "Market calls, SMS, email, and Computer as one product. Activation and outbound actions remain subject to actual sender registration, recipient permission, and line eligibility.",
   ],
   shell: {
     componentOwner: "src/components/WorkspaceShell.tsx",

@@ -43,6 +43,62 @@ async function mockWorkspace(page: Page) {
   });
 }
 
+test("setup offers cloning at voice selection and resumes before rehearsal", async ({ page }) => {
+  await mockWorkspace(page);
+  let cloneCreates = 0;
+  await page.route("**/api/voice/live-voices", async (route) => {
+    if (route.request().method() === "POST") cloneCreates += 1;
+    await route.fulfill({
+      json: {
+        available: true,
+        voices: [],
+        maxVoices: 3,
+        minSeconds: 10,
+        recommendedSeconds: 90,
+        maxSeconds: 120,
+        maxBytes: 10000000,
+        consentVersion: "fixture-consent",
+        biometricReleaseVersion: "fixture-release",
+      },
+    });
+  });
+  await page.route("**/api/agent-config/*", (route) =>
+    route.fulfill({
+      json: {
+        voice: { voiceId: "marin", provider: "openai" },
+      },
+    }),
+  );
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem("wireline:post-create-wizard")) return;
+    sessionStorage.setItem(
+      "wireline:post-create-wizard",
+      JSON.stringify({
+        agentId: "bot-front-desk",
+        agentName: "Front Desk",
+        phoneProvisionRequested: false,
+        phoneProvisioned: false,
+      }),
+    );
+    sessionStorage.setItem("wireline:post-create-wizard-step", "train");
+  });
+  await page.goto("/studio?agent=bot-front-desk&section=setup");
+  const guide = page.getByRole("dialog", { name: "Next Up for Front Desk" });
+  await guide.getByRole("button", { name: "Choose Voice", exact: true }).click();
+  await expect(guide.getByRole("heading", { name: "Choose Voice", exact: true })).toBeVisible();
+  await guide.getByRole("button", { name: "Clone Voice", exact: true }).first().click();
+  await expect(guide.locator("#setup-guide-voice-clone")).toBeFocused();
+  await guide.getByRole("button", { name: "Clone Voice", exact: true }).last().click();
+  await expect(guide.getByText("Step 1 of 3 · Permission", { exact: true })).toBeVisible();
+  await expect(guide.getByRole("button", { name: "Continue", exact: true })).toBeDisabled();
+  await guide.getByRole("button", { name: "Cancel", exact: true }).click();
+  await page.reload();
+  await expect(guide.getByRole("heading", { name: "Choose Voice", exact: true })).toBeVisible();
+  await guide.getByRole("button", { name: "Continue to Try It", exact: true }).click();
+  await expect(guide.getByText("Hear It First", { exact: true })).toBeVisible();
+  expect(cloneCreates).toBe(0);
+});
+
 test("a second Bot keeps its own activation selection and opens its new line", async ({ page }) => {
   await mockWorkspace(page);
   const lines = [initialLine];

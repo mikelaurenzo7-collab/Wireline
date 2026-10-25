@@ -33,11 +33,11 @@ describe("BotBound design vision", () => {
       rule: "BotBound Design System is the only customer-facing system name. Describe visual decisions by function: light, dark, canvas, surface, raised, recessed, ink, violet, wire, signal, and status. Do not create named sub-systems, material themes, or palette codenames.",
     });
     expect(WIRELINE_DESIGN_VISION.appearance).toEqual({
-      default: "dark",
+      default: "light",
       modes: ["light", "dark", "system"],
-      lightCanvas: "#F6F5FA",
+      lightCanvas: "#F7F7F3",
       darkCanvas: "#0A0A0E",
-      rule: "Dark is the first-visit appearance. Saved customer preference always wins. Light and dark are appearances of the same BotBound Design System, never separate visual systems.",
+      rule: "Light is the first-visit appearance. Saved customer preference always wins. Light and dark are appearances of the same BotBound Design System, never separate visual systems.",
     });
     expect(WIRELINE_DESIGN_VISION.shell).toEqual({
       componentOwner: "src/components/WorkspaceShell.tsx",
@@ -54,7 +54,7 @@ describe("BotBound design vision", () => {
     });
     expect(WIRELINE_DESIGN_VISION.tokens.action).toBe("#A78BFA");
     expect(WIRELINE_DESIGN_VISION.principles).toContain(
-      "Near-black dark canvas is the first-visit default; off-white light remains a first-class appearance.",
+      "Warm off-white is the first-visit default; near-black dark remains a first-class appearance.",
     );
     expect(WIRELINE_DESIGN_VISION.principles).toContain(
       "There is one BotBound visual language across public, authenticated, extension, MCP, and native surfaces.",

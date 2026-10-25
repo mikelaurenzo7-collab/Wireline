@@ -227,6 +227,13 @@ describe("ElevenLabs voice transport foundation", () => {
     expect(JSON.parse(String(init?.body))).toEqual({
       text: ELEVENLABS_VOICE_PREVIEW.text,
       model_id: "eleven_flash_v2_5",
+      voice_settings: {
+        stability: 0.5,
+        similarity_boost: 0.75,
+        style: 0,
+        speed: 1,
+        use_speaker_boost: false,
+      },
     });
     expect(init).toMatchObject({
       method: "POST",

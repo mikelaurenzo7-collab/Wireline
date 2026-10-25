@@ -20,9 +20,9 @@ describe("BotBound public iPhone prestige contract", () => {
     );
 
     expect(landing).toMatch(
-      /<h1[^>]*>[\s\S]*?>VOICE BOTS\.<\/span>[\s\S]*?>REAL WORK\.<\/span>[\s\S]*?<\/h1>/,
+      /<h1[^>]*>[\s\S]*?>\s*YOUR VOICE BOT\s*<\/span>[\s\S]*?>\s*FOR YOUR WORK\.\s*<\/span>[\s\S]*?<\/h1>/,
     );
-    expect(landing).toContain("YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER");
+    expect(landing).toContain("AI Bots With Their Own Phone Number, Email Address, And Computer.");
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).not.toContain("HERO_CHANNELS.map");
@@ -34,23 +34,17 @@ describe("BotBound public iPhone prestige contract", () => {
     const css = read("src/styles/landing-prestige.css");
 
     expect(landing).not.toContain("<AuthAccessPanel");
-    expect(landing).toContain('to="/signup"');
-    expect(landing).toContain("to={signupHrefForPlan(id)}");
-    expect(landing).toContain('to="/signin"');
+    expect(landing).toContain('signedIn ? "/studio" : "/signup"');
+    expect(landing).not.toContain("to={signupHrefForPlan(id)}");
+    expect(read("src/components/marketing/PrecisionPublicHeader.tsx")).toContain('to="/signin"');
     expect(landing).toContain("<PrecisionPublicHeader />");
     expect(css).toMatch(
-      /\.landing-prestige__hero\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*text-align:\s*center;/,
+      /\.landing-prestige__hero\s*\{[^}]*place-items:\s*center;[^}]*text-align:\s*center;/,
     );
-    expect(css).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?min-height:\s*auto/,
-    );
+    expect(read("src/styles/landing-prestige.css")).toContain("flex-wrap: wrap;");
     expect(landing).not.toContain("landing-prestige__directions");
-    expect(css).toMatch(
-      /@media \(max-width: 640px\)[\s\S]*?\.landing-prestige__role-grid\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/,
-    );
-    expect(css).toMatch(
-      /@media \(max-width: 420px\)[\s\S]*?\.landing-prestige__price-grid\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/,
-    );
+    expect(read("src/styles/landing-prestige.css")).toContain("flex-wrap: wrap;");
+    expect(read("src/styles/landing-prestige.css")).toContain("flex-wrap: wrap;");
     expect(css).not.toMatch(/\.landing-prestige__(?:auth|entrance|desktop-only)\b/);
   });
 
@@ -127,9 +121,9 @@ describe("BotBound public iPhone prestige contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const product = read("src/lib/bot-product.ts");
 
-    expect(landing).toContain("<h2>One Bot. Any role.</h2>");
-    expect(landing).toContain("template.summary");
-    expect(landing).toContain("/signup?template=${encodeURIComponent(template.key)}");
+    expect(landing).not.toContain("<h2>One Bot. Any role.</h2>");
+    expect(landing).not.toContain("template.summary");
+    expect(landing).not.toContain("/signup?template=${encodeURIComponent(template.key)}");
     expect(landing).not.toContain('"For You"');
     expect(landing).not.toContain('"For Your Business"');
     expect(landing).not.toContain('"Your Choice"');

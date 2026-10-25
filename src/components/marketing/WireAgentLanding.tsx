@@ -1,68 +1,49 @@
-import { useEffect } from "react";
-import {
-  ArrowRight,
-  CalendarDays,
-  Check,
-  Headphones,
-  PhoneIncoming,
-  House,
-  ShieldCheck,
-  UserRound,
-  WandSparkles,
-  type LucideIcon,
-} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowRight, Mail, MessageSquare, Monitor, Phone, type LucideIcon } from "lucide-react";
 import { Link } from "react-router";
-
 import BotBoundMark from "../brand/BotBoundMark";
 import LandingFooter from "./LandingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
-import { BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
-import { STRIPE_PLANS } from "../../lib/plan-catalog";
-import {
-  getPlanCapacityLabel,
-  getPlanDisplayName,
-  PLAN_CAPACITY_LABELS,
-} from "../../lib/plan-display";
-import { HOME_PLAN_IDS } from "../../lib/public-plan-lineup";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
-import { signupHrefForPlan } from "../../lib/signup-intent";
-import { usePaidPlanAvailability } from "../../hooks/usePaidPlanAvailability";
-import { USAGE_BASE_USD_MONTHLY, USAGE_NEVER_PAY_FOR } from "../../lib/usage-billing-catalog";
 import { useAuth } from "../../contexts/AuthContext";
 
-const FEATURED_TEMPLATE_KEYS = [
-  "personal-assistant",
-  "family-concierge",
-  "front-desk",
-  "appointment-setter",
-  "customer-support",
-  "custom",
-] as const;
-const FEATURED_TEMPLATES = FEATURED_TEMPLATE_KEYS.map((key) => {
-  const template = BOT_ROLE_TEMPLATES.find((candidate) => candidate.key === key);
-  if (!template) throw new Error(`Missing Bot template: ${key}`);
-  return template;
-});
-const ROLE_ICONS: Record<string, LucideIcon> = {
-  "personal-assistant": UserRound,
-  "family-concierge": House,
-  "front-desk": PhoneIncoming,
-  "appointment-setter": CalendarDays,
-  "customer-support": Headphones,
-  custom: WandSparkles,
-};
-const PUBLIC_PLANS = HOME_PLAN_IDS.map((id) => {
-  const plan = STRIPE_PLANS.find((candidate) => candidate.id === id);
-  if (!plan) throw new Error(`Missing public plan: ${id}`);
-  return { id, plan };
-});
+const EXAMPLES: readonly {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  message: string;
+}[] = [
+  {
+    id: "calls",
+    label: "Calls",
+    icon: Phone,
+    message: "Choose A Voice. Or Clone Your Own.",
+  },
+  {
+    id: "sms",
+    label: "SMS",
+    icon: MessageSquare,
+    message: "Keep The Conversation Going.",
+  },
+  {
+    id: "email",
+    label: "Email",
+    icon: Mail,
+    message: "Your Inbox. Your Knowledge. Your Signature.",
+  },
+  {
+    id: "computer",
+    label: "Computer",
+    icon: Monitor,
+    message: "Research. Compare. Get It Done.",
+  },
+];
 
 export default function WireAgentLanding() {
-  const { available, billingModel, canActivate, needsEmailSetupReview, notice } =
-    usePaidPlanAvailability();
   const signedIn = Boolean(useAuth().user);
-  // Many-Bots copy appears only once the server sells the usage plan.
-  const usageBilling = billingModel === "usage";
+  const [selected, setSelected] = useState(3);
+  const tabs = useRef<Array<HTMLButtonElement | null>>([]);
+  const example = EXAMPLES[selected]!;
   useEffect(() => {
     emitProductEventOnce({
       event: "landing_viewed",
@@ -70,12 +51,11 @@ export default function WireAgentLanding() {
       metadata: { path: window.location.pathname || "/", scope: "prestige_access_home" },
     });
   }, []);
-
-  const trackSignupIntent = (source: string, label: string) =>
+  const trackSignupIntent = () =>
     emitProductEvent({
       event: "landing_primary_cta_clicked",
       surface: "marketing_web",
-      metadata: { source, label },
+      metadata: { source: "hero_primary", label: "Get Started" },
     });
 
   return (
@@ -88,233 +68,83 @@ export default function WireAgentLanding() {
               <BotBoundMark className="landing-prestige__hero-bot" />
             </div>
             <h1 id="landing-prestige-title">
-              <span className="landing-prestige__title-line">VOICE BOTS.</span>{" "}
-              <span className="landing-prestige__title-line is-accent">REAL WORK.</span>
+              <span className="landing-prestige__title-line">YOUR VOICE BOT</span>{" "}
+              <span className="landing-prestige__title-line landing-prestige__title-accent">
+                FOR YOUR WORK.
+              </span>
             </h1>
             <p className="landing-prestige__description">
-              YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER.
+              AI Bots With Their Own Phone Number, Email Address, And Computer.
             </p>
             <div className="landing-prestige__actions">
-              {signedIn ? (
-                <Link to="/studio" className="landing-prestige__cta is-primary">
-                  Open Workspace <ArrowRight aria-hidden="true" />
-                </Link>
-              ) : (
-                <>
-                  <Link
-                    to="/signup"
-                    className="landing-prestige__cta is-primary"
-                    onClick={() => trackSignupIntent("hero_primary", "Get Started")}
-                  >
-                    Get Started <ArrowRight aria-hidden="true" />
-                  </Link>
-                  <Link to="/signin" className="landing-prestige__cta">
-                    Sign In
-                  </Link>
-                </>
-              )}
+              <Link
+                to={signedIn ? "/studio" : "/signup"}
+                className="landing-prestige__cta is-primary"
+                onClick={trackSignupIntent}
+              >
+                {signedIn ? "Open Workspace" : "Get Started"} <ArrowRight aria-hidden="true" />
+              </Link>
+              <Link to="/pricing" className="landing-prestige__cta is-text">
+                See Pricing
+              </Link>
             </div>
           </div>
         </section>
-
-        <section id="solutions" className="landing-prestige__section landing-prestige__roles">
-          <div className="landing-prestige__rail">
-            <header className="landing-prestige__section-heading">
-              {usageBilling ? (
-                <>
-                  <h2>One plan. One shared work allowance.</h2>
-                  <span>
-                    Give every role its own Bot, then teach each one your hours, services, and
-                    answers.
-                  </span>
-                </>
-              ) : (
-                <>
-                  <h2>One Bot. Any role.</h2>
-                  <span>
-                    Pick a starting role, then teach it your hours, services, and answers.
-                  </span>
-                </>
-              )}
-            </header>
-            <div className="landing-prestige__role-grid">
-              {FEATURED_TEMPLATES.map((template) => {
-                const Icon = ROLE_ICONS[template.key] ?? WandSparkles;
-                return (
-                  <article key={template.key} className="landing-prestige__role-card">
-                    <div className="landing-prestige__role-topline">
-                      <Icon aria-hidden="true" />
-                    </div>
-                    <h3>{template.name}</h3>
-                    <p>{template.summary}</p>
-                    <Link
-                      to={`/signup?template=${encodeURIComponent(template.key)}`}
-                      onClick={() => trackSignupIntent("role_starter", template.name)}
-                    >
-                      Use this role
-                      <span className="sr-only">: {template.name}</span>
-                      <ArrowRight aria-hidden="true" />
-                    </Link>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {usageBilling ? (
-          <section
-            id="pricing"
-            className="landing-prestige__section landing-prestige__pricing"
-            aria-label="Pricing"
-          >
-            <div className="landing-prestige__rail">
-              <header className="landing-prestige__section-heading">
-                <h2>{`From $${USAGE_BASE_USD_MONTHLY}/month. Usage included.`}</h2>
-                <span>
-                  {`You never pay for ${USAGE_NEVER_PAY_FOR.join(", ").toLowerCase()}. Set a monthly limit and your Bots pause there.`}
-                </span>
-              </header>
-              <div className="landing-prestige__actions">
-                <Link
-                  to="/pricing"
-                  className="landing-prestige__cta is-primary"
-                  onClick={() => trackSignupIntent("pricing", "Estimate Your Bill")}
-                >
-                  Estimate Your Bill <ArrowRight aria-hidden="true" />
-                </Link>
-                <Link to="/contact?topic=demo" className="landing-prestige__cta">
-                  Hear a Demo
-                </Link>
-              </div>
-            </div>
-          </section>
-        ) : null}
-
         <section
-          id={usageBilling ? undefined : "pricing"}
-          hidden={usageBilling}
-          className="landing-prestige__section landing-prestige__pricing"
+          className="landing-prestige__examples landing-prestige__rail"
+          aria-label="Explore BotBound"
         >
-          <div className="landing-prestige__rail">
-            <header className="landing-prestige__section-heading">
-              <h2>Calls, email, or both.</h2>
-              <span>
-                Every paid plan includes a cloud computer for web tasks, with AI usage built in.
-              </span>
-              {!available ? (
-                <span className="landing-prestige__activation" role="status">
-                  {notice}
-                </span>
-              ) : null}
-            </header>
-            <div className="landing-prestige__price-grid">
-              {PUBLIC_PLANS.map(({ id, plan }) => {
-                const planName = getPlanDisplayName(plan);
-                const featured = id === "voice-email";
-                const emailSetupReview = needsEmailSetupReview(id);
-                return (
-                  <article
-                    key={id}
-                    aria-label={`${planName} plan`}
-                    className={`landing-prestige__price-card${featured ? " is-featured" : ""}`}
-                  >
-                    <div>
-                      <p>{planName}</p>
-                      {id === "personal" ? null : <span>{getPlanCapacityLabel(plan)}</span>}
-                      <div className="landing-prestige__price-number">
-                        <strong>${plan.price_usd_monthly}</strong>
-                        <span>/mo</span>
-                      </div>
-                    </div>
-                    <ul>
-                      <li>
-                        <Check aria-hidden="true" />
-                        {`${plan.max_agents} live Bot${plan.max_agents === 1 ? "" : "s"}`}
-                      </li>
-                      <li>
-                        <Check aria-hidden="true" />
-                        {plan.voice_minutes_monthly > 0
-                          ? `${plan.voice_minutes_monthly} call minutes/month`
-                          : "1 managed email inbox"}
-                      </li>
-                      <li>
-                        <Check aria-hidden="true" />
-                        {id === "email"
-                          ? "AI and email allowance included"
-                          : id === "voice-email"
-                            ? "1 number + 1 email inbox"
-                            : id === "personal"
-                              ? "1 number + connected inbox"
-                              : "1 local number included"}
-                      </li>
-                    </ul>
-                    {emailSetupReview ? (
-                      <p className="landing-prestige__price-note">
-                        Email activation has a <Link to="/contact?topic=email">setup review</Link>.
-                      </p>
-                    ) : null}
-                    <Link
-                      to={signupHrefForPlan(id)}
-                      className={featured ? "is-primary" : undefined}
-                      onClick={() => trackSignupIntent("pricing", planName)}
-                    >
-                      {emailSetupReview
-                        ? `Choose ${planName}`
-                        : `${canActivate(id) ? "Choose" : "Set Up"} ${planName}`}
-                    </Link>
-                  </article>
-                );
-              })}
-            </div>
-            <div className="landing-prestige__pricing-more">
-              <Link to="/pricing">
-                {`Compare ${PLAN_CAPACITY_LABELS.light}, ${PLAN_CAPACITY_LABELS.regular}, and ${PLAN_CAPACITY_LABELS.high}`}
-                <ArrowRight aria-hidden="true" />
-              </Link>
-            </div>
+          <div className="landing-prestige__tabs" role="tablist" aria-label="Bot capabilities">
+            {EXAMPLES.map(({ id, label, icon: Icon }, index) => (
+              <button
+                key={id}
+                ref={(el) => {
+                  tabs.current[index] = el;
+                }}
+                id={`capability-${id}`}
+                role="tab"
+                type="button"
+                aria-selected={selected === index}
+                aria-controls="capability-example"
+                tabIndex={selected === index ? 0 : -1}
+                onClick={() => setSelected(index)}
+                onPointerEnter={(event) => {
+                  if (event.pointerType === "mouse") setSelected(index);
+                }}
+                onKeyDown={(event) => {
+                  const next =
+                    event.key === "ArrowRight"
+                      ? (index + 1) % EXAMPLES.length
+                      : event.key === "ArrowLeft"
+                        ? (index + EXAMPLES.length - 1) % EXAMPLES.length
+                        : event.key === "Home"
+                          ? 0
+                          : event.key === "End"
+                            ? EXAMPLES.length - 1
+                            : null;
+                  if (next === null) return;
+                  event.preventDefault();
+                  setSelected(next);
+                  tabs.current[next]?.focus();
+                }}
+              >
+                <Icon aria-hidden="true" />
+                <span>{label}</span>
+              </button>
+            ))}
           </div>
-        </section>
-
-        <section className="landing-prestige__closing" aria-labelledby="landing-prestige-closing">
-          <div className="landing-prestige__rail">
-            <h2 id="landing-prestige-closing">
-              <span>NEVER MISS</span> <span>A LEAD.</span>
-            </h2>
-            <p className="landing-prestige__closing-line">
-              Every call answered. Every email handled. Every summary sent straight to you.
-            </p>
-            <div className="landing-prestige__actions">
-              {signedIn ? (
-                <Link to="/studio" className="landing-prestige__cta is-primary">
-                  Open Workspace <ArrowRight aria-hidden="true" />
-                </Link>
-              ) : (
-                <Link
-                  to="/signup"
-                  className="landing-prestige__cta is-primary"
-                  onClick={() => trackSignupIntent("closing_primary", "Get Started")}
-                >
-                  Get Started <ArrowRight aria-hidden="true" />
-                </Link>
-              )}
-              <Link to="/features" className="landing-prestige__cta">
-                How It Works
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        <section className="landing-prestige__trust" aria-label="BotBound trust and control">
-          <div className="landing-prestige__rail landing-prestige__trust-inner">
-            <div>
-              <ShieldCheck aria-hidden="true" />
-              <strong>Your Line. Your Rules.</strong>
-            </div>
-            <nav aria-label="Trust links">
-              <Link to="/security">Security</Link>
-              <Link to="/support">Support</Link>
-            </nav>
+          <div
+            id="capability-example"
+            role="tabpanel"
+            tabIndex={0}
+            aria-labelledby={`capability-${example.id}`}
+            className="landing-prestige__example"
+          >
+            <h2>{example.message}</h2>
+            <Link to={`/features#${example.id}`} className="landing-prestige__example-link">
+              Explore {example.label}
+              <ArrowRight aria-hidden="true" />
+            </Link>
           </div>
         </section>
       </main>

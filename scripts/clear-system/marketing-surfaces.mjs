@@ -70,22 +70,25 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   );
 
   for (const [pattern, description] of [
-    [/to="\/signup"[\s\S]*?Get Started/, "root landing must offer a plan-neutral signup action"],
-    [/to="\/signin"/, "root landing must keep sign-in one action away"],
+    [/signedIn \? "\/studio" : "\/signup"/, "root landing must offer plan-neutral account access"],
     [
-      /YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER/,
+      /AI Bots With Their Own Phone Number, Email Address, And Computer\./,
       "root landing must describe the product family together",
     ],
     [/<PrecisionPublicHeader \/>/, "root landing must share the public header"],
-    [/FEATURED_TEMPLATE_KEYS/, "landing must curate role starters"],
-    [/template\.summary/, "role starters must explain their job concisely"],
-    [/encodeURIComponent\(template\.key\)/, "role selection must preserve template intent"],
-    [/id="pricing"/, "landing must preserve direct pricing"],
-    [/STRIPE_PLANS/, "landing pricing must use Stripe plan catalog"],
-    [/landing-prestige__trust/, "landing must retain trust exit"],
+    [/role="tablist"/, "landing must expose capability navigation"],
+    [/role="tabpanel"/, "capability details must be associated with their selected tab"],
+    [/onKeyDown/, "capability navigation must support keyboard selection"],
+    [/to="\/pricing"/, "landing must link directly to pricing"],
     [/<LandingFooter\s*\/>/, "desktop landing must retain wayfinding"],
   ])
     mustInclude("src/components/marketing/WireAgentLanding.tsx", landing, pattern, description);
+  mustInclude(
+    "src/components/marketing/PrecisionPublicHeader.tsx",
+    publicHeader,
+    /to="\/signin"/,
+    "shared public header must keep sign-in one action away",
+  );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
@@ -107,7 +110,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
 
   for (const [pattern, description] of [
     [
-      /\.landing-prestige__hero\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*text-align:\s*center;/,
+      /\.landing-prestige__hero\s*\{[^}]*place-items:\s*center;[^}]*text-align:\s*center;/,
       "home hero must be one centered column",
     ],
     [
@@ -115,14 +118,14 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
       "display headings must balance lines while retaining text enlargement",
     ],
     [
-      /\.landing-prestige__section-heading\s*\{[^}]*margin-inline:\s*auto;[^}]*text-align:\s*center;/,
-      "section headings must align with centered content",
+      /\.landing-prestige__example\s*\{[^}]*text-align:\s*center;/,
+      "capability details must align with centered content",
     ],
     [
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?min-height:\s*auto;/,
-      "mobile hero must remain in document flow",
+      /\.landing-prestige__hero h1\s*\{[^}]*flex-wrap:\s*wrap;/,
+      "hero phrases must reflow on narrow screens",
     ],
-    [/\.landing-prestige__role-grid/, "landing must provide role grid"],
+    [/\.landing-prestige__tabs/, "landing must provide channel navigation"],
   ])
     mustInclude("src/styles/landing-prestige.css", landingPrestigeCss, pattern, description);
   mustExclude(
@@ -152,8 +155,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   mustInclude(
     "src/components/marketing/LandingFooter.tsx",
     landingFooter,
-    /<MarketingChromeBar\s*\/>/,
-    "landing footer must render shared link bar",
+    /aria-label="Footer"[\s\S]*\/support[\s\S]*\/privacy[\s\S]*\/terms[\s\S]*wireline:open-privacy-choices/,
+    "minimal landing footer must retain support, legal links, and privacy controls",
   );
   mustInclude(
     "src/lib/bot-product.ts",

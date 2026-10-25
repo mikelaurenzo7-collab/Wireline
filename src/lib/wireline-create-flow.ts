@@ -3,7 +3,7 @@ import { isBotMarkKey, type BotMarkKey } from "./bot-mark";
 /** Session key for non-fatal warnings after Fast Start agent creation. */
 export const CREATE_WARNING_SESSION_KEY = "wireline:create-warning";
 
-/** Post-create wizard payload — Train → Rehearse → Launch after create.
+/** Post-create wizard payload — Train → Voice → Rehearse → Launch after create.
  *  Private rehearsal comes before customer traffic. Free Builder stays private;
  *  a paid Bot's managed phone and mailbox can prepare in the background.
  *  "wire" and "channels" survive in the step type only as legacy stored
@@ -11,7 +11,7 @@ export const CREATE_WARNING_SESSION_KEY = "wireline:create-warning";
 export const POST_CREATE_WIZARD_KEY = "wireline:post-create-wizard";
 export const POST_CREATE_WIZARD_STEP_KEY = "wireline:post-create-wizard-step";
 
-export type PostCreateWizardStep = "train" | "channels" | "wire" | "test" | "launch";
+export type PostCreateWizardStep = "train" | "voice" | "channels" | "wire" | "test" | "launch";
 
 export type PostCreateWizardPayload = {
   agentId: string;
@@ -102,6 +102,7 @@ export function readPostCreateWizardStep(): PostCreateWizardStep | null {
     const step = sessionStorage.getItem(POST_CREATE_WIZARD_STEP_KEY);
     if (
       step === "train" ||
+      step === "voice" ||
       step === "channels" ||
       step === "wire" ||
       step === "test" ||

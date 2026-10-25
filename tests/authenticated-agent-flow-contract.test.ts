@@ -216,7 +216,7 @@ describe("authenticated Bot flow", () => {
     expect(wizard).toContain('value === "test"');
     expect(wizard).toContain('value === "launch"');
     expect(wizard).toContain(
-      'const stepOrder: WizardStep[] = ["train", "test", "launch", "complete"]',
+      'const stepOrder: WizardStep[] = ["train", "voice", "test", "launch", "complete"]',
     );
     expect(wizard).toContain("clearPostCreateWizard");
     expect(wizard).toContain("stashPostCreateWizardStep");

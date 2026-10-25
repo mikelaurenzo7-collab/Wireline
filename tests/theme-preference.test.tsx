@@ -41,7 +41,7 @@ vi.mock("react", async (original) => ({
 }));
 
 const preload = readFileSync("index.html", "utf8").match(/<script>\s*([\s\S]*?)<\/script>/)![1];
-const colors = { dark: "#0A0A0E", light: "#F6F5FA" };
+const colors = { dark: "#0A0A0E", light: "#F7F7F3" };
 let stored: string | null;
 let storageFailure: "getter" | "read" | "write" | null;
 let systemDark: boolean;
@@ -126,14 +126,14 @@ afterEach(() => {
 
 describe("canonical theme preference", () => {
   it.each([
-    ["first visit", null, false, null, "dark", "dark"],
+    ["first visit", null, false, null, "light", "light"],
     ["saved light", "light", true, null, "light", "light"],
     ["saved dark", "dark", false, null, "dark", "dark"],
     ["saved system on light OS", "system", false, null, "system", "light"],
     ["saved system on dark OS", "system", true, null, "system", "dark"],
-    ["invalid saved preference", "unknown", false, null, "dark", "dark"],
-    ["blocked storage getter", null, false, "getter", "dark", "dark"],
-    ["blocked storage read", null, false, "read", "dark", "dark"],
+    ["invalid saved preference", "unknown", false, null, "light", "light"],
+    ["blocked storage getter", null, false, "getter", "light", "light"],
+    ["blocked storage read", null, false, "read", "light", "light"],
   ] as const)(
     "honors %s before and after hydration",
     (_label, saved, osDark, failure, preference, resolved) => {
@@ -198,6 +198,6 @@ describe("canonical theme preference", () => {
   it("uses the manifest default outside a provider", () => {
     const fallback = useTheme();
     expect(fallback.theme).toBe(WIRELINE_DESIGN_VISION.appearance.default satisfies Theme);
-    expect(fallback.resolvedTheme).toBe("dark");
+    expect(fallback.resolvedTheme).toBe("light");
   });
 });

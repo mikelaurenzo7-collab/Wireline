@@ -314,7 +314,7 @@ test("closed custom-voice pilot stays hidden while all ten OpenAI calling voices
   const voice = await openVoice(page);
   await expect(voice.getByRole("region", { name: "Private custom voice previews" })).toHaveCount(0);
   await voice.locator("summary").click();
-  await expect(voice.getByText("10 built-in voices", { exact: true })).toBeVisible();
+  await expect(voice.getByText("10 Built-In Voices", { exact: true })).toBeVisible();
   await expect(voice.locator("button[aria-pressed]")).toHaveCount(10);
   await expect(voice.getByRole("button", { name: "Marin Selected", exact: true })).toHaveAttribute(
     "aria-pressed",

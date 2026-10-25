@@ -31,7 +31,7 @@ test("homepage mobile product and access path has clear branding and no serious 
   await expect(page.getByRole("link", { name: "BotBound home" })).toBeVisible();
   const actions = page.locator(".landing-prestige__hero .landing-prestige__actions");
   await expect(actions.getByRole("link", { name: "Get Started" })).toBeVisible();
-  await expect(actions.getByRole("link", { name: "Sign In", exact: true })).toBeVisible();
+  await expect(actions.getByRole("link", { name: "See Pricing", exact: true })).toBeVisible();
 
   const results = await new AxeBuilder({ page }).include("main").analyze();
   const blockingViolations = results.violations.filter((violation) =>
@@ -48,13 +48,13 @@ test("homepage promise and access path stay centered inside the desktop viewport
   await gotoHomepageWithMain(page);
 
   const headline = page.getByRole("heading", {
-    name: "VOICE BOTS. REAL WORK.",
+    name: "YOUR VOICE BOT FOR YOUR WORK.",
     exact: true,
   });
   await expect(headline).toBeVisible();
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
   await expect(page.locator(".landing-prestige__description")).toHaveText(
-    "YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER.",
+    "AI Bots With Their Own Phone Number, Email Address, And Computer.",
   );
   await expect(page.locator(".landing-prestige__directions")).toHaveCount(0);
 
@@ -85,7 +85,7 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
   await page.setViewportSize({ width: 1365, height: 900 });
   await gotoHomepageWithMain(page);
 
-  const role = page.getByRole("link", { name: /Use this role\s*:\s*Front Desk/i });
+  const role = page.getByRole("tab", { name: "Computer", exact: true });
   await role.focus();
   await expect(role).toBeFocused();
   const focusStyle = await role.evaluate((element) => {
@@ -95,8 +95,24 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
   expect(focusStyle.outlineStyle).not.toBe("none");
   expect(Number.parseFloat(focusStyle.outlineWidth)).toBeGreaterThanOrEqual(2);
 
+  await role.press("Home");
+  const calls = page.getByRole("tab", { name: "Calls", exact: true });
+  await expect(calls).toBeFocused();
+  await expect(calls).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tabpanel")).toContainText("Choose A Voice. Or Clone Your Own.");
+  await calls.press("ArrowRight");
+  await expect(page.getByRole("tab", { name: "SMS", exact: true })).toBeFocused();
+  await expect(page.getByRole("tabpanel")).toContainText("Keep The Conversation Going.");
+  await page.getByRole("tab", { name: "Email", exact: true }).hover();
+  await expect(page.getByRole("link", { name: "Explore Email" })).toHaveAttribute(
+    "href",
+    "/features#email",
+  );
+
   await page.setViewportSize({ width: 390, height: 844 });
   await gotoHomepageWithMain(page);
+  await page.getByRole("tab", { name: "Calls", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Explore Calls" })).toBeVisible();
   const start = page
     .locator(".landing-prestige__hero .landing-prestige__actions")
     .getByRole("link", { name: "Get Started" });
@@ -115,7 +131,7 @@ test("homepage channels stay clear and readable without decorative labels at 320
   const hero = page.locator(".landing-prestige__hero");
   const description = hero.locator(".landing-prestige__description");
   await expect(description).toHaveText(
-    "YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER.",
+    "AI Bots With Their Own Phone Number, Email Address, And Computer.",
   );
   await expect(hero.locator("p")).toHaveCount(1);
   await expect(hero.getByText("Choose calls, email, or both.", { exact: true })).toHaveCount(0);
@@ -127,19 +143,9 @@ test("homepage channels stay clear and readable without decorative labels at 320
       .getByText(/^(For You|For Your Business|Your Choice)$/),
   ).toHaveCount(0);
   await expect(hero.getByRole("link", { name: "Get Started" })).toHaveAttribute("href", "/signup");
-  await expect(page.getByRole("link", { name: /Use this role\s*:\s*Front Desk/i })).toHaveAttribute(
-    "href",
-    "/signup?template=front-desk",
-  );
-  await expect(page.getByRole("article", { name: "Personal plan", exact: true })).toContainText(
-    "1 number + connected inbox",
-  );
-  for (const heading of await page.locator(".landing-prestige__section-heading h2").all()) {
-    expect(await heading.evaluate((element) => getComputedStyle(element).textTransform)).toBe(
-      "uppercase",
-    );
-  }
-
+  await expect(
+    page.getByRole("tablist", { name: "Bot capabilities" }).getByRole("tab"),
+  ).toHaveCount(4);
   const lineMetrics = () =>
     description.evaluate((element) => {
       const node = element.firstChild!;
@@ -178,6 +184,27 @@ test("homepage channels stay clear and readable without decorative labels at 320
   });
   await description.scrollIntoViewIfNeeded();
   const enlarged = await lineMetrics();
+  const enlargedControls = await page.evaluate(() =>
+    [
+      ...document.querySelectorAll<HTMLElement>(
+        ".landing-prestige__title-line, .landing-prestige__tabs button",
+      ),
+    ].map((element) => {
+      const bounds = element.getBoundingClientRect();
+      return {
+        text: element.textContent,
+        left: bounds.left,
+        right: bounds.right,
+        client: element.clientWidth,
+        scroll: element.scrollWidth,
+      };
+    }),
+  );
+  for (const control of enlargedControls) {
+    expect(control.left, control.text ?? "").toBeGreaterThanOrEqual(0);
+    expect(control.right, control.text ?? "").toBeLessThanOrEqual(enlarged.width);
+    expect(control.scroll, control.text ?? "").toBeLessThanOrEqual(control.client + 1);
+  }
   for (const line of enlarged.lines) {
     expect(line.left).toBeGreaterThanOrEqual(enlarged.bounds.left - 1);
     expect(line.right).toBeLessThanOrEqual(enlarged.bounds.right + 1);
@@ -191,14 +218,12 @@ test("homepage channels stay clear and readable without decorative labels at 320
   });
 });
 
-test("public brand titles retain their case and heading semantics within the uppercase system", async ({
-  page,
-}) => {
+test("public titles retain authored title case and heading semantics", async ({ page }) => {
   await page.goto("/trust");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveCSS("text-transform", "uppercase");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCSS("text-transform", "none");
   await expect(
     page.getByRole("heading", { name: "Tenant Isolation", level: 2, exact: true }),
-  ).toHaveCSS("text-transform", "uppercase");
+  ).toHaveCSS("text-transform", "none");
   await page.locator("summary").filter({ hasText: "Technical Details" }).click();
   const extension = page.getByRole("heading", {
     name: "BotBound Command (Browser Extension)",
@@ -210,7 +235,7 @@ test("public brand titles retain their case and heading semantics within the upp
   await expect(extension).toHaveCSS("text-transform", "none");
 
   await page.goto("/changelog");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveCSS("text-transform", "uppercase");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCSS("text-transform", "none");
   const monitoring = page.getByRole("heading", {
     name: "BotBound Runtime Monitoring",
     level: 2,

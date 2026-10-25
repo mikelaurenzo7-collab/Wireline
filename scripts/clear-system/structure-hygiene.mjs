@@ -85,7 +85,7 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
   mustInclude(
     "src/styles/theme-light.css",
     lightTheme,
-    /--wireline-color-text-tertiary:\s*#625c76/i,
+    /--wireline-color-text-tertiary:\s*#606066/i,
     "Light tertiary text must retain the audited AA-safe value",
   );
   mustInclude(
@@ -97,8 +97,8 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
   mustInclude(
     "src/lib/wireline-design-vision.ts",
     designVisionSource,
-    /appearance:\s*\{\s*default:\s*"dark"/,
-    "the canonical design manifest must retain the dark first-visit default",
+    /appearance:\s*\{\s*default:\s*"light"/,
+    "the canonical design manifest must retain the light first-visit default",
   );
   mustInclude(
     "src/contexts/ThemeContext.tsx",

@@ -73,7 +73,7 @@ describe("authenticated Bot navigation contract", () => {
     expect(studio).toContain('{ id: "work", label: "Work" }');
     expect(studio).toContain('{ id: "computer", label: "Browser" }');
     expect(studio).toContain('{ id: "try", label: "Rehearse" }');
-    expect(studio).toContain('{ id: "setup", label: "Set up" }');
+    expect(studio).toContain('{ id: "setup", label: "Set Up" }');
     expect(studio).toContain('{ id: "review", label: "Summary" }');
     expect(studio).toContain("<ComputerWorkspaceProvider>");
     expect(studio).toContain("<StudioTaskChat");

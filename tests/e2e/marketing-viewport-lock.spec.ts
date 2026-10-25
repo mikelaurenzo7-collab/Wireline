@@ -255,7 +255,7 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
   ).toHaveCount(0);
   await expect(
     page.getByRole("heading", {
-      name: "VOICE BOTS. REAL WORK.",
+      name: "YOUR VOICE BOT FOR YOUR WORK.",
     }),
   ).toBeVisible();
   await expect(page.locator(".landing-prestige__directions")).toHaveCount(0);
@@ -267,13 +267,11 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
     "href",
     "/signup",
   );
-  await expect(actions.getByRole("link", { name: "Sign In", exact: true })).toHaveAttribute(
+  await expect(actions.getByRole("link", { name: "See Pricing", exact: true })).toHaveAttribute(
     "href",
-    "/signin",
+    "/pricing",
   );
-  await expect(
-    page.getByRole("heading", { name: "One Bot. Any role.", exact: true }),
-  ).toBeAttached();
+  await expect(page.getByRole("tablist", { name: "Bot capabilities" })).toBeAttached();
 
   const metrics = await publicMetrics(page);
   expectNoHorizontalEscape(metrics, "desktop home");
@@ -303,11 +301,10 @@ test("home keeps the BotBound promise and account path in one mobile flow", asyn
   await expect(
     page.locator(".landing-prestige__getting-started, .landing-prestige__steps"),
   ).toHaveCount(0);
-  await expect(page.locator("#solutions")).toBeAttached();
-  await expect(page.locator("#pricing")).toBeAttached();
+  await expect(page.getByRole("tablist", { name: "Bot capabilities" })).toBeAttached();
   const actions = page.locator(".landing-prestige__hero .landing-prestige__actions");
   await expect(actions.getByRole("link", { name: "Get Started" })).toBeInViewport();
-  await expect(actions.getByRole("link", { name: "Sign In", exact: true })).toBeInViewport();
+  await expect(actions.getByRole("link", { name: "See Pricing", exact: true })).toBeInViewport();
 
   const metrics = await publicMetrics(page);
   expectNoHorizontalEscape(metrics, "phone home");
@@ -317,41 +314,18 @@ test("home keeps the BotBound promise and account path in one mobile flow", asyn
   expectBalancedHomeMessage(metrics, "phone home");
 });
 
-test("home role choices and hero fit the narrowest supported width", async ({ page }) => {
+test("home channels and hero fit the narrowest supported width", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await openPublicRoute(page, "/");
-
-  const geometry = await page.evaluate(() => {
-    const choices = Array.from(
-      document.querySelectorAll<HTMLElement>(".landing-prestige__role-card"),
-    ).map((element) => {
-      const card = element.getBoundingClientRect();
-      const action = element.querySelector<HTMLAnchorElement>("a")!;
-      return {
-        left: card.left,
-        right: card.right,
-        actionHeight: action.getBoundingClientRect().height,
-        href: action.getAttribute("href"),
-      };
-    });
-    const group = document
-      .querySelector<HTMLElement>(".landing-prestige__role-grid")
-      ?.getBoundingClientRect();
-    return { group, choices, width: window.innerWidth };
-  });
-
-  expect(geometry.group).toBeTruthy();
-  expect(geometry.choices).toHaveLength(6);
-  expect(geometry.group!.left).toBeGreaterThanOrEqual(-1);
-  expect(geometry.group!.right).toBeLessThanOrEqual(geometry.width + 1);
-  for (const choice of geometry.choices) {
-    expect(choice.left).toBeGreaterThanOrEqual(geometry.group!.left - 1);
-    expect(choice.right).toBeLessThanOrEqual(geometry.group!.right + 1);
-    expect(choice.actionHeight).toBeGreaterThanOrEqual(44);
-    const destination = new URL(choice.href!, "https://botbound.app");
-    expect(destination.pathname).toBe("/signup");
-    expect(destination.searchParams.get("template")).toBeTruthy();
-    expect(destination.searchParams.has("plan")).toBe(false);
+  const tabs = page.getByRole("tablist", { name: "Bot capabilities" }).getByRole("tab");
+  await expect(tabs).toHaveCount(4);
+  for (const tab of await tabs.all()) {
+    const box = await tab.boundingBox();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(320);
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+    await tab.click();
+    await expect(tab).toHaveAttribute("aria-selected", "true");
   }
   expectBalancedHomeMessage(await publicMetrics(page), "narrow phone home");
 });

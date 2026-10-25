@@ -1,14 +1,12 @@
 import { Link } from "react-router";
 import {
-  ArrowRight,
   CalendarCheck,
   ClipboardCheck,
   Hand,
   Mail,
+  MessageSquare,
   MonitorSmartphone,
   Phone,
-  PhoneOutgoing,
-  ShieldCheck,
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
@@ -16,6 +14,7 @@ import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 
 type Pillar = {
+  id: string;
   icon: LucideIcon;
   label: string;
   body: string;
@@ -24,54 +23,55 @@ type Pillar = {
 
 const PILLARS: readonly Pillar[] = [
   {
+    id: "calls",
     icon: Phone,
-    label: "Phone Number",
-    body: "Answer questions, capture requests, and book available times with your configured calendar.",
+    label: "Calls",
+    body: "Answer questions, capture requests, book appointments, and make approved follow-up calls. Choose a voice or clone your own.",
+    note: "Outbound calls require recipient permission and an eligible line.",
   },
   {
+    id: "sms",
+    icon: MessageSquare,
+    label: "SMS",
+    body: "Keep conversations moving from your business number, with your knowledge, tone, and opt-out controls.",
+    note: "Activation requires approved business and sender registration.",
+  },
+  {
+    id: "email",
     icon: Mail,
-    label: "Email Address",
-    body: "Read incoming messages, draft replies, and send approved email. Use a managed inbox or your verified domain with guided setup.",
-    note: "Email activation requires a setup review.",
+    label: "Email",
+    body: "Read requests, prepare replies, and send approved email with your business signature. Use a managed inbox or your verified domain.",
+    note: "A setup review verifies your sending identity.",
   },
   {
+    id: "computer",
     icon: MonitorSmartphone,
     label: "Cloud Computer",
-    body: "Research sites and complete web tasks in a live browser. See the work, take control, and hand it back.",
-    note: "Included with paid plans.",
+    body: "Compare options, research leads, and work through forms in a live browser. Watch, take control, or let your Bot continue.",
+    note: "Up to 15 minutes per session. Review the result and its sources.",
   },
 ];
 
 const CAPABILITIES: readonly { icon: LucideIcon; title: string; body: string }[] = [
   {
-    icon: PhoneOutgoing,
-    title: "Reviewed Calls",
-    body: "Place a personal coordination call or a specific business service call with recipient permission. Available on eligible paid lines when both parties are in Illinois.",
-  },
-  {
     icon: Sparkles,
     title: "Made Yours",
-    body: "Your knowledge, preferences, voice, and rules shape how your Bot works. Where available, read a short script and callers hear your own voice.",
+    body: "Your knowledge, preferences, and rules, shared across every job.",
   },
   {
     icon: CalendarCheck,
     title: "Native Calendar Booking",
-    body: "Weekly availability, your timezone, and booking rules. Optionally import Google or Outlook busy times when you sync.",
+    body: "Your availability, timezone, and booking rules. Sync Google or Outlook busy times.",
   },
   {
     icon: Hand,
     title: "Approvals and Handoffs",
-    body: "Sensitive work waits for your OK. A person gets the full context when a caller needs one.",
+    body: "Approve sensitive actions. Get the context when your Bot needs you.",
   },
   {
     icon: ClipboardCheck,
     title: "Clear Outcomes",
     body: "Review call records, approvals, and computer task results from your workspace.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Rehearse Before Launch",
-    body: "Rehearse privately before activating live work.",
   },
 ];
 
@@ -79,15 +79,15 @@ export default function Features() {
   return (
     <MarketingPageFrame className="wl-features-page">
       <PageMeta
-        title="Features | BotBound"
-        description="Build a Bot for your life or your business. Answer calls, manage email, and assign tasks to its cloud computer."
+        title="Product | BotBound"
+        description="One Bot for calls, SMS, email, and Computer work. Your knowledge, voice, and rules across every job."
         path="/features"
       />
 
       <section className="marketing-section marketing-section--screen">
         <div className="wl-public-rail mx-auto max-w-6xl">
           <header className="wl-features-intro text-center">
-            <h1 className="marketing-hero-title mx-auto">Calls. Email. Computer.</h1>
+            <h1 className="marketing-hero-title mx-auto">One Bot. More Possibilities.</h1>
             <p className="wl-features-intro__lead mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
               One Bot, your knowledge, and the tools to get work done.
             </p>
@@ -108,8 +108,8 @@ export default function Features() {
           </header>
 
           <ul className="wl-features-pillars" aria-label="Available Bot capabilities">
-            {PILLARS.map(({ icon: Icon, label, body, note }) => (
-              <li key={label} className="wl-features-pillar">
+            {PILLARS.map(({ id, icon: Icon, label, body, note }) => (
+              <li id={id} key={id} className="wl-features-pillar scroll-mt-24">
                 <span className="wl-features-pillar__icon" aria-hidden="true">
                   <Icon />
                 </span>
@@ -134,12 +134,6 @@ export default function Features() {
               </li>
             ))}
           </ul>
-
-          <div className="wl-features-closing">
-            <Link to="/signup" className="marketing-btn-primary min-h-11 px-5">
-              Get Started <ArrowRight className="size-4" aria-hidden="true" />
-            </Link>
-          </div>
         </div>
       </section>
     </MarketingPageFrame>

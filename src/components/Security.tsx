@@ -176,9 +176,9 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     icon: CreditCard,
     title: "Billing & Spend Controls",
     items: [
-      "Runtime Balance is a prepaid ledger. Paid plans draw overflow voice from funded balance after included minutes. Existing services retain their billing and verification requirements. Live voice requires an active eligible paid plan.",
-      "Paid plans include a monthly amount of AI usage for AI, research, and enrichment, funded by the platform. A call that runs past its minutes can take up to 10 more to finish, within its session limit. Any amount due pauses new calls and prepaid extras until topped up.",
-      "Daily spend totals and cost alerts help you track your account's spending and catch unexpected charges early.",
+      "The shared-work plan includes one monthly allowance for calls, email, and Computer. Extra work is metered at the rates shown in Pricing. Unused allowance does not roll over.",
+      "Set a monthly pretax spending limit in Billing. Work pauses at that limit. Computer tasks also have a processing limit; a higher spending limit does not remove it.",
+      "Existing plans keep their allowances and, where applicable, prepaid Runtime Balance. Billing shows the terms and usage for your account.",
     ],
   },
   {
@@ -278,7 +278,7 @@ export default function Security() {
               </div>
             </div>
             <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-              <span className="whitespace-nowrap">Last updated · October 20, 2026</span>
+              <span className="whitespace-nowrap">Last updated · October 25, 2026</span>
             </p>
             {!isTrustHub ? (
               <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">

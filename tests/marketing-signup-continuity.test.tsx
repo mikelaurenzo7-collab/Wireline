@@ -17,7 +17,7 @@ vi.mock("react", async (importOriginal) => ({
   useEffect: () => undefined,
   useLayoutEffect: () => undefined,
   useRef: () => ({ current: null }),
-  useState: () => [true, vi.fn()],
+  useState: (initial: unknown) => [typeof initial === "number" ? initial : true, vi.fn()],
 }));
 vi.mock("react-router", () => ({
   Link: "a",
@@ -93,7 +93,7 @@ describe("marketing signup continuity", () => {
     },
   );
 
-  it("keeps role choice specific without decorative audience badges or retired gate copy", () => {
+  it("keeps the minimal landing plan-neutral with accessible capability choices", () => {
     const text = (node: ReactNode): string =>
       Array.isArray(node)
         ? node.map(text).join("")
@@ -107,20 +107,21 @@ describe("marketing signup continuity", () => {
       .map((element) => text(element.props.children))
       .join(" ");
     expect(renderedText).not.toContain("For You");
-    expect(renderedText).toContain("Personal Assistant");
+    expect(renderedText).not.toContain("Personal Assistant");
     expect(renderedText).not.toContain("For Your Business");
-    expect(renderedText).toContain("Front Desk");
+    expect(renderedText).not.toContain("Front Desk");
     expect(renderedText).toContain(
-      "YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER",
+      "AI Bots With Their Own Phone Number, Email Address, And Computer.",
     );
     expect(renderedText).not.toContain("Choose calls, email, or both.");
     expect(renderedText).not.toContain("then sends you the summary");
-    expect(renderedText).toContain("1 number + connected inbox");
+    expect(renderedText).not.toContain("1 number + connected inbox");
     const roleLinks = elements(page).filter((element) =>
       element.props.to?.startsWith("/signup?template="),
     );
-    expect(roleLinks).toHaveLength(6);
-    expect(roleLinks.every((element) => !element.props.to?.includes("plan="))).toBe(true);
+    expect(roleLinks).toHaveLength(0);
+    expect(elements(page).filter((element) => element.props.role === "tab")).toHaveLength(4);
+    expect(elements(page).some((element) => element.props.to === "/signup")).toBe(true);
     expect(renderedText).not.toContain("server-verifiable consent records");
     expect(renderedText).not.toContain("Federal Do Not Call screening");
     expect(renderedText).not.toMatch(/outbound calls are not available yet|coming soon/i);

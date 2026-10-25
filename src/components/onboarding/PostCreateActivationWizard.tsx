@@ -5,6 +5,7 @@ import { useModalFocusTrap } from "../../lib/use-modal-focus-trap";
 import { useBodyScrollLock } from "../../lib/use-body-scroll-lock";
 
 import RoleplaySandbox from "../RoleplaySandbox";
+import SimpleVoicePicker from "../voice/SimpleVoicePicker";
 import { Button } from "../atoms";
 import { StatusNotice } from "../molecules";
 import SoftOpenCheckoutNote from "./SoftOpenCheckoutNote";
@@ -35,6 +36,7 @@ type WizardStep = PostCreateWizardStep | "complete";
 function isWizardStep(value: string | null): value is PostCreateWizardStep {
   return (
     value === "train" ||
+    value === "voice" ||
     value === "channels" ||
     value === "wire" ||
     value === "test" ||
@@ -96,7 +98,7 @@ export default function PostCreateActivationWizard({
   const activationNeeded = !phoneNumber && payload.phoneActivationRequired === true;
   const [testStarted, setTestStarted] = useState(false);
 
-  const stepOrder: WizardStep[] = ["train", "test", "launch", "complete"];
+  const stepOrder: WizardStep[] = ["train", "voice", "test", "launch", "complete"];
   const stepIndex = stepOrder.indexOf(step);
 
   const setStep = useCallback(
@@ -321,7 +323,7 @@ export default function PostCreateActivationWizard({
           aria-label="Setup steps"
           className="flex items-center gap-2 border-b border-border px-5 py-3.5 sm:px-6"
         >
-          {(["train", "test", "launch"] as const).map((id, index) => {
+          {(["train", "voice", "test", "launch"] as const).map((id, index) => {
             const active = step === id;
             const done = stepIndex > index || step === "complete";
             return (
@@ -335,7 +337,8 @@ export default function PostCreateActivationWizard({
                   />
                 ) : null}
                 <p
-                  className={`wl-overline truncate ${
+                  aria-current={active ? "step" : undefined}
+                  className={`text-xs font-semibold ${
                     active ? "text-foreground" : done ? "text-primary" : "text-muted-foreground"
                   }`}
                 >
@@ -370,12 +373,32 @@ export default function PostCreateActivationWizard({
                   type="button"
                   size="sm"
                   onClick={() => {
-                    setStep("test");
+                    setStep("voice");
                   }}
                 >
                   {POST_CREATE_WIZARD_COPY.steps.train.secondary}
                 </Button>
               </div>
+            </section>
+          ) : null}
+
+          {step === "voice" ? (
+            <section className="grid gap-4" aria-labelledby="setup-voice-title">
+              <div>
+                <h3 id="setup-voice-title" className="text-base font-semibold text-foreground">
+                  {POST_CREATE_WIZARD_COPY.steps.voice.title}
+                </h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                  {POST_CREATE_WIZARD_COPY.steps.voice.detail}
+                </p>
+              </div>
+              <SimpleVoicePicker
+                agentId={payload.agentId}
+                agentName={payload.agentName}
+                markKey={payload.markKey}
+                botPhone={phoneNumber}
+                cloneAnchorId="setup-guide-voice-clone"
+              />
             </section>
           ) : null}
 
@@ -665,6 +688,16 @@ export default function PostCreateActivationWizard({
         </div>
 
         <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-5 py-4 sm:px-6">
+          {step === "voice" ? (
+            <>
+              <Button type="button" variant="secondary" size="sm" onClick={() => setStep("train")}>
+                Back
+              </Button>
+              <Button type="button" size="sm" onClick={() => setStep("test")}>
+                {POST_CREATE_WIZARD_COPY.steps.voice.primary}
+              </Button>
+            </>
+          ) : null}
           {step !== "complete" ? (
             <Button type="button" variant="ghost" size="sm" onClick={dismiss}>
               Skip for Now

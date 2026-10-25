@@ -57,9 +57,9 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
       "Personal is $12 a month for calls and a computer. Compare Calls, Email, and combined plans.",
   },
   "/features": {
-    title: "Features",
+    title: "Product",
     description:
-      "Build a Bot for your life or your business. Answer calls, manage email, and assign tasks to its cloud computer.",
+      "One Bot for calls, SMS, email, and Computer work. Your knowledge, voice, and rules across every job.",
   },
   "/compare": {
     title: "Why BotBound | Compare Bots",

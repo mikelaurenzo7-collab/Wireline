@@ -31,76 +31,36 @@ const paidPlans = {
   ),
 };
 
-test("homepage gives Email interests a paid plan and setup-review path", async ({ page }) => {
-  await mockPublicAccount(page, {
-    ...paidPlans,
-    plans: paidPlans.plans.map((plan) =>
-      plan.id.includes("email")
-        ? { ...plan, configured: false, annual_configured: false, contact_sales: true }
-        : plan,
-    ),
-  });
+test("minimal homepage keeps signup plan-neutral and channel links useful", async ({ page }) => {
+  await mockPublicAccount(page, paidPlans);
   await page.goto("/");
-  const email = page.getByRole("article", { name: "Email plan", exact: true });
-  const combined = page.getByRole("article", { name: "Calls + Email plan", exact: true });
-  const calls = page.getByRole("article", { name: "Calls plan", exact: true });
-  await expect(email).toContainText("$9");
-  await expect(combined).toContainText("$25");
-  await expect(email.getByRole("link", { name: "Choose Email" })).toHaveAttribute(
+  await page.getByRole("tab", { name: "Email", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Explore Email", exact: true })).toHaveAttribute(
     "href",
-    "/signup?plan=email",
+    "/features#email",
   );
-  await expect(combined.getByRole("link", { name: "Choose Calls + Email" })).toHaveAttribute(
-    "href",
-    "/signup?plan=voice-email",
-  );
-  await expect(email.getByRole("link", { name: "setup review" })).toHaveAttribute(
-    "href",
-    "/contact?topic=email",
-  );
-  await expect(calls.getByRole("link", { name: "Choose Calls" })).toHaveAttribute(
-    "href",
-    "/signup?plan=voice",
-  );
+  await page.locator("main").getByRole("link", { name: "Get Started", exact: true }).click();
+  await expect(page).toHaveURL(/\/signup$/);
 });
 
-test("paused activation stays explicit from the homepage through paid signup", async ({ page }) => {
-  await mockPublicAccount(page, { ...paidPlans, checkout_available: false });
-  await page.goto("/");
-  await expect(page.locator(".landing-prestige__activation")).toHaveText(
-    "Checkout is unavailable right now. Try again shortly.",
-  );
-  const access = page.getByRole("region", { name: "Account access" });
-  await page.getByRole("link", { name: "Set Up Calls", exact: true }).click();
-  await expect(page).toHaveURL(/\/signup\?plan=voice/);
-  await expect(access.getByRole("status")).toHaveText(
-    "Checkout is unavailable right now. Try again shortly.",
-  );
-  await expect(access).toContainText("$19/month");
-  await page.getByRole("link", { name: "Pricing", exact: true }).click();
-  await expect(
-    page.getByText("Checkout is unavailable right now. Try again shortly."),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "Set Up These Channels", exact: true }),
-  ).toBeVisible();
-});
-
-for (const failure of ["http", "malformed"] as const) {
-  test(`a ${failure} availability failure does not advertise immediate paid activation`, async ({
+for (const failure of ["paused", "http", "malformed"] as const) {
+  test(`a ${failure} availability response still prevents selected-plan activation`, async ({
     page,
   }) => {
     await mockPublicAccount(
       page,
-      failure === "http" ? {} : { plans: null },
+      failure === "paused"
+        ? { ...paidPlans, checkout_available: false }
+        : failure === "http"
+          ? {}
+          : { plans: null },
       failure === "http" ? 503 : 200,
     );
-    await page.goto("/");
-    await expect(page.locator(".landing-prestige__activation")).toHaveText(
-      "Plan availability could not be checked. Refresh and try again.",
+    await page.goto("/signup?plan=voice");
+    const access = page.getByRole("region", { name: "Account access" });
+    await expect(access.getByRole("status")).toContainText(
+      failure === "paused" ? "Checkout is unavailable" : "Plan availability could not be checked",
     );
-    await expect(page.getByRole("link", { name: "Set Up Calls", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Choose Calls", exact: true })).toHaveCount(0);
   });
 }
 

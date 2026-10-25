@@ -39,7 +39,7 @@ async function mockStudio(page: Page) {
 
 async function openHours(page: Page) {
   await page.goto(`/studio?agent=${bot.id}`);
-  await page.getByRole("button", { name: "Bot details" }).click();
+  await page.getByRole("button", { name: "Set Up Bot" }).click();
   const hours = page.getByRole("region", { name: "Business Hours", exact: true });
   await expect(hours.getByText("Always open", { exact: true })).toBeVisible();
   await hours.getByRole("switch", { name: "Set business hours" }).click();

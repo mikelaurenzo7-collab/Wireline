@@ -34,7 +34,20 @@ function parseEvent(raw: unknown): Event {
     throw new Error("Expected an event object");
   return parsed as Event;
 }
-export type SpeechStream = (text: string, signal: AbortSignal) => AsyncIterable<Uint8Array>;
+export type SpeechStream = (
+  text: string,
+  signal: AbortSignal,
+  context?: { previousText: string },
+) => AsyncIterable<Uint8Array>;
+
+type SpeechJob = {
+  text: string;
+  previousText: string;
+  signal: AbortSignal;
+  prepared?: Promise<{ audio: Uint8Array } | { failed: true }>;
+};
+
+const MAX_SPEECH_BYTES = 8_000 * 60;
 
 /**
  * Adapts OpenAI's text-output Realtime socket to the existing call runner.
@@ -47,6 +60,9 @@ export class ElevenLabsMediaSession extends EventEmitter {
   private controller = new AbortController();
   private work = Promise.resolve();
   private text = "";
+  private previousText = "";
+  private speechQueue: SpeechJob[] = [];
+  private canPrefetch = false;
   private responseId = "";
   private itemId = "";
   private queuedChars = 0;
@@ -217,6 +233,7 @@ export class ElevenLabsMediaSession extends EventEmitter {
     if (event.type === "input_audio_buffer.speech_started") this.interrupt();
     if (event.type === "response.created") {
       this.responseId = event.response?.id ?? "";
+      this.previousText = "";
       this.modelResponding = true;
     }
     if (event.type === "response.output_text.delta") {
@@ -229,7 +246,9 @@ export class ElevenLabsMediaSession extends EventEmitter {
       }
       // Speak complete clauses as they arrive; bound long unpunctuated replies.
       let end: number;
-      while ((end = this.text.search(/[.!?;:\n](?:\s|$)/u)) >= 0 || this.text.length >= 240) {
+      // A token ending in punctuation is not necessarily a sentence ending:
+      // "$19." + "50", "https:" + "//...", and "Dr." + " Smith" must stay intact.
+      while ((end = speechBoundary(this.text)) >= 0 || this.text.length >= 240) {
         // Punctuation can be much later than the limit, and a long word may
         // have no spaces. Neither case should create an unbounded request or
         // hundreds of one-character provider calls.
@@ -286,17 +305,28 @@ export class ElevenLabsMediaSession extends EventEmitter {
     const generation = this.generation;
     const responseId = this.responseId;
     const signal = this.controller.signal;
+    const job: SpeechJob = { text, previousText: this.previousText, signal };
+    this.previousText = (this.previousText + " " + text).trim().slice(-1_000);
+    this.speechQueue.push(job);
+    this.prefetchNext();
     this.queuedChars += text.length;
     this.work = this.work
       .then(async () => {
         if (signal.aborted || generation !== this.generation || this.readyState !== 1) return;
+        this.canPrefetch = false;
+        if (this.speechQueue[0] === job) this.speechQueue.shift();
         const synthesize = async (speech: SpeechStream): Promise<boolean> => {
           let bytes = 0;
-          for await (const chunk of speech(text, signal)) {
+          const source = job.prepared
+            ? preparedSpeech(job.prepared)
+            : speech(text, signal, { previousText: job.previousText });
+          // A failed prefetched request follows the same single stock retry.
+          job.prepared = undefined;
+          for await (const chunk of source) {
             if (signal.aborted || generation !== this.generation) return false;
             if (!chunk.length) continue;
             bytes += chunk.length;
-            if (bytes > 8_000 * 60) throw new Error("Speech duration exceeded");
+            if (bytes > MAX_SPEECH_BYTES) throw new Error("Speech duration exceeded");
             if (!this.speaking) {
               this.speaking = true;
               this.event({
@@ -337,7 +367,13 @@ export class ElevenLabsMediaSession extends EventEmitter {
             });
             if (!(await synthesize(this.options.stockSpeech))) return;
           }
-          const played = await this.waitForPlayback(signal);
+          const playback = this.waitForPlayback(signal);
+          // Prepare just the next clause while the caller hears this one.
+          // Never send it or claim it was heard until the preceding mark arrives.
+          this.canPrefetch = true;
+          this.prefetchNext();
+          const played = await playback;
+          if (generation === this.generation) this.canPrefetch = false;
           if (!played || signal.aborted) return;
           this.event({
             type: "response.output_audio_transcript.delta",
@@ -367,6 +403,26 @@ export class ElevenLabsMediaSession extends EventEmitter {
         });
       }
     });
+  }
+
+  private prefetchNext() {
+    const next = this.speechQueue[0];
+    if (!this.canPrefetch || !next || next.prepared || next.signal.aborted) return;
+    const speech = this.stock ? this.options.stockSpeech : this.options.cloneSpeech;
+    next.prepared = (async () => {
+      const chunks: Uint8Array[] = [];
+      let bytes = 0;
+      for await (const chunk of speech(next.text, next.signal, {
+        previousText: next.previousText,
+      })) {
+        if (next.signal.aborted) return { failed: true as const };
+        bytes += chunk.length;
+        if (bytes > MAX_SPEECH_BYTES) throw new Error("Speech duration exceeded");
+        chunks.push(chunk);
+      }
+      if (!bytes) throw new Error("Speech provider returned empty audio");
+      return { audio: Buffer.concat(chunks) };
+    })().catch(() => ({ failed: true as const }));
   }
 
   private waitForPlayback(signal: AbortSignal): Promise<boolean> {
@@ -404,7 +460,11 @@ export class ElevenLabsMediaSession extends EventEmitter {
   }
 
   private interrupt() {
+    if (!this.modelResponding && !this.speaking && !this.queuedChars && !this.text) return;
     this.generation += 1;
+    this.canPrefetch = false;
+    this.speechQueue = [];
+    this.previousText = "";
     this.controller.abort();
     this.controller = new AbortController();
     this.text = "";
@@ -445,6 +505,9 @@ export class ElevenLabsMediaSession extends EventEmitter {
     this.flushCompletions();
     this.readyState = 3;
     this.controller.abort();
+    this.speechQueue = [];
+    this.canPrefetch = false;
+    this.previousText = "";
     for (const mark of this.marks.values()) {
       clearTimeout(mark.timer);
       mark.finish(false);
@@ -460,4 +523,25 @@ export class ElevenLabsMediaSession extends EventEmitter {
     if (this.listenerCount("error")) this.emit("error", new Error(message));
     this.close(1011, message);
   }
+}
+
+/** Wait for a real sentence boundary, retaining abbreviations and decimals. */
+function speechBoundary(text: string): number {
+  const boundaries = /[.!?\n](?:["”’')\]]*)(?=\s)/gu;
+  for (const match of text.matchAll(boundaries)) {
+    const end = match.index!;
+    const prefix = text.slice(0, end + 1);
+    if (match[0][0] === "." && /(?:\b(?:Mr|Mrs|Ms|Dr|Prof|St|vs|etc)|\b[A-Z])\.$/u.test(prefix))
+      continue;
+    return end + match[0].length - 1;
+  }
+  return -1;
+}
+
+async function* preparedSpeech(
+  result: NonNullable<SpeechJob["prepared"]>,
+): AsyncIterable<Uint8Array> {
+  const prepared = await result;
+  if ("failed" in prepared) throw new Error("Speech preparation failed");
+  yield prepared.audio;
 }

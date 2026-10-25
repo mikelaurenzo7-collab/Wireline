@@ -29,7 +29,7 @@ describe("Clear System channel catalog guard", () => {
       "src/components/marketing/WireAgentLanding.tsx",
       (source) =>
         source.replace(
-          "YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER",
+          "AI Bots With Their Own Phone Number, Email Address, And Computer.",
           "Calling.",
         ),
       "describe the product family together",

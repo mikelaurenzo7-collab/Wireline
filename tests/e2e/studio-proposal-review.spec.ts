@@ -364,7 +364,7 @@ test("Change and Try It drafts survive leaving the Workspace without mixing thei
   await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
 });
 
-for (const section of ["Set up", "Summary"] as const) {
+for (const section of ["Set Up", "Summary"] as const) {
   test(`${section} rehearsal focuses voice and preserves an existing customer draft`, async ({
     page,
   }) => {
@@ -376,7 +376,7 @@ for (const section of ["Set up", "Summary"] as const) {
       exact: true,
     });
     await input.fill("Can you handle this specific customer request?");
-    await page.getByRole("button", { name: "Bot details", exact: true }).click();
+    await page.getByRole("button", { name: "Set Up Bot", exact: true }).click();
     await page.getByRole("tab", { name: section, exact: true }).click();
     await page
       .getByRole("button", {
@@ -399,8 +399,8 @@ test("setup focuses voice without seeding a customer message or replacing the Se
   const buildInput = page.getByRole("textbox", { name: "Message Front Desk", exact: true });
   await buildInput.fill("Keep this unsent Build instruction.");
   await expect(buildInput).toHaveCSS("resize", "none");
-  await page.getByRole("button", { name: "Bot details", exact: true }).click();
-  const greeting = page.getByRole("textbox", { name: "Opening greeting", exact: true });
+  await page.getByRole("button", { name: "Set Up Bot", exact: true }).click();
+  const greeting = page.getByRole("textbox", { name: "Opening Greeting", exact: true });
   await expect(greeting).toBeVisible();
   expect(await greeting.evaluate((element) => getComputedStyle(element).resize)).toMatch(
     /^(block|vertical)$/,

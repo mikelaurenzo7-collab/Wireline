@@ -70,7 +70,7 @@ describe("launch truth contract", () => {
     expect(changelog).not.toContain("botbound.app/status");
     expect(changelog).not.toContain("trywireline.com/status");
 
-    expect(security).toContain("Last updated · October 20, 2026");
+    expect(security).toContain("Last updated · October 25, 2026");
     expect(security).toContain("Twilio provides phone numbers, PSTN transport, SIP, and SMS");
     // AI processing is described as BotBound's, on contracted providers, unnamed.
     expect(security).toContain(

@@ -201,9 +201,9 @@ describe("E2E design and BotBound brand polish", () => {
 
   it("keeps status foregrounds accessible while public entry paths remain text-labeled", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain('id="solutions"');
-    expect(landing).toContain("FEATURED_TEMPLATES.map");
-    expect(landing).toContain("encodeURIComponent(template.key)");
+    expect(landing).toContain('aria-label="Bot capabilities"');
+    expect(landing).not.toContain("FEATURED_TEMPLATES.map");
+    expect(landing).not.toContain("encodeURIComponent(template.key)");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
     const badge = read("src/components/atoms/Badge.tsx");
     expect(badge).toContain("text-[var(--wireline-color-status-success)]");
@@ -215,34 +215,30 @@ describe("E2E design and BotBound brand polish", () => {
     const auth = read("src/styles/auth-access-panel.css");
     // Account access lives behind two clear actions instead of a split form.
     expect(landing).not.toContain("<AuthAccessPanel");
-    expect(landing).toContain('to="/signup"');
-    expect(landing).toContain('to="/signin"');
-    expect(landing).toMatch(/<h1[^>]*>[\s\S]*VOICE BOTS\.[\s\S]*REAL WORK\.[\s\S]*<\/h1>/);
+    expect(landing).toContain('signedIn ? "/studio" : "/signup"');
+    expect(read("src/components/marketing/PrecisionPublicHeader.tsx")).toContain('to="/signin"');
+    expect(landing).toMatch(/<h1[^>]*>[\s\S]*YOUR VOICE BOT[\s\S]*FOR YOUR WORK\.[\s\S]*<\/h1>/);
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).toContain("<BotBoundMark");
     expect(landing).toContain("landing-prestige__hero-mark");
     expect(landing).not.toContain("landing-prestige__directions");
     expect(landing).not.toContain("Personal is $12 a month");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
-    expect(landing).toContain("FEATURED_TEMPLATE_KEYS");
-    expect(landing).toContain("FEATURED_TEMPLATES.map");
-    expect(landing).toContain("{template.summary}");
-    expect(landing).toContain('id="pricing"');
-    expect(landing).toContain("landing-prestige__trust");
+    expect(landing).not.toContain("FEATURED_TEMPLATE_KEYS");
+    expect(landing).not.toContain("FEATURED_TEMPLATES.map");
+    expect(landing).not.toContain("{template.summary}");
+    expect(landing).toContain('to="/pricing"');
+    expect(landing).not.toContain("landing-prestige__trust");
     expect(landing).toContain("<LandingFooter />");
     expect(landing).toContain("<PrecisionPublicHeader />");
     expect(landing).not.toContain("ONE WORKSPACE");
     expect(landing).not.toContain("Runtime Balance");
     expect(landing).not.toContain("WIRE YOUR PHONE BOT");
     expect(prestige).toMatch(
-      /\.landing-prestige__hero\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*text-align:\s*center;/,
+      /\.landing-prestige__hero\s*\{[^}]*place-items:\s*center;[^}]*text-align:\s*center;/,
     );
-    expect(prestige).toMatch(
-      /\.landing-prestige__section-heading\s*\{[^}]*margin-inline:\s*auto;[^}]*text-align:\s*center;/,
-    );
-    expect(prestige).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?min-height:\s*auto/,
-    );
+    expect(prestige).toContain("text-wrap: balance;");
+    expect(read("src/styles/landing-prestige.css")).toContain("flex-wrap: wrap;");
     expect(prestige).not.toMatch(/\.landing-prestige__(?:auth|entrance|desktop-only)\b/);
     const providerGrid = auth.match(/\.wl-access-panel__oauth\s*\{([^}]+)\}/)?.[1];
     // Provider choices must reflow when the container or enlarged labels need

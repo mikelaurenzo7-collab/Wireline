@@ -16,6 +16,8 @@ type SimpleVoicePickerProps = {
   markKey?: BotMarkKey | null;
   /** The Bot's phone number, so owners can place a test call after cloning. */
   botPhone?: string | null;
+  /** Setup and the workspace can be mounted together; focus the local clone flow. */
+  cloneAnchorId?: string;
 };
 
 /** The voice callers actually hear when phone calls run on another provider. */
@@ -42,6 +44,7 @@ export default function SimpleVoicePicker({
   agentName,
   markKey,
   botPhone,
+  cloneAnchorId = LIVE_VOICE_ANCHOR_ID,
 }: SimpleVoicePickerProps) {
   const { user } = useAuth();
   const ownerId = user?.id ?? null;
@@ -278,14 +281,15 @@ export default function SimpleVoicePicker({
   }
 
   function scrollToClone() {
-    const target = document.getElementById(LIVE_VOICE_ANCHOR_ID);
+    const target = document.getElementById(cloneAnchorId);
     if (!target) return;
     target.scrollIntoView({ behavior: "smooth", block: "start" });
     target.focus({ preventScroll: true });
   }
 
   function renderVoice(voice: VoiceOption) {
-    const selected = selectedVoiceId === voice.id && selectedProvider === voice.provider;
+    const selected =
+      !clonedVoiceName && selectedVoiceId === voice.id && selectedProvider === voice.provider;
     const saving = savingVoiceId === voice.id;
     return (
       <div
@@ -362,12 +366,7 @@ export default function SimpleVoicePicker({
           className="flex min-h-11 w-full items-center gap-2 rounded-xl border border-primary/25 bg-primary/5 px-3 py-2 text-left text-sm font-semibold text-foreground transition-colors hover:bg-primary/10 wl-focus-ring-halo"
         >
           <Mic className="size-4 shrink-0 text-primary" aria-hidden="true" />
-          <span className="min-w-0 flex-1">
-            Clone your voice
-            <span className="block text-xs font-normal text-muted-foreground">
-              Callers hear you instead of a stock voice.
-            </span>
-          </span>
+          <span className="min-w-0 flex-1">Clone Voice</span>
         </button>
       ) : null}
       <div aria-live="polite">
@@ -413,11 +412,13 @@ export default function SimpleVoicePicker({
           <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-2.5 py-3 wl-focus-ring-halo sm:px-3">
             <span className="min-w-0 flex-1">
               <span className="block break-words text-sm font-semibold text-foreground">
-                {selectedVoice
-                  ? selectedVoice.name.split("·")[0].trim()
-                  : selectedVoiceId
-                    ? "Unavailable voice"
-                    : "Choose a voice"}
+                {clonedVoiceName
+                  ? `Built-In Voice · ${selectedVoice?.name.split("·")[0].trim() || "Choose"}`
+                  : selectedVoice
+                    ? selectedVoice.name.split("·")[0].trim()
+                    : selectedVoiceId
+                      ? "Unavailable Voice"
+                      : "Choose Voice"}
               </span>
               {selectedVoice ? (
                 <span className="mt-0.5 block break-words text-xs text-muted-foreground">
@@ -435,11 +436,10 @@ export default function SimpleVoicePicker({
           </summary>
           <div className="min-w-0 space-y-3 border-t border-border p-2 sm:p-3">
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span>{includedVoices.length} Built-In Voices</span>
               <span>
-                {includedVoices.length} built-in voices
-                {phoneCall ? ". Tap play to hear one as callers will." : ""}
+                {clonedVoiceName ? "Choosing one replaces your clone." : "Saves when you pick."}
               </span>
-              <span>Saves when you pick. Undo anytime.</span>
             </div>
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-2">
               {includedVoices.map(renderVoice)}
@@ -448,13 +448,13 @@ export default function SimpleVoicePicker({
         </details>
       )}
 
-      {!loading && !selectedIsAvailable ? (
+      {!loading && !selectedIsAvailable && !clonedVoiceName ? (
         <StatusNotice tone="warning">Choose a voice before the next call.</StatusNotice>
       ) : null}
 
       <p className="text-xs leading-5 text-muted-foreground">
         {clonedVoiceName
-          ? `Callers hear ${clonedVoiceName}, your cloned voice. Browser rehearsals use your stock voice.`
+          ? `Callers hear ${clonedVoiceName}. Rehearsals use the built-in voice.`
           : phoneCall && phoneCallReady === false
             ? "Phone voice registration is pending. Callers hear the standard voice until it finishes."
             : phoneCallVoiceName(phoneCall)
@@ -469,7 +469,7 @@ export default function SimpleVoicePicker({
         className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted wl-focus-ring-halo"
       >
         <Volume2 className="size-4" aria-hidden="true" />
-        {previewOpen ? "Close Preview" : "Preview Voice"}
+        {previewOpen ? "Close Rehearsal" : "Rehearse"}
       </button>
 
       {previewOpen && selectedIsAvailable ? (
@@ -487,6 +487,7 @@ export default function SimpleVoicePicker({
           agentName={agentName}
           stockVoiceId={phoneCall?.voice ?? selectedVoiceId}
           botPhone={botPhone}
+          anchorId={cloneAnchorId}
           onActiveVoiceChange={setClonedVoiceName}
         />
       ) : null}

@@ -87,13 +87,13 @@ describe("sales trust copy contract", () => {
       /real Google or Outlook availability|Salesforce are supported today|reservation writes back|SMS activation is pending/i,
     );
     expect(wedges).toContain("Google or Outlook busy times can be imported when you sync.");
-    expect(features).toContain("Optionally import Google or Outlook busy times when you sync.");
+    expect(features).toContain("Sync Google or Outlook busy times.");
     expect(compare).not.toContain("continues with shared context");
   });
 
   it("keeps the landing customer-facing without internal design meta", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain("YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER");
+    expect(landing).toContain("AI Bots With Their Own Phone Number, Email Address, And Computer.");
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toMatch(/homepage now leads/i);
     expect(landing).not.toMatch(/live desk/i);

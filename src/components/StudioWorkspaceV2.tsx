@@ -49,7 +49,7 @@ const STUDIO_PANEL_REST_STORAGE_KEY = "wireline:studio-panel-rest:v1";
 const PANEL_TABS: ReadonlyArray<{ id: PanelSection; label: string }> = [
   { id: "computer", label: "Browser" },
   { id: "try", label: "Rehearse" },
-  { id: "setup", label: "Set up" },
+  { id: "setup", label: "Set Up" },
   { id: "review", label: "Summary" },
 ];
 // The panel can be dragged as wide as the conversation allows; Full width

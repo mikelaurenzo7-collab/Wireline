@@ -24,7 +24,6 @@ import SimpleVoicePicker from "./voice/SimpleVoicePicker";
 import AgentToolPermissions from "./AgentToolPermissions";
 import BusinessHoursEditor from "./BusinessHoursEditor";
 import DeleteBotSection from "./studio/DeleteBotSection";
-import BotLivePanel from "./studio/BotLivePanel";
 import HumanHandoffEditor from "./HumanHandoffEditor";
 import PlaybookEditor from "./PlaybookEditor";
 
@@ -349,10 +348,10 @@ export default function StudioAgentWorkspacePanel({
   }
 
   const contentClass = compact
-    ? "mx-auto w-full max-w-none space-y-3 px-2 py-3 sm:px-3"
+    ? "mx-auto w-full max-w-none space-y-5 px-4 py-5"
     : "mx-auto w-full max-w-3xl space-y-4 px-4 py-5 sm:px-6 sm:py-7";
   const sectionClass = compact
-    ? "rounded-xl border border-border bg-card p-3 sm:p-4"
+    ? "rounded-xl border border-border bg-card p-4 sm:p-5"
     : "rounded-2xl border border-border bg-card p-5 sm:p-6";
 
   return (
@@ -369,7 +368,7 @@ export default function StudioAgentWorkspacePanel({
                 : "wl-preserve-case break-words text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
             }
           >
-            Tone & Knowledge
+            Bot Setup
           </h2>
           {snapshot.dirty ? (
             <p className="mt-1 text-xs text-muted-foreground" role="status">
@@ -377,13 +376,6 @@ export default function StudioAgentWorkspacePanel({
             </p>
           ) : null}
         </header>
-
-        <BotLivePanel
-          agentId={agentId}
-          agentName={agentName}
-          compact={compact}
-          className={sectionClass}
-        />
 
         <section className={sectionClass} aria-label="Tone and knowledge">
           {loadingSetup ? (
@@ -441,7 +433,7 @@ export default function StudioAgentWorkspacePanel({
               </fieldset>
 
               <label className="grid gap-2" htmlFor="setup-greeting">
-                <span className="text-sm font-semibold text-foreground">Opening greeting</span>
+                <span className="text-sm font-semibold text-foreground">Opening Greeting</span>
                 <textarea
                   id="setup-greeting"
                   disabled={applyingSetup}

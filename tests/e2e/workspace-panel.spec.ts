@@ -759,7 +759,7 @@ test.describe("wide screens", () => {
     await expect(panelTabs(page).getByRole("tab")).toHaveText([
       "Browser",
       "Rehearse",
-      "Set up",
+      "Set Up",
       "Summary",
     ]);
     await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true");
@@ -815,8 +815,8 @@ test.describe("wide screens", () => {
     await expect(panelTabs(page)).toHaveCount(0);
     await expect(page.getByRole("group", { name: "Set Up view" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Rehearse", exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Bot details", exact: true }).click();
-    await expect(panelTab(page, "Set up")).toHaveAttribute("aria-selected", "true");
+    await page.getByRole("button", { name: "Set Up Bot", exact: true }).click();
+    await expect(panelTab(page, "Set Up")).toHaveAttribute("aria-selected", "true");
   });
 
   test("a focused browser restores split view even after a saved panel close", async ({ page }) => {
@@ -923,7 +923,7 @@ test.describe("wide screens", () => {
       .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).fontSize))
       .toBe("32px");
     await page.evaluate(() => document.fonts.ready);
-    for (const name of ["Browser", "Rehearse", "Set up", "Summary"])
+    for (const name of ["Browser", "Rehearse", "Set Up", "Summary"])
       await expect(panelTab(page, name)).toBeVisible();
     await panelTab(page, "Browser").focus();
     await panelTab(page, "Browser").press("End");

@@ -108,7 +108,7 @@ describe("marketing copy punctuation and retired-positioning contract", () => {
     );
     expect(read("src/lib/bot-product.ts")).toContain('name: "Phone Bot"');
     expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain(
-      "YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, AND COMPUTER",
+      "AI Bots With Their Own Phone Number, Email Address, And Computer.",
     );
     expect(read("src/pages/Compare.tsx")).toContain("feature by feature");
   });

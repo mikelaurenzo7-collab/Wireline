@@ -12,14 +12,14 @@ describe("design system polish e2e verified wins", () => {
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
 
     expect(features).not.toContain("wl-features-intro__steps");
-    expect(features).toContain("Calls. Email. Computer.");
+    expect(features).toContain("One Bot. More Possibilities.");
     expect(features).not.toContain("MARKETING_VOICE.channelProof.map");
     expect(features).not.toMatch(/wl-channel-chip[\s\S]{0,180}<Icon\b/);
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toContain("landing-prestige__getting-started");
     expect(landing).not.toContain("landing-prestige__directions");
-    expect(landing).toContain("FEATURED_TEMPLATES.map");
-    expect(landing).toContain('to="/signup"');
+    expect(landing).not.toContain("FEATURED_TEMPLATES.map");
+    expect(landing).toContain('signedIn ? "/studio" : "/signup"');
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).not.toContain("HERO_CHANNELS.map");
     expect(landing).not.toContain('aria-label="BotBound channels"');

@@ -100,7 +100,7 @@ export default function StudioContextChrome() {
               variant={inspectorOpen ? "secondary" : "ghost"}
               size="sm"
               className="min-h-[44px] px-2.5"
-              aria-label="Bot details"
+              aria-label="Set Up Bot"
               aria-expanded={inspectorOpen}
               aria-controls={inspectorOpen ? "studio-inspector" : undefined}
               onClick={() =>
@@ -114,7 +114,7 @@ export default function StudioContextChrome() {
               }
             >
               <SlidersHorizontal className="size-4" aria-hidden="true" />
-              Details
+              Set Up
             </Button>
           ) : null}
           {readyLabel ? (

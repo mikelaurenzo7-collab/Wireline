@@ -124,12 +124,14 @@ export default function LiveVoiceCloneStudio({
   agentName,
   stockVoiceId,
   botPhone,
+  anchorId = LIVE_VOICE_ANCHOR_ID,
   onActiveVoiceChange,
 }: {
   agentId: string;
   agentName: string;
   stockVoiceId: string | null;
   botPhone?: string | null;
+  anchorId?: string;
   /** Lets the voice picker say which voice callers hear. */
   onActiveVoiceChange?: (name: string | null) => void;
 }) {
@@ -553,22 +555,20 @@ export default function LiveVoiceCloneStudio({
       </span>
       <div className="min-w-0 flex-1">
         <h4 id={`${id}-title`} className="text-sm font-semibold text-foreground">
-          Your voice, on every call
+          Your Voices
         </h4>
         <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{subtitle}</p>
       </div>
     </div>
   );
-  const header = renderHeader(
-    `Read a short script and ${agentName} answers the phone sounding like you.`,
-  );
+  const header = renderHeader("Clone once. Use on any of your Bots.");
   const shellClass =
     "min-w-0 scroll-mt-24 space-y-3 outline-none rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background p-3 sm:p-4";
 
   if (loading) {
     return (
       <section
-        id={LIVE_VOICE_ANCHOR_ID}
+        id={anchorId}
         tabIndex={-1}
         aria-labelledby={`${id}-title`}
         aria-busy="true"
@@ -585,12 +585,7 @@ export default function LiveVoiceCloneStudio({
 
   if (!capabilities?.available) {
     return (
-      <section
-        id={LIVE_VOICE_ANCHOR_ID}
-        tabIndex={-1}
-        aria-labelledby={`${id}-title`}
-        className={shellClass}
-      >
+      <section id={anchorId} tabIndex={-1} aria-labelledby={`${id}-title`} className={shellClass}>
         {renderHeader(
           error
             ? "Record a short script so callers hear you."
@@ -598,7 +593,7 @@ export default function LiveVoiceCloneStudio({
         )}
         {error ? (
           <div className="space-y-2">
-            <StatusNotice tone="destructive" title="Something needs a second try">
+            <StatusNotice tone="destructive" title="Voice Needs Attention">
               {error}
             </StatusNotice>
             <button
@@ -668,18 +663,13 @@ export default function LiveVoiceCloneStudio({
   };
 
   return (
-    <section
-      id={LIVE_VOICE_ANCHOR_ID}
-      tabIndex={-1}
-      aria-labelledby={`${id}-title`}
-      className={shellClass}
-    >
+    <section id={anchorId} tabIndex={-1} aria-labelledby={`${id}-title`} className={shellClass}>
       {header}
 
       <div aria-live="polite" className="space-y-2">
         {notice ? <StatusNotice tone="success">{notice}</StatusNotice> : null}
         {error ? (
-          <StatusNotice tone="destructive" title="Something needs a second try">
+          <StatusNotice tone="destructive" title="Voice Needs Attention">
             {error}
           </StatusNotice>
         ) : null}
@@ -711,7 +701,7 @@ export default function LiveVoiceCloneStudio({
             ) : (
               <RotateCcw className="size-4" aria-hidden="true" />
             )}
-            Switch back to stock voice
+            Use Built-In Voice
           </button>
         </div>
       ) : null}
@@ -774,7 +764,7 @@ export default function LiveVoiceCloneStudio({
                     {busy === `use:${voice.id}` ? (
                       <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                     ) : null}
-                    Use on this Bot
+                    Use Voice
                   </button>
                 ) : null}
                 <button
@@ -812,7 +802,7 @@ export default function LiveVoiceCloneStudio({
             className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 wl-focus-ring-halo sm:w-auto"
           >
             <Mic className="size-4" aria-hidden="true" />
-            {voices.length ? "Clone another voice" : "Clone my voice"}
+            {voices.length ? "Clone Another Voice" : "Clone Voice"}
           </button>
         )
       ) : null}
@@ -829,7 +819,7 @@ export default function LiveVoiceCloneStudio({
             Step 1 of 3 · Permission
           </p>
           <label className="block text-sm font-medium text-foreground" htmlFor={`${id}-name`}>
-            Voice name
+            Voice Name
             <input
               id={`${id}-name`}
               value={name}
@@ -842,8 +832,7 @@ export default function LiveVoiceCloneStudio({
             Record your own voice. Each person clones their own voice and signs for it.
           </p>
           <label className="block text-sm font-medium text-foreground" htmlFor={`${id}-gender`}>
-            Closest stock voice{" "}
-            <span className="font-normal text-muted-foreground">(optional)</span>
+            Backup Voice <span className="font-normal text-muted-foreground">(optional)</span>
             <select
               id={`${id}-gender`}
               value={gender}
@@ -889,7 +878,7 @@ export default function LiveVoiceCloneStudio({
               className="space-y-2 rounded-lg border border-border bg-muted/40 p-3"
               data-testid="biometric-release"
             >
-              <p className="text-sm font-semibold text-foreground">Voice data release</p>
+              <p className="text-sm font-semibold text-foreground">Voice Data Release</p>
               <ul className="space-y-1.5 text-xs leading-5 text-foreground">
                 {biometricReleaseText(agentName).map((line) => (
                   <li key={line}>{line}</li>
@@ -899,7 +888,7 @@ export default function LiveVoiceCloneStudio({
                 className="block text-sm font-medium text-foreground"
                 htmlFor={`${id}-signature`}
               >
-                Your full legal name
+                Full Legal Name
                 <input
                   id={`${id}-signature`}
                   value={signedName}
@@ -1016,7 +1005,7 @@ export default function LiveVoiceCloneStudio({
                 <Square className="size-3.5 fill-current" aria-hidden="true" />
                 {seconds < minSeconds
                   ? `Keep going (${Math.ceil(minSeconds - seconds)}s)`
-                  : "Stop and check"}
+                  : "Stop and Check"}
               </button>
             ) : (
               <button
@@ -1030,7 +1019,7 @@ export default function LiveVoiceCloneStudio({
                 ) : (
                   <Mic className="size-4" aria-hidden="true" />
                 )}
-                Start recording
+                Start Recording
               </button>
             )}
             <button
@@ -1040,7 +1029,7 @@ export default function LiveVoiceCloneStudio({
               className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold text-foreground hover:bg-muted wl-focus-ring-halo disabled:opacity-50"
             >
               <Upload className="size-4" aria-hidden="true" />
-              Upload a WAV
+              Upload WAV
             </button>
             <input
               ref={fileInput}
@@ -1125,7 +1114,7 @@ export default function LiveVoiceCloneStudio({
             {!retake ? (
               <button type="button" onClick={() => void createVoice()} className={primaryButton}>
                 <Sparkles className="size-4" aria-hidden="true" />
-                Create my voice
+                Create Voice
               </button>
             ) : null}
           </div>
@@ -1159,8 +1148,8 @@ export default function LiveVoiceCloneStudio({
             {created.name} is ready. Hear the difference:
           </p>
           <div className="flex flex-col gap-2 sm:flex-row">
-            {playButton(created.id, "clone", "Your voice")}
-            {playButton(created.id, "stock", "Stock voice")}
+            {playButton(created.id, "clone", "Your Voice")}
+            {playButton(created.id, "stock", "Built-In Voice")}
           </div>
           <div className="flex flex-wrap gap-2">
             <button
@@ -1174,14 +1163,14 @@ export default function LiveVoiceCloneStudio({
               ) : (
                 <Check className="size-4" aria-hidden="true" />
               )}
-              Use this voice on {agentName}
+              Use Voice
             </button>
             <button
               type="button"
               onClick={() => setStep("idle")}
               className="inline-flex min-h-11 items-center rounded-xl px-4 text-sm font-semibold text-muted-foreground hover:bg-muted wl-focus-ring-halo"
             >
-              Not now
+              Not Now
             </button>
           </div>
           {!tipDismissed ? (
@@ -1200,7 +1189,7 @@ export default function LiveVoiceCloneStudio({
         </div>
       ) : null}
 
-      {activeVoice && botPhone ? <TestCallLink phone={botPhone} label="Test call" /> : null}
+      {activeVoice && botPhone ? <TestCallLink phone={botPhone} label="Test Call" /> : null}
     </section>
   );
 }

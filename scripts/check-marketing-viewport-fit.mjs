@@ -124,16 +124,10 @@ for (const [needle, description] of [
   ["landing-prestige__hero", "home must keep the centered hero"],
   ["<PrecisionPublicHeader />", "home must share the public header"],
   ["<BotBoundMark", "home must lead with the canonical phone-Bot mascot"],
-  ['to="/signup"', "home must keep neutral account creation"],
-  ['to="/signin"', "home must keep sign-in one action away"],
-  ["FEATURED_TEMPLATES.map", "home must expose the canonical role choices"],
-  [
-    "to={`/signup?template=${encodeURIComponent(template.key)}`}",
-    "each role must preserve its signup intent",
-  ],
-  ['id="solutions"', "home must include solutions"],
-  ['id="pricing"', "home must include pricing"],
-  ["landing-prestige__trust", "home must include trust controls"],
+  ['signedIn ? "/studio" : "/signup"', "home must keep neutral account creation"],
+  ['role="tablist"', "home must expose its capability navigation"],
+  ["to={`/features#${example.id}`}", "each capability must link to its product section"],
+  ['to="/pricing"', "home must link to pricing"],
   ["<LandingFooter />", "home must retain footer wayfinding"],
 ]) {
   if (!executableHome.includes(needle)) {
@@ -168,11 +162,21 @@ if (/BrowserCallWidget|useProtectedPublicDemo|RTCPeerConnection|getUserMedia/.te
 }
 
 const landingFooter = read("src/components/marketing/LandingFooter.tsx");
-if (!landingFooter.includes("<MarketingChromeBar />")) {
-  failures.push("src/components/marketing/LandingFooter.tsx: shared public link bar is missing");
+if (
+  !landingFooter.includes('aria-label="Footer"') ||
+  !landingFooter.includes("wireline:open-privacy-choices")
+) {
+  failures.push(
+    "src/components/marketing/LandingFooter.tsx: footer navigation and privacy control must remain available",
+  );
 }
 
 const header = executable(read("src/components/marketing/PrecisionPublicHeader.tsx"));
+if (!header.includes('to="/signin"')) {
+  failures.push(
+    "src/components/marketing/PrecisionPublicHeader.tsx: sign-in must remain one action away",
+  );
+}
 if (/Dialog|SITE_NAV|aria-label="Site"/.test(header)) {
   failures.push(
     "src/components/marketing/PrecisionPublicHeader.tsx: public header must not contain a full-site navigation overlay",
@@ -186,10 +190,10 @@ if (!header.includes('aria-label="Account"')) {
 
 const landingPrestige = read("src/styles/landing-prestige.css");
 for (const [needle, description] of [
-  [".landing-prestige__role-grid", "role grid is missing"],
-  [".landing-prestige__price-grid", "pricing grid is missing"],
-  [".landing-prestige__trust", "trust exit is missing"],
-  ["@media (max-width: 820px)", "mobile stacking rules are missing"],
+  [".landing-prestige__tabs", "capability tabs are missing"],
+  [".landing-prestige__example", "selected capability detail is missing"],
+  [".landing-prestige__footer", "footer layout is missing"],
+  ["@media (max-width: 639px)", "mobile stacking rules are missing"],
 ]) {
   if (!landingPrestige.includes(needle)) {
     failures.push(`src/styles/landing-prestige.css: ${description}`);

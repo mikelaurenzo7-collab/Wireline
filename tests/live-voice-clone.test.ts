@@ -189,10 +189,10 @@ describe("clone studio copy", () => {
     for (const piece of [
       'role="meter"',
       "Retake",
-      "Switch back to stock voice",
-      "Use this voice on {agentName}",
+      "Use Built-In Voice",
+      "Use Voice",
       "<TestCallLink",
-      '"Stock voice"',
+      '"Built-In Voice"',
       'aria-live="polite"',
       "LIVE_VOICE_SCRIPT",
     ])
@@ -213,7 +213,7 @@ describe("clone discoverability and stock voice undo", () => {
   });
 
   it("links the picker and short routes to the clone studio", () => {
-    expect(picker).toContain("Clone your voice");
+    expect(picker).toContain("Clone Voice");
     expect(picker).toContain("LIVE_VOICE_ANCHOR_ID");
     for (const path of ['path="/voice"', 'path="/voices"', 'path="/voice-clone"'])
       expect(routes).toContain(path);

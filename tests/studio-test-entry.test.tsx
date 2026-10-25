@@ -200,7 +200,7 @@ describe("Studio settings-to-Test handoff", () => {
       expect(h.writePreference).not.toHaveBeenCalled();
       expect((h.session as ReturnType<typeof createStudioSessionState>).conversations.size).toBe(0);
       const chrome = elements(StudioContextChrome());
-      expect(chrome.some((node) => node.props["aria-label"] === "Bot details")).toBe(false);
+      expect(chrome.some((node) => node.props["aria-label"] === "Set Up Bot")).toBe(false);
       expect(chrome.find((node) => node.type === "h1")?.props.children).not.toBe("Alpha");
 
       h.degraded = true;

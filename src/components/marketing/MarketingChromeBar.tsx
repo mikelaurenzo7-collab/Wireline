@@ -8,20 +8,8 @@ import { WirelineWordmark } from "../brand/WirelineBrand";
 const OPEN_PRIVACY_CHOICES_EVENT = "wireline:open-privacy-choices";
 
 const PRODUCT_LINKS = [
-  { to: "/features", label: "Features" },
+  { to: "/features", label: "Product" },
   { to: "/pricing", label: "Pricing" },
-  { to: "/solutions/support", label: "Front Desk" },
-  { to: "/compare", label: "Compare" },
-] as const;
-
-const WHO_ITS_FOR_LINKS = [
-  { to: "/for/everyday", label: "For You" },
-  { to: "/for/home-services", label: "Home Services" },
-  { to: "/for/insurance", label: "Insurance" },
-  { to: "/for/legal", label: "Legal" },
-  { to: "/for/medical", label: "Medical" },
-  { to: "/for/real-estate", label: "Real Estate" },
-  { to: "/for/restaurants", label: "Restaurants" },
 ] as const;
 
 const COMPANY_LINKS = [
@@ -39,6 +27,7 @@ const RESOURCE_LINKS = [
 
 /** Always visible in the bar itself. */
 const BAR_LINKS = [
+  { to: "/support", label: "Support" },
   { to: "/trust", label: "Trust" },
   { to: "/privacy", label: "Privacy" },
   { to: "/terms", label: "Terms" },
@@ -46,7 +35,6 @@ const BAR_LINKS = [
 
 const COLUMNS = [
   { heading: "Product", links: PRODUCT_LINKS },
-  { heading: "Who It's For", links: WHO_ITS_FOR_LINKS },
   { heading: "Company", links: COMPANY_LINKS },
   { heading: "Resources", links: RESOURCE_LINKS },
 ] as const;
@@ -89,7 +77,7 @@ export default function MarketingChromeBar({ className }: { className?: string }
       }}
     >
       <div ref={panelRef} id={panelId} className="marketing-chrome-bar__panel" hidden={!open}>
-        <div className="wl-public-rail grid grid-cols-2 gap-x-8 gap-y-6 px-5 py-6 text-left sm:grid-cols-4 lg:px-8">
+        <div className="wl-public-rail grid grid-cols-2 gap-x-8 gap-y-6 px-5 py-6 text-left sm:grid-cols-3 lg:px-8">
           {COLUMNS.map(({ heading, links }) => (
             <nav key={heading} aria-label={heading} className="flex flex-col items-start gap-0.5">
               <p className="wl-overline mb-1.5">{heading}</p>
@@ -122,7 +110,7 @@ export default function MarketingChromeBar({ className }: { className?: string }
               ))}
             </nav>
           ))}
-          <div className="col-span-2 sm:col-span-4">
+          <div className="col-span-2 sm:col-span-3">
             <button
               type="button"
               data-compact="true"
