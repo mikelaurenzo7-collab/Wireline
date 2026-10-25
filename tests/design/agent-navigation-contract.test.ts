@@ -25,14 +25,12 @@ describe("authenticated Bot navigation contract", () => {
     expect(navigation).toMatch(/href: "\/insights", label: "Insights"/);
     expect(navigation).toMatch(/href: "\/connections"[\s\S]*label: "Connections"/);
     expect(navigation).toContain('route: "/templates", parentHref: "/studio"');
-    expect(navigation).toContain('route: "/knowledge", parentHref: "/studio"');
-    expect(navigation).toContain('route: "/computer", parentHref: "/studio"');
-    expect(WORKSPACE_NAV.slice(0, 2).map((item) => item.href)).toEqual(["/studio", "/inbox"]);
-    expect(desktopNavParentHref("/knowledge")).toBe("/studio");
-    expect(desktopNavParentHref("/computer")).toBe("/studio");
+    expect(WORKSPACE_NAV.slice(0, 2).map((item) => item.href)).toEqual(["/studio", "/computer"]);
+    expect(desktopNavParentHref("/knowledge")).toBeNull();
+    expect(desktopNavParentHref("/computer")).toBeNull();
     expect(navigation).toContain('route: "/approvals", parentHref: "/inbox"');
     expect(navigation).toContain('route: "/apps", parentHref: "/settings"');
-    expect(shell).toContain("desktopNavParentHref(pathname)");
+    expect(shell).toContain("desktopNavParentHref(navPathname)");
     expect(shell).toContain('navLabel: "Workspace"');
     expect(shell).toContain("MobileNavMoreSheet");
     expect(shell).toContain("WorkspaceResizablePanel");
@@ -144,7 +142,7 @@ describe("authenticated Bot navigation contract", () => {
     expect(connections).not.toContain("IntegrationOperatingMap");
     expect(connections).toContain("CrmConnectionCard");
     expect(knowledge).toContain("WorkspaceControlBand");
-    expect(knowledge).toContain("WorkspaceTabStrip");
+    expect(knowledge).not.toContain("WorkspaceTabStrip");
     expect(settingsTabs).toContain('href: "/settings/apps", label: "Apps"');
     expect(settingsTabs).toContain("WorkspaceControlBand");
     expect(billing).toContain("Runtime Balance");

@@ -59,7 +59,7 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
     studio: {
       fullBleed: true,
       header:
-        "Bot context with Workspace sections; Try It, Details, and Summary share a side panel on wide screens",
+        "Bot context and Set Up; Rehearse, Browser, and Summary share a side panel on wide screens",
       surfaces: ["Workspace"],
     },
   },

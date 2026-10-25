@@ -5,6 +5,8 @@ import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 import PhoneSetupPanel from "../components/PhoneSetupPanel";
 import PhoneCallHistoryPanel from "../components/PhoneCallHistoryPanel";
+import ReportingPreferences from "../components/training/ReportingPreferences";
+import RecentCallArtifactRequests from "../components/training/RecentCallArtifactRequests";
 import OutboundHub from "../components/outbound/OutboundHub";
 import PreparedCallReview from "../components/outbound/PreparedCallReview";
 import WorkspaceControlBand from "../components/layout/WorkspaceControlBand";
@@ -24,6 +26,7 @@ import {
 // call log, outbound work, and the lines themselves.
 const PHONE_TABS = [
   { id: "logs", label: "History" },
+  { id: "reports", label: "Reports" },
   { id: "outbound", label: "Reviewed Calls" },
   { id: "setup", label: "Lines" },
 ] as const;
@@ -104,7 +107,7 @@ export default function PhonePage() {
   }
 
   const showAgentScope =
-    (primaryTab === "logs" && (agents.length > 1 || activeAgentId)) ||
+    (["logs", "reports"].includes(primaryTab) && (agents.length > 1 || activeAgentId)) ||
     (primaryTab === "outbound" && activeAgentId) ||
     scopeBlocked;
 
@@ -212,6 +215,12 @@ export default function PhonePage() {
           {primaryTab === "logs" && !scopeBlocked && (
             <div className="contents" data-visual-qa-state="primary-logs">
               <PhoneCallHistoryPanel agentId={activeAgentId || null} />
+            </div>
+          )}
+          {primaryTab === "reports" && !scopeBlocked && (
+            <div className="mx-auto w-full max-w-[1180px] space-y-5 px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+              <ReportingPreferences />
+              <RecentCallArtifactRequests key={activeAgentId} agentId={activeAgentId || null} />
             </div>
           )}
           {primaryTab === "outbound" && !scopeBlocked && (

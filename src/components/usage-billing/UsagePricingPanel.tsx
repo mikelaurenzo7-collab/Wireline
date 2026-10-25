@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { Checkbox } from "../ui/shadcn/Checkbox";
 import { signupHrefForPlan } from "../../lib/signup-intent";
 import {
@@ -191,9 +191,12 @@ export default function UsagePricingPanel({
               type="button"
               aria-pressed={tier === id}
               onClick={() => setTier(id)}
-              className={`rounded-2xl border p-6 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary ${tier === id ? "border-primary bg-primary/5" : "border-border bg-card"}`}
+              className={`rounded-2xl border bg-card p-6 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary ${tier === id ? "border-primary" : "border-border hover:border-foreground/30"}`}
             >
-              <span className="block text-lg font-semibold">{option.name}</span>
+              <span className="flex items-center justify-between gap-2 text-lg font-semibold">
+                {option.name}
+                {tier === id ? <Check className="size-5 text-primary" aria-hidden="true" /> : null}
+              </span>
               <span className="mt-3 block">
                 <strong className="text-4xl font-semibold">${option.monthlyUsd}</strong>
                 <span className="text-sm text-muted-foreground"> / Month</span>

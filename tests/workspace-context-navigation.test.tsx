@@ -70,6 +70,7 @@ vi.mock("react", async (original) => ({
 }));
 vi.mock("react-router", () => ({
   Link: "a",
+  Navigate: "redirect",
   useLocation: () => ({ hash: "" }),
   useSearchParams: () => [h.params, vi.fn()],
   useNavigate: () => h.navigate,
@@ -256,6 +257,11 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Bot context across workspace pages", () => {
+  it("keeps Bot scope when an old Knowledge Reports bookmark opens Calls", () => {
+    h.params = new URLSearchParams({ agent: "missing-bot", tab: "reports" });
+    const redirect = elements(render(KnowledgePage)).find((node) => node.type === "redirect");
+    expect(redirect?.props.to).toBe("/phone?agent=missing-bot&tab=reports");
+  });
   it.each([
     ["voice", "setup"],
     ["flows", "setup"],

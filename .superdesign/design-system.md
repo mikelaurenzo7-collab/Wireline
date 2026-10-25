@@ -37,7 +37,7 @@ Core jobs:
 
 ## Visual identity
 
-The canonical identity is the **BotBound Design System**: a near-black violet canvas, layered charcoal-violet surfaces, precise silver rules, electric lavender primary actions, and restrained semantic status colors. It should feel calm, exact, substantial, and quietly advanced. Avoid generic SaaS gradients, glass-heavy decoration, neon cyberpunk styling, playful illustration, excessive pills, and ornamental motion. Use semantic names for surfaces and colors; do not introduce separate named themes.
+The canonical identity is the **BotBound Design System**: a warm off-white canvas, clean neutral surfaces, fine rules, violet primary actions, and restrained semantic status colors. Dark mode keeps the same hierarchy on near-black surfaces. Page backgrounds use a subtle neutral light falloff, never brand-colored washes or paper grain. Reserve violet for identity, actions, selection, and focus. Preserve the approved BotBound mascot without adding decorative illustration. Avoid glass-heavy decoration, excessive pills, and ornamental motion. Use semantic names for surfaces and colors; do not introduce separate named themes.
 
 Use only these type families:
 
@@ -55,7 +55,7 @@ Use only these core dark-mode colors:
 - Borders: soft `#1C1A22`; default `#262430`; strong `#3A3745`
 - Status: success `#4ADE9A`; warning `#E8B85C`; error `#EF7B92`; info `#93A0C7`
 
-Dark is the first-visit appearance. A saved light, dark, or system preference always wins. Light mode uses `html.light`: canvas `#F6F5FA`, surface `#FFFFFF`, text `#171426`, primary `#6D28D9`. Both appearances use the same component and interaction system. The executable manifest is `src/lib/wireline-design-vision.ts`; `ThemeContext` applies the preference.
+Light is the first-visit appearance. A saved light, dark, or system preference always wins. Light mode uses `html.light`: canvas `#F7F7F3`, surface `#FFFFFF`, text `#19191D`, primary `#7040D7`. Both appearances use the same component and interaction system. The executable manifest is `src/lib/wireline-design-vision.ts`; `ThemeContext` applies the preference.
 
 ## Typography
 
@@ -74,7 +74,7 @@ Use the available layout width for headlines and let them wrap naturally on smal
 
 ## Layout and rhythm
 
-- Marketing rail: 1088px maximum.
+- Supporting public page rail: 1120px maximum. The homepage owns its wider hero lockup.
 - Authenticated content: 1152px maximum.
 - Public section spacing: 48–76px depending on viewport; use consistent vertical cadence.
 - Spacing scale: 2, 4, 6, 8, 10, 12, 16, 24, 32, 40, 48, 64px.
@@ -93,14 +93,13 @@ Use the available layout width for headlines and let them wrap naturally on smal
 
 ## Public landing-page contract
 
-The home page uses the shared BotBound header and footer around a vertical story:
+The home page uses the shared BotBound header and a quiet footer around one compact product promise:
 
-1. Hero: preserve "Voice Bots With a Computer, Phone Number, and Email Address." with a free start primary action and no subhero.
-2. Product preview: clearly illustrated examples of incoming calls, email, and computer tasks. SMS and campaign calling stay out of the launch story. Examples are never presented as real customer activity.
-3. Keep public copy focused on capability and outcomes. Do not add setup-step lists or repeated process slogans; operational setup guidance belongs inside the product.
-4. Roles: useful starting points for one configurable Bot.
-5. Pricing: Free Builder, Calls, Email, and Calls + Email with current capacity tiers, explicit limits, and billing periods from `src/lib/plan-catalog.ts`.
-6. A focused closing action.
+1. Hero: "YOUR VOICE BOT FOR YOUR WORK." Keep "FOR YOUR WORK." violet, including the final period. Use one line where space permits and balanced wrapping on phones.
+2. Supporting line: "AI Bots With Their Own Phone Number, Email Address, And Computer."
+3. Primary action: Get Started, or Open Workspace when signed in. See Pricing is secondary.
+4. Calls, SMS, Email, and Computer show concise capability copy on mouse hover, keyboard selection, or touch. Keep the actual browser workspace inside the authenticated product; do not add a fabricated activity preview or repetitive lower sections.
+5. Pricing belongs on `/pricing`, without a price footnote on the homepage. Lite, Starter, and Plus share a flexible work allowance and included identities from `src/lib/usage-billing-catalog.ts`. Existing subscribers retain their actual plans. Explain required channel activation accurately without Coming Soon labels.
 
 Public routes do not offer anonymous live calling. Private tests and live calling require the relevant account, plan, and provider configuration. LiveAvatar and live talking-head video are retired; do not promote them as an add-on or launch dependency.
 
@@ -109,7 +108,7 @@ Public routes do not offer anonymous live calling. Private tests and live callin
 - Primary CTA: use the semantic primary action and onAction colors for the current appearance. Dark mode uses lavender with dark text; light mode uses deeper violet with white text. Keep a minimum 48px target for hero and conversion moments.
 - Secondary CTA: silver/dark outlined treatment with equal target size.
 - Navigation must preserve clear active/hover/focus states and collapse cleanly on mobile.
-- Supporting public pages expose only Features, Pricing, and account entry in their header. Use a compact menu on phones; the homepage retains its dedicated product entrance.
+- Public pages expose Product, Pricing, and account entry in their header. Use a compact menu on phones.
 - Tabs use semantic `tablist`, `tab`, and `tabpanel` roles with arrow, Home, and End keyboard support.
 - Inputs expose labels, errors, requirements, and focus states without relying on color alone.
 - Pricing switches update amounts, periods, savings language, and destination URLs together.
@@ -138,22 +137,22 @@ Public routes do not offer anonymous live calling. Private tests and live callin
 
 ## Information Architecture and Core Flows
 
-The global shell stays stable while the main work changes. The desktop rail defaults to icons, with accessible names and labels on hover or keyboard focus. Expansion is optional. A Bot switcher names the current context; navigation into Bot work must retain that selection.
+The global shell stays stable while the main work changes. The desktop rail starts expanded with clear labels and remembers the customer's width and collapsed preference. Collapsed icons retain accessible names and labels on hover or keyboard focus. A Bot switcher names the current context; navigation into Bot work must retain that selection.
 
 | Destination | Purpose                                              | Supporting surfaces             |
 | ----------- | ---------------------------------------------------- | ------------------------------- |
-| Workspace   | Instruct and operate the selected Bot                | Set Up, Knowledge, Computer     |
+| Workspace   | Instruct and operate the selected Bot                | Set Up, Rehearse, Summary       |
 | Set Up      | Instructions conversation and reviewed configuration | Try It, Details, Summary        |
 | Knowledge   | Sources, facts, and behavior                         | Existing Training controls      |
 | Computer    | Current goal, browser, owner controls, and result    | History and Activity drawers    |
 | Inbox       | Email conversations and decisions                    | Approvals                       |
-| Calls       | History and reviewed calls                           | Lines and call report           |
+| Calls       | History, reports, and reviewed calls                 | Lines and call files            |
 | Calendar    | Availability and appointments                        | Booking rules                   |
 | Insights    | Performance and usage                                | Evidence and metric definitions |
 | Connections | Optional channels and external tools                 | Setup status and repair actions |
 | Settings    | Account, billing, appearance, team, and apps         | Security and administration     |
 
-The route registry owns destinations and shortcuts. Do not create another navigation array for this table. On phones, use the existing Bot, Inbox, Calls, Insights, and More dock. Calendar, Connections, and Settings remain in More.
+The route registry owns destinations and shortcuts. Knowledge and Computer have direct desktop rail destinations. On phones, retain the Bot, Inbox, Calls, Insights, and More dock, with Knowledge, Computer, Calendar, Connections, and Settings in More. Do not repeat a Workspace/Knowledge section strip at any screen size. Preserve explicit Bot scope, including unavailable IDs, rather than silently selecting another Bot. Reports belong to Calls; old Knowledge report links redirect with their scope intact.
 
 ### Instruct and Rehearse
 
@@ -184,17 +183,17 @@ The JSON token source already supplies typed values and generated web, extension
 
 | Semantic role   | Dark      | Light     |
 | --------------- | --------- | --------- |
-| Canvas          | `#0A0A0E` | `#F6F5FA` |
+| Canvas          | `#0A0A0E` | `#F7F7F3` |
 | Default surface | `#141319` | `#FFFFFF` |
-| Subtle surface  | `#100F15` | `#F1EFF7` |
+| Subtle surface  | `#100F15` | `#F5F5F7` |
 | Raised surface  | `#201E29` | `#FFFFFF` |
-| Primary text    | `#F5F4F8` | `#171426` |
-| Secondary text  | `#B6B1C6` | `#5B5770` |
-| Tertiary text   | `#908CA5` | `#625C76` |
-| Primary action  | `#A78BFA` | `#6D28D9` |
+| Primary text    | `#F5F4F8` | `#19191D` |
+| Secondary text  | `#B6B1C6` | `#626268` |
+| Tertiary text   | `#908CA5` | `#606066` |
+| Primary action  | `#A78BFA` | `#7040D7` |
 | Text on action  | `#0E0B16` | `#FFFFFF` |
-| Default border  | `#262430` | `#E1DEEA` |
-| Strong border   | `#3A3745` | `#C9C4D9` |
+| Default border  | `#262430` | `#E5E5EB` |
+| Strong border   | `#3A3745` | `#C8C8D1` |
 | Success         | `#4ADE9A` | `#127548` |
 | Warning         | `#E8B85C` | `#8A5C07` |
 | Error           | `#EF7B92` | `#B83648` |

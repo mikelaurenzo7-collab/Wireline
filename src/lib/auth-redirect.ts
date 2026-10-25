@@ -1,4 +1,5 @@
 import {
+  activationBillingHref,
   getStoredSignupIntent,
   getSignupWedgeRecommendation,
   parseSignupIntent,
@@ -93,6 +94,7 @@ function returningPaidIntentDestination(search: string): string | null {
   const intent = parseSignupIntent(search);
   const plan = intent?.preferredPlanId;
   if (!plan) return null;
+  if (plan === "usage") return activationBillingHref(intent);
 
   const params = new URLSearchParams({ plan });
   if (intent.preferredBillingInterval) params.set("interval", intent.preferredBillingInterval);

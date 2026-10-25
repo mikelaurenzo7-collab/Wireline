@@ -73,6 +73,7 @@ export function setStudioWorkroomModeParams(
   const next = canonicalStudioParams(current);
   if (mode === "test") {
     next.set("workroom", "test");
+    next.delete("panel");
   } else {
     next.delete("workroom");
     next.delete("command");
@@ -88,6 +89,7 @@ export function setStudioInspectorSectionParams(
   const hadCommand = current.has("command") || current.has("commandNonce");
   const next = canonicalStudioParams(current);
   next.set("section", section);
+  next.delete("panel");
   next.set("chat", "setup");
   if (hadCommand) next.set("workroom", "test");
   next.delete("command");

@@ -123,7 +123,7 @@ describe("Studio route state", () => {
 
   it("preserves test mode while opening and closing the inspector", () => {
     const inspector = setStudioInspectorSectionParams(
-      new URLSearchParams("agent=bot-1&workroom=test&command=Hello&commandNonce=3"),
+      new URLSearchParams("agent=bot-1&workroom=test&command=Hello&commandNonce=3&panel=computer"),
       "review",
     );
     expect(inspector.toString()).toBe("agent=bot-1&workroom=test&section=review&chat=setup");
@@ -136,7 +136,7 @@ describe("Studio route state", () => {
 
   it("writes canonical test state without disturbing inspector selection", () => {
     const test = setStudioWorkroomModeParams(
-      new URLSearchParams("agent=bot-1&section=setup"),
+      new URLSearchParams("agent=bot-1&section=setup&panel=computer"),
       "test",
     );
     expect(test.toString()).toBe("agent=bot-1&section=setup&workroom=test");

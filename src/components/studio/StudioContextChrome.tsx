@@ -3,7 +3,6 @@ import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router";
 
 import { Button } from "../atoms/Button";
-import WorkspaceSectionNav from "../layout/WorkspaceSectionNav";
 import { useStudioActiveAgentId } from "../../hooks/useStudioActiveAgentId";
 import { buildAgentOptionLabels } from "../../lib/agent-option-labels";
 import { agentLineStatus, agentReadinessLabel } from "../../lib/agent-readiness";
@@ -85,12 +84,6 @@ export default function StudioContextChrome() {
             <h1 className="sr-only">{language.plural}</h1>
           )}
         </div>
-
-        {activeAgent ? (
-          <div className="order-3 w-full min-w-0 md:order-none md:w-auto md:flex-1">
-            <WorkspaceSectionNav />
-          </div>
-        ) : null}
 
         <div className="flex max-w-full flex-wrap items-center gap-1">
           {activeAgent ? (

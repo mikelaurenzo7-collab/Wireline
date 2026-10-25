@@ -4,34 +4,34 @@
 
 `src/constants/navigation.ts` owns route names, parent destinations, rail and dock placement, and keyboard shortcuts. `WorkspaceShell` renders that registry. Preserve stable routes and compatibility redirects when changing visible labels.
 
-Desktop uses a compact icon rail by default, with labels on hover and keyboard focus and an explicit expand control. Mobile uses a dock with Bot, Inbox, Calls, Insights, and More. More opens a sheet containing Calendar, Connections, and Settings. It is not a second sidebar.
+Desktop starts with a labeled rail and remembers its width and collapsed state. Collapsed icons expose labels on hover and keyboard focus. Mobile uses a dock with Bot, Inbox, Calls, Insights, and More. More groups Knowledge, Computer, Calendar, Connections, and Settings.
 
-Workspace is home for the selected Bot. Its sections are Set Up, Knowledge, and Computer. Explicit Computer navigation gives the task the available workspace; the setup conversation stays mounted behind the focused desktop panel. The owner can restore the side panel. Narrow screens use the Computer page. Navigation between these sections and through the command palette preserves the selected Bot.
+Workspace is home for the selected Bot's conversation and setup. Knowledge and Computer have their own navigation entries without a repeated section strip. Explicit Computer navigation opens the same workbench beside chat on wide screens; narrow screens use the Computer page. Navigation and the command palette preserve the selected Bot, including an explicit unavailable scope.
 
-The public story remains voice Bots with a computer, phone number, and email address. Navigation does not promote SMS or outbound campaigns. Existing saved history and allowed reviewed calling retain their current access rules.
+The public story presents voice Bots with a phone number, email address, and Computer, including SMS and reviewed outbound capabilities with accurate activation requirements. Navigation and marketing do not bypass provider, recipient, or funding controls.
 
 ## Component roles
 
-| Need                            | Canonical primitive                           | BotBound presentation                          |
-| ------------------------------- | --------------------------------------------- | ---------------------------------------------- |
-| Mobile marketing navigation     | `Dialog`                                      | `navigation`                                   |
-| Mobile page and toolbar actions | `Dialog`                                      | `drawer`                                       |
-| Mobile workspace navigation     | `WorkspaceShell` and `MobileNavMoreSheet`     | Persistent dock and More sheet                 |
-| Destructive confirmation        | `AlertDialog`                                 | Explicit confirmation                          |
-| Compact application commands    | `DropdownMenu`                                | menu                                           |
-| Persistent workspace routing    | `WorkspaceShell`                              | Desktop rail with active route and Bot context |
-| Workspace sections              | `WorkspaceSectionNav` and `WorkspaceTabStrip` | Links with current destination state           |
-| Command search                  | `CommandBar`                                  | Searchable destinations and creation action    |
+| Need                            | Canonical primitive                       | BotBound presentation                          |
+| ------------------------------- | ----------------------------------------- | ---------------------------------------------- |
+| Mobile marketing navigation     | `Dialog`                                  | `navigation`                                   |
+| Mobile page and toolbar actions | `Dialog`                                  | `drawer`                                       |
+| Mobile workspace navigation     | `WorkspaceShell` and `MobileNavMoreSheet` | Persistent dock and More sheet                 |
+| Destructive confirmation        | `AlertDialog`                             | Explicit confirmation                          |
+| Compact application commands    | `DropdownMenu`                            | menu                                           |
+| Persistent workspace routing    | `WorkspaceShell`                          | Desktop rail with active route and Bot context |
+| Page tabs                       | `WorkspaceTabStrip`                       | Subsections within the current destination     |
+| Command search                  | `CommandBar`                              | Searchable destinations and creation action    |
 
 ## Destination ownership
 
 | Destination | Owns                                                                                   |
 | ----------- | -------------------------------------------------------------------------------------- |
 | Workspace   | Bot selection, creation, instructions, rehearsal, setup details, and summary           |
-| Knowledge   | Saved sources, facts, rules, and reports for the selected Bot                          |
+| Knowledge   | Saved sources, facts, and rules for the selected Bot                                   |
 | Computer    | The current task, browser viewport, owner control, task activity, results, and history |
 | Inbox       | Email conversations and Approvals; preserved SMS history follows existing access rules |
-| Calls       | Call history, permitted reviewed calls, and Lines                                      |
+| Calls       | Call history, reports, call files, permitted reviewed calls, and Lines                 |
 | Calendar    | Appointments and availability                                                          |
 | Insights    | Performance, reliability, quality, and revenue views                                   |
 | Connections | Mailbox connections and optional connected tools                                       |

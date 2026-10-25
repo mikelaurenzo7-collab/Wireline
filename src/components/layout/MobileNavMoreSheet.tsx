@@ -1,7 +1,13 @@
 import { Link } from "react-router";
 import { useRef, type RefObject } from "react";
 
-import { MOBILE_MORE_GROUPS, isNavActive, type ShellNavItem } from "../../constants/navigation";
+import {
+  MOBILE_MORE_GROUPS,
+  isNavActive,
+  scopedWorkspaceHref,
+  type ShellNavItem,
+} from "../../constants/navigation";
+import { useStudioActiveAgentId } from "../../hooks/useStudioActiveAgentId";
 import { navIcon } from "../nav-icons";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "../ui/shadcn/Sheet";
 
@@ -16,17 +22,19 @@ function MoreNavLink({
   item,
   pathname,
   onNavigate,
+  agentId,
 }: {
   item: ShellNavItem;
   pathname: string;
   onNavigate: () => void;
+  agentId?: string | null;
 }) {
   const active = isNavActive(pathname, item.href);
   const Icon = navIcon(item.icon);
 
   return (
     <Link
-      to={item.href}
+      to={scopedWorkspaceHref(item.href, agentId)}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       data-wireline-nav-href={item.href}
@@ -50,6 +58,8 @@ export default function MobileNavMoreSheet({
   returnFocusRef,
 }: MobileNavMoreSheetProps) {
   const navigating = useRef(false);
+  const { requestedId, resolvedId } = useStudioActiveAgentId();
+  const scopedAgentId = requestedId?.trim() || resolvedId;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -90,6 +100,7 @@ export default function MobileNavMoreSheet({
                     key={item.href}
                     item={item}
                     pathname={pathname}
+                    agentId={scopedAgentId}
                     onNavigate={() => {
                       navigating.current = item.href.split(/[?#]/)[0] !== pathname;
                       onOpenChange(false);

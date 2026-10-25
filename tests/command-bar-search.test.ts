@@ -4,7 +4,7 @@ import CommandBar, {
   searchWorkspaceCommands,
   workspaceCommandHref,
 } from "../src/components/CommandBar";
-import WorkspaceSectionNav from "../src/components/layout/WorkspaceSectionNav";
+import { scopedWorkspaceHref } from "../src/constants/navigation";
 
 const h = vi.hoisted(() => ({
   states: [] as unknown[],
@@ -52,7 +52,6 @@ vi.mock("../src/components/atoms", () => ({
   EmptyState: "empty-state",
 }));
 vi.mock("../src/components/ui/shadcn/ScrollArea", () => ({ ScrollArea: "scroll-area" }));
-vi.mock("../src/components/layout/WorkspaceTabStrip", () => ({ WorkspaceTabStrip: "tab-strip" }));
 
 type Props = {
   children?: ReactNode;
@@ -61,7 +60,6 @@ type Props = {
   "aria-controls"?: string;
   "aria-activedescendant"?: string;
   onClick?: () => void;
-  tabs?: Array<{ id: string; href: string }>;
 };
 function elements(node: ReactNode): Array<ReactElement<Props>> {
   if (Array.isArray(node)) return node.flatMap(elements);
@@ -98,9 +96,8 @@ describe("workspace command discovery", () => {
       if (requested) h.params.set("agent", requested);
       const scope = requested ?? "known-bot";
       const href = `/computer?agent=${encodeURIComponent(scope)}`;
-      const section = WorkspaceSectionNav({}) as ReactElement<Props>;
-      expect(section.props.tabs?.find((tab) => tab.id === "computer")?.href).toBe(href);
-      expect(section.props.tabs?.find((tab) => tab.id === "setup")?.href).toBe(
+      expect(scopedWorkspaceHref("/computer", scope)).toBe(href);
+      expect(scopedWorkspaceHref("/studio", scope)).toBe(
         `/studio?agent=${encodeURIComponent(scope)}`,
       );
       commands()

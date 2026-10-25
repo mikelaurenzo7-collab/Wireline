@@ -49,7 +49,6 @@ import LinkifiedText from "../components/ui/LinkifiedText";
 import WorkspaceRecovery from "../components/WorkspaceRecovery";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
-import WorkspaceSectionNav from "../components/layout/WorkspaceSectionNav";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../components/ui/shadcn/Sheet";
 import BrowserSessionTools, {
   saveBrowserFile,
@@ -809,9 +808,7 @@ function ActivityCard({ event, index }: { event: TaskEvent; index: number }) {
         <span className="wl-computer-action__kind">{EVENT_KIND_LABEL[event.kind]}</span>
         <span>
           {event.text}
-          {event.url && !event.text.includes(event.url) ? (
-            <em> · {urlTrail(event.url)}</em>
-          ) : null}
+          {event.url && !event.text.includes(event.url) ? <em> · {urlTrail(event.url)}</em> : null}
         </span>
       </div>
     </li>
@@ -2356,7 +2353,6 @@ export default function ComputerPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-6">
       <WorkspacePageFrame mode="standard" className="max-w-[1400px]">
-        <WorkspaceSectionNav />
         <ComputerWorkbench />
       </WorkspacePageFrame>
     </WorkspaceShell>
