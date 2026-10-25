@@ -29,10 +29,9 @@ describe("authenticated responsive polish contract", () => {
     expect(chrome).toContain(
       'className="flex min-w-0 flex-[1_1_10rem] items-center gap-2.5 md:max-w-[18rem] md:flex-none"',
     );
-    // The Workspace section strip takes its own full-width row on phones.
-    expect(chrome).toContain(
-      'className="order-3 w-full min-w-0 md:order-none md:w-auto md:flex-1"',
-    );
+    // Knowledge and Computer now live in the rail/More menu at every width.
+    // A second navigation row must not crowd the Bot's own controls.
+    expect(chrome).not.toContain("WorkspaceSectionNav");
     // The redundant kicker and separator stay for the no-agent state only, so
     // the selected agent name owns the row on every width.
     expect(chrome).toContain("{activeAgent ? null : (");
