@@ -17,8 +17,9 @@ describe("Workspace computer panel", () => {
     expect(computer).toContain('new URLSearchParams({ panel: "computer" })');
     expect(computer).toContain("<Navigate to={`/studio?${next.toString()}`} replace />");
     expect(studio).toContain('useMediaQuery("(min-width: 1180px)")');
+    expect(studio).toContain('panelParam !== "computer" || !splitWorkspace');
     expect(studio).toContain(
-      'requestedAgentUnavailable || panelParam !== "computer" || !splitWorkspace',
+      "if (requestedAgentUnavailable || computerRouteApplied.current) return;",
     );
   });
 

@@ -1,8 +1,10 @@
 # Usage billing
 
-Status: **bundled-plan release candidate; new tiers open after final verification and promotion.**
-The original shared-work offer is already enabled in production. Keep its immutable prices and
-historical periods intact during this additive rollout.
+Status: **shared-work release candidate includes US SMS.**
+Lite, Starter and Plus are deployed. BOTBOUND LLC runtime permissions and the matching
+live usage catalog were verified on October 25. Promotion still requires the committed
+SMS migration, webhook activation and audited founder/demo binding reconciliation.
+Keep existing immutable prices and historical periods intact during this rollout.
 Michael authorized selecting sustainable pricing, completing billing and cloning, merging to main,
 deploying to Render and enabling the proven features. No further generic approval is required.
 The required release evidence remains a condition of that authorization.
@@ -15,14 +17,17 @@ The required release evidence remains a condition of that authorization.
 | Starter |     $24 |         $14 |             1 |               1 |
 | Plus    |     $49 |         $36 |             2 |               2 |
 
-Calls cost $0.25/minute, sent email replies $0.02 each, and Computer $0.20/minute.
+Inbound and outbound calls cost $0.25/minute, US SMS $0.04/sent segment,
+sent email replies $0.02 each, and Computer $0.20/minute.
 Calls and Computer are measured by the second. Every plan has the same core capabilities.
 Additional identities cost $3/local number/month and $4/email address/month. These quantities
 are extras beyond included capacity; an included identity must never become a paid line item.
 Provisioning uses the verified base/work price pair, not user-editable Stripe metadata.
 
-All three kinds of work use one allowance, reset on the subscription billing cycle without
-rollover. SMS uses its separate existing funding and activation requirements. Customer-owned
+All four kinds of work use one allowance, reset on the subscription billing cycle without
+rollover. SMS requires sender approval and recipient permission. International SMS and MMS
+are rejected before a shared-work carrier send; they need separately verified pricing.
+Legacy subscriptions retain their existing SMS funding. Customer-owned
 domains need verification; international/toll-free numbers are not promised at the local rate.
 Stripe receives one weighted meter: 100 credits = $1 of work. The first 400/1,400/3,600 credits
 cost zero for Lite/Starter/Plus, then one cent per credit. Native quantities remain in the ledger.
@@ -80,7 +85,7 @@ support time. The earlier v1 margin percentages are retired; do not reuse them f
 | Flag and env names                          | `src/lib/usage-billing-config.ts`                                                                                                                           |
 | Ledger rules (record, admit, alert, report) | `src/lib/usage-billing-ledger.ts` (pure, unit tested)                                                                                                       |
 | Postgres store and Stripe meter client      | `src/lib/usage-billing-store.ts`                                                                                                                            |
-| Tables                                      | `src/db/usage-billing-schema.ts`, migrations `0187_usage_billing.sql` through `0190_usage_plan_tiers.sql`                                                   |
+| Tables                                      | `src/db/usage-billing-schema.ts`, migrations `0187_usage_billing.sql` through `0191_shared_sms_usage.sql`                                                   |
 | Plan                                        | `USAGE_PLAN` / `isUsagePlanId` in `src/lib/plan-catalog.ts` (outside `STRIPE_PLANS`)                                                                        |
 | Bots                                        | `resolveAgentEntitlement` returns `unlimited: true` for an active usage subscription; the only ceiling is the 120-mark identity namespace                   |
 | Checkout                                    | `plan_id: "usage"`, `usage_tier`: selected base/work pair and optional extras; monthly only                                                                 |
@@ -89,7 +94,11 @@ support time. The earlier v1 margin percentages are retired; do not reuse them f
 | Public copy                                 | `/api/billing/plans` returns `billing_model` and `usage_checkout_available`; the landing and pricing pages switch on it, so copy is never ahead of checkout |
 
 Recording points: settled call minutes (`voice-usage.ts`), sent email replies
-(`email-thread-reply.ts`) and cloud computer task wall time (`cloud-computer/task-runner.ts`).
+(`email-thread-reply.ts`), accepted SMS segments (`sms-usage-billing.ts`), and cloud computer
+task wall time (`cloud-computer/task-runner.ts`). SMS reserves whole estimated segments under
+the shared spending lock before a carrier attempt. Definitive rejection releases the reservation;
+an ambiguous response retains it for reconciliation without resending. Cancellation preserves
+the admitted period and holds its final invoice for reconciliation.
 Each records once per source id, so retries and replays never double count.
 
 ## Stripe objects and env vars

@@ -804,7 +804,7 @@ export const USAGE_PLAN: StripePlan & { unlimitedBots: true } = {
   overage_per_min_usd: USAGE_METERS.call_minutes.tiers[0].unitUsd,
   included_phone_numbers: 0,
   included_mailboxes: 0,
-  channels: ["voice", "email"],
+  channels: ["voice", "email", "sms"],
   checkoutAvailability: "available",
   features: [],
   priceIdEnv: "STRIPE_USAGE_BASE_PRICE_ID",

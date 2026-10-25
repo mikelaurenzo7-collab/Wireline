@@ -463,41 +463,40 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   sales: {
     slug: "sales",
-    metaTitle: "BotBound for Sales Inquiries | Phone Bots for Incoming Calls",
+    metaTitle: "Sales Bots for Prospecting and Follow Up | BotBound",
     metaDescription:
-      "Answer incoming sales questions, capture customer needs, and book available appointments with your Bot. No CRM required.",
-    eyebrow: "For Sales Inquiries",
-    headline: "Turn Questions into Next Steps",
+      "Find prospects, qualify leads, and follow up on deals with calls, SMS, email, and a Computer. No CRM required.",
+    eyebrow: "For Sales",
+    headline: "Keep Every Deal Moving",
     pains: [
       {
         icon: "Phone",
-        title: "Incoming Questions",
-        body: "Give your Bot your services, pricing, and common answers so it can help callers from the first question.",
+        title: "Prospect and Qualify",
+        body: "Research prospects, start approved outbound conversations, and capture what each lead needs.",
       },
       {
         icon: "Clock",
-        title: "After Hours Coverage",
-        body: "Answer when you are unavailable, capture the request, and leave a clear record for your review.",
+        title: "Follow Up to Close",
+        body: "Answer objections from your Knowledge and follow up by call, SMS, or email. Keep the next step visible.",
       },
       {
         icon: "Calendar",
-        title: "Calendar Aware Booking",
-        body: "Uses your configured hours, timezone, buffers, and imported busy times to offer slots and record supported bookings.",
+        title: "Book the Next Step",
+        body: "Offer available times using your calendar rules. Hand off qualified prospects with the conversation attached.",
       },
       {
         icon: "Shield",
         title: "Your Rules",
-        body: "Choose which questions your Bot can answer and which requests need your attention.",
+        body: "Set the offer, qualification questions, and escalation rules. Review outcomes in your workspace.",
       },
     ],
-    scriptPreview: `"Thanks for calling [Your Company]. I'm Casey, an AI assistant. I can answer questions about our services or help find a time to speak with the team. What would help today?"`,
-    statValue: "Ready to Answer",
-    statLabel:
-      "Give incoming requests a clear next step, from the first question to an appointment or handoff.",
-    primaryCta: { label: "Create Your Bot", href: signupHrefForWedge("support") },
+    scriptPreview: `"Hi, I'm Casey, an AI assistant from [Your Company], following up on your request. Is now a good time to talk about what you need?"`,
+    statValue: "From Lead to Next Step",
+    statLabel: "Research, conversations, and next steps in one workspace.",
+    primaryCta: { label: "Create Your Sales Bot", href: signupHrefForWedge("sales") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
-      "Lead details, call outcomes, and next steps remain visible in BotBound for your team to review.",
+      "Outbound and SMS require sender approval, recipient permission, and applicable DNC checks.",
     faqs: [
       {
         q: "Can I Shape What the Bot Says?",
@@ -513,7 +512,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Can the Bot Send an Email Recap?",
-        a: "Add Email to give your Bot a managed mailbox for approved replies and recaps. Email activation includes a setup review.",
+        a: "Yes. Every paid plan includes an email address for approved replies and recaps. A setup review verifies your sending identity.",
       },
     ],
   },

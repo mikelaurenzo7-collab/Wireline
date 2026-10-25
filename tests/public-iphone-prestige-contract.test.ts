@@ -22,7 +22,7 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(landing).toMatch(
       /<h1[^>]*>[\s\S]*?>\s*YOUR VOICE BOT\s*<\/span>[\s\S]*?>\s*FOR YOUR WORK\.\s*<\/span>[\s\S]*?<\/h1>/,
     );
-    expect(landing).toContain("AI Bots With Their Own Phone Number, Email Address, And Computer.");
+    expect(landing).toContain("A Phone Number. An Email Address. A Computer.");
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).not.toContain("HERO_CHANNELS.map");

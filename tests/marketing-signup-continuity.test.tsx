@@ -77,7 +77,7 @@ describe("marketing signup continuity", () => {
       expect(stickyDestination(page)).toBeUndefined();
       const destination = new URL(href!, "https://botbound.app");
       expect(destination.pathname).toBe("/signup");
-      expect(destination.searchParams.get("wedge")).toBe(slug === "sales" ? "support" : slug);
+      expect(destination.searchParams.get("wedge")).toBe(slug);
       expect(destination.searchParams.has("plan")).toBe(false);
     },
   );
@@ -110,9 +110,7 @@ describe("marketing signup continuity", () => {
     expect(renderedText).not.toContain("Personal Assistant");
     expect(renderedText).not.toContain("For Your Business");
     expect(renderedText).not.toContain("Front Desk");
-    expect(renderedText).toContain(
-      "AI Bots With Their Own Phone Number, Email Address, And Computer.",
-    );
+    expect(renderedText).toContain("A Phone Number. An Email Address. A Computer.");
     expect(renderedText).not.toContain("Choose calls, email, or both.");
     expect(renderedText).not.toContain("then sends you the summary");
     expect(renderedText).not.toContain("1 number + connected inbox");
@@ -139,10 +137,10 @@ describe("marketing signup continuity", () => {
       .map((element) => Children.toArray(element.props.children).join(""))
       .join(" ");
     if (wedge === "sales") {
-      expect(renderedText).toContain("A Customer Calls");
-      expect(renderedText).toContain("Every Inquiry. A Next Step.");
-      expect(renderedText).toContain("Answer. Book. Keep the Record.");
-      expect(heroLink?.props.to).toBe("/signup?template=front-desk");
+      expect(renderedText).toContain("Find the Right Prospects");
+      expect(renderedText).toContain("Start the Conversation");
+      expect(renderedText).toContain("Move the Deal Forward");
+      expect(heroLink?.props.to).toBe("/signup?wedge=sales");
       expect(renderedText).not.toMatch(
         /server-verifiable consent records|Federal Do Not Call screening|not available yet|coming soon/i,
       );

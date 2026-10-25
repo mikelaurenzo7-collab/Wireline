@@ -73,7 +73,7 @@ export const usageMeterEvents = pgTable(
       .where(sql`status = 'pending'`),
     meterCheck: check(
       "wireline_usage_meter_events_meter_check",
-      sql`meter IN ('call_minutes', 'emails_handled', 'computer_minutes')`,
+      sql`meter IN ('call_minutes', 'emails_handled', 'computer_minutes', 'sms_segments')`,
     ),
     statusCheck: check(
       "wireline_usage_meter_events_status_check",

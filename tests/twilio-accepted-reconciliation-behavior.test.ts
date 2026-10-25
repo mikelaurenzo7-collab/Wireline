@@ -7,6 +7,8 @@ type ProviderOutcome =
 function installSendMocks(options: {
   provider: ProviderOutcome;
   failAdjustment?: boolean;
+  sharedWork?: boolean;
+  countryCode?: string;
   failPersistence?: boolean;
   failRefund?: boolean;
   accountEnvironment?: "production" | "test" | "demo";
@@ -32,6 +34,18 @@ function installSendMocks(options: {
     };
   });
   const enqueue = vi.fn(async () => ({ ok: true, jobId: "job-reconcile-1" }));
+  const reserveSmsUsage = vi.fn(async () =>
+    options.sharedWork ? { periodKey: "frozen-period" } : null,
+  );
+  const settleSmsUsage = vi.fn(async () => {
+    if (options.failAdjustment && options.sharedWork)
+      throw new Error("shared settlement unavailable");
+    return Boolean(options.sharedWork);
+  });
+  const basicLookup = vi.fn(async () => ({
+    valid: true,
+    countryCode: options.countryCode ?? "US",
+  }));
   const refundRuntimeUsage = options.failRefund
     ? vi.fn(async () => {
         throw new Error("refund ledger unavailable");
@@ -125,9 +139,17 @@ function installSendMocks(options: {
     reserveRuntimeUsage,
     refundRuntimeUsage,
   }));
+  vi.doMock("../src/lib/sms-usage-billing", () => ({
+    reserveSmsUsage,
+    settleSmsUsage,
+    hasReleasedSmsUsage: vi.fn(async () => false),
+  }));
   vi.doMock("../src/lib/job-queue", () => ({ enqueue }));
   vi.doMock("../src/lib/twilio-service-base", () => ({
-    getTwilioClient: () => ({ messages: { create: createMessage } }),
+    getTwilioClient: () => ({
+      messages: { create: createMessage },
+      lookups: { v2: { phoneNumbers: () => ({ fetch: basicLookup }) } },
+    }),
     isTwilioConfigured: () => true,
     lookupTenantPhoneNumber,
     SMS_PROVIDER_OUTCOME_AMBIGUOUS: "SMS_PROVIDER_OUTCOME_AMBIGUOUS",
@@ -172,6 +194,9 @@ function installSendMocks(options: {
 
   return {
     createMessage,
+    reserveSmsUsage,
+    settleSmsUsage,
+    basicLookup,
     lookupTenantPhoneNumber,
     enqueue,
     refundRuntimeUsage,
@@ -186,6 +211,88 @@ function installSendMocks(options: {
 }
 
 describe("Twilio accepted-message reliability", () => {
+  it("settles accepted SMS against shared work without a wallet debit", async () => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted", numSegments: "2" },
+      sharedWork: true,
+    });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+    const result = await sendTenantMessage("user-1", {
+      to: "+14155550123",
+      body: "Hello",
+      idempotencyKey: "shared-success",
+    });
+    expect(result.ok).toBe(true);
+    expect(mocks.reserveRuntimeUsage).not.toHaveBeenCalled();
+    expect(mocks.refundRuntimeUsage).not.toHaveBeenCalled();
+    expect(mocks.basicLookup).toHaveBeenCalledWith();
+    expect(mocks.settleSmsUsage).toHaveBeenCalledWith(
+      "user-1",
+      "twilio_message:sms:shared-success",
+      2,
+    );
+  });
+
+  it.each([400, 503])(
+    "shared SMS preserves carrier outcome semantics for status %s",
+    async (status) => {
+      const mocks = installSendMocks({ provider: { kind: "rejected", status }, sharedWork: true });
+      const { sendTenantMessage } = await import("../src/lib/twilio-service");
+      const result = await sendTenantMessage("user-1", {
+        to: "+14155550123",
+        body: "Hello",
+        idempotencyKey: "shared-error",
+      });
+      expect(result.ok).toBe(false);
+      expect(mocks.reserveRuntimeUsage).not.toHaveBeenCalled();
+      if (status === 400)
+        expect(mocks.settleSmsUsage).toHaveBeenCalledWith(
+          "user-1",
+          "twilio_message:sms:shared-error",
+          0,
+        );
+      else {
+        expect(mocks.settleSmsUsage).not.toHaveBeenCalled();
+        expect(result.doNotResend).toBe(true);
+      }
+    },
+  );
+
+  it("queues failed shared settlement without retrying the accepted message", async () => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted" },
+      sharedWork: true,
+      failAdjustment: true,
+    });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+    const result = await sendTenantMessage("user-1", { to: "+14155550123", body: "Hello" });
+    expect(result).toMatchObject({ ok: true, reconciliationPending: true });
+    expect(mocks.createMessage).toHaveBeenCalledTimes(1);
+    expect(mocks.enqueue).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          fundingModel: "shared_work",
+          steps: ["billing_adjustment"],
+        }),
+      }),
+    );
+  });
+
+  it("releases the reserve before rejecting destinations outside the published US SMS rate", async () => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted" },
+      sharedWork: true,
+      countryCode: "CA",
+    });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+    await expect(
+      sendTenantMessage("user-1", { to: "+14165550123", body: "Hello", idempotencyKey: "not-us" }),
+    ).rejects.toThrow("valid US destination");
+    expect(mocks.createMessage).not.toHaveBeenCalled();
+    expect(mocks.settleSmsUsage).toHaveBeenCalledWith("user-1", "twilio_message:sms:not-us", 0);
+  });
+
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -519,7 +626,7 @@ describe("Twilio accepted-message reliability", () => {
         body: "Rejected before acceptance",
         channel: "sms",
       }),
-    ).rejects.toThrow(/refund could not be recorded/i);
+    ).rejects.toThrow(/billing reservation could not be released/i);
 
     expect(mocks.createMessage).toHaveBeenCalledTimes(1);
     expect(mocks.refundRuntimeUsage).toHaveBeenCalledTimes(1);

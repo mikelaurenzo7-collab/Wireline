@@ -59,18 +59,20 @@ describe("sales trust copy contract", () => {
     expect(violations).toEqual([]);
   });
 
-  it("keeps the legacy sales route focused on inbound inquiries", () => {
+  it("shows sales prospecting and follow up with truthful activation requirements", () => {
     const sales = WEDGES.sales;
     const security = read("src/components/Security.tsx");
     const product = read("src/lib/bot-product.ts");
-    expect(sales.metaTitle).toBe("BotBound for Sales Inquiries | Phone Bots for Incoming Calls");
-    expect(sales.headline).toBe("Turn Questions into Next Steps");
-    expect(sales.pains.map(({ title }) => title)).toContain("Incoming Questions");
-    expect(sales.statValue).toBe("Ready to Answer");
-    expect(sales.trustLine).toContain("remain visible in BotBound");
-    expect(JSON.stringify(sales)).not.toMatch(/consent|do not call|\bDNC\b|coming soon/i);
-    expect(JSON.stringify(sales)).not.toMatch(/call prospects|outbound|lead list/i);
-    expect(sales.primaryCta.href).toContain("wedge=support");
+    expect(sales.metaTitle).toBe("Sales Bots for Prospecting and Follow Up | BotBound");
+    expect(sales.headline).toBe("Keep Every Deal Moving");
+    expect(sales.pains.map(({ title }) => title)).toContain("Prospect and Qualify");
+    expect(sales.statValue).toBe("From Lead to Next Step");
+    expect(sales.trustLine).toContain(
+      "sender approval, recipient permission, and applicable DNC checks",
+    );
+    expect(JSON.stringify(sales)).not.toMatch(/coming soon/i);
+    expect(sales.scriptPreview).toContain("AI assistant");
+    expect(sales.primaryCta.href).toContain("wedge=sales");
     expect(security).toContain(
       "Recipient permission and account Do Not Call checks remain enforced before eligible outgoing calls are placed.",
     );
@@ -93,7 +95,7 @@ describe("sales trust copy contract", () => {
 
   it("keeps the landing customer-facing without internal design meta", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain("AI Bots With Their Own Phone Number, Email Address, And Computer.");
+    expect(landing).toContain("A Phone Number. An Email Address. A Computer.");
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toMatch(/homepage now leads/i);
     expect(landing).not.toMatch(/live desk/i);

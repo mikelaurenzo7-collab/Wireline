@@ -39,6 +39,24 @@ import {
 } from "../scripts/stripe-usage-billing-setup.mjs";
 
 describe("usage rate card", () => {
+  it("shares SMS with call, email and Computer allowance instead of charging a second wallet", () => {
+    const input = {
+      tier: "lite" as const,
+      callsPerMonth: 2,
+      avgCallMinutes: 3,
+      emailsPerMonth: 25,
+      computerMinutes: 5,
+      smsSegments: 25,
+      number: false,
+      emailAddress: false,
+    };
+    expect(estimateFromSliders(input)).toMatchObject({
+      totalUsd: 12,
+      workUsd: 4,
+      includedRemainingUsd: 0,
+    });
+    expect(estimateFromSliders({ ...input, smsSegments: 26 })).toMatchObject({ totalUsd: 12.04 });
+  });
   it("rounds the pooled invoice once across fractional channels", () => {
     expect(
       estimateUsageBill({
@@ -95,6 +113,7 @@ describe("usage rate card", () => {
     expect(multiLocation.totalUsd).toBe(2_592);
     expect(solo.lines.map((line) => line.key)).toEqual([
       "base",
+      "sms_segments",
       "call_minutes",
       "emails_handled",
       "computer_minutes",
@@ -146,7 +165,9 @@ describe("usage rate card", () => {
     expect(copy).toContain("$0.25/min from your shared work allowance");
     expect(copy).toContain("$3/month beyond your plan's included local numbers");
     expect(copy).toContain("Gmail and Outlook connect at no extra cost");
-    expect(copy).not.toMatch(/free|text|sms|—|wireline/i);
+    expect(copy).toContain("Inbound & Outbound Calls");
+    expect(copy).toContain("$0.04 per sent US SMS segment");
+    expect(copy).not.toMatch(/free|—|wireline/i);
   });
 });
 

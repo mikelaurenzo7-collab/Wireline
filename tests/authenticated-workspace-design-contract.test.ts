@@ -234,14 +234,15 @@ describe("authenticated workspace design architecture", () => {
     expect(settingsTabs).toContain("WorkspaceControlBand");
   });
 
-  it("offers personal calling and permissions while keeping business outbound as coming soon", () => {
+  it("offers reviewed calls and campaign preparation without dropping recipient permissions", () => {
     const hub = read("src/components/outbound/OutboundHub.tsx");
     expect(hub).toContain('title="Place a Reviewed Call"');
     expect(hub).toContain('aria-label="New Call"');
     expect(hub).toContain("RecipientVoicePermissions");
     expect(hub).toContain("CAMPAIGN_CALLING_TITLE");
     expect(hub).not.toContain("Lead Intake");
-    expect(hub).not.toContain("CampaignsPanel");
+    expect(hub).toContain("<CampaignsPanel initialAgentId={initialAgentId}");
+    expect(hub).toContain('ariaLabel="Outbound Work"');
     expect(hub).not.toContain("Cadences");
   });
 

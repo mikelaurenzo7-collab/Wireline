@@ -23,7 +23,7 @@ describe("annual billing purchase path", () => {
 
   it("does not invent sales discounts", () => {
     const personas = read("src/lib/wireline-agent-personas.ts");
-    expect(personas).toContain("Do not invent coupons or percent-off deals");
+    expect(personas).toContain("custom price or discount that is not published");
     expect(personas).not.toMatch(/Offer up to \$\{SALES_AUTO_DISCOUNT_MAX_PERCENT\}%/);
   });
 

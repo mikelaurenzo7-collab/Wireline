@@ -1162,7 +1162,7 @@ test.describe("wide screens", () => {
       (url) =>
         url.pathname === "/studio" &&
         url.searchParams.get("agent") === bots[0].id &&
-        !url.searchParams.has("panel"),
+        url.searchParams.get("panel") === "computer",
     );
     await expect(browser).toBeVisible();
     await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true");

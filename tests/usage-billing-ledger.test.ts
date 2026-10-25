@@ -473,7 +473,12 @@ describe("usage spend caps", () => {
     };
     expect(periodSpendUsd(control, emptyMeterTotals())).toBe(26);
     expect(
-      periodSpendUsd(control, { call_minutes: 160, emails_handled: 150, computer_minutes: 25 }),
+      periodSpendUsd(control, {
+        call_minutes: 160,
+        emails_handled: 150,
+        computer_minutes: 25,
+        sms_segments: 0,
+      }),
     ).toBe(26 + 40 + 3 + 5 - 12);
   });
 
@@ -606,7 +611,7 @@ describe("Plus period accounting", () => {
           alertPeriodKey: null,
           alertLevelPct: 0,
         },
-        { call_minutes: 348, emails_handled: 0, computer_minutes: 0 },
+        { call_minutes: 348, emails_handled: 0, computer_minutes: 0, sms_segments: 0 },
       ),
     ).toBe(100);
   });

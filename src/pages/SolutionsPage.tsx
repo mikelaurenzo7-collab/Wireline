@@ -4,34 +4,41 @@ import { PageMeta } from "../lib/page-meta";
 
 const SOLUTIONS = {
   sales: {
-    title: "Every Inquiry. A Next Step.",
+    title: "Your Next Sales Bot.",
     description:
-      "Answer incoming questions, capture what the customer needs, and offer an available appointment. Keep the conversation and next step in BotBound.",
-    primary: { href: "/signup?template=front-desk", label: "Create Your Front Desk" },
+      "Research prospects, make outbound calls, qualify interest, and move deals forward with SMS and email.",
+    primary: { href: "/signup?wedge=sales", label: "Create Your Sales Bot" },
     secondary: { href: "/features", label: "See How It Works" },
     sequence: [
-      ["A Customer Calls", "Your Bot answers on its own number and asks what the caller needs."],
       [
-        "Set the Playbook",
-        "Add your services, common questions, prices, and rules for involving you.",
+        "Find the Right Prospects",
+        "Give your Bot a target market. Use Computer to research businesses and prepare the conversation.",
       ],
       [
-        "Answer. Book. Keep the Record.",
-        "Offer an available appointment, record the request, or hand the conversation to you.",
+        "Start the Conversation",
+        "Call approved prospects, qualify interest, and handle objections with your sales playbook.",
+      ],
+      [
+        "Move the Deal Forward",
+        "Book the next meeting, follow up by SMS or email, and hand off with the conversation attached.",
       ],
     ],
     capabilities: [
       [
-        "Your Playbook in Every Call",
+        "Prospecting & Qualification",
         "Use your positioning, tone, qualification rules, and approved claims.",
       ],
-      ["Email Recaps", "Send a recap from your Bot's email address when Email is enabled."],
       [
-        "Calendar Aware Booking",
+        "Deal Follow Up",
+        "Answer buying questions and send requested next steps from your Bot's number and email.",
+      ],
+      [
+        "Meetings & Handoffs",
         "Offer real availability and write the confirmed next step back to the record.",
       ],
     ],
-    proof: "Start with your Bot's inbox, calendar, and call records. No CRM required.",
+    proof:
+      "Your Voice. Your Sales Playbook. Every Next Step, Recorded. Outbound uses verified senders and recipient permissions.",
   },
   support: {
     title: "Meet Your Front Desk",

@@ -71,10 +71,22 @@
   max-width: 60rem;
   margin: 1.25rem 0 0;
   color: var(--wireline-color-text-secondary);
+  font-family: var(--wireline-font-family-body);
   font-size: clamp(1.25rem, 2.15vw, 1.875rem);
   font-weight: 400;
   line-height: 1.45;
   letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+.landing-prestige p.landing-prestige__identity-line {
+  max-width: 45rem;
+  margin: var(--wireline-space-125) 0 0;
+  color: var(--wireline-color-text-secondary);
+  font-family: var(--wireline-font-family-body);
+  font-size: clamp(0.9375rem, 1.4vw, 1.125rem);
+  font-weight: var(--wireline-typography-body-weight);
+  letter-spacing: var(--wireline-typography-body-letterSpacing);
+  line-height: 1.5;
   text-wrap: balance;
 }
 .landing-prestige__actions {

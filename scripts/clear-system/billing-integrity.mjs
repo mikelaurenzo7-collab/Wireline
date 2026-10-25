@@ -180,28 +180,26 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/data/wireline-knowledge.ts",
     wirelineKnowledge,
-    /Runtime Balance/,
-    "shared product knowledge must include Runtime Balance",
+    /shared allowance/,
+    "shared product knowledge must describe the shared allowance",
   );
   mustInclude(
     "src/data/wireline-knowledge.ts",
     wirelineKnowledge,
-    /STRIPE_PLANS\.filter\([\s\S]*plan\.catalogFamily === "channels" && !plan\.channels\.includes\("sms"\),?\s*\)\.map[\s\S]*BotBound Enterprise/,
-    "shared product knowledge must derive current launch offers from the catalog while excluding SMS",
+    /PUBLIC_USAGE_TIERS\.map\([\s\S]*const plan = USAGE_TIERS\[id\]/,
+    "shared product knowledge must derive public offers from the shared-work catalog",
   );
   mustExclude(
     "src/data/wireline-knowledge.ts",
     wirelineKnowledge,
-    /BotBound\s+(?:Starter(?:\s+Plus)?|Pro|Scale|Business)\b/i,
+    /BotBound\s+(?:Starter\s+Plus|Pro|Scale|Business|Enterprise)\b/i,
     "shared product knowledge must not quote retired self-serve offers",
   );
   for (const field of [
-    "price_usd_monthly",
-    "price_usd_annual",
-    "voice_minutes_monthly",
-    "included_phone_numbers",
-    "included_mailboxes",
-    "ai_spend_allowance_usd_monthly",
+    "monthlyUsd",
+    "includedWorkUsd",
+    "includedNumbers",
+    "includedEmailAddresses",
   ])
     mustInclude(
       "src/data/wireline-knowledge.ts",
@@ -212,7 +210,7 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   mustExclude(
     "src/data/wireline-knowledge.ts",
     wirelineKnowledge,
-    /Legacy BotBound|BotBound Plus|one Assistants|Assistants analytics/i,
+    /Legacy BotBound|one Assistants|Assistants analytics/i,
     "shared product knowledge must purge legacy catalog and assistant copy",
   );
   mustExclude(

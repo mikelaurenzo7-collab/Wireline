@@ -48,11 +48,11 @@ import { isBotMarkKey } from "../lib/bot-mark";
  * "Deployed" count still recognizes Bots made from a template before it was
  * renamed into plain language.
  */
-const LEGACY_TEMPLATE_NAMES: Record<string, string> = {
-  "sales-sdr": "SDR: Outbound Prospecting",
-  "sales-closer": "Closer: Late Stage Deals",
-  "support-tier1": "Tier 1: General Support",
-  "marketing-survey": "NPS & Feedback Collector",
+const LEGACY_TEMPLATE_NAMES: Record<string, string[]> = {
+  "sales-sdr": ["SDR: Outbound Prospecting", "Outbound Sales Caller"],
+  "sales-closer": ["Closer: Late Stage Deals", "Deal Closer"],
+  "support-tier1": ["Tier 1: General Support"],
+  "marketing-survey": ["NPS & Feedback Collector"],
 };
 
 const CHANNEL_LABELS = { voice: "Voice", email: "Email" } as const;
@@ -62,21 +62,21 @@ export const AGENT_TEMPLATES = [
   {
     id: "sales-sdr",
     category: "Sales & Revenue",
-    name: "Outbound Sales Caller",
+    name: "Sales Prospecting Bot",
     description:
       "Qualifies prospects, books demos, and records the outcome. Updates your CRM when connected.",
     role: "sales",
     channel: "voice" as const,
     icon: Target,
     accent: BRAND.colors.primary,
-    badge: "Sales rehearsal",
+    badge: "Outbound",
     firstMessage:
       "Hi, I'm following up because you showed interest in what we offer. Is now a good time for two quick questions?",
   },
   {
     id: "sales-closer",
     category: "Sales & Revenue",
-    name: "Deal Closer",
+    name: "Deal Closing Bot",
     description: "Follows up with warm leads and answers pricing questions.",
     role: "sales",
     channel: "voice" as const,
@@ -311,15 +311,9 @@ export const AGENT_TEMPLATES = [
 type Template = (typeof AGENT_TEMPLATES)[number];
 
 // Keep the full definitions for existing Bots and runtime compatibility.
-// The launch gallery offers incoming business work and personal calling.
-const DEFERRED_BUSINESS_TEMPLATE_IDS = new Set<string>([
-  "sales-sdr",
-  "sales-closer",
-  "collections-soft",
-  "collections-hard",
-  "marketing-reengagement",
-  "marketing-survey",
-]);
+// Sales and follow-up are supported starting points; carrier and recipient
+// permissions are enforced at the actual sending boundary.
+const DEFERRED_BUSINESS_TEMPLATE_IDS = new Set<string>(["collections-soft", "collections-hard"]);
 
 export const LAUNCH_AGENT_TEMPLATES = AGENT_TEMPLATES.filter(
   (template) => !DEFERRED_BUSINESS_TEMPLATE_IDS.has(template.id),
@@ -729,9 +723,10 @@ export default function AgentTemplates() {
                     deploying={deploying === template.id}
                     deployedCount={
                       (deployedCounts.get(template.name.toLowerCase()) ?? 0) +
-                      (deployedCounts.get(
-                        LEGACY_TEMPLATE_NAMES[template.id]?.toLowerCase() ?? "",
-                      ) ?? 0)
+                      (LEGACY_TEMPLATE_NAMES[template.id] ?? []).reduce(
+                        (count, name) => count + (deployedCounts.get(name.toLowerCase()) ?? 0),
+                        0,
+                      )
                     }
                   />
                 ))}

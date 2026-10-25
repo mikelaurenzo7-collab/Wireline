@@ -167,7 +167,7 @@ describe("explicit Calls Bot scope", () => {
     expect(h.params.get("agent")).toBe("bot-b");
     const nodes = render();
     expect(nodes.find((node) => node.type === "outbound-hub")?.props.initialAgentId).toBe("bot-b");
-    expect(scope(nodes)?.props["aria-label"]).toBe("Choose Bot for Reviewed calls");
+    expect(scope(nodes)?.props["aria-label"]).toBe("Choose Bot for Outbound");
     expect(scope(nodes)?.props.value).toBe("bot-b");
   });
 
