@@ -2,7 +2,7 @@
 
 BotBound gives **your Bot calling, email, and a Computer**. Start with a focused job: answer incoming calls, handle requested email, or complete supervised web work with visible proof and an owner handoff. Connected browser and ChatGPT surfaces use the same account and Bot. Native clients and additional channels retain their own release gates.
 
-SMS, campaign calling, and unproven messaging integrations are outside launch promotion. Existing channel history and reviewed non-marketing service-call controls remain supported under their separate entitlement, permission, funding, and release policies.
+Public pages present calls, SMS, email, and Computer. Activation still requires the applicable entitlement, verified sender, recipient permission, funding, and provider readiness. Reviewed service calls remain a separate workflow; campaign calling and unverified integrations are not certified by the public design release.
 
 Public marketing leads with capabilities, outcomes, and a clear signup action. Inside the product, customers create a Bot, set it up, and rehearse privately before activating live work. Product architecture supports these steps through Create, Training, and Wire:
 
@@ -28,9 +28,15 @@ optional live-transfer destination without using setup chat.
 - **Android - internal beta:** native calls, notifications, widgets, Telecom, FCM, and urgent owner controls; Play release remains gated.
 - **Identity - retired live talking-head:** identity badges stay on every Bot. Video files and clip-script substitutes are not offered. LiveAvatar / HeyGen sessions are not minted.
 
-Paid packages include one Bot. **BotBound Personal is a paid plan**, currently $12/month or $120/year, with 20 monthly call minutes, one local number, Computer access metered against its managed AI allowance, and a connection to the customer's existing Gmail or Outlook inbox. It does not include a managed mailbox. Historical Free Builder references and `free`/`builder` plan slugs do not make Personal free; account signup and a private draft do not authorize live work.
+### Current Shared Work Offer
 
-Channel packages include the Calls and/or Email selected at checkout. Calls includes a local number; Email includes a managed mailbox. Customers choose an available US area code and exact number in Phone setup. Email-only activation does not require Twilio, and Calls-only does not allocate an AgentMail mailbox. SMS combinations remain unavailable to activate until carrier and cost checks pass and remain outside launch promotion. Background identity repair reuses an owned line and never chooses a new number for the customer. Unpaid draft Bots receive no live identity; unused capacity does not pre-provision carrier numbers. See `src/lib/plan-catalog.ts` and server-owned entitlements for the commercial contract.
+New enrollment uses $19/month with $12 of shared work: calls $0.25/minute, sent email replies $0.02 each, and Computer $0.20/minute. A number is $3/month and a managed mailbox is $4/month. The default monthly pretax cap is $100. Usage, provider processing, identity capacity, and activation remain bounded; see `docs/USAGE_BILLING.md`. Existing subscriptions are not automatically migrated.
+
+### Legacy Package Compatibility
+
+The following packages describe preserved subscriptions and historical catalog compatibility, not the default new offer. Paid packages include one Bot. **BotBound Personal is a paid plan**, historically $12/month or $120/year, with 20 monthly call minutes, one local number, Computer access metered against its managed AI allowance, and a connection to the customer's existing Gmail or Outlook inbox. It does not include a managed mailbox. Historical Free Builder references and `free`/`builder` plan slugs do not make Personal free; account signup and a private draft do not authorize live work.
+
+Channel packages include the Calls and/or Email selected at checkout. Calls includes a local number; Email includes a managed mailbox. Customers choose an available US area code and exact number in Phone setup. Email-only activation does not require Twilio, and Calls-only does not allocate an AgentMail mailbox. SMS activation still requires carrier, consent, funding, and cost checks. Background identity repair reuses an owned line and never chooses a new number for the customer. Unpaid draft Bots receive no live identity; unused capacity does not pre-provision carrier numbers. See `src/lib/plan-catalog.ts` and server-owned entitlements for the commercial contract.
 
 Every customer's email must use that customer's verified business identity and signature. Customer-owned domains require their own setup and DNS verification; an included managed mailbox does not prove a customer domain is configured.
 
@@ -43,7 +49,7 @@ Calendar owns appointments, weekly availability, timezone, and booking rules at 
 ## Technology and ownership
 
 - **Web/API:** React 19, Vite, Express, TypeScript, Tailwind, Drizzle ORM, Supabase Postgres, and Node 22 on Render. The Vercel bundle remains a legacy rollback path.
-- **Design:** the **BotBound Design System**, generated from shared semantic tokens for web, browser, iOS, and Android. Dark is the first-visit appearance; saved appearance preferences take precedence. Technical token filenames retain the `wireline` namespace.
+- **Design:** the **BotBound Design System**, generated from shared semantic tokens for web, browser, iOS, and Android. Warm light is the first-visit web appearance; saved appearance preferences take precedence. Technical token filenames retain the `wireline` namespace.
 - **Managed reasoning:** xAI first (`grok-4.7`) with OpenAI GPT-5.6 Terra as the backup, as defined in `src/lib/ai-models.ts`. Gemini is retired; the legacy Vercel AI Gateway route is disabled on Render; routing policy remains server-owned and customer surfaces never name the vendor.
 - **Voice/PSTN:** OpenAI Realtime owns authenticated Studio/ChatGPT rehearsals and is the default telephone runtime for founder-owned internal Bot profiles and customer Bots. With `WIRELINE_PHONE_VOICE_PROVIDER=xai`, phone calls on numbers registered with xAI run on xAI voice (`grok-voice-3.0`); unregistered numbers keep answering on OpenAI. Public voice previews are retired. Twilio owns carrier transport, numbers, SIP, and SMS. A call never moves between providers mid-flight.
 - **Persistent phone worker:** production SIP calls require a separate always-on Node 22 service built from `src/entrypoints/voice-worker.ts`. The web/API service forwards verified webhooks; the worker maintains calls for up to 60 minutes and drains before replacement. The Render migration uses separate API and voice services in `render.yaml`; source deployment alone does not complete the traffic cutover. See `deploy/voice-worker/` and `docs/OPENAI_REALTIME_VOICE.md`.

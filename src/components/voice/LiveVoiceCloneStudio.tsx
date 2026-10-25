@@ -729,7 +729,7 @@ export default function LiveVoiceCloneStudio({
                 key={voice.id}
                 className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-background px-3 py-2"
               >
-                <span className="min-w-0 flex-1">
+                <span className="min-w-0 basis-full sm:min-w-48 sm:flex-1 sm:basis-48">
                   <span className="block break-words text-sm font-semibold text-foreground">
                     {voice.name}
                   </span>

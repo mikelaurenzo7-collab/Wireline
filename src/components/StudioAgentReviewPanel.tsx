@@ -250,6 +250,36 @@ export default function StudioAgentReviewPanel({
     };
   }, [agentId, reloadKey]);
 
+  const voiceIncluded = access.includes("voice");
+  const [callVoice, setCallVoice] = useState<{
+    agentId: string;
+    name: string | null;
+    status: "ready" | "unavailable";
+  } | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    setCallVoice(null);
+    if (!voiceIncluded) return () => controller.abort();
+    void authFetch("/api/voice/live-voices", { signal: controller.signal })
+      .then(async (response) => {
+        const body = (await response.json()) as {
+          voices?: Array<{ name: string; speaksOnCalls?: boolean; inUseByAgentIds: string[] }>;
+        };
+        if (!response.ok || !Array.isArray(body.voices))
+          throw new Error("Voice status unavailable.");
+        const active = body.voices.find(
+          (voice) => voice.inUseByAgentIds.includes(agentId) && voice.speaksOnCalls !== false,
+        );
+        if (!controller.signal.aborted)
+          setCallVoice({ agentId, name: active?.name ?? null, status: "ready" });
+      })
+      .catch(() => {
+        if (!controller.signal.aborted)
+          setCallVoice({ agentId, name: null, status: "unavailable" });
+      });
+    return () => controller.abort();
+  }, [agentId, reloadKey, voiceIncluded]);
+
   const savedVoiceName = resolveVoiceLabel(
     config?.voice?.provider?.trim().toLowerCase() === "presenter"
       ? config.voice.phoneVoiceId
@@ -258,9 +288,15 @@ export default function StudioAgentReviewPanel({
   const phoneCallVoice = config?.voice?.phoneCall?.voice?.trim();
   const voiceName = phoneCallVoice
     ? config?.voice?.phoneCallReady === false
-      ? "Standard voice while registration finishes"
+      ? "Phone Setup Incomplete"
       : phoneCallVoice.charAt(0).toUpperCase() + phoneCallVoice.slice(1)
     : savedVoiceName;
+  const phoneVoiceName =
+    callVoice?.agentId !== agentId
+      ? "Checking Voice..."
+      : callVoice.status === "unavailable"
+        ? "Check Voice Setup"
+        : (callVoice.name ?? voiceName);
   const role = formatAgentRoleLabel(config?.role ?? agentRole ?? null);
   const hasPhone = Boolean(phoneNumber);
   const contentClass = compact
@@ -319,7 +355,7 @@ export default function StudioAgentReviewPanel({
                     ),
                 },
                 ...(access.includes("voice")
-                  ? [{ label: "Built-In Voice", value: voiceName }]
+                  ? [{ label: "Phone Voice", value: phoneVoiceName }]
                   : []),
               ].map((item) => (
                 <div key={item.label} className="py-3 first:pt-0 last:pb-0">

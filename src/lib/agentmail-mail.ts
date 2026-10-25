@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
 import { ImapFlow } from "imapflow";
 import nodemailer from "nodemailer";
-import { findImapReplyThreading, type ReplyThreading } from "./imap-reply-target";
+import { findImapReplyThreading, replyReferences, type ReplyThreading } from "./imap-reply-target";
+import { mailboxScopedExternalId } from "./mailbox-identity";
 
 import { resolveCanonicalAppUrl } from "./app-url";
 import { fetchWithTimeout, log } from "./server-context";
@@ -558,11 +559,66 @@ export async function fetchAgentMailInbox(
 }
 
 /** Thread headers for replying to the newest message from `from` in this AgentMail inbox. */
-export function findAgentMailReplyThreading(
+export async function findAgentMailReplyThreading(
   email: string,
   credential: string,
-  query: { from: string; subject: string },
+  query: { from: string; subject: string; accountId?: string; scopedThreadId?: string },
 ): Promise<ReplyThreading | null> {
+  // Webhook conversations use AgentMail thread IDs. IMAP subject search can
+  // miss those messages (or select a different conversation with the same
+  // subject). Match the stored mailbox-scoped identity through the API instead.
+  if (query.accountId && query.scopedThreadId) {
+    try {
+      let pageToken: string | undefined;
+      const seen = new Set<string>();
+      for (let page = 0; page < 3; page += 1) {
+        const params = new URLSearchParams({ limit: "100", from: query.from });
+        if (pageToken) params.set("page_token", pageToken);
+        const result = await agentMailJson(
+          credential,
+          `/inboxes/${encodeURIComponent(email)}/messages?${params}`,
+        );
+        assertAgentMailStatus(result.status, "Reply conversation lookup failed.");
+        const body = asRecord(result.body);
+        const messages = Array.isArray(body?.messages) ? body.messages : [];
+        for (const raw of messages) {
+          const message = asRecord(raw);
+          if (!message) continue;
+          // IMAP imports historically used the message ID as their thread key.
+          // Both paths must match a stored identity, never just the subject.
+          const identities = [message.thread_id, message.message_id].filter(
+            (id): id is string => typeof id === "string" && Boolean(id.trim()),
+          );
+          if (
+            !identities.some(
+              (id) =>
+                mailboxScopedExternalId(query.accountId!, "agentmail", id) === query.scopedThreadId,
+            )
+          )
+            continue;
+          const sender = typeof message.from === "string" ? message.from.trim() : "";
+          const address = /<([^<>]+)>$/.exec(sender)?.[1] ?? sender;
+          if (address.toLowerCase() !== query.from.toLowerCase()) continue;
+          const messageId = message.message_id;
+          if (typeof messageId !== "string" || !/^<[^<>\s]+>$/.test(messageId)) continue;
+          const prior = Array.isArray(message.references)
+            ? message.references.filter(
+                (id): id is string => typeof id === "string" && /^<[^<>\s]+>$/.test(id),
+              )
+            : [];
+          return { inReplyTo: messageId, references: replyReferences(prior, messageId) };
+        }
+        const next = body?.next_page_token;
+        if (typeof next !== "string" || !next || seen.has(next)) break;
+        seen.add(next);
+        pageToken = next;
+      }
+    } catch {
+      log.warn("AgentMail reply conversation lookup failed; sending without thread headers");
+    }
+    // Never guess another conversation from its subject after an exact lookup.
+    return null;
+  }
   return findImapReplyThreading(createImapClient(email, credential), query);
 }
 

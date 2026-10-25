@@ -745,6 +745,7 @@ export class IntegrationService {
    */
   async sendThreadReply(params: {
     accountId: string;
+    scopedThreadId?: string;
     to: string;
     subject: string;
     body: string;
@@ -834,7 +835,12 @@ export class IntegrationService {
             if (!account.accessToken || !account.emailAddress) return notSent;
             const email = account.emailAddress as string;
             const apiKey = decryptSecret(account.accessToken);
-            const threading = await findAgentMailReplyThreading(email, apiKey, query);
+            const threading = await findAgentMailReplyThreading(email, apiKey, {
+              ...query,
+              ...(params.scopedThreadId
+                ? { accountId: params.accountId, scopedThreadId: params.scopedThreadId }
+                : {}),
+            });
             const sent = await sendFundedManagedEmail({
               userId: this.userId,
               provider: "agentmail",

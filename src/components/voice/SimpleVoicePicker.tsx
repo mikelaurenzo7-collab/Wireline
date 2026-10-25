@@ -456,7 +456,7 @@ export default function SimpleVoicePicker({
         {clonedVoiceName
           ? `Callers hear ${clonedVoiceName}. Rehearsals use the built-in voice.`
           : phoneCall && phoneCallReady === false
-            ? "Phone voice registration is pending. Callers hear the standard voice until it finishes."
+            ? "Finish phone setup to use this voice."
             : phoneCallVoiceName(phoneCall)
               ? `Callers hear ${phoneCallVoiceName(phoneCall)}, the closest phone voice to your rehearsal voice.`
               : "Used for phone calls and browser rehearsals."}

@@ -11,13 +11,13 @@ The required release evidence remains a condition of that authorization.
 | ------------------------------- | -------------------------------------------- |
 | Monthly base                    | $19, including one $12 shared work allowance |
 | Calls                           | $0.25/minute, measured by the second         |
-| Delivered email replies         | $0.02 each                                   |
+| Sent email replies              | $0.02 each                                   |
 | Computer task time              | $0.20/minute                                 |
 | Optional BotBound number        | $3/month each                                |
 | Optional BotBound email address | $4/month each                                |
 
 All three channels draw from the same $12 allowance. For example, 24 call minutes,
-100 delivered replies and 20 Computer minutes together use $12. The allowance resets
+100 sent replies and 20 Computer minutes together use $12. The allowance resets
 on the subscription billing cycle and does not roll over. Fixed add-ons are separate.
 The customer sees dollars of work, native quantities, estimated charges and a pretax cap.
 Stripe receives one weighted meter: 100 credits = $1 of work; its first 1,200 credits
@@ -75,7 +75,7 @@ support time. The earlier v1 margin percentages are retired; do not reuse them f
 | Reporting                                   | `usage_meter_report` job; Stripe meter events carry the idempotency key as `identifier`                                                                     |
 | Public copy                                 | `/api/billing/plans` returns `billing_model` and `usage_checkout_available`; the landing and pricing pages switch on it, so copy is never ahead of checkout |
 
-Recording points: settled call minutes (`voice-usage.ts`), delivered email replies
+Recording points: settled call minutes (`voice-usage.ts`), sent email replies
 (`email-thread-reply.ts`) and cloud computer task wall time (`cloud-computer/task-runner.ts`).
 Each records once per source id, so retries and replays never double count.
 

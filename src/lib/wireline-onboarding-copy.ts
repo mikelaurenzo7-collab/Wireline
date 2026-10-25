@@ -62,8 +62,8 @@ export const POST_CREATE_WIZARD_COPY = {
       title: "Hear It First",
       detail:
         "Practice privately with your built-in voice. To hear a cloned voice in a conversation, connect a number and make a real test call.",
-      primary: "Continue to launch",
-      skip: "Skip for now",
+      primary: "Continue to Launch",
+      skip: "Skip Rehearsal",
     },
   },
   complete: {

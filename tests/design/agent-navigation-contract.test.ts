@@ -115,7 +115,7 @@ describe("authenticated Bot navigation contract", () => {
     expect(studioPanel).toContain("<SimpleVoicePicker");
     expect(studioPanel).toContain("Phone Voice");
     expect(studioPanel).not.toMatch(/VoiceGallery|AgentPresenceLivePreview/);
-    expect(studioReview).toContain("Built-In Voice");
+    expect(studioReview).toContain("Phone Voice");
     expect(studioReview).toContain("No phone connected");
   });
 

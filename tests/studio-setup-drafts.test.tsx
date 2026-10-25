@@ -195,6 +195,7 @@ beforeEach(() => {
   h.fetch.mockReset().mockImplementation(async (path: string, options?: RequestInit) => {
     const body = options?.body ? JSON.parse(String(options.body)) : null;
     if (path === "/api/emails/accounts") return json({ accounts: [] });
+    if (path === "/api/voice/live-voices") return json({ voices: [] });
     if (!options?.method) return json(h.config);
     if (path.endsWith("/mark")) h.config.mark_key = body.mark_key;
     if (path.endsWith("/manual") && body.type === "personality")
@@ -211,6 +212,36 @@ afterEach(() => {
 });
 
 describe("Studio inspector draft lifecycle", () => {
+  it("shows the assigned live clone in Summary and hides it immediately when switching Bots", async () => {
+    h.surface = "review";
+    const usual = h.fetch.getMockImplementation()!;
+    h.fetch.mockImplementation((path: string, options?: RequestInit) =>
+      path === "/api/voice/live-voices"
+        ? Promise.resolve(
+            json({
+              voices: [{ name: "Owner Voice", speaksOnCalls: true, inUseByAgentIds: ["bot-a"] }],
+            }),
+          )
+        : usual(path, options),
+    );
+    await mount(false);
+    await vi.waitFor(() => expect(text(render())).toContain("Phone VoiceOwner Voice"));
+    h.botId = "bot-b";
+    expect(text(render())).not.toContain("Owner Voice");
+    await vi.waitFor(() => expect(text(render())).not.toContain("Checking Voice..."));
+    expect(text(render())).not.toContain("Owner Voice");
+  });
+
+  it("does not claim a stock or cloned call voice when voice status cannot be verified", async () => {
+    h.surface = "review";
+    const usual = h.fetch.getMockImplementation()!;
+    h.fetch.mockImplementation((path: string, options?: RequestInit) =>
+      path === "/api/voice/live-voices" ? Promise.resolve(json({}, 503)) : usual(path, options),
+    );
+    await mount(false);
+    await vi.waitFor(() => expect(text(render())).toContain("Phone VoiceCheck Voice Setup"));
+  });
+
   it("names the saved Knowledge and rules destination and preserves the active Bot", async () => {
     await mount();
     const link = elements(render()).find(
@@ -369,26 +400,28 @@ describe("Studio inspector draft lifecycle", () => {
 
   it.each([
     [{ provider: "xai", voice: "eve" }, true, "Eve"],
-    [{ provider: "xai", voice: "eve" }, false, "Standard voice while registration finishes"],
+    [{ provider: "xai", voice: "eve" }, false, "Phone Setup Incomplete"],
     [null, null, "Marin · Natural & Expressive"],
   ])(
-    "labels the built-in phone voice separately from a custom voice (%j, %s)",
+    "shows the runtime phone voice when no live clone is assigned (%j, %s)",
     async (phoneCall, phoneCallReady, label) => {
       h.surface = "review";
       h.fetch.mockImplementation(async (path: string) =>
         path === "/api/emails/accounts"
           ? json({ accounts: [] })
-          : json({
-              ...h.config,
-              voice: { provider: "openai", voiceId: "marin", phoneCall, phoneCallReady },
-            }),
+          : path === "/api/voice/live-voices"
+            ? json({ voices: [] })
+            : json({
+                ...h.config,
+                voice: { provider: "openai", voiceId: "marin", phoneCall, phoneCallReady },
+              }),
       );
       await mount();
       await vi.waitFor(() => {
         const row = elements(render()).find(
-          (element) => element.type === "div" && text(element).startsWith("Built-In Voice"),
+          (element) => element.type === "div" && text(element).startsWith("Phone Voice"),
         );
-        expect(row && text(row)).toBe(`Built-In Voice${label}`);
+        expect(row && text(row)).toBe(`Phone Voice${label}`);
       });
     },
   );

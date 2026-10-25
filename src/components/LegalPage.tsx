@@ -247,7 +247,7 @@ export function TermsOfService() {
           cancellation takes effect at the end of the current billing period.
         </p>
         <p>
-          Shared Work subscriptions include the allowance shown at checkout. Calls, delivered email
+          Shared Work subscriptions include the allowance shown at checkout. Calls, sent email
           replies, and Computer work draw from one monthly allowance, with additional usage invoiced
           through Stripe at the published rates. Calls and Computer time are measured by the second.
           Optional phone numbers and email addresses carry separate recurring charges. Included work

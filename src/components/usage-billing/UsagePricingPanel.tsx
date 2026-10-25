@@ -28,10 +28,7 @@ export const USAGE_RATE_LINES: ReadonlyArray<readonly [string, string]> = [
     "Call Minutes",
     `${usd(CALLS.tiers[0].unitUsd)}/min from your shared work allowance, billed by the second.`,
   ],
-  [
-    "Emails Handled",
-    `${usd(EMAILS.tiers[0].unitUsd)} per delivered reply from the same allowance.`,
-  ],
+  ["Emails Handled", `${usd(EMAILS.tiers[0].unitUsd)} per sent reply from the same allowance.`],
   [
     "Computer Minutes",
     `${usd(COMPUTER.tiers[0].unitUsd)}/min from the same allowance. Heavy tasks may pause at a processing limit.`,
@@ -306,8 +303,8 @@ export default function UsagePricingPanel() {
         ))}
       </dl>
       <p className="text-center text-xs text-muted-foreground">
-        Calls and Computer are measured by the second. Email is billed per delivered reply. Limit
-        alerts at 50%, 80%, and 100%.
+        Calls and Computer are measured by the second. Email is billed per sent reply. Limit alerts
+        at 50%, 80%, and 100%.
       </p>
     </div>
   );

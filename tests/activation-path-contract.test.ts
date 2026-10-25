@@ -103,8 +103,8 @@ describe("activation path contract", () => {
     expect(copy).not.toContain('label: "Number"');
     expect(copy).not.toContain('label: "Rehearse"');
     expect(copy).toContain("Continue to Try It");
-    expect(copy).toContain("Continue to launch");
-    expect(copy).toContain("Skip for now");
+    expect(copy).toContain("Continue to Launch");
+    expect(copy).toContain("Skip Rehearsal");
     expect(copy).toContain("Put It on the Line");
     expect(billing).toContain("shouldResumePostCreateLaunch(");
     expect(billing).toContain("Boolean(readPostCreateWizard())");

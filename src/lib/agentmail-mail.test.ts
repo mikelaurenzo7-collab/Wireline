@@ -52,6 +52,7 @@ import {
   deleteWirelineAgentMailWebhooks,
   ensureAgentMailWebhook,
   fetchAgentMailInbox,
+  findAgentMailReplyThreading,
   inboxMatchesAddress,
   isAgentMailManagedAddress,
   listAgentMailInboxes,
@@ -61,6 +62,7 @@ import {
   sendAgentMail,
   verifyAgentMailCredentials,
 } from "./agentmail-mail";
+import { mailboxScopedExternalId } from "./mailbox-identity";
 
 function jsonResponse(status: number, body: unknown) {
   return {
@@ -68,6 +70,111 @@ function jsonResponse(status: number, body: unknown) {
     text: async () => JSON.stringify(body),
   };
 }
+
+describe("AgentMail conversation reply lookup", () => {
+  const accountId = "account-qa";
+  const query = {
+    from: "sender@example.com",
+    subject: "Re: Founder QA: Readiness",
+    accountId,
+    scopedThreadId: mailboxScopedExternalId(accountId, "agentmail", "original-thread"),
+  };
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFetchWithTimeout.mockReset();
+  });
+
+  it("uses the exact mailbox thread even when a newer message has the same subject", async () => {
+    mockFetchWithTimeout.mockResolvedValue(
+      jsonResponse(200, {
+        messages: [
+          {
+            from: "sender@example.com",
+            thread_id: "different-thread",
+            message_id: "<wrong@example.com>",
+          },
+          {
+            from: "Sender <SENDER@example.com>",
+            thread_id: "original-thread",
+            message_id: "<right@example.com>",
+            references: ["<root@example.com>", "bad\r\nheader"],
+          },
+        ],
+      }),
+    );
+    await expect(findAgentMailReplyThreading("bot@example.com", "key", query)).resolves.toEqual({
+      inReplyTo: "<right@example.com>",
+      references: "<root@example.com> <right@example.com>",
+    });
+    expect(mockFetchWithTimeout.mock.calls[0][0]).toContain("/inboxes/bot%40example.com/messages?");
+    expect(mockConnect).not.toHaveBeenCalled();
+  });
+
+  it("matches the exact message identity used by existing IMAP imports", async () => {
+    mockFetchWithTimeout.mockResolvedValue(
+      jsonResponse(200, {
+        messages: [
+          {
+            from: query.from,
+            thread_id: "provider-thread",
+            message_id: "<imported@example.com>",
+          },
+        ],
+      }),
+    );
+    await expect(
+      findAgentMailReplyThreading("bot@example.com", "key", {
+        ...query,
+        scopedThreadId: mailboxScopedExternalId(accountId, "agentmail", "<imported@example.com>"),
+      }),
+    ).resolves.toEqual({
+      inReplyTo: "<imported@example.com>",
+      references: "<imported@example.com>",
+    });
+    expect(mockConnect).not.toHaveBeenCalled();
+  });
+
+  it("does not attach another mailbox, sender, or malformed message id", async () => {
+    mockFetchWithTimeout.mockResolvedValue(
+      jsonResponse(200, {
+        messages: [
+          {
+            from: "other@example.com",
+            thread_id: "original-thread",
+            message_id: "<other@example.com>",
+          },
+          {
+            from: query.from,
+            thread_id: "original-thread",
+            message_id: "<id>\r\nBcc: other@example.com",
+          },
+        ],
+      }),
+    );
+    await expect(findAgentMailReplyThreading("bot@example.com", "key", query)).resolves.toBeNull();
+    await expect(
+      findAgentMailReplyThreading("bot@example.com", "key", {
+        ...query,
+        accountId: "other-account",
+      }),
+    ).resolves.toBeNull();
+    expect(mockConnect).not.toHaveBeenCalled();
+  });
+
+  it("follows bounded pages and stops on a repeated cursor", async () => {
+    mockFetchWithTimeout.mockResolvedValue(
+      jsonResponse(200, { messages: [], next_page_token: "same" }),
+    );
+    await expect(findAgentMailReplyThreading("bot@example.com", "key", query)).resolves.toBeNull();
+    expect(mockFetchWithTimeout).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps a provider lookup failure unthreaded without guessing from a subject", async () => {
+    mockFetchWithTimeout.mockResolvedValue(jsonResponse(403, {}));
+    await expect(findAgentMailReplyThreading("bot@example.com", "key", query)).resolves.toBeNull();
+    expect(mockConnect).not.toHaveBeenCalled();
+  });
+});
 
 describe("agentmail-mail", () => {
   afterEach(() => vi.unstubAllEnvs());

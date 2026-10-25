@@ -35,9 +35,13 @@ describe("product documentation and compatibility contract", () => {
     expect(readme).toContain("**Connect and activate** a number");
     expect(readme).toContain("Studio / Operations");
     expect(readme).toContain("your Bot calling, email, and a Computer");
+    expect(readme).toContain("Public pages present calls, SMS, email, and Computer.");
     expect(readme).toContain(
-      "SMS, campaign calling, and unproven messaging integrations are outside launch promotion",
+      "verified sender, recipient permission, funding, and provider readiness",
     );
+    expect(readme).toContain("Current Shared Work Offer");
+    expect(readme).toContain("Legacy Package Compatibility");
+    expect(readme).toContain("Warm light is the first-visit web appearance");
     expect(readme).toContain("BotBound Personal is a paid plan");
     expect(readme).toContain("Paid packages include one Bot");
     expect(readme).toContain("Calls includes a local number; Email includes a managed mailbox.");
@@ -64,7 +68,7 @@ describe("product documentation and compatibility contract", () => {
       "The launch story is voice Bots with a computer, phone number, and email address.",
     );
     expect(readme).toContain(
-      "SMS and outbound are not launch marketing offers; legacy channel code, saved history, and allowed reviewed calling retain their entitlement and runtime policy boundaries.",
+      "Public pages present calls, SMS, email, and Computer; activation retains entitlement, verified sender, recipient permission, funding, and provider readiness checks.",
     );
     expect(readme).toContain("Training");
     expect(readme).toContain("BotBound Command");

@@ -8,6 +8,7 @@ const h = vi.hoisted(() => ({
     accountId: string | null;
     customerEmail: string | null;
     subject: string | null;
+    scopedThreadId?: string;
   },
   ledger: [] as Array<Record<string, unknown>>,
   messages: [] as Array<Record<string, unknown>>,
@@ -172,10 +173,12 @@ describe("sending an inbox reply", () => {
     expect(h.sendThreadReply).toHaveBeenCalledTimes(1);
   });
   it("replies once from the conversation's mailbox and adds it to the transcript", async () => {
+    h.thread!.scopedThreadId = "mailbox-scoped-original-thread";
     const result = await send();
 
     expect(h.sendThreadReply).toHaveBeenCalledWith({
       accountId: "00000000-0000-4000-8000-0000000000cc",
+      scopedThreadId: "mailbox-scoped-original-thread",
       to: "dana@example.com",
       subject: "Re: Quote for the kitchen",
       body: "Thanks, we can do Tuesday at 10.",

@@ -262,6 +262,7 @@ export async function sendEmailThreadReply(input: {
     .select({
       id: schema.emailThreads.id,
       accountId: schema.emailThreads.accountId,
+      scopedThreadId: schema.emailThreads.threadId,
       customerEmail: schema.emailThreads.customerEmail,
       subject: schema.emailThreads.subject,
     })
@@ -330,6 +331,7 @@ export async function sendEmailThreadReply(input: {
   try {
     outcome = await new IntegrationService(input.userId).sendThreadReply({
       accountId: thread.accountId,
+      ...(thread.scopedThreadId ? { scopedThreadId: thread.scopedThreadId } : {}),
       to,
       subject: replySubject(thread.subject ?? ""),
       body,

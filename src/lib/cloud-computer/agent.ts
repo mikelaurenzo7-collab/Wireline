@@ -15,7 +15,10 @@ export const CLOUD_COMPUTER_LIMITS = {
   maxTurns: 30,
   maxActions: 120,
   maxRunMs: 15 * 60_000,
-  maxOutputTokens: 2_048,
+  // Reasoning shares this budget with tool calls and the final report. A 2K
+  // ceiling can exhaust the first turn before a multi-page task opens a URL.
+  // turnReserveUsd includes this full ceiling before every request.
+  maxOutputTokens: 8_192,
   ownerReplyWaitMs: 10 * 60_000,
   ownerWaitBudgetMs: 20 * 60_000,
   maxOwnerQuestions: 5,

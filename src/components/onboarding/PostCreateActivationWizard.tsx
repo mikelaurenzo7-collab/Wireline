@@ -700,7 +700,7 @@ export default function PostCreateActivationWizard({
           ) : null}
           {step !== "complete" ? (
             <Button type="button" variant="ghost" size="sm" onClick={dismiss}>
-              Skip for Now
+              Finish Later
             </Button>
           ) : null}
           {step === "test" ? (
