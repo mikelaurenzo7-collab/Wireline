@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, Loader2, Mic, Play, RotateCcw, Square, Volume2 } from "lucide-react";
 
 import { authFetch } from "../../lib/api";
@@ -9,6 +9,8 @@ import OpenAILiveVoiceSandbox from "../OpenAILiveVoiceSandbox";
 import { StatusNotice } from "../molecules";
 import LiveVoiceCloneStudio, { LIVE_VOICE_ANCHOR_ID } from "./LiveVoiceCloneStudio";
 import VoiceClonePanel from "./VoiceClonePanel";
+import PhoneVoiceCatalog from "./PhoneVoiceCatalog";
+import type { CatalogPhoneVoice } from "../../lib/phone-voice-catalog";
 
 type SimpleVoicePickerProps = {
   agentId: string;
@@ -31,6 +33,7 @@ type AgentVoiceResponse = {
     phoneVoiceProvider?: string | null;
     phoneCall?: PhoneCallVoice;
     phoneCallReady?: boolean | null;
+    catalogVoice?: CatalogPhoneVoice | null;
   };
 };
 
@@ -62,6 +65,11 @@ export default function SimpleVoicePicker({
   const [phoneCall, setPhoneCall] = useState<PhoneCallVoice>(null);
   const [phoneCallReady, setPhoneCallReady] = useState<boolean | null>(null);
   const [clonedVoiceName, setClonedVoiceName] = useState<string | null>(null);
+  const [catalogVoice, setCatalogVoice] = useState<CatalogPhoneVoice | null>(null);
+  const handleActiveClone = useCallback((name: string | null) => {
+    setClonedVoiceName(name);
+    if (name) setCatalogVoice(null);
+  }, []);
   const [cloneCardEpoch, setCloneCardEpoch] = useState(0);
   // The voice that was live before the last pick, so a mis-tap is one tap to undo.
   const [undoVoice, setUndoVoice] = useState<VoiceOption | null>(null);
@@ -88,6 +96,7 @@ export default function SimpleVoicePicker({
     setUndoVoice(null);
     setChoicesOpen(false);
     setPhoneCall(null);
+    setCatalogVoice(null);
     if (!agentId || !ownerId) {
       setLoading(false);
       return;
@@ -117,6 +126,7 @@ export default function SimpleVoicePicker({
         );
         setSelectedVoiceId(managedVoice?.id ?? storedVoiceId);
         setPhoneCall(agentData.voice?.phoneCall ?? null);
+        setCatalogVoice(agentData.voice?.catalogVoice ?? null);
         setPhoneCallReady(
           typeof agentData.voice?.phoneCallReady === "boolean"
             ? agentData.voice.phoneCallReady
@@ -240,6 +250,7 @@ export default function SimpleVoicePicker({
       } | null;
       if (!response.ok) throw new Error(body?.error || "Voice could not be saved.");
       if (!isCurrentSave()) return;
+      setCatalogVoice(null);
       setPhoneCall(body?.voice?.phoneCall ?? null);
       setPhoneCallReady(
         typeof body?.voice?.phoneCallReady === "boolean" ? body.voice.phoneCallReady : null,
@@ -289,7 +300,10 @@ export default function SimpleVoicePicker({
 
   function renderVoice(voice: VoiceOption) {
     const selected =
-      !clonedVoiceName && selectedVoiceId === voice.id && selectedProvider === voice.provider;
+      !clonedVoiceName &&
+      !catalogVoice &&
+      selectedVoiceId === voice.id &&
+      selectedProvider === voice.provider;
     const saving = savingVoiceId === voice.id;
     return (
       <div
@@ -412,7 +426,7 @@ export default function SimpleVoicePicker({
           <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-2.5 py-3 wl-focus-ring-halo sm:px-3">
             <span className="min-w-0 flex-1">
               <span className="block break-words text-sm font-semibold text-foreground">
-                {clonedVoiceName
+                {clonedVoiceName || catalogVoice
                   ? `Built-In Voice · ${selectedVoice?.name.split("·")[0].trim() || "Choose"}`
                   : selectedVoice
                     ? selectedVoice.name.split("·")[0].trim()
@@ -448,18 +462,36 @@ export default function SimpleVoicePicker({
         </details>
       )}
 
-      {!loading && !selectedIsAvailable && !clonedVoiceName ? (
+      {!loading && ownerId ? (
+        <PhoneVoiceCatalog
+          key={`${ownerId}:${agentId}`}
+          agentId={agentId}
+          selected={catalogVoice}
+          onSelected={(voice) => {
+            stopSample();
+            setCatalogVoice(voice);
+            setClonedVoiceName(null);
+            setUndoVoice(null);
+            setNotice("Phone Voice Saved.");
+            setCloneCardEpoch((epoch) => epoch + 1);
+          }}
+        />
+      ) : null}
+
+      {!loading && !selectedIsAvailable && !clonedVoiceName && !catalogVoice ? (
         <StatusNotice tone="warning">Choose a voice before the next call.</StatusNotice>
       ) : null}
 
       <p className="text-xs leading-5 text-muted-foreground">
-        {clonedVoiceName
-          ? `Callers hear ${clonedVoiceName}. Rehearsals use the built-in voice.`
-          : phoneCall && phoneCallReady === false
-            ? "Finish phone setup to use this voice."
-            : phoneCallVoiceName(phoneCall)
-              ? `Callers hear ${phoneCallVoiceName(phoneCall)}, the closest phone voice to your rehearsal voice.`
-              : "Used for phone calls and browser rehearsals."}
+        {catalogVoice
+          ? `Callers Hear ${catalogVoice.name}. Rehearsal Uses Your Built-In Voice.`
+          : clonedVoiceName
+            ? `Callers hear ${clonedVoiceName}. Rehearsals use the built-in voice.`
+            : phoneCall && phoneCallReady === false
+              ? "Finish phone setup to use this voice."
+              : phoneCallVoiceName(phoneCall)
+                ? `Callers hear ${phoneCallVoiceName(phoneCall)}, the closest phone voice to your rehearsal voice.`
+                : "Used for phone calls and browser rehearsals."}
       </p>
       <button
         type="button"
@@ -488,7 +520,7 @@ export default function SimpleVoicePicker({
           stockVoiceId={phoneCall?.voice ?? selectedVoiceId}
           botPhone={botPhone}
           anchorId={cloneAnchorId}
-          onActiveVoiceChange={setClonedVoiceName}
+          onActiveVoiceChange={handleActiveClone}
         />
       ) : null}
       {ownerId ? (

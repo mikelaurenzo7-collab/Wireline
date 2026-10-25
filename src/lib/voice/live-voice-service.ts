@@ -72,6 +72,7 @@ import {
 } from "./clone-engine-selection";
 import { stockFallbackVoiceFor } from "./xai-voice-config";
 import { voiceSampleLine } from "./voice-sample";
+import { PHONE_CATALOG_VOICE_KEY } from "../phone-voice-catalog";
 
 /** Per-account cap on every engine; each engine also has a shared workspace/team ceiling. */
 export const LIVE_VOICE_MAX_PER_ACCOUNT = 2;
@@ -730,6 +731,7 @@ export const liveVoiceService = {
         selectedAt: new Date().toISOString(),
       },
     };
+    delete (variables as Record<string, unknown>)[PHONE_CATALOG_VOICE_KEY];
     await inTenant(actor.id, () =>
       drizzle
         .update(schema.agents)
@@ -755,6 +757,7 @@ export const liveVoiceService = {
     if (!agent) throw AppError.notFound("Bot not found.");
     const variables = { ...asRecord(agent.businessVariables) };
     delete variables[LIVE_CUSTOM_VOICE_KEY];
+    delete variables[PHONE_CATALOG_VOICE_KEY];
     await inTenant(actor.id, () =>
       drizzle
         .update(schema.agents)

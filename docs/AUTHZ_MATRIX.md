@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 458
-**Protected:** 371
+**Routes scanned:** 460
+**Protected:** 373
 **Public (allowlisted):** 87
 **Violations:** 0
 
@@ -123,6 +123,8 @@
 | agent-routes-v2.ts | PATCH | `/api/agent-config/:id/business` | inline | — | — | Protected |
 | agent-routes-v2.ts | PATCH | `/api/agent-config/:id/directive/:rowId` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/agent-config/:id/manual` | inline | — | — | Protected |
+| agent-routes-v2.ts | PATCH | `/api/agent-config/:id/phone-voice` | inline | — | — | Protected |
+| agent-routes-v2.ts | GET | `/api/agent-config/:id/phone-voices` | inline | — | — | Protected |
 | agent-routes-v2.ts | PATCH | `/api/agent-config/:id/playbook` | inline | — | — | Protected |
 | agent-routes-v2.ts | PATCH | `/api/agent-config/:id/runtime` | inline | — | — | Protected |
 | agent-routes-v2.ts | PATCH | `/api/agent-config/:id/voice` | inline | — | — | Protected |

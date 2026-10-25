@@ -1,5 +1,6 @@
 import type { SpeechStream } from "./elevenlabs-media-session";
 import { ELEVENLABS_SPEECH_MODEL, ELEVENLABS_SPEECH_SETTINGS } from "./elevenlabs-speech-settings";
+import { CARTESIA_API_VERSION, CARTESIA_SPEECH_MODEL } from "./phone-catalog-service";
 
 export const clonedStockVoice = (gender: "female" | "male" | null): "nova" | "onyx" =>
   gender === "male" ? "onyx" : "nova";
@@ -80,17 +81,19 @@ async function* responseBytes(response: Response): AsyncIterable<Uint8Array> {
 export function clonedSpeechStreams(input: {
   voiceId: string;
   elevenLabsKey: string;
+  cartesiaKey?: string;
+  speechProvider?: "elevenlabs" | "cartesia";
   openAIKey: string;
   stockVoice: string;
   fetchImpl?: typeof fetch;
   /** Reserve provider cost before each synthesis attempt; errors fail closed. */
-  reserve: (provider: "elevenlabs" | "openai", text: string) => Promise<void>;
+  reserve: (provider: "elevenlabs" | "cartesia" | "openai", text: string) => Promise<void>;
 }): { cloneSpeech: SpeechStream; stockSpeech: SpeechStream } {
   const request = input.fetchImpl ?? fetch;
   // Keep audio continuity within this call and utterance. Text context alone
   // cannot carry the preceding generation's actual cadence or voice delivery.
   let completedSpeech = { text: "", requestIds: [] as string[] };
-  const stream = (provider: "elevenlabs" | "openai"): SpeechStream =>
+  const stream = (provider: "elevenlabs" | "cartesia" | "openai"): SpeechStream =>
     async function* (text, signal, context) {
       if (signal.aborted) return;
       await input.reserve(provider, text);
@@ -130,20 +133,37 @@ export function clonedSpeechStreams(input: {
                   }),
                 },
               )
-            : await request("https://api.openai.com/v1/audio/speech", {
-                method: "POST",
-                signal: combined,
-                headers: {
-                  Authorization: `Bearer ${input.openAIKey}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  model: "tts-1",
-                  voice: input.stockVoice,
-                  input: text,
-                  response_format: "pcm",
-                }),
-              });
+            : provider === "cartesia"
+              ? await request("https://api.cartesia.ai/tts/bytes", {
+                  method: "POST",
+                  signal: combined,
+                  redirect: "error",
+                  headers: {
+                    Authorization: `Bearer ${input.cartesiaKey}`,
+                    "Cartesia-Version": CARTESIA_API_VERSION,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    model_id: CARTESIA_SPEECH_MODEL,
+                    transcript: text,
+                    voice: input.voiceId,
+                    output_format: { container: "raw", encoding: "pcm_mulaw", sample_rate: 8000 },
+                  }),
+                })
+              : await request("https://api.openai.com/v1/audio/speech", {
+                  method: "POST",
+                  signal: combined,
+                  headers: {
+                    Authorization: `Bearer ${input.openAIKey}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    model: "tts-1",
+                    voice: input.stockVoice,
+                    input: text,
+                    response_format: "pcm",
+                  }),
+                });
         const bytes =
           provider === "openai" ? pcm24ToMulaw(responseBytes(response)) : responseBytes(response);
         let receivedBytes = 0;
@@ -165,5 +185,8 @@ export function clonedSpeechStreams(input: {
         clearTimeout(firstByteTimer);
       }
     };
-  return { cloneSpeech: stream("elevenlabs"), stockSpeech: stream("openai") };
+  return {
+    cloneSpeech: stream(input.speechProvider ?? "elevenlabs"),
+    stockSpeech: stream("openai"),
+  };
 }
