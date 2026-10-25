@@ -70,6 +70,7 @@ describe("cloud browser address checks", () => {
 describe("hosted browser context isolation", () => {
   const browserFixture = () => {
     const vendorPage = {
+      isClosed: () => false,
       url: () => "https://another-customer.example/account",
       setViewportSize: vi.fn(async () => undefined),
       on: vi.fn(),
@@ -80,6 +81,7 @@ describe("hosted browser context isolation", () => {
       cookies: vi.fn(async () => [{ name: "another-session", value: "private" }]),
     };
     const isolatedPage = {
+      isClosed: () => false,
       url: () => "about:blank",
       setViewportSize: vi.fn(async () => undefined),
       on: vi.fn(),
