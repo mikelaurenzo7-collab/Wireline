@@ -192,6 +192,11 @@ const recommended = [
 ];
 
 const optional = [
+  [
+    "ELEVENLABS_API_KEY",
+    "Speech key for explicitly enabled live cloning; configure on API and voice worker",
+  ],
+  ["LIVE_VOICE_CLONE_ENABLED", "Explicit cloning rollout gate; leave false until approval"],
   ["PLATFORM_SMS_FROM", "Optional registered sender for platform SMS alerts; unset disables them"],
   [
     "CLOUD_COMPUTER_BROWSER_WS_URL",
@@ -237,7 +242,6 @@ const optional = [
 ];
 
 const retiredVoiceEnvKeys = [
-  "ELEVENLABS_API_KEY",
   "VITE_VAPI_PUBLIC_KEY",
   "VAPI_PRIVATE_KEY",
   "VAPI_WEBHOOK_SECRET",

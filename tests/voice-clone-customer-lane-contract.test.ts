@@ -104,12 +104,12 @@ describe("customer voice clone lane contract", () => {
     expect(migration).toContain("Voice clone preview ledger rows are immutable");
   });
 
-  it("expires due customer assets from the existing jobs sweep behind the customer flag", () => {
+  it("expires due customer assets even when new customer access is disabled", () => {
     expect(service).toContain("async expireDue(now: Date = deps.now())");
     expect(service).toContain("deps.repository.dueForExpiry(now, VOICE_CLONE_EXPIRY_BATCH)");
     expect(service).toContain('"voice_asset_expire"');
     expect(service).toContain('"expired"');
-    expect(jobRoutes).toContain('process.env.VOICE_CLONE_CUSTOMER_ENABLED === "true"');
+    expect(jobRoutes).not.toContain('process.env.VOICE_CLONE_CUSTOMER_ENABLED === "true"');
     expect(jobRoutes).toContain("voiceAssetService.expireDue()");
     expect(jobRoutes).toContain("voice_clone_assets_expired");
   });

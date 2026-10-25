@@ -56,18 +56,18 @@ function setup(cloneSpeech: SpeechStream = audio, markTimeoutMs = 1000, initialS
   session.on("message", (value) => events.push(JSON.parse(String(value))));
   model.emit("open");
   model.receive({ type: "session.updated" });
-  const speak = (text = "Hello there.") => {
-    model.receive({ type: "response.created", response: { id: "r1" } });
+  const speak = (text = "Hello there.", responseId = "r1") => {
+    model.receive({ type: "response.created", response: { id: responseId } });
     model.receive({
       type: "response.output_text.delta",
-      response_id: "r1",
+      response_id: responseId,
       item_id: "item1",
       delta: text,
     });
-    model.receive({ type: "response.output_text.done", response_id: "r1" });
+    model.receive({ type: "response.output_text.done", response_id: responseId });
     model.receive({
       type: "response.done",
-      response: { id: "r1", status: "completed", usage: { total_tokens: 5 } },
+      response: { id: responseId, status: "completed", usage: { total_tokens: 5 } },
     });
   };
   const acknowledge = () => {
@@ -90,14 +90,22 @@ function setup(cloneSpeech: SpeechStream = audio, markTimeoutMs = 1000, initialS
 describe("cloned phone media", () => {
   it("uses stock speech when the clone was revoked between routing and admission", async () => {
     let cloneRequests = 0;
-    const clone: SpeechStream = async function* () { cloneRequests++; yield new Uint8Array([1]); };
+    const clone: SpeechStream = async function* () {
+      cloneRequests++;
+      yield new Uint8Array([1]);
+    };
     const s = setup(clone, 1000, true);
-    s.speak(); await tick(); s.acknowledge(); await tick();
+    s.speak();
+    await tick();
+    s.acknowledge();
+    await tick();
     expect(cloneRequests).toBe(0);
     expect(s.fallback()).toBe(1);
     expect(s.played()).toBe(0);
-    expect(s.events.find(e => e.type === "botbound.voice_fallback")?.reason).toBe("clone_unavailable");
-    expect(s.events.some(e => e.type === "response.done")).toBe(true);
+    expect(s.events.find((e) => e.type === "botbound.voice_fallback")?.reason).toBe(
+      "clone_unavailable",
+    );
+    expect(s.events.some((e) => e.type === "response.done")).toBe(true);
     s.session.close();
   });
   it("requires real carrier playback before confirming disclosure/transcript and releasing response completion", async () => {
@@ -129,6 +137,45 @@ describe("cloned phone media", () => {
     expect(s.model.sent.some((e) => e.type === "conversation.item.delete")).toBe(true);
     s.session.close();
   });
+  it("retains completion and usage when the caller interrupts after model completion", async () => {
+    const s = setup();
+    s.speak();
+    await tick();
+    s.model.receive({ type: "input_audio_buffer.speech_started" });
+    await tick();
+    expect(s.events.filter((e) => e.type === "response.done")).toEqual([
+      {
+        type: "response.done",
+        response: { id: "r1", status: "completed", usage: { total_tokens: 5 } },
+      },
+    ]);
+    s.acknowledge();
+    await tick();
+    expect(s.played()).toBe(0);
+    expect(s.events.some((e) => e.type === "response.output_audio_transcript.delta")).toBe(false);
+
+    s.model.receive({ type: "input_audio_buffer.speech_stopped" });
+    s.speak("I can help with that.", "r2");
+    await tick();
+    s.acknowledge();
+    await tick();
+    const completed = s.events.filter((e) => e.type === "response.done");
+    expect(completed.map((e) => e.response.id)).toEqual(["r1", "r2"]);
+    expect(completed.reduce((sum, e) => sum + e.response.usage.total_tokens, 0)).toBe(10);
+    s.session.close();
+    expect(s.events.filter((e) => e.type === "response.done")).toHaveLength(2);
+  });
+  it("settles completed model work when the caller hangs up before playback finishes", async () => {
+    const s = setup();
+    s.speak();
+    await tick();
+    s.carrier.close();
+    await tick();
+    expect(s.events.filter((e) => e.type === "response.done")).toHaveLength(1);
+    expect(s.events.find((e) => e.type === "response.done")?.response.usage.total_tokens).toBe(5);
+    expect(s.played()).toBe(0);
+    expect(s.session.readyState).toBe(3);
+  });
   it("cancels in-flight synthesis and drops late chunks after interruption", async () => {
     let release!: () => void;
     const blocked: SpeechStream = async function* () {
@@ -141,6 +188,7 @@ describe("cloned phone media", () => {
     s.speak();
     await tick();
     s.model.receive({ type: "input_audio_buffer.speech_started" });
+    expect(s.events.filter((e) => e.type === "response.done")).toHaveLength(1);
     release();
     await tick();
     expect(s.carrier.sent.some((e) => e.event === "media")).toBe(false);

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("production voice runtime policy", () => {
-  it("keeps audio-file generators out of live PSTN voice routing", () => {
+  it("keeps sample generators out of live routing and delegates cloned media to its signed bridge", () => {
     const policy = read("docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md");
     expect(policy).toContain(
       "Twilio carrier/PSTN through signed BotBound routing to the admitted voice provider",
@@ -18,12 +18,15 @@ describe("production voice runtime policy", () => {
     for (const path of [
       "src/lib/voice/realtime-sip-target.ts",
       "src/lib/voice/openai-phone-agent-runtime.ts",
-      "src/lib/voice/openai-sip-session.ts",
     ]) {
       expect(read(path), path).not.toMatch(
         /elevenlabs|11labs|synthesizeVoiceSample|\/audio\/speech|text-to-speech/i,
       );
     }
+    const session = read("src/lib/voice/openai-sip-session.ts");
+    expect(session).toContain("createClonedMediaSession");
+    expect(session).not.toMatch(/synthesizeVoiceSample|\/audio\/speech|text-to-speech/i);
+    expect(read("src/lib/voice/elevenlabs-media-bridge.ts")).toContain("twilio.validateRequest");
   });
 
   it("labels only documented OpenAI voices as live phone voices", () => {
@@ -51,7 +54,7 @@ describe("production voice runtime policy", () => {
     const catalog = read("src/lib/voice-catalog.ts");
     expect(policy).toContain("## Cloned live voices");
     expect(policy).toContain("never the reference audio");
-    expect(policy).toContain("the call is never dropped");
+    expect(policy).toContain("loss of both speech paths ends the session explicitly");
     expect(policy).toContain(
       "The disabled platform-admin private-preview foundation and ElevenLabs",
     );

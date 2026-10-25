@@ -787,10 +787,17 @@ describe("customer voice clone preview lane", () => {
     );
   });
 
-  it("keeps the retention sweep inert while the customer lane is off", async () => {
-    const { service, repo } = setup();
-    expect(await service.expireDue(now)).toBe(0);
-    expect(repo.dueForExpiry).not.toHaveBeenCalled();
+  it("destroys expired customer references even after the customer lane is switched off", async () => {
+    const { service, repo, rows } = setup();
+    const due = { ...rows.get(id)!, ...customerFields(new Date(now.getTime() - DAY_MS)) };
+    vi.mocked(repo.dueForExpiry).mockResolvedValue([due]);
+    expect(await service.expireDue(now)).toBe(1);
+    expect(repo.dueForExpiry).toHaveBeenCalledWith(now, VOICE_CLONE_EXPIRY_BATCH);
+    expect(rows.get(id)).toMatchObject({
+      status: "deleted",
+      secretEncrypted: null,
+      deletedReason: "retention_expired",
+    });
   });
 
   it("skips rows that are not due or were concurrently changed without failing the batch", async () => {

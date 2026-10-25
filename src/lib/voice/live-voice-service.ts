@@ -115,11 +115,11 @@ function asRecord(value: unknown): Record<string, unknown> {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
- * Configured voice cloning is available by default. Operators retain an
- * explicit emergency kill switch; consent and ownership checks always apply.
+ * Provider credentials do not grant rollout approval. Cloning stays off until
+ * explicitly enabled; consent and ownership checks always apply.
  */
 export function liveVoiceCloneEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  if (env.LIVE_VOICE_CLONE_ENABLED === "false") return false;
+  if (env.LIVE_VOICE_CLONE_ENABLED !== "true") return false;
   return cloneEngine("xai").configured() || cloneEngine("elevenlabs").configured();
 }
 

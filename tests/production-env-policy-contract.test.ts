@@ -150,7 +150,7 @@ describe("production environment launch policy", () => {
     expect(envValidator).toContain("least-privilege rk_live_");
   });
 
-  it("removes ElevenLabs from the OpenAI-only inventory and rejects stale inheritance", () => {
+  it("allows the current clone speech key while keeping retired providers and preview inheritance blocked", () => {
     const registryBlock = envValidator.slice(
       envValidator.indexOf("export const ENV_REGISTRY"),
       envValidator.indexOf("export function validateEnv"),
@@ -160,13 +160,21 @@ describe("production environment launch policy", () => {
       prodCheck.indexOf("const retiredVoiceEnvKeys = ["),
     );
 
-    expect(registryBlock).not.toContain('name: "ELEVENLABS_API_KEY"');
+    expect(registryBlock).toContain('name: "ELEVENLABS_API_KEY"');
     expect(envValidator).toContain("const retiredVoiceEnv");
-    expect(envValidator).toContain('"ELEVENLABS_API_KEY",');
-    expect(productionInventory).not.toContain("ELEVENLABS_API_KEY");
+    expect(envValidator.slice(envValidator.indexOf("const retiredVoiceEnv = ["))).not.toContain(
+      '"ELEVENLABS_API_KEY",',
+    );
+    expect(productionInventory).toContain("ELEVENLABS_API_KEY");
     expect(prodCheck).toContain("const retiredVoiceEnvKeys");
-    expect(prodCheck).toContain('"ELEVENLABS_API_KEY",');
-    expect(envExample).not.toContain("ELEVENLABS_API_KEY");
+    expect(prodCheck.slice(prodCheck.indexOf("const retiredVoiceEnvKeys = ["))).not.toContain(
+      '"ELEVENLABS_API_KEY",',
+    );
+    expect(envExample).toContain("ELEVENLABS_API_KEY=");
+    expect(envExample).toContain("LIVE_VOICE_CLONE_ENABLED=false");
+    const preview = runPreviewBoundary({ ELEVENLABS_API_KEY: "configured" });
+    expect(preview.status).toBe(1);
+    expect(`${preview.stdout}${preview.stderr}`).toContain("ELEVENLABS_API_KEY");
   });
 
   it("pins every production-generated URL to the exact BotBound origin", () => {

@@ -446,11 +446,11 @@ Repository branch protection and required checks should be enabled as soon as th
 
 ### OpenAI and Twilio
 
-OpenAI Realtime is the managed browser voice runtime and the default telephone runtime. Twilio owns customer numbers, PSTN transport, and SMS. Vapi is retired.
+xAI is the default stock telephone runtime, with OpenAI Realtime as the fallback. OpenAI Realtime also owns browser rehearsals. Cloned ElevenLabs calls use the media bridge below. Twilio owns customer numbers, PSTN transport, and SMS. Vapi is retired.
 
 ### ElevenLabs cloned phone voices
 
-Cloning is available when a clone provider is configured, unless `LIVE_VOICE_CLONE_ENABLED=false` explicitly disables it. For ElevenLabs calls, configure `ELEVENLABS_API_KEY`, `OPENAI_API_KEY`, and `LIVE_VOICE_CLONE_ENABLED=true` on both the API and persistent voice worker. Keep the existing Twilio credentials, worker service secret, and worker URL aligned. The worker can use its `RENDER_EXTERNAL_URL` for its own public origin. Never copy production keys into local development.
+Cloning stays off unless `LIVE_VOICE_CLONE_ENABLED=true` explicitly enables the approved rollout. Provider credentials alone never enable it. For ElevenLabs calls, configure `ELEVENLABS_API_KEY` and `OPENAI_API_KEY` on both the API and persistent voice worker, then enable the clone flag on both only when the rollout is approved. Keep the existing Twilio credentials, worker service secret, and worker URL aligned. The worker can use its `RENDER_EXTERNAL_URL` for its own public origin. Never copy production keys into local development.
 
 An assigned ElevenLabs voice uses signed Twilio bidirectional Media Streams at `/api/voice/cloned-media`; the API must route that public WebSocket path directly to the worker. OpenAI Realtime handles caller audio, reasoning, and tools with text-only output; ElevenLabs streams telephone-format speech. The internal `/api/voice/cloned-media/admit` endpoint requires the worker service secret, a registered stream, a signed routing token, and a matching persisted parent call SID. Existing account/Bot deletion, funding, capacity, and call-duration gates still apply.
 
@@ -469,7 +469,7 @@ Cutover, on the release commit:
 3. As a platform admin, `POST /api/voice/xai/registrations/sync`. Each assigned number is registered with xAI (`origin: byo_trunk`) with generated SIP digest credentials. Its one-time webhook secret is stored as a secret-vault envelope in `wireline_xai_phone_registrations`, which only root (non-tenant) database access can read. `GET /api/voice/xai/status` lists registered phone suffixes.
 4. Place one inbound and one approved outbound call and confirm disclosure playback, transcript, tool use, and hangup.
 
-A number that is not registered keeps answering on OpenAI, so the cutover never strands a line. New lines register automatically when xAI is on, and released lines are deregistered. To roll back, unset `WIRELINE_PHONE_VOICE_PROVIDER` and redeploy; calls already running on xAI finish there.
+A number that is not registered keeps answering on OpenAI, so the cutover never strands a line. New lines register automatically when xAI is on, and released lines are deregistered. To roll back, set `WIRELINE_PHONE_VOICE_PROVIDER=openai` and follow the drain/deploy procedure; leaving it unset selects xAI. Calls already running on xAI finish there.
 
 The persistent worker is required for production SIP admission. Full business calls default to 60 minutes; private rehearsals and message-taking retain their documented shorter limits. Check both deployed duration settings and an actual long call before advertising the longer runtime as available.
 

@@ -261,9 +261,11 @@ describe("clone engine selection", () => {
     ).toBe("elevenlabs");
   });
 
-  it("configured cloning is available by default, with an explicit kill switch", () => {
+  it("requires explicit opt-in even when a clone provider is configured", () => {
     vi.stubEnv("LIVE_VOICE_CLONE_ENABLED", "");
     vi.stubEnv("ELEVENLABS_API_KEY", "test-eleven-key");
+    expect(liveVoiceCloneEnabled()).toBe(false);
+    vi.stubEnv("LIVE_VOICE_CLONE_ENABLED", "true");
     expect(liveVoiceCloneEnabled()).toBe(true);
     vi.stubEnv("LIVE_VOICE_CLONE_ENABLED", "false");
     expect(liveVoiceCloneEnabled()).toBe(false);

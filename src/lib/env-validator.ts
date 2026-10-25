@@ -239,6 +239,22 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     formatHint: `USD amount >= ${OPENAI_REALTIME_SESSION_MINIMUM_RESERVE_USD.toFixed(2)}`,
   },
   {
+    name: "ELEVENLABS_API_KEY",
+    group: "ai",
+    required: false,
+    description: "Server-side speech key for explicitly enabled live cloning",
+    validate: (value) => /^[!-~]{1,512}$/.test(value),
+    formatHint: "Provider key without whitespace; configure only in the intended environment",
+  },
+  {
+    name: "LIVE_VOICE_CLONE_ENABLED",
+    group: "ai",
+    required: false,
+    description: "Explicit live-cloning rollout gate; credentials alone never enable it",
+    validate: (value) => value === "true" || value === "false",
+    formatHint: "true or false; leave false until rollout approval",
+  },
+  {
     name: "BOTBOUND_ELEVENLABS_VOICE_ENABLED",
     group: "ai",
     required: false,
@@ -824,7 +840,6 @@ export function validateEnv(): EnvValidationResult {
   // presence as a deployment error so stale Vercel variables cannot silently
   // reactivate or imply support for a removed provider.
   const retiredVoiceEnv = [
-    "ELEVENLABS_API_KEY",
     "VITE_VAPI_PUBLIC_KEY",
     "VAPI_PRIVATE_KEY",
     "VAPI_WEBHOOK_SECRET",

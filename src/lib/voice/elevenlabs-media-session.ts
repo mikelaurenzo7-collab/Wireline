@@ -54,6 +54,7 @@ export class ElevenLabsMediaSession extends EventEmitter {
   private speaking = false;
   private modelResponding = false;
   private cancelledResponses = new Set<string>();
+  private pendingCompletions = new Set<Event>();
   private initialized = false;
   private marks = new Map<
     string,
@@ -102,6 +103,12 @@ export class ElevenLabsMediaSession extends EventEmitter {
 
   private event(event: Event) {
     this.emit("message", Buffer.from(JSON.stringify(event)));
+  }
+  private finishResponse(event: Event) {
+    if (this.pendingCompletions.delete(event)) this.event(event);
+  }
+  private flushCompletions() {
+    for (const event of this.pendingCompletions) this.finishResponse(event);
   }
   private modelSend(event: Event) {
     if (this.options.model.readyState === 1) this.options.model.send(JSON.stringify(event));
@@ -245,19 +252,22 @@ export class ElevenLabsMediaSession extends EventEmitter {
       this.enqueueSpeech(this.text);
       this.text = "";
       const generation = this.generation;
+      this.pendingCompletions.add(event);
       // Usage and tool outputs remain intact, but do not run the next turn
-      // while synthesized speech from this response is still playing.
+      // while synthesized speech from this response is still playing. Clear
+      // and close flush these completions even if synthesis never resolves.
       this.work = this.work.then(() => {
-        if (generation !== this.generation || this.readyState !== 1) return;
-        if (this.speaking) {
-          this.speaking = false;
-          this.event({
-            type: "output_audio_buffer.stopped",
-            response_id: event.response?.id,
-          });
+        if (generation === this.generation && this.readyState === 1) {
+          if (this.speaking) {
+            this.speaking = false;
+            this.event({
+              type: "output_audio_buffer.stopped",
+              response_id: event.response?.id,
+            });
+          }
+          this.itemId = "";
         }
-        this.itemId = "";
-        this.event(event);
+        this.finishResponse(event);
       });
       return;
     }
@@ -415,6 +425,9 @@ export class ElevenLabsMediaSession extends EventEmitter {
       type: "output_audio_buffer.cleared",
       response_id: this.responseId,
     });
+    // Cancelling audible speech cannot undo already-completed model work.
+    // Release its lifecycle/usage event once, without claiming playback.
+    this.flushCompletions();
   }
 
   ping() {
@@ -425,6 +438,7 @@ export class ElevenLabsMediaSession extends EventEmitter {
   }
   close(code = 1000, reason = "Call ended") {
     if (this.readyState === 3) return;
+    this.flushCompletions();
     this.readyState = 3;
     this.controller.abort();
     for (const mark of this.marks.values()) {

@@ -10,7 +10,7 @@ stable policy path used by release checklists.
 
 | Surface              | Production path                                                                    | Policy                                                                                                                                                  |
 | -------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Phone calls          | Twilio carrier/PSTN through signed BotBound routing to the admitted voice provider | xAI voice by default for every number; lines register with xAI automatically and OpenAI Realtime is the fallback. The admitted call keeps its provider. |
+| Phone calls          | Twilio carrier/PSTN through signed BotBound routing to the admitted voice provider | xAI voice by default for every number; lines register with xAI automatically and OpenAI Realtime is the fallback. Eligible inbound calls can recover through OpenAI during the call. |
 | Browser/mobile voice | Authenticated same-origin BotBound SDP exchange → OpenAI Realtime WebRTC           | Private Studio rehearsals and authenticated ChatGPT simulation only; public and guest audio/call demos are retired                                      |
 | SMS                  | Twilio signed webhooks and Messaging Service/number                                | Twilio owns sender and carrier delivery only                                                                                                            |
 | Presenter/video      | Retired live-video compatibility surface                                           | Presenter identity never becomes the phone voice; phone fallback is OpenAI                                                                              |
@@ -26,16 +26,22 @@ normalize at the application and database boundaries. Browser rehearsals use tha
 
 ## Cloned live voices
 
-Customers may clone their own voice (or a speaker who authorized it) and use it
-on live xAI phone calls. The flow requires an explicit consent record
+Cloning remains off until `LIVE_VOICE_CLONE_ENABLED=true` explicitly enables an
+approved rollout. Customers may then clone their own voice (or a speaker who
+authorized it). Native xAI calls use an entitled custom-voice provider route;
+ElevenLabs calls use the signed Twilio Media Stream bridge with OpenAI Realtime
+reasoning, ElevenLabs speech, and OpenAI stock-speech recovery. The flow requires an explicit consent record
 (`live-voice-clone-consent-v1-2026-10-24`), passes a local quality check, and
 creates the voice natively at the voice provider; BotBound stores only the
 provider voice id, a SHA-256 of the reference, its duration and quality score,
 never the reference audio. Each account may keep two cloned voices. Deleting a
 voice, or the account, deletes it at the provider. If a cloned voice errors or
 misses the reply budget twice in a row on a call, that call switches silently to
-the Bot's stock voice and is logged; the call is never dropped. Calls that fall
-back to OpenAI speak the stock voice.
+the Bot's stock voice and is logged. Recovery preserves the carrier call when
+possible; loss of both speech paths ends the session explicitly. Calls that fall
+back to OpenAI speak the stock voice. Playback marks, rather than completed text
+generation, establish verified cloned speech; interruption must still settle
+completed model usage and tool lifecycle events exactly once.
 
 The disabled platform-admin private-preview foundation and ElevenLabs
 read-only operator diagnostics remain documented in
@@ -56,4 +62,4 @@ Before general availability, prove all of the following on the exact release com
 
 The accurate product promise is:
 
-> BotBound offers 10 built-in voice choices and keeps a consistent voice during each active session. Private browser rehearsal uses OpenAI Realtime. Phone calls run on xAI voice by default with OpenAI Realtime as the fallback; each admitted call stays with its provider. Customers can clone a consented voice for live calls, with an automatic switch to the stock voice if it misbehaves. Twilio provides carrier transport, numbers, and SMS.
+> BotBound offers 10 built-in voice choices. Private browser rehearsal uses OpenAI Realtime. Stock phone calls use xAI by default, with OpenAI recovery for eligible inbound calls. Consented cloning remains off pending rollout approval and a verified phone conversation. When enabled, the cloned-speech route can recover through a stock voice. Twilio provides carrier transport, numbers, and SMS.
