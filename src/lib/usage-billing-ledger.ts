@@ -277,6 +277,7 @@ export async function admitUsage(
   if (
     !identity.usagePlanActive ||
     !period ||
+    identity.stripeCustomerId !== period.stripeCustomerId ||
     period.blockedReason ||
     now < period.startsAt.getTime() ||
     now >= period.endsAt.getTime()

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   USAGE_REPORT_MAX_AGE_MS,
   USAGE_REPORT_RETRY_WINDOW_MS,
@@ -26,6 +26,13 @@ import type { UsageMeterKey } from "../src/lib/usage-billing-catalog";
 const USER = "user-1";
 const PERIOD = "2026-11-01";
 const NOW = new Date("2026-10-24T12:00:00Z");
+
+beforeEach(() => {
+  vi.spyOn(Date, "now").mockReturnValue(NOW.getTime());
+});
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 type Row = UsageEventRow & { billable: number | null; reason: string | null };
 
@@ -365,6 +372,14 @@ describe("usage reconciliation holds", () => {
   it("never guesses a period when the Stripe snapshot is missing", async () => {
     const { store, periods } = memoryStore();
     periods.clear();
+    await expect(admitUsage(store, USER, "call_minutes")).rejects.toMatchObject({
+      statusCode: 503,
+    });
+  });
+
+  it("refuses admission when the current customer differs from the period snapshot", async () => {
+    const { store, identity } = memoryStore();
+    identity.stripeCustomerId = "cus_different";
     await expect(admitUsage(store, USER, "call_minutes")).rejects.toMatchObject({
       statusCode: 503,
     });

@@ -44,6 +44,7 @@ export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   { table: "wireline_live_voices", userColumns: ["user_id"] },
   // Usage billing ledger and spend controls. Stripe keeps the invoice record.
   { table: "wireline_usage_meter_events", userColumns: ["user_id"] },
+  { table: "wireline_usage_billing_periods", userColumns: ["user_id"] },
   { table: "wireline_usage_spend_controls", userColumns: ["user_id"] },
   { table: "wireline_audit_log", userColumns: ["user_id"] },
   { table: "wireline_signal_presence", userColumns: ["user_id"] },
