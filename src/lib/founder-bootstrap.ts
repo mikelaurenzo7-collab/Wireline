@@ -14,6 +14,7 @@ import {
 import { FOUNDER_EFFECTIVE_PLAN_ID } from "./plan-entitlements";
 import { getErrorMessage } from "./server-utils";
 import { ensureFounderShowcaseBots } from "./founder-showcase-seed";
+import { withBillingEntitlementLease } from "./stripe-subscription-sync-lease";
 
 const bootstrapInFlight = new Set<string>();
 
@@ -25,45 +26,49 @@ export interface FounderBootstrapResult {
 
 /** Upsert enterprise subscription so billing + entitlements match owner dogfood. */
 export async function ensureFounderEnterpriseSubscription(userId: string): Promise<void> {
-  const currentPeriodEnd = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
-  await drizzle
-    .insert(schema.subscriptions)
-    .values({
-      userId,
-      plan: FOUNDER_EFFECTIVE_PLAN_ID,
-      status: "active",
-      entitlementSource: "demo",
-      grantReason: "founder_dogfood",
-      currentPeriodEnd,
-      cancelAtPeriodEnd: false,
-    })
-    .onConflictDoUpdate({
-      target: [schema.subscriptions.userId],
-      set: {
+  return withBillingEntitlementLease(userId, async (assertOwned) => {
+    const currentPeriodEnd = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+    await assertOwned();
+    await drizzle
+      .insert(schema.subscriptions)
+      .values({
+        userId,
         plan: FOUNDER_EFFECTIVE_PLAN_ID,
         status: "active",
         entitlementSource: "demo",
         grantReason: "founder_dogfood",
         currentPeriodEnd,
         cancelAtPeriodEnd: false,
-        updatedAt: new Date(),
-      },
-    });
+      })
+      .onConflictDoUpdate({
+        target: [schema.subscriptions.userId],
+        set: {
+          plan: FOUNDER_EFFECTIVE_PLAN_ID,
+          status: "active",
+          entitlementSource: "demo",
+          grantReason: "founder_dogfood",
+          currentPeriodEnd,
+          cancelAtPeriodEnd: false,
+          updatedAt: new Date(),
+        },
+      });
 
-  await drizzle
-    .insert(schema.settings)
-    .values({
-      id: userId,
-      userId,
-      subscriptionStatus: "active",
-    })
-    .onConflictDoUpdate({
-      target: schema.settings.userId,
-      set: {
+    await assertOwned();
+    await drizzle
+      .insert(schema.settings)
+      .values({
+        id: userId,
+        userId,
         subscriptionStatus: "active",
-        updatedAt: new Date(),
-      },
-    });
+      })
+      .onConflictDoUpdate({
+        target: schema.settings.userId,
+        set: {
+          subscriptionStatus: "active",
+          updatedAt: new Date(),
+        },
+      });
+  });
 }
 
 /**

@@ -11,6 +11,10 @@ function installSendMocks(options: {
   countryCode?: string;
   failPersistence?: boolean;
   failRefund?: boolean;
+  fetchedSegments?: string;
+  fetchedStatus?: string;
+  fetchError?: boolean;
+  fetchedSid?: string;
   accountEnvironment?: "production" | "test" | "demo";
   fenceDenied?: boolean;
   threadStatus?: string;
@@ -34,6 +38,15 @@ function installSendMocks(options: {
     };
   });
   const enqueue = vi.fn(async () => ({ ok: true, jobId: "job-reconcile-1" }));
+  const fetchMessage = vi.fn(async () => {
+    if (options.fetchError) throw new Error("Twilio resource is unavailable");
+    return {
+      sid: options.fetchedSid ?? "SMaccepted123",
+      to: "+14155550123",
+      numSegments: options.fetchedSegments ?? "1",
+      status: options.fetchedStatus ?? "sent",
+    };
+  });
   const reserveSmsUsage = vi.fn(async () =>
     options.sharedWork ? { periodKey: "frozen-period" } : null,
   );
@@ -147,7 +160,7 @@ function installSendMocks(options: {
   vi.doMock("../src/lib/job-queue", () => ({ enqueue }));
   vi.doMock("../src/lib/twilio-service-base", () => ({
     getTwilioClient: () => ({
-      messages: { create: createMessage },
+      messages: Object.assign(() => ({ fetch: fetchMessage }), { create: createMessage }),
       lookups: { v2: { phoneNumbers: () => ({ fetch: basicLookup }) } },
     }),
     isTwilioConfigured: () => true,
@@ -194,6 +207,7 @@ function installSendMocks(options: {
 
   return {
     createMessage,
+    fetchMessage,
     reserveSmsUsage,
     settleSmsUsage,
     basicLookup,
@@ -211,6 +225,133 @@ function installSendMocks(options: {
 }
 
 describe("Twilio accepted-message reliability", () => {
+  it("reserves the estimate, then bills confirmed Smart Encoding segments without resending", async () => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted", numSegments: "0" },
+      sharedWork: true,
+      fetchedSegments: "1",
+    });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+    const { handleTwilioMessageReconciliationJob } =
+      await import("../src/lib/twilio-message-reconciliation");
+    // Unicode smart quote makes the pre-send estimate two segments. Twilio's
+    // Smart Encoding can send this as one; the creation response does not know yet.
+    const result = await sendTenantMessage("user-1", {
+      to: "+14155550123",
+      body: `“${"a".repeat(124)}`,
+      idempotencyKey: "smart-encoding",
+    });
+    expect(result).toMatchObject({ ok: true, reconciliationPending: true });
+    expect(mocks.reserveSmsUsage).toHaveBeenCalledWith(
+      "user-1",
+      "twilio_message:sms:smart-encoding",
+      2,
+    );
+    expect(mocks.settleSmsUsage).not.toHaveBeenCalled();
+    expect(mocks.fetchMessage).not.toHaveBeenCalled();
+    const queued = mocks.enqueue.mock.calls[0]?.[1];
+    expect(queued).toMatchObject({
+      payload: { actualSegments: 0, segmentCountPending: true, steps: ["billing_adjustment"] },
+    });
+    const job = { id: "job-reconcile-1", user_id: "user-1", payload: queued.payload };
+    await handleTwilioMessageReconciliationJob(job as never);
+    await handleTwilioMessageReconciliationJob(job as never);
+    expect(mocks.settleSmsUsage.mock.calls).toEqual([
+      ["user-1", "twilio_message:sms:smart-encoding", 1],
+      ["user-1", "twilio_message:sms:smart-encoding", 1],
+    ]);
+    expect(mocks.createMessage).toHaveBeenCalledTimes(1);
+    expect(mocks.reserveRuntimeUsage).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { fetchedSegments: "0", fetchedStatus: "queued" },
+    { fetchedSegments: "0", fetchedStatus: "undelivered" },
+    { fetchedSegments: "invalid" },
+    { fetchedSegments: "1.5" },
+    { fetchError: true },
+    { fetchedSid: "SMdifferent" },
+  ])("keeps unknown segment usage reserved and retryable for %j", async (outcome) => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted", numSegments: "0" },
+      sharedWork: true,
+      ...outcome,
+    });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+    const { handleTwilioMessageReconciliationJob } =
+      await import("../src/lib/twilio-message-reconciliation");
+    await sendTenantMessage("user-1", { to: "+14155550123", body: "Hello" });
+    const job = {
+      id: "job-reconcile-1",
+      user_id: "user-1",
+      payload: mocks.enqueue.mock.calls[0][1].payload,
+    };
+    await expect(handleTwilioMessageReconciliationJob(job as never)).rejects.toThrow();
+    expect(mocks.settleSmsUsage).not.toHaveBeenCalled();
+    expect(mocks.refundRuntimeUsage).not.toHaveBeenCalled();
+    expect(mocks.createMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["failed", "canceled"])(
+    "releases zero segments only after Twilio confirms %s without resending",
+    async (fetchedStatus) => {
+      const mocks = installSendMocks({
+        provider: { kind: "accepted", numSegments: "0" },
+        sharedWork: true,
+        fetchedSegments: "0",
+        fetchedStatus,
+      });
+      const { sendTenantMessage } = await import("../src/lib/twilio-service");
+      const { handleTwilioMessageReconciliationJob } =
+        await import("../src/lib/twilio-message-reconciliation");
+      await sendTenantMessage("user-1", {
+        to: "+14155550123",
+        body: "Hello",
+        idempotencyKey: "terminal-zero",
+      });
+      await handleTwilioMessageReconciliationJob({
+        id: "job-reconcile-1",
+        user_id: "user-1",
+        payload: mocks.enqueue.mock.calls[0][1].payload,
+      } as never);
+      expect(mocks.settleSmsUsage).toHaveBeenCalledWith(
+        "user-1",
+        "twilio_message:sms:terminal-zero",
+        0,
+      );
+      expect(mocks.createMessage).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it("true-ups a legacy wallet only after the authoritative segment count arrives", async () => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted", numSegments: "0" },
+      fetchedSegments: "1",
+    });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+    const { handleTwilioMessageReconciliationJob } =
+      await import("../src/lib/twilio-message-reconciliation");
+    await sendTenantMessage("user-1", {
+      to: "+14155550123",
+      body: `“${"a".repeat(124)}`,
+      idempotencyKey: "legacy-encoding",
+    });
+    expect(mocks.refundRuntimeUsage).not.toHaveBeenCalled();
+    await handleTwilioMessageReconciliationJob({
+      id: "job-reconcile-1",
+      user_id: "user-1",
+      payload: mocks.enqueue.mock.calls[0][1].payload,
+    } as never);
+    expect(mocks.refundRuntimeUsage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        referenceId: "twilio_message:sms:legacy-encoding:actual",
+        amountUsd: 0.02,
+      }),
+    );
+    expect(mocks.settleSmsUsage).not.toHaveBeenCalled();
+    expect(mocks.createMessage).toHaveBeenCalledTimes(1);
+  });
+
   it("settles accepted SMS against shared work without a wallet debit", async () => {
     const mocks = installSendMocks({
       provider: { kind: "accepted", numSegments: "2" },

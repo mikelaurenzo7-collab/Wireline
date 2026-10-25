@@ -7,7 +7,9 @@ import { drizzle, log, tenantStore } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { smsOutcomeAfterMessage } from "./sms-thread-outcome";
 import { settleSmsUsage } from "./sms-usage-billing";
-import type { TwilioMessageChannel } from "./twilio-service-base";
+import { SMS_COST_PER_SEGMENT_USD } from "./sms-billing";
+import { USAGE_METERS } from "./usage-billing-catalog";
+import { getTwilioClient, type TwilioMessageChannel } from "./twilio-service-base";
 
 export type TwilioMessageReconciliationStep = "billing_adjustment" | "outbound_persistence";
 
@@ -24,6 +26,8 @@ export interface AcceptedTwilioMessageInput {
   estimatedUsd: number;
   actualUsd: number;
   actualSegments: number;
+  /** Messaging Services can accept a message before its segment count is known. */
+  segmentCountPending?: boolean;
   /** Missing on historical jobs, which must retain prepaid-wallet accounting. */
   fundingModel?: "shared_work" | "runtime_balance";
 }
@@ -147,8 +151,11 @@ export async function adjustAcceptedTwilioReservation(
     | "sid"
     | "actualSegments"
     | "fundingModel"
+    | "segmentCountPending"
   >,
 ): Promise<void> {
+  if (input.segmentCountPending)
+    throw new Error("Accepted SMS segment count is still awaiting Twilio confirmation.");
   if (input.fundingModel === "shared_work") {
     if (
       input.channel !== "sms" ||
@@ -235,7 +242,11 @@ export async function finalizeAcceptedTwilioMessage(
   const failedSteps: TwilioMessageReconciliationStep[] = [];
   const failures: Partial<Record<TwilioMessageReconciliationStep, string>> = {};
 
-  if (input.channel === "sms") {
+  if (input.channel === "sms" && input.segmentCountPending) {
+    // Zero on the creation response is unknown, not free and not the estimate.
+    // Keep the reserve until a read of the accepted SID confirms actual usage.
+    failedSteps.push("billing_adjustment");
+  } else if (input.channel === "sms") {
     try {
       await adjustAcceptedTwilioReservation(input);
     } catch (error) {
@@ -283,7 +294,7 @@ export async function finalizeAcceptedTwilioMessage(
     }
   }
 
-  log.error("Twilio provider accepted message with local reconciliation pending", {
+  const details = {
     userId: input.userId,
     sid: input.sid,
     channel: input.channel,
@@ -293,7 +304,10 @@ export async function finalizeAcceptedTwilioMessage(
     durableFallbackRecorded,
     providerAccepted: true,
     doNotRetryProviderSend: true,
-  });
+  };
+  if (Object.keys(failures).length > 0 || !jobId)
+    log.error("Twilio provider accepted message with local reconciliation pending", details);
+  else log.info("Twilio accepted SMS is awaiting its final segment count", details);
 
   return { reconciliationPending: true, jobId };
 }
@@ -324,7 +338,10 @@ function parseReconciliationPayload(job: JobRow): TwilioMessageReconciliationPay
     typeof payload.reservationReference !== "string" ||
     !Number.isFinite(payload.estimatedUsd) ||
     !Number.isFinite(payload.actualUsd) ||
-    !Number.isFinite(payload.actualSegments) ||
+    !Number.isSafeInteger(payload.actualSegments) ||
+    Number(payload.actualSegments) < 0 ||
+    (payload.segmentCountPending !== undefined &&
+      (typeof payload.segmentCountPending !== "boolean" || payload.channel !== "sms")) ||
     (payload.fundingModel !== undefined &&
       payload.fundingModel !== "shared_work" &&
       payload.fundingModel !== "runtime_balance") ||
@@ -336,9 +353,42 @@ function parseReconciliationPayload(job: JobRow): TwilioMessageReconciliationPay
   return { ...(payload as TwilioMessageReconciliationPayload), steps };
 }
 
-/** Retry only local bookkeeping for a message the provider already accepted. */
+/** Read the accepted message; never submit another carrier send to resolve billing. */
+async function confirmAcceptedSmsSegments(
+  input: TwilioMessageReconciliationPayload,
+): Promise<TwilioMessageReconciliationPayload> {
+  if (!input.segmentCountPending || !input.steps.includes("billing_adjustment")) return input;
+  const client = getTwilioClient();
+  if (!client) throw new Error("Twilio is unavailable for SMS segment reconciliation.");
+  const message = await client.messages(input.sid).fetch();
+  if (message.sid !== input.sid || message.to !== input.customerNumber)
+    throw new Error("Twilio segment reconciliation returned a different message.");
+  const count = String(message.numSegments ?? "").trim();
+  const segments = /^\d+$/.test(count) ? Number(count) : Number.NaN;
+  // A queued/accepted zero stays reserved. Only a definitive no-send status
+  // allows zero settlement; missing resources and fetch failures prove nothing.
+  if (
+    !Number.isSafeInteger(segments) ||
+    segments < 0 ||
+    (segments === 0 && message.status !== "failed" && message.status !== "canceled")
+  )
+    throw new Error("Twilio has not confirmed the accepted SMS segment count yet.");
+  const rate =
+    input.fundingModel === "shared_work"
+      ? USAGE_METERS.sms_segments.tiers[0].unitUsd
+      : SMS_COST_PER_SEGMENT_USD;
+  return {
+    ...input,
+    actualSegments: segments,
+    actualUsd: money(rate * segments),
+    segmentCountPending: false,
+  };
+}
+
+/** Retry bookkeeping and authoritative reads for a message already accepted. */
 export async function handleTwilioMessageReconciliationJob(job: JobRow): Promise<void> {
-  const payload = parseReconciliationPayload(job);
+  // Fetch outside the tenant transaction; provider latency must not hold it open.
+  const payload = await confirmAcceptedSmsSegments(parseReconciliationPayload(job));
   await tenantStore.run(payload.userId, async () => {
     // Keep transaction-bound tenant queries sequential. Each step is idempotent,
     // so a partial attempt can safely resume after the queue's normal backoff.

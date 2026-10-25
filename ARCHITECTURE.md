@@ -1,10 +1,11 @@
 # BotBound Architecture
 
-BotBound is one Bot product and workspace. Its launch offer is calling, email,
-and Computer: proven incoming calls, requested email, and supervised web work.
-SMS, campaign calling, and unproven messaging integrations remain outside launch
-promotion; retained channel code and reviewed service-call controls have separate
-entitlement and runtime boundaries. Its technical operating loop is **Create -> Train -> Wire -> Run**.
+BotBound is one Bot product and workspace. Public pages showcase inbound and outbound
+calls, SMS, email, and Computer, including sales and customer-service workflows.
+Executing a workflow still requires its applicable entitlement, verified sender,
+recipient permission, funding, screening and provider readiness. Public positioning
+does not certify those gates; reviewed service calls and marketing calls retain
+distinct runtime controls. Its technical operating loop is **Create -> Train -> Wire -> Run**.
 Public messaging leads with concrete Bot capabilities, outcomes, and signup rather than a setup-step list.
 
 A customer configures a Bot with durable knowledge and policy, connects it to numbers and tools, then runs work through Studio. After create, customers see **Train -> Rehearse -> Launch**. Calls, texts, follow-up, approvals, handoffs, transcripts, and outcomes remain available for optional review and later refinements. Ongoing review is not an additional setup step.
@@ -14,7 +15,7 @@ A customer configures a Bot with durable knowledge and policy, connects it to nu
 1. A person creates a focused Bot.
 2. They train the Bot with instructions, knowledge, tone, voice, escalation policy, and workflow behavior.
 3. They wire calendars, email, contacts, CRM, numbers, billing, routing, approvals, and other launch controls when useful.
-4. Calling, email, Computer, and connected-client execution use the saved Bot profile. Retained messaging workflows remain separately gated.
+4. Calling, SMS, email, Computer, and connected-client execution use the saved Bot profile. Each channel retains its own activation and execution gates.
 5. Live talking-head video is retired. Compatibility presenter code may support identity badges and fail-closed legacy webhooks, but it must not mint sessions or create a separate product surface.
 6. Outcomes feed review, coaching, analytics, and retraining.
 
@@ -35,7 +36,7 @@ Historic workspace URLs should redirect into the active Bot workflow rather than
 | Bot roster/state     | `src/contexts/AgentsContext.tsx`                                                                                                                                                      |
 | Shared visual system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts`                                            |
 
-The visual layer is intentionally restrained: the BotBound Design System uses dark/ink surfaces, a near-black canvas, electric-violet action, a platinum-silver wire accent, and accessible focus states. Dark is the first-visit appearance; saved light, dark, or system preferences take precedence. Both appearances share one component and interaction system.
+The visual layer is intentionally restrained: the BotBound Design System uses a warm light canvas, neutral surfaces, violet actions, generous space, and accessible focus states. Warm light is the first-visit appearance; saved light, dark, or system preferences take precedence. Both appearances share one component and interaction system. Titles and controls use Title Case or uppercase; generated conversation prose remains naturally cased.
 
 ## Core API flow
 

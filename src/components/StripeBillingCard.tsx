@@ -412,7 +412,12 @@ export default function StripeBillingCard({
           onPortal={openPortal}
         />
       ) : hasGrantedPlanAccess ? (
-        <GrantedPlanAccessCard sub={sub} agentCount={agentCount} />
+        <GrantedPlanAccessCard
+          sub={sub}
+          agentCount={agentCount}
+          busy={busy === "portal"}
+          onPortal={openPortal}
+        />
       ) : null}
       {hasActiveSubscription && !isUsagePlanId(sub?.plan) ? (
         <UsageMeter
@@ -703,9 +708,13 @@ function PlanPicker({
 function GrantedPlanAccessCard({
   sub,
   agentCount,
+  busy,
+  onPortal,
 }: {
   sub: BillingSubscriptionState;
   agentCount: number;
+  busy: boolean;
+  onPortal: () => void;
 }) {
   const accent = PLAN_ACCENTS[sub.plan || ""] || BRAND.colors.primary;
   const Icon = PLAN_ICONS[sub.plan || ""] || Building2;
@@ -732,8 +741,7 @@ function GrantedPlanAccessCard({
             </h3>
             <p className="text-sm font-semibold text-foreground">Plan access is active</p>
             <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-              Paid-plan access is granted directly to this workspace. No recurring invoice is
-              scheduled.
+              Paid-plan access is granted directly to this workspace.
             </p>
             {sub.max_agents ? (
               <p className="font-mono text-[11px] uppercase tracking-[.08em] text-muted-foreground">
@@ -744,6 +752,23 @@ function GrantedPlanAccessCard({
             ) : null}
           </div>
         </div>
+        {sub.has_customer === true ? (
+          <ShadButton
+            type="button"
+            disableAnimations
+            variant="outline"
+            onClick={onPortal}
+            disabled={busy}
+            className="inline-flex h-auto min-h-11 w-full shrink-0 gap-2.5 whitespace-normal rounded-md border px-4 py-3 text-sm font-semibold tracking-normal hover-premium-glow shadow-premium-button wl-accent-cta sm:w-auto"
+          >
+            {busy ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ExternalLink className="w-4 h-4" />
+            )}
+            Manage Billing
+          </ShadButton>
+        ) : null}
       </div>
     </div>
   );

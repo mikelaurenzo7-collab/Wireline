@@ -22,7 +22,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 export const CATALOG_VERSION = "2026-10-usage-v2";
-export const BOTBOUND_STRIPE_ACCOUNT_ID = "acct_1UQBcs6Ph5cHChCS";
+export const BOTBOUND_STRIPE_ACCOUNT_ID = "acct_1TkyXL8e6If87QKm";
 
 /** Verify the selected account before creating any billing objects. */
 export async function assertUsageStripeAccount(stripe, { mode = "live", sandboxAccountId } = {}) {

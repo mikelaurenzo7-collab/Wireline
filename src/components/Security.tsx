@@ -176,7 +176,7 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     icon: CreditCard,
     title: "Billing & Spend Controls",
     items: [
-      "The shared-work plan includes one monthly allowance for calls, email, and Computer. Extra work is metered at the rates shown in Pricing. Unused allowance does not roll over.",
+      "Shared Work plans include one monthly allowance for calls, sent US SMS, sent email replies, and Computer. Extra work is metered at the rates shown in Pricing. Unused allowance does not roll over.",
       "Set a monthly pretax spending limit in Billing. Work pauses at that limit. Computer tasks also have a processing limit; a higher spending limit does not remove it.",
       "Existing plans keep their allowances and, where applicable, prepaid Runtime Balance. Billing shows the terms and usage for your account.",
     ],

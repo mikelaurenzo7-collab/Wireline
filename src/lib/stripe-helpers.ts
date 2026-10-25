@@ -22,7 +22,10 @@ import {
 import { STRIPE_API_VERSION } from "./stripe-api-version";
 import { stripeOwnerUserExists } from "./stripe-owner-liveness";
 import { stripeSubscriptionCancellation } from "./stripe-subscription-cancellation";
-import { withStripeSubscriptionSyncLease } from "./stripe-subscription-sync-lease";
+import {
+  withBillingEntitlementLease,
+  withStripeSubscriptionSyncLease,
+} from "./stripe-subscription-sync-lease";
 import { recordPaidAllowanceReceipt, verifiedPaidAllowanceReceipt } from "./paid-allowance-period";
 import { liveStripeCredentialBlocked } from "./preview-spend-policy";
 import {
@@ -685,14 +688,18 @@ async function syncSubscriptionFromStripeUnderLease(
   customerId: string,
   assertSyncLease: () => Promise<void>,
 ) {
+  const subscriptionProjection = {
+    userId: schema.subscriptions.userId,
+    status: schema.subscriptions.status,
+    stripeSubscriptionId: schema.subscriptions.stripeSubscriptionId,
+    cancelAtPeriodEnd: schema.subscriptions.cancelAtPeriodEnd,
+    plan: schema.subscriptions.plan,
+    entitlementSource: schema.subscriptions.entitlementSource,
+    grantReason: schema.subscriptions.grantReason,
+    currentPeriodEnd: schema.subscriptions.currentPeriodEnd,
+  };
   let [existing] = await drizzle
-    .select({
-      userId: schema.subscriptions.userId,
-      status: schema.subscriptions.status,
-      stripeSubscriptionId: schema.subscriptions.stripeSubscriptionId,
-      cancelAtPeriodEnd: schema.subscriptions.cancelAtPeriodEnd,
-      plan: schema.subscriptions.plan,
-    })
+    .select(subscriptionProjection)
     .from(schema.subscriptions)
     .where(eq(schema.subscriptions.stripeCustomerId, customerId))
     .limit(1);
@@ -741,13 +748,15 @@ async function syncSubscriptionFromStripeUnderLease(
         target: schema.subscriptions.userId,
         set: { stripeCustomerId: customerId, updatedAt: new Date() },
       });
-    existing = {
-      userId: metadataUserId,
-      status: null,
-      stripeSubscriptionId: null,
-      cancelAtPeriodEnd: false,
-      plan: null,
-    };
+    // Customer recovery must retain the existing grant/projection provenance.
+    // A legacy subscription can still point at a founder's explicitly granted
+    // workspace even while its customer binding is being repaired.
+    [existing] = await drizzle
+      .select(subscriptionProjection)
+      .from(schema.subscriptions)
+      .where(eq(schema.subscriptions.userId, metadataUserId))
+      .limit(1);
+    if (!existing) throw new Error("Stripe sync: repaired customer mapping is unavailable");
   } else if (!(await stripeOwnerUserExists(existing.userId))) {
     // The database FK removes this legacy/orphan possibility once migration
     // 0162 is live. Keep the code gate for deploy-order safety and defense in
@@ -905,153 +914,189 @@ async function syncSubscriptionFromStripeUnderLease(
   // defense against a userId-resolution bug crediting the wrong wallet. The
   // customer lookup and metadata repair above stay at root scope on purpose;
   // they are how identity gets established when no tenant is known yet.
-  await tenantStore.run(userId, async () => {
-    await assertSyncLease();
-    if (paidAllowance) await recordPaidAllowanceReceipt(userId, paidAllowance);
-    await reconcileLiveVideoAddonWithBasePlan({
-      customerId,
-      baseCancelAtPeriodEnd: cancellation.atPeriodEnd,
-      baseTerminal,
-      baseUnpaid,
-      basePaused,
-      restoreCascade,
-      assertSyncLease,
-    });
-
-    // One snapshot per row for the insert and its conflict update. Separate
-    // `new Date()` calls stamped the same mirror a millisecond apart depending
-    // on whether the row already existed.
-    const subscriptionMirror = {
-      stripeCustomerId: customerId,
-      stripeSubscriptionId: sub.id,
-      plan: plan?.id ?? null,
-      status: stripeStatus,
-      currentPeriodEnd: currentPeriodEndIso ? new Date(currentPeriodEndIso) : null,
-      cancelAtPeriodEnd: cancellation.atPeriodEnd,
-      updatedAt: new Date(),
+  const assertCustomerSyncLease = assertSyncLease;
+  await withBillingEntitlementLease(userId, async (assertEntitlementLease) => {
+    const assertSyncLease = async () => {
+      await assertCustomerSyncLease();
+      await assertEntitlementLease();
     };
-    await assertSyncLease();
-    await drizzle
-      .insert(schema.subscriptions)
-      .values({ userId, ...subscriptionMirror })
-      .onConflictDoUpdate({ target: [schema.subscriptions.userId], set: subscriptionMirror });
-
-    if (plan && isUsagePlanId(plan.id)) {
-      // Add-on quantities drive lazy provisioning: no number or BotBound email
-      // address exists unless the owner bought one.
-      const { setUsageAddonQuantities } = await import("./usage-billing-store");
+    await tenantStore.run(userId, async () => {
       await assertSyncLease();
-      const period = subscriptionPeriod(sub);
-      await setUsageAddonQuantities(userId, usageAddonQuantitiesFromSubscription(sub), {
-        tier: usageTierFromSubscription(sub),
+      // Founder bootstrap can refresh the grant while Stripe reads its provider.
+      // Read again under their shared per-user lease before projecting any access.
+      const [currentEntitlement] = await drizzle
+        .select(subscriptionProjection)
+        .from(schema.subscriptions)
+        .where(eq(schema.subscriptions.userId, userId))
+        .limit(1);
+      if (!currentEntitlement) throw new Error("Stripe sync: entitlement mapping is unavailable");
+      await assertSyncLease();
+      if (paidAllowance) await recordPaidAllowanceReceipt(userId, paidAllowance);
+      // This explicit, bounded founder grant is independent of legacy paid
+      // subscriptions. Preserve real invoice receipts above, but do not let a
+      // renewal/cancellation replace its access or trigger paid-plan side effects.
+      // Ordinary demo/manual accounts still convert through the normal path.
+      if (
+        currentEntitlement.entitlementSource === "demo" &&
+        currentEntitlement.grantReason === "founder_dogfood" &&
+        currentEntitlement.plan === "enterprise" &&
+        currentEntitlement.status === "active" &&
+        currentEntitlement.currentPeriodEnd &&
+        currentEntitlement.currentPeriodEnd.getTime() > Date.now()
+      ) {
+        log.info("Stripe sync: preserving active founder dogfood grant", {
+          userId,
+          customerId,
+          subscriptionId: sub.id,
+          stripeStatus,
+        });
+        return;
+      }
+      await reconcileLiveVideoAddonWithBasePlan({
+        customerId,
+        baseCancelAtPeriodEnd: cancellation.atPeriodEnd,
+        baseTerminal,
+        baseUnpaid,
+        basePaused,
+        restoreCascade,
+        assertSyncLease,
+      });
+
+      // One snapshot per row for the insert and its conflict update. Separate
+      // `new Date()` calls stamped the same mirror a millisecond apart depending
+      // on whether the row already existed.
+      const subscriptionMirror = {
         stripeCustomerId: customerId,
         stripeSubscriptionId: sub.id,
-        startsAt: period.start ? new Date(period.start * 1000) : null,
-        endsAt: period.end ? new Date(period.end * 1000) : null,
-      });
-    }
-
-    const settingsMirror = {
-      subscriptionStatus: localStatus,
-      maxAgents: effectiveMaxAgents,
-      extraAgents,
-      updatedAt: new Date(),
-    };
-    await assertSyncLease();
-    await drizzle
-      .insert(schema.settings)
-      .values({ id: userId, userId, ...settingsMirror })
-      .onConflictDoUpdate({ target: [schema.settings.userId], set: settingsMirror });
-
-    const { ensureDefaultAiSpendBudget } = await import("./workspace-usage-snapshot");
-    const spendBudgetPlanId =
-      stripeStatus === "active" || stripeStatus === "trialing" ? (plan?.id ?? null) : null;
-    await assertSyncLease();
-    await ensureDefaultAiSpendBudget(userId, spendBudgetPlanId);
-
-    if (plan?.id === providerPlanId && sub.metadata.wireline_capacity_target_plan === plan?.id) {
-      const { releaseAppliedCapacitySchedule } = await import("./stripe-capacity-upgrade");
+        plan: plan?.id ?? null,
+        status: stripeStatus,
+        currentPeriodEnd: currentPeriodEndIso ? new Date(currentPeriodEndIso) : null,
+        cancelAtPeriodEnd: cancellation.atPeriodEnd,
+        updatedAt: new Date(),
+      };
       await assertSyncLease();
-      await drizzle.transaction(async (tx) => {
-        await tx.execute(
-          sql`SELECT pg_advisory_xact_lock(hashtext(${`billing-capacity:${userId}`}))`,
-        );
+      await drizzle
+        .insert(schema.subscriptions)
+        .values({ userId, ...subscriptionMirror })
+        .onConflictDoUpdate({ target: [schema.subscriptions.userId], set: subscriptionMirror });
+
+      if (plan && isUsagePlanId(plan.id)) {
+        // Add-on quantities drive lazy provisioning: no number or BotBound email
+        // address exists unless the owner bought one.
+        const { setUsageAddonQuantities } = await import("./usage-billing-store");
         await assertSyncLease();
-        await releaseAppliedCapacitySchedule(
-          { userId, customerId, subscriptionId: sub.id, planId: plan!.id },
-          stripe,
-          assertSyncLease,
-        );
-        await assertSyncLease();
-      });
-    }
-
-    await assertSyncLease();
-    invalidateDashboard(userId);
-
-    dispatchWebhook(userId, "subscription.changed", {
-      plan: plan?.id ?? null,
-      voice_number_slots_cap: effectiveMaxAgents,
-      included_extra_agents: extraAgents,
-      status: stripeStatus,
-      legacy_status: localStatus,
-      cancel_at_period_end: cancellation.atPeriodEnd,
-      current_period_end: currentPeriodEndIso,
-      at: new Date().toISOString(),
-    }).catch((error: unknown) =>
-      log.warn("subscription.changed webhook dispatch failed", {
-        userId,
-        error: getErrorMessage(error),
-      }),
-    );
-
-    const billingAction:
-      "subscription_created" | "subscription_updated" | "subscription_cancelled" =
-      stripeStatus === "canceled" || stripeStatus === "incomplete_expired"
-        ? "subscription_cancelled"
-        : (incomingSub as Stripe.Subscription & { _auditCreate?: boolean })._auditCreate
-          ? "subscription_created"
-          : "subscription_updated";
-
-    // Trialing paid plans are admitted to voice, so they need the same included
-    // allowance for metered runtime features while the customer evaluates.
-    if (
-      (stripeStatus === "active" || stripeStatus === "trialing") &&
-      plan?.id &&
-      plan.id === providerPlanId
-    ) {
-      const interval = subscriptionBillingInterval(sub);
-      const periodReference = subscriptionPeriodReference(sub);
-      // Must succeed — swallowing here marks the webhook processed with no
-      // included Runtime Allowance, and Stripe will not retry.
-      await assertSyncLease();
-      await grantSubscriptionRuntimeAllowance(userId, periodReference, plan.id, interval);
-      if (stripeStatus === "active") {
-        const { enqueuePaidBotIdentityReconciliation } = await import("./paid-bot-identity");
-        await assertSyncLease();
-        const identityQueue = await enqueuePaidBotIdentityReconciliation(userId);
-        log.info("Paid Bot identity reconciliation attached to authoritative subscription sync", {
-          userId,
-          subscriptionId: sub.id,
-          ...identityQueue,
+        const period = subscriptionPeriod(sub);
+        await setUsageAddonQuantities(userId, usageAddonQuantitiesFromSubscription(sub), {
+          tier: usageTierFromSubscription(sub),
+          stripeCustomerId: customerId,
+          stripeSubscriptionId: sub.id,
+          startsAt: period.start ? new Date(period.start * 1000) : null,
+          endsAt: period.end ? new Date(period.end * 1000) : null,
         });
       }
-    }
 
-    void auditLogger
-      .logBilling(billingAction, {
-        userId,
-        subscriptionId: sub.id,
-        customerId,
-        plan: plan?.id || undefined,
-        metadata: {
-          stripe_status: stripeStatus,
-          legacy_status: localStatus,
-          cancel_at_period_end: cancellation.atPeriodEnd,
-          extra_agents: extraAgents,
-          provider_extra_agents: providerExtraAgents,
-        },
-      })
-      .catch(() => {});
+      const settingsMirror = {
+        subscriptionStatus: localStatus,
+        maxAgents: effectiveMaxAgents,
+        extraAgents,
+        updatedAt: new Date(),
+      };
+      await assertSyncLease();
+      await drizzle
+        .insert(schema.settings)
+        .values({ id: userId, userId, ...settingsMirror })
+        .onConflictDoUpdate({ target: [schema.settings.userId], set: settingsMirror });
+
+      const { ensureDefaultAiSpendBudget } = await import("./workspace-usage-snapshot");
+      const spendBudgetPlanId =
+        stripeStatus === "active" || stripeStatus === "trialing" ? (plan?.id ?? null) : null;
+      await assertSyncLease();
+      await ensureDefaultAiSpendBudget(userId, spendBudgetPlanId);
+
+      if (plan?.id === providerPlanId && sub.metadata.wireline_capacity_target_plan === plan?.id) {
+        const { releaseAppliedCapacitySchedule } = await import("./stripe-capacity-upgrade");
+        await assertSyncLease();
+        await drizzle.transaction(async (tx) => {
+          await tx.execute(
+            sql`SELECT pg_advisory_xact_lock(hashtext(${`billing-capacity:${userId}`}))`,
+          );
+          await assertSyncLease();
+          await releaseAppliedCapacitySchedule(
+            { userId, customerId, subscriptionId: sub.id, planId: plan!.id },
+            stripe,
+            assertSyncLease,
+          );
+          await assertSyncLease();
+        });
+      }
+
+      await assertSyncLease();
+      invalidateDashboard(userId);
+
+      dispatchWebhook(userId, "subscription.changed", {
+        plan: plan?.id ?? null,
+        voice_number_slots_cap: effectiveMaxAgents,
+        included_extra_agents: extraAgents,
+        status: stripeStatus,
+        legacy_status: localStatus,
+        cancel_at_period_end: cancellation.atPeriodEnd,
+        current_period_end: currentPeriodEndIso,
+        at: new Date().toISOString(),
+      }).catch((error: unknown) =>
+        log.warn("subscription.changed webhook dispatch failed", {
+          userId,
+          error: getErrorMessage(error),
+        }),
+      );
+
+      const billingAction:
+        "subscription_created" | "subscription_updated" | "subscription_cancelled" =
+        stripeStatus === "canceled" || stripeStatus === "incomplete_expired"
+          ? "subscription_cancelled"
+          : (incomingSub as Stripe.Subscription & { _auditCreate?: boolean })._auditCreate
+            ? "subscription_created"
+            : "subscription_updated";
+
+      // Trialing paid plans are admitted to voice, so they need the same included
+      // allowance for metered runtime features while the customer evaluates.
+      if (
+        (stripeStatus === "active" || stripeStatus === "trialing") &&
+        plan?.id &&
+        plan.id === providerPlanId
+      ) {
+        const interval = subscriptionBillingInterval(sub);
+        const periodReference = subscriptionPeriodReference(sub);
+        // Must succeed — swallowing here marks the webhook processed with no
+        // included Runtime Allowance, and Stripe will not retry.
+        await assertSyncLease();
+        await grantSubscriptionRuntimeAllowance(userId, periodReference, plan.id, interval);
+        if (stripeStatus === "active") {
+          const { enqueuePaidBotIdentityReconciliation } = await import("./paid-bot-identity");
+          await assertSyncLease();
+          const identityQueue = await enqueuePaidBotIdentityReconciliation(userId);
+          log.info("Paid Bot identity reconciliation attached to authoritative subscription sync", {
+            userId,
+            subscriptionId: sub.id,
+            ...identityQueue,
+          });
+        }
+      }
+
+      void auditLogger
+        .logBilling(billingAction, {
+          userId,
+          subscriptionId: sub.id,
+          customerId,
+          plan: plan?.id || undefined,
+          metadata: {
+            stripe_status: stripeStatus,
+            legacy_status: localStatus,
+            cancel_at_period_end: cancellation.atPeriodEnd,
+            extra_agents: extraAgents,
+            provider_extra_agents: providerExtraAgents,
+          },
+        })
+        .catch(() => {});
+    });
   });
 }
