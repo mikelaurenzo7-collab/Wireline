@@ -1,14 +1,19 @@
 import { and, desc, eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
-import { classifyUntrustedDirectDial } from "./outbound-call-purpose";
+import {
+  canonicalizeOutboundPurpose,
+  resolveEffectiveOutboundPurpose,
+  type OutboundCallPurpose,
+} from "./outbound-call-purpose";
 import { evaluateOutboundDialGate, type OutboundDialGateResult } from "./outbound-dial-gate";
+import { screenManualOutbound } from "./outbound-manual-screening";
+import { deriveRelationship, isWithinRelationshipWindow } from "./outbound-relationship";
 import { drizzle } from "./server-context";
 
 /**
- * A consumer's inbound text is evidence for only the immediately active
- * conversation. After this window, an account-holder reply returns to the
- * ordinary untrusted outbound classification and all marketing controls.
+ * Quiet-hours bypass for a text the contact just sent. The 90-day relationship
+ * window is separate and only skips Do Not Call screening.
  */
 export const SMS_LIVE_FOLLOW_UP_WINDOW_MS = 60 * 60 * 1000;
 
@@ -16,6 +21,15 @@ type SmsReplyGateInput = {
   userId: string;
   threadId: string;
   phone: string;
+  requestedPurpose?: OutboundCallPurpose;
+  permissionConfirmed?: boolean;
+  nonsalesConfirmed?: boolean;
+  customerSince?: string | null;
+  content?: string | null;
+  salesAttestationConfirmed?: boolean;
+  enforceContactConfirmation?: boolean;
+  actorIp?: string | null;
+  userAgent?: string | null;
 };
 
 type InboundArtifactScope = Pick<SmsReplyGateInput, "userId" | "threadId"> & {
@@ -27,6 +41,7 @@ type InboundArtifact = { createdAt: unknown } | null;
 type SmsReplyComplianceDeps = {
   loadLatestInboundArtifact?: (scope: InboundArtifactScope) => Promise<InboundArtifact>;
   evaluateGate?: typeof evaluateOutboundDialGate;
+  deriveRelationship?: typeof deriveRelationship;
   now?: () => number;
 };
 
@@ -58,11 +73,20 @@ export function isRecentInboundSmsArtifact(
   return ageMs >= 0 && ageMs <= SMS_LIVE_FOLLOW_UP_WINDOW_MS;
 }
 
+function denied(message: string): OutboundDialGateResult {
+  return {
+    allowed: false,
+    status: "AutoDialFailed",
+    reason: "contact_confirmation_required",
+    customerMessage: message,
+    federalDncMessage: message,
+  };
+}
+
 /**
- * Only a recent, tenant-and-thread-scoped inbound row may mint the live SMS
- * follow-up class. Missing, stale, future, and malformed evidence fails closed
- * as an untrusted marketing send with mandatory Federal DNC screening and no
- * verified express-written-consent claim.
+ * A text in a conversation the contact started (inbound within 90 days) is not
+ * sales screening. An inbound text inside the last hour also skips quiet hours.
+ * Missing, future, and malformed evidence fails closed as sales.
  */
 export async function evaluateSmsThreadReplyGate(
   input: SmsReplyGateInput,
@@ -70,14 +94,38 @@ export async function evaluateSmsThreadReplyGate(
 ): Promise<OutboundDialGateResult> {
   const loadArtifact = deps.loadLatestInboundArtifact || loadLatestInboundArtifact;
   const evaluateGate = deps.evaluateGate || evaluateOutboundDialGate;
+  const nowMs = (deps.now || Date.now)();
   const artifact = await loadArtifact({
     userId: input.userId,
     threadId: input.threadId,
     direction: "in",
   });
-  const isLiveFollowUp = isRecentInboundSmsArtifact(artifact?.createdAt, (deps.now || Date.now)());
+  const isLiveFollowUp = isRecentInboundSmsArtifact(artifact?.createdAt, nowMs);
+  const threadReturning = isWithinRelationshipWindow(artifact?.createdAt, nowMs);
+  const relationship = threadReturning
+    ? {
+        kind: "returning_contact" as const,
+        source: "sms" as const,
+        sourceId: input.threadId,
+        at:
+          artifact?.createdAt instanceof Date
+            ? artifact.createdAt.toISOString()
+            : new Date(nowMs).toISOString(),
+      }
+    : await (deps.deriveRelationship ?? deriveRelationship)(input.userId, input.phone);
 
-  if (isLiveFollowUp) {
+  const requested = input.requestedPurpose
+    ? canonicalizeOutboundPurpose(input.requestedPurpose)
+    : relationship
+      ? "returning_contact"
+      : "sales";
+  const resolved = resolveEffectiveOutboundPurpose({
+    requested,
+    relationshipReturning: Boolean(relationship),
+    customerSince: input.customerSince ? new Date(input.customerSince) : null,
+  });
+
+  if (isLiveFollowUp && !input.enforceContactConfirmation) {
     return evaluateGate({
       userId: input.userId,
       phone: input.phone,
@@ -86,15 +134,45 @@ export async function evaluateSmsThreadReplyGate(
     });
   }
 
-  const classification = classifyUntrustedDirectDial({
-    callPurpose: "service_or_requested",
-  });
+  if (input.enforceContactConfirmation) {
+    const manual = await screenManualOutbound({
+      userId: input.userId,
+      phone: input.phone,
+      channel: "sms",
+      requestedPurpose: requested,
+      permissionConfirmed: input.permissionConfirmed,
+      nonsalesConfirmed: input.nonsalesConfirmed,
+      customerSince: input.customerSince,
+      content: input.content,
+      salesAttestationConfirmed: input.salesAttestationConfirmed,
+      actorIp: input.actorIp,
+      userAgent: input.userAgent,
+      relationship,
+    });
+    if (!manual.ok) return denied(manual.error);
+    const sales = manual.screening.requireFederalDncScreening;
+    const gate = await evaluateGate({
+      userId: input.userId,
+      phone: input.phone,
+      isMarketingCall: sales,
+      isLiveSessionFollowUp: isLiveFollowUp,
+      requireFederalDncScreening: sales,
+      salesScreening: sales ? "one_off" : "bulk",
+      hasExpressWrittenConsent: false,
+      isRequestedCallback: false,
+      audit: manual.audit,
+    });
+    return gate.allowed ? { ...gate, contentWarning: manual.contentWarning } : gate;
+  }
+
+  const sales = resolved.effective === "sales";
   return evaluateGate({
     userId: input.userId,
     phone: input.phone,
-    isMarketingCall: classification.isMarketingCall,
+    isMarketingCall: sales,
     isLiveSessionFollowUp: false,
-    requireFederalDncScreening: true,
+    requireFederalDncScreening: sales,
+    salesScreening: sales ? "one_off" : "bulk",
     hasExpressWrittenConsent: false,
   });
 }

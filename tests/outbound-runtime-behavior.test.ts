@@ -244,7 +244,7 @@ describe("outbound dial gate runtime", () => {
     expect(result.allowed).toBe(true);
     expect(resolveCallingHoursForPhone).toHaveBeenCalledWith("+13125551234");
     expect(isDncBlocked).toHaveBeenCalledWith("tenant-user", "+13125551234");
-    expect(isFederalDncListed).toHaveBeenCalledWith("+13125551234");
+    expect(isFederalDncListed).not.toHaveBeenCalled();
     expect(assertFederalDncForMarketing).not.toHaveBeenCalled();
     expect(select).not.toHaveBeenCalled();
   });

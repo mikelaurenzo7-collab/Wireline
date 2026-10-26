@@ -22,6 +22,13 @@ describe("TCPA calling hours", () => {
     expect(decision.allowed).toBe(false);
   });
 
+  it("blocks a New York number at 8pm local", () => {
+    // 2026-07-23 00:00 UTC = 20:00 America/New_York
+    const decision = resolveCallingHoursForPhone("+12125550100", new Date("2026-07-23T00:00:00Z"));
+    expect(decision.localHour).toBe(20);
+    expect(decision.allowed).toBe(false);
+  });
+
   it("blocks a New York number at/after 9pm local", () => {
     // 2026-07-23 01:00 UTC = 21:00 America/New_York
     const decision = resolveCallingHoursForPhone("+12125550100", new Date("2026-07-23T01:00:00Z"));
@@ -56,13 +63,13 @@ describe("TCPA calling hours", () => {
     expect(decision.localHour).toBe(7);
   });
 
-  it("blocks a Tennessee number at 8pm Central because East Tennessee is 9pm Eastern", () => {
+  it("blocks a Tennessee number at 8:30pm Central because East Tennessee is past 8pm Eastern", () => {
     // 2026-07-23 01:30 UTC = 20:30 Central = 21:30 Eastern — past 9pm in the east.
     const decision = resolveCallingHoursForPhone("+16155550100", new Date("2026-07-23T01:30:00Z"));
     expect(decision.state).toBe("TN");
     expect(decision.allowed).toBe(false);
-    expect(decision.timeZone).toBe("America/New_York");
-    expect(decision.localHour).toBe(21);
+    expect(decision.timeZone).toBe("America/Chicago");
+    expect(decision.localHour).toBe(20);
   });
 
   it("uses the continental intersection window when state is unknown", () => {

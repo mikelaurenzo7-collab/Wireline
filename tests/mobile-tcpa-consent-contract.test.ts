@@ -29,7 +29,7 @@ describe("mobile TCPA consent contract", () => {
     expect(view).toMatch(/consentConfirmed/);
     expect(view).toContain("marketing_or_sales");
     expect(view).toContain("service_or_requested");
-    expect(copy).toContain("permission to call");
+    expect(copy).toContain("permission to contact");
   });
 
   it("does not hardcode express written consent for Siri or CarPlay callbacks", () => {

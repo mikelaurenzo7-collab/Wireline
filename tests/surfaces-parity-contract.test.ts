@@ -10,7 +10,7 @@ describe("outbound consent admission", () => {
     const mobile = read("src/routes/mobile-routes.ts");
     const web = read("src/routes/outbound-routes.ts");
 
-    expect(web).toContain("screenedDirectOutboundCall(callPurpose)");
+    expect(web).toContain("screenManualOutbound");
     expect(web).toContain("const effectiveCallPurpose = screening.callPurpose");
     expect(web).not.toContain("await inspectOutboundRecipientPermission({");
     expect(mobile).toContain("res.status(503).json(NATIVE_OUTBOUND_UNAVAILABLE)");

@@ -418,16 +418,19 @@ export async function handleCoreToolCall(
         userId: agent.user_id,
         phone: targetNumber,
         isMarketingCall: !isLiveCounterpart,
+        salesScreening: isLiveCounterpart ? "bulk" : "one_off",
         hasExpressWrittenConsent: isLiveCounterpart,
         isLiveSessionFollowUp: isLiveCounterpart,
       });
       if (!gate.allowed) {
         const isDncBlock = gate.reason === "blocked_internal_dnc" || gate.reason === "blocked_tcpa";
+        const salesAttestation = gate.reason === "sales_attestation_required";
         // Never create a future-send task for a DNC block. For temporary or
         // operational blocks, persist the human-review task before promising
         // the caller that anyone will follow up.
         const recorded =
           !isDncBlock &&
+          !salesAttestation &&
           (await recordCommsFollowUpTask(drizzle, {
             userId: agent.user_id,
             agentId: agent?.id,
@@ -437,7 +440,9 @@ export async function handleCoreToolCall(
             deliveryStatus: "not_sent",
           }));
         return notConfirmed(
-          isDncBlock
+          salesAttestation
+            ? "I can't send a sales text until you confirm, once, that you're responsible for permission and Do Not Call rules. You'll see that checkbox the next time you place a sales call or text."
+            : isDncBlock
             ? "I can't text that number, it's on a do-not-contact list."
             : gate.reason === "outside_permitted_calling_hours"
               ? recorded

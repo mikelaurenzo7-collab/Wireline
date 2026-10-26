@@ -11,6 +11,12 @@ import {
 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import { salesContentWarning } from "../lib/outbound-call-purpose";
+import { INTERNAL_DNC_MESSAGE } from "../lib/outbound-compliance-copy";
+import OutboundPurposePicker, {
+  SalesAttestationCheckbox,
+  type OutboundPurposeChoice,
+} from "./outbound/OutboundPurposePicker";
 import { apiField, apiNum, apiStr } from "../lib/api-row";
 import { formatDate } from "../lib/safe-date";
 import { conversationOutcomeLabel } from "../lib/conversation-outcome-display";
@@ -183,6 +189,17 @@ export default function SmsThreads({
   const [search, setSearch] = useState("");
   const [replyDrafts, setReplyDrafts] = useState<Record<string, SmsReplyDraft>>({});
   const [sending, setSending] = useState(false);
+  const [smsPurpose, setSmsPurpose] = useState<OutboundPurposeChoice>("appointment_service");
+  const [smsRelationship, setSmsRelationship] = useState(false);
+  const [smsPermissionStored, setSmsPermissionStored] = useState(false);
+  const [smsNonsalesStored, setSmsNonsalesStored] = useState(false);
+  const [smsPermissionChecked, setSmsPermissionChecked] = useState(false);
+  const [smsNonsalesChecked, setSmsNonsalesChecked] = useState(false);
+  const [smsCustomerSince, setSmsCustomerSince] = useState("");
+  const [smsContextLoaded, setSmsContextLoaded] = useState(false);
+  const [smsOptedOut, setSmsOptedOut] = useState(false);
+  const [smsSalesAttested, setSmsSalesAttested] = useState(false);
+  const [smsSalesChecked, setSmsSalesChecked] = useState(false);
   const [drafting, setDrafting] = useState(false);
   const [draftError, setDraftError] = useState<string | null>(null);
   const [pendingSends, setPendingSends] = useState<Record<string, PendingSmsSend>>({});
@@ -463,6 +480,40 @@ export default function SmsThreads({
   }, [search, threads]);
 
   const activeThread = threads.find((thread) => thread.id === activeId) || null;
+  useEffect(() => {
+    const phone = activeThread?.customer_number;
+    if (!phone) return;
+    setSmsContextLoaded(false);
+    setSmsOptedOut(false);
+    const controller = new AbortController();
+    void authFetch(`/api/outbound/contact-context?phone=${encodeURIComponent(phone)}`, {
+      signal: controller.signal,
+    })
+      .then(async (response) => (response.ok ? response.json() : null))
+      .then((body: {
+        relationship?: unknown;
+        permissionConfirmed?: boolean;
+        nonsalesConfirmed?: boolean;
+        customerSince?: string | null;
+        suggestedPurpose?: OutboundPurposeChoice;
+        salesAttestationRecorded?: boolean;
+        optedOut?: boolean;
+      } | null) => {
+        if (!body || controller.signal.aborted) return;
+        setSmsRelationship(Boolean(body.relationship));
+        setSmsOptedOut(body.optedOut === true);
+        setSmsPermissionStored(body.permissionConfirmed === true);
+        setSmsNonsalesStored(body.nonsalesConfirmed === true);
+        setSmsSalesAttested(body.salesAttestationRecorded === true);
+        setSmsContextLoaded(true);
+        if (body.suggestedPurpose) setSmsPurpose(body.suggestedPurpose);
+        setSmsCustomerSince(body.customerSince ? body.customerSince.slice(0, 10) : "");
+        setSmsPermissionChecked(false);
+        setSmsNonsalesChecked(false);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [activeThread?.customer_number]);
   const changeSearch = (next: string) => {
     setSearch(next);
     // Return to matching results without discarding the selected thread's draft.
@@ -540,6 +591,39 @@ export default function SmsThreads({
       drafting
     )
       return;
+    if (smsOptedOut) {
+      setThreadErr(INTERNAL_DNC_MESSAGE);
+      return;
+    }
+    const effectiveSmsPurpose =
+      smsRelationship && smsPurpose === "sales" ? "returning_contact" : smsPurpose;
+    const needsPermission =
+      smsContextLoaded && !smsRelationship && !smsPermissionStored && !smsPermissionChecked;
+    const needsNonsales =
+      smsContextLoaded &&
+      !smsRelationship &&
+      effectiveSmsPurpose !== "sales" &&
+      !smsNonsalesStored &&
+      !smsNonsalesChecked;
+    const needsSalesAttestation =
+      effectiveSmsPurpose === "sales" && !smsSalesAttested && !smsSalesChecked;
+    if (
+      needsPermission ||
+      needsNonsales ||
+      needsSalesAttestation ||
+      (smsContextLoaded && smsPurpose === "existing_customer" && !smsCustomerSince)
+    ) {
+      setThreadErr(
+        needsPermission
+          ? "Confirm you have this person's permission before the first text."
+          : needsNonsales
+            ? "Confirm this isn't selling anything before a non-sales text."
+            : needsSalesAttestation
+              ? "Confirm you're responsible for permission and Do Not Call rules before a sales text."
+              : "Enter the approximate date of their last purchase or service.",
+      );
+      return;
+    }
     const threadId = activeId;
     const body = reply.trim();
     const bodyFingerprint = smsBodyFingerprint(body);
@@ -595,7 +679,14 @@ export default function SmsThreads({
             "Content-Type": "application/json",
             "Idempotency-Key": idempotencyKey,
           },
-          body: JSON.stringify({ body }),
+          body: JSON.stringify({
+            body,
+            callPurpose: smsRelationship && smsPurpose === "sales" ? "returning_contact" : smsPurpose,
+            permissionConfirmed: smsPermissionChecked || smsPermissionStored,
+            nonsalesConfirmed: smsNonsalesChecked || smsNonsalesStored,
+            customerSince: smsPurpose === "existing_customer" ? smsCustomerSince : undefined,
+            salesAttestationConfirmed: smsSalesChecked,
+          }),
         });
       type SmsReplyResult = {
         ok?: boolean;
@@ -1005,6 +1096,39 @@ export default function SmsThreads({
                     This conversation has no verified destination number. BotBound will not draft or
                     send until a specific Twilio line is attached.
                   </StatusNotice>
+                ) : null}
+                <OutboundPurposePicker
+                  purpose={smsRelationship && smsPurpose === "sales" ? "returning_contact" : smsPurpose}
+                  onPurpose={(next) => {
+                    setSmsPurpose(next);
+                    setSmsPermissionChecked(false);
+                    setSmsNonsalesChecked(false);
+                  }}
+                  relationship={smsRelationship}
+                  customerSince={smsCustomerSince}
+                  onCustomerSince={setSmsCustomerSince}
+                  showPermission={!smsOptedOut && !smsRelationship && !smsPermissionStored}
+                  permissionChecked={smsPermissionChecked}
+                  onPermission={setSmsPermissionChecked}
+                  showNonsales={
+                    !smsOptedOut && !smsRelationship && smsPurpose !== "sales" && !smsNonsalesStored
+                  }
+                  nonsalesChecked={smsNonsalesChecked}
+                  onNonsales={setSmsNonsalesChecked}
+                  contentWarning={smsPurpose === "sales" ? null : salesContentWarning(reply)}
+                  disabled={readOnly || sending}
+                />
+                {smsOptedOut ? (
+                  <p className="text-sm text-foreground" role="status">
+                    {INTERNAL_DNC_MESSAGE}
+                  </p>
+                ) : null}
+                {(!smsOptedOut && !smsRelationship && smsPurpose === "sales" && !smsSalesAttested) ? (
+                  <SalesAttestationCheckbox
+                    checked={smsSalesChecked}
+                    onChange={setSmsSalesChecked}
+                    disabled={sending || drafting}
+                  />
                 ) : null}
                 <fieldset disabled={readOnly} className="flex min-w-0 gap-2">
                   <Button

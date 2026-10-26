@@ -1,5 +1,4 @@
 import { and, eq, sql } from "drizzle-orm";
-import { randomUUID } from "node:crypto";
 
 import * as schema from "../db/schema";
 import { evaluateOutboundDialGate, mergeLeadMetadata } from "./outbound-dial-gate";
@@ -8,7 +7,6 @@ import { drizzle, log } from "./server-context";
 import { getErrorMessage, toJsonbSafe } from "./server-utils";
 import { placeOutboundCall } from "./voice/outbound-call-service";
 import { assertOutboundVoiceAllowed } from "./voice-spend-control";
-import { inspectOutboundRecipientPermission } from "./recipient-voice-permission-store";
 
 export const INTAKE_AUTO_DIAL_JOB_TYPE = "intake_auto_dial" as const;
 
@@ -237,22 +235,19 @@ export async function processIntakeAutoDialJob(
   }
 
   try {
-    const permission = await inspectOutboundRecipientPermission({
-      userId: payload.userId,
-      agentId: lead.agentId,
-      phone: lead.customerNumber,
-      callPurpose: "marketing_or_sales",
-      leadId,
-      attemptId: randomUUID(),
-    });
     const gate = await evaluateOutboundDialGate({
       userId: payload.userId,
       phone: lead.customerNumber,
       leadId,
       metadata,
-      isMarketingCall: true,
-      requireFederalDncScreening: true,
-      hasExpressWrittenConsent: permission.effectiveCallPurpose === "marketing_or_sales",
+      isMarketingCall: false,
+      requireFederalDncScreening: false,
+      hasExpressWrittenConsent: false,
+      audit: {
+        channel: "call",
+        requestedPurpose: "returning_contact",
+        effectivePurpose: "returning_contact",
+      },
     });
     if (!gate.allowed) {
       if (gate.reason === "outside_permitted_calling_hours") {
@@ -319,9 +314,8 @@ export async function processIntakeAutoDialJob(
       customerName: lead.customerName,
       customerNumber: lead.customerNumber,
       context: lead.context || `Inbound lead via ${payload.intakeKeyName}`,
-      callPurpose: "marketing_or_sales",
+      callPurpose: "returning_contact",
       leadId,
-      consentArtifactId: permission.artifactId,
     });
     if (result.ok && result.callId) {
       // Calls.create may return after the exact terminal callback. The shared

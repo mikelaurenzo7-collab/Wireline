@@ -12,6 +12,22 @@ function pass(_req: Request, _res: Response, next: NextFunction) {
 vi.mock("../src/middleware/auth", () => ({ authenticateUser: pass }));
 vi.mock("../src/lib/voice-spend-control", () => ({ outboundVoiceGuard: () => pass }));
 vi.mock("../src/lib/outbound-dial-gate", () => ({ evaluateOutboundDialGate: h.gate }));
+vi.mock("../src/lib/outbound-manual-screening", () => ({
+  screenManualOutbound: async () => ({
+    ok: true,
+    screening: {
+      callPurpose: "appointment_service",
+      requestedCallPurpose: "appointment_service",
+      isMarketingCall: false,
+      requireFederalDncScreening: false,
+      isRequestedCallback: false,
+    },
+    relationship: null,
+    customerSince: null,
+    contentWarning: null,
+    audit: { channel: "call", requestedPurpose: "appointment_service", effectivePurpose: "appointment_service" },
+  }),
+}));
 vi.mock("../src/lib/voice/outbound-call-service", () => ({ placeOutboundCall: h.place }));
 vi.mock("../src/lib/voice/openai-outbound-placement", () => ({
   readNativeOutboundRequestReplay: async () => null,

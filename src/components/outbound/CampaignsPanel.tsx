@@ -15,6 +15,7 @@ import {
   type SalesPlaybookId,
 } from "../../lib/sales-playbooks";
 import { LeadHuntReview } from "./LeadHuntReview";
+import { CAMPAIGN_SALES_BADGE } from "../../lib/outbound-compliance-copy";
 
 type Campaign = {
   id: string;
@@ -149,7 +150,7 @@ export default function CampaignsPanel({ initialAgentId }: { initialAgentId?: st
     const checklist = [
       "I attest lead source and consent provenance are documented for this list.",
       "Workspace call windows and retry caps are enforced at dial time (server timezone; not lead-state jurisdiction hours).",
-      "I understand DNC / TCPA / federal DNC gates run on every dial attempt.",
+      "I understand campaigns need number screening, and numbers on the Do Not Call list are skipped.",
     ];
     const confirmed = window.confirm(
       `Launch attestation (dialer still enforces DNC/TCPA and workspace call windows):\n\n${checklist
@@ -341,6 +342,7 @@ export default function CampaignsPanel({ initialAgentId }: { initialAgentId?: st
                   <p className="text-xs text-muted-foreground mt-2">
                     {c.leads_count} leads · {c.dialed_count} dialed · {c.connected_count} connected
                   </p>
+                  <p className="text-xs text-muted-foreground mt-1">{CAMPAIGN_SALES_BADGE}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {c.status === "draft" || c.status === "paused" ? (

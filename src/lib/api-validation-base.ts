@@ -8,6 +8,7 @@
 import { z, ZodSchema, ZodError } from "zod";
 import type { Request, Response, NextFunction } from "express";
 import { KNOWLEDGE_DOCUMENT_MAX_BASE64_CHARS } from "./knowledge-asset-limits";
+import { OUTBOUND_CALL_PURPOSES } from "./outbound-call-purpose";
 
 /**
  * Validation middleware factory
@@ -383,6 +384,11 @@ export const sendSmsSchema = z.object({
 /** Inbox thread reply body — used by POST /api/sms/threads/:id/reply. */
 export const smsReplySchema = z.object({
   body: z.string().min(1, "body is required").max(1600),
+  callPurpose: z.enum(OUTBOUND_CALL_PURPOSES).optional(),
+  permissionConfirmed: z.boolean().optional(),
+  nonsalesConfirmed: z.boolean().optional(),
+  customerSince: z.string().max(40).optional(),
+  salesAttestationConfirmed: z.boolean().optional(),
 });
 
 // ============================================================================

@@ -11,7 +11,7 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("outbound consent copy contract", () => {
   it("exports canonical label and legal path", () => {
-    expect(OUTBOUND_CONSENT_LABEL).toContain("permission to call");
+    expect(OUTBOUND_CONSENT_LABEL).toContain("permission to contact");
     expect(OUTBOUND_CONSENT_LEGAL_PATH).toBe("/trust/legal");
   });
 

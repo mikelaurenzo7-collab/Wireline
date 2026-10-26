@@ -1,6 +1,6 @@
 /**
  * Canonical application schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0193_reuse_bot_mark_pictures.sql`.
+ * Latest committed migration: `drizzle/migrations/0194_outbound_purpose_compliance.sql`.
  * Runtime voice defaults remain defined by
  * `drizzle/migrations/0168_openai_realtime_voice_runtime.sql`; migrations 0169
  * and 0172 remove empty retired provider ledgers.
@@ -114,6 +114,12 @@ export const settings = pgTable("wireline_settings", {
   nativeCalendar: jsonb("native_calendar"),
   /** Seller's own National DNC Registry subscription; see lib/dnc-seller-registration. */
   dncSellerRegistration: jsonb("dnc_seller_registration"),
+  /** Optional National DNC Registry account number sent with sales screening. */
+  dncSan: text("dnc_san"),
+  /** Who confirmed one-off sales responsibility, when, and which wording. */
+  salesDncAttestationUserId: uuid("sales_dnc_attestation_user_id"),
+  salesDncAttestationAt: timestamp("sales_dnc_attestation_at", { withTimezone: true }),
+  salesDncAttestationVersion: text("sales_dnc_attestation_version"),
   crmType: text("crm_type"),
   twilioMessagingEnabled: boolean("twilio_messaging_enabled").default(false),
   twilioLookupEnabled: boolean("twilio_lookup_enabled").default(false),

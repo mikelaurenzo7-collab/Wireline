@@ -220,6 +220,12 @@ async function readState(
   return { request, grant, revoked, claims };
 }
 
+function summaryPurpose(purpose: OutboundCallPurpose): VoicePermissionSummary["purpose"] {
+  if (purpose === "callback") return "callback";
+  if (purpose === "sales" || purpose === "marketing_or_sales") return "marketing_or_sales";
+  return "service_or_requested";
+}
+
 function summary(state: PermissionState, now = Date.now()): VoicePermissionSummary {
   const { request, grant, revoked, claims } = state;
   const status = revoked
@@ -236,7 +242,7 @@ function summary(state: PermissionState, now = Date.now()): VoicePermissionSumma
     agent_id: request.agentId,
     bot_name: request.botName,
     recipient_phone_masked: maskedVoicePermissionPhone(request.phone),
-    purpose: request.purpose,
+    purpose: summaryPurpose(request.purpose),
     status,
     request_expires_at: request.requestExpiresAt,
     expires_at: request.expiresAt,
@@ -863,7 +869,7 @@ async function resolvePermissionForDispatch(
     throw new AppError(
       403,
       "OUTSIDE_PERMITTED_CALLING_HOURS",
-      `This recipient can be called only from ${callingHours.startHour === 9 ? "9am" : "8am"} until 9pm in their signed local time zone.`,
+      `This recipient can be called only from ${callingHours.startHour === 9 ? "9am" : "8am"} until 8pm in their signed local time zone.`,
       { calling_hours: callingHours },
     );
   const [blocked] = await tx

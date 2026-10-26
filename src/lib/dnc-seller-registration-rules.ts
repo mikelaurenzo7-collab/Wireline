@@ -17,6 +17,19 @@ export const DNC_REGISTRY_URL = "https://telemarketing.donotcall.gov";
 const MAX_TERM_DAYS = 400;
 const MAX_AREA_CODES = 400;
 const SAN_RE = /^[A-Za-z0-9-]{6,20}$/;
+
+/** Optional workspace SAN. Blank clears it. A full registration is not required. */
+export function normalizeOptionalDncSan(
+  value: unknown,
+): { ok: true; san: string | null } | { ok: false; error: string } {
+  if (value == null || (typeof value === "string" && value.trim() === "")) {
+    return { ok: true, san: null };
+  }
+  if (typeof value !== "string" || !SAN_RE.test(value.trim())) {
+    return { ok: false, error: "Account numbers are 6 to 20 letters, numbers, or dashes." };
+  }
+  return { ok: true, san: value.trim().toUpperCase() };
+}
 const AREA_CODE_RE = /^[2-9]\d{2}$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const VENDOR_PROJECT_RE = /^[A-Za-z0-9_-]{1,64}$/;

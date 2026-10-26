@@ -405,11 +405,13 @@ describe("authenticated SMS reply pre-provider guard", () => {
       "sms_thread_reply",
       { phone: REAL_NUMBER },
     );
-    expect(loaded.evaluateSmsThreadReplyGate).toHaveBeenCalledWith({
-      userId: USER_ID,
-      threadId: "thread-1",
-      phone: REAL_NUMBER,
-    });
+    expect(loaded.evaluateSmsThreadReplyGate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: USER_ID,
+        threadId: "thread-1",
+        phone: REAL_NUMBER,
+      }),
+    );
     expect(loaded.insert).toHaveBeenCalledTimes(1);
     expect(loaded.sendTenantMessage).toHaveBeenCalledWith(
       USER_ID,

@@ -253,12 +253,12 @@ describe("explicit US jurisdiction policy", () => {
       ).allowed,
     ).toBe(true);
   });
-  it("enforces Illinois 9am in both daylight and standard time and rejects 9pm exactly", () => {
+  it("enforces Illinois 9am in both daylight and standard time and rejects 8pm exactly", () => {
     for (const [stamp, allowed] of [
       ["2026-10-17T13:59:59Z", false],
       ["2026-10-17T14:00:00Z", true],
-      ["2026-10-18T01:59:59Z", true],
-      ["2026-10-18T02:00:00Z", false],
+      ["2026-10-18T00:59:59Z", true],
+      ["2026-10-18T01:00:00Z", false],
       ["2026-12-17T14:59:59Z", false],
       ["2026-12-17T15:00:00Z", true],
     ] as const)

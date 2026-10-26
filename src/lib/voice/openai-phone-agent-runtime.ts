@@ -4,6 +4,7 @@ import { DIRECTIVE_PROMPT_ORDER } from "../agent-knowledge-search";
 import { and, desc, eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
+import { spokenBusinessName } from "./spoken-business-name";
 import { AppError } from "../api-error";
 import {
   RUNTIME_ACTION_SAFETY_BLOCK,
@@ -382,7 +383,7 @@ export function composeOpenAIRealtimeInstructions(input: {
 }
 
 async function loadRuntime(agentId: string, userId: string) {
-  const [agents, settings, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
+  const [agents, settings, personalities, directives, knowledge, owners] = await drizzle.transaction((tx) =>
     serialQueryBatch([
       tx
         .select({
@@ -417,6 +418,7 @@ async function loadRuntime(agentId: string, userId: string) {
           twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
           twilioLookupEnabled: schema.settings.twilioLookupEnabled,
           businessName: schema.settings.businessName,
+          workspaceDisplayName: schema.settings.workspaceDisplayName,
           nativeCalendar: schema.settings.nativeCalendar,
         })
         .from(schema.settings)
@@ -440,17 +442,35 @@ async function loadRuntime(agentId: string, userId: string) {
         .orderBy(desc(schema.knowledge.createdAt))
         // Only the prompt's opening facts; the search tool reaches the rest.
         .limit(MAX_INITIAL_KNOWLEDGE_ITEMS),
+      tx
+        .select({ fullName: schema.users.fullName })
+        .from(schema.users)
+        .where(eq(schema.users.id, userId))
+        .limit(1),
     ]),
   );
 
   const agent = agents[0] as OpenAIRealtimeInstructionAgent | undefined;
   if (!agent) throw AppError.notFound("Agent not found.");
-  const tenant: OpenAIRealtimeTenantSettings = settings[0] || {
-    aiTier: null,
-    twilioMessagingEnabled: false,
-    twilioLookupEnabled: false,
-    businessName: null,
-  };
+  const row = settings[0];
+  const tenant: OpenAIRealtimeTenantSettings = row
+    ? {
+        aiTier: row.aiTier,
+        twilioMessagingEnabled: row.twilioMessagingEnabled,
+        twilioLookupEnabled: row.twilioLookupEnabled,
+        nativeCalendar: row.nativeCalendar,
+        businessName: spokenBusinessName({
+          businessName: row.businessName,
+          workspaceDisplayName: row.workspaceDisplayName,
+          accountDisplayName: owners[0]?.fullName,
+        }),
+      }
+    : {
+        aiTier: null,
+        twilioMessagingEnabled: false,
+        twilioLookupEnabled: false,
+        businessName: null,
+      };
   return {
     agent,
     tenant,

@@ -9,11 +9,12 @@ import { validate } from "../middleware/input-validation";
 import { AppError } from "../lib/api-error";
 import { normalizeOutboundNumber } from "../lib/dialer-compliance";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
+import { CALL_NEEDS_PERMISSION_MESSAGE } from "../lib/outbound-compliance-copy";
 import {
   OUTBOUND_CALL_PURPOSES,
   outboundConsentMetadata,
-  screenedDirectOutboundCall,
 } from "../lib/outbound-call-purpose";
+import { screenManualOutbound } from "../lib/outbound-manual-screening";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { SentryEvents } from "../lib/sentry-events";
 import { drizzle, log } from "../lib/server-context";
@@ -49,6 +50,10 @@ const dialSchema = z.object({
   customerName: z.string().max(200).optional(),
   context: z.string().max(2000).optional(),
   callPurpose: z.enum(OUTBOUND_CALL_PURPOSES),
+  permissionConfirmed: z.boolean().optional(),
+  nonsalesConfirmed: z.boolean().optional(),
+  customerSince: z.string().max(40).optional(),
+  salesAttestationConfirmed: z.boolean().optional(),
   requestKey: callRequestKeySchema,
   consentArtifactId: z.string().uuid().optional(),
   preparedRequestId: callRequestKeySchema.optional(),
@@ -86,22 +91,26 @@ function gateResponse(res: Response, gate: DeniedOutboundDialGate) {
   if (gate.reason === "federal_dnc_unconfigured") {
     return res.status(503).json({
       code: gate.federalDncCode || "FEDERAL_DNC_UNCONFIGURED",
-      error:
-        gate.federalDncMessage ||
-        "Screening has to clear this sales outreach before it goes out. Answering calls still works.",
+      error: gate.federalDncMessage || gate.customerMessage || "Campaigns and automated sales need number screening before they can send.",
+    });
+  }
+  if (gate.reason === "sales_attestation_required") {
+    return res.status(403).json({
+      code: "SALES_ATTESTATION_REQUIRED",
+      error: gate.customerMessage,
     });
   }
   if (gate.reason === "blocked_internal_dnc") {
     return res.status(403).json({
       code: "FORBIDDEN",
-      error: "This number is on the Do Not Call list and cannot be dialed.",
+      error: gate.customerMessage || "This person asked not to be contacted. We won't call or text them from this line.",
       dncBlocked: true,
     });
   }
   if (gate.reason === "blocked_tcpa") {
     return res.status(403).json({
       code: "FORBIDDEN",
-      error: gate.tcpaDecision?.disclosure_script || "Call blocked by TCPA consent rules.",
+      error: gate.customerMessage || gate.tcpaDecision?.disclosure_script || CALL_NEEDS_PERMISSION_MESSAGE,
       tcpaBlocked: true,
       tcpa: gate.tcpaDecision,
     });
@@ -109,15 +118,14 @@ function gateResponse(res: Response, gate: DeniedOutboundDialGate) {
   if (gate.reason === "outside_permitted_calling_hours") {
     return res.status(403).json({
       code: "OUTSIDE_PERMITTED_CALLING_HOURS",
-      error: "This number cannot be dialed outside permitted calling hours.",
+      error: gate.customerMessage || "It's outside 8am–8pm where they are. Try after 8am their time.",
       reason: gate.reason,
       calling_hours: gate.metadataPatch?.calling_hours,
     });
   }
   return res.status(409).json({
     code: "DUPLICATE_DIAL_SUPPRESSED",
-    error:
-      "This number was already dialed recently or has an active dial request. Wait before dialing again, or schedule a callback.",
+    error: gate.customerMessage || "This number already got a call today. You can try again tomorrow.",
     reason: gate.reason,
     status: gate.status,
   });
@@ -202,7 +210,23 @@ router.post(
           { allowExpiredReceipt: true },
         )
       : null;
-    const screening = screenedDirectOutboundCall(callPurpose);
+    const manual = await screenManualOutbound({
+      userId: req.user.id,
+      phone: phoneE164,
+      channel: "call",
+      requestedPurpose: callPurpose,
+      permissionConfirmed: req.body.permissionConfirmed,
+      nonsalesConfirmed: req.body.nonsalesConfirmed,
+      customerSince: req.body.customerSince,
+      content: context,
+      salesAttestationConfirmed: req.body.salesAttestationConfirmed,
+      actorIp: req.ip,
+      userAgent: typeof req.get === "function" ? req.get("user-agent") : null,
+    });
+    if (!manual.ok) {
+      return res.status(manual.status).json({ code: manual.code, error: manual.error });
+    }
+    const screening = manual.screening;
     const effectiveCallPurpose = screening.callPurpose;
     const replay = await readNativeOutboundRequestReplay({
       userId: req.user.id,
@@ -260,9 +284,11 @@ router.post(
         phone: phoneE164,
         isMarketingCall: screening.isMarketingCall,
         requireFederalDncScreening: screening.requireFederalDncScreening,
-        hasExpressWrittenConsent: screening.hasExpressWrittenConsent,
-        isRequestedCallback: screening.isRequestedCallback,
+        salesScreening: screening.requireFederalDncScreening ? "one_off" : "bulk",
+        hasExpressWrittenConsent: false,
+        isRequestedCallback: false,
         metadata: { has_express_written_consent: false },
+        audit: manual.audit,
       });
       if (!gate.allowed) {
         await markReservation(req.user.id, operationKey, {

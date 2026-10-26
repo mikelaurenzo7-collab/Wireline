@@ -303,7 +303,16 @@ const IntakeLeadsBulkRequest: JsonSchema = {
 
 const OutboundCallPurpose: JsonSchema = {
   type: "string",
-  enum: ["service_or_requested", "marketing_or_sales", "callback"],
+  enum: [
+    "personal",
+    "returning_contact",
+    "appointment_service",
+    "existing_customer",
+    "sales",
+    "callback",
+    "service_or_requested",
+    "marketing_or_sales",
+  ],
   description:
     "`marketing_or_sales` requires express written consent. `service_or_requested` and `callback` must not fake marketing consent.",
 };

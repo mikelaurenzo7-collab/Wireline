@@ -36,7 +36,7 @@ describe("64.1200(b) runtime wiring", () => {
       // recorded request earns the "callback" class — which drops the (b)(3)
       // announcement. Everything else stays marketing and keeps it.
       ["src/lib/callback-engine.ts", /consumerRequested \? "callback" : "marketing_or_sales"/],
-      ["src/lib/intake-auto-dial.ts", /callPurpose: "marketing_or_sales"/],
+      ["src/lib/intake-auto-dial.ts", /callPurpose: "returning_contact"/],
       // Web/mobile manual dials classify the client label as untrusted and pass
       // only the server-derived effective purpose to the placement boundary.
       [

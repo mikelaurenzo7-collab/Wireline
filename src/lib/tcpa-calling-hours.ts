@@ -1,11 +1,12 @@
 /**
- * TCPA permitted calling hours (47 CFR § 64.1200(c)(1)):
- * automated/telemarketing calls may only be placed between 8:00 a.m. and
- * 9:00 p.m. local time at the called party's location.
+ * Calling hours. Federal telemarketing rules allow 8:00 a.m. to 9:00 p.m.
+ * local time. BotBound's default is stricter: 8:00 a.m. to 8:00 p.m. recipient
+ * local time. The end hour is exclusive, so 8:00 p.m. is already blocked.
  *
  * State → timezone is a best-effort NANP mapping. When the destination state
  * cannot be inferred, we use the continental US intersection window
- * (11:00–21:00 America/New_York) so a call is legal in every continental zone.
+ * (11:00–20:00 America/New_York) so a call is inside 8am–8pm in every
+ * continental zone.
  */
 import { inferStateFromPhone } from "./tcpa-consent";
 import {
@@ -19,7 +20,7 @@ import {
 } from "./us-calling-jurisdiction";
 
 export const TCPA_CALLING_HOUR_START = FEDERAL_CALLING_HOUR_START;
-export const TCPA_CALLING_HOUR_END = FEDERAL_CALLING_HOUR_END; // exclusive of 21:00+ (last legal hour is 20:xx)
+export const TCPA_CALLING_HOUR_END = FEDERAL_CALLING_HOUR_END; // exclusive of 20:00 (last legal hour is 19:xx)
 
 /** Primary IANA zone per USPS state for TCPA local-time checks. */
 const STATE_PRIMARY_TIMEZONE: Record<string, string> = {
@@ -34,7 +35,7 @@ const STATE_PRIMARY_TIMEZONE: Record<string, string> = {
  * States whose NANP footprint straddles a timezone line. A single area code
  * can cover both sides (e.g. FL 850 spans Eastern Tallahassee and Central
  * Pensacola), so the number alone can't pin the exact zone. To stay fail-safe
- * on TCPA hours we require the call to fall inside 8am–9pm local in EVERY zone
+ * on calling hours we require the call to fall inside 8am–8pm local in EVERY zone
  * the state spans — a number in the western (or eastern) slice is then never
  * dialed outside permitted hours, at the cost of the one boundary hour for
  * those states. Under-blocking here is a per-call TCPA violation; over-blocking
@@ -45,7 +46,7 @@ const STATE_SPANNED_TIMEZONES = US_STATE_SPANNED_TIMEZONES;
 /** Conservative continental intersection when state/timezone is unknown. */
 const UNKNOWN_DESTINATION_TIMEZONE = "America/New_York";
 const UNKNOWN_DESTINATION_START_HOUR = 11;
-const UNKNOWN_DESTINATION_END_HOUR = 21;
+const UNKNOWN_DESTINATION_END_HOUR = 20;
 
 export type CallingHoursDecision = {
   allowed: boolean;

@@ -11,6 +11,7 @@ import {
   VOICE_WORKER_AUTH_HEADER,
 } from "../lib/voice/openai-sip-worker-dispatch";
 import { and, eq } from "drizzle-orm";
+import { spokenBusinessName } from "../lib/voice/spoken-business-name";
 
 import * as schema from "../db/schema";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
@@ -241,10 +242,13 @@ async function resolveOutboundContext(
     const [agentContext] = await tx
       .select({
         businessName: schema.settings.businessName,
+        workspaceDisplayName: schema.settings.workspaceDisplayName,
+        accountDisplayName: schema.users.fullName,
         complianceMode: schema.agents.complianceMode,
       })
       .from(schema.agents)
       .leftJoin(schema.settings, eq(schema.settings.userId, schema.agents.userId))
+      .leftJoin(schema.users, eq(schema.users.id, schema.agents.userId))
       .where(and(eq(schema.agents.id, lead.agentId), eq(schema.agents.userId, lead.userId)))
       .limit(1);
     const calledNumber = normalizeOpenAIPhoneNumber(line?.phoneNumber);
@@ -283,7 +287,11 @@ async function resolveOutboundContext(
         customerName: lead.customerName,
         context: lead.context,
         callPurpose: outboundPurpose(nativeVoice.call_purpose),
-        businessName: agentContext.businessName,
+        businessName: spokenBusinessName({
+          businessName: agentContext.businessName,
+          workspaceDisplayName: agentContext.workspaceDisplayName,
+          accountDisplayName: agentContext.accountDisplayName,
+        }),
         complianceMode: agentContext.complianceMode,
         callRecordingEnabled,
         ...(twilioParentCallSid ? { twilioParentCallSid } : {}),

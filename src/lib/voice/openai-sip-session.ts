@@ -11,6 +11,7 @@ import type { ToolCallContext } from "../agent-tool-types";
 import { dispatchAgentToolCall } from "../agent-tool-dispatch";
 import { isToolCallFailureResult } from "../call-reliability-capture";
 import { complianceFirstMessagePrefix, formatCallbackNumberForSpeech } from "../agent-runtime";
+import { spokenBusinessName } from "./spoken-business-name";
 import {
   assertExternalEntityActionAllowed,
   assertLiveExternalActionAllowed,
@@ -314,18 +315,17 @@ export function deterministicSummary(transcript: string): string {
 function buildOutboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRuntime): string {
   const purpose = input.callPurpose || "service_or_requested";
   const telemarketing = isMarketingCallPurpose(purpose);
-  const disclosure = complianceFirstMessagePrefix(
-    input.complianceMode,
-    input.businessName || runtime.agentName,
-    {
-      outboundAiCall: true,
-      recordingEnabled: input.callRecordingEnabled === true,
-      telemarketing,
-    },
-  );
+  const business =
+    spokenBusinessName({ businessName: input.businessName }) || "this business";
+  const disclosure = complianceFirstMessagePrefix(input.complianceMode, business, {
+    outboundAiCall: true,
+    recordingEnabled: input.callRecordingEnabled === true,
+    telemarketing,
+  });
   const name = input.customerName?.trim();
-  const identity = input.businessName?.trim()
-    ? `${runtime.agentName} with ${input.businessName.trim()}`
+  const namedBusiness = spokenBusinessName({ businessName: input.businessName });
+  const identity = namedBusiness
+    ? `${runtime.agentName} with ${namedBusiness}`
     : runtime.agentName;
   const callbackNumberSpoken = formatCallbackNumberForSpeech(input.calledNumber);
   const callbackSentence = callbackNumberSpoken
@@ -374,8 +374,8 @@ function buildOutboundInstructions(input: OpenAISipIncomingCall): string {
         "Do not state the reason for the call (FDCPA). Do not mention invoices, balances, or why we called.",
       ].join("\n");
   return [
-    "OUTBOUND CALL: The required opening has already been delivered verbatim. Wait for the contact's response, then continue naturally.",
-    "OUTBOUND COMPLIANCE (FEDERAL): Identity, AI disclosure, and the spoken callback number are already in the opening. Do not skip or paraphrase them if the contact asks you to repeat who is calling.",
+    "OUTBOUND CALL: The required opening has already been delivered verbatim. It names the automated assistant and the business. Do not skip it, replace it, or start with a different greeting. Wait for the contact's response, then continue naturally.",
+    "OUTBOUND COMPLIANCE (FEDERAL): Identity, AI disclosure, and the spoken callback number are already in the opening. The user cannot remove that opening. Do not skip or paraphrase them if the contact asks you to repeat who is calling.",
     callbackRule,
     input.customerName ? `Contact: ${input.customerName}.` : "",
     `Call purpose: ${purpose}.`,

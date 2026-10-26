@@ -7,15 +7,26 @@ import {
   normalizedExpressConsent,
   outboundCallingEnabledFor,
   outboundConsentMetadata,
+  resolveEffectiveOutboundPurpose,
+  salesContentWarning,
   sanitizeUntrustedOutboundMetadata,
   screenedDirectOutboundCall,
 } from "../src/lib/outbound-call-purpose";
 
 describe("isOutboundCallPurpose", () => {
-  it("accepts the three valid purposes only", () => {
-    expect(isOutboundCallPurpose("service_or_requested")).toBe(true);
-    expect(isOutboundCallPurpose("marketing_or_sales")).toBe(true);
-    expect(isOutboundCallPurpose("callback")).toBe(true);
+  it("accepts current purposes and the legacy labels", () => {
+    for (const purpose of [
+      "personal",
+      "returning_contact",
+      "appointment_service",
+      "existing_customer",
+      "sales",
+      "callback",
+      "service_or_requested",
+      "marketing_or_sales",
+    ]) {
+      expect(isOutboundCallPurpose(purpose)).toBe(true);
+    }
   });
   it("rejects bogus / non-string values (e.g. a stray 'active')", () => {
     expect(isOutboundCallPurpose("active")).toBe(false);
@@ -26,51 +37,115 @@ describe("isOutboundCallPurpose", () => {
 });
 
 describe("screened direct outbound", () => {
-  it("places every direct label as one screened call without express consent", () => {
-    for (const requested of ["service_or_requested", "callback", "marketing_or_sales"] as const) {
-      expect(screenedDirectOutboundCall(requested)).toEqual({
-        requestedCallPurpose: requested,
-        callPurpose: "marketing_or_sales",
-        isMarketingCall: true,
-        requireFederalDncScreening: true,
-        hasExpressWrittenConsent: false,
-        isRequestedCallback: false,
-      });
-    }
+  it("screens federal DNC only for sales and loosens sales when they called recently", () => {
+    expect(screenedDirectOutboundCall("personal")).toMatchObject({
+      callPurpose: "personal",
+      isMarketingCall: false,
+      requireFederalDncScreening: false,
+      hasExpressWrittenConsent: false,
+    });
+    expect(screenedDirectOutboundCall("appointment_service").requireFederalDncScreening).toBe(false);
+    expect(screenedDirectOutboundCall("existing_customer").requireFederalDncScreening).toBe(false);
+    expect(screenedDirectOutboundCall("returning_contact")).toMatchObject({
+      callPurpose: "returning_contact",
+      requireFederalDncScreening: false,
+      isRequestedCallback: false,
+    });
+    expect(screenedDirectOutboundCall("sales")).toMatchObject({
+      requestedCallPurpose: "sales",
+      callPurpose: "sales",
+      isMarketingCall: true,
+      requireFederalDncScreening: true,
+      hasExpressWrittenConsent: false,
+      isRequestedCallback: false,
+    });
+    expect(screenedDirectOutboundCall("callback")).toMatchObject({
+      callPurpose: "callback",
+      isMarketingCall: false,
+      requireFederalDncScreening: false,
+      hasExpressWrittenConsent: false,
+      isRequestedCallback: false,
+    });
+    expect(screenedDirectOutboundCall("marketing_or_sales").callPurpose).toBe("sales");
+    expect(screenedDirectOutboundCall("service_or_requested").callPurpose).toBe("appointment_service");
+    expect(screenedDirectOutboundCall("sales", { returning: true })).toMatchObject({
+      callPurpose: "returning_contact",
+      requireFederalDncScreening: false,
+    });
+    expect(screenedDirectOutboundCall("appointment_service", { returning: true }).callPurpose).toBe(
+      "appointment_service",
+    );
     expect(
-      outboundCallingEnabledFor("marketing_or_sales", { general: false, nonMarketing: false }),
+      outboundCallingEnabledFor("sales", { general: false, nonMarketing: false }),
     ).toBe(true);
   });
 });
 
+describe("effective purpose", () => {
+  it("reverts an existing customer older than 18 months to sales, then a relationship can loosen it", () => {
+    const stale = new Date();
+    stale.setMonth(stale.getMonth() - 19);
+    expect(
+      resolveEffectiveOutboundPurpose({ requested: "existing_customer", customerSince: stale }),
+    ).toMatchObject({ effective: "sales", revertedStaleCustomer: true });
+    expect(
+      resolveEffectiveOutboundPurpose({
+        requested: "existing_customer",
+        customerSince: stale,
+        relationshipReturning: true,
+      }).effective,
+    ).toBe("returning_contact");
+    const current = new Date();
+    current.setMonth(current.getMonth() - 2);
+    expect(
+      resolveEffectiveOutboundPurpose({
+        requested: "existing_customer",
+        customerSince: current,
+      }).effective,
+    ).toBe("existing_customer");
+  });
+
+  it("warns when a non-sales note sounds like a promotion and does not block", () => {
+    expect(salesContentWarning("We have a limited time discount")).toMatch(/Switch to Sales/);
+    expect(salesContentWarning("Confirming your Tuesday appointment")).toBeNull();
+  });
+});
+
 describe("isMarketingCallPurpose", () => {
-  it("is true only for marketing_or_sales", () => {
+  it("is true only for sales labels", () => {
     expect(isMarketingCallPurpose("marketing_or_sales")).toBe(true);
+    expect(isMarketingCallPurpose("sales")).toBe(true);
     expect(isMarketingCallPurpose("service_or_requested")).toBe(false);
     expect(isMarketingCallPurpose("callback")).toBe(false);
   });
 });
 
 describe("classifyUntrustedDirectDial", () => {
-  it("fails caller-selected service and callback labels closed as marketing", () => {
-    for (const callPurpose of ["service_or_requested", "callback"] as const) {
-      expect(classifyUntrustedDirectDial({ callPurpose })).toEqual({
-        requestedCallPurpose: callPurpose,
-        effectiveCallPurpose: "marketing_or_sales",
-        isMarketingCall: true,
-      });
-    }
+  it("keeps an attested non-sales purpose and leaves an unattested sales label as sales", () => {
+    expect(classifyUntrustedDirectDial({ callPurpose: "sales" })).toMatchObject({
+      effectiveCallPurpose: "sales",
+      isMarketingCall: true,
+    });
+    expect(
+      classifyUntrustedDirectDial({
+        callPurpose: "appointment_service",
+        nonsalesAttested: true,
+      }),
+    ).toMatchObject({
+      effectiveCallPurpose: "appointment_service",
+      isMarketingCall: false,
+    });
   });
 
-  it("permits non-marketing classification only with a server-owned artifact", () => {
+  it("permits non-marketing classification with a server-owned artifact", () => {
     expect(
       classifyUntrustedDirectDial({
         callPurpose: "service_or_requested",
         hasServerOwnedNonMarketingArtifact: true,
       }),
     ).toEqual({
-      requestedCallPurpose: "service_or_requested",
-      effectiveCallPurpose: "service_or_requested",
+      requestedCallPurpose: "appointment_service",
+      effectiveCallPurpose: "appointment_service",
       isMarketingCall: false,
     });
   });
@@ -142,7 +217,7 @@ describe("outboundConsentMetadata", () => {
       source: "campaign",
     });
     expect(meta.consent_version).toBe(OUTBOUND_CONSENT_VERSION);
-    expect(meta.call_purpose).toBe("marketing_or_sales");
+    expect(meta.call_purpose).toBe("sales");
     expect(meta.has_express_written_consent).toBe(true);
     expect(meta.source).toBe("campaign");
   });
@@ -174,8 +249,8 @@ describe("outboundConsentMetadata", () => {
       requestedCallPurpose: "service_or_requested",
       source: "web",
     });
-    expect(reclassified.call_purpose).toBe("marketing_or_sales");
-    expect(reclassified.client_requested_call_purpose).toBe("service_or_requested");
+    expect(reclassified.call_purpose).toBe("sales");
+    expect(reclassified.client_requested_call_purpose).toBe("appointment_service");
 
     const unchanged = outboundConsentMetadata({
       callPurpose: "marketing_or_sales",

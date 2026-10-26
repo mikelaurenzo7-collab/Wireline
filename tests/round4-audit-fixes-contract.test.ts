@@ -105,7 +105,7 @@ describe("round-4 audit fix contracts", () => {
     expect(session).toContain("function buildOutboundOpening");
     expect(session).toContain("Say exactly these words and nothing else:");
     expect(factory).toContain("businessName: schema.settings.businessName");
-    expect(session).toContain("input.businessName || runtime.agentName");
+    expect(session).toContain('|| "this business"');
   });
 
   it("missing transcripts are logged as unverifiable, never as played", () => {

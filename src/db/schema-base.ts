@@ -180,6 +180,12 @@ export const settings = pgTable("wireline_settings", {
   businessHours: jsonb("business_hours"),
   nativeCalendar: jsonb("native_calendar"),
   dncSellerRegistration: jsonb("dnc_seller_registration"),
+  /** Optional National DNC Registry account number sent with sales screening. */
+  dncSan: text("dnc_san"),
+  /** Who confirmed one-off sales responsibility, when, and which wording. */
+  salesDncAttestationUserId: uuid("sales_dnc_attestation_user_id"),
+  salesDncAttestationAt: timestamp("sales_dnc_attestation_at", { withTimezone: true }),
+  salesDncAttestationVersion: text("sales_dnc_attestation_version"),
   crmType: text("crm_type"),
   twilioMessagingEnabled: boolean("twilio_messaging_enabled").default(false),
   twilioLookupEnabled: boolean("twilio_lookup_enabled").default(false),
@@ -2088,6 +2094,75 @@ export const designIntegrations = pgTable(
 );
 
 export type DesignIntegration = typeof designIntegrations.$inferSelect;
+
+/**
+ * One row per workspace phone. Stores the one-time permission and non-sales
+ * confirmations, the last purpose used, and an existing-customer date.
+ * Mutable. Account deletion removes it. Not a consent record collected by BotBound.
+ */
+export const contactOutboundConsent = pgTable(
+  "wireline_contact_outbound_consent",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    phoneE164: text("phone_e164").notNull(),
+    permissionConfirmedAt: timestamp("permission_confirmed_at", { withTimezone: true }),
+    permissionTextVersion: text("permission_text_version"),
+    nonsalesConfirmedAt: timestamp("nonsales_confirmed_at", { withTimezone: true }),
+    nonsalesTextVersion: text("nonsales_text_version"),
+    lastPurpose: text("last_purpose"),
+    customerSince: timestamp("customer_since", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    userPhoneKey: unique("wireline_contact_outbound_consent_user_phone_key").on(
+      t.userId,
+      t.phoneE164,
+    ),
+    userIdx: index("idx_contact_outbound_consent_user").on(t.userId),
+  }),
+);
+
+/**
+ * Append-only outbound allow/block ledger. Retained for 5 years: it is not in
+ * the 365-day purge. Terminal account deletion may erase it. No provider secrets.
+ */
+export const outboundPurposeAudit = pgTable(
+  "wireline_outbound_purpose_audit",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    channel: text("channel").notNull(),
+    destinationE164: text("destination_e164").notNull(),
+    requestedPurpose: text("requested_purpose").notNull(),
+    effectivePurpose: text("effective_purpose").notNull(),
+    derivedRelationship: jsonb("derived_relationship"),
+    attested: boolean("attested").default(false).notNull(),
+    attestationTextVersion: text("attestation_text_version"),
+    salesAttestationUserId: uuid("sales_attestation_user_id"),
+    salesAttestationAt: timestamp("sales_attestation_at", { withTimezone: true }),
+    salesAttestationVersion: text("sales_attestation_version"),
+    confirmations: jsonb("confirmations"),
+    customerSince: timestamp("customer_since", { withTimezone: true }),
+    dncChecked: boolean("dnc_checked").default(false).notNull(),
+    dncSource: text("dnc_source").default("none").notNull(),
+    dncResult: text("dnc_result"),
+    dncListVersion: text("dnc_list_version"),
+    quietHoursTz: text("quiet_hours_tz"),
+    decision: text("decision").notNull(),
+    blockCode: text("block_code"),
+    actorIp: text("actor_ip"),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    userCreatedIdx: index("idx_outbound_purpose_audit_user_created").on(t.userId, t.createdAt),
+  }),
+);
 
 export const oauthPendingCodes = pgTable("wireline_oauth_pending_codes", {
   codeHash: text("code_hash").primaryKey(),

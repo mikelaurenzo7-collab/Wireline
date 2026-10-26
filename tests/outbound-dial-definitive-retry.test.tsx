@@ -2,6 +2,9 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import OutboundDialDialog from "../src/components/OutboundDialDialog";
 import OutboundHub from "../src/components/outbound/OutboundHub";
+import OutboundPurposePicker from "../src/components/outbound/OutboundPurposePicker";
+import { NONSALES_CONFIRMATION_LABEL } from "../src/lib/outbound-compliance-copy";
+import { OUTBOUND_CONSENT_LABEL } from "../src/lib/outbound-consent-copy";
 import { authFetch } from "../src/lib/api";
 import { readPendingOutboundDial } from "../src/lib/outbound-dial-recovery";
 
@@ -167,6 +170,14 @@ it("opens the reviewed call dialog with the Bot selected in Calls", () => {
   expect(posts()).toHaveLength(0);
 });
 
+let preparedCall: {
+  request_key: string;
+  agent_id: string;
+  phone: string;
+  instruction: string;
+  call_purpose: "service_or_requested" | "callback";
+  expires_at: string;
+} | undefined;
 function render(open = true) {
   harness.cursor = 0;
   const direct = OutboundDialDialog({
@@ -174,6 +185,7 @@ function render(open = true) {
     onClose: close,
     initialAgentId: "bot-1",
     initialNumber: "+13125550123",
+    preparedCall,
   }) as ReactElement;
   const Component = direct.type as (props: unknown) => ReactNode;
   nodes = descendants(Component(direct.props));
@@ -203,7 +215,19 @@ function posted(index: number) {
 function response(status: number, body: unknown = {}) {
   return () => Promise.resolve(new Response(JSON.stringify(body), { status }));
 }
+async function confirmContact() {
+  const picker = nodes.find((node) => node.type === OutboundPurposePicker);
+  expect(picker, "purpose picker").toBeDefined();
+  const props = picker!.props as {
+    onPermission?: (checked: boolean) => void;
+    onNonsales?: (checked: boolean) => void;
+  };
+  props.onPermission?.(true);
+  props.onNonsales?.(true);
+}
 async function prepare() {
+  await settle();
+  confirmContact();
   await settle();
   expect(button("Place call").props.disabled).toBe(false);
 }
@@ -219,6 +243,7 @@ function unmount() {
 
 beforeEach(() => {
   unmount();
+  preparedCall = undefined;
   harness.agents = [
     {
       id: "bot-1",
@@ -288,6 +313,8 @@ describe("direct outbound definitive-refusal retry", () => {
       expect.arrayContaining(["Business Front Desk", "Personal Assistant"]),
     );
     expect(optionLabels).not.toContain("Marketing or sales");
+    confirmContact();
+    await settle();
     expect(button("Place call").props.disabled).toBe(false);
     expect(posts()).toHaveLength(0);
     expect(entries.size).toBe(0);
@@ -412,4 +439,57 @@ describe("direct outbound definitive-refusal retry", () => {
     expect(button("Place call").props.disabled).toBe(true);
     expect(posts()).toHaveLength(1);
   });
+
+  it("places a prepared call after the permission boxes are clicked", async () => {
+    preparedCall = {
+      request_key: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      agent_id: "bot-1",
+      phone: "+13125550123",
+      instruction: "Confirm the appointment.",
+      call_purpose: "service_or_requested",
+      expires_at: "2099-01-01T00:00:00.000Z",
+    };
+    postOutcomes.push(response(200, { callId: "CAprepared" }));
+    await settle();
+    const picker = nodes.find((node) => node.type === OutboundPurposePicker);
+    expect(picker, "purpose picker").toBeDefined();
+    const rendered = (picker!.type as (props: unknown) => ReactNode)(picker!.props);
+    expect(textOf(rendered)).toContain("Appointment/service");
+    expect(textOf(rendered)).not.toContain("appointment_service");
+    expect(button("Place call").props.disabled).toBe(true);
+    clickCheckbox(OUTBOUND_CONSENT_LABEL);
+    clickCheckbox(NONSALES_CONFIRMATION_LABEL);
+    await settle();
+    expect(button("Place call").props.disabled).toBe(false);
+    await place();
+    const body = JSON.parse(posts()[0][1]!.body as string) as {
+      permissionConfirmed?: boolean;
+      nonsalesConfirmed?: boolean;
+      callPurpose?: string;
+    };
+    expect(body.permissionConfirmed).toBe(true);
+    expect(body.nonsalesConfirmed).toBe(true);
+    expect(body.callPurpose).toBe("service_or_requested");
+  });
 });
+
+function textOf(node: ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(textOf).join("");
+  if (isValidElement(node)) return textOf((node.props as { children?: ReactNode }).children);
+  return "";
+}
+
+function clickCheckbox(label: string) {
+  const picker = nodes.find((node) => node.type === OutboundPurposePicker);
+  expect(picker, "purpose picker").toBeDefined();
+  const rendered = (picker!.type as (props: unknown) => ReactNode)(picker!.props);
+  const labelNode = descendants(rendered).find(
+    (node) => node.type === "label" && textOf(node).includes(label),
+  );
+  expect(labelNode, label).toBeDefined();
+  const box = descendants(labelNode).find((node) => node.type === "input");
+  expect(box, `${label} checkbox`).toBeDefined();
+  expect(box!.props.disabled).not.toBe(true);
+  box!.props.onChange?.({ target: { checked: true, value: "" } });
+}

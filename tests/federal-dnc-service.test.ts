@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getDncProvider } from "../src/lib/dnc-provider";
 import {
   assertFederalDncForMarketing,
   isFederalDncListed,
@@ -6,6 +7,7 @@ import {
   lookupFederalDnc,
   normalizeUsPhone10,
 } from "../src/lib/federal-dnc-service";
+import { BULK_SALES_SCREENING_REQUIRED_MESSAGE } from "../src/lib/outbound-compliance-copy";
 
 describe("federal-dnc-service", () => {
   beforeEach(() => {
@@ -132,9 +134,17 @@ describe("federal-dnc-service", () => {
     expect(gate.configured).toBe(false);
     if (gate.allowed) return;
     expect(gate.code).toBe("FEDERAL_DNC_NOT_CONFIGURED");
-    expect(gate.message).toBe(
-      "Screening has to clear this sales outreach before it goes out. Answering calls still works.",
-    );
+    expect(gate.message).toBe(BULK_SALES_SCREENING_REQUIRED_MESSAGE);
+  });
+
+  it("fails closed when the named provider is not implemented", () => {
+    process.env.FEDERAL_DNC_API_URL = "https://dnc.example.com/check";
+    process.env.FEDERAL_DNC_API_KEY = "test-key";
+    process.env.FEDERAL_DNC_PROVIDER = "ftc_file";
+    expect(getDncProvider().id).toBe("ftc_file");
+    expect(getDncProvider().configured()).toBe(false);
+    const gate = assertFederalDncForMarketing();
+    expect(gate.allowed).toBe(false);
   });
 
   it("reports configured when federal screening credentials are valid", () => {

@@ -86,6 +86,8 @@ export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
     organizationColumns: ["organization_id"],
   },
   { table: "wireline_dnc_list", userColumns: ["user_id"] },
+  { table: "wireline_contact_outbound_consent", userColumns: ["user_id"] },
+  { table: "wireline_outbound_purpose_audit", userColumns: ["user_id"] },
   { table: "wireline_phone_numbers", userColumns: ["user_id"] },
   { table: "wireline_agent_conversation_messages", userColumns: ["user_id"] },
   { table: "wireline_agent_team_members", userColumns: ["user_id"] },

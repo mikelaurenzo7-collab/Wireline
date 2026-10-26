@@ -8,6 +8,7 @@ import {
   type DncAreaCodeSuggestion,
   type DncSellerRegistrationState,
 } from "../lib/dnc-seller-registration-rules";
+import { DNC_SAN_HELP } from "../lib/outbound-compliance-copy";
 import { Button, Skeleton } from "./atoms";
 import { FormField, StatusNotice } from "./molecules";
 import { Checkbox } from "./ui/shadcn/Checkbox";
@@ -16,6 +17,8 @@ import { Input } from "./ui/shadcn/Input";
 type RegistrationResponse = {
   state: DncSellerRegistrationState;
   registry_url: string;
+  dnc_san?: string | null;
+  dnc_san_help?: string;
   registration: {
     san: string;
     seller_name: string;
@@ -41,11 +44,11 @@ export const DNC_REGISTRATION_STATE_LABEL: Record<DncSellerRegistrationState, st
 
 const STATE_DETAIL: Record<DncSellerRegistrationState, string> = {
   missing:
-    "Needed only before your Bot places sales or marketing calls or texts. Answering calls doesn't need it.",
+    "Optional. If you have a National Do Not Call Registry account number, paste it below. Sales screening still runs. Personal, appointment, and follow-up calls don't use it.",
   pending_link:
-    "BotBound is connecting screening to your subscription. Marketing calls and texts start once it is connected.",
+    "Your account number is saved. Sales screening can use it after this connection finishes. One-at-a-time calls and texts are not waiting on it.",
   expired: "Renew your subscription at the registry, then update the expiration date here.",
-  active: "Marketing calls and texts are screened against the registry with your subscription.",
+  active: "Sales calls and texts can include your registry account number.",
 };
 
 /** Registry subscriptions include five area codes at no cost. */
@@ -81,6 +84,8 @@ export default function DncRegistrationCard({
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [san, setSan] = useState("");
+  const [workspaceSan, setWorkspaceSan] = useState("");
+  const [savingSan, setSavingSan] = useState(false);
   const [sellerName, setSellerName] = useState("");
   const [areaCodes, setAreaCodes] = useState("");
   const [expiresOn, setExpiresOn] = useState("");
@@ -93,6 +98,7 @@ export default function DncRegistrationCard({
   const applyResponse = useCallback((next: RegistrationResponse) => {
     setData((previous) => ({ ...next, setup: next.setup ?? previous?.setup }));
     onStateChangeRef.current?.(next.state);
+    setWorkspaceSan(next.dnc_san ?? "");
     const reg = next.registration;
     const setup = next.setup;
     setSan(reg?.san ?? "");
@@ -164,6 +170,30 @@ export default function DncRegistrationCard({
     }
   }
 
+  async function saveWorkspaceSan(event: FormEvent) {
+    event.preventDefault();
+    setSavingSan(true);
+    setError(null);
+    try {
+      const result = await readApiJson<{ dnc_san: string | null }>(
+        await authFetch("/api/compliance/dnc-san", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ san: workspaceSan }),
+        }),
+      );
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setWorkspaceSan(result.data.dnc_san ?? "");
+    } catch {
+      setError("Could not save the account number.");
+    } finally {
+      setSavingSan(false);
+    }
+  }
+
   async function copyAreaCodes(codes: string) {
     try {
       await navigator.clipboard.writeText(codes);
@@ -212,6 +242,27 @@ export default function DncRegistrationCard({
       ) : (
         <div className="mt-3 grid gap-4 text-sm">
           <p className="leading-6 text-muted-foreground">{STATE_DETAIL[state]}</p>
+          <form className="grid gap-2" onSubmit={(event) => void saveWorkspaceSan(event)}>
+            <label className="grid gap-1">
+              <span className="text-xs font-medium text-muted-foreground">
+                Registry account number (optional)
+              </span>
+              <Input
+                value={workspaceSan}
+                onChange={(event) => setWorkspaceSan(event.target.value)}
+                autoComplete="off"
+                placeholder="Leave blank if you don't have one"
+                aria-describedby="dnc-san-help"
+              />
+            </label>
+            <p id="dnc-san-help" className="text-xs leading-5 text-muted-foreground">
+              {data?.dnc_san_help || DNC_SAN_HELP}
+            </p>
+            <Button type="submit" variant="secondary" disabled={savingSan}>
+              {savingSan ? <Loader2 className="size-4 animate-spin" /> : null}
+              Save account number
+            </Button>
+          </form>
 
           {reg && !showForm ? (
             <dl className="grid gap-2 border-y border-border py-3 sm:grid-cols-2">

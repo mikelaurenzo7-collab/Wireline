@@ -6,8 +6,9 @@
  * artifacts, and workspace integrations remain optional capabilities.
  *
  * Federal DNC is intentionally deferred from the platform GO / score gate until
- * the founder completes business registration with DNCScrub. Marketing outbound
- * still fails closed at runtime via `assertFederalDncForMarketing()`, and the
+ * the founder completes business registration with DNCScrub. Campaigns and other
+ * bulk sales still fail closed at runtime via `assertFederalDncForMarketing()`.
+ * One-off sales calls and texts use a workspace attestation instead, and the
  * separate outbound_campaign_ready field remains false while any deferred
  * outbound checklist item is incomplete.
  */
