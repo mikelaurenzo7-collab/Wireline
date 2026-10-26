@@ -362,9 +362,20 @@ describe("Google + Microsoft connector scope contract", () => {
     }
 
     // Routes must consume the shared filter so the invariant cannot drift.
-    expect(read("src/routes/oauth/google.ts")).toContain(
-      "scope: googleConnectScopes(emailIncluded)",
+    expect(googleConnectScopes(true, "email")).toEqual([
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/gmail.send",
+      "https://www.googleapis.com/auth/gmail.readonly",
+    ]);
+    expect(googleConnectScopes(true, "drive").some((scope) => scope.includes("gmail"))).toBe(false);
+    expect(googleConnectScopes(true, "drive")).toContain(
+      "https://www.googleapis.com/auth/drive.file",
     );
+    expect(read("src/routes/oauth/google.ts")).toContain(
+      "scope: googleConnectScopes(emailIncluded, purpose)",
+    );
+    expect(read("src/routes/oauth/google.ts")).toContain("include_granted_scopes: true");
     expect(read("src/routes/oauth/microsoft.ts")).toContain(
       "scope: microsoftConnectScopes(emailIncluded)",
     );
