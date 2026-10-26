@@ -18,13 +18,14 @@ import BillingIntervalControl from "../components/BillingIntervalControl";
 import ChannelPlanPicker from "../components/ChannelPlanPicker";
 import { usePaidPlanAvailability } from "../hooks/usePaidPlanAvailability";
 import UsagePricingPanel from "../components/usage-billing/UsagePricingPanel";
-import type { UsageTierId } from "../lib/usage-billing-catalog";
+import { type UsageTierId } from "../lib/usage-billing-catalog";
 
 const CHANNEL_PLANS = STRIPE_PLANS.filter(
   (plan) =>
     plan.catalogFamily === "channels" && plan.id !== "personal" && !plan.channels.includes("sms"),
 );
 const TOPUP_RATE = `$${FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min`;
+
 const FAQ = [
   [
     "Can I Use a Bot for Myself and My Business?",
@@ -210,8 +211,8 @@ export default function Pricing() {
               {selectedHasCalls ? (
                 <>
                   {" "}
-                  Extra minutes are {TOPUP_RATE}, paid from Runtime Balance you add ahead of time.
-                  A call that runs past your minutes can take up to 10 more to finish. Bots answer
+                  Extra minutes are {TOPUP_RATE}, paid from Runtime Balance you add ahead of time. A
+                  call that runs past your minutes can take up to 10 more to finish. Bots answer
                   calls on their own number.
                 </>
               ) : null}

@@ -42,8 +42,10 @@ struct CallAgentIntent: AppIntent {
                 agentId: agent.id,
                 to: phoneNumber,
                 context: context.isEmpty ? nil : context,
-                callPurpose: "service_or_requested",
-                hasExpressWrittenConsent: false
+                callPurpose: "appointment_service",
+                permissionConfirmed: false,
+                nonsalesConfirmed: false,
+                salesAttestationConfirmed: false
             )
             return .result(dialog: "\(agent.name) is calling \(phoneNumber) now.")
         } catch let WirelineAPI.APIError.http(status, _) where status == 401 || status == 403 {

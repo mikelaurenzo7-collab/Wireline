@@ -7,6 +7,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   productionStaticHeaders,
+  registerLegacyContentRedirects,
   registerProductionStaticAliases,
   rejectMissingPublicResource,
   setPublicIsolationHeaders,
@@ -42,6 +43,7 @@ beforeEach(async () => {
     next();
   });
   app.get("/api/test", (_req, res) => res.json({ authenticated: true }));
+  registerLegacyContentRedirects(app);
   registerProductionStaticAliases(app, fixture);
   app.use(
     express.static(fixture, { redirect: false, setHeaders: productionStaticHeaders(fixture) }),
@@ -79,6 +81,18 @@ describe("production public route compatibility", () => {
       expect(response.headers.get("location")).toBe("/trust?from=email&value=%2Ftrust");
     },
   );
+
+  it.each(["/legal", "/legal/"])("redirects %s to the terms page", async (path) => {
+    const response = await fetch(`${origin}${path}?from=footer`, { redirect: "manual" });
+    expect(response.status).toBe(301);
+    expect(response.headers.get("location")).toBe("/terms?from=footer");
+  });
+
+  it.each(["/docs", "/docs/"])("redirects %s to the developers page", async (path) => {
+    const response = await fetch(`${origin}${path}?topic=api`, { redirect: "manual" });
+    expect(response.status).toBe(301);
+    expect(response.headers.get("location")).toBe("/developers?topic=api");
+  });
 
   it("serves the deletion confirmation document at the URL returned to Meta", async () => {
     const response = await fetch(`${origin}/legal/data-deletion?fbid=test-user&code=confirmation`);

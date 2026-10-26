@@ -22,11 +22,25 @@ import {
   usCallingStateName,
 } from "../../lib/us-calling-jurisdiction";
 
-const PURPOSE_LABELS: Record<VoicePermissionPurpose, string> = {
-  callback: "Requested callback",
-  service_or_requested: "Service calls",
-  marketing_or_sales: "Marketing calls",
+const PURPOSE_CHOICES: ReadonlyArray<readonly [VoicePermissionPurpose, string]> = [
+  ["callback", "Callback"],
+  ["service_or_requested", "Appointment/service"],
+];
+
+const PURPOSE_LABELS: Record<string, string> = {
+  callback: "Callback",
+  service_or_requested: "Appointment/service",
+  appointment_service: "Appointment/service",
+  marketing_or_sales: "Sales",
+  sales: "Sales",
+  personal: "Personal",
+  returning_contact: "Returning their call",
+  existing_customer: "Existing customer",
 };
+
+function purposeLabel(purpose: string): string {
+  return PURPOSE_LABELS[purpose] ?? "Appointment/service";
+}
 const STATUS_LABELS: Record<VoicePermissionSummary["status"], string> = {
   pending: "Awaiting recipient",
   granted: "Granted",
@@ -309,13 +323,11 @@ function OwnedRecipientVoicePermissions() {
               onChange={(event) => setPurpose(event.target.value as VoicePermissionPurpose)}
               disabled={!!pending}
             >
-              {Object.entries(PURPOSE_LABELS)
-                .filter(([id]) => id !== "marketing_or_sales")
-                .map(([id, label]) => (
-                  <option key={id} value={id}>
-                    {label}
-                  </option>
-                ))}
+              {PURPOSE_CHOICES.map(([id, label]) => (
+                <option key={id} value={id}>
+                  {label}
+                </option>
+              ))}
             </select>
           </label>
           <label className="block space-y-1 text-sm">
@@ -402,7 +414,7 @@ function OwnedRecipientVoicePermissions() {
                   <span className="font-normal text-muted-foreground">{row.bot_name}</span>
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {PURPOSE_LABELS[row.purpose]} · {STATUS_LABELS[row.status]}
+                  {purposeLabel(row.purpose)} · {STATUS_LABELS[row.status]}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">

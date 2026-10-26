@@ -33,6 +33,22 @@ export function productionStaticHeaders(publicDirectory: string) {
   };
 }
 
+/** Exact public aliases. `/legal/data-deletion` stays a static document. */
+const LEGACY_CONTENT_REDIRECTS = [
+  ["/legal", "/terms"],
+  ["/docs", "/developers"],
+] as const;
+
+export function registerLegacyContentRedirects(app: Express): void {
+  for (const [source, destination] of LEGACY_CONTENT_REDIRECTS) {
+    app.get([source, `${source}/`], (req, res) => {
+      const queryStart = req.originalUrl.indexOf("?");
+      const query = queryStart >= 0 ? req.originalUrl.slice(queryStart) : "";
+      res.redirect(301, `${destination}${query}`);
+    });
+  }
+}
+
 /** Preserve public URLs whose redirects/rewrites previously ran at the host edge. */
 export function registerProductionStaticAliases(app: Express, publicDirectory: string): void {
   app.all("/status", (req, res) => {

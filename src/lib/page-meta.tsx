@@ -109,7 +109,7 @@ export function PageMeta({
     setCanonical(canonicalUrl || null);
     setMeta("property", "og:title", fullTitle);
     setMeta("property", "og:description", resolvedDescription);
-    setMeta("property", "og:url", canonicalUrl || SITE_URL);
+    setMeta("property", "og:url", canonicalUrl || (noIndex ? null : SITE_URL));
     setMeta("property", "og:image", ogImage);
     setMeta("name", "twitter:title", fullTitle);
     setMeta("name", "twitter:description", resolvedDescription);

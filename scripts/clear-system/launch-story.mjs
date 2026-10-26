@@ -18,6 +18,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   const landingPage = read("src/pages/LandingPage.tsx");
   const planCatalog = read("src/lib/plan-catalog.ts");
   const pricingPage = read("src/pages/Pricing.tsx");
+  const usagePricingPanel = read("src/components/usage-billing/UsagePricingPanel.tsx");
 
   mustInclude(
     "index.html",
@@ -199,10 +200,10 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
     "public pricing must render the shared channel and capacity selector",
   );
   mustInclude(
-    "src/pages/Pricing.tsx",
-    pricingPage,
-    /Runtime\s+Balance/,
-    "pricing must explain Runtime Balance",
+    "src/components/usage-billing/UsagePricingPanel.tsx",
+    usagePricingPanel,
+    /Calls, texts, email, and Computer share that work/,
+    "pricing must explain shared work",
   );
   mustExclude(
     "src/pages/Pricing.tsx",

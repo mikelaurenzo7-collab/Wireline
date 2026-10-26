@@ -90,6 +90,7 @@ describe("page metadata across client navigation", () => {
     expect(content("robots")).toBe("noindex, nofollow");
     expect(content("googlebot")).toBe("noindex, nofollow");
     expect(select('link[rel="canonical"]')).toBeNull();
+    expect(select('meta[property="og:url"]')).toBeNull();
   });
 
   it("keeps metadata current without duplicating tags on repeated navigation", () => {

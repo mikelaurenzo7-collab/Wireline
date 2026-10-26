@@ -92,6 +92,8 @@ export const computerTasks = pgTable(
       table.agentId,
       table.createdAt,
     ),
+    // The composite above leads with user_id, so agent-scoped reads need their own index.
+    agentIdIdx: index("idx_computer_tasks_agent_id").on(table.agentId),
     // One active task per account, enforced across every API process.
     oneActivePerUser: uniqueIndex("uq_computer_tasks_one_active_per_user")
       .on(table.userId)

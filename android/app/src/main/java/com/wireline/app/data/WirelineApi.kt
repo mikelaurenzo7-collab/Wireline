@@ -115,16 +115,17 @@ class WirelineApi(context: Context) {
         customerNumber: String,
         context: String?,
         callPurpose: String,
-        hasExpressWrittenConsent: Boolean,
+        permissionConfirmed: Boolean,
+        nonsalesConfirmed: Boolean,
+        salesAttestationConfirmed: Boolean,
     ): String? {
         val body = JSONObject()
             .put("agentId", agentId)
             .put("customerNumber", customerNumber)
             .put("callPurpose", callPurpose)
-            .put("hasExpressWrittenConsent", hasExpressWrittenConsent)
-        if (hasExpressWrittenConsent) {
-            body.put("consentSource", "manual_attestation")
-        }
+            .put("permissionConfirmed", permissionConfirmed)
+            .put("nonsalesConfirmed", nonsalesConfirmed)
+            .put("salesAttestationConfirmed", salesAttestationConfirmed)
         if (!context.isNullOrBlank()) body.put("context", context)
         val response: OutboundCallResponse = post("/api/mobile/calls/outbound", body)
         return response.callId

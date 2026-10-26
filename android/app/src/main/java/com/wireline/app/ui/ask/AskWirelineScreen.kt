@@ -7,6 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -56,12 +58,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.wireline.app.ui.OutboundConsentFields
+import com.wireline.app.ui.OutboundConfirmationFields
+import com.wireline.app.ui.OutboundPurposeCopy
 import com.wireline.app.ui.WirelineViewModel
 import com.wireline.app.ui.theme.Brand
 import com.wireline.app.ui.theme.WirelineTheme
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AskWirelineScreen(
     model: WirelineViewModel,
@@ -73,13 +76,23 @@ fun AskWirelineScreen(
     var showCall by remember { mutableStateOf(false) }
     var number by remember { mutableStateOf("") }
     var context by remember { mutableStateOf("") }
-    var purpose by remember { mutableStateOf("service_or_requested") }
-    var consent by remember { mutableStateOf(false) }
+    var purpose by remember { mutableStateOf(OutboundPurposeCopy.APPOINTMENT) }
+    var permissionConfirmed by remember { mutableStateOf(false) }
+    var nonsalesConfirmed by remember { mutableStateOf(false) }
+    var salesAttestationConfirmed by remember { mutableStateOf(false) }
     var selectedAgentId by remember { mutableStateOf("") }
 
     val selectedAgent = state.agents.firstOrNull { it.id == selectedAgentId }
         ?: state.agents.firstOrNull()
-    val requiresConsent = purpose == "marketing_or_sales"
+    val salesCall = purpose == OutboundPurposeCopy.SALES
+    val confirmationsReady =
+        permissionConfirmed && if (salesCall) salesAttestationConfirmed else nonsalesConfirmed
+    fun selectPurpose(next: String) {
+        purpose = next
+        permissionConfirmed = false
+        nonsalesConfirmed = false
+        salesAttestationConfirmed = false
+    }
 
     LaunchedEffect(state.agents, selectedAgentId) {
         if (selectedAgentId.isBlank() || state.agents.none { it.id == selectedAgentId }) {
@@ -278,30 +291,33 @@ fun AskWirelineScreen(
                                 colors = fieldColors(),
                             )
 
-                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 FilterChip(
-                                    selected = purpose == "service_or_requested",
-                                    onClick = { purpose = "service_or_requested"; consent = false },
-                                    label = { Text("Service") },
+                                    selected = purpose == OutboundPurposeCopy.APPOINTMENT,
+                                    onClick = { selectPurpose(OutboundPurposeCopy.APPOINTMENT) },
+                                    label = { Text(OutboundPurposeCopy.APPOINTMENT_LABEL) },
                                 )
                                 FilterChip(
-                                    selected = purpose == "callback",
-                                    onClick = { purpose = "callback"; consent = false },
-                                    label = { Text("Callback") },
+                                    selected = purpose == OutboundPurposeCopy.CALLBACK,
+                                    onClick = { selectPurpose(OutboundPurposeCopy.CALLBACK) },
+                                    label = { Text(OutboundPurposeCopy.CALLBACK_LABEL) },
                                 )
                                 FilterChip(
-                                    selected = purpose == "marketing_or_sales",
-                                    onClick = { purpose = "marketing_or_sales"; consent = false },
-                                    label = { Text("Sales") },
+                                    selected = purpose == OutboundPurposeCopy.SALES,
+                                    onClick = { selectPurpose(OutboundPurposeCopy.SALES) },
+                                    label = { Text(OutboundPurposeCopy.SALES_LABEL) },
                                 )
                             }
 
-                            if (requiresConsent) {
-                                Row(verticalAlignment = Alignment.Top) {
-                                    Checkbox(checked = consent, onCheckedChange = { consent = it })
-                                    OutboundConsentFields()
-                                }
-                            }
+                            OutboundConfirmationFields(
+                                salesCall = salesCall,
+                                permissionConfirmed = permissionConfirmed,
+                                onPermissionConfirmed = { permissionConfirmed = it },
+                                nonsalesConfirmed = nonsalesConfirmed,
+                                onNonsalesConfirmed = { nonsalesConfirmed = it },
+                                salesAttestationConfirmed = salesAttestationConfirmed,
+                                onSalesAttestationConfirmed = { salesAttestationConfirmed = it },
+                            )
 
                             Button(
                                 onClick = {
@@ -312,17 +328,18 @@ fun AskWirelineScreen(
                                             destination,
                                             context,
                                             purpose,
-                                            requiresConsent && consent,
+                                            permissionConfirmed,
+                                            if (salesCall) false else nonsalesConfirmed,
+                                            salesCall && salesAttestationConfirmed,
                                         )
                                         answer = "Call requested with ${bot.name} for $destination."
                                         number = ""
                                         context = ""
-                                        purpose = "service_or_requested"
-                                        consent = false
+                                        selectPurpose(OutboundPurposeCopy.APPOINTMENT)
                                         showCall = false
                                     }
                                 },
-                                enabled = selectedAgent != null && number.isNotBlank() && (!requiresConsent || consent) && !state.isWorking,
+                                enabled = selectedAgent != null && number.isNotBlank() && confirmationsReady && !state.isWorking,
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = ButtonDefaults.buttonColors(containerColor = Brand.Accent),
                             ) {

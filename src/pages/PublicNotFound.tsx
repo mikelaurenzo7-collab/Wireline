@@ -9,7 +9,6 @@ export default function PublicNotFound() {
       <PageMeta
         title="Page Not Found | BotBound"
         description="That BotBound page could not be found."
-        path="/404"
         noIndex
       />
       <MarketingChrome stickyCta={false}>

@@ -43,7 +43,11 @@ describe("voice-pricing-display", () => {
     const pricing = readFileSync(resolve(process.cwd(), "src/pages/Pricing.tsx"), "utf8");
     expect(pricing).toContain("FLAT_OVERAGE_PER_MIN_USD");
     expect(pricing).toContain("TOPUP_RATE");
+    expect(pricing).toContain(
+      "Extra minutes are {TOPUP_RATE}, paid from Runtime Balance you add ahead of time.",
+    );
     expect(pricing).not.toContain('"$0.22');
+    expect(pricing).not.toContain("Lite is $");
   });
 
   it("estimates minutes at the published rate", () => {

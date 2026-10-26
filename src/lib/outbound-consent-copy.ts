@@ -3,7 +3,7 @@
 export const OUTBOUND_CONSENT_LABEL = "I have this person's permission to contact them.";
 
 export const OUTBOUND_CONSENT_HELP =
-  "Required for outbound dialing. Marketing or promotional calls need express written consent.";
+  "Confirm permission before the first call. A call that is not sales also needs confirmation that it is not selling anything.";
 
 export const OUTBOUND_CONSENT_LEGAL_PATH = "/trust/legal";
 
