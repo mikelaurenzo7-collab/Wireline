@@ -293,6 +293,7 @@ test("leaving while a voice session is accepted closes its late provider session
   releaseAnswer();
   await expect.poll(() => stops).toEqual(["late-accepted-call"]);
   expect(await microphoneCount(page)).toEqual({ microphones: 1, tracksStopped: 1, peersClosed: 1 });
+  await page.getByRole("button", { name: "Configure", exact: true }).click();
   await expect(
     page.getByRole("textbox", { name: "Message Front Desk", exact: true }),
   ).toBeVisible();
@@ -327,6 +328,10 @@ test("legacy customer commands stay in voice rehearsal without editing the Bot o
   expect((await microphoneCount(page)).microphones).toBe(0);
   expect(sessions).toEqual([]);
   await page.getByRole("button", { name: "Close panel", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "Task for Front Desk", exact: true })).toHaveValue(
+    "",
+  );
+  await page.getByRole("button", { name: "Configure", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Message Front Desk", exact: true })).toHaveValue(
     "",
   );
