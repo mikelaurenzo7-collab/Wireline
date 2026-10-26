@@ -36,6 +36,7 @@ import UsagePricingPanel, {
 import {
   CATALOG_VERSION,
   assertUsageStripeAccount,
+  BOTBOUND_LLC_STRIPE_ACCOUNT_IDS,
   BOTBOUND_STRIPE_ACCOUNT_ID,
   USAGE_STRIPE_PLAN,
   USAGE_STRIPE_PLANS,
@@ -280,12 +281,20 @@ describe("Stripe setup script parity", () => {
         accounts: { retrieve: async () => ({ id: BOTBOUND_STRIPE_ACCOUNT_ID }) },
       }),
     ).resolves.toBeUndefined();
-    await expect(
-      assertUsageStripeAccount(
-        { accounts: { retrieve: async () => ({ id: "acct_1UQBcs6Ph5cHChCS" }) } },
-        { mode: "live", sandboxAccountId: "acct_1UQBcs6Ph5cHChCS" },
-      ),
-    ).rejects.toThrow("requires the BotBound Stripe account");
+    for (const accountId of BOTBOUND_LLC_STRIPE_ACCOUNT_IDS) {
+      await expect(
+        assertUsageStripeAccount(
+          { accounts: { retrieve: async () => ({ id: accountId }) } },
+          { mode: "test", sandboxAccountId: accountId },
+        ),
+      ).rejects.toThrow("BOTBOUND LLC");
+      await expect(
+        assertUsageStripeAccount(
+          { accounts: { retrieve: async () => ({ id: accountId }) } },
+          { mode: "live" },
+        ),
+      ).rejects.toThrow("BOTBOUND LLC");
+    }
   });
   it("uses the catalog version", () => {
     expect(CATALOG_VERSION).toBe(USAGE_CATALOG_VERSION);

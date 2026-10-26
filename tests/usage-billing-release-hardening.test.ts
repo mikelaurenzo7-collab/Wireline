@@ -74,6 +74,21 @@ describe("usage catalog validation", () => {
       expect(() => validateUsagePrice({ ...price(), ...patch }, spec, context)).toThrow(
         "approved catalog",
       );
+    expect(() =>
+      validateUsagePrice({ ...price(), lookup_key: "usage_lite_monthly" }, spec, context),
+    ).toThrow(/lookup key usage_lite_monthly/);
+    expect(() =>
+      validateUsagePrice(
+        {
+          ...price(),
+          tiers: price().tiers.map((tier, index) =>
+            index === 0 ? { ...tier, unit_amount_decimal: "999" } : tier,
+          ),
+        },
+        spec,
+        context,
+      ),
+    ).toThrow(/expected amount/);
   });
   it("rejects incompatible aggregation, preaggregation windows and customer mappings", () => {
     expect(() => validateUsageMeter(meter(), spec)).not.toThrow();
@@ -142,6 +157,7 @@ describe("checkout rate-card gate", () => {
       };
     });
     const client = {
+      accounts: { retrieve: vi.fn(async () => ({ id: "acct_1TkyXL8e6If87QKm" })) },
       prices: { retrieve: vi.fn(async (id: string) => prices.find((price) => price.id === id)) },
       products: {
         retrieve: vi.fn(async () => ({ active: true, metadata: { wireline_product: "usage" } })),
