@@ -531,6 +531,16 @@ router.post(
     // Template deploys carry the template's channel, opening line, and
     // personality overlay; plain Fast Start creates keep the defaults.
     const channel = req.body?.channel === "email" ? "email" : "voice";
+    const requestedTimeZone = cleanText(req.body?.timezone, 80);
+    let timezone: string | undefined;
+    if (requestedTimeZone) {
+      try {
+        new Intl.DateTimeFormat("en", { timeZone: requestedTimeZone }).format();
+        timezone = requestedTimeZone;
+      } catch {
+        throw new AppError(400, "UNKNOWN_TIMEZONE", "Choose a valid timezone.");
+      }
+    }
     const firstMessage = resolveCreateFirstMessage(req.body?.firstMessage, name);
     const templateId = cleanText(req.body?.templateId, 80);
     if (isTemplateLaunchReviewRequired(templateId)) {
@@ -614,6 +624,7 @@ router.post(
           voiceId,
           voiceProvider: "openai",
           autonomyLevel: "supervised",
+          ...(timezone ? { timezone } : {}),
           enabledTools,
           firstMessage,
           isBusinessAgent,

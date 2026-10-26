@@ -28,6 +28,9 @@ describe("business hours editor", () => {
     const profile = { business_hours: hours, timezone: "America/Chicago" };
     expect(isWithinBusinessHours(profile, new Date("2026-10-07T15:00:00Z"))).toBe(true);
     expect(isWithinBusinessHours(profile, new Date("2026-10-07T23:00:00Z"))).toBe(false);
+    expect(
+      isWithinBusinessHours({ business_hours: hours }, new Date("2026-10-07T12:30:00Z")),
+    ).toBe(true);
   });
 
   it("loads saved hours the way the runtime reads them and saves them back unchanged", () => {

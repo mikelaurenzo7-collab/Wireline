@@ -276,6 +276,7 @@ export default function CreateAgentDialog({
           mark_key: markKey,
           role,
           is_business_agent: legacyCapabilityProfile,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }),
       });
       const body = (await safeJson(response)) as {
