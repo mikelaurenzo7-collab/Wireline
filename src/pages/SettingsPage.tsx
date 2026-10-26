@@ -328,7 +328,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <WorkspaceShell contentClassName="pt-1 pb-6">
+    <WorkspaceShell contentClassName="min-w-0 overflow-x-clip pt-1 pb-6">
       <WorkspacePageFrame mode="narrow">
         <SettingsTabs />
         <WorkspacePageIntro title="Account" titleHidden />

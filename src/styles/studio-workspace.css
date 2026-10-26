@@ -96,6 +96,19 @@
   gap: 0.125rem;
 }
 
+@media (max-width: 767px) {
+  .wl-studio-panel-header {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .wl-studio-panel-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+}
+
 .wl-studio-panel-tab {
   position: relative;
   min-height: 2.75rem;
