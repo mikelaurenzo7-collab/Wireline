@@ -122,11 +122,7 @@ test("unpaid SMS discovery preserves saved texts and cannot draft or send", asyn
   });
   await page.goto("/inbox?tab=sms&thread=saved-sms");
   await expect(page.getByRole("button", { name: "SMS", exact: true })).toBeVisible();
-  await expect(page.getByText("SMS Isn't in Your Plan", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Choose Plan", exact: true })).toHaveAttribute(
-    "href",
-    "/settings/billing",
-  );
+  await expect(page.getByText("SMS Isn't in Your Plan", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Can we move our appointment?", { exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Text reply", exact: true })).toBeDisabled();
   await expect(

@@ -23,9 +23,9 @@ export default function SmsConsentPage() {
           campaigns.
         </p>
         <p className="mt-4 rounded-md border border-border bg-muted/30 p-4 text-sm leading-6">
-          SMS activation is pending carrier verification. This page documents the opt in flow
-          required for activation; it does not collect consent or show that any person has already
-          agreed to receive messages.
+          Texting is included. A text goes out only after the recipient agrees. This page documents
+          that opt-in flow. It does not collect consent or show that any person has already agreed
+          to receive messages.
         </p>
 
         <section className="mt-10 space-y-4" aria-labelledby="verbal-consent">

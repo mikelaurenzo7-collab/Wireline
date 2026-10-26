@@ -227,18 +227,14 @@ export default function PhonePage() {
           )}
           {primaryTab === "outbound" && !scopeBlocked && (
             <div className="contents" data-visual-qa-state="primary-outbound">
-              {!access.includes("voice") ? (
-                <ChannelAccessNotice access={access} channel="voice" />
-              ) : (
-                <div className="contents" data-visual-qa-state={`secondary-${outboundView}`}>
-                  <OutboundHub
-                    key={activeAgentId}
-                    activeView={outboundView}
-                    onViewChange={setOutboundView}
-                    initialAgentId={activeAgentId}
-                  />
-                </div>
-              )}
+              <div className="contents" data-visual-qa-state={`secondary-${outboundView}`}>
+                <OutboundHub
+                  key={activeAgentId}
+                  activeView={outboundView}
+                  onViewChange={setOutboundView}
+                  initialAgentId={activeAgentId}
+                />
+              </div>
             </div>
           )}
           {primaryTab === "setup" && !scopeBlocked && (

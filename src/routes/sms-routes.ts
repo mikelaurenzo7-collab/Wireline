@@ -517,7 +517,7 @@ router.post(
             503,
             gate.federalDncCode || "FEDERAL_DNC_UNCONFIGURED",
             gate.federalDncMessage ||
-              "Sales and marketing texts aren't available yet. Answering calls still works.",
+              "Screening has to clear this sales outreach before it goes out. Answering calls still works.",
           );
         }
         throw new AppError(

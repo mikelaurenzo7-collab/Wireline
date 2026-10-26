@@ -133,7 +133,7 @@ describe("federal-dnc-service", () => {
     if (gate.allowed) return;
     expect(gate.code).toBe("FEDERAL_DNC_NOT_CONFIGURED");
     expect(gate.message).toBe(
-      "Sales and marketing calls aren't available yet. Answering calls still works.",
+      "Screening has to clear this sales outreach before it goes out. Answering calls still works.",
     );
   });
 

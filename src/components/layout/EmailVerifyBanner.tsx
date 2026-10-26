@@ -299,8 +299,7 @@ export default function EmailVerifyBanner() {
             </>
           ) : (
             <>
-              <strong>Verify your email</strong> to secure your account.{" "}
-              {"A live plan and compliant number are still required before outbound dialing."}
+              <strong>Verify your email</strong> to secure your account.
             </>
           )}
         </span>

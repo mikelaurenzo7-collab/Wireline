@@ -33,13 +33,6 @@ export default function ChannelAccessNotice({
         Your saved conversations are unchanged.
       </StatusNotice>
     );
-  // Match the tab names owners see: Calls, Email, and SMS.
-  const notIncludedTitle =
-    channel === "voice"
-      ? "Calls Aren't in Your Plan"
-      : channel === "email"
-        ? "Email Isn't in Your Plan"
-        : "SMS Isn't in Your Plan";
   // A failed renewal suspends every channel. That is a payment to fix, not a
   // plan the owner never bought. Usage plans include all three channels;
   // legacy plans still retain their own channel selection.
@@ -68,6 +61,11 @@ export default function ChannelAccessNotice({
       </StatusNotice>
     );
   }
+  // SMS is included. A payment problem is the only SMS hold shown here.
+  if (channel === "sms") return null;
+  // Match the tab names owners see: Calls and Email.
+  const notIncludedTitle =
+    channel === "voice" ? "Calls Aren't in Your Plan" : "Email Isn't in Your Plan";
   const hasPlan = Boolean(access.data?.plan_id);
   return (
     <StatusNotice
@@ -80,11 +78,9 @@ export default function ChannelAccessNotice({
         </Button>
       }
     >
-      {channel === "sms"
-        ? "Plans with SMS are available. Sender approval and recipient permission still apply. Saved conversations remain available."
-        : hasPlan
-          ? "Your plan covers your selected channels. Saved conversations remain available."
-          : "Choose a plan to connect this channel. Voice rehearsal stays available."}
+      {hasPlan
+        ? "Your plan covers your selected channels. Saved conversations remain available."
+        : "Choose a plan to connect this channel. Voice rehearsal stays available."}
     </StatusNotice>
   );
 }

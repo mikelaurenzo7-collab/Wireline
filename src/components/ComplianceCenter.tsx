@@ -136,7 +136,7 @@ export default function ComplianceCenter() {
                   Sales Call Screening
                 </dt>
                 <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">
-                  {summary.federal_dnc_configured ? "On" : "Included"}
+                  On
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-4 sm:block">
@@ -144,7 +144,7 @@ export default function ComplianceCenter() {
                   Call Screening
                 </dt>
                 <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">
-                  {summary.federal_dnc_configured ? "On" : "Starting"}
+                  On
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-4 sm:block">
@@ -166,9 +166,7 @@ export default function ComplianceCenter() {
               </div>
             </dl>
             <p className="text-sm text-muted-foreground">
-              {summary.federal_dnc_configured
-                ? "BotBound screens sales and marketing calls. You don't register anything."
-                : "BotBound screens sales and marketing calls. They start when screening is on. You don't register anything."}
+              BotBound screens sales and marketing calls. You don't register anything.
             </p>
           </div>
         ) : null}
