@@ -123,7 +123,14 @@ describe("signup intent contract", () => {
     expect(parseSignupIntent("?plan=free")?.preferredPlanId).toBe("personal");
     expect(parseSignupIntent("?plan=builder")?.preferredPlanId).toBe("personal");
     expect(parseSignupIntent("?plan=business-starter")?.preferredPlanId).toBe("starter");
-    expect(parseSignupIntent("?plan=plus")?.preferredPlanId).toBe("team");
+    expect(parseSignupIntent("?plan=plus")).toMatchObject({
+      preferredPlanId: "usage",
+      preferredUsageTier: "plus",
+    });
+    expect(parseSignupIntent("?plan=lite")).toMatchObject({
+      preferredPlanId: "usage",
+      preferredUsageTier: "lite",
+    });
     expect(parseSignupIntent("?plan=starter-plus")?.preferredPlanId).toBe("team");
     expect(parseSignupIntent("?plan=business-starter-plus")?.preferredPlanId).toBe("team");
     expect(parseSignupIntent("?plan=pro")?.preferredPlanId).toBe("business");
@@ -231,8 +238,8 @@ describe("signup intent contract", () => {
       sanitizeSignupIntent({
         preferredPlanId: "plus" as never,
         capturedAt: "2026-07-10T00:00:00.000Z",
-      })?.preferredPlanId,
-    ).toBe("team");
+      }),
+    ).toMatchObject({ preferredPlanId: "usage", preferredUsageTier: "plus" });
 
     expect(
       sanitizeSignupIntent({

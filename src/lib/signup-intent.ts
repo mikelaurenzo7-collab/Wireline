@@ -204,12 +204,8 @@ const LEGACY_PLAN_ALIASES: Record<string, SignupPlanId> = {
   free: "personal",
   builder: "personal",
   free_builder: "personal",
-  lite: "starter",
-  business_lite: "starter",
-  businesslite: "starter",
   business_starter: "starter",
   businessstarter: "starter",
-  plus: "team",
   starter_plus: "team",
   starterplus: "team",
   personal_plus: "team",
@@ -225,6 +221,24 @@ const LEGACY_PLAN_ALIASES: Record<string, SignupPlanId> = {
   custom: "business",
   scale: "business",
 };
+
+const PUBLIC_USAGE_PLAN_SLUGS: Record<string, UsageTierId> = {
+  lite: "lite",
+  business_lite: "lite",
+  businesslite: "lite",
+  plus: "plus",
+  standard: "standard",
+};
+
+function usageTierFromPlanSlug(value: string | null | undefined): UsageTierId | undefined {
+  const cleaned = value?.trim().toLowerCase();
+  if (!cleaned) return undefined;
+  const aliasKey = cleaned.replace(/[-\s]+/g, "_");
+  if (Object.hasOwn(PUBLIC_USAGE_PLAN_SLUGS, aliasKey)) return PUBLIC_USAGE_PLAN_SLUGS[aliasKey];
+  return Object.hasOwn(PUBLIC_USAGE_PLAN_SLUGS, cleaned)
+    ? PUBLIC_USAGE_PLAN_SLUGS[cleaned]
+    : undefined;
+}
 
 function normalizePlanId(value: string | null | undefined): SignupPlanId | undefined {
   const cleaned = value?.trim().toLowerCase();
@@ -258,13 +272,17 @@ export function sanitizeSignupIntent(intent: SignupIntent | null | undefined): S
     capturedAt: intent.capturedAt || new Date().toISOString(),
   };
 
-  const normalizedPlan = normalizePlanId(intent.preferredPlanId);
+  const usageTierSlug = usageTierFromPlanSlug(intent.preferredPlanId);
+  const normalizedPlan = usageTierSlug ? "usage" : normalizePlanId(intent.preferredPlanId);
   if (normalizedPlan) out.preferredPlanId = normalizedPlan;
 
   if (intent.preferredBillingInterval === "year" || intent.preferredBillingInterval === "month") {
     out.preferredBillingInterval = intent.preferredBillingInterval;
   }
-  if (normalizedPlan === "usage") {
+  if (usageTierSlug) {
+    out.preferredBillingInterval = "month";
+    out.preferredUsageTier = usageTierSlug;
+  } else if (normalizedPlan === "usage") {
     out.preferredBillingInterval = "month";
     if (isUsageTierId(intent.preferredUsageTier))
       out.preferredUsageTier = intent.preferredUsageTier;
@@ -303,14 +321,18 @@ export function parseSignupIntent(search: string): SignupIntent | null {
     capturedAt: new Date().toISOString(),
   };
 
-  const normalizedPlan = normalizePlanId(rawPlan);
+  const usageTierSlug = usageTierFromPlanSlug(rawPlan);
+  const normalizedPlan = usageTierSlug ? "usage" : normalizePlanId(rawPlan);
   if (normalizedPlan) intent.preferredPlanId = normalizedPlan;
 
   const rawInterval = params.get("interval")?.trim().toLowerCase();
   if (rawInterval === "year" || rawInterval === "month") {
     intent.preferredBillingInterval = rawInterval;
   }
-  if (normalizedPlan === "usage") {
+  if (usageTierSlug) {
+    intent.preferredBillingInterval = "month";
+    intent.preferredUsageTier = usageTierSlug;
+  } else if (normalizedPlan === "usage") {
     intent.preferredBillingInterval = "month";
     const tier = params.get("tier");
     if (isUsageTierId(tier)) intent.preferredUsageTier = tier;

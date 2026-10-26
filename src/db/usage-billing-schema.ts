@@ -93,7 +93,7 @@ export const usageBillingPeriods = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     periodKey: text("period_key").notNull(),
     stripeCustomerId: text("stripe_customer_id").notNull(),
-    tier: text("tier").$type<UsageTierId>().notNull().default("starter"),
+    tier: text("tier").$type<UsageTierId>().notNull().default("standard"),
     stripeSubscriptionId: text("stripe_subscription_id").notNull(),
     startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
     endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
@@ -131,7 +131,7 @@ export const usageBillingPeriods = pgTable(
 export const usageSpendControls = pgTable(
   "wireline_usage_spend_controls",
   {
-    tier: text("tier").$type<UsageTierId>().notNull().default("starter"),
+    tier: text("tier").$type<UsageTierId>().notNull().default("standard"),
     userId: uuid("user_id")
       .primaryKey()
       .references(() => users.id, { onDelete: "cascade" }),

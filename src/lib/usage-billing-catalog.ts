@@ -2,8 +2,9 @@
  * Usage billing rate card (client-safe, no env or server imports).
  *
  * Shared work across calls, SMS, emails and Computer, with identities included in
- * each public plan. Extra identities are flat add-ons. The original offer is
- * retained for existing subscriptions and historical billing periods only.
+ * each public plan. Extra identities are flat add-ons. The retired offer stays
+ * in the rate card only so billing periods already stored under it keep their
+ * recorded allowance. New work defaults to Starter.
  *
  * Design and margin math: /workspace/launch/usage-billing-design.md (mirrored in
  * docs/USAGE_BILLING.md). Every number here must match the Stripe objects the
@@ -12,12 +13,10 @@
 
 export const USAGE_PLAN_ID = "usage" as const;
 export const USAGE_CATALOG_VERSION = "2026-10-usage-v2" as const;
-/** One allowance across all kinds of work. Resets each subscription month. */
-export const USAGE_INCLUDED_WORK_USD = 12;
 export const USAGE_TIERS = {
   starter: {
     id: "starter",
-    name: "Original",
+    name: "Previous",
     monthlyUsd: 19,
     includedWorkUsd: 12,
     includedNumbers: 0,
@@ -55,15 +54,19 @@ export const USAGE_TIERS = {
 export type UsageTierId = keyof typeof USAGE_TIERS;
 export const PUBLIC_USAGE_TIERS = ["lite", "standard", "plus"] as const;
 export const DEFAULT_PUBLIC_USAGE_TIER: UsageTierId = "standard";
+/** Starter's monthly price. Omitted tiers use this, not a retired offer. */
+export const USAGE_BASE_USD_MONTHLY = USAGE_TIERS[DEFAULT_PUBLIC_USAGE_TIER].monthlyUsd;
+/** Starter's included work. Omitted allowances use this, not a retired offer. */
+export const USAGE_INCLUDED_WORK_USD = USAGE_TIERS[DEFAULT_PUBLIC_USAGE_TIER].includedWorkUsd;
 export function publicUsageTierId(value: unknown): UsageTierId {
   return PUBLIC_USAGE_TIERS.find((tier) => tier === value) ?? DEFAULT_PUBLIC_USAGE_TIER;
 }
 export function isUsageTierId(value: unknown): value is UsageTierId {
   return typeof value === "string" && Object.hasOwn(USAGE_TIERS, value);
 }
-/** Missing historical values belong to the original $19 offer. */
-export function usageTier(value: UsageTierId = "starter") {
-  return USAGE_TIERS[value];
+/** Omitted tiers are the current Starter plan. A stored retired id keeps its rate. */
+export function usageTier(value: UsageTierId = DEFAULT_PUBLIC_USAGE_TIER) {
+  return USAGE_TIERS[value] ?? USAGE_TIERS[DEFAULT_PUBLIC_USAGE_TIER];
 }
 /** Stripe meters cents of work; native quantities remain in the local ledger. */
 export const USAGE_WORK_EVENT_NAME = "botbound_work_credits_v2";
@@ -87,8 +90,6 @@ export interface UsageMeterRate {
   /** Default Stripe meter event name; overridable by env on the server. */
   defaultEventName: string;
 }
-
-export const USAGE_BASE_USD_MONTHLY = 19;
 
 export const USAGE_METERS: Record<UsageMeterKey, UsageMeterRate> = {
   sms_segments: {
@@ -208,7 +209,7 @@ export function pooledWorkUsd(totals: Partial<Record<UsageMeterKey, number>>): n
 
 export function pooledOverageUsd(
   totals: Partial<Record<UsageMeterKey, number>>,
-  tier: UsageTierId = "starter",
+  tier: UsageTierId = DEFAULT_PUBLIC_USAGE_TIER,
 ): number {
   return Math.max(0, pooledWorkUsd(totals) - usageTier(tier).includedWorkUsd);
 }
@@ -220,7 +221,7 @@ export function workCredits(key: UsageMeterKey, quantity: number): number {
 /** Fixed monthly charges: base plus chosen add-ons. */
 export function fixedMonthlyUsd(
   addons: Pick<UsageQuantities, "numbers" | "emailAddresses">,
-  tier: UsageTierId = "starter",
+  tier: UsageTierId = DEFAULT_PUBLIC_USAGE_TIER,
 ): number {
   return cents(
     usageTier(tier).monthlyUsd +
@@ -231,7 +232,7 @@ export function fixedMonthlyUsd(
 
 export function minimumMonthlyCapUsd(
   addons: Pick<UsageQuantities, "numbers" | "emailAddresses">,
-  tier: UsageTierId = "starter",
+  tier: UsageTierId = DEFAULT_PUBLIC_USAGE_TIER,
 ): number {
   return cents(fixedMonthlyUsd(addons, tier) + USAGE_MIN_CAP_HEADROOM_USD);
 }
@@ -239,7 +240,7 @@ export function minimumMonthlyCapUsd(
 /** Live estimate shared by the pricing estimator, billing UI and cap math. */
 export function estimateUsageBill(
   input: UsageQuantities,
-  tier: UsageTierId = "starter",
+  tier: UsageTierId = DEFAULT_PUBLIC_USAGE_TIER,
 ): UsageBillEstimate {
   const plan = usageTier(tier);
   const numbers = Math.floor(safeQuantity(input.numbers));
@@ -337,4 +338,47 @@ export function crossedAlertThresholds(previousPct: number, currentPct: number):
 
 export function formatUsdCents(value: number): string {
   return value < 1 ? `${Math.round(value * 100)}¢` : `$${value.toFixed(2)}`;
+}
+
+/** Live prices for every Bot. These replace older prices saved in Training. */
+export function currentPricingFacts(): string[] {
+  const plans = PUBLIC_USAGE_TIERS.map((id) => {
+    const plan = USAGE_TIERS[id];
+    const numbers = `${plan.includedNumbers} phone number${plan.includedNumbers === 1 ? "" : "s"}`;
+    const emails = `${plan.includedEmailAddresses} email address${plan.includedEmailAddresses === 1 ? "" : "es"}`;
+    return `${plan.name} is $${plan.monthlyUsd}/month with $${plan.includedWorkUsd} of included work, ${numbers}, and ${emails}.`;
+  });
+  const sms = USAGE_METERS.sms_segments.tiers[0].unitUsd.toFixed(2);
+  const calls = USAGE_METERS.call_minutes.tiers[0].unitUsd.toFixed(2);
+  const email = USAGE_METERS.emails_handled.tiers[0].unitUsd.toFixed(2);
+  const computer = USAGE_METERS.computer_minutes.tiers[0].unitUsd.toFixed(2);
+  return [
+    ...plans,
+    `SMS is $${sms} per sent segment. Calls are $${calls} per minute, email replies are $${email}, and Computer is $${computer} per minute. Calls, SMS, email, and Computer share one monthly allowance.`,
+    `Extra numbers are $${USAGE_ADDONS.number.usdMonthly}/month. Extra email addresses are $${USAGE_ADDONS.email_address.usdMonthly}/month.`,
+    "Every plan includes unlimited Bots. Usage charges apply across all of them.",
+    "Quote only these prices. If asked for a discount or a retired offer, give these prices and escalate instead of inventing an offer.",
+  ];
+}
+
+export function currentPricingPromptBlock(): string {
+  return [
+    "CURRENT BOTBOUND PRICING",
+    "These prices replace any older BotBound prices saved in Training.",
+    ...currentPricingFacts(),
+  ].join("\n");
+}
+
+/** Saved Training that still quotes a retired BotBound offer, not a customer's own price. */
+export function isStaleBotBoundPricing(text: string): boolean {
+  const dollar = String.fromCharCode(36);
+  const lower = text.toLowerCase();
+  return (
+    text.includes(`${dollar}19/month`) ||
+    text.includes(`${dollar}19 per month`) ||
+    text.includes(`${dollar}190/year`) ||
+    lower.includes(`${dollar}12 shared`) ||
+    lower.includes("channel packages include one bot") ||
+    lower.includes("prepaid runtime balance")
+  );
 }

@@ -1,6 +1,6 @@
 /**
  * Canonical application schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0191_shared_sms_usage.sql`.
+ * Latest committed migration: `drizzle/migrations/0192_usage_tier_standard_default.sql`.
  * Runtime voice defaults remain defined by
  * `drizzle/migrations/0168_openai_realtime_voice_runtime.sql`; migrations 0169
  * and 0172 remove empty retired provider ledgers.

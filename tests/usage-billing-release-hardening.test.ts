@@ -160,13 +160,13 @@ describe("checkout rate-card gate", () => {
       },
     };
     await expect(
-      validateUsageCheckoutCatalog(client as unknown as Stripe, env),
+      validateUsageCheckoutCatalog(client as unknown as Stripe, env, "starter"),
     ).resolves.toBeUndefined();
     expect(client.prices.retrieve).toHaveBeenCalledTimes(4);
     prices.find((price) => price.id === "price_email_address")!.unit_amount = 999;
-    await expect(validateUsageCheckoutCatalog(client as unknown as Stripe, env)).rejects.toThrow(
-      "approved catalog",
-    );
+    await expect(
+      validateUsageCheckoutCatalog(client as unknown as Stripe, env, "starter"),
+    ).rejects.toThrow("approved catalog");
   });
 });
 

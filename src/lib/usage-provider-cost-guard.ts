@@ -2,12 +2,17 @@
 import { and, eq, sql } from "drizzle-orm";
 import { usageMeterEvents } from "../db/usage-billing-schema";
 import { createUsageStore } from "./usage-billing-store";
-import { priceMeterExact, usageTier, type UsageTierId } from "./usage-billing-catalog";
+import {
+  DEFAULT_PUBLIC_USAGE_TIER,
+  priceMeterExact,
+  usageTier,
+  type UsageTierId,
+} from "./usage-billing-catalog";
 
 /** Reserve the plan's Computer budget, then at most 40% of its extra earned work. */
 export function computerProviderBudgetUsd(
   computerWorkUsd: number,
-  tier: UsageTierId = "starter",
+  tier: UsageTierId = DEFAULT_PUBLIC_USAGE_TIER,
 ): number {
   if (!Number.isFinite(computerWorkUsd) || computerWorkUsd < 0) return 0;
   const plan = usageTier(tier);

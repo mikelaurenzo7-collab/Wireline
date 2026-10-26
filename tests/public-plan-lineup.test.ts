@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
+import { PUBLIC_USAGE_TIERS, USAGE_TIERS } from "../src/lib/usage-billing-catalog";
 import {
   HOME_PLAN_IDS,
   PERSONAL_PLAN,
@@ -17,11 +18,16 @@ describe("public plan lineup", () => {
     expect(PUBLIC_CHANNEL_PLANS.some((plan) => plan.id === "personal")).toBe(false);
     expect(HOME_PLAN_IDS).toEqual(["personal", "email", "voice", "voice-email"]);
     expect(publicPriceSummary()).toBe(
-      `Personal $${PERSONAL_PLAN.price_usd_monthly}/mo · Calls from $${PUBLIC_ENTRY_PLANS.calls.price_usd_monthly}/mo · Email from $${PUBLIC_ENTRY_PLANS.email.price_usd_monthly}/mo`,
+      PUBLIC_USAGE_TIERS.map(
+        (id) => `${USAGE_TIERS[id].name} $${USAGE_TIERS[id].monthlyUsd}/mo`,
+      ).join(" · "),
     );
-    expect(publicPriceHint()).toContain(
-      `Email from $${PUBLIC_ENTRY_PLANS.email.price_usd_monthly}`,
+    expect(publicPriceHint()).toBe(
+      PUBLIC_USAGE_TIERS.map((id) => `${USAGE_TIERS[id].name} $${USAGE_TIERS[id].monthlyUsd}`).join(
+        " · ",
+      ),
     );
+    expect(publicPriceSummary()).not.toContain(`${String.fromCharCode(36)}19`);
   });
 
   it("keeps entry plans the cheapest package in each channel family", () => {

@@ -5,13 +5,13 @@ import {
   validateUsagePrice,
 } from "../../scripts/stripe-usage-billing-setup.mjs";
 import { usageMeterEventName, usagePriceId } from "./usage-billing-config";
-import type { UsageTierId } from "./usage-billing-catalog";
+import { DEFAULT_PUBLIC_USAGE_TIER, type UsageTierId } from "./usage-billing-catalog";
 
 /** Refuse checkout if configured objects differ from the public rate card. */
 export async function validateUsageCheckoutCatalog(
   client: Stripe,
   env: NodeJS.ProcessEnv = process.env,
-  tier: UsageTierId = "starter",
+  tier: UsageTierId = DEFAULT_PUBLIC_USAGE_TIER,
 ): Promise<void> {
   const USAGE_STRIPE_PLAN = USAGE_STRIPE_PLANS[tier];
   const specs = [

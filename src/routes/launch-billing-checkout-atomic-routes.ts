@@ -62,7 +62,7 @@ function usageAddonQuantity(value: unknown): number {
 export function usageCheckoutLineItems(
   addons: { numbers: number; emailAddresses: number },
   env: NodeJS.ProcessEnv = process.env,
-  tier: UsageTierId = "starter",
+  tier: UsageTierId = DEFAULT_PUBLIC_USAGE_TIER,
 ): Stripe.Checkout.SessionCreateParams.LineItem[] {
   const required = (key: Parameters<typeof usagePriceId>[0]) => {
     const id = usagePriceId(key, env, tier);

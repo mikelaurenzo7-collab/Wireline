@@ -18,6 +18,7 @@ import { AppError } from "./api-error";
 import { drizzle, log } from "./server-context";
 import { isUsagePlanId } from "./plan-catalog";
 import {
+  DEFAULT_PUBLIC_USAGE_TIER,
   USAGE_DEFAULT_MONTHLY_CAP_USD,
   usageTier,
   type UsageTierId,
@@ -153,7 +154,7 @@ export function createUsageStore(
         .limit(1);
       return {
         capUsd: row ? Number(row.monthlyCapUsd) : USAGE_DEFAULT_MONTHLY_CAP_USD,
-        tier: row?.tier ?? "starter",
+        tier: row?.tier ?? DEFAULT_PUBLIC_USAGE_TIER,
         numbers: row?.numberAddons ?? 0,
         emailAddresses: row?.emailAddressAddons ?? 0,
         alertPeriodKey: row?.alertPeriodKey ?? null,
@@ -670,7 +671,7 @@ export async function setUsageAddonQuantities(
       .values({
         userId,
         periodKey,
-        tier: period.tier ?? "starter",
+        tier: period.tier ?? DEFAULT_PUBLIC_USAGE_TIER,
         stripeCustomerId: period.stripeCustomerId,
         stripeSubscriptionId: period.stripeSubscriptionId,
         startsAt: period.startsAt!,
@@ -685,7 +686,7 @@ export async function setUsageAddonQuantities(
           // Proration cannot be reconstructed from the latest quantities. Keep the
           // original snapshot and require invoice reconciliation if they change.
           blockedReason: sql`CASE WHEN ${usageBillingPeriods.numberAddons} <> ${quantities.numbers}
-        OR ${usageBillingPeriods.tier} <> ${period.tier ?? "starter"}
+        OR ${usageBillingPeriods.tier} <> ${period.tier ?? DEFAULT_PUBLIC_USAGE_TIER}
         OR ${usageBillingPeriods.emailAddressAddons} <> ${quantities.emailAddresses}
         OR ${usageBillingPeriods.startsAt} <> ${period.startsAt}
         OR ${usageBillingPeriods.stripeCustomerId} <> ${period.stripeCustomerId}
@@ -698,14 +699,14 @@ export async function setUsageAddonQuantities(
         userId,
         numberAddons: quantities.numbers,
         emailAddressAddons: quantities.emailAddresses,
-        tier: period.tier ?? "starter",
+        tier: period.tier ?? DEFAULT_PUBLIC_USAGE_TIER,
       })
       .onConflictDoUpdate({
         target: usageSpendControls.userId,
         set: {
           numberAddons: quantities.numbers,
           emailAddressAddons: quantities.emailAddresses,
-          tier: period.tier ?? "starter",
+          tier: period.tier ?? DEFAULT_PUBLIC_USAGE_TIER,
           updatedAt: new Date(),
         },
       });

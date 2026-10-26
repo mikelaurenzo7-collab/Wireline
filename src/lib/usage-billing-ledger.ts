@@ -17,6 +17,7 @@ import { AppError } from "./api-error";
 import { createHash } from "node:crypto";
 import { usageMeterEventName } from "./usage-billing-config";
 import {
+  DEFAULT_PUBLIC_USAGE_TIER,
   USAGE_MAX_MONTHLY_CAP_USD,
   crossedAlertThresholds,
   fixedMonthlyUsd,
@@ -178,7 +179,7 @@ export function clampBillableQuantity(
   quantity: number,
   headroomUsd: number,
   totals: MeterTotals = { ...emptyMeterTotals(), [meter]: alreadyBilled },
-  tier: UsageTierId = "starter",
+  tier: UsageTierId = DEFAULT_PUBLIC_USAGE_TIER,
 ): number {
   if (!(quantity > 0)) return 0;
   const incremental = (q: number) =>
@@ -247,7 +248,7 @@ export async function usageSpendState(store: UsageStore, userId: string): Promis
   );
   const pct = control.capUsd > 0 ? Math.floor((spentUsd / control.capUsd) * 100) : 100;
   return {
-    tier: control.tier ?? "starter",
+    tier: control.tier ?? DEFAULT_PUBLIC_USAGE_TIER,
     includedWorkUsd: usageTier(control.tier).includedWorkUsd,
     periodKey: identity.periodKey,
     spentUsd,

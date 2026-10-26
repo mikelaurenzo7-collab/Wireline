@@ -247,7 +247,7 @@ export class ElevenLabsMediaSession extends EventEmitter {
       // Speak complete clauses as they arrive; bound long unpunctuated replies.
       let end: number;
       // A token ending in punctuation is not necessarily a sentence ending:
-      // "$19." + "50", "https:" + "//...", and "Dr." + " Smith" must stay intact.
+      // "No. 19." + "50", "https:" + "//...", and "Dr." + " Smith" must stay intact.
       while ((end = speechBoundary(this.text)) >= 0 || this.text.length >= 240) {
         // Punctuation can be much later than the limit, and a long word may
         // have no spaces. Neither case should create an unbounded request or

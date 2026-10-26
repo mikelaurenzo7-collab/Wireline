@@ -57,9 +57,10 @@ Stripe receives one weighted meter: 100 credits = $1 of work. The first 400/1,40
 cost zero for Lite/Starter/Plus, then one cent per credit. Native quantities remain in the ledger.
 Round the combined meter once, not each channel before summation.
 
-The original $19/$12 offer is retained internally as `starter`; the new public Starter is
-`standard`. This deliberate distinction preserves historical invoices and immutable Stripe
-objects. New checkout rejects the original offer. Existing package subscriptions are unchanged.
+The retired monthly offer is retained internally as `starter` so stored periods keep
+their allowance. New periods and any omitted tier default to public Starter (`standard`).
+This distinction preserves historical invoices and immutable Stripe objects. New checkout
+rejects `starter`. Existing package subscriptions are unchanged.
 Each billing period freezes its tier. A midperiod tier or add-on change holds new work for
 invoice reconciliation rather than retroactively changing accrued usage.
 
@@ -84,8 +85,8 @@ Verified bundled-plan sandbox renewal totals on October 25: $12.00 for Lite's ex
 allowance, $24.01 for Starter's fractional overage, and $100.00 for Plus with both extra
 identities and capped work. Duplicate submissions aggregated once; no live charge was made.
 
-Earlier original-offer v2 sandbox renewal totals on October 25: $19.00 for mixed included work,
-$40.68 for fractional work with both add-ons, and $19.01 for cross-channel fractional
+Earlier retired-offer v2 sandbox renewal totals on October 25 matched the stored starter
+rate card for mixed included work, fractional work with both add-ons, and cross-channel fractional
 rounding. Duplicate requests aggregated once. These provider proofs do not replace
 application webhook, entitlement, cancellation, payment-failure and final-release checks.
 
@@ -109,7 +110,7 @@ support time. The earlier v1 margin percentages are retired; do not reuse them f
 | Flag and env names                          | `src/lib/usage-billing-config.ts`                                                                                                                           |
 | Ledger rules (record, admit, alert, report) | `src/lib/usage-billing-ledger.ts` (pure, unit tested)                                                                                                       |
 | Postgres store and Stripe meter client      | `src/lib/usage-billing-store.ts`                                                                                                                            |
-| Tables                                      | `src/db/usage-billing-schema.ts`, migrations `0187_usage_billing.sql` through `0191_shared_sms_usage.sql`                                                   |
+| Tables                                      | `src/db/usage-billing-schema.ts`, migrations `0187_usage_billing.sql` through `0192_usage_tier_standard_default.sql`                                                   |
 | Plan                                        | `USAGE_PLAN` / `isUsagePlanId` in `src/lib/plan-catalog.ts` (outside `STRIPE_PLANS`)                                                                        |
 | Bots                                        | `resolveAgentEntitlement` returns `unlimited: true` for an active usage subscription; the only ceiling is the 120-mark identity namespace                   |
 | Checkout                                    | `plan_id: "usage"`, `usage_tier`: selected base/work pair and optional extras; monthly only                                                                 |
@@ -135,7 +136,7 @@ or meter event name and never modifies or archives anything.
 | ------------------------------- | --------------------------------------------------------------- |
 | Lite / Starter / Plus bases     | `usage_{lite,standard,plus}_monthly_2026_10_v1`                 |
 | Lite / Starter / Plus work      | `usage_{lite,standard,plus}_work_2026_10_v1`                    |
-| Original $19 base, historical   | `usage_base_monthly_2026_10_v2`                                 |
+| Retired monthly base, historical | `usage_base_monthly_2026_10_v2`                                |
 | Sum meter, by Stripe customer   | `botbound_work_credits_v2`                                      |
 | Original work price, historical | `usage_work_2026_10_v2`                                         |
 | Add-on prices                   | `usage_addon_number_2026_10_v2`, `usage_addon_email_2026_10_v2` |
@@ -148,7 +149,7 @@ Environment names: `USAGE_BILLING_ENABLED`, `STRIPE_USAGE_BASE_PRICE_ID`,
 
 | Stage | What                                                                                                                                                                                                                                                        |
 | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0     | For a new environment, validate with the flag off. Install migrations 0187 through 0191 through the reviewed release path, verifying the ledger and actual schema before promotion. Never replay them blindly on production.                                |
+| 0     | For a new environment, validate with the flag off. Install migrations 0187 through 0192 through the reviewed release path, verifying the ledger and actual schema before promotion. Never replay them blindly on production. Apply `0192_usage_tier_standard_default.sql` by hand after 0191 and before deploy. |
 | 1     | The selected production target is BotBound (`acct_1TkyXL8e6If87QKm`). Use an explicitly selected isolated test sandbox for invoice proof. Audit the target's existing catalog before applying each public tier; reuse passing proof when source and conditions still match. |
 | 2     | After proof and authorization, use `--apply --live --rates-approved` as needed, configure matching merchant prices, meter, webhook and runtime permissions, reconcile exact founder/demo bindings, and deploy the reviewed source. The selected-account switch was verified in PR #1386; future configuration changes require fresh matching evidence. |
 | 3     | Verify deployed checkout, webhook ownership, entitlement and settlement against the same merchant. Preserve historical merchant bindings and invoices unless an exact, audited reconciliation explicitly changes them.                                      |

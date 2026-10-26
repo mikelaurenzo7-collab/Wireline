@@ -127,6 +127,7 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
         "0189_usage_billing_periods",
         "0190_usage_plan_tiers",
         "0191_shared_sms_usage",
+        "0192_usage_tier_standard_default",
       ])
         await pool.query(
           readFileSync(new URL(`../drizzle/migrations/${name}.sql`, import.meta.url), "utf8"),
@@ -148,6 +149,7 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
       USER,
       { numbers: 1, emailAddresses: 0 },
       {
+        tier: "starter",
         stripeCustomerId: "cus_review",
         stripeSubscriptionId: "sub_review",
         startsAt: START,

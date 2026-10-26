@@ -7,7 +7,6 @@ import { usePaidPlanAvailability } from "../../hooks/usePaidPlanAvailability";
 import {
   USAGE_ADDONS,
   USAGE_DEFAULT_MONTHLY_CAP_USD,
-  USAGE_INCLUDED_WORK_USD,
   USAGE_TIERS,
   publicUsageTierId,
   usageTier,
@@ -250,9 +249,9 @@ export default function UsageSpendCard({
         )}
         <p className="text-sm text-muted-foreground">
           {formatUsdCents(state.included_remaining_usd ?? 0)} of your $
-          {state.included_work_usd ?? USAGE_INCLUDED_WORK_USD} shared work allowance remains. Calls,
-          SMS, email and Computer use the same pool. It resets monthly without rollover. Heavy
-          Computer tasks may reach a separate processing limit.
+          {state.included_work_usd ?? usageTier(state.tier).includedWorkUsd} shared work allowance
+          remains. Calls, SMS, email and Computer use the same pool. It resets monthly without
+          rollover. Heavy Computer tasks may reach a separate processing limit.
         </p>
         <p className="text-sm text-muted-foreground">
           Your limit covers BotBound charges before tax. Applicable tax is added separately. Active

@@ -32,6 +32,18 @@ describe("signup-intent", () => {
     expect(parseSignupIntent("?plan=personal-plus")?.preferredPlanId).toBe("team");
     expect(parseSignupIntent("?plan=business-starter")?.preferredPlanId).toBe("starter");
     expect(parseSignupIntent("?plan=starter")?.preferredPlanId).toBe("starter");
+    expect(parseSignupIntent("?plan=lite")).toMatchObject({
+      preferredPlanId: "usage",
+      preferredUsageTier: "lite",
+    });
+    expect(parseSignupIntent("?plan=plus")).toMatchObject({
+      preferredPlanId: "usage",
+      preferredUsageTier: "plus",
+    });
+    expect(parseSignupIntent("?plan=standard")).toMatchObject({
+      preferredPlanId: "usage",
+      preferredUsageTier: "standard",
+    });
     expect(parseSignupIntent("?plan=scale")?.preferredPlanId).toBe("business");
     expect(parseSignupIntent("?plan=enterprise")?.preferredPlanId).toBe("business");
   });

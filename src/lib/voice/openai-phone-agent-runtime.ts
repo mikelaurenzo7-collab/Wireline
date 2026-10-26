@@ -28,6 +28,7 @@ import {
 } from "../runtime-template-personality";
 import { drizzle, serialQueryBatch } from "../server-context";
 import { validateNativeCalendarSettings } from "../native-calendar-policy";
+import { currentPricingPromptBlock, isStaleBotBoundPricing } from "../usage-billing-catalog";
 import {
   OPENAI_REALTIME_DEFAULT_MODEL,
   OPENAI_REALTIME_DEFAULT_TRANSCRIBER,
@@ -363,12 +364,17 @@ export function composeOpenAIRealtimeInstructions(input: {
       runtimeReviewRequired ? "" : listBlock("OPERATING RULES", input.directives, 24),
       runtimeReviewRequired
         ? ""
-        : listBlock("INITIAL APPROVED KNOWLEDGE", input.knowledge, MAX_INITIAL_KNOWLEDGE_ITEMS),
+        : listBlock(
+            "INITIAL APPROVED KNOWLEDGE",
+            input.knowledge.filter((item) => !isStaleBotBoundPricing(item.content ?? "")),
+            MAX_INITIAL_KNOWLEDGE_ITEMS,
+          ),
       `\n${RUNTIME_ACTION_SAFETY_BLOCK}`,
       `\n${RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK}`,
       internalPolicy && !runtimeReviewRequired
         ? `\n${founderInternalRuntimeAuthorityBoundary(internalPolicy)}`
         : "",
+      `\n${currentPricingPromptBlock()}`,
     ]
       .filter(Boolean)
       .join("\n"),

@@ -631,6 +631,13 @@
       "when": 1792942000001,
       "tag": "0191_shared_sms_usage",
       "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1792942000002,
+      "tag": "0192_usage_tier_standard_default",
+      "breakpoints": true
     }
   ]
 }
