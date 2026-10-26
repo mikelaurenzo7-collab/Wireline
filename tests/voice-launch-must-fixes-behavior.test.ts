@@ -385,6 +385,10 @@ describe("Codex #1360 review fixes", () => {
     const create = service.indexOf("await engine.create(");
     expect(lock).toBeGreaterThan(-1);
     expect(create).toBeGreaterThan(lock);
+    const reserve = service.slice(lock, create);
+    expect(reserve).toContain("await drizzle.transaction");
+    expect(reserve).toContain("});");
+    expect(reserve).not.toContain(".insert(liveVoices)");
   });
 
   it("keeps durable cleanup evidence when a provider delete fails", () => {
