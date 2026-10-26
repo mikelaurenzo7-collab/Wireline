@@ -78,7 +78,7 @@ router.post(
       return res.status(409).json({
         code: "CHANNEL_SETUP_UNAVAILABLE",
         error:
-          "SMS setup is not available yet. Registration charges and carrier readiness must be confirmed before checkout.",
+          "SMS plans check out once sender registration is confirmed for your account. Registration charges and carrier readiness are confirmed first.",
       });
     }
 

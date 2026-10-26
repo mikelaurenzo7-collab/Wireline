@@ -97,7 +97,7 @@ describe("usage rate card", () => {
           numbers: 0,
           emailAddresses: 0,
         },
-        "starter",
+        "previous",
       ).totalUsd,
     ).toBe(19.01);
   });
@@ -128,7 +128,7 @@ describe("usage rate card", () => {
         numbers: 1,
         emailAddresses: 0,
       },
-      "starter",
+      "previous",
     );
     const salon = estimateUsageBill(
       {
@@ -138,7 +138,7 @@ describe("usage rate card", () => {
         numbers: 1,
         emailAddresses: 1,
       },
-      "starter",
+      "previous",
     );
     const multiLocation = estimateUsageBill(
       {
@@ -148,7 +148,7 @@ describe("usage rate card", () => {
         numbers: 3,
         emailAddresses: 3,
       },
-      "starter",
+      "previous",
     );
     expect(solo.totalUsd).toBe(56.8);
     expect(salon.totalUsd).toBe(274);
@@ -175,8 +175,8 @@ describe("usage rate card", () => {
   it("keeps the minimum cap above fixed charges and alerts at 50/80/100", () => {
     expect(minimumMonthlyCapUsd({ numbers: 0, emailAddresses: 0 })).toBe(29);
     expect(minimumMonthlyCapUsd({ numbers: 2, emailAddresses: 1 })).toBe(39);
-    expect(minimumMonthlyCapUsd({ numbers: 0, emailAddresses: 0 }, "starter")).toBe(24);
-    expect(minimumMonthlyCapUsd({ numbers: 2, emailAddresses: 1 }, "starter")).toBe(34);
+    expect(minimumMonthlyCapUsd({ numbers: 0, emailAddresses: 0 }, "previous")).toBe(24);
+    expect(minimumMonthlyCapUsd({ numbers: 2, emailAddresses: 1 }, "previous")).toBe(34);
     expect(crossedAlertThresholds(0, 49)).toEqual([]);
     expect(crossedAlertThresholds(0, 85)).toEqual([50, 80]);
     expect(crossedAlertThresholds(80, 100)).toEqual([100]);
@@ -243,7 +243,7 @@ describe("usage billing flag and payload", () => {
       [USAGE_PRICE_ENV.email_address]: "price_mailbox",
     };
     expect(usageCheckoutConfigured(retired)).toBe(false);
-    expect(usageCheckoutConfigured(retired, "starter")).toBe(true);
+    expect(usageCheckoutConfigured(retired, "previous")).toBe(true);
     expect([...usagePriceIds(prices)].sort()).toEqual(
       ["price_base", "price_work", "price_number", "price_mailbox"].sort(),
     );
@@ -301,7 +301,7 @@ describe("Stripe setup script parity", () => {
   });
 
   it("prices the base and add-ons exactly as the catalog", () => {
-    expect(USAGE_STRIPE_PLAN.base.unit_amount).toBe(USAGE_TIERS.starter.monthlyUsd * 100);
+    expect(USAGE_STRIPE_PLAN.base.unit_amount).toBe(USAGE_TIERS.previous.monthlyUsd * 100);
     expect(USAGE_STRIPE_PLANS.standard.base.unit_amount).toBe(USAGE_BASE_USD_MONTHLY * 100);
     expect(USAGE_STRIPE_PLAN.base.metadata.wireline_plan_id).toBe("usage");
     expect(USAGE_STRIPE_PLAN.product.metadata).not.toHaveProperty("wireline_plan_id");
@@ -316,7 +316,7 @@ describe("Stripe setup script parity", () => {
     expect(USAGE_STRIPE_PLAN.meters).toHaveLength(1);
     expect(USAGE_STRIPE_PLAN.meters[0].event_name).toBe(USAGE_WORK_EVENT_NAME);
     expect(USAGE_STRIPE_PLAN.meters[0].tiers).toEqual([
-      { up_to: USAGE_TIERS.starter.includedWorkUsd * 100, unit_amount_decimal: "0" },
+      { up_to: USAGE_TIERS.previous.includedWorkUsd * 100, unit_amount_decimal: "0" },
       { up_to: "inf", unit_amount_decimal: "1" },
     ]);
   });
@@ -331,7 +331,7 @@ describe("Stripe setup script parity", () => {
           numbers: 0,
           emailAddresses: 0,
         },
-        "starter",
+        "previous",
       );
     for (const args of [
       [48, 0, 0],
@@ -416,7 +416,7 @@ describe("Stripe setup script parity", () => {
 
 describe("shared work plans", () => {
   it("matches all Stripe allowances and prices while preserving the original offer", () => {
-    for (const tier of ["starter", "lite", "standard", "plus"] as const) {
+    for (const tier of ["previous", "lite", "standard", "plus"] as const) {
       expect(USAGE_STRIPE_PLANS[tier].base.unit_amount).toBe(USAGE_TIERS[tier].monthlyUsd * 100);
       expect(USAGE_STRIPE_PLANS[tier].meters[0].tiers[0].up_to).toBe(
         USAGE_TIERS[tier].includedWorkUsd * 100,
@@ -458,7 +458,7 @@ describe("shared work plans", () => {
       Object.values(USAGE_PRICE_ENV).map((key) => [key, "price_test"]),
     );
     env.USAGE_BILLING_ENABLED = "true";
-    expect(usageCheckoutConfigured(env, "starter")).toBe(true);
+    expect(usageCheckoutConfigured(env, "previous")).toBe(true);
     expect(usageCheckoutConfigured(env, "plus")).toBe(false);
   });
 });

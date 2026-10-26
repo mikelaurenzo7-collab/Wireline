@@ -124,12 +124,6 @@ async function registerMenus() {
     contexts: ["page", "selection"],
   });
   api.contextMenus.create({
-    id: "wireline-text-from-page",
-    title: "BotBound SMS is coming soon",
-    enabled: false,
-    contexts: ["page", "selection"],
-  });
-  api.contextMenus.create({
     id: "wireline-followup-from-page",
     title: "Draft an email with BotBound",
     contexts: ["page", "selection"],

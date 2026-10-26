@@ -14,8 +14,8 @@
 export const USAGE_PLAN_ID = "usage" as const;
 export const USAGE_CATALOG_VERSION = "2026-10-usage-v2" as const;
 export const USAGE_TIERS = {
-  starter: {
-    id: "starter",
+  previous: {
+    id: "previous",
     name: "Previous",
     monthlyUsd: 19,
     includedWorkUsd: 12,
@@ -64,9 +64,14 @@ export function publicUsageTierId(value: unknown): UsageTierId {
 export function isUsageTierId(value: unknown): value is UsageTierId {
   return typeof value === "string" && Object.hasOwn(USAGE_TIERS, value);
 }
-/** Omitted tiers are the current Starter plan. A stored retired id keeps its rate. */
+/**
+ * Omitted tiers are the current Starter plan. A stored retired id keeps its
+ * rate: billing periods written before the key rename carry "starter", which
+ * resolves to the same retired record under its current key, "previous".
+ */
 export function usageTier(value: UsageTierId = DEFAULT_PUBLIC_USAGE_TIER) {
-  return USAGE_TIERS[value] ?? USAGE_TIERS[DEFAULT_PUBLIC_USAGE_TIER];
+  const key = (value as string) === "starter" ? "previous" : value;
+  return USAGE_TIERS[key as UsageTierId] ?? USAGE_TIERS[DEFAULT_PUBLIC_USAGE_TIER];
 }
 /** Stripe meters cents of work; native quantities remain in the local ledger. */
 export const USAGE_WORK_EVENT_NAME = "botbound_work_credits_v2";
