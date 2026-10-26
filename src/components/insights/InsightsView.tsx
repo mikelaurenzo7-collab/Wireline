@@ -29,7 +29,6 @@ import FunnelView from "./FunnelView";
 import AttributionView from "./AttributionView";
 import TopicsView from "./TopicsView";
 import HeatmapView from "./HeatmapView";
-import LeaderboardView from "./LeaderboardView";
 import FailureModesView from "./FailureModesView";
 import VoiceLatencyView from "./VoiceLatencyView";
 import AISpendView from "./AISpendView";
@@ -50,7 +49,6 @@ const WINDOWED_VIEWS = new Set([
   "funnel",
   "attribution",
   "heatmap",
-  "leaderboard",
   "latency",
   "reliability",
   "spend",
@@ -102,7 +100,6 @@ export default function InsightsView() {
       attribution: wrap("Attribution", <AttributionView days={days} />),
       topics: wrap("Topics", <TopicsView />),
       heatmap: wrap("Heatmap", <HeatmapView days={days} />),
-      leaderboard: wrap("Leaderboard", <LeaderboardView days={days} />),
       failures: wrap("Failures", <FailureModesView />),
       latency: wrap("Latency", <VoiceLatencyView days={days} />),
       reliability: wrap("Reliability", <VoiceReliabilityView days={days} />),

@@ -79,7 +79,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "inbox",
     label: "Inbox",
-    keywords: "conversations outcomes handoffs",
+    keywords: "conversations outcomes handoffs sms text messages email",
     icon: Inbox,
     href: "/inbox",
     category: "Workspace",
@@ -89,7 +89,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     // "Calls" everywhere: the rail, page titles, and the authenticated 404 all
     // name /phone "Calls" (constants/navigation.ts) — the palette must match.
     label: "Calls",
-    keywords: "phone calls history reviewed inbound service callback",
+    keywords: "phone calls history inbound outbound sales follow-up callback",
     icon: Phone,
     href: "/phone",
     category: "Workspace",

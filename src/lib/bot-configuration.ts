@@ -36,9 +36,9 @@ const DEFAULT_CHANNELS: BotChannelConfiguration = {
       "Answer naturally, identify the need, complete the next step, and recap the outcome.",
   },
   text: {
-    enabled: false,
+    enabled: true,
     instructions:
-      "Continue approved conversations, confirm details, and honor opt-outs immediately.",
+      "Continue the conversation by text, confirm details, and honor opt-outs immediately.",
   },
   email: {
     enabled: true,

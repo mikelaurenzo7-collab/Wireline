@@ -160,7 +160,10 @@ describe("BotBound product voice", () => {
   it("preserves channel compatibility while promoting only the current launch capabilities", () => {
     expect(BOT_CHANNELS.map((channel) => channel.label)).toEqual(["Call", "Text", "Email"]);
     expect(BOT_CHANNELS.find((channel) => channel.key === "text")?.description).toContain(
-      "SMS is coming soon",
+      "Text from your business number",
+    );
+    expect(BOT_CHANNELS.find((channel) => channel.key === "text")?.description).not.toMatch(
+      /coming soon|unavailable/i,
     );
     expect(isReviewedOutboundCandidate({ phone_number: "+13125550100", channel: "voice" })).toBe(
       true,

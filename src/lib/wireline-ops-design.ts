@@ -554,7 +554,7 @@ export const OPS_INSIGHTS_GROUPS = [
   {
     id: "performance",
     label: "Performance",
-    tabs: ["funnel", "calls", "goals", "heatmap", "leaderboard"] as const,
+    tabs: ["funnel", "calls", "goals", "heatmap"] as const,
   },
   {
     id: "reliability",
@@ -598,13 +598,6 @@ export const OPS_INSIGHTS_EMPTY = {
     actions: [
       { label: "Start Outbound", to: "/phone?tab=outbound", primary: true },
       { label: "Workspace", to: "/studio" },
-    ],
-  },
-  leaderboard: {
-    title: "No Ranked Bots",
-    actions: [
-      { label: "Create Bot", to: "/studio", primary: true },
-      { label: "Call History", to: "/phone?tab=logs" },
     ],
   },
   latency: {

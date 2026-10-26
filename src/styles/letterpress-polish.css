@@ -1143,57 +1143,6 @@ html[data-privacy-choices="open"] body {
   color: var(--wireline-color-text-onAction);
 }
 
-/* Insights leaderboard podium — violet action for first, silver wire for
-   second, neutral for third. Referenced by data-rank without a definition,
-   so the top-three avatars (including the rank-one trophy) drew no surface. */
-.wl-leaderboard-avatar[data-rank="0"] {
-  background: linear-gradient(
-    135deg,
-    var(--wireline-color-action-primary-pressed),
-    var(--wireline-color-action-primary-default)
-  );
-  color: var(--wireline-color-text-onAction);
-}
-
-.wl-leaderboard-avatar[data-rank="1"] {
-  background: linear-gradient(
-    135deg,
-    var(--wireline-color-action-secondary-containerStrong),
-    var(--wireline-color-action-secondary-container)
-  );
-  color: var(--wireline-color-action-secondary-default);
-}
-
-.wl-leaderboard-avatar[data-rank="2"] {
-  background: linear-gradient(
-    135deg,
-    var(--wireline-color-surface-strong),
-    var(--wireline-color-surface-container)
-  );
-  color: var(--wireline-color-status-neutral);
-}
-
-/* Podium borders live here, not as Tailwind utilities on the row: the rows
-   carry .wl-panel, whose unlayered border shorthand beats layered utilities. */
-.wl-leaderboard-card[data-rank="0"] {
-  border-color: color-mix(in srgb, var(--wireline-color-action-primary-default) 40%, transparent);
-  box-shadow:
-    var(--wireline-elevation-card),
-    0 0 24px -10px var(--wireline-color-glow-primary);
-}
-
-.wl-leaderboard-card[data-rank="1"] {
-  border-color: color-mix(in srgb, var(--wireline-color-action-secondary-default) 30%, transparent);
-  box-shadow:
-    var(--wireline-elevation-card),
-    0 0 24px -12px var(--wireline-color-glow-wire);
-}
-
-.wl-leaderboard-card[data-rank="2"] {
-  border-color: color-mix(in srgb, var(--wireline-color-status-neutral) 25%, transparent);
-  box-shadow: var(--wireline-elevation-card);
-}
-
 /* Toast tone accents — the edge bar and icon read the tone from the
    container's data-toast attribute. Both were referenced without a
    definition, so every toast shipped with an invisible accent bar and an

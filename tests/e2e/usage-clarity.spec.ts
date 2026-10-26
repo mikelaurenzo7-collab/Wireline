@@ -133,7 +133,7 @@ for (const width of [1440, 390]) {
     await expect(page.getByRole("spinbutton", { name: "Monthly Safety Limit (USD)" })).toHaveValue(
       "2",
     );
-    await expect(page.getByText("Recorded AI Cost", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Recorded AI Cost · \d+d/)).toBeVisible();
     await expect(page.getByText("$0.12", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("No Conversations Yet", { exact: true })).toHaveCount(0);
 

@@ -30,13 +30,12 @@ describe("API response contract", () => {
     expect(usageMeter).not.toMatch(/interface UsageSnapshot/);
   });
 
-  it("types insights funnel and leaderboard views against shared contracts", () => {
+  it("types insights funnel views against shared contracts", () => {
     const funnel = read("src/components/insights/FunnelView.tsx");
     expect(funnel).toContain("InsightsFunnelResponse");
     expect(funnel).not.toMatch(/useState<any>/);
+    expect(existsSync("src/components/insights/LeaderboardView.tsx")).toBe(false);
 
-    const leaderboard = read("src/components/insights/LeaderboardView.tsx");
-    expect(leaderboard).toContain("InsightsLeaderboardResponse");
     const insightsTypes = read("src/types/api-insights.ts");
     expect(insightsTypes).toContain("InsightsFunnelResponse");
     expect(insightsTypes).toContain("InsightsAttributionResponse");

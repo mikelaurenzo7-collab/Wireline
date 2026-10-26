@@ -32,7 +32,7 @@ describe("Free Builder spend UI truth", () => {
     expect(source).toContain("AI processing allowance funded by the plan");
     expect(source).toContain("Completed in-flight work still settles.");
     expect(source).toContain("Processing costs, separate from your bill.");
-    expect(source).toContain('label="Recorded AI Cost"');
+    expect(source).toContain("Recorded AI Cost · ${days}d");
     expect(source).not.toContain('label="Total Spend"');
   });
 });

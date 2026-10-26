@@ -13,7 +13,7 @@ describe("Fast Start brief-first flow contract", () => {
     expect(create).not.toContain("{language.setupDescription}");
     expect(create).toContain("BOT_ROLE_TEMPLATES.map");
     expect(create).toContain(
-      'Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")',
+      'Configurable channels: ${BOT_CHANNELS.map((channel) => channel.label)',
     );
     expect(create).toContain('aria-label="Bot role starters"');
     expect(create).toContain("aria-expanded={customizing}");

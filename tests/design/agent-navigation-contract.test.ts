@@ -124,7 +124,7 @@ describe("authenticated Bot navigation contract", () => {
     expect(create).toContain("language.createCta");
     expect(create).toContain("BOT_ROLE_TEMPLATES.map");
     expect(create).toContain(
-      'Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")',
+      'Configurable channels: ${BOT_CHANNELS.map((channel) => channel.label)',
     );
     expect(create).toContain('aria-label="Bot role starters"');
     expect(create).toContain("phoneProvisionRequested: false");

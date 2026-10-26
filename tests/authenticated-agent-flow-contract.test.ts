@@ -125,7 +125,7 @@ describe("authenticated Bot flow", () => {
     expect(createDialog).toContain("{language.setupPrompt}");
     expect(createDialog).toContain("BOT_ROLE_TEMPLATES.map");
     expect(createDialog).toContain(
-      'Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")',
+      'Configurable channels: ${BOT_CHANNELS.map((channel) => channel.label)',
     );
     expect(createDialog).toContain("Cancel");
     expect(createDialog).not.toContain("VoicePickerField");
@@ -173,7 +173,7 @@ describe("authenticated Bot flow", () => {
     expect(botProduct).not.toContain('name: "Collections"');
     expect(createDialog).toContain("BOT_ROLE_TEMPLATES.map");
     expect(createDialog).toContain(
-      'Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")',
+      'Configurable channels: ${BOT_CHANNELS.map((channel) => channel.label)',
     );
     expect(createDialog).toContain('aria-label="Bot role starters"');
     expect(createDialog).toContain("<option key={template.key} value={template.key}>");

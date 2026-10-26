@@ -18,7 +18,6 @@ import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
 
-const DEFAULT_AGENT_ROLE = "customer_service";
 const reviewableLeadScore = sql<number | null>`CASE
   WHEN btrim(coalesce(${schema.callLogs.coachingNote}, '')) IN (${LEGACY_CALL_REVIEW_FAILURE_NOTES[0]}, ${LEGACY_CALL_REVIEW_FAILURE_NOTES[1]}) THEN NULL
   ELSE coalesce(${schema.callLogs.leadScore}, 0)
@@ -119,15 +118,16 @@ router.get(
       const apptWhere = and(
         eq(schema.appointments.userId, userId),
         gte(schema.appointments.createdAt, since),
+        sql`${schema.appointments.status} is distinct from 'Cancelled'`,
+        eq(schema.appointments.demo, false),
       );
       const leadWhere = and(
         eq(schema.outboundLeads.userId, userId),
         gte(schema.outboundLeads.createdAt, since),
       );
 
-      // Single pooled client for the fan-out — see the agent-performance query
-      // below: root Drizzle queries each check out their own tenant-scoped
-      // client against a five-connection serverless pool.
+      // One pooled client for this fan-out. Root Drizzle queries each check out
+      // their own tenant-scoped client against a five-connection serverless pool.
       const [callRows, apptRows, leadRows] = await drizzle.transaction((tx) =>
         serialQueryBatch([
           tx
@@ -241,149 +241,6 @@ router.get(
         }
       }
       res.json({ window_days: days, grid });
-    } catch (e) {
-      if (e instanceof AppError) throw e;
-      aiErr(res, e);
-    }
-  },
-);
-
-router.get(
-  "/api/insights/leaderboard",
-  authenticateUser,
-  async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const days = Math.min(365, Math.max(1, parseInt(String(req.query.days ?? "30"), 10) || 30));
-      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-
-      const userId = req.user.id;
-      const callWhere = and(
-        eq(schema.callLogs.userId, userId),
-        gte(schema.callLogs.createdAt, since),
-      );
-      const apptWhere = and(
-        eq(schema.appointments.userId, userId),
-        gte(schema.appointments.createdAt, since),
-      );
-
-      const [agents, callStats, apptStats, aiCostStats] = await drizzle.transaction((tx) =>
-        serialQueryBatch([
-          tx
-            .select({
-              id: schema.agents.id,
-              name: schema.agents.name,
-              markKey: schema.agents.markKey,
-              archetype: schema.agents.archetype,
-              channel: schema.agents.channel,
-              role: schema.agents.role,
-            })
-            .from(schema.agents)
-            .where(eq(schema.agents.userId, userId))
-            .limit(500),
-          tx
-            .select({
-              agentId: schema.callLogs.agentId,
-              totalCalls: count(),
-              qualified:
-                sql<number>`count(*) filter (where coalesce(${schema.callLogs.leadScore}, 0) >= 50)`.mapWith(
-                  Number,
-                ),
-              highIntent:
-                sql<number>`count(*) filter (where ${schema.callLogs.intentLabel} = 'high')`.mapWith(
-                  Number,
-                ),
-              minutes:
-                sql<number>`coalesce(round(sum(coalesce(${schema.callLogs.durationSeconds}, 0)) / 60.0), 0)::int`.mapWith(
-                  Number,
-                ),
-              cost: sql<string>`coalesce(sum(coalesce(${schema.callLogs.cost}, 0)), 0)`.mapWith(
-                String,
-              ),
-              avgScore: sql<number>`coalesce(round(avg(${reviewableLeadScore})), 0)::int`.mapWith(
-                Number,
-              ),
-            })
-            .from(schema.callLogs)
-            .where(callWhere)
-            .groupBy(schema.callLogs.agentId),
-          tx
-            .select({
-              agentId: schema.appointments.agentId,
-              bookings: count(),
-            })
-            .from(schema.appointments)
-            .where(apptWhere)
-            .groupBy(schema.appointments.agentId),
-          tx
-            .select({
-              agentId:
-                sql<string>`coalesce(${schema.auditLog.metadata}->>'agent_id', 'unknown')`.mapWith(
-                  String,
-                ),
-              aiCost:
-                sql<string>`coalesce(sum(coalesce((${schema.auditLog.metadata}->>'cost_usd')::numeric, 0)), 0)`.mapWith(
-                  String,
-                ),
-            })
-            .from(schema.auditLog)
-            .where(
-              and(
-                eq(schema.auditLog.userId, userId),
-                eq(schema.auditLog.eventType, "ai.api_call"),
-                gte(schema.auditLog.createdAt, since),
-              ),
-            )
-            .groupBy(sql`coalesce(${schema.auditLog.metadata}->>'agent_id', 'unknown')`),
-        ]),
-      );
-
-      const callByAgent = new Map((callStats || []).map((r) => [r.agentId || "unknown", r]));
-      const apptsByAgent = new Map(
-        (apptStats || []).map((r) => [r.agentId || "unknown", r.bookings ?? 0]),
-      );
-      const aiCostByAgent = new Map(
-        (aiCostStats || []).map((r) => [r.agentId, Number(r.aiCost || 0)]),
-      );
-
-      const rows = (agents || [])
-        .map((a: any) => {
-          const stats = callByAgent.get(a.id);
-          const total = stats?.totalCalls ?? 0;
-          const qualifiedCount = stats?.qualified ?? 0;
-          const highIntentCount = stats?.highIntent ?? 0;
-          const minutes = stats?.minutes ?? 0;
-          const cost = Number(Number(stats?.cost ?? 0).toFixed(2));
-          const avgScore = stats?.avgScore ?? 0;
-          const bookings = apptsByAgent.get(a.id) ?? 0;
-          const costPerQualified = qualifiedCount ? Number((cost / qualifiedCount).toFixed(2)) : 0;
-          const outcomes = qualifiedCount + bookings;
-          const costPerOutcome = outcomes ? Number((cost / outcomes).toFixed(2)) : 0;
-          const aiCost = Number((aiCostByAgent.get(a.id) ?? 0).toFixed(4));
-          const totalCost = Number((cost + aiCost).toFixed(4));
-          return {
-            agent_id: a.id,
-            agent_name: a.name,
-            mark_key: a.markKey,
-            archetype: a.archetype,
-            role: a.role || DEFAULT_AGENT_ROLE,
-            channel: a.channel,
-            total_calls: total,
-            qualified: qualifiedCount,
-            high_intent: highIntentCount,
-            bookings,
-            avg_lead_score: avgScore,
-            minutes,
-            cost,
-            ai_cost: aiCost,
-            total_cost: totalCost,
-            cost_per_qualified: costPerQualified,
-            cost_per_outcome: costPerOutcome,
-            conversion_rate: total ? Math.round((qualifiedCount / total) * 100) : 0,
-          };
-        })
-        .sort((a: any, b: any) => b.qualified - a.qualified);
-
-      res.json({ window_days: days, agents: rows });
     } catch (e) {
       if (e instanceof AppError) throw e;
       aiErr(res, e);

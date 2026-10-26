@@ -17,7 +17,7 @@ describe("founder agent prompt truth contract", () => {
       expect(sales).toContain(`${plan.includedNumbers} phone number`);
     }
     expect(sales).toContain("Do not offer an annual plan");
-    expect(sales).toContain("never promise SMS activation or outbound calling while unavailable");
+    expect(sales).toContain("Do not tell the customer a channel is unavailable");
     expect(sales).toContain("US SMS $0.04/sent segment");
     const prompts = Object.values(WIRELINE_PERSONAS)
       .map((persona) => persona.systemPrompt)

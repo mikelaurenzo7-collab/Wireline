@@ -19,8 +19,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { AdminSaveBar } from "./AdminSaveBar";
 import { OPS_ADMIN } from "../../lib/wireline-ops-design";
 import { useToast } from "../../contexts/ToastContext";
-import { useChannelEntitlements } from "../../hooks/useChannelEntitlements";
-import { planById } from "../../lib/plan-catalog";
 import { SMS_LAUNCH_UI_ENABLED } from "../../lib/product-copy";
 
 const CARRIER_AGENT_UNSET = "__unset__";
@@ -146,7 +144,6 @@ export function CarrierPanel({
   onUpdateNumberAgent,
 }: CarrierPanelProps) {
   const { error: toastError } = useToast();
-  const access = useChannelEntitlements();
   const voiceAgents = agents.filter(
     (agent) => agent.channel === "voice" || agent.channel === "omnichannel" || !agent.channel,
   );
@@ -155,20 +152,6 @@ export function CarrierPanel({
   // Honesty: never show ON when send path cannot succeed (mirrors Salesforce disconnect).
   const messagingEnabled = Boolean(settings.twilio_messaging_enabled) && smsSendable;
   const managerAlertsEnabled = Boolean(settings.twilio_manager_alerts_enabled) && managerAlertReady;
-  // Owner grants are broader than the purchased package. Preserve saved SMS
-  // setup without presenting those grants as a new launch offer.
-  const hasSmsPackage =
-    access.data?.is_owner === false &&
-    planById(access.data.plan_id ?? "")?.channels.includes("sms") === true;
-  const showSmsSettings =
-    hasSmsPackage ||
-    Boolean(
-      settings.twilio_messaging_enabled ||
-      settings.twilio_manager_alerts_enabled ||
-      smsSendable ||
-      managerAlertReady ||
-      settings.twilio_whatsapp_from_number?.trim(),
-    );
 
   return (
     <div className="grid min-h-0 grid-cols-1 items-start gap-3 pb-4 xl:grid-cols-2">
@@ -188,9 +171,7 @@ export function CarrierPanel({
               ["Phone runtime", "BotBound Voice"],
               ["PSTN + numbers", "Twilio"],
               ["Phone voices", "BotBound voices"],
-              ...(SMS_LAUNCH_UI_ENABLED
-                ? [["SMS", showSmsSettings ? "Twilio" : "Coming soon"]]
-                : []),
+              ...(SMS_LAUNCH_UI_ENABLED ? [["SMS", "Twilio"]] : []),
             ].map(([label, value]) => (
               <div key={label} className="rounded-lg border border-border bg-background p-3">
                 <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
@@ -340,12 +321,11 @@ export function CarrierPanel({
       {SMS_LAUNCH_UI_ENABLED ? (
         <Panel
           title="Text Messaging"
-          hint={showSmsSettings ? "FOLLOW UPS · ALERTS" : "COMING SOON"}
+          hint="FOLLOW UPS · ALERTS"
           icon={MessageSquareText}
           autoHeight
         >
-          {showSmsSettings ? (
-            <div className="space-y-4">
+          <div className="space-y-4">
               <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background p-3">
                 <div>
                   <p className="text-sm font-semibold text-foreground">Customer texts</p>
@@ -469,10 +449,7 @@ export function CarrierPanel({
                 label={OPS_ADMIN.saveLabels.carrierMessaging}
                 fullWidth
               />
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">SMS is coming soon.</p>
-          )}
+          </div>
         </Panel>
       ) : null}
     </div>

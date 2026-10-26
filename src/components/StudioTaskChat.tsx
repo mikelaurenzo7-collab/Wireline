@@ -45,6 +45,10 @@ export default function StudioTaskChat({
     (model.selected?.agentId === agentId
       ? model.selected
       : (model.tasks?.find((task) => task.agentId === agentId) ?? null));
+  const browserActions = selected?.events.filter((event) => event.kind === "action") ?? [];
+  const workNotes = selected?.events.filter((event) => event.kind === "note") ?? [];
+  const browserActionCount =
+    browserActions.length > 0 ? browserActions.length : (selected?.actionCount ?? 0);
   const awaitingReply = ownActive?.status === "needs_input" && !ownActive.ownerControl;
   const handoff = Boolean(ownActive?.ownerControl && ownActive.preparingBrowser);
   const draftKey = `${agentId}:${awaitingReply ? "work-reply" : "work"}`;
@@ -254,23 +258,23 @@ export default function StudioTaskChat({
                 className="wl-studio-message is-bot"
                 aria-label={`${agentName} task activity`}
               >
-                {selected.events.some(
-                  (event) => event.kind === "action" || event.kind === "note",
-                ) ? (
+                {browserActions.length > 0 || workNotes.length > 0 ? (
                   <details className="wl-work-steps">
                     <summary>
-                      {selected.actionCount} browser{" "}
-                      {selected.actionCount === 1 ? "action" : "actions"}
+                      {browserActionCount} browser {browserActionCount === 1 ? "action" : "actions"}
                       {ACTIVE_COMPUTER_TASKS.includes(selected.status) ? " · In progress" : ""}
                     </summary>
+                    {workNotes.map((event, index) => (
+                      <p key={`${event.at}-note-${index}`}>
+                        <LinkifiedText>{event.text}</LinkifiedText>
+                      </p>
+                    ))}
                     <ol>
-                      {selected.events
-                        .filter((event) => event.kind === "action" || event.kind === "note")
-                        .map((event, index) => (
-                          <li key={`${event.at}-${index}`}>
-                            <LinkifiedText>{event.text}</LinkifiedText>
-                          </li>
-                        ))}
+                      {browserActions.map((event, index) => (
+                        <li key={`${event.at}-${index}`}>
+                          <LinkifiedText>{event.text}</LinkifiedText>
+                        </li>
+                      ))}
                     </ol>
                   </details>
                 ) : null}

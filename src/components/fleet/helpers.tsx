@@ -1,5 +1,5 @@
 /**
- * Role metadata for agent roster surfaces (Insights leaderboard). The `tw`
+ * Role metadata for agent roster surfaces. The `tw`
  * object holds Tailwind classes pre-composed so callers don't string-concat
  * color stems at render time. Purple + cream family only.
  */

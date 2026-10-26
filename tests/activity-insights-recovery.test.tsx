@@ -490,7 +490,7 @@ describe("Activity spend presentation", () => {
     expect(stats().find((node) => node.props.label === "Recorded events")?.props.value).toBe("3");
     expect(stats().find((node) => node.props.label === "Avg / event")?.props.value).toBe("$0.0033");
     expect(stats().some((node) => node.props.label === "AI Calls")).toBe(false);
-    expect(stats().find((node) => node.props.label === "Recorded AI Cost")?.props.value).toBe(
+    expect(stats().find((node) => node.props.label === "Recorded AI Cost · 7d")?.props.value).toBe(
       "$0.01",
     );
     expect(stats().some((node) => node.props.label === "Total Spend")).toBe(false);

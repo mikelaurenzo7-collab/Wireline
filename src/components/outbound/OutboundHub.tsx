@@ -27,7 +27,7 @@ export default function OutboundHub({
         <EmptyState
           icon={Phone}
           title={CAMPAIGN_CALLING_TITLE}
-          description="Use Reviewed Calls for individual service calls with recipient permission."
+          description="Reviewed calls and campaigns are ready. Recipient permission still applies."
           framed
           density="compact"
           withHalo={false}

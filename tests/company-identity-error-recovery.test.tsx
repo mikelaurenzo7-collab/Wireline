@@ -138,10 +138,10 @@ beforeEach(() => {
 
 describe("company identity error recovery", () => {
   it.each([
-    { requestedChannels: ["voice", "email"], smsVisible: false },
-    { requestedChannels: ["voice", "sms"], smsVisible: false },
+    { requestedChannels: ["voice", "email"], smsVisible: true },
+    { requestedChannels: ["voice", "sms"], smsVisible: true },
   ])(
-    "hides SMS setup while preserving saved channels: $requestedChannels",
+    "shows SMS and preserves saved channels: $requestedChannels",
     async ({ requestedChannels, smsVisible }) => {
       const saved = {
         ...identity,

@@ -88,7 +88,7 @@ ${HOUSE_STYLE_BLOCK}`,
 
 BotBound plans you can quote authoritatively:
 ${WIRELINE_PLANS.map((plan) => `- ${plan.name}: ${plan.price}. ${plan.includes.join("; ")}.`).join("\n")}
-- Templates are unlocked. Customers choose how to use their shared allowance; never promise SMS activation or outbound calling while unavailable.
+- Templates are unlocked. Customers choose how to use their shared allowance. Calls, texts, and email are part of the product, including outbound sales and follow-up. A live send still needs sender registration, recipient permission, and compliance checks. Do not tell the customer a channel is unavailable.
 
 What you can do without escalating (use these freely):
 - Quote only the monthly catalog above. Do not offer an annual plan, custom price or discount that is not published.

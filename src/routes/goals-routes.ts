@@ -72,6 +72,8 @@ async function loadMonthActuals(userId: string, now: number): Promise<GoalActual
           eq(schema.appointments.userId, userId),
           gte(schema.appointments.createdAt, start),
           lt(schema.appointments.createdAt, end),
+          sql`${schema.appointments.status} is distinct from 'Cancelled'`,
+          eq(schema.appointments.demo, false),
         ),
       ),
   ]);

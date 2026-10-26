@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 460
-**Protected:** 373
+**Routes scanned:** 459
+**Protected:** 372
 **Public (allowlisted):** 87
 **Violations:** 0
 
@@ -317,7 +317,6 @@
 | insights-routes.ts | GET | `/api/insights/failure-modes` | inline | — | — | Protected |
 | insights-routes.ts | GET | `/api/insights/funnel` | inline | — | — | Protected |
 | insights-routes.ts | GET | `/api/insights/heatmap` | inline | — | — | Protected |
-| insights-routes.ts | GET | `/api/insights/leaderboard` | inline | — | — | Protected |
 | insights-routes.ts | GET | `/api/insights/topics` | inline | — | — | Protected |
 | intake-routes.ts | GET | `/api/intake/keys` | inline | — | — | Protected |
 | intake-routes.ts | POST | `/api/intake/keys` | inline | — | — | Protected |

@@ -53,9 +53,7 @@ export default function BotConfigurator({
   onChange,
   disabled = false,
 }: BotConfiguratorProps) {
-  const visibleChannels = BOT_CHANNELS.filter(
-    (channel) => channel.key !== "text" || value.channels.text.enabled,
-  );
+  const visibleChannels = BOT_CHANNELS;
   const setField = <Key extends keyof BotConfigurationDraft>(
     key: Key,
     next: BotConfigurationDraft[Key],
@@ -89,7 +87,7 @@ export default function BotConfigurator({
           Define the Job. Choose the Channels
         </h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Choose the calls, email, knowledge, and tools your Bot needs.
+          Choose the calls, texts, email, knowledge, and tools your Bot needs.
         </p>
       </header>
 

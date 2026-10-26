@@ -182,19 +182,11 @@ describe("customer-selectable Bot identity marks", () => {
     expect(authenticatedVoice).toContain("markKey?: BotMarkKey | null");
   });
 
-  it("carries unique Bot identities through Insights and the full MCP workspace list", () => {
+  it("carries unique Bot identities through the full MCP workspace list", () => {
     const insightsRoute = read("src/routes/insights-routes.ts");
-    const insightsType = read("src/types/api-insights.ts");
-    const leaderboard = read("src/components/insights/LeaderboardView.tsx");
     const mcp = read("src/routes/chatgpt-mcp-account-routes.ts");
 
-    expect(insightsRoute).toContain("markKey: schema.agents.markKey");
-    expect(insightsRoute).toContain("mark_key: a.markKey");
-    expect(insightsType).toContain("mark_key: BotMarkKey | null");
-    expect(leaderboard).toContain('import BotMark from "../BotMark"');
-    expect(leaderboard).toContain("markKey={a.mark_key}");
-    expect(leaderboard).toContain("seed={a.agent_id}");
-
+    expect(insightsRoute).not.toContain("/api/insights/leaderboard");
     expect(mcp).toContain('import { BOT_MARK_IDENTITY_CAPACITY } from "../lib/bot-mark"');
     expect(mcp).toContain("maxItems: BOT_MARK_IDENTITY_CAPACITY");
     expect(mcp).toContain('mark_key: { type: ["string", "null"] }');

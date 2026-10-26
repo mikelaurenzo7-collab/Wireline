@@ -53,7 +53,8 @@ describe("Call Ops analytics truth", () => {
     // the log, outbound work, and lines, and forwards old Analytics bookmarks.
     expect(insightsView).toContain('import CallOpsOverview from "../CallOpsOverview";');
     expect(insightsView).toContain('calls: wrap("Call analytics", <CallOpsOverview />)');
-    expect(opsDesign).toContain('tabs: ["funnel", "calls", "goals", "heatmap", "leaderboard"]');
+    expect(opsDesign).toContain('tabs: ["funnel", "calls", "goals", "heatmap"]');
+    expect(opsDesign).not.toContain("leaderboard");
     expect(phonePage).not.toContain('{ id: "analytics", label: "Analytics" }');
     expect(phonePage).toContain('<Navigate to="/insights?tab=performance&view=calls" replace />');
     expect(callOps).toContain("const CALL_PAGE_SIZE = 100;");

@@ -1070,24 +1070,6 @@ const PATHS: Record<string, PathItem> = {
       },
     },
   },
-  "/api/insights/leaderboard": {
-    get: {
-      summary: "Per-agent leaderboard",
-      operationId: "getLeaderboard",
-      tags: ["Insights"],
-      security: auth.bearer,
-      responses: {
-        "200": {
-          description: "Leaderboard rows.",
-          content: {
-            "application/json": { schema: { type: "object", additionalProperties: true } },
-          },
-        },
-        "401": COMMON_ERROR_RESPONSES["401"],
-      },
-    },
-  },
-
   // ── Webhooks (CRUD over the outbound subscription list) ──────────
   "/api/webhooks": {
     get: {
@@ -1425,7 +1407,7 @@ export function getOpenApiSpec(serverUrl?: string): OpenApiDocument {
         name: "Settings",
         description: "Tenant-level settings (retention, business profile, ...).",
       },
-      { name: "Insights", description: "Triage Inbox, Daily Brief, funnel, leaderboard." },
+      { name: "Insights", description: "Triage Inbox, Daily Brief, and funnel." },
       {
         name: "Webhooks",
         description: "Outbound webhook subscriptions and the events they deliver.",

@@ -35,7 +35,6 @@ vi.mock("../src/components/insights/FunnelView", () => ({ default: "funnel" }));
 vi.mock("../src/components/insights/AttributionView", () => ({ default: "attribution" }));
 vi.mock("../src/components/insights/TopicsView", () => ({ default: "topics" }));
 vi.mock("../src/components/insights/HeatmapView", () => ({ default: "heatmap" }));
-vi.mock("../src/components/insights/LeaderboardView", () => ({ default: "leaderboard" }));
 vi.mock("../src/components/insights/FailureModesView", () => ({ default: "failures" }));
 vi.mock("../src/components/insights/VoiceLatencyView", () => ({ default: "latency" }));
 vi.mock("../src/components/insights/AISpendView", () => ({ default: "spend" }));

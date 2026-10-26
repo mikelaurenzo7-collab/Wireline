@@ -17,7 +17,6 @@ import {
   Star,
   Target,
   TrendingUp,
-  Trophy,
   Zap,
 } from "lucide-react";
 import { OPS_INSIGHTS_GROUPS } from "./wireline-ops-design";
@@ -161,13 +160,6 @@ export const INSIGHTS_VIEW_TABS: Record<string, AppPageSubTab> = {
     shortLabel: "Heat",
     ariaLabel: "Heatmap",
     icon: Calendar,
-  },
-  leaderboard: {
-    id: "leaderboard",
-    label: "Leaderboard",
-    shortLabel: "Ranks",
-    ariaLabel: "Leaderboard",
-    icon: Trophy,
   },
   failures: { id: "failures", label: "Failures", icon: AlertOctagon },
   latency: { id: "latency", label: "Latency", icon: Gauge },
