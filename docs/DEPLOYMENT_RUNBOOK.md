@@ -14,7 +14,7 @@ While Vercel remains available for an explicitly reviewed rollback, `revaluate/b
 Non-marketing service, coordination, and requested callbacks for personal and business Bots can be enabled independently with
 `BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED=true` on the API and voice runtime. The general
 outbound switch remains separate. Bot audience does not determine eligibility;
-paid voice, line ownership, captured recipient permission, Illinois jurisdiction,
+paid voice, line ownership, captured recipient permission, United States jurisdiction,
 quiet hours, funding, and duplicate suppression still apply. Set the non-marketing switch
 to `false` while general outbound remains disabled to stop new placements
 without changing inbound calling.

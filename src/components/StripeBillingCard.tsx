@@ -14,7 +14,7 @@ import { authFetch } from "../lib/api";
 import BillingIntervalControl from "./BillingIntervalControl";
 import ChannelPlanPicker, { hasChannelPlanDetails } from "./ChannelPlanPicker";
 import CapacityUpgradeCard from "./CapacityUpgradeCard";
-import { STRIPE_PLANS, isUsagePlanId } from "../lib/plan-catalog";
+import { STRIPE_PLANS, isUsagePlanId, planById } from "../lib/plan-catalog";
 import { billingModelFromPayload, type BillingModel } from "../lib/billing-model";
 import { getPlanDisplayLabel } from "../lib/plan-display";
 import { safeDate, formatDate } from "../lib/safe-date";
@@ -718,6 +718,7 @@ function GrantedPlanAccessCard({
 }) {
   const accent = PLAN_ACCENTS[sub.plan || ""] || BRAND.colors.primary;
   const Icon = PLAN_ICONS[sub.plan || ""] || Building2;
+  const includedNumbers = planById(sub.plan)?.included_phone_numbers ?? 0;
   return (
     <div
       className="rounded-md wl-panel border border-border p-8 md:p-10 relative overflow-hidden"
@@ -748,6 +749,11 @@ function GrantedPlanAccessCard({
                 {isUsagePlanId(sub.plan)
                   ? `${agentCount} Bots in use`
                   : `${agentCount} / ${sub.max_agents} ${sub.max_agents === 1 ? "Bot" : "Bots"} in use`}
+              </p>
+            ) : null}
+            {!isUsagePlanId(sub.plan) && includedNumbers > 0 ? (
+              <p className="font-mono text-[11px] uppercase tracking-[.08em] text-muted-foreground">
+                {includedNumbers} live number{includedNumbers === 1 ? "" : "s"} included
               </p>
             ) : null}
           </div>

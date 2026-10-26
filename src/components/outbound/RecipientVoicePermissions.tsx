@@ -15,6 +15,12 @@ import type {
   VoicePermissionPurpose,
   VoicePermissionSummary,
 } from "../../lib/recipient-voice-permission-contract";
+import {
+  isUsCallingState,
+  timeZonesForCallingState,
+  US_CALLING_STATE_CODES,
+  usCallingStateName,
+} from "../../lib/us-calling-jurisdiction";
 
 const PURPOSE_LABELS: Record<VoicePermissionPurpose, string> = {
   callback: "Requested callback",
@@ -47,6 +53,7 @@ function OwnedRecipientVoicePermissions() {
   const [agentId, setAgentId] = useState("");
   const [phone, setPhone] = useState("");
   const [recipientState, setRecipientState] = useState("");
+  const [recipientTimeZone, setRecipientTimeZone] = useState("");
   const [purpose, setPurpose] = useState<VoicePermissionPurpose>("callback");
   const [pending, setPending] = useState("");
   const [confirmRevoke, setConfirmRevoke] = useState("");
@@ -169,7 +176,8 @@ function OwnedRecipientVoicePermissions() {
       !callingAgents.some((agent) => agent.id === agentId) ||
       purpose === "marketing_or_sales" ||
       !phone.trim() ||
-      recipientState !== "IL" ||
+      !isUsCallingState(recipientState) ||
+      !timeZonesForCallingState(recipientState).includes(recipientTimeZone) ||
       degraded
     )
       return;
@@ -178,7 +186,7 @@ function OwnedRecipientVoicePermissions() {
       phone: phone.trim(),
       call_purpose: purpose,
       recipient_state: recipientState,
-      recipient_time_zone: "America/Chicago",
+      recipient_time_zone: recipientTimeZone,
     };
     const fingerprint = JSON.stringify(payload);
     if (request.current?.fingerprint !== fingerprint) {
@@ -315,14 +323,40 @@ function OwnedRecipientVoicePermissions() {
             <select
               className={SELECT_CLASS}
               value={recipientState}
-              onChange={(event) => setRecipientState(event.target.value)}
+              onChange={(event) => {
+                const state = event.target.value;
+                setRecipientState(state);
+                setRecipientTimeZone(timeZonesForCallingState(state)[0] || "");
+              }}
               disabled={!!pending}
               required
             >
-              <option value="">Choose the recipient's location</option>
-              <option value="IL">Illinois, Central time</option>
+              <option value="">Choose the recipient's state</option>
+              {US_CALLING_STATE_CODES.map((code) => (
+                <option key={code} value={code}>
+                  {usCallingStateName(code)}
+                </option>
+              ))}
             </select>
           </label>
+          {timeZonesForCallingState(recipientState).length > 1 ? (
+            <label className="block space-y-1 text-sm">
+              <span>Recipient time zone</span>
+              <select
+                className={SELECT_CLASS}
+                value={recipientTimeZone}
+                onChange={(event) => setRecipientTimeZone(event.target.value)}
+                disabled={!!pending}
+                required
+              >
+                {timeZonesForCallingState(recipientState).map((zone) => (
+                  <option key={zone} value={zone}>
+                    {zone}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <p className="text-xs text-muted-foreground">
             Creating a link does not place a call or grant permission.
           </p>
@@ -331,7 +365,12 @@ function OwnedRecipientVoicePermissions() {
               type="submit"
               size="sm"
               disabled={
-                !!pending || !agentId || !phone.trim() || recipientState !== "IL" || degraded
+                !!pending ||
+                !agentId ||
+                !phone.trim() ||
+                !isUsCallingState(recipientState) ||
+                !recipientTimeZone ||
+                degraded
               }
             >
               {pending === "create" ? <Loader2 className="animate-spin" aria-hidden /> : null}Create

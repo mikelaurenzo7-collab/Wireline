@@ -459,7 +459,7 @@ function toolDefinitions() {
       name: "prepare_call",
       title: "Prepare a call",
       description:
-        "Save a personal or business Bot's service, coordination, or requested call for the account holder to review and place in BotBound. Requires a paid Calls plan. Never calls the recipient from this tool. Use a fresh UUIDv4 for a new request and reuse that UUID on retries. Show the returned review URL; do not approve or click Place call for the user. Recipient permission and Illinois caller/recipient scope currently apply. Sales and marketing are not supported.",
+        "Save a personal or business Bot's service, coordination, or requested call for the account holder to review and place in BotBound. Requires a paid Calls plan. Never calls the recipient from this tool. Use a fresh UUIDv4 for a new request and reuse that UUID on retries. Show the returned review URL; do not approve or click Place call for the user. Recipient permission and a United States caller and recipient currently apply. Sales and marketing are not supported.",
       inputSchema: {
         type: "object",
         properties: {

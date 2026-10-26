@@ -19,5 +19,5 @@ export type VoicePermissionPublicView = {
   seller_name: string;
   disclosure: string;
   disclosure_hash: string;
-  jurisdiction: { recipient_state: "IL"; time_zone: "America/Chicago" };
+  jurisdiction: { recipient_state: string; time_zone: string };
 };

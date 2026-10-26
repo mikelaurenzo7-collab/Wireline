@@ -115,9 +115,10 @@ The staged implementation uses these controls across ordinary outbound placement
   opaque capability link. The link is in a URL fragment, excluded from analytics
   and removed from the address bar. Only an audited bearer-link and typed-signature
   record is claimed; this does not verify identity or phone possession.
-- The initial scope is an Illinois seller and an explicitly declared Illinois
-  recipient in `America/Chicago`, 9 a.m. to 9 p.m. local. This is an engineering
-  restriction, not nationwide legal clearance. Marketing still needs applicable
+- The scope is a United States seller and an explicitly declared United States
+  recipient in a time zone that state uses. Calling hours are 8 a.m. to 9 p.m.
+  local, and 9 a.m. to 9 p.m. in Illinois. This is an engineering window, not a
+  claim of complete state-law clearance. Marketing still needs applicable
   Federal DNC screening. Saved caller identity and recipient withdrawal are
   checked again immediately before dispatch.
 - The callback permission is consumed only at dispatch, not by a failed gate or

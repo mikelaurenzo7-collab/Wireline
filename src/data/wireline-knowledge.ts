@@ -48,7 +48,7 @@ export const WIRELINE_FEATURES = [
   {
     title: "Personal Calls",
     blurb:
-      "Prepare personal coordination calls and specific business service or appointment calls, then review each one before placement. Recipient permission is required. Illinois callers and recipients are currently supported.",
+      "Prepare personal coordination calls and specific business service or appointment calls, then review each one before placement. Recipient permission is required. Callers and recipients in the United States are supported.",
   },
   {
     title: "Email Workflows",

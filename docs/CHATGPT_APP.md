@@ -103,7 +103,7 @@ Only the authenticated workspace route places the call; the MCP credential canno
 It rechecks the saved payload and uses the existing durable outbound request, funding,
 recipient permission, quiet-hours, and carrier reconciliation path.
 
-Initial calling scope remains Illinois callers and recipients with captured permission.
+Reviewed calling covers United States callers and recipients with captured permission.
 `BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED=true` enables this path independently of general
 outbound. Eligibility depends on the call's non-marketing purpose, not the Bot's audience.
 Marketing and campaigns remain under their existing separate gates. A client-selected

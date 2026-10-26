@@ -144,6 +144,7 @@ describe("recipient voice permission integrity", () => {
         purpose,
         phone: "+13125550100",
         expiresAt: new Date(now).toISOString(),
+        timeZone: "America/Chicago",
       });
       expect(copy).toContain("Example LLC");
       expect(copy).toContain("AI-generated voice");
@@ -214,11 +215,11 @@ describe("recipient permission scope and freshness", () => {
   });
 });
 
-describe("explicit initial jurisdiction policy", () => {
+describe("explicit US jurisdiction policy", () => {
   const jurisdiction = { callerState: "IL", recipientState: "IL", timeZone: "America/Chicago" };
   it.each([
-    { callerState: "CA" },
-    { recipientState: "CA" },
+    { callerState: "PR" },
+    { recipientState: "CA", timeZone: "America/Chicago" },
     { recipientState: "" },
     { timeZone: "America/New_York" },
     { timeZone: "" },
@@ -229,6 +230,28 @@ describe("explicit initial jurisdiction policy", () => {
     expect(
       resolvePermissionCallingHours({ ...jurisdiction, ...patch }, new Date(now)).allowed,
     ).toBe(false);
+  });
+  it("accepts a caller and recipient in different US states when the signed zone matches", () => {
+    const national = { callerState: "CA", recipientState: "NY", timeZone: "America/New_York" };
+    expect(() => assertVoicePermissionJurisdiction(national)).not.toThrow();
+    expect(resolvePermissionCallingHours(national, new Date(now))).toMatchObject({
+      allowed: true,
+      state: "NY",
+      timeZone: "America/New_York",
+      startHour: 8,
+    });
+    expect(
+      resolvePermissionCallingHours(
+        { callerState: "IL", recipientState: "CA", timeZone: "America/Los_Angeles" },
+        new Date("2026-10-17T14:59:59Z"),
+      ).allowed,
+    ).toBe(false);
+    expect(
+      resolvePermissionCallingHours(
+        { callerState: "TX", recipientState: "TX", timeZone: "America/Denver" },
+        new Date(now),
+      ).allowed,
+    ).toBe(true);
   });
   it("enforces Illinois 9am in both daylight and standard time and rejects 9pm exactly", () => {
     for (const [stamp, allowed] of [

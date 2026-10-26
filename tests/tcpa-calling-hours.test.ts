@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { resolveCallingHoursForPhone } from "../src/lib/tcpa-calling-hours";
+import {
+  isRecipientCallingTimeZone,
+  parseUsCallingStateFromAddress,
+} from "../src/lib/us-calling-jurisdiction";
 
 describe("TCPA calling hours", () => {
   it("allows a California number during Pacific business hours", () => {
@@ -72,5 +76,19 @@ describe("TCPA calling hours", () => {
     // 12:00 ET — inside 11–21
     expect(ok.localHour).toBe(12);
     expect(ok.allowed).toBe(true);
+  });
+
+  it("reads a US state from a mailing address and rejects a zone the state does not use", () => {
+    expect(parseUsCallingStateFromAddress("123 Example Street, Chicago IL 60601")).toBe("IL");
+    expect(parseUsCallingStateFromAddress("1 Market Street, San Francisco, California 94105")).toBe(
+      "CA",
+    );
+    expect(
+      parseUsCallingStateFromAddress("1600 Pennsylvania Avenue NW, Washington, DC 20500"),
+    ).toBe("DC");
+    expect(parseUsCallingStateFromAddress("10 Downing Street, London")).toBeNull();
+    expect(isRecipientCallingTimeZone("TX", "America/Denver")).toBe(true);
+    expect(isRecipientCallingTimeZone("TX", "America/Los_Angeles")).toBe(false);
+    expect(isRecipientCallingTimeZone("CA", "America/Los_Angeles")).toBe(true);
   });
 });

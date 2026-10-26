@@ -1,6 +1,11 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { AppError } from "./api-error";
 import { isOutboundCallPurpose, type OutboundCallPurpose } from "./outbound-call-purpose";
+import {
+  isRecipientCallingTimeZone,
+  isUsCallingState,
+  type UsCallingStateCode,
+} from "./us-calling-jurisdiction";
 
 export const VOICE_PERMISSION_VERSION = "voice-permission-v1" as const;
 export const VOICE_PERMISSION_EVENTS = {
@@ -25,9 +30,9 @@ export type VoicePermissionRequest = {
   sellerName: string;
   sellerIdentityHash: string;
   purpose: OutboundCallPurpose;
-  callerState: "IL";
-  recipientState: "IL";
-  timeZone: "America/Chicago";
+  callerState: UsCallingStateCode;
+  recipientState: UsCallingStateCode;
+  timeZone: string;
   requestedAt: string;
   requestExpiresAt: string;
   expiresAt: string;
@@ -169,6 +174,7 @@ export function buildVoicePermissionDisclosure(input: {
   purpose: OutboundCallPurpose;
   phone: string;
   expiresAt: string;
+  timeZone: string;
 }): string {
   const scope =
     input.purpose === "marketing_or_sales"
@@ -176,24 +182,28 @@ export function buildVoicePermissionDisclosure(input: {
       : input.purpose === "callback"
         ? "one non-marketing callback using an artificial or AI-generated voice"
         : "non-marketing service, appointment, and personal coordination calls using an artificial or AI-generated voice";
-  return `I authorize ${input.sellerName} to call my number ending ${input.phone.slice(-4)} for ${scope}, until ${new Date(input.expiresAt).toLocaleString("en-US", { timeZone: "America/Chicago", timeZoneName: "short" })}. I may withdraw permission at any time. This permission is not a condition of buying anything. My typed name is my electronic signature. This link and signature record permission; they do not verify my identity or possession of the phone.`;
+  return `I authorize ${input.sellerName} to call my number ending ${input.phone.slice(-4)} for ${scope}, until ${new Date(input.expiresAt).toLocaleString("en-US", { timeZone: input.timeZone, timeZoneName: "short" })}. I may withdraw permission at any time. This permission is not a condition of buying anything. My typed name is my electronic signature. This link and signature record permission; they do not verify my identity or possession of the phone.`;
 }
 
-/** The initial reviewed dispatch scope is deliberately narrow, not fifty-state clearance. */
+/** Reviewed calls require a US caller, a US recipient, and that recipient's signed time zone. */
 export function assertVoicePermissionJurisdiction(input: {
   callerState: unknown;
   recipientState: unknown;
   timeZone: unknown;
-}): asserts input is { callerState: "IL"; recipientState: "IL"; timeZone: "America/Chicago" } {
+}): asserts input is {
+  callerState: UsCallingStateCode;
+  recipientState: UsCallingStateCode;
+  timeZone: string;
+} {
   if (
-    input.callerState !== "IL" ||
-    input.recipientState !== "IL" ||
-    input.timeZone !== "America/Chicago"
+    !isUsCallingState(input.callerState) ||
+    !isUsCallingState(input.recipientState) ||
+    !isRecipientCallingTimeZone(input.recipientState, input.timeZone)
   )
     throw new AppError(
       403,
       "VOICE_PERMISSION_JURISDICTION_UNSUPPORTED",
-      "Calling is not cleared for this jurisdiction. Illinois callers and recipients are the supported initial scope.",
+      "Calling is not cleared for this jurisdiction. The caller and recipient must be in the United States, and the recipient time zone must match their state.",
     );
 }
 

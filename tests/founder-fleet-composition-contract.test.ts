@@ -196,7 +196,7 @@ describe("founder fleet composition", () => {
       expect(email).toContain("Email activation requires a setup review");
     }
     expect(facts).toContain("Reviewed personal coordination");
-    expect(facts).toContain("supported caller and recipient locations in Illinois");
+    expect(facts).toContain("a caller and recipient in the United States");
     expect(facts).toContain("Marketing and sales call campaigns are unavailable");
     expect(knowledgeForRole("customer_service").join("\n")).not.toContain(
       "work across voice, text, and email",

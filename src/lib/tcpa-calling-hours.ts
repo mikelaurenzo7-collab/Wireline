@@ -8,68 +8,23 @@
  * (11:00–21:00 America/New_York) so a call is legal in every continental zone.
  */
 import { inferStateFromPhone } from "./tcpa-consent";
+import {
+  callingHourStart,
+  FEDERAL_CALLING_HOUR_END,
+  FEDERAL_CALLING_HOUR_START,
+  isRecipientCallingTimeZone,
+  isUsCallingState,
+  US_STATE_PRIMARY_TIMEZONE,
+  US_STATE_SPANNED_TIMEZONES,
+} from "./us-calling-jurisdiction";
 
-export const TCPA_CALLING_HOUR_START = 8;
-export const TCPA_CALLING_HOUR_END = 21; // exclusive of 21:00+ (last legal hour is 20:xx)
-
-// Illinois' Automatic Telephone Dialers Act starts at 9am (815 ILCS 305/15).
-// Keep the stricter window for automated calling even when the federal floor is 8am.
-const STATE_CALLING_HOUR_START: Readonly<Record<string, number>> = { IL: 9 };
+export const TCPA_CALLING_HOUR_START = FEDERAL_CALLING_HOUR_START;
+export const TCPA_CALLING_HOUR_END = FEDERAL_CALLING_HOUR_END; // exclusive of 21:00+ (last legal hour is 20:xx)
 
 /** Primary IANA zone per USPS state for TCPA local-time checks. */
 const STATE_PRIMARY_TIMEZONE: Record<string, string> = {
-  AL: "America/Chicago",
-  AK: "America/Anchorage",
-  AZ: "America/Phoenix",
-  AR: "America/Chicago",
-  CA: "America/Los_Angeles",
-  CO: "America/Denver",
-  CT: "America/New_York",
-  DE: "America/New_York",
-  DC: "America/New_York",
-  FL: "America/New_York",
-  GA: "America/New_York",
-  HI: "Pacific/Honolulu",
-  ID: "America/Boise",
-  IL: "America/Chicago",
-  IN: "America/Indiana/Indianapolis",
-  IA: "America/Chicago",
-  KS: "America/Chicago",
-  KY: "America/New_York",
-  LA: "America/Chicago",
-  ME: "America/New_York",
-  MD: "America/New_York",
-  MA: "America/New_York",
-  MI: "America/Detroit",
-  MN: "America/Chicago",
-  MS: "America/Chicago",
-  MO: "America/Chicago",
-  MT: "America/Denver",
-  NE: "America/Chicago",
-  NV: "America/Los_Angeles",
-  NH: "America/New_York",
-  NJ: "America/New_York",
-  NM: "America/Denver",
-  NY: "America/New_York",
-  NC: "America/New_York",
-  ND: "America/Chicago",
-  OH: "America/New_York",
-  OK: "America/Chicago",
-  OR: "America/Los_Angeles",
-  PA: "America/New_York",
-  RI: "America/New_York",
-  SC: "America/New_York",
-  SD: "America/Chicago",
-  TN: "America/Chicago",
-  TX: "America/Chicago",
-  UT: "America/Denver",
-  VT: "America/New_York",
-  VA: "America/New_York",
-  WA: "America/Los_Angeles",
-  WV: "America/New_York",
-  WI: "America/Chicago",
-  WY: "America/Denver",
-  // NANP territories commonly reached from US outbound
+  ...US_STATE_PRIMARY_TIMEZONE,
+  // NANP territories commonly reached from US outbound. They are not reviewed-call states.
   PR: "America/Puerto_Rico",
   VI: "America/St_Thomas",
   GU: "Pacific/Guam",
@@ -85,20 +40,7 @@ const STATE_PRIMARY_TIMEZONE: Record<string, string> = {
  * those states. Under-blocking here is a per-call TCPA violation; over-blocking
  * only defers the edge hour, so we accept the trade in the compliant direction.
  */
-const STATE_SPANNED_TIMEZONES: Record<string, readonly string[]> = {
-  FL: ["America/New_York", "America/Chicago"], // panhandle (e.g. 850) is Central
-  MI: ["America/Detroit", "America/Chicago"], // western UP is Central
-  IN: ["America/Indiana/Indianapolis", "America/Chicago"], // NW/SW counties are Central
-  KY: ["America/New_York", "America/Chicago"], // western KY is Central
-  TN: ["America/Chicago", "America/New_York"], // eastern TN is Eastern
-  TX: ["America/Chicago", "America/Denver"], // El Paso/Hudspeth are Mountain
-  KS: ["America/Chicago", "America/Denver"], // western KS is Mountain
-  NE: ["America/Chicago", "America/Denver"], // western panhandle is Mountain
-  ND: ["America/Chicago", "America/Denver"], // southwestern ND is Mountain
-  SD: ["America/Chicago", "America/Denver"], // western SD is Mountain
-  OR: ["America/Los_Angeles", "America/Denver"], // Malheur County is Mountain
-  ID: ["America/Boise", "America/Los_Angeles"], // northern ID is Pacific
-};
+const STATE_SPANNED_TIMEZONES = US_STATE_SPANNED_TIMEZONES;
 
 /** Conservative continental intersection when state/timezone is unknown. */
 const UNKNOWN_DESTINATION_TIMEZONE = "America/New_York";
@@ -131,7 +73,7 @@ export function resolveCallingHoursForPhone(
   now: Date = new Date(),
 ): CallingHoursDecision {
   const state = inferStateFromPhone(phone);
-  const stateStartHour = (state && STATE_CALLING_HOUR_START[state]) || TCPA_CALLING_HOUR_START;
+  const stateStartHour = callingHourStart(state);
 
   // Split-timezone states: the call must be within permitted hours in every
   // zone the state spans (fail-safe intersection). Report the binding zone —
@@ -180,26 +122,30 @@ export function resolveCallingHoursForPhone(
   };
 }
 
-/** Explicit recipient location for the initial Illinois-only permission flow.
+/** Explicit recipient location for reviewed US calling.
  * A phone area code is never substituted for the location the recipient signs.
- * Unsupported jurisdictions fail closed until their policy has been reviewed.
+ * Caller and recipient must each be a US state or the District of Columbia, and
+ * the signed zone must be one that recipient state uses.
  */
 export function resolvePermissionCallingHours(
   jurisdiction: { callerState: string; recipientState: string; timeZone: string },
   now: Date = new Date(),
 ): CallingHoursDecision {
   const supported =
-    jurisdiction.callerState === "IL" &&
-    jurisdiction.recipientState === "IL" &&
-    jurisdiction.timeZone === "America/Chicago";
+    isUsCallingState(jurisdiction.callerState) &&
+    isUsCallingState(jurisdiction.recipientState) &&
+    isRecipientCallingTimeZone(jurisdiction.recipientState, jurisdiction.timeZone);
+  const startHour = supported
+    ? callingHourStart(jurisdiction.recipientState)
+    : TCPA_CALLING_HOUR_START;
   const localHour = supported ? localHourInZone(now, jurisdiction.timeZone) : -1;
   return {
-    allowed: supported && localHour >= 9 && localHour < 21,
-    state: supported ? "IL" : null,
-    timeZone: supported ? "America/Chicago" : "unknown",
+    allowed: supported && localHour >= startHour && localHour < TCPA_CALLING_HOUR_END,
+    state: supported ? jurisdiction.recipientState : null,
+    timeZone: supported ? jurisdiction.timeZone : "unknown",
     localHour,
-    startHour: 9,
-    endHour: 21,
+    startHour,
+    endHour: TCPA_CALLING_HOUR_END,
     inferred: false,
   };
 }

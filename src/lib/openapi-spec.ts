@@ -870,7 +870,7 @@ const PATHS: Record<string, PathItem> = {
     post: {
       summary: "Place a tenant-scoped outbound call",
       description:
-        "Staged authenticated manual dial. Production execution requires operator enablement after carrier and paid acceptance. Requires a stable request UUID and a matching recipient-signed permission; the server rechecks purpose, scope, revocation, jurisdiction and funding before dispatch. Initial permission scope is Illinois/Central and supported carrier routes are restricted separately. Marketing retains required Federal DNC screening. Bearer-link/typed-signature evidence is not verified identity or phone possession.",
+        "Staged authenticated manual dial. Production execution requires operator enablement after carrier and paid acceptance. Requires a stable request UUID and a matching recipient-signed permission; the server rechecks purpose, scope, revocation, jurisdiction and funding before dispatch. Permission scope is a United States caller and recipient in the recipient's signed time zone. Marketing retains required Federal DNC screening. Bearer-link/typed-signature evidence is not verified identity or phone possession.",
       operationId: "postOutboundDial",
       tags: ["Outbound"],
       security: auth.bearer,

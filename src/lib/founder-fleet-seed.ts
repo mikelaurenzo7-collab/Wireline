@@ -278,7 +278,7 @@ export function wirelinePlanFacts(): string[] {
     "Channel packages include one Bot with only the selected Calls and Email channels. Extra Bots are not available as add ons. Calls includes one number; Email includes one managed mailbox. SMS activation is unavailable and SMS packages are not part of the launch offer.",
     "Channel call minutes and managed AI renew on the monthly subscription anniversary, including annual plans; unused included usage does not roll over.",
     "Calls packages allow one call at a time. Extra minutes use prepaid Runtime Balance, with up to 10 minutes of completion credit within the call's duration limit. Any amount due pauses new calls and prepaid extras until topped up. There is no automatic overage invoice or guarantee that a call cannot end at its duration limit.",
-    "Reviewed personal coordination and specific business service or appointment calls require recipient permission, a paid Calls plan, and supported caller and recipient locations in Illinois. Each call needs account holder review and current dispatch and funding checks. Marketing and sales call campaigns are unavailable. A selected area code does not grant recipient permission.",
+    "Reviewed personal coordination and specific business service or appointment calls require recipient permission, a paid Calls plan, and a caller and recipient in the United States. Each call needs account holder review and current dispatch and funding checks. Marketing and sales call campaigns are unavailable. A selected area code does not grant recipient permission.",
     "Quote only these plan facts. If asked for a discount, custom terms, or anything not listed, take the request and escalate instead of inventing an offer.",
   ];
 }

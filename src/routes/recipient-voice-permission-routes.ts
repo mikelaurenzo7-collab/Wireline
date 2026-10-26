@@ -7,6 +7,7 @@ import { getCanonicalAppUrl } from "../lib/app-url";
 import { AppError } from "../lib/api-error";
 import { OUTBOUND_CALL_PURPOSES } from "../lib/outbound-call-purpose";
 import { outboundCallingAvailability } from "../lib/outbound-call-purpose";
+import { isRecipientCallingTimeZone, isUsCallingState } from "../lib/us-calling-jurisdiction";
 import {
   createRecipientVoicePermission,
   grantRecipientVoicePermission,
@@ -32,26 +33,38 @@ const recipientLimit = createIpRateLimiter({
   failClosedOnError: true,
 });
 const tokenBody = z.object({ token: z.string().min(1).max(100) }).strict();
+const callingJurisdiction = {
+  recipient_state: z
+    .string()
+    .refine(isUsCallingState, "Choose a US state or the District of Columbia."),
+  recipient_time_zone: z.string().min(1).max(64),
+};
 const createBody = z
   .object({
     request_key: z.string().uuid(),
     agent_id: z.string().min(1).max(200),
     phone: z.string().min(7).max(30),
     call_purpose: z.enum(OUTBOUND_CALL_PURPOSES),
-    recipient_state: z.literal("IL"),
-    recipient_time_zone: z.literal("America/Chicago"),
+    ...callingJurisdiction,
   })
-  .strict();
+  .strict()
+  .refine((body) => isRecipientCallingTimeZone(body.recipient_state, body.recipient_time_zone), {
+    message: "Choose a time zone used by the recipient's state.",
+    path: ["recipient_time_zone"],
+  });
 const grantBody = tokenBody
   .extend({
     signer_name: z.string().trim().min(2).max(120),
     phone: z.string().min(7).max(30),
     accepted: z.literal(true),
     disclosure_hash: z.string().regex(/^[a-f0-9]{64}$/),
-    recipient_state: z.literal("IL"),
-    recipient_time_zone: z.literal("America/Chicago"),
+    ...callingJurisdiction,
   })
-  .strict();
+  .strict()
+  .refine((body) => isRecipientCallingTimeZone(body.recipient_state, body.recipient_time_zone), {
+    message: "Choose a time zone used by the recipient's state.",
+    path: ["recipient_time_zone"],
+  });
 function captureOrigin(): string {
   try {
     const configured = getCanonicalAppUrl();

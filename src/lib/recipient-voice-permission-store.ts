@@ -11,6 +11,7 @@ import type { OutboundCallPurpose } from "./outbound-call-purpose";
 import { drizzle, log } from "./server-context";
 import { tenantStore } from "./tenant-context-store";
 import { resolvePermissionCallingHours } from "./tcpa-calling-hours";
+import { parseUsCallingStateFromAddress } from "./us-calling-jurisdiction";
 import type {
   VoicePermissionPublicView,
   VoicePermissionSummary,
@@ -87,16 +88,12 @@ async function sellerIdentity(db: PermissionDb, userId: string, agentId: string)
   );
   const sellerName = settings?.name?.trim();
   const address = identity.physicalPostalAddress?.trim();
-  if (
-    !sellerName ||
-    sellerName.length > 120 ||
-    !address ||
-    !/\b(?:IL|Illinois)\s+\d{5}(?:-\d{4})?\b/i.test(address)
-  ) {
+  const callerState = address ? parseUsCallingStateFromAddress(address) : null;
+  if (!sellerName || sellerName.length > 120 || !address || !callerState) {
     throw new AppError(
       409,
       "CALLER_IDENTITY_REQUIRED",
-      "Save your full name or legal business name and Illinois address in Caller Identity before requesting permission.",
+      "Save your full name or legal business name and United States mailing address in Caller Identity before requesting permission.",
       { settings_path: "/phone?tab=setup#company-identity" },
     );
   }
@@ -104,6 +101,7 @@ async function sellerIdentity(db: PermissionDb, userId: string, agentId: string)
   return {
     sellerName,
     botName,
+    callerState,
     sellerIdentityHash: voicePermissionHash({ sellerName, address, botName }),
   };
 }
@@ -112,6 +110,7 @@ async function append(
   db: PermissionDb,
   record: VoicePermissionRecord,
   phone: string,
+  state: string,
 ): Promise<void> {
   const event =
     record.kind === "request"
@@ -129,7 +128,7 @@ async function append(
       event,
       ruleVersion: VOICE_PERMISSION_VERSION,
       rule: "two_party",
-      state: "IL",
+      state,
       metadata: signVoicePermissionRecord(record),
     })
     .returning({ id: schema.consentLog.id });
@@ -252,17 +251,12 @@ export async function createRecipientVoicePermission(input: {
   agentId: string;
   phone: string;
   callPurpose: OutboundCallPurpose;
-  recipientState: "IL";
-  timeZone: "America/Chicago";
+  recipientState: string;
+  timeZone: string;
 }): Promise<{ permission: VoicePermissionSummary; token: string }> {
   const phone = normalizeVoicePermissionPhone(input.phone);
   if (!phone || !VOICE_PERMISSION_UUID.test(input.requestKey))
     throw AppError.badRequest("Use a valid US phone number and request key.");
-  assertVoicePermissionJurisdiction({
-    callerState: "IL",
-    recipientState: input.recipientState,
-    timeZone: input.timeZone,
-  });
   return tenantStore.run(input.userId, () =>
     drizzle.transaction(async (tx) => {
       await tx.execute(
@@ -280,6 +274,12 @@ export async function createRecipientVoicePermission(input: {
         )
         .limit(2);
       const identity = await sellerIdentity(tx, input.userId, input.agentId);
+      const jurisdiction = {
+        callerState: identity.callerState,
+        recipientState: input.recipientState,
+        timeZone: input.timeZone,
+      };
+      assertVoicePermissionJurisdiction(jurisdiction);
       if (existing.length) {
         const request =
           existing.length === 1
@@ -291,8 +291,9 @@ export async function createRecipientVoicePermission(input: {
           request.agentId !== input.agentId ||
           request.purpose !== input.callPurpose ||
           request.sellerIdentityHash !== identity.sellerIdentityHash ||
-          request.recipientState !== input.recipientState ||
-          request.timeZone !== input.timeZone
+          request.recipientState !== jurisdiction.recipientState ||
+          request.timeZone !== jurisdiction.timeZone ||
+          request.callerState !== jurisdiction.callerState
         )
           throw AppError.conflict(
             "This request key already belongs to different permission details. Start a new request.",
@@ -326,9 +327,9 @@ export async function createRecipientVoicePermission(input: {
         sellerName: identity.sellerName,
         sellerIdentityHash: identity.sellerIdentityHash,
         purpose: input.callPurpose,
-        callerState: "IL",
-        recipientState: input.recipientState,
-        timeZone: input.timeZone,
+        callerState: jurisdiction.callerState,
+        recipientState: jurisdiction.recipientState,
+        timeZone: jurisdiction.timeZone,
         requestedAt: new Date(now).toISOString(),
         requestExpiresAt: new Date(now + VOICE_PERMISSION_REQUEST_MS).toISOString(),
         expiresAt,
@@ -337,11 +338,12 @@ export async function createRecipientVoicePermission(input: {
           purpose: input.callPurpose,
           phone,
           expiresAt,
+          timeZone: jurisdiction.timeZone,
         }),
         tokenHash: voicePermissionHash(token),
       };
       await lockRecipient(tx, input.userId, phone);
-      await append(tx, request, phone);
+      await append(tx, request, phone, request.recipientState);
       return { permission: summary({ request, grant: null, revoked: false, claims: [] }), token };
     }),
   );
@@ -443,7 +445,10 @@ export async function previewRecipientVoicePermission(
     seller_name: state.request.sellerName,
     disclosure: state.request.disclosure,
     disclosure_hash: voicePermissionHash(state.request.disclosure),
-    jurisdiction: { recipient_state: "IL", time_zone: "America/Chicago" },
+    jurisdiction: {
+      recipient_state: state.request.recipientState,
+      time_zone: state.request.timeZone,
+    },
   }));
 }
 
@@ -453,8 +458,8 @@ export async function grantRecipientVoicePermission(input: {
   phone: string;
   accepted: true;
   disclosureHash: string;
-  recipientState: "IL";
-  timeZone: "America/Chicago";
+  recipientState: string;
+  timeZone: string;
   ip?: string;
   userAgent?: string;
 }): Promise<VoicePermissionPublicView> {
@@ -505,7 +510,7 @@ export async function grantRecipientVoicePermission(input: {
         ipHash: voicePermissionHash(input.ip || "unavailable"),
         userAgentHash: voicePermissionHash((input.userAgent || "").slice(0, 500)),
       };
-      await append(tx, grant, request.phone);
+      await append(tx, grant, request.phone, request.recipientState);
       state.grant = grant;
     }
     return {
@@ -513,7 +518,10 @@ export async function grantRecipientVoicePermission(input: {
       seller_name: request.sellerName,
       disclosure: request.disclosure,
       disclosure_hash: voicePermissionHash(request.disclosure),
-      jurisdiction: { recipient_state: "IL", time_zone: "America/Chicago" },
+      jurisdiction: {
+        recipient_state: request.recipientState,
+        time_zone: request.timeZone,
+      },
     };
   });
 }
@@ -532,7 +540,7 @@ async function revoke(
       revokedAt: new Date().toISOString(),
       actor,
     };
-    await append(tx, record, state.request.phone);
+    await append(tx, record, state.request.phone, state.request.recipientState);
     state.revoked = true;
   }
   // An opt-out also suppresses other grants for the same seller/number. Removing
@@ -654,7 +662,11 @@ export type OutboundRecipientPermissionReceipt = {
   grantHash: string;
   effectiveCallPurpose: OutboundCallPurpose;
   expiresAt: string;
-  jurisdiction: { recipientState: "IL"; timeZone: "America/Chicago"; callerState: "IL" };
+  jurisdiction: {
+    recipientState: VoicePermissionRequest["recipientState"];
+    timeZone: string;
+    callerState: VoicePermissionRequest["callerState"];
+  };
 };
 
 export type OutboundRecipientPermissionInput = {
@@ -695,7 +707,11 @@ export async function inspectOutboundRecipientPermission(
         grantHash: voicePermissionHash(grant),
         effectiveCallPurpose: request.purpose,
         expiresAt: request.expiresAt,
-        jurisdiction: { recipientState: "IL", timeZone: "America/Chicago", callerState: "IL" },
+        jurisdiction: {
+          recipientState: request.recipientState,
+          timeZone: request.timeZone,
+          callerState: request.callerState,
+        },
       };
     }),
   );
@@ -740,7 +756,7 @@ export async function assertOutboundRecipientPermissionInTransaction(
     purpose: input.callPurpose,
     claimedAt: new Date().toISOString(),
   };
-  if (!priorClaim) await append(tx, claim, phone);
+  if (!priorClaim) await append(tx, claim, phone, request.recipientState);
   return {
     artifactId: request.artifactId,
     receiptId: claim.receiptId,
@@ -748,7 +764,11 @@ export async function assertOutboundRecipientPermissionInTransaction(
     grantHash: voicePermissionHash(grant),
     effectiveCallPurpose: request.purpose,
     expiresAt: request.expiresAt,
-    jurisdiction: { recipientState: "IL", timeZone: "America/Chicago", callerState: "IL" },
+    jurisdiction: {
+      recipientState: request.recipientState,
+      timeZone: request.timeZone,
+      callerState: request.callerState,
+    },
   };
 }
 
@@ -843,7 +863,7 @@ async function resolvePermissionForDispatch(
     throw new AppError(
       403,
       "OUTSIDE_PERMITTED_CALLING_HOURS",
-      "This recipient can be called only from 9am until 9pm in their signed Illinois time zone.",
+      `This recipient can be called only from ${callingHours.startHour === 9 ? "9am" : "8am"} until 9pm in their signed local time zone.`,
       { calling_hours: callingHours },
     );
   const [blocked] = await tx

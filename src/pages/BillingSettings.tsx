@@ -418,13 +418,6 @@ export default function BillingSettings() {
           onCheckoutAvailabilityChange={setCheckoutAvailability}
         />
 
-        {!loading && !statusUnavailable && paidPlan && !usagePlan && plan ? (
-          <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-            Current Plan Capacity · {plan.included_phone_numbers} live number
-            {plan.included_phone_numbers === 1 ? "" : "s"} included
-          </p>
-        ) : null}
-
         {showRuntimeBalance && (
           <section className="mt-6">
             <article className="wl-paper wl-paper-elevated p-5 sm:p-6">

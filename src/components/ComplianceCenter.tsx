@@ -133,7 +133,7 @@ export default function ComplianceCenter() {
           <StatusNotice tone="destructive" className="mt-3" title={error} />
         ) : summary ? (
           <div className="mt-4 space-y-3">
-            <dl className="grid gap-3 border-y border-border py-4 sm:grid-cols-3 sm:gap-4">
+            <dl className="grid gap-3 border-y border-border py-4 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
               <div className="flex items-baseline justify-between gap-4 sm:block">
                 <dt className="shrink-0 text-xs font-medium text-muted-foreground">
                   Do Not Call Registry

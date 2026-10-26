@@ -6,6 +6,11 @@ import { Button, Input } from "../components/atoms";
 import { Checkbox } from "../components/ui/shadcn/Checkbox";
 import { PageMeta } from "../lib/page-meta";
 import type { VoicePermissionPublicView } from "../lib/recipient-voice-permission-contract";
+import {
+  isRecipientCallingTimeZone,
+  isUsCallingState,
+  usCallingStateName,
+} from "../lib/us-calling-jurisdiction";
 
 function publicView(value: unknown): VoicePermissionPublicView {
   const view = value as VoicePermissionPublicView | null;
@@ -18,8 +23,8 @@ function publicView(value: unknown): VoicePermissionPublicView {
     typeof view.permission?.id !== "string" ||
     typeof view.permission.recipient_phone_masked !== "string" ||
     !["pending", "granted", "revoked", "expired", "used"].includes(view.permission.status) ||
-    view.jurisdiction?.recipient_state !== "IL" ||
-    view.jurisdiction.time_zone !== "America/Chicago"
+    !isUsCallingState(view.jurisdiction?.recipient_state) ||
+    !isRecipientCallingTimeZone(view.jurisdiction.recipient_state, view.jurisdiction.time_zone)
   )
     throw new Error("The permission receipt could not be confirmed. Please retry.");
   return view;
@@ -31,8 +36,8 @@ type Confirmation = {
   phone: string;
   accepted: true;
   disclosure_hash: string;
-  recipient_state: "IL";
-  recipient_time_zone: "America/Chicago";
+  recipient_state: string;
+  recipient_time_zone: string;
 };
 
 export default function VoicePermissionPage() {
@@ -105,8 +110,8 @@ export default function VoicePermissionPage() {
       phone,
       accepted: true as const,
       disclosure_hash: view.disclosure_hash,
-      recipient_state: "IL" as const,
-      recipient_time_zone: "America/Chicago" as const,
+      recipient_state: view.jurisdiction.recipient_state,
+      recipient_time_zone: view.jurisdiction.time_zone,
     };
     if (!pendingConfirmation.current && (!accepted || !locationAccepted)) return;
     pendingConfirmation.current = payload;
@@ -279,8 +284,9 @@ export default function VoicePermissionPage() {
                       required
                     />
                     <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
-                      These calls will reach me in Illinois (America/Chicago). I’ll tell the caller
-                      if that changes.
+                      These calls will reach me in{" "}
+                      {usCallingStateName(view.jurisdiction.recipient_state)} (
+                      {view.jurisdiction.time_zone}). I’ll tell the caller if that changes.
                     </span>
                   </label>
                   <Button
