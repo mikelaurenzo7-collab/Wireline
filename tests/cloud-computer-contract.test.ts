@@ -531,7 +531,10 @@ describe("cloud computer source contracts", () => {
     expect(runner).toContain("if (!(await saveOutcome(task))) continue;");
     // Stop never overwrites a task that already ended.
     const stop = runner.slice(runner.indexOf("export async function stopComputerTask"));
-    expect(stop).toContain("inArray(schema.computerTasks.status, ACTIVE_STATUSES)");
+    expect(stop).toContain("await settleStoredComputerTask(row");
+    expect(read("src/lib/cloud-computer/usage-receipts.ts")).toContain(
+      'inArray(computerTasks.status, ["running", "needs_input"])',
+    );
     expect(stop).toContain("return toView(updated ?? (await ownedRow(userId, taskId)));");
   });
 

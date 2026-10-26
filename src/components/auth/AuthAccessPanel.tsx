@@ -152,7 +152,14 @@ function signupIntentLabel(intent: SignupIntent | null): string | null {
   if (intent.preferredTemplateId) {
     parts.push(signupTemplateLabel(intent.preferredTemplateId));
   }
-  if (intent.signupWedge) parts.push(intent.signupWedge.replace(/-/g, " "));
+  if (intent.signupWedge) {
+    parts.push(
+      intent.signupWedge
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" "),
+    );
+  }
   return parts.length ? parts.join(" · ") : null;
 }
 

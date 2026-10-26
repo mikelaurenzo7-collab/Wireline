@@ -24,6 +24,7 @@ import {
   type UsageMeterKey,
 } from "./usage-billing-catalog";
 import { usageBillingEnabled } from "./usage-billing-config";
+import { recoverStaleComputerUsageReceipts } from "./cloud-computer/usage-receipts";
 import {
   admitUsage,
   emptyMeterTotals,
@@ -460,9 +461,10 @@ export async function recordSettledUsageReceipt(input: {
 /** Repair receipts whose immediate meter write failed or died with the process. */
 export async function reconcileUsageReceipts(
   limit = 200,
-  reader: Pick<Reader, "select"> = drizzle,
+  reader: Pick<Reader, "select" | "update"> = drizzle,
   recordReceipt = recordSettledUsageReceipt,
 ): Promise<void> {
+  await recoverStaleComputerUsageReceipts(limit, reader);
   const computers = await reader
     .select({
       userId: schema.computerTasks.userId,
@@ -471,12 +473,16 @@ export async function reconcileUsageReceipts(
     })
     .from(schema.computerTasks)
     .where(
-      sql`${schema.computerTasks.usageReceipt} IS NOT NULL AND NOT EXISTS (SELECT 1 FROM ${usageMeterEvents} WHERE ${usageMeterEvents.idempotencyKey} = 'usage:computer_minutes:computer_task:' || ${schema.computerTasks.id}::text)`,
+      sql`${schema.computerTasks.usageReceipt} IS NOT NULL
+        AND ${schema.computerTasks.status} NOT IN ('running', 'needs_input')
+        AND ${schema.computerTasks.finishedAt} IS NOT NULL
+        AND ${schema.computerTasks.usageReceipt}->>'phase' IS DISTINCT FROM 'admitted'
+        AND NOT EXISTS (SELECT 1 FROM ${usageMeterEvents} WHERE ${usageMeterEvents.idempotencyKey} = 'usage:computer_minutes:computer_task:' || ${schema.computerTasks.id}::text)`,
     )
     .orderBy(asc(schema.computerTasks.finishedAt))
     .limit(limit);
   for (const row of computers) {
-    if (row.receipt)
+    if (row.receipt && row.receipt.phase !== "admitted")
       await recordReceipt({
         ...row,
         receipt: row.receipt,

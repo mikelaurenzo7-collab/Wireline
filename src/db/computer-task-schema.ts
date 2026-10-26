@@ -32,6 +32,20 @@ export type ComputerTaskEvent = {
   ok?: boolean;
 };
 
+export type ComputerUsageAdmission = {
+  periodKey: string;
+  observedQuantity: number;
+  occurredAt: string;
+  phase: "admitted";
+};
+export type ComputerUsageSettlement = {
+  periodKey: string;
+  quantity: number;
+  occurredAt: string;
+  /** Historical terminal receipts omit phase. */
+  phase?: "settled";
+};
+
 /**
  * One owner-assigned task on a Bot's cloud computer (migration 0176).
  *
@@ -68,11 +82,7 @@ export const computerTasks = pgTable(
     actionCount: integer("action_count").notNull().default(0),
     startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
     finishedAt: timestamp("finished_at", { withTimezone: true }),
-    usageReceipt: jsonb("usage_receipt").$type<{
-      periodKey: string;
-      quantity: number;
-      occurredAt: string;
-    }>(),
+    usageReceipt: jsonb("usage_receipt").$type<ComputerUsageAdmission | ComputerUsageSettlement>(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },

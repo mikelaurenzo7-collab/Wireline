@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, desc, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import type { ComputerTaskEvent, ComputerTaskStatus } from "../../db/computer-task-schema";
@@ -41,12 +41,18 @@ import {
   cloudComputerReadiness,
 } from "./config";
 import { displayUrl, parseNavigateTarget } from "./url-policy";
+import {
+  COMPUTER_INTERRUPTED_SUMMARY,
+  COMPUTER_TASK_STALE_AFTER_MS,
+  computerUsageCheckpoint,
+  settleStoredComputerTask,
+} from "./usage-receipts";
 
 const MAX_EVENTS = 150;
 const FRAME_RETENTION_MS = 30 * 60_000;
 const OWNER_FRAME_REFRESH_MS = 2_500;
 const AGENT_POINTER_VISIBLE_MS = 15_000;
-const STALE_AFTER_MS = 3 * 60_000;
+const STALE_AFTER_MS = COMPUTER_TASK_STALE_AFTER_MS;
 // A live task touches its row well inside STALE_AFTER_MS, so a long model
 // call or an owner question never reads as abandoned to another process.
 const HEARTBEAT_MS = 60_000;
@@ -77,7 +83,7 @@ export function browserlessSessionCostUsd(connectionMs: number): number {
 const TERMINAL_PERSIST_BACKOFF_MS = [0, 500, 1_500] as const;
 const SHUTDOWN_DEADLINE_MS = 5_000;
 const ACTIVE_STATUSES: ComputerTaskStatus[] = ["running", "needs_input"];
-const INTERRUPTED_SUMMARY = "This task was interrupted by a BotBound update. Start it again.";
+const INTERRUPTED_SUMMARY = COMPUTER_INTERRUPTED_SUMMARY;
 const STOPPED_SUMMARY = "Stopped by the owner.";
 const EXPIRED_BROWSER_OUTCOME = {
   status: "failed",
@@ -151,6 +157,8 @@ type LiveTask = {
 };
 
 const live = new Map<string, LiveTask>();
+type PersistResult = "written" | "unmatched" | "error";
+const taskWrites = new WeakMap<LiveTask, Promise<PersistResult>>();
 const loggedBrowserClosures = new WeakSet<LiveTask>();
 /** Accounts with a start in flight: one start per account, counted against capacity. */
 const starting = new Set<string>();
@@ -547,7 +555,7 @@ async function admitComputerTask(
   await assertLiveExternalActionAllowed(userId, "computer.browse");
 
   const busy = await drizzle
-    .select({ id: schema.computerTasks.id, updatedAt: schema.computerTasks.updatedAt })
+    .select()
     .from(schema.computerTasks)
     .where(
       and(
@@ -565,12 +573,9 @@ async function admitComputerTask(
   ) {
     throw busyError();
   }
-  // A task this process finished whose final write did not land still holds
-  // the account's one active row: write its stored outcome first.
-  for (const row of busy) {
-    const task = live.get(row.id);
-    if (task?.finished) await saveOutcome(task);
-  }
+  // Preserve the original period and last confirmed usage when recovering a
+  // previous task, including a process that died before its terminal write.
+  await settleStaleTasks(busy);
   await enforceTaskLimits(userId);
   // Usage billing: refuse at the monthly spending limit; otherwise the task is
   // billed as computer minutes and stays off the managed AI allowance.
@@ -584,29 +589,27 @@ async function admitComputerTask(
   }
 
   const model = cloudComputerModel();
-  // A row whose heartbeat stopped is a task that died with its process; settle
-  // it so the one-active-task index does not hold the account forever.
-  await drizzle
-    .update(schema.computerTasks)
-    .set({
-      status: "interrupted",
-      summary: INTERRUPTED_SUMMARY,
-      question: null,
-      finishedAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(schema.computerTasks.userId, userId),
-        inArray(schema.computerTasks.status, ACTIVE_STATUSES),
-        lt(schema.computerTasks.updatedAt, new Date(cutoff)),
-      ),
-    );
+  const startedAt = new Date();
   let row: TaskRow | undefined;
   try {
     [row] = await drizzle
       .insert(schema.computerTasks)
-      .values({ userId, agentId: brief.agent_id, goal, startUrl, status: "running", model })
+      .values({
+        userId,
+        agentId: brief.agent_id,
+        goal,
+        startUrl,
+        status: "running",
+        model,
+        startedAt,
+        usageReceipt: computerUsageCheckpoint(
+          usagePeriodKey,
+          startedAt.getTime(),
+          startedAt.getTime(),
+          MAX_TASK_LIFETIME_MS,
+          "admitted",
+        ),
+      })
       .returning();
   } catch (error) {
     // The partial unique index is the cross-process guard for one active task.
@@ -619,7 +622,7 @@ async function admitComputerTask(
     taskId: row.id,
     userId,
     agentId: brief.agent_id,
-    startedAt: Date.now(),
+    startedAt: startedAt.getTime(),
     usageMetered,
     usagePeriodKey,
     stop: false,
@@ -674,15 +677,43 @@ async function admitComputerTask(
 async function persist(
   task: LiveTask,
   patch: Partial<typeof schema.computerTasks.$inferInsert>,
-): Promise<"written" | "unmatched" | "error"> {
+): Promise<PersistResult> {
+  // Heartbeats and owner/model updates share one writer. An older delayed write
+  // must not replace a newer usage checkpoint or task transition.
+  const previous = taskWrites.get(task);
+  const write = (previous ?? Promise.resolve()).then(() => persistNow(task, patch));
+  taskWrites.set(task, write);
   try {
+    return await write;
+  } finally {
+    if (taskWrites.get(task) === write) taskWrites.delete(task);
+  }
+}
+
+async function persistNow(
+  task: LiveTask,
+  patch: Partial<typeof schema.computerTasks.$inferInsert>,
+): Promise<PersistResult> {
+  try {
+    const observedAt = new Date();
     const updated = await drizzle
       .update(schema.computerTasks)
       .set({
         events: task.events,
         turnCount: task.turns,
         actionCount: task.actions,
-        updatedAt: new Date(),
+        updatedAt: observedAt,
+        ...(task.usagePeriodKey
+          ? {
+              usageReceipt: computerUsageCheckpoint(
+                task.usagePeriodKey,
+                task.startedAt,
+                observedAt.getTime(),
+                MAX_TASK_LIFETIME_MS,
+                "admitted",
+              ),
+            }
+          : {}),
         ...patch,
       })
       .where(
@@ -811,17 +842,13 @@ async function saveOutcome(task: LiveTask): Promise<boolean> {
   if (!task.outcome) return false;
   // Persist the billing receipt with the outcome. Retrying a terminal write
   // cannot extend the charged duration, and process exit cannot lose the meter.
-  const usageReceipt = task.usagePeriodKey
-    ? {
-        periodKey: task.usagePeriodKey,
-        quantity:
-          Math.min(
-            Math.max(0, task.outcome.finishedAt.getTime() - task.startedAt),
-            MAX_TASK_LIFETIME_MS,
-          ) / 60_000,
-        occurredAt: new Date(task.startedAt).toISOString(),
-      }
-    : null;
+  const usageReceipt = computerUsageCheckpoint(
+    task.usagePeriodKey,
+    task.startedAt,
+    task.outcome.finishedAt.getTime(),
+    MAX_TASK_LIFETIME_MS,
+    "settled",
+  );
   const saved = await persist(task, { ...terminalPatch(task.outcome), usageReceipt });
   if (saved === "error") return false;
   if (usageReceipt && saved === "written") {
@@ -1337,36 +1364,18 @@ async function settleStaleTasks(rows: TaskRow[]): Promise<TaskRow[]> {
       ACTIVE_STATUSES.includes(row.status) && !live.has(row.id) && row.updatedAt.getTime() < cutoff,
   );
   if (!stale.length) return rows.map((row) => saved.get(row.id) ?? row);
-  const ids = stale.map((row) => row.id);
   const now = new Date();
-  await drizzle
-    .update(schema.computerTasks)
-    .set({
-      status: "interrupted",
-      summary: INTERRUPTED_SUMMARY,
-      question: null,
-      finishedAt: now,
-      updatedAt: now,
-    })
-    .where(
-      and(
-        inArray(schema.computerTasks.id, ids),
-        inArray(schema.computerTasks.status, ACTIVE_STATUSES),
-        lt(schema.computerTasks.updatedAt, new Date(cutoff)),
-      ),
+  for (const row of stale) {
+    const updated = await settleStoredComputerTask(
+      row,
+      { status: "interrupted", summary: INTERRUPTED_SUMMARY, finishedAt: now },
+      { staleBefore: new Date(cutoff) },
     );
-  return rows.map((row) =>
-    ids.includes(row.id)
-      ? {
-          ...row,
-          status: "interrupted" as const,
-          summary: INTERRUPTED_SUMMARY,
-          question: null,
-          finishedAt: now,
-          updatedAt: now,
-        }
-      : (saved.get(row.id) ?? row),
-  );
+    // A heartbeat or terminal write may have won after the read. Never show a
+    // fabricated interruption or overwrite that winner's receipt.
+    saved.set(row.id, updated ?? (await ownedRow(row.userId, row.id)));
+  }
+  return rows.map((row) => saved.get(row.id) ?? row);
 }
 
 export async function listComputerTasks(
@@ -1505,23 +1514,11 @@ export async function stopComputerTask(userId: string, taskId: string): Promise<
   }
   if (ACTIVE_STATUSES.includes(row.status)) {
     const now = new Date();
-    const [updated] = await drizzle
-      .update(schema.computerTasks)
-      .set({
-        status: "stopped",
-        summary: STOPPED_SUMMARY,
-        question: null,
-        finishedAt: now,
-        updatedAt: now,
-      })
-      .where(
-        and(
-          eq(schema.computerTasks.id, taskId),
-          eq(schema.computerTasks.userId, userId),
-          inArray(schema.computerTasks.status, ACTIVE_STATUSES),
-        ),
-      )
-      .returning();
+    const updated = await settleStoredComputerTask(row, {
+      status: "stopped",
+      summary: STOPPED_SUMMARY,
+      finishedAt: now,
+    });
     // No longer active: the task ended on its own between the read and this
     // write (here or on another process). Show its real outcome.
     return toView(updated ?? (await ownedRow(userId, taskId)));

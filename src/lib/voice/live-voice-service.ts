@@ -309,16 +309,22 @@ async function xaiTeamVoicesUsed(): Promise<number> {
 
 const SWEEP_BATCH = 25;
 
+/** Preserve the legacy object-only behavior without replacing a stale snapshot. */
+function currentBotVariables() {
+  return sql`CASE WHEN jsonb_typeof(${schema.agents.businessVariables}) = 'object' THEN ${schema.agents.businessVariables} ELSE '{}'::jsonb END`;
+}
+
 async function clearBotSelections(userId: string, cloneId: string): Promise<void> {
-  for (const agent of await ownedAgents(userId)) {
-    if (customVoiceSelection(agent.businessVariables)?.cloneId !== cloneId) continue;
-    const variables = { ...asRecord(agent.businessVariables) };
-    delete variables[LIVE_CUSTOM_VOICE_KEY];
-    await drizzle
-      .update(schema.agents)
-      .set({ businessVariables: variables })
-      .where(and(eq(schema.agents.id, agent.id), eq(schema.agents.userId, userId)));
-  }
+  // The deletion sweep must not clear a replacement selected while cleanup ran.
+  await drizzle
+    .update(schema.agents)
+    .set({ businessVariables: sql`(${currentBotVariables()}) - ${LIVE_CUSTOM_VOICE_KEY}` })
+    .where(
+      and(
+        eq(schema.agents.userId, userId),
+        sql`${schema.agents.businessVariables}->${LIVE_CUSTOM_VOICE_KEY}->>'cloneId' = ${cloneId}`,
+      ),
+    );
 }
 
 async function destroyRow(
@@ -710,35 +716,42 @@ export const liveVoiceService = {
   },
 
   async useOnBot(actor: Actor, id: string, agentId: string) {
-    const row = await readyVoice(actor.id, id);
+    if (!UUID.test(id)) throw AppError.notFound("Voice not found.");
     if (!validBotId(agentId)) throw AppError.notFound("Bot not found.");
-    const [agent] = await inTenant(actor.id, () =>
-      drizzle
-        .select({
-          id: schema.agents.id,
-          businessVariables: schema.agents.businessVariables,
-        })
-        .from(schema.agents)
-        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, actor.id)))
-        .limit(1),
+    return inTenant(actor.id, () =>
+      drizzle.transaction(async (tx) => {
+        // Revocation first updates this same voice row. Hold its lock until the
+        // selection commits: deletion either wins first or clears this selection.
+        const [row] = await tx
+          .select({ id: liveVoices.id, name: liveVoices.name })
+          .from(liveVoices)
+          .where(
+            and(
+              eq(liveVoices.userId, actor.id),
+              eq(liveVoices.id, id),
+              eq(liveVoices.status, "ready"),
+              voiceNotExpired(),
+            ),
+          )
+          .limit(1)
+          .for("update");
+        if (!row) throw AppError.notFound("Voice not found.");
+        const selection = JSON.stringify({
+          cloneId: row.id,
+          name: row.name,
+          selectedAt: new Date().toISOString(),
+        });
+        const [agent] = await tx
+          .update(schema.agents)
+          .set({
+            businessVariables: sql`jsonb_set((${currentBotVariables()}) - ${PHONE_CATALOG_VOICE_KEY}, ARRAY[${LIVE_CUSTOM_VOICE_KEY}], ${selection}::jsonb)`,
+          })
+          .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, actor.id)))
+          .returning({ id: schema.agents.id });
+        if (!agent) throw AppError.notFound("Bot not found.");
+        return { agentId, customVoice: { cloneId: row.id, name: row.name } };
+      }),
     );
-    if (!agent) throw AppError.notFound("Bot not found.");
-    const variables = {
-      ...asRecord(agent.businessVariables),
-      [LIVE_CUSTOM_VOICE_KEY]: {
-        cloneId: row.id,
-        name: row.name,
-        selectedAt: new Date().toISOString(),
-      },
-    };
-    delete (variables as Record<string, unknown>)[PHONE_CATALOG_VOICE_KEY];
-    await inTenant(actor.id, () =>
-      drizzle
-        .update(schema.agents)
-        .set({ businessVariables: variables })
-        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, actor.id))),
-    );
-    return { agentId, customVoice: { cloneId: row.id, name: row.name } };
   },
 
   /** One tap back to the Bot's stock voice. Idempotent. */
@@ -746,24 +759,14 @@ export const liveVoiceService = {
     if (!validBotId(agentId)) throw AppError.notFound("Bot not found.");
     const [agent] = await inTenant(actor.id, () =>
       drizzle
-        .select({
-          id: schema.agents.id,
-          businessVariables: schema.agents.businessVariables,
+        .update(schema.agents)
+        .set({
+          businessVariables: sql`(${currentBotVariables()}) - ${LIVE_CUSTOM_VOICE_KEY} - ${PHONE_CATALOG_VOICE_KEY}`,
         })
-        .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, actor.id)))
-        .limit(1),
+        .returning({ id: schema.agents.id }),
     );
     if (!agent) throw AppError.notFound("Bot not found.");
-    const variables = { ...asRecord(agent.businessVariables) };
-    delete variables[LIVE_CUSTOM_VOICE_KEY];
-    delete variables[PHONE_CATALOG_VOICE_KEY];
-    await inTenant(actor.id, () =>
-      drizzle
-        .update(schema.agents)
-        .set({ businessVariables: variables })
-        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, actor.id))),
-    );
     return { agentId, customVoice: null };
   },
 

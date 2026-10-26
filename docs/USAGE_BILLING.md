@@ -1,20 +1,30 @@
 # Usage billing
 
-Status: **Lite, Starter and Plus shared-work billing is deployed; the authorized merchant switch is staged, not yet verified.**
-Michael subsequently selected the older BotBound Stripe account
-(`acct_1TkyXL8e6If87QKm`) as the production target. Complete the matching catalog,
-credentials, webhook, founder/demo binding reconciliation and exact-source deployment
-before recording the switch as live. The account name does not establish its legal
-entity or tax classification; provider verification is a separate check.
+Status: **Lite, Starter and Plus shared-work billing is deployed; the authorized return to the selected BotBound merchant is verified.**
+Michael selected the older BotBound Stripe account (`acct_1TkyXL8e6If87QKm`).
+The October 25 local release of [PR #1386](https://github.com/mikelaurenzo7-collab/Wireline/pull/1386)
+verified all four Render services on `d680a8fdddba88429c2f8d2f837df6a57e85f258`.
+Final API runtime confirmed the selected merchant with checkout and webhook enabled,
+28 current/configured legacy prices active in live USD, the active shared-work meter,
+matching credential hashes and the canonical customer portal. The target webhook is
+active; the previous LLC account's endpoint is disabled. Founder binding repair retained
+the explicit grant and historical invoice receipts. These are dated configuration and
+release receipts, not ordinary new-plan payment or settlement acceptance. The account
+name does not establish its legal entity or tax classification; provider verification
+is a separate check.
 
 Earlier on October 25, the release switched new production billing to BOTBOUND LLC
 (`acct_1UQBcs6Ph5cHChCS`), verified its runtime permissions and live catalog, activated
 the matching lifecycle webhook, and reconciled migration 0191 and the founder/demo
 bindings. See [release PR #1382](https://github.com/mikelaurenzo7-collab/Wireline/pull/1382).
-Those are dated receipts for that merchant, not proof of the subsequent switch.
-Sandbox renewal invoices and the earlier live hosted-checkout handoff are verified;
-checkout on the selected merchant and an ordinary new subscription's production
-recurring settlement remain separate acceptance work. SMS execution still requires
+Those are dated receipts for that earlier merchant. The subsequent selected-account
+release above was verified separately. Manage Billing opened the original customer's
+portal, preserving its paid legacy subscription, scheduled cancellation and separate
+founder grant. Review Plan correctly prevented another subscription for that customer;
+no new checkout or payment was created. Sandbox renewal invoices and the earlier
+LLC-hosted checkout handoff remain valid within their scope. A new Shared Work checkout
+on the selected merchant, ordinary paid activation and production recurring settlement
+remain separate acceptance work. SMS execution still requires
 carrier approval, consent and the existing runtime gates. DNCScrub purchase is deferred
 by the founder; marketing calls requiring federal screening remain blocked until
 vendor access and the seller's registration are configured and verified.
@@ -140,7 +150,7 @@ Environment names: `USAGE_BILLING_ENABLED`, `STRIPE_USAGE_BASE_PRICE_ID`,
 | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 0     | For a new environment, validate with the flag off. Install migrations 0187 through 0191 through the reviewed release path, verifying the ledger and actual schema before promotion. Never replay them blindly on production.                                |
 | 1     | The selected production target is BotBound (`acct_1TkyXL8e6If87QKm`). Use an explicitly selected isolated test sandbox for invoice proof. Audit the target's existing catalog before applying each public tier; reuse passing proof when source and conditions still match. |
-| 2     | After proof and authorization, use `--apply --live --rates-approved` as needed, configure matching merchant prices, meter, webhook and runtime permissions, reconcile exact founder/demo bindings, and deploy the reviewed source. The selected-account switch is staged, not yet verified. |
+| 2     | After proof and authorization, use `--apply --live --rates-approved` as needed, configure matching merchant prices, meter, webhook and runtime permissions, reconcile exact founder/demo bindings, and deploy the reviewed source. The selected-account switch was verified in PR #1386; future configuration changes require fresh matching evidence. |
 | 3     | Verify deployed checkout, webhook ownership, entitlement and settlement against the same merchant. Preserve historical merchant bindings and invoices unless an exact, audited reconciliation explicitly changes them.                                      |
 
 ## Settlement Verification And Operating Limits

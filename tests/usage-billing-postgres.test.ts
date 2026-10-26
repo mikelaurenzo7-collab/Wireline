@@ -20,6 +20,7 @@ import {
   admitVoiceUsage,
   createUsageStore,
   reportAllPendingUsage,
+  reconcileUsageReceipts,
   setUsageAddonQuantities,
   setUsageMonthlyCap,
   settleVoiceUsageReceipt,
@@ -79,6 +80,22 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
       CREATE TABLE IF NOT EXISTS wireline_computer_tasks (
         id uuid PRIMARY KEY, user_id uuid, usage_receipt jsonb, finished_at timestamptz
       );
+      ALTER TABLE wireline_computer_tasks
+        ADD COLUMN IF NOT EXISTS status text DEFAULT 'completed',
+        ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now(),
+        ADD COLUMN IF NOT EXISTS agent_id text,
+        ADD COLUMN IF NOT EXISTS goal text,
+        ADD COLUMN IF NOT EXISTS start_url text,
+        ADD COLUMN IF NOT EXISTS summary text,
+        ADD COLUMN IF NOT EXISTS question text,
+        ADD COLUMN IF NOT EXISTS sources jsonb DEFAULT '[]'::jsonb,
+        ADD COLUMN IF NOT EXISTS events jsonb DEFAULT '[]'::jsonb,
+        ADD COLUMN IF NOT EXISTS error_code text,
+        ADD COLUMN IF NOT EXISTS model text,
+        ADD COLUMN IF NOT EXISTS turn_count integer DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS action_count integer DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS started_at timestamptz DEFAULT now(),
+        ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now();
       CREATE TABLE IF NOT EXISTS wireline_audit_log (
         id bigserial PRIMARY KEY, user_id uuid, resource_id text, event_type text,
         metadata jsonb, created_at timestamptz DEFAULT now()
@@ -156,6 +173,64 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
       quantity,
       occurredAt: NOW,
     });
+
+  it.each(["running", "stopped"])(
+    "recovers a %s Computer admission once in its original period without adding downtime",
+    async (status) => {
+      const taskId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+      const occurredAt = new Date(NOW.getTime() - 15 * 60_000).toISOString();
+      const originalPeriod = "sub_original:pe:2026-01-01T00:00:00.000Z";
+      const receipt = {
+        periodKey: originalPeriod,
+        observedQuantity: 5,
+        occurredAt,
+        phase: "admitted",
+      };
+      await pool.query(
+        `INSERT INTO wireline_computer_tasks
+        (id, user_id, status, usage_receipt, updated_at, finished_at, summary)
+        VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7)`,
+        [
+          taskId,
+          USER,
+          status,
+          JSON.stringify(receipt),
+          status === "running" ? new Date(NOW.getTime() - 10 * 60_000) : NOW,
+          status === "running" ? null : NOW,
+          status === "running" ? null : "Stopped by an older process.",
+        ],
+      );
+      await Promise.all([reconcileUsageReceipts(), reconcileUsageReceipts()]);
+      await reconcileUsageReceipts();
+      const task = (
+        await pool.query(
+          "SELECT status, summary, usage_receipt, finished_at FROM wireline_computer_tasks WHERE id=$1",
+          [taskId],
+        )
+      ).rows[0];
+      expect(task).toMatchObject({
+        status: status === "running" ? "interrupted" : "stopped",
+        summary:
+          status === "running"
+            ? "This task was interrupted by a BotBound update. Start it again."
+            : "Stopped by an older process.",
+        usage_receipt: { periodKey: originalPeriod, quantity: 5, occurredAt, phase: "settled" },
+      });
+      if (status === "stopped") expect(task.finished_at).toEqual(NOW);
+      const events = await pool.query(
+        "SELECT user_id, period_key, source_id, quantity, occurred_at FROM wireline_usage_meter_events",
+      );
+      expect(events.rows).toEqual([
+        {
+          user_id: USER,
+          period_key: originalPeriod,
+          source_id: taskId,
+          quantity: "5.0000",
+          occurred_at: new Date(occurredAt),
+        },
+      ]);
+    },
+  );
 
   it("serializes SMS admission against the shared allowance and releases only proven failures", async () => {
     await setUsageMonthlyCap(USER, 27);
