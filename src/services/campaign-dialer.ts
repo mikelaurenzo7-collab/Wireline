@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- external integration data shape varies by provider. */
 import { and, eq, inArray, lt, sql } from "drizzle-orm";
-import { randomUUID } from "node:crypto";
 
 import * as schema from "../db/schema";
 import { assertFederalDncForMarketing } from "../lib/federal-dnc-service";
@@ -12,7 +11,6 @@ import { drizzle, log } from "../lib/server-context";
 import { jsonSafeId, toJsonbSafe } from "../lib/server-utils";
 import { placeOutboundCall } from "../lib/voice/outbound-call-service";
 import { assertOutboundVoiceAllowed } from "../lib/voice-spend-control";
-import { inspectOutboundRecipientPermission } from "../lib/recipient-voice-permission-store";
 
 export function isWithinCallWindow(start: string, end: string, now: string): boolean {
   if (start <= end) return now >= start && now <= end;
@@ -326,23 +324,13 @@ export class CampaignDialerService {
         ...record(lead.metadata),
         has_express_written_consent: false,
       };
-      const permission = await inspectOutboundRecipientPermission({
-        userId: lead.userId!,
-        agentId: campaign.agentId!,
-        leadId: lead.id,
-        phone: lead.customerNumber,
-        callPurpose: "marketing_or_sales",
-        attemptId: randomUUID(),
-      });
-      if (permission.effectiveCallPurpose !== "marketing_or_sales")
-        throw new Error("A matching marketing voice permission is required.");
       const gate = await evaluateOutboundDialGate({
         userId: lead.userId!,
         phone: lead.customerNumber,
         leadId: lead.id,
         lastCalledAt: lead.lastCalledAt,
         metadata,
-        hasExpressWrittenConsent: true,
+        hasExpressWrittenConsent: false,
       });
 
       if (!gate.allowed) {
@@ -435,7 +423,6 @@ export class CampaignDialerService {
         callPurpose: "marketing_or_sales",
         leadId: lead.id,
         priorLeadStatus: priorStatus,
-        consentArtifactId: permission.artifactId,
       });
 
       if (result.ok) {

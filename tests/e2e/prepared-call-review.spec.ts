@@ -83,13 +83,9 @@ test("personal MCP proposal stays immutable, places once after review, and recon
   await expect(dialog.getByLabel("Phone number", { exact: true })).toHaveValue(prepared.phone);
   await expect(dialog.getByLabel("Phone number", { exact: true })).toBeDisabled();
   await expect(dialog.getByLabel("Instruction (optional)")).toBeDisabled();
-  await expect(dialog.getByLabel("Call type")).toBeDisabled();
-  await expect(dialog.getByRole("option", { name: "Marketing or sales" })).toHaveCount(0);
+  await expect(dialog.getByRole("combobox", { name: "Call type" })).toHaveCount(0);
+  await expect(dialog.getByRole("combobox", { name: "Recipient permission" })).toHaveCount(0);
   expect(writes).toHaveLength(0);
-  await expect(dialog.getByRole("button", { name: "Place call", exact: true })).toBeDisabled();
-  await dialog
-    .getByRole("combobox", { name: "Recipient permission", exact: true })
-    .selectOption(permissionId);
   await expect(dialog.getByRole("button", { name: "Place call", exact: true })).toBeEnabled();
   expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(
     true,
@@ -103,8 +99,9 @@ test("personal MCP proposal stays immutable, places once after review, and recon
     agentId: prepared.agent_id,
     customerNumber: prepared.phone,
     context: prepared.instruction,
-    consentArtifactId: permissionId,
+    callPurpose: "marketing_or_sales",
   });
+  expect(writes[0].consentArtifactId).toBeUndefined();
   await page.goto(url);
   await expect(
     page.getByText("This call has already been submitted. Check History for its progress."),

@@ -5,8 +5,10 @@ import {
   isMarketingCallPurpose,
   isOutboundCallPurpose,
   normalizedExpressConsent,
+  outboundCallingEnabledFor,
   outboundConsentMetadata,
   sanitizeUntrustedOutboundMetadata,
+  screenedDirectOutboundCall,
 } from "../src/lib/outbound-call-purpose";
 
 describe("isOutboundCallPurpose", () => {
@@ -20,6 +22,24 @@ describe("isOutboundCallPurpose", () => {
     expect(isOutboundCallPurpose("")).toBe(false);
     expect(isOutboundCallPurpose(undefined)).toBe(false);
     expect(isOutboundCallPurpose(3)).toBe(false);
+  });
+});
+
+describe("screened direct outbound", () => {
+  it("places every direct label as one screened call without express consent", () => {
+    for (const requested of ["service_or_requested", "callback", "marketing_or_sales"] as const) {
+      expect(screenedDirectOutboundCall(requested)).toEqual({
+        requestedCallPurpose: requested,
+        callPurpose: "marketing_or_sales",
+        isMarketingCall: true,
+        requireFederalDncScreening: true,
+        hasExpressWrittenConsent: false,
+        isRequestedCallback: false,
+      });
+    }
+    expect(
+      outboundCallingEnabledFor("marketing_or_sales", { general: false, nonMarketing: false }),
+    ).toBe(true);
   });
 });
 

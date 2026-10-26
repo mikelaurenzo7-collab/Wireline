@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CalendarCheck2, Inbox, Phone, Plus, ShieldCheck, Sparkles } from "lucide-react";
+import { CalendarCheck2, Inbox, Phone, Plus, ShieldCheck } from "lucide-react";
 import { Link } from "react-router";
 
 import ActivationChecklist from "../components/ActivationChecklist";
@@ -20,7 +20,6 @@ import { WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { StatusNotice } from "../components/molecules";
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
-import { isReviewedOutboundCandidate } from "../lib/outbound-call-purpose";
 
 function MetricSkeleton() {
   return (
@@ -188,11 +187,7 @@ export default function OverviewPage() {
 
   const primaryBot = agents[0];
   const hasBots = agents.length > 0;
-  const hasLiveLine = agents.some((bot) => isReviewedOutboundCandidate(bot));
   const isFirstRun = !loading && !degraded && !hasBots;
-  const primaryStudioHref = primaryBot
-    ? `/studio?agent=${encodeURIComponent(primaryBot.id)}&section=setup`
-    : "/studio?create=1";
 
   return (
     <WorkspaceShell contentClassName="pt-3 pb-5 lg:pt-4">
@@ -206,7 +201,7 @@ export default function OverviewPage() {
               <Button asChild variant="secondary" className="justify-center">
                 <Link to="/templates">Browse Templates</Link>
               </Button>
-              {hasLiveLine ? (
+              {hasBots ? (
                 <Button
                   type="button"
                   className="justify-center"
@@ -217,13 +212,9 @@ export default function OverviewPage() {
                 </Button>
               ) : (
                 <Button asChild className="justify-center">
-                  <Link to={hasBots ? primaryStudioHref : "/studio?create=1"}>
-                    {hasBots ? (
-                      <Sparkles size={15} aria-hidden="true" />
-                    ) : (
-                      <Plus size={15} aria-hidden="true" />
-                    )}
-                    {hasBots ? "Configure Bot" : "Create Bot"}
+                  <Link to="/studio?create=1">
+                    <Plus size={15} aria-hidden="true" />
+                    Create Bot
                   </Link>
                 </Button>
               )}

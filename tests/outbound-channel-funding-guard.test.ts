@@ -158,7 +158,7 @@ describe("ordinary outbound pre-SIP funding", () => {
         ok: true,
         callId: sid,
       });
-      expect(h.order).toEqual(["permission", "fund", "spend", "dispatch", "create"]);
+      expect(h.order).toEqual(["fund", "spend", "dispatch", "create"]);
       expect(h.channel).toHaveBeenCalledWith("tenant", "voice");
     },
   );
@@ -166,17 +166,17 @@ describe("ordinary outbound pre-SIP funding", () => {
     { role: "receptionist", isBusinessAgent: true, callPurpose: "marketing_or_sales" },
     { role: "personal_assistant", isBusinessAgent: false, callPurpose: "marketing_or_sales" },
   ] as const)(
-    "keeps marketing closed for every Bot audience: %j",
+    "places a screened call for every Bot audience without a separate activation flag: %j",
     async ({ callPurpose, ...agent }) => {
       vi.stubEnv("BOTBOUND_GENERAL_OUTBOUND_ENABLED", "false");
-      vi.stubEnv("BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED", "true");
+      vi.stubEnv("BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED", "false");
       h.agent = { id: "bot", ...agent };
       await expect(placeOutboundCall({ ...input, callPurpose })).resolves.toMatchObject({
-        ok: false,
-        code: "OUTBOUND_UNAVAILABLE",
+        ok: true,
+        callId: sid,
       });
-      expect(h.claim).not.toHaveBeenCalled();
-      expect(h.create).not.toHaveBeenCalled();
+      expect(h.permission).not.toHaveBeenCalled();
+      expect(h.order).toEqual(["fund", "spend", "dispatch", "create"]);
     },
   );
   it("does not treat the free personal plan as a paid voice entitlement", async () => {
@@ -204,23 +204,22 @@ describe("ordinary outbound pre-SIP funding", () => {
     expect(h.claim).not.toHaveBeenCalled();
     expect(h.prepare).not.toHaveBeenCalled();
   });
-  it("stays closed on the server until the operator enables the accepted release", async () => {
+  it("places a connected-line call when the general activation flag is unset", async () => {
     vi.stubEnv("BOTBOUND_GENERAL_OUTBOUND_ENABLED", "false");
+    vi.stubEnv("BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED", "false");
     await expect(placeOutboundCall(input)).resolves.toMatchObject({
-      ok: false,
-      code: "OUTBOUND_UNAVAILABLE",
-      status: 503,
+      ok: true,
+      callId: sid,
     });
-    expect(h.create).not.toHaveBeenCalled();
-    expect(h.claim).not.toHaveBeenCalled();
     expect(h.permission).not.toHaveBeenCalled();
+    expect(h.create).toHaveBeenCalled();
   });
   it.each(["voice", "voice-email", "voice-sms", "omnichannel"])(
     "funds %s before bounded carrier creation",
     async (planId) => {
       h.channel.mockResolvedValue({ planId, channels: ["voice"] });
       await expect(placeOutboundCall(input)).resolves.toMatchObject({ ok: true, callId: sid });
-      expect(h.order).toEqual(["permission", "fund", "spend", "dispatch", "create"]);
+      expect(h.order).toEqual(["fund", "spend", "dispatch", "create"]);
       expect(h.create.mock.calls[0][0]).toMatchObject({ timeout: 30 });
       expect(h.create.mock.calls[0][0].timeLimit).toBeLessThanOrEqual(90);
     },

@@ -129,7 +129,6 @@ function descendants(node: ReactNode): Node[] {
   if (Array.isArray(node)) return node.flatMap(descendants);
   return isValidElement<Props>(node) ? [node, ...descendants(node.props.children)] : [];
 }
-const permissionId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const close = vi.fn();
 const entries = new Map<string, string>();
 const store = {
@@ -205,13 +204,6 @@ function response(status: number, body: unknown = {}) {
   return () => Promise.resolve(new Response(JSON.stringify(body), { status }));
 }
 async function prepare() {
-  await settle();
-  const permission = nodes.find(
-    (node) =>
-      node.type === "select" &&
-      descendants(node.props.children).some((child) => child.props.value === permissionId),
-  )!;
-  permission.props.onChange!({ target: { value: permissionId } });
   await settle();
   expect(button("Place call").props.disabled).toBe(false);
 }
@@ -296,9 +288,7 @@ describe("direct outbound definitive-refusal retry", () => {
       expect.arrayContaining(["Business Front Desk", "Personal Assistant"]),
     );
     expect(optionLabels).not.toContain("Marketing or sales");
-    expect(button("Place call").props.disabled).toBe(true);
-    button("Place call").props.onClick!();
-    await settle();
+    expect(button("Place call").props.disabled).toBe(false);
     expect(posts()).toHaveLength(0);
     expect(entries.size).toBe(0);
   });

@@ -3,6 +3,7 @@ import { History, Loader2 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import CallLogsClaude from "./CallLogsClaude";
+import OutboundDialDialog from "./OutboundDialDialog";
 import { EmptyState, Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 import { useAgents } from "../contexts/AgentsContext";
@@ -23,6 +24,7 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
   const [hasCalls, setHasCalls] = useState<boolean | null>(null);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [showDial, setShowDial] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -130,33 +132,32 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
   }
 
   const livePhone = relevantAgents.find((agent) => agent.phone_number)?.phone_number ?? null;
+  const setupHref = agentId
+    ? `/phone?tab=setup&agent=${encodeURIComponent(agentId)}`
+    : "/phone?tab=setup";
   const emptyState = !hasAgents
     ? { title: "Create a Bot", action: { label: "New Bot", to: "/studio?create=1" } }
     : !livePhone
       ? {
-          title: "Connect a Line",
-          action: {
-            label: "Add a Line",
-            to: agentId
-              ? `/phone?tab=setup&agent=${encodeURIComponent(agentId)}`
-              : "/phone?tab=setup",
-          },
+          title: "Call with your Bot",
+          action: { label: "New Call", onClick: () => setShowDial(true) },
+          secondary: { label: "Add a Line", to: setupHref },
         }
       : {
           title: agentId ? "No Calls for This Bot" : "No Calls Yet",
-          action: { label: "Call the Line", to: `tel:${livePhone}` },
-          secondary: {
-            label: "New Call",
-            to: agentId
-              ? `/phone?tab=outbound&agent=${encodeURIComponent(agentId)}`
-              : "/phone?tab=outbound",
-          },
+          action: { label: "New Call", onClick: () => setShowDial(true) },
+          secondary: { label: "Call the Line", to: `tel:${livePhone}` },
         };
 
   // History is this tab's only content, so its empty state is a message
   // centered in the open space, the same as Activity and Inbox: one next step.
   return (
     <div className="flex min-h-[min(60vh,32rem)] w-full flex-1 flex-col px-4 sm:px-6">
+      <OutboundDialDialog
+        open={showDial}
+        onClose={() => setShowDial(false)}
+        initialAgentId={agentId || undefined}
+      />
       <EmptyState
         fill
         density="compact"

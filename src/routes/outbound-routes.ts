@@ -11,9 +11,9 @@ import { parseFormData, OutboundBulkSchema } from "../lib/form-validators";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import {
   OUTBOUND_CALL_PURPOSES,
-  isMarketingCallPurpose,
   outboundConsentMetadata,
   sanitizeUntrustedOutboundMetadata,
+  screenedDirectOutboundCall,
 } from "../lib/outbound-call-purpose";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { SentryEvents } from "../lib/sentry-events";
@@ -26,7 +26,6 @@ import {
   readNativeOutboundRequestStatus,
   cancelMissingNativeOutboundRequest,
 } from "../lib/voice/openai-outbound-placement";
-import { inspectOutboundRecipientPermission } from "../lib/recipient-voice-permission-store";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { LEAD_STATUS } from "../lib/outbound-status";
 import { campaignWriteRateLimit } from "../middleware/api-rate-limits";
@@ -497,8 +496,9 @@ router.post(
         consentSource,
         consentLeadId,
         requestKey,
-        consentArtifactId,
       } = req.body;
+      const screening = screenedDirectOutboundCall(callPurpose);
+      const effectiveCallPurpose = screening.callPurpose;
       const replay = await readNativeOutboundRequestReplay({
         userId: req.user.id,
         requestKey,
@@ -506,30 +506,18 @@ router.post(
         customerNumber,
         customerName,
         context,
-        callPurpose,
-        consentArtifactId,
+        callPurpose: effectiveCallPurpose,
       });
       if (replay) return res.status(replay.status).json(replay);
-      const permission = await inspectOutboundRecipientPermission({
-        userId: req.user.id,
-        agentId,
-        phone: customerNumber,
-        callPurpose,
-        artifactId: consentArtifactId,
-        attemptId: requestKey,
-      });
-      const effectiveCallPurpose = permission.effectiveCallPurpose;
-      const marketing = isMarketingCallPurpose(effectiveCallPurpose);
-      const expressConsent = marketing;
 
       const gate = await evaluateOutboundDialGate({
         userId: req.user.id,
         phone: customerNumber,
-        isMarketingCall: marketing,
-        requireFederalDncScreening: marketing,
-        hasExpressWrittenConsent: expressConsent,
-        isRequestedCallback: effectiveCallPurpose === "callback",
-        metadata: { has_express_written_consent: expressConsent },
+        isMarketingCall: screening.isMarketingCall,
+        requireFederalDncScreening: screening.requireFederalDncScreening,
+        hasExpressWrittenConsent: screening.hasExpressWrittenConsent,
+        isRequestedCallback: screening.isRequestedCallback,
+        metadata: { has_express_written_consent: false },
       });
       if (!gate.allowed) {
         if (gate.reason === "federal_dnc_unconfigured") {
@@ -586,8 +574,8 @@ router.post(
 
       const consentMetadata = outboundConsentMetadata({
         callPurpose: effectiveCallPurpose,
-        requestedCallPurpose: callPurpose,
-        hasExpressWrittenConsent: expressConsent,
+        requestedCallPurpose: screening.requestedCallPurpose,
+        hasExpressWrittenConsent: false,
         source: "web",
         consentSource,
         consentLeadId,
@@ -601,7 +589,6 @@ router.post(
         callPurpose: effectiveCallPurpose,
         leadMetadata: consentMetadata,
         requestKey,
-        consentArtifactId,
       });
       if (!result.ok) {
         return res.status(result.status).json({

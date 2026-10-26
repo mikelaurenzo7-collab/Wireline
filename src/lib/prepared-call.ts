@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { AppError } from "./api-error";
 import { requireTenantChannel } from "./channel-entitlements";
-import { outboundCallingAvailability } from "./outbound-call-purpose";
+import { outboundCallingAvailability, outboundCallingEnabledFor } from "./outbound-call-purpose";
 import {
   prepareCallSchema,
   preparedCallSchema,
@@ -46,8 +46,7 @@ export async function prepareCall(userId: string, raw: unknown): Promise<Prepare
       "Provide a request UUIDv4, Bot, US phone number, instruction, and service or callback purpose.",
     );
   const input = parsed.data;
-  const availability = outboundCallingAvailability();
-  if (!availability.nonMarketing && !availability.general)
+  if (!outboundCallingEnabledFor(input.call_purpose, outboundCallingAvailability()))
     throw AppError.serviceUnavailable("Calling is temporarily unavailable.");
   await requireTenantChannel(userId, "voice");
   const [agent] = await drizzle

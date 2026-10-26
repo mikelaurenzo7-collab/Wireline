@@ -2,6 +2,20 @@ import { describe, expect, it } from "vitest";
 import { evaluateOutboundConsent } from "../src/lib/tcpa-consent";
 
 describe("outbound consent and opt-out decisions", () => {
+  it("allows a marketing call without express written consent and still discloses and offers an opt-out", () => {
+    expect(
+      evaluateOutboundConsent({
+        phone: "+12125550100",
+        is_marketing_call: true,
+        has_express_written_consent: false,
+      }),
+    ).toMatchObject({
+      allowed: true,
+      must_disclose_recording: true,
+      must_offer_opt_out: true,
+    });
+  });
+
   it("requires a marketing opt-out even in a one-party recording state", () => {
     expect(
       evaluateOutboundConsent({

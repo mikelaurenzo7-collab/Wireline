@@ -129,7 +129,7 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     title: "Calls",
     label: "Calls",
     eyebrow: "Operate",
-    description: "Review history, place reviewed calls, and manage lines.",
+    description: "Answer and place calls on your Bot's number.",
     icon: "Phone",
     desktop: { group: "work", order: 30 },
     mobile: { placement: "primary", order: 30 },

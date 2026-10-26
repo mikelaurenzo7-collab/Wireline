@@ -125,14 +125,16 @@ describe("automation respects canonical outbound placement ownership", () => {
     await dialCampaignLead();
     expect(h.lead).toMatchObject({ status: "Max-Attempts", attempts: 1 });
     expect(h.writes.filter((patch) => "attempts" in patch)).toEqual([]);
+    expect(h.inspect).not.toHaveBeenCalled();
     expect(h.place).toHaveBeenCalledWith(
       expect.objectContaining({
         priorLeadStatus: "Queued",
-        consentArtifactId: "signed-permission",
+        callPurpose: "marketing_or_sales",
       }),
     );
+    expect(h.place.mock.calls[0][0].consentArtifactId).toBeUndefined();
     expect(h.gate).toHaveBeenCalledWith(
-      expect.objectContaining({ hasExpressWrittenConsent: true }),
+      expect.objectContaining({ hasExpressWrittenConsent: false }),
     );
   });
   it("does not double-count or overwrite an early terminal cadence outcome", async () => {
@@ -146,12 +148,15 @@ describe("automation respects canonical outbound placement ownership", () => {
       expect.objectContaining({ hasExpressWrittenConsent: true }),
     );
   });
-  it("restores a campaign's processable state when signed permission is missing before service admission", async () => {
+  it("places a campaign call when no recipient signature is on file", async () => {
     h.inspect.mockRejectedValue(new Error("No signed permission"));
     await dialCampaignLead();
-    expect(h.lead).toMatchObject({ status: "Queued", attempts: 0 });
-    expect(h.gate).not.toHaveBeenCalled();
-    expect(h.place).not.toHaveBeenCalled();
+    expect(h.inspect).not.toHaveBeenCalled();
+    expect(h.gate).toHaveBeenCalled();
+    expect(h.place).toHaveBeenCalledWith(
+      expect.objectContaining({ callPurpose: "marketing_or_sales" }),
+    );
+    expect(h.place.mock.calls[0][0].consentArtifactId).toBeUndefined();
   });
   it("restores the outer campaign claim when an early service gate rejects before a placement receipt exists", async () => {
     h.place.mockResolvedValue({ ok: false, status: 503, error: "temporarily unavailable" });

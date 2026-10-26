@@ -31,7 +31,7 @@ describe("launch readiness cross-surface contract", () => {
     );
     expect(kb).toContain("document type that does not match its extension");
     expect(security).toMatch(
-      /Recipient permission and account Do Not Call checks remain enforced before eligible outgoing calls are placed\./i,
+      /BotBound screens the national do-not-call list, the account block list, and calling hours before an outgoing call\./i,
     );
     expect(security).not.toContain("Live outbound dialing is gated");
     expect(security).not.toContain("FEDERAL_DNC_API_KEY");

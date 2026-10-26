@@ -11,8 +11,8 @@ import { normalizeOutboundNumber } from "../lib/dialer-compliance";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import {
   OUTBOUND_CALL_PURPOSES,
-  isMarketingCallPurpose,
   outboundConsentMetadata,
+  screenedDirectOutboundCall,
 } from "../lib/outbound-call-purpose";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { SentryEvents } from "../lib/sentry-events";
@@ -24,7 +24,6 @@ import {
   readNativeOutboundRequestStatus,
   cancelMissingNativeOutboundRequest,
 } from "../lib/voice/openai-outbound-placement";
-import { inspectOutboundRecipientPermission } from "../lib/recipient-voice-permission-store";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { callRequestKeySchema } from "../lib/prepared-call-contract";
 import {
@@ -176,7 +175,6 @@ router.post(
       consentSource,
       consentLeadId,
       requestKey,
-      consentArtifactId,
       preparedRequestId,
     } = req.body;
     const normalized = normalizeOutboundNumber(customerNumber);
@@ -204,6 +202,8 @@ router.post(
           { allowExpiredReceipt: true },
         )
       : null;
+    const screening = screenedDirectOutboundCall(callPurpose);
+    const effectiveCallPurpose = screening.callPurpose;
     const replay = await readNativeOutboundRequestReplay({
       userId: req.user.id,
       requestKey,
@@ -211,25 +211,13 @@ router.post(
       customerNumber: phoneE164,
       customerName,
       context,
-      callPurpose,
-      consentArtifactId,
+      callPurpose: effectiveCallPurpose,
     });
     if (replay) return res.status(replay.status).json({ ...replay, operationId: requestKey });
     if (prepared && Date.parse(prepared.expires_at) <= Date.now())
       throw AppError.conflict(
         "This call proposal expired. Prepare a new call before reviewing it.",
       );
-    const permission = await inspectOutboundRecipientPermission({
-      userId: req.user.id,
-      agentId,
-      phone: phoneE164,
-      callPurpose,
-      artifactId: consentArtifactId,
-      attemptId: requestKey,
-    });
-    const effectiveCallPurpose = permission.effectiveCallPurpose;
-    const marketing = isMarketingCallPurpose(effectiveCallPurpose);
-    const expressConsent = marketing;
     // This column is globally unique. Client request keys are only unique per account.
     const operationKey = `${req.user.id}:${requestKey.toLowerCase()}`;
     let providerCallId: string | null = null;
@@ -270,11 +258,11 @@ router.post(
       const gate = await evaluateOutboundDialGate({
         userId: req.user.id,
         phone: phoneE164,
-        isMarketingCall: marketing,
-        requireFederalDncScreening: marketing,
-        hasExpressWrittenConsent: expressConsent,
-        isRequestedCallback: effectiveCallPurpose === "callback",
-        metadata: { has_express_written_consent: expressConsent },
+        isMarketingCall: screening.isMarketingCall,
+        requireFederalDncScreening: screening.requireFederalDncScreening,
+        hasExpressWrittenConsent: screening.hasExpressWrittenConsent,
+        isRequestedCallback: screening.isRequestedCallback,
+        metadata: { has_express_written_consent: false },
       });
       if (!gate.allowed) {
         await markReservation(req.user.id, operationKey, {
@@ -293,12 +281,11 @@ router.post(
         context,
         callPurpose: effectiveCallPurpose,
         requestKey,
-        consentArtifactId,
         leadMetadata: {
           ...outboundConsentMetadata({
             callPurpose: effectiveCallPurpose,
-            requestedCallPurpose: callPurpose,
-            hasExpressWrittenConsent: expressConsent,
+            requestedCallPurpose: screening.requestedCallPurpose,
+            hasExpressWrittenConsent: false,
             source: "web",
             consentSource,
             consentLeadId,

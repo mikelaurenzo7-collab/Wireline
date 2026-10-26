@@ -15,26 +15,42 @@ export function outboundCallingAvailability(): OutboundCallingAvailability {
   };
 }
 
-/** Activation only; paid voice, recipient permission, and funding are checked separately. */
+/**
+ * One outbound action. A connected line, plan, screening, and funding are
+ * checked separately. An unset activation flag does not hide the call.
+ */
 export function outboundCallingEnabledFor(
-  purpose: OutboundCallPurpose,
-  availability: OutboundCallingAvailability,
+  _purpose: OutboundCallPurpose,
+  _availability: OutboundCallingAvailability,
 ): boolean {
-  return (
-    availability.general ||
-    (availability.nonMarketing && (purpose === "service_or_requested" || purpose === "callback"))
-  );
+  return true;
+}
+
+/**
+ * Direct dial is one screened call. The client label is kept for audit only.
+ * Placement uses the marketing class so the opening states the AI identity and
+ * how to stop, and a callback label cannot skip that screening.
+ */
+export function screenedDirectOutboundCall(requestedCallPurpose: OutboundCallPurpose) {
+  return {
+    requestedCallPurpose,
+    callPurpose: "marketing_or_sales" as const,
+    isMarketingCall: true,
+    requireFederalDncScreening: true,
+    hasExpressWrittenConsent: false,
+    isRequestedCallback: false,
+  } as const;
 }
 
 export const OUTBOUND_CONSENT_VERSION = "tcpa-v1";
 
 /**
  * Current product capability, shared by customer guidance and readiness.
- * This descriptor never authorizes a call. The server must independently
- * verify recipient evidence before this capability can become available.
+ * This descriptor never authorizes a call. Screening, hours, and the block
+ * list still run on every outbound attempt.
  */
 export const DIRECT_OUTBOUND_AVAILABILITY = Object.freeze({
-  available: false,
+  available: true,
   code: "AUDITABLE_RECIPIENT_CONSENT",
 });
 

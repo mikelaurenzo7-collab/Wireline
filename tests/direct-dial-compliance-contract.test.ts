@@ -48,7 +48,7 @@ describe("direct-dial compliance contract", () => {
     expect(requiresFederalDncScreeningForDirectDial()).toBe(true);
   });
 
-  it("requires a fresh recipient-signed artifact before web dial and keeps marketing DNC mandatory", () => {
+  it("screens a direct dial without a recipient signature and keeps federal DNC mandatory", () => {
     const directDialRoutes = [
       "src/routes/outbound-dial-atomic-routes.ts",
       "src/routes/outbound-routes.ts",
@@ -56,28 +56,27 @@ describe("direct-dial compliance contract", () => {
 
     for (const route of directDialRoutes) {
       const source = read(route);
-      expect(source).toContain("await inspectOutboundRecipientPermission({");
-      expect(source).toContain("const effectiveCallPurpose = permission.effectiveCallPurpose");
+      expect(source).toContain("const screening = screenedDirectOutboundCall(callPurpose)");
+      expect(source).toContain("const effectiveCallPurpose = screening.callPurpose");
       expect(source).toContain("callPurpose: effectiveCallPurpose");
-      expect(source).toContain("requestedCallPurpose: callPurpose");
-      expect(source).toContain("const marketing = isMarketingCallPurpose(effectiveCallPurpose)");
-      expect(source).not.toContain("isMarketingCallPurpose(callPurpose)");
-      expect(source).toContain("requireFederalDncScreening: marketing");
-      const inspection = source.indexOf("await inspectOutboundRecipientPermission({");
-      const callbackException = source.indexOf(
-        'isRequestedCallback: effectiveCallPurpose === "callback"',
-      );
-      expect(callbackException).toBeGreaterThan(inspection);
-      expect(source).toContain("hasExpressWrittenConsent: expressConsent");
-      expect(source).toContain("consentArtifactId");
+      expect(source).toContain("requestedCallPurpose: screening.requestedCallPurpose");
+      expect(source).toContain("requireFederalDncScreening: screening.requireFederalDncScreening");
+      expect(source).toContain("isRequestedCallback: screening.isRequestedCallback");
+      expect(source).toContain("hasExpressWrittenConsent: false");
+      expect(source).not.toContain("await inspectOutboundRecipientPermission({");
+      expect(source).not.toContain("artifactId: consentArtifactId");
       expect(source).toContain("readNativeOutboundRequestReplay");
     }
     const mobile = read("src/routes/mobile-routes.ts");
     expect(mobile).toContain("res.status(503).json(NATIVE_OUTBOUND_UNAVAILABLE)");
     expect(mobile).not.toContain("placeOutboundCall");
     const service = read("src/lib/voice/outbound-call-service.ts");
-    expect(service.indexOf("await inspectOutboundRecipientPermission({")).toBeLessThan(
-      service.indexOf("await twilio.calls.create({"),
-    );
+    const screeningAt = service.indexOf("issueOutboundScreeningReceipt({");
+    const signedAt = service.indexOf("await inspectOutboundRecipientPermission({");
+    const createAt = service.indexOf("await twilio.calls.create({");
+    expect(signedAt).toBeGreaterThan(-1);
+    expect(screeningAt).toBeGreaterThan(signedAt);
+    expect(createAt).toBeGreaterThan(screeningAt);
+    expect(service).toContain("input.consentArtifactId");
   });
 });

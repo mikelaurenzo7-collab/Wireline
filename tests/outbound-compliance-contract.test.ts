@@ -16,7 +16,7 @@ describe("outbound compliance contract", () => {
       expect(source).not.toContain("callPurpose: z.enum(OUTBOUND_CALL_PURPOSES).optional()");
       expect(source).not.toContain('default("marketing_or_sales")');
       expect(source).toContain("callPurpose: effectiveCallPurpose");
-      expect(source).toContain("requestedCallPurpose: callPurpose");
+      expect(source).toContain("requestedCallPurpose: screening.requestedCallPurpose");
       expect(source).toContain("evaluateOutboundDialGate({");
       expect(source).toContain("outboundConsentMetadata({");
       expect(source).toContain("tcpaBlocked: true");
@@ -24,8 +24,9 @@ describe("outbound compliance contract", () => {
       expect(source).toContain("OUTSIDE_PERMITTED_CALLING_HOURS");
     }
 
-    expect(web).toContain("await inspectOutboundRecipientPermission({");
-    expect(web).toContain("const effectiveCallPurpose = permission.effectiveCallPurpose");
+    expect(web).toContain("screenedDirectOutboundCall(callPurpose)");
+    expect(web).toContain("const effectiveCallPurpose = screening.callPurpose");
+    expect(web).not.toContain("await inspectOutboundRecipientPermission({");
     expect(mobile).toContain("res.status(503).json(NATIVE_OUTBOUND_UNAVAILABLE)");
     expect(mobile).not.toContain("placeOutboundCall");
     expect(read("src/lib/voice/openai-outbound-placement.ts")).toContain("lastCalledAt:");
@@ -118,7 +119,6 @@ describe("outbound compliance contract", () => {
       "customerNumber",
       "callPurpose",
       "requestKey",
-      "consentArtifactId",
     ]);
     expect(spec.components.schemas.LegacyMobileOutboundDialRequest.required).toEqual([
       "agentId",

@@ -182,7 +182,7 @@ describe("outbound dial gate runtime", () => {
   });
 
   it.each([undefined, false])(
-    "rejects legacy metadata consent when server-verified consent is %s",
+    "does not require express written consent when server-verified consent is %s",
     async (hasExpressWrittenConsent) => {
       vi.doMock("../src/lib/server-context", () => ({
         drizzle: {
@@ -209,9 +209,8 @@ describe("outbound dial gate runtime", () => {
       });
 
       expect(result).toMatchObject({
-        allowed: false,
-        reason: "blocked_tcpa",
-        tcpaDecision: { abort_reason: "no_express_consent_required" },
+        allowed: true,
+        tcpaDecision: { allowed: true, must_disclose_recording: true, must_offer_opt_out: true },
       });
     },
   );

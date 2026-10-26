@@ -1,6 +1,7 @@
 import { and, eq, or, sql } from "drizzle-orm";
 import * as schema from "../../db/schema";
 import { AppError } from "../api-error";
+import { isDncBlocked } from "../compliance";
 import { enqueue } from "../job-queue";
 import type { OutboundCallPurpose } from "../outbound-call-purpose";
 import {
@@ -32,6 +33,7 @@ import {
 } from "../voice-call-identity";
 import { trackVoiceMinutes } from "../voice-usage";
 import { normalizeOpenAIPhoneNumber, resolveOpenAISipSessionMaxSeconds } from "./openai-sip-config";
+import { outboundScreeningMatches } from "./outbound-screening-receipt";
 
 const TERMINAL = new Set(["completed", "busy", "no-answer", "failed", "canceled"]);
 const CALL_SID = /^CA[a-f0-9]{32}$/i;
@@ -130,7 +132,14 @@ export async function prepareOutboundPlacementFunding(input: {
   from: string;
   callPurpose: OutboundCallPurpose;
   permissionAttemptId: string;
-  permission: { artifactId: string; grantHash: string; expiresAt: string };
+  permission: {
+    artifactId: string;
+    grantHash: string;
+    expiresAt: string;
+    admissionKind?: "platform_screen";
+    receiptId?: string;
+    receiptHash?: string;
+  };
 }): Promise<OutboundPlacementAdmission> {
   return drizzle.transaction(async (tx) => {
     const lead = await lockOutboundAttempt(tx, input.userId, input.leadId);
@@ -144,6 +153,11 @@ export async function prepareOutboundPlacementFunding(input: {
       !Number.isFinite(Date.parse(input.permission.expiresAt))
     )
       throw AppError.conflict("Outbound admission no longer matches this request.");
+    if (
+      input.permission.admissionKind === "platform_screen" &&
+      (!input.permission.receiptId || !input.permission.receiptHash)
+    )
+      throw AppError.conflict("Outbound screening receipt is incomplete.");
     const canonicalCallId = phoneTestFundingId(input.placementId);
     if (
       (await attemptReceipt(tx, input.userId, input.placementId)) ||
@@ -184,6 +198,14 @@ export async function prepareOutboundPlacementFunding(input: {
         permission_artifact_id: input.permission.artifactId,
         permission_attempt_id: input.permissionAttemptId,
         permission_grant_hash: input.permission.grantHash,
+        ...(input.permission.admissionKind === "platform_screen"
+          ? {
+              admission_kind: "platform_screen" as const,
+              permission_expires_at: input.permission.expiresAt,
+              screening_receipt_id: input.permission.receiptId,
+              screening_receipt_hash: input.permission.receiptHash,
+            }
+          : {}),
         max_seconds: maxSeconds,
         deadline_at_ms: deadlineAtMs,
       },
@@ -226,20 +248,57 @@ export async function markOutboundProviderAttempted(
         throw AppError.conflict("This outbound placement cannot be dispatched again.");
       if (await readVoiceIdentityReceipt(tx, userId, `voice_outbound_cancel:${canonical}`))
         throw AppError.conflict("This outbound permission was withdrawn before dispatch.");
-      const permission = await assertOutboundRecipientPermissionInTransaction(tx, {
-        userId,
-        agentId: String(attempt.agent_id),
-        leadId,
-        phone: lead.customerNumber || lead.phoneNumber || "",
-        callPurpose: attempt.call_purpose as OutboundCallPurpose,
-        artifactId: String(attempt.permission_artifact_id),
-        attemptId: String(attempt.permission_attempt_id),
-      });
-      if (
+      const phone = normalizeOpenAIPhoneNumber(lead.customerNumber || lead.phoneNumber || "") || "";
+      const screened = attempt.admission_kind === "platform_screen";
+      const permission = screened
+        ? null
+        : await assertOutboundRecipientPermissionInTransaction(tx, {
+            userId,
+            agentId: String(attempt.agent_id),
+            leadId,
+            phone,
+            callPurpose: attempt.call_purpose as OutboundCallPurpose,
+            artifactId: String(attempt.permission_artifact_id),
+            attemptId: String(attempt.permission_attempt_id),
+          });
+      if (screened) {
+        if (
+          !outboundScreeningMatches({
+            userId,
+            agentId: String(attempt.agent_id),
+            phone,
+            callPurpose: String(attempt.call_purpose),
+            attemptId: String(attempt.permission_attempt_id),
+            leadId: String(attempt.lead_id),
+            artifactId: String(attempt.permission_artifact_id),
+            expiresAt: String(attempt.permission_expires_at),
+            receiptId: String(attempt.screening_receipt_id),
+            grantHash: String(attempt.permission_grant_hash),
+            receiptHash: String(attempt.screening_receipt_hash),
+          })
+        )
+          throw AppError.conflict("This call's screening receipt could not be verified.");
+      } else if (
+        !permission ||
         permission.grantHash !== attempt.permission_grant_hash ||
         permission.effectiveCallPurpose !== attempt.call_purpose
       )
         throw AppError.conflict("The outbound permission receipt changed before dispatch.");
+      const admittedReceipt = screened
+        ? {
+            artifactId: String(attempt.permission_artifact_id),
+            receiptId: String(attempt.screening_receipt_id),
+            receiptHash: String(attempt.screening_receipt_hash),
+            grantHash: String(attempt.permission_grant_hash),
+            basis: "platform_screen" as const,
+          }
+        : {
+            artifactId: permission!.artifactId,
+            receiptId: permission!.receiptId,
+            receiptHash: permission!.receiptHash,
+            grantHash: permission!.grantHash,
+            basis: "recipient_permission" as const,
+          };
       const attempts = Number(lead.attempts ?? 0);
       if (!Number.isSafeInteger(attempts) || attempts < 0 || attempts >= 2_147_483_647)
         throw AppError.conflict("The outbound attempt count could not be verified.");
@@ -254,10 +313,11 @@ export async function markOutboundProviderAttempted(
         refId: canonical,
         metadata: {
           version: 1,
-          permission_artifact_id: permission.artifactId,
-          permission_receipt_id: permission.receiptId,
-          permission_receipt_hash: permission.receiptHash,
-          permission_grant_hash: permission.grantHash,
+          basis: admittedReceipt.basis,
+          permission_artifact_id: admittedReceipt.artifactId,
+          permission_receipt_id: admittedReceipt.receiptId,
+          permission_receipt_hash: admittedReceipt.receiptHash,
+          permission_grant_hash: admittedReceipt.grantHash,
         },
       });
       await appendVoiceIdentityReceipt(tx, {
@@ -650,6 +710,45 @@ export async function assertOutboundBridgePermission(
     typeof attempt.permission_attempt_id !== "string"
   )
     throw AppError.conflict("The outbound permission evidence could not be verified.");
+  const phone = lead.customerNumber || lead.phoneNumber || "";
+  if (attempt.admission_kind === "platform_screen") {
+    if (await isDncBlocked(userId, phone))
+      throw AppError.forbidden("This number is on the Do Not Call list.");
+    const normalized = normalizeOpenAIPhoneNumber(phone) || "";
+    if (
+      !outboundScreeningMatches({
+        userId,
+        agentId: String(attempt.agent_id),
+        phone: normalized,
+        callPurpose: String(attempt.call_purpose),
+        attemptId: String(attempt.permission_attempt_id),
+        leadId: String(attempt.lead_id),
+        artifactId: String(attempt.permission_artifact_id),
+        expiresAt: String(attempt.permission_expires_at),
+        receiptId: String(attempt.screening_receipt_id),
+        grantHash: String(attempt.permission_grant_hash),
+        receiptHash: String(attempt.screening_receipt_hash),
+      })
+    )
+      throw AppError.conflict("This call's screening receipt could not be verified.");
+    const claim = await readVoiceIdentityReceipt(
+      drizzle,
+      userId,
+      `voice_outbound_permission:${phoneTestFundingId(placementId)}`,
+    );
+    const claimed = record(claim?.metadata);
+    if (
+      !claim ||
+      claim.refType !== "voice_outbound_permission" ||
+      Number(claim.deltaUsd) !== 0 ||
+      claimed.basis !== "platform_screen" ||
+      claimed.permission_receipt_id !== attempt.screening_receipt_id ||
+      claimed.permission_receipt_hash !== attempt.screening_receipt_hash ||
+      claimed.permission_grant_hash !== attempt.permission_grant_hash
+    )
+      throw AppError.conflict("The outbound screening receipt changed.");
+    return;
+  }
   const proof = await assertOutboundRecipientPermission({
     userId,
     agentId: String(attempt.agent_id),

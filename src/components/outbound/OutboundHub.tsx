@@ -31,9 +31,7 @@ export default function OutboundHub({
           framed
           density="compact"
           withHalo={false}
-          actions={[
-            { label: "Reviewed Calls", onClick: () => onViewChange("dispatch"), primary: true },
-          ]}
+          actions={[{ label: "Call", onClick: () => onViewChange("dispatch"), primary: true }]}
         />
       </div>
     );
@@ -44,7 +42,7 @@ export default function OutboundHub({
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2 sm:px-4">
         <WorkspaceTabStrip
           tabs={[
-            { id: "dispatch", label: "Reviewed Calls" },
+            { id: "dispatch", label: "Call" },
             { id: "campaigns", label: "Campaigns" },
           ]}
           activeId={activeView}
@@ -76,6 +74,7 @@ export default function OutboundHub({
                 titleTone="ui"
                 withHalo={false}
                 className="w-full max-w-lg"
+                actions={[{ label: "Call", onClick: () => setShowDial(true), primary: true }]}
               />
             </div>
             <div className="px-3 pb-4 sm:px-6">

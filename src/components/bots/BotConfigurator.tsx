@@ -111,8 +111,8 @@ export default function BotConfigurator({
             className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
           >
             <option value="inbound">Incoming Calls</option>
-            <option value="outbound">Reviewed Outgoing Calls</option>
-            <option value="hybrid">Incoming and Reviewed Calls</option>
+            <option value="outbound">Outgoing Calls</option>
+            <option value="hybrid">Incoming and Outgoing Calls</option>
           </select>
         </label>
       </div>

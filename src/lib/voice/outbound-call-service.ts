@@ -15,6 +15,7 @@ import { requireTenantChannel } from "../channel-entitlements";
 import { AppError } from "../api-error";
 import { inferStateFromPhone } from "../tcpa-consent";
 import { inspectOutboundRecipientPermission } from "../recipient-voice-permission-store";
+import { issueOutboundScreeningReceipt } from "./outbound-screening-receipt";
 import { outboundCallingAvailability, outboundCallingEnabledFor } from "../outbound-call-purpose";
 import {
   commitPlatformCostReservation,
@@ -126,13 +127,6 @@ async function placeOutboundCallAfterDeletionFence(
   input: PlaceOutboundCallInput,
 ): Promise<PlaceCallResult> {
   const availability = outboundCallingAvailability();
-  if (!availability.general && !availability.nonMarketing)
-    return {
-      ok: false,
-      status: 503,
-      code: "OUTBOUND_UNAVAILABLE",
-      error: "Calling is temporarily unavailable. Please try again later.",
-    };
   const customerNumber = normalizeOpenAIPhoneNumber(input.customerNumber);
   if (!customerNumber) {
     return { ok: false, status: 400, error: "Invalid phone number. Use E.164 format." };
@@ -236,15 +230,27 @@ async function placeOutboundCallAfterDeletionFence(
   let providerAttempted = false;
   let spend: PlatformCostReservation | undefined;
   try {
-    const permission = await inspectOutboundRecipientPermission({
-      userId: input.userId,
-      agentId: input.agentId,
-      phone: customerNumber,
-      callPurpose: input.callPurpose,
-      leadId: lead.id,
-      artifactId: input.consentArtifactId,
-      attemptId: input.requestKey ?? placementId,
-    });
+    const attemptId = input.requestKey ?? placementId;
+    // A caller-supplied artifact is a callback, cadence, or intake signature.
+    // A normal outbound call gets a screening receipt instead, not express consent.
+    const permission = input.consentArtifactId
+      ? await inspectOutboundRecipientPermission({
+          userId: input.userId,
+          agentId: input.agentId,
+          phone: customerNumber,
+          callPurpose: input.callPurpose,
+          leadId: lead.id,
+          artifactId: input.consentArtifactId,
+          attemptId,
+        })
+      : issueOutboundScreeningReceipt({
+          userId: input.userId,
+          agentId: input.agentId,
+          phone: customerNumber,
+          callPurpose: input.callPurpose,
+          attemptId,
+          leadId: String(lead.id),
+        });
     const admission = await prepareOutboundPlacementFunding({
       userId: input.userId,
       agentId: input.agentId,
@@ -254,7 +260,7 @@ async function placeOutboundCallAfterDeletionFence(
       from: fromNumber,
       callPurpose: input.callPurpose,
       permission,
-      permissionAttemptId: input.requestKey ?? placementId,
+      permissionAttemptId: attemptId,
     });
     if (permission.effectiveCallPurpose !== input.callPurpose)
       throw AppError.conflict("The permission purpose does not match this outbound request.");

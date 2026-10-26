@@ -76,26 +76,23 @@ describe("outbound capability readiness", () => {
     vi.stubEnv("STRIPE_EMAIL_PRICE_ID", "price_fixture");
     expect(evaluateLaunchReadiness().launch_blockers).toContain("AGENTMAIL_API_KEY");
   });
-  it("does not certify campaigns from configured providers while recipient consent is unsupported", () => {
+  it("does not wait on a per-recipient signature once registry screening is configured", () => {
     const report = evaluateLaunchReadiness();
     expect(report.campaign_ready).toBe(true);
     expect(report.overall_score).toBe(100);
     expect(report.launch_blockers).toEqual([]);
-    expect(report.outbound_campaign_ready).toBe(false);
-    expect(report.deferred_checklist).toContain("AUDITABLE_RECIPIENT_CONSENT");
+    expect(report.outbound_campaign_ready).toBe(true);
+    expect(report.deferred_checklist).not.toContain("AUDITABLE_RECIPIENT_CONSENT");
     expect(
       report.capabilities.find((capability) => capability.id === "compliance_ready"),
-    ).toMatchObject({ level: "degraded", blockers: ["AUDITABLE_RECIPIENT_CONSENT"] });
+    ).toMatchObject({ level: "ready", blockers: [] });
   });
 
-  it("reports missing DNC configuration separately from the missing consent capability", () => {
+  it("reports missing DNC configuration as the remaining outbound screen", () => {
     h.federalDncConfigured = false;
     const report = evaluateLaunchReadiness();
     expect(report.campaign_ready).toBe(true);
     expect(report.outbound_campaign_ready).toBe(false);
-    expect(report.deferred_checklist).toEqual([
-      "FEDERAL_DNC_API_URL+FEDERAL_DNC_API_KEY",
-      "AUDITABLE_RECIPIENT_CONSENT",
-    ]);
+    expect(report.deferred_checklist).toEqual(["FEDERAL_DNC_API_URL+FEDERAL_DNC_API_KEY"]);
   });
 });

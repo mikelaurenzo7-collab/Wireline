@@ -169,7 +169,7 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     title: "Call Permissions and Disclosures",
     items: [
       "Your configured disclosures and recording choices apply to calls. Enable recording only with the permissions your use requires.",
-      "Recipient permission and account Do Not Call checks remain enforced before eligible outgoing calls are placed.",
+      "BotBound screens the national do-not-call list, the account block list, and calling hours before an outgoing call. The Bot says it is an AI and how to stop.",
     ],
   },
   {

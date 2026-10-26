@@ -10,8 +10,9 @@ describe("outbound consent admission", () => {
     const mobile = read("src/routes/mobile-routes.ts");
     const web = read("src/routes/outbound-routes.ts");
 
-    expect(web).toContain("await inspectOutboundRecipientPermission({");
-    expect(web).toContain("const effectiveCallPurpose = permission.effectiveCallPurpose");
+    expect(web).toContain("screenedDirectOutboundCall(callPurpose)");
+    expect(web).toContain("const effectiveCallPurpose = screening.callPurpose");
+    expect(web).not.toContain("await inspectOutboundRecipientPermission({");
     expect(mobile).toContain("res.status(503).json(NATIVE_OUTBOUND_UNAVAILABLE)");
     expect(mobile).not.toContain("hasAuditableExpressConsentArtifact");
     expect(mobile).not.toContain("placeOutboundCall");
@@ -40,7 +41,8 @@ describe("dial consent artifact on clients", () => {
     const web = read("src/components/OutboundDialDialog.tsx");
     const android = read("android/app/src/main/java/com/wireline/app/data/WirelineApi.kt");
     const ios = read("ios/Wireline/Networking/WirelineAPI.swift");
-    expect(web).toContain("consentArtifactId,");
+    expect(web).not.toContain("consentArtifactId,");
+    expect(web).toContain("callPurpose,");
     expect(web).toContain("requestKey: requestRef.current.key");
     expect(web).toContain("savePendingOutboundDial");
     expect(web).not.toContain('consentSource: "manual_attestation"');

@@ -343,7 +343,7 @@ const LegacyMobileOutboundDialRequest: JsonSchema = {
 
 const OutboundDialRequest: JsonSchema = {
   ...LegacyMobileOutboundDialRequest,
-  required: ["agentId", "customerNumber", "callPurpose", "requestKey", "consentArtifactId"],
+  required: ["agentId", "customerNumber", "callPurpose", "requestKey"],
   properties: {
     ...LegacyMobileOutboundDialRequest.properties,
     requestKey: {
@@ -356,7 +356,7 @@ const OutboundDialRequest: JsonSchema = {
       type: "string",
       format: "uuid",
       description:
-        "Recipient-signed permission matching the seller, Bot, number and purpose. A client checkbox or imported lead label is not permission evidence.",
+        "Ignored on a normal outbound call. A client value does not authorize the call and is not recorded as express written consent. Callback, cadence, and intake paths still resolve a server-owned signature separately.",
     },
     preparedRequestId: {
       type: "string",

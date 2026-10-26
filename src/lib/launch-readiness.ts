@@ -86,10 +86,8 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   if (!isFederalDncVendorConfigured()) {
     deferred_checklist.push("FEDERAL_DNC_API_URL+FEDERAL_DNC_API_KEY");
   }
-  // Provider configuration does not establish per-recipient permission. The
-  // direct-dial artifact resolver and campaign execution still fail closed
-  // until immutable, server-verified written-consent records are supported.
-  // Keep that implementation gap visible even after DNC credentials are set.
+  // A normal outbound call is screened by BotBound. It does not wait on a
+  // recipient signature. Federal registry configuration stays on this checklist.
   if (!DIRECT_OUTBOUND_AVAILABILITY.available) {
     deferred_checklist.push(DIRECT_OUTBOUND_AVAILABILITY.code);
   }

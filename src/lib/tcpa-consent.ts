@@ -496,12 +496,11 @@ export interface ConsentInputs {
   /** Set when this number appears on the federal DNC registry. */
   is_federal_dnc?: boolean;
   /**
-   * Verified recipient permission for the business, purpose, and artificial-voice
-   * marketing call. An inbound call, relationship, or generic lead form alone
-   * does not establish prior express written consent.
+   * A verified recipient signature, when one exists. A normal outbound call is
+   * not rejected only because this is false. It is never inferred from a checkbox.
    */
   has_express_written_consent?: boolean;
-  /** Marketing purpose; false does not exempt an artificial-voice call from consent. */
+  /** Marketing purpose. Disclosure and an opt-out offer still apply. */
   is_marketing_call?: boolean;
   /** Account Holder's business name to weave into the disclosure. */
   business_name?: string;
@@ -528,16 +527,6 @@ export function evaluateOutboundConsent(input: ConsentInputs): ConsentDecision {
       must_disclose_recording: false,
       must_offer_opt_out: false,
       abort_reason: "dnc_federal",
-    };
-  }
-  if (input.is_marketing_call && !input.has_express_written_consent) {
-    return {
-      allowed: false,
-      rule: "two_party",
-      state: null,
-      must_disclose_recording: false,
-      must_offer_opt_out: false,
-      abort_reason: "no_express_consent_required",
     };
   }
 

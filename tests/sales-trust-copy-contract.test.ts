@@ -74,7 +74,7 @@ describe("sales trust copy contract", () => {
     expect(sales.scriptPreview).toContain("AI assistant");
     expect(sales.primaryCta.href).toContain("wedge=sales");
     expect(security).toContain(
-      "Recipient permission and account Do Not Call checks remain enforced before eligible outgoing calls are placed.",
+      "BotBound screens the national do-not-call list, the account block list, and calling hours before an outgoing call. The Bot says it is an AI and how to stop.",
     );
     expect(security).not.toContain("Live outbound dialing is gated");
     expect(product).toContain('name: "Sales Rep"');
