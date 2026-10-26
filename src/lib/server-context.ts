@@ -4,7 +4,10 @@ import { getPostgresConnectionConfig } from "./postgres-tls.mjs";
 import { AppError } from "./api-error";
 import { resolveTenantDatabaseScope } from "./tenant-context-scope";
 import { runTenantScopedPoolQuery, scopePgClientToTenant } from "./tenant-pool-transaction";
-import { attachIdleDatabaseClientErrorListener } from "./idle-database-client-error";
+import {
+  attachCheckedOutDatabaseClientErrorListener,
+  attachIdleDatabaseClientErrorListener,
+} from "./idle-database-client-error";
 
 export { log, IS_PROD };
 
@@ -84,6 +87,7 @@ const pool = databaseConnection
     })
   : createUnavailablePool();
 if (databaseConnection) attachIdleDatabaseClientErrorListener(pool);
+if (databaseConnection) attachCheckedOutDatabaseClientErrorListener(pool);
 
 export { tenantStore };
 
