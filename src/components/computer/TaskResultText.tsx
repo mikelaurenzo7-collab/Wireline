@@ -47,7 +47,7 @@ export default function TaskResultText({ children }: { children: string }) {
           );
         if (lines.every((line) => /^\s*\d+[.)]\s+/.test(line)))
           return (
-            <ol key={index}>
+            <ol key={index} start={Number.parseInt(lines[0]!, 10)}>
               {lines.map((line, n) => (
                 <li key={n}>{inline(line.replace(/^\s*\d+[.)]\s+/, ""))}</li>
               ))}
