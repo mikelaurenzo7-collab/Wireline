@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Activity, AlertTriangle, Gauge, PhoneOff, ShieldAlert, Wrench } from "lucide-react";
+import { Activity, AlertTriangle, PhoneOff, ShieldAlert, Wrench } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -82,16 +82,6 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
     .sort((a, b) => b[1] - a[1]);
 
   const tiles = [
-    {
-      icon: Gauge,
-      label: "Response Time",
-      value: summary.latency.ttftP95Ms != null ? `${summary.latency.ttftP95Ms}ms` : "N/A",
-      sub:
-        summary.latency.ttftP95Ms == null
-          ? "No timing data yet"
-          : "95th percentile · goal under 1.2s",
-      healthy: summary.latency.healthy,
-    },
     {
       icon: PhoneOff,
       label: "Flagged Hangups",
@@ -318,10 +308,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
                         : call.outcomeTag || call.sentiment || "call"}
                     </p>
                     <p className="text-[length:var(--wireline-typography-overline-size)] text-muted font-mono">
-                      {call.ttftMs != null
-                        ? `${call.ttftMs}ms response`
-                        : "Response time unavailable"}
-                      {call.pipelineError ? ` · ${recentCallIssueLabel(call)}` : ""}
+                      {call.pipelineError ? recentCallIssueLabel(call) : "Completed"}
                     </p>
                   </div>
                   <span className="font-mono text-[length:var(--wireline-typography-overline-size)] text-muted shrink-0">

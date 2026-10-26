@@ -273,7 +273,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Does It Work for a Single Professional or a Full Brokerage?",
-        a: "A solo professional can start with one Bot and the phone capacity included in a Calls plan. For brokerage needs beyond that capacity, contact BotBound to plan the rollout. Runtime Balance covers supported usage beyond included plan allowances.",
+        a: "A solo professional can start on a Calls plan and add more Bots in the same workspace. For brokerage needs beyond included phone capacity, contact BotBound to plan the rollout. Extra usage is billed at the listed rates.",
       },
       {
         q: "How Does It Qualify the Buyer?",
@@ -399,7 +399,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How Does It Compare with a 24/7 Answering Service?",
-        a: "Compare BotBound on the complete intake, conversation, follow up, and logged outcome, not only the per call price. Calls plans include voice minutes, and prepaid Runtime Balance covers supported usage beyond the plan allowance.",
+        a: "Compare BotBound on the complete intake, conversation, follow up, and logged outcome, not only the per call price. Calls plans include voice minutes, and extra usage is billed at the listed rates.",
       },
     ],
   },

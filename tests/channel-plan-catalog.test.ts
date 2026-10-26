@@ -151,7 +151,7 @@ describe("channel packages", () => {
       }
     }
   });
-  it("enforces the shared creation cap across 21 packages without granting per-Bot resources", () => {
+  it("does not cap Bot creation by package while phone and email stay plan resources", () => {
     for (const plan of STRIPE_PLANS.filter((item) => item.catalogFamily === "channels")) {
       const entitlement = resolveAgentEntitlement({
         isOwner: false,
@@ -160,11 +160,9 @@ describe("channel packages", () => {
         maxAgents: 1,
         extraAgents: 0,
       });
-      expect(entitlement.effectiveCap, plan.id).toBe(plan.max_agents);
-      for (let existing = 0; existing < plan.max_agents; existing++) {
-        expect(agentCapHit(existing, entitlement), plan.id).toBe(false);
-      }
-      expect(agentCapHit(plan.max_agents, entitlement), plan.id).toBe(true);
+      expect(entitlement.unlimited, plan.id).toBe(true);
+      expect(entitlement.effectiveCap, plan.id).toBeNull();
+      expect(agentCapHit(plan.max_agents, entitlement), plan.id).toBe(false);
       expect(includedPhoneSlotsForPlan(plan.id, 0), plan.id).toBe(plan.included_phone_numbers);
       expect(plan.included_phone_numbers).toBe(
         Number(plan.channels.some((channel) => channel === "voice" || channel === "sms")),
@@ -176,7 +174,8 @@ describe("channel packages", () => {
         subscriptionStatus: "past_due",
         maxAgents: plan.max_agents,
       });
-      expect(inactive.effectiveCap).toBe(1);
+      expect(inactive.unlimited).toBe(true);
+      expect(inactive.effectiveCap).toBeNull();
     }
   });
   it("carries exact capacity through daily profiles without increasing concurrency or reviving disabled overrides", () => {

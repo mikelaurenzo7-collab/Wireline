@@ -80,11 +80,11 @@ describe("usage add-on slots", () => {
     expect(db.select).not.toHaveBeenCalled();
   });
 
-  it("returns only the add-ons the owner bought once the flag is on", async () => {
+  it("adds Starter's included identities to purchased add-ons when the row has no tier", async () => {
     vi.stubEnv("USAGE_BILLING_ENABLED", "true");
     expect(await usageAddonSlots("user-1", executor([{ numbers: 1, emailAddresses: 0 }]))).toEqual({
-      numbers: 1,
-      emailAddresses: 0,
+      numbers: 2,
+      emailAddresses: 1,
     });
     expect(await usageAddonSlots("user-1", executor([]))).toEqual({
       numbers: 0,
@@ -107,7 +107,7 @@ describe("usage phone line entitlements", () => {
       [{ subscriptionStatus: "active", extraAgents: 0 }],
       [{ numbers: 2, emailAddresses: 0 }],
     );
-    expect(await getIncludedPhoneLineSlots("user-1", bought)).toBe(2);
+    expect(await getIncludedPhoneLineSlots("user-1", bought)).toBe(3);
   });
 
   it("gives an inactive usage subscription no number", async () => {
@@ -130,23 +130,22 @@ describe("unlimited Bot admission on the usage plan", () => {
     expect(entitlement).toMatchObject({
       unlimited: true,
       purchasedExtras: 0,
-      effectiveCap: BOT_MARK_IDENTITY_CAPACITY,
+      effectiveCap: null,
     });
     expect(agentCapHit(50, entitlement)).toBe(false);
-    expect(agentCapHit(BOT_MARK_IDENTITY_CAPACITY, entitlement)).toBe(true);
-    expect(agentCapMessage(entitlement.effectiveCap ?? 0, entitlement.unlimited)).not.toMatch(
-      /plan includes/i,
-    );
+    expect(agentCapHit(BOT_MARK_IDENTITY_CAPACITY, entitlement)).toBe(false);
+    expect(agentCapMessage(1, entitlement.unlimited)).not.toMatch(/plan includes/i);
   });
 
-  it("keeps the draft cap without an active subscription", () => {
+  it("keeps Bot creation open without an active subscription", () => {
     const entitlement = resolveAgentEntitlement({
       isOwner: false,
       subscriptionStatus: "canceled",
       planId: "usage",
     });
-    expect(entitlement.unlimited).not.toBe(true);
-    expect(entitlement.effectiveCap).toBe(1);
+    expect(entitlement.unlimited).toBe(true);
+    expect(entitlement.effectiveCap).toBeNull();
+    expect(agentCapHit(1, entitlement)).toBe(false);
   });
 });
 

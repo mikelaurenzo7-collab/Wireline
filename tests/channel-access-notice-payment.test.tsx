@@ -39,29 +39,19 @@ describe("channel access notice", () => {
     },
   );
 
-  it("offers billing for SMS without claiming the product is unavailable", () => {
-    const notice = ChannelAccessNotice({
-      access: access("active", "voice"),
-      channel: "sms",
-    })!;
-    expect(notice.props.title).toBe("SMS Isn't in Your Plan");
-    expect(text(notice.props.children)).toContain("Plans with SMS are available");
-    expect(text(notice.props.children)).toContain("Sender approval and recipient permission");
-    expect(elements(notice).find((element) => element.type === "a")?.props.to).toBe(
-      "/settings/billing",
-    );
+  it("presents SMS as included instead of a missing plan add-on", () => {
+    expect(
+      ChannelAccessNotice({
+        access: access("active", "voice"),
+        channel: "sms",
+      }),
+    ).toBeNull();
   });
 
   it.each(["past_due", "unpaid", "incomplete"])(
-    "does not imply renewing a %s legacy Calls plan grants texting",
+    "does not turn a %s legacy Calls plan into an SMS upsell",
     (status) => {
-      const notice = ChannelAccessNotice({ access: access(status), channel: "sms" })!;
-      expect(notice.props.title).toBe("SMS Isn't in Your Plan");
-      const content = elements(notice)
-        .map((element) => text(element))
-        .join(" ");
-      expect(content).toContain("View Billing");
-      expect(content).not.toContain("Update Payment");
+      expect(ChannelAccessNotice({ access: access(status), channel: "sms" })).toBeNull();
     },
   );
 
@@ -85,19 +75,12 @@ describe("channel access notice", () => {
     expect(text(notice.props.children)).toContain("Texts are paused");
   });
 
-  it("takes an unpaid new account to current plan selection without a legacy channel query", () => {
-    const notice = ChannelAccessNotice({
-      access: access("pending_activation", null),
-      channel: "sms",
-    })!;
-    expect(notice.props.title).toBe("SMS Isn't in Your Plan");
-    expect(elements(notice).find((element) => element.type === "a")?.props.to).toBe(
-      "/settings/billing",
-    );
+  it("presents SMS as included for an account that has not chosen a plan", () => {
     expect(
-      elements(notice)
-        .map((element) => text(element))
-        .join(" "),
-    ).toContain("Choose Plan");
+      ChannelAccessNotice({
+        access: access("pending_activation", null),
+        channel: "sms",
+      }),
+    ).toBeNull();
   });
 });

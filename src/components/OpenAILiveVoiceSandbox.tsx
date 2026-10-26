@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import {
   CircleAlert,
   Loader2,
@@ -25,6 +25,37 @@ type Line = { id: string; role: "You" | "Bot"; text: string };
 type VoiceState = "idle" | "connecting" | "listening" | "speaking" | "thinking" | "error";
 
 const RATE = 24_000;
+
+function microphoneMessage(reason: unknown): string {
+  const name = reason instanceof DOMException ? reason.name : "";
+  if (name === "NotAllowedError" || name === "PermissionDeniedError")
+    return "The browser blocked the microphone. Allow access for this site, or type a test below.";
+  if (name === "NotFoundError" || name === "DevicesNotFoundError")
+    return "No microphone was found. Connect one, or type a test below.";
+  if (name === "NotReadableError" || name === "TrackStartError")
+    return "The microphone is busy in another app. Close it, or type a test below.";
+  if (name === "SecurityError") return "The microphone needs a secure page. Type a test below.";
+  return "The microphone didn't start. Allow access, or type a test below.";
+}
+
+function rehearsalReply(raw: string): string {
+  let reply = "";
+  for (const block of raw.split("\n\n")) {
+    const data = block
+      .split("\n")
+      .filter((line) => line.startsWith("data:"))
+      .map((line) => line.slice(5).trim())
+      .join("");
+    if (!data) continue;
+    try {
+      const payload = JSON.parse(data) as { reply?: unknown };
+      if (typeof payload.reply === "string" && payload.reply.trim()) reply = payload.reply.trim();
+    } catch {
+      // Incomplete SSE blocks are ignored until a reply event arrives.
+    }
+  }
+  return reply;
+}
 
 // Signature and tenant checks belong to the server; the browser only requires
 // a usable opaque capability before attaching an accepted provider session.
@@ -119,6 +150,8 @@ export default function OpenAILiveVoiceSandbox({
 }) {
   const [state, setState] = useState<VoiceState>("idle");
   const [muted, setMuted] = useState(false);
+  const [typed, setTyped] = useState("");
+  const [typing, setTyping] = useState(false);
   // Mute can be chosen while browser permission is pending. Apply the latest
   // intent before attaching a newly acquired microphone to the connection.
   const desiredMuted = useRef(false);
@@ -360,6 +393,51 @@ export default function OpenAILiveVoiceSandbox({
     }
   };
 
+  const sendTyped = async (event: FormEvent) => {
+    event.preventDefault();
+    const content = typed.trim();
+    if (!content || typing) return;
+    setTyped("");
+    setError("");
+    const line = { id: crypto.randomUUID(), role: "You" as const, text: content };
+    setLines((current) => [...current, line]);
+    const dataChannel = channel.current;
+    if (dataChannel?.readyState === "open") {
+      dataChannel.send(
+        JSON.stringify({
+          type: "conversation.item.create",
+          item: {
+            type: "message",
+            role: "user",
+            content: [{ type: "input_text", text: content }],
+          },
+        }),
+      );
+      dataChannel.send(JSON.stringify({ type: "response.create" }));
+      return;
+    }
+    setTyping(true);
+    try {
+      const history = lines.slice(-12).map((item) => ({
+        role: item.role === "You" ? "customer" : "employee",
+        content: item.text,
+      }));
+      const response = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/test/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, history }),
+      });
+      const raw = await response.text();
+      const reply = rehearsalReply(raw);
+      if (!response.ok || !reply) throw new Error("The typed test did not return a reply.");
+      setLines((current) => [...current, { id: crypto.randomUUID(), role: "Bot", text: reply }]);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "The typed test did not return a reply.");
+    } finally {
+      setTyping(false);
+    }
+  };
+
   const start = async () => {
     if (["connecting", "listening", "speaking", "thinking"].includes(state)) return;
     stop();
@@ -476,12 +554,7 @@ export default function OpenAILiveVoiceSandbox({
         else events.addEventListener("open", sendGreeting, { once: true });
       }
     } catch (reason) {
-      if (currentGeneration === generation.current)
-        fail(
-          reason instanceof Error
-            ? reason.message
-            : "Microphone access is required for live voice.",
-        );
+      if (currentGeneration === generation.current) fail(microphoneMessage(reason));
     }
   };
 
@@ -528,6 +601,31 @@ export default function OpenAILiveVoiceSandbox({
           {active ? "End Rehearsal" : "Start Rehearsal"}
         </button>
       </div>
+
+      <form
+        className="mt-4 flex flex-col gap-2 sm:flex-row"
+        onSubmit={(event) => void sendTyped(event)}
+      >
+        <label className="sr-only" htmlFor={`${startButtonId || agentId}-typed-test`}>
+          Type a test
+        </label>
+        <input
+          id={`${startButtonId || agentId}-typed-test`}
+          value={typed}
+          onChange={(event) => setTyped(event.target.value)}
+          placeholder="Type a test line"
+          maxLength={4000}
+          disabled={typing}
+          className="min-h-11 min-w-0 flex-1 rounded-md border border-border bg-background px-3 text-sm"
+        />
+        <button
+          type="submit"
+          className="studio-secondary-button"
+          disabled={typing || !typed.trim()}
+        >
+          {typing ? "Sending…" : "Send test"}
+        </button>
+      </form>
 
       {showActivity ? (
         <div className="wl-voice-bar" data-state={state}>

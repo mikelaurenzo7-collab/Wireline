@@ -45,10 +45,16 @@ router.get(
     // Calendar/Drive remain usable without buying the Email channel. The
     // entitlement filter drops Gmail scopes only; it must never remove the
     // calendar/Drive scopes the connector needs for booking and exports.
+    const rawPurpose = typeof req.query.purpose === "string" ? req.query.purpose : "";
+    const purpose =
+      rawPurpose === "email" || rawPurpose === "calendar" || rawPurpose === "drive"
+        ? rawPurpose
+        : "workspace";
     const oauth2Client = await getGoogleOAuthClient(req);
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: "offline",
-      scope: googleConnectScopes(emailIncluded),
+      scope: googleConnectScopes(emailIncluded, purpose),
+      include_granted_scopes: true,
       prompt: "consent",
       state: generateOAuthState(uid ? { userId: uid } : undefined),
     });

@@ -2,8 +2,7 @@ import { useEffect } from "react";
 import { PageMeta } from "../lib/page-meta";
 import { HOME_DESCRIPTION, HOME_TITLE } from "../lib/marketing-route-meta";
 import { BOTBOUND_PRODUCTION_ORIGIN } from "../lib/brand";
-import { STRIPE_PLANS } from "../lib/plan-catalog";
-import { getPlanDisplayLabel } from "../lib/plan-display";
+import { PUBLIC_USAGE_TIERS, USAGE_TIERS } from "../lib/usage-billing-catalog";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import WireAgentLanding from "../components/marketing/WireAgentLanding";
 
@@ -13,9 +12,7 @@ export default function LandingPage() {
   useEffect(() => {
     captureSignupIntentFromLocation();
   }, []);
-  const publicPlans = STRIPE_PLANS.filter(
-    (plan) => plan.public !== false && plan.checkoutAvailability === "available",
-  );
+  const publicPlans = PUBLIC_USAGE_TIERS.map((id) => USAGE_TIERS[id]);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -24,13 +21,13 @@ export default function LandingPage() {
     offers: {
       "@type": "AggregateOffer",
       priceCurrency: "USD",
-      lowPrice: Math.min(...publicPlans.map((plan) => plan.price_usd_monthly)),
-      highPrice: Math.max(...publicPlans.map((plan) => plan.price_usd_monthly)),
+      lowPrice: Math.min(...publicPlans.map((plan) => plan.monthlyUsd)),
+      highPrice: Math.max(...publicPlans.map((plan) => plan.monthlyUsd)),
       offerCount: publicPlans.length,
       offers: publicPlans.map((plan) => ({
         "@type": "Offer",
-        name: getPlanDisplayLabel(plan),
-        price: plan.price_usd_monthly,
+        name: plan.name,
+        price: plan.monthlyUsd,
         priceCurrency: "USD",
         url: `${PUBLIC_ORIGIN}/pricing`,
       })),

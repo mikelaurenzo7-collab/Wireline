@@ -17,7 +17,8 @@ import {
 } from "../lib/create-brief-recovery";
 import { extractionPersistedSomething } from "../lib/training-extraction-result";
 import { createStudioSetupDrafts, type StudioSetupDrafts } from "../lib/studio-setup-drafts";
-import { Button } from "./atoms";
+import { isBotPermissionLevel, type BotPermissionLevel } from "../lib/bot-permission";
+import { Button, NativeSelect } from "./atoms";
 import BotMarkPicker from "./BotMarkPicker";
 import { StatusNotice } from "./molecules";
 import SimpleVoicePicker from "./voice/SimpleVoicePicker";
@@ -41,6 +42,7 @@ type StudioAgentWorkspacePanelProps = {
 
 type AgentSetupResponse = {
   mark_key?: string | null;
+  permission?: BotPermissionLevel;
   personality?: string;
   openingGreeting?: string | null;
   firstMessage?: string | null;
@@ -133,6 +135,8 @@ export default function StudioAgentWorkspacePanel({
       ),
     [agentId, agents],
   );
+  const [permission, setPermission] = useState<BotPermissionLevel>("auto");
+  const [permissionError, setPermissionError] = useState<string | null>(null);
   const [recoveringBrief, setRecoveringBrief] = useState(false);
   const [loadingSetup, setLoadingSetup] = useState(true);
   const [setupLoadError, setSetupLoadError] = useState<string | null>(null);
@@ -202,6 +206,7 @@ export default function StudioAgentWorkspacePanel({
       })
       .then((data) => {
         if (cancelled) return;
+        if (isBotPermissionLevel(data.permission)) setPermission(data.permission);
         setKnowledgeSummary({
           facts: Array.isArray(data.knowledge) ? data.knowledge.length : 0,
           rules: Array.isArray(data.directives) ? data.directives.length : 0,
@@ -519,6 +524,47 @@ export default function StudioAgentWorkspacePanel({
                   {setupError}
                 </StatusNotice>
               ) : null}
+
+              <div className="space-y-1.5">
+                <label htmlFor="bot-permission" className="text-sm font-medium">
+                  Permission
+                </label>
+                <NativeSelect
+                  id="bot-permission"
+                  value={permission}
+                  disabled={applyingSetup}
+                  onChange={(event) => {
+                    const level = event.target.value;
+                    if (!isBotPermissionLevel(level)) return;
+                    const previous = permission;
+                    setPermission(level);
+                    setPermissionError(null);
+                    void authFetch(`/api/agents/${encodeURIComponent(agentId)}/permission`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ level }),
+                    }).then(async (response) => {
+                      if (response.ok) return;
+                      setPermission(previous);
+                      setPermissionError("Permission could not be saved.");
+                    });
+                  }}
+                >
+                  <option value="full">Full access</option>
+                  <option value="auto">Auto</option>
+                  <option value="ask">Ask for approval</option>
+                </NativeSelect>
+                <p className="text-xs text-muted-foreground">
+                  {permission === "full"
+                    ? "This Bot completes allowed actions without waiting."
+                    : permission === "ask"
+                      ? "This Bot waits for your approval before it acts."
+                      : "This Bot handles ordinary work and asks before it emails, texts, or updates a customer record."}
+                </p>
+                {permissionError ? (
+                  <StatusNotice tone="destructive">{permissionError}</StatusNotice>
+                ) : null}
+              </div>
 
               <Button
                 type="button"

@@ -37,7 +37,7 @@ describe("soft launch surfaces", () => {
   it("keeps Create Bot to one brief and states the launch channels", () => {
     const create = read("src/components/CreateAgentDialog.tsx");
     expect(create).toContain("Describe the Job");
-    expect(create).toContain("One Bot that answers and calls, plus email and a computer.");
+    expect(create).toContain("Answers and calls, plus email and a computer.");
     expect(create).not.toContain("SMS is coming soon");
     expect(create).not.toContain("setup wizard");
   });

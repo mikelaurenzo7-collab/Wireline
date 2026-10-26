@@ -152,13 +152,8 @@ customer-facing reasons, timestamps, and the balance after each entry. Failed
 refreshes retain the last confirmed values and offer retry; missing activity is
 not reported as an empty history.
 
-Activity > Revenue > AI Spend shows recorded model and tool costs for the chosen
-window, plus the current monthly allowance or safety limit. These audit costs
-are separate from the Runtime Balance ledger and are not a complete customer
-invoice. Full-window totals are aggregated in PostgreSQL rather than sampled
-from the most recent events. Calls > Analytics reports elapsed duration; billed
-voice minutes round each completed provider attempt up, so the two measures can
-differ. Monthly included usage resets separately from subscription renewal.
+Activity shows call, booking, and usage results. Model cost, token counts, and
+response-time engineering metrics stay off the customer insights pages.
 
 ### 9. Live Video remains retired
 

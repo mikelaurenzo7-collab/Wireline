@@ -63,40 +63,17 @@ beforeEach(() => {
   };
 });
 
-describe("Leaderboard monetary values", () => {
-  it("shows actual zero spend and zero unit costs with recorded outcomes", () => {
-    expect(metrics()).toMatchObject({ "$/Qual": "$0", "$/Outcome": "$0", "Total Cost": "$0" });
+describe("Leaderboard customer results", () => {
+  it("shows calls, bookings, and minutes without internal cost", () => {
+    expect(metrics()).toEqual({ Calls: "2", Booking: "1", Minutes: "0" });
+    expect(metrics()).not.toHaveProperty("$/Qual");
+    expect(metrics()).not.toHaveProperty("Total Cost");
   });
 
-  it("keeps unit cost unavailable when no qualifying outcome exists", () => {
-    h.row.qualified = 0;
+  it("uses the singular label for one call and no bookings", () => {
+    h.row.total_calls = 1;
     h.row.bookings = 0;
-    expect(metrics()).toMatchObject({ "$/Qual": "N/A", "$/Outcome": "N/A", "Total Cost": "$0" });
-  });
-
-  it("uses bookings as a valid outcome without inventing a qualified lead", () => {
-    h.row.qualified = 0;
-    expect(metrics()).toMatchObject({ "$/Qual": "N/A", "$/Outcome": "$0" });
-  });
-
-  it.each([null, undefined, Number.NaN, Number.POSITIVE_INFINITY])(
-    "does not convert unavailable or invalid cost %s to zero",
-    (value) => {
-      h.row.total_cost = value;
-      h.row.cost_per_qualified = value;
-      h.row.cost_per_outcome = value;
-      expect(metrics()).toMatchObject({ "$/Qual": "N/A", "$/Outcome": "N/A", "Total Cost": "N/A" });
-    },
-  );
-
-  it("retains nonzero amounts and precision returned by the API", () => {
-    h.row.total_cost = 1.2345;
-    h.row.cost_per_qualified = 0.75;
-    h.row.cost_per_outcome = 0.38;
-    expect(metrics()).toMatchObject({
-      "$/Qual": "$0.75",
-      "$/Outcome": "$0.38",
-      "Total Cost": "$1.2345",
-    });
+    h.row.minutes = 1;
+    expect(metrics()).toEqual({ Call: "1", Bookings: "0", Minute: "1" });
   });
 });

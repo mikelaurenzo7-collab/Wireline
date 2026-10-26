@@ -1,18 +1,33 @@
 import type Stripe from "stripe";
 import {
   USAGE_STRIPE_PLANS,
+  assertUsageStripeAccount,
   validateUsageMeter,
   validateUsagePrice,
 } from "../../scripts/stripe-usage-billing-setup.mjs";
 import { usageMeterEventName, usagePriceId } from "./usage-billing-config";
-import type { UsageTierId } from "./usage-billing-catalog";
+import { DEFAULT_PUBLIC_USAGE_TIER, type UsageTierId } from "./usage-billing-catalog";
+
+/** Live keys must be the BotBound merchant. A named test sandbox is allowed, and never BOTBOUND LLC. */
+export async function assertBotBoundStripeAccount(
+  client: Stripe,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<void> {
+  const key = env.STRIPE_SECRET_KEY?.trim() ?? "";
+  const live = /^(?:sk|rk)_live_/.test(key);
+  await assertUsageStripeAccount(client, {
+    mode: live ? "live" : "test",
+    sandboxAccountId: env.STRIPE_USAGE_SANDBOX_ACCOUNT_ID,
+  });
+}
 
 /** Refuse checkout if configured objects differ from the public rate card. */
 export async function validateUsageCheckoutCatalog(
   client: Stripe,
   env: NodeJS.ProcessEnv = process.env,
-  tier: UsageTierId = "starter",
+  tier: UsageTierId = DEFAULT_PUBLIC_USAGE_TIER,
 ): Promise<void> {
+  await assertBotBoundStripeAccount(client, env);
   const USAGE_STRIPE_PLAN = USAGE_STRIPE_PLANS[tier];
   const specs = [
     { key: "base" as const, spec: USAGE_STRIPE_PLAN.base },

@@ -95,13 +95,16 @@ export default function TeamSettings() {
     try {
       const response = await authFetch("/api/team");
       const payload = (await response.json().catch(() => null)) as
-        ({ members?: TeamMemberRecord[] } & TeamErrorPayload) | null;
+        ({ members?: TeamMemberRecord[]; available?: boolean } & TeamErrorPayload) | null;
       if (response.status === 403) {
         setTeamAccess("restricted");
         setMembers([]);
         return;
       }
-      if (response.status === 503 && payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED") {
+      if (
+        payload?.available === false ||
+        (response.status === 503 && payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED")
+      ) {
         setTeamAccess("certifying");
         setMembers([]);
         return;

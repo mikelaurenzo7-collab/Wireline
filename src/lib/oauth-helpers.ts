@@ -33,17 +33,39 @@ export const SCOPES = [
   "https://www.googleapis.com/auth/drive.file",
 ];
 
+export type GoogleConnectPurpose = "email" | "calendar" | "drive" | "workspace";
+
+const GOOGLE_IDENTITY_SCOPES = [
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/userinfo.profile",
+];
+const GOOGLE_EMAIL_SCOPES = [
+  "https://www.googleapis.com/auth/gmail.send",
+  "https://www.googleapis.com/auth/gmail.readonly",
+];
+const GOOGLE_CALENDAR_SCOPES = [
+  "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/calendar.readonly",
+];
+const GOOGLE_DRIVE_SCOPES = [
+  "https://www.googleapis.com/auth/drive.readonly",
+  "https://www.googleapis.com/auth/drive.file",
+];
+
 /**
- * OAuth scope list for the Google workspace connection (Gmail + Calendar +
- * Drive). The Email channel entitlement gates Gmail only: Calendar and Drive
- * stay available on every plan. Filter specific scopes instead of slicing the
- * array by position so a future non-mail scope can never be dropped by the
- * entitlement check. Registrations live in docs/OAUTH_PROVIDER_SETUP.md.
+ * Ask for the scopes this connection needs. `include_granted_scopes` keeps
+ * earlier grants, so email, calendar, and Drive can be approved separately.
+ * The workspace purpose remains the full set for callers that have not split yet.
  */
-export function googleConnectScopes(emailTransportIncluded: boolean): string[] {
-  return emailTransportIncluded
-    ? [...SCOPES]
-    : SCOPES.filter((scope) => !scope.includes("/gmail."));
+export function googleConnectScopes(
+  emailTransportIncluded: boolean,
+  purpose: GoogleConnectPurpose = "workspace",
+): string[] {
+  const email = emailTransportIncluded ? GOOGLE_EMAIL_SCOPES : [];
+  if (purpose === "email") return [...GOOGLE_IDENTITY_SCOPES, ...email];
+  if (purpose === "calendar") return [...GOOGLE_IDENTITY_SCOPES, ...GOOGLE_CALENDAR_SCOPES];
+  if (purpose === "drive") return [...GOOGLE_IDENTITY_SCOPES, ...GOOGLE_DRIVE_SCOPES];
+  return emailTransportIncluded ? [...SCOPES] : SCOPES.filter((scope) => !scope.includes("/gmail."));
 }
 
 function getAppOrigin(req: express.Request): string {

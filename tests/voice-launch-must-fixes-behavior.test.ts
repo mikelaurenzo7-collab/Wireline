@@ -383,8 +383,12 @@ describe("Codex #1360 review fixes", () => {
     const service = read("src/lib/voice/live-voice-service.ts");
     const lock = service.indexOf("live_voice_cap:");
     const create = service.indexOf("await engine.create(");
+    const reserve = service.lastIndexOf("await drizzle.transaction", create);
     expect(lock).toBeGreaterThan(-1);
-    expect(create).toBeGreaterThan(lock);
+    expect(lock).toBeLessThan(create);
+    expect(reserve).toBeGreaterThan(-1);
+    expect(reserve).toBeLessThan(create);
+    expect(service.indexOf(".insert(liveVoices)", create)).toBeGreaterThan(create);
   });
 
   it("keeps durable cleanup evidence when a provider delete fails", () => {

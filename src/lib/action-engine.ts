@@ -13,6 +13,7 @@ import { type ActionItem, type ActionResult } from "./action-types";
 import { addMinutesToIso, localDateTimeToUtcIso, normalizeIanaTimeZone } from "./calendar-time";
 import { CRMService } from "./crm-service";
 import { IntegrationService } from "./integrations";
+import { actionExecutionMode } from "./bot-permission";
 import { bookNativeAppointment, getNativeCalendarConfiguration } from "./native-calendar";
 import { touchNavCounts } from "./nav-counts-invalidate";
 import { evaluateOutboundDialGate } from "./outbound-dial-gate";
@@ -194,18 +195,22 @@ async function resolveActionPolicy(
       };
     }
 
-    const inheritedAutonomy = agentRow.tenantAutonomyLevel === "auto" ? "auto" : "draft";
-    // Native Calendar's saved mode creates Scheduled or Requested directly.
-    // A generic draft here would add a second approval stage for the same booking.
+    let calendarBookingMode: string | null = null;
+    if (scopedAction.type === "schedule_calendar" && connections.native_calendar_configured) {
+      const nativeCalendar = await getNativeCalendarConfiguration(userId).catch(() => null);
+      calendarBookingMode = nativeCalendar?.settings.booking_mode ?? null;
+    }
+    // An explicit calendar Confirmation books through Calendar, including
+    // owner approval, so Inbox does not add a second approval for the same time.
     const autonomy =
-      scopedAction.type === "schedule_calendar" && connections.native_calendar_configured
-        ? "auto"
-        : autonomyOverride ||
-          (agentRow.autonomyLevel && agentRow.autonomyLevel !== "inherit"
-            ? agentRow.autonomyLevel === "auto"
-              ? "auto"
-              : "draft"
-            : inheritedAutonomy);
+      autonomyOverride ||
+      actionExecutionMode({
+        agentLevel: agentRow.autonomyLevel,
+        tenantLevel: agentRow.tenantAutonomyLevel,
+        actionType: scopedAction.type,
+        calendarBookingMode,
+        nativeCalendarConfigured: Boolean(connections.native_calendar_configured),
+      });
 
     return {
       action: scopedAction,
@@ -365,6 +370,7 @@ async function executeAutonomousAction(
           serviceType: payload.service_type || payload.event_name,
           phoneNumber: payload.customer_number,
           notes: action.reasoning,
+          ownerApproved: Boolean(context.approvalTaskId),
           requestKey: `native-calendar:action:${createHash("sha256")
             .update(
               JSON.stringify([

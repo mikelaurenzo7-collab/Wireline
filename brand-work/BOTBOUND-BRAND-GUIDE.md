@@ -21,7 +21,7 @@ Its supporting line is: “YOUR BOT GETS THEIR OWN PHONE NUMBER, EMAIL ADDRESS, 
 
 The general product category is **Voice Bots**. The launch campaign line is **Your Next Hire Is a Bot.** The prepared **Give Your Bot a Goal.** family remains a creative variant and uses the approved operator and the existing Stay in the Work photograph. Historical campaigns remain dated creative variants; “hire” describes software, not an employment service. See [the goal campaign copy kit](launch-2026-10-goal/COPY-KIT.md).
 
-Keep SMS, campaign calling, and unproven messaging integrations out of launch marketing and customer discovery. Reviewed personal and specific business service calls remain subject to the current eligibility controls. Do not promise that personal branding removes those controls. The [founder launch runbook](../docs/FOUNDER_LAUNCH_COMMAND_CENTER.md) owns the current scope and proof requirements.
+SMS and outbound calling are included in the product. Do not describe them as coming soon, pending, or missing from the plan. Recipient permission still applies. Reviewed personal and specific business service calls remain subject to the current eligibility controls. Do not promise that personal branding removes those controls. The [founder launch runbook](../docs/FOUNDER_LAUNCH_COMMAND_CENTER.md) owns the current scope and proof requirements.
 
 The homepage describes the product family. A dedicated number requires an eligible Calls plan; a managed inbox requires an eligible Email plan. Computer work starts as its own browser task. Do not imply that one task automatically receives the Bot's call or email history.
 

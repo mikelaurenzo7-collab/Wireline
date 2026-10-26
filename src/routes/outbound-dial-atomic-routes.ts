@@ -88,7 +88,7 @@ function gateResponse(res: Response, gate: DeniedOutboundDialGate) {
       code: gate.federalDncCode || "FEDERAL_DNC_UNCONFIGURED",
       error:
         gate.federalDncMessage ||
-        "Sales and marketing calls aren't available yet. Answering calls still works.",
+        "Screening has to clear this sales outreach before it goes out. Answering calls still works.",
     });
   }
   if (gate.reason === "blocked_internal_dnc") {

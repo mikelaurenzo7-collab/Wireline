@@ -252,26 +252,6 @@ router.post(
           .where(eq(schema.agents.userId, req.user.id));
         const existing = existingAgents.length;
 
-        const [settingsRow] = await tx
-          .select({
-            subscriptionStatus: schema.settings.subscriptionStatus,
-            maxAgents: schema.settings.maxAgents,
-            extraAgents: schema.settings.extraAgents,
-            planId: schema.subscriptions.plan,
-          })
-          .from(schema.settings)
-          .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
-          .where(eq(schema.settings.userId, req.user.id))
-          .limit(1);
-        const entitlement = resolveAgentEntitlement({
-          isOwner: isOwnerEmail(req.user.email),
-          subscriptionStatus: settingsRow?.subscriptionStatus,
-          planId: settingsRow?.planId,
-          maxAgents: settingsRow?.maxAgents,
-          extraAgents: settingsRow?.extraAgents,
-        });
-        if (agentCapHit(existing, entitlement)) return { kind: "plan_capacity" } as const;
-
         const usedMarkKeys = new Set<BotMarkKey>();
         for (const existingAgent of existingAgents) {
           usedMarkKeys.add(
@@ -281,7 +261,6 @@ router.post(
           );
         }
         const markKey = firstAvailableBotMarkKey(id, usedMarkKeys);
-        if (!markKey) return { kind: "mark_capacity" } as const;
 
         const voiceId = pickRotatedVoiceId(existing);
         await tx.insert(schema.agents).values({
@@ -294,6 +273,7 @@ router.post(
           archetype: resolveAgentRoleArchetype(role),
           voiceId,
           voiceProvider: "openai",
+          autonomyLevel: "supervised",
           enabledTools,
           firstMessage: `Hi, this is ${name}. How can I help?`,
           isBusinessAgent,
@@ -310,20 +290,6 @@ router.post(
         }
         return { kind: "created", voiceId, markKey } as const;
       });
-
-      if (created.kind === "plan_capacity") {
-        return res.status(402).json({
-          code: "AGENT_CAPACITY_REACHED",
-          error:
-            "Your plan has reached its Bot limit. Edit your current Bot to change what it does.",
-        });
-      }
-      if (created.kind === "mark_capacity") {
-        return res.status(409).json({
-          code: "BOT_MARK_CAPACITY_REACHED",
-          error: "Every available Bot identity is already in use.",
-        });
-      }
 
       res.status(201).json({
         id,

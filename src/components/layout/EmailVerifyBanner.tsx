@@ -257,11 +257,14 @@ export default function EmailVerifyBanner() {
       aria-live="polite"
       initial={{ height: 0, opacity: 0 }}
       animate={{ height: "auto", opacity: 1 }}
-      className={cn("wl-banner flex-col gap-3 sm:flex-row sm:items-center sm:gap-3", bannerTone)}
+      className={cn(
+        "wl-banner wl-banner--compact flex-row items-center gap-2 py-1.5",
+        bannerTone,
+      )}
     >
       <div className="wl-banner__body w-full min-w-0">
         <Mail className="wl-banner__icon" aria-hidden />
-        <span className="min-w-0 text-left">
+        <span className="min-w-0 truncate text-left text-[13px] leading-4">
           {outcome === "sent" ? (
             <>Verification email resent. Check your inbox + spam folder.</>
           ) : outcome === "no-transport" ? (
@@ -299,13 +302,12 @@ export default function EmailVerifyBanner() {
             </>
           ) : (
             <>
-              <strong>Verify your email</strong> to secure your account.{" "}
-              {"A live plan and compliant number are still required before outbound dialing."}
+              <strong>Verify your email</strong> to secure your account.
             </>
           )}
         </span>
       </div>
-      <div className="flex w-full shrink-0 flex-col gap-2 self-stretch sm:w-auto sm:flex-row sm:items-center sm:self-center">
+      <div className="flex shrink-0 items-center gap-1">
         <Button
           type="button"
           variant="secondary"
@@ -319,7 +321,7 @@ export default function EmailVerifyBanner() {
           }}
           disabled={buttonDisabled}
           className={cn(
-            "touch-press hover:scale-[1.02] w-full shrink-0 app-micro-cta h-auto after:hidden shadow-none sm:w-auto",
+            "h-8 w-auto shrink-0 px-2 text-xs shadow-none after:hidden",
             outcome === "sent" && "opacity-70",
           )}
         >
@@ -332,7 +334,7 @@ export default function EmailVerifyBanner() {
           disableAnimations
           onClick={dismissForSession}
           aria-label="Dismiss email verification reminder for this session"
-          className="touch-press w-full shrink-0 gap-1.5 text-muted-foreground sm:w-auto"
+          className="h-8 w-auto shrink-0 gap-1 px-2 text-xs text-muted-foreground"
         >
           <X className="size-3.5" aria-hidden="true" />
           Dismiss

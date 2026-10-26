@@ -564,12 +564,12 @@ export const OPS_INSIGHTS_GROUPS = [
   {
     id: "quality",
     label: "Quality",
-    tabs: ["failures", "latency"] as const,
+    tabs: ["failures"] as const,
   },
   {
     id: "revenue",
-    label: "Sources & Spend",
-    tabs: ["attribution", "topics", "spend"] as const,
+    label: "Sources",
+    tabs: ["attribution", "topics"] as const,
   },
 ] as const;
 

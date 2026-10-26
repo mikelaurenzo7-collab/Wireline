@@ -301,13 +301,16 @@ export default function CalendarAvailabilityPanel({
                   change({ booking_mode: event.target.value as CalendarSettings["booking_mode"] })
                 }
               >
+                <option value="inherit">Same as this Bot</option>
                 <option value="automatic">Book automatically</option>
                 <option value="approval">Ask for approval</option>
               </NativeSelect>
               <p className="text-xs text-muted-foreground">
                 {settings.booking_mode === "approval"
                   ? "Requests hold their time until you confirm or cancel them."
-                  : "Your Bot confirms available times without waiting for approval."}
+                  : settings.booking_mode === "automatic"
+                    ? "Your Bot confirms available times without waiting for approval."
+                    : "Confirmation follows this Bot's permission unless you choose a calendar setting."}
               </p>
             </div>
           </section>

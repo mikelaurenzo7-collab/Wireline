@@ -280,10 +280,7 @@ describe("team access status", () => {
   });
 
   it("uses the short availability notice for uncertified workspaces without a future promise", async () => {
-    await load(
-      { code: "SHARED_WORKSPACES_NOT_CERTIFIED", error: "Internal certification details" },
-      503,
-    );
+    await load({ available: false }, 200);
     expect(text(tree)).toContain("Team invitations are currently unavailable.");
     expect(text(tree)).not.toMatch(/certification|will open|Owner/);
     expect(invite().title).toBe("Team invitations are currently unavailable.");

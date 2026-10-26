@@ -1,5 +1,4 @@
 import { ChevronDown } from "lucide-react";
-import { Link } from "react-router";
 import { Button } from "./atoms";
 import { StatusNotice } from "./molecules/StatusNotice";
 
@@ -82,16 +81,7 @@ export default function RuntimeBalanceActivity({
         />
       </summary>
       <div className="space-y-3 pb-1 pt-2">
-        <p className="text-xs leading-5 text-muted-foreground">
-          Up to 20 recent balance changes.{" "}
-          <Link
-            to="/insights?tab=revenue&view=spend"
-            className="rounded-sm font-medium text-primary underline underline-offset-4 wl-focus-ring-halo"
-          >
-            AI spend
-          </Link>{" "}
-          is tracked separately.
-        </p>
+        <p className="text-xs leading-5 text-muted-foreground">Up to 20 recent balance changes.</p>
         {loading ? (
           <p role="status" className="text-sm text-muted-foreground">
             {entries ? "Refreshing activity…" : "Loading activity…"}

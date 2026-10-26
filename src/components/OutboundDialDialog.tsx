@@ -15,6 +15,10 @@ import { useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { isReviewedOutboundCandidate } from "../lib/outbound-call-purpose";
+import {
+  OUTBOUND_CONSENT_LABEL,
+  OUTBOUND_CONSENT_LEGAL_PATH,
+} from "../lib/outbound-consent-copy";
 import { authFetch } from "../lib/api";
 import { emitProductEvent } from "../lib/product-event-client";
 import type { PreparedCall } from "../lib/prepared-call-contract";
@@ -430,7 +434,12 @@ function DirectOutboundDialDialog({
                   onChange={(event) => setNumber(event.target.value)}
                 />
               </label>
-
+              <p className="text-xs leading-5 text-muted-foreground">
+                {OUTBOUND_CONSENT_LABEL}{" "}
+                <Link to={OUTBOUND_CONSENT_LEGAL_PATH} className="underline underline-offset-2">
+                  Permission details
+                </Link>
+              </p>
               <label className="block space-y-1.5">
                 <span className="block text-sm font-semibold text-foreground">
                   Instruction (optional)

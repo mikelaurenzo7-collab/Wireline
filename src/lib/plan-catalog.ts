@@ -1,7 +1,7 @@
 import { selfServeBillingEnabled } from "./billing-release";
 import { VOICE_COMPLETION_GRACE_MINUTES } from "./voice-funding-policy";
 import { BOT_MARK_IDENTITY_CAPACITY } from "./bot-mark";
-import { USAGE_BASE_USD_MONTHLY, USAGE_METERS } from "./usage-billing-catalog";
+import { DEFAULT_PUBLIC_USAGE_TIER, USAGE_METERS, usageTier } from "./usage-billing-catalog";
 
 /** Stripe-backed launch plan catalog. Public plan ids remain canonical. */
 
@@ -792,18 +792,19 @@ export function planById(id: string | null | undefined): StripePlan | null {
  * `max_agents` is the identity-mark ceiling enforced by the database, not a
  * plan limit; `unlimitedBots` is what every surface shows.
  */
+const defaultUsageOffer = usageTier(DEFAULT_PUBLIC_USAGE_TIER);
 export const USAGE_PLAN: StripePlan & { unlimitedBots: true } = {
   id: "usage",
   name: "BotBound",
-  price_usd_monthly: USAGE_BASE_USD_MONTHLY,
+  price_usd_monthly: defaultUsageOffer.monthlyUsd,
   price_usd_annual: 0,
   max_agents: BOT_MARK_IDENTITY_CAPACITY,
   voice_minutes_monthly: USAGE_METERS.call_minutes.included,
   runtime_allowance_usd_monthly: 0,
   ai_spend_allowance_usd_monthly: 2,
   overage_per_min_usd: USAGE_METERS.call_minutes.tiers[0].unitUsd,
-  included_phone_numbers: 0,
-  included_mailboxes: 0,
+  included_phone_numbers: defaultUsageOffer.includedNumbers,
+  included_mailboxes: defaultUsageOffer.includedEmailAddresses,
   channels: ["voice", "email", "sms"],
   checkoutAvailability: "available",
   features: [],

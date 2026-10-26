@@ -5,7 +5,7 @@ export type CalendarSettings = {
   duration_minutes: number;
   buffer_minutes: number;
   minimum_notice_minutes: number;
-  booking_mode: "automatic" | "approval";
+  booking_mode: "automatic" | "approval" | "inherit";
   weekly_hours: Array<{ day: number; start: string; end: string }>;
 };
 
@@ -29,7 +29,7 @@ export function readCalendarSettings(value: unknown): CalendarSettings | null {
     !Number.isInteger(settings.minimum_notice_minutes) ||
     settings.minimum_notice_minutes < 0 ||
     settings.minimum_notice_minutes > 10080 ||
-    !["automatic", "approval"].includes(settings.booking_mode) ||
+    !["automatic", "approval", "inherit"].includes(settings.booking_mode) ||
     !Array.isArray(settings.weekly_hours) ||
     settings.weekly_hours.length > 7 ||
     settings.weekly_hours.some(

@@ -1,11 +1,10 @@
 /**
- * Curated Bot identity marks.
+ * Curated Bot pictures.
  *
  * BotBound's robot is the company mark. These marks identify individual Bots
- * throughout the product. Fifteen distinct symbols cover the largest published
- * plan without repeating a symbol. Eight restrained colorways expand the
- * identity catalog to 120 unique combinations, covering the 15-Bot Scale plan
- * plus the maximum 100 paid add-ons without a duplicate workspace identity.
+ * in the product. Fifteen symbols and eight colors make 120 pictures. A
+ * workspace prefers an unused picture, then reuses one. A picture is not a
+ * Bot slot, and two Bots may share one.
  * Role and runtime status never choose or recolor the identity.
  */
 
@@ -166,7 +165,7 @@ export const BOT_MARK_CHOICES: ReadonlyArray<{
 
 /** Compatibility export for policy and downstream visual-contract checks. */
 export const BOT_MARK_PALETTE = BOT_MARK_PALETTES.map((palette) => palette.colors);
-/** The number of non-repeating workspace identities available to customers. */
+/** The number of curated pictures. Workspaces may reuse one after these are all in use. */
 export const BOT_MARK_IDENTITY_CAPACITY = BOT_MARK_CHOICES.length;
 /** Stable animation-signature space retained for existing persisted Bot ids. */
 export const BOT_MARK_SIGNATURE_CAPACITY = 1_048_576;
@@ -203,11 +202,11 @@ export function defaultBotMarkKey(seed: string | null | undefined): BotMarkKey {
   return BOT_MARK_CHOICES[stableBotMarkHash(normalized) % BOT_MARK_CHOICES.length].key;
 }
 
-/** Picks a stable available identity without ever reusing a workspace mark. */
+/** Prefers an unused picture, then reuses one so another Bot can still be created. */
 export function firstAvailableBotMarkKey(
   seed: string | null | undefined,
   unavailableKeys: Iterable<string>,
-): BotMarkKey | null {
+): BotMarkKey {
   const unavailable = new Set(
     Array.from(unavailableKeys).filter((candidate): candidate is BotMarkKey =>
       isBotMarkKey(candidate),
@@ -222,7 +221,7 @@ export function firstAvailableBotMarkKey(
     const candidate = candidatePool[(start + offset) % candidatePool.length].key;
     if (!unavailable.has(candidate)) return candidate;
   }
-  return null;
+  return defaultBotMarkKey(seed);
 }
 
 export function botMarkFor(input: {

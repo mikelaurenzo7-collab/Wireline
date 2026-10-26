@@ -13,12 +13,19 @@ export function sharedWorkspacesEnabled(env: NodeJS.ProcessEnv = process.env): b
 }
 
 export function requireCertifiedSharedWorkspaces(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction,
 ): void {
   if (sharedWorkspacesEnabled()) {
     next();
+    return;
+  }
+
+  const fullPath = `${req.baseUrl || ""}${req.path || ""}`;
+  const isTeamRead = req.method === "GET" && (fullPath === "/api/team" || fullPath === "/api/team/");
+  if (isTeamRead) {
+    res.status(200).json({ available: false });
     return;
   }
 

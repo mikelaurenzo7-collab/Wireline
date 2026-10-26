@@ -58,7 +58,7 @@ Avoid on broad public surfaces:
 - guaranteed bookings or revenue
 - customer-count, ROI, or testimonial claims that do not yet have real customer evidence
 - public WhatsApp claims while the feature remains outside the launch posture
-- SMS or outbound promotions, including coming soon offers
+- coming soon, pending carrier, or not-in-plan status for SMS and outbound calling
 - multiple workflow spines competing on the same journey
 
 ## Pre-customer proof standard

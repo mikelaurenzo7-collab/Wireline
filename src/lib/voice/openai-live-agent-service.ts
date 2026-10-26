@@ -30,6 +30,7 @@ import {
   RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK,
 } from "../agent-runtime";
 import { clampRuntimePromptPreservingTail } from "../agent-runtime-helpers";
+import { currentPricingPromptBlock, isStaleBotBoundPricing } from "../usage-billing-catalog";
 import {
   founderInternalRuntimeAuthorityBoundary,
   founderInternalRuntimePolicyBlock,
@@ -279,12 +280,17 @@ export function composeOpenAILiveInstructions(
       runtimeReviewRequired ? "" : listBlock("OPERATING RULES", directives, 24),
       runtimeReviewRequired
         ? ""
-        : listBlock("INITIAL APPROVED KNOWLEDGE", knowledge, MAX_INITIAL_KNOWLEDGE_ITEMS),
+        : listBlock(
+            "INITIAL APPROVED KNOWLEDGE",
+            knowledge.filter((item) => !isStaleBotBoundPricing(item.content ?? "")),
+            MAX_INITIAL_KNOWLEDGE_ITEMS,
+          ),
       `\n${RUNTIME_ACTION_SAFETY_BLOCK}`,
       `\n${RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK}`,
       internalPolicy && !runtimeReviewRequired
         ? `\n${founderInternalRuntimeAuthorityBoundary(internalPolicy)}`
         : "",
+      `\n${currentPricingPromptBlock()}`,
     ]
       .filter(Boolean)
       .join("\n"),

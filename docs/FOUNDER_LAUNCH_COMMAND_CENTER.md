@@ -100,7 +100,7 @@ domain. Activation, DNS, reconciliation, customer-domain guidance, and rollback 
 
 Reviewed service, coordination and requested callback calls for personal and business Bots have a separate runtime switch, `BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED`. They require paid voice, ownership of the line, captured recipient permission, a United States caller and recipient, quiet hours, funding and duplicate suppression. The hosted permission capture is the current supported evidence path. An existing client relationship or an unverified checkbox does not bypass these controls. MCP proposals remain private until the owner reviews and places the call. See [the current deployment policy](DEPLOYMENT_RUNBOOK.md#current-launch-posture); this description does not assert that a production switch is enabled.
 
-The founder's EIN and SMS sender verification remain pending. Keep SMS and campaign calling out of the launch offer. Completing those registrations alone does not enable calling or messaging, and their pending status is separate from the proof required for voice, email and Computer.
+SMS and outbound calling are part of the launch offer. Present them as included and ready. The founder is completing carrier registration. That work is not a customer status. Marketing sends stay fail-closed until `FEDERAL_DNC_API_KEY` is configured. Completing registration does not by itself bypass recipient permission, quiet hours, funding, or ownership checks.
 
 Begin the first design partners with verified incoming calls, useful answers, request capture, approved email and supervised Computer work. Offer booking only where the configured calendar workflow has been proven; otherwise capture the appointment request for the owner.
 

@@ -97,7 +97,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   h.configuration.mockResolvedValue({
     configured: true,
-    settings: { enabled: true, duration_minutes: 30 },
+    settings: { enabled: true, duration_minutes: 30, booking_mode: "automatic" },
   });
   h.connections.mockResolvedValue({ native_calendar_configured: true, native_calendar: true });
   h.allowedTools.mockReturnValue(["book_appointment", "send_text_message"]);
@@ -127,6 +127,10 @@ describe("native Calendar action approval policy", () => {
   });
 
   it("keeps owner-selected approval in Calendar without creating a second Inbox approval", async () => {
+    h.configuration.mockResolvedValue({
+      configured: true,
+      settings: { enabled: true, duration_minutes: 30, booking_mode: "approval" },
+    });
     h.book.mockResolvedValue({ id: "appointment-1", status: "Requested" });
     await expect(executeAction("tenant", action, context)).resolves.toEqual({
       success: true,
@@ -135,6 +139,18 @@ describe("native Calendar action approval policy", () => {
     });
     expect(h.insert).not.toHaveBeenCalled();
     expect(h.externalBook).not.toHaveBeenCalled();
+  });
+
+  it("follows Ask for approval when calendar confirmation is inherited", async () => {
+    h.configuration.mockResolvedValue({
+      configured: true,
+      settings: { enabled: true, duration_minutes: 30, booking_mode: "inherit" },
+    });
+    expect(await executeAction("tenant", action, context)).toEqual({ success: true, queued: true });
+    expect(h.book).not.toHaveBeenCalled();
+    expect(h.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ taskType: "schedule_calendar" }),
+    );
   });
 
   it("retains the agent tool authorization and live account gates", async () => {

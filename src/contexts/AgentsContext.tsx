@@ -28,6 +28,8 @@ interface AgentsContextValue {
   phoneLookupDegraded: boolean;
   hasAgents: boolean;
   refresh: () => void;
+  /** Load the Bot list and resolve after it is stored, before a route change. */
+  reload: () => Promise<void>;
 }
 
 const AgentsContext = createContext<AgentsContextValue>({
@@ -37,6 +39,7 @@ const AgentsContext = createContext<AgentsContextValue>({
   phoneLookupDegraded: false,
   hasAgents: false,
   refresh: () => {},
+  reload: async () => {},
 });
 
 /** Fired after an agent is created or removed so the Studio roster refreshes. */
@@ -154,10 +157,32 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
   const hasLoadedOnceRef = useRef(false);
   const focusDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const generation = useRef(0);
+  const reload = useCallback(async () => {
+    const ownerId = user?.id;
+    if (!ownerId) return;
+    const token = ++generation.current;
+    try {
+      const result = await fetchAgentsWithRetry();
+      if (token !== generation.current) return;
+      setAgents(result.agents);
+      setDegraded(result.degraded);
+      setPhoneLookupDegraded(result.phoneLookupDegraded);
+      hasLoadedOnceRef.current = true;
+    } catch {
+      if (token !== generation.current) return;
+      setDegraded(true);
+      setPhoneLookupDegraded(true);
+      hasLoadedOnceRef.current = true;
+    } finally {
+      if (token === generation.current) setLoading(false);
+    }
+  }, [user?.id]);
   const refresh = useCallback(() => setNonce((value) => value + 1), []);
 
   useEffect(() => {
     if (!user) {
+      generation.current += 1;
       setAgents([]);
       setDegraded(false);
       setPhoneLookupDegraded(false);
@@ -165,39 +190,9 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
       hasLoadedOnceRef.current = false;
       return;
     }
-
-    let cancelled = false;
     if (!hasLoadedOnceRef.current) setLoading(true);
-
-    fetchAgentsWithRetry()
-      .then(
-        ({
-          agents: list,
-          degraded: nextDegraded,
-          phoneLookupDegraded: nextPhoneLookupDegraded,
-        }) => {
-          if (cancelled) return;
-          setAgents(list);
-          setDegraded(nextDegraded);
-          setPhoneLookupDegraded(nextPhoneLookupDegraded);
-          hasLoadedOnceRef.current = true;
-        },
-      )
-      .catch(() => {
-        if (cancelled) return;
-        setAgents((current) => (current.length > 0 ? current : []));
-        setDegraded(true);
-        setPhoneLookupDegraded(true);
-        hasLoadedOnceRef.current = true;
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user, nonce]);
+    void reload();
+  }, [user, nonce, reload]);
 
   useEffect(() => {
     if (!user) return;
@@ -223,8 +218,9 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
       phoneLookupDegraded,
       hasAgents: agents.length > 0,
       refresh,
+      reload,
     }),
-    [agents, loading, degraded, phoneLookupDegraded, refresh],
+    [agents, loading, degraded, phoneLookupDegraded, refresh, reload],
   );
 
   return <AgentsContext.Provider value={value}>{children}</AgentsContext.Provider>;

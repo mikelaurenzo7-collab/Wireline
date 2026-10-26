@@ -534,10 +534,9 @@ export const liveVoiceService = {
         createdAt: now,
       };
       try {
-        const row = await drizzle.transaction(async (tx) => {
-          // The per-account cap is reserved atomically BEFORE any provider is
-          // contacted: concurrent creates for one account serialize on this
-          // lock, and each re-counts under it.
+        await drizzle.transaction(async (tx) => {
+          // Reserve the account cap before the provider call, then release the
+          // connection. The clone request must not sit inside this transaction.
           await tx.execute(
             sql`SELECT pg_advisory_xact_lock(hashtext(${`live_voice_cap:${actor.id}`}))`,
           );
@@ -551,33 +550,49 @@ export const liveVoiceService = {
               "LIVE_VOICE_ACCOUNT_LIMIT",
               `You can keep ${LIVE_VOICE_MAX_PER_ACCOUNT} cloned voices. Remove one to add another.`,
             );
-          let lastError: unknown = null;
-          const engine = cloneEngine("elevenlabs");
-          try {
-            const { providerVoiceId } = await engine.create({
-              name,
-              wav,
-              gender,
-            });
-            created = { engine, providerVoiceId };
-          } catch (error) {
-            lastError = error;
-            const code = error instanceof CloneEngineError ? error.code : "provider_unavailable";
-            log.warn("Live voice clone failed at engine", {
-              userId: actor.id,
-              engine: "elevenlabs",
-              code,
-              status: error instanceof CloneEngineError ? error.status : null,
-            });
-            void alertCloneEngineCapacity("elevenlabs", code, { jurisdiction }).catch(() => {});
-          }
-          if (!created) throw friendlyProviderError(lastError);
+        });
+        let lastError: unknown = null;
+        const engine = cloneEngine("elevenlabs");
+        try {
+          const { providerVoiceId } = await engine.create({
+            name,
+            wav,
+            gender,
+          });
+          created = { engine, providerVoiceId };
+        } catch (error) {
+          lastError = error;
+          const code = error instanceof CloneEngineError ? error.code : "provider_unavailable";
+          log.warn("Live voice clone failed at engine", {
+            userId: actor.id,
+            engine: "elevenlabs",
+            code,
+            status: error instanceof CloneEngineError ? error.status : null,
+          });
+          void alertCloneEngineCapacity("elevenlabs", code, { jurisdiction }).catch(() => {});
+        }
+        if (!created) throw friendlyProviderError(lastError);
+        const savedClone = created;
+        const row = await drizzle.transaction(async (tx) => {
+          await tx.execute(
+            sql`SELECT pg_advisory_xact_lock(hashtext(${`live_voice_cap:${actor.id}`}))`,
+          );
+          const [ready] = await tx
+            .select({ n: count() })
+            .from(liveVoices)
+            .where(and(eq(liveVoices.userId, actor.id), eq(liveVoices.status, "ready")));
+          if (Number(ready?.n ?? 0) >= LIVE_VOICE_MAX_PER_ACCOUNT)
+            throw new AppError(
+              409,
+              "LIVE_VOICE_ACCOUNT_LIMIT",
+              `You can keep ${LIVE_VOICE_MAX_PER_ACCOUNT} cloned voices. Remove one to add another.`,
+            );
           const [inserted] = await tx
             .insert(liveVoices)
             .values({
               ...values,
-              provider: created.engine.id,
-              providerVoiceId: created.providerVoiceId,
+              provider: savedClone.engine.id,
+              providerVoiceId: savedClone.providerVoiceId,
               status: "ready",
             })
             .returning();

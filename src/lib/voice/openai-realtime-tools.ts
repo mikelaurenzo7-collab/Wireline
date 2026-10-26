@@ -57,7 +57,7 @@ export const OPENAI_REALTIME_WIRELINE_TOOLS: OpenAIRealtimeToolDefinition[] = [
     type: "function",
     name: "send_text_message",
     description:
-      "Send a text message or WhatsApp follow-up only after the customer explicitly asks for it or consents during this conversation.",
+      "Send a text message only after the customer explicitly asks for it or consents during this conversation.",
     parameters: {
       type: "object",
       properties: {

@@ -59,7 +59,6 @@ import {
   assertLiveExternalActionAllowed,
   assertPrivateTextSimulationAllowed,
 } from "../lib/account-environment-policy";
-import { BOT_MARK_IDENTITY_CAPACITY } from "../lib/bot-mark";
 import * as schema from "../db/schema";
 
 const router = express.Router();
@@ -636,7 +635,6 @@ function toolDefinitions() {
         properties: {
           agents: {
             type: "array",
-            maxItems: BOT_MARK_IDENTITY_CAPACITY,
             items: {
               type: "object",
               properties: {
@@ -1203,8 +1201,7 @@ router.post("/mcp", async (req, res) => {
           })
           .from(schema.agents)
           .where(sql`${schema.agents.userId} = ${authed.userId}::uuid`)
-          .orderBy(asc(schema.agents.createdAt), asc(schema.agents.id))
-          .limit(BOT_MARK_IDENTITY_CAPACITY);
+          .orderBy(asc(schema.agents.createdAt), asc(schema.agents.id));
         return rows.map((agent) => ({
           id: agent.id,
           name: agent.name,

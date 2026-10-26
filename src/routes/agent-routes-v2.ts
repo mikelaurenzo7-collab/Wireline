@@ -31,6 +31,12 @@ import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import { listAgentsForUser } from "../lib/agents-store";
 import { deleteBot, previewBotDeletion } from "../lib/bot-deletion";
+import {
+  autonomyFromPermissionLevel,
+  effectiveAutonomy,
+  isBotPermissionLevel,
+  permissionLevelFromAutonomy,
+} from "../lib/bot-permission";
 import { normalizeManagedOpenAIVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
 import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/liveavatar-service";
 import {
@@ -60,12 +66,6 @@ import {
 } from "../lib/ai-gateway";
 import { AgentBusinessProfileSchema } from "../lib/form-validators";
 import { humanHandoffProblem, normalizeHandoffPhone } from "../lib/human-handoff-settings";
-import { isOwnerEmail } from "../lib/auth-service";
-import {
-  AGENT_CAPACITY_REACHED,
-  agentCapMessage,
-  resolveAgentEntitlement,
-} from "../lib/agent-entitlements";
 import {
   KNOWLEDGE_DOCUMENT_MAX_BASE64_CHARS,
   KNOWLEDGE_IMAGE_MAX_DATA_URL_CHARS,
@@ -526,6 +526,16 @@ router.post(
     // Template deploys carry the template's channel, opening line, and
     // personality overlay; plain Fast Start creates keep the defaults.
     const channel = req.body?.channel === "email" ? "email" : "voice";
+    const requestedTimeZone = cleanText(req.body?.timezone, 80);
+    let timezone: string | undefined;
+    if (requestedTimeZone) {
+      try {
+        new Intl.DateTimeFormat("en", { timeZone: requestedTimeZone }).format();
+        timezone = requestedTimeZone;
+      } catch {
+        throw new AppError(400, "UNKNOWN_TIMEZONE", "Choose a valid timezone.");
+      }
+    }
     const firstMessage = resolveCreateFirstMessage(req.body?.firstMessage, name);
     const templateId = cleanText(req.body?.templateId, 80);
     if (isTemplateLaunchReviewRequired(templateId)) {
@@ -547,7 +557,7 @@ router.post(
 
     const markKey = await withBotMarkPersistenceErrors(() =>
       drizzle.transaction(async (tx): Promise<BotMarkKey> => {
-        // Serialize capacity checks per tenant so concurrent creates cannot exceed plan caps.
+        // Serialize creates per workspace so concurrent requests do not race on pictures.
         await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
 
         const existingAgents = await tx
@@ -556,35 +566,6 @@ router.post(
           .where(eq(schema.agents.userId, req.user.id));
         const existing = existingAgents.length;
 
-        const isOwner = isOwnerEmail(req.user.email);
-        const [row] = await tx
-          .select({
-            planId: schema.subscriptions.plan,
-            subscriptionStatus: schema.settings.subscriptionStatus,
-            maxAgents: schema.settings.maxAgents,
-            extraAgents: schema.settings.extraAgents,
-          })
-          .from(schema.settings)
-          .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
-          .where(eq(schema.settings.userId, req.user.id))
-          .limit(1);
-
-        const entitlement = resolveAgentEntitlement({
-          isOwner,
-          subscriptionStatus: row?.subscriptionStatus,
-          planId: row?.planId,
-          maxAgents: row?.maxAgents,
-          extraAgents: row?.extraAgents,
-        });
-
-        if (entitlement.effectiveCap !== null && existing >= entitlement.effectiveCap) {
-          throw new AppError(
-            402,
-            AGENT_CAPACITY_REACHED,
-            agentCapMessage(entitlement.effectiveCap, entitlement.unlimited),
-          );
-        }
-
         const usedMarkKeys = new Set<BotMarkKey>();
         for (const existingAgent of existingAgents) {
           const existingMark = isBotMarkKey(existingAgent.markKey)
@@ -592,23 +573,9 @@ router.post(
             : defaultBotMarkKey(existingAgent.id);
           usedMarkKeys.add(existingMark);
         }
-        if (isBotMarkKey(requestedMarkKey) && usedMarkKeys.has(requestedMarkKey)) {
-          throw new AppError(
-            409,
-            "BOT_MARK_CONFLICT",
-            "That Bot identity is already in use in this workspace.",
-          );
-        }
         const availableMarkKey = isBotMarkKey(requestedMarkKey)
           ? requestedMarkKey
           : firstAvailableBotMarkKey(id, usedMarkKeys);
-        if (!availableMarkKey) {
-          throw new AppError(
-            409,
-            "BOT_MARK_CAPACITY_REACHED",
-            "Every available Bot identity is already in use.",
-          );
-        }
 
         const voiceId =
           normalizeManagedOpenAIVoiceId(requestedVoiceId) || pickRotatedVoiceId(existing);
@@ -622,6 +589,8 @@ router.post(
           archetype: resolveAgentRoleArchetype(role),
           voiceId,
           voiceProvider: "openai",
+          autonomyLevel: "supervised",
+          ...(timezone ? { timezone } : {}),
           enabledTools,
           firstMessage,
           isBusinessAgent,
@@ -693,23 +662,6 @@ router.patch(
           .limit(1);
         if (!ownedAgent) throw AppError.fromHttpStatus(404, "Agent not found");
 
-        const workspaceAgents = await tx
-          .select({ id: schema.agents.id, markKey: schema.agents.markKey })
-          .from(schema.agents)
-          .where(eq(schema.agents.userId, req.user.id));
-        const conflict = workspaceAgents.some(
-          (agent) =>
-            agent.id !== req.params.id &&
-            (isBotMarkKey(agent.markKey) ? agent.markKey : defaultBotMarkKey(agent.id)) === markKey,
-        );
-        if (conflict) {
-          throw new AppError(
-            409,
-            "BOT_MARK_CONFLICT",
-            "That Bot identity is already in use in this workspace.",
-          );
-        }
-
         const [saved] = await tx
           .update(schema.agents)
           .set({ markKey })
@@ -724,14 +676,33 @@ router.patch(
   },
 );
 
+router.patch(
+  "/api/agents/:id/permission",
+  authenticateUser,
+  agentMutationRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!isBotPermissionLevel(req.body?.level)) {
+      throw AppError.badRequest("Choose Full access, Auto, or Ask for approval.");
+    }
+    const autonomyLevel = autonomyFromPermissionLevel(req.body.level);
+    const [saved] = await drizzle
+      .update(schema.agents)
+      .set({ autonomyLevel })
+      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+      .returning({ id: schema.agents.id });
+    if (!saved) throw AppError.fromHttpStatus(404, "Agent not found");
+    res.json({ id: saved.id, permission: req.body.level });
+  },
+);
+
 router.get(
   "/api/agent-config/:id",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
-    const [agentRows, personalities, directives, knowledge] = await drizzle.transaction(
-      async (tx) => {
+    const [agentRows, personalities, directives, knowledge, tenantSettings] =
+      await drizzle.transaction(async (tx) => {
         // A transaction is a single pg client. Run the snapshot reads in
         // order instead of relying on pg@8's deprecated concurrent queue.
         const agentRows = await tx
@@ -749,6 +720,7 @@ router.get(
             llmTemperature: schema.agents.llmTemperature,
             voiceId: schema.agents.voiceId,
             voiceProvider: schema.agents.voiceProvider,
+            autonomyLevel: schema.agents.autonomyLevel,
             phoneVoiceId: schema.agents.phoneVoiceId,
             phoneVoiceProvider: schema.agents.phoneVoiceProvider,
             ...BUSINESS_PROFILE_COLUMNS,
@@ -789,7 +761,12 @@ router.get(
             ),
           )
           .orderBy(desc(schema.knowledge.createdAt));
-        return [agentRows, personalities, directives, knowledge] as const;
+        const tenantSettings = await tx
+          .select({ autonomyLevel: schema.settings.autonomyLevel })
+          .from(schema.settings)
+          .where(eq(schema.settings.userId, req.user.id))
+          .limit(1);
+        return [agentRows, personalities, directives, knowledge, tenantSettings] as const;
       },
     );
     const record = agentRows[0];
@@ -834,6 +811,9 @@ router.get(
       : null;
     res.json({
       mark_key: record?.markKey || null,
+      permission: permissionLevelFromAutonomy(
+        effectiveAutonomy(record?.autonomyLevel, tenantSettings[0]?.autonomyLevel),
+      ),
       capabilities: { image_uploads: isTrainingImageAvailable() },
       firstMessage: record?.firstMessage || null,
       openingGreeting: resolveAgentGreeting(record || {}, directives),

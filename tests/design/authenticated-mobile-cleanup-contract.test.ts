@@ -79,7 +79,7 @@ describe("authenticated mobile cleanup", () => {
     expect(shell).toContain("Current Bot");
     expect(shell).not.toContain("orderedAgents");
     expect(chrome).toContain('aria-label="Switch Bot"');
-    expect(create).toContain("BOT_ROLE_TEMPLATES.map");
+    expect(create).toContain("BOT_ROLE_TEMPLATES.find");
     expect(create).toContain("Cancel");
   });
 

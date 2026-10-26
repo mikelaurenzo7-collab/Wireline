@@ -36,7 +36,11 @@ describe("entitlement fail-closed defaults", () => {
         maxAgents: 99,
         extraAgents: 10,
       }),
-    ).toMatchObject({ subscriptionStatus: "pending_activation", effectiveCap: 1 });
+    ).toMatchObject({
+      subscriptionStatus: "pending_activation",
+      effectiveCap: null,
+      unlimited: true,
+    });
 
     for (const [path, source] of [
       ["src/lib/voice/outbound-call-service.ts", outbound],

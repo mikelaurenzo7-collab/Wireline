@@ -204,5 +204,5 @@ it("an Email package preserves call history but does not mount phone provisionin
   h.params = new URLSearchParams({ tab: "setup" });
   expect(render().some((node) => node.type === "phone-setup")).toBe(false);
   h.params = new URLSearchParams({ tab: "outbound" });
-  expect(render().some((node) => node.type === "outbound-hub")).toBe(false);
+  expect(render().some((node) => node.type === "outbound-hub")).toBe(true);
 });

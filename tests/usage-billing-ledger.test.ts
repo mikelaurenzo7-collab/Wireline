@@ -44,6 +44,7 @@ function memoryStore(
 ) {
   const rows: Row[] = [];
   const control: UsageSpendControl = {
+    tier: "starter",
     capUsd: 100,
     numbers: 0,
     emailAddresses: 0,
@@ -465,6 +466,7 @@ describe("usage spend caps", () => {
   });
   it("prices fixed charges plus every meter at its period total", () => {
     const control = {
+      tier: "starter" as const,
       capUsd: 100,
       numbers: 1,
       emailAddresses: 1,
@@ -472,6 +474,7 @@ describe("usage spend caps", () => {
       alertLevelPct: 0,
     };
     expect(periodSpendUsd(control, emptyMeterTotals())).toBe(26);
+    expect(periodSpendUsd({ ...control, tier: undefined }, emptyMeterTotals())).toBe(31);
     expect(
       periodSpendUsd(control, {
         call_minutes: 160,
@@ -486,13 +489,14 @@ describe("usage spend caps", () => {
     // 60 minutes are included, so 70 minutes from zero cost $2.50.
     expect(clampBillableQuantity("call_minutes", 0, 70, 100)).toBe(70);
     expect(clampBillableQuantity("call_minutes", 60, 10, 1)).toBe(4);
-    expect(clampBillableQuantity("call_minutes", 0, 70, 0)).toBe(48);
+    expect(clampBillableQuantity("call_minutes", 0, 70, 0, emptyMeterTotals(), "starter")).toBe(48);
+    expect(clampBillableQuantity("call_minutes", 0, 70, 0)).toBe(56);
     expect(clampBillableQuantity("call_minutes", 80, 10, 0)).toBe(0);
     expect(clampBillableQuantity("emails_handled", 0, 0, 10)).toBe(0);
   });
 
   it("never reports more than the cap, and skips work past it", async () => {
-    // $19 base, cap $25: $6 of headroom is 24 paid minutes after the 60 included.
+    // Retired base of 19 dollars, cap 25: 6 dollars of headroom is 24 paid minutes after the included bucket.
     const { store, rows } = memoryStore({ control: { capUsd: 25 } });
     const { client, sent } = recordingClient();
     await recordUsageEvent(
@@ -565,7 +569,7 @@ describe("usage spend alerts", () => {
   it("sends each threshold once per period, the highest only, and pauses at 100%", async () => {
     const { store, paused } = memoryStore({ control: { capUsd: 40 } });
     const notify = vi.fn().mockResolvedValue(undefined);
-    // $19 base of a $40 cap is 47%.
+    // A retired base of 19 dollars against a 40 dollar cap is 47%.
     expect(await evaluateUsageSpendAlerts(store, USER, notify)).toEqual([]);
     await recordUsageEvent(store, event("call_minutes", "call-1", 52)); // $20 = 50%
     expect(await evaluateUsageSpendAlerts(store, USER, notify)).toEqual([50]);

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   activationBillingHref,
   billingIntervalFromIntent,
+  captureSignupIntentFromLocation,
   mergeSignupIntent,
   parseSignupIntent,
   recommendedPlanFromIntent,
@@ -32,6 +33,18 @@ describe("signup-intent", () => {
     expect(parseSignupIntent("?plan=personal-plus")?.preferredPlanId).toBe("team");
     expect(parseSignupIntent("?plan=business-starter")?.preferredPlanId).toBe("starter");
     expect(parseSignupIntent("?plan=starter")?.preferredPlanId).toBe("starter");
+    expect(parseSignupIntent("?plan=lite")).toMatchObject({
+      preferredPlanId: "usage",
+      preferredUsageTier: "lite",
+    });
+    expect(parseSignupIntent("?plan=plus")).toMatchObject({
+      preferredPlanId: "usage",
+      preferredUsageTier: "plus",
+    });
+    expect(parseSignupIntent("?plan=standard")).toMatchObject({
+      preferredPlanId: "usage",
+      preferredUsageTier: "standard",
+    });
     expect(parseSignupIntent("?plan=scale")?.preferredPlanId).toBe("business");
     expect(parseSignupIntent("?plan=enterprise")?.preferredPlanId).toBe("business");
   });
@@ -144,4 +157,30 @@ describe("signup-intent", () => {
       ).toBe(expected);
     },
   );
+
+  it("remembers Starter when signup has no plan in the address", () => {
+    const storage = new Map<string, string>();
+    const previous = globalThis.window;
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: {
+        location: { search: "", pathname: "/signup" },
+        localStorage: {
+          getItem: (key: string) => storage.get(key) ?? null,
+          setItem: (key: string, value: string) => {
+            storage.set(key, value);
+          },
+          removeItem: (key: string) => {
+            storage.delete(key);
+          },
+        },
+      },
+    });
+    expect(captureSignupIntentFromLocation()).toMatchObject({
+      preferredPlanId: "usage",
+      preferredUsageTier: "standard",
+      preferredBillingInterval: "month",
+    });
+    Object.defineProperty(globalThis, "window", { configurable: true, value: previous });
+  });
 });

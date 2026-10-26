@@ -23,17 +23,26 @@ import { pathToFileURL } from "node:url";
 
 export const CATALOG_VERSION = "2026-10-usage-v2";
 export const BOTBOUND_STRIPE_ACCOUNT_ID = "acct_1TkyXL8e6If87QKm";
+export const BOTBOUND_LLC_STRIPE_ACCOUNT_IDS = ["acct_1UQBcs6Ph5cHChCS", "acct_1UQBcz65EUA2bfnZ"];
 
 /** Verify the selected account before creating any billing objects. */
 export async function assertUsageStripeAccount(stripe, { mode = "live", sandboxAccountId } = {}) {
   const account = await stripe.accounts.retrieve();
+  if (BOTBOUND_LLC_STRIPE_ACCOUNT_IDS.includes(account.id)) {
+    throw new Error(
+      `Refusing the BOTBOUND LLC Stripe account (${account.id}). Billing must use the BotBound account (${BOTBOUND_STRIPE_ACCOUNT_ID}).`,
+    );
+  }
+  const sandbox = typeof sandboxAccountId === "string" ? sandboxAccountId.trim() : "";
   const expected =
-    mode === "test" && /^acct_[A-Za-z0-9]+$/.test(sandboxAccountId ?? "")
-      ? sandboxAccountId
+    mode === "test" &&
+    /^acct_[A-Za-z0-9]+$/.test(sandbox) &&
+    !BOTBOUND_LLC_STRIPE_ACCOUNT_IDS.includes(sandbox)
+      ? sandbox
       : BOTBOUND_STRIPE_ACCOUNT_ID;
   if (account.id !== expected) {
     throw new Error(
-      `Usage billing setup requires the BotBound Stripe account (${BOTBOUND_STRIPE_ACCOUNT_ID}); the supplied key belongs to another account.`,
+      `Usage billing setup requires the BotBound Stripe account (${BOTBOUND_STRIPE_ACCOUNT_ID}); the supplied key belongs to ${account.id}.`,
     );
   }
 }
@@ -217,10 +226,23 @@ export function validateUsagePrice(price, spec, { productId, meterId } = {}) {
       price.recurring?.usage_type === "licensed" &&
       !price.recurring?.meter &&
       Number(price.unit_amount_decimal ?? price.unit_amount) === spec.unit_amount;
-  if (!common || !rates)
+  if (!common || !rates) {
+    const expectedAmount = spec.tiers
+      ? spec.tiers.map((tier) => tier.unit_amount_decimal).join(",")
+      : String(spec.unit_amount);
+    const configuredAmount = spec.tiers
+      ? (price.tiers ?? [])
+          .map((tier) => String(tier.unit_amount_decimal ?? tier.unit_amount ?? "missing"))
+          .join(",")
+      : String(price.unit_amount_decimal ?? price.unit_amount ?? "missing");
+    const lookup =
+      price.lookup_key === spec.lookup_key
+        ? "lookup key matches"
+        : `lookup key ${price.lookup_key ?? "missing"}`;
     throw new Error(
-      `Usage price ${spec.lookup_key} does not match the approved catalog. No automatic repair is allowed.`,
+      `Usage price ${spec.lookup_key} does not match the approved catalog (${lookup}; expected amount ${expectedAmount}; configured amount ${configuredAmount}). No automatic repair is allowed.`,
     );
+  }
 }
 
 export function validateUsageMeter(meter, spec) {

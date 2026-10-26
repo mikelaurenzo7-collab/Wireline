@@ -560,7 +560,7 @@ export async function stripeAllowsCanceledNumberReclamation(input: {
  * plan. When the base plan is scheduled to end, becomes unpaid/paused, or
  * reaches a terminal state, schedule any active standalone Live Video add-on to end too
  * so a customer cannot become blocked in-product while continuing to receive
- * future $19 renewals. We preserve the already-paid add-on period rather than
+ * future live-video add-on renewals. We preserve the already-paid add-on period rather than
  * performing an immediate cancellation/refund mutation. A cascade marker lets
  * us safely undo only BotBound-triggered add-on cancellations if the base plan
  * recovers or a replacement paid base plan becomes active before the add-on ends.

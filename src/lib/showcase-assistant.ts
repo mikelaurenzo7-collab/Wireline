@@ -634,7 +634,7 @@ function buildCompactBotBoundKnowledgeSection(kind: ShowcaseKind): string[] {
     "BOTBOUND KNOWLEDGE:",
     modeLead,
     `- ${WIRELINE_ONE_LINER}`,
-    "- Core capabilities: calls, SMS, email, native calendar booking, and supervised Computer work. No CRM is required. Explain the relevant capability first. SMS and outbound activation depend on provider approval, recipient permission, account configuration and the supported call purpose. Never claim a channel is active unless its tools confirm it. Do not recite an activation checklist unless asked.",
+    "- Core capabilities: calls, SMS, email, native calendar booking, and supervised Computer work. No CRM is required. Explain the relevant capability first. SMS and outbound calling are included and ready. Recipient permission, account configuration, and the supported call purpose still apply. Never claim a channel is active unless its tools confirm it. Do not recite an activation checklist unless asked.",
     `- Small business use: ${WIRELINE_GROWTH_ENGINE}`,
     `- Pricing: ${buildCompactPricingSummary()}.`,
     `- Optional connections: ${WIRELINE_INTEGRATIONS.join(", ")}. The native calendar and inbox do not require a CRM.`,

@@ -13,7 +13,6 @@ import {
   personalityForTemplate,
   wirelinePlanFacts,
 } from "../src/lib/founder-fleet-seed";
-import { plansForClient } from "../src/lib/plan-catalog";
 import { pickRotatedVoiceId } from "../src/data/voice-roster";
 import { WIRELINE_PERSONAS } from "../src/lib/wireline-agent-personas";
 
@@ -153,56 +152,19 @@ describe("founder fleet composition", () => {
     }
   });
 
-  it("teaches current launch plans from the catalog without offering retained SMS packages", () => {
+  it("teaches the live usage prices without a retired offer", () => {
     const facts = wirelinePlanFacts().join("\n");
-    const plans = plansForClient();
-    const launchPlans = plans.filter(
-      (plan) =>
-        plan.is_free || (plan.catalog_family === "channels" && !plan.channels.includes("sms")),
-    );
-    expect(launchPlans).toHaveLength(10);
-
-    // Every launch package keeps its exact canonical price and capacity. SMS
-    // remains in billing for existing subscribers without becoming sales copy.
-    for (const plan of launchPlans) {
-      expect(facts, `${plan.name} missing from plan facts`).toContain(plan.name);
-      if (plan.price_usd_monthly > 0) {
-        expect(facts).toContain(
-          `${plan.name}: $${plan.price_usd_monthly}/month or $${plan.price_usd_annual}/year`,
-        );
-      }
-    }
-    for (const plan of plans.filter((plan) => plan.channels.includes("sms"))) {
-      expect(facts).not.toContain(`${plan.name}:`);
-    }
-
-    // Prices can recur in different offers; reject retired identities and
-    // unsupported benefits rather than forbidding valid channel amounts.
-    expect(facts).not.toMatch(/BotBound (?:Starter|Pro|Scale|Business)\b/);
-    expect(facts).not.toMatch(
-      /Additional agents are an add-on|Every paid Bot includes|never cut mid conversation/,
-    );
-    expect(facts).toContain("Extra Bots are not available as add ons");
-    expect(facts).toContain("one call at a time");
-    expect(facts).toContain(
-      "up to 10 minutes of completion credit within the call's duration limit",
-    );
-    expect(facts).toContain("SMS activation is unavailable");
-    const email = facts.split("\n").find((line) => line.startsWith("BotBound Email Light:"))!;
-    expect(email).toContain("Calls not included, no included number, 1 managed mailbox");
-    expect(email).not.toContain("until a paid plan is active");
-    const emailPlan = launchPlans.find((plan) => plan.id === "email")!;
-    if (emailPlan.contact_sales) {
-      expect(email).toContain("Email activation requires a setup review");
-    }
-    expect(facts).toContain("Reviewed personal coordination");
-    expect(facts).toContain("a caller and recipient in the United States");
-    expect(facts).toContain("Marketing and sales call campaigns are unavailable");
-    expect(knowledgeForRole("customer_service").join("\n")).not.toContain(
-      "work across voice, text, and email",
-    );
-
-    // Guardrail so a seeded agent cannot improvise commercial terms.
+    const retired = `${String.fromCharCode(36)}19/month`;
+    expect(facts).toContain("Lite is $12/month");
+    expect(facts).toContain("Starter is $24/month");
+    expect(facts).toContain("Plus is $49/month");
+    expect(facts).toContain("SMS is $0.04 per sent segment");
+    expect(facts).toContain("unlimited Bots");
+    expect(facts).not.toContain(retired);
+    expect(facts).not.toContain("channel packages include one Bot");
+    expect(facts).not.toContain("prepaid Runtime Balance");
+    expect(knowledgeForRole("customer_service").join("\n")).toContain("Starter is $24/month");
+    expect(knowledgeForRole("personal_assistant").join("\n")).not.toContain("Starter is $24/month");
     expect(facts).toMatch(/escalate instead of inventing an offer/i);
   });
 

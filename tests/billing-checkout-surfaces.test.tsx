@@ -256,7 +256,7 @@ describe("billing plan decisions", () => {
     );
     expect(text(summary)).toContain("3 phone numbers included");
     expect(text(summary)).toContain("225 call minutes/month · 1 call at a time");
-    expect(text(summary)).toContain("$2.75 Runtime Allowance each month");
+    expect(text(summary)).toContain("$2.75 of included usage each month");
     expect(text(summary)).toContain("$4.50 of AI usage included each month");
     expect(text(detailsFrom(elements))).toContain("No automatic overages");
     expect(text(summary)).not.toContain("Connected calendar");

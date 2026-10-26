@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -6,12 +7,13 @@ import {
   USAGE_ADDONS,
   USAGE_BASE_USD_MONTHLY,
   USAGE_CATALOG_VERSION,
-  USAGE_INCLUDED_WORK_USD,
   USAGE_TIERS,
   USAGE_WORK_EVENT_NAME,
   USAGE_NEVER_PAY_FOR,
   crossedAlertThresholds,
+  currentPricingFacts,
   estimateUsageBill,
+  isStaleBotBoundPricing,
   marginalUnitUsd,
   minimumMonthlyCapUsd,
   priceMeter,
@@ -20,6 +22,7 @@ import {
   USAGE_BILLING_ENV_VARS,
   USAGE_METER_EVENT_ENV,
   USAGE_PRICE_ENV,
+  USAGE_TIER_PRICE_ENV,
   usageBillingEnabled,
   usageCheckoutConfigured,
   usageMeterEventName,
@@ -33,6 +36,7 @@ import UsagePricingPanel, {
 import {
   CATALOG_VERSION,
   assertUsageStripeAccount,
+  BOTBOUND_LLC_STRIPE_ACCOUNT_IDS,
   BOTBOUND_STRIPE_ACCOUNT_ID,
   USAGE_STRIPE_PLAN,
   USAGE_STRIPE_PLANS,
@@ -53,7 +57,7 @@ describe("usage rate card", () => {
     for (const [index, id] of (["lite", "standard", "plus"] as const).entries()) {
       const plan = USAGE_TIERS[id];
       const [, selectButton, details] = cards[index];
-      expect(selectButton).toContain("Usage Included");
+      expect(selectButton).toContain("Includes");
       expect(selectButton).not.toContain(`$${plan.includedWorkUsd}`);
       expect(selectButton).not.toMatch(/<(?:summary|details|a)\b/);
       expect(details).toContain(`aria-label="${plan.name} Plan Details"`);
@@ -85,13 +89,16 @@ describe("usage rate card", () => {
   });
   it("rounds the pooled invoice once across fractional channels", () => {
     expect(
-      estimateUsageBill({
-        callMinutes: 48.02,
-        emailsHandled: 0,
-        computerMinutes: 0.025,
-        numbers: 0,
-        emailAddresses: 0,
-      }).totalUsd,
+      estimateUsageBill(
+        {
+          callMinutes: 48.02,
+          emailsHandled: 0,
+          computerMinutes: 0.025,
+          numbers: 0,
+          emailAddresses: 0,
+        },
+        "starter",
+      ).totalUsd,
     ).toBe(19.01);
   });
   it("prices call minutes with included units, then graduated tiers", () => {
@@ -113,27 +120,36 @@ describe("usage rate card", () => {
   });
 
   it("reproduces the example bills in the design doc", () => {
-    const solo = estimateUsageBill({
-      callMinutes: 180,
-      emailsHandled: 40,
-      computerMinutes: 5,
-      numbers: 1,
-      emailAddresses: 0,
-    });
-    const salon = estimateUsageBill({
-      callMinutes: 1_000,
-      emailsHandled: 300,
-      computerMinutes: 20,
-      numbers: 1,
-      emailAddresses: 1,
-    });
-    const multiLocation = estimateUsageBill({
-      callMinutes: 10_000,
-      emailsHandled: 2_000,
-      computerMinutes: 120,
-      numbers: 3,
-      emailAddresses: 3,
-    });
+    const solo = estimateUsageBill(
+      {
+        callMinutes: 180,
+        emailsHandled: 40,
+        computerMinutes: 5,
+        numbers: 1,
+        emailAddresses: 0,
+      },
+      "starter",
+    );
+    const salon = estimateUsageBill(
+      {
+        callMinutes: 1_000,
+        emailsHandled: 300,
+        computerMinutes: 20,
+        numbers: 1,
+        emailAddresses: 1,
+      },
+      "starter",
+    );
+    const multiLocation = estimateUsageBill(
+      {
+        callMinutes: 10_000,
+        emailsHandled: 2_000,
+        computerMinutes: 120,
+        numbers: 3,
+        emailAddresses: 3,
+      },
+      "starter",
+    );
     expect(solo.totalUsd).toBe(56.8);
     expect(salon.totalUsd).toBe(274);
     expect(multiLocation.totalUsd).toBe(2_592);
@@ -157,8 +173,10 @@ describe("usage rate card", () => {
   });
 
   it("keeps the minimum cap above fixed charges and alerts at 50/80/100", () => {
-    expect(minimumMonthlyCapUsd({ numbers: 0, emailAddresses: 0 })).toBe(24);
-    expect(minimumMonthlyCapUsd({ numbers: 2, emailAddresses: 1 })).toBe(34);
+    expect(minimumMonthlyCapUsd({ numbers: 0, emailAddresses: 0 })).toBe(29);
+    expect(minimumMonthlyCapUsd({ numbers: 2, emailAddresses: 1 })).toBe(39);
+    expect(minimumMonthlyCapUsd({ numbers: 0, emailAddresses: 0 }, "starter")).toBe(24);
+    expect(minimumMonthlyCapUsd({ numbers: 2, emailAddresses: 1 }, "starter")).toBe(34);
     expect(crossedAlertThresholds(0, 49)).toEqual([]);
     expect(crossedAlertThresholds(0, 85)).toEqual([50, 80]);
     expect(crossedAlertThresholds(80, 100)).toEqual([100]);
@@ -206,16 +224,26 @@ describe("usage billing flag and payload", () => {
   });
 
   it("opens checkout only with the flag and all four offered prices", () => {
+    const standard = USAGE_TIER_PRICE_ENV.standard;
     const prices = {
-      [USAGE_PRICE_ENV.base]: "price_base",
-      [USAGE_PRICE_ENV.work]: "price_work",
+      [standard.base]: "price_base",
+      [standard.work]: "price_work",
       [USAGE_PRICE_ENV.number]: "price_number",
       [USAGE_PRICE_ENV.email_address]: "price_mailbox",
     };
     expect(usageCheckoutConfigured(prices)).toBe(false);
     expect(usageCheckoutConfigured({ ...prices, USAGE_BILLING_ENABLED: "true" })).toBe(true);
-    const { [USAGE_PRICE_ENV.work]: _omitted, ...missingOne } = prices;
+    const { [standard.work]: _omitted, ...missingOne } = prices;
     expect(usageCheckoutConfigured({ ...missingOne, USAGE_BILLING_ENABLED: "true" })).toBe(false);
+    const retired = {
+      USAGE_BILLING_ENABLED: "true",
+      [USAGE_PRICE_ENV.base]: "price_retired_base",
+      [USAGE_PRICE_ENV.work]: "price_retired_work",
+      [USAGE_PRICE_ENV.number]: "price_number",
+      [USAGE_PRICE_ENV.email_address]: "price_mailbox",
+    };
+    expect(usageCheckoutConfigured(retired)).toBe(false);
+    expect(usageCheckoutConfigured(retired, "starter")).toBe(true);
     expect([...usagePriceIds(prices)].sort()).toEqual(
       ["price_base", "price_work", "price_number", "price_mailbox"].sort(),
     );
@@ -253,19 +281,28 @@ describe("Stripe setup script parity", () => {
         accounts: { retrieve: async () => ({ id: BOTBOUND_STRIPE_ACCOUNT_ID }) },
       }),
     ).resolves.toBeUndefined();
-    await expect(
-      assertUsageStripeAccount(
-        { accounts: { retrieve: async () => ({ id: "acct_1UQBcs6Ph5cHChCS" }) } },
-        { mode: "live", sandboxAccountId: "acct_1UQBcs6Ph5cHChCS" },
-      ),
-    ).rejects.toThrow("requires the BotBound Stripe account");
+    for (const accountId of BOTBOUND_LLC_STRIPE_ACCOUNT_IDS) {
+      await expect(
+        assertUsageStripeAccount(
+          { accounts: { retrieve: async () => ({ id: accountId }) } },
+          { mode: "test", sandboxAccountId: accountId },
+        ),
+      ).rejects.toThrow("BOTBOUND LLC");
+      await expect(
+        assertUsageStripeAccount(
+          { accounts: { retrieve: async () => ({ id: accountId }) } },
+          { mode: "live" },
+        ),
+      ).rejects.toThrow("BOTBOUND LLC");
+    }
   });
   it("uses the catalog version", () => {
     expect(CATALOG_VERSION).toBe(USAGE_CATALOG_VERSION);
   });
 
   it("prices the base and add-ons exactly as the catalog", () => {
-    expect(USAGE_STRIPE_PLAN.base.unit_amount).toBe(USAGE_BASE_USD_MONTHLY * 100);
+    expect(USAGE_STRIPE_PLAN.base.unit_amount).toBe(USAGE_TIERS.starter.monthlyUsd * 100);
+    expect(USAGE_STRIPE_PLANS.standard.base.unit_amount).toBe(USAGE_BASE_USD_MONTHLY * 100);
     expect(USAGE_STRIPE_PLAN.base.metadata.wireline_plan_id).toBe("usage");
     expect(USAGE_STRIPE_PLAN.product.metadata).not.toHaveProperty("wireline_plan_id");
     for (const addon of USAGE_STRIPE_PLAN.addons) {
@@ -279,20 +316,23 @@ describe("Stripe setup script parity", () => {
     expect(USAGE_STRIPE_PLAN.meters).toHaveLength(1);
     expect(USAGE_STRIPE_PLAN.meters[0].event_name).toBe(USAGE_WORK_EVENT_NAME);
     expect(USAGE_STRIPE_PLAN.meters[0].tiers).toEqual([
-      { up_to: USAGE_INCLUDED_WORK_USD * 100, unit_amount_decimal: "0" },
+      { up_to: USAGE_TIERS.starter.includedWorkUsd * 100, unit_amount_decimal: "0" },
       { up_to: "inf", unit_amount_decimal: "1" },
     ]);
   });
 
   it("lets any mix consume the same allowance exactly once", () => {
     const bill = (callMinutes: number, emailsHandled: number, computerMinutes: number) =>
-      estimateUsageBill({
-        callMinutes,
-        emailsHandled,
-        computerMinutes,
-        numbers: 0,
-        emailAddresses: 0,
-      });
+      estimateUsageBill(
+        {
+          callMinutes,
+          emailsHandled,
+          computerMinutes,
+          numbers: 0,
+          emailAddresses: 0,
+        },
+        "starter",
+      );
     for (const args of [
       [48, 0, 0],
       [0, 600, 0],
@@ -304,6 +344,36 @@ describe("Stripe setup script parity", () => {
     expect(bill(48, 600, 60).totalUsd).toBe(43);
     expect(bill(24, 100, 21).totalUsd).toBe(19.2);
     expect(bill(0, 0, 0).includedRemainingUsd).toBe(12);
+    expect(
+      estimateUsageBill({
+        callMinutes: 0,
+        emailsHandled: 0,
+        computerMinutes: 0,
+        numbers: 0,
+        emailAddresses: 0,
+      }),
+    ).toMatchObject({ totalUsd: 24, includedRemainingUsd: 14 });
+  });
+
+  it("teaches the live prices and ignores a retired saved offer", () => {
+    const facts = currentPricingFacts().join("\n");
+    const retired = `${String.fromCharCode(36)}19/month`;
+    expect(facts).toContain("Lite is $12/month");
+    expect(facts).toContain("Starter is $24/month");
+    expect(facts).toContain("Plus is $49/month");
+    expect(facts).toContain("SMS is $0.04 per sent segment");
+    expect(facts).toContain("unlimited Bots");
+    expect(facts).not.toContain(retired);
+    expect(isStaleBotBoundPricing(`BotBound Calls plan is ${retired}`)).toBe(true);
+    expect(isStaleBotBoundPricing("A haircut is 19 dollars")).toBe(false);
+    const migration = readFileSync(
+      "drizzle/migrations/0192_usage_tier_standard_default.sql",
+      "utf8",
+    );
+    expect(migration).toContain("ALTER COLUMN tier SET DEFAULT 'standard'");
+    expect(migration).not.toMatch(/\bUPDATE\b/);
+    expect(migration).not.toContain("wireline_knowledge");
+    expect(migration).not.toContain("wireline_personality");
   });
 
   it("prints exactly the env vars the server reads, names only", () => {

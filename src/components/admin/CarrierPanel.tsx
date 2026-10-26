@@ -161,6 +161,7 @@ export function CarrierPanel({
     access.data?.is_owner === false &&
     planById(access.data.plan_id ?? "")?.channels.includes("sms") === true;
   const showSmsSettings =
+    SMS_LAUNCH_UI_ENABLED ||
     hasSmsPackage ||
     Boolean(
       settings.twilio_messaging_enabled ||
@@ -188,9 +189,7 @@ export function CarrierPanel({
               ["Phone runtime", "BotBound Voice"],
               ["PSTN + numbers", "Twilio"],
               ["Phone voices", "BotBound voices"],
-              ...(SMS_LAUNCH_UI_ENABLED
-                ? [["SMS", showSmsSettings ? "Twilio" : "Coming soon"]]
-                : []),
+              ...(SMS_LAUNCH_UI_ENABLED ? [["SMS", "Twilio"]] : []),
             ].map(([label, value]) => (
               <div key={label} className="rounded-lg border border-border bg-background p-3">
                 <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
@@ -340,7 +339,7 @@ export function CarrierPanel({
       {SMS_LAUNCH_UI_ENABLED ? (
         <Panel
           title="Text Messaging"
-          hint={showSmsSettings ? "FOLLOW UPS · ALERTS" : "COMING SOON"}
+          hint="FOLLOW UPS · ALERTS"
           icon={MessageSquareText}
           autoHeight
         >
@@ -471,7 +470,7 @@ export function CarrierPanel({
               />
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">SMS is coming soon.</p>
+            <p className="text-sm text-muted-foreground">Texting is included.</p>
           )}
         </Panel>
       ) : null}

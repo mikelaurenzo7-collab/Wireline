@@ -1,7 +1,7 @@
 import { BOT_BRAND, BOT_PRODUCT_TYPES } from "./bot-product";
 
-/** Presentation only. Preserve messaging data and runtime gates for a later release. */
-export const SMS_LAUNCH_UI_ENABLED: boolean = false;
+/** SMS and outbound calling are part of the product. Carrier setup stays with the founder. */
+export const SMS_LAUNCH_UI_ENABLED: boolean = true;
 
 /** Shared customer-facing product voice. Technical routes, schemas, events, and APIs retain `agent` for compatibility. */
 
@@ -21,7 +21,7 @@ export const BRAND_SYSTEM = {
     "Use Bot as the customer-facing object while keeping agent as the technical domain.",
     "Use Phone Bot, Conversation Bot, and Human Bot as configuration lenses, never separate products or workspaces.",
     "Treat employee roles as starting templates, not product categories or permanent limits.",
-    "Promote incoming calls, reviewed personal calls, specific business service calls, email, and computer tasks. Keep SMS and campaign calling out of launch marketing.",
+    "Promote calls, texts, outbound calling, email, and computer tasks. SMS and outbound calling are included. Recipient permission still applies.",
     "Let customers train the playbook, channels, knowledge, tools, guardrails, approvals, and handoffs.",
     "Only promise a number for launch plans that include Calls, and an inbox for plans that include Email. Preserve existing channel access without promoting unavailable setup.",
     "Treat additional Bots as optional expansion for concurrency or genuinely separate roles.",

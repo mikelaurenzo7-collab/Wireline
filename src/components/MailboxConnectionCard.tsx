@@ -108,7 +108,9 @@ export default function MailboxConnectionCard() {
     setBusy(provider);
     setError(null);
     try {
-      const response = await authFetch(`/api/oauth/${provider}/url`);
+      const response = await authFetch(
+        `/api/oauth/${provider}/url${provider === "google" ? "?purpose=email" : ""}`,
+      );
       const body = (await safeJson(response)) as { url?: string; error?: string } | null;
       if (!response.ok || !body?.url) {
         throw new Error(

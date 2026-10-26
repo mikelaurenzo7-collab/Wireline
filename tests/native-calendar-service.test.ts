@@ -229,8 +229,8 @@ beforeEach(() => {
   h.unguardedReads = 0;
   h.failAudit = false;
   h.rows.set("wireline_settings", [
-    { id: "settings-1", userId: user, nativeCalendar: config() },
-    { id: "settings-2", userId: other, nativeCalendar: config() },
+    { id: "settings-1", userId: user, autonomyLevel: "supervised", nativeCalendar: config() },
+    { id: "settings-2", userId: other, autonomyLevel: "supervised", nativeCalendar: config() },
   ]);
 });
 afterEach(() => vi.useRealTimers());
@@ -274,6 +274,44 @@ describe("native calendar transactional booking", () => {
     await cancelCalendarAppointment(user, first.id);
     expect((await bookNativeAppointment(user, input("one"))).status).toBe("Cancelled");
     expect((await bookNativeAppointment(user, input("two"))).status).toBe("Scheduled");
+  });
+
+  it("requests owner approval when inherited confirmation resolves to Ask", async () => {
+    h.rows.set("wireline_agents", [{ id: "owned", userId: user, autonomyLevel: "draft" }]);
+    const asked = await bookNativeAppointment(user, { ...input("ask"), agentId: "owned" });
+    expect(asked.status).toBe("Requested");
+
+    h.rows.get("wireline_agents")![0].autonomyLevel = "inherit";
+    h.rows.get("wireline_settings")![0].autonomyLevel = "draft";
+    const inherited = await bookNativeAppointment(user, {
+      ...input("inherit-ask", "11:00"),
+      agentId: "owned",
+    });
+    expect(inherited.status).toBe("Requested");
+
+    h.rows.get("wireline_agents")![0].autonomyLevel = "supervised";
+    const automaticBot = await bookNativeAppointment(user, {
+      ...input("inherit-auto", "12:00"),
+      agentId: "owned",
+    });
+    expect(automaticBot.status).toBe("Scheduled");
+
+    h.rows.get("wireline_settings")![0].nativeCalendar.booking_mode = "automatic";
+    h.rows.get("wireline_agents")![0].autonomyLevel = "draft";
+    const forced = await bookNativeAppointment(user, {
+      ...input("forced", "13:00"),
+      agentId: "owned",
+      ownerApproved: false,
+    });
+    expect(forced.status).toBe("Scheduled");
+
+    h.rows.get("wireline_settings")![0].nativeCalendar.booking_mode = "inherit";
+    const approved = await bookNativeAppointment(user, {
+      ...input("approved", "14:00"),
+      agentId: "owned",
+      ownerApproved: true,
+    });
+    expect(approved.status).toBe("Scheduled");
   });
 
   it("holds Requested slots, then confirms once without creating another appointment", async () => {

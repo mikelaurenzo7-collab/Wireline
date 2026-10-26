@@ -238,8 +238,8 @@ def render():
         100,
         277,
         97,
-        "Build Free. Plans from $19/month",
-        "Starter includes 1 Bot and 50 voice minutes/month. Live phone and email setup depend on account eligibility and availability. Additional Bots expand with the business.",
+        "Build Free. Plans from $12/month",
+        "Lite is $12/month with $4 of included work. Starter is $24/month with $14 of included work. Plus is $49/month with $36 of included work. Every plan includes unlimited Bots. Usage charges apply across all of them.",
         "BUSINESS MODEL",
     )
 

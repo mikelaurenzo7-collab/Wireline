@@ -13,7 +13,7 @@ import { ROLE_PERSONALITY_TEMPLATES } from "./agent-constants";
 import { pickRotatedVoiceId } from "../data/voice-roster";
 import { getOwnerEmails } from "./auth-service";
 import { BRAND_SYSTEM } from "./product-copy";
-import { plansForClient } from "./plan-catalog";
+import { currentPricingFacts } from "./usage-billing-catalog";
 import { FOUNDER_FLEET_SEED_CONTRACT_VERSION } from "./founder-internal-runtime-policy";
 import {
   defaultBotMarkKey,
@@ -238,49 +238,7 @@ export function founderFleetSeedNeedsRefresh(state: FounderFleetSeedState): bool
  * offer changes; refreshing the fleet must not restore edited seed text.
  */
 export function wirelinePlanFacts(): string[] {
-  // plansForClient() is the same public catalog the pricing page consumes. A
-  // hand-rolled `plan.public` filter here silently dropped every paid plan,
-  // because paid plans are public by omission (`public !== false`) — the fleet
-  // would have gone to work knowing only Free Builder.
-  const launchPlans = plansForClient().filter(
-    (plan) =>
-      plan.is_free || (plan.catalog_family === "channels" && !plan.channels.includes("sms")),
-  );
-  const lines = launchPlans.map((plan) => {
-    const price =
-      plan.price_usd_monthly === 0
-        ? "free"
-        : `$${plan.price_usd_monthly}/month or $${plan.price_usd_annual}/year`;
-    const minutes = plan.voice_minutes_monthly
-      ? `${plan.voice_minutes_monthly} included call minutes per month`
-      : plan.is_free
-        ? "private testing only; no live customer calls"
-        : "Calls not included";
-    const numbers = plan.included_phone_numbers
-      ? `${plan.included_phone_numbers} included BotBound number${plan.included_phone_numbers === 1 ? "" : "s"}`
-      : "no included number";
-    const mailboxes = plan.included_mailboxes
-      ? `${plan.included_mailboxes} managed mailbox${plan.included_mailboxes === 1 ? "" : "es"}`
-      : "no managed mailbox";
-    const agents = `${plan.max_agents} Bot${plan.max_agents === 1 ? "" : "s"}`;
-    const availability = plan.is_free
-      ? "Private setup and bounded rehearsal."
-      : plan.channels.includes("email") && plan.contact_sales
-        ? "Email activation requires a setup review. Confirm current Billing availability."
-        : !plan.configured && !plan.annual_configured
-          ? "Paid activation is currently unavailable. Confirm current Billing availability."
-          : "Activation depends on current Billing availability.";
-    return `${plan.name}: ${price}. ${agents}, ${minutes}, ${numbers}, ${mailboxes}. ${availability}`;
-  });
-  return [
-    `BotBound in one line: ${BRAND_SYSTEM.northStar}`,
-    ...lines,
-    "Channel packages include one Bot with only the selected Calls and Email channels. Extra Bots are not available as add ons. Calls includes one number; Email includes one managed mailbox. SMS activation is unavailable and SMS packages are not part of the launch offer.",
-    "Channel call minutes and managed AI renew on the monthly subscription anniversary, including annual plans; unused included usage does not roll over.",
-    "Calls packages allow one call at a time. Extra minutes use prepaid Runtime Balance, with up to 10 minutes of completion credit within the call's duration limit. Any amount due pauses new calls and prepaid extras until topped up. There is no automatic overage invoice or guarantee that a call cannot end at its duration limit.",
-    "Reviewed personal coordination and specific business service or appointment calls require recipient permission, a paid Calls plan, and a caller and recipient in the United States. Each call needs account holder review and current dispatch and funding checks. Marketing and sales call campaigns are unavailable. A selected area code does not grant recipient permission.",
-    "Quote only these plan facts. If asked for a discount, custom terms, or anything not listed, take the request and escalate instead of inventing an offer.",
-  ];
+  return [`BotBound in one line: ${BRAND_SYSTEM.northStar}`, ...currentPricingFacts()];
 }
 
 const KNOWLEDGE_SNIPPETS: Record<string, string[]> = {
@@ -644,12 +602,9 @@ async function upsertAgent(
       );
     }
     const markKey =
-      (isBotMarkKey(existing?.markKey) && !unavailable.has(existing.markKey)
+      isBotMarkKey(existing?.markKey) && !unavailable.has(existing.markKey)
         ? existing.markKey
-        : firstAvailableBotMarkKey(agentId, unavailable)) ?? null;
-    if (!markKey) {
-      throw new Error(`Bot identity catalog exhausted for founder workspace ${userId}.`);
-    }
+        : firstAvailableBotMarkKey(agentId, unavailable);
 
     if (existing) {
       // A completed contract owns its saved Training. Exact-content matching

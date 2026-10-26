@@ -224,7 +224,7 @@ export default function UsagePricingPanel({
                   <strong className="text-4xl font-semibold">${option.monthlyUsd}</strong>
                   <span className="text-sm text-muted-foreground"> / Month</span>
                 </span>
-                <span className="mt-4 block text-sm font-semibold">Usage Included</span>
+                <span className="mt-4 block text-sm font-semibold">Includes</span>
                 <span className="mt-2 block text-sm text-muted-foreground">
                   {option.includedNumbers} {option.includedNumbers === 1 ? "Number" : "Numbers"}
                   {" + "}

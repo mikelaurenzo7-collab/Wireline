@@ -15,7 +15,7 @@ export type NativeCalendarSettings = {
   duration_minutes: number;
   buffer_minutes: number;
   minimum_notice_minutes: number;
-  booking_mode: "automatic" | "approval";
+  booking_mode: "automatic" | "approval" | "inherit";
   weekly_hours: Array<{ day: number; start: string; end: string }>;
 };
 
@@ -26,7 +26,7 @@ export const DEFAULT_NATIVE_CALENDAR: NativeCalendarSettings = {
   duration_minutes: 30,
   buffer_minutes: 0,
   minimum_notice_minutes: 60,
-  booking_mode: "automatic",
+  booking_mode: "inherit",
   weekly_hours: [1, 2, 3, 4, 5].map((day) => ({ day, start: "09:00", end: "17:00" })),
 };
 
@@ -62,8 +62,9 @@ export function validateNativeCalendarSettings(value: unknown): NativeCalendarSe
     const input = value as Record<string, unknown>;
     if (typeof input.enabled !== "boolean")
       throw AppError.badRequest("Choose whether to accept bookings.");
-    if (input.booking_mode !== "automatic" && input.booking_mode !== "approval") {
-      throw AppError.badRequest("Choose automatic booking or owner approval.");
+    const bookingMode = input.booking_mode;
+    if (bookingMode !== "automatic" && bookingMode !== "approval" && bookingMode !== "inherit") {
+      throw AppError.badRequest("Choose how this calendar confirms a booking.");
     }
     const name = typeof input.appointment_name === "string" ? input.appointment_name.trim() : "";
     if (!name || name.length > 100)
@@ -106,7 +107,7 @@ export function validateNativeCalendarSettings(value: unknown): NativeCalendarSe
       duration_minutes: duration,
       buffer_minutes: integer(input.buffer_minutes, 0, 120, "Buffer"),
       minimum_notice_minutes: integer(input.minimum_notice_minutes, 0, 10080, "Minimum notice"),
-      booking_mode: input.booking_mode,
+      booking_mode: bookingMode,
       weekly_hours,
     };
   });

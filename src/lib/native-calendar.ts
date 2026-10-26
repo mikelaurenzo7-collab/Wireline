@@ -5,6 +5,7 @@ import { drizzle, tenantStore } from "./server-context";
 import { AppError } from "./api-error";
 import { invalidateDashboard } from "./dashboard-cache";
 import { localDateWindowToUtc, parseIsoLocalDate } from "./calendar-time";
+import { nativeAppointmentStatus } from "./bot-permission";
 import {
   APPOINTMENT_STATUSES,
   calendarValidation,
@@ -118,6 +119,24 @@ async function assertOwnedCalendarAgent(
     .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
     .limit(1);
   if (!row) throw AppError.notFound("Bot not found.");
+}
+
+async function bookingAutonomy(tx: Pick<Tx, "select">, userId: string, agentId: string | null) {
+  const [settings] = await tx
+    .select({ autonomyLevel: schema.settings.autonomyLevel })
+    .from(schema.settings)
+    .where(eq(schema.settings.userId, userId))
+    .limit(1);
+  if (!agentId) return { agentLevel: null, tenantLevel: settings?.autonomyLevel ?? null };
+  const [agent] = await tx
+    .select({ autonomyLevel: schema.agents.autonomyLevel })
+    .from(schema.agents)
+    .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+    .limit(1);
+  return {
+    agentLevel: agent?.autonomyLevel ?? null,
+    tenantLevel: settings?.autonomyLevel ?? null,
+  };
 }
 
 async function assertOwnedCall(tx: Tx, userId: string, callId: string | null) {
@@ -276,6 +295,8 @@ export type NativeAppointmentInput = {
   phoneNumber?: string | null;
   notes?: string | null;
   requestKey: string;
+  /** Set when an owner already approved this booking, so inherit+Ask does not wait again. */
+  ownerApproved?: boolean;
 };
 
 function text(value: unknown, label: string, max: number, required = false): string | null {
@@ -345,6 +366,7 @@ export async function bookNativeAppointment(
       const busy = await busyIntervals(tx, userId, interval.date, settings.time_zone);
       if (busy.some((row) => intervalsOverlap(interval, row)))
         throw AppError.conflict("That time is no longer available. Choose another time.");
+      const autonomy = await bookingAutonomy(tx, userId, clean.agentId);
       const [row] = await tx
         .insert(schema.appointments)
         .values({
@@ -357,7 +379,12 @@ export async function bookNativeAppointment(
           serviceType: clean.serviceType ?? settings.appointment_name,
           notes: clean.notes,
           phoneNumber: clean.phoneNumber,
-          status: settings.booking_mode === "approval" ? "Requested" : "Scheduled",
+          status: nativeAppointmentStatus({
+            bookingMode: settings.booking_mode,
+            agentLevel: autonomy.agentLevel,
+            tenantLevel: autonomy.tenantLevel,
+            ownerApproved: input.ownerApproved,
+          }),
           startAt: interval.startAt,
           endAt: interval.endAt,
           timeZone: settings.time_zone,

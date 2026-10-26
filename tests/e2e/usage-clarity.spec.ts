@@ -98,10 +98,8 @@ for (const width of [1440, 390]) {
     await expect(activity.getByText("+$5.00", { exact: true })).toBeVisible();
     await expect(activity.getByText("Balance $4.78", { exact: true })).toBeVisible();
     await expect(activity).not.toContainText("internal-");
-    await expect(activity.getByRole("link", { name: "AI spend", exact: true })).toHaveAttribute(
-      "href",
-      "/insights?tab=revenue&view=spend",
-    );
+    await expect(activity.getByRole("link", { name: "AI spend", exact: true })).toHaveCount(0);
+    await expect(activity).not.toContainText("AI spend");
     await page.evaluate(() => document.fonts.ready);
     const screenshotPath = testInfo.outputPath(`balance-activity-${width}.png`);
     await activity.screenshot({ path: screenshotPath });
@@ -124,18 +122,6 @@ for (const width of [1440, 390]) {
     await summary.focus();
     await page.keyboard.press("Enter");
     await expect(activity.getByRole("list")).toBeHidden();
-
-    // The account has no Bots, but its prior spend and current allowance still belong to it.
-    await page.keyboard.press("Enter");
-    await activity.getByRole("link", { name: "AI spend", exact: true }).click();
-    await expect(page).toHaveURL(/\/insights\?tab=revenue&view=spend$/);
-    await expect(page.getByText("Simulation allowance", { exact: true })).toBeVisible();
-    await expect(page.getByRole("spinbutton", { name: "Monthly Safety Limit (USD)" })).toHaveValue(
-      "2",
-    );
-    await expect(page.getByText("Recorded AI Cost", { exact: true })).toBeVisible();
-    await expect(page.getByText("$0.12", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("No Conversations Yet", { exact: true })).toHaveCount(0);
 
     await page.goto("/insights");
     await expect(page.getByText("No Conversations Yet", { exact: true })).toBeVisible();

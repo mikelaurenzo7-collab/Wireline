@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { AppError } from "./api-error";
 import {
+  DEFAULT_PUBLIC_USAGE_TIER,
   minimumMonthlyCapUsd,
   USAGE_DEFAULT_MONTHLY_CAP_USD,
   type UsageTierId,
@@ -24,7 +25,7 @@ export function validateUsageCheckoutAddons(
     numbers: number;
     emailAddresses: number;
   },
-  tier: UsageTierId = "starter",
+  tier: UsageTierId = DEFAULT_PUBLIC_USAGE_TIER,
 ): void {
   if (minimumMonthlyCapUsd(addons, tier) > USAGE_DEFAULT_MONTHLY_CAP_USD) {
     throw new AppError(

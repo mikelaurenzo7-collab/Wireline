@@ -40,7 +40,10 @@ import { fulfillStripeCheckoutSession } from "../lib/stripe-checkout-fulfillment
 import { resolveStrictFounderPriceId } from "../lib/stripe-founder-price";
 import { resolveOwnedStripeCustomer } from "../lib/stripe-customer-binding";
 import { findPotentiallyLiveStripeSubscription } from "../lib/stripe-subscription-safety";
-import { validateUsageCheckoutCatalog } from "../lib/usage-stripe-validation";
+import {
+  assertBotBoundStripeAccount,
+  validateUsageCheckoutCatalog,
+} from "../lib/usage-stripe-validation";
 
 const router = Router();
 
@@ -62,7 +65,7 @@ function usageAddonQuantity(value: unknown): number {
 export function usageCheckoutLineItems(
   addons: { numbers: number; emailAddresses: number },
   env: NodeJS.ProcessEnv = process.env,
-  tier: UsageTierId = "starter",
+  tier: UsageTierId = DEFAULT_PUBLIC_USAGE_TIER,
 ): Stripe.Checkout.SessionCreateParams.LineItem[] {
   const required = (key: Parameters<typeof usagePriceId>[0]) => {
     const id = usagePriceId(key, env, tier);
@@ -192,9 +195,6 @@ router.post(
   enforceVerifiedEmailForCheckout,
   fencePayableBillingDuringAccountDeletion,
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!stripeAvailable())
-      throw AppError.fromHttpStatus(503, "Billing is temporarily unavailable.");
-
     const requestedPlanId = String(req.body?.plan_id || "").trim();
     const interval = req.body?.interval === "year" ? "year" : "month";
     const plan = planById(requestedPlanId);
@@ -265,6 +265,17 @@ router.post(
         code: "CHANNEL_CHECKOUT_UNAVAILABLE",
         error: "This package is not available for checkout yet.",
       });
+    }
+
+    if (!stripeAvailable())
+      throw AppError.fromHttpStatus(503, "Billing is temporarily unavailable.");
+    try {
+      await assertBotBoundStripeAccount(stripe);
+    } catch (error) {
+      log.error("Checkout refused: Stripe account is not the BotBound merchant", {
+        message: getErrorMessage(error),
+      });
+      throw new AppError(503, "USAGE_PRICE_MISMATCH", "Billing is temporarily unavailable.");
     }
 
     const [existing] = await drizzle
@@ -355,11 +366,12 @@ router.post(
     if (usageCheckout) {
       try {
         await validateUsageCheckoutCatalog(stripe, process.env, tier);
-      } catch {
-        log.error("Usage checkout refused: Stripe catalog validation failed");
-        throw AppError.serviceUnavailable(
-          "Usage billing configuration is being verified. Please try again later.",
+      } catch (error) {
+        log.error(
+          "Usage checkout refused: configured Stripe price does not match the expected lookup key and amount",
+          { message: getErrorMessage(error), tier },
         );
+        throw new AppError(503, "USAGE_PRICE_MISMATCH", "Billing is temporarily unavailable.");
       }
     }
     const lineItems = usageCheckout
@@ -741,6 +753,14 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     if (!stripeAvailable())
       throw AppError.fromHttpStatus(503, "Billing is temporarily unavailable.");
+    try {
+      await assertBotBoundStripeAccount(stripe);
+    } catch (error) {
+      log.error("Checkout verify refused: Stripe account is not the BotBound merchant", {
+        message: getErrorMessage(error),
+      });
+      throw new AppError(503, "USAGE_PRICE_MISMATCH", "Billing is temporarily unavailable.");
+    }
     const sessionId = String(req.body?.session_id || "").trim();
     if (!/^cs_[A-Za-z0-9_]+$/.test(sessionId)) {
       throw AppError.fromHttpStatus(400, "A Stripe checkout session id is required.");

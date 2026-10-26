@@ -423,12 +423,12 @@ describe("Runtime Balance recent activity", () => {
     ).toBe(true);
     expect(text(activity())).not.toContain("private");
     expect(hasText("Up to 20 recent balance changes.")).toBe(true);
+    expect(text(activity())).not.toContain("AI spend");
     expect(
       tree.some(
         (node) => node.type === "a" && node.props.to === "/insights?tab=revenue&view=spend",
       ),
-    ).toBe(true);
-    expect(hasText("is tracked separately.")).toBe(true);
+    ).toBe(false);
   });
 
   it("caps the recent list at 20 without exposing legacy reasons or internal metadata", async () => {
@@ -628,11 +628,12 @@ describe("Billing Settings shared recovery", () => {
     },
   );
 
-  it("describes every occupied Bot slot as full rather than near capacity", async () => {
+  it("counts Bots in use without a slot cap", async () => {
     statusFails = false;
     balanceFails = false;
     await settle();
-    expect(hasText("All Bot slots in use.")).toBe(true);
+    expect(hasText("2 Bots in use")).toBe(true);
+    expect(hasText("All Bot slots in use.")).toBe(false);
     expect(hasText("Near capacity.")).toBe(false);
     expect(tree.find((element) => element.type === "usage-meter")?.props.showBalance).toBe(false);
     expect(hasText("$24.50")).toBe(true);

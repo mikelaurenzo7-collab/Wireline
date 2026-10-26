@@ -201,13 +201,6 @@ export async function createAgentDraft(
         );
       }
       const markKey = firstAvailableBotMarkKey(id, usedMarkKeys);
-      if (!markKey) {
-        throw new AppError(
-          409,
-          "BOT_MARK_CAPACITY_REACHED",
-          "Every available Bot identity is already in use.",
-        );
-      }
 
       const voiceId = pickRotatedVoiceId(existingCount);
       await tx.insert(schema.agents).values({
@@ -220,6 +213,7 @@ export async function createAgentDraft(
         archetype: ROLE_ARCHETYPES[profile.identity.role],
         voiceId,
         voiceProvider: "openai",
+        autonomyLevel: "supervised",
         // A draft records intended actions in its customization profile, but it
         // never receives external tools until the user configures and enables
         // them explicitly in BotBound.

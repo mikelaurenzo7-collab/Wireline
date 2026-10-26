@@ -4,7 +4,7 @@
  * SMS packages exist in the catalog but are not sold yet, so they stay out.
  */
 import { STRIPE_PLANS, type StripePlan } from "./plan-catalog";
-import { getPlanDisplayName } from "./plan-display";
+import { PUBLIC_USAGE_TIERS, USAGE_TIERS } from "./usage-billing-catalog";
 
 function launchPlan(plan: StripePlan): boolean {
   return (
@@ -35,22 +35,16 @@ export const PUBLIC_ENTRY_PLANS = {
 /** Home page cards: Personal plus the entry package of each channel family. */
 export const HOME_PLAN_IDS = ["personal", "email", "voice", "voice-email"] as const;
 
-const usd = (amount: number) => `$${amount.toLocaleString("en-US")}`;
-
-/** e.g. "Personal $12/mo · Calls from $19/mo · Email from $9/mo" */
+/** e.g. "Lite $12/mo · Starter $24/mo · Plus $49/mo" */
 export function publicPriceSummary(): string {
-  return [
-    `${getPlanDisplayName(PERSONAL_PLAN)} ${usd(PERSONAL_PLAN.price_usd_monthly)}/mo`,
-    `${getPlanDisplayName(PUBLIC_ENTRY_PLANS.calls)} from ${usd(PUBLIC_ENTRY_PLANS.calls.price_usd_monthly)}/mo`,
-    `${getPlanDisplayName(PUBLIC_ENTRY_PLANS.email)} from ${usd(PUBLIC_ENTRY_PLANS.email.price_usd_monthly)}/mo`,
-  ].join(" · ");
+  return PUBLIC_USAGE_TIERS.map(
+    (id) => `${USAGE_TIERS[id].name} $${USAGE_TIERS[id].monthlyUsd}/mo`,
+  ).join(" · ");
 }
 
-/** Short hint for tight spaces, e.g. "Personal $12 · Email from $9 · Calls from $19" */
+/** Short hint for tight spaces, e.g. "Lite $12 · Starter $24 · Plus $49" */
 export function publicPriceHint(): string {
-  return [
-    `${getPlanDisplayName(PERSONAL_PLAN)} ${usd(PERSONAL_PLAN.price_usd_monthly)}`,
-    `${getPlanDisplayName(PUBLIC_ENTRY_PLANS.email)} from ${usd(PUBLIC_ENTRY_PLANS.email.price_usd_monthly)}`,
-    `${getPlanDisplayName(PUBLIC_ENTRY_PLANS.calls)} from ${usd(PUBLIC_ENTRY_PLANS.calls.price_usd_monthly)}`,
-  ].join(" · ");
+  return PUBLIC_USAGE_TIERS.map(
+    (id) => `${USAGE_TIERS[id].name} $${USAGE_TIERS[id].monthlyUsd}`,
+  ).join(" · ");
 }

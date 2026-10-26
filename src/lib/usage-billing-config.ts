@@ -9,6 +9,7 @@ import {
   USAGE_WORK_EVENT_NAME,
   type UsageAddonKey,
   type UsageMeterKey,
+  DEFAULT_PUBLIC_USAGE_TIER,
   type UsageTierId,
 } from "./usage-billing-catalog";
 
@@ -55,7 +56,7 @@ export const USAGE_BILLING_ENV_VARS = [
 export function usagePriceId(
   key: keyof typeof USAGE_PRICE_ENV,
   env: NodeJS.ProcessEnv = process.env,
-  tier: UsageTierId = "starter",
+  tier: UsageTierId = DEFAULT_PUBLIC_USAGE_TIER,
 ): string | null {
   const name =
     key === "base" || key === "work" ? USAGE_TIER_PRICE_ENV[tier][key] : USAGE_PRICE_ENV[key];
@@ -72,7 +73,7 @@ export function usageMeterEventName(
 /** Every price offered by the public form must exist before checkout opens. */
 export function usageCheckoutConfigured(
   env: NodeJS.ProcessEnv = process.env,
-  tier: UsageTierId = "starter",
+  tier: UsageTierId = DEFAULT_PUBLIC_USAGE_TIER,
 ): boolean {
   return (
     usageBillingEnabled(env) &&

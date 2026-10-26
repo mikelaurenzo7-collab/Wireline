@@ -47,7 +47,7 @@ export const BOT_CHANNELS = [
   {
     key: "text" as const,
     label: "Text",
-    description: "SMS is coming soon. Existing conversations stay available.",
+    description: "Send and reply to texts. Recipient permission still applies.",
   },
   {
     key: "email" as const,
