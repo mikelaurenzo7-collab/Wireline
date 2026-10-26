@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   activationBillingHref,
   billingIntervalFromIntent,
+  captureSignupIntentFromLocation,
   mergeSignupIntent,
   parseSignupIntent,
   recommendedPlanFromIntent,
@@ -156,4 +157,30 @@ describe("signup-intent", () => {
       ).toBe(expected);
     },
   );
+
+  it("remembers Starter when signup has no plan in the address", () => {
+    const storage = new Map<string, string>();
+    const previous = globalThis.window;
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: {
+        location: { search: "", pathname: "/signup" },
+        localStorage: {
+          getItem: (key: string) => storage.get(key) ?? null,
+          setItem: (key: string, value: string) => {
+            storage.set(key, value);
+          },
+          removeItem: (key: string) => {
+            storage.delete(key);
+          },
+        },
+      },
+    });
+    expect(captureSignupIntentFromLocation()).toMatchObject({
+      preferredPlanId: "usage",
+      preferredUsageTier: "standard",
+      preferredBillingInterval: "month",
+    });
+    Object.defineProperty(globalThis, "window", { configurable: true, value: previous });
+  });
 });

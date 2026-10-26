@@ -1,5 +1,5 @@
 import { BOT_ROLE_TEMPLATES } from "./bot-product";
-import { isUsageTierId, type UsageTierId } from "./usage-billing-catalog";
+import { isUsageTierId, DEFAULT_PUBLIC_USAGE_TIER, type UsageTierId } from "./usage-billing-catalog";
 
 export const SIGNUP_INTENT_STORAGE_KEY = "wireline_signup_intent_v1";
 export const DEFAULT_ACTIVATION_PLAN_ID = "voice-regular";
@@ -428,7 +428,17 @@ export function captureSignupIntentFromLocation(): SignupIntent | null {
       : fromUrl;
     return persistSignupIntent(next);
   }
-  return getStoredSignupIntent();
+  const stored = getStoredSignupIntent();
+  if (stored) return stored;
+  if (window.location.pathname === "/signup" || window.location.pathname === "/signup/") {
+    return persistSignupIntent({
+      preferredPlanId: "usage",
+      preferredUsageTier: DEFAULT_PUBLIC_USAGE_TIER,
+      preferredBillingInterval: "month",
+      capturedAt: new Date().toISOString(),
+    });
+  }
+  return null;
 }
 
 export function recommendedPlanFromIntent(intent: SignupIntent | null | undefined): SignupPlanId {
