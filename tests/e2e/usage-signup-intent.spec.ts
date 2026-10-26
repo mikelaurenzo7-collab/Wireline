@@ -126,7 +126,7 @@ for (const [tier, name, price] of [
     authenticated = true;
     // No query parameters here: Billing must recover the signup choice.
     await page.goto("/settings/billing");
-    const offer = page.getByRole("region", { name: "Optional Subscription" });
+    const offer = page.getByRole("region", { name: "Subscription Plans" });
     await expect(offer.getByRole("checkbox", { name: /^Extra Number/ })).not.toBeChecked();
     await expect(offer.getByRole("checkbox", { name: /^Extra Email Address/ })).toBeChecked();
     // Returning signed-in visitors must keep the same tier through the auth redirect.

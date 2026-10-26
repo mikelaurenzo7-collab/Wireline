@@ -391,14 +391,15 @@ export default function StudioAgentReviewPanel({
         ) : !access.data?.channels.length ? (
           <StatusNotice
             tone="info"
-            title="Choose Live Channels"
+            title="Connect Live Channels"
             action={
               <Button asChild size="sm" variant="secondary">
-                <Link to={activationBillingHref(getStoredSignupIntent())}>Choose Channels</Link>
+                <Link to={activationBillingHref(getStoredSignupIntent())}>See Plans to Go Live</Link>
               </Button>
             }
           >
-            Keep rehearsing privately, then connect your selected channels.
+            Keep rehearsing privately. A plan connects your phone, email, and texting — pick one
+            when you're ready to go live.
           </StatusNotice>
         ) : null}
 

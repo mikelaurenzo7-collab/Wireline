@@ -52,6 +52,15 @@ type TechnicalRole =
   | "personal_assistant"
   | "custom";
 
+/** The five roles BotBound sells, offered as one-tap starters in the dialog. */
+const ROLE_PRESET_KEYS: TemplateKey[] = [
+  "front-desk",
+  "sales-rep",
+  "appointment-setter",
+  "customer-support",
+  "recruiter",
+];
+
 const TECHNICAL_ROLE_BY_TEMPLATE: Record<TemplateKey, TechnicalRole> = {
   "front-desk": "receptionist",
   "sales-rep": "sales",
@@ -151,6 +160,7 @@ export default function CreateAgentDialog({
   const briefIsTemplateTextRef = useRef(true);
   const markWasChosenRef = useRef(false);
   const [creating, setCreating] = useState(false);
+  const [createStage, setCreateStage] = useState<"creating" | "training">("creating");
   const [error, setError] = useState("");
   const [customizing, setCustomizing] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -262,6 +272,7 @@ export default function CreateAgentDialog({
     const legacyCapabilityProfile = isBusinessTemplateCategory(selectedTemplate.category);
 
     setCreating(true);
+    setCreateStage("creating");
     setError("");
     const controller = new AbortController();
     createAbortRef.current = controller;
@@ -307,6 +318,7 @@ export default function CreateAgentDialog({
 
       let trainingApplied = false;
       if (finalBrief) {
+        setCreateStage("training");
         rememberCreateBrief(creationUserId, body.id, finalBrief);
         try {
           const extractRes = await authFetch("/api/train/extract", {
@@ -467,6 +479,45 @@ export default function CreateAgentDialog({
 
         <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-6">
           <div className="grid min-w-0 grid-cols-1 gap-5">
+            <div>
+              <span className="text-sm font-semibold text-foreground">Start from a role</span>
+              <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Role starters">
+                {ROLE_PRESET_KEYS.map((key) => {
+                  const preset = templateForKey(key);
+                  const selected = templateKey === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      disabled={creating}
+                      aria-pressed={selected}
+                      onClick={() => {
+                        setTemplateKey(key);
+                        setMarkKey(
+                          firstAvailableBotMarkKey(key, unavailableMarkKeysRef.current) ??
+                            defaultBotMarkKey(key),
+                        );
+                        if (!brief.trim() || briefIsTemplateTextRef.current) {
+                          setBrief(preset.summary);
+                          briefIsTemplateTextRef.current = true;
+                        }
+                      }}
+                      className={`min-h-11 rounded-full border px-3.5 text-sm transition-colors wl-focus-ring-halo ${
+                        selected
+                          ? "border-primary bg-primary/10 font-semibold text-foreground"
+                          : "border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {preset.name}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Or describe any job below — the starter just fills in a first brief you can edit.
+              </p>
+            </div>
+
             <label className="block">
               <span className="sr-only">Describe the Job</span>
               <Textarea
@@ -539,6 +590,14 @@ export default function CreateAgentDialog({
             </div>
           </div>
 
+          {creating ? (
+            <p aria-live="polite" className="mt-5 text-sm text-muted-foreground">
+              {createStage === "training"
+                ? "Bot created — now teaching it the job from your brief. This can take a few seconds."
+                : "Creating your Bot…"}
+            </p>
+          ) : null}
+
           {error ? (
             <StatusNotice tone="destructive" title="Could Not Create Bot" className="mt-5">
               {error}
@@ -567,7 +626,11 @@ export default function CreateAgentDialog({
               ) : (
                 <WandSparkles size={15} aria-hidden="true" />
               )}
-              {creating ? "Creating…" : language.createCta}
+              {creating
+                ? createStage === "training"
+                  ? "Teaching It the Job…"
+                  : "Creating Your Bot…"
+                : language.createCta}
             </Button>
           </div>
         </div>
