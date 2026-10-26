@@ -121,7 +121,7 @@ function bundledPlan(tier, name, monthlyCents, workCents, identities, envPrefix)
 }
 
 export const USAGE_STRIPE_PLANS = {
-  starter: USAGE_STRIPE_PLAN,
+  previous: USAGE_STRIPE_PLAN,
   lite: bundledPlan("lite", "Lite", 1200, 400, 1, "LITE"),
   standard: bundledPlan("standard", "Starter", 2400, 1400, 1, "STARTER"),
   plus: bundledPlan("plus", "Plus", 4900, 3600, 2, "PLUS"),
@@ -381,7 +381,7 @@ export async function applyUsageCatalog(stripe, plan = USAGE_STRIPE_PLAN) {
 }
 
 async function main(argv = process.argv.slice(2)) {
-  const tier = argv.find((arg) => arg.startsWith("--tier="))?.slice(7) ?? "starter";
+  const tier = argv.find((arg) => arg.startsWith("--tier="))?.slice(7) ?? "previous";
   if (!Object.hasOwn(USAGE_STRIPE_PLANS, tier)) throw new Error("Unknown usage tier.");
   const plan = USAGE_STRIPE_PLANS[tier];
   const flags = {
