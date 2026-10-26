@@ -17,6 +17,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   const developersPage = read("src/pages/Developers.tsx");
   const solutionsPage = read("src/pages/SolutionsPage.tsx");
   const pricingPage = read("src/pages/Pricing.tsx");
+  const usagePricingPanel = read("src/components/usage-billing/UsagePricingPanel.tsx");
 
   mustInclude(
     "src/styles/clarity-system.css",
@@ -248,8 +249,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
     "pricing must keep SMS packages and controls out of launch selection",
   );
   mustInclude(
-    "src/pages/Pricing.tsx",
-    pricingPage,
+    "src/components/usage-billing/UsagePricingPanel.tsx",
+    usagePricingPanel,
     /Calls, texts, email, and Computer share that work/,
     "pricing must explain shared work",
   );

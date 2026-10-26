@@ -26,6 +26,20 @@ function usd(value: number): string {
   return Number.isInteger(value) ? `$${value}` : `$${value.toFixed(2)}`;
 }
 
+/** Catalog-backed lineup shown on the usage pricing page. */
+export function sharedWorkNote(): string {
+  const plans = PUBLIC_USAGE_TIERS.map((id) => USAGE_TIERS[id]);
+  const described = plans.map(
+    (plan) =>
+      `${plan.name} is ${usd(plan.monthlyUsd)}/month with ${usd(plan.includedWorkUsd)} of included work`,
+  );
+  const lineup =
+    described.length <= 1
+      ? (described[0] ?? "")
+      : `${described.slice(0, -1).join(", ")}, and ${described[described.length - 1]}`;
+  return `${lineup}. Calls, texts, email, and Computer share that work. Extra numbers are ${usd(USAGE_ADDONS.number.usdMonthly)}/month and extra email addresses are ${usd(USAGE_ADDONS.email_address.usdMonthly)}/month.`;
+}
+
 /** Plain-language rate lines, built from the catalog so copy never drifts. */
 export const USAGE_RATE_LINES: ReadonlyArray<readonly [string, string]> = [
   [
@@ -258,6 +272,7 @@ export default function UsagePricingPanel({
       <p className="text-center text-sm text-muted-foreground">
         Inbound, Outbound, SMS, Email & Computer. One allowance, any mix. Resets monthly.
       </p>
+      <p className="text-center text-sm leading-6 text-muted-foreground">{sharedWorkNote()}</p>
       <article
         aria-label="Monthly estimate"
         className="grid gap-8 rounded-2xl border border-border bg-card p-5 sm:p-8 md:grid-cols-[1fr_17rem]"

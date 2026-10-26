@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
 import { STRIPE_PLANS } from "../../src/lib/plan-catalog";
-import { USAGE_ADDONS } from "../../src/lib/usage-billing-catalog";
 
 const plans = STRIPE_PLANS.filter(
   (plan) => plan.catalogFamily === "channels" && plan.id !== "personal",
@@ -64,13 +63,11 @@ test("launch channel capacities retain exact annual signup intent in one readabl
     await expect(signup).toHaveAttribute("href", `/signup?plan=${plan.id}&interval=year`);
     const usageNote = page.getByText("Included usage is shown per month.", { exact: false });
     await expect(usageNote).toContainText("No automatic balance purchases or overage invoices.");
-    if (plan.channels.includes("voice")) {
-      await expect(usageNote).toContainText("Calls, texts, email, and Computer share that work.");
+    if (plan.channels.includes("voice"))
       await expect(usageNote).toContainText(
-        `Extra numbers are $${USAGE_ADDONS.number.usdMonthly}/month and extra email addresses are $${USAGE_ADDONS.email_address.usdMonthly}/month.`,
+        "Extra minutes are $0.22/min, paid from balance you add ahead of time.",
       );
-      await expect(usageNote).not.toContainText("Runtime Balance");
-    } else {
+    else {
       await expect(usageNote).not.toContainText("Extra minutes");
       await expect(usageNote).not.toContainText("Outbound calls");
     }

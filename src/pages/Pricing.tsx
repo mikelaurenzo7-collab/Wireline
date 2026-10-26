@@ -18,12 +18,7 @@ import BillingIntervalControl from "../components/BillingIntervalControl";
 import ChannelPlanPicker from "../components/ChannelPlanPicker";
 import { usePaidPlanAvailability } from "../hooks/usePaidPlanAvailability";
 import UsagePricingPanel from "../components/usage-billing/UsagePricingPanel";
-import {
-  PUBLIC_USAGE_TIERS,
-  USAGE_ADDONS,
-  USAGE_TIERS,
-  type UsageTierId,
-} from "../lib/usage-billing-catalog";
+import { type UsageTierId } from "../lib/usage-billing-catalog";
 
 const CHANNEL_PLANS = STRIPE_PLANS.filter(
   (plan) =>
@@ -31,22 +26,6 @@ const CHANNEL_PLANS = STRIPE_PLANS.filter(
 );
 const TOPUP_RATE = `$${FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min`;
 
-function formatCatalogUsd(value: number): string {
-  return Number.isInteger(value) ? `$${value}` : `$${value.toFixed(2)}`;
-}
-
-const SHARED_WORK_NOTE = (() => {
-  const plans = PUBLIC_USAGE_TIERS.map((id) => USAGE_TIERS[id]);
-  const described = plans.map(
-    (plan) =>
-      `${plan.name} is ${formatCatalogUsd(plan.monthlyUsd)}/month with ${formatCatalogUsd(plan.includedWorkUsd)} of included work`,
-  );
-  const lineup =
-    described.length <= 1
-      ? (described[0] ?? "")
-      : `${described.slice(0, -1).join(", ")}, and ${described[described.length - 1]}`;
-  return `${lineup}. Calls, texts, email, and Computer share that work. Extra numbers are ${formatCatalogUsd(USAGE_ADDONS.number.usdMonthly)}/month and extra email addresses are ${formatCatalogUsd(USAGE_ADDONS.email_address.usdMonthly)}/month.`;
-})();
 const FAQ = [
   [
     "Can I Use a Bot for Myself and My Business?",
@@ -232,8 +211,8 @@ export default function Pricing() {
               {selectedHasCalls ? (
                 <>
                   {" "}
-                  {SHARED_WORK_NOTE}{" "}
-                  A call that runs past your minutes can take up to 10 more to finish. Bots answer
+                  Extra minutes are {TOPUP_RATE}, paid from Runtime Balance you add ahead of time. A
+                  call that runs past your minutes can take up to 10 more to finish. Bots answer
                   calls on their own number.
                 </>
               ) : null}
