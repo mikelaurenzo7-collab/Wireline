@@ -81,46 +81,7 @@ describe("outbound dial gate runtime", () => {
     }));
   });
 
-  it("fails marketing outbound closed without the seller's own registry subscription", async () => {
-    const isFederalDncListed = vi.fn(async () => false);
-    const isDncBlocked = vi.fn(async () => false);
-    const evaluateSellerDncForMarketing = vi.fn(async () => ({
-      allowed: false as const,
-      code: "SELLER_DNC_REGISTRATION_REQUIRED" as const,
-      message: "Add your National Do Not Call Registry subscription in Compliance.",
-    }));
-    vi.doMock("../src/lib/server-context", () => ({
-      drizzle: { select: vi.fn() },
-      log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
-    }));
-    vi.doMock("../src/lib/federal-dnc-service", () => ({
-      assertFederalDncForMarketing: () => ({ allowed: true, configured: true }),
-      isFederalDncListed,
-    }));
-    vi.doMock("../src/lib/dnc-seller-registration", () => ({ evaluateSellerDncForMarketing }));
-    vi.doMock("../src/lib/compliance", () => ({ isDncBlocked }));
-
-    const { evaluateOutboundDialGate } = await import("../src/lib/outbound-dial-gate");
-    const result = await evaluateOutboundDialGate({
-      userId: "tenant-user",
-      phone: "+13125551234",
-      isMarketingCall: true,
-      hasExpressWrittenConsent: true,
-    });
-
-    expect(result).toMatchObject({
-      allowed: false,
-      status: "AutoDialFailed",
-      reason: "federal_dnc_unconfigured",
-      federalDncCode: "SELLER_DNC_REGISTRATION_REQUIRED",
-      metadataPatch: { seller_dnc_registration: "SELLER_DNC_REGISTRATION_REQUIRED" },
-    });
-    expect(evaluateSellerDncForMarketing).toHaveBeenCalledWith("tenant-user", "+13125551234");
-    expect(isFederalDncListed).not.toHaveBeenCalled();
-    expect(isDncBlocked).not.toHaveBeenCalled();
-  });
-
-  it("screens marketing calls with the seller's own vendor project", async () => {
+  it("screens marketing calls with BotBound's registry access and no user subscription", async () => {
     const isFederalDncListed = vi.fn(async () => false);
     vi.doMock("../src/lib/server-context", () => ({
       drizzle: {
@@ -146,9 +107,7 @@ describe("outbound dial gate runtime", () => {
     });
 
     expect(result.allowed).toBe(true);
-    expect(isFederalDncListed).toHaveBeenCalledWith("+13125551234", {
-      vendorProjectId: "proj-seller",
-    });
+    expect(isFederalDncListed).toHaveBeenCalledWith("+13125551234");
   });
 
   it("fails marketing outbound closed before dialing when Federal DNC is unconfigured", async () => {

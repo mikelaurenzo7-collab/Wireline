@@ -27,7 +27,7 @@ export default function OutboundHub({
         <EmptyState
           icon={Phone}
           title={CAMPAIGN_CALLING_TITLE}
-          description="Use Reviewed Calls for individual service calls with recipient permission."
+          description="Call someone who asked for a call. Start a new conversation by email or text."
           framed
           density="compact"
           withHalo={false}
@@ -69,8 +69,8 @@ export default function OutboundHub({
             <div className="flex w-full flex-col items-center px-3 py-6 sm:px-6">
               <EmptyState
                 icon={Phone}
-                title="Place a Reviewed Call"
-                description="Personal coordination or a specific business service call. The recipient grants permission first."
+                title="Call When They Ask"
+                description="Use this when someone asked for a call. Start a new conversation by email or text."
                 framed
                 density="compact"
                 titleTone="ui"

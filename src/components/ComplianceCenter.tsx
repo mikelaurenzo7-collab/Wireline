@@ -3,10 +3,8 @@ import { Link } from "react-router";
 import { Download, ExternalLink, Loader2, Shield } from "lucide-react";
 
 import DncManager from "./DncManager";
-import DncRegistrationCard, { DNC_REGISTRATION_STATE_LABEL } from "./DncRegistrationCard";
 import { authFetch } from "../lib/api";
 import { formatPhone } from "../lib/safe-number";
-import type { DncSellerRegistrationState } from "../lib/dnc-seller-registration-rules";
 import type { ConsentLedgerEvent } from "../lib/tcpa-consent";
 import { Button, Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";
@@ -65,7 +63,6 @@ export default function ComplianceCenter() {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [registryState, setRegistryState] = useState<DncSellerRegistrationState | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -136,10 +133,10 @@ export default function ComplianceCenter() {
             <dl className="grid gap-3 border-y border-border py-4 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
               <div className="flex items-baseline justify-between gap-4 sm:block">
                 <dt className="shrink-0 text-xs font-medium text-muted-foreground">
-                  Do Not Call Registry
+                  Sales Call Screening
                 </dt>
                 <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">
-                  {registryState ? DNC_REGISTRATION_STATE_LABEL[registryState] : "Checking"}
+                  {summary.federal_dnc_configured ? "On" : "Included"}
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-4 sm:block">
@@ -147,7 +144,7 @@ export default function ComplianceCenter() {
                   Call Screening
                 </dt>
                 <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">
-                  {summary.federal_dnc_configured ? "Connected" : "Setup Required"}
+                  {summary.federal_dnc_configured ? "On" : "Starting"}
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-4 sm:block">
@@ -168,15 +165,11 @@ export default function ComplianceCenter() {
                 </dd>
               </div>
             </dl>
-            {!summary.federal_dnc_configured ? (
-              <p className="text-sm text-muted-foreground">
-                Campaign calls need Do Not Call screening.{" "}
-                <a className="underline underline-offset-4" href="mailto:support@botbound.app">
-                  Contact Support
-                </a>{" "}
-                to connect it.
-              </p>
-            ) : null}
+            <p className="text-sm text-muted-foreground">
+              {summary.federal_dnc_configured
+                ? "BotBound screens sales and marketing calls. You don't register anything."
+                : "BotBound screens sales and marketing calls. They start when screening is on. You don't register anything."}
+            </p>
           </div>
         ) : null}
 
@@ -205,18 +198,6 @@ export default function ComplianceCenter() {
       </section>
 
       <div className="grid gap-4">
-        <details>
-          <summary className="wl-paper wl-paper-elevated wl-focus-ring-halo min-h-11 cursor-pointer p-4 text-sm font-semibold text-foreground">
-            Do Not Call Registration
-            <span className="mt-1 block text-xs font-normal text-muted-foreground">
-              Register Before Campaign Calls
-            </span>
-          </summary>
-          <div className="mt-3">
-            <DncRegistrationCard onStateChange={setRegistryState} />
-          </div>
-        </details>
-
         {summary ? (
           <section className="wl-paper wl-paper-elevated p-4 sm:p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
