@@ -135,6 +135,9 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
   const setupHref = agentId
     ? `/phone?tab=setup&agent=${encodeURIComponent(agentId)}`
     : "/phone?tab=setup";
+  const outboundHref = agentId
+    ? `/phone?tab=outbound&agent=${encodeURIComponent(agentId)}`
+    : "/phone?tab=outbound";
   const emptyState = !hasAgents
     ? { title: "Create a Bot", action: { label: "New Bot", to: "/studio?create=1" } }
     : !livePhone
@@ -146,7 +149,7 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
       : {
           title: agentId ? "No Calls for This Bot" : "No Calls Yet",
           action: { label: "New Call", onClick: () => setShowDial(true) },
-          secondary: { label: "Call the Line", to: `tel:${livePhone}` },
+          secondary: { label: "Outbound", to: outboundHref },
         };
 
   // History is this tab's only content, so its empty state is a message

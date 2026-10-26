@@ -74,8 +74,8 @@ describe("Bot roster: empty versus unreachable", () => {
     expect(studio.slice(emptyGuard)).toContain("StudioEmptyState");
 
     const dial = read("src/components/OutboundDialDialog.tsx");
-    const dialGuard = dial.indexOf("voiceAgents.length === 0 && (degraded || phoneLookupDegraded)");
-    const dialEmptyState = dial.indexOf(": voiceAgents.length === 0 ? (");
+    const dialGuard = dial.indexOf("agents.length === 0 && (degraded || phoneLookupDegraded)");
+    const dialEmptyState = dial.indexOf("agents.length === 0 ? (");
     expect(dialGuard).toBeGreaterThan(-1);
     expect(dialEmptyState).toBeGreaterThan(-1);
     expect(dialGuard).toBeLessThan(dialEmptyState);
@@ -94,7 +94,7 @@ describe("Bot roster: empty versus unreachable", () => {
     expect(createBranch).toBeGreaterThan(-1);
     expect(degradedBranch).toBeLessThan(createBranch);
     expect(read("src/components/OutboundDialDialog.tsx")).toContain(
-      "Create and activate one in Studio",
+      "Create a Bot",
     );
     const overview = read("src/pages/OverviewPage.tsx");
     const firstRun = read("src/components/overview/FirstRunWorkspace.tsx");

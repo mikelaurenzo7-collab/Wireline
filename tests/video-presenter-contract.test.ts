@@ -23,8 +23,8 @@ describe("bot visual identity", () => {
     expect(mark).not.toContain("monogram");
     expect(mark).not.toContain("mark.initial");
 
-    expect(policy).toContain("Fifteen distinct symbols cover the largest published");
-    expect(policy).toContain("120 unique combinations");
+    expect(policy).toContain("Fifteen symbols and eight colors make 120 pictures");
+    expect(policy).toContain("two Bots may share one");
     expect(policy).toContain("Role and runtime status never choose");
     expect(policy).toContain("BOT_MARK_CHOICES");
     expect(policy).toContain("BOT_MARK_PALETTE");

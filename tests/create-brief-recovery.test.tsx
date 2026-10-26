@@ -54,7 +54,7 @@ vi.mock("react-router", () => ({
 }));
 vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: h.userId } }) }));
 vi.mock("../src/contexts/AgentsContext", () => ({
-  useAgents: () => ({ agents: [], refresh: vi.fn() }),
+  useAgents: () => ({ agents: [], refresh: vi.fn(), reload: vi.fn(async () => {}) }),
   AGENTS_CHANGED_EVENT: "agents-changed",
 }));
 vi.mock("../src/lib/api", () => ({

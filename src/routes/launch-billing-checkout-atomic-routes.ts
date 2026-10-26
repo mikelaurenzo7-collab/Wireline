@@ -195,17 +195,6 @@ router.post(
   enforceVerifiedEmailForCheckout,
   fencePayableBillingDuringAccountDeletion,
   async (req: AuthenticatedRequest, res: Response) => {
-    if (!stripeAvailable())
-      throw AppError.fromHttpStatus(503, "Billing is temporarily unavailable.");
-    try {
-      await assertBotBoundStripeAccount(stripe);
-    } catch (error) {
-      log.error("Checkout refused: Stripe account is not the BotBound merchant", {
-        message: getErrorMessage(error),
-      });
-      throw new AppError(503, "USAGE_PRICE_MISMATCH", "Billing is temporarily unavailable.");
-    }
-
     const requestedPlanId = String(req.body?.plan_id || "").trim();
     const interval = req.body?.interval === "year" ? "year" : "month";
     const plan = planById(requestedPlanId);
@@ -276,6 +265,17 @@ router.post(
         code: "CHANNEL_CHECKOUT_UNAVAILABLE",
         error: "This package is not available for checkout yet.",
       });
+    }
+
+    if (!stripeAvailable())
+      throw AppError.fromHttpStatus(503, "Billing is temporarily unavailable.");
+    try {
+      await assertBotBoundStripeAccount(stripe);
+    } catch (error) {
+      log.error("Checkout refused: Stripe account is not the BotBound merchant", {
+        message: getErrorMessage(error),
+      });
+      throw new AppError(503, "USAGE_PRICE_MISMATCH", "Billing is temporarily unavailable.");
     }
 
     const [existing] = await drizzle

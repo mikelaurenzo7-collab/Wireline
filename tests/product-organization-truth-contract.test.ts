@@ -43,7 +43,7 @@ describe("product organization truth contracts", () => {
     expect(billing).toContain("billingReady={billingReady}");
     expect(billing).toContain("<BillingTrustFooter />");
     expect(billing.match(/CONVERSATION_BALANCE_PRESETS_USD\.map/g)).toHaveLength(1);
-    expect(billing).toContain("plan.included_phone_numbers");
+    expect(stripeCard).toContain("in use");
     expect(billing).not.toContain("Manage in Stripe");
     expect(billing).not.toContain("View invoices and payment method");
     expect(billing).not.toContain('text-eyebrow text-muted-foreground">Subscription');

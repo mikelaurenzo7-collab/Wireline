@@ -111,7 +111,7 @@ describe("restored launch regression guards", () => {
     expect(agentRoutes).toContain("resolveCreateEnabledTools(role, isBusinessAgent)");
     expect(dialog).toContain("isBusinessTemplateCategory(selectedTemplate.category)");
     expect(dialog).not.toContain("accountType");
-    expect(dialog).toContain("BOT_ROLE_TEMPLATES.map");
+    expect(dialog).toContain("BOT_ROLE_TEMPLATES.find");
     expect(dialog).toContain(
       'Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")',
     );
@@ -210,7 +210,8 @@ describe("restored launch regression guards", () => {
     expect(security).not.toContain("DNCScrub");
     expect(security).not.toContain("FEDERAL_DNC_API_KEY");
     // Shows the owner's own registry status, not BotBound's vendor configuration.
-    expect(compliance).toContain("DNC_REGISTRATION_STATE_LABEL[registryState]");
+    expect(compliance).toContain("Call Screening");
+    expect(compliance).toContain("BotBound screens sales and marketing calls.");
     expect(compliance).not.toContain("Screening setup needed");
     expect(compliance).not.toContain("DNCScrub");
   });

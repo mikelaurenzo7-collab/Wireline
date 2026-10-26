@@ -70,7 +70,11 @@ vi.mock("../src/contexts/AgentsContext", () => ({
   AGENTS_CHANGED_EVENT: "agents-changed",
 }));
 vi.mock("../src/lib/api", () => ({ authFetch: (...args: unknown[]) => h.fetch(...args) }));
-vi.mock("../src/components/atoms", () => ({ Button: "button", Skeleton: "skeleton" }));
+vi.mock("../src/components/atoms", () => ({
+  Button: "button",
+  Skeleton: "skeleton",
+  NativeSelect: "select",
+}));
 vi.mock("../src/components/molecules", () => ({ StatusNotice: "aside" }));
 vi.mock("../src/components/BotMark", () => ({ default: "mark" }));
 vi.mock("../src/components/BotMarkPicker", () => ({ default: "mark-picker" }));

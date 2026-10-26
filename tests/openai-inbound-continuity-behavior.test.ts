@@ -84,6 +84,12 @@ async function loadRouter(
   vi.doMock("../src/lib/channel-entitlements", () => ({
     getTenantChannelEntitlements: async () => ({ channels: input.channels ?? ["voice"] }),
   }));
+  vi.doMock("../src/lib/voice/fallback-drill", () => ({
+    consumeFallbackDrill: vi.fn(async () => null),
+  }));
+  vi.doMock("../src/lib/voice/cloned-call-routing", () => ({
+    clonedCallTwiml: vi.fn(async () => null),
+  }));
   vi.doMock("../src/lib/founder-fleet-seed", () => ({
     resolveFounderUserId: vi.fn(async () => "founder-1"),
   }));

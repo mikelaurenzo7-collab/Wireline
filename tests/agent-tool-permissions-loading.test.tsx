@@ -149,7 +149,7 @@ describe("agent action editor loading", () => {
     render();
     toggle();
     await flush();
-    expect(textOf(render())).not.toContain("SMS");
+    expect(textOf(render())).toContain("SMS");
     expect(textOf(render())).not.toContain("WhatsApp");
     elements(render()).find((node) => node.type === "input")!.props.onChange!();
     elements(render()).find(

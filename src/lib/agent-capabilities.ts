@@ -227,9 +227,9 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   // Messaging
   {
     name: "send_text_message",
-    label: "Send SMS / WhatsApp (private beta)",
+    label: "Send SMS",
     description:
-      "SMS follow-up. WhatsApp stays private beta until an ONLINE Twilio sender and approved templates are live.",
+      "Text follow-up after the customer agrees. Recipient permission still applies.",
     group: "messaging",
     integration: "twilio",
   },
