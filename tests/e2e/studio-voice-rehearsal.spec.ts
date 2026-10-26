@@ -289,7 +289,7 @@ test("leaving while a voice session is accepted closes its late provider session
   await page.goto("/studio?agent=bot-front-desk&workroom=test");
   await page.getByRole("button", { name: "Start rehearsal", exact: true }).click();
   await accepted;
-  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+  await page.getByRole("button", { name: "Close panel", exact: true }).click();
   releaseAnswer();
   await expect.poll(() => stops).toEqual(["late-accepted-call"]);
   expect(await microphoneCount(page)).toEqual({ microphones: 1, tracksStopped: 1, peersClosed: 1 });
@@ -326,7 +326,7 @@ test("legacy customer commands stay in voice rehearsal without editing the Bot o
   await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
   expect((await microphoneCount(page)).microphones).toBe(0);
   expect(sessions).toEqual([]);
-  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+  await page.getByRole("button", { name: "Close panel", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Message Front Desk", exact: true })).toHaveValue(
     "",
   );

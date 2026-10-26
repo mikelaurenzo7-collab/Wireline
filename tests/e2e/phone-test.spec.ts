@@ -77,7 +77,7 @@ async function setup(page: Page, lostResponse = false, rejectStart = false) {
     });
   });
   await page.goto("/studio?agent=bot-front-desk&workroom=test");
-  await page.getByRole("button", { name: "Call my phone", exact: true }).click();
+  await page.getByRole("button", { name: "Call My Phone", exact: true }).click();
   return {
     starts,
     ends,
@@ -119,7 +119,7 @@ for (const width of [320, 1440]) {
     expect(state.starts).toHaveLength(1);
     expect(state.starts[0]).toMatchObject({ phone: "+13125550123", consent: true });
     await dialog.getByRole("button", { name: "Close", exact: true }).click();
-    await page.getByRole("button", { name: "Call my phone", exact: true }).click();
+    await page.getByRole("button", { name: "Call My Phone", exact: true }).click();
     await expect(page.getByLabel("Phone verification code", { exact: true })).toBeVisible();
     expect(state.starts).toHaveLength(1);
     const rects = await dialog.evaluate((element) => {
@@ -159,7 +159,7 @@ test("a lost POST response survives close and reload without a second call", asy
   await expect(dialog.getByRole("button", { name: "Check call", exact: true })).toBeVisible();
   await dialog.getByRole("button", { name: "Close", exact: true }).click();
   await page.reload();
-  await page.getByRole("button", { name: "Call my phone", exact: true }).click();
+  await page.getByRole("button", { name: "Call My Phone", exact: true }).click();
   await expect(page.getByLabel("Phone verification code", { exact: true })).toHaveText("123456");
   expect(state.starts).toHaveLength(1);
   expect(await page.evaluate(() => JSON.stringify({ ...sessionStorage }))).not.toContain("123456");

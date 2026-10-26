@@ -86,9 +86,9 @@ test("setup offers cloning at voice selection and resumes before rehearsal", asy
   const guide = page.getByRole("dialog", { name: "Next Up for Front Desk" });
   await guide.getByRole("button", { name: "Choose Voice", exact: true }).click();
   await expect(guide.getByRole("heading", { name: "Choose Voice", exact: true })).toBeVisible();
-  await guide.getByRole("button", { name: "Clone Voice", exact: true }).first().click();
-  await expect(guide.locator("#setup-guide-voice-clone")).toBeFocused();
-  await guide.getByRole("button", { name: "Clone Voice", exact: true }).last().click();
+  const cloneVoice = guide.getByRole("button", { name: "Clone Voice", exact: true });
+  await expect(cloneVoice).toHaveCount(1);
+  await cloneVoice.click();
   await expect(guide.getByText("Step 1 of 3 · Permission", { exact: true })).toBeVisible();
   await expect(guide.getByRole("button", { name: "Continue", exact: true })).toBeDisabled();
   await guide.getByRole("button", { name: "Cancel", exact: true }).click();

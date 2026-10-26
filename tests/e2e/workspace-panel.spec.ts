@@ -499,8 +499,17 @@ for (const status of ["stopped", "interrupted"] as const) {
     await expect(details.getByText(goal, { exact: true })).toBeVisible();
     await expect(detail.getByRole("figure", { name: "Ended browser", exact: true })).toBeVisible();
     await expect(detail.getByRole("img")).toHaveCount(0);
-    await expect(detail.getByRole("button", { name: "New task", exact: true })).toHaveCount(1);
-    await expect(detail.locator(".wl-computer-recovery").getByRole("button")).toHaveCount(0);
+    await expect(detail.getByRole("button", { name: "New task", exact: true })).toHaveCount(0);
+    await expect(detail.getByRole("button", { name: "Open browser", exact: true })).toBeVisible();
+    const recovery = detail.locator(".wl-computer-recovery");
+    if (status === "interrupted") {
+      await expect(
+        recovery.getByRole("button", { name: "Set web address", exact: true }),
+      ).toBeVisible();
+    } else {
+      await expect(recovery.getByRole("button")).toHaveCount(0);
+    }
+    await expect(page.locator("textarea:visible")).toHaveCount(1);
     await expect(detail.getByRole("button", { name: "Tasks", exact: true })).toBeVisible();
     await expect(
       detail.getByRole("button", { name: "Open task activity", exact: true }),
@@ -1043,21 +1052,15 @@ test.describe("wide screens", () => {
     await page.goto(`/studio?agent=${bots[0].id}&chat=setup`);
     await conversation(page).fill("Keep my configuration instruction.");
     await panelTab(page, "Browser").click();
-    await page.getByRole("button", { name: "Open browser", exact: true }).click();
     await expect(page.getByRole("figure", { name: "Ended browser", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Tasks", exact: true })).toHaveCount(1);
     const goal = page.getByLabel("What should your Bot do?", { exact: true });
     const url = page.getByLabel("Web address", { exact: true });
     await expect(goal).toHaveCount(0);
-    await url.fill("https://botbound.app/pricing");
+    await expect(page.locator("textarea:visible")).toHaveCount(1);
 
-    await panelTab(page, "Summary").click();
-    await panelTab(page, "Browser").click();
-    await expect(goal).toHaveCount(0);
-    await expect(conversation(page)).toHaveValue("Keep my configuration instruction.");
-    await expect(url).toHaveValue("https://botbound.app/pricing");
-    await expect(page.getByRole("button", { name: "Back to task", exact: true })).toBeVisible();
-
+    // On phones the full-width Browser owns the sole task input. Opening its
+    // draft form must not be confused with Open browser, which starts work.
     await page.setViewportSize({ width: 390, height: 844 });
     await page
       .getByRole("navigation", { name: "Workspace view" })
@@ -1066,9 +1069,11 @@ test.describe("wide screens", () => {
     await expect(page).toHaveURL(
       (url) => url.pathname === "/studio" && url.searchParams.get("panel") === "computer",
     );
+    await page.getByRole("button", { name: "New task", exact: true }).click();
     await expect(goal).toHaveValue("");
     await goal.fill("Read the public Calls Regular monthly price.");
-    await expect(url).toHaveValue("https://botbound.app/pricing");
+    await url.fill("https://botbound.app/pricing");
+    await expect(page.locator("textarea:visible")).toHaveCount(1);
     await page.getByLabel("Switch Bot", { exact: true }).selectOption(bots[1].id);
     await expect(page.getByText("The previous task is complete.", { exact: true })).toHaveCount(0);
     await expect(goal).toHaveValue("");
@@ -1082,6 +1087,13 @@ test.describe("wide screens", () => {
     await expect(goal).toHaveCount(0);
     await expect(conversation(page)).toHaveValue("Keep my configuration instruction.");
     await expect(url).toHaveValue("https://botbound.app/pricing");
+    await expect(page.locator("textarea:visible")).toHaveCount(1);
+    await panelTab(page, "Summary").click();
+    await panelTab(page, "Browser").click();
+    await expect(goal).toHaveCount(0);
+    await expect(conversation(page)).toHaveValue("Keep my configuration instruction.");
+    await expect(url).toHaveValue("https://botbound.app/pricing");
+    await expect(page.getByRole("button", { name: "Back to task", exact: true })).toBeVisible();
     expect(taskStarts).toBe(0);
   });
 
