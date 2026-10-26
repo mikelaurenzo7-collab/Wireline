@@ -123,7 +123,7 @@ describe("authenticated Bot flow", () => {
 
     expect(appRoutes).toContain('path="/studio" element={<AgentStudioHome');
     expect(createDialog).toContain("{language.setupPrompt}");
-    expect(createDialog).toContain("BOT_ROLE_TEMPLATES.map");
+    expect(createDialog).not.toContain("BOT_ROLE_TEMPLATES.map");
     expect(createDialog).toContain(
       'Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")',
     );
@@ -171,12 +171,12 @@ describe("authenticated Bot flow", () => {
       expect(botProduct).toContain(`name: "${phrase}"`);
     }
     expect(botProduct).not.toContain('name: "Collections"');
-    expect(createDialog).toContain("BOT_ROLE_TEMPLATES.map");
+    expect(createDialog).not.toContain("BOT_ROLE_TEMPLATES.map");
     expect(createDialog).toContain(
       'Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")',
     );
-    expect(createDialog).toContain('aria-label="Bot role starters"');
-    expect(createDialog).toContain("<option key={template.key} value={template.key}>");
+    expect(createDialog).not.toContain('aria-label="Bot role starters"');
+    expect(createDialog).not.toContain("<option key={template.key} value={template.key}>");
     expect(createDialog).not.toContain("Choose one personal job");
   });
 

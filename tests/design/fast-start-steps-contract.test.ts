@@ -7,15 +7,15 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 describe("Fast Start brief-first flow contract", () => {
   const create = read("src/components/CreateAgentDialog.tsx");
 
-  it("keeps creation on one brief-first screen with optional role starters", () => {
+  it("keeps creation on one brief-first screen without a role gallery", () => {
     expect(create).toContain("{language.setupPrompt}");
-    expect(create).toContain("Start from a Role");
+    expect(create).not.toContain("Start from a Role");
     expect(create).not.toContain("{language.setupDescription}");
-    expect(create).toContain("BOT_ROLE_TEMPLATES.map");
+    expect(create).not.toContain("BOT_ROLE_TEMPLATES.map");
     expect(create).toContain(
       'Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")',
     );
-    expect(create).toContain('aria-label="Bot role starters"');
+    expect(create).not.toContain('aria-label="Bot role starters"');
     expect(create).toContain("aria-expanded={customizing}");
     expect(create).toContain("Describe the Job");
     expect(create).toContain("language.createCta");
@@ -31,7 +31,7 @@ describe("Fast Start brief-first flow contract", () => {
       'setBrief(initialBrief || (nextTemplate.key === "custom" ? "" : nextTemplate.summary))',
     );
     expect(create).toContain("briefIsTemplateTextRef.current");
-    expect(create).toContain('template.key === "custom" ? "" : template.summary');
+    expect(create).toContain('nextTemplate.key === "custom" ? "" : nextTemplate.summary');
     expect(create).toContain("const finalBrief = brief.trim() || selectedTemplate.summary");
     expect(create).toContain("if (finalBrief) {");
     expect(create).not.toContain("defaultBrief");

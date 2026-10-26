@@ -120,13 +120,13 @@ describe("authenticated Bot navigation contract", () => {
 
   it("makes Fast Start brief-first, posture-neutral, and free of provider complexity", () => {
     expect(create).toContain("language.setupPrompt");
-    expect(create).toContain("Start from a Role");
+    expect(create).not.toContain("Start from a Role");
     expect(create).toContain("language.createCta");
-    expect(create).toContain("BOT_ROLE_TEMPLATES.map");
+    expect(create).not.toContain("BOT_ROLE_TEMPLATES.map");
     expect(create).toContain(
       'Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")',
     );
-    expect(create).toContain('aria-label="Bot role starters"');
+    expect(create).not.toContain('aria-label="Bot role starters"');
     expect(create).toContain("phoneProvisionRequested: false");
     expect(create).toContain("&section=setup");
     expect(create).not.toMatch(

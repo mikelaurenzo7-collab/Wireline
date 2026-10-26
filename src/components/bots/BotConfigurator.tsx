@@ -1,5 +1,5 @@
-import { BOT_CHANNELS, BOT_ROLE_TEMPLATES, type BotChannelKey } from "../../lib/bot-product";
-import { createBotConfiguration, type BotConfigurationDraft } from "../../lib/bot-configuration";
+import { BOT_CHANNELS, type BotChannelKey } from "../../lib/bot-product";
+import { type BotConfigurationDraft } from "../../lib/bot-configuration";
 import { Checkbox } from "../ui/shadcn/Checkbox";
 
 export type BotConfiguratorProps = {
@@ -61,22 +61,6 @@ export default function BotConfigurator({
     next: BotConfigurationDraft[Key],
   ) => onChange({ ...value, [key]: next });
 
-  const selectTemplate = (templateKey: (typeof BOT_ROLE_TEMPLATES)[number]["key"]) => {
-    const templateDraft = createBotConfiguration(
-      templateKey,
-      value.name.trim() ? { name: value.name } : {},
-    );
-
-    onChange({
-      ...templateDraft,
-      channels: value.channels,
-      knowledgeBrief: value.knowledgeBrief,
-      toolsBrief: value.toolsBrief,
-      approvalBrief: value.approvalBrief,
-      handoffBrief: value.handoffBrief,
-    });
-  };
-
   return (
     <section
       className="space-y-6 rounded-[var(--radius-xl)] border border-border bg-card p-5 sm:p-6"
@@ -93,25 +77,7 @@ export default function BotConfigurator({
         </p>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <label className="space-y-2 text-sm font-medium text-foreground">
-          Starting Template
-          <select
-            value={value.templateKey}
-            disabled={disabled}
-            onChange={(event) =>
-              selectTemplate(event.target.value as (typeof BOT_ROLE_TEMPLATES)[number]["key"])
-            }
-            className="min-h-11 w-full rounded-xl border border-border bg-background px-3 text-sm"
-          >
-            {BOT_ROLE_TEMPLATES.map((template) => (
-              <option key={template.key} value={template.key}>
-                {template.name} · {template.direction}
-              </option>
-            ))}
-          </select>
-        </label>
-
+      <div className="grid gap-4">
         <label className="space-y-2 text-sm font-medium text-foreground">
           Bot Name
           <input

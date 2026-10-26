@@ -236,7 +236,7 @@ describe("authenticated workspace design architecture", () => {
 
   it("offers reviewed calls and campaign preparation without dropping recipient permissions", () => {
     const hub = read("src/components/outbound/OutboundHub.tsx");
-    expect(hub).toContain('title="Call When They Ask"');
+    expect(hub).toContain('title="Call"');
     expect(hub).toContain('aria-label="New Call"');
     expect(hub).toContain("RecipientVoicePermissions");
     expect(hub).toContain("CAMPAIGN_CALLING_TITLE");

@@ -72,15 +72,11 @@ for (const width of [320, 390, 1440]) {
     await page.goto("/studio?create=1");
     const dialog = page.getByRole("dialog", { name: "What Should Your Bot Do?" });
     await expect(dialog.getByRole("heading", { name: "What Should Your Bot Do?" })).toBeFocused();
-    await dialog.getByText("Start from a Role", { exact: true }).click();
-    const role = dialog.getByRole("combobox", { name: "Bot role starters" });
     const brief = dialog.getByRole("textbox", { name: "Describe the Job" });
-    await role.selectOption("front-desk");
-    await expect(brief).not.toHaveValue("");
     const supplied = "Book repairs only after checking the customer's ZIP code.";
     await brief.fill(supplied);
-    await role.selectOption("appointment-setter");
     await expect(brief).toHaveValue(supplied);
+    await expect(dialog.getByText("Start from a Role", { exact: true })).toHaveCount(0);
     await expect(dialog.getByRole("textbox", { name: /Bot Name/ })).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Create Bot", exact: true })).toBeInViewport();
     await expect

@@ -7,10 +7,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { ChevronDown, ChevronRight, Loader2, WandSparkles, X } from "lucide-react";
+import { ChevronDown, Loader2, WandSparkles, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
 
-import { Button, Input, NativeSelect, Textarea } from "./atoms";
+import { Button, Input, Textarea } from "./atoms";
 import BotMarkPicker from "./BotMarkPicker";
 import { StatusNotice } from "./molecules";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
@@ -488,42 +488,6 @@ export default function CreateAgentDialog({
                 resize="vertical"
               />
             </label>
-
-            <details className="group" open={initialTemplate.key !== "custom"}>
-              <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-md py-3 text-sm font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
-                <ChevronRight
-                  className="size-4 shrink-0 transition-transform group-open:rotate-90 motion-reduce:transition-none"
-                  aria-hidden="true"
-                />
-                Start from a Role
-              </summary>
-              <NativeSelect
-                id="create-bot-role"
-                aria-label="Bot role starters"
-                value={templateKey}
-                disabled={creating}
-                onChange={(event) => {
-                  const template = templateForKey(event.target.value);
-                  setTemplateKey(template.key);
-                  if (!markWasChosenRef.current) {
-                    setMarkKey(
-                      firstAvailableBotMarkKey(template.key, unavailableMarkKeys) ??
-                        defaultBotMarkKey(template.key),
-                    );
-                  }
-                  if (briefIsTemplateTextRef.current || !brief.trim()) {
-                    briefIsTemplateTextRef.current = true;
-                    setBrief(template.key === "custom" ? "" : template.summary);
-                  }
-                }}
-              >
-                {BOT_ROLE_TEMPLATES.map((template) => (
-                  <option key={template.key} value={template.key}>
-                    {template.name}
-                  </option>
-                ))}
-              </NativeSelect>
-            </details>
 
             <label className="grid gap-2">
               <span className="text-sm font-semibold text-foreground">

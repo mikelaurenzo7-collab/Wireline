@@ -264,7 +264,7 @@ export function LeadHuntReview({
             <h2 className="text-sm font-semibold text-foreground">Find. Review. Queue.</h2>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Find people, then reach them by email or text. Call when they ask.
+            Find people and call them. The same Bot can answer and call. BotBound screens the list.
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">

@@ -27,7 +27,7 @@ export default function OutboundHub({
         <EmptyState
           icon={Phone}
           title={CAMPAIGN_CALLING_TITLE}
-          description="Call someone who asked for a call. Start a new conversation by email or text."
+          description="Your Bot answers calls and places them. BotBound screens the list."
           framed
           density="compact"
           withHalo={false}
@@ -69,8 +69,8 @@ export default function OutboundHub({
             <div className="flex w-full flex-col items-center px-3 py-6 sm:px-6">
               <EmptyState
                 icon={Phone}
-                title="Call When They Ask"
-                description="Use this when someone asked for a call. Start a new conversation by email or text."
+                title="Call"
+                description="Your Bot answers and calls on the same number. BotBound screens every outbound call."
                 framed
                 density="compact"
                 titleTone="ui"

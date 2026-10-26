@@ -295,8 +295,8 @@ describe("BotBound product voice", () => {
       expect(plan.features.join("\n"), plan.id).toMatch(/dedicated production number/i);
       expect(plan.features.join("\n"), plan.id).toMatch(/BotBound-managed email identity/i);
     }
-    const billing = read("src/pages/BillingSettings.tsx");
-    expect(billing).toContain("plan.included_phone_numbers");
+    const billing = read("src/components/StripeBillingCard.tsx");
+    expect(billing).toContain("included_phone_numbers");
   });
 
   it("keeps the authenticated route map intentional", () => {
