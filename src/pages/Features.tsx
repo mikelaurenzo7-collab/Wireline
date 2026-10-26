@@ -35,7 +35,7 @@ const PILLARS: readonly Pillar[] = [
     icon: MessageSquare,
     label: "SMS",
     body: "Keep conversations moving from your business number, with your knowledge, tone, and opt-out controls.",
-    note: "Activation requires approved business and sender registration.",
+    note: "Texting is included. Recipient permission still applies.",
   },
   {
     id: "email",
@@ -96,7 +96,7 @@ export default function Features() {
                 to={signedIn ? "/studio" : "/signup"}
                 className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
               >
-                {signedIn ? "Open Workspace" : "Get Started"}
+                {signedIn ? "Open Workspace" : "GET YOUR SALES BOT"}
               </Link>
               <Link
                 to="/pricing"

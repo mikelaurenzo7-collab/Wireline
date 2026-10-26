@@ -30,7 +30,7 @@ test("homepage mobile product and access path has clear branding and no serious 
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
   await expect(page.getByRole("link", { name: "BotBound home" })).toBeVisible();
   const actions = page.locator(".landing-prestige__hero .landing-prestige__actions");
-  await expect(actions.getByRole("link", { name: "Get Started" })).toBeVisible();
+  await expect(actions.getByRole("link", { name: "GET YOUR SALES BOT" })).toBeVisible();
   await expect(actions.getByRole("link", { name: "See Pricing", exact: true })).toBeVisible();
 
   const results = await new AxeBuilder({ page }).include("main").analyze();
@@ -115,7 +115,7 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
   await expect(page.getByRole("link", { name: "Explore Calls" })).toBeVisible();
   const start = page
     .locator(".landing-prestige__hero .landing-prestige__actions")
-    .getByRole("link", { name: "Get Started" });
+    .getByRole("link", { name: "GET YOUR SALES BOT" });
   await start.click();
   await expect(page).toHaveURL(/\/signup$/);
   await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
@@ -140,7 +140,7 @@ test("homepage channels stay clear and readable without decorative labels at 320
       .locator(".landing-prestige__role-card")
       .getByText(/^(For You|For Your Business|Your Choice)$/),
   ).toHaveCount(0);
-  await expect(hero.getByRole("link", { name: "Get Started" })).toHaveAttribute("href", "/signup");
+  await expect(hero.getByRole("link", { name: "GET YOUR SALES BOT" })).toHaveAttribute("href", "/signup");
   await expect(
     page.getByRole("tablist", { name: "Bot capabilities" }).getByRole("tab"),
   ).toHaveCount(4);
@@ -209,7 +209,7 @@ test("homepage channels stay clear and readable without decorative labels at 320
     expect(line.left).toBeGreaterThanOrEqual(0);
     expect(line.right).toBeLessThanOrEqual(enlarged.width);
   }
-  await expect(hero.getByRole("link", { name: "Get Started" })).toBeVisible();
+  await expect(hero.getByRole("link", { name: "GET YOUR SALES BOT" })).toBeVisible();
   await page.screenshot({
     path: info.outputPath("landing-channels-320-enlarged.png"),
     fullPage: true,
