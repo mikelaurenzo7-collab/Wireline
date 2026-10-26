@@ -48,7 +48,7 @@ const FAQ = [
   ],
   [
     "What Happens When Included Call Minutes Run Out?",
-    `Extra calling is billed as usage at ${TOPUP_RATE}. Each call needs at least one minute of coverage, plus a completion buffer of up to 10 minutes so a conversation can wrap up, within the session cap of 60 minutes. Usage past the monthly spending cap pauses new calls. Billing and saved records stay available. No automatic balance purchases or overage invoices.`,
+    `Extra calling is billed as usage at ${TOPUP_RATE}. Each call requires at least one funded minute and is limited by available coverage, plus a completion buffer of up to 10 minutes so a conversation can wrap up, within the session cap of 60 minutes. Unpaid completion usage pauses new calls and prepaid extras until the amount is paid. Billing and saved records stay available. No automatic balance purchases or overage invoices.`,
   ],
   [
     "How Long Can a Call Last?",
@@ -210,9 +210,9 @@ export default function Pricing() {
               {selectedHasCalls ? (
                 <>
                   {" "}
-                  Extra minutes are {TOPUP_RATE}, paid from balance you add ahead of time. A call
-                  that runs past your minutes can take up to 10 more to finish. Bots answer calls on
-                  their own number.
+                  Extra minutes are {TOPUP_RATE}, paid from Runtime Balance you add ahead of time.
+                  A call that runs past your minutes can take up to 10 more to finish. Bots answer
+                  calls on their own number.
                 </>
               ) : null}
             </p>
