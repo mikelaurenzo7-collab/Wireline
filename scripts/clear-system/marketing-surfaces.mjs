@@ -250,8 +250,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /Runtime\s+Balance/,
-    "pricing must explain Runtime Balance",
+    /Calls, texts, email, and Computer share that work/,
+    "pricing must explain shared work",
   );
   mustInclude(
     "src/pages/Pricing.tsx",

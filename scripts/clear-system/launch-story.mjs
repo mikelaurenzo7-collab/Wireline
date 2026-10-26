@@ -201,8 +201,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /Runtime\s+Balance/,
-    "pricing must explain Runtime Balance",
+    /Calls, texts, email, and Computer share that work/,
+    "pricing must explain shared work",
   );
   mustExclude(
     "src/pages/Pricing.tsx",
