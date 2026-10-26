@@ -272,13 +272,22 @@ private fun SignInScreen(state: WirelineUiState, onSignIn: (String, String) -> U
 private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: WirelineViewModel, onNavigateToSettings: () -> Unit) {
     var number by rememberSaveable { mutableStateOf("") }
     var context by rememberSaveable { mutableStateOf("") }
-    var consentConfirmed by rememberSaveable { mutableStateOf(false) }
-    var callPurpose by rememberSaveable { mutableStateOf("service_or_requested") }
+    var permissionConfirmed by rememberSaveable { mutableStateOf(false) }
+    var nonsalesConfirmed by rememberSaveable { mutableStateOf(false) }
+    var salesAttestationConfirmed by rememberSaveable { mutableStateOf(false) }
+    var callPurpose by rememberSaveable { mutableStateOf(OutboundPurposeCopy.APPOINTMENT) }
     var selectedAgentId by rememberSaveable { mutableStateOf("") }
     var showAsk by rememberSaveable { mutableStateOf(false) }
     val agent = state.agents.firstOrNull { it.id == selectedAgentId } ?: state.agents.firstOrNull()
     val followUps = state.recentCalls.count { it.outcomeTag == "followup" }
-    val requiresMarketingConsent = callPurpose == "marketing_or_sales"
+    val salesCall = callPurpose == OutboundPurposeCopy.SALES
+    val confirmationsReady = permissionConfirmed && if (salesCall) salesAttestationConfirmed else nonsalesConfirmed
+    fun selectPurpose(next: String) {
+        callPurpose = next
+        permissionConfirmed = false
+        nonsalesConfirmed = false
+        salesAttestationConfirmed = false
+    }
 
     LazyColumn(modifier = Modifier.fillMaxSize().background(Brand.Canvas).padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { AskWirelineHeroCard(onClick = { showAsk = true }) }
@@ -302,21 +311,36 @@ private fun StudioScreen(padding: PaddingValues, state: WirelineUiState, model: 
                 AgentChips(state.agents, agent?.id, onSelect = { selectedAgentId = it })
                 OutlinedTextField(value = number, onValueChange = { number = it }, label = { Text("PHONE NUMBER") }, modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(Brand.RadiusSm))
                 OutlinedTextField(value = context, onValueChange = { context = it }, label = { Text("WHAT SHOULD YOUR BOT HANDLE?") }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(Brand.RadiusSm))
-                Text("CALL TYPE", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                    FilterChip(selected = callPurpose == "service_or_requested", onClick = { callPurpose = "service_or_requested"; consentConfirmed = false }, label = { Text("SERVICE") })
-                    FilterChip(selected = callPurpose == "callback", onClick = { callPurpose = "callback"; consentConfirmed = false }, label = { Text("CALLBACK") })
-                    FilterChip(selected = callPurpose == "marketing_or_sales", onClick = { callPurpose = "marketing_or_sales"; consentConfirmed = false }, label = { Text("SALES") })
+                Text("WHY ARE YOU CONTACTING THEM?", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Brand.Text3)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                    FilterChip(selected = callPurpose == OutboundPurposeCopy.APPOINTMENT, onClick = { selectPurpose(OutboundPurposeCopy.APPOINTMENT) }, label = { Text(OutboundPurposeCopy.APPOINTMENT_LABEL) })
+                    FilterChip(selected = callPurpose == OutboundPurposeCopy.CALLBACK, onClick = { selectPurpose(OutboundPurposeCopy.CALLBACK) }, label = { Text(OutboundPurposeCopy.CALLBACK_LABEL) })
+                    FilterChip(selected = callPurpose == OutboundPurposeCopy.SALES, onClick = { selectPurpose(OutboundPurposeCopy.SALES) }, label = { Text(OutboundPurposeCopy.SALES_LABEL) })
                 }
-                if (requiresMarketingConsent) {
-                    Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Checkbox(checked = consentConfirmed, onCheckedChange = { consentConfirmed = it })
-                        OutboundConsentFields()
-                    }
-                }
+                OutboundConfirmationFields(
+                    salesCall = salesCall,
+                    permissionConfirmed = permissionConfirmed,
+                    onPermissionConfirmed = { permissionConfirmed = it },
+                    nonsalesConfirmed = nonsalesConfirmed,
+                    onNonsalesConfirmed = { nonsalesConfirmed = it },
+                    salesAttestationConfirmed = salesAttestationConfirmed,
+                    onSalesAttestationConfirmed = { salesAttestationConfirmed = it },
+                )
                 Button(
-                    onClick = { agent?.let { model.placeCall(it.id, number, context, callPurpose, requiresMarketingConsent && consentConfirmed) } },
-                    enabled = agent != null && number.isNotBlank() && (!requiresMarketingConsent || consentConfirmed) && !state.isWorking,
+                    onClick = {
+                        agent?.let {
+                            model.placeCall(
+                                it.id,
+                                number,
+                                context,
+                                callPurpose,
+                                permissionConfirmed,
+                                if (salesCall) false else nonsalesConfirmed,
+                                salesCall && salesAttestationConfirmed,
+                            )
+                        }
+                    },
+                    enabled = agent != null && number.isNotBlank() && confirmationsReady && !state.isWorking,
                     shape = RoundedCornerShape(Brand.RadiusSm),
                 ) { Text("PLACE CALL") }
             }
@@ -505,17 +529,41 @@ private fun AgentChips(agents: List<Agent>, selectedId: String?, onSelect: (Stri
 }
 
 @Composable
-fun OutboundConsentFields() {
+fun OutboundConfirmationFields(
+    salesCall: Boolean,
+    permissionConfirmed: Boolean,
+    onPermissionConfirmed: (Boolean) -> Unit,
+    nonsalesConfirmed: Boolean,
+    onNonsalesConfirmed: (Boolean) -> Unit,
+    salesAttestationConfirmed: Boolean,
+    onSalesAttestationConfirmed: (Boolean) -> Unit,
+) {
     val uriHandler = LocalUriHandler.current
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(OutboundConsentCopy.LABEL, style = MaterialTheme.typography.bodySmall, color = Brand.Text)
-        Text(OutboundConsentCopy.HELP, style = MaterialTheme.typography.labelSmall, color = Brand.Text3)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        ConfirmationCheck(OutboundConsentCopy.PERMISSION, permissionConfirmed, onPermissionConfirmed)
+        if (salesCall) {
+            ConfirmationCheck(
+                OutboundConsentCopy.SALES_ATTESTATION,
+                salesAttestationConfirmed,
+                onSalesAttestationConfirmed,
+            )
+        } else {
+            ConfirmationCheck(OutboundConsentCopy.NONSALES, nonsalesConfirmed, onNonsalesConfirmed)
+        }
         TextButton(
             onClick = { uriHandler.openUri(OutboundConsentCopy.LEGAL_URL) },
             contentPadding = PaddingValues(0.dp),
         ) {
             Text(OutboundConsentCopy.LEARN_MORE, style = MaterialTheme.typography.labelSmall, color = Brand.Accent)
         }
+    }
+}
+
+@Composable
+private fun ConfirmationCheck(label: String, checked: Boolean, onChecked: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Checkbox(checked = checked, onCheckedChange = onChecked)
+        Text(label, style = MaterialTheme.typography.bodySmall, color = Brand.Text)
     }
 }
 

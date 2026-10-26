@@ -101,16 +101,19 @@ actor WirelineAPI {
         agentId: String,
         to number: String,
         context: String?,
-        callPurpose: String = "service_or_requested",
-        hasExpressWrittenConsent: Bool = false
+        callPurpose: String = "appointment_service",
+        permissionConfirmed: Bool = false,
+        nonsalesConfirmed: Bool = false,
+        salesAttestationConfirmed: Bool = false
     ) async throws -> String? {
         struct Body: Encodable {
             let agentId: String
             let customerNumber: String
             let context: String?
             let callPurpose: String
-            let hasExpressWrittenConsent: Bool
-            let consentSource: String?
+            let permissionConfirmed: Bool
+            let nonsalesConfirmed: Bool
+            let salesAttestationConfirmed: Bool
         }
         struct Result: Decodable {
             let success: Bool
@@ -123,8 +126,9 @@ actor WirelineAPI {
                 customerNumber: number,
                 context: context,
                 callPurpose: callPurpose,
-                hasExpressWrittenConsent: hasExpressWrittenConsent,
-                consentSource: hasExpressWrittenConsent ? "manual_attestation" : nil
+                permissionConfirmed: permissionConfirmed,
+                nonsalesConfirmed: nonsalesConfirmed,
+                salesAttestationConfirmed: salesAttestationConfirmed
             )
         )
         return (try? JSONDecoder().decode(Result.self, from: data))?.callId

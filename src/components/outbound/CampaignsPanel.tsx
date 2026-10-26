@@ -153,7 +153,7 @@ export default function CampaignsPanel({ initialAgentId }: { initialAgentId?: st
       "I understand campaigns need number screening, and numbers on the Do Not Call list are skipped.",
     ];
     const confirmed = window.confirm(
-      `Launch attestation (dialer still enforces DNC/TCPA and workspace call windows):\n\n${checklist
+      `Before this campaign launches, number screening, Do Not Call rules, and calling hours still apply:\n\n${checklist
         .map((line) => `• ${line}`)
         .join("\n")}\n\n${
         playbook ? `Playbook: ${playbook}` : "No playbook tag on this campaign."

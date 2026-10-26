@@ -150,8 +150,8 @@ export function TermsOfService() {
           </li>
           <li>Impersonate any person or organization</li>
           <li>
-            Violate any telemarketing law including the TCPA (US), CASL (Canada), or applicable
-            state law
+            Violate any telemarketing or texting law, including US calling rules, Canadian anti-spam
+            rules, or applicable state law
           </li>
           <li>
             Process highly sensitive categories of personal data (health, financial) without

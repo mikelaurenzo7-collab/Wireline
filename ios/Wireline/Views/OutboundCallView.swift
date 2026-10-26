@@ -12,13 +12,19 @@ struct OutboundCallView: View {
     @State private var selectedAgentId: String = ""
     @State private var number = ""
     @State private var context = ""
-    @State private var callPurpose = "service_or_requested"
-    @State private var consentConfirmed = false
+    @State private var callPurpose = OutboundPurposeCopy.appointment
+    @State private var permissionConfirmed = false
+    @State private var nonsalesConfirmed = false
+    @State private var salesAttestationConfirmed = false
     @State private var isPlacing = false
     @State private var errorMessage: String?
 
-    private var requiresMarketingConsent: Bool {
-        callPurpose == "marketing_or_sales"
+    private var salesCall: Bool {
+        callPurpose == OutboundPurposeCopy.sales
+    }
+
+    private var confirmationsReady: Bool {
+        permissionConfirmed && (salesCall ? salesAttestationConfirmed : nonsalesConfirmed)
     }
 
     var body: some View {
@@ -34,28 +40,26 @@ struct OutboundCallView: View {
                         .keyboardType(.phonePad)
                     TextField("Instruction (optional)", text: $context, axis: .vertical)
                         .lineLimit(2...4)
-                    Picker("Call type", selection: $callPurpose) {
-                        Text("Service").tag("service_or_requested")
-                        Text("Callback").tag("callback")
-                        Text("Marketing").tag("marketing_or_sales")
+                    Picker("Why are you contacting them?", selection: $callPurpose) {
+                        Text(OutboundPurposeCopy.appointmentLabel).tag(OutboundPurposeCopy.appointment)
+                        Text(OutboundPurposeCopy.callbackLabel).tag(OutboundPurposeCopy.callback)
+                        Text(OutboundPurposeCopy.salesLabel).tag(OutboundPurposeCopy.sales)
                     }
-                    .pickerStyle(.segmented)
-                    .onChange(of: callPurpose) { _ in consentConfirmed = false }
-                    if requiresMarketingConsent {
-                        Toggle(isOn: $consentConfirmed) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(OutboundConsentCopy.label)
-                                    .font(.footnote)
-                                Text(OutboundConsentCopy.help)
-                                    .font(.caption)
-                                    .foregroundStyle(Brand.text2)
-                                Button(OutboundConsentCopy.learnMore) {
-                                    openURL(OutboundConsentCopy.legalURL)
-                                }
-                                .font(.caption)
-                            }
-                        }
+                    .onChange(of: callPurpose) { _ in
+                        permissionConfirmed = false
+                        nonsalesConfirmed = false
+                        salesAttestationConfirmed = false
                     }
+                    Toggle(OutboundConsentCopy.permission, isOn: $permissionConfirmed)
+                    if salesCall {
+                        Toggle(OutboundConsentCopy.salesAttestation, isOn: $salesAttestationConfirmed)
+                    } else {
+                        Toggle(OutboundConsentCopy.nonsales, isOn: $nonsalesConfirmed)
+                    }
+                    Button(OutboundConsentCopy.learnMore) {
+                        openURL(OutboundConsentCopy.legalURL)
+                    }
+                    .font(.caption)
                 }
                 if let errorMessage {
                     Text(errorMessage).font(.footnote).foregroundStyle(Brand.destructive)
@@ -67,12 +71,7 @@ struct OutboundCallView: View {
                         if isPlacing { ProgressView().tint(.white) } else { Text("Place call") }
                     }
                     .buttonStyle(PrimaryButtonStyle())
-                    .disabled(
-                        isPlacing ||
-                            selectedAgentId.isEmpty ||
-                            number.isEmpty ||
-                            (requiresMarketingConsent && !consentConfirmed)
-                    )
+                    .disabled(isPlacing || selectedAgentId.isEmpty || number.isEmpty || !confirmationsReady)
                     .listRowInsets(EdgeInsets())
                 }
             }
@@ -94,7 +93,9 @@ struct OutboundCallView: View {
                 to: number,
                 context: context.isEmpty ? nil : context,
                 callPurpose: callPurpose,
-                hasExpressWrittenConsent: requiresMarketingConsent && consentConfirmed
+                permissionConfirmed: permissionConfirmed,
+                nonsalesConfirmed: salesCall ? false : nonsalesConfirmed,
+                salesAttestationConfirmed: salesCall && salesAttestationConfirmed
             )
             dismiss()
         } catch let WirelineAPI.APIError.http(status, _) where status == 503 {

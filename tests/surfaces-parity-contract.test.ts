@@ -46,8 +46,12 @@ describe("dial consent artifact on clients", () => {
     expect(web).toContain("requestKey: requestRef.current.key");
     expect(web).toContain("savePendingOutboundDial");
     expect(web).not.toContain('consentSource: "manual_attestation"');
-    expect(android).toContain('body.put("consentSource", "manual_attestation")');
-    expect(ios).toContain('consentSource: hasExpressWrittenConsent ? "manual_attestation" : nil');
+    expect(android).toContain('body.put("permissionConfirmed", permissionConfirmed)');
+    expect(android).toContain('body.put("nonsalesConfirmed", nonsalesConfirmed)');
+    expect(android).not.toContain('body.put("consentSource", "manual_attestation")');
+    expect(ios).toContain("permissionConfirmed: Bool");
+    expect(ios).toContain("nonsalesConfirmed: Bool");
+    expect(ios).not.toContain("hasExpressWrittenConsent");
   });
 });
 

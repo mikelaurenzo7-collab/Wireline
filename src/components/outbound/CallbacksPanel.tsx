@@ -7,6 +7,13 @@ import { OPS_CHANNEL_EMPTY } from "../../lib/wireline-ops-design";
 import { formatDateTime } from "../../lib/safe-date";
 import { formatPhone } from "../../lib/safe-number";
 
+function callbackStatusLabel(status: string | undefined): string {
+  if (status === "Callback-Scheduled") return "Scheduled";
+  if (status === "Blocked-TCPA" || status === "Blocked-DNC") return "Not called";
+  if (!status || status.includes("_")) return "Pending";
+  return status;
+}
+
 type Callback = {
   id: string;
   customer_number?: string;
@@ -81,7 +88,7 @@ export default function CallbacksPanel() {
             </p>
             <span className="w-fit rounded-full bg-muted px-2 py-0.5 text-xs capitalize">
               <span className="sr-only">Status: </span>
-              {cb.status === "Callback-Scheduled" ? "Scheduled" : cb.status || "Pending"}
+              {callbackStatusLabel(cb.status)}
             </span>
           </div>
           <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">

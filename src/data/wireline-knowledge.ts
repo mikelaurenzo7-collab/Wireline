@@ -136,7 +136,7 @@ export const WIRELINE_COMPLIANCE_STATUS = {
     "TLS in transit",
     "Per-tenant data isolation in the application and database policy layers",
     "Audit logging for protected state changes",
-    "TCPA consent and opt-out records for outbound workflows",
+    "Permission and opt-out records for outbound calls and texts",
     "DNC enforcement on outbound dialing",
     "Account deletion with a delayed hard-delete workflow",
   ],

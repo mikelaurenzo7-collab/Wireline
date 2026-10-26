@@ -134,7 +134,9 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
                 to: number,
                 context: nil,
                 callPurpose: "callback",
-                hasExpressWrittenConsent: false
+                permissionConfirmed: false,
+                nonsalesConfirmed: false,
+                salesAttestationConfirmed: false
             )
         } catch {
             // Native outbound is unavailable until the signed-permission client ships.

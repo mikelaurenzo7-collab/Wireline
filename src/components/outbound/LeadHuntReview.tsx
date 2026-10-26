@@ -423,8 +423,8 @@ export function LeadHuntReview({
             />
             <span className="text-xs leading-relaxed text-muted-foreground">
               I reviewed these recipients and approve adding them to this draft. This approval is
-              not consent proof and does not bypass suppression, DNC, TCPA, calling hour, or launch
-              gates.
+              not consent proof and does not bypass the block list, Do Not Call rules, calling hours, or
+              the separate launch check.
             </span>
           </label>
 
