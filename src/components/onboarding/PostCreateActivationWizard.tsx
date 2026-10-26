@@ -398,6 +398,7 @@ export default function PostCreateActivationWizard({
                 markKey={payload.markKey}
                 botPhone={phoneNumber}
                 cloneAnchorId="setup-guide-voice-clone"
+                showCloneShortcut={false}
               />
             </section>
           ) : null}
@@ -439,14 +440,16 @@ export default function PostCreateActivationWizard({
                   {checkoutAvailable === false ? (
                     <SoftOpenCheckoutNote />
                   ) : (
-                    <p className="text-sm text-muted-foreground">Choose Calls, Email, or both.</p>
+                    <p className="text-sm text-muted-foreground">
+                      Calls, SMS, Email, and Computer.
+                    </p>
                   )}
                   <Button asChild size="sm">
                     <Link
                       to={activationPlanPath}
                       onClick={() => stashPostCreateWizardStep("launch")}
                     >
-                      Choose Channels
+                      Choose Plan
                     </Link>
                   </Button>
                 </>

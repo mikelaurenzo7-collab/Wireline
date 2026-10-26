@@ -10,9 +10,9 @@ describe("tenant tool integration status", () => {
     emailProviders: [] as string[],
   };
 
-  it("treats platform-managed tools as configured", () => {
+  it("only treats tenant-safe platform-managed tools as configured", () => {
     expect(resolveTenantToolIntegrationStatus("twilio", base)).toBe("configured");
-    expect(resolveTenantToolIntegrationStatus("docusign", base)).toBe("configured");
+    expect(resolveTenantToolIntegrationStatus("docusign", base)).toBe("missing");
   });
 
   it("requires a live CRM connection for CRM tools", () => {

@@ -11,10 +11,7 @@ export type TenantToolIntegrationContext = {
   nativeCalendarConfigured?: boolean;
 };
 
-const PLATFORM_MANAGED: ReadonlySet<ToolIntegration> = new Set([
-  "twilio",
-  "docusign",
-] as ToolIntegration[]);
+const PLATFORM_MANAGED: ReadonlySet<ToolIntegration> = new Set(["twilio"]);
 
 /**
  * Tenant-safe integration posture for agent tool toggles — no platform env-var leakage.

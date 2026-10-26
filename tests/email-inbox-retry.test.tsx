@@ -282,7 +282,7 @@ beforeEach(() => {
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 
 describe("email inbox operation recovery", () => {
-  it("hides the SMS tab and clears a retired message link without losing Bot scope", async () => {
+  it("shows SMS with its saved conversation scope but keeps unsubscribed access read-only", async () => {
     h.page = true;
     h.params = new URLSearchParams({
       tab: "sms",
@@ -294,11 +294,17 @@ describe("email inbox operation recovery", () => {
     const tabStrip = elements(tree).find((node) => Array.isArray(node.props.tabs));
     expect(tabStrip?.props.tabs).toEqual([
       { id: "email", label: "Email" },
+      { id: "sms", label: "SMS" },
       { id: "approvals", label: "Approvals" },
     ]);
-    expect(elements(tree).some((node) => node.type === "sms-threads")).toBe(false);
-    expect(h.params.has("thread")).toBe(false);
-    expect(h.params.has("tab")).toBe(false);
+    const sms = elements(tree).find((node) => node.type === "sms-threads");
+    expect(sms?.props).toMatchObject({
+      readOnly: true,
+      agentId: "bot-a",
+      initialThreadId: "sms-thread",
+    });
+    expect(h.params.get("thread")).toBe("sms-thread");
+    expect(h.params.get("tab")).toBe("sms");
     expect(h.params.get("agent")).toBe("bot-a");
     expect(h.params.get("keep")).toBe("unchanged");
   });

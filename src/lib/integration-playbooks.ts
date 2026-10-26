@@ -73,8 +73,8 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
   x: {
     integration: "x",
     label: "X",
-    headline: "Engage on X: post, reply, like, repost, DM, and read ad performance.",
-    orbitHint: "Post, reply, like, DM, ads",
+    headline: "Engage on X: post, reply, like, repost, and DM.",
+    orbitHint: "Post, reply, like, DM",
     connectPath: "/connections",
     tasks: [
       {

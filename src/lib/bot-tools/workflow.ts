@@ -59,13 +59,13 @@ export async function handleWorkflowToolCall(
         toolCallId,
         result: zoomMeeting
           ? `Meeting link created: ${zoomMeeting.join_url}`
-          : "I wasn't able to create the meeting link right now. I'll have someone follow up with the link.",
+          : "The Zoom meeting link was not confirmed. No follow-up task was saved. Offer to create one with create_followup_task and confirm it only after the tool succeeds.",
       };
     } catch {
       return {
         toolCallId,
         result:
-          "I ran into a hiccup creating the meeting link. I'll have someone follow up with it.",
+          "The Zoom meeting link was not confirmed. No follow-up task was saved. Offer to create one with create_followup_task and confirm it only after the tool succeeds.",
       };
     }
   }

@@ -204,31 +204,54 @@ export default function UsagePricingPanel({
         {availableTiers.map((id) => {
           const option = USAGE_TIERS[id];
           return (
-            <button
+            <div
               key={id}
-              type="button"
-              aria-pressed={tier === id}
-              onClick={() => setTier(id)}
-              className={`rounded-2xl border bg-card p-6 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary ${tier === id ? "border-primary" : "border-border hover:border-foreground/30"}`}
+              className={`rounded-2xl border bg-card text-left transition-colors ${tier === id ? "border-primary" : "border-border hover:border-foreground/30"}`}
             >
-              <span className="flex items-center justify-between gap-2 text-lg font-semibold">
-                {option.name}
-                {tier === id ? <Check className="size-5 text-primary" aria-hidden="true" /> : null}
-              </span>
-              <span className="mt-3 block">
-                <strong className="text-4xl font-semibold">${option.monthlyUsd}</strong>
-                <span className="text-sm text-muted-foreground"> / Month</span>
-              </span>
-              <span className="mt-4 block text-sm font-semibold">
-                ${option.includedWorkUsd} Shared Work
-              </span>
-              <span className="mt-2 block text-sm text-muted-foreground">
-                {option.includedNumbers} {option.includedNumbers === 1 ? "Number" : "Numbers"}
-                {" + "}
-                {option.includedEmailAddresses}{" "}
-                {option.includedEmailAddresses === 1 ? "Email Address" : "Email Addresses"}
-              </span>
-            </button>
+              <button
+                type="button"
+                aria-pressed={tier === id}
+                onClick={() => setTier(id)}
+                className="w-full rounded-2xl p-6 pb-2 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+              >
+                <span className="flex items-center justify-between gap-2 text-lg font-semibold">
+                  {option.name}
+                  {tier === id ? (
+                    <Check className="size-5 text-primary" aria-hidden="true" />
+                  ) : null}
+                </span>
+                <span className="mt-3 block">
+                  <strong className="text-4xl font-semibold">${option.monthlyUsd}</strong>
+                  <span className="text-sm text-muted-foreground"> / Month</span>
+                </span>
+                <span className="mt-4 block text-sm font-semibold">Usage Included</span>
+                <span className="mt-2 block text-sm text-muted-foreground">
+                  {option.includedNumbers} {option.includedNumbers === 1 ? "Number" : "Numbers"}
+                  {" + "}
+                  {option.includedEmailAddresses}{" "}
+                  {option.includedEmailAddresses === 1 ? "Email Address" : "Email Addresses"}
+                </span>
+              </button>
+              <details className="mx-6 mb-4">
+                <summary
+                  aria-label={`${option.name} Plan Details`}
+                  className="cursor-pointer rounded-md py-2 text-sm font-semibold wl-focus-ring-halo"
+                >
+                  Plan Details
+                </summary>
+                <p className="pb-2 text-xs leading-5 text-muted-foreground">
+                  {usd(option.includedWorkUsd)} for calls, SMS, email, and Computer. Resets monthly.
+                  No rollover. Extra usage follows the{" "}
+                  <a
+                    href="#usage-rates"
+                    className="underline underline-offset-4 wl-focus-ring-halo"
+                  >
+                    listed rates
+                  </a>
+                  .
+                </p>
+              </details>
+            </div>
           );
         })}
       </div>
@@ -381,7 +404,7 @@ export default function UsagePricingPanel({
         </p>
       </section>
 
-      <dl className="grid gap-3 sm:grid-cols-6">
+      <dl id="usage-rates" className="grid scroll-mt-24 gap-3 sm:grid-cols-6">
         {USAGE_RATE_LINES.map(([term, detail]) => (
           <div
             key={term}

@@ -146,10 +146,16 @@ export async function handleEnrichmentToolCall(
       });
       return {
         toolCallId,
-        result: id ? `Contact created with ID ${id}.` : "I've noted the contact details.",
+        result: id
+          ? `Contact created with ID ${id}.`
+          : "The CRM contact was not confirmed. No follow-up task was saved. Offer to create one with create_followup_task and confirm it only after the tool succeeds.",
       };
     } catch {
-      return { toolCallId, result: "I've noted the contact details." };
+      return {
+        toolCallId,
+        result:
+          "The CRM contact was not confirmed. No follow-up task was saved. Offer to create one with create_followup_task and confirm it only after the tool succeeds.",
+      };
     }
   }
 

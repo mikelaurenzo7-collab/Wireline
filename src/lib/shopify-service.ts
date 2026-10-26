@@ -778,7 +778,8 @@ export async function createDraftOrder(params: {
     log.error("Shopify create draft order failed", { error: getErrorMessage(err) });
     return {
       ok: false,
-      message: "Could not create the draft order. A team member will follow up.",
+      message:
+        "The draft order was not confirmed. Check the store before another attempt. No follow-up task was saved.",
     };
   }
 }

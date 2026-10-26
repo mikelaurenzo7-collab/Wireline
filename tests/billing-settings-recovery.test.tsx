@@ -2,6 +2,7 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import BillingSettings from "../src/pages/BillingSettings";
 import StripeBillingCard from "../src/components/StripeBillingCard";
+import UsageSpendCard from "../src/components/usage-billing/UsageSpendCard";
 import { readRuntimeBalanceEntries } from "../src/components/RuntimeBalanceActivity";
 import { stripeSubscriptionCancellation } from "../src/lib/stripe-subscription-cancellation";
 
@@ -12,12 +13,13 @@ type Slot = {
   setter?: (next: unknown) => void;
 };
 const h = vi.hoisted(() => ({
-  slots: { page: [], card: [] } as Record<string, Slot[]>,
+  slots: { page: [], card: [], usage: [] } as Record<string, Slot[]>,
   current: "page",
   cursor: 0,
   dirty: false,
   effects: [] as Array<() => void>,
   fetch: vi.fn(),
+  usageEnabled: false,
 }));
 
 vi.mock("react", async (original) => {
@@ -104,7 +106,10 @@ vi.mock("../src/lib/signup-intent", async (original) => ({
     new URLSearchParams(window.location.search).get("interval") === "year" ? "year" : "month",
 }));
 vi.mock("../src/hooks/usePaidPlanAvailability", () => ({
-  usePaidPlanAvailability: () => ({ canActivate: () => false }),
+  usePaidPlanAvailability: () => ({
+    canActivate: () => h.usageEnabled,
+    usageTiers: ["lite", "standard", "plus"],
+  }),
 }));
 
 type Props = {
@@ -121,11 +126,15 @@ type Props = {
   onUpgrade?: () => unknown;
   onClick?: () => unknown;
   onRetry?: () => void;
+  refreshKey?: number;
+  hasSubscription?: boolean;
+  grantedPlanName?: string;
 };
 type Element = ReactElement<Props>;
 let tree: Element[];
 let statusFails: boolean;
 let balanceFails: boolean;
+let balanceUsd: number;
 let ledger: unknown;
 let retryBilling: (() => void) | undefined;
 let subscription: Record<string, unknown> | null;
@@ -160,6 +169,11 @@ function expand(node: ReactNode): Element[] {
     h.current = "card";
     h.cursor = 0;
     return expand(StripeBillingCard(node.props));
+  }
+  if (node.type === UsageSpendCard) {
+    h.current = "usage";
+    h.cursor = 0;
+    return expand(UsageSpendCard(node.props));
   }
   if (typeof node.type === "function")
     return expand((node.type as (props: Props) => ReactNode)(node.props));
@@ -202,11 +216,13 @@ function requests(path: string) {
 }
 
 beforeEach(() => {
-  h.slots = { page: [], card: [] };
+  h.slots = { page: [], card: [], usage: [] };
   h.effects = [];
   h.dirty = false;
   statusFails = true;
   balanceFails = true;
+  balanceUsd = 24.5;
+  h.usageEnabled = false;
   ledger = [];
   retryBilling = undefined;
   subscription = {
@@ -228,11 +244,16 @@ beforeEach(() => {
       return statusFails
         ? response({ error: "Status unavailable" }, 503)
         : response({ stripe_configured: true, subscription, agent_count: 2 });
-    if (path === "/api/billing/plans") return response(catalog);
+    if (path === "/api/billing/plans")
+      return response(h.usageEnabled ? { ...catalog, billing_model: "usage" } : catalog);
+    if (path === "/api/billing/usage-spend")
+      return response({ enabled: h.usageEnabled, usage_account: false });
+    if (path === "/api/billing/checkout")
+      return response({ url: "https://checkout.example.test/shared-work" });
     if (path === "/api/conversation-balance")
       return balanceFails
         ? response({ error: "Balance unavailable" }, 503)
-        : response({ balance_usd: 24.5, ledger });
+        : response({ balance_usd: balanceUsd, ledger });
     throw new Error(`Unexpected endpoint ${path}`);
   });
   const location = {
@@ -241,6 +262,7 @@ beforeEach(() => {
     hash: "",
     href: "http://localhost/settings/billing",
     replace: vi.fn(),
+    assign: vi.fn(),
   };
   vi.stubGlobal("window", {
     location,
@@ -276,6 +298,86 @@ describe("Runtime Balance recent activity", () => {
   });
   const activity = () =>
     tree.find((node) => node.props["aria-label"] === "Recent Runtime Balance activity");
+
+  it("leads an empty new account to its chosen Shared Work plan without prepaid copy", async () => {
+    statusFails = false;
+    balanceFails = false;
+    balanceUsd = 0;
+    subscription = null;
+    h.usageEnabled = true;
+    window.location.search = "?plan=usage&interval=month&number=0&email_address=0&tier=lite";
+    render();
+    expect(hasText("Prepaid extra call minutes")).toBe(false);
+    await settle();
+    expect(hasText("Start a Subscription")).toBe(true);
+    expect(hasText("$12/month includes $4 of work shared across calls")).toBe(true);
+    expect(hasText("Prepaid extra call minutes")).toBe(false);
+    expect(hasText("Computer tasks use your included AI usage.")).toBe(false);
+    expect(hasText("Recent Activity")).toBe(false);
+    await button("Review Plan").props.onClick?.();
+    await settle();
+    expect(h.fetch).toHaveBeenCalledWith(
+      "/api/billing/checkout",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          plan_id: "usage",
+          usage_tier: "lite",
+          interval: "month",
+          addons: { number: 0, email_address: 0 },
+        }),
+      }),
+    );
+    expect(window.location.assign).toHaveBeenCalledWith(
+      "https://checkout.example.test/shared-work",
+    );
+    expect(requests("/api/conversation-balance/checkout")).toHaveLength(0);
+  });
+
+  it.each([
+    { has_subscription: true, status: "active" },
+    { has_subscription: false, status: "active" },
+    { has_subscription: true, status: "canceled" },
+  ])("retains a zero balance for an existing legacy subscription or grant: %j", async (state) => {
+    statusFails = false;
+    balanceFails = false;
+    balanceUsd = 0;
+    subscription = { ...subscription, ...state };
+    await settle();
+    expect(hasText("Prepaid extra call minutes")).toBe(true);
+    expect(hasText("$0.00")).toBe(true);
+    expect(hasText("Recent Activity")).toBe(true);
+  });
+
+  it.each([
+    { balance: 12, history: false, visible: "$12.00" },
+    { balance: -3, history: false, visible: "$3.00 due" },
+    { balance: 0, history: true, visible: "Runtime Balance top-up" },
+  ])("retains real credit, debt or history without a current subscription: %j", async (state) => {
+    statusFails = false;
+    balanceFails = false;
+    subscription = null;
+    balanceUsd = state.balance;
+    ledger = state.history ? [entry()] : [];
+    await settle();
+    expect(hasText(state.visible)).toBe(true);
+    expect(hasText("Prepaid extra call minutes")).toBe(true);
+  });
+
+  it("keeps unknown balance history recoverable before hiding a confirmed empty new balance", async () => {
+    statusFails = false;
+    balanceFails = false;
+    subscription = null;
+    balanceUsd = 0;
+    ledger = undefined;
+    await settle();
+    expect(tree.some((node) => node.props.title === "Activity Unavailable")).toBe(true);
+    ledger = [];
+    button("Retry Activity").props.onClick?.();
+    await settle();
+    expect(hasText("Prepaid extra call minutes")).toBe(false);
+    expect(hasText("Recent Activity")).toBe(false);
+  });
 
   it("offers a collapsed native disclosure with customer reasons, signed amounts and dates", async () => {
     statusFails = false;
@@ -608,7 +710,7 @@ describe("Billing Settings shared recovery", () => {
     await settle();
     expect(requests("/api/billing/status")).toHaveLength(beforeStatusReads);
     expect(requests("/api/billing/plans")).toHaveLength(beforePlanReads);
-    expect(hasText("Loading balance")).toBe(true);
+    expect(hasText("Loading your plan and balance")).toBe(true);
     expect(window.history.replaceState).not.toHaveBeenCalled();
     finish(response({ status: "complete", payment_status: "paid", synced: true }));
     await settle();

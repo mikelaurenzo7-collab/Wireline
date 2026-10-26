@@ -120,7 +120,7 @@ describe("demo/test agent-tool provider families", () => {
         context,
       ),
     ).resolves.toEqual(
-      expect.objectContaining({ result: expect.stringContaining("can't apply a discount") }),
+      expect.objectContaining({ result: expect.stringContaining("No discount was applied.") }),
     );
     await expect(
       handleSquareToolCall(

@@ -1,6 +1,7 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AgentToolPermissions from "../src/components/AgentToolPermissions";
+import IntegrationCapabilityPanel from "../src/components/IntegrationCapabilityPanel";
 
 const h = vi.hoisted(() => ({
   states: [] as unknown[],
@@ -78,6 +79,63 @@ beforeEach(() => {
 });
 
 describe("agent action editor loading", () => {
+  it.each([false, true])(
+    "omits tenant-ineligible actions without rewriting stored permissions (saved=%s)",
+    async (saved) => {
+      const blocked = [
+        "send_contract",
+        "meta_submit_lead",
+        "list_x_ad_campaigns",
+        "get_x_ad_campaign_stats",
+      ];
+      h.fetch.mockImplementation((url: string) =>
+        Promise.resolve(
+          json(
+            url.startsWith("/api/agent-config/")
+              ? { enabledTools: saved ? blocked : [] }
+              : url === "/api/oauth/crm/status"
+                ? { x: { connected: true }, meta: { connected: true } }
+                : { accounts: [] },
+          ),
+        ),
+      );
+      render();
+      toggle();
+      await flush();
+      const editorText = textOf(render());
+      expect(editorText).not.toContain("DocuSign");
+      expect(editorText).not.toContain("Submit lead to Meta");
+      expect(editorText).not.toContain("X ad campaign");
+      expect(editorText).toContain("Post on X");
+      elements(render()).find((node) => node.props["aria-label"] === "Enable all X actions")!.props
+        .onClick!();
+      elements(render()).find(
+        (node) => node.type === "button" && textOf(node).includes("Save Actions"),
+      )!.props.onClick!();
+      const submitted = JSON.parse(
+        h.fetch.mock.calls.find(([, options]) => options?.method === "POST")![1].body,
+      ).enabled_tools;
+      expect(submitted).toContain("post_x_tweet");
+      for (const tool of blocked) expect(submitted.includes(tool)).toBe(saved);
+      await flush();
+    },
+  );
+
+  it("does not advertise blocked provider actions in connection capabilities", () => {
+    const props = {
+      accentColor: "neutral",
+      connected: true,
+      enabledTools: ["list_x_ad_campaigns"] as const,
+    };
+    for (const compact of [true, false]) {
+      const xPanel = IntegrationCapabilityPanel({ ...props, integration: "x", compact });
+      expect(textOf(xPanel)).toContain("Publishes a tweet");
+      expect(textOf(xPanel)).not.toContain("campaign");
+      expect(IntegrationCapabilityPanel({ ...props, integration: "docusign", compact })).toBeNull();
+      expect(IntegrationCapabilityPanel({ ...props, integration: "meta", compact })).toBeNull();
+    }
+  });
+
   it("hides unreleased messaging while retaining saved permissions on another edit", async () => {
     h.fetch.mockImplementation((url: string) =>
       Promise.resolve(

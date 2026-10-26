@@ -175,7 +175,9 @@ describe("Activity budget recovery", () => {
       "Included work is paused after a payment reversal. Review Billing or contact support.",
     );
     expect(text(tree)).toContain("$5.00");
-    expect(text(tree)).not.toContain("Live usage limit reached");
+    expect(text(tree)).not.toContain("AI processing limit reached");
+    expect(text(tree)).toContain("AI Processing Limit");
+    expect(text(tree)).toContain("Processing costs, separate from your bill.");
     expect(saveButton()).toBeDefined();
     expect(h.fetch).toHaveBeenCalledTimes(2);
     const links = elements(tree).filter((node) => node.type === "a") as ReactElement<{
@@ -488,6 +490,10 @@ describe("Activity spend presentation", () => {
     expect(stats().find((node) => node.props.label === "Recorded events")?.props.value).toBe("3");
     expect(stats().find((node) => node.props.label === "Avg / event")?.props.value).toBe("$0.0033");
     expect(stats().some((node) => node.props.label === "AI Calls")).toBe(false);
+    expect(stats().find((node) => node.props.label === "Recorded AI Cost")?.props.value).toBe(
+      "$0.01",
+    );
+    expect(stats().some((node) => node.props.label === "Total Spend")).toBe(false);
     expect(text(tree)).toContain("No model recorded");
     expect(text(tree)).toContain("2 events");
     expect(text(tree)).toContain("Spend by Action");

@@ -251,16 +251,16 @@ function SpendBudgetCard() {
     ? `Through ${resetDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
     : "Current allowance period";
   const isSimulationAllowance = status?.guard_scope === "free_simulation_allowance";
-  const guardTitle = isSimulationAllowance ? "Simulation allowance" : "Live usage guard";
+  const guardTitle = isSimulationAllowance ? "Simulation allowance" : "AI Processing Limit";
   const capReachedCopy = isSimulationAllowance
     ? "Simulation allowance reached. Private simulation is paused"
-    : "Live usage limit reached. New paid work is paused";
+    : "AI processing limit reached. New AI processing is paused";
   const maximumHelper = isSimulationAllowance
     ? `Maximum $${safeFixed(maximumLimit, 2)} per month.`
-    : `Up to $${safeFixed(maximumLimit, 2)} for ${status.plan_id || status.plan_name ? getPlanDisplayLabel({ id: status.plan_id, name: status.plan_name }) : "the active plan"}. You can lower this guard, but it cannot exceed the usage allowance funded by the plan.`;
+    : `Up to $${safeFixed(maximumLimit, 2)} for ${status.plan_id || status.plan_name ? getPlanDisplayLabel({ id: status.plan_id, name: status.plan_name }) : "the active plan"}. You can lower this guard, but it cannot exceed the AI processing allowance funded by the plan.`;
   const hardCapHelper = isSimulationAllowance
     ? "Private simulation pauses at the monthly allowance."
-    : "New paid work pauses at the limit. Completed in-flight work still settles.";
+    : "New AI processing pauses at the limit. Completed in-flight work still settles.";
 
   return (
     <div className={cn(WL_APP_CLASSES.panelFrame, "p-6 md:p-7 space-y-5")} data-accent={barColor}>
@@ -300,6 +300,9 @@ function SpendBudgetCard() {
           <div>
             <div className="wl-insight-label tracking-[0.32em] wl-accent-text">{guardTitle}</div>
             <div className="text-sm text-foreground/70 mt-1 font-mono">{period}</div>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              Processing costs, separate from your bill.
+            </p>
             {isSimulationAllowance && (
               <p className="mt-1 text-xs leading-5 text-muted-foreground">
                 Funds private setup, training, and simulation. Activate a paid plan to go live.
@@ -511,7 +514,7 @@ export default function AISpendView({ days }: { days: number }) {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <SpendStat
-              label="Total Spend"
+              label="Recorded AI Cost"
               value={formatMoney(totals?.cost, 2)}
               icon={DollarSign}
               accent={BRAND.colors.primary}

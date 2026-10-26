@@ -80,17 +80,14 @@ export default function Features() {
     <MarketingPageFrame className="wl-features-page">
       <PageMeta
         title="Product | BotBound"
-        description="One Bot for calls, SMS, email, and Computer work. Your knowledge, voice, and rules across every job."
+        description="Create Bots for calls, SMS, email, and Computer work. Give each its own knowledge, voice, and rules."
         path="/features"
       />
 
       <section className="marketing-section marketing-section--screen">
         <div className="wl-public-rail mx-auto max-w-6xl">
           <header className="wl-features-intro text-center">
-            <h1 className="marketing-hero-title mx-auto">One Bot. More Possibilities.</h1>
-            <p className="wl-features-intro__lead mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
-              One Bot, your knowledge, and the tools to get work done.
-            </p>
+            <h1 className="marketing-hero-title mx-auto">BOTS FOR EVERY JOB.</h1>
             <div className="marketing-hero__actions">
               <Link
                 to="/signup"

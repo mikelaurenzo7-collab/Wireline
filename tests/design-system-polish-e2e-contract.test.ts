@@ -12,7 +12,8 @@ describe("design system polish e2e verified wins", () => {
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
 
     expect(features).not.toContain("wl-features-intro__steps");
-    expect(features).toContain("One Bot. More Possibilities.");
+    expect(features).toContain("BOTS FOR EVERY JOB.");
+    expect(features).not.toMatch(/One Bot\./i);
     expect(features).not.toContain("MARKETING_VOICE.channelProof.map");
     expect(features).not.toMatch(/wl-channel-chip[\s\S]{0,180}<Icon\b/);
     expect(landing).not.toContain("landing-prestige__promise");

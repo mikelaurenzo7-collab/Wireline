@@ -712,7 +712,9 @@ for (const width of [1206, 390, 320]) {
 test.describe("wide screens", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test("direct Knowledge and Computer navigation retains the selected Bot", async ({ page }) => {
+  test("Knowledge and the Browser shortcut retain the selected Bot under Workspace", async ({
+    page,
+  }) => {
     const fixture = await mockWorkspace(page);
     await page.goto(`/studio?agent=${bots[1].id}`);
     const rail = page.getByRole("complementary", { name: "Workspace navigation", exact: true });
@@ -726,9 +728,12 @@ test.describe("wide screens", () => {
       "aria-current",
       "page",
     );
-    await rail.getByRole("link", { name: "Computer", exact: true }).click();
+    await expect(rail.getByRole("link", { name: "Computer", exact: true })).toHaveCount(0);
+    await page.getByRole("heading", { name: "Knowledge", exact: true }).click();
+    await page.keyboard.press("g");
+    await page.keyboard.press("m");
     await expect(page).toHaveURL(new RegExp(`/studio\\?panel=computer&agent=${bots[1].id}$`));
-    await expect(rail.getByRole("link", { name: "Computer", exact: true })).toHaveAttribute(
+    await expect(rail.getByRole("link", { name: "Workspace", exact: true })).toHaveAttribute(
       "aria-current",
       "page",
     );
@@ -737,7 +742,7 @@ test.describe("wide screens", () => {
       bots[1].id,
     );
     await page.reload();
-    await expect(rail.getByRole("link", { name: "Computer", exact: true })).toHaveAttribute(
+    await expect(rail.getByRole("link", { name: "Workspace", exact: true })).toHaveAttribute(
       "aria-current",
       "page",
     );
@@ -816,21 +821,23 @@ test.describe("wide screens", () => {
       .getByRole("button", { name: "Configure", exact: true })
       .click();
     await panelTab(page, "Rehearse").click();
-    await panel.getByRole("button", { name: "Typed", exact: true }).click();
+    await expect(panel.getByRole("button", { name: "Typed", exact: true })).toHaveCount(0);
     await expect(
       panel.getByRole("textbox", { name: "Customer message for Front Desk", exact: true }),
-    ).toBeVisible();
+    ).toHaveCount(0);
+    await expect(panel.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
     await expect(conversation(page)).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("workspace-try-it.png") });
 
     await panelTab(page, "Browser").click();
     await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true");
-    await expect(panel.getByLabel("What should your Bot do?")).toBeVisible();
+    await expect(panel.getByLabel("What should your Bot do?")).toHaveCount(0);
     await expect(panel.getByRole("button", { name: "Open browser", exact: true })).toBeVisible();
     // The panel's computer belongs to the Bot being set up; no second Bot picker.
     await expect(panel.locator("#computer-agent")).toHaveCount(0);
     await expect(panel.getByRole("button", { name: "Tasks", exact: true })).toBeVisible();
     await expect(conversation(page)).toBeVisible();
+    await expect(page.locator("textarea:visible")).toHaveCount(1);
     await page.screenshot({ path: testInfo.outputPath("workspace-computer-panel.png") });
 
     // Full width takes the Workspace and gives it back without losing a draft.
@@ -1006,7 +1013,7 @@ test.describe("wide screens", () => {
     await expect.poll(async () => (await panel.boundingBox())!.width).toBeLessThan(before);
   });
 
-  test("Computer drafts survive panel and responsive remounts without crossing Bots", async ({
+  test("Browser drafts survive responsive remounts without a duplicate desktop composer", async ({
     page,
   }) => {
     await mockWorkspace(page, [
@@ -1034,18 +1041,20 @@ test.describe("wide screens", () => {
         taskStarts += 1;
     });
     await page.goto(`/studio?agent=${bots[0].id}&chat=setup`);
+    await conversation(page).fill("Keep my configuration instruction.");
     await panelTab(page, "Browser").click();
-    await page.getByRole("button", { name: "New task", exact: true }).click();
+    await page.getByRole("button", { name: "Open browser", exact: true }).click();
     await expect(page.getByRole("figure", { name: "Ended browser", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Tasks", exact: true })).toHaveCount(1);
     const goal = page.getByLabel("What should your Bot do?", { exact: true });
     const url = page.getByLabel("Web address", { exact: true });
-    await goal.fill("Read the public Calls Regular monthly price.");
+    await expect(goal).toHaveCount(0);
     await url.fill("https://botbound.app/pricing");
 
     await panelTab(page, "Summary").click();
     await panelTab(page, "Browser").click();
-    await expect(goal).toHaveValue("Read the public Calls Regular monthly price.");
+    await expect(goal).toHaveCount(0);
+    await expect(conversation(page)).toHaveValue("Keep my configuration instruction.");
     await expect(url).toHaveValue("https://botbound.app/pricing");
     await expect(page.getByRole("button", { name: "Back to task", exact: true })).toBeVisible();
 
@@ -1057,7 +1066,8 @@ test.describe("wide screens", () => {
     await expect(page).toHaveURL(
       (url) => url.pathname === "/studio" && url.searchParams.get("panel") === "computer",
     );
-    await expect(goal).toHaveValue("Read the public Calls Regular monthly price.");
+    await expect(goal).toHaveValue("");
+    await goal.fill("Read the public Calls Regular monthly price.");
     await expect(url).toHaveValue("https://botbound.app/pricing");
     await page.getByLabel("Switch Bot", { exact: true }).selectOption(bots[1].id);
     await expect(page.getByText("The previous task is complete.", { exact: true })).toHaveCount(0);
@@ -1069,7 +1079,8 @@ test.describe("wide screens", () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true");
-    await expect(goal).toHaveValue("Read the public Calls Regular monthly price.");
+    await expect(goal).toHaveCount(0);
+    await expect(conversation(page)).toHaveValue("Keep my configuration instruction.");
     await expect(url).toHaveValue("https://botbound.app/pricing");
     expect(taskStarts).toBe(0);
   });

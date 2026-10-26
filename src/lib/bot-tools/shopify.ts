@@ -139,7 +139,7 @@ export async function handleShopifyToolCall(
       return {
         toolCallId,
         result:
-          "I'm having trouble checking the catalog right now. Let me take your info and have someone look into it.",
+          "The catalog lookup failed. No follow-up task was saved. Offer to create one with create_followup_task; confirm it only after the tool succeeds.",
       };
     }
   }
@@ -187,7 +187,7 @@ export async function handleShopifyToolCall(
       return {
         toolCallId,
         result:
-          "I wasn't able to create the order right now. Let me take your details and have someone process it.",
+          "The draft order was not confirmed. Ask the owner to check the store before another attempt. No follow-up task was saved. Offer to create one with create_followup_task.",
       };
     }
   }
@@ -202,7 +202,7 @@ export async function handleShopifyToolCall(
     return {
       toolCallId,
       result:
-        "I can't apply a discount to an order directly on this line. Let me take the details and have the team apply it and follow up to confirm.",
+        "No discount was applied. Offer to create a follow-up task for the owner to review the request; confirm it only after the tool succeeds.",
     };
   }
 

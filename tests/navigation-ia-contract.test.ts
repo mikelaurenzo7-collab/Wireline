@@ -19,7 +19,6 @@ describe("BotBound workspace information architecture", () => {
   it("keeps daily desktop work focused and ordered", () => {
     expect(WORKSPACE_NAV.map((item) => item.href)).toEqual([
       "/studio",
-      "/computer",
       "/inbox",
       "/phone",
       "/calendar",
@@ -44,6 +43,7 @@ describe("BotBound workspace information architecture", () => {
     for (const pathname of [
       "/studio",
       "/studio/handoff",
+      "/computer",
       "/templates",
       "/knowledge",
       "/inbox",
@@ -62,7 +62,7 @@ describe("BotBound workspace information architecture", () => {
   });
 
   it("keeps contextual children under their natural parent", () => {
-    for (const section of ["/knowledge", "/computer"]) {
+    for (const section of ["/knowledge"]) {
       expect(desktopNavParentHref(section), section).toBeNull();
       expect(
         [...WORKSPACE_NAV, ...OPERATE_NAV]
@@ -72,6 +72,8 @@ describe("BotBound workspace information architecture", () => {
       ).toEqual([section]);
     }
     expect(desktopNavParentHref("/templates")).toBe("/studio");
+    expect(desktopNavParentHref("/computer")).toBe("/studio");
+    expect(isNavActive("/computer", "/studio")).toBe(true);
     expect(desktopNavParentHref("/approvals")).toBe("/inbox");
     expect(desktopNavParentHref("/apps")).toBe("/settings");
     expect(desktopNavParentHref("/settings/compliance")).toBe("/settings");
@@ -83,11 +85,13 @@ describe("BotBound workspace information architecture", () => {
     expect(isMobileMoreActive("/settings/team")).toBe(true);
     expect(isMobileMoreActive("/apps")).toBe(true);
 
-    for (const pathname of ["/knowledge", "/computer"]) {
+    for (const pathname of ["/knowledge"]) {
       expect(isMobileMoreActive(pathname), pathname).toBe(true);
       expect(isMobilePrimaryActive(pathname, "/studio"), pathname).toBe(false);
     }
     expect(isMobilePrimaryActive("/templates", "/studio")).toBe(true);
+    expect(isMobilePrimaryActive("/computer", "/studio")).toBe(true);
+    expect(isMobileMoreActive("/computer")).toBe(false);
     expect(isMobileMoreActive("/approvals")).toBe(false);
     expect(isMobilePrimaryActive("/approvals", "/inbox")).toBe(true);
   });
@@ -96,18 +100,22 @@ describe("BotBound workspace information architecture", () => {
     expect(MOBILE_MORE_GROUPS.map((group) => group.label)).toEqual(["Build", "Operate", "System"]);
     expect(MOBILE_MORE_GROUPS.map((group) => group.items.map((item) => item.href))).toEqual([
       ["/knowledge"],
-      ["/computer", "/calendar"],
+      ["/calendar"],
       ["/connections", "/settings"],
     ]);
   });
 
   it("preserves explicit Bot scope without narrowing account-wide destinations", () => {
-    for (const href of ["/studio", "/knowledge", "/computer"]) {
+    for (const href of ["/studio", "/knowledge"]) {
       expect(scopedWorkspaceHref(href, "missing/bot")).toBe(`${href}?agent=missing%2Fbot`);
       expect(scopedWorkspaceHref(href, " ")).toBe(href);
     }
     expect(scopedWorkspaceHref("/inbox", "bot-a")).toBe("/inbox");
     expect(scopedWorkspaceHref("/phone", "bot-a")).toBe("/phone");
+    expect(scopedWorkspaceHref("/computer", "missing/bot")).toBe(
+      "/studio?panel=computer&agent=missing%2Fbot",
+    );
+    expect(scopedWorkspaceHref("/computer", " ")).toBe("/studio?panel=computer");
   });
 
   it("keeps deep page titles and intuitive keyboard ownership", () => {

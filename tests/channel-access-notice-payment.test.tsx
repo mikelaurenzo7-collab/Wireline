@@ -39,22 +39,29 @@ describe("channel access notice", () => {
     },
   );
 
-  it("shows saved texts without a package prompt while no plan sells texting", () => {
+  it("offers billing for SMS without claiming the product is unavailable", () => {
     const notice = ChannelAccessNotice({
       access: access("active", "voice"),
       channel: "sms",
     })!;
-    expect(notice.props.title).toBe("Texting Isn't Available Yet");
-    expect(text(notice.props.children)).toContain("Texts sent to your Bot's number appear here");
-    expect(elements(notice).some((element) => element.type === "a")).toBe(false);
+    expect(notice.props.title).toBe("SMS Isn't in Your Plan");
+    expect(text(notice.props.children)).toContain("Plans with SMS are available");
+    expect(text(notice.props.children)).toContain("Sender approval and recipient permission");
+    expect(elements(notice).find((element) => element.type === "a")?.props.to).toBe(
+      "/settings/billing",
+    );
   });
 
   it.each(["past_due", "unpaid", "incomplete"])(
-    "does not send a %s Calls owner to pay for texting no plan includes",
+    "does not imply renewing a %s legacy Calls plan grants texting",
     (status) => {
       const notice = ChannelAccessNotice({ access: access(status), channel: "sms" })!;
-      expect(notice.props.title).toBe("Texting Isn't Available Yet");
-      expect(elements(notice).some((element) => element.type === "a")).toBe(false);
+      expect(notice.props.title).toBe("SMS Isn't in Your Plan");
+      const content = elements(notice)
+        .map((element) => text(element))
+        .join(" ");
+      expect(content).toContain("View Billing");
+      expect(content).not.toContain("Update Payment");
     },
   );
 
@@ -70,5 +77,27 @@ describe("channel access notice", () => {
       channel: "voice",
     })!;
     expect(notice.props.title).toBe("Calls Aren't in Your Plan");
+  });
+
+  it("keeps SMS payment recovery for a current usage plan", () => {
+    const notice = ChannelAccessNotice({ access: access("past_due", "usage"), channel: "sms" })!;
+    expect(notice.props.title).toBe("Payment Needs Attention");
+    expect(text(notice.props.children)).toContain("Texts are paused");
+  });
+
+  it("takes an unpaid new account to current plan selection without a legacy channel query", () => {
+    const notice = ChannelAccessNotice({
+      access: access("pending_activation", null),
+      channel: "sms",
+    })!;
+    expect(notice.props.title).toBe("SMS Isn't in Your Plan");
+    expect(elements(notice).find((element) => element.type === "a")?.props.to).toBe(
+      "/settings/billing",
+    );
+    expect(
+      elements(notice)
+        .map((element) => text(element))
+        .join(" "),
+    ).toContain("Choose Plan");
   });
 });

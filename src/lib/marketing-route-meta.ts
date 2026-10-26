@@ -59,7 +59,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/features": {
     title: "Product",
     description:
-      "One Bot for calls, SMS, email, and Computer work. Your knowledge, voice, and rules across every job.",
+      "Create Bots for calls, SMS, email, and Computer work. Give each its own knowledge, voice, and rules.",
   },
   "/compare": {
     title: "Why BotBound | Compare Bots",

@@ -3,7 +3,6 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
-  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -53,7 +52,6 @@ export type StudioConversationSession = {
 type WorkroomMode = "configure" | "test";
 
 const CONFIGURE_PROMPTS = WORKSPACE_VOICE.configurePrompts;
-const TEST_PROMPTS = WORKSPACE_VOICE.testPrompts;
 
 function MessageSkeletons() {
   return (
@@ -79,13 +77,11 @@ export type StudioWorkroomDraft = {
 function MessageBubble({
   message,
   agentName,
-  mode,
   agentId,
   operations,
 }: {
   message: StudioMessage;
   agentName: string;
-  mode: WorkroomMode;
   agentId: string;
   operations: Map<string, StudioProposalOperation>;
 }) {
@@ -99,9 +95,6 @@ function MessageBubble({
             <LinkifiedText>{message.content}</LinkifiedText>
           </p>
         </div>
-        {mode === "test" ? (
-          <p className="mt-1 text-right text-xs text-muted-foreground">Customer</p>
-        ) : null}
       </article>
     );
   }
@@ -114,7 +107,7 @@ function MessageBubble({
             <LinkifiedText>{message.content}</LinkifiedText>
           </p>
         </div>
-        {mode === "configure" && message.proposals ? (
+        {message.proposals ? (
           <StudioProposalReview
             agentId={agentId}
             proposals={message.proposals}
@@ -123,7 +116,7 @@ function MessageBubble({
             operations={operations}
           />
         ) : null}
-        {mode === "configure" && message.reviewUnavailable ? (
+        {message.reviewUnavailable ? (
           <p className="mt-2 text-xs text-muted-foreground" role="status">
             This earlier draft is unavailable. Ask your Bot to draft it again.
           </p>
@@ -235,6 +228,7 @@ const StudioWorkroom = forwardRef<
     [updateSession],
   );
   const [draft, setDraft] = useState(() => {
+    if (mode === "test") return "";
     const command = initialCommand?.trim() || null;
     if (
       initialDraft &&
@@ -252,54 +246,44 @@ const StudioWorkroom = forwardRef<
   const [loading, setLoading] = useState(mode === "configure" && !session.loaded);
   const [sending, setSending] = useState(false);
   const [showPhoneTest, setShowPhoneTest] = useState(false);
-  const [rehearsalView, setRehearsalView] = useState<"voice" | "text">(() =>
-    initialCommand?.trim() ? "text" : "voice",
-  );
   const [voiceStartFocusRequested, setVoiceStartFocusRequested] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const injectedCommandRef = useRef<string | null>(initialCommand?.trim() || null);
   const injectedCommandNonceRef = useRef<string | null>(commandNonce || null);
   const split = layout === "split";
-  // Change and Try It can be on screen together, so each composer owns its id.
-  const composerId = mode === "test" ? "studio-workroom-test-message" : "studio-workroom-message";
-  const quickPrompts = mode === "test" ? TEST_PROMPTS : CONFIGURE_PROMPTS;
+  const composerId = "studio-workroom-message";
+  const quickPrompts = CONFIGURE_PROMPTS;
   const showStarterPrompts = !loading && !sending && messages.length === 0 && !draft.trim();
 
   useImperativeHandle(
     ref,
     () => ({
       focusComposer(text?: string) {
-        setRehearsalView("text");
+        if (mode === "test") {
+          setVoiceStartFocusRequested(true);
+          return;
+        }
         if (text) setDraft((current) => (current.trim() ? current : text));
         requestAnimationFrame(() => inputRef.current?.focus());
       },
       focusVoiceRehearsal() {
-        setRehearsalView("voice");
         setVoiceStartFocusRequested(true);
       },
     }),
-    [],
+    [mode],
   );
 
   useEffect(() => {
-    if (!voiceStartFocusRequested || mode !== "test" || rehearsalView !== "voice" || !voiceVisible)
-      return;
-    // A frame scheduled before setRehearsalView commits can run while the Text
-    // view is still mounted. Focus only after the matching Voice DOM exists.
+    if (!voiceStartFocusRequested || mode !== "test" || !voiceVisible) return;
+    // Wait until the requested voice panel is visible before focusing its mic control.
     const startButton = document.getElementById(studioVoiceStartId(agentId));
     if (!startButton) return;
     startButton.focus();
     setVoiceStartFocusRequested(false);
-  }, [agentId, mode, rehearsalView, voiceStartFocusRequested, voiceVisible]);
+  }, [agentId, mode, voiceStartFocusRequested, voiceVisible]);
 
-  const endpoint = useMemo(
-    () =>
-      mode === "test"
-        ? `/api/agents/${encodeURIComponent(agentId)}/test/stream`
-        : `/api/agents/${encodeURIComponent(agentId)}/workspace/messages/stream`,
-    [agentId, mode],
-  );
+  const endpoint = `/api/agents/${encodeURIComponent(agentId)}/workspace/messages/stream`;
 
   const loadMessages = useCallback(
     async (signal?: AbortSignal) => {
@@ -308,8 +292,6 @@ const StudioWorkroom = forwardRef<
         return;
       }
       if (mode === "test") {
-        session.loaded = true;
-        setMessages([]);
         setLoading(false);
         return;
       }
@@ -381,6 +363,11 @@ const StudioWorkroom = forwardRef<
   }, [loadMessages]);
 
   useEffect(() => {
+    if (mode === "test") {
+      // Historical command links are rehearsal scenarios, never configuration edits.
+      if (initialCommand?.trim()) setVoiceStartFocusRequested(true);
+      return;
+    }
     const previousInjectedCommand = injectedCommandRef.current;
     const nextInjectedCommand = initialCommand?.trim() || null;
     const nextNonce = commandNonce || null;
@@ -395,23 +382,23 @@ const StudioWorkroom = forwardRef<
       );
     }
     if (nextInjectedCommand) {
-      setRehearsalView("text");
       requestAnimationFrame(() => inputRef.current?.focus());
     }
-  }, [initialCommand, commandNonce]);
+  }, [initialCommand, commandNonce, mode]);
 
   useEffect(() => {
+    if (mode === "test") return;
     onDraftChange?.({
       text: draft,
       command: initialCommand?.trim() || null,
       commandNonce: commandNonce || null,
     });
-  }, [commandNonce, draft, initialCommand, onDraftChange]);
+  }, [commandNonce, draft, initialCommand, mode, onDraftChange]);
 
   useEffect(() => {
     if (!scrollRef.current) return;
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, streamState.phase, split, rehearsalView]);
+  }, [messages, streamState.phase, split]);
 
   useEffect(() => {
     const textarea = inputRef.current;
@@ -434,15 +421,11 @@ const StudioWorkroom = forwardRef<
     });
     observer.observe(textarea);
     return () => observer.disconnect();
-  }, [draft, mode, rehearsalView]);
+  }, [draft, mode]);
 
   const submit = useCallback(() => {
     const text = draft.trim();
-    if (!text || sending || loading || clearing) return;
-    const history = messages.slice(-12).map((message) => ({
-      role: message.role === "Account Holder" ? "customer" : "employee",
-      content: message.content,
-    }));
+    if (mode !== "configure" || !text || sending || loading || clearing) return;
     setMessages((current) => [
       ...current,
       {
@@ -457,30 +440,11 @@ const StudioWorkroom = forwardRef<
     setSending(true);
     requestActive.current = true;
     updateSession({ interrupted: false });
-    void streamSend({ content: text, history: mode === "test" ? history : undefined });
-  }, [
-    clearing,
-    draft,
-    loading,
-    messages,
-    mode,
-    sending,
-    streamSend,
-    setMessages,
-    setError,
-    updateSession,
-  ]);
+    void streamSend({ content: text });
+  }, [clearing, draft, loading, mode, sending, streamSend, setMessages, setError, updateSession]);
 
   const clearConversation = useCallback(async () => {
-    if (clearing || sending || loading) return;
-    if (mode === "test") {
-      setMessages([]);
-      updateSession({ interrupted: false });
-      session.operations.clear();
-      setError(null);
-      requestAnimationFrame(() => inputRef.current?.focus());
-      return;
-    }
+    if (mode !== "configure" || clearing || sending || loading) return;
     if (!window.confirm("Clear this conversation?")) return;
 
     updateSession({ clearing: true, clearError: null });
@@ -505,7 +469,7 @@ const StudioWorkroom = forwardRef<
     } finally {
       updateSession({ clearing: false });
     }
-  }, [agentId, clearing, loading, mode, sending, session, setMessages, setError, updateSession]);
+  }, [agentId, clearing, loading, mode, sending, session, setError, updateSession]);
 
   const workingLabel =
     streamState.phase === "connecting" || streamState.phase === "preparing"
@@ -537,8 +501,8 @@ const StudioWorkroom = forwardRef<
       disabled={!messages.length || clearing || sending || loading}
       onClick={() => void clearConversation()}
       className="grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo disabled:cursor-not-allowed disabled:opacity-35"
-      aria-label={mode === "test" ? "Reset rehearsal conversation" : "Clear conversation"}
-      title={mode === "test" ? "Reset rehearsal" : "Clear conversation"}
+      aria-label="Clear conversation"
+      title="Clear conversation"
     >
       {clearing ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
     </button>
@@ -547,7 +511,7 @@ const StudioWorkroom = forwardRef<
     <details className="wl-studio-starters" aria-label="Starter prompts">
       <summary>Suggestions</summary>
       <div>
-        {quickPrompts.slice(0, 3).map((prompt, index) => (
+        {quickPrompts.slice(0, 3).map((prompt) => (
           <button
             key={prompt}
             type="button"
@@ -556,9 +520,7 @@ const StudioWorkroom = forwardRef<
               requestAnimationFrame(() => inputRef.current?.focus());
             }}
           >
-            {mode === "test"
-              ? ["What can you do?", "Book an appointment", "Email the details"][index]
-              : prompt}
+            {prompt}
           </button>
         ))}
       </div>
@@ -568,7 +530,7 @@ const StudioWorkroom = forwardRef<
   return (
     <section
       className="wl-studio-chat flex h-full min-h-0 flex-col overflow-y-auto bg-background"
-      aria-label={mode === "test" ? `${agentName} rehearsal conversation` : `${agentName} workroom`}
+      aria-label={mode === "test" ? `${agentName} voice rehearsal` : `${agentName} workroom`}
     >
       {modeControls === "header" || mode === "test" ? (
         <header
@@ -628,52 +590,18 @@ const StudioWorkroom = forwardRef<
                   size="sm"
                   variant="secondary"
                   onClick={() => setShowPhoneTest(true)}
-                  aria-label="Call my phone"
+                  aria-label="Call My Phone"
                 >
                   <Phone className="size-3.5" aria-hidden="true" />
-                  <span className="hidden sm:inline">Call my phone</span>
+                  <span className="hidden sm:inline">Call My Phone</span>
                 </Button>
               ) : null}
-              {mode === "test" && rehearsalView === "text" ? clearButton : null}
             </div>
           </div>
         </header>
       ) : null}
 
       {mode === "test" ? (
-        <div className="shrink-0 px-3 pb-1 sm:px-5">
-          <div
-            className="mx-auto flex max-w-3xl flex-wrap items-center gap-1"
-            role="group"
-            aria-label="Rehearsal channel"
-          >
-            <Button
-              type="button"
-              size="sm"
-              variant={rehearsalView === "voice" ? "secondary" : "ghost"}
-              aria-pressed={rehearsalView === "voice"}
-              className="shrink-0"
-              onClick={() => setRehearsalView("voice")}
-            >
-              <Mic className="size-4" aria-hidden="true" />
-              Voice
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={rehearsalView === "text" ? "secondary" : "ghost"}
-              aria-pressed={rehearsalView === "text"}
-              className="shrink-0"
-              onClick={() => setRehearsalView("text")}
-            >
-              <MessageCircle className="size-4" aria-hidden="true" />
-              Typed
-            </Button>
-          </div>
-        </div>
-      ) : null}
-
-      {mode === "test" && rehearsalView === "voice" ? (
         <div className="shrink-0">
           {voiceVisible ? (
             <StudioVoiceRehearsal
@@ -739,7 +667,6 @@ const StudioWorkroom = forwardRef<
                       key={message.id}
                       message={message}
                       agentName={agentName}
-                      mode={mode}
                       agentId={agentId}
                       operations={session.operations}
                     />
@@ -752,13 +679,6 @@ const StudioWorkroom = forwardRef<
                       </div>
                     </div>
                   ) : null}
-                </div>
-              ) : mode === "test" ? (
-                <div className="mx-auto flex h-full min-h-52 max-w-md flex-col items-center justify-center gap-3 py-8 text-center">
-                  <h2 className="text-2xl font-semibold text-foreground">
-                    Try a Customer Question
-                  </h2>
-                  {starterPrompts}
                 </div>
               ) : (
                 <div className="wl-studio-chat__welcome">
@@ -775,7 +695,7 @@ const StudioWorkroom = forwardRef<
             <div className="mx-auto max-w-3xl">
               <div className={`${WL_COMPOSER_CLASSES.composerDock} wl-studio-composer`}>
                 <label className="sr-only" htmlFor={composerId}>
-                  {mode === "test" ? `Customer message for ${agentName}` : `Message ${agentName}`}
+                  {`Message ${agentName}`}
                 </label>
                 <textarea
                   id={composerId}
@@ -798,9 +718,7 @@ const StudioWorkroom = forwardRef<
                   }}
                   rows={1}
                   disabled={sending}
-                  placeholder={
-                    mode === "test" ? "Ask as a customer…" : "Share knowledge or give instructions…"
-                  }
+                  placeholder="Share knowledge or give instructions…"
                   className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
                 />
                 <div className="wl-composer-dock__toolbar">

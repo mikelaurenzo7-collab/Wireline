@@ -27,9 +27,12 @@ describe("Free Builder spend UI truth", () => {
     );
   });
 
-  it("keeps paid-plan usage language product-owned", () => {
-    expect(source).toContain('"Live usage guard"');
-    expect(source).toContain("usage allowance funded by the plan");
+  it("distinguishes processing costs from customer billing", () => {
+    expect(source).toContain('"AI Processing Limit"');
+    expect(source).toContain("AI processing allowance funded by the plan");
     expect(source).toContain("Completed in-flight work still settles.");
+    expect(source).toContain("Processing costs, separate from your bill.");
+    expect(source).toContain('label="Recorded AI Cost"');
+    expect(source).not.toContain('label="Total Spend"');
   });
 });

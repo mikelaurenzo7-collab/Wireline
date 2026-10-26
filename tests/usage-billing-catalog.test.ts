@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { MemoryRouter } from "react-router";
 import {
   USAGE_ADDONS,
   USAGE_BASE_USD_MONTHLY,
@@ -23,7 +26,7 @@ import {
   usagePriceIds,
 } from "../src/lib/usage-billing-config";
 import { billingModelFromPayload } from "../src/lib/billing-model";
-import {
+import UsagePricingPanel, {
   USAGE_RATE_LINES,
   estimateFromSliders,
 } from "../src/components/usage-billing/UsagePricingPanel";
@@ -39,6 +42,29 @@ import {
 } from "../scripts/stripe-usage-billing-setup.mjs";
 
 describe("usage rate card", () => {
+  it("discloses each plan's allowance without selecting it or nesting controls", () => {
+    const markup = renderToStaticMarkup(
+      createElement(MemoryRouter, null, createElement(UsagePricingPanel)),
+    );
+    const cards = [
+      ...markup.matchAll(/(<button\b[^>]*>[\s\S]*?<\/button>)\s*(<details\b[\s\S]*?<\/details>)/g),
+    ];
+    expect(cards).toHaveLength(3);
+    for (const [index, id] of (["lite", "standard", "plus"] as const).entries()) {
+      const plan = USAGE_TIERS[id];
+      const [, selectButton, details] = cards[index];
+      expect(selectButton).toContain("Usage Included");
+      expect(selectButton).not.toContain(`$${plan.includedWorkUsd}`);
+      expect(selectButton).not.toMatch(/<(?:summary|details|a)\b/);
+      expect(details).toContain(`aria-label="${plan.name} Plan Details"`);
+      expect(details).toContain(`$${plan.includedWorkUsd} for calls, SMS, email, and Computer`);
+      expect(details).toContain("Resets monthly. No rollover.");
+      expect(details).toContain('href="#usage-rates"');
+    }
+    expect(markup).toContain('id="usage-rates"');
+    expect(markup).toContain("Get Starter");
+  });
+
   it("shares SMS with call, email and Computer allowance instead of charging a second wallet", () => {
     const input = {
       tier: "lite" as const,

@@ -59,9 +59,8 @@ export interface ConversationState {
 }
 
 /**
- * The 6 Wireline staff roles. These are the founder's "employees" —
- * the agents that answer Wireline's own lines + that Mike manages
- * from the Founder's Dashboard.
+ * Six BotBound AI assistant roles managed by Michael, the sole founder.
+ * These are software personas, not human employees.
  */
 export type WirelinePersonaId =
   "reception" | "sales" | "support" | "technical" | "onboarding" | "success";
@@ -117,7 +116,7 @@ export const TIER_1_TOPICS: readonly string[] = Object.freeze([
   "how to get a phone number",
   "how to clone a voice",
   "vertical fit questions (does this work for [industry])",
-  "Personal plan questions ($12 a month for calls and a computer; there is no free plan)",
+  "account creation and Bot setup before paid activation; private rehearsal limits shown in the workspace",
   "password-reset guidance; use create_support_ticket for authorized follow-up",
   "receipt or invoice guidance; use create_support_ticket for authorized resend",
   "cancellation guidance; capture the request with create_support_ticket and never claim completion",
@@ -132,7 +131,7 @@ export const TIER_1_TOPICS: readonly string[] = Object.freeze([
 ]);
 
 export const SUPPORT_REFUND_REVIEW_INSTRUCTION =
-  "Every refund request: capture the invoice details and use create_support_ticket to queue an authorized billing review. Tell the caller the billing team will review it and follow up. Never issue, approve, or promise a refund from the conversation alone.";
+  "Every refund request: capture the invoice details and use create_support_ticket to request a billing review by Michael, the founder. Confirm the request is saved only after the tool succeeds. Never issue, approve, or promise a refund, response time, or future callback from the conversation alone.";
 
 /**
  * Keyword sets used by multiple rules. Pulled out so we can exhaustively

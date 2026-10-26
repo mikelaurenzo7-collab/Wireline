@@ -124,6 +124,20 @@ describe("Shopify order lookup privacy", () => {
 });
 
 describe("Shopify draft order pricing", () => {
+  it("reports an uncertain provider failure without inventing a human follow-up or retrying", async () => {
+    fixtures.fetchWithTimeout.mockRejectedValueOnce(new Error("connection lost after send"));
+    const result = await createDraftOrder({
+      userId: "tenant-1",
+      lineItems: [{ variantId: "123456", quantity: 1 }],
+    });
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain("draft order was not confirmed");
+    expect(result.message).toContain("Check the store before another attempt");
+    expect(result.message).toContain("No follow-up task was saved");
+    expect(result.message).not.toMatch(/team member will|will follow up/i);
+    expect(fixtures.fetchWithTimeout).toHaveBeenCalledOnce();
+  });
+
   it("rejects a custom-priced item without a catalog variant", async () => {
     const attemptedDraft = {
       userId: "tenant-1",

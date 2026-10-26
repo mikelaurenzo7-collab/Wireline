@@ -5,7 +5,11 @@ import {
   accountSidebarItems,
   isRouteAvailableForAccount,
 } from "../src/lib/account-type";
-import { MOBILE_MORE_NAV } from "../src/constants/navigation";
+import {
+  MOBILE_MORE_NAV,
+  desktopNavParentHref,
+  scopedWorkspaceHref,
+} from "../src/constants/navigation";
 
 describe("legacy account-type navigation compatibility", () => {
   it("keeps the complete Bot workspace for both stored account values", () => {
@@ -29,7 +33,6 @@ describe("legacy account-type navigation compatibility", () => {
     // Frequent Bot surfaces are directly reachable from the shared rail.
     expect(groups.find((group) => group.label === "Work")?.items.map((item) => item.path)).toEqual([
       "/studio",
-      "/computer",
       "/inbox",
       "/phone",
       "/calendar",
@@ -44,10 +47,11 @@ describe("legacy account-type navigation compatibility", () => {
     expect(paths).not.toContain("/approvals");
     expect(paths).not.toContain("/apps");
     expect(paths).toContain("/knowledge");
-    expect(paths).toContain("/computer");
+    expect(paths).not.toContain("/computer");
+    expect(desktopNavParentHref("/computer")).toBe("/studio");
+    expect(scopedWorkspaceHref("/computer", "bot-a")).toBe("/studio?panel=computer&agent=bot-a");
     expect(MOBILE_MORE_NAV.map((item) => item.href)).toEqual([
       "/knowledge",
-      "/computer",
       "/calendar",
       "/connections",
       "/settings",
@@ -60,5 +64,7 @@ describe("legacy account-type navigation compatibility", () => {
     expect(isRouteAvailableForAccount("personal", "/phone")).toBe(true);
     expect(isRouteAvailableForAccount("personal", "/connections")).toBe(true);
     expect(isRouteAvailableForAccount("business", "/insights")).toBe(true);
+    expect(isRouteAvailableForAccount("personal", "/computer")).toBe(true);
+    expect(isRouteAvailableForAccount("business", "/computer")).toBe(true);
   });
 });

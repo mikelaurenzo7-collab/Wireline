@@ -20,6 +20,8 @@ type SimpleVoicePickerProps = {
   botPhone?: string | null;
   /** Setup and the workspace can be mounted together; focus the local clone flow. */
   cloneAnchorId?: string;
+  /** Compact setup already shows the clone card without a second entry point. */
+  showCloneShortcut?: boolean;
 };
 
 /** The voice callers actually hear when phone calls run on another provider. */
@@ -48,6 +50,7 @@ export default function SimpleVoicePicker({
   markKey,
   botPhone,
   cloneAnchorId = LIVE_VOICE_ANCHOR_ID,
+  showCloneShortcut = true,
 }: SimpleVoicePickerProps) {
   const { user } = useAuth();
   const ownerId = user?.id ?? null;
@@ -373,7 +376,7 @@ export default function SimpleVoicePicker({
 
   return (
     <div className="min-w-0 space-y-3">
-      {ownerId && !clonedVoiceName ? (
+      {showCloneShortcut && ownerId && !clonedVoiceName ? (
         <button
           type="button"
           onClick={scrollToClone}

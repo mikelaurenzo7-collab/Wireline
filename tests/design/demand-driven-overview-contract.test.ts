@@ -47,7 +47,7 @@ describe("demand-driven authenticated experience", () => {
 
   it("keeps Inbox and Insights as independent canonical read surfaces", () => {
     expect(inbox).toContain('label: "Email"');
-    expect(inbox).toContain('label: "Text"');
+    expect(inbox).toContain('{ id: "sms", label: "SMS" }');
     expect(inbox).toContain("WorkspaceControlBand");
     expect(activity).toContain("WorkspaceControlBand");
     expect(activity).toContain('aria-label="Insights view"');
@@ -81,7 +81,7 @@ describe("demand-driven authenticated experience", () => {
     expect(setup).not.toMatch(/AgentPresenceLivePreview|VoiceGallery/);
     expect(setup).toContain("<details");
     expect(setup).toContain("AgentToolPermissions");
-    expect(workroom).toContain("/test/stream");
+    expect(workroom).toContain("<StudioVoiceRehearsal");
     expect(workroom).toContain("Private Rehearsal");
     expect(workroom).not.toContain('role="tablist"');
     expect(review).toContain('aria-label="Next actions"');
@@ -96,8 +96,7 @@ describe("demand-driven authenticated experience", () => {
     );
     expect(testRoute).toContain("Do not claim a booking, transfer, message, payment");
     expect(testRoute).not.toContain("agentConversationMessages");
-    expect(workroom).toContain("messages.slice(-12)");
-    expect(workroom).toContain('history: mode === "test" ? history');
+    expect(workroom).not.toContain("/test/stream");
   });
 
   it("keeps voice choice customer-facing rather than narrating provider topology", () => {

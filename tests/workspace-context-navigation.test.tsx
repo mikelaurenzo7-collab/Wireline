@@ -600,78 +600,100 @@ describe("phone mutations refresh the shared roster", () => {
 });
 
 describe("Workroom setup and rehearsal flow", () => {
-  it("opens Voice with a retained customer draft and restores it only when Typed is chosen", () => {
-    const workroom = () =>
-      render(() =>
-        (
-          StudioWorkroom as unknown as {
-            render: (props: object, ref: null) => ReactNode;
-          }
-        ).render(
-          {
-            agentId: "bot-b",
-            agentName: "Bravo",
-            mode: "test",
-            initialDraft: {
-              text: "Keep this customer scenario.",
-              command: null,
-              commandNonce: null,
+  it.each([undefined, "Book an appointment."])(
+    "keeps rehearsal voice-only without loading or changing configuration for command %s",
+    (initialCommand) => {
+      h.runEffects = true;
+      const focus = vi.fn();
+      const onDraftChange = vi.fn();
+      const handle = { current: null as null | { focusComposer: (text?: string) => void } };
+      vi.stubGlobal("document", {
+        getElementById: (id: string) => (id === "studio-voice-start-bot-b" ? { focus } : null),
+      });
+      const workroom = () =>
+        render(() =>
+          (
+            StudioWorkroom as unknown as {
+              render: (props: object, ref: typeof handle) => ReactNode;
+            }
+          ).render(
+            {
+              agentId: "bot-b",
+              agentName: "Bravo",
+              mode: "test",
+              initialCommand,
+              onDraftChange,
+              allowOutbound: true,
+              initialDraft: {
+                text: "Keep this historical customer scenario private.",
+                command: null,
+                commandNonce: null,
+              },
             },
-          },
-          null,
-        ),
+            handle,
+          ),
+        );
+      const initial = elements(workroom());
+      expect(initial.some((node) => node.type === "textarea")).toBe(false);
+      expect(initial.some((node) => node.props["aria-label"] === "Bravo voice rehearsal")).toBe(
+        true,
       );
-    const initial = elements(workroom());
-    expect(
-      initial.find((node) => node.type === "button" && text(node) === "Voice")?.props[
-        "aria-pressed"
-      ],
-    ).toBe(true);
-    // Try It's composer has its own id so it can sit beside the Instructions conversation.
-    expect(initial.some((node) => node.props.id === "studio-workroom-test-message")).toBe(false);
-    initial.find((node) => node.type === "button" && text(node) === "Typed")!.props.onClick!();
-    expect(
-      elements(workroom()).find((node) => node.props.id === "studio-workroom-test-message")?.props
-        .value,
-    ).toBe("Keep this customer scenario.");
-  });
+      expect(
+        initial.some(
+          (node) => typeof node.type === "function" && node.type.name === "StudioVoiceRehearsal",
+        ),
+      ).toBe(true);
+      expect(initial.some((node) => node.props["aria-label"] === "Call My Phone")).toBe(true);
+      expect(text(initial)).not.toContain("Typed");
+      expect(text(initial)).not.toContain("Keep this historical customer scenario private.");
+      focus.mockClear();
+      handle.current!.focusComposer("This must never become an edit.");
+      expect(elements(workroom()).some((node) => node.type === "textarea")).toBe(false);
+      expect(focus).toHaveBeenCalledOnce();
+      expect(onDraftChange).not.toHaveBeenCalled();
+      expect(h.fetch).not.toHaveBeenCalled();
+    },
+  );
 
   it.each([
     { draft: "Keep this customer scenario.", expected: "Keep this customer scenario." },
     { draft: "", expected: "Suggested customer question" },
     { draft: "  ", expected: "Suggested customer question" },
-  ])("focuses Test without replacing the existing draft: $draft", ({ draft, expected }) => {
-    const frames: Array<() => void> = [];
-    vi.stubGlobal("requestAnimationFrame", (callback: () => void) => frames.push(callback));
-    const handle = { current: null as null | { focusComposer: (text?: string) => void } };
-    const workroom = () =>
-      render(() =>
-        (
-          StudioWorkroom as unknown as {
-            render: (props: object, ref: typeof handle) => ReactNode;
-          }
-        ).render(
-          {
-            agentId: "bot-b",
-            agentName: "Bravo",
-            mode: "test",
-            initialDraft: { text: draft, command: null, commandNonce: null },
-          },
-          handle,
-        ),
-      );
-    workroom();
-    handle.current!.focusComposer("Suggested customer question");
-    const composer = elements(workroom()).find(
-      (node) => node.props.id === "studio-workroom-test-message",
-    )!;
-    expect(composer.props.value).toBe(expected);
-    expect((composer.props as Props & { "data-resize": string })["data-resize"]).toBe("none");
-    const focus = vi.fn();
-    (composer.props as Props & { ref: { current: unknown } }).ref.current = { focus };
-    frames.splice(0).forEach((frame) => frame());
-    expect(focus).toHaveBeenCalledOnce();
-  });
+  ])(
+    "focuses the configuration composer without replacing the existing draft: $draft",
+    ({ draft, expected }) => {
+      const frames: Array<() => void> = [];
+      vi.stubGlobal("requestAnimationFrame", (callback: () => void) => frames.push(callback));
+      const handle = { current: null as null | { focusComposer: (text?: string) => void } };
+      const workroom = () =>
+        render(() =>
+          (
+            StudioWorkroom as unknown as {
+              render: (props: object, ref: typeof handle) => ReactNode;
+            }
+          ).render(
+            {
+              agentId: "bot-b",
+              agentName: "Bravo",
+              mode: "configure",
+              initialDraft: { text: draft, command: null, commandNonce: null },
+            },
+            handle,
+          ),
+        );
+      workroom();
+      handle.current!.focusComposer("Suggested customer question");
+      const composer = elements(workroom()).find(
+        (node) => node.props.id === "studio-workroom-message",
+      )!;
+      expect(composer.props.value).toBe(expected);
+      expect((composer.props as Props & { "data-resize": string })["data-resize"]).toBe("none");
+      const focus = vi.fn();
+      (composer.props as Props & { ref: { current: unknown } }).ref.current = { focus };
+      frames.splice(0).forEach((frame) => frame());
+      expect(focus).toHaveBeenCalledOnce();
+    },
+  );
 
   it("keeps setup and private rehearsal in one workspace and restores focus after switching", () => {
     const frames: Array<() => void> = [];

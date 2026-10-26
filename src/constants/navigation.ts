@@ -153,8 +153,7 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     eyebrow: "Operate",
     description: "Give your Bot web tasks on its own secure cloud computer.",
     icon: "Monitor",
-    desktop: { group: "work", order: 15 },
-    mobile: { placement: "more", group: "Operate", order: 10 },
+    parentHref: "/studio",
     shortcut: { key: "M", hint: "g m" },
   },
   {
@@ -320,7 +319,7 @@ function byMobilePlacement(placement: MobileNavPlacement) {
 
 /** The Bot's Workspace and the channels it works in share the primary rail. */
 export const WORKSPACE_NAV: ShellNavItem[] = byDesktopOrder("work");
-/* Derived order: href: "/studio"; href: "/computer"; href: "/inbox"; href: "/phone"; href: "/calendar". */
+/* Derived order: href: "/studio"; href: "/inbox"; href: "/phone"; href: "/calendar". */
 
 /** Lower-frequency visibility and setup destinations stay secondary. */
 export const OPERATE_NAV: ShellNavItem[] = byDesktopOrder("manage");
@@ -336,7 +335,7 @@ export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
   {
     href: MOBILE_MORE_HREF,
     label: "More",
-    description: "Knowledge, Computer, Calendar, Connections, and Settings.",
+    description: "Knowledge, Calendar, Connections, and Settings.",
     icon: "MoreHorizontal",
     section: "System",
   },
@@ -380,7 +379,12 @@ export function cleanNavPath(pathname: string) {
 
 /** Carry explicit Bot scope, including stale IDs, across Bot-specific surfaces. */
 export function scopedWorkspaceHref(href: string, agentId?: string | null) {
-  if (!["/studio", "/knowledge", "/computer"].includes(href) || !agentId?.trim()) return href;
+  if (href === "/computer") {
+    const params = new URLSearchParams({ panel: "computer" });
+    if (agentId?.trim()) params.set("agent", agentId.trim());
+    return `/studio?${params.toString()}`;
+  }
+  if (!["/studio", "/knowledge"].includes(href) || !agentId?.trim()) return href;
   return `${href}?agent=${encodeURIComponent(agentId.trim())}`;
 }
 

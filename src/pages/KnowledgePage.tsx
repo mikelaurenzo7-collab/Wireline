@@ -13,6 +13,7 @@ import KnowledgeQuickAdd from "../components/training/KnowledgeQuickAdd";
 import WebsiteKnowledgeImport from "../components/training/WebsiteKnowledgeImport";
 import { useAgents } from "../contexts/AgentsContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
+import { buildAgentOptionLabels } from "../lib/agent-option-labels";
 
 function EmptyKnowledge() {
   return (
@@ -66,6 +67,7 @@ export default function KnowledgePage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const { agents, loading, degraded, refresh } = useAgents();
+  const agentLabels = buildAgentOptionLabels(agents);
   const { requestedId, resolvedId } = useStudioActiveAgentId();
   // A requested Bot is an explicit scope. A stale link must never fall back to
   // another Bot and let the owner save knowledge to the wrong one.
@@ -127,7 +129,7 @@ export default function KnowledgePage() {
           ) : null}
           {agents.map((agent) => (
             <option key={agent.id} value={agent.id}>
-              {agent.name}
+              {agentLabels.get(agent.id) ?? agent.name}
             </option>
           ))}
         </NativeSelect>

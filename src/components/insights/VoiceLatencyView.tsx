@@ -3,6 +3,7 @@ import { Gauge, Activity, AlertTriangle } from "lucide-react";
 import { cn } from "../../lib/utils";
 import type { AuditSummary, VoiceLatencyInsightsResponse } from "../../types/api-insights";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
+import { insightActionLabel } from "./insight-action-labels";
 
 export default function VoiceLatencyView({ days }: { days: number }) {
   const [actionData, setActionData] = useState<AuditSummary | null>(null);
@@ -237,7 +238,9 @@ export default function VoiceLatencyView({ days }: { days: number }) {
                   key={a.action}
                   className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0"
                 >
-                  <span className="text-sm text-foreground/85 truncate">{a.action}</span>
+                  <span className="text-sm text-foreground/85 truncate">
+                    {insightActionLabel(a.action)}
+                  </span>
                   <span className="font-mono text-[length:var(--wireline-typography-overline-size)] text-muted shrink-0">
                     {a.avg_latency_ms}ms · {a.calls}×
                   </span>

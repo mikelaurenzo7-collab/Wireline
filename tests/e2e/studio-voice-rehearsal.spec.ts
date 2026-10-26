@@ -137,17 +137,15 @@ async function microphoneCount(page: Page) {
 }
 
 for (const width of [1440, 390]) {
-  test(`voice rehearsal waits for Start, preserves text drafts and cleans up at ${width}px`, async ({
+  test(`voice-only rehearsal waits for Start and releases the microphone at ${width}px`, async ({
     page,
   }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
     const { stops, sessions } = await mockRehearsal(page);
     await page.goto("/studio?agent=bot-front-desk&workroom=test");
     await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Voice", exact: true })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    await expect(page.getByRole("button", { name: "Typed", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
     expect((await microphoneCount(page)).microphones).toBe(0);
     expect(sessions).toEqual([]);
     await expect(page.locator('[aria-label="Voice rehearsal transcript"]')).toHaveCount(0);
@@ -161,16 +159,13 @@ for (const width of [1440, 390]) {
     await page.getByRole("button", { name: "Start rehearsal", exact: true }).click();
     await expect(page.getByText("Listening", { exact: true })).toBeVisible();
     expect(sessions).toEqual(["bot-front-desk"]);
-    await page.getByRole("button", { name: "Typed", exact: true }).click();
+    await page.getByRole("button", { name: "End rehearsal", exact: true }).click();
     await expect.poll(() => stops).toEqual(["token-1"]);
     expect(await microphoneCount(page)).toEqual({
       microphones: 1,
       tracksStopped: 1,
       peersClosed: 1,
     });
-    const input = page.getByRole("textbox", { name: "Customer message for Front Desk" });
-    await input.fill("Please keep this unsent customer scenario.");
-    await page.getByRole("button", { name: "Voice", exact: true }).click();
     await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
     expect((await microphoneCount(page)).microphones).toBe(1);
     await expect
@@ -180,8 +175,7 @@ for (const width of [1440, 390]) {
       path: testInfo.outputPath(`studio-voice-${width}.png`),
       fullPage: true,
     });
-    await page.getByRole("button", { name: "Typed", exact: true }).click();
-    await expect(input).toHaveValue("Please keep this unsent customer scenario.");
+    await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
   });
 }
 
@@ -231,7 +225,7 @@ test("idle voice rehearsal fits 320px with enlarged text without starting a micr
     .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).fontSize))
     .toBe("32px");
   const rehearsal = page.getByRole("region", {
-    name: "Front Desk rehearsal conversation",
+    name: "Front Desk voice rehearsal",
     exact: true,
   });
   await expect(rehearsal).toBeVisible();
@@ -295,12 +289,12 @@ test("leaving while a voice session is accepted closes its late provider session
   await page.goto("/studio?agent=bot-front-desk&workroom=test");
   await page.getByRole("button", { name: "Start rehearsal", exact: true }).click();
   await accepted;
-  await page.getByRole("button", { name: "Typed", exact: true }).click();
+  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
   releaseAnswer();
   await expect.poll(() => stops).toEqual(["late-accepted-call"]);
   expect(await microphoneCount(page)).toEqual({ microphones: 1, tracksStopped: 1, peersClosed: 1 });
   await expect(
-    page.getByRole("textbox", { name: "Customer message for Front Desk" }),
+    page.getByRole("textbox", { name: "Message Front Desk", exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "End rehearsal", exact: true })).toHaveCount(0);
 });
@@ -320,20 +314,22 @@ test("switching Bots closes the previous rehearsal without starting the next Bot
   await expect(page.getByRole("link", { name: /Call connected line/ })).toHaveCount(0);
 });
 
-test("direct customer commands open Text without microphone access", async ({ page }) => {
+test("legacy customer commands stay in voice rehearsal without editing the Bot or starting audio", async ({
+  page,
+}) => {
   const { sessions } = await mockRehearsal(page);
   await page.goto(
     "/studio?agent=bot-front-desk&workroom=test&command=Can%20I%20book%20tomorrow%3F&commandNonce=one",
   );
-  await expect(page.getByRole("textbox", { name: "Customer message for Front Desk" })).toHaveValue(
-    "Can I book tomorrow?",
-  );
-  await expect(page.getByRole("button", { name: "Typed", exact: true })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Typed", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
   expect((await microphoneCount(page)).microphones).toBe(0);
   expect(sessions).toEqual([]);
+  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "Message Front Desk", exact: true })).toHaveValue(
+    "",
+  );
 });
 
 test("opening mobile settings stops the hidden microphone rehearsal", async ({ page }) => {

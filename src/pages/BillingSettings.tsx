@@ -307,6 +307,13 @@ export default function BillingSettings() {
   );
   const paidPlan = isPaidPlan(subscription?.plan_id) && Boolean(plan && plan.id !== "personal");
   const usagePlan = isUsagePlanId(subscription?.plan_id);
+  const hasLegacyPlan = Boolean(subscription?.has_subscription || paidPlan);
+  const hasRuntimeBalance =
+    (balanceUsd !== null && balanceUsd !== 0) || Boolean(balanceEntries?.length);
+  const runtimeBalanceUnknown =
+    statusUnavailable || activityUnavailable || balanceUsd === null || balanceEntries === null;
+  const showRuntimeBalance =
+    !usagePlan && (hasLegacyPlan || hasRuntimeBalance || (!loading && runtimeBalanceUnknown));
   const canAddBalance =
     !loading &&
     billingReady &&
@@ -418,7 +425,7 @@ export default function BillingSettings() {
           </p>
         ) : null}
 
-        {!usagePlan && (
+        {showRuntimeBalance && (
           <section className="mt-6">
             <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
               <div className="flex items-start justify-between gap-4">

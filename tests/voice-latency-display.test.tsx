@@ -6,6 +6,7 @@ import voiceRouter from "../src/routes/voice-observability-routes";
 const h = vi.hoisted(() => ({
   cursor: 0,
   voice: {} as Record<string, unknown>,
+  actions: [] as Array<{ action: string; avg_latency_ms: number }>,
   trends: vi.fn(),
   reliability: vi.fn(),
 }));
@@ -14,7 +15,11 @@ vi.mock("react", async (original) => ({
   ...(await original<typeof import("react")>()),
   useState: () => [
     [
-      { latency: { sample_count: 1, p50_ms: 10, p95_ms: 20 }, totals: { avg_latency: 15 } },
+      {
+        latency: { sample_count: 1, p50_ms: 10, p95_ms: 20 },
+        totals: { avg_latency: 15 },
+        by_action: h.actions,
+      },
       h.voice,
       false,
       null,
@@ -73,6 +78,7 @@ const reliabilityHandler = reliabilityRoute.stack[reliabilityRoute.stack.length 
 beforeEach(() => {
   vi.clearAllMocks();
   h.cursor = 0;
+  h.actions = [];
   h.voice = {
     days: 30,
     trends: [{ date: "2026-09-20", avgTtftMs: 440, p95TtftMs: 700, errorRate: 0 }],
@@ -83,6 +89,38 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("voice latency configured call limit", () => {
+  it("labels measured actions without exposing route IDs or losing unknown operation names", () => {
+    const agentId = "agent-55a7379e-ed74-4073-a442-20fabdf97a2c";
+    h.actions = [
+      {
+        action: "workspace.api.agents." + agentId + ".workspace.messages.stream",
+        avg_latency_ms: 700,
+      },
+      { action: "agent-test.api.agents." + agentId + ".test.stream", avg_latency_ms: 600 },
+      { action: "computer.browse", avg_latency_ms: 500 },
+      { action: "training.training", avg_latency_ms: 400 },
+      { action: "jobs.post_call_enrichment", avg_latency_ms: 300 },
+      { action: "widgets.api.customers." + agentId + ".fetch_records", avg_latency_ms: 200 },
+      { action: "", avg_latency_ms: 100 },
+    ];
+    const originalRows = structuredClone(h.actions);
+    const content = text(VoiceLatencyView({ days: 30 }));
+    for (const [label, latency] of [
+      ["Bot Chat", 700],
+      ["Bot Rehearsal", 600],
+      ["Computer Browsing", 500],
+      ["Knowledge Training", 400],
+      ["Call Processing", 300],
+      ["Widgets Customers Fetch Records", 200],
+      ["Other Activity", 100],
+    ])
+      expect(content).toContain(String(label) + latency + "ms");
+    expect(content).not.toContain(agentId);
+    expect(content).not.toContain(".api.");
+    expect(content.indexOf("Bot Chat")).toBeLessThan(content.indexOf("Bot Rehearsal"));
+    expect(h.actions).toEqual(originalRows);
+  });
+
   it.each([
     ["1800", 1800],
     ["3600", 3600],

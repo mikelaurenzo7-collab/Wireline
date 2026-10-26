@@ -86,13 +86,6 @@ export const LIVE_VOICE_TIP_KEY = "botbound.liveVoiceTip.v1";
 export const LIVE_VOICE_TIP_COPY =
   "Tip: you can switch any Bot back to a stock voice in one tap, anytime.";
 
-const CREATE_STAGES = [
-  "Checking your recording…",
-  "Learning how you sound…",
-  "Tuning it for phone calls…",
-  "Almost ready…",
-];
-
 async function errorMessage(response: Response, fallback: string): Promise<string> {
   const body = (await response.json().catch(() => null)) as {
     error?: string;
@@ -152,7 +145,6 @@ export default function LiveVoiceCloneStudio({
   const [level, setLevel] = useState(0);
   const [recordingState, setRecordingState] = useState<"idle" | "requesting" | "recording">("idle");
   const [recording, setRecording] = useState<Recording | null>(null);
-  const [createStage, setCreateStage] = useState(0);
   const [created, setCreated] = useState<ClonedVoice | null>(null);
   const [playing, setPlaying] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -263,16 +255,6 @@ export default function LiveVoiceCloneStudio({
   }, [agentId, agentName, load, releaseCapture, stopPlayback]);
 
   useEffect(() => () => clearRecording(), [clearRecording]);
-
-  useEffect(() => {
-    if (step !== "creating") return;
-    setCreateStage(0);
-    const timer = window.setInterval(
-      () => setCreateStage((stage) => Math.min(CREATE_STAGES.length - 1, stage + 1)),
-      2_500,
-    );
-    return () => window.clearInterval(timer);
-  }, [step]);
 
   function acceptWav(bytes: Uint8Array) {
     const decoded = readPcm16MonoWav(bytes);
@@ -1129,17 +1111,7 @@ export default function LiveVoiceCloneStudio({
           className="flex items-center gap-3 rounded-xl border border-border bg-background p-4"
         >
           <Loader2 className="size-5 shrink-0 animate-spin text-primary" aria-hidden="true" />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-foreground">{CREATE_STAGES[createStage]}</p>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary transition-[width] duration-700"
-                style={{
-                  width: `${((createStage + 1) / CREATE_STAGES.length) * 90}%`,
-                }}
-              />
-            </div>
-          </div>
+          <p className="min-w-0 text-sm font-semibold text-foreground">Creating Voice…</p>
         </div>
       ) : null}
 

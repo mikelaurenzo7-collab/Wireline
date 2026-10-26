@@ -25,9 +25,9 @@ describe("authenticated Bot navigation contract", () => {
     expect(navigation).toMatch(/href: "\/insights", label: "Insights"/);
     expect(navigation).toMatch(/href: "\/connections"[\s\S]*label: "Connections"/);
     expect(navigation).toContain('route: "/templates", parentHref: "/studio"');
-    expect(WORKSPACE_NAV.slice(0, 2).map((item) => item.href)).toEqual(["/studio", "/computer"]);
+    expect(WORKSPACE_NAV.slice(0, 2).map((item) => item.href)).toEqual(["/studio", "/inbox"]);
     expect(desktopNavParentHref("/knowledge")).toBeNull();
-    expect(desktopNavParentHref("/computer")).toBeNull();
+    expect(desktopNavParentHref("/computer")).toBe("/studio");
     expect(navigation).toContain('route: "/approvals", parentHref: "/inbox"');
     expect(navigation).toContain('route: "/apps", parentHref: "/settings"');
     expect(shell).toContain("desktopNavParentHref(navPathname)");
@@ -87,10 +87,11 @@ describe("authenticated Bot navigation contract", () => {
     expect(studio).not.toContain("posture=");
   });
 
-  it("uses a real customer roleplay with saved configuration and no persistence bait", () => {
+  it("keeps voice rehearsal separate from configuration and the private roleplay API", () => {
     const route = read("src/routes/agent-test-routes.ts");
-    expect(workroom).toContain("/test/stream");
-    expect(workroom).toContain("WORKSPACE_VOICE.testPrompts");
+    expect(workroom).toContain("<StudioVoiceRehearsal");
+    expect(workroom).not.toContain("/test/stream");
+    expect(workroom).not.toContain("Rehearsal channel");
     expect(copy).toContain("What can you help with?");
     expect(copy).toContain("I want to book an appointment.");
     expect(route).toContain("Reply only as that customer-facing Bot");

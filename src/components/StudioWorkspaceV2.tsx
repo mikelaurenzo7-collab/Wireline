@@ -616,7 +616,7 @@ function StudioWorkspaceContent() {
   };
 
   const main = sessionFor(mainMode);
-  // Route commands prefill the explicit private rehearsal composer.
+  // Legacy route commands focus private voice rehearsal without editing the Bot.
   const mainReceivesCommand = mainMode === "test";
   const workroom = (
     <StudioWorkroom
@@ -678,7 +678,7 @@ function StudioWorkspaceContent() {
           key={active.id}
           agentId={active.id}
           layout="panel"
-          chatControls={!setupChat && splitWorkspace}
+          chatControls={splitWorkspace}
         />
       </Suspense>
     ) : null;

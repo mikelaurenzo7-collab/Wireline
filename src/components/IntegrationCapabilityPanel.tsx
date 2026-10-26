@@ -3,11 +3,8 @@ import { ChevronDown, Phone, Zap, Wrench } from "lucide-react";
 import { cn } from "../lib/utils";
 import type { AgentToolName, ToolIntegration } from "../lib/agent-capabilities";
 import { AGENT_TOOL_CATALOG } from "../lib/agent-capabilities";
-import {
-  getIntegrationPlaybook,
-  getCatalogEntry,
-  getActiveTasksForIntegration,
-} from "../lib/integration-playbooks";
+import { getIntegrationPlaybook, getCatalogEntry } from "../lib/integration-playbooks";
+import { UNSCOPED_PLATFORM_LIVE_TOOL_NAMES } from "../lib/platform-live-tool-exclusions";
 import { Checkbox } from "./ui/shadcn/Checkbox";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
@@ -37,13 +34,21 @@ export default function IntegrationCapabilityPanel({
   const playbook = getIntegrationPlaybook(integration);
   if (!playbook) return null;
 
-  const tasks = compact
-    ? playbook.tasks
-    : getActiveTasksForIntegration(integration, enabledTools).length > 0
-      ? getActiveTasksForIntegration(integration, enabledTools)
-      : playbook.tasks;
+  const availableTasks = playbook.tasks
+    .map((task) => ({
+      ...task,
+      tools: task.tools.filter((name) => !UNSCOPED_PLATFORM_LIVE_TOOL_NAMES.has(name)),
+    }))
+    .filter((task) => task.tools.length > 0);
+  const activeTasks = availableTasks.filter((task) =>
+    task.tools.some((name) => enabledTools.includes(name)),
+  );
+  const tasks = compact || activeTasks.length === 0 ? availableTasks : activeTasks;
+  if (!tasks.length) return null;
 
-  const integrationTools = AGENT_TOOL_CATALOG.filter((t) => t.integration === integration);
+  const integrationTools = AGENT_TOOL_CATALOG.filter(
+    (t) => t.integration === integration && !UNSCOPED_PLATFORM_LIVE_TOOL_NAMES.has(t.name),
+  );
   const enabledSet = new Set(enabledTools);
   const href = connectHref ?? playbook.connectPath;
 

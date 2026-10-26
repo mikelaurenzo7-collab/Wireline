@@ -358,23 +358,19 @@ test("a tool proposal requires a confirmed enabled-tool result and remains retry
   ]);
 });
 
-test("Change and Try It drafts survive leaving the Workspace without mixing their conversations", async ({
+test("Configure drafts survive navigation and voice rehearsal without a second composer", async ({
   page,
 }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 960 });
   await mockWorkspace(page);
   const review = await requestProposal(page);
   const buildInput = page.getByRole("textbox", { name: "Message Front Desk", exact: true });
-  // Wide screens keep Try It beside the conversation that changes the Bot.
+  // Voice rehearsal stays beside the one conversation that changes the Bot.
   const panel = page.getByRole("complementary", { name: "Workspace panel" });
-  const testInput = page.getByRole("textbox", {
-    name: "Customer message for Front Desk",
-    exact: true,
-  });
   await buildInput.fill("Keep this unsent Build instruction.");
   await page.getByRole("tab", { name: "Rehearse", exact: true }).click();
-  await panel.getByRole("button", { name: "Typed", exact: true }).click();
-  await testInput.fill("Keep this unsent customer scenario.");
+  await expect(panel.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+  await expect(panel.getByRole("textbox")).toHaveCount(0);
   await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
   await expect(panel.getByText(opening.value, { exact: true })).toHaveCount(0);
   await page.screenshot({
@@ -387,8 +383,7 @@ test("Change and Try It drafts survive leaving the Workspace without mixing thei
   await page.goBack();
   await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
   await expect(review).toBeVisible();
-  await panel.getByRole("button", { name: "Typed", exact: true }).click();
-  await expect(testInput).toHaveValue("Keep this unsent customer scenario.");
+  await expect(panel.getByRole("textbox")).toHaveCount(0);
 
   // Phones keep private rehearsal behind one contextual action.
   await page.setViewportSize({ width: 390, height: 844 });
@@ -396,8 +391,8 @@ test("Change and Try It drafts survive leaving the Workspace without mixing thei
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
     .toBe(true);
   await page.getByRole("button", { name: "Rehearse", exact: true }).click();
-  await page.getByRole("button", { name: "Typed", exact: true }).click();
-  await expect(testInput).toHaveValue("Keep this unsent customer scenario.");
+  await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
   await page.screenshot({
     path: testInfo.outputPath("studio-try-it-mobile.png"),
     fullPage: true,
@@ -409,17 +404,14 @@ test("Change and Try It drafts survive leaving the Workspace without mixing thei
 });
 
 for (const section of ["Set Up", "Summary"] as const) {
-  test(`${section} rehearsal focuses voice and preserves an existing customer draft`, async ({
-    page,
-  }) => {
+  test(`${section} opens voice rehearsal without a second editor`, async ({ page }) => {
     await mockWorkspace(page);
-    await page.goto(`/studio?agent=${bots[0].id}&workroom=test`);
-    await page.getByRole("button", { name: "Typed", exact: true }).click();
+    await page.goto(`/studio?agent=${bots[0].id}&chat=setup`);
     const input = page.getByRole("textbox", {
-      name: "Customer message for Front Desk",
+      name: "Message Front Desk",
       exact: true,
     });
-    await input.fill("Can you handle this specific customer request?");
+    await input.fill("Keep my configuration draft.");
     await page.getByRole("button", { name: "Set Up Bot", exact: true }).click();
     await page.getByRole("tab", { name: section, exact: true }).click();
     await page
@@ -429,8 +421,9 @@ for (const section of ["Set Up", "Summary"] as const) {
       })
       .click();
     await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeFocused();
-    await page.getByRole("button", { name: "Typed", exact: true }).click();
-    await expect(input).toHaveValue("Can you handle this specific customer request?");
+    await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
+    await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+    await expect(input).toHaveValue("Keep my configuration draft.");
     await expect(input).toHaveCSS("resize", "none");
   });
 }
@@ -455,8 +448,7 @@ test("setup focuses voice without seeding a customer message or replacing the Se
     exact: true,
   });
   await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeFocused();
-  await page.getByRole("button", { name: "Typed", exact: true }).click();
-  await expect(testInput).toHaveValue("");
+  await expect(testInput).toHaveCount(0);
   await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
   await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
 });
@@ -467,10 +459,8 @@ test("Set Up proposals survive rehearsal and Bot switches without appearing on a
   const writes = await mockWorkspace(page);
   const review = await requestProposal(page);
   await page.getByRole("button", { name: "Rehearse", exact: true }).click();
-  await page.getByRole("button", { name: "Typed", exact: true }).click();
-  await expect(
-    page.getByRole("textbox", { name: "Customer message for Front Desk" }),
-  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
   await expect(review).toHaveCount(0);
   await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
   await expect(review.getByText(opening.value, { exact: true })).toBeVisible();
@@ -539,26 +529,19 @@ test("a delayed clear remains pending across remounts and cannot restore deleted
   expect(deleteCount).toBe(1);
 });
 
-test("Rehearsal replies cannot surface or apply a configuration or communication proposal", async ({
-  page,
-}) => {
+test("voice rehearsal has no typed endpoint or configuration submission", async ({ page }) => {
   const writes = await mockWorkspace(page);
-  await page.route("**/api/agents/*/test/stream", (route) =>
-    route.fulfill({
-      contentType: "text/event-stream",
-      body: `event: done\ndata: ${JSON.stringify({ ...plan, reply: "How can I help with your appointment?" })}\n\n`,
-    }),
-  );
+  const typedRequests: string[] = [];
+  await page.route("**/api/agents/*/test/stream", (route) => {
+    typedRequests.push(route.request().url());
+    return route.fulfill({ status: 500 });
+  });
   await page.goto(`/studio?agent=${bots[0].id}&workroom=test`);
-  await page.getByRole("button", { name: "Typed", exact: true }).click();
-  await page
-    .getByRole("textbox", { name: "Customer message for Front Desk" })
-    .fill("I would like an appointment.");
-  await page.getByRole("button", { name: "Send", exact: true }).click();
-  await expect(
-    page.getByText("How can I help with your appointment?", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Send", exact: true })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Review Opening greeting" })).toHaveCount(0);
+  expect(typedRequests).toEqual([]);
   await expect(page.getByRole("button", { name: "Save Opening greeting" })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Review Email capability" })).toHaveCount(0);
   await expect(page.getByText(emailDraft.subject, { exact: true })).toHaveCount(0);

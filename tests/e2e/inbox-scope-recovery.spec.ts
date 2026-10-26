@@ -46,9 +46,7 @@ async function mockWorkspace(page: Page) {
   return threadRequests;
 }
 
-test("an existing SMS subscriber keeps payment recovery without exposing the unreleased channel", async ({
-  page,
-}) => {
+test("an existing SMS subscriber sees the SMS tab and payment recovery", async ({ page }) => {
   await mockWorkspace(page);
   await page.route("**/api/billing/status", (route) =>
     route.fulfill({
@@ -64,7 +62,7 @@ test("an existing SMS subscriber keeps payment recovery without exposing the unr
   );
 
   await page.goto("/inbox");
-  await expect(page.getByRole("button", { name: "Text", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "SMS", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Email", exact: true })).toBeVisible();
   await expect(page.getByText("Payment Needs Attention", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Update Payment" })).toHaveAttribute(
@@ -72,6 +70,70 @@ test("an existing SMS subscriber keeps payment recovery without exposing the unr
     "/settings/billing",
   );
   await expect(page.getByText("SMS Coming Soon", { exact: true })).toHaveCount(0);
+});
+
+test("unpaid SMS discovery preserves saved texts and cannot draft or send", async ({ page }) => {
+  await mockWorkspace(page);
+  const sendRequests: string[] = [];
+  await page.route("**/api/billing/status", (route) =>
+    route.fulfill({
+      json: {
+        channel_entitlements: {
+          plan_id: null,
+          subscription_status: "none",
+          channels: [],
+          is_owner: false,
+        },
+      },
+    }),
+  );
+  await page.route("**/api/sms/**", (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith("/reply") || path.endsWith("/draft")) sendRequests.push(path);
+    return route.fulfill({
+      json:
+        path === "/api/sms/threads"
+          ? {
+              threads: [
+                {
+                  id: "saved-sms",
+                  customer_number: "+12025550101",
+                  destination_number: "+12025550102",
+                  status: "open",
+                  unread_count: 0,
+                  last_message_at: "2026-10-25T12:00:00Z",
+                },
+              ],
+            }
+          : path.endsWith("/messages")
+            ? {
+                messages: [
+                  {
+                    id: "saved-message",
+                    direction: "in",
+                    body: "Can we move our appointment?",
+                    created_at: "2026-10-25T12:00:00Z",
+                    agent_id: "bot-desk",
+                  },
+                ],
+              }
+            : {},
+    });
+  });
+  await page.goto("/inbox?tab=sms&thread=saved-sms");
+  await expect(page.getByRole("button", { name: "SMS", exact: true })).toBeVisible();
+  await expect(page.getByText("SMS Isn't in Your Plan", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Choose Plan", exact: true })).toHaveAttribute(
+    "href",
+    "/settings/billing",
+  );
+  await expect(page.getByText("Can we move our appointment?", { exact: true })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Text reply", exact: true })).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Write reply with Bot", exact: true }),
+  ).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Send text", exact: true })).toBeDisabled();
+  expect(sendRequests).toEqual([]);
 });
 
 test("a mailbox deep link never requests all conversations while its scope loads", async ({

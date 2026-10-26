@@ -11,6 +11,7 @@ const shopify = vi.hoisted(() => ({
   createDraftOrder: vi.fn(),
 }));
 const crm = vi.hoisted(() => ({
+  createContact: vi.fn(),
   searchContacts: vi.fn(),
   logCall: vi.fn(),
   createOpportunity: vi.fn(),
@@ -23,10 +24,13 @@ const square = vi.hoisted(() => ({
   squareCreatePaymentLink: vi.fn(),
 }));
 
+const zoom = vi.hoisted(() => ({ createMeeting: vi.fn() }));
+vi.mock("../src/lib/zoom-service", () => zoom);
 vi.mock("../src/lib/shopify-service", () => shopify);
 vi.mock("../src/lib/crm-service", () => ({
   CRMService: vi.fn(function CRMService() {
     return {
+      createContact: crm.createContact,
       searchContacts: crm.searchContacts,
       logCall: crm.logCall,
       createOpportunity: crm.createOpportunity,
@@ -556,4 +560,110 @@ describe("lead and CRM lookups on a live call", () => {
       expect(crm.updateDealStage).not.toHaveBeenCalled();
     },
   );
+});
+
+describe("connector failure results", () => {
+  it("does not promise human follow-up when the Shopify catalog lookup fails", async () => {
+    shopify.searchProducts.mockRejectedValueOnce(new Error("provider unavailable"));
+    const insert = vi.fn();
+    const result = await handleShopifyToolCall(
+      "shopify_check_inventory",
+      { query: "boots" },
+      liveCall(null, { insert }),
+    );
+    expect(shopify.searchProducts).toHaveBeenCalledOnce();
+    expect(result?.result).toContain("catalog lookup failed");
+    expect(result?.result).toContain("No follow-up task was saved");
+    expect(result?.result).toContain("confirm it only after the tool succeeds");
+    expect(result?.result).not.toMatch(/have someone|will follow up/i);
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it.each(["empty", "error"])(
+    "does not claim a CRM contact or follow-up was saved after %s",
+    async (failure) => {
+      if (failure === "error")
+        crm.createContact.mockRejectedValueOnce(new Error("provider unavailable"));
+      else crm.createContact.mockResolvedValueOnce(null);
+      const insert = vi.fn();
+      const result = await handleEnrichmentToolCall(
+        "crm_create_contact",
+        { first_name: "Avery", email: "avery@example.com" },
+        liveCall(null, { insert }),
+      );
+      expect(crm.createContact).toHaveBeenCalledOnce();
+      expect(result?.result).toContain("CRM contact was not confirmed");
+      expect(result?.result).toContain("No follow-up task was saved");
+      expect(result?.result).toContain("create_followup_task");
+      expect(result?.result).not.toMatch(/I've noted|will follow up|I'll have/i);
+      expect(insert).not.toHaveBeenCalled();
+    },
+  );
+
+  it("retains provider-confirmed CRM success", async () => {
+    crm.createContact.mockResolvedValueOnce("contact-123");
+    const result = await handleEnrichmentToolCall(
+      "crm_create_contact",
+      { first_name: "Avery" },
+      liveCall(null),
+    );
+    expect(result?.result).toBe("Contact created with ID contact-123.");
+  });
+
+  it.each(["empty", "error"])("does not promise a Zoom follow-up after %s", async (failure) => {
+    if (failure === "error")
+      zoom.createMeeting.mockRejectedValueOnce(new Error("provider unavailable"));
+    else zoom.createMeeting.mockResolvedValueOnce(null);
+    const insert = vi.fn();
+    const result = await handleWorkflowToolCall(
+      "generate_zoom_link",
+      { topic: "Product demo", start_time: "2026-11-04T16:00:00Z" },
+      liveCall(null, { insert }),
+    );
+    expect(zoom.createMeeting).toHaveBeenCalledOnce();
+    expect(result?.result).toContain("Zoom meeting link was not confirmed");
+    expect(result?.result).toContain("No follow-up task was saved");
+    expect(result?.result).toContain("create_followup_task");
+    expect(result?.result).not.toMatch(/will follow up|I'll have/i);
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("retains provider-confirmed Zoom success", async () => {
+    zoom.createMeeting.mockResolvedValueOnce({ join_url: "https://zoom.example/meeting" });
+    const result = await handleWorkflowToolCall(
+      "generate_zoom_link",
+      { topic: "Product demo" },
+      liveCall(null),
+    );
+    expect(result?.result).toBe("Meeting link created: https://zoom.example/meeting");
+  });
+
+  it("does not promise order processing after an ambiguous Shopify draft failure", async () => {
+    shopify.createDraftOrder.mockRejectedValueOnce(new Error("provider unavailable"));
+    const insert = vi.fn();
+    const result = await handleShopifyToolCall(
+      "shopify_create_draft_order",
+      { variant_id: "123456", quantity: 1 },
+      liveCall(null, { insert }),
+    );
+    expect(shopify.createDraftOrder).toHaveBeenCalledOnce();
+    expect(result?.result).toContain("draft order was not confirmed");
+    expect(result?.result).toContain("check the store before another attempt");
+    expect(result?.result).toContain("No follow-up task was saved");
+    expect(result?.result).not.toMatch(/have someone|will follow up/i);
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("offers a saved task instead of promising an unsupported discount", async () => {
+    const insert = vi.fn();
+    const result = await handleShopifyToolCall(
+      "shopify_apply_discount",
+      { discount_code: "TEN" },
+      liveCall(null, { insert }),
+    );
+    expect(result?.result).toContain("No discount was applied");
+    expect(result?.result).toContain("confirm it only after the tool succeeds");
+    expect(result?.result).not.toMatch(/have the team apply|will follow up/i);
+    expect(insert).not.toHaveBeenCalled();
+  });
 });

@@ -82,10 +82,10 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("workspace command discovery", () => {
   it("preserves the selected Bot for workspace navigation without scoping account actions", () => {
-    expect(workspaceCommandHref("/computer", "bot/a")).toBe("/computer?agent=bot%2Fa");
+    expect(workspaceCommandHref("/computer", "bot/a")).toBe("/studio?panel=computer&agent=bot%2Fa");
     expect(workspaceCommandHref("/knowledge", "bot-b")).toBe("/knowledge?agent=bot-b");
     expect(workspaceCommandHref("/studio", "bot-b")).toBe("/studio?agent=bot-b");
-    expect(workspaceCommandHref("/computer", null)).toBe("/computer");
+    expect(workspaceCommandHref("/computer", null)).toBe("/studio?panel=computer");
     expect(workspaceCommandHref("/studio?create=1", "bot-b")).toBe("/studio?create=1");
     expect(workspaceCommandHref("/settings/billing", "bot-b")).toBe("/settings/billing");
   });
@@ -95,7 +95,7 @@ describe("workspace command discovery", () => {
     (requested) => {
       if (requested) h.params.set("agent", requested);
       const scope = requested ?? "known-bot";
-      const href = `/computer?agent=${encodeURIComponent(scope)}`;
+      const href = `/studio?panel=computer&agent=${encodeURIComponent(scope)}`;
       expect(scopedWorkspaceHref("/computer", scope)).toBe(href);
       expect(scopedWorkspaceHref("/studio", scope)).toBe(
         `/studio?agent=${encodeURIComponent(scope)}`,

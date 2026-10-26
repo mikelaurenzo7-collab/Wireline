@@ -240,7 +240,7 @@ export default function UsageSpendCard({
           </p>
         ) : state.at_cap ? (
           <p role="status" className="text-sm font-semibold">
-            Your Bots are paused for new calls, emails, and computer tasks until you raise your
+            Your Bots are paused for new calls, SMS, emails, and Computer tasks until you raise your
             limit or the next period starts.
           </p>
         ) : (
@@ -251,8 +251,8 @@ export default function UsageSpendCard({
         <p className="text-sm text-muted-foreground">
           {formatUsdCents(state.included_remaining_usd ?? 0)} of your $
           {state.included_work_usd ?? USAGE_INCLUDED_WORK_USD} shared work allowance remains. Calls,
-          email and Computer use the same pool. It resets monthly without rollover. Heavy Computer
-          tasks may reach a separate processing limit.
+          SMS, email and Computer use the same pool. It resets monthly without rollover. Heavy
+          Computer tasks may reach a separate processing limit.
         </p>
         <p className="text-sm text-muted-foreground">
           Your limit covers BotBound charges before tax. Applicable tax is added separately. Active

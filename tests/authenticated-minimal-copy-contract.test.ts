@@ -98,18 +98,11 @@ describe("authenticated minimal copy contract", () => {
 
   it("keeps the instructions canvas clear and the composer neutral", () => {
     const studio = read("src/components/StudioWorkroom.tsx");
-    const emptyHeading = studio.match(
-      /<h2 className="text-2xl font-semibold text-foreground">[\s\S]*?<\/h2>/,
-    )?.[0];
-    const composerPlaceholder = studio.match(
-      /placeholder=\{\s*mode === "test" \? "Ask as a customer…" : "([^"]+)"/,
-    )?.[1];
+    const composerPlaceholder = studio.match(/placeholder="([^"]+)"/)?.[1];
 
-    expect(emptyHeading).toContain("Try a Customer Question");
     expect(studio).not.toContain("What Should We Change?");
-    expect(studio).toContain(') : mode === "test" ? (');
-    expect(emptyHeading).not.toMatch(/Describe What Should Change/i);
-    expect(emptyHeading).not.toMatch(/describe what should change/i);
+    expect(studio).toContain("What should {agentName} know?");
+    expect(studio).not.toContain("Ask as a customer…");
     expect(composerPlaceholder).toBe("Share knowledge or give instructions…");
     expect(studio).not.toContain("Describe a change…");
   });

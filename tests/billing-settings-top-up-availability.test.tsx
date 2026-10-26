@@ -79,7 +79,7 @@ async function mount() {
   render();
   h.effects[0]();
   await vi.waitFor(() =>
-    expect(render().some((element) => text(element).includes("Loading balance"))).toBe(false),
+    expect(render().some((element) => text(element).includes("$5.00"))).toBe(true),
   );
 }
 beforeEach(() => {

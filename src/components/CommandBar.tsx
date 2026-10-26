@@ -34,7 +34,7 @@ import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import { Button, EmptyState, Input } from "./atoms";
 import { ScrollArea } from "./ui/shadcn/ScrollArea";
-import { APP_KEYBOARD_SHORTCUTS } from "../constants/navigation";
+import { APP_KEYBOARD_SHORTCUTS, scopedWorkspaceHref } from "../constants/navigation";
 import { customerAgentLanguage } from "../lib/product-copy";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 
@@ -215,8 +215,7 @@ export function searchWorkspaceCommands(query: string): readonly CommandItem[] {
 
 /** Workspace destinations retain the Bot already selected by the owner. */
 export function workspaceCommandHref(href: string, agentId: string | null): string {
-  if (!agentId || !["/studio", "/knowledge", "/computer"].includes(href)) return href;
-  return `${href}?agent=${encodeURIComponent(agentId)}`;
+  return scopedWorkspaceHref(href, agentId);
 }
 
 export default function CommandBar() {

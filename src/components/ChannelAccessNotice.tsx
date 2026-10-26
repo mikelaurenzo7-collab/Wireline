@@ -2,11 +2,7 @@ import { Link } from "react-router";
 import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
 import type { useChannelEntitlements } from "../hooks/useChannelEntitlements";
-import {
-  channelSoldSelfServe,
-  planIncludesChannel,
-  type CommunicationChannel,
-} from "../lib/plan-catalog";
+import { planIncludesChannel, type CommunicationChannel } from "../lib/plan-catalog";
 
 export default function ChannelAccessNotice({
   access,
@@ -37,32 +33,20 @@ export default function ChannelAccessNotice({
         Your saved conversations are unchanged.
       </StatusNotice>
     );
-  // Match the tab names owners see: Calls, Email, and Text.
+  // Match the tab names owners see: Calls, Email, and SMS.
   const notIncludedTitle =
     channel === "voice"
       ? "Calls Aren't in Your Plan"
       : channel === "email"
         ? "Email Isn't in Your Plan"
-        : "Texting Isn't in Your Plan";
-  // No package sells texting yet, so a package or payment prompt would lead
-  // nowhere unless the owner's own plan includes it. Texts sent to a Bot's
-  // number are still saved, and this tab shows them.
-  if (
-    channel === "sms" &&
-    !channelSoldSelfServe("sms") &&
-    !planIncludesChannel(access.data?.plan_id, "sms")
-  ) {
-    return (
-      <StatusNotice tone="info" title="Texting Isn't Available Yet" className="my-3">
-        Texts sent to your Bot&apos;s number appear here. No plan can send texts yet.
-      </StatusNotice>
-    );
-  }
+        : "SMS Isn't in Your Plan";
   // A failed renewal suspends every channel. That is a payment to fix, not a
-  // package the owner never bought.
+  // plan the owner never bought. Usage plans include all three channels;
+  // legacy plans still retain their own channel selection.
+  const channelInPlan = planIncludesChannel(access.data?.plan_id, channel);
   if (
-    access.data?.plan_id &&
-    ["past_due", "unpaid", "incomplete"].includes(access.data.subscription_status)
+    channelInPlan &&
+    ["past_due", "unpaid", "incomplete"].includes(access.data?.subscription_status ?? "")
   ) {
     return (
       <StatusNotice
@@ -84,7 +68,7 @@ export default function ChannelAccessNotice({
       </StatusNotice>
     );
   }
-  const active = access.data?.channels.length !== 0;
+  const hasPlan = Boolean(access.data?.plan_id);
   return (
     <StatusNotice
       tone="info"
@@ -92,15 +76,15 @@ export default function ChannelAccessNotice({
       className="my-3"
       action={
         <Button asChild size="sm" variant="secondary">
-          <Link to={active ? "/settings/billing" : `/settings/billing?plan=${channel}`}>
-            {active ? "View Billing" : "Choose Channels"}
-          </Link>
+          <Link to="/settings/billing">{hasPlan ? "View Billing" : "Choose Plan"}</Link>
         </Button>
       }
     >
-      {active
-        ? "Your plan covers your selected channels. Saved conversations remain available."
-        : "Choose a package to connect this channel. Trying your Bot privately stays available."}
+      {channel === "sms"
+        ? "Plans with SMS are available. Sender approval and recipient permission still apply. Saved conversations remain available."
+        : hasPlan
+          ? "Your plan covers your selected channels. Saved conversations remain available."
+          : "Choose a plan to connect this channel. Voice rehearsal stays available."}
     </StatusNotice>
   );
 }
