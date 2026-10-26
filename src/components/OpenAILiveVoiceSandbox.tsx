@@ -500,7 +500,7 @@ export default function OpenAILiveVoiceSandbox({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-3">
           <div className="min-w-0">
-            {!compact ? <p className="wl-stitch-label">Voice rehearsal</p> : null}
+            {!compact ? <p className="wl-stitch-label">Voice Rehearsal</p> : null}
             <h3
               className={
                 compact
@@ -508,7 +508,7 @@ export default function OpenAILiveVoiceSandbox({
                   : "mt-1 font-display text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.02em] text-foreground"
               }
             >
-              Speak with <span className="wl-preserve-case">{agentName}</span>
+              Speak With <span className="wl-preserve-case">{agentName}</span>
             </h3>
           </div>
         </div>
@@ -525,7 +525,7 @@ export default function OpenAILiveVoiceSandbox({
           ) : (
             <Mic size={16} />
           )}
-          {active ? "End rehearsal" : "Start rehearsal"}
+          {active ? "End Rehearsal" : "Start Rehearsal"}
         </button>
       </div>
 
@@ -536,9 +536,9 @@ export default function OpenAILiveVoiceSandbox({
             aria-hidden="true"
           />
           <span className="wl-voice-bar__label" role="status" aria-live="polite">
-            <span>{mutedListening ? "Microphone muted" : activity.title}</span>
+            <span>{mutedListening ? "Microphone Muted" : activity.title}</span>
             {muted && !mutedListening ? (
-              <span className="wl-voice-bar__muted">Microphone muted</span>
+              <span className="wl-voice-bar__muted">Microphone Muted</span>
             ) : null}
           </span>
           {active ? (
@@ -570,7 +570,7 @@ export default function OpenAILiveVoiceSandbox({
         <div
           className="mt-4 min-h-[130px] space-y-3 rounded-lg border border-border bg-secondary p-4"
           aria-live="polite"
-          aria-label="Voice rehearsal transcript"
+          aria-label="Voice Rehearsal Transcript"
         >
           {lines.length ? (
             lines.map((line) => (
@@ -606,7 +606,7 @@ export default function OpenAILiveVoiceSandbox({
                 stop();
                 setError("");
               }}
-              aria-label="Reset live voice"
+              aria-label="Reset Live Voice"
               className="grid h-11 w-11 place-items-center rounded-md hover:bg-secondary"
             >
               <RotateCcw size={14} />

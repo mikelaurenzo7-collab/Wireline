@@ -49,7 +49,7 @@ const STOP_WORDS = new Set([
   "your",
 ]);
 
-const MAX_QUERY_WORDS = 12;
+const MAX_QUERY_WORDS = 32;
 /** Rows Postgres returns per table before the exact-phrase bonus reorders them. */
 const CANDIDATES_PER_TABLE = 40;
 const EXACT_PHRASE_BONUS = 8;

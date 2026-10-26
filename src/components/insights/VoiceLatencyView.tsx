@@ -187,10 +187,10 @@ export default function VoiceLatencyView({ days }: { days: number }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
-          { label: "Median action time", value: `${latency.p50_ms}ms` },
-          { label: "95th percentile action time", value: `${latency.p95_ms}ms` },
+          { label: "Median Action Time", value: `${latency.p50_ms}ms` },
+          { label: "95th Percentile Action Time", value: `${latency.p95_ms}ms` },
           {
-            label: "Average action time",
+            label: "Average Action Time",
             value: `${actionData?.totals?.avg_latency ?? 0}ms`,
           },
         ].map((tile) => (
@@ -200,7 +200,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
           >
             <p className="wl-insight-label mb-2">{tile.label}</p>
             <p className="metric-value font-display text-3xl text-foreground">{tile.value}</p>
-            {tile.label === "Average action time" && (
+            {tile.label === "Average Action Time" && (
               <p className="wl-insight-label mt-2 tabular-nums">{latency.sample_count} samples</p>
             )}
           </div>

@@ -11,6 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
+import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
 
 type Pillar = {
@@ -76,6 +77,8 @@ const CAPABILITIES: readonly { icon: LucideIcon; title: string; body: string }[]
 ];
 
 export default function Features() {
+  const signedIn = Boolean(useAuth().user);
+
   return (
     <MarketingPageFrame className="wl-features-page">
       <PageMeta
@@ -90,10 +93,10 @@ export default function Features() {
             <h1 className="marketing-hero-title mx-auto">BOTS FOR EVERY JOB.</h1>
             <div className="marketing-hero__actions">
               <Link
-                to="/signup"
+                to={signedIn ? "/studio" : "/signup"}
                 className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
               >
-                Get Started
+                {signedIn ? "Open Workspace" : "Get Started"}
               </Link>
               <Link
                 to="/pricing"

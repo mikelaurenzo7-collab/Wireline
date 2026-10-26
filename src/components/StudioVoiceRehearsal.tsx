@@ -52,9 +52,18 @@ export default function StudioVoiceRehearsal({
   const [playing, setPlaying] = useState(false);
   const audio = useRef<HTMLAudioElement | null>(null);
   const url = useRef<string | null>(null);
+  const previewRequest = useRef<AbortController | null>(null);
+  const previewGeneration = useRef(0);
 
   const stop = useCallback(() => {
-    audio.current?.pause();
+    previewGeneration.current += 1;
+    previewRequest.current?.abort();
+    previewRequest.current = null;
+    if (audio.current) {
+      audio.current.onended = null;
+      audio.current.onerror = null;
+      audio.current.pause();
+    }
     audio.current = null;
     if (url.current) URL.revokeObjectURL(url.current);
     url.current = null;
@@ -64,22 +73,35 @@ export default function StudioVoiceRehearsal({
 
   async function playClone() {
     if (!clone) return;
-    if (playing) return stop();
+    if (previewRequest.current) return stop();
+    const request = new AbortController();
+    const generation = ++previewGeneration.current;
+    previewRequest.current = request;
+    const isCurrent = () =>
+      previewGeneration.current === generation &&
+      previewRequest.current === request &&
+      !request.signal.aborted;
     setPlaying(true);
     try {
       const params = new URLSearchParams({ variant: "clone", agentName });
       const response = await authFetch(
         `/api/voice/live-voices/${encodeURIComponent(clone.id)}/preview?${params}`,
-        { timeoutMs: 30_000 },
+        { timeoutMs: 30_000, signal: request.signal },
       );
+      if (!isCurrent()) return;
       if (!response.ok) throw new Error("preview");
-      url.current = URL.createObjectURL(await response.blob());
+      const blob = await response.blob();
+      if (!isCurrent()) return;
+      url.current = URL.createObjectURL(blob);
       const element = new Audio(url.current);
       audio.current = element;
-      element.onended = stop;
+      element.onended = element.onerror = () => {
+        if (isCurrent()) stop();
+      };
       await element.play();
     } catch {
-      stop();
+      // A stopped preview may reject after another preview has already started.
+      if (isCurrent()) stop();
     }
   }
 
@@ -87,10 +109,10 @@ export default function StudioVoiceRehearsal({
     <div className="mx-auto w-full max-w-3xl space-y-3 px-3 py-4 sm:px-5">
       {clone ? (
         <div
-          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3"
+          className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3"
           data-testid="rehearsal-voice-label"
         >
-          <p className="min-w-0 flex-1 text-sm leading-5 text-foreground">
+          <p className="break-words text-sm leading-5 text-foreground [overflow-wrap:anywhere]">
             Rehearsal speaks in a stock voice.{" "}
             {clone.speaksOnCalls === false ? (
               <>
@@ -106,6 +128,7 @@ export default function StudioVoiceRehearsal({
             type="button"
             onClick={() => void playClone()}
             aria-pressed={playing}
+            aria-label={playing ? `Pause Preview: ${clone.name}` : `Hear Voice: ${clone.name}`}
             className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground hover:bg-muted wl-focus-ring-halo"
           >
             {playing ? (
@@ -113,7 +136,7 @@ export default function StudioVoiceRehearsal({
             ) : (
               <Play className="size-4" aria-hidden="true" />
             )}
-            Hear {clone.name}
+            {playing ? "Pause Preview" : "Hear Voice"}
           </button>
         </div>
       ) : null}
@@ -127,9 +150,9 @@ export default function StudioVoiceRehearsal({
       {dialable ? (
         <div className="space-y-2 rounded-xl border border-border bg-card px-4 py-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <p className="text-sm font-semibold text-foreground">Call your live Bot</p>
+            <p className="text-sm font-semibold text-foreground">Call Your Live Bot</p>
             <Badge variant="warning" className="max-w-full whitespace-normal">
-              Actions enabled
+              Actions Enabled
             </Badge>
           </div>
           <TestCallLink phone={dialable} label="Call" />

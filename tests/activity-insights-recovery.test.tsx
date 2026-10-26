@@ -392,7 +392,7 @@ describe("Activity latency recovery", () => {
       errors()[0].props.onRetry?.();
       await settle();
       expect(errors()).toHaveLength(0);
-      expect(text(tree)).toContain("Median action time10ms");
+      expect(text(tree)).toContain("Median Action Time10ms");
     },
   );
 
@@ -409,12 +409,12 @@ describe("Activity latency recovery", () => {
 
   it("does not relabel previous metrics as the newly selected window when loading fails", async () => {
     await settle();
-    expect(text(tree)).toContain("Median action time10ms");
+    expect(text(tree)).toContain("Median Action Time10ms");
     days = 30;
     h.insight.mockRejectedValue(new Error("Unavailable"));
     await settle();
     expect(errors()).toHaveLength(1);
-    expect(text(tree)).not.toContain("Median action time10ms");
+    expect(text(tree)).not.toContain("Median Action Time10ms");
     h.insight.mockImplementation(async (url: string) =>
       url.startsWith("/api/audit/")
         ? { ...actionData, latency: { sample_count: 2, p50_ms: 30, p95_ms: 40 } }
@@ -423,7 +423,7 @@ describe("Activity latency recovery", () => {
     errors()[0].props.onRetry?.();
     await settle();
     expect(errors()).toHaveLength(0);
-    expect(text(tree)).toContain("Median action time30ms");
+    expect(text(tree)).toContain("Median Action Time30ms");
     expect(h.insight.mock.calls.slice(-2).every(([url]) => url.endsWith("days=30"))).toBe(true);
   });
 });

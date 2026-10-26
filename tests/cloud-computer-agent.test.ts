@@ -107,6 +107,53 @@ function userImages(request: Record<string, unknown>): Item[] {
 const bot = { name: "Repair Desk", role: "front desk", facts: ["We serve Austin."], rules: [] };
 
 describe("OpenAI cloud computer agent loop", () => {
+  it.each([
+    {
+      label: "paragraphs and numbered findings",
+      summary:
+        "  Three Workflows\r\n\r\n1. Answer Calls.\r\n2. Follow Up by Email.\r\n3. Research in the Browser.\r\n\r\nSource: https://example.com/  ",
+      expected:
+        "Three Workflows\n\n1. Answer Calls.\n2. Follow Up by Email.\n3. Research in the Browser.\n\nSource: https://example.com/",
+    },
+    {
+      label: "the report limit without flattening the opening paragraphs",
+      summary: "Findings\n\n" + "Detailed result. ".repeat(500),
+      expected:
+        ("Findings\n\n" + "Detailed result. ".repeat(500)).slice(
+          0,
+          CLOUD_COMPUTER_LIMITS.reportChars - 1,
+        ) + "…",
+    },
+  ])("preserves $label in a completed task report", async ({ summary, expected }) => {
+    const { session } = fakeSession({}, "https://example.com/");
+    const openai = client([
+      response([
+        functionCall("finish", "finish_task", {
+          outcome: "completed",
+          summary,
+          sources: ["https://example.com/"],
+        }),
+      ]),
+    ]);
+    const { hooks: h } = hooks();
+    const outcome = await runCloudComputerAgent({
+      client: openai.client,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Summarize the page in three workflows.",
+      startUrl: "https://example.com/",
+      hooks: h,
+    });
+    expect(outcome).toEqual({
+      status: "completed",
+      summary: expected,
+      sources: ["https://example.com/"],
+    });
+    expect(outcome.summary.length).toBeLessThanOrEqual(CLOUD_COMPUTER_LIMITS.reportChars);
+    expect(openai.requests).toHaveLength(1);
+  });
+
   it("recognizes a public page opened by the owner from a blank paused task", async () => {
     const { session } = fakeSession({}, "about:blank");
     let controlRequested = true;

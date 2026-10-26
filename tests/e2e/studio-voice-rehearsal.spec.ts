@@ -143,30 +143,30 @@ for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 900 });
     const { stops, sessions } = await mockRehearsal(page);
     await page.goto("/studio?agent=bot-front-desk&workroom=test");
-    await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Typed", exact: true })).toHaveCount(0);
     await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
     expect((await microphoneCount(page)).microphones).toBe(0);
     expect(sessions).toEqual([]);
-    await expect(page.locator('[aria-label="Voice rehearsal transcript"]')).toHaveCount(0);
+    await expect(page.locator('[aria-label="Voice Rehearsal Transcript"]')).toHaveCount(0);
     await expect(page.getByText("Ready for a Voice Rehearsal", { exact: true })).toHaveCount(0);
-    await expect(page.getByText("Call your live Bot", { exact: true })).toBeVisible();
-    await expect(page.getByText("Actions enabled", { exact: true })).toBeVisible();
+    await expect(page.getByText("Call Your Live Bot", { exact: true })).toBeVisible();
+    await expect(page.getByText("Actions Enabled", { exact: true })).toBeVisible();
     // Desktop browsers get the number with a copy button instead of a tel: link.
     const testCall = page.getByTestId("test-call-desktop");
     await expect(testCall).toBeVisible();
     await expect(testCall.getByRole("button", { name: /^Copy / })).toBeVisible();
-    await page.getByRole("button", { name: "Start rehearsal", exact: true }).click();
+    await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
     await expect(page.getByText("Listening", { exact: true })).toBeVisible();
     expect(sessions).toEqual(["bot-front-desk"]);
-    await page.getByRole("button", { name: "End rehearsal", exact: true }).click();
+    await page.getByRole("button", { name: "End Rehearsal", exact: true }).click();
     await expect.poll(() => stops).toEqual(["token-1"]);
     expect(await microphoneCount(page)).toEqual({
       microphones: 1,
       tracksStopped: 1,
       peersClosed: 1,
     });
-    await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
     expect((await microphoneCount(page)).microphones).toBe(1);
     await expect
       .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
@@ -184,9 +184,9 @@ test("compact voice reveals real transcript lines and keeps them after ending re
 }) => {
   await mockRehearsal(page);
   await page.goto("/studio?agent=bot-front-desk&workroom=test");
-  const transcript = page.locator('[aria-label="Voice rehearsal transcript"]');
+  const transcript = page.locator('[aria-label="Voice Rehearsal Transcript"]');
   await expect(transcript).toHaveCount(0);
-  await page.getByRole("button", { name: "Start rehearsal", exact: true }).click();
+  await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
   await expect(page.getByText("Listening", { exact: true })).toBeVisible();
   await expect(transcript).toHaveCount(0);
   await page.evaluate(() => {
@@ -206,8 +206,8 @@ test("compact voice reveals real transcript lines and keeps them after ending re
   });
   await expect(transcript.getByText("What time do you open?", { exact: true })).toBeVisible();
   await expect(transcript.getByText("We open at nine.", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "End rehearsal", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "End Rehearsal", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
   await expect(transcript.getByText("What time do you open?", { exact: true })).toBeVisible();
   await expect(transcript.getByText("We open at nine.", { exact: true })).toBeVisible();
 });
@@ -251,7 +251,7 @@ test("idle voice rehearsal fits 320px with enlarged text without starting a micr
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
     .toBe(true);
-  const start = page.getByRole("button", { name: "Start rehearsal", exact: true });
+  const start = page.getByRole("button", { name: "Start Rehearsal", exact: true });
   await start.scrollIntoViewIfNeeded();
   await page.screenshot({
     path: testInfo.outputPath("studio-voice-320px-start.png"),
@@ -287,7 +287,7 @@ test("leaving while a voice session is accepted closes its late provider session
     await route.fulfill({ json: { sdp: "v=0\r\n", cleanupToken: "late-accepted-call" } });
   });
   await page.goto("/studio?agent=bot-front-desk&workroom=test");
-  await page.getByRole("button", { name: "Start rehearsal", exact: true }).click();
+  await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
   await accepted;
   await page.getByRole("button", { name: "Close panel", exact: true }).click();
   releaseAnswer();
@@ -297,7 +297,7 @@ test("leaving while a voice session is accepted closes its late provider session
   await expect(
     page.getByRole("textbox", { name: "Message Front Desk", exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: "End rehearsal", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "End Rehearsal", exact: true })).toHaveCount(0);
 });
 
 test("switching Bots closes the previous rehearsal without starting the next Bot", async ({
@@ -305,13 +305,13 @@ test("switching Bots closes the previous rehearsal without starting the next Bot
 }) => {
   const { stops, sessions } = await mockRehearsal(page);
   await page.goto("/studio?agent=bot-front-desk&workroom=test");
-  await page.getByRole("button", { name: "Start rehearsal", exact: true }).click();
+  await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
   await expect(page.getByText("Listening", { exact: true })).toBeVisible();
   await page.getByRole("combobox", { name: "Switch Bot" }).selectOption("bot-sales");
-  await expect(page.getByText("Speak with Sales Bot", { exact: true })).toBeVisible();
+  await expect(page.getByText("Speak With Sales Bot", { exact: true })).toBeVisible();
   await expect.poll(() => stops).toEqual(["token-1"]);
   expect(sessions).toEqual(["bot-front-desk"]);
-  await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: /Call connected line/ })).toHaveCount(0);
 });
 
@@ -322,7 +322,7 @@ test("legacy customer commands stay in voice rehearsal without editing the Bot o
   await page.goto(
     "/studio?agent=bot-front-desk&workroom=test&command=Can%20I%20book%20tomorrow%3F&commandNonce=one",
   );
-  await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Typed", exact: true })).toHaveCount(0);
   await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
   expect((await microphoneCount(page)).microphones).toBe(0);
@@ -341,7 +341,7 @@ test("opening mobile settings stops the hidden microphone rehearsal", async ({ p
   await page.setViewportSize({ width: 390, height: 844 });
   const { stops, sessions } = await mockRehearsal(page);
   await page.goto("/studio?agent=bot-front-desk&workroom=test");
-  await page.getByRole("button", { name: "Start rehearsal", exact: true }).click();
+  await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
   await expect(page.getByText("Listening", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Set Up Bot", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Opening Greeting", exact: true })).toBeVisible();
@@ -365,7 +365,7 @@ for (const [label, token] of [
       route.fulfill({ json: { sdp: "v=0\r\n", cleanupToken: token } }),
     );
     await page.goto("/studio?agent=bot-front-desk&workroom=test");
-    await page.getByRole("button", { name: "Start rehearsal", exact: true }).click();
+    await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
     await expect(
       page.getByText("Voice rehearsal could not be controlled safely. Try again.", { exact: true }),
     ).toBeVisible();
@@ -380,7 +380,7 @@ for (const [label, token] of [
       peersClosed: 1,
     });
     expect(stops).toEqual([]);
-    await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
   });
 }
 
@@ -390,7 +390,7 @@ for (const failure of ["peer-constructor", "data-channel"] as const) {
   }) => {
     const { stops, sessions } = await mockRehearsal(page, failure);
     await page.goto("/studio?agent=bot-front-desk&workroom=test");
-    await page.getByRole("button", { name: "Start rehearsal", exact: true }).click();
+    await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
     await expect(
       page.getByText(
         failure === "peer-constructor"
@@ -406,6 +406,6 @@ for (const failure of ["peer-constructor", "data-channel"] as const) {
     });
     expect(sessions).toEqual([]);
     expect(stops).toEqual([]);
-    await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
   });
 }

@@ -28,7 +28,10 @@ export function insightActionLabel(action: string): string {
     .replace(/(?:agent-)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, "")
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .split(/[./_\s-]+/)
-    .filter((word) => word && word.toLowerCase() !== "api");
+    .filter((word) => word && word.toLowerCase() !== "api")
+    .filter(
+      (word, index, parts) => index === 0 || word.toLowerCase() !== parts[index - 1].toLowerCase(),
+    );
   return (
     words.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ") || "Other Activity"
   );

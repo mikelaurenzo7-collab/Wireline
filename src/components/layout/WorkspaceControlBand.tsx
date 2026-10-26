@@ -26,6 +26,7 @@ export default function WorkspaceControlBand({
 }: WorkspaceControlBandProps) {
   return (
     <div
+      role="group"
       data-wireline-control-band
       data-embedded={embedded ? "true" : undefined}
       aria-label={ariaLabel}

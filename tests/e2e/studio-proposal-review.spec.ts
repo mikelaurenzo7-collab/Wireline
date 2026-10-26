@@ -369,7 +369,7 @@ test("Configure drafts survive navigation and voice rehearsal without a second c
   const panel = page.getByRole("complementary", { name: "Workspace panel" });
   await buildInput.fill("Keep this unsent Build instruction.");
   await page.getByRole("tab", { name: "Rehearse", exact: true }).click();
-  await expect(panel.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
   await expect(panel.getByRole("textbox")).toHaveCount(0);
   await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
   await expect(panel.getByText(opening.value, { exact: true })).toHaveCount(0);
@@ -391,7 +391,7 @@ test("Configure drafts survive navigation and voice rehearsal without a second c
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
     .toBe(true);
   await page.getByRole("button", { name: "Rehearse", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
   await page.screenshot({
     path: testInfo.outputPath("studio-try-it-mobile.png"),
@@ -420,7 +420,7 @@ for (const section of ["Set Up", "Summary"] as const) {
         exact: true,
       })
       .click();
-    await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeFocused();
+    await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeFocused();
     await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
     await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
     await expect(input).toHaveValue("Keep my configuration draft.");
@@ -447,7 +447,7 @@ test("setup focuses voice without seeding a customer message or replacing the Se
     name: "Customer message for Front Desk",
     exact: true,
   });
-  await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeFocused();
   await expect(testInput).toHaveCount(0);
   await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
   await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
@@ -459,7 +459,7 @@ test("Set Up proposals survive rehearsal and Bot switches without appearing on a
   const writes = await mockWorkspace(page);
   const review = await requestProposal(page);
   await page.getByRole("button", { name: "Rehearse", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
   await expect(review).toHaveCount(0);
   await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
@@ -537,7 +537,7 @@ test("voice rehearsal has no typed endpoint or configuration submission", async 
     return route.fulfill({ status: 500 });
   });
   await page.goto(`/studio?agent=${bots[0].id}&workroom=test`);
-  await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Send", exact: true })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Review Opening greeting" })).toHaveCount(0);

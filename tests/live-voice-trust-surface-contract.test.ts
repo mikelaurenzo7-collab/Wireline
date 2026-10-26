@@ -22,7 +22,7 @@ describe("live voice trust surface", () => {
     expect(openai).toContain("Live Voice Needs Attention");
     expect(openai).toContain('role="status"');
     expect(openai).toContain('className="wl-voice-bar__label"');
-    expect(openai).toContain("Microphone muted");
+    expect(openai).toContain("Microphone Muted");
     expect(openai).not.toContain("<ConversationActivity");
     expect(openai).not.toContain("wl-voice-bar__meter");
   });
@@ -41,9 +41,9 @@ describe("live voice trust surface", () => {
 
     expect(openai).toContain("cannot perform external actions");
     expect(openai).toContain("Live Voice Interrupted");
-    expect(openai).toContain("Reset live voice");
+    expect(openai).toContain("Reset Live Voice");
     expect(openai).toContain("<StatusNotice");
-    expect(openai).toContain('aria-label="Reset live voice"');
+    expect(openai).toContain('aria-label="Reset Live Voice"');
   });
 
   it("uses OpenAI Realtime as the Studio transport with approved tool contracts", () => {

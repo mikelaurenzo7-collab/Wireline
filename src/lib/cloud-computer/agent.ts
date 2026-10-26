@@ -166,6 +166,12 @@ function clip(value: string, max: number): string {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 }
 
+/** Final reports keep their paragraphs and lists within the same character limit. */
+function clipReport(value: string, max: number): string {
+  const text = value.replace(/\r\n?/g, "\n").trim();
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+}
+
 export function buildSystemPrompt(bot: BotContext): string {
   const facts = bot.facts.slice(0, 20).map((fact) => `- ${clip(fact, 300)}`);
   const rules = bot.rules.slice(0, 20).map((rule) => `- ${clip(rule, 300)}`);
@@ -1324,7 +1330,7 @@ export async function runCloudComputerAgent(input: {
         const proposedSources = cleanSources(finishCall.args.sources);
         const sources = proposedSources.filter((source) => verifiedSources.has(source));
         const report = sanitizeSummaryLinks(
-          clip(String(finishCall.args.summary ?? ""), CLOUD_COMPUTER_LIMITS.reportChars) ||
+          clipReport(String(finishCall.args.summary ?? ""), CLOUD_COMPUTER_LIMITS.reportChars) ||
             "Task finished.",
           verifiedSources,
         );

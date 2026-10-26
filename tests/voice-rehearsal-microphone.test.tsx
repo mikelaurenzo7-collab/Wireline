@@ -116,27 +116,27 @@ it("keeps pending microphone mute, Bot activity and error recovery aligned with 
     },
   );
 
-  click("Start rehearsal");
+  click("Start Rehearsal");
   click("Mute");
   expect(statusText()).toContain("Connecting Live Voice");
-  expect(statusText()).toContain("Microphone muted");
+  expect(statusText()).toContain("Microphone Muted");
   resolveMicrophone(stream);
   await vi.waitFor(() => expect(addTrack).toHaveBeenCalledWith(false));
   expect(track.enabled).toBe(false);
 
   events.onopen!();
-  expect(statusText()).toBe("Microphone muted");
+  expect(statusText()).toBe("Microphone Muted");
   events.onmessage!({
     data: JSON.stringify({ type: "response.output_audio_transcript.delta", delta: "Hello." }),
   });
-  expect(statusText()).toBe("Microphone muted");
+  expect(statusText()).toBe("Microphone Muted");
   events.onmessage!({ data: JSON.stringify({ type: "output_audio_buffer.started" }) });
   expect(statusText()).toContain("Bot Speaking");
-  expect(statusText()).toContain("Microphone muted");
+  expect(statusText()).toContain("Microphone Muted");
   events.onmessage!({ data: JSON.stringify({ type: "response.done" }) });
   expect(statusText()).toContain("Bot Speaking");
   events.onmessage!({ data: JSON.stringify({ type: "output_audio_buffer.stopped" }) });
-  expect(statusText()).toBe("Microphone muted");
+  expect(statusText()).toBe("Microphone Muted");
   events.onmessage!({
     data: JSON.stringify({
       type: "response.function_call_arguments.done",
@@ -146,18 +146,18 @@ it("keeps pending microphone mute, Bot activity and error recovery aligned with 
     }),
   });
   expect(statusText()).toContain("Checking Approved Knowledge");
-  expect(statusText()).toContain("Microphone muted");
+  expect(statusText()).toContain("Microphone Muted");
   events.onmessage!({ data: JSON.stringify({ type: "response.done" }) });
   expect(statusText()).toContain("Checking Approved Knowledge");
 
   click("Unmute");
   expect(track.enabled).toBe(true);
-  expect(statusText()).not.toContain("Microphone muted");
+  expect(statusText()).not.toContain("Microphone Muted");
   events.onerror!();
   expect(statusText()).toBe("Live Voice Needs Attention");
   expect(track.stop).toHaveBeenCalledOnce();
   expect(close).toHaveBeenCalledOnce();
-  click("Reset live voice");
+  click("Reset Live Voice");
   expect(statusText()).toBe("Ready for a Voice Rehearsal");
   expect(track.stop).toHaveBeenCalledOnce();
   resolveOffer({ sdp: "v=0" });

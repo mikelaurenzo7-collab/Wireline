@@ -21,7 +21,7 @@ export function canDialFromThisDevice(): boolean {
 
 export default function TestCallLink({
   phone,
-  label = "Test call",
+  label = "Test Call",
 }: {
   phone: string;
   label?: string;
@@ -44,7 +44,7 @@ export default function TestCallLink({
         className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold text-foreground hover:bg-muted wl-focus-ring-halo sm:w-auto"
       >
         <Phone className="size-4" aria-hidden="true" />
-        {label}: dial {display}
+        {label} {display}
       </a>
     );
 
@@ -55,7 +55,8 @@ export default function TestCallLink({
     >
       <Smartphone className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       <span className="min-w-0 flex-1 text-sm text-foreground">
-        {label}: call <strong className="tabular-nums">{display}</strong> from your phone
+        {label}: <strong className="tabular-nums">{display}</strong>
+        <span className="block text-xs text-muted-foreground">From Your Phone</span>
       </span>
       <button
         type="button"
@@ -73,7 +74,7 @@ export default function TestCallLink({
         ) : (
           <Copy className="size-4" aria-hidden="true" />
         )}
-        {copied ? "Copied" : "Copy number"}
+        {copied ? "Copied" : "Copy Number"}
       </button>
     </div>
   );

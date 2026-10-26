@@ -178,7 +178,9 @@ describe("E2E design and BotBound brand polish", () => {
     expect(features).toContain("marketing-hero-title");
     expect(features).not.toContain("MarketingHero");
     // Controls use authored Title Case like every other public CTA.
-    expect(features).toContain(">\n                Get Started\n");
+    expect(features).toContain("const signedIn = Boolean(useAuth().user)");
+    expect(features).toContain('to={signedIn ? "/studio" : "/signup"}');
+    expect(features).toContain('{signedIn ? "Open Workspace" : "Get Started"}');
     expect(features).toContain(">\n                See Pricing\n");
     expect(features).not.toMatch(/START FREE|SEE PRICING/);
     const publicSystem = read("src/styles/public-design-system.css");

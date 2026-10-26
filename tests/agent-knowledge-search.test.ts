@@ -69,8 +69,8 @@ describe("knowledge search words", () => {
     expect(knowledgeSearchWords("the the THE price price")).toEqual(["price"]);
     expect(knowledgeSearchWords("is it ok?")).toEqual([]);
     expect(
-      knowledgeSearchWords(Array.from({ length: 30 }, (_, i) => `word${i}`).join(" ")),
-    ).toHaveLength(12);
+      knowledgeSearchWords(Array.from({ length: 60 }, (_, i) => `word${i}`).join(" ")),
+    ).toHaveLength(32);
   });
 
   it("scores word hits and rewards the whole question", () => {
@@ -133,6 +133,26 @@ describe("searching everything a Bot was taught", () => {
         total: 3,
       }),
     ).toEqual(["Gift cards never expire.", "We open at 9.", "Parking is free."]);
+  });
+
+  it("finds the business topic after a longer question's instruction preface", async () => {
+    const prefixOnlyFact = "Answer using saved company facts without changing settings.";
+    const topicFact =
+      "BotBound helps service businesses with incoming inquiries, outbound sales follow-up, and SMS. Prospect research and sender setup support permission-based outreach; sensitive actions require approval.";
+    const { db } = fakeDb({
+      rules: [],
+      facts: [prefixOnlyFact, topicFact],
+      newest: [prefixOnlyFact],
+    });
+
+    expect(
+      await loadPromptKnowledge(db, {
+        ...scope,
+        text: "Answer only from your saved company facts, without changing settings or contacting anyone: I run a small service business. How could BotBound help with incoming inquiries, outbound sales follow-up, and SMS? What would still need my approval or setup? Please be brief, identify yourself accurately, and do not promise a booking or callback has happened.",
+        relevant: 1,
+        total: 1,
+      }),
+    ).toEqual([topicFact]);
   });
 });
 

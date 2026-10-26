@@ -318,7 +318,7 @@ test("switching from Build to Test isolates an unfinished configuration response
       page.getByRole("button", { name: "Clear conversation", exact: true }),
     ).toBeDisabled();
     await page.getByRole("button", { name: "Rehearse", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeEnabled();
     await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
     await expect(page.getByText("Use a warm, concise greeting.", { exact: true })).toHaveCount(0);
   } finally {
@@ -338,11 +338,11 @@ test("Studio preserves each Bot's configuration draft through voice rehearsal", 
     .getByRole("textbox", { name: "Message Front Desk", exact: true })
     .fill("Front desk setup draft");
   await page.getByRole("button", { name: "Rehearse", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
 
   await page.getByRole("combobox", { name: "Switch Bot" }).selectOption("bot-sales");
-  await expect(page.getByText("Speak with Sales Bot", { exact: true })).toBeVisible();
+  await expect(page.getByText("Speak With Sales Bot", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
   const salesBuild = page.getByRole("textbox", { name: "Message Sales Bot", exact: true });
   await expect(salesBuild).toHaveValue("");
@@ -353,9 +353,9 @@ test("Studio preserves each Bot's configuration draft through voice rehearsal", 
     "Front desk setup draft",
   );
   await page.getByRole("button", { name: "Rehearse", exact: true }).click();
-  await expect(page.getByText("Speak with Front Desk", { exact: true })).toBeVisible();
+  await expect(page.getByText("Speak With Front Desk", { exact: true })).toBeVisible();
   await page.getByRole("combobox", { name: "Switch Bot" }).selectOption("bot-sales");
-  await expect(page.getByText("Speak with Sales Bot", { exact: true })).toBeVisible();
+  await expect(page.getByText("Speak With Sales Bot", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
   await expect(salesBuild).toHaveValue("Sales setup draft");
 });
@@ -369,7 +369,7 @@ test("a legacy rehearsal command never becomes a configuration instruction after
   await page.goto(
     "/studio?agent=bot-front-desk&workroom=test&command=Original%20question&commandNonce=first",
   );
-  await expect(page.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
   const configure = page.getByRole("textbox", { name: "Message Front Desk", exact: true });

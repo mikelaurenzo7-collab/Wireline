@@ -232,6 +232,122 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
     },
   );
 
+  it("keeps identical SMS operation keys independent across accounts and Stripe reports", async () => {
+    await pool.query(
+      `INSERT INTO wireline_subscriptions VALUES ($1, 'cus_other', 'sub_other', 'usage', 'active', $2)`,
+      [OTHER, END],
+    );
+    await setUsageAddonQuantities(
+      OTHER,
+      { numbers: 0, emailAddresses: 0 },
+      {
+        stripeCustomerId: "cus_other",
+        stripeSubscriptionId: "sub_other",
+        startsAt: START,
+        endsAt: END,
+      },
+    );
+    const sourceId = "twilio_message:sms:shared-client-key:attempt:1";
+    await Promise.all([reserveSmsUsage(USER, sourceId, 2), reserveSmsUsage(OTHER, sourceId, 3)]);
+    await Promise.all([reserveSmsUsage(USER, sourceId, 2), reserveSmsUsage(OTHER, sourceId, 3)]);
+    const admitted = await pool.query(
+      "SELECT user_id, idempotency_key, quantity FROM wireline_usage_meter_events ORDER BY user_id",
+    );
+    expect(admitted.rows.map((row) => [row.user_id, row.quantity])).toEqual([
+      [USER, "2.0000"],
+      [OTHER, "3.0000"],
+    ]);
+    expect(new Set(admitted.rows.map((row) => row.idempotency_key)).size).toBe(2);
+    await Promise.all([settleSmsUsage(USER, sourceId, 1), settleSmsUsage(OTHER, sourceId, 2)]);
+    const send = vi.fn().mockResolvedValue(undefined);
+    for (const userId of [USER, OTHER]) {
+      await reportPendingUsageForUser(createUsageStore(), { send }, userId, new Date());
+      await reportPendingUsageForUser(createUsageStore(), { send }, userId, new Date());
+    }
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(send.mock.calls.map(([event]) => [event.stripeCustomerId, event.value])).toEqual([
+      ["cus_review", 4],
+      ["cus_other", 8],
+    ]);
+    expect(new Set(send.mock.calls.map(([event]) => event.identifier)).size).toBe(2);
+  });
+
+  it("reuses a legacy SMS receipt and its frozen Stripe request instead of creating a new charge", async () => {
+    const sourceId = "legacy-sms";
+    const key = `usage:sms_segments:sms_send:${sourceId}`;
+    await pool.query(
+      `INSERT INTO wireline_usage_meter_events
+        (user_id, period_key, meter, source_type, source_id, idempotency_key, quantity, status, occurred_at)
+        VALUES ($1, $2, 'sms_segments', 'sms_send', $3, $4, 3, 'admitted', $5)`,
+      [USER, PERIOD, sourceId, key, NOW],
+    );
+    expect(await reserveSmsUsage(USER, sourceId, 3)).toEqual({ periodKey: PERIOD });
+    await settleSmsUsage(USER, sourceId, 2);
+    const send = vi.fn().mockRejectedValueOnce(new Error("Stripe response lost"));
+    await reportPendingUsageForUser(createUsageStore(), { send }, USER, NOW);
+    await settleSmsUsage(USER, sourceId, 2);
+    send.mockResolvedValue(undefined);
+    await reportPendingUsageForUser(createUsageStore(), { send }, USER, new Date());
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(send.mock.calls[1][0]).toEqual(send.mock.calls[0][0]);
+    expect(send.mock.calls[0][0]).toMatchObject({ identifier: key, value: 8 });
+    await settleSmsUsage(USER, sourceId, 2);
+    await expect(reserveSmsUsage(USER, sourceId, 3)).rejects.toMatchObject({
+      code: "SMS_FUNDING_SETTLED",
+    });
+    const rows = await pool.query(
+      "SELECT period_key, idempotency_key, status, quantity FROM wireline_usage_meter_events",
+    );
+    expect(rows.rows).toEqual([
+      { period_key: PERIOD, idempotency_key: key, status: "reported", quantity: "2.0000" },
+    ]);
+  });
+
+  it("recognizes legacy SMS no-send proof after cancellation without using another account's receipt", async () => {
+    const sourceId = "legacy-no-send";
+    const key = `usage:sms_segments:sms_send:${sourceId}`;
+    await pool.query(
+      `INSERT INTO wireline_usage_meter_events
+        (user_id, period_key, meter, source_type, source_id, idempotency_key, quantity, status)
+        VALUES ($1, $2, 'sms_segments', 'sms_send', $3, $4, 1, 'admitted')`,
+      [USER, PERIOD, sourceId, key],
+    );
+    await pool.query("UPDATE wireline_subscriptions SET status = 'canceled'");
+    vi.stubEnv("USAGE_BILLING_ENABLED", "false");
+    expect(await reserveSmsUsage(USER, sourceId, 1)).toEqual({ periodKey: PERIOD });
+    expect(await settleSmsUsage(OTHER, sourceId, 0)).toBe(false);
+    expect(await settleSmsUsage(USER, sourceId, 0)).toBe(true);
+    expect(await hasReleasedSmsUsage(USER, sourceId)).toBe(true);
+    expect(await hasReleasedSmsUsage(OTHER, sourceId)).toBe(false);
+    const rows = await pool.query(
+      "SELECT period_key, idempotency_key, status, quantity FROM wireline_usage_meter_events",
+    );
+    expect(rows.rows).toEqual([
+      { period_key: PERIOD, idempotency_key: key, status: "skipped", quantity: "0.0000" },
+    ]);
+  });
+
+  it("fails closed if a mixed-version SMS attempt has both scoped and legacy receipts", async () => {
+    const sourceId = "mixed-version-sms";
+    await reserveSmsUsage(USER, sourceId, 1);
+    await pool.query(
+      `INSERT INTO wireline_usage_meter_events
+        (user_id, period_key, meter, source_type, source_id, idempotency_key, quantity, status)
+        VALUES ($1, $2, 'sms_segments', 'sms_send', $3, $4, 1, 'admitted')`,
+      [USER, PERIOD, sourceId, `usage:sms_segments:sms_send:${sourceId}`],
+    );
+    for (const attempt of [
+      () => reserveSmsUsage(USER, sourceId, 1),
+      () => settleSmsUsage(USER, sourceId, 0),
+      () => hasReleasedSmsUsage(USER, sourceId),
+    ])
+      await expect(attempt()).rejects.toThrow(
+        "Multiple SMS billing receipts require reconciliation",
+      );
+    const rows = await pool.query("SELECT status FROM wireline_usage_meter_events");
+    expect(rows.rows.map((row) => row.status)).toEqual(["admitted", "admitted"]);
+  });
+
   it("serializes SMS admission against the shared allowance and releases only proven failures", async () => {
     await setUsageMonthlyCap(USER, 27);
     await record("calls-before-sms", 67.84);

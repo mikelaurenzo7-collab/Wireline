@@ -235,14 +235,14 @@ for (const width of [700, 1206]) {
     if (width < 1180) {
       await room.getByRole("button", { name: "Rehearse", exact: true }).click();
       await expect(
-        page.getByRole("button", { name: "Start rehearsal", exact: true }),
+        page.getByRole("button", { name: "Start Rehearsal", exact: true }),
       ).toBeVisible();
       await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
       await expect(input).toBeFocused();
     } else {
       await panelTab(page, "Rehearse").click();
       await expect(
-        page.getByRole("button", { name: "Start rehearsal", exact: true }),
+        page.getByRole("button", { name: "Start Rehearsal", exact: true }),
       ).toBeVisible();
       await panelTab(page, "Browser").click();
     }
@@ -834,7 +834,7 @@ test.describe("wide screens", () => {
     await expect(
       panel.getByRole("textbox", { name: "Customer message for Front Desk", exact: true }),
     ).toHaveCount(0);
-    await expect(panel.getByRole("button", { name: "Start rehearsal", exact: true })).toBeVisible();
+    await expect(panel.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
     await expect(conversation(page)).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("workspace-try-it.png") });
 
