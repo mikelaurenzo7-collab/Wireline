@@ -36,7 +36,7 @@ describe("customer-selectable Bot identity marks", () => {
         "agent-123",
         BOT_MARK_CHOICES.map((choice) => choice.key),
       ),
-    ).toBe(null);
+    ).toBe(defaultBotMarkKey("agent-123"));
   });
 
   it("allocates the full catalog without duplicates and uses every motif first", () => {
@@ -54,7 +54,9 @@ describe("customer-selectable Bot identity marks", () => {
 
     expect(allocated.size).toBe(BOT_MARK_IDENTITY_CAPACITY);
     expect(firstMotifs.size).toBe(BOT_MARK_MOTIFS.length);
-    expect(firstAvailableBotMarkKey("agent-over-capacity", allocated)).toBeNull();
+    expect(firstAvailableBotMarkKey("agent-over-capacity", allocated)).toBe(
+      defaultBotMarkKey("agent-over-capacity"),
+    );
   });
 
   it("lets customers choose at creation and change the mark in Studio", () => {
@@ -126,7 +128,6 @@ describe("customer-selectable Bot identity marks", () => {
     expect(routes).toContain('"/api/agents/:id/mark"');
     expect(routes).toContain("isBotMarkKey(markKey)");
     expect(routes).toContain("BOT_MARK_CONFLICT");
-    expect(routes).toContain("defaultBotMarkKey(agent.id)) === markKey");
     expect(routes).toContain('databaseError.code === "23505"');
     expect(routes).toContain('databaseError.constraint === "uq_wireline_agents_user_mark_key"');
     expect(routes).toContain('databaseError.code === "23514"');
@@ -159,8 +160,9 @@ describe("customer-selectable Bot identity marks", () => {
       expect(source).toContain("markKey");
     }
     expect(web).toContain("BOT_MARK_CONFLICT");
-    expect(mobile).toContain('kind: "mark_capacity"');
-    expect(draft).toContain('"BOT_MARK_CAPACITY_REACHED"');
+    expect(mobile).not.toContain('kind: "mark_capacity"');
+    expect(draft).not.toContain("BOT_MARK_CAPACITY_REACHED");
+    expect(founder).not.toContain("catalog exhausted");
     expect(founder).toContain("pg_advisory_xact_lock");
     expect(founder).toContain("hashtext(${template.id})");
     expect(founder).toContain("namespacedCollision.userId !== userId");
@@ -195,14 +197,12 @@ describe("customer-selectable Bot identity marks", () => {
     expect(leaderboard).toContain("markKey={a.mark_key}");
     expect(leaderboard).toContain("seed={a.agent_id}");
 
-    expect(mcp).toContain('import { BOT_MARK_IDENTITY_CAPACITY } from "../lib/bot-mark"');
-    expect(mcp).toContain("maxItems: BOT_MARK_IDENTITY_CAPACITY");
     expect(mcp).toContain('mark_key: { type: ["string", "null"] }');
     expect(mcp).toContain('required: ["id", "name", "mark_key", "role", "channel"]');
     expect(mcp).toContain("markKey: schema.agents.markKey");
     expect(mcp).toContain("mark_key: agent.markKey");
     expect(mcp).toContain(".orderBy(asc(schema.agents.createdAt), asc(schema.agents.id))");
-    expect(mcp).toContain(".limit(BOT_MARK_IDENTITY_CAPACITY)");
+    expect(mcp).not.toContain(".limit(BOT_MARK_IDENTITY_CAPACITY)");
     expect(mcp).not.toContain(".limit(20)");
   });
 });

@@ -602,12 +602,9 @@ async function upsertAgent(
       );
     }
     const markKey =
-      (isBotMarkKey(existing?.markKey) && !unavailable.has(existing.markKey)
+      isBotMarkKey(existing?.markKey) && !unavailable.has(existing.markKey)
         ? existing.markKey
-        : firstAvailableBotMarkKey(agentId, unavailable)) ?? null;
-    if (!markKey) {
-      throw new Error(`Bot identity catalog exhausted for founder workspace ${userId}.`);
-    }
+        : firstAvailableBotMarkKey(agentId, unavailable);
 
     if (existing) {
       // A completed contract owns its saved Training. Exact-content matching

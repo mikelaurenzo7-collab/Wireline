@@ -1,7 +1,3 @@
-import { isUsagePlanId, planById } from "./plan-catalog";
-import { BOT_MARK_IDENTITY_CAPACITY } from "./bot-mark";
-import { clampAgentCapacity, clampExtraAgentAddons } from "./agent-capacity";
-
 export interface AgentEntitlementInput {
   isOwner: boolean;
   subscriptionStatus?: string | null;
@@ -18,70 +14,24 @@ export interface AgentEntitlement {
   unlimited: boolean;
 }
 
-const PAID_CAPACITY_STATUSES = new Set(["active", "trialing"]);
-
 function normalizedSubscriptionStatus(status: string | null | undefined): string {
   return status?.trim().toLowerCase() || "pending_activation";
 }
 
+/**
+ * Every plan includes unlimited Bots. A stored maxAgents value, an extra-Bot
+ * add-on, or an inactive subscription does not turn creation into a 402.
+ * Running out of Bot identities is a separate conflict, not a plan charge.
+ */
 export function resolveAgentEntitlement(input: AgentEntitlementInput): AgentEntitlement {
-  if (input.isOwner) {
-    return {
-      subscriptionStatus: "active",
-      planAgents: BOT_MARK_IDENTITY_CAPACITY,
-      purchasedExtras: 0,
-      effectiveCap: BOT_MARK_IDENTITY_CAPACITY,
-      unlimited: false,
-    };
-  }
-
-  const subscriptionStatus = normalizedSubscriptionStatus(input.subscriptionStatus);
-  const freeDraftCap = planById("personal")?.max_agents ?? 1;
-
-  // Create and Train remain available without a paid subscription, but only at
-  // the Free Builder cap. Legacy settings.maxAgents defaults and stale paid-plan
-  // mirrors must not survive cancellation, failed payment, or activation loss.
-  if (!PAID_CAPACITY_STATUSES.has(subscriptionStatus)) {
-    return {
-      subscriptionStatus,
-      planAgents: freeDraftCap,
-      purchasedExtras: 0,
-      effectiveCap: freeDraftCap,
-      unlimited: false,
-    };
-  }
-
-  // Usage billing: Bots are never sold, so the workspace has no plan cap. The
-  // only ceiling is the identity namespace, which is far above any real team.
-  if (isUsagePlanId(input.planId)) {
-    return {
-      subscriptionStatus,
-      planAgents: BOT_MARK_IDENTITY_CAPACITY,
-      purchasedExtras: 0,
-      effectiveCap: BOT_MARK_IDENTITY_CAPACITY,
-      unlimited: true,
-    };
-  }
-
-  // Active/trialing workspaces receive their catalog allowance, purchased
-  // extras, and any deliberate platform grant stored above that catalog total.
-  const plan = planById(input.planId) || planById("personal");
-  const planAgents = plan?.max_agents ?? freeDraftCap;
-  const purchasedExtras = clampExtraAgentAddons(input.extraAgents);
-  const catalogCap = planAgents + purchasedExtras;
-  const storedCap =
-    typeof input.maxAgents === "number" && Number.isFinite(input.maxAgents)
-      ? clampAgentCapacity(input.maxAgents)
-      : 0;
   return {
-    subscriptionStatus,
-    planAgents,
-    purchasedExtras,
-    // A workspace cannot promise more Bots than the non-repeating identity
-    // namespace can represent. Published paid capacity tops out at 115 today;
-    // this clamp also keeps owner and deliberate platform grants truthful.
-    effectiveCap: clampAgentCapacity(Math.max(catalogCap, storedCap)),
-    unlimited: false,
+    subscriptionStatus: input.isOwner
+      ? "active"
+      : normalizedSubscriptionStatus(input.subscriptionStatus),
+    planAgents: null,
+    purchasedExtras: 0,
+    effectiveCap: null,
+    unlimited: true,
   };
 }
 

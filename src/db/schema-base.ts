@@ -564,9 +564,6 @@ export const agents = pgTable(
   (table) => ({
     userIdIdx: sql`CREATE INDEX idx_agents_user_id ON wireline_agents USING btree (user_id)`,
     createdAtIdx: sql`CREATE INDEX idx_agents_created_at ON wireline_agents USING btree (created_at)`,
-    workspaceMarkUnique: uniqueIndex("uq_wireline_agents_user_mark_key")
-      .on(table.userId, table.markKey)
-      .where(sql`${table.markKey} IS NOT NULL`),
     markKeyCheck: check(
       "wireline_agents_mark_key_check",
       sql`${table.markKey} IS NULL OR ${table.markKey} ~ '^(orbit|beacon|spark|prism|flow|pulse|compass|focus|aperture|wave|helix|loop|nova|route|vertex)-(violet|blue|rose|amber|teal|magenta|indigo|slate)$'`,

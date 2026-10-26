@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { includedPhoneSlotsForPlan } from "../src/lib/phone-line-entitlements";
-import { resolveAgentEntitlement } from "../src/lib/agent-entitlements";
+import { agentCapHit, resolveAgentEntitlement } from "../src/lib/agent-entitlements";
 import { parseSignupIntent, recommendedPlanFromIntent } from "../src/lib/signup-intent";
 
 const root = process.cwd();
@@ -17,7 +17,7 @@ describe("round-5 fine-tune verified fixes", () => {
     expect(includedPhoneSlotsForPlan("team", 1)).toBe(3);
   });
 
-  it("honors admin maxAgents when higher than catalog + extras on an active workspace", () => {
+  it("does not let a stored maxAgents count cap an active workspace", () => {
     const entitlement = resolveAgentEntitlement({
       isOwner: false,
       subscriptionStatus: "active",
@@ -25,7 +25,9 @@ describe("round-5 fine-tune verified fixes", () => {
       extraAgents: 0,
       maxAgents: 4,
     });
-    expect(entitlement.effectiveCap).toBe(4);
+    expect(entitlement.unlimited).toBe(true);
+    expect(entitlement.effectiveCap).toBeNull();
+    expect(agentCapHit(4, entitlement)).toBe(false);
   });
 
   it("accepts the Solutions support wedge and starts the free build", () => {

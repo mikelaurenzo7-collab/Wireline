@@ -628,11 +628,12 @@ describe("Billing Settings shared recovery", () => {
     },
   );
 
-  it("describes every occupied Bot slot as full rather than near capacity", async () => {
+  it("counts Bots in use without a slot cap", async () => {
     statusFails = false;
     balanceFails = false;
     await settle();
-    expect(hasText("All Bot slots in use.")).toBe(true);
+    expect(hasText("2 Bots in use")).toBe(true);
+    expect(hasText("All Bot slots in use.")).toBe(false);
     expect(hasText("Near capacity.")).toBe(false);
     expect(tree.find((element) => element.type === "usage-meter")?.props.showBalance).toBe(false);
     expect(hasText("$24.50")).toBe(true);

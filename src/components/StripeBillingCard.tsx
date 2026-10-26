@@ -744,13 +744,9 @@ function GrantedPlanAccessCard({
             <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
               Paid-plan access is granted directly to this workspace.
             </p>
-            {sub.max_agents ? (
-              <p className="font-mono text-[11px] uppercase tracking-[.08em] text-muted-foreground">
-                {isUsagePlanId(sub.plan)
-                  ? `${agentCount} Bots in use`
-                  : `${agentCount} / ${sub.max_agents} ${sub.max_agents === 1 ? "Bot" : "Bots"} in use`}
-              </p>
-            ) : null}
+            <p className="font-mono text-[11px] uppercase tracking-[.08em] text-muted-foreground">
+              {agentCount} {agentCount === 1 ? "Bot" : "Bots"} in use
+            </p>
             {!isUsagePlanId(sub.plan) && includedNumbers > 0 ? (
               <p className="font-mono text-[11px] uppercase tracking-[.08em] text-muted-foreground">
                 {includedNumbers} live number{includedNumbers === 1 ? "" : "s"} included
@@ -835,36 +831,16 @@ function ActiveSubCard({
               {getPlanDisplayLabel({ id: sub.plan, name: sub.plan_name })}
             </h3>
             <p className="text-sm tabular-nums text-muted-foreground">
-              {sub.max_agents ? (
-                <span
-                  className={
-                    !isUsagePlanId(sub.plan) && agentCount >= sub.max_agents - 1
-                      ? "text-[var(--wireline-color-status-warning)]"
-                      : ""
-                  }
-                >
-                  {isUsagePlanId(sub.plan)
-                    ? `${agentCount} Bots in use`
-                    : `${agentCount} / ${sub.max_agents} ${sub.max_agents === 1 ? "Bot" : "Bots"} in use`}
-                </span>
-              ) : (
-                ""
-              )}
-              {periodEnd && periodEndLabel && (
+              <span>
+                {agentCount} {agentCount === 1 ? "Bot" : "Bots"} in use
+              </span>
+              {periodEnd && periodEndLabel ? (
                 <>
-                  {sub.max_agents ? " · " : ""}
+                  {" · "}
                   {periodEndLabel} {formatDate(periodEnd)}
                 </>
-              )}
+              ) : null}
             </p>
-            {!isUsagePlanId(sub.plan) &&
-            sub.max_agents &&
-            sub.max_agents > 1 &&
-            agentCount >= sub.max_agents - 1 ? (
-              <p className="text-sm text-[var(--wireline-color-status-warning)]">
-                {agentCount >= sub.max_agents ? "All Bot slots in use." : "Near capacity."}
-              </p>
-            ) : null}
           </div>
         </div>
         <ShadButton

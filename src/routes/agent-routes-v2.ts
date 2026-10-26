@@ -597,23 +597,9 @@ router.post(
             : defaultBotMarkKey(existingAgent.id);
           usedMarkKeys.add(existingMark);
         }
-        if (isBotMarkKey(requestedMarkKey) && usedMarkKeys.has(requestedMarkKey)) {
-          throw new AppError(
-            409,
-            "BOT_MARK_CONFLICT",
-            "That Bot identity is already in use in this workspace.",
-          );
-        }
         const availableMarkKey = isBotMarkKey(requestedMarkKey)
           ? requestedMarkKey
           : firstAvailableBotMarkKey(id, usedMarkKeys);
-        if (!availableMarkKey) {
-          throw new AppError(
-            409,
-            "BOT_MARK_CAPACITY_REACHED",
-            "Every available Bot identity is already in use.",
-          );
-        }
 
         const voiceId =
           normalizeManagedOpenAIVoiceId(requestedVoiceId) || pickRotatedVoiceId(existing);
@@ -698,23 +684,6 @@ router.patch(
           .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
           .limit(1);
         if (!ownedAgent) throw AppError.fromHttpStatus(404, "Agent not found");
-
-        const workspaceAgents = await tx
-          .select({ id: schema.agents.id, markKey: schema.agents.markKey })
-          .from(schema.agents)
-          .where(eq(schema.agents.userId, req.user.id));
-        const conflict = workspaceAgents.some(
-          (agent) =>
-            agent.id !== req.params.id &&
-            (isBotMarkKey(agent.markKey) ? agent.markKey : defaultBotMarkKey(agent.id)) === markKey,
-        );
-        if (conflict) {
-          throw new AppError(
-            409,
-            "BOT_MARK_CONFLICT",
-            "That Bot identity is already in use in this workspace.",
-          );
-        }
 
         const [saved] = await tx
           .update(schema.agents)

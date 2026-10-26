@@ -25,7 +25,7 @@ describe("agent capacity integrity", () => {
     "canceled",
     "trial_expired",
     "unknown",
-  ])("collapses inactive status %s to the one-draft Free Builder cap", (subscriptionStatus) => {
+  ])("keeps Bot creation open for inactive status %s", (subscriptionStatus) => {
     const entitlement = resolveAgentEntitlement({
       isOwner: false,
       subscriptionStatus,
@@ -35,14 +35,14 @@ describe("agent capacity integrity", () => {
     });
 
     expect(entitlement.subscriptionStatus).toBe(subscriptionStatus || "pending_activation");
-    expect(entitlement.planAgents).toBe(1);
+    expect(entitlement.planAgents).toBeNull();
     expect(entitlement.purchasedExtras).toBe(0);
-    expect(entitlement.effectiveCap).toBe(1);
-    expect(entitlement.unlimited).toBe(false);
-    expect(agentCapHit(1, entitlement)).toBe(true);
+    expect(entitlement.effectiveCap).toBeNull();
+    expect(entitlement.unlimited).toBe(true);
+    expect(agentCapHit(1, entitlement)).toBe(false);
   });
 
-  it("normalizes status before deciding whether paid capacity is valid", () => {
+  it("normalizes status without turning it into a Bot cap", () => {
     const entitlement = resolveAgentEntitlement({
       isOwner: false,
       subscriptionStatus: "  ACTIVE  ",
@@ -59,14 +59,14 @@ describe("agent capacity integrity", () => {
     });
 
     expect(entitlement.subscriptionStatus).toBe("active");
-    expect(entitlement.planAgents).toBe(2);
-    expect(entitlement.purchasedExtras).toBe(1);
-    expect(entitlement.effectiveCap).toBe(3);
+    expect(entitlement.unlimited).toBe(true);
+    expect(entitlement.effectiveCap).toBeNull();
     expect(inactive.subscriptionStatus).toBe("past_due");
-    expect(inactive.effectiveCap).toBe(1);
+    expect(inactive.effectiveCap).toBeNull();
+    expect(agentCapHit(25, inactive)).toBe(false);
   });
 
-  it("honors an explicit platform grant only for active or trialing workspaces", () => {
+  it("does not let a stored grant restore a Bot cap", () => {
     for (const subscriptionStatus of ["active", "trialing"]) {
       const entitlement = resolveAgentEntitlement({
         isOwner: false,
@@ -75,11 +75,12 @@ describe("agent capacity integrity", () => {
         maxAgents: 10,
         extraAgents: 1,
       });
-      expect(entitlement.effectiveCap).toBe(10);
+      expect(entitlement.effectiveCap).toBeNull();
+      expect(agentCapHit(10, entitlement)).toBe(false);
     }
   });
 
-  it("keeps the owner workspace within the non-repeating identity namespace", () => {
+  it("keeps the owner workspace unlimited as well", () => {
     const entitlement = resolveAgentEntitlement({
       isOwner: true,
       subscriptionStatus: "canceled",
@@ -88,13 +89,13 @@ describe("agent capacity integrity", () => {
       extraAgents: 0,
     });
 
-    expect(entitlement.unlimited).toBe(false);
-    expect(entitlement.planAgents).toBe(BOT_MARK_IDENTITY_CAPACITY);
-    expect(entitlement.effectiveCap).toBe(BOT_MARK_IDENTITY_CAPACITY);
-    expect(agentCapHit(BOT_MARK_IDENTITY_CAPACITY, entitlement)).toBe(true);
+    expect(entitlement.unlimited).toBe(true);
+    expect(entitlement.subscriptionStatus).toBe("active");
+    expect(entitlement.effectiveCap).toBeNull();
+    expect(agentCapHit(BOT_MARK_IDENTITY_CAPACITY, entitlement)).toBe(false);
   });
 
-  it("clamps explicit grants to the non-repeating identity namespace", () => {
+  it("ignores stored counts above the identity namespace", () => {
     const entitlement = resolveAgentEntitlement({
       isOwner: false,
       subscriptionStatus: "active",
@@ -103,9 +104,9 @@ describe("agent capacity integrity", () => {
       extraAgents: 100,
     });
 
-    expect(entitlement.effectiveCap).toBe(BOT_MARK_IDENTITY_CAPACITY);
-    expect(entitlement.purchasedExtras).toBe(MAX_EXTRA_AGENT_ADDONS);
-    expect(entitlement.unlimited).toBe(false);
+    expect(entitlement.effectiveCap).toBeNull();
+    expect(entitlement.purchasedExtras).toBe(0);
+    expect(entitlement.unlimited).toBe(true);
   });
 
   it("uses one capacity boundary across settings, billing, and Stripe reconciliation", () => {

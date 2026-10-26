@@ -281,7 +281,6 @@ router.post(
           );
         }
         const markKey = firstAvailableBotMarkKey(id, usedMarkKeys);
-        if (!markKey) return { kind: "mark_capacity" } as const;
 
         const voiceId = pickRotatedVoiceId(existing);
         await tx.insert(schema.agents).values({
@@ -319,13 +318,6 @@ router.post(
             "Your plan has reached its Bot limit. Edit your current Bot to change what it does.",
         });
       }
-      if (created.kind === "mark_capacity") {
-        return res.status(409).json({
-          code: "BOT_MARK_CAPACITY_REACHED",
-          error: "Every available Bot identity is already in use.",
-        });
-      }
-
       res.status(201).json({
         id,
         name,

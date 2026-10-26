@@ -36,7 +36,6 @@ import { emitProductEvent } from "../lib/product-event-client";
 import { customerAgentLanguage } from "../lib/product-copy";
 import { BOT_CHANNELS, BOT_ROLE_TEMPLATES } from "../lib/bot-product";
 import {
-  BOT_MARK_CHOICES,
   defaultBotMarkKey,
   firstAvailableBotMarkKey,
   isBotMarkKey,
@@ -129,7 +128,7 @@ export default function CreateAgentDialog({
 }) {
   const navigate = useNavigate();
   const [, setParams] = useSearchParams();
-  const { agents, refresh } = useAgents();
+  const { agents, refresh, reload } = useAgents();
   const { user } = useAuth();
   const activeUserIdRef = useRef(user?.id ?? null);
   const createAbortRef = useRef<AbortController | null>(null);
@@ -148,7 +147,6 @@ export default function CreateAgentDialog({
   );
   const unavailableMarkKeysRef = useRef(unavailableMarkKeys);
   unavailableMarkKeysRef.current = unavailableMarkKeys;
-  const markCapacityReached = unavailableMarkKeys.size >= BOT_MARK_CHOICES.length;
   const [brief, setBrief] = useState(initialBrief);
   const briefIsTemplateTextRef = useRef(true);
   const markWasChosenRef = useRef(false);
@@ -249,12 +247,6 @@ export default function CreateAgentDialog({
     }
     const isCurrentAccount = () =>
       activeUserIdRef.current === creationUserId && isCreateBriefRecoveryOwner(creationUserId);
-    if (markCapacityReached) {
-      setError(
-        "Every available Bot identity is already in use. Contact support before adding another Bot.",
-      );
-      return;
-    }
     const selectedTemplate = templateForKey(templateKey);
     const finalBrief = brief.trim() || selectedTemplate.summary;
     if (finalBrief.length > CREATE_BRIEF_MAX_CHARS) {
@@ -341,6 +333,7 @@ export default function CreateAgentDialog({
       if (!isCreateBriefRecoveryOwner(creationUserId) || controller.signal.aborted) return;
       if (trainingApplied) clearCreateBrief(creationUserId, body.id, finalBrief);
       if (!isCurrentAccount()) return;
+      await reload();
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       refresh();
       if (trainingApplied) {
@@ -538,7 +531,7 @@ export default function CreateAgentDialog({
                   seed={`new:${templateKey}`}
                   name={name.trim() || defaultName(templateKey)}
                   compact
-                  disabled={creating || markCapacityReached}
+                  disabled={creating}
                   unavailableKeys={unavailableMarkKeys}
                 />
               </div>
@@ -564,7 +557,8 @@ export default function CreateAgentDialog({
             </button>
             <Button
               type="submit"
-              disabled={creating || markCapacityReached}
+              disabled={creating}
+              aria-busy={creating}
               className="h-auto min-h-11 gap-2 whitespace-normal px-3 py-2 sm:px-5"
             >
               {creating ? (

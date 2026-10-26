@@ -201,13 +201,6 @@ export async function createAgentDraft(
         );
       }
       const markKey = firstAvailableBotMarkKey(id, usedMarkKeys);
-      if (!markKey) {
-        throw new AppError(
-          409,
-          "BOT_MARK_CAPACITY_REACHED",
-          "Every available Bot identity is already in use.",
-        );
-      }
 
       const voiceId = pickRotatedVoiceId(existingCount);
       await tx.insert(schema.agents).values({
