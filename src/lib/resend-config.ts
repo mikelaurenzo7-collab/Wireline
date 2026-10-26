@@ -44,11 +44,21 @@ export function getResendTransportDiagnostics(): ResendTransportDiagnostics {
   let configured_via: ResendTransportDiagnostics["configured_via"] = "default";
   if (explicit) configured_via = "RESEND_FROM_EMAIL";
   else if (domain) configured_via = "RESEND_FROM_DOMAIN";
-  return { from, from_domain: extractFromDomain(from), has_api_key: Boolean(process.env.RESEND_API_KEY?.trim()), configured_via };
+  return {
+    from,
+    from_domain: extractFromDomain(from),
+    has_api_key: Boolean(process.env.RESEND_API_KEY?.trim()),
+    configured_via,
+  };
 }
 
 function sanitizeResendErrorDetail(value: string): string {
-  return value.slice(0, 4_000).replace(/\b[A-Z0-9._%+-]{1,64}@[A-Z0-9.-]{1,255}\.[A-Z]{2,63}\b/gi, "[redacted-email]").replace(/\s+/g, " ").trim().slice(0, 300);
+  return value
+    .slice(0, 4_000)
+    .replace(/\b[A-Z0-9._%+-]{1,64}@[A-Z0-9.-]{1,255}\.[A-Z]{2,63}\b/gi, "[redacted-email]")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 300);
 }
 
 export function formatResendApiError(status: number, body: string): string {
@@ -56,11 +66,16 @@ export function formatResendApiError(status: number, body: string): string {
   try {
     const parsed = JSON.parse(body) as { message?: unknown };
     if (typeof parsed.message === "string") detail = sanitizeResendErrorDetail(parsed.message);
-  } catch { /* keep sanitized raw slice */ }
+  } catch {
+    /* keep sanitized raw slice */
+  }
 
-  if (status === 403 || /sending domain|domain (?:is )?not verified|verify (?:the |your )?domain/i.test(detail)) {
+  if (
+    status === 403 ||
+    /sending domain|domain (?:is )?not verified|verify (?:the |your )?domain/i.test(detail)
+  ) {
     const domain = extractFromDomain(resolveResendFromAddress());
-    return `Resend ${status}: ${detail}. Sending domain must be verified in Resend for "${domain}". Set RESEND_FROM_EMAIL or RESEND_FROM_DOMAIN in Vercel to match your verified domain, then redeploy.`;
+    return `Resend ${status}: ${detail}. Sending domain must be verified in Resend for "${domain}". Set RESEND_FROM_EMAIL or RESEND_FROM_DOMAIN in Render to match your verified domain, then redeploy.`;
   }
   return `Resend ${status}: ${detail}`;
 }
