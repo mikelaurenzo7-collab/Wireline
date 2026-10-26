@@ -250,7 +250,7 @@ export default function EmailPage() {
     ) : undefined;
 
   return (
-    <WorkspaceShell fullBleed contentClassName="flex min-h-0 flex-1 flex-col">
+    <WorkspaceShell fullBleed containScroll contentClassName="flex min-h-0 flex-1 flex-col">
       <WorkspacePageFrame mode="operate" className="flex min-h-0 flex-1 flex-col pb-3">
         <WorkspacePageIntro title="Inbox" titleHidden />
         <WorkspaceControlBand

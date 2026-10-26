@@ -1099,6 +1099,15 @@ html[data-privacy-choices="open"] body {
   );
 }
 
+@media (max-width: 390px) {
+  .wl-privacy-choices {
+    left: 0.5rem;
+    right: 0.5rem;
+    width: auto;
+    max-width: calc(100vw - 1rem);
+  }
+}
+
 .wl-recipe-icon {
   color: var(--wireline-color-action-primary-default);
 }

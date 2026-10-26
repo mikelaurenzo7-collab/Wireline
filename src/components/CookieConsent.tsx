@@ -179,7 +179,7 @@ export default function CookieConsent() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 24, opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
-          className="fixed z-[9999] left-3 right-3 sm:left-auto sm:right-4 sm:w-[720px] sm:max-w-[calc(100vw-2rem)] max-lg:bottom-[var(--wl-fixed-overlay-bottom)] lg:bottom-5 max-h-[calc(100dvh-var(--wl-fixed-overlay-bottom)-1rem)] lg:max-h-[calc(100dvh-2.5rem)] overflow-y-auto overscroll-contain rounded-md"
+          className="fixed z-[9999] box-border wl-privacy-choices left-3 right-3 w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] sm:left-auto sm:right-4 sm:w-[720px] sm:max-w-[calc(100vw-2rem)] max-lg:bottom-[var(--wl-fixed-overlay-bottom)] lg:bottom-5 max-h-[calc(100dvh-var(--wl-fixed-overlay-bottom)-1rem)] lg:max-h-[calc(100dvh-2.5rem)] overflow-y-auto overscroll-contain rounded-md"
           role="region"
           aria-label="Privacy Choices"
           tabIndex={-1}
@@ -199,7 +199,7 @@ export default function CookieConsent() {
               <h2 className="pr-10 text-sm font-semibold leading-snug sm:sr-only">
                 Privacy Choices
               </h2>
-              <p className="wl-balance text-sm leading-relaxed text-foreground/80 sm:flex-1">
+              <p className="wl-balance break-words text-sm leading-relaxed text-foreground/80 sm:flex-1">
                 Essential storage keeps{" "}
                 <span className="font-semibold text-foreground">BotBound</span> working. Optional
                 measurement stays off until you allow it.{" "}
@@ -221,7 +221,7 @@ export default function CookieConsent() {
                   Your privacy signal keeps measurement off.
                 </p>
               ) : (
-                <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,9rem),1fr))] gap-2 sm:flex sm:shrink-0">
+                <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,8.5rem),1fr))] gap-2 sm:flex sm:shrink-0">
                   <ShadButton
                     type="button"
                     variant="outline"

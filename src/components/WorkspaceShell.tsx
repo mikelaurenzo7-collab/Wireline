@@ -386,6 +386,7 @@ export default function WorkspaceShell({
   action,
   children,
   contentClassName = "pt-2 pb-5",
+  containScroll = false,
   fullBleed = false,
 }: {
   title?: string;
@@ -394,6 +395,8 @@ export default function WorkspaceShell({
   action?: ReactNode;
   children: ReactNode;
   contentClassName?: string;
+  /** Keep this page in the viewport and let an inner pane scroll. */
+  containScroll?: boolean;
   fullBleed?: boolean;
 }) {
   const location = useLocation();
@@ -403,7 +406,9 @@ export default function WorkspaceShell({
     ? "p-0 lg:pb-0"
     : "px-3 pt-2 pb-5 sm:px-6 sm:pt-3 lg:px-7 lg:pt-4 lg:pb-6";
   const contentInner = fullBleed
-    ? "wl-workspace-content-inner flex h-full min-h-0 w-full max-w-none shrink-0 flex-col"
+    ? `wl-workspace-content-inner flex w-full max-w-none flex-col ${
+        containScroll ? "min-h-0 flex-1" : "h-full min-h-0 shrink-0"
+      }`
     : // Document pages must grow with their content so overflow cannot consume
       // the scrollport's bottom padding and slide actions beneath the mobile dock.
       "wl-workspace-content-inner wl-shell-measure flex min-h-full w-full grow shrink-0 flex-col";
@@ -452,7 +457,7 @@ export default function WorkspaceShell({
           ) : null}
 
           <div
-            className={`wl-workspace-content flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain ${contentClassName}`}
+            className={`wl-workspace-content flex min-h-0 flex-1 flex-col ${containScroll ? "overflow-hidden" : "overflow-y-auto overscroll-contain"} ${contentClassName}`}
           >
             <div className="wl-shell-notice-rail wl-shell-measure">
               <EmailVerifyBanner />

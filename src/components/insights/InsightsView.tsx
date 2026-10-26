@@ -31,7 +31,6 @@ import TopicsView from "./TopicsView";
 import HeatmapView from "./HeatmapView";
 import LeaderboardView from "./LeaderboardView";
 import FailureModesView from "./FailureModesView";
-import LearningMetricsView from "./LearningMetricsView";
 
 // Reliability and Scorecards are the only two of these views that draw
 // with Recharts, and they are not the default tab. Imported eagerly they put the
@@ -55,7 +54,6 @@ const FIXED_PERIOD_LABELS: Record<string, string> = {
   goals: "This month",
   topics: "Recent calls",
   failures: "Recent qualifying calls",
-  learning: "Saved learning",
 };
 
 type InsightGroupId = "performance" | "reliability" | "quality" | "revenue";
@@ -80,7 +78,7 @@ export default function InsightsView() {
 
   const wrap = (label: string, node: React.ReactNode) => (
     <WidgetBoundary label={label}>
-      <div className="flex flex-col flex-1 min-h-0 w-full overflow-y-auto overscroll-contain scroll-viewport scroll-pb-safe pr-1 pb-4">
+      <div className="flex w-full flex-col pr-1 pb-4 md:min-h-0 md:flex-1 md:overflow-y-auto md:overscroll-contain md:scroll-viewport md:scroll-pb-safe">
         {/* Only one view renders at a time, so a single boundary here covers
             whichever of them is lazy without each view declaring its own. */}
         <Suspense fallback={<PanelSkeleton rows={6} />}>{node}</Suspense>
@@ -100,7 +98,6 @@ export default function InsightsView() {
       failures: wrap("Failures", <FailureModesView />),
       reliability: wrap("Reliability", <VoiceReliabilityView days={days} />),
       quality: wrap("Scorecards", <QualityView days={days} />),
-      learning: wrap("Learning", <LearningMetricsView />),
     };
     return views[activeView] ?? views.funnel;
   }, [activeView, days]);
