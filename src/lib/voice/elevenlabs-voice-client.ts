@@ -13,7 +13,10 @@
  * https://elevenlabs.io/docs/api-reference/user/subscription/get
  */
 import { Buffer } from "node:buffer";
-import { ELEVENLABS_SPEECH_MODEL, ELEVENLABS_SPEECH_SETTINGS } from "./elevenlabs-speech-settings";
+import {
+  ELEVENLABS_CLONE_SPEECH_SETTINGS,
+  ELEVENLABS_SPEECH_MODEL,
+} from "./elevenlabs-speech-settings";
 
 const ORIGIN = "https://api.elevenlabs.io";
 const MAX_JSON_BYTES = 256 * 1_024;
@@ -377,7 +380,7 @@ export function createElevenLabsVoiceClient(input: {
         body: JSON.stringify({
           text: spoken,
           model_id: ELEVENLABS_VOICE_PREVIEW.modelId,
-          voice_settings: ELEVENLABS_SPEECH_SETTINGS,
+          voice_settings: ELEVENLABS_CLONE_SPEECH_SETTINGS,
         }),
       },
       async (response, signal) => {

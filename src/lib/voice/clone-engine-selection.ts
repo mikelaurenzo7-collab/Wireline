@@ -1,14 +1,10 @@
 import type { CloneEngineId } from "./clone-engines";
 
 /**
- * Per-account clone engine choice, decided by eligibility rather than by the
- * customer. BotBound's own voice lifecycle is the same for every engine.
- *
- * xAI Custom Voices (https://docs.x.ai/developers/model-capabilities/audio/custom-voices):
- *   "Custom Voices is currently only available in the United States, with the
- *   exception of Illinois." / "The `POST /v1/custom-voices` endpoint is gated to
- *   teams on an Enterprise plan." / "The default limit is 30 custom voices per team."
- * BotBound uses one xAI team, so the 30 voices are shared by every customer.
+ * Each user records their own clone. New clones are created only at ElevenLabs
+ * and stored on that user's account. xAI still speaks ordinary phone calls.
+ * The xAI helpers below describe that team's voice library; they are not a
+ * second create path.
  */
 export const US_STATE_CODES = [
   "AL",
@@ -107,11 +103,9 @@ export function resolveXAICustomVoiceTeamLimit(env: NodeJS.ProcessEnv = process.
 }
 
 /**
- * Capability check for the Enterprise-gated xAI create endpoint.
- * XAI_CUSTOM_VOICES_API_ENABLED=false never uses xAI for clones. Otherwise xAI
- * is tried when eligible, and a 403 (no Enterprise) is remembered for six
- * hours so new clones go straight to the next engine. Once Enterprise is on,
- * xAI answers 200 and becomes the clone engine with no code or env change.
+ * Remembered answer for the Enterprise-gated xAI create endpoint. User clones
+ * do not consult it. It stays so a later team-library decision can tell a 403
+ * from a configured key without another rollout flag.
  */
 const XAI_NOT_ENTITLED_TTL_MS = 6 * 60 * 60 * 1000;
 let xaiNotEntitledUntil = 0;
@@ -153,7 +147,7 @@ export type CloneEngineSelectionInput = {
   jurisdiction: SpeakerJurisdiction;
   xai: { configured: boolean; entitled: boolean; teamVoicesUsed: number; teamLimit: number };
   elevenlabs: { configured: boolean };
-  /** Optional operator pin (VOICE_CLONE_ENGINE_DEFAULT); still subject to eligibility. */
+  /** Unused by user-clone selection. Kept so older callers can still pass it. */
   preferred?: CloneEngineId | null;
 };
 
@@ -162,6 +156,7 @@ export type CloneEngineSelection =
   | { engine: null; reason: CloneSelectionReason; writtenReleaseRequired: boolean };
 
 export type CloneSelectionReason =
+  | "elevenlabs"
   | "xai_eligible"
   | "operator_preferred_elevenlabs"
   | "xai_region_excluded"
@@ -170,24 +165,15 @@ export type CloneSelectionReason =
   | "xai_team_full"
   | "no_engine_available";
 
+/**
+ * One clone path. ElevenLabs creates the voice. xAI still speaks stock phone
+ * calls; it is not a second clone vendor. Illinois consent rules still apply.
+ */
 export function selectCloneEngine(input: CloneEngineSelectionInput): CloneEngineSelection {
   const writtenReleaseRequired = requiresWrittenBiometricRelease(input.jurisdiction);
-  let xaiBlock: CloneSelectionReason | null = null;
-  if (!xaiCustomVoiceRegionAllowed(input.jurisdiction)) xaiBlock = "xai_region_excluded";
-  else if (!input.xai.configured) xaiBlock = "xai_not_configured";
-  else if (!input.xai.entitled) xaiBlock = "xai_not_entitled";
-  else if (input.xai.teamVoicesUsed >= input.xai.teamLimit) xaiBlock = "xai_team_full";
-
-  if (input.preferred === "elevenlabs" && input.elevenlabs.configured)
-    return {
-      engine: "elevenlabs",
-      reason: "operator_preferred_elevenlabs",
-      writtenReleaseRequired,
-    };
-  if (!xaiBlock) return { engine: "xai", reason: "xai_eligible", writtenReleaseRequired };
-  if (input.elevenlabs.configured)
-    return { engine: "elevenlabs", reason: xaiBlock, writtenReleaseRequired };
-  return { engine: null, reason: "no_engine_available", writtenReleaseRequired };
+  if (!input.elevenlabs.configured)
+    return { engine: null, reason: "no_engine_available", writtenReleaseRequired };
+  return { engine: "elevenlabs", reason: "elevenlabs", writtenReleaseRequired };
 }
 
 /**
@@ -224,25 +210,9 @@ export function parseSignedLegalName(value: unknown): string | null {
   return name.includes(" ") ? name : null;
 }
 
-/**
- * Ordered engines to try for one new clone. The first is the selected engine;
- * the rest are eligible fall-throughs when it answers with a capacity or
- * entitlement error. Illinois and non-US speakers never reach xAI.
- */
+/** The only engine a new clone may use. There is no second vendor to fall through to. */
 export function cloneEngineCandidates(input: CloneEngineSelectionInput): CloneEngineId[] {
-  const first = selectCloneEngine(input).engine;
-  if (!first) return [];
-  const out: CloneEngineId[] = [first];
-  if (first === "xai" && input.elevenlabs.configured) out.push("elevenlabs");
-  if (
-    first === "elevenlabs" &&
-    xaiCustomVoiceRegionAllowed(input.jurisdiction) &&
-    input.xai.configured &&
-    input.xai.entitled &&
-    input.xai.teamVoicesUsed < input.xai.teamLimit
-  )
-    out.push("xai");
-  return out;
+  return selectCloneEngine(input).engine === "elevenlabs" ? ["elevenlabs"] : [];
 }
 
 /** Plain-language destruction schedule shown with the written release. */

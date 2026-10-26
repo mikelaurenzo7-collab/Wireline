@@ -58,16 +58,11 @@ import {
   BIOMETRIC_RETENTION_SUMMARY,
   BIOMETRIC_RETENTION_POLICY_VERSION,
   biometricExpiresAt,
-  CLONE_ENGINE_FALLTHROUGH_CODES,
   cloneEngineCandidates,
   parseSignedLegalName,
   parseSpeakerJurisdiction,
   requiresWrittenBiometricRelease,
-  resolvePreferredCloneEngine,
-  resolveXAICustomVoiceTeamLimit,
   WRITTEN_BIOMETRIC_RELEASE_JURISDICTIONS,
-  noteXAICustomVoiceNotEntitled,
-  xaiCustomVoiceApiEntitled,
   type SpeakerJurisdiction,
 } from "./clone-engine-selection";
 import { stockFallbackVoiceFor } from "./xai-voice-config";
@@ -121,7 +116,9 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
  */
 export function liveVoiceCloneEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
   if (env.LIVE_VOICE_CLONE_ENABLED !== "true") return false;
-  return cloneEngine("xai").configured() || cloneEngine("elevenlabs").configured();
+  // A key alone is not enough: the recorder stays closed until a call can
+  // actually speak the clone (OpenAI text, ElevenLabs audio, voice worker).
+  return elevenLabsCallsConfigured(env);
 }
 
 /** Engines available to the native or streaming phone runtime. */
@@ -290,23 +287,6 @@ export type CreateLiveVoiceInput = {
   agentName?: unknown;
 };
 
-/** Ready xAI voices across every BotBound account (one shared xAI team). */
-async function xaiTeamVoicesUsed(): Promise<number> {
-  try {
-    const [row] = await tenantStore.exit(() =>
-      drizzle
-        .select({ n: count() })
-        .from(liveVoices)
-        .where(and(eq(liveVoices.provider, "xai"), eq(liveVoices.status, "ready")))
-        .execute(),
-    );
-    return Number(row?.n ?? 0);
-  } catch {
-    // Unknown usage never blocks a clone; xAI's own 400 at the cap falls through.
-    return 0;
-  }
-}
-
 const SWEEP_BATCH = 25;
 
 /** Preserve the legacy object-only behavior without replacing a stale snapshot. */
@@ -450,7 +430,7 @@ export const liveVoiceService = {
 
   async create(actor: Actor, wav: Buffer, input: CreateLiveVoiceInput) {
     if (!liveVoiceCloneEnabled())
-      throw friendlyProviderError(new CloneEngineError("xai", "not_configured"));
+      throw friendlyProviderError(new CloneEngineError("elevenlabs", "not_configured"));
     const name = typeof input.name === "string" ? input.name.trim() : "";
     // eslint-disable-next-line no-control-regex
     if (!name || name.length > 80 || /[\u0000-\u001f\u007f]/.test(name))
@@ -524,17 +504,11 @@ export const liveVoiceService = {
 
     const candidates = cloneEngineCandidates({
       jurisdiction,
-      xai: {
-        configured: cloneEngine("xai").configured(),
-        entitled: xaiCustomVoiceApiEntitled(),
-        teamVoicesUsed: await xaiTeamVoicesUsed(),
-        teamLimit: resolveXAICustomVoiceTeamLimit(),
-      },
+      xai: { configured: false, entitled: false, teamVoicesUsed: 0, teamLimit: 0 },
       elevenlabs: { configured: cloneEngine("elevenlabs").configured() },
-      preferred: resolvePreferredCloneEngine(),
     });
     if (candidates.length === 0)
-      throw friendlyProviderError(new CloneEngineError("xai", "region_unavailable"));
+      throw friendlyProviderError(new CloneEngineError("elevenlabs", "not_configured"));
 
     return fenced(actor.id, "live_voice_create", async () => {
       let created: { engine: CloneEngine; providerVoiceId: string } | null = null;
@@ -578,31 +552,24 @@ export const liveVoiceService = {
               `You can keep ${LIVE_VOICE_MAX_PER_ACCOUNT} cloned voices. Remove one to add another.`,
             );
           let lastError: unknown = null;
-          for (const id of candidates) {
-            const engine = cloneEngine(id);
-            try {
-              const { providerVoiceId } = await engine.create({
-                name,
-                wav,
-                gender,
-              });
-              created = { engine, providerVoiceId };
-              break;
-            } catch (error) {
-              lastError = error;
-              const code = error instanceof CloneEngineError ? error.code : "provider_unavailable";
-              log.warn("Live voice clone failed at engine", {
-                userId: actor.id,
-                engine: id,
-                code,
-                status: error instanceof CloneEngineError ? error.status : null,
-              });
-              if (id === "xai" && code === "not_entitled") noteXAICustomVoiceNotEntitled();
-              // xAI without Enterprise is expected until it is enabled: not an alert.
-              if (!(id === "xai" && code === "not_entitled"))
-                void alertCloneEngineCapacity(id, code, { jurisdiction }).catch(() => {});
-              if (!(CLONE_ENGINE_FALLTHROUGH_CODES as readonly string[]).includes(code)) break;
-            }
+          const engine = cloneEngine("elevenlabs");
+          try {
+            const { providerVoiceId } = await engine.create({
+              name,
+              wav,
+              gender,
+            });
+            created = { engine, providerVoiceId };
+          } catch (error) {
+            lastError = error;
+            const code = error instanceof CloneEngineError ? error.code : "provider_unavailable";
+            log.warn("Live voice clone failed at engine", {
+              userId: actor.id,
+              engine: "elevenlabs",
+              code,
+              status: error instanceof CloneEngineError ? error.status : null,
+            });
+            void alertCloneEngineCapacity("elevenlabs", code, { jurisdiction }).catch(() => {});
           }
           if (!created) throw friendlyProviderError(lastError);
           const [inserted] = await tx
@@ -866,7 +833,10 @@ export async function resolveRuntimeCustomVoice(
   businessVariables: unknown,
 ): Promise<RuntimeCustomVoice | null> {
   const selection = customVoiceSelection(businessVariables);
-  if (!selection || !liveVoiceCloneEnabled()) return null;
+  // The rollout flag gates every saved clone. ElevenLabs must be able to
+  // speak on a call. An older xAI clone still speaks on the native session
+  // when that key is present, without opening a new xAI create path.
+  if (!selection || process.env.LIVE_VOICE_CLONE_ENABLED !== "true") return null;
   try {
     const [row] = await drizzle
       .select({
@@ -889,6 +859,9 @@ export async function resolveRuntimeCustomVoice(
       )
       .limit(1);
     if (!row || !isCloneEngineId(row.provider)) return null;
+    if (row.provider === "elevenlabs") {
+      if (!elevenLabsCallsConfigured()) return null;
+    } else if (row.provider !== "xai" || !cloneEngine("xai").configured()) return null;
     const engine = cloneEngine(row.provider);
     if (!engine.isVoiceId(row.providerVoiceId)) return null;
     // lastUsedAt moves only when the clone is actually heard

@@ -1,5 +1,8 @@
 import type { SpeechStream } from "./elevenlabs-media-session";
-import { ELEVENLABS_SPEECH_MODEL, ELEVENLABS_SPEECH_SETTINGS } from "./elevenlabs-speech-settings";
+import {
+  ELEVENLABS_CLONE_SPEECH_SETTINGS,
+  ELEVENLABS_SPEECH_MODEL,
+} from "./elevenlabs-speech-settings";
 import { CARTESIA_API_VERSION, CARTESIA_SPEECH_MODEL } from "./phone-catalog-service";
 
 export const clonedStockVoice = (gender: "female" | "male" | null): "nova" | "onyx" =>
@@ -124,7 +127,7 @@ export function clonedSpeechStreams(input: {
                   body: JSON.stringify({
                     text,
                     model_id: ELEVENLABS_SPEECH_MODEL,
-                    voice_settings: ELEVENLABS_SPEECH_SETTINGS,
+                    voice_settings: ELEVENLABS_CLONE_SPEECH_SETTINGS,
                     ...(previousRequestIds.length
                       ? { previous_request_ids: previousRequestIds }
                       : previousText

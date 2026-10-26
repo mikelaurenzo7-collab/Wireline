@@ -229,7 +229,7 @@ describe("ElevenLabs voice transport foundation", () => {
       model_id: "eleven_flash_v2_5",
       voice_settings: {
         stability: 0.5,
-        similarity_boost: 0.75,
+        similarity_boost: 0.8,
         style: 0,
         speed: 1,
         use_speaker_boost: false,

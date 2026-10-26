@@ -33,6 +33,7 @@ import {
 import { staleXAIRegistrations } from "../src/lib/voice/xai-phone-registration";
 import { readCloneDetailsHeader } from "../src/routes/cloned-voice-routes";
 import { liveVoiceCloneEnabled } from "../src/lib/voice/live-voice-service";
+import { mediaBridgeEngine } from "../src/lib/voice/cloned-call-routing";
 import { DRILL_TTL_MS, isFallbackDrillMode } from "../src/lib/voice/fallback-drill";
 
 const CALL_SID = `CA${"a".repeat(32)}`;
@@ -237,7 +238,7 @@ describe("clone engine selection", () => {
     expect(xaiCustomVoiceApiEntitled({ XAI_CUSTOM_VOICES_API_ENABLED: "false" }, now)).toBe(false);
   });
 
-  it("ElevenLabs serves Illinois; xAI falls through to ElevenLabs elsewhere", () => {
+  it("uses ElevenLabs for every speaker and no second clone vendor", () => {
     const base = {
       xai: {
         configured: true,
@@ -248,27 +249,73 @@ describe("clone engine selection", () => {
       elevenlabs: { configured: true },
     };
     expect(cloneEngineCandidates({ ...base, jurisdiction: "US-IL" })).toEqual(["elevenlabs"]);
-    expect(cloneEngineCandidates({ ...base, jurisdiction: "US-CA" })).toEqual([
-      "xai",
-      "elevenlabs",
-    ]);
+    expect(cloneEngineCandidates({ ...base, jurisdiction: "US-CA" })).toEqual(["elevenlabs"]);
+    expect(cloneEngineCandidates({ ...base, jurisdiction: "INTL" })).toEqual(["elevenlabs"]);
     expect(
       cloneEngineCandidates({
         ...base,
         jurisdiction: "US-CA",
-        xai: { ...base.xai, entitled: false },
-      })[0],
-    ).toBe("elevenlabs");
+        elevenlabs: { configured: false },
+      }),
+    ).toEqual([]);
   });
 
-  it("requires explicit opt-in even when a clone provider is configured", () => {
-    vi.stubEnv("LIVE_VOICE_CLONE_ENABLED", "");
-    vi.stubEnv("ELEVENLABS_API_KEY", "test-eleven-key");
-    expect(liveVoiceCloneEnabled()).toBe(false);
-    vi.stubEnv("LIVE_VOICE_CLONE_ENABLED", "true");
-    expect(liveVoiceCloneEnabled()).toBe(true);
-    vi.stubEnv("LIVE_VOICE_CLONE_ENABLED", "false");
-    expect(liveVoiceCloneEnabled()).toBe(false);
+  it("requires explicit opt-in and a callable ElevenLabs phone path", () => {
+    const ready = {
+      LIVE_VOICE_CLONE_ENABLED: "true",
+      ELEVENLABS_API_KEY: "test-eleven-key",
+      OPENAI_API_KEY: "test-openai-key",
+      WIRELINE_VOICE_WORKER_URL: "https://voice.botbound.app",
+    };
+    expect(liveVoiceCloneEnabled({ ...ready, LIVE_VOICE_CLONE_ENABLED: "" })).toBe(false);
+    expect(liveVoiceCloneEnabled(ready)).toBe(true);
+    expect(liveVoiceCloneEnabled({ ...ready, ELEVENLABS_API_KEY: "" })).toBe(false);
+    expect(liveVoiceCloneEnabled({ ...ready, OPENAI_API_KEY: "" })).toBe(false);
+    expect(liveVoiceCloneEnabled({ ...ready, WIRELINE_VOICE_WORKER_URL: "" })).toBe(false);
+    expect(liveVoiceCloneEnabled({ ...ready, LIVE_VOICE_CLONE_ENABLED: "false" })).toBe(false);
+  });
+
+  it("plays an ElevenLabs clone only when that phone path is configured", () => {
+    expect(
+      mediaBridgeEngine({
+        customEngine: "elevenlabs",
+        catalogEngine: null,
+        elevenLabsCalls: true,
+        catalogCalls: true,
+      }),
+    ).toBe("elevenlabs");
+    expect(
+      mediaBridgeEngine({
+        customEngine: "elevenlabs",
+        catalogEngine: "cartesia",
+        elevenLabsCalls: false,
+        catalogCalls: true,
+      }),
+    ).toBeNull();
+    expect(
+      mediaBridgeEngine({
+        customEngine: "xai",
+        catalogEngine: null,
+        elevenLabsCalls: true,
+        catalogCalls: true,
+      }),
+    ).toBeNull();
+    expect(
+      mediaBridgeEngine({
+        customEngine: "unavailable",
+        catalogEngine: "cartesia",
+        elevenLabsCalls: false,
+        catalogCalls: true,
+      }),
+    ).toBeNull();
+    expect(
+      mediaBridgeEngine({
+        customEngine: null,
+        catalogEngine: "cartesia",
+        elevenLabsCalls: false,
+        catalogCalls: true,
+      }),
+    ).toBe("cartesia");
   });
 });
 
