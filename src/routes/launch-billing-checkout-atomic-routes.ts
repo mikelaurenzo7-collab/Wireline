@@ -202,11 +202,11 @@ router.post(
     const usageCheckout = isUsagePlanId(plan.id);
     const tier: UsageTierId = req.body?.usage_tier ?? DEFAULT_PUBLIC_USAGE_TIER;
     if (usageCheckout) {
-      if (!isUsageTierId(tier)) throw AppError.badRequest("Choose a valid plan.");
-      if (tier === "starter")
+      if ((tier as string) === "starter" || tier === "previous")
         throw AppError.badRequest(
           "This offer has been replaced. Choose a current plan on Pricing.",
         );
+      if (!isUsageTierId(tier)) throw AppError.badRequest("Choose a valid plan.");
       // Dark until USAGE_BILLING_ENABLED and every usage price id are set.
       if (!usageBillingEnabled() || !usageCheckoutConfigured(process.env, tier)) {
         return res.status(503).json({
@@ -256,7 +256,7 @@ router.post(
       return res.status(409).json({
         code: "CHANNEL_SETUP_UNAVAILABLE",
         error:
-          "SMS setup is not available yet. Registration charges and carrier readiness must be confirmed before checkout.",
+          "SMS plans check out once sender registration is confirmed for your account. Registration charges and carrier readiness are confirmed first.",
       });
     }
 

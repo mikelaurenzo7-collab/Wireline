@@ -644,7 +644,15 @@ export default function AuthAccessPanel({
           ) : null}
           {isReset ? <p>We’ll send a secure reset link.</p> : null}
           {isSignUp && intentLabel && (!paidSignupPlan || planStatus === "ready") ? (
-            <span className="wl-access-panel__intent">{intentLabel}</span>
+            <span className="wl-access-panel__intent">
+              {intentLabel}
+              {signupIntent?.preferredPlanId ? (
+                <>
+                  {" · "}
+                  <Link to="/pricing">Change plan</Link>
+                </>
+              ) : null}
+            </span>
           ) : null}
           {isSignUp && paidSignupPlan ? <p role="status">{notice}</p> : null}
         </header>

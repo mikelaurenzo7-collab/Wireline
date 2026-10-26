@@ -27,7 +27,7 @@ export const USAGE_PRICE_ENV = {
 } as const satisfies Record<"base" | "work" | UsageAddonKey, string>;
 
 export const USAGE_TIER_PRICE_ENV = {
-  starter: { base: USAGE_PRICE_ENV.base, work: USAGE_PRICE_ENV.work },
+  previous: { base: USAGE_PRICE_ENV.base, work: USAGE_PRICE_ENV.work },
   lite: { base: "STRIPE_USAGE_LITE_BASE_PRICE_ID", work: "STRIPE_USAGE_LITE_WORK_PRICE_ID" },
   standard: {
     base: "STRIPE_USAGE_STARTER_BASE_PRICE_ID",

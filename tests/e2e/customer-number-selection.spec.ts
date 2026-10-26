@@ -201,7 +201,7 @@ for (const checkout of [false, "unavailable"] as const) {
     await page.getByRole("radio", { name: "(312) 555-0101 Chicago, IL", exact: true }).check();
     await expect(page.getByRole("button", { name: "Activate Line", exact: true })).toBeEnabled();
     await expect(
-      page.getByText("Live activation isn't available right now", { exact: true }),
+      page.getByText("Activation completes when checkout opens", { exact: true }),
     ).toHaveCount(0);
     expect(purchases).toBe(0);
   });
@@ -224,7 +224,7 @@ test("an unactivated customer gets the paused-sales explanation after the entitl
   );
   await page.getByRole("button", { name: "Find Numbers", exact: true }).click();
   await expect(
-    page.getByText("Live activation isn't available right now", { exact: true }),
+    page.getByText("Activation completes when checkout opens", { exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "Activate Line", exact: true })).toHaveCount(0);
   expect(purchases).toBe(0);
