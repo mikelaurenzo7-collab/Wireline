@@ -101,7 +101,10 @@ export default function TeamSettings() {
         setMembers([]);
         return;
       }
-      if (response.status === 503 && payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED") {
+      if (
+        payload?.available === false ||
+        (response.status === 503 && payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED")
+      ) {
         setTeamAccess("certifying");
         setMembers([]);
         return;

@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { requireCertifiedSharedWorkspaces } from "../src/lib/shared-workspace-readiness";
 
 const root = path.resolve(process.cwd());
 const read = (relative: string) => fs.readFileSync(path.join(root, relative), "utf8");
@@ -46,6 +47,7 @@ describe("shared workspace readiness posture", () => {
   it("explains invitation availability without exposing internal certification details", () => {
     const page = read("src/pages/TeamSettings.tsx");
     expect(page).toContain('payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED"');
+    expect(page).toContain("payload?.available === false");
     expect(page).toContain('setTeamAccess("certifying")');
     expect(page).toContain("Team invitations are currently unavailable.");
     expect(page).toContain("throw new Error(TEAM_INVITES_UNAVAILABLE)");
@@ -53,6 +55,30 @@ describe("shared workspace readiness posture", () => {
     expect(page).not.toContain("Invitations will open after");
     expect(page).toContain('teamAccess === "ok"');
     expect(page).toContain("data-wireline-preserve-case");
+  });
+
+  it("answers GET /api/team as unavailable without a server error", () => {
+    const previous = process.env.WIRELINE_SHARED_WORKSPACES_CERTIFICATION;
+    delete process.env.WIRELINE_SHARED_WORKSPACES_CERTIFICATION;
+    const json = vi.fn();
+    const status = vi.fn(() => ({ json }));
+    requireCertifiedSharedWorkspaces(
+      { method: "GET", baseUrl: "/api/team", path: "/" } as never,
+      { status } as never,
+      vi.fn(),
+    );
+    expect(status).toHaveBeenCalledWith(200);
+    expect(json).toHaveBeenCalledWith({ available: false });
+    status.mockClear();
+    json.mockClear();
+    requireCertifiedSharedWorkspaces(
+      { method: "POST", baseUrl: "/api/team", path: "/invite" } as never,
+      { status } as never,
+      vi.fn(),
+    );
+    expect(status).toHaveBeenCalledWith(503);
+    if (previous === undefined) delete process.env.WIRELINE_SHARED_WORKSPACES_CERTIFICATION;
+    else process.env.WIRELINE_SHARED_WORKSPACES_CERTIFICATION = previous;
   });
 
   it("surfaces canonical API errors from invitation attempts", () => {
