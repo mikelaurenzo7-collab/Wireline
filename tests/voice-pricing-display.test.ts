@@ -43,6 +43,9 @@ describe("voice-pricing-display", () => {
     const pricing = readFileSync(resolve(process.cwd(), "src/pages/Pricing.tsx"), "utf8");
     expect(pricing).toContain("FLAT_OVERAGE_PER_MIN_USD");
     expect(pricing).toContain("TOPUP_RATE");
+    expect(pricing).toContain("USAGE_TIERS");
+    expect(pricing).toContain("USAGE_ADDONS");
+    expect(pricing).not.toContain("Runtime Balance");
     expect(pricing).not.toContain('"$0.22');
   });
 
