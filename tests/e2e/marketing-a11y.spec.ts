@@ -53,9 +53,10 @@ test("homepage promise and access path stay centered inside the desktop viewport
   });
   await expect(headline).toBeVisible();
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
-  await expect(page.locator(".landing-prestige__description")).toHaveText(
-    "Find Prospects. Start Conversations. Close Deals.",
+  await expect(page.locator(".landing-prestige__identity-line")).toHaveText(
+    "A Phone Number. An Email Address. A Computer.",
   );
+  await expect(page.locator(".landing-prestige__description")).toHaveCount(0);
   await expect(page.locator(".landing-prestige__directions")).toHaveCount(0);
 
   const bounds = await page.evaluate(() => {
@@ -129,9 +130,9 @@ test("homepage channels stay clear and readable without decorative labels at 320
   await page.evaluate(() => document.fonts.ready);
 
   const hero = page.locator(".landing-prestige__hero");
-  const description = hero.locator(".landing-prestige__description");
-  await expect(description).toHaveText("Find Prospects. Start Conversations. Close Deals.");
-  await expect(hero.locator("p")).toHaveCount(2);
+  const description = hero.locator(".landing-prestige__identity-line");
+  await expect(description).toHaveText("A Phone Number. An Email Address. A Computer.");
+  await expect(hero.locator("p")).toHaveCount(1);
   await expect(hero.getByText("Choose calls, email, or both.", { exact: true })).toHaveCount(0);
   await expect(hero.getByText("For life. For work.", { exact: true })).toHaveCount(0);
   await expect(page.locator("main").getByText("Life + work", { exact: true })).toHaveCount(0);

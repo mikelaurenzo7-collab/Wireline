@@ -192,8 +192,8 @@ describe("E2E design and BotBound brand polish", () => {
     expect(solutions).not.toContain("<MarketingHero");
     expect(solutions).toContain("marketing-hero-title");
     expect(blog).toContain("marketing-hero-title");
-    expect(support).toContain("marketing-hero-title");
-    expect(contact).toContain("marketing-hero-title");
+    expect(support).not.toContain("marketing-hero-title");
+    expect(contact).not.toContain("marketing-hero-title");
     expect(notFound).toContain("text-[4.25rem]");
     expect(notFound).not.toContain("xl:text-[12rem]");
     expect(responsive).not.toMatch(/\.wl-pricing-page h1\s*\{[^}]*10\.4vw/);
@@ -231,7 +231,7 @@ describe("E2E design and BotBound brand polish", () => {
     expect(landing).not.toContain("{template.summary}");
     expect(landing).toContain('to="/pricing"');
     expect(landing).not.toContain("landing-prestige__trust");
-    expect(landing).toContain("<LandingFooter />");
+    expect(landing).toContain("<MarketingChromeBar />");
     expect(landing).toContain("<PrecisionPublicHeader />");
     expect(landing).not.toContain("ONE WORKSPACE");
     expect(landing).not.toContain("Runtime Balance");

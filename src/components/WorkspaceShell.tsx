@@ -27,7 +27,6 @@ import {
   type ShellNavItem,
 } from "../constants/navigation";
 import { navIcon } from "./nav-icons";
-import { WiredEyebrow } from "./ui/WiredEyebrow";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/shadcn/Tooltip";
 
 // Legacy persistence/native identifiers intentionally remain stable through the
@@ -381,8 +380,6 @@ function MobileDock({
 
 export default function WorkspaceShell({
   title,
-  eyebrow,
-  description,
   action,
   children,
   contentClassName = "pt-2 pb-5",
@@ -390,7 +387,9 @@ export default function WorkspaceShell({
   fullBleed = false,
 }: {
   title?: string;
+  /** Accepted for compatibility; the lean shell header renders title + action only. */
   eyebrow?: string;
+  /** Accepted for compatibility; registry descriptions live in the Command Bar, not the page header. */
   description?: string;
   action?: ReactNode;
   children: ReactNode;
@@ -401,7 +400,7 @@ export default function WorkspaceShell({
 }) {
   const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
-  const showHeader = Boolean(title || eyebrow || description || action);
+  const showHeader = Boolean(title || action);
   const mainSpacing = fullBleed
     ? "p-0 lg:pb-0"
     : "px-3 pt-2 pb-5 sm:px-6 sm:pt-3 lg:px-7 lg:pt-4 lg:pb-6";
@@ -447,9 +446,7 @@ export default function WorkspaceShell({
             <header className="wl-shell-commandbar">
               <div className="wl-shell-commandbar-inner wl-shell-measure md:grid-cols-[minmax(0,1fr)_auto]">
                 <div className="wl-task-header flex min-w-0 flex-col items-start text-left">
-                  {eyebrow ? <WiredEyebrow>{eyebrow}</WiredEyebrow> : null}
                   {title ? <h1 className="wl-shell-page-title">{title}</h1> : null}
-                  {description ? <p className="wl-shell-page-description">{description}</p> : null}
                 </div>
                 {action ? <div className="wl-shell-page-actions">{action}</div> : null}
               </div>

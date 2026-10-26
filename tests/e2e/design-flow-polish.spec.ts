@@ -134,13 +134,6 @@ for (const width of [320, 390, 1440]) {
       "Email",
       "Cloud Computer",
     ]);
-    const features = page.getByRole("list", { name: "Built Around You" });
-    await expect(features.getByRole("heading", { level: 3 })).toHaveText([
-      "Made Yours",
-      "Native Calendar Booking",
-      "Approvals and Handoffs",
-      "Clear Outcomes",
-    ]);
     if (width >= 1024) {
       const geometry = await page.evaluate(() => {
         const title = document.querySelector("h1")!;

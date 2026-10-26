@@ -110,31 +110,15 @@ const PublicNotFound = lazy(() =>
 );
 
 function RouteLoading() {
-  // A route chunk is materializing. Keep this minimal and non-blocking: a
-  // full-screen takeover on every lazy navigation reads as a crash, not a
-  // transition. A thin brand progress sweep plus a pulsing wordmark lets
-  // the shell stay visible while the next page resolves.
+  // A route chunk is materializing. Keep this to the shared progress sweep:
+  // a full-screen takeover on every lazy navigation reads as a crash, not a
+  // transition, and the old wordmark block was the visible "Loading page"
+  // flash on cold public navigation.
   return (
-    <div
-      className="flex min-h-[100dvh] flex-col"
-      role="status"
-      aria-live="polite"
-      aria-busy="true"
-      aria-label="Loading page"
-    >
-      <div className="fixed inset-x-0 top-0 z-[9999] h-[2px] overflow-hidden" aria-hidden="true">
+    <div role="status" aria-busy="true" className="fixed inset-x-0 top-0 z-[9999]">
+      <span className="sr-only">Loading</span>
+      <div className="h-[2px] overflow-hidden" aria-hidden="true">
         <div className="route-progress-sweep-bar h-full w-1/3 rounded-full bg-primary" />
-      </div>
-      <div className="flex flex-1 items-center justify-center p-8">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <span className="sr-only">Loading</span>
-          <span
-            className="animate-pulse font-display text-xl font-semibold tracking-tight text-foreground"
-            aria-hidden="true"
-          >
-            BotBound
-          </span>
-        </div>
       </div>
     </div>
   );

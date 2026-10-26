@@ -1,22 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation } from "react-router";
 
 import { addTemporaryTabIndex } from "../lib/temporary-tab-index";
-import { workspaceRouteMeta } from "../constants/navigation";
-
-function labelFromPath(pathname: string) {
-  const workspaceRoute = workspaceRouteMeta(pathname);
-  if (workspaceRoute) return workspaceRoute.title;
-  const segment = pathname.split("/").filter(Boolean)[0];
-  if (!segment) return "Home";
-  return segment.replace(/[-_]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
 
 export default function RouteChangeA11y() {
   const location = useLocation();
   const first = useRef(true);
-  const label = useMemo(() => labelFromPath(location.pathname), [location.pathname]);
-  const [message, setMessage] = useState("");
 
   useEffect(() => {
     let restoreTabIndex: (() => void) | null = null;
@@ -66,12 +55,7 @@ export default function RouteChangeA11y() {
         }
       }
 
-      if (first.current) {
-        first.current = false;
-        return;
-      }
-
-      setMessage(`${label} loaded`);
+      first.current = false;
     }, 0);
 
     return () => {
@@ -80,11 +64,7 @@ export default function RouteChangeA11y() {
     };
     // Section switches and filters update the query within the current page.
     // Preserve their control's focus so keyboard navigation can continue.
-  }, [label, location.hash, location.pathname]);
+  }, [location.hash, location.pathname]);
 
-  return (
-    <div aria-live="polite" className="sr-only" data-testid="route-announcer" role="status">
-      {message}
-    </div>
-  );
+  return null;
 }

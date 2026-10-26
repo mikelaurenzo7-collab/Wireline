@@ -46,19 +46,21 @@ const COLUMNS = [
  * trigger; navigation keeps route focus and Escape returns to the disclosure.
  */
 export default function MarketingChromeBar({ className }: { className?: string }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
+  const mountedRef = useRef(false);
   const panelId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
   useEffect(() => {
-    setOpen(false);
-  }, [location.key]);
-
-  useEffect(() => {
     // The panel precedes the trigger, so Tab would otherwise skip every link.
     if (!open) return;
+    // The panel starts open by default; only a deliberate toggle moves focus.
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
     const firstLink = panelRef.current?.querySelector<HTMLAnchorElement>("a[href]");
     firstLink?.focus({ preventScroll: true });
     // Respect the footer controls' scroll margins above fixed mobile chrome.

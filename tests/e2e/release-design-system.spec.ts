@@ -409,11 +409,11 @@ test("More navigation leaves focus on the destination page", async ({ page }) =>
   await expect(page.getByRole("heading", { name: "Connections", level: 1 })).toBeFocused();
 });
 
-test("a signed-in unknown route has one page announcer", async ({ page }) => {
+test("a signed-in unknown route focuses its heading without a page announcer", async ({ page }) => {
   await mockWorkspace(page);
   await page.goto("/unknown-design-review-page");
   await expect(page.getByRole("main")).toBeVisible();
-  await expect(page.getByTestId("route-announcer")).toHaveCount(1);
+  await expect(page.getByTestId("route-announcer")).toHaveCount(0);
   await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
 });
 
