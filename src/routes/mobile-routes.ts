@@ -294,6 +294,7 @@ router.post(
           archetype: resolveAgentRoleArchetype(role),
           voiceId,
           voiceProvider: "openai",
+          autonomyLevel: "supervised",
           enabledTools,
           firstMessage: `Hi, this is ${name}. How can I help?`,
           isBusinessAgent,

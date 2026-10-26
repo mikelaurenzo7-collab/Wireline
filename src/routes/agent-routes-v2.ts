@@ -31,6 +31,11 @@ import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import { listAgentsForUser } from "../lib/agents-store";
 import { deleteBot, previewBotDeletion } from "../lib/bot-deletion";
+import {
+  autonomyFromPermissionLevel,
+  isBotPermissionLevel,
+  permissionLevelFromAutonomy,
+} from "../lib/bot-permission";
 import { normalizeManagedOpenAIVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
 import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/liveavatar-service";
 import {
@@ -622,6 +627,7 @@ router.post(
           archetype: resolveAgentRoleArchetype(role),
           voiceId,
           voiceProvider: "openai",
+          autonomyLevel: "supervised",
           enabledTools,
           firstMessage,
           isBusinessAgent,
@@ -724,6 +730,25 @@ router.patch(
   },
 );
 
+router.patch(
+  "/api/agents/:id/permission",
+  authenticateUser,
+  agentMutationRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!isBotPermissionLevel(req.body?.level)) {
+      throw AppError.badRequest("Choose Full access, Auto, or Ask for approval.");
+    }
+    const autonomyLevel = autonomyFromPermissionLevel(req.body.level);
+    const [saved] = await drizzle
+      .update(schema.agents)
+      .set({ autonomyLevel })
+      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+      .returning({ id: schema.agents.id });
+    if (!saved) throw AppError.fromHttpStatus(404, "Agent not found");
+    res.json({ id: saved.id, permission: req.body.level });
+  },
+);
+
 router.get(
   "/api/agent-config/:id",
   authenticateUser,
@@ -749,6 +774,7 @@ router.get(
             llmTemperature: schema.agents.llmTemperature,
             voiceId: schema.agents.voiceId,
             voiceProvider: schema.agents.voiceProvider,
+            autonomyLevel: schema.agents.autonomyLevel,
             phoneVoiceId: schema.agents.phoneVoiceId,
             phoneVoiceProvider: schema.agents.phoneVoiceProvider,
             ...BUSINESS_PROFILE_COLUMNS,
@@ -834,6 +860,7 @@ router.get(
       : null;
     res.json({
       mark_key: record?.markKey || null,
+      permission: permissionLevelFromAutonomy(record?.autonomyLevel),
       capabilities: { image_uploads: isTrainingImageAvailable() },
       firstMessage: record?.firstMessage || null,
       openingGreeting: resolveAgentGreeting(record || {}, directives),

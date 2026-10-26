@@ -4,7 +4,7 @@ export type AppointmentSlot = { date: string; time: string; start_at: string; en
 export type AppointmentAvailability = {
   time_zone: string;
   duration_minutes: number;
-  booking_mode: "automatic" | "approval";
+  booking_mode: "automatic" | "approval" | "inherit";
   slots: AppointmentSlot[];
 };
 export type AppointmentCreateRequest = {
@@ -39,7 +39,7 @@ export function readAppointmentAvailability(
     !Number.isInteger(data.duration_minutes) ||
     Number(data.duration_minutes) < 15 ||
     Number(data.duration_minutes) > 240 ||
-    !["automatic", "approval"].includes(String(data.booking_mode)) ||
+    !["automatic", "approval", "inherit"].includes(String(data.booking_mode)) ||
     !Array.isArray(data.slots) ||
     data.slots.length > 96
   )
