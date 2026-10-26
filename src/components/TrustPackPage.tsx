@@ -2,7 +2,7 @@
  * Vertical trust packs — review-ready evidence and boundaries for regulated buyers.
  */
 import { Link, useParams } from "react-router";
-import { ArrowLeft, ArrowRight, Check, FileCheck2, ShieldAlert, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, FileCheck2, ShieldAlert } from "lucide-react";
 import MarketingChrome from "./marketing/MarketingChrome";
 import { PageMeta } from "../lib/page-meta";
 import { resolveRouteMeta } from "../lib/marketing-route-meta";
@@ -232,14 +232,8 @@ export default function TrustPackPage() {
         </Link>
 
         <section className="mx-auto max-w-3xl text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-brand text-on-brand">
-            <ShieldCheck className="h-6 w-6" />
-          </div>
-          <h1 className="wl-public-section-heading mx-auto mt-5 max-w-[22ch]">{pack.title}</h1>
+          <h1 className="wl-public-section-heading mx-auto max-w-[22ch]">{pack.title}</h1>
           <p className="wl-public-copy mx-auto mt-4 max-w-2xl">{pack.subtitle}</p>
-          <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-            Reviewed for launch · July 28, 2026
-          </p>
         </section>
 
         <section className="mt-12" aria-labelledby="shipping-now">

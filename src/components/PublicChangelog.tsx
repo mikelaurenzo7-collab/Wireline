@@ -184,8 +184,8 @@ export default function PublicChangelog() {
       />
       <MarketingChrome stickyCta={false}>
         <div className="relative z-10 max-w-3xl mx-auto px-5 sm:px-6 pt-12 pb-8 sm:pt-16 sm:pb-12">
-          <div className="mb-10">
-            <h1 className="marketing-hero-title">What’s New</h1>
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">What’s New</h1>
           </div>
 
           <ol className="space-y-6">

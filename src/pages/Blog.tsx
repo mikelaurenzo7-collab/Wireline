@@ -98,9 +98,9 @@ export default function Blog() {
       <section className="marketing-section mx-auto max-w-6xl">
         <div className="wl-stitch-card wl-stitch-card-brand p-7 sm:p-10">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
+            <p className="text-balance text-2xl font-semibold tracking-[-.03em]">
               Give Your Bot a Clear First Job
-            </h2>
+            </p>
             <div className="wl-marketing-actions mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
                 to="/signup"

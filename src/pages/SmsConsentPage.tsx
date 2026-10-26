@@ -13,7 +13,7 @@ export default function SmsConsentPage() {
         noIndex
       />
       <article className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-6 sm:py-14">
-        <h1 className="marketing-hero-title mb-5 text-3xl sm:text-4xl">
+        <h1 className="mb-5 text-2xl font-semibold tracking-tight text-foreground">
           Permission Before a Text.
         </h1>
         <p className="mb-4 text-base text-muted-foreground">BotBound Customer Care</p>

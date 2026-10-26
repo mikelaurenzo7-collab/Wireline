@@ -393,7 +393,7 @@ export default function UsagePricingPanel({
               to="/contact?topic=demo"
               className="marketing-btn-secondary inline-flex min-h-11 w-full items-center justify-center rounded-xl px-4 text-sm font-semibold"
             >
-              Hear a Demo
+              Request a Demo
             </Link>
           </div>
         </div>

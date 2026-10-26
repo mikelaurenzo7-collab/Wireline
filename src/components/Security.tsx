@@ -232,8 +232,8 @@ export default function Security() {
   const technicalSections = isTrustHub ? sections.filter((section) => section.technical) : [];
   const renderSection = ({ icon: Icon, title, items }: SecurityTopic) => (
     <section key={title}>
-      <div className="mb-4 flex flex-col items-center gap-2.5 text-center">
-        <Icon className="h-4 w-4 text-brand" strokeWidth={1.8} />
+      <div className="mx-auto mb-4 flex max-w-2xl items-center gap-2.5">
+        <Icon className="h-4 w-4 shrink-0 text-brand" strokeWidth={1.8} />
         <h2
           className="font-display text-lg leading-tight text-foreground"
           data-wireline-preserve-case={title.includes("BotBound") || undefined}
@@ -268,9 +268,6 @@ export default function Security() {
         <div className="wl-security-doc relative z-10 mx-auto max-w-3xl px-5 sm:px-6">
           <div className="mb-10 text-center">
             <div className="mb-5 flex flex-col items-center justify-center gap-3 text-center">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-brand">
-                <ShieldCheck className="h-5 w-5 text-on-brand" />
-              </div>
               <div className="text-center">
                 <h1 className="wl-public-section-heading max-w-[22ch]">
                   {isTrustHub ? "Trust, Made Visible" : "Your Data. Your Control."}
@@ -280,15 +277,6 @@ export default function Security() {
             <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
               <span className="whitespace-nowrap">Last updated · October 25, 2026</span>
             </p>
-            {!isTrustHub ? (
-              <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                Data rights, subprocessors, and billing controls live in the{" "}
-                <Link to="/trust" className="text-brand hover:underline">
-                  Trust Center
-                </Link>
-                .
-              </p>
-            ) : null}
           </div>
 
           <section className="mb-10" aria-labelledby="trust-packs-heading">

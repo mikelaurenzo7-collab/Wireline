@@ -30,11 +30,11 @@ export function ContactPage() {
       : initialIntent?.toLowerCase() === "enterprise"
         ? "Enterprise rollout"
         : initialIntent?.toLowerCase() === "demo"
-          ? "Hear a demo"
+          ? "Request a demo"
           : initialIntent?.toLowerCase() === "email"
             ? "Email setup review"
             : initialIntent?.toLowerCase() === "sms"
-              ? "Future SMS availability"
+              ? "SMS setup"
               : "",
   );
   const [phone, setPhone] = useState("");
@@ -169,10 +169,6 @@ export function ContactPage() {
         path="/contact"
       />
       <section className="mx-auto max-w-4xl px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16">
-        <div className="mx-auto max-w-3xl text-center">
-          <h1 className="marketing-hero-title mx-auto">Let's Talk</h1>
-        </div>
-
         <nav
           aria-label="Contact Options"
           className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm"

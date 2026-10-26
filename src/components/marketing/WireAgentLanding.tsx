@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Mail, MessageSquare, Monitor, Phone, type LucideIcon } from "lucide-react";
+import { ArrowRight, Check, Mail, MessageSquare, Monitor, Phone, type LucideIcon } from "lucide-react";
 import { Link } from "react-router";
 import BotBoundMark from "../brand/BotBoundMark";
-import LandingFooter from "./LandingFooter";
+import MarketingChromeBar from "./MarketingChromeBar";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { useAuth } from "../../contexts/AuthContext";
@@ -73,9 +73,6 @@ export default function WireAgentLanding() {
                 FOR YOUR WORK.
               </span>
             </h1>
-            <p className="landing-prestige__description">
-              Find Prospects. Start Conversations. Close Deals.
-            </p>
             <p className="landing-prestige__identity-line">
               A Phone Number. An Email Address. A Computer.
             </p>
@@ -111,9 +108,6 @@ export default function WireAgentLanding() {
                 aria-controls="capability-example"
                 tabIndex={selected === index ? 0 : -1}
                 onClick={() => setSelected(index)}
-                onPointerEnter={(event) => {
-                  if (event.pointerType === "mouse") setSelected(index);
-                }}
                 onKeyDown={(event) => {
                   const next =
                     event.key === "ArrowRight"
@@ -144,6 +138,27 @@ export default function WireAgentLanding() {
             className="landing-prestige__example"
           >
             <h2>{example.message}</h2>
+            {example.id === "computer" ? (
+              <div className="mx-auto mt-6 max-w-md rounded-xl border border-border bg-card p-4 text-left shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Example task · Live in your workspace
+                </p>
+                <ol className="mt-3 space-y-2 text-sm text-foreground">
+                  <li className="flex items-start gap-2">
+                    <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                    Open the supplier portal
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                    Compare this week's prices
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <ArrowRight className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                    Draft the order summary for your approval
+                  </li>
+                </ol>
+              </div>
+            ) : null}
             <Link to={`/features#${example.id}`} className="landing-prestige__example-link">
               Explore {example.label}
               <ArrowRight aria-hidden="true" />
@@ -151,7 +166,7 @@ export default function WireAgentLanding() {
           </div>
         </section>
       </main>
-      <LandingFooter />
+      <MarketingChromeBar />
     </div>
   );
 }
