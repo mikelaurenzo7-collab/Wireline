@@ -159,7 +159,7 @@ export async function evaluateSmsThreadReplyGate(
       requireFederalDncScreening: sales,
       salesScreening: sales ? "one_off" : "bulk",
       hasExpressWrittenConsent: false,
-      isRequestedCallback: manual.screening.isRequestedCallback,
+      isRequestedCallback: false,
       audit: manual.audit,
     });
     return gate.allowed ? { ...gate, contentWarning: manual.contentWarning } : gate;

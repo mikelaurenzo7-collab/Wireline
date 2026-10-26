@@ -7,9 +7,11 @@ import {
   type OutboundPurpose,
   screenedDirectOutboundCall,
 } from "./outbound-call-purpose";
+import { isDncBlocked } from "./compliance";
 import {
   CONTACT_PERMISSION_VERSION,
   CUSTOMER_SINCE_REQUIRED_MESSAGE,
+  INTERNAL_DNC_MESSAGE,
   NONSALES_CONFIRMATION_VERSION,
   NONSALES_REQUIRED_MESSAGE,
   PERMISSION_REQUIRED_MESSAGE,
@@ -66,6 +68,26 @@ export async function screenManualOutbound(input: {
   userAgent?: string | null;
   relationship?: DerivedRelationship | null;
 }): Promise<ManualOutboundBlock | ManualOutboundScreen> {
+  try {
+    if (await isDncBlocked(input.userId, input.phone)) {
+      await block(
+        input,
+        null,
+        input.requestedPurpose,
+        input.requestedPurpose,
+        INTERNAL_DNC_MESSAGE,
+      );
+      return { ok: false, status: 403, code: "DO_NOT_CONTACT", error: INTERNAL_DNC_MESSAGE };
+    }
+  } catch (error) {
+    log.warn("opt-out lookup failed before outbound confirmation", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    const errorText = "We couldn't check the do-not-contact list for this number. Try again.";
+    await block(input, null, input.requestedPurpose, input.requestedPurpose, errorText);
+    return { ok: false, status: 503, code: "DO_NOT_CONTACT_UNAVAILABLE", error: errorText };
+  }
+
   const relationship =
     input.relationship === undefined
       ? await deriveRelationship(input.userId, input.phone)

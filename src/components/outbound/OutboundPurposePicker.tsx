@@ -27,6 +27,10 @@ type OutboundPurposePickerProps = {
   onNonsales: (checked: boolean) => void;
   contentWarning?: string | null;
   disabled?: boolean;
+  /** Locks the purpose chips. Permission checkboxes stay usable. */
+  purposeLocked?: boolean;
+  /** Replaces the purpose chips with the human label of a prepared call. */
+  lockedPurposeLabel?: string;
   permissionLabel?: string;
 };
 
@@ -44,34 +48,40 @@ export default function OutboundPurposePicker({
   onNonsales,
   contentWarning,
   disabled,
+  purposeLocked,
+  lockedPurposeLabel,
   permissionLabel = CONTACT_PERMISSION_LABEL,
 }: OutboundPurposePickerProps) {
   return (
     <div className="space-y-3">
       <div>
         <span className="block text-sm font-semibold text-foreground">Why are you contacting them?</span>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {OUTBOUND_PURPOSE_CHOICES.map((choice) => {
-            const lockedSales = relationship && choice.id === "sales";
-            const selected = purpose === choice.id;
-            return (
-              <button
-                key={choice.id}
-                type="button"
-                disabled={disabled || lockedSales}
-                aria-pressed={selected}
-                onClick={() => onPurpose(choice.id)}
-                className={`min-h-11 rounded-full border px-3 text-sm ${
-                  selected
-                    ? "border-primary bg-primary/10 text-foreground"
-                    : "border-border bg-background text-muted-foreground"
-                } ${lockedSales ? "cursor-not-allowed opacity-50" : ""}`}
-              >
-                {choice.label}
-              </button>
-            );
-          })}
-        </div>
+        {lockedPurposeLabel ? (
+          <p className="mt-2 text-sm text-foreground">{lockedPurposeLabel}</p>
+        ) : (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {OUTBOUND_PURPOSE_CHOICES.map((choice) => {
+              const lockedSales = relationship && choice.id === "sales";
+              const selected = purpose === choice.id;
+              return (
+                <button
+                  key={choice.id}
+                  type="button"
+                  disabled={disabled || purposeLocked || lockedSales}
+                  aria-pressed={selected}
+                  onClick={() => onPurpose(choice.id)}
+                  className={`min-h-11 rounded-full border px-3 text-sm ${
+                    selected
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border bg-background text-muted-foreground"
+                  } ${lockedSales ? "cursor-not-allowed opacity-50" : ""}`}
+                >
+                  {choice.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
         {relationship ? (
           <p className="mt-2 text-xs leading-5 text-muted-foreground">
             They contacted you in the last 90 days, so Returning their call is selected. That can
@@ -88,7 +98,7 @@ export default function OutboundPurposePicker({
             type="date"
             className="min-h-11 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
             value={customerSince}
-            disabled={disabled}
+            disabled={disabled || purposeLocked}
             onChange={(event) => onCustomerSince(event.target.value)}
           />
         </label>

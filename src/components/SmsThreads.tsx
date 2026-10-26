@@ -12,6 +12,7 @@ import {
 
 import { authFetch } from "../lib/api";
 import { salesContentWarning } from "../lib/outbound-call-purpose";
+import { INTERNAL_DNC_MESSAGE } from "../lib/outbound-compliance-copy";
 import OutboundPurposePicker, {
   SalesAttestationCheckbox,
   type OutboundPurposeChoice,
@@ -196,6 +197,7 @@ export default function SmsThreads({
   const [smsNonsalesChecked, setSmsNonsalesChecked] = useState(false);
   const [smsCustomerSince, setSmsCustomerSince] = useState("");
   const [smsContextLoaded, setSmsContextLoaded] = useState(false);
+  const [smsOptedOut, setSmsOptedOut] = useState(false);
   const [smsSalesAttested, setSmsSalesAttested] = useState(false);
   const [smsSalesChecked, setSmsSalesChecked] = useState(false);
   const [drafting, setDrafting] = useState(false);
@@ -482,6 +484,7 @@ export default function SmsThreads({
     const phone = activeThread?.customer_number;
     if (!phone) return;
     setSmsContextLoaded(false);
+    setSmsOptedOut(false);
     const controller = new AbortController();
     void authFetch(`/api/outbound/contact-context?phone=${encodeURIComponent(phone)}`, {
       signal: controller.signal,
@@ -494,9 +497,11 @@ export default function SmsThreads({
         customerSince?: string | null;
         suggestedPurpose?: OutboundPurposeChoice;
         salesAttestationRecorded?: boolean;
+        optedOut?: boolean;
       } | null) => {
         if (!body || controller.signal.aborted) return;
         setSmsRelationship(Boolean(body.relationship));
+        setSmsOptedOut(body.optedOut === true);
         setSmsPermissionStored(body.permissionConfirmed === true);
         setSmsNonsalesStored(body.nonsalesConfirmed === true);
         setSmsSalesAttested(body.salesAttestationRecorded === true);
@@ -586,6 +591,10 @@ export default function SmsThreads({
       drafting
     )
       return;
+    if (smsOptedOut) {
+      setThreadErr(INTERNAL_DNC_MESSAGE);
+      return;
+    }
     const effectiveSmsPurpose =
       smsRelationship && smsPurpose === "sales" ? "returning_contact" : smsPurpose;
     const needsPermission =
@@ -1098,16 +1107,23 @@ export default function SmsThreads({
                   relationship={smsRelationship}
                   customerSince={smsCustomerSince}
                   onCustomerSince={setSmsCustomerSince}
-                  showPermission={!smsRelationship && !smsPermissionStored}
+                  showPermission={!smsOptedOut && !smsRelationship && !smsPermissionStored}
                   permissionChecked={smsPermissionChecked}
                   onPermission={setSmsPermissionChecked}
-                  showNonsales={!smsRelationship && smsPurpose !== "sales" && !smsNonsalesStored}
+                  showNonsales={
+                    !smsOptedOut && !smsRelationship && smsPurpose !== "sales" && !smsNonsalesStored
+                  }
                   nonsalesChecked={smsNonsalesChecked}
                   onNonsales={setSmsNonsalesChecked}
                   contentWarning={smsPurpose === "sales" ? null : salesContentWarning(reply)}
                   disabled={readOnly || sending}
                 />
-                {(!smsRelationship && smsPurpose === "sales" && !smsSalesAttested) ? (
+                {smsOptedOut ? (
+                  <p className="text-sm text-foreground" role="status">
+                    {INTERNAL_DNC_MESSAGE}
+                  </p>
+                ) : null}
+                {(!smsOptedOut && !smsRelationship && smsPurpose === "sales" && !smsSalesAttested) ? (
                   <SalesAttestationCheckbox
                     checked={smsSalesChecked}
                     onChange={setSmsSalesChecked}

@@ -46,7 +46,7 @@ const STATE_DETAIL: Record<DncSellerRegistrationState, string> = {
   missing:
     "Optional. If you have a National Do Not Call Registry account number, paste it below. Sales screening still runs. Personal, appointment, and follow-up calls don't use it.",
   pending_link:
-    "Your account number is saved. Sales screening uses it when you add it. You do not have to wait for anything else to connect.",
+    "Your account number is saved. Sales screening can use it after this connection finishes. One-at-a-time calls and texts are not waiting on it.",
   expired: "Renew your subscription at the registry, then update the expiration date here.",
   active: "Sales calls and texts can include your registry account number.",
 };

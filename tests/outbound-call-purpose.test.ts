@@ -63,7 +63,8 @@ describe("screened direct outbound", () => {
       callPurpose: "callback",
       isMarketingCall: false,
       requireFederalDncScreening: false,
-      isRequestedCallback: true,
+      hasExpressWrittenConsent: false,
+      isRequestedCallback: false,
     });
     expect(screenedDirectOutboundCall("marketing_or_sales").callPurpose).toBe("sales");
     expect(screenedDirectOutboundCall("service_or_requested").callPurpose).toBe("appointment_service");

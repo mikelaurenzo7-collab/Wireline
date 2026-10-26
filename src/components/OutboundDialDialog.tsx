@@ -19,6 +19,7 @@ import {
   OUTBOUND_CONSENT_LABEL,
   OUTBOUND_CONSENT_LEGAL_PATH,
 } from "../lib/outbound-consent-copy";
+import { INTERNAL_DNC_MESSAGE } from "../lib/outbound-compliance-copy";
 import OutboundPurposePicker, {
   SalesAttestationCheckbox,
   type OutboundPurposeChoice,
@@ -33,6 +34,17 @@ import {
   savePendingOutboundDial,
   type PendingOutboundDial,
 } from "../lib/outbound-dial-recovery";
+
+function preparedPurposeLabel(purpose: string): string {
+  if (purpose === "callback") return "Callback";
+  if (purpose === "service_or_requested" || purpose === "appointment_service")
+    return "Appointment/service";
+  if (purpose === "returning_contact") return "Returning their call";
+  if (purpose === "existing_customer") return "Existing customer";
+  if (purpose === "personal") return "Personal";
+  if (purpose === "sales" || purpose === "marketing_or_sales") return "Sales";
+  return "Appointment/service";
+}
 
 type OutboundDialDialogProps = {
   open: boolean;
@@ -68,6 +80,7 @@ function DirectOutboundDialDialog({
   const [customerSince, setCustomerSince] = useState("");
   const [salesAttestationRecorded, setSalesAttestationRecorded] = useState(false);
   const [salesAttestationChecked, setSalesAttestationChecked] = useState(false);
+  const [optedOut, setOptedOut] = useState(false);
   const [purposeTouched, setPurposeTouched] = useState(false);
   const preparedPurpose = preparedCall?.call_purpose ?? null;
   const callPurpose =
@@ -75,7 +88,7 @@ function DirectOutboundDialDialog({
   const salesCall = callPurpose === "sales";
 
   const [agentId, setAgentId] = useState(initialAgentId);
-  const [number, setNumber] = useState(initialNumber);
+  const [number, setNumber] = useState(preparedCall?.phone || initialNumber);
   const [context, setContext] = useState(initialContext);
   const [placing, setPlacing] = useState(false);
   const [savedRecovery] = useState(() => {
@@ -112,8 +125,8 @@ function DirectOutboundDialDialog({
   useEffect(() => {
     if (!open || placingRef.current || pendingRef.current) return;
     setAgentId(initialAgentId);
-    setNumber(initialNumber);
-    setContext(initialContext);
+    setNumber(preparedCall?.phone || initialNumber);
+    setContext(preparedCall?.instruction || initialContext);
     setPurpose("appointment_service");
     setRelationship(false);
     setPermissionStored(false);
@@ -123,14 +136,16 @@ function DirectOutboundDialDialog({
     setCustomerSince("");
     setSalesAttestationRecorded(false);
     setSalesAttestationChecked(false);
+    setOptedOut(false);
     setPurposeTouched(false);
     setUncertain(false);
     requestRef.current = null;
   }, [open, initialAgentId, initialNumber, initialContext, preparedCall]);
 
   useEffect(() => {
-    if (!open || preparedCall) return;
-    const digits = number.replace(/\D/g, "");
+    if (!open) return;
+    const source = preparedCall?.phone || number;
+    const digits = source.replace(/\D/g, "");
     if (digits.length < 10) return;
     const phone = `+${digits.length === 10 ? `1${digits}` : digits}`;
     const controller = new AbortController();
@@ -145,14 +160,16 @@ function DirectOutboundDialDialog({
         customerSince?: string | null;
         suggestedPurpose?: OutboundPurposeChoice;
         salesAttestationRecorded?: boolean;
+        optedOut?: boolean;
       } | null) => {
         if (!body || controller.signal.aborted) return;
         const hasRelationship = Boolean(body.relationship);
         setRelationship(hasRelationship);
+        setOptedOut(body.optedOut === true);
         setPermissionStored(body.permissionConfirmed === true);
         setNonsalesStored(body.nonsalesConfirmed === true);
         setSalesAttestationRecorded(body.salesAttestationRecorded === true);
-        if (!purposeTouched && body.suggestedPurpose) setPurpose(body.suggestedPurpose);
+        if (!preparedCall && !purposeTouched && body.suggestedPurpose) setPurpose(body.suggestedPurpose);
         if (body.customerSince) setCustomerSince(body.customerSince.slice(0, 10));
       })
       .catch(() => undefined);
@@ -270,9 +287,9 @@ function DirectOutboundDialDialog({
   const setupHref = resolvedAgentId
     ? `/phone?tab=setup&agent=${encodeURIComponent(resolvedAgentId)}`
     : "/phone?tab=setup";
-  const showPermission = !permissionStored;
-  const showNonsales = !salesCall && callPurpose !== "callback" && !nonsalesStored;
-  const showSalesAttestation = salesCall && !salesAttestationRecorded;
+  const showPermission = !optedOut && !permissionStored;
+  const showNonsales = !optedOut && !salesCall && !nonsalesStored;
+  const showSalesAttestation = !optedOut && salesCall && !salesAttestationRecorded;
   const contentWarning = salesCall ? null : salesContentWarning(context);
   const canPlace =
     !placing &&
@@ -282,6 +299,7 @@ function DirectOutboundDialDialog({
     (!preparedCall || Date.parse(preparedCall.expires_at) > Date.now()) &&
     !!resolvedAgentId &&
     number.trim().length > 0 &&
+    !optedOut &&
     (!showPermission || permissionChecked) &&
     (!showNonsales || nonsalesChecked) &&
     (!showSalesAttestation || salesAttestationChecked) &&
@@ -522,14 +540,21 @@ function DirectOutboundDialDialog({
                 nonsalesChecked={nonsalesChecked}
                 onNonsales={setNonsalesChecked}
                 contentWarning={contentWarning}
-                disabled={placing || uncertain || !!preparedCall}
+                disabled={placing || uncertain}
+                purposeLocked={!!preparedCall}
+                lockedPurposeLabel={preparedCall ? preparedPurposeLabel(preparedCall.call_purpose) : undefined}
                 permissionLabel={OUTBOUND_CONSENT_LABEL}
               />
+              {optedOut ? (
+                <p className="text-sm text-foreground" role="status">
+                  {INTERNAL_DNC_MESSAGE}
+                </p>
+              ) : null}
               {showSalesAttestation ? (
                 <SalesAttestationCheckbox
                   checked={salesAttestationChecked}
                   onChange={setSalesAttestationChecked}
-                  disabled={placing || uncertain || !!preparedCall}
+                  disabled={placing || uncertain}
                 />
               ) : null}
               <p className="text-xs leading-5 text-muted-foreground">

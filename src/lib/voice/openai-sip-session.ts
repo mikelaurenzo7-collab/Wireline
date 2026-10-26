@@ -11,6 +11,7 @@ import type { ToolCallContext } from "../agent-tool-types";
 import { dispatchAgentToolCall } from "../agent-tool-dispatch";
 import { isToolCallFailureResult } from "../call-reliability-capture";
 import { complianceFirstMessagePrefix, formatCallbackNumberForSpeech } from "../agent-runtime";
+import { spokenBusinessName } from "./spoken-business-name";
 import {
   assertExternalEntityActionAllowed,
   assertLiveExternalActionAllowed,
@@ -314,15 +315,17 @@ export function deterministicSummary(transcript: string): string {
 function buildOutboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRuntime): string {
   const purpose = input.callPurpose || "service_or_requested";
   const telemarketing = isMarketingCallPurpose(purpose);
-  const business = (input.businessName || "").trim() || "this business";
+  const business =
+    spokenBusinessName({ businessName: input.businessName }) || "this business";
   const disclosure = complianceFirstMessagePrefix(input.complianceMode, business, {
     outboundAiCall: true,
     recordingEnabled: input.callRecordingEnabled === true,
     telemarketing,
   });
   const name = input.customerName?.trim();
-  const identity = input.businessName?.trim()
-    ? `${runtime.agentName} with ${input.businessName.trim()}`
+  const namedBusiness = spokenBusinessName({ businessName: input.businessName });
+  const identity = namedBusiness
+    ? `${runtime.agentName} with ${namedBusiness}`
     : runtime.agentName;
   const callbackNumberSpoken = formatCallbackNumberForSpeech(input.calledNumber);
   const callbackSentence = callbackNumberSpoken

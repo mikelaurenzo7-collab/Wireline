@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SALES_DNC_ATTESTATION_VERSION, SALES_DNC_LISTED_MESSAGE } from "../src/lib/outbound-compliance-copy";
 import { currentSalesDncAttestation } from "../src/lib/sales-dnc-attestation";
+import { screenedDirectOutboundCall } from "../src/lib/outbound-call-purpose";
 
 const ATTESTATION_AT = new Date("2026-10-26T15:00:00.000Z");
 
@@ -144,5 +145,102 @@ describe("one-off and bulk sales screening", () => {
     if (!result.allowed) expect(result.reason).toBe("federal_dnc_unconfigured");
     expect(assertFederalDncForMarketing).toHaveBeenCalledOnce();
     expect(isFederalDncListed).not.toHaveBeenCalled();
+  });
+
+  it("does not let a client callback purpose skip the one-call-per-day limit or grant consent", async () => {
+    const screening = screenedDirectOutboundCall("callback");
+    expect(screening.isRequestedCallback).toBe(false);
+    expect(screening.hasExpressWrittenConsent).toBe(false);
+    const evaluateOutboundConsent = vi.fn(() => ({
+      allowed: true,
+      rule: "one_party",
+      state: "IL",
+      must_disclose_recording: true,
+      must_offer_opt_out: true,
+      disclosure_script: "script",
+    }));
+    vi.resetModules();
+    vi.doMock("../src/lib/server-context", () => ({
+      drizzle: {
+        select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) }),
+      },
+      log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    }));
+    vi.doMock("../src/lib/tcpa-calling-hours", () => ({
+      resolveCallingHoursForPhone: () => ({ allowed: true, timeZone: "America/Chicago" }),
+    }));
+    vi.doMock("../src/lib/federal-dnc-service", () => ({
+      assertFederalDncForMarketing: () => ({ allowed: true, configured: true }),
+      isFederalDncListed: async () => false,
+    }));
+    vi.doMock("../src/lib/compliance", () => ({ isDncBlocked: async () => false }));
+    vi.doMock("../src/lib/tcpa-consent", () => ({ evaluateOutboundConsent }));
+    const { evaluateOutboundDialGate } = await import("../src/lib/outbound-dial-gate");
+    const recent = await evaluateOutboundDialGate({
+      userId: "tenant-1",
+      phone: "+13125550100",
+      isMarketingCall: screening.isMarketingCall,
+      requireFederalDncScreening: screening.requireFederalDncScreening,
+      hasExpressWrittenConsent: screening.hasExpressWrittenConsent,
+      isRequestedCallback: screening.isRequestedCallback,
+      lastCalledAt: new Date(),
+    });
+    expect(recent.allowed).toBe(false);
+    if (!recent.allowed) expect(recent.reason).toBe("self_recent_call_scheduled");
+    expect(evaluateOutboundConsent).not.toHaveBeenCalled();
+
+    const open = await evaluateOutboundDialGate({
+      userId: "tenant-1",
+      phone: "+13125550100",
+      isMarketingCall: screening.isMarketingCall,
+      requireFederalDncScreening: screening.requireFederalDncScreening,
+      hasExpressWrittenConsent: screening.hasExpressWrittenConsent,
+      isRequestedCallback: screening.isRequestedCallback,
+    });
+    expect(open.allowed).toBe(true);
+    expect(evaluateOutboundConsent).toHaveBeenCalledWith(
+      expect.objectContaining({ has_express_written_consent: false, is_marketing_call: false }),
+    );
+  });
+});
+
+describe("opted-out numbers", () => {
+  afterEach(() => {
+    vi.resetModules();
+    vi.unstubAllEnvs();
+  });
+
+  it("skips the permission prompt and does not save a confirmation", async () => {
+    vi.resetModules();
+    const rememberContactOutbound = vi.fn();
+    const readContactOutboundRecord = vi.fn();
+    vi.doMock("../src/lib/server-context", () => ({
+      drizzle: {},
+      log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    }));
+    vi.doMock("../src/lib/compliance", () => ({ isDncBlocked: async () => true }));
+    vi.doMock("../src/lib/outbound-contact-consent", () => ({
+      readContactOutboundRecord,
+      rememberContactOutbound,
+    }));
+    vi.doMock("../src/lib/outbound-relationship", () => ({
+      deriveRelationship: vi.fn(),
+    }));
+    const { screenManualOutbound } = await import("../src/lib/outbound-manual-screening");
+    const result = await screenManualOutbound({
+      userId: "tenant-1",
+      phone: "+13125550100",
+      channel: "call",
+      requestedPurpose: "appointment_service",
+      permissionConfirmed: true,
+      nonsalesConfirmed: true,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe("DO_NOT_CONTACT");
+      expect(result.error).toMatch(/asked not to be contacted/);
+    }
+    expect(rememberContactOutbound).not.toHaveBeenCalled();
+    expect(readContactOutboundRecord).not.toHaveBeenCalled();
   });
 });

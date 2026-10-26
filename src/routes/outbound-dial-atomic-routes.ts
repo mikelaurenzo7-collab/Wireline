@@ -9,6 +9,7 @@ import { validate } from "../middleware/input-validation";
 import { AppError } from "../lib/api-error";
 import { normalizeOutboundNumber } from "../lib/dialer-compliance";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
+import { CALL_NEEDS_PERMISSION_MESSAGE } from "../lib/outbound-compliance-copy";
 import {
   OUTBOUND_CALL_PURPOSES,
   outboundConsentMetadata,
@@ -109,7 +110,7 @@ function gateResponse(res: Response, gate: DeniedOutboundDialGate) {
   if (gate.reason === "blocked_tcpa") {
     return res.status(403).json({
       code: "FORBIDDEN",
-      error: gate.customerMessage || gate.tcpaDecision?.disclosure_script || "Call blocked by TCPA consent rules.",
+      error: gate.customerMessage || gate.tcpaDecision?.disclosure_script || CALL_NEEDS_PERMISSION_MESSAGE,
       tcpaBlocked: true,
       tcpa: gate.tcpaDecision,
     });
@@ -285,7 +286,7 @@ router.post(
         requireFederalDncScreening: screening.requireFederalDncScreening,
         salesScreening: screening.requireFederalDncScreening ? "one_off" : "bulk",
         hasExpressWrittenConsent: false,
-        isRequestedCallback: screening.isRequestedCallback,
+        isRequestedCallback: false,
         metadata: { has_express_written_consent: false },
         audit: manual.audit,
       });

@@ -71,7 +71,8 @@ describe("direct-dial compliance contract", () => {
       expect(source).toContain("requestedCallPurpose: screening.requestedCallPurpose");
       expect(source).toContain("requireFederalDncScreening: screening.requireFederalDncScreening");
       expect(source).toContain('salesScreening: screening.requireFederalDncScreening ? "one_off" : "bulk"');
-      expect(source).toContain("isRequestedCallback: screening.isRequestedCallback");
+      expect(source).toContain("isRequestedCallback: false");
+      expect(source).not.toContain("isRequestedCallback: screening.isRequestedCallback");
       expect(source).toContain("hasExpressWrittenConsent: false");
       expect(source).not.toContain("await inspectOutboundRecipientPermission({");
       expect(source).not.toContain("artifactId: consentArtifactId");

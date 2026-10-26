@@ -7,6 +7,7 @@ import * as schema from "../db/schema";
 import { authenticateUser } from "../middleware/auth";
 import { validate } from "../middleware/input-validation";
 import { AppError } from "../lib/api-error";
+import { isDncBlocked } from "../lib/compliance";
 import { parseFormData, OutboundBulkSchema } from "../lib/form-validators";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import {
@@ -16,6 +17,7 @@ import {
 } from "../lib/outbound-call-purpose";
 import { readContactOutboundRecord } from "../lib/outbound-contact-consent";
 import { screenManualOutbound } from "../lib/outbound-manual-screening";
+import { CALL_NEEDS_PERMISSION_MESSAGE } from "../lib/outbound-compliance-copy";
 import { deriveRelationship } from "../lib/outbound-relationship";
 import { readSalesDncAttestation } from "../lib/sales-dnc-attestation";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
@@ -506,10 +508,11 @@ router.get(
       return res.status(400).json({ code: "VALIDATION_ERROR", error: "A phone number is required." });
     }
     try {
-      const [relationship, record, attestation] = await Promise.all([
+      const [relationship, record, attestation, optedOut] = await Promise.all([
         deriveRelationship(req.user.id, phone),
         readContactOutboundRecord(req.user.id, phone),
         readSalesDncAttestation(req.user.id),
+        isDncBlocked(req.user.id, phone),
       ]);
       res.json({
         relationship,
@@ -519,6 +522,7 @@ router.get(
         customerSince: record.customerSince,
         suggestedPurpose: suggestedOutboundPurpose(relationship, record.lastPurpose),
         salesAttestationRecorded: Boolean(attestation),
+        optedOut,
       });
     } catch (error) {
       log.warn("outbound contact context failed", { error: getErrorMessage(error) });
@@ -587,7 +591,7 @@ router.post(
         requireFederalDncScreening: screening.requireFederalDncScreening,
         salesScreening: screening.requireFederalDncScreening ? "one_off" : "bulk",
         hasExpressWrittenConsent: false,
-        isRequestedCallback: screening.isRequestedCallback,
+        isRequestedCallback: false,
         metadata: { has_express_written_consent: false },
         audit: manual.audit,
       });
@@ -627,7 +631,7 @@ router.post(
             error:
               gate.customerMessage ||
               tcpa?.disclosure_script ||
-              "Call blocked by TCPA consent rules.",
+              CALL_NEEDS_PERMISSION_MESSAGE,
             tcpaBlocked: true,
             tcpa,
           });

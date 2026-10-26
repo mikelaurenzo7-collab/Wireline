@@ -95,7 +95,7 @@ export function screenedDirectOutboundCall(
     isMarketingCall: sales,
     requireFederalDncScreening: sales,
     hasExpressWrittenConsent: false,
-    isRequestedCallback: callPurpose === "callback",
+    isRequestedCallback: false,
   } as const;
 }
 

@@ -1,8 +1,8 @@
 -- 0194 — outbound purpose compliance.
 -- Optional per-workspace National DNC account number, per-contact confirmation
 -- store, and an append-only allow/block audit. Audit rows are kept for 5 years
--- and are intentionally absent from wireline_purge_old_data. Do not apply this
--- file from an agent; the operator applies migrations.
+-- and are intentionally absent from wireline_purge_old_data. Apply via the
+-- Supabase migration process right before merge.
 -- LAWYER REVIEW NEEDED: retention wording is a product record, not a legal opinion.
 
 ALTER TABLE public.wireline_settings

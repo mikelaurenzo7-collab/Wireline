@@ -35,6 +35,8 @@ export const NONSALES_CONFIRMATION_VERSION = "nonsales-confirmation-2026-10-26";
 export const PERMISSION_REQUIRED_MESSAGE =
   "Confirm you have this person's permission before the first call or text.";
 
+export const CALL_NEEDS_PERMISSION_MESSAGE = "This call needs the person's permission first.";
+
 export const NONSALES_REQUIRED_MESSAGE =
   "Confirm this isn't selling anything before a non-sales call or text.";
 
