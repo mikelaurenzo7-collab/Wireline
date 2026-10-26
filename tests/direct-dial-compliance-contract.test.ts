@@ -11,13 +11,21 @@ import {
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("direct-dial compliance contract", () => {
-  it("does not trust a client-selected service or callback label as a non-marketing artifact", () => {
-    for (const callPurpose of ["service_or_requested", "callback"] as const) {
-      expect(classifyUntrustedDirectDial({ callPurpose })).toMatchObject({
-        effectiveCallPurpose: "marketing_or_sales",
-        isMarketingCall: true,
-      });
-    }
+  it("trusts a non-sales purpose and keeps sales on federal screening", () => {
+    expect(classifyUntrustedDirectDial({ callPurpose: "appointment_service", nonsalesAttested: true })).toMatchObject({
+      effectiveCallPurpose: "appointment_service",
+      isMarketingCall: false,
+    });
+    expect(classifyUntrustedDirectDial({ callPurpose: "sales" })).toMatchObject({
+      effectiveCallPurpose: "sales",
+      isMarketingCall: true,
+    });
+    expect(requiresFederalDncScreeningForDirectDial("sales")).toBe(true);
+    expect(requiresFederalDncScreeningForDirectDial("personal")).toBe(false);
+    expect(requiresFederalDncScreeningForDirectDial("appointment_service")).toBe(false);
+    expect(requiresFederalDncScreeningForDirectDial("existing_customer")).toBe(false);
+    expect(requiresFederalDncScreeningForDirectDial("returning_contact")).toBe(false);
+    expect(requiresFederalDncScreeningForDirectDial("sales", { returning: true })).toBe(false);
   });
 
   it("rejects client-supplied consent descriptions until the server verifies an artifact", () => {
@@ -44,8 +52,9 @@ describe("direct-dial compliance contract", () => {
     expect(hasAuditableExpressConsentArtifact({})).toBe(false);
   });
 
-  it("makes Federal DNC screening unconditional for direct dial", () => {
+  it("makes Federal DNC screening depend on the purpose", () => {
     expect(requiresFederalDncScreeningForDirectDial()).toBe(true);
+    expect(requiresFederalDncScreeningForDirectDial("appointment_service")).toBe(false);
   });
 
   it("screens a direct dial without a recipient signature and keeps federal DNC mandatory", () => {
@@ -56,11 +65,12 @@ describe("direct-dial compliance contract", () => {
 
     for (const route of directDialRoutes) {
       const source = read(route);
-      expect(source).toContain("const screening = screenedDirectOutboundCall(callPurpose)");
+      expect(source).toContain("const screening = manual.screening");
       expect(source).toContain("const effectiveCallPurpose = screening.callPurpose");
       expect(source).toContain("callPurpose: effectiveCallPurpose");
       expect(source).toContain("requestedCallPurpose: screening.requestedCallPurpose");
       expect(source).toContain("requireFederalDncScreening: screening.requireFederalDncScreening");
+      expect(source).toContain('salesScreening: screening.requireFederalDncScreening ? "one_off" : "bulk"');
       expect(source).toContain("isRequestedCallback: screening.isRequestedCallback");
       expect(source).toContain("hasExpressWrittenConsent: false");
       expect(source).not.toContain("await inspectOutboundRecipientPermission({");

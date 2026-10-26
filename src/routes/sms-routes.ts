@@ -510,20 +510,35 @@ router.post(
         userId: req.user.id,
         threadId,
         phone: thread.customerNumber!,
+        requestedPurpose: req.body.callPurpose,
+        permissionConfirmed: req.body.permissionConfirmed,
+        nonsalesConfirmed: req.body.nonsalesConfirmed,
+        customerSince: req.body.customerSince,
+        content: body,
+        salesAttestationConfirmed: req.body.salesAttestationConfirmed,
+        enforceContactConfirmation: true,
+        actorIp: req.ip,
+        userAgent: typeof req.get === "function" ? req.get("user-agent") || null : null,
       });
       if (!gate.allowed) {
         if (gate.reason === "federal_dnc_unconfigured") {
           throw new AppError(
             503,
             gate.federalDncCode || "FEDERAL_DNC_UNCONFIGURED",
-            gate.federalDncMessage ||
-              "Screening has to clear this sales outreach before it goes out. Answering calls still works.",
+            gate.customerMessage ||
+              gate.federalDncMessage ||
+              "Campaigns and automated sales need number screening before they can send.",
           );
+        }
+        if (gate.reason === "sales_attestation_required") {
+          throw new AppError(403, "SALES_ATTESTATION_REQUIRED", gate.customerMessage || "Confirm sales responsibility first.");
         }
         throw new AppError(
           403,
           "FORBIDDEN",
-          gate.federalDncMessage || "Outbound SMS blocked by compliance policy for this number.",
+          gate.customerMessage ||
+            gate.federalDncMessage ||
+            "Outbound SMS blocked by compliance policy for this number.",
           { reason: gate.reason },
         );
       }

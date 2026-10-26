@@ -332,7 +332,7 @@ export async function createPhoneTest(input: {
   if (!gate.allowed) {
     if (gate.reason === "outside_permitted_calling_hours")
       throw AppError.conflict(
-        "Try your phone test between 8am and 9pm at your number's local time.",
+        "Try your phone test between 8am and 8pm at your number's local time.",
       );
     throw AppError.forbidden(
       "This number cannot receive the requested test. Check your Do Not Call settings.",

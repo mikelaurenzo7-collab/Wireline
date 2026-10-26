@@ -69,6 +69,24 @@ export async function clearDncSellerRegistration(userId: string): Promise<void> 
     .where(eq(schema.settings.userId, userId));
 }
 
+export async function readWorkspaceDncSan(userId: string): Promise<string | null> {
+  const [row] = await drizzle
+    .select({ dncSan: schema.settings.dncSan })
+    .from(schema.settings)
+    .where(eq(schema.settings.userId, userId))
+    .limit(1);
+  return typeof row?.dncSan === "string" && row.dncSan.trim() ? row.dncSan : null;
+}
+
+export async function saveWorkspaceDncSan(userId: string, san: string | null): Promise<void> {
+  const updated = await drizzle
+    .update(schema.settings)
+    .set({ dncSan: san, updatedAt: new Date() })
+    .where(eq(schema.settings.userId, userId))
+    .returning({ userId: schema.settings.userId });
+  if (!updated.length) throw AppError.fromHttpStatus(409, "Account settings are not ready yet.");
+}
+
 /** Platform admin: record the screening vendor project configured with this seller's SAN. */
 export async function linkDncSellerVendorProject(input: {
   userId: string;

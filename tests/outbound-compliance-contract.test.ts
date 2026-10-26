@@ -24,7 +24,7 @@ describe("outbound compliance contract", () => {
       expect(source).toContain("OUTSIDE_PERMITTED_CALLING_HOURS");
     }
 
-    expect(web).toContain("screenedDirectOutboundCall(callPurpose)");
+    expect(web).toContain("screenManualOutbound");
     expect(web).toContain("const effectiveCallPurpose = screening.callPurpose");
     expect(web).not.toContain("await inspectOutboundRecipientPermission({");
     expect(mobile).toContain("res.status(503).json(NATIVE_OUTBOUND_UNAVAILABLE)");
@@ -74,10 +74,10 @@ describe("outbound compliance contract", () => {
     const mobile = read("src/routes/mobile-routes.ts");
 
     expect(purpose).toContain('OUTBOUND_CONSENT_VERSION = "tcpa-v1"');
-    expect(purpose).toContain("call_purpose: input.callPurpose");
+    expect(purpose).toContain("call_purpose: effective");
     expect(purpose).toContain("client_requested_call_purpose");
     expect(purpose).toContain("consent_version: OUTBOUND_CONSENT_VERSION");
-    expect(purpose).toContain("has_express_written_consent: normalizedExpressConsent(input)");
+    expect(purpose).toContain("normalizedExpressConsent({");
     expect(purpose).toContain("source: input.source");
     expect(purpose).not.toContain("normalizeOutboundCallPurpose");
     expect(web).toContain('source: "web"');

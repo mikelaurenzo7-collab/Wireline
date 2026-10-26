@@ -130,42 +130,35 @@ beforeEach(() => {
 });
 
 describe("automated intake signed permission admission", () => {
-  it("inspects the exact owned marketing grant before compliance and forwards it for dispatch recheck", async () => {
+  it("places a returning-contact call and does not throw on a missing consent artifact", async () => {
     await expect(processIntakeAutoDialJob(payload)).resolves.toEqual({
       outcome: "dialing",
       callId: sid,
     });
-    expect(h.order).toEqual(["signed-inspection", "dial-gate", "controls", "placement"]);
-    expect(h.inspect).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId,
-        agentId: "bot",
-        phone: h.lead.customerNumber,
-        leadId: 1n,
-        callPurpose: "marketing_or_sales",
-        attemptId: expect.stringMatching(/^[a-f0-9-]{36}$/i),
-      }),
-    );
+    expect(h.order).toEqual(["dial-gate", "controls", "placement"]);
+    expect(h.inspect).not.toHaveBeenCalled();
     expect(h.gate).toHaveBeenCalledWith(
       expect.objectContaining({
-        isMarketingCall: true,
-        requireFederalDncScreening: true,
-        hasExpressWrittenConsent: true,
+        isMarketingCall: false,
+        requireFederalDncScreening: false,
+        hasExpressWrittenConsent: false,
       }),
     );
     expect(h.place).toHaveBeenCalledWith(
-      expect.objectContaining({ consentArtifactId: artifactId, leadId: 1n }),
+      expect.objectContaining({ callPurpose: "returning_contact", leadId: 1n }),
     );
+    expect(h.place.mock.calls[0][0].consentArtifactId).toBeUndefined();
   });
 
-  it("never treats imported consent flags as permission when inspection fails", async () => {
+  it("never treats imported consent flags as a reason to throw", async () => {
     h.inspect.mockRejectedValue(new Error("RECIPIENT_PERMISSION_REQUIRED"));
-    await expect(processIntakeAutoDialJob(payload)).rejects.toThrow(
-      "RECIPIENT_PERMISSION_REQUIRED",
-    );
-    expect(h.gate).not.toHaveBeenCalled();
-    expect(h.controls).not.toHaveBeenCalled();
-    expect(h.place).not.toHaveBeenCalled();
+    await expect(processIntakeAutoDialJob(payload)).resolves.toEqual({
+      outcome: "dialing",
+      callId: sid,
+    });
+    expect(h.inspect).not.toHaveBeenCalled();
+    expect(h.gate).toHaveBeenCalled();
+    expect(h.place).toHaveBeenCalled();
   });
 
   it("does not overwrite an early terminal carrier outcome after Calls.create returns", async () => {

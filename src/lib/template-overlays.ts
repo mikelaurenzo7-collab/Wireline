@@ -186,7 +186,7 @@ DOCUMENTATION: Within the approved collections workflow, use log_payment_promise
 
 ESCALATION: Soft collections DO NOT escalate to hard collections on the first contact. Save the verified outcome for owner review with an enabled task tool. Do not schedule another call or claim that a cadence will handle it.
 
-ABSOLUTE NO-GOs: No threats, no shame language, no judgments about how they spend money, no calls before 8am or after 9pm local time.`,
+ABSOLUTE NO-GOs: No threats, no shame language, no judgments about how they spend money, no calls before 8am or after 8pm local time.`,
 
   "collections-hard": `## TEMPLATE SPECIALTY: Hard Collections (Recovery)
 **COMPLIANCE DISCLAIMER (ALWAYS STATE VERBALLY WHEN DISCUSSING ANY RESOLUTION OR SETTLEMENT):** "Settlement outcomes are not guaranteed. Creditors and collectors set their own policies. This is not legal or financial advice."
@@ -214,7 +214,7 @@ OBJECTION HANDLING (compliant):
 - "Stop calling me" → Acknowledge the request, use the approved suppression tool, state completion only after confirmation, and end the call. If the tool fails, end the call and escalate without making another collection attempt.
 - "I'll pay when I can" → "I appreciate that. Can we set a specific date so I can note it on your account? If something changes, just give us a call back."
 
-ABSOLUTE BARS: No threats of arrest, criminal action, garnishment you can't actually pursue, or harm to credit you can't actually report. No calls before 8am or after 9pm local. No discussing debt with anyone other than the debtor or their attorney.`,
+ABSOLUTE BARS: No threats of arrest, criminal action, garnishment you can't actually pursue, or harm to credit you can't actually report. No calls before 8am or after 8pm local. No discussing debt with anyone other than the debtor or their attorney.`,
 
   // ─── MARKETING ─────────────────────────────────────────────────────────────
   "marketing-reengagement": `## TEMPLATE SPECIALTY: Re-Engagement Campaigner

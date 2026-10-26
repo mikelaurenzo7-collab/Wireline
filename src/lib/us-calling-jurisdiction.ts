@@ -1,12 +1,13 @@
 /**
  * United States locations for reviewed calling.
- * Hours use the federal 8am–9pm window, then a stricter state start already
- * enforced for phone inference. The recipient's signed time zone must be one
- * the state actually uses.
+ * BotBound's default window is 8am–8pm recipient local time, stricter than the
+ * federal 9pm cutoff. Illinois still starts at 9am. The recipient's signed
+ * time zone must be one the state actually uses.
  */
 
 export const FEDERAL_CALLING_HOUR_START = 8;
-export const FEDERAL_CALLING_HOUR_END = 21;
+/** Exclusive. Last legal hour is 19 (7pm–7:59pm). 8pm local is outside the window. */
+export const FEDERAL_CALLING_HOUR_END = 20;
 
 const STATE_CALLING_HOUR_START: Readonly<Record<string, number>> = { IL: 9 };
 

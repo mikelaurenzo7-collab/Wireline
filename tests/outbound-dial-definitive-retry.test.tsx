@@ -2,6 +2,7 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import OutboundDialDialog from "../src/components/OutboundDialDialog";
 import OutboundHub from "../src/components/outbound/OutboundHub";
+import OutboundPurposePicker from "../src/components/outbound/OutboundPurposePicker";
 import { authFetch } from "../src/lib/api";
 import { readPendingOutboundDial } from "../src/lib/outbound-dial-recovery";
 
@@ -203,7 +204,19 @@ function posted(index: number) {
 function response(status: number, body: unknown = {}) {
   return () => Promise.resolve(new Response(JSON.stringify(body), { status }));
 }
+async function confirmContact() {
+  const picker = nodes.find((node) => node.type === OutboundPurposePicker);
+  expect(picker, "purpose picker").toBeDefined();
+  const props = picker!.props as {
+    onPermission?: (checked: boolean) => void;
+    onNonsales?: (checked: boolean) => void;
+  };
+  props.onPermission?.(true);
+  props.onNonsales?.(true);
+}
 async function prepare() {
+  await settle();
+  confirmContact();
   await settle();
   expect(button("Place call").props.disabled).toBe(false);
 }
@@ -288,6 +301,8 @@ describe("direct outbound definitive-refusal retry", () => {
       expect.arrayContaining(["Business Front Desk", "Personal Assistant"]),
     );
     expect(optionLabels).not.toContain("Marketing or sales");
+    confirmContact();
+    await settle();
     expect(button("Place call").props.disabled).toBe(false);
     expect(posts()).toHaveLength(0);
     expect(entries.size).toBe(0);

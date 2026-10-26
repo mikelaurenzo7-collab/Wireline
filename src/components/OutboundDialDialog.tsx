@@ -14,11 +14,15 @@ import { Button } from "./atoms";
 import { useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
-import { isReviewedOutboundCandidate } from "../lib/outbound-call-purpose";
+import { isReviewedOutboundCandidate, salesContentWarning } from "../lib/outbound-call-purpose";
 import {
   OUTBOUND_CONSENT_LABEL,
   OUTBOUND_CONSENT_LEGAL_PATH,
 } from "../lib/outbound-consent-copy";
+import OutboundPurposePicker, {
+  SalesAttestationCheckbox,
+  type OutboundPurposeChoice,
+} from "./outbound/OutboundPurposePicker";
 import { authFetch } from "../lib/api";
 import { emitProductEvent } from "../lib/product-event-client";
 import type { PreparedCall } from "../lib/prepared-call-contract";
@@ -55,7 +59,20 @@ function DirectOutboundDialDialog({
 }: OutboundDialDialogProps & { userId: string }) {
   const { agents, loading, degraded, phoneLookupDegraded } = useAgents();
   const { toast } = useToast();
-  const callPurpose = preparedCall?.call_purpose ?? "marketing_or_sales";
+  const [purpose, setPurpose] = useState<OutboundPurposeChoice>("appointment_service");
+  const [relationship, setRelationship] = useState(false);
+  const [permissionStored, setPermissionStored] = useState(false);
+  const [nonsalesStored, setNonsalesStored] = useState(false);
+  const [permissionChecked, setPermissionChecked] = useState(false);
+  const [nonsalesChecked, setNonsalesChecked] = useState(false);
+  const [customerSince, setCustomerSince] = useState("");
+  const [salesAttestationRecorded, setSalesAttestationRecorded] = useState(false);
+  const [salesAttestationChecked, setSalesAttestationChecked] = useState(false);
+  const [purposeTouched, setPurposeTouched] = useState(false);
+  const preparedPurpose = preparedCall?.call_purpose ?? null;
+  const callPurpose =
+    preparedPurpose ?? (relationship && purpose === "sales" ? "returning_contact" : purpose);
+  const salesCall = callPurpose === "sales";
 
   const [agentId, setAgentId] = useState(initialAgentId);
   const [number, setNumber] = useState(initialNumber);
@@ -97,9 +114,50 @@ function DirectOutboundDialDialog({
     setAgentId(initialAgentId);
     setNumber(initialNumber);
     setContext(initialContext);
+    setPurpose("appointment_service");
+    setRelationship(false);
+    setPermissionStored(false);
+    setNonsalesStored(false);
+    setPermissionChecked(false);
+    setNonsalesChecked(false);
+    setCustomerSince("");
+    setSalesAttestationRecorded(false);
+    setSalesAttestationChecked(false);
+    setPurposeTouched(false);
     setUncertain(false);
     requestRef.current = null;
   }, [open, initialAgentId, initialNumber, initialContext, preparedCall]);
+
+  useEffect(() => {
+    if (!open || preparedCall) return;
+    const digits = number.replace(/\D/g, "");
+    if (digits.length < 10) return;
+    const phone = `+${digits.length === 10 ? `1${digits}` : digits}`;
+    const controller = new AbortController();
+    void authFetch(`/api/outbound/contact-context?phone=${encodeURIComponent(phone)}`, {
+      signal: controller.signal,
+    })
+      .then(async (response) => (response.ok ? response.json() : null))
+      .then((body: {
+        relationship?: unknown;
+        permissionConfirmed?: boolean;
+        nonsalesConfirmed?: boolean;
+        customerSince?: string | null;
+        suggestedPurpose?: OutboundPurposeChoice;
+        salesAttestationRecorded?: boolean;
+      } | null) => {
+        if (!body || controller.signal.aborted) return;
+        const hasRelationship = Boolean(body.relationship);
+        setRelationship(hasRelationship);
+        setPermissionStored(body.permissionConfirmed === true);
+        setNonsalesStored(body.nonsalesConfirmed === true);
+        setSalesAttestationRecorded(body.salesAttestationRecorded === true);
+        if (!purposeTouched && body.suggestedPurpose) setPurpose(body.suggestedPurpose);
+        if (body.customerSince) setCustomerSince(body.customerSince.slice(0, 10));
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [open, number, preparedCall, purposeTouched]);
 
   const refreshCallStatus = useCallback(
     async (signal?: AbortSignal) => {
@@ -212,6 +270,10 @@ function DirectOutboundDialDialog({
   const setupHref = resolvedAgentId
     ? `/phone?tab=setup&agent=${encodeURIComponent(resolvedAgentId)}`
     : "/phone?tab=setup";
+  const showPermission = !permissionStored;
+  const showNonsales = !salesCall && callPurpose !== "callback" && !nonsalesStored;
+  const showSalesAttestation = salesCall && !salesAttestationRecorded;
+  const contentWarning = salesCall ? null : salesContentWarning(context);
   const canPlace =
     !placing &&
     !uncertain &&
@@ -219,7 +281,11 @@ function DirectOutboundDialDialog({
     selectedReady &&
     (!preparedCall || Date.parse(preparedCall.expires_at) > Date.now()) &&
     !!resolvedAgentId &&
-    number.trim().length > 0;
+    number.trim().length > 0 &&
+    (!showPermission || permissionChecked) &&
+    (!showNonsales || nonsalesChecked) &&
+    (!showSalesAttestation || salesAttestationChecked) &&
+    (callPurpose !== "existing_customer" || customerSince.length > 0);
 
   const placeCall = async () => {
     if (!canPlace || placingRef.current) return;
@@ -233,6 +299,10 @@ function DirectOutboundDialDialog({
         customerName: "",
         context: context.trim() || undefined,
         callPurpose,
+        permissionConfirmed: permissionChecked || permissionStored,
+        nonsalesConfirmed: nonsalesChecked || nonsalesStored,
+        customerSince: callPurpose === "existing_customer" ? customerSince : undefined,
+        salesAttestationConfirmed: salesAttestationChecked,
       };
       const fingerprint = JSON.stringify(payload);
       if (requestRef.current?.fingerprint !== fingerprint) {
@@ -434,8 +504,35 @@ function DirectOutboundDialDialog({
                   onChange={(event) => setNumber(event.target.value)}
                 />
               </label>
+              <OutboundPurposePicker
+                purpose={purpose === "sales" && relationship ? "returning_contact" : purpose}
+                onPurpose={(next) => {
+                  setPurposeTouched(true);
+                  setPurpose(next);
+                  setPermissionChecked(false);
+                  setNonsalesChecked(false);
+                }}
+                relationship={relationship}
+                customerSince={customerSince}
+                onCustomerSince={setCustomerSince}
+                showPermission={showPermission}
+                permissionChecked={permissionChecked}
+                onPermission={setPermissionChecked}
+                showNonsales={showNonsales}
+                nonsalesChecked={nonsalesChecked}
+                onNonsales={setNonsalesChecked}
+                contentWarning={contentWarning}
+                disabled={placing || uncertain || !!preparedCall}
+                permissionLabel={OUTBOUND_CONSENT_LABEL}
+              />
+              {showSalesAttestation ? (
+                <SalesAttestationCheckbox
+                  checked={salesAttestationChecked}
+                  onChange={setSalesAttestationChecked}
+                  disabled={placing || uncertain || !!preparedCall}
+                />
+              ) : null}
               <p className="text-xs leading-5 text-muted-foreground">
-                {OUTBOUND_CONSENT_LABEL}{" "}
                 <Link to={OUTBOUND_CONSENT_LEGAL_PATH} className="underline underline-offset-2">
                   Permission details
                 </Link>

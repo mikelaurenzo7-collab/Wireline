@@ -183,6 +183,8 @@ export async function executeStep(
         leadId: lead.id,
         lastCalledAt: lead.lastCalledAt,
         metadata: lead.metadata || {},
+        isMarketingCall: true,
+        requireFederalDncScreening: true,
         hasExpressWrittenConsent: step.type === "call" && Boolean(voicePermissionId),
       });
       if (!gate.allowed) {

@@ -30,12 +30,12 @@ describe("sms inbox error honesty", () => {
 
   it.each([
     ["an outbound-only thread", null],
-    ["a stale inbound message", { createdAt: new Date(Date.parse("2026-08-26T10:59:59.999Z")) }],
     ["a future inbound timestamp", { createdAt: new Date("2026-08-26T12:00:00.001Z") }],
     ["an invalid inbound timestamp", { createdAt: new Date(Number.NaN) }],
-  ])("fails %s closed through the untrusted marketing gate", async (_label, artifact) => {
+  ])("fails %s closed as a sales text", async (_label, artifact) => {
     const nowMs = Date.parse("2026-08-26T12:00:00.000Z");
     const loadLatestInboundArtifact = vi.fn(async () => artifact);
+    const deriveRelationship = vi.fn(async () => null);
     const evaluateGate = vi.fn(async () => ({
       allowed: false as const,
       status: "AutoDialFailed",
@@ -44,7 +44,7 @@ describe("sms inbox error honesty", () => {
 
     await evaluateSmsThreadReplyGate(
       { userId: "tenant-1", threadId: "thread-1", phone: "+14155550123" },
-      { loadLatestInboundArtifact, evaluateGate, now: () => nowMs },
+      { loadLatestInboundArtifact, deriveRelationship, evaluateGate, now: () => nowMs },
     );
 
     expect(loadLatestInboundArtifact).toHaveBeenCalledWith({
@@ -52,12 +52,40 @@ describe("sms inbox error honesty", () => {
       threadId: "thread-1",
       direction: "in",
     });
+    expect(deriveRelationship).toHaveBeenCalledWith("tenant-1", "+14155550123");
     expect(evaluateGate).toHaveBeenCalledWith({
       userId: "tenant-1",
       phone: "+14155550123",
       isMarketingCall: true,
       isLiveSessionFollowUp: false,
       requireFederalDncScreening: true,
+      salesScreening: "one_off",
+      hasExpressWrittenConsent: false,
+    });
+  });
+
+  it("treats an inbound text inside 90 days as a returning conversation", async () => {
+    const nowMs = Date.parse("2026-08-26T12:00:00.000Z");
+    const loadLatestInboundArtifact = vi.fn(async () => ({
+      createdAt: new Date(Date.parse("2026-08-26T10:59:59.999Z")),
+    }));
+    const deriveRelationship = vi.fn(async () => null);
+    const evaluateGate = vi.fn(async () => ({
+      allowed: true as const,
+      tcpaDecision: { allowed: true },
+    }));
+    await evaluateSmsThreadReplyGate(
+      { userId: "tenant-1", threadId: "thread-1", phone: "+14155550123" },
+      { loadLatestInboundArtifact, deriveRelationship, evaluateGate, now: () => nowMs },
+    );
+    expect(deriveRelationship).not.toHaveBeenCalled();
+    expect(evaluateGate).toHaveBeenCalledWith({
+      userId: "tenant-1",
+      phone: "+14155550123",
+      isMarketingCall: false,
+      isLiveSessionFollowUp: false,
+      requireFederalDncScreening: false,
+      salesScreening: "bulk",
       hasExpressWrittenConsent: false,
     });
   });

@@ -28,17 +28,21 @@ import {
   linkDncSellerVendorProject,
   listDncSellerRegistrations,
   readDncSellerRegistration,
+  readWorkspaceDncSan,
   saveDncSellerRegistration,
+  saveWorkspaceDncSan,
 } from "../lib/dnc-seller-registration";
 import {
   DNC_REGISTRY_URL,
   defaultDncExpiresOn,
   dncSellerRegistrationState,
   isValidVendorProjectId,
+  normalizeOptionalDncSan,
   parseDncSellerRegistrationInput,
   suggestDncAreaCodes,
   type DncSellerRegistration,
 } from "../lib/dnc-seller-registration-rules";
+import { DNC_SAN_HELP } from "../lib/outbound-compliance-copy";
 
 const router = Router();
 
@@ -249,8 +253,21 @@ router.get(
     const registration = await readDncSellerRegistration(req.user.id);
     res.json({
       ...sellerRegistrationResponse(registration),
+      dnc_san: await readWorkspaceDncSan(req.user.id),
+      dnc_san_help: DNC_SAN_HELP,
       setup: await sellerRegistrationSetupHints(req.user.id),
     });
+  },
+);
+
+router.put(
+  "/api/compliance/dnc-san",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const parsed = normalizeOptionalDncSan((req.body ?? {}).san);
+    if (!parsed.ok) throw AppError.fromHttpStatus(400, parsed.error);
+    await saveWorkspaceDncSan(req.user.id, parsed.san);
+    res.json({ dnc_san: parsed.san, dnc_san_help: DNC_SAN_HELP });
   },
 );
 

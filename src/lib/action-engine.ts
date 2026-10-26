@@ -509,7 +509,7 @@ async function handleSendTextMessage(
   // gate as untrusted marketing unless a future server-owned artifact is
   // resolved here explicitly.
   const purpose = classifyUntrustedDirectDial({
-    callPurpose: "service_or_requested",
+    callPurpose: "sales",
   });
 
   const [lead] = await drizzle

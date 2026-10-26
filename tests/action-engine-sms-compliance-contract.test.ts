@@ -20,6 +20,7 @@ describe("action-engine outbound SMS compliance gate", () => {
     expect(handler).toContain("await evaluateOutboundDialGate({");
     expect(handler).toContain("isMarketingCall: purpose.isMarketingCall");
     expect(handler).toContain("requireFederalDncScreening: true");
+    expect(handler).not.toContain("one_off");
     expect(handler).toContain("hasExpressWrittenConsent: false");
     expect(handler).toContain("userId");
     expect(handler).toContain("phone");
@@ -38,7 +39,7 @@ describe("action-engine outbound SMS compliance gate", () => {
     expect(engine).not.toContain("NON_MARKETING_SMS_ROLES");
     expect(engine).not.toContain("schema.agents.role");
     expect(engine).toContain("cleanOutboundSmsPhone");
-    expect(engine).toContain('callPurpose: "service_or_requested"');
+    expect(engine).toContain('callPurpose: "sales"');
     expect(engine).toContain("classifyUntrustedDirectDial");
   });
 });
