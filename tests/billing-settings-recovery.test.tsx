@@ -423,12 +423,12 @@ describe("Runtime Balance recent activity", () => {
     ).toBe(true);
     expect(text(activity())).not.toContain("private");
     expect(hasText("Up to 20 recent balance changes.")).toBe(true);
+    expect(text(activity())).not.toContain("AI spend");
     expect(
       tree.some(
         (node) => node.type === "a" && node.props.to === "/insights?tab=revenue&view=spend",
       ),
-    ).toBe(true);
-    expect(hasText("is tracked separately.")).toBe(true);
+    ).toBe(false);
   });
 
   it("caps the recent list at 20 without exposing legacy reasons or internal metadata", async () => {

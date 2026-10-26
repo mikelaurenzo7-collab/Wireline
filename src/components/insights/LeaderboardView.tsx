@@ -15,12 +15,13 @@ function RolePill({ role }: { role?: string }) {
   return <span className="text-xs text-muted-foreground">{meta.label}</span>;
 }
 
-function costLabel(value: unknown): string {
-  return typeof value === "number" && Number.isFinite(value) ? `$${value}` : "N/A";
-}
-
-function unitCostLabel(value: unknown, denominator: number): string {
-  return Number.isFinite(denominator) && denominator > 0 ? costLabel(value) : "N/A";
+function countLabel(
+  value: number,
+  singular: string,
+  plural: string,
+): { label: string; value: number } {
+  const count = Number.isFinite(value) ? value : 0;
+  return { label: count === 1 ? singular : plural, value: count };
 }
 
 export default function LeaderboardView({ days }: { days: number }) {
@@ -52,21 +53,17 @@ export default function LeaderboardView({ days }: { days: number }) {
   if (err) return <ErrCard error={err} onRetry={() => setReloadKey((k) => k + 1)} />;
   if (!data || !data.agents?.length) return <InsightEmpty configKey="leaderboard" icon={Trophy} />;
 
-  const agentRows: InsightsLeaderboardAgentRow[] = Array.isArray(data?.agents) ? data.agents : [];
+  const agentRows: InsightsLeaderboardAgentRow[] = (
+    Array.isArray(data?.agents) ? [...data.agents] : []
+  ).sort((left, right) => right.bookings - left.bookings || right.total_calls - left.total_calls);
 
   return (
     <div className="space-y-3">
       {agentRows.map((a, i) => {
         const metrics = [
-          { label: "Calls", value: a.total_calls },
-          { label: "Bookings", value: a.bookings },
-          { label: "Minutes", value: a.minutes },
-          { label: "$/Qual", value: unitCostLabel(a.cost_per_qualified, a.qualified) },
-          {
-            label: "$/Outcome",
-            value: unitCostLabel(a.cost_per_outcome, a.qualified + a.bookings),
-          },
-          { label: "Total Cost", value: costLabel(a.total_cost) },
+          countLabel(a.total_calls, "Call", "Calls"),
+          countLabel(a.bookings, "Booking", "Bookings"),
+          countLabel(a.minutes, "Minute", "Minutes"),
         ];
         return (
           <motion.div
@@ -115,7 +112,7 @@ export default function LeaderboardView({ days }: { days: number }) {
               )}
               <RolePill role={a.role} />
             </div>
-            <dl className="relative col-span-2 grid grid-cols-2 gap-x-4 gap-y-5 sm:col-span-1 sm:col-start-2 sm:grid-cols-4 lg:grid-cols-8">
+            <dl className="relative col-span-2 grid grid-cols-2 gap-x-4 gap-y-5 sm:col-span-1 sm:col-start-2 sm:grid-cols-3">
               {metrics.map((metric) => (
                 <div key={metric.label} className="min-w-0 space-y-1">
                   <dt className="text-xs text-muted-foreground">{metric.label}</dt>

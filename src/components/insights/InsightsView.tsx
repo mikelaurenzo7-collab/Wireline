@@ -31,16 +31,12 @@ import TopicsView from "./TopicsView";
 import HeatmapView from "./HeatmapView";
 import LeaderboardView from "./LeaderboardView";
 import FailureModesView from "./FailureModesView";
-import VoiceLatencyView from "./VoiceLatencyView";
-import AISpendView from "./AISpendView";
 import LearningMetricsView from "./LearningMetricsView";
 
-// Reliability and Scorecards are the only two of these twelve views that draw
+// Reliability and Scorecards are the only two of these views that draw
 // with Recharts, and they are not the default tab. Imported eagerly they put the
-// whole charting library — ~107 kB gzipped, the largest chunk in the app — on
-// the critical path for everyone who opens Insights, including the ten tabs that
-// never render a chart. Loading them on demand keeps that cost with the two tabs
-// that actually spend it.
+// whole charting library on the critical path for everyone who opens Insights.
+// Loading them on demand keeps that cost with the tabs that actually spend it.
 const VoiceReliabilityView = lazy(() => import("./VoiceReliabilityView"));
 const QualityView = lazy(() => import("./QualityView"));
 
@@ -51,9 +47,7 @@ const WINDOWED_VIEWS = new Set([
   "attribution",
   "heatmap",
   "leaderboard",
-  "latency",
   "reliability",
-  "spend",
   "quality",
 ]);
 const FIXED_PERIOD_LABELS: Record<string, string> = {
@@ -104,9 +98,7 @@ export default function InsightsView() {
       heatmap: wrap("Heatmap", <HeatmapView days={days} />),
       leaderboard: wrap("Leaderboard", <LeaderboardView days={days} />),
       failures: wrap("Failures", <FailureModesView />),
-      latency: wrap("Latency", <VoiceLatencyView days={days} />),
       reliability: wrap("Reliability", <VoiceReliabilityView days={days} />),
-      spend: wrap("AI Spend", <AISpendView days={days} />),
       quality: wrap("Scorecards", <QualityView days={days} />),
       learning: wrap("Learning", <LearningMetricsView />),
     };
@@ -114,7 +106,7 @@ export default function InsightsView() {
   }, [activeView, days]);
 
   // Account spend and budget remain available before creation or after deleting every Bot.
-  if (agentsDegraded && agents.length === 0 && activeView !== "spend") {
+  if (agentsDegraded && agents.length === 0) {
     return (
       <ClientRouteViewport>
         <InsightEmpty
@@ -126,7 +118,7 @@ export default function InsightsView() {
     );
   }
 
-  if (firstRun && activeView !== "spend") {
+  if (firstRun) {
     return (
       <ClientRouteViewport>
         <InsightEmpty configKey="funnel" icon={TrendingUp} />

@@ -381,7 +381,12 @@ router.get(
             conversion_rate: total ? Math.round((qualifiedCount / total) * 100) : 0,
           };
         })
-        .sort((a: any, b: any) => b.qualified - a.qualified);
+        .sort(
+          (
+            a: { bookings: number; total_calls: number },
+            b: { bookings: number; total_calls: number },
+          ) => b.bookings - a.bookings || b.total_calls - a.total_calls,
+        );
 
       res.json({ window_days: days, agents: rows });
     } catch (e) {
