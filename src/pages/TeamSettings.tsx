@@ -95,7 +95,7 @@ export default function TeamSettings() {
     try {
       const response = await authFetch("/api/team");
       const payload = (await response.json().catch(() => null)) as
-        ({ members?: TeamMemberRecord[] } & TeamErrorPayload) | null;
+        ({ members?: TeamMemberRecord[]; available?: boolean } & TeamErrorPayload) | null;
       if (response.status === 403) {
         setTeamAccess("restricted");
         setMembers([]);

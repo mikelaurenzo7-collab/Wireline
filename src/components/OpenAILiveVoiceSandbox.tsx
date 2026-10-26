@@ -24,6 +24,8 @@ type SignalResponse = {
 type Line = { id: string; role: "You" | "Bot"; text: string };
 type VoiceState = "idle" | "connecting" | "listening" | "speaking" | "thinking" | "error";
 
+const RATE = 24_000;
+
 function microphoneMessage(reason: unknown): string {
   const name = reason instanceof DOMException ? reason.name : "";
   if (name === "NotAllowedError" || name === "PermissionDeniedError")
