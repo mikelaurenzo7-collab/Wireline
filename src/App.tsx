@@ -219,8 +219,10 @@ function AppRouter() {
         <Route path="/support" element={<SupportPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/legal" element={<PreservingRedirect to="/terms" />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/sms-consent" element={<SmsConsentPage />} />
+        <Route path="/docs" element={<PreservingRedirect to="/developers" />} />
         <Route path="/developers" element={<Developers />} />
         <Route path="/signin/*" element={<AuthPortalRoute />} />
         <Route path="/signup/*" element={<AuthPortalRoute />} />

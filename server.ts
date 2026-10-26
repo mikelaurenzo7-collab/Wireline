@@ -4,6 +4,7 @@ import express from "express";
 import type { Server } from "node:http";
 import { AsyncLocalStorage } from "node:async_hooks";
 import cors from "cors";
+import { readFileSync } from "node:fs";
 import path from "path";
 import { randomUUID } from "node:crypto";
 import { IS_PROD, log } from "./src/lib/server-context";
@@ -24,10 +25,12 @@ import { registerApiRoutes } from "./src/server/register-api-routes";
 import { registerMcpRoutes } from "./src/server/register-mcp-routes";
 import {
   productionStaticHeaders,
+  registerLegacyContentRedirects,
   registerProductionStaticAliases,
   rejectMissingPublicResource,
   setPublicIsolationHeaders,
 } from "./src/server/register-production-static-aliases";
+import { deindexFallbackDocument } from "./src/server/not-found-document";
 import { installStripeCheckoutBrandingInvariant } from "./src/lib/stripe-checkout-branding-invariant";
 import { sseBroadcaster } from "./src/services/sse-broadcaster";
 import { initSupervisorWebSocketServer } from "./src/services/supervisor-websocket-service";
@@ -250,6 +253,8 @@ process.on("uncaughtException", (error) => {
   reportError(error, { tags: { surface: "process", kind: "uncaughtException" } });
 });
 
+registerLegacyContentRedirects(app);
+
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const { createServer } = await import("vite");
@@ -292,7 +297,12 @@ async function startServer() {
   app.get("*", (req, res) => {
     const normalizedPath = req.path.replace(/\/+$/, "") || "/";
     if (!isKnownSpaRoute(normalizedPath)) res.status(404);
-    res.type("html").sendFile(prerenderedShells.get(normalizedPath) ?? indexHtml);
+    const shellPath = prerenderedShells.get(normalizedPath) ?? indexHtml;
+    if (res.statusCode !== 404) {
+      res.type("html").sendFile(shellPath);
+      return;
+    }
+    res.type("html").send(deindexFallbackDocument(readFileSync(shellPath, "utf8")));
   });
 }
 
