@@ -22,7 +22,9 @@ describe("live voice trust surface", () => {
     expect(openai).toContain("Live Voice Needs Attention");
     expect(openai).toContain('role="status"');
     expect(openai).toContain('className="wl-voice-bar__label"');
-    expect(openai).toContain("Microphone Muted");
+    expect(openai).toContain("NotAllowedError");
+    expect(openai).toContain("Type a test");
+    expect(openai).toContain("/test/stream");
     expect(openai).not.toContain("<ConversationActivity");
     expect(openai).not.toContain("wl-voice-bar__meter");
   });
