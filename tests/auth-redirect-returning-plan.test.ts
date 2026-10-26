@@ -69,6 +69,22 @@ describe("post-auth destination", () => {
     expect(resolvePostAuthDestination("business", "?redirect=%2F%2Fevil.example")).toBe("/studio");
   });
 
+  it("sends a fresh signup to Studio even when a settings return target rides along", () => {
+    sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+
+    expect(resolvePostAuthDestination("business", "?redirect=%2Fsettings")).toBe(
+      "/studio?create=1",
+    );
+  });
+
+  it("still honors the preserved invite target for a fresh signup", () => {
+    sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+
+    expect(resolvePostAuthDestination("business", "?redirect=%2Faccept-invite")).toBe(
+      "/accept-invite",
+    );
+  });
+
   it("sends every fresh signup into the same one-workspace Bot Studio", () => {
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 

@@ -116,7 +116,11 @@ export function resolvePostAuthDestination(
 ): string {
   const freshSignup = isFreshSignupSession();
   const fromSearch = readRedirectFromSearch(search);
-  if (fromSearch) {
+  // A fresh signup's first screen is always create-first Studio. Only the
+  // preserved return targets (MCP OAuth, invite acceptance) may outrank it;
+  // an incidental target such as the /settings deep link AppShell's
+  // signed-out bounce manufactures must not replace the first-run flow.
+  if (fromSearch && (!freshSignup || isFreshSignupPreservedRedirect(fromSearch))) {
     persistAuthRedirect(null);
     if (freshSignup) clearFreshSignupSession();
     return fromSearch;

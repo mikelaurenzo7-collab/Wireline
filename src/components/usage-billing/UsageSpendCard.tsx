@@ -141,7 +141,7 @@ export default function UsageSpendCard({
     if (!canActivate("usage")) return null;
     const Offer = grantedPlanName ? "details" : "div";
     return (
-      <section className="mt-6" aria-label="Optional Subscription">
+      <section className="mt-6" aria-label="Subscription Plans">
         <Offer className="wl-paper wl-paper-elevated space-y-4 p-5 sm:p-6">
           {grantedPlanName ? (
             <summary className="cursor-pointer text-sm font-semibold wl-focus-ring-halo">
