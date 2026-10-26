@@ -64,9 +64,8 @@ describe("every paywall is clickable", () => {
         emitted.add(m[1]);
       }
     }
-    // The four explicit ones that were all previously dropped.
+    // Bot creation no longer emits AGENT_CAPACITY_REACHED. These still do.
     for (const code of [
-      "AGENT_CAPACITY_REACHED",
       "SPEND_CAP_REACHED",
       "LIVE_PLAN_REQUIRED",
       "LIVE_VIDEO_BASE_PLAN_REQUIRED",

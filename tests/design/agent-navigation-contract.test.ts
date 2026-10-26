@@ -146,6 +146,6 @@ describe("authenticated Bot navigation contract", () => {
     expect(knowledge).not.toContain("WorkspaceTabStrip");
     expect(settingsTabs).toContain('href: "/settings/apps", label: "Apps"');
     expect(settingsTabs).toContain("WorkspaceControlBand");
-    expect(billing).toContain("Runtime Balance");
+    expect(billing).toContain("CONVERSATION_BALANCE_COPY.title");
   });
 });

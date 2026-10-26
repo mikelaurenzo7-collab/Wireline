@@ -31,6 +31,15 @@ describe("native Calendar rehearsal policy", () => {
     expect(h.book).not.toHaveBeenCalled();
   });
 
+  it("follows Ask for approval when calendar confirmation is inherited", async () => {
+    h.settings.mockResolvedValue({ ...settings, booking_mode: "inherit" });
+    const prompt = await nativeCalendarRehearsalContext("tenant", ["book_appointment"]);
+    expect(prompt).toContain("follows this Bot's permission");
+    expect(prompt).toContain("Never describe a pending request as confirmed");
+    expect(prompt).not.toContain("owner chose automatic booking");
+    expect(h.book).not.toHaveBeenCalled();
+  });
+
   it("reflects approval only when the owner selected it", async () => {
     h.settings.mockResolvedValue({ ...settings, booking_mode: "approval" });
     const prompt = await nativeCalendarRehearsalContext("tenant", ["book_appointment"]);

@@ -447,7 +447,7 @@ export default function CreateAgentDialog({
                   {language.setupPrompt}
                 </h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  One Bot that answers and calls, plus email and a computer.
+                  Answers and calls, plus email and a computer.
                 </p>
               </div>
             </div>

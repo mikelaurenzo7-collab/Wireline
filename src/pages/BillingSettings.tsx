@@ -140,8 +140,8 @@ export default function BillingSettings() {
               if (returnFlow === "runtime_balance" && verification.credit_granted) {
                 setCheckoutReturnNotice({
                   tone: "success",
-                  title: "Runtime Balance Added",
-                  message: "Your prepaid balance is ready for calls and eligible live actions.",
+                  title: "Payment Received",
+                  message: "This payment is ready for calls and eligible live actions.",
                 });
               } else if (returnFlow === "plan" && verification.synced) {
                 setCheckoutReturnNotice({
@@ -170,7 +170,7 @@ export default function BillingSettings() {
                 title: "Payment Processing",
                 message:
                   returnFlow === "runtime_balance"
-                    ? "Your Runtime Balance will update automatically after payment is confirmed."
+                    ? "This payment will show in Billing after it is confirmed."
                     : returnFlow === "live_video"
                       ? "This legacy checkout is still processing. Live video remains retired and no new activation will be granted."
                       : "Your plan will activate automatically after payment is confirmed.",
@@ -329,12 +329,12 @@ export default function BillingSettings() {
     if (!canAddBalance) {
       setActionError(
         statusUnavailable
-          ? "Billing status is unavailable. Retry before adding Runtime Balance."
+          ? "Billing status is unavailable. Retry before adding a payment."
           : checkoutAvailability !== "available"
             ? "Balance top-ups are unavailable. Refresh this page to check again."
             : paidPlan
-              ? "Restore your active subscription before adding Runtime Balance."
-              : "Choose a paid plan before adding Runtime Balance.",
+              ? "Restore your active subscription before adding a payment."
+              : "Choose a paid plan before adding a payment.",
       );
       return;
     }

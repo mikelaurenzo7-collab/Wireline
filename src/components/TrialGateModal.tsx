@@ -116,7 +116,7 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
         body: "Open the link in your email to continue.",
       };
     case "AGENT_CAPACITY_REACHED":
-      return { title: "Bot Limit Reached", body: detail.error };
+      return { title: "Open Workspace", body: detail.error };
     case "TRIAL_LIMIT_HIT":
       return {
         title: "Trial Limit Reached",
@@ -253,7 +253,7 @@ export default function TrialGateModal() {
     checkoutTiers.length > 0 &&
     checkoutTiers.every((tier) => tier.disabled === true);
   const showBillingPortal = detail.code === "SUBSCRIPTION_REQUIRED";
-  // Every plan sold today includes one Bot, so a plan picker cannot lift the Bot cap.
+  // A plan picker does not sell extra Bots. Send the owner back to the workspace.
   const showPlanCheckout =
     detail.code !== "EMAIL_UNVERIFIED" &&
     detail.code !== "SUBSCRIPTION_REQUIRED" &&

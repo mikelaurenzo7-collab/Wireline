@@ -370,6 +370,7 @@ async function executeAutonomousAction(
           serviceType: payload.service_type || payload.event_name,
           phoneNumber: payload.customer_number,
           notes: action.reasoning,
+          ownerApproved: Boolean(context.approvalTaskId),
           requestKey: `native-calendar:action:${createHash("sha256")
             .update(
               JSON.stringify([

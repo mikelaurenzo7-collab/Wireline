@@ -125,6 +125,14 @@ function localizeNow(now: Date, timeZone: string): { day: DayOfWeek; minutes: nu
  * `open` and `close` set requires `open <= now < close`. Overnight
  * windows (close < open, e.g. 22:00 → 06:00) wrap correctly.
  */
+/** Saved account zone wins. A blank zone keeps the previous Eastern fallback. */
+export const BUSINESS_HOURS_FALLBACK_TIME_ZONE = "America/New_York";
+
+export function businessHoursTimeZone(profile: AgentRuntimeProfile | null | undefined): string {
+  const zone = profile?.timezone?.trim();
+  return zone || BUSINESS_HOURS_FALLBACK_TIME_ZONE;
+}
+
 export function isWithinBusinessHours(
   profile: AgentRuntimeProfile | null | undefined,
   now: Date = new Date(),
@@ -132,7 +140,7 @@ export function isWithinBusinessHours(
   const hours = profile?.business_hours;
   if (!hours || typeof hours !== "object" || Object.keys(hours).length === 0) return true;
 
-  const tz = profile?.timezone?.trim() || "UTC";
+  const tz = businessHoursTimeZone(profile);
   const { day, minutes } = localizeNow(now, tz);
   const today = hours[day];
   if (!today) return true; // no rule for today → don't gate
@@ -461,7 +469,7 @@ export function buildAgentRuntimeContext(
   const vibeBlock = buildVibeBlock(profile?.personality_vibe);
   if (vibeBlock) sections.push(vibeBlock.trim());
 
-  const zone = profile?.timezone?.trim() || "UTC";
+  const zone = businessHoursTimeZone(profile);
   const savedHours =
     profile?.business_hours &&
     typeof profile.business_hours === "object" &&

@@ -20,6 +20,6 @@ describe("round-6 agent-create capacity serialization", () => {
     expect(lockIdx).toBeGreaterThan(-1);
     expect(rosterIdx).toBeGreaterThan(lockIdx);
     expect(insertIdx).toBeGreaterThan(rosterIdx);
-    expect(create).toContain("AGENT_CAPACITY_REACHED");
+    expect(create).not.toContain("AGENT_CAPACITY_REACHED");
   });
 });

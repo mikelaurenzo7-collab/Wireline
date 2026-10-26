@@ -252,26 +252,6 @@ router.post(
           .where(eq(schema.agents.userId, req.user.id));
         const existing = existingAgents.length;
 
-        const [settingsRow] = await tx
-          .select({
-            subscriptionStatus: schema.settings.subscriptionStatus,
-            maxAgents: schema.settings.maxAgents,
-            extraAgents: schema.settings.extraAgents,
-            planId: schema.subscriptions.plan,
-          })
-          .from(schema.settings)
-          .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
-          .where(eq(schema.settings.userId, req.user.id))
-          .limit(1);
-        const entitlement = resolveAgentEntitlement({
-          isOwner: isOwnerEmail(req.user.email),
-          subscriptionStatus: settingsRow?.subscriptionStatus,
-          planId: settingsRow?.planId,
-          maxAgents: settingsRow?.maxAgents,
-          extraAgents: settingsRow?.extraAgents,
-        });
-        if (agentCapHit(existing, entitlement)) return { kind: "plan_capacity" } as const;
-
         const usedMarkKeys = new Set<BotMarkKey>();
         for (const existingAgent of existingAgents) {
           usedMarkKeys.add(
@@ -311,13 +291,6 @@ router.post(
         return { kind: "created", voiceId, markKey } as const;
       });
 
-      if (created.kind === "plan_capacity") {
-        return res.status(402).json({
-          code: "AGENT_CAPACITY_REACHED",
-          error:
-            "Your plan has reached its Bot limit. Edit your current Bot to change what it does.",
-        });
-      }
       res.status(201).json({
         id,
         name,

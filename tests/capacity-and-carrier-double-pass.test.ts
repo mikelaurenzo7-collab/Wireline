@@ -149,16 +149,16 @@ describe("agent capacity integrity", () => {
     expect(agentCapMessage(2)).toContain("2 Bots");
     expect(agentCapMessage(25)).toContain("25 Bots");
 
-    // Both surfaces raise this, so the sentence has to come from one place or
-    // the two copies drift — which is how the pluralisation bug survived. Its
-    // own code keeps the client from showing a payment prompt no plan answers.
-    for (const file of ["src/routes/agent-routes-v2.ts", "src/lib/agent-draft-service.ts"]) {
-      expect(read(file)).toContain(
-        "agentCapMessage(entitlement.effectiveCap, entitlement.unlimited)",
-      );
-      expect(read(file)).toContain("AGENT_CAPACITY_REACHED");
-      expect(read(file)).not.toContain("Your plan allows up to ${entitlement.effectiveCap} agents");
-    }
+    // Draft creation still has the shared sentence. Web and mobile create no
+    // longer return a Bot cap, because every plan includes unlimited Bots.
+    expect(read("src/lib/agent-draft-service.ts")).toContain(
+      "agentCapMessage(entitlement.effectiveCap, entitlement.unlimited)",
+    );
+    expect(read("src/routes/agent-routes-v2.ts")).not.toContain("AGENT_CAPACITY_REACHED");
+    expect(read("src/routes/mobile-routes.ts")).not.toContain('code: "AGENT_CAPACITY_REACHED"');
+    expect(read("src/lib/agent-draft-service.ts")).not.toContain(
+      "Your plan allows up to ${entitlement.effectiveCap} agents",
+    );
     const modal = read("src/components/TrialGateModal.tsx");
     expect(modal).toContain('detail.code !== "AGENT_CAPACITY_REACHED"');
     expect(modal).toContain('case "AGENT_CAPACITY_REACHED":');

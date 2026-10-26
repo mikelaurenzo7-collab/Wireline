@@ -65,7 +65,7 @@ export function channelSelectionKey(channels: readonly CommunicationChannel[]): 
 }
 
 export function channelPlanHighlights(plan: ChannelPlanOption): string[] {
-  const highlights = [`${plan.max_agents} ${plan.max_agents === 1 ? "Bot" : "Bots"}`];
+  const highlights = ["Unlimited Bots"];
   if (plan.included_phone_numbers > 0)
     highlights.push(
       `${plan.included_phone_numbers} phone number${plan.included_phone_numbers === 1 ? "" : "s"} included`,
@@ -87,8 +87,8 @@ export function channelPlanHighlights(plan: ChannelPlanOption): string[] {
   )
     highlights.push(
       plan.channels.includes("sms")
-        ? `$${plan.runtime_allowance_usd_monthly.toFixed(2)} SMS transport allowance each month`
-        : `$${plan.runtime_allowance_usd_monthly.toFixed(2)} Runtime Allowance each month`,
+        ? `$${plan.runtime_allowance_usd_monthly.toFixed(2)} for SMS each month`
+        : `$${plan.runtime_allowance_usd_monthly.toFixed(2)} of included usage each month`,
     );
   return highlights;
 }

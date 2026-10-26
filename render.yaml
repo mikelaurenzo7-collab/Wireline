@@ -242,6 +242,21 @@ projects:
                 sync: false
               - key: STRIPE_AUTOMATIC_TAX_ENABLED
                 sync: false
+              # Usage-plan price IDs and the allowed test merchant. Names only.
+              - key: STRIPE_USAGE_LITE_BASE_PRICE_ID
+                sync: false
+              - key: STRIPE_USAGE_LITE_WORK_PRICE_ID
+                sync: false
+              - key: STRIPE_USAGE_STARTER_BASE_PRICE_ID
+                sync: false
+              - key: STRIPE_USAGE_STARTER_WORK_PRICE_ID
+                sync: false
+              - key: STRIPE_USAGE_PLUS_BASE_PRICE_ID
+                sync: false
+              - key: STRIPE_USAGE_PLUS_WORK_PRICE_ID
+                sync: false
+              - key: STRIPE_USAGE_SANDBOX_ACCOUNT_ID
+                sync: false
               - key: STRIPE_STARTER_9_PRICE_ID
                 sync: false
               - key: STRIPE_STARTER_PRICE_ID

@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import {
   actionExecutionMode,
   autonomyFromPermissionLevel,
+  effectiveAutonomy,
+  nativeAppointmentStatus,
   permissionLevelFromAutonomy,
 } from "../src/lib/bot-permission";
 
@@ -52,6 +54,62 @@ describe("per-bot permission", () => {
         calendarBookingMode: "inherit",
       }),
     ).toBe("draft");
+  });
+
+  it("books an inherited calendar as Requested only when the Bot is Ask", () => {
+    expect(
+      nativeAppointmentStatus({
+        bookingMode: "inherit",
+        agentLevel: "draft",
+        tenantLevel: "auto",
+      }),
+    ).toBe("Requested");
+    expect(
+      nativeAppointmentStatus({
+        bookingMode: "inherit",
+        agentLevel: "inherit",
+        tenantLevel: "draft",
+      }),
+    ).toBe("Requested");
+    expect(
+      nativeAppointmentStatus({
+        bookingMode: "inherit",
+        agentLevel: "supervised",
+        tenantLevel: "draft",
+      }),
+    ).toBe("Scheduled");
+    expect(
+      nativeAppointmentStatus({
+        bookingMode: "automatic",
+        agentLevel: "draft",
+        tenantLevel: "draft",
+      }),
+    ).toBe("Scheduled");
+    expect(
+      nativeAppointmentStatus({
+        bookingMode: "approval",
+        agentLevel: "auto",
+        ownerApproved: true,
+      }),
+    ).toBe("Requested");
+    expect(
+      nativeAppointmentStatus({
+        bookingMode: "inherit",
+        agentLevel: "draft",
+        ownerApproved: true,
+      }),
+    ).toBe("Scheduled");
+    expect(permissionLevelFromAutonomy(effectiveAutonomy("inherit", "draft"))).toBe("ask");
+    expect(permissionLevelFromAutonomy(effectiveAutonomy("inherit", "supervised"))).toBe("auto");
+    expect(permissionLevelFromAutonomy(effectiveAutonomy("inherit", "auto"))).toBe("full");
+  });
+
+  it("shows the workspace permission when a Bot is stored as inherit", () => {
+    const route = readFileSync("src/routes/agent-routes-v2.ts", "utf8");
+    expect(route).toContain(
+      "permissionLevelFromAutonomy(\n        effectiveAutonomy(record?.autonomyLevel, tenantSettings[0]?.autonomyLevel),",
+    );
+    expect(route).not.toContain("permission: permissionLevelFromAutonomy(record?.autonomyLevel)");
   });
 
   it("starts a new Bot on Auto", () => {

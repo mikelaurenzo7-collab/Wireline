@@ -33,6 +33,7 @@ import { listAgentsForUser } from "../lib/agents-store";
 import { deleteBot, previewBotDeletion } from "../lib/bot-deletion";
 import {
   autonomyFromPermissionLevel,
+  effectiveAutonomy,
   isBotPermissionLevel,
   permissionLevelFromAutonomy,
 } from "../lib/bot-permission";
@@ -65,12 +66,6 @@ import {
 } from "../lib/ai-gateway";
 import { AgentBusinessProfileSchema } from "../lib/form-validators";
 import { humanHandoffProblem, normalizeHandoffPhone } from "../lib/human-handoff-settings";
-import { isOwnerEmail } from "../lib/auth-service";
-import {
-  AGENT_CAPACITY_REACHED,
-  agentCapMessage,
-  resolveAgentEntitlement,
-} from "../lib/agent-entitlements";
 import {
   KNOWLEDGE_DOCUMENT_MAX_BASE64_CHARS,
   KNOWLEDGE_IMAGE_MAX_DATA_URL_CHARS,
@@ -562,7 +557,7 @@ router.post(
 
     const markKey = await withBotMarkPersistenceErrors(() =>
       drizzle.transaction(async (tx): Promise<BotMarkKey> => {
-        // Serialize capacity checks per tenant so concurrent creates cannot exceed plan caps.
+        // Serialize creates per workspace so concurrent requests do not race on pictures.
         await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
 
         const existingAgents = await tx
@@ -570,35 +565,6 @@ router.post(
           .from(schema.agents)
           .where(eq(schema.agents.userId, req.user.id));
         const existing = existingAgents.length;
-
-        const isOwner = isOwnerEmail(req.user.email);
-        const [row] = await tx
-          .select({
-            planId: schema.subscriptions.plan,
-            subscriptionStatus: schema.settings.subscriptionStatus,
-            maxAgents: schema.settings.maxAgents,
-            extraAgents: schema.settings.extraAgents,
-          })
-          .from(schema.settings)
-          .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
-          .where(eq(schema.settings.userId, req.user.id))
-          .limit(1);
-
-        const entitlement = resolveAgentEntitlement({
-          isOwner,
-          subscriptionStatus: row?.subscriptionStatus,
-          planId: row?.planId,
-          maxAgents: row?.maxAgents,
-          extraAgents: row?.extraAgents,
-        });
-
-        if (entitlement.effectiveCap !== null && existing >= entitlement.effectiveCap) {
-          throw new AppError(
-            402,
-            AGENT_CAPACITY_REACHED,
-            agentCapMessage(entitlement.effectiveCap, entitlement.unlimited),
-          );
-        }
 
         const usedMarkKeys = new Set<BotMarkKey>();
         for (const existingAgent of existingAgents) {
@@ -735,8 +701,8 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
-    const [agentRows, personalities, directives, knowledge] = await drizzle.transaction(
-      async (tx) => {
+    const [agentRows, personalities, directives, knowledge, tenantSettings] =
+      await drizzle.transaction(async (tx) => {
         // A transaction is a single pg client. Run the snapshot reads in
         // order instead of relying on pg@8's deprecated concurrent queue.
         const agentRows = await tx
@@ -795,7 +761,12 @@ router.get(
             ),
           )
           .orderBy(desc(schema.knowledge.createdAt));
-        return [agentRows, personalities, directives, knowledge] as const;
+        const tenantSettings = await tx
+          .select({ autonomyLevel: schema.settings.autonomyLevel })
+          .from(schema.settings)
+          .where(eq(schema.settings.userId, req.user.id))
+          .limit(1);
+        return [agentRows, personalities, directives, knowledge, tenantSettings] as const;
       },
     );
     const record = agentRows[0];
@@ -840,7 +811,9 @@ router.get(
       : null;
     res.json({
       mark_key: record?.markKey || null,
-      permission: permissionLevelFromAutonomy(record?.autonomyLevel),
+      permission: permissionLevelFromAutonomy(
+        effectiveAutonomy(record?.autonomyLevel, tenantSettings[0]?.autonomyLevel),
+      ),
       capabilities: { image_uploads: isTrainingImageAvailable() },
       firstMessage: record?.firstMessage || null,
       openingGreeting: resolveAgentGreeting(record || {}, directives),

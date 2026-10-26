@@ -57,7 +57,7 @@ describe("usage rate card", () => {
     for (const [index, id] of (["lite", "standard", "plus"] as const).entries()) {
       const plan = USAGE_TIERS[id];
       const [, selectButton, details] = cards[index];
-      expect(selectButton).toContain("Usage Included");
+      expect(selectButton).toContain("Includes");
       expect(selectButton).not.toContain(`$${plan.includedWorkUsd}`);
       expect(selectButton).not.toMatch(/<(?:summary|details|a)\b/);
       expect(details).toContain(`aria-label="${plan.name} Plan Details"`);
@@ -371,8 +371,9 @@ describe("Stripe setup script parity", () => {
       "utf8",
     );
     expect(migration).toContain("ALTER COLUMN tier SET DEFAULT 'standard'");
-    expect(migration).toContain("wireline_knowledge");
-    expect(migration).toContain("$24/month");
+    expect(migration).not.toMatch(/\bUPDATE\b/);
+    expect(migration).not.toContain("wireline_knowledge");
+    expect(migration).not.toContain("wireline_personality");
   });
 
   it("prints exactly the env vars the server reads, names only", () => {

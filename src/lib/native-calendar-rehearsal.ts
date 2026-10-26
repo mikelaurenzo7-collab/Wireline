@@ -20,7 +20,9 @@ export async function nativeCalendarRehearsalContext(
       `Saved Calendar policy: ${settings.duration_minutes}-minute appointments in ${settings.time_zone}.`,
       settings.booking_mode === "approval"
         ? "The owner chose approval: live booking requests remain pending until the owner approves them. Never describe a pending request as confirmed."
-        : "The owner chose automatic booking: in live calls, check availability and book after the customer confirms the exact time. Do not ask for separate owner confirmation.",
+        : settings.booking_mode === "inherit"
+          ? "Calendar confirmation follows this Bot's permission. Ask for approval leaves the appointment pending until the owner approves it. Never describe a pending request as confirmed."
+          : "The owner chose automatic booking: in live calls, check availability and book after the customer confirms the exact time. Do not ask for separate owner confirmation.",
       "This rehearsal has no live calendar access and creates no appointments. Practice collecting the customer's name, requested service, date, time, and timezone; describe the next step conditionally instead of claiming availability or a completed booking.",
     ].join(" ");
   } catch {

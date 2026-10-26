@@ -8262,7 +8262,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'starter'"
+          "default": "'standard'"
         },
         "stripe_subscription_id": {
           "name": "stripe_subscription_id",
@@ -8591,7 +8591,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'starter'"
+          "default": "'standard'"
         },
         "user_id": {
           "name": "user_id",

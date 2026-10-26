@@ -44,6 +44,24 @@ export function effectiveAutonomy(
   return "draft";
 }
 
+/**
+ * Calendar confirmation. Approval always waits. Automatic always books.
+ * Inherit follows the Bot, then the workspace. Ask (`draft`) is Requested
+ * unless the owner already approved this booking.
+ */
+export function nativeAppointmentStatus(input: {
+  bookingMode: "automatic" | "approval" | "inherit";
+  agentLevel?: string | null;
+  tenantLevel?: string | null;
+  ownerApproved?: boolean;
+}): "Scheduled" | "Requested" {
+  if (input.bookingMode === "approval") return "Requested";
+  if (input.bookingMode === "automatic" || input.ownerApproved) return "Scheduled";
+  return effectiveAutonomy(input.agentLevel, input.tenantLevel) === "draft"
+    ? "Requested"
+    : "Scheduled";
+}
+
 /** Whether the action engine executes now or files an approval. */
 export function actionExecutionMode(input: {
   agentLevel?: string | null;

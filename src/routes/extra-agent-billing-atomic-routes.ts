@@ -220,7 +220,7 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
           body: {
             code: "ADDON_NOT_AVAILABLE",
             error:
-              "This channel package includes one Bot. Extra-Bot add-ons are not available for this package.",
+              "Extra-Bot add-ons are not part of this package. Plans include unlimited Bots.",
           },
         };
       }

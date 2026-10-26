@@ -77,9 +77,9 @@ actual token, browser and retry costs before expanding that processing policy. D
 advertise 60 guaranteed Computer minutes or unlimited processing.
 
 Voice admission reserves time; customer quotas and provider capacity remain finite.
-There is no per-Bot charge, but the current identity namespace supports 120 Bots and
-human workspace sharing requires its own supported permissions. Do not promise unlimited
-identities or imply this release proves shared-human tenancy.
+There is no per-Bot charge. Bot pictures may repeat, so a workspace is not limited to
+120 pictures. Human workspace sharing still requires its own supported permissions.
+Do not imply this release proves shared-human tenancy.
 
 Verified bundled-plan sandbox renewal totals on October 25: $12.00 for Lite's exact mixed
 allowance, $24.01 for Starter's fractional overage, and $100.00 for Plus with both extra
@@ -112,7 +112,7 @@ support time. The earlier v1 margin percentages are retired; do not reuse them f
 | Postgres store and Stripe meter client      | `src/lib/usage-billing-store.ts`                                                                                                                            |
 | Tables                                      | `src/db/usage-billing-schema.ts`, migrations `0187_usage_billing.sql` through `0192_usage_tier_standard_default.sql`                                                   |
 | Plan                                        | `USAGE_PLAN` / `isUsagePlanId` in `src/lib/plan-catalog.ts` (outside `STRIPE_PLANS`)                                                                        |
-| Bots                                        | `resolveAgentEntitlement` returns `unlimited: true` for an active usage subscription; the only ceiling is the 120-mark identity namespace                   |
+| Bots                                        | `resolveAgentEntitlement` returns `unlimited: true`. Pictures may repeat (`0193_reuse_bot_mark_pictures.sql`); there is no 120-Bot ceiling                    |
 | Checkout                                    | `plan_id: "usage"`, `usage_tier`: selected base/work pair and optional extras; monthly only                                                                 |
 | Add-on slots                                | mirrored from the Stripe subscription into `wireline_usage_spend_controls`; included identities plus paid extras determine provisionable capacity           |
 | Reporting                                   | `usage_meter_report` job; Stripe meter events carry the idempotency key as `identifier`                                                                     |
@@ -143,7 +143,11 @@ or meter event name and never modifies or archives anything.
 
 Environment names: `USAGE_BILLING_ENABLED`, `STRIPE_USAGE_BASE_PRICE_ID`,
 `STRIPE_USAGE_WORK_PRICE_ID`, `STRIPE_USAGE_WORK_METER_EVENT`,
-`STRIPE_USAGE_NUMBER_ADDON_PRICE_ID`, `STRIPE_USAGE_EMAIL_ADDON_PRICE_ID`. Bundled offers additionally need `STRIPE_USAGE_{LITE,STARTER,PLUS}_{BASE,WORK}_PRICE_ID`. The API only advertises configured public tiers.
+`STRIPE_USAGE_NUMBER_ADDON_PRICE_ID`, `STRIPE_USAGE_EMAIL_ADDON_PRICE_ID`,
+`STRIPE_USAGE_LITE_BASE_PRICE_ID`, `STRIPE_USAGE_LITE_WORK_PRICE_ID`,
+`STRIPE_USAGE_STARTER_BASE_PRICE_ID`, `STRIPE_USAGE_STARTER_WORK_PRICE_ID`,
+`STRIPE_USAGE_PLUS_BASE_PRICE_ID`, `STRIPE_USAGE_PLUS_WORK_PRICE_ID`, and
+`STRIPE_USAGE_SANDBOX_ACCOUNT_ID` for the allowed test merchant. The API only advertises configured public tiers.
 
 ## Rollout
 
