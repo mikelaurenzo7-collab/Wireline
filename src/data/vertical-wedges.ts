@@ -212,7 +212,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Does the Bot Give Legal Advice?",
-        a: "No. The Bot is an intake specialist: it captures the matter, schedules the consult, and hands off to an attorney. It explicitly tells callers it cannot provide legal advice and that anything substantive needs the attorney. Refusal is enforced in the directive layer.",
+        a: "No. Your Bot captures the matter, schedules a consult, and hands off to an attorney. It tells callers it cannot provide legal advice.",
       },
       {
         q: "How Does It Handle Conflict Checks?",

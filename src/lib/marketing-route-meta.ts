@@ -52,7 +52,7 @@ function withBrand(title: string): string {
 
 const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/pricing": {
-    title: "Pricing | Calls, Email, and a Computer",
+    title: "Pricing | Shared Work Allowance",
     description:
       "Monthly plans for calls, SMS, email and Computer. Compare included numbers, email addresses and shared work.",
   },

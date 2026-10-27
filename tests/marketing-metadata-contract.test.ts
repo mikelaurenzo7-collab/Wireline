@@ -1,11 +1,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import {
-  EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY,
-  STRIPE_PLANS,
-  planById,
-} from "../src/lib/plan-catalog";
+import { EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY, STRIPE_PLANS } from "../src/lib/plan-catalog";
+import { PUBLIC_USAGE_TIERS, USAGE_TIERS } from "../src/lib/usage-billing-catalog";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -111,16 +108,13 @@ describe("marketing metadata contract", () => {
     const features = read("src/pages/Features.tsx");
     const solutions = read("src/pages/SolutionsPage.tsx");
 
-    expect(planById("team")?.price_usd_monthly).toBe(39);
-    expect(planById("team")?.included_phone_numbers).toBe(2);
-    expect(planById("business")?.price_usd_monthly).toBe(79);
-    expect(planById("business")?.included_phone_numbers).toBe(5);
-    expect(planById("email")?.price_usd_monthly).toBe(9);
+    // Retained subscriptions are not the offer displayed to new customers.
+    expect(PUBLIC_USAGE_TIERS.map((id) => USAGE_TIERS[id].monthlyUsd)).toEqual([12, 24, 49]);
+    expect(PUBLIC_USAGE_TIERS.map((id) => USAGE_TIERS[id].includedWorkUsd)).toEqual([4, 14, 36]);
     expect(pricing).not.toContain("Plans from $");
-    expect(pricing).toContain("Choose your channels and capacity.");
     expect(pricing).toContain("Compare included numbers, email addresses and shared work.");
-    expect(pricing).toContain("CHANNEL_PLANS = STRIPE_PLANS.filter");
-    expect(pricing).toContain("plans={CHANNEL_PLANS}");
+    expect(pricing).toContain("<UsagePricingPanel availableTiers={availableTiers}");
+    expect(pricing).not.toContain("CHANNEL_PLANS");
     expect(pricing).not.toContain('"@type": "OfferCatalog"');
     // Contact is an inquiry form; prices and availability belong to Pricing.
     expect(contact).not.toContain("Starter launches at");
