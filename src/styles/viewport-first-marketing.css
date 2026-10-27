@@ -426,7 +426,7 @@
  * Preserve authored Title Case for public headings. Size, weight, and spacing
  * establish hierarchy without transforming the text. Supporting prose stays
  * in sentence case, and customer authored text keeps its original casing.
- * The homepage hero retains its approved wording and punctuation.
+ * Headlines stay in authored Title Case. The homepage hero is not forced to capitals.
  * These rules only tune word spacing and line height for display headings.
  */
 .marketing-surface :is(.marketing-hero__title, .wl-public-section-heading, .wl-stitch-display) {

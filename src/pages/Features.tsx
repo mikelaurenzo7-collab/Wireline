@@ -16,25 +16,25 @@ const PILLARS: readonly Pillar[] = [
     id: "calls",
     icon: Phone,
     label: "Calls",
-    body: "Prospect, qualify leads, follow up on deals, and answer incoming calls. Choose a voice or clone your own.",
+    body: "Answer the phone and book the job.",
   },
   {
     id: "sms",
     icon: MessageSquare,
     label: "SMS",
-    body: "Keep conversations moving from your business number, with your knowledge, tone, and opt-out controls.",
+    body: "Keep the conversation going.",
   },
   {
     id: "email",
     icon: Mail,
     label: "Email",
-    body: "Read requests, prepare replies, and send approved email with your business signature. Use a managed inbox or your verified domain.",
+    body: "Reply with your signature.",
   },
   {
     id: "computer",
     icon: MonitorSmartphone,
     label: "Cloud Computer",
-    body: "Compare options, research leads, and work through forms in a live browser. Watch, take control, or let your Bot continue.",
+    body: "Research it, then finish the task.",
   },
 ];
 
@@ -52,13 +52,14 @@ export default function Features() {
       <section className="marketing-section marketing-section--screen">
         <div className="wl-public-rail mx-auto max-w-6xl">
           <header className="wl-features-intro text-center">
-            <h1 className="marketing-hero-title mx-auto">BOTS FOR EVERY JOB.</h1>
+            <h1 className="marketing-hero-title mx-auto">Bots for Every Job.</h1>
+            <p className="marketing-hero-lead mx-auto mt-4">Calls, texts, email, and Computer.</p>
             <div className="marketing-hero__actions">
               <Link
                 to={signedIn ? "/studio" : "/signup"}
                 className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
               >
-                {signedIn ? "Open Workspace" : "GET YOUR SALES BOT"}
+                {signedIn ? "Open Workspace" : "Get Started"}
               </Link>
               <Link
                 to="/pricing"
@@ -81,10 +82,8 @@ export default function Features() {
             ))}
           </ul>
 
-          <p className="mx-auto mt-8 max-w-2xl text-center text-xs leading-relaxed text-muted-foreground">
-            Every channel works under your rules: recipient permission for outbound calls and
-            texts, a setup review that verifies your sending identity, and up to 15 minutes per
-            Computer session with the result and its sources ready to review.
+          <p className="mx-auto mt-10 max-w-xl text-center text-sm text-muted-foreground">
+            Outbound calls and texts wait for permission and carrier approval.
           </p>
         </div>
       </section>

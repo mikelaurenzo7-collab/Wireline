@@ -8,7 +8,7 @@ const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("BotBound public iPhone prestige contract", () => {
-  it("keeps a short uppercase hero and the complete product family together", () => {
+  it("keeps a short title-case hero and the complete product family together", () => {
     const product = read("src/lib/bot-product.ts");
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
 
@@ -20,9 +20,9 @@ describe("BotBound public iPhone prestige contract", () => {
     );
 
     expect(landing).toMatch(
-      /<h1[^>]*>[\s\S]*?>\s*YOUR VOICE BOT\s*<\/span>[\s\S]*?>\s*FOR YOUR WORK\.\s*<\/span>[\s\S]*?<\/h1>/,
+      /<h1[^>]*>[\s\S]*?>\s*Your Voice Bot\s*<\/span>[\s\S]*?>\s*for Your Work\.\s*<\/span>[\s\S]*?<\/h1>/,
     );
-    expect(landing).toContain("A Phone Number. An Email Address. A Computer.");
+    expect(landing).toContain("A phone number, an email address, and a computer.");
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).not.toContain("HERO_CHANNELS.map");
@@ -95,11 +95,9 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(consent).toContain("sm:w-[720px] sm:max-w-[calc(100vw-2rem)]");
     expect(consent).not.toContain("lg:left-8 lg:right-8 lg:max-w-none");
     expect(consent).toContain(
-      'className="flex-1 min-w-0 space-y-3 sm:flex sm:items-center sm:gap-3 sm:space-y-0"',
+      'className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3"',
     );
-    expect(consent).toContain(
-      'className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,8.5rem),1fr))] gap-2 sm:flex sm:shrink-0"',
-    );
+    expect(consent).toContain('className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0"');
     expect(consent).toContain("sm:items-center");
   });
 

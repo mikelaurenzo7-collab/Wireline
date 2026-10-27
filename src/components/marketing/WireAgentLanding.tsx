@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, Mail, MessageSquare, Monitor, Phone, type LucideIcon } from "lucide-react";
+import { ArrowRight, Mail, MessageSquare, Monitor, Phone, type LucideIcon } from "lucide-react";
 import { Link } from "react-router";
 import BotBoundMark from "../brand/BotBoundMark";
 import MarketingChromeBar from "./MarketingChromeBar";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
+import WireSignalArt from "./WireSignalArt";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -17,25 +18,25 @@ const EXAMPLES: readonly {
     id: "calls",
     label: "Calls",
     icon: Phone,
-    message: "Choose A Voice. Or Clone Your Own.",
+    message: "Choose a voice, or clone your own.",
   },
   {
     id: "sms",
     label: "SMS",
     icon: MessageSquare,
-    message: "Keep The Conversation Going.",
+    message: "Keep the conversation going.",
   },
   {
     id: "email",
     label: "Email",
     icon: Mail,
-    message: "Your Inbox. Your Knowledge. Your Signature.",
+    message: "Reply in your own voice.",
   },
   {
     id: "computer",
     label: "Computer",
     icon: Monitor,
-    message: "Research. Compare. Get It Done.",
+    message: "Research it, then finish it.",
   },
 ];
 
@@ -55,7 +56,7 @@ export default function WireAgentLanding() {
     emitProductEvent({
       event: "landing_primary_cta_clicked",
       surface: "marketing_web",
-      metadata: { source: "hero_primary", label: "GET YOUR SALES BOT" },
+      metadata: { source: "hero_primary", label: "Get Started" },
     });
 
   return (
@@ -68,13 +69,13 @@ export default function WireAgentLanding() {
               <BotBoundMark className="landing-prestige__hero-bot" />
             </div>
             <h1 id="landing-prestige-title">
-              <span className="landing-prestige__title-line">YOUR VOICE BOT</span>{" "}
+              <span className="landing-prestige__title-line">Your Voice Bot</span>{" "}
               <span className="landing-prestige__title-line landing-prestige__title-accent">
-                FOR YOUR WORK.
+                for Your Work.
               </span>
             </h1>
             <p className="landing-prestige__identity-line">
-              A Phone Number. An Email Address. A Computer.
+              A phone number, an email address, and a computer.
             </p>
             <div className="landing-prestige__actions">
               <Link
@@ -82,7 +83,7 @@ export default function WireAgentLanding() {
                 className="landing-prestige__cta is-primary"
                 onClick={trackSignupIntent}
               >
-                {signedIn ? "Open Workspace" : "GET YOUR SALES BOT"} <ArrowRight aria-hidden="true" />
+                {signedIn ? "Open Workspace" : "Get Started"} <ArrowRight aria-hidden="true" />
               </Link>
               <Link to="/pricing" className="landing-prestige__cta is-text">
                 See Pricing
@@ -138,54 +139,10 @@ export default function WireAgentLanding() {
             className="landing-prestige__example"
           >
             <h2>{example.message}</h2>
-            {example.id === "calls" || example.id === "computer" ? (
-              <div className="mx-auto mt-6 max-w-md rounded-xl border border-border bg-card p-4 text-left shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {example.id === "calls"
-                    ? "Example call · Live in your workspace"
-                    : "Example task · Live in your workspace"}
-                </p>
-                <ol className="mt-3 space-y-2 text-sm text-foreground">
-                  {example.id === "calls" ? (
-                    <>
-                      <li className="flex items-start gap-2">
-                        <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-                        Answer the call and help the caller
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-                        Book the appointment on your calendar
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <ArrowRight
-                          className="mt-0.5 size-4 shrink-0 text-primary"
-                          aria-hidden="true"
-                        />
-                        Send the confirmation and follow-up text
-                      </li>
-                    </>
-                  ) : (
-                    <>
-                      <li className="flex items-start gap-2">
-                        <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-                        Open the supplier portal
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-                        Compare this week's prices
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <ArrowRight
-                          className="mt-0.5 size-4 shrink-0 text-primary"
-                          aria-hidden="true"
-                        />
-                        Draft the order summary for your approval
-                      </li>
-                    </>
-                  )}
-                </ol>
-              </div>
-            ) : null}
+            <WireSignalArt
+              variant={example.id === "computer" ? "pulse" : "wave"}
+              className="landing-prestige__signal"
+            />
             <Link to={`/features#${example.id}`} className="landing-prestige__example-link">
               Explore {example.label}
               <ArrowRight aria-hidden="true" />
