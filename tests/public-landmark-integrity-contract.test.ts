@@ -25,11 +25,12 @@ describe("public landmark integrity", () => {
   it("gives the pricing document a primary heading before its plan cards", () => {
     const pricing = read("src/pages/Pricing.tsx");
     const headingIndex = pricing.indexOf("<h1");
-    const firstPlanIndex = pricing.indexOf("<ChannelPlanPicker");
+    const firstPlanIndex = pricing.indexOf("<UsagePricingPanel");
 
     expect(headingIndex).toBeGreaterThanOrEqual(0);
     expect(firstPlanIndex).toBeGreaterThan(headingIndex);
-    expect(read("src/components/ChannelPlanPicker.tsx")).toContain("<h2");
-    expect(pricing).toContain("More Bots or a Custom Setup?");
+    // One pricing layout: the usage model. The dead channels layout and its
+    // picker were removed (production never served them).
+    expect(pricing).not.toContain("ChannelPlanPicker");
   });
 });

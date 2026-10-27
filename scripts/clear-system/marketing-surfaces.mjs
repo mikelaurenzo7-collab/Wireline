@@ -194,24 +194,16 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /<h2[^>]*>Personal · \$12\/month<\/h2>[\s\S]*?to=\{signupHrefForPlan\("personal", \{ interval: billingInterval \}\)\}/,
-    "pricing must expose the paid Personal plan through its canonical signup destination",
+    /<UsagePricingPanel availableTiers=\{usageTiers\}/,
+    "pricing must render the shared-work plans from live availability",
   );
-  const channelPicker = read("src/components/ChannelPlanPicker.tsx");
+  mustExclude(
+    "src/pages/Pricing.tsx",
+    pricingPage,
+    /ChannelPlanPicker|CHANNEL_PLANS/,
+    "pricing must not revive the retired channels layout",
+  );
   const planDisplay = read("src/lib/plan-display.ts");
-  for (const label of ["Calls", "Email", "SMS"])
-    mustInclude(
-      "src/components/ChannelPlanPicker.tsx",
-      channelPicker,
-      new RegExp(`label: "${label}"`),
-      `shared pricing selector must preserve ${label}`,
-    );
-  mustInclude(
-    "src/components/ChannelPlanPicker.tsx",
-    channelPicker,
-    /import\s*\{[^}]*\bPLAN_CAPACITY_LABELS\b[^}]*\}\s*from\s*"\.\.\/lib\/plan-display"/,
-    "shared pricing selector must import canonical capacity labels",
-  );
   for (const [capacity, label] of [
     ["light", "Starter"],
     ["regular", "Plus"],
@@ -223,19 +215,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
       new RegExp(`PLAN_CAPACITY_LABELS[^=]*=\\s*\\{[^}]*\\b${capacity}:\\s*"${label}"`),
       `canonical capacity labels must preserve ${label}`,
     );
-    mustInclude(
-      "src/components/ChannelPlanPicker.tsx",
-      channelPicker,
-      new RegExp(`id:\\s*"${capacity}",\\s*label:\\s*PLAN_CAPACITY_LABELS\\.${capacity}\\b`),
-      `shared pricing selector must use the canonical ${label} label`,
-    );
   }
-  mustInclude(
-    "src/components/ChannelPlanPicker.tsx",
-    channelPicker,
-    /interval === "year" \? plan\.price_usd_annual : plan\.price_usd_monthly/,
-    "pricing must use the exact catalog price for each interval",
-  );
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
@@ -243,22 +223,10 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
     "pricing must check live availability for the selected package and interval",
   );
   mustInclude(
-    "src/pages/Pricing.tsx",
-    pricingPage,
-    /!plan\.channels\.includes\("sms"\)[\s\S]*availableChannels=\{\["voice", "email"\]\}/,
-    "pricing must keep SMS packages and controls out of launch selection",
-  );
-  mustInclude(
     "src/components/usage-billing/UsagePricingPanel.tsx",
     usagePricingPanel,
     /Calls, texts, email, and Computer share that work/,
     "pricing must explain shared work",
-  );
-  mustInclude(
-    "src/pages/Pricing.tsx",
-    pricingPage,
-    /STRIPE_PLANS/,
-    "pricing must use Stripe catalog",
   );
   mustExclude(
     "src/pages/Pricing.tsx",

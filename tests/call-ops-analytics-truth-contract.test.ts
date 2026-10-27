@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 const route = readFileSync("src/routes/call-ops-analytics-routes.ts", "utf8");
 const registry = readFileSync("src/server/register-api-routes.ts", "utf8");
 const analytics = readFileSync("src/components/CallOpsAnalytics.tsx", "utf8");
-const overview = readFileSync("src/components/CallOpsOverview.tsx", "utf8");
 const callOps = readFileSync("src/components/CallLogsClaude.tsx", "utf8");
 const phonePage = readFileSync("src/pages/PhonePage.tsx", "utf8");
 const insightsView = readFileSync("src/components/insights/InsightsView.tsx", "utf8");
@@ -39,7 +38,7 @@ describe("Call Ops analytics truth", () => {
     expect(analyticsMount).toBeLessThan(dashboardMount);
   });
 
-  it("renders analytics from aggregate-only data and removes the hidden 200-call cap", () => {
+  it("keeps call analytics out of Insights — the Calls page is the one calls surface", () => {
     expect(analytics).toContain("/api/call-ops/analytics?timezone=");
     expect(analytics).toContain("Intl.DateTimeFormat().resolvedOptions().timeZone");
     expect(analytics).toContain("analytics.totalCalls");
@@ -47,15 +46,14 @@ describe("Call Ops analytics truth", () => {
     expect(analytics).toContain("analytics.avgDurationSeconds");
     expect(analytics).toContain("analytics.avgQaScore");
     expect(analytics).toContain("analytics.weekdayCounts");
-    expect(overview).toContain('import CallOpsAnalytics from "./CallOpsAnalytics";');
-    expect(overview).toContain("<CallOpsAnalytics />");
-    // Call analytics lives in Insights beside every other channel; Calls keeps
-    // the log, outbound work, and lines, and forwards old Analytics bookmarks.
-    expect(insightsView).toContain('import CallOpsOverview from "../CallOpsOverview";');
-    expect(insightsView).toContain('calls: wrap("Call analytics", <CallOpsOverview />)');
-    expect(opsDesign).toContain('tabs: ["funnel", "calls", "goals", "heatmap", "leaderboard"]');
+    // The duplicated Insights "Calls" view was cut (Oct 26 sweep): Insights
+    // keeps Totals, Goals, Topics, Quality, Reliability. The analytics
+    // endpoint stays registered; its component's only UI consumer was the
+    // cut view — flagged for a follow-up decision, not silently deleted.
+    expect(insightsView).not.toContain("CallOpsOverview");
+    expect(opsDesign).toContain('tabs: ["funnel", "goals"]');
     expect(phonePage).not.toContain('{ id: "analytics", label: "Analytics" }');
-    expect(phonePage).toContain('<Navigate to="/insights?tab=performance&view=calls" replace />');
+    expect(phonePage).toContain('<Navigate to="/insights?tab=performance" replace />');
     expect(callOps).toContain("const CALL_PAGE_SIZE = 100;");
     expect(callOps).toContain("offset: String(calls.length)");
     expect(callOps).toContain("Load More Calls");

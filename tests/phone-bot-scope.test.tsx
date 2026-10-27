@@ -191,7 +191,7 @@ describe("explicit Calls Bot scope", () => {
     h.degraded = true;
     const redirect = render().find((node) => node.type === "navigate");
     expect(redirect?.props).toMatchObject({
-      to: "/insights?tab=performance&view=calls",
+      to: "/insights?tab=performance",
       replace: true,
     });
   });

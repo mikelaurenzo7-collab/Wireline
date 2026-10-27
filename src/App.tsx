@@ -25,16 +25,13 @@ const Features = lazy(() =>
 const Pricing = lazy(() =>
   import("./pages/Pricing").then((module) => withVisualQaPage(module, "pricing")),
 );
-const Showcase = lazy(() =>
-  import("./pages/Showcase").then((module) => withVisualQaPage(module, "showcase")),
-);
+
 const Compare = lazy(() =>
   import("./pages/Compare").then((module) => withVisualQaPage(module, "compare")),
 );
 const About = lazy(() =>
   import("./pages/About").then((module) => withVisualQaPage(module, "about")),
 );
-const Blog = lazy(() => import("./pages/Blog").then((module) => withVisualQaPage(module, "blog")));
 const Security = lazy(() =>
   import("./components/Security").then((module) =>
     withVisualQaPage(module, "trust-center", (location) =>
@@ -174,7 +171,7 @@ function AppRouter() {
         <Route path="/features" element={<Features />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/billing" element={<PreservingRedirect to="/settings/billing" />} />
-        <Route path="/showcase" element={<Showcase />} />
+        <Route path="/showcase" element={<PreservingRedirect to="/signup" />} />
         <Route path="/compare" element={<Compare />} />
         <Route path="/solutions" element={<PreservingRedirect to="/solutions/support" />} />
         <Route path="/use-cases" element={<PreservingRedirect to="/solutions/support" />} />
@@ -194,10 +191,10 @@ function AppRouter() {
         <Route path="/for/sales" element={<VerticalLanding slug="sales" />} />
         <Route path="/for/*" element={<PreservingRedirect to="/for/everyday" />} />
         <Route path="/about" element={<About />} />
-        <Route path="/blog" element={<Blog />} />
-        <Route path="/blog/*" element={<PreservingRedirect to="/blog" />} />
+        <Route path="/blog" element={<PreservingRedirect to="/changelog" />} />
+        <Route path="/blog/*" element={<PreservingRedirect to="/changelog" />} />
         <Route path="/changelog" element={<PublicChangelog />} />
-        <Route path="/security" element={<Security />} />
+        <Route path="/security" element={<PreservingRedirect to="/trust" />} />
         <Route path="/trust" element={<Security />} />
         <Route path="/trust/:vertical" element={<TrustPackPage />} />
         <Route path="/support" element={<SupportPage />} />

@@ -23,6 +23,7 @@ import { eq, and, gte, lt, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import { validateBody, createGoalSchema } from "../lib/api-validation";
+import { appointmentsInWindow } from "../lib/appointment-where";
 import {
   GOAL_METRICS,
   isGoalMetric,
@@ -67,13 +68,8 @@ async function loadMonthActuals(userId: string, now: number): Promise<GoalActual
     drizzle
       .select({ count: sql<number>`count(*)` })
       .from(schema.appointments)
-      .where(
-        and(
-          eq(schema.appointments.userId, userId),
-          gte(schema.appointments.createdAt, start),
-          lt(schema.appointments.createdAt, end),
-        ),
-      ),
+      // Shared with the Insights funnel: cancelled bookings never count.
+      .where(appointmentsInWindow(userId, start, end)),
   ]);
   return computeActuals({ calls, appointmentCount: Number(apptAgg[0]?.count ?? 0) });
 }

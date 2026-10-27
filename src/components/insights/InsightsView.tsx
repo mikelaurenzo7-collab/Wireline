@@ -7,7 +7,6 @@
 import { Suspense, lazy, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { TrendingUp } from "lucide-react";
-import CallOpsOverview from "../CallOpsOverview";
 import CsvExportButton from "../CsvExportButton";
 import GoalsView from "../GoalsView";
 import WidgetBoundary from "../WidgetBoundary";
@@ -26,11 +25,7 @@ import {
 import { useAgents } from "../../contexts/AgentsContext";
 import { InsightEmpty } from "./shared";
 import FunnelView from "./FunnelView";
-import AttributionView from "./AttributionView";
 import TopicsView from "./TopicsView";
-import HeatmapView from "./HeatmapView";
-import LeaderboardView from "./LeaderboardView";
-import FailureModesView from "./FailureModesView";
 
 // Reliability and Scorecards are the only two of these views that draw
 // with Recharts, and they are not the default tab. Imported eagerly they put the
@@ -41,22 +36,13 @@ const QualityView = lazy(() => import("./QualityView"));
 
 const DAY_OPTIONS = [7, 14, 30, 60, 90] as const;
 // Only these views pass the selected window into their API requests.
-const WINDOWED_VIEWS = new Set([
-  "funnel",
-  "attribution",
-  "heatmap",
-  "leaderboard",
-  "reliability",
-  "quality",
-]);
+const WINDOWED_VIEWS = new Set(["funnel", "reliability", "quality"]);
 const FIXED_PERIOD_LABELS: Record<string, string> = {
-  calls: "Today and all-time",
   goals: "This month",
   topics: "Recent calls",
-  failures: "Recent qualifying calls",
 };
 
-type InsightGroupId = "performance" | "reliability" | "quality" | "revenue";
+type InsightGroupId = "performance" | "reliability" | "quality" | "sources";
 
 const INSIGHTS_ROUTE = resolveAppPageSubTabRoute("/insights")!;
 
@@ -89,13 +75,8 @@ export default function InsightsView() {
   const viewContent = useMemo(() => {
     const views: Record<string, React.ReactNode> = {
       funnel: wrap("Activity totals", <FunnelView days={days} />),
-      calls: wrap("Call analytics", <CallOpsOverview />),
       goals: wrap("Goals", <GoalsView />),
-      attribution: wrap("Attribution", <AttributionView days={days} />),
       topics: wrap("Topics", <TopicsView />),
-      heatmap: wrap("Heatmap", <HeatmapView days={days} />),
-      leaderboard: wrap("Leaderboard", <LeaderboardView days={days} />),
-      failures: wrap("Failures", <FailureModesView />),
       reliability: wrap("Reliability", <VoiceReliabilityView days={days} />),
       quality: wrap("Scorecards", <QualityView days={days} />),
     };

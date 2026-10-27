@@ -30,19 +30,18 @@ describe("API response contract", () => {
     expect(usageMeter).not.toMatch(/interface UsageSnapshot/);
   });
 
-  it("types insights funnel and leaderboard views against shared contracts", () => {
+  it("types the insights funnel view against shared contracts", () => {
     const funnel = read("src/components/insights/FunnelView.tsx");
     expect(funnel).toContain("InsightsFunnelResponse");
     expect(funnel).not.toMatch(/useState<any>/);
 
-    const leaderboard = read("src/components/insights/LeaderboardView.tsx");
-    expect(leaderboard).toContain("InsightsLeaderboardResponse");
     const insightsTypes = read("src/types/api-insights.ts");
     expect(insightsTypes).toContain("InsightsFunnelResponse");
-    expect(insightsTypes).toContain("InsightsAttributionResponse");
-    expect(insightsTypes).toContain("InsightsHeatmapResponse");
     expect(insightsTypes).toContain("InsightsQaStatsResponse");
     expect(insightsTypes).toContain("VoiceLatencyInsightsResponse");
+    // The Leaderboard was removed end-to-end (owner decision, Oct 26): no
+    // view, no endpoint, no types.
+    expect(insightsTypes).not.toContain("InsightsLeaderboardResponse");
   });
 
   it("syncs billing status OpenAPI schema with live route fields", () => {

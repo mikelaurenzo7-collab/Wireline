@@ -3,7 +3,6 @@ const STICKY_CTA_EXACT = new Set([
   "/compare",
   "/features",
   "/pricing",
-  "/blog",
   "/security",
   "/trust",
 ]);

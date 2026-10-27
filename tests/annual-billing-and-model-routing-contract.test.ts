@@ -12,9 +12,11 @@ describe("annual billing purchase path", () => {
     const billingCard = read("src/components/StripeBillingCard.tsx");
     const launchCheckout = read("src/routes/launch-billing-checkout-routes.ts");
 
-    expect(read("src/components/ChannelPlanPicker.tsx")).toContain('interval === "year"');
-    expect(pricing).toContain("signupHrefForPlan(plan.id as SignupPlanId");
+    // The channels picker is gone with its layout; annual intent still
+    // flows through pricing's availability check and the usage panel.
+    expect(pricing).toContain("usePaidPlanAvailability");
     expect(pricing).toContain("interval: billingInterval");
+    expect(pricing).toContain("<UsagePricingPanel");
     expect(billingCard).toContain("interval },");
     expect(billingCard).toContain('billingInterval === "year"');
     expect(launchCheckout).toContain('req.body?.interval === "year"');

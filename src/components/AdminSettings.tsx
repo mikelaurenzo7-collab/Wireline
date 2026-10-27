@@ -14,7 +14,6 @@ import { useBranding } from "../contexts/BrandingContext";
 import AdminHubViewport from "./layout/AdminHubViewport";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
-import { CAMPAIGN_CALLING_TITLE } from "../lib/product-copy";
 import { OPS_ADMIN, type OpsAdminTab } from "../lib/wireline-ops-design";
 import { BRAND } from "../constants/brand-colors";
 import { LIVE_VOICE_MODEL, LIVE_VOICE_PROVIDER } from "../lib/ai-models";
@@ -24,7 +23,6 @@ import { AccountsPanel } from "./admin/AccountsPanel";
 import { BrandingPanel } from "./admin/BrandingPanel";
 import { CarrierPanel } from "./admin/CarrierPanel";
 import { SubscriptionPanel } from "./admin/SubscriptionPanel";
-import { EmptyState } from "./ui/EmptyState";
 import ComplianceChecklist from "./admin/ComplianceChecklist";
 import { PanelSkeleton } from "./atoms/skeleton-presets";
 import { isLegacyAdminTabRedirect } from "../lib/admin-access";
@@ -115,14 +113,13 @@ function AdminSettingsContent() {
   const [integrationHealth, setIntegrationHealth] = useState<IntegrationHealthPayload | null>(null);
 
   type AdminTab =
-    "accounts" | "branding" | "carrier" | "subscription" | "team" | "flywheel" | "activity";
+    "accounts" | "branding" | "carrier" | "subscription" | "team" | "activity";
   const VALID_TABS: AdminTab[] = [
     "accounts",
     "branding",
     "carrier",
     "subscription",
     "team",
-    "flywheel",
     "activity",
   ];
   // Honor ?tab=<name> in the URL so deep links (SettingsTabSwitcher and the
@@ -151,7 +148,6 @@ function AdminSettingsContent() {
       queueMicrotask(() => navigate("/studio", { replace: true }));
       return "accounts";
     }
-    if (qsRaw === "growth") return "flywheel";
     const qs = qsRaw as AdminTab;
     return VALID_TABS.includes(qs) ? qs : "accounts";
   })();
@@ -394,8 +390,8 @@ function AdminSettingsContent() {
             onSelect={(id) => navigate(id === "team" ? "/settings/team" : `/admin?tab=${id}`)}
             density="compact"
             wrap="always"
-            mobileSelect={activeTab !== "flywheel"}
-            tabs={VALID_TABS.filter((tab) => tab !== "flywheel").map((tab) => ({
+            mobileSelect
+            tabs={VALID_TABS.map((tab) => ({
               id: tab,
               label: OPS_ADMIN.tabLabels[tab as OpsAdminTab] ?? tab,
             }))}
@@ -496,26 +492,6 @@ function AdminSettingsContent() {
                       className="h-full"
                     >
                       <SubscriptionPanel onDeleteAccount={deleteAccount} />
-                    </motion.div>
-                  )}
-
-                  {activeTab === "flywheel" && (
-                    <motion.div
-                      key="flywheel"
-                      role="tabpanel"
-                      id="admin-panel-flywheel"
-                      data-visual-qa-state="panel-flywheel"
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="h-full"
-                    >
-                      <EmptyState
-                        icon={Settings}
-                        title={CAMPAIGN_CALLING_TITLE}
-                        framed
-                        density="compact"
-                        withHalo={false}
-                      />
                     </motion.div>
                   )}
 

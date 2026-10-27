@@ -293,7 +293,7 @@ describe("Bot context across workspace pages", () => {
         .filter((node) => node.type === "a")
         .map((node) => node.props.to);
       expect(links).toContain(`/phone?tab=${connected ? "logs" : "setup"}&agent=bot-b`);
-      expect(links).toContain("/phone?tab=setup&agent=bot-b#company-identity");
+      expect(links).toContain("/phone?tab=lines&agent=bot-b#company-identity");
     },
   );
 

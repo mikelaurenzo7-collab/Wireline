@@ -125,18 +125,11 @@ describe("launch truth contract", () => {
     expect(playbook).not.toContain("| Starter Plus | $39");
   });
 
-  it("does not leak Wireline branding into a customer's sequence message", () => {
-    const cadences = read("src/components/Cadences.tsx");
-    expect(cadences).not.toContain("Reaching out from Wireline");
-    expect(cadences).toContain("disabled={saving || !draftName.trim() || draftSteps.length === 0}");
-  });
-
   it("describes deletion billing and provider spend controls as implemented", () => {
     const settings = read("src/pages/SettingsPage.tsx");
     const accountRoutes = read("src/routes/account-routes.ts");
     const deletionBilling = read("src/lib/account-deletion-billing.ts");
     const spendRoutes = read("src/routes/spend-control-routes.ts");
-    const spendView = read("src/components/insights/AISpendView.tsx");
 
     expect(settings).not.toContain("Billing continues until purge");
     expect(accountRoutes).toContain("renewal_stopped");
@@ -150,6 +143,5 @@ describe("launch truth contract", () => {
     expect(deletionBilling).toContain("DELETION_RENEWAL_MARKER");
     expect(spendRoutes).toContain("maximum_limit_usd");
     expect(spendRoutes).toContain("The provider spend guard is always enabled with a hard cap.");
-    expect(spendView).toContain("Always on");
   });
 });

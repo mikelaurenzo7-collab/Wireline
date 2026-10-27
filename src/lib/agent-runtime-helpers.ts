@@ -3,7 +3,7 @@ import {
   filterToolsByTenantConnections,
   loadTenantIntegrationConnections,
 } from "./tenant-integration-connections";
-import { DEFAULT_AGENT_ROLE } from "./agent-constants";
+import { DEFAULT_AGENT_ROLE_ID } from "./agent-role-definitions";
 import { getTenantChannelEntitlements } from "./channel-entitlements";
 import { isAgentToolChannelAllowed } from "./agent-tool-channel-policy";
 import { log } from "./server-context";
@@ -194,7 +194,7 @@ const OUTBOUND_VOICE_ROLE_ALIASES: Record<string, string> = {
 };
 
 export function mapOutboundVoiceRole(role: string | null | undefined): string {
-  if (!role) return DEFAULT_AGENT_ROLE;
+  if (!role) return DEFAULT_AGENT_ROLE_ID;
   return OUTBOUND_VOICE_ROLE_ALIASES[role] ?? role.replace(/^wireline_/, "");
 }
 

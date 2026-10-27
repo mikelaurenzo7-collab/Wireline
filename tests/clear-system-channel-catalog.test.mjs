@@ -40,28 +40,9 @@ describe("Clear System channel catalog guard", () => {
       "display headings must balance lines",
     ],
     [
-      "src/pages/Pricing.tsx",
-      (source) => source.replace('plan.catalogFamily === "channels"', "plan.public"),
-      "current launch packages",
-    ],
-    [
       "src/lib/plan-display.ts",
       (source) => source.replace('high: "Pro"', 'high: "Scale"'),
       "preserve Pro",
-    ],
-    [
-      "src/components/ChannelPlanPicker.tsx",
-      (source) =>
-        source.replace(
-          'interval === "year" ? plan.price_usd_annual : plan.price_usd_monthly',
-          'interval === "year" ? plan.price_usd_monthly * 10 : plan.price_usd_monthly',
-        ),
-      "exact catalog price",
-    ],
-    [
-      "src/pages/Pricing.tsx",
-      (source) => source.replace(' && !plan.channels.includes("sms")', ""),
-      "SMS packages and controls",
     ],
     [
       "src/data/wireline-knowledge.ts",

@@ -9,7 +9,6 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
   it("never treats Call Logs HTTP failures as an empty inventory", () => {
     const logs = read("src/components/CallLogsClaude.tsx");
     const probe = read("src/components/PhoneCallHistoryPanel.tsx");
-    const overview = read("src/components/CallOpsOverview.tsx");
     expect(logs).toContain('if (!response.ok) throw new Error("Could not load calls.")');
     expect(logs).not.toContain("response.ok ? response.json() : null");
     expect(logs).toContain('title="Call History Unavailable"');
@@ -18,7 +17,6 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
     expect(probe).toContain("if (!response.ok) throw new Error");
     expect(probe).toContain('title="Calls Unavailable"');
     expect(probe).toContain("Nothing has been erased.");
-    expect(overview).toContain('{metricsLoading || metricsError ? "N/A" : kpi.value}');
   });
 
   it("surfaces Webhooks and Intake Keys load failures instead of empty success", () => {
@@ -28,15 +26,6 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
     expect(webhooks).toContain("setLoadError(message)");
     expect(intake).toContain("Couldn't load intake keys.");
     expect(intake).toContain("setLoadError(");
-  });
-
-  it("marks Cadences load errors when the sequences response is non-OK", () => {
-    const cadences = read("src/components/Cadences.tsx");
-    expect(cadences).toContain("cR?.ok ? cR.json().catch(() => null) : null");
-    expect(cadences).toContain("const sequences = parseCadences(cD)");
-    expect(cadences).toMatch(/if \(!sequences\) \{\s*throw new Error\(/);
-    expect(cadences).toContain("setCadences([])");
-    expect(cadences).toContain("setLoadErr(");
   });
 
   it("keeps UsageMeter and StripeBillingCard honest on billing fetch failures", () => {
@@ -65,18 +54,11 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
     expect(wizard).toContain("disabled={refreshingPhone || phoneLookupFailed}");
   });
 
-  it("keeps Call Logs and Cadences usable when secondary fetches fail", () => {
+  it("keeps Call Logs usable when secondary fetches fail", () => {
     const logs = read("src/components/CallLogsClaude.tsx");
-    const overview = read("src/components/CallOpsOverview.tsx");
-    const cadences = read("src/components/Cadences.tsx");
     expect(logs).toContain("setLoadMoreError(");
     expect(logs).toContain("The calls already shown remain available.");
     expect(logs).toContain("{desktop ? (");
     expect(logs).not.toContain("{!error && desktop ? (");
-    expect(overview).toContain('title="Operational Metrics Unavailable"');
-    expect(overview).toContain("Call history and all-time analytics remain available.");
-    expect(overview).toContain("<CallOpsAnalytics />");
-    expect(cadences).toContain("setRunsWarning(");
-    expect(cadences).toContain("{runsWarning ? (");
   });
 });

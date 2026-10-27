@@ -348,20 +348,6 @@ export interface FunnelData {
   queuedLeads: number;
 }
 
-export interface HeatmapCell {
-  hour: number;
-  day: number;
-  count: number;
-}
-
-export interface LeaderboardEntry {
-  agent_id: string;
-  agent_name: string;
-  call_count: number;
-  avg_score: number | null;
-  avg_duration: number;
-}
-
 /* ── Email ───────────────────────────────────────────────────────── */
 
 export interface EmailAccount {
@@ -480,16 +466,8 @@ export type {
 
 export type {
   AuditSummary,
-  InsightsAttributionResponse,
-  InsightsAttributionRow,
-  InsightsFailureModeRow,
-  InsightsFailureModesResponse,
   InsightsFunnelResponse,
   InsightsFunnelStage,
-  InsightsHeatmapCell,
-  InsightsHeatmapResponse,
-  InsightsLeaderboardAgentRow,
-  InsightsLeaderboardResponse,
   InsightsQaStatsResponse,
   InsightsTopicRow,
   InsightsTopicsResponse,

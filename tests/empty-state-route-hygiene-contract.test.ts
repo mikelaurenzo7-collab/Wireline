@@ -7,8 +7,6 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 describe("empty-state route hygiene", () => {
   it("routes Bot creation, phone setup, SMS, and attribution to their live owners", () => {
     const ops = read("src/lib/wireline-ops-design.ts");
-    const overview = read("src/pages/OverviewPage.tsx");
-    const firstRun = read("src/components/overview/FirstRunWorkspace.tsx");
     const shell = read("src/components/WorkspaceShell.tsx");
     const studioChrome = read("src/components/studio/StudioContextChrome.tsx");
     const readiness = read("src/lib/agent-readiness.ts");
@@ -16,20 +14,13 @@ describe("empty-state route hygiene", () => {
     const sms = read("src/components/SmsThreads.tsx");
 
     expect(ops).not.toContain("/settings?tab=carrier");
-    expect(ops).toContain('to: "/phone?tab=setup"');
+    expect(ops).toContain('to: "/phone?tab=lines"');
     expect(ops).not.toContain('to: "/overview');
     expect(ops).not.toMatch(/to: "\/agents"/);
     expect(ops).toContain("directorAssistHref");
     expect(ops).toContain("`/studio?agent=");
     expect(ops).toContain("&command=");
     expect(ops).not.toContain("&prompt=");
-
-    expect(overview).toContain("<FirstRunWorkspace />");
-    expect(firstRun).toContain('to="/studio?create=1"');
-    expect(firstRun).toContain('to="/templates"');
-    expect(firstRun).toContain("Create Your Own");
-    expect(firstRun).toContain("Browse Templates");
-    expect(firstRun).not.toContain("posture=");
 
     expect(shell).toContain('data-wireline-bot-selected="true"');
     expect(shell).toContain("Current Bot");
@@ -54,7 +45,7 @@ describe("empty-state route hygiene", () => {
 
     const insightsEmpty = read("src/components/insights/shared.tsx");
     expect(insightsEmpty).toContain(
-      '{ label: "Connect Phone", to: "/phone?tab=setup", primary: true }',
+      '{ label: "Connect Phone", to: "/phone?tab=lines", primary: true }',
     );
     expect(insightsEmpty).toContain('{ label: "Call History", to: "/phone" }');
     expect(insightsEmpty).not.toContain('to: "/studio?section=test"');

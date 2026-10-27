@@ -27,19 +27,11 @@ vi.mock("../src/components/layout/ClientRouteViewport", () => ({ default: "viewp
 vi.mock("../src/components/layout/ClientToolbar", () => ({ default: "toolbar" }));
 vi.mock("../src/components/ui/SegmentStrip", () => ({ SegmentStrip: "period-control" }));
 vi.mock("../src/components/CsvExportButton", () => ({ default: "export" }));
-vi.mock("../src/components/CallOpsOverview", () => ({ default: "calls" }));
 vi.mock("../src/components/GoalsView", () => ({ default: "goals" }));
 vi.mock("../src/components/WidgetBoundary", () => ({ default: "widget" }));
 vi.mock("../src/components/insights/shared", () => ({ InsightEmpty: "empty" }));
 vi.mock("../src/components/insights/FunnelView", () => ({ default: "funnel" }));
-vi.mock("../src/components/insights/AttributionView", () => ({ default: "attribution" }));
 vi.mock("../src/components/insights/TopicsView", () => ({ default: "topics" }));
-vi.mock("../src/components/insights/HeatmapView", () => ({ default: "heatmap" }));
-vi.mock("../src/components/insights/LeaderboardView", () => ({ default: "leaderboard" }));
-vi.mock("../src/components/insights/FailureModesView", () => ({ default: "failures" }));
-vi.mock("../src/components/insights/VoiceLatencyView", () => ({ default: "latency" }));
-vi.mock("../src/components/insights/AISpendView", () => ({ default: "spend" }));
-vi.mock("../src/components/insights/LearningMetricsView", () => ({ default: "learning" }));
 
 type Props = {
   children?: ReactNode;
@@ -73,10 +65,8 @@ beforeEach(() => {
 
 describe("Insights period controls", () => {
   it.each([
-    ["performance", "calls", "Today and all-time"],
     ["performance", "goals", "This month"],
-    ["revenue", "topics", "Recent calls"],
-    ["quality", "failures", "Recent qualifying calls"],
+    ["sources", "topics", "Recent calls"],
   ])(
     "shows the real fixed scope for %s/%s without an ineffective day selector",
     (group, view, label) => {
@@ -93,11 +83,11 @@ describe("Insights period controls", () => {
   it("keeps the selected days when visiting a fixed-period view and returning", () => {
     elements(render()).find((node) => node.type === "period-control")!.props.onChange!("14");
     expect(elements(render()).find((node) => node.type === "funnel")?.props.days).toBe(14);
-    h.search = "tab=performance&view=calls";
+    h.search = "tab=performance&view=goals";
     expect(elements(render()).some((node) => node.type === "period-control")).toBe(false);
-    h.search = "tab=performance&view=heatmap";
+    h.search = "tab=performance&view=funnel";
     const nodes = elements(render());
     expect(nodes.find((node) => node.type === "period-control")?.props.value).toBe("14");
-    expect(nodes.find((node) => node.type === "heatmap")?.props.days).toBe(14);
+    expect(nodes.find((node) => node.type === "funnel")?.props.days).toBe(14);
   });
 });

@@ -175,29 +175,28 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
     /included_phone_numbers/,
     "plan catalog must back included-number claims",
   );
+  // Pricing serves ONE layout: the shared-work (usage) model. The channels
+  // layout and its picker were deleted Oct 26 — production never served
+  // them (the plans endpoint returns the usage model), and their cold-load
+  // branch was the fluctuating pricing title. The $12 entry point is the
+  // Lite usage tier in the usage catalog.
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /<h2[^>]*>Personal · \$12\/month<\/h2>/,
-    "pricing must preserve the paid Personal plan entry",
+    /<UsagePricingPanel availableTiers=\{usageTiers\}/,
+    "pricing must render the shared-work plans from live availability",
   );
   mustInclude(
-    "src/pages/Pricing.tsx",
-    pricingPage,
-    /to=\{signupHrefForPlan\("personal", \{ interval: billingInterval \}\)\}/,
-    "pricing must route Personal signup through the canonical plan destination",
+    "src/lib/usage-billing-catalog.ts",
+    read("src/lib/usage-billing-catalog.ts"),
+    /monthlyUsd: 12/,
+    "the $12 entry tier must stay in the usage catalog",
   );
-  mustInclude(
+  mustExclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /STRIPE_PLANS\.filter\([\s\S]*plan\.catalogFamily === "channels" &&[\s\S]*!plan\.channels\.includes\("sms"\)/,
-    "public pricing must select current launch packages while retaining SMS in the catalog",
-  );
-  mustInclude(
-    "src/pages/Pricing.tsx",
-    pricingPage,
-    /<ChannelPlanPicker[\s\S]*plans=\{CHANNEL_PLANS\}/,
-    "public pricing must render the shared channel and capacity selector",
+    /ChannelPlanPicker|CHANNEL_PLANS/,
+    "pricing must not revive the retired channels layout",
   );
   mustInclude(
     "src/components/usage-billing/UsagePricingPanel.tsx",

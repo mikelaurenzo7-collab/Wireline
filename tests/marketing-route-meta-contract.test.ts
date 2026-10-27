@@ -134,7 +134,6 @@ describe("route meta prerendering", () => {
 
     const routeSources: Record<string, string> = {
       "/about": "src/pages/About.tsx",
-      "/blog": "src/pages/Blog.tsx",
       "/support": "src/components/SupportPage.tsx",
       "/contact": "src/components/ContactPage.tsx",
       "/security": "src/components/Security.tsx",

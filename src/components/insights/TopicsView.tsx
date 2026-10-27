@@ -12,11 +12,19 @@ export default function TopicsView() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
-  const load = (refresh = false) => {
+  const load = (refresh = false, pollAttempt = 0) => {
     setLoading(true);
     setErr(null);
     fetchInsight<InsightsTopicsResponse>(`/api/insights/topics${refresh ? "?refresh=1" : ""}`)
-      .then(setData)
+      .then((result) => {
+        setData(result);
+        // Cold reads return immediately with a pending state while the
+        // cluster computes in the background; poll until it lands (or give
+        // up to the empty state after ~a minute).
+        if (result.pending && pollAttempt < 12) {
+          window.setTimeout(() => load(false, pollAttempt + 1), 5000);
+        }
+      })
       .catch((e) => setErr(e instanceof Error ? e.message : "Request failed"))
       .finally(() => setLoading(false));
   };
@@ -27,6 +35,16 @@ export default function TopicsView() {
   if (loading && !data) return <InsightSkeleton />;
   if (err) return <ErrCard error={err} onRetry={() => load()} />;
   if (!data) return null;
+  if (data.pending) {
+    return (
+      <div className="space-y-4">
+        <InsightSkeleton />
+        <p role="status" className="text-sm text-muted-foreground">
+          Clustering your recent calls…
+        </p>
+      </div>
+    );
+  }
   const topics = data.topics || [];
   if (data.message || topics.length === 0) {
     return <InsightEmpty configKey="topics" icon={RefreshCw} />;

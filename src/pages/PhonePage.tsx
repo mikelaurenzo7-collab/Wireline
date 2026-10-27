@@ -27,13 +27,18 @@ import {
 // call log, outbound work, and the lines themselves.
 const PHONE_TABS = [
   { id: "logs", label: "History" },
-  { id: "reports", label: "Reports" },
+  { id: "settings", label: "Settings" },
   { id: "outbound", label: "Outbound" },
-  { id: "setup", label: "Lines" },
+  { id: "lines", label: "Lines" },
 ] as const;
 
-/** Readable ?tab= values from links and emails. */
-const PHONE_TAB_ALIASES: Record<string, string> = { lines: "setup", history: "logs" };
+/** Readable + legacy ?tab= values from links and emails (ids renamed to
+ *  match their labels 2026-10-26; the old internal ids keep resolving). */
+const PHONE_TAB_ALIASES: Record<string, string> = {
+  setup: "lines",
+  reports: "settings",
+  history: "logs",
+};
 
 export default function PhonePage() {
   const { user } = useAuth();
@@ -108,13 +113,14 @@ export default function PhonePage() {
   }
 
   const showAgentScope =
-    (["logs", "reports"].includes(primaryTab) && (agents.length > 1 || activeAgentId)) ||
+    (["logs", "settings"].includes(primaryTab) && (agents.length > 1 || activeAgentId)) ||
     (primaryTab === "outbound" && activeAgentId) ||
     scopeBlocked;
 
-  // Bookmarks to the retired Calls › Analytics tab open the same view in Insights.
+  // Bookmarks to the retired Calls › Analytics tab open Insights Totals —
+  // the surviving performance view (the duplicated Calls view was cut).
   if (rawTabParam === "analytics") {
-    return <Navigate to="/insights?tab=performance&view=calls" replace />;
+    return <Navigate to="/insights?tab=performance" replace />;
   }
   const agentLabels = buildAgentOptionLabels(agents);
   const agentScope = showAgentScope ? (
@@ -122,7 +128,7 @@ export default function PhonePage() {
       value={activeAgentId}
       onChange={(event) => setAgentScope(event.target.value)}
       aria-label={
-        primaryTab === "setup"
+        primaryTab === "lines"
           ? "Choose Bot for Lines"
           : primaryTab === "outbound"
             ? "Choose Bot for Outbound"
@@ -219,7 +225,7 @@ export default function PhonePage() {
               <PhoneCallHistoryPanel agentId={activeAgentId || null} />
             </div>
           )}
-          {primaryTab === "reports" && !scopeBlocked && (
+          {primaryTab === "settings" && !scopeBlocked && (
             <div className="mx-auto w-full max-w-[1180px] space-y-5 px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
               <ReportingPreferences />
               <RecentCallArtifactRequests key={activeAgentId} agentId={activeAgentId || null} />
@@ -237,10 +243,10 @@ export default function PhonePage() {
               </div>
             </div>
           )}
-          {primaryTab === "setup" && !scopeBlocked && (
+          {primaryTab === "lines" && !scopeBlocked && (
             <div
               className="mx-auto w-full max-w-[1180px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8"
-              data-visual-qa-state="primary-setup"
+              data-visual-qa-state="primary-lines"
             >
               {access.includes("voice") || access.includes("sms") ? (
                 <PhoneSetupPanel

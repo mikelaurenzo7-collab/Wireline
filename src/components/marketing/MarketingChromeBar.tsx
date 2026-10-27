@@ -14,7 +14,6 @@ const PRODUCT_LINKS = [
 
 const COMPANY_LINKS = [
   { to: "/about", label: "About" },
-  { to: "/blog", label: "Notes" },
   { to: "/contact", label: "Contact" },
   { to: "/changelog", label: "Changelog" },
 ] as const;
