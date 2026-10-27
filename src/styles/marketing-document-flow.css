@@ -157,21 +157,6 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
   background: linear-gradient(90deg, var(--wireline-color-action-primary-default), transparent);
 }
 
-.marketing-surface.wl-features-page .wl-features-pillar__icon {
-  display: grid;
-  width: 2.6rem;
-  height: 2.6rem;
-  place-items: center;
-  border-radius: 0.75rem;
-  background: color-mix(in srgb, var(--wireline-color-action-primary-default) 14%, transparent);
-  color: var(--wireline-color-action-primary-default);
-}
-
-.marketing-surface.wl-features-page .wl-features-pillar__icon svg {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
 .marketing-surface.wl-features-page .wl-features-pillar .wl-features-pillar__label {
   margin: 1.25rem 0 0;
   color: var(--wireline-color-action-primary-default);

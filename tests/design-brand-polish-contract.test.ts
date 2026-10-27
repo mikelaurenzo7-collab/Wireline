@@ -221,7 +221,7 @@ describe("E2E design and BotBound brand polish", () => {
     expect(landing).not.toContain("<AuthAccessPanel");
     expect(landing).toContain('signedIn ? "/studio" : "/signup"');
     expect(read("src/components/marketing/PrecisionPublicHeader.tsx")).toContain('to="/signin"');
-    expect(landing).toMatch(/<h1[^>]*>[\s\S]*YOUR VOICE BOT[\s\S]*FOR YOUR WORK\.[\s\S]*<\/h1>/);
+    expect(landing).toMatch(/<h1[^>]*>[\s\S]*Your next hire[\s\S]*is a bot\.[\s\S]*<\/h1>/);
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).toContain("<BotBoundMark");
     expect(landing).toContain("landing-prestige__hero-mark");

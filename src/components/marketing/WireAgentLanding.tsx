@@ -68,13 +68,13 @@ export default function WireAgentLanding() {
               <BotBoundMark className="landing-prestige__hero-bot" />
             </div>
             <h1 id="landing-prestige-title">
-              <span className="landing-prestige__title-line">YOUR VOICE BOT</span>{" "}
+              <span className="landing-prestige__title-line">Your next hire</span>{" "}
               <span className="landing-prestige__title-line landing-prestige__title-accent">
-                FOR YOUR WORK.
+                is a bot.
               </span>
             </h1>
             <p className="landing-prestige__identity-line">
-              A Phone Number. An Email Address. A Computer.
+              A Phone Number. A Text. An Email Address. A Computer.
             </p>
             <div className="landing-prestige__actions">
               <Link

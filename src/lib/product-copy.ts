@@ -141,7 +141,7 @@ export const MARKETING_VOICE = {
   headline: BOT_BRAND.slogan,
   primaryCta: "Get Started",
   subline: BOT_BRAND.promise,
-  channelProof: ["Call", "Email", "Computer"],
+  channelProof: ["Call", "Text", "Email", "Computer"],
   extensionLead:
     "Send this page to your Workspace to research it, draft an email, or plan the next step.",
   differentiator: OUTBOUND_WEDGE.differentiator,
@@ -160,7 +160,7 @@ export const CLIENT_SURFACE_POSTURE = {
 
 /** Retained export name for compatibility with older marketing modules. */
 export const BUSINESS_MARKETING_VOICE = {
-  eyebrow: "VOICE BOTS WITH A COMPUTER, PHONE NUMBER, AND EMAIL ADDRESS",
+  eyebrow: "VOICE BOTS WITH A COMPUTER, PHONE NUMBER, TEXT, AND EMAIL ADDRESS",
   proof: [
     "Answers calls",
     "Captures requests",

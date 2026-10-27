@@ -255,7 +255,7 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
   ).toHaveCount(0);
   await expect(
     page.getByRole("heading", {
-      name: "YOUR VOICE BOT FOR YOUR WORK.",
+      name: "Your next hire is a bot.",
     }),
   ).toBeVisible();
   await expect(page.locator(".landing-prestige__directions")).toHaveCount(0);

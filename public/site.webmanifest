@@ -1,7 +1,7 @@
 {
-  "name": "BotBound | For You. For Your Business.",
+  "name": "BotBound | Your next hire is a bot.",
   "short_name": "BotBound",
-  "description": "Voice Bots with a computer, phone number, and email address.",
+  "description": "Voice Bots with a computer, phone number, text, and email address.",
   "id": "/",
   "start_url": "/studio",
   "scope": "/",

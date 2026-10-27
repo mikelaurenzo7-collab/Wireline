@@ -14,11 +14,11 @@ describe("BotBound static marketing metadata", () => {
   it("keeps the HTML shell aligned with the BotBound promise", () => {
     const index = read("index.html");
 
-    expect(index).toContain("BotBound | A Bot for You");
-    expect(index).toContain("Voice Bots with a computer, phone number, and email address.");
+    expect(index).toContain("BotBound | Your Bot for calls, texts, email, and computer.");
+    expect(index).toContain("Voice Bots with a computer, phone number, text, and email address.");
     expect(structuredData().find((entry) => entry["@type"] === "Organization")).toMatchObject({
       name: "BotBound",
-      slogan: "For You. For Your Business.",
+      slogan: "Your next hire is a bot.",
       logo: "https://botbound.app/botbound-icon-512.png",
     });
     expect(index).toContain('<link rel="canonical" href="https://botbound.app/" />');
@@ -74,9 +74,9 @@ describe("BotBound static marketing metadata", () => {
     expect(landing).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(landing).not.toContain("LEGACY_PRODUCTION_ORIGIN");
     expect(landing).not.toContain("VITE_PUBLIC_SITE_URL");
-    expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | A Bot for You"');
+    expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | Your Bot for calls, texts, email, and computer."');
     expect(pageMeta).toMatch(
-      /DEFAULT_DESCRIPTION =\s*"Voice Bots with a computer, phone number, and email address\./,
+      /DEFAULT_DESCRIPTION =\s*"Voice Bots with a computer, phone number, text, and email address\./,
     );
     expect(pageMeta).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(pageMeta).not.toContain("VITE_PUBLIC_SITE_URL");
@@ -122,10 +122,10 @@ describe("BotBound static marketing metadata", () => {
       shortcuts: Array<{ name: string; description: string; url: string }>;
     };
 
-    expect(manifest.name).toBe("BotBound | For You. For Your Business.");
+    expect(manifest.name).toBe("BotBound | Your next hire is a bot.");
     expect(manifest.short_name).toBe("BotBound");
     expect(manifest.description).toBe(
-      "Voice Bots with a computer, phone number, and email address.",
+      "Voice Bots with a computer, phone number, text, and email address.",
     );
     expect(manifest.start_url).toBe("/studio");
     expect(manifest.icons[0]?.src).toBe("/botbound-icon-192.png");

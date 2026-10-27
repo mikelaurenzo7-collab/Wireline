@@ -48,13 +48,13 @@ test("homepage promise and access path stay centered inside the desktop viewport
   await gotoHomepageWithMain(page);
 
   const headline = page.getByRole("heading", {
-    name: "YOUR VOICE BOT FOR YOUR WORK.",
+    name: "Your next hire is a bot.",
     exact: true,
   });
   await expect(headline).toBeVisible();
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
   await expect(page.locator(".landing-prestige__identity-line")).toHaveText(
-    "A Phone Number. An Email Address. A Computer.",
+    "A Phone Number. A Text. An Email Address. A Computer.",
   );
   await expect(page.locator(".landing-prestige__description")).toHaveCount(0);
   await expect(page.locator(".landing-prestige__directions")).toHaveCount(0);
@@ -131,7 +131,7 @@ test("homepage channels stay clear and readable without decorative labels at 320
 
   const hero = page.locator(".landing-prestige__hero");
   const description = hero.locator(".landing-prestige__identity-line");
-  await expect(description).toHaveText("A Phone Number. An Email Address. A Computer.");
+  await expect(description).toHaveText("A Phone Number. A Text. An Email Address. A Computer.");
   await expect(hero.locator("p")).toHaveCount(1);
   await expect(hero.getByText("Choose calls, email, or both.", { exact: true })).toHaveCount(0);
   await expect(hero.getByText("For life. For work.", { exact: true })).toHaveCount(0);

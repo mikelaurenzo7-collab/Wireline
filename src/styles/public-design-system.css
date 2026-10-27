@@ -79,7 +79,7 @@
   text-transform: none;
 }
 
-.marketing-surface :is(.marketing-hero-lead, .wl-features-intro__lead) {
+.marketing-surface .marketing-hero-lead {
   max-width: 46ch;
   font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
   line-height: 1.65;
@@ -146,13 +146,6 @@
 
 .marketing-surface.wl-features-page .wl-features-pillar::before {
   content: none;
-}
-
-.marketing-surface.wl-features-page .wl-features-pillar__icon {
-  background: transparent;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 0;
 }
 
 .marketing-surface.wl-features-page .wl-features-pillar .wl-features-pillar__title {

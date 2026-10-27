@@ -6,9 +6,9 @@ import { ACCOUNT_PRIVACY_DESCRIPTION, ACCOUNT_TERMS_DESCRIPTION } from "./legal-
 // origin. APP_URL remains independently configurable for provider callbacks.
 export const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 const BRAND_SUFFIX = ` | ${BOTBOUND_BRAND_NAME}`;
-export const HOME_TITLE = "BotBound | A Bot for You";
+export const HOME_TITLE = "BotBound | Your Bot for calls, texts, email, and computer.";
 export const HOME_DESCRIPTION =
-  "Voice Bots with a computer, phone number, and email address. Answer calls, handle requests, and get everyday work done for you or your business.";
+  "Voice Bots with a computer, phone number, text, and email address. Answer calls, handle requests, and get everyday work done for you or your business.";
 const HOME_ROBOTS_TAG =
   '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />';
 const HOME_GOOGLEBOT_TAG =
@@ -67,7 +67,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
       "Compare BotBound's Bot workspace with flat subscriptions, usage pricing, and developer voice infrastructure.",
   },
   "/about": {
-    title: "About BotBound | A Bot for Your Life and Work",
+    title: "About BotBound | Your Bot for calls, texts, email, and computer.",
     description:
       "BotBound is an independent platform for calls, email, and cloud browser tasks. Set your knowledge and rules, review outcomes, and reach the founder directly for support.",
   },
