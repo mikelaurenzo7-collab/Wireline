@@ -99,6 +99,12 @@ describe("demand-driven authenticated experience", () => {
     expect(workroom).not.toContain("/test/stream");
   });
 
+  it("lets Insights use the shell scrollport once", () => {
+    const view = read("src/components/insights/InsightsView.tsx");
+    expect(activity).not.toContain("overflow-y-auto");
+    expect(view).not.toContain("overflow-y-auto");
+  });
+
   it("keeps voice choice customer-facing rather than narrating provider topology", () => {
     expect(voice).toContain("Rehearse");
     expect(voice).toContain("OpenAILiveVoiceSandbox");
