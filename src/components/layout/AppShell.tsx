@@ -7,7 +7,7 @@ import { workspacePageTitle } from "../../constants/navigation";
 import AppRoutes from "../../routes/AppRoutes";
 import TransitionSurface from "../TransitionSurface";
 import TrialGateModal from "../TrialGateModal";
-import { CommandBar } from "../organisms";
+import CommandBar from "../CommandBar";
 
 export default function AppShell() {
   const { user, loading, sessionUnavailable, retrySessionProbe } = useAuth();
