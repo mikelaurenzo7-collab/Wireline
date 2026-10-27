@@ -13,16 +13,16 @@ describe("BotBound public iPhone prestige contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
 
     expect(product).toContain('name: "BotBound"');
-    expect(product).toContain('slogan: "For You. For Your Business."');
-    expect(product).toContain('supportingLine: "CALL · EMAIL · COMPUTER"');
+    expect(product).toContain('slogan: "Your next hire is a bot."');
+    expect(product).toContain('supportingLine: "CALL · TEXT · EMAIL · COMPUTER"');
     expect(product).toMatch(
       /key:\s*"voice"[\s\S]*?label:\s*"Call"[\s\S]*?key:\s*"text"[\s\S]*?label:\s*"Text"[\s\S]*?key:\s*"email"[\s\S]*?label:\s*"Email"/,
     );
 
     expect(landing).toMatch(
-      /<h1[^>]*>[\s\S]*?>\s*YOUR VOICE BOT\s*<\/span>[\s\S]*?>\s*FOR YOUR WORK\.\s*<\/span>[\s\S]*?<\/h1>/,
+      /<h1[^>]*>[\s\S]*?>\s*Your next hire\s*<\/span>[\s\S]*?>\s*is a bot\.\s*<\/span>[\s\S]*?<\/h1>/,
     );
-    expect(landing).toContain("A Phone Number. An Email Address. A Computer.");
+    expect(landing).toContain("A Phone Number. A Text. An Email Address. A Computer.");
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).not.toContain("HERO_CHANNELS.map");

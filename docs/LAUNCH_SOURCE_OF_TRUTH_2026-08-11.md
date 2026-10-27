@@ -18,7 +18,7 @@ A local source capture is internal UI evidence. A product-proof claim needs the 
 
 ## One buyer story
 
-**Eyebrow:** For You. For Your Business.
+**Brand line:** Your next hire is a bot.
 **Headline:** Voice Bots With a Computer, Phone Number, and Email Address.
 **Homepage support:** No subhero paragraph. Personal and business examples lead to the same workspace.
 **Primary CTA:** Start Free

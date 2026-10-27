@@ -80,8 +80,8 @@ describe("BotBound product voice", () => {
   it("uses BotBound + Bot customer language while retaining agent as the technical domain", () => {
     expect(BOT_BRAND).toMatchObject({
       name: "BotBound",
-      slogan: "For You. For Your Business.",
-      supportingLine: "CALL · EMAIL · COMPUTER",
+      slogan: "Your next hire is a bot.",
+      supportingLine: "CALL · TEXT · EMAIL · COMPUTER",
       promise: "Your Bot for incoming calls, reviewed calls, email, and computer tasks.",
     });
     expect(BRAND_SYSTEM).toMatchObject({
@@ -171,7 +171,7 @@ describe("BotBound product voice", () => {
     expect(isReviewedOutboundCandidate({ phone_number: "+13125550100", channel: "email" })).toBe(
       false,
     );
-    expect(MARKETING_VOICE.channelProof).toEqual(["Call", "Email", "Computer"]);
+    expect(MARKETING_VOICE.channelProof).toEqual(["Call", "Text", "Email", "Computer"]);
     expect(BOT_MARKETING_VOICE.spine).toEqual(["Call", "Email", "Computer"]);
     expect(WORKSPACE_VOICE.emptyCue).toContain("calls, email, knowledge, and computer tasks");
     expect(AGENT_NUMBER_PROMISE).toContain("Calls plans");
@@ -252,7 +252,7 @@ describe("BotBound product voice", () => {
     }
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
     expect(landing).not.toContain("<AuthAccessPanel");
-    expect(landing).toContain("A Phone Number. An Email Address. A Computer.");
+    expect(landing).toContain("A Phone Number. A Text. An Email Address. A Computer.");
     expect(landing).toContain('signedIn ? "/studio" : "/signup"');
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toContain("landing-prestige__directions");
@@ -268,7 +268,7 @@ describe("BotBound product voice", () => {
 
   it("keeps shared marketing voice aligned to BotBound", () => {
     expect(MARKETING_VOICE.headline).toBe(BOT_BRAND.slogan);
-    expect(MARKETING_VOICE.eyebrow).toBe("CALL · EMAIL · COMPUTER");
+    expect(MARKETING_VOICE.eyebrow).toBe("CALL · TEXT · EMAIL · COMPUTER");
     expect(MARKETING_VOICE.primaryCta).toBe("Get Started");
     expect(MARKETING_VOICE.subline).toBe(BOT_BRAND.promise);
     expect(BOT_MARKETING_VOICE.headline).toBe(BOT_BRAND.slogan);

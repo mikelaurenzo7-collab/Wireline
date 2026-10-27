@@ -62,10 +62,10 @@ describe("product documentation and compatibility contract", () => {
     expect(readme).toContain("customers create a Bot, set it up, and rehearse privately");
     expect(readme).toContain("LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
     expect(launchTruth).toContain("Do not add a public setup sequence or repeat process slogans.");
-    expect(launchTruth).toContain("For You. For Your Business.");
+    expect(launchTruth).toContain("Your next hire is a bot.");
     expect(readme).toContain("Broad public copy uses **Bot** or **Phone Bot**");
     expect(readme).toContain(
-      "The launch story is voice Bots with a computer, phone number, and email address.",
+      "The launch story is voice Bots with a computer, phone number, text, and email address.",
     );
     expect(readme).toContain(
       "Public pages present calls, SMS, email, and Computer; activation retains entitlement, verified sender, recipient permission, funding, and provider readiness checks.",
@@ -135,13 +135,13 @@ describe("product documentation and compatibility contract", () => {
     const head = read("index.html");
     const ogImage = read("public/og-image.svg").replace(/<image\b[^>]*\/>/g, "");
 
-    expect(head).toContain("BotBound | A Bot for You");
+    expect(head).toContain("BotBound | Your Bot for calls, texts, email, and computer.");
     expect(head).toContain("Voice Bots with a computer, phone number, and email address.");
     const graph = JSON.parse(
       head.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)![1],
     )["@graph"];
     expect(graph).toContainEqual(
-      expect.objectContaining({ name: "BotBound", slogan: "For You. For Your Business." }),
+      expect.objectContaining({ name: "BotBound", slogan: "Your next hire is a bot." }),
     );
     expect(head).not.toContain("WIRE YOUR PHONE BOT");
     expect(head).not.toContain("VOICE-FIRST");
