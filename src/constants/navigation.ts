@@ -166,7 +166,7 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     description: "See how your Bot performs across calls, messages, and outcomes.",
     icon: "BarChart3",
     desktop: { group: "manage", order: 10 },
-    mobile: { placement: "primary", order: 40 },
+    mobile: { placement: "more", group: "Operate", order: 40 },
   },
   {
     href: "/knowledge",
@@ -176,7 +176,7 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     description: "Ground your Bot in trusted business information.",
     icon: "GraduationCap",
     desktop: { group: "manage", order: 5 },
-    mobile: { placement: "more", group: "Build", order: 5 },
+    mobile: { placement: "primary", order: 40 },
     shortcut: { key: "T", hint: "g t" },
   },
   {
@@ -327,9 +327,10 @@ export const WORKSPACE_NAV: ShellNavItem[] = byDesktopOrder("work");
 export const OPERATE_NAV: ShellNavItem[] = byDesktopOrder("manage");
 
 /**
- * Mobile exposes four task destinations plus one More owner. Insights earns a
- * dock position because it answers the recurring “how is my Bot doing?”
- * question; the calendar, connections, and settings remain grouped in More.
+ * Mobile exposes four task destinations plus one More owner. Knowledge earns
+ * the dock position (owner ruling, Oct 27, 2026): it is core Bot-building,
+ * used daily. Insights is a glance surface and groups in More with the
+ * calendar, connections, and settings.
  */
 export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
   // Canonical primary owner begins with href: "/studio".
@@ -337,7 +338,7 @@ export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
   {
     href: MOBILE_MORE_HREF,
     label: "More",
-    description: "Knowledge, Calendar, Connections, and Settings.",
+    description: "Insights, Calendar, Connections, and Settings.",
     icon: "MoreHorizontal",
     section: "System",
   },

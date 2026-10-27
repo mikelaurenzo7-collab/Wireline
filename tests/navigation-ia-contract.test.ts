@@ -36,7 +36,7 @@ describe("BotBound workspace information architecture", () => {
       "/studio",
       "/inbox",
       "/phone",
-      "/insights",
+      "/knowledge",
       "__more__",
     ]);
 
@@ -85,10 +85,12 @@ describe("BotBound workspace information architecture", () => {
     expect(isMobileMoreActive("/settings/team")).toBe(true);
     expect(isMobileMoreActive("/apps")).toBe(true);
 
-    for (const pathname of ["/knowledge"]) {
+    for (const pathname of ["/insights"]) {
       expect(isMobileMoreActive(pathname), pathname).toBe(true);
       expect(isMobilePrimaryActive(pathname, "/studio"), pathname).toBe(false);
     }
+    expect(isMobileMoreActive("/knowledge")).toBe(false);
+    expect(isMobilePrimaryActive("/knowledge", "/knowledge")).toBe(true);
     expect(isMobilePrimaryActive("/templates", "/studio")).toBe(true);
     expect(isMobilePrimaryActive("/computer", "/studio")).toBe(true);
     expect(isMobileMoreActive("/computer")).toBe(false);
@@ -97,10 +99,9 @@ describe("BotBound workspace information architecture", () => {
   });
 
   it("groups the More sheet by task instead of exposing a flat admin list", () => {
-    expect(MOBILE_MORE_GROUPS.map((group) => group.label)).toEqual(["Build", "Operate", "System"]);
+    expect(MOBILE_MORE_GROUPS.map((group) => group.label)).toEqual(["Operate", "System"]);
     expect(MOBILE_MORE_GROUPS.map((group) => group.items.map((item) => item.href))).toEqual([
-      ["/knowledge"],
-      ["/calendar"],
+      ["/calendar", "/insights"],
       ["/connections", "/settings"],
     ]);
   });
