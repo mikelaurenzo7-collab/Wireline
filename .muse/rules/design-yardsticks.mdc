@@ -1,0 +1,29 @@
+---
+description: Design + copy yardsticks for all BotBound UI work
+globs: src/**/*.{ts,tsx,css}
+alwaysApply: false
+---
+
+# Design yardsticks (owner directives, Oct 2026)
+
+- **Minimal copy is the yardstick.** As little copy as possible: no
+  label-above-the-label, no eyebrow + title + description stacks, no hero
+  that restates the page's own name. Pages start at their content. If a
+  line of copy doesn't change what the user does next, cut it.
+- **Muse (muse.ai) is the primary design-system / IA inspiration**,
+  tailored to BotBound: calm, few words, one obvious next action.
+- **One pattern per job.** One marketing footer (MarketingChromeBar), one
+  workspace page header (WorkspaceShell title + action), one route
+  fallback, one skeleton, one empty state. Do not add a parallel variant —
+  extend the existing component. The CSS "polish/pass/hotfix" layers are
+  debt: consolidate components first; CSS burn-down happens in its own car,
+  never mixed into feature work.
+- **Surfaces are sized for BotBound's actual accounts**: personal = 1 bot,
+  SMB = 1–few bots. Fleet chrome (rankings, density grids, attribution
+  for accounts with no campaigns) erodes trust — don't build it.
+- Headline features must be *shown working*, not just named: a capability
+  tab/panel carries a real example of the work, not a slogan.
+- Loading states: shared progress sweep / skeletons only. Never render
+  status sentences ("X loaded", "Loading page") as page content.
+- Contract tests pin copy and structure. When a change alters pinned copy,
+  update the pinning test in the same PR and say so in the PR body.

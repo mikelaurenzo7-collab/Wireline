@@ -1,0 +1,50 @@
+---
+description: BotBound repo conventions — merge gate, migrations, single sources of truth
+alwaysApply: true
+---
+
+# BotBound (Wireline) — working conventions
+
+Full doc: `docs/REPO_CONVENTIONS.md`. The essentials:
+
+## Merge gate (owner decision — do not "fix")
+- GitHub Actions are DISABLED on this repo by the owner's decision. There is
+  no CI. **A full-diff human/agent review against the change's spec is the
+  merge gate.** Never suggest enabling Actions.
+- One PR per logical car of work. Review the complete diff before merging;
+  verify mergeable state; merge with a merge commit.
+- Render auto-deploys the API + both crons on merge. botbound-voice deploys
+  are deliberate (pre-drain, then deploy — see render.yaml header and
+  docs/DEPLOYMENT_RUNBOOK.md). Verify all four services run the final SHA
+  at the end of a change train, not after every car.
+
+## Migrations
+- Migrations NEVER auto-apply (no migration command on deploy/boot/CI).
+- Every migration PR includes the drizzle journal entry AND the regenerated
+  `meta/NNNN_snapshot.json` in the same change.
+- Promotion is manual, from a clean checkout of the exact release SHA:
+  `scripts/promote-production-schema.mjs` with the production POSTGRES_URL
+  direct endpoint (:5432).
+
+## Single sources of truth — use them, never fork them
+- Call outcomes: `src/lib/call-outcome.ts` (`classifyCallOutcome`). Metrics
+  SQL mirrors its missed set; surfaces never invent their own definition.
+- Agent role: `src/lib/agent-role-definitions.ts` (resolver + defaults).
+- Delivery tone label: `resolveDeliveryToneLabel` in
+  `src/lib/compose-setup-personality.ts`.
+- Appointment counts: `appointmentsInWindow` in
+  `src/lib/appointment-where.ts` (excludes Cancelled).
+- Usage-billing env names: `USAGE_BILLING_ENV_VARS` in
+  `src/lib/usage-billing-config.ts`. render.yaml declares names only
+  (`sync: false`); never invent env names or values.
+- Pricing truth is the usage model: Lite $12 / Starter $24 / Plus $49, one
+  shared work allowance (calls $0.25/min, Computer $0.20/min, email
+  $0.02/reply, SMS $0.04/segment). The channels catalog in plan-catalog.ts
+  is server data for stored records — the client has ONE pricing layout.
+
+## Product rules
+- Never have a bot claim to be human, in any copy or prompt.
+- Compliance-fact copy (consent, screening, A2P/DNC facts) is regulatory
+  fact: keep it accurate; polish placement, not substance.
+- Marketing/product surfaces present every channel as fully ready. No
+  "coming soon" / "not available yet" hedge copy on customer surfaces.
