@@ -252,7 +252,7 @@ describe("BotBound product voice", () => {
     }
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
     expect(landing).not.toContain("<AuthAccessPanel");
-    expect(landing).toContain("A Phone Number. A Text. An Email Address. A Computer.");
+    expect(landing).toContain("Voice Calls. Texts. Email. Computer Use.");
     expect(landing).toContain('signedIn ? "/studio" : "/signup"');
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toContain("landing-prestige__directions");

@@ -95,7 +95,7 @@ describe("sales trust copy contract", () => {
 
   it("keeps the landing customer-facing without internal design meta", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain("A Phone Number. A Text. An Email Address. A Computer.");
+    expect(landing).toContain("Voice Calls. Texts. Email. Computer Use.");
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toMatch(/homepage now leads/i);
     expect(landing).not.toMatch(/live desk/i);

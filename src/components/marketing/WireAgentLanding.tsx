@@ -74,7 +74,7 @@ export default function WireAgentLanding() {
               </span>
             </h1>
             <p className="landing-prestige__identity-line">
-              A Phone Number. A Text. An Email Address. A Computer.
+              Voice Calls. Texts. Email. Computer Use.
             </p>
             <div className="landing-prestige__actions">
               <Link
