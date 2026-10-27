@@ -205,18 +205,20 @@ export default function StudioTaskChat({
               title={
                 model.status.reason === "plan_required"
                   ? "Choose a plan to start work"
-                  : "Computer work is unavailable"
+                  : "Computer Needs Setup"
               }
               action={
                 model.status.reason === "plan_required" ? (
                   <Button asChild size="sm">
                     <Link to="/settings/billing">See plans</Link>
                   </Button>
-                ) : undefined
+                ) : (
+                  <Button asChild size="sm" variant="outline">
+                    <Link to="/support">Get Help</Link>
+                  </Button>
+                )
               }
-            >
-              Your draft stays here.
-            </StatusNotice>
+            />
           ) : null}
           {activeElsewhere ? (
             <StatusNotice

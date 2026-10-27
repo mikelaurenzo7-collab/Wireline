@@ -181,10 +181,15 @@ function UnavailableNotice({ status }: { status: ComputerStatus }) {
     );
   }
   return (
-    <StatusNotice tone="info" title="Your Bot's Computer Is Being Set Up">
-      The cloud computer turns on as soon as BotBound finishes setting it up. Nothing you need to do
-      here.
-    </StatusNotice>
+    <StatusNotice
+      tone="info"
+      title="Computer Needs Setup"
+      action={
+        <Button asChild size="sm" variant="outline">
+          <Link to="/support">Get Help</Link>
+        </Button>
+      }
+    />
   );
 }
 
@@ -1917,7 +1922,7 @@ export function ComputerWorkbench({
           The server outcome is uncertain. Refresh before starting or repeating work.
         </StatusNotice>
       ) : null}
-      {status && !status.available ? <UnavailableNotice status={status} /> : null}
+      {status && !status.available && !chatControls ? <UnavailableNotice status={status} /> : null}
       {!status && statusFailed ? (
         <StatusNotice
           tone="warning"
@@ -2093,7 +2098,6 @@ export function ComputerWorkbench({
                   <div className="wl-computer-launch-browser__canvas">
                     <Globe className="size-8" aria-hidden="true" />
                     <strong>A fresh browser</strong>
-                    <span>Open a site, or give your Bot a task.</span>
                   </div>
                 </div>
               )}

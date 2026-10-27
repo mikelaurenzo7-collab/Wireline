@@ -161,8 +161,14 @@
 
 .wl-computer-field {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: var(--wireline-space-050);
+}
+
+.wl-computer-field :is(input, textarea, select) {
+  max-width: 100%;
+  min-width: 0;
 }
 
 .wl-computer-field > label {
