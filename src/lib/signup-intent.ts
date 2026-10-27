@@ -385,9 +385,22 @@ export function getStoredSignupIntent(): SignupIntent | null {
   }
 }
 
+export function clearSignupIntent(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(SIGNUP_INTENT_STORAGE_KEY);
+  } catch {
+    // Storage can fail in private browsing; signup still works without attribution.
+  }
+}
+
 export function persistSignupIntent(intent: SignupIntent | null): SignupIntent | null {
   const safe = sanitizeSignupIntent(intent);
-  if (typeof window === "undefined" || !safe) return null;
+  if (typeof window === "undefined") return safe;
+  if (!safe) {
+    clearSignupIntent();
+    return null;
+  }
   try {
     window.localStorage.setItem(SIGNUP_INTENT_STORAGE_KEY, JSON.stringify(safe));
   } catch {
@@ -428,17 +441,14 @@ export function captureSignupIntentFromLocation(): SignupIntent | null {
       : fromUrl;
     return persistSignupIntent(next);
   }
-  const stored = getStoredSignupIntent();
-  if (stored) return stored;
-  if (window.location.pathname === "/signup" || window.location.pathname === "/signup/") {
-    return persistSignupIntent({
-      preferredPlanId: "usage",
-      preferredUsageTier: DEFAULT_PUBLIC_USAGE_TIER,
-      preferredBillingInterval: "month",
-      capturedAt: new Date().toISOString(),
-    });
+  const pathname = window.location.pathname;
+  if (pathname === "/signup" || pathname === "/signup/") {
+    // A plain Create Account visit is a new choice. Drop a Front Desk or Plus
+    // chip left by an earlier link instead of signing the owner up for it.
+    clearSignupIntent();
+    return null;
   }
-  return null;
+  return getStoredSignupIntent();
 }
 
 export function recommendedPlanFromIntent(intent: SignupIntent | null | undefined): SignupPlanId {
