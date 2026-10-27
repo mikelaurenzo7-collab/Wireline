@@ -466,8 +466,6 @@
 | outbound-routes.ts | POST | `/api/outbound/dial` | inline | — | — | Protected |
 | outbound-routes.ts | GET | `/api/outbound/dial/:requestKey` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/outbound/dial/:requestKey/cancel-missing` | inline | — | — | Protected |
-| overview-operating-metrics-routes.ts | GET | `/api/overview/operating-metrics` | inline | — | — | Protected |
-| overview-operating-metrics-routes.ts | GET | `/api/overview/recent-conversations` | inline | — | — | Protected |
 | phone-test-routes.ts | POST | `/api/agents/:agentId/phone-test` | inline | — | — | Protected |
 | phone-test-routes.ts | GET | `/api/agents/:agentId/phone-test/:requestKey` | inline | — | — | Protected |
 | phone-test-routes.ts | DELETE | `/api/agents/:agentId/phone-test/:requestKey` | inline | — | — | Protected |

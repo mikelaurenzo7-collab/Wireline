@@ -95,7 +95,7 @@ describe("authenticated Bot flow", () => {
     expect(appRoutes).toContain('path="/inbox"');
     expect(appRoutes).toContain('path="/approvals"');
     expect(nav).toMatch(/href:\s*["']\/insights["']/);
-    expect(registry).toContain("overviewOperatingMetricsRouter");
+    expect(registry).not.toContain("overviewOperatingMetricsRouter");
     expect(appRoutes).not.toContain("OverviewPage");
     expect(appRoutes).not.toContain("DailyBriefPanel");
   });

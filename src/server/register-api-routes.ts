@@ -56,7 +56,6 @@ import callRecordingRouter from "../routes/call-recording-routes";
 import agentCallRouter from "../routes/agent-call-routes";
 import callOpsMetricsRouter from "../routes/call-ops-metrics-routes";
 import callOpsAnalyticsRouter from "../routes/call-ops-analytics-routes";
-import overviewOperatingMetricsRouter from "../routes/overview-operating-metrics-routes";
 import navCountsTruthRouter from "../routes/nav-counts-truth-routes";
 import operatorTaskRouter from "../routes/operator-task-routes";
 import fleetRouter from "../routes/fleet-routes";
@@ -181,7 +180,6 @@ export function registerApiRoutes(app: Express): void {
   app.use(agentCallRouter);
   app.use(callOpsMetricsRouter);
   app.use(callOpsAnalyticsRouter);
-  app.use(overviewOperatingMetricsRouter);
   app.use(navCountsTruthRouter);
   app.use(dashboardRouter);
   app.use(operatorTaskRouter);
