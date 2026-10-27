@@ -233,7 +233,7 @@ describe("E2E design and BotBound brand polish", () => {
     expect(landing).not.toContain("{template.summary}");
     expect(landing).toContain('to="/pricing"');
     expect(landing).not.toContain("landing-prestige__trust");
-    expect(landing).toContain("<MarketingChromeBar />");
+    expect(landing).not.toContain("MarketingChromeBar");
     expect(landing).toContain("<PrecisionPublicHeader />");
     expect(landing).not.toContain("ONE WORKSPACE");
     expect(landing).not.toContain("Runtime Balance");
@@ -297,4 +297,3 @@ describe("E2E design and BotBound brand polish", () => {
     expect(caps).toContain("text-transform: none");
   });
 });
-

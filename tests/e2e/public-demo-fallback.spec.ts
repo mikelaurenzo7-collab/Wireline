@@ -66,10 +66,8 @@ test("home offers neutral signup without selecting a plan or exposing a public a
     "/signup",
   );
   await page.getByRole("tab", { name: "Calls", exact: true }).click();
-  await expect(page.getByRole("link", { name: "Explore Calls", exact: true })).toHaveAttribute(
-    "href",
-    "/features#calls",
-  );
+  await expect(page.getByRole("tabpanel")).toContainText("Customer call");
+  await expect(page.locator(".marketing-chrome-bar")).toHaveCount(0);
   await expect(page.getByRole("button", { name: /talk to/i })).toHaveCount(0);
   await expect(page.locator("audio, video")).toHaveCount(0);
   expect(publicVoiceRequests).toEqual([]);
@@ -93,4 +91,3 @@ test("legacy public voice endpoints return deterministic provider-free retiremen
     });
   }
 });
-

@@ -23,32 +23,32 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "index.html",
     indexHtml,
-    /<title>BotBound \| A Bot for You<\/title>/,
-    "static metadata must make the voice Bot offer explicit",
+    /<title>BotBound \| Your Bot for calls, texts, email, and computer\.<\/title>/,
+    "static metadata must use the current BotBound offer",
   );
   mustInclude(
     "index.html",
     indexHtml,
-    /Voice Bots with a computer, phone number, and email address/,
+    /Voice Bots with a computer, phone number, text, and email address/,
     "static metadata must describe the focused launch offer",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_TITLE = "BotBound \| A Bot for You"/,
-    "runtime metadata must use the BotBound hero",
+    /DEFAULT_TITLE = "BotBound \| Your Bot for calls, texts, email, and computer\."/,
+    "runtime metadata must use the current BotBound offer",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_DESCRIPTION =\s*"Voice Bots with a computer, phone number, and email address/,
+    /DEFAULT_DESCRIPTION =\s*"Voice Bots with a computer, phone number, text, and email address/,
     "runtime metadata must carry the focused voice Bot offer",
   );
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /"name"\s*:\s*"BotBound \| For You\. For Your Business\."/,
-    "install metadata must use BotBound",
+    /"name"\s*:\s*"BotBound"/,
+    "installed app name must stay concise and use BotBound",
   );
   mustExclude(
     "public/site.webmanifest",
@@ -66,13 +66,13 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
-    /slogan:\s*"For You\. For Your Business\."/,
-    "shared model must preserve the BotBound brand slogan",
+    /slogan:\s*"Your next hire is a bot\."/,
+    "shared model must preserve the current BotBound brand line",
   );
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
-    /supportingLine:\s*"CALL · EMAIL · COMPUTER"/,
+    /supportingLine:\s*"CALL · TEXT · EMAIL · COMPUTER"/,
     "shared model must keep launch capabilities explicit in canonical order",
   );
   for (const productType of ["Phone Bot", "Conversation Bot", "Human Bot"])
@@ -123,8 +123,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /A Phone Number\. An Email Address\. A Computer\./,
-    "landing must describe the calling, email and Computer product family",
+    /Phone Number\. Email Address\. Computer Use/,
+    "landing must keep the approved product identity line",
   );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
@@ -147,8 +147,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /to=\{`\/features#\$\{example\.id\}`\}/,
-    "capability selection must link to the matching product section",
+    /<CapabilityPreview channel=\{example\.id\} \/>/,
+    "each capability tab must show its compact product demo",
   );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
@@ -183,7 +183,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /<UsagePricingPanel availableTiers=\{usageTiers\}/,
+    /<UsagePricingPanel availableTiers=\{availableTiers\}/,
     "pricing must render the shared-work plans from live availability",
   );
   mustInclude(
@@ -201,8 +201,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/usage-billing/UsagePricingPanel.tsx",
     usagePricingPanel,
-    /Calls, texts, email, and Computer share that work/,
-    "pricing must explain shared work",
+    /Calls,\s*SMS,\s*email,\s*and Computer share this allowance/,
+    "pricing must explain the allowance beside each plan price",
   );
   mustExclude(
     "src/pages/Pricing.tsx",

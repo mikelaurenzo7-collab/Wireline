@@ -16,7 +16,6 @@ const PUBLIC_SURFACES = ["src/components/layout/MarketingPageFrame.tsx"];
 
 const FRAMED_PAGES = [
   "src/pages/About.tsx",
-  "src/pages/Blog.tsx",
   "src/pages/Compare.tsx",
   "src/pages/Developers.tsx",
   "src/pages/Features.tsx",
@@ -54,6 +53,20 @@ for (const path of FRAMED_PAGES) {
   if (!source.includes("MarketingPageFrame")) {
     failures.push(`${path}: public page must use MarketingPageFrame`);
   }
+}
+
+const publicRoutes = read("src/App.tsx");
+for (const [pattern, description] of [
+  [
+    /path="\/blog" element=\{<PreservingRedirect to="\/changelog" \/>\}/,
+    "the retired Blog route must redirect to Changelog",
+  ],
+  [
+    /path="\/security" element=\{<PreservingRedirect to="\/trust" \/>\}/,
+    "the retired Security route must redirect to Trust",
+  ],
+]) {
+  if (!pattern.test(publicRoutes)) failures.push(`src/App.tsx: ${description}`);
 }
 
 const app = read("src/App.tsx");
@@ -125,14 +138,22 @@ for (const [needle, description] of [
   ["<PrecisionPublicHeader />", "home must share the public header"],
   ["<BotBoundMark", "home must lead with the canonical phone-Bot mascot"],
   ['signedIn ? "/studio" : "/signup"', "home must keep neutral account creation"],
+  [
+    "Phone Number. Email Address. Computer Use",
+    "home must preserve the approved product identity line",
+  ],
   ['role="tablist"', "home must expose its capability navigation"],
-  ["to={`/features#${example.id}`}", "each capability must link to its product section"],
+  ["<CapabilityPreview channel={example.id} />", "each capability must display a compact demo"],
   ['to="/pricing"', "home must link to pricing"],
-  ["<LandingFooter />", "home must retain footer wayfinding"],
 ]) {
   if (!executableHome.includes(needle)) {
     failures.push(`src/components/marketing/WireAgentLanding.tsx: ${description}`);
   }
+}
+if (/MarketingChromeBar|LandingFooter/.test(executableHome)) {
+  failures.push(
+    "src/components/marketing/WireAgentLanding.tsx: removed home footer bar must stay removed",
+  );
 }
 if (
   /BrowserCallWidget|useProtectedPublicDemo|\/api\/public\/demo-(?:session|call)/.test(
@@ -149,26 +170,8 @@ if (/variant="phone"|landing-phone|landing-os__tray|chrome="hidden"/.test(execut
   );
 }
 
-const showcase = executable(read("src/pages/Showcase.tsx"));
-for (const [needle, description] of [
-  ["<Navigate", "retired Showcase must redirect instead of rendering a public voice preview"],
-  ['to="/signup"', "Showcase must use neutral account creation"],
-  ["replace", "Showcase redirect must replace the retired history entry"],
-]) {
-  if (!showcase.includes(needle)) failures.push(`src/pages/Showcase.tsx: ${description}`);
-}
-if (/BrowserCallWidget|useProtectedPublicDemo|RTCPeerConnection|getUserMedia/.test(showcase)) {
-  failures.push("src/pages/Showcase.tsx: retired public voice-preview runtime must stay removed");
-}
-
-const landingFooter = read("src/components/marketing/LandingFooter.tsx");
-if (
-  !landingFooter.includes('aria-label="Footer"') ||
-  !landingFooter.includes("wireline:open-privacy-choices")
-) {
-  failures.push(
-    "src/components/marketing/LandingFooter.tsx: footer navigation and privacy control must remain available",
-  );
+if (!/path="\/showcase" element=\{<PreservingRedirect to="\/signup" \/>\}/.test(publicRoutes)) {
+  failures.push("src/App.tsx: retired Showcase route must redirect to neutral account creation");
 }
 
 const header = executable(read("src/components/marketing/PrecisionPublicHeader.tsx"));
@@ -191,8 +194,7 @@ if (!header.includes('aria-label="Account"')) {
 const landingPrestige = read("src/styles/landing-prestige.css");
 for (const [needle, description] of [
   [".landing-prestige__tabs", "capability tabs are missing"],
-  [".landing-prestige__example", "selected capability detail is missing"],
-  [".landing-prestige__footer", "footer layout is missing"],
+  [".landing-prestige__preview", "compact capability demo layout is missing"],
   ["@media (max-width: 639px)", "mobile stacking rules are missing"],
 ]) {
   if (!landingPrestige.includes(needle)) {

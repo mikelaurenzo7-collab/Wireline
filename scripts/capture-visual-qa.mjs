@@ -130,6 +130,8 @@ const LEGACY_ROUTE_PREFIXES = new Set([
 function routeReached(base, requestedRoute, finalUrl) {
   const requestedPath = requestedRoute.split(/[?#]/)[0];
   const expectedRedirects = new Map([
+    ["/blog", "/changelog"],
+    ["/security", "/trust"],
     ["/overview", "/studio"],
     ["/status", "/trust"],
     ["/studio/live-video", "/studio"],

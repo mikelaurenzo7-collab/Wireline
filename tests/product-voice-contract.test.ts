@@ -261,7 +261,7 @@ describe("BotBound product voice", () => {
     expect(landing).not.toContain("FEATURED_TEMPLATES.map");
     expect(landing).not.toContain("{template.summary}");
     expect(landing).not.toContain("STRIPE_PLANS");
-    expect(landing).toContain("MarketingChromeBar");
+    expect(landing).not.toContain("MarketingChromeBar");
     expect(landing).toContain("<PrecisionPublicHeader />");
     expect(landing).not.toContain("Runtime Balance");
   });

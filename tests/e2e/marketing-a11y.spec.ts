@@ -41,6 +41,85 @@ test("homepage mobile product and access path has clear branding and no serious 
   expect(blockingViolations).toEqual([]);
 });
 
+test("homepage has no axe violations or horizontal overflow at review widths", async ({
+  page,
+}, info) => {
+  const demoContent = [
+    "Outbound example",
+    "Could I book for Thursday?",
+    "Customer question",
+    "Find an open time",
+  ];
+
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+    await gotoHomepageWithMain(page);
+    await page.evaluate(() => document.fonts.ready);
+
+    const results = await new AxeBuilder({ page }).analyze();
+    expect(
+      results.violations,
+      `axe violations at ${width}px: ${JSON.stringify(results.violations, null, 2)}`,
+    ).toEqual([]);
+    await page.screenshot({ path: info.outputPath(`homepage-${width}.png`), fullPage: true });
+
+    const tabs = page.getByRole("tab", { name: /Calls|SMS|Email|Computer/ });
+    for (let index = 0; index < demoContent.length; index += 1) {
+      const tab = tabs.nth(index);
+      await tab.click();
+      await expect(tab).toHaveAttribute("aria-selected", "true");
+      await expect(page.getByRole("tabpanel")).toContainText(demoContent[index]!);
+
+      const dimensions = await page.evaluate(() => ({
+        clientWidth: document.documentElement.clientWidth,
+        documentWidth: document.documentElement.scrollWidth,
+        bodyWidth: document.body.scrollWidth,
+      }));
+      expect(
+        dimensions.documentWidth,
+        `${width}px document overflow in ${demoContent[index]}`,
+      ).toBeLessThanOrEqual(dimensions.clientWidth);
+      expect(
+        dimensions.bodyWidth,
+        `${width}px body overflow in ${demoContent[index]}`,
+      ).toBeLessThanOrEqual(dimensions.clientWidth);
+
+      if (index > 0) {
+        await page.screenshot({
+          path: info.outputPath(
+            `homepage-${demoContent[index]!.toLowerCase().replaceAll(" ", "-")}-${width}.png`,
+          ),
+          fullPage: true,
+        });
+      }
+    }
+  }
+});
+
+test("first-visit privacy choices stay compact on mobile pricing", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    localStorage.removeItem("wireline_cookie_consent");
+    localStorage.removeItem("wireline_marketing_measurement_consent");
+  });
+  await page.goto("/pricing", { waitUntil: "domcontentloaded" });
+
+  const privacy = page.getByRole("region", { name: "Privacy Choices" });
+  await expect(privacy).toBeVisible({ timeout: 10_000 });
+  await expect(privacy.getByRole("button", { name: "Essential Only", exact: true })).toBeVisible();
+  await expect(privacy.getByRole("button", { name: "Allow Optional", exact: true })).toBeVisible();
+  await expect(privacy.getByRole("link", { name: "Privacy", exact: true })).toBeVisible();
+
+  const size = await privacy.evaluate((element) => ({
+    height: element.getBoundingClientRect().height,
+    viewportHeight: window.innerHeight,
+  }));
+  expect(size.height / size.viewportHeight).toBeLessThanOrEqual(0.16);
+
+  const results = await new AxeBuilder({ page }).include(".wl-privacy-choices").analyze();
+  expect(results.violations).toEqual([]);
+});
+
 test("homepage promise and access path stay centered inside the desktop viewport", async ({
   page,
 }) => {
@@ -100,20 +179,22 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
   const calls = page.getByRole("tab", { name: "Calls", exact: true });
   await expect(calls).toBeFocused();
   await expect(calls).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByRole("tabpanel")).toContainText("CHOOSE FROM A CATALOG OF VOICES OR CLONE YOUR OWN");
+  await expect(page.getByRole("tabpanel")).toContainText("Customer call");
+  await expect(page.locator(".marketing-chrome-bar")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /Explore Calls/ })).toHaveCount(0);
   await calls.press("ArrowRight");
-  await expect(page.getByRole("tab", { name: "SMS", exact: true })).toBeFocused();
-  await expect(page.getByRole("tabpanel")).toContainText("Keep The Conversation Going.");
-  await page.getByRole("tab", { name: "Email", exact: true }).hover();
-  await expect(page.getByRole("link", { name: "Explore Email" })).toHaveAttribute(
-    "href",
-    "/features#email",
-  );
+  const sms = page.getByRole("tab", { name: "SMS", exact: true });
+  await expect(sms).toBeFocused();
+  await expect(page.getByRole("tabpanel")).toContainText("Could I book for Thursday?");
+  const email = page.getByRole("tab", { name: "Email", exact: true });
+  await email.click();
+  await expect(page.getByRole("tabpanel")).toContainText("Customer question");
 
   await page.setViewportSize({ width: 390, height: 844 });
   await gotoHomepageWithMain(page);
   await page.getByRole("tab", { name: "Calls", exact: true }).click();
-  await expect(page.getByRole("link", { name: "Explore Calls" })).toBeVisible();
+  await expect(page.getByRole("tabpanel")).toBeVisible();
+  await expect(page.locator(".landing-prestige__preview")).toBeInViewport();
   const start = page
     .locator(".landing-prestige__hero .landing-prestige__actions")
     .getByRole("link", { name: "GET STARTED" });
@@ -244,4 +325,3 @@ test("public titles retain authored title case and heading semantics", async ({ 
   await expect(monitoring).toHaveText("BotBound Runtime Monitoring");
   await expect(monitoring).toHaveCSS("text-transform", "none");
 });
-

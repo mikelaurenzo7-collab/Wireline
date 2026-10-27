@@ -26,20 +26,6 @@ function usd(value: number): string {
   return Number.isInteger(value) ? `$${value}` : `$${value.toFixed(2)}`;
 }
 
-/** Catalog-backed lineup shown on the usage pricing page. */
-export function sharedWorkNote(): string {
-  const plans = PUBLIC_USAGE_TIERS.map((id) => USAGE_TIERS[id]);
-  const described = plans.map(
-    (plan) =>
-      `${plan.name} is ${usd(plan.monthlyUsd)}/month with ${usd(plan.includedWorkUsd)} of included work`,
-  );
-  const lineup =
-    described.length <= 1
-      ? (described[0] ?? "")
-      : `${described.slice(0, -1).join(", ")}, and ${described[described.length - 1]}`;
-  return `${lineup}. Calls, texts, email, and Computer share that work. Extra numbers are ${usd(USAGE_ADDONS.number.usdMonthly)}/month and extra email addresses are ${usd(USAGE_ADDONS.email_address.usdMonthly)}/month.`;
-}
-
 /** Plain-language rate lines, built from the catalog so copy never drifts. */
 export const USAGE_RATE_LINES: ReadonlyArray<readonly [string, string]> = [
   [
@@ -238,12 +224,15 @@ export default function UsagePricingPanel({
                   <strong className="text-4xl font-semibold">${option.monthlyUsd}</strong>
                   <span className="text-sm text-muted-foreground"> / Month</span>
                 </span>
-                <span className="mt-4 block text-sm font-semibold">Includes</span>
+                <span className="mt-4 block text-sm font-semibold">
+                  {usd(option.includedWorkUsd)} shared work included
+                </span>
                 <span className="mt-2 block text-sm text-muted-foreground">
-                  {option.includedNumbers} {option.includedNumbers === 1 ? "Number" : "Numbers"}
-                  {" + "}
+                  {option.includedNumbers}{" "}
+                  {option.includedNumbers === 1 ? "phone number" : "phone numbers"}
+                  {" · "}
                   {option.includedEmailAddresses}{" "}
-                  {option.includedEmailAddresses === 1 ? "Email Address" : "Email Addresses"}
+                  {option.includedEmailAddresses === 1 ? "email address" : "email addresses"}
                 </span>
               </button>
               <details className="mx-6 mb-4">
@@ -254,8 +243,8 @@ export default function UsagePricingPanel({
                   Plan Details
                 </summary>
                 <p className="pb-2 text-xs leading-5 text-muted-foreground">
-                  {usd(option.includedWorkUsd)} for calls, SMS, email, and Computer. Resets monthly.
-                  No rollover. Extra usage follows the{" "}
+                  Calls, SMS, email, and Computer share this allowance. Resets monthly with no
+                  rollover. Extra usage follows the{" "}
                   <a
                     href="#usage-rates"
                     className="underline underline-offset-4 wl-focus-ring-halo"
@@ -272,7 +261,6 @@ export default function UsagePricingPanel({
       <p className="text-center text-sm text-muted-foreground">
         Inbound, Outbound, SMS, Email & Computer. One allowance, any mix. Resets monthly.
       </p>
-      <p className="text-center text-sm leading-6 text-muted-foreground">{sharedWorkNote()}</p>
       <article
         aria-label="Monthly estimate"
         className="grid gap-8 rounded-2xl border border-border bg-card p-5 sm:p-8 md:grid-cols-[1fr_17rem]"

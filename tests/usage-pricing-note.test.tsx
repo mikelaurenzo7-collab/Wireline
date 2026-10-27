@@ -2,22 +2,10 @@ import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { sharedWorkNote } from "../src/components/usage-billing/UsagePricingPanel";
-
-const availability = vi.hoisted(() => ({
-  billingModel: "usage" as "usage" | "plans",
-}));
 
 vi.mock("../src/hooks/usePaidPlanAvailability", () => ({
   usePaidPlanAvailability: () => ({
-    billingModel: availability.billingModel,
     usageTiers: ["lite", "standard", "plus"],
-    canActivate: () => true,
-    emailSetupReview: false,
-    notice: "Choose a plan and check out. Cancel anytime.",
-    status: "ready",
-    available: true,
-    needsEmailSetupReview: () => false,
   }),
 }));
 vi.mock("../src/components/layout/MarketingPageFrame", () => ({
@@ -51,26 +39,24 @@ beforeEach(() => {
   });
 });
 
-describe("pricing branch notes", () => {
-  it("shows the shared-work note on the usage branch", () => {
-    availability.billingModel = "usage";
+describe("public pricing plan cards", () => {
+  it("shows each work allowance beside its plan price without repeating the lineup below", () => {
     const html = renderPricing();
-    expect(html).toContain(sharedWorkNote());
-    expect(html).toContain("Lite is $12/month with $4 of included work");
-    expect(html).toContain("Starter is $24/month with $14 of included work");
-    expect(html).toContain("and Plus is $49/month with $36 of included work");
-    expect(html).toContain("Calls, texts, email, and Computer share that work.");
-    expect(html).toContain("Extra numbers are $3/month and extra email addresses are $4/month.");
-    expect(html).not.toContain("Extra minutes are");
-    expect(html).not.toContain("botbound_work_credits");
-  });
-
-  it("keeps the prepaid minute line on the channel branch", () => {
-    availability.billingModel = "plans";
-    const html = renderPricing();
+    expect(html).toContain("$4 shared work included");
+    expect(html).toContain("$14 shared work included");
+    expect(html).toContain("$36 shared work included");
+    expect(html).toContain("Calls, SMS, email, and Computer. One shared allowance.");
+    expect(html).not.toContain("Email, And Computer. One Shared Allowance.");
     expect(html).toContain(
-      "Extra minutes are $0.22/min, paid from Runtime Balance you add ahead of time.",
+      "Calls, SMS, email, and Computer share this allowance. Resets monthly with no rollover.",
     );
     expect(html).not.toContain("Lite is $12/month with $4 of included work");
+    expect(html).not.toContain("Starter is $24/month with $14 of included work");
+    expect(html).not.toContain("Plus is $49/month with $36 of included work");
+    expect(html).not.toContain("Extra minutes are");
+    expect(html).not.toContain("Runtime Balance");
+    expect(html).not.toContain("botbound_work_credits");
+    expect(html).toContain("Extra Number");
+    expect(html).toContain("Extra Email Address");
   });
 });

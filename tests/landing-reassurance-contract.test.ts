@@ -16,6 +16,10 @@ describe("minimal landing launch clarity", () => {
     expect(landing).toContain('role="tabpanel"');
     for (const key of ["ArrowRight", "ArrowLeft", "Home", "End"]) expect(landing).toContain(key);
     expect(landing).toContain("onClick={() => setSelected(index)}");
-    expect(landing).toContain("CHOOSE FROM A CATALOG OF VOICES OR CLONE YOUR OWN");
+    expect(landing).toContain("<CapabilityPreview channel={example.id} />");
+    expect(landing).not.toMatch(
+      /CHOOSE FROM A CATALOG|clone your own|Explore \$\{example.label\}/i,
+    );
+    expect(landing).not.toContain("MarketingChromeBar");
   });
 });

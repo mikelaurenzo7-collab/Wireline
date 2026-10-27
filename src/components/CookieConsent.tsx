@@ -196,13 +196,9 @@ export default function CookieConsent() {
             </div>
 
             <div className="flex-1 min-w-0 space-y-3 sm:flex sm:items-center sm:gap-3 sm:space-y-0">
-              <h2 className="pr-10 text-sm font-semibold leading-snug sm:sr-only">
-                Privacy Choices
-              </h2>
+              <h2 className="sr-only">Privacy Choices</h2>
               <p className="wl-balance break-words text-sm leading-relaxed text-foreground/80 sm:flex-1">
-                Essential storage keeps{" "}
-                <span className="font-semibold text-foreground">BotBound</span> working. Optional
-                measurement stays off until you allow it.{" "}
+                Essential storage is required. Optional analytics stay off unless you allow them.{" "}
                 <Link
                   to="/privacy"
                   className="text-brand hover:text-brand/80 underline"

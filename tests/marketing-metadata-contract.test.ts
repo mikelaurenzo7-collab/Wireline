@@ -15,10 +15,12 @@ describe("marketing metadata contract", () => {
     const runtimeMeta = read("src/lib/page-meta.tsx");
 
     expect(staticHead).toContain("BotBound | Your Bot for calls, texts, email, and computer.");
-    expect(runtimeMeta).toContain('const DEFAULT_TITLE = "BotBound | Your Bot for calls, texts, email, and computer."');
+    expect(runtimeMeta).toContain(
+      'const DEFAULT_TITLE = "BotBound | Your Bot for calls, texts, email, and computer."',
+    );
     for (const source of [staticHead, runtimeMeta]) {
       expect(source).toContain(
-        "Voice Bots with a computer, phone number, and email address. Answer calls, handle requests, and get everyday work done for you or your business.",
+        "Voice Bots with a computer, phone number, text, and email address. Answer calls, handle requests, and get everyday work done for you or your business.",
       );
       expect(source).not.toContain("WIRE YOUR PHONE BOT");
       expect(source).not.toContain("VOICE-FIRST");
@@ -117,10 +119,9 @@ describe("marketing metadata contract", () => {
     expect(planById("business")?.included_phone_numbers).toBe(5);
     expect(planById("email")?.price_usd_monthly).toBe(9);
     expect(pricing).not.toContain("Plans from $");
-    expect(pricing).toContain("Choose your channels and capacity.");
+    expect(pricing).toContain("Calls, SMS, email, and Computer. One shared allowance.");
     expect(pricing).toContain("Compare included numbers, email addresses and shared work.");
-    expect(pricing).toContain("CHANNEL_PLANS = STRIPE_PLANS.filter");
-    expect(pricing).toContain("plans={CHANNEL_PLANS}");
+    expect(pricing).toContain("UsagePricingPanel availableTiers={availableTiers}");
     expect(pricing).not.toContain('"@type": "OfferCatalog"');
     // Contact is an inquiry form; prices and availability belong to Pricing.
     expect(contact).not.toContain("Starter launches at");

@@ -31,14 +31,11 @@ const paidPlans = {
   ),
 };
 
-test("minimal homepage keeps signup plan-neutral and channel links useful", async ({ page }) => {
+test("minimal homepage keeps signup plan-neutral and channel demos useful", async ({ page }) => {
   await mockPublicAccount(page, paidPlans);
   await page.goto("/");
   await page.getByRole("tab", { name: "Email", exact: true }).click();
-  await expect(page.getByRole("link", { name: "Explore Email", exact: true })).toHaveAttribute(
-    "href",
-    "/features#email",
-  );
+  await expect(page.getByRole("tabpanel")).toContainText("Customer question");
   await page.locator("main").getByRole("link", { name: "GET STARTED", exact: true }).click();
   await expect(page).toHaveURL(/\/signup$/);
 });
@@ -125,4 +122,3 @@ test("mobile paid signup includes Personal status and keeps generic signup neutr
     access.getByRole("button", { name: "Create Account", exact: true }).last(),
   ).toBeVisible();
 });
-

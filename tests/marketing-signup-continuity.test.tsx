@@ -26,7 +26,6 @@ vi.mock("react-router", () => ({
 }));
 vi.mock("../src/components/marketing/PrecisionPublicHeader", () => ({ default: "header" }));
 vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: null }) }));
-vi.mock("../src/components/marketing/MarketingChromeBar", () => ({ default: "footer" }));
 vi.mock("../src/lib/page-meta", () => ({ PageMeta: "page-meta" }));
 vi.mock("../src/lib/product-event-client", () => ({
   emitProductEvent: vi.fn(),
@@ -169,7 +168,9 @@ describe("marketing signup continuity", () => {
 
   it("sends the retired blog to the changelog instead of a second signup", () => {
     const app = readFileSync("src/App.tsx", "utf8");
-    expect(app).toContain('<Route path="/blog" element={<PreservingRedirect to="/changelog" />} />');
+    expect(app).toContain(
+      '<Route path="/blog" element={<PreservingRedirect to="/changelog" />} />',
+    );
     expect(app).not.toMatch(/path="\/blog"[\s\S]{0,80}\/signup/);
   });
 });
