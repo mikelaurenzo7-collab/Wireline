@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "github": {
+      "url": "https://api.githubcopilot.com/mcp/",
+      "note": "GitHub's official remote MCP server — the same surface used for PRs, issues, and file operations on mikelaurenzo7-collab/Wireline. Authenticate per-developer through Cursor's OAuth flow on first use. Never commit tokens or credentials to this repo."
+    }
+  }
+}
