@@ -27,7 +27,7 @@ describe("launch artifact privacy and operations truth", () => {
   it("retires unauthenticated browser voice without retaining a provider path", () => {
     const route = read("src/routes/marketing-runtime-routes.ts");
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    const showcase = read("src/pages/Showcase.tsx");
+    const app = read("src/App.tsx");
 
     expect(route).toContain("function publicVoicePreviewRetired");
     expect(route).toContain("res.status(410).json");
@@ -35,7 +35,7 @@ describe("launch artifact privacy and operations truth", () => {
     expect(route).toContain('"/api/public/demo-call"');
     expect(route).not.toMatch(/OpenAI|VAPI|createServerManagedOpenAIRealtimeCall|runInBackground/);
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo|demo-session/);
-    expect(showcase).toContain('<Navigate to="/signup" replace />');
+    expect(app).toContain('<Route path="/showcase" element={<PreservingRedirect to="/signup" />} />');
   });
 
   it("keeps public retention and recording claims aligned with runtime defaults", () => {

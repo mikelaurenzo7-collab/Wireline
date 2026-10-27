@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -68,15 +68,12 @@ describe("unified Bot workspace compatibility", () => {
     );
   });
 
-  it("keeps creation and Overview free of posture routing", () => {
+  it("keeps creation and Studio free of posture routing", () => {
     const dialog = read("src/components/CreateAgentDialog.tsx");
-    const overview = read("src/pages/OverviewPage.tsx");
     const studio = read("src/components/StudioWorkspaceV2.tsx");
+    expect(existsSync("src/pages/OverviewPage.tsx")).toBe(false);
     expect(dialog).toContain('workspace_model: "one_workspace"');
     expect(dialog).not.toMatch(/setPosture|rolesForPosture/);
-    expect(overview).toContain("UnifiedInbox");
-    expect(overview).toContain("BotRoster");
-    expect(overview).not.toContain("posture=");
     expect(studio).not.toContain("posture=");
   });
 
@@ -88,6 +85,8 @@ describe("unified Bot workspace compatibility", () => {
     expect(team?.max_agents).toBe(2);
     expect(team?.included_phone_numbers).toBe(2);
     expect(team?.checkoutAvailability).toBe("legacy_only");
-    expect(read("src/pages/Pricing.tsx")).toContain('plan.catalogFamily === "channels"');
+    expect(read("src/lib/plan-catalog.ts")).toContain('id: "team"');
+    expect(read("src/pages/Pricing.tsx")).not.toContain("Starter Plus");
+    expect(read("src/components/usage-billing/UsagePricingPanel.tsx")).not.toContain("Starter Plus");
   });
 });

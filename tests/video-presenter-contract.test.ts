@@ -95,13 +95,13 @@ describe("bot visual identity", () => {
     expect(compatibility).not.toContain("<path");
   });
 
-  it("uses Bot Marks directly in the primary Overview roster", () => {
-    const rail = source("src/components/overview/OverviewRail.tsx");
-    expect(rail).toContain('import BotMark from "../BotMark"');
-    expect(rail).toContain("<BotMark");
-    expect(rail).toContain("seed={bot.id}");
-    expect(rail).toContain("title={`${bot.name} mark`}");
-    expect(rail).not.toContain("<AgentFace");
+  it("uses Bot Marks directly on the workspace shell", () => {
+    const shell = source("src/components/WorkspaceShell.tsx");
+    expect(existsSync(resolve(root, "src/components/overview/OverviewRail.tsx"))).toBe(false);
+    expect(shell).toContain("<BotMark");
+    expect(shell).toContain("seed={agent.id}");
+    expect(shell).toContain("title={agent.name}");
+    expect(shell).not.toContain("<AgentFace");
   });
 
   it("keeps Fast Start and the tracked client tree free of avatar selection UI", () => {

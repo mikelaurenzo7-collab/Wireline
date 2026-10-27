@@ -16,8 +16,8 @@ describe("status notice design contract", () => {
     expect(statusNotice).toContain("destructive:");
   });
 
-  it("keeps overview and settings on the shared feedback surface", () => {
-    expect(source("src/pages/OverviewPage.tsx")).toContain("<StatusNotice");
+  it("keeps settings on the shared feedback surface", () => {
     expect(source("src/pages/SettingsPage.tsx")).toContain("<StatusNotice");
+    expect(source("src/components/molecules/StatusNotice.tsx")).toContain('data-slot="status-notice"');
   });
 });

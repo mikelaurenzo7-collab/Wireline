@@ -5,9 +5,9 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("retired public browser voice cost boundary", () => {
-  const routes = read("src/routes/marketing-runtime-routes.ts");
-  const landing = read("src/components/marketing/WireAgentLanding.tsx");
-  const showcase = read("src/pages/Showcase.tsx");
+const routes = read("src/routes/marketing-runtime-routes.ts");
+const landing = read("src/components/marketing/WireAgentLanding.tsx");
+const app = read("src/App.tsx");
 
   it("serves only deterministic 410 responses from the legacy voice-preview endpoints", () => {
     expect(routes).toContain("function publicVoicePreviewRetired");
@@ -29,10 +29,9 @@ describe("retired public browser voice cost boundary", () => {
     expect(landing).not.toMatch(
       /BrowserCallWidget|useProtectedPublicDemo|RTCPeerConnection|getUserMedia/,
     );
-    expect(showcase).toContain('<Navigate to="/signup" replace />');
-    expect(showcase).not.toMatch(
-      /BrowserCallWidget|useProtectedPublicDemo|RTCPeerConnection|getUserMedia/,
-    );
+    expect(existsSync(resolve(process.cwd(), "src/pages/Showcase.tsx"))).toBe(false);
+    expect(app).toContain('<Route path="/showcase" element={<PreservingRedirect to="/signup" />} />');
+    expect(app).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo|RTCPeerConnection|getUserMedia/);
   });
 
   it("removes obsolete public-demo budget and ticket machinery", () => {

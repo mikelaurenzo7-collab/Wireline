@@ -134,11 +134,14 @@ describe("radii come off the token scale", () => {
 });
 
 describe("async state on the primary surfaces is announced", () => {
-  it("marks the Overview KPI row busy and speaks the result", () => {
-    const overview = read("src/pages/OverviewPage.tsx");
-    expect(overview).toContain("aria-busy={loadingDashboard}");
-    expect(overview).toContain('<p className="sr-only" role="status">');
-    expect(overview).toContain("needing attention.");
+  it("marks Workspace loading busy and speaks a status", () => {
+    const studio = read("src/components/StudioWorkspaceV2.tsx");
+    expect(studio).toContain('aria-busy="true"');
+    expect(studio).toContain('aria-label="Loading Workspace"');
+    const fallback = read("src/components/layout/RouteFallback.tsx");
+    expect(fallback).toContain('aria-busy="true"');
+    expect(fallback).toContain('className="sr-only"');
+    expect(fallback).toContain("Loading page…");
   });
 });
 

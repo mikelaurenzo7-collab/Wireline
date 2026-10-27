@@ -120,20 +120,15 @@ describe("restored launch regression guards", () => {
   });
 
   it("keeps one roster while preserving legacy seed flags for safe migrations", () => {
-    const overview = read("src/pages/OverviewPage.tsx");
-    const roster = read("src/components/overview/OverviewRail.tsx");
     const studio = read("src/components/StudioWorkspaceV2.tsx");
+    const shell = read("src/components/WorkspaceShell.tsx");
+    const routes = read("src/routes/AppRoutes.tsx");
     const founderSeed = read("src/lib/founder-fleet-seed.ts");
 
-    expect(overview).toContain("UnifiedInbox");
-    expect(overview).toContain("BotRoster");
-    expect(overview).toContain("Create Your Own");
-    expect(overview).not.toMatch(/personalAgents|businessAgents|founderPair|posture=/);
-    expect(overview).toContain("<BotRoster bots={agents}");
-    expect(roster).toContain("{bots.length}");
-    expect(roster).toContain("bots.slice(0, 4).map");
-    expect(roster).toContain('to="/studio"');
-    expect(roster).not.toMatch(/personalBots|businessBots|postureBots|matchesPosture/);
+    expect(routes).toContain('path="/overview" element={<ToStudioRedirect />}');
+    expect(shell).toContain("<BotMark");
+    expect(shell).toContain("seed={agent.id}");
+    expect(shell).not.toMatch(/personalAgents|businessAgents|founderPair|posture=/);
     expect(studio).not.toContain("useAccount");
     expect(studio).not.toContain("posture=");
     expect(founderSeed).toContain("isBusinessAgent: false");

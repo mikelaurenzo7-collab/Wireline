@@ -17,7 +17,7 @@ describe("authenticated mobile cleanup", () => {
     expect(tabStrip).toContain('className="hidden sm:inline"');
     expect(tabStrip).toContain("nav.scrollWidth <= nav.clientWidth");
     expect(tabs).toContain('shortLabel: "Camps"');
-    expect(tabs).toContain('shortLabel: "Seq"');
+    expect(tabs).not.toContain('shortLabel: "Seq"');
     expect(settingsTabs).toContain("WorkspaceControlBand");
     expect(settingsTabs).not.toContain('wrap="always"');
   });

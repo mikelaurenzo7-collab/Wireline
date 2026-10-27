@@ -34,7 +34,7 @@ const CORE_BUYING_SURFACES = [
   "src/components/marketing/WireAgentLanding.tsx",
   "src/components/marketing/PrecisionPublicHeader.tsx",
   "src/components/marketing/MarketingStickyCta.tsx",
-  "src/components/marketing/MarketingFooter.tsx",
+  "src/components/marketing/MarketingChromeBar.tsx",
 ] as const;
 
 const CUSTOMER_BOT_SURFACES = [
@@ -56,7 +56,6 @@ const CUSTOMER_BOT_SURFACES = [
   "src/components/outbound/CampaignsPanel.tsx",
   "src/lib/private-agent-test.ts",
   "src/pages/CustomizationSettings.tsx",
-  "src/pages/Showcase.tsx",
   "src/routes/marketing-runtime-routes.ts",
   "src/routes/agent-test-routes.ts",
   "src/routes/chatgpt-mcp-account-routes.ts",
@@ -68,8 +67,7 @@ const UNIFIED_AUDIENCE_SURFACES = [
   "src/components/CreateAgentDialog.tsx",
   "src/components/StudioAgentWorkspacePanel.tsx",
   "src/components/bots/BotConfigurator.tsx",
-  "src/components/overview/FirstRunWorkspace.tsx",
-  "src/pages/OverviewPage.tsx",
+  "src/components/StudioWorkspaceV2.tsx",
   "src/pages/KnowledgePage.tsx",
   "src/components/ContactPage.tsx",
   "src/routes/chatgpt-mcp-account-routes.ts",
@@ -331,7 +329,6 @@ describe("BotBound product voice", () => {
       "/contact",
       "/showcase",
       "/developers",
-      "/blog",
       "/changelog",
       "/security",
       "/trust",
@@ -346,6 +343,9 @@ describe("BotBound product voice", () => {
       "/auth/oauth-complete",
     ];
     for (const path of publicPaths) expect(isSessionOptionalPublicPath(path), path).toBe(true);
+    expect(read("src/App.tsx")).toContain(
+      '<Route path="/blog" element={<PreservingRedirect to="/changelog" />} />',
+    );
     expect(existsSync("src/components/marketing/PublicSiteHeader.tsx")).toBe(false);
   });
 });

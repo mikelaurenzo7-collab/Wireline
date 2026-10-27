@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -58,24 +58,22 @@ describe("authenticated minimal copy contract", () => {
     expect(insightEmpty).not.toMatch(/eyebrow=\{config\.eyebrow\}/);
   });
 
-  it("types remaining high-traffic insight views", () => {
+  it("types the insight views that still ship", () => {
     expect(read("src/components/insights/TopicsView.tsx")).toContain("InsightsTopicsResponse");
-    expect(read("src/components/insights/FailureModesView.tsx")).toContain(
-      "InsightsFailureModesResponse",
-    );
     expect(read("src/components/insights/VoiceReliabilityView.tsx")).toContain(
       "VoiceReliabilityResponse",
     );
-    expect(read("src/components/insights/AttributionView.tsx")).toContain(
-      "InsightsAttributionResponse",
-    );
-    expect(read("src/components/insights/HeatmapView.tsx")).toContain("InsightsHeatmapResponse");
     expect(read("src/components/insights/QualityView.tsx")).toContain("InsightsQaStatsResponse");
-    expect(read("src/components/insights/AISpendView.tsx")).toContain("AuditSummary");
-    expect(read("src/components/insights/VoiceLatencyView.tsx")).toContain(
-      "VoiceLatencyInsightsResponse",
-    );
-    expect(read("src/components/insights/HeatmapView.tsx")).toContain("heatmap");
+    for (const retired of [
+      "src/components/insights/FailureModesView.tsx",
+      "src/components/insights/AttributionView.tsx",
+      "src/components/insights/HeatmapView.tsx",
+      "src/components/insights/AISpendView.tsx",
+      "src/components/insights/VoiceLatencyView.tsx",
+      "src/components/insights/LearningMetricsView.tsx",
+    ]) {
+      expect(existsSync(resolve(root, retired)), retired).toBe(false);
+    }
     expect(read("src/server/register-api-routes.ts")).toContain("app.use(insightsRouter)");
     expect(read("src/server/register-api-routes.ts")).toContain("app.use(pipelineRouter)");
     expect(read("src/routes/voice-observability-routes.ts")).toContain('"/api/insights/latency"');

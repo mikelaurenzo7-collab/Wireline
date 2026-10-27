@@ -18,11 +18,12 @@ describe("public voice-preview retirement contract", () => {
   });
 
   it("redirects the retired Showcase directly to plan-neutral signup", () => {
-    const showcase = read("src/pages/Showcase.tsx");
+    const app = read("src/App.tsx");
 
-    expect(showcase).toContain('import { Navigate } from "react-router"');
-    expect(showcase).toContain('<Navigate to="/signup" replace />');
-    expect(showcase).not.toMatch(/BrowserCallWidget|RTCPeerConnection|getUserMedia|demo-session/);
+    expect(existsSync(resolve(process.cwd(), "src/pages/Showcase.tsx"))).toBe(false);
+    expect(app).toContain('<Route path="/showcase" element={<PreservingRedirect to="/signup" />} />');
+    expect(app).toContain("return <Navigate to={`${to}${location.search}${location.hash}`} replace />");
+    expect(app).not.toMatch(/path="\/showcase"[\s\S]{0,80}plan=/);
   });
 
   it("keeps official captures on live product surfaces instead of screenshotting the redirect", () => {
@@ -79,7 +80,6 @@ describe("public voice-preview retirement contract", () => {
 
   it("does not advertise retired founder phone numbers on public marketing CTAs", () => {
     const surfaces = [
-      "src/pages/Showcase.tsx",
       "src/pages/SolutionsPage.tsx",
       "src/pages/VerticalLanding.tsx",
       "src/data/vertical-wedges.ts",
