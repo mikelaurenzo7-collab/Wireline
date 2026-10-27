@@ -1060,19 +1060,19 @@
   background: var(--wireline-color-surface-subtle);
 }
 
-.wl-computer-control > .wl-computer-control__form:first-child {
+.wl-computer-control > .wl-computer-control__form:first-of-type {
   display: grid;
   flex: 1 1 100%;
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: end;
 }
-.wl-computer-control > .wl-computer-control__form:first-child label {
+.wl-computer-control > .wl-computer-control__form:first-of-type label {
   grid-column: 1 / -1;
 }
-.wl-computer-control > .wl-computer-control__form:first-child input {
+.wl-computer-control > .wl-computer-control__form:first-of-type input {
   min-width: 0;
 }
-.wl-computer-control > .wl-computer-control__form:first-child button {
+.wl-computer-control > .wl-computer-control__form:first-of-type button {
   align-self: end;
 }
 .wl-computer-control > .wl-computer-control__form:has(#computer-handoff-goal) {
@@ -1113,6 +1113,12 @@
   color: var(--wireline-color-text-primary);
   font-size: 0.78rem;
   font-weight: 600;
+}
+
+.wl-computer-control__modes {
+  display: flex;
+  flex: 0 0 100%;
+  gap: var(--wireline-space-050);
 }
 
 .wl-computer-control__keys {
