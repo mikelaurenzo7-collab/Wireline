@@ -205,7 +205,7 @@ export default function StudioTaskChat({
               title={
                 model.status.reason === "plan_required"
                   ? "Choose a plan to start work"
-                  : "Computer work is unavailable"
+                  : "Computer turns on with your Bot."
               }
               action={
                 model.status.reason === "plan_required" ? (
@@ -214,9 +214,7 @@ export default function StudioTaskChat({
                   </Button>
                 ) : undefined
               }
-            >
-              Your draft stays here.
-            </StatusNotice>
+            />
           ) : null}
           {activeElsewhere ? (
             <StatusNotice

@@ -247,9 +247,6 @@ export default function PlaybookEditor({ agentId, compact }: Props) {
           >
             Playbook
           </span>
-          <span className="block text-xs text-muted-foreground">
-            The exact words your Bot uses, and how it handles specific moments.
-          </span>
         </span>
         <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
           {loading ? "Loading…" : loadError ? "Couldn't load" : summary(saved)}

@@ -180,12 +180,7 @@ function UnavailableNotice({ status }: { status: ComputerStatus }) {
       </StatusNotice>
     );
   }
-  return (
-    <StatusNotice tone="info" title="Your Bot's Computer Is Being Set Up">
-      The cloud computer turns on as soon as BotBound finishes setting it up. Nothing you need to do
-      here.
-    </StatusNotice>
-  );
+  return null;
 }
 
 function LiveScreen({
@@ -2093,7 +2088,6 @@ export function ComputerWorkbench({
                   <div className="wl-computer-launch-browser__canvas">
                     <Globe className="size-8" aria-hidden="true" />
                     <strong>A fresh browser</strong>
-                    <span>Open a site, or give your Bot a task.</span>
                   </div>
                 </div>
               )}
