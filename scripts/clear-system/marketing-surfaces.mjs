@@ -7,7 +7,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   const marketingHero = read("src/components/marketing/MarketingHero.tsx");
   const publicHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
   const landing = read("src/components/marketing/WireAgentLanding.tsx");
-  const landingFooter = read("src/components/marketing/LandingFooter.tsx");
+  const marketingChrome = read("src/components/marketing/MarketingChromeBar.tsx");
   const landingPrestigeCss = read("src/styles/landing-prestige.css");
   const authAccessCss = read("src/styles/auth-access-panel.css");
   const indexCss = read("src/index.css");
@@ -81,7 +81,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
     [/role="tabpanel"/, "capability details must be associated with their selected tab"],
     [/onKeyDown/, "capability navigation must support keyboard selection"],
     [/to="\/pricing"/, "landing must link directly to pricing"],
-    [/<LandingFooter\s*\/>/, "desktop landing must retain wayfinding"],
+    [/<MarketingChromeBar\s*\/>/, "desktop landing must retain wayfinding"],
   ])
     mustInclude("src/components/marketing/WireAgentLanding.tsx", landing, pattern, description);
   mustInclude(
@@ -153,12 +153,19 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
     /@import "\.\/styles\/landing-prestige\.css";/,
     "CSS stack must own landing styling",
   );
-  mustInclude(
-    "src/components/marketing/LandingFooter.tsx",
-    landingFooter,
-    /aria-label="Footer"[\s\S]*\/support[\s\S]*\/privacy[\s\S]*\/terms[\s\S]*wireline:open-privacy-choices/,
-    "minimal landing footer must retain support, legal links, and privacy controls",
-  );
+  for (const [pattern, description] of [
+    [/<footer\b/, "marketing footer must render a footer landmark"],
+    [/to: "\/support"/, "marketing footer must link to support"],
+    [/to: "\/privacy"/, "marketing footer must link to privacy"],
+    [/to: "\/terms"/, "marketing footer must link to terms"],
+    [/wireline:open-privacy-choices/, "marketing footer must open privacy choices"],
+  ])
+    mustInclude(
+      "src/components/marketing/MarketingChromeBar.tsx",
+      marketingChrome,
+      pattern,
+      description,
+    );
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
@@ -194,7 +201,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /<UsagePricingPanel availableTiers=\{usageTiers\}/,
+    /<UsagePricingPanel availableTiers=\{availableTiers\} \/>[\s\S]*<UsagePricing availableTiers=\{usageTiers\} \/>/,
     "pricing must render the shared-work plans from live availability",
   );
   mustExclude(
