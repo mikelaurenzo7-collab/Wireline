@@ -61,7 +61,7 @@ test("home offers neutral signup without selecting a plan or exposing a public a
   await openPage(page, "/");
 
   const hero = page.locator(".landing-prestige__hero");
-  await expect(hero.getByRole("link", { name: "GET YOUR SALES BOT", exact: true })).toHaveAttribute(
+  await expect(hero.getByRole("link", { name: "GET STARTED", exact: true })).toHaveAttribute(
     "href",
     "/signup",
   );
@@ -93,3 +93,4 @@ test("legacy public voice endpoints return deterministic provider-free retiremen
     });
   }
 });
+

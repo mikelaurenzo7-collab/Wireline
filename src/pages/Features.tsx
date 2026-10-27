@@ -58,7 +58,7 @@ export default function Features() {
                 to={signedIn ? "/studio" : "/signup"}
                 className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
               >
-                {signedIn ? "Open Workspace" : "GET YOUR SALES BOT"}
+                {signedIn ? "Open Workspace" : "GET STARTED"}
               </Link>
               <Link
                 to="/pricing"
@@ -88,3 +88,4 @@ export default function Features() {
     </MarketingPageFrame>
   );
 }
+

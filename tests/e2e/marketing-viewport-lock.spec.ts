@@ -71,7 +71,7 @@ async function publicMetrics(page: Page) {
       };
     });
     const startFree = Array.from(document.querySelectorAll<HTMLAnchorElement>("a")).find(
-      (link) => link.textContent?.trim() === "GET YOUR SALES BOT",
+      (link) => link.textContent?.trim() === "GET STARTED",
     );
     const rect = (element: Element | null | undefined) => element?.getBoundingClientRect();
     const rootRect = rect(root);
@@ -263,7 +263,7 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
   // Account access is one action away instead of a split-screen form.
   await expect(page.getByRole("region", { name: "Account access" })).toHaveCount(0);
   const actions = page.locator(".landing-prestige__hero .landing-prestige__actions");
-  await expect(actions.getByRole("link", { name: "GET YOUR SALES BOT" })).toHaveAttribute(
+  await expect(actions.getByRole("link", { name: "GET STARTED" })).toHaveAttribute(
     "href",
     "/signup",
   );
@@ -303,7 +303,7 @@ test("home keeps the BotBound promise and account path in one mobile flow", asyn
   ).toHaveCount(0);
   await expect(page.getByRole("tablist", { name: "Bot capabilities" })).toBeAttached();
   const actions = page.locator(".landing-prestige__hero .landing-prestige__actions");
-  await expect(actions.getByRole("link", { name: "GET YOUR SALES BOT" })).toBeInViewport();
+  await expect(actions.getByRole("link", { name: "GET STARTED" })).toBeInViewport();
   await expect(actions.getByRole("link", { name: "See Pricing", exact: true })).toBeInViewport();
 
   const metrics = await publicMetrics(page);
@@ -362,3 +362,4 @@ test("showcase redirects into plan-neutral account creation without horizontal e
   const metrics = await publicMetrics(page);
   expectDocumentInsideViewport(metrics, "showcase redirect");
 });
+
