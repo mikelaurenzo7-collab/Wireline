@@ -34,7 +34,7 @@ const inviteRoleOptions: { value: InviteRole; label: string }[] = [
   { value: "viewer", label: "Viewer" },
 ];
 
-const TEAM_INVITES_UNAVAILABLE = "Team invitations are currently unavailable.";
+const TEAM_INVITES_UNAVAILABLE = "Team invites are coming soon.";
 
 function formatRole(role: string | null | undefined) {
   if (!role) return "Member";

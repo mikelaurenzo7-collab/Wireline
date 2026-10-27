@@ -49,7 +49,7 @@ describe("shared workspace readiness posture", () => {
     expect(page).toContain('payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED"');
     expect(page).toContain("payload?.available === false");
     expect(page).toContain('setTeamAccess("certifying")');
-    expect(page).toContain("Team invitations are currently unavailable.");
+    expect(page).toContain("Team invites are coming soon.");
     expect(page).toContain("throw new Error(TEAM_INVITES_UNAVAILABLE)");
     expect(page).not.toContain("shared-workspace security certification");
     expect(page).not.toContain("Invitations will open after");

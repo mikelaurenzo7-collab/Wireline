@@ -281,9 +281,9 @@ describe("team access status", () => {
 
   it("uses the short availability notice for uncertified workspaces without a future promise", async () => {
     await load({ available: false }, 200);
-    expect(text(tree)).toContain("Team invitations are currently unavailable.");
+    expect(text(tree)).toContain("Team invites are coming soon.");
     expect(text(tree)).not.toMatch(/certification|will open|Owner/);
-    expect(invite().title).toBe("Team invitations are currently unavailable.");
+    expect(invite().title).toBe("Team invites are coming soon.");
     expect(invite().disabled).toBe(true);
   });
 
@@ -322,7 +322,7 @@ describe("team access status", () => {
       body: JSON.stringify({ email: "teammate@example.test", role: "member" }),
     });
     expect(text(tree)).toContain("Invite Teammate");
-    expect(text(tree)).toContain("Team invitations are currently unavailable.");
+    expect(text(tree)).toContain("Team invites are coming soon.");
     expect(text(tree)).not.toContain("Internal certification details");
     const submit = elements(tree).find(
       (node) => node.type === "button" && node.props.type === "submit",
