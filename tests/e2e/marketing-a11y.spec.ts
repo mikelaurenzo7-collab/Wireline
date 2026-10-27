@@ -54,7 +54,7 @@ test("homepage promise and access path stay centered inside the desktop viewport
   await expect(headline).toBeVisible();
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
   await expect(page.locator(".landing-prestige__identity-line")).toHaveText(
-    "Voice Calls. Texts. Email. Computer Use.",
+    "Phone Number. Email Address. Computer Use",
   );
   await expect(page.locator(".landing-prestige__description")).toHaveCount(0);
   await expect(page.locator(".landing-prestige__directions")).toHaveCount(0);
@@ -131,7 +131,7 @@ test("homepage channels stay clear and readable without decorative labels at 320
 
   const hero = page.locator(".landing-prestige__hero");
   const description = hero.locator(".landing-prestige__identity-line");
-  await expect(description).toHaveText("Voice Calls. Texts. Email. Computer Use.");
+  await expect(description).toHaveText("Phone Number. Email Address. Computer Use");
   await expect(hero.locator("p")).toHaveCount(1);
   await expect(hero.getByText("Choose calls, email, or both.", { exact: true })).toHaveCount(0);
   await expect(hero.getByText("For life. For work.", { exact: true })).toHaveCount(0);
