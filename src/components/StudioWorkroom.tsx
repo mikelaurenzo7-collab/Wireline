@@ -1,13 +1,14 @@
 import {
   forwardRef,
   useCallback,
+  type ChangeEvent,
   useEffect,
   useImperativeHandle,
   useRef,
   useState,
   useSyncExternalStore,
 } from "react";
-import { ArrowUp, Loader2, MessageCircle, Mic, Phone, Trash2 } from "lucide-react";
+import { ArrowUp, Blocks, Loader2, MessageCircle, Mic, Paperclip, Phone, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
@@ -18,11 +19,18 @@ import StudioProposalReview, {
   type StudioProposalOperation,
 } from "./StudioProposalReview";
 import { useStreamingChat } from "../hooks/useStreamingChat";
-import { authFetch } from "../lib/api";
+import { authFetch, safeJson } from "../lib/api";
 import type { BotMarkKey } from "../lib/bot-mark";
 import { WORKSPACE_VOICE } from "../lib/product-copy";
-import { reconcileStudioCommandDraft } from "../lib/studio-route-state";
+import { reconcileStudioCommandDraft, setStudioInspectorSectionParams } from "../lib/studio-route-state";
 import { WL_COMPOSER_CLASSES } from "../lib/wireline-design-system";
+import { useSearchParams } from "react-router";
+import { readAsset } from "../lib/knowledge-asset";
+import {
+  KNOWLEDGE_ASSET_MAX_FILES,
+  knowledgeAssetFileCountNotice,
+} from "../lib/knowledge-asset-limits";
+import { emitProductEvent } from "../lib/product-event-client";
 import { retainStudioConversationMessages } from "../lib/studio-session-state";
 import LinkifiedText from "./ui/LinkifiedText";
 
@@ -251,6 +259,66 @@ const StudioWorkroom = forwardRef<
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const injectedCommandRef = useRef<string | null>(initialCommand?.trim() || null);
   const injectedCommandNonceRef = useRef<string | null>(commandNonce || null);
+  const attachInputRef = useRef<HTMLInputElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [attachBusy, setAttachBusy] = useState(false);
+  const [attachNotice, setAttachNotice] = useState<string | null>(null);
+  const [attachError, setAttachError] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const openConnectors = useCallback(() => {
+    setMenuOpen(false);
+    setSearchParams(setStudioInspectorSectionParams(searchParams, "setup"));
+  }, [searchParams, setSearchParams]);
+
+  const onAttachPick = async (event: ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || !files.length) return;
+    const picked = Array.from(files);
+    const list = picked.slice(0, KNOWLEDGE_ASSET_MAX_FILES);
+    setMenuOpen(false);
+    setAttachBusy(true);
+    setAttachNotice(null);
+    setAttachError(null);
+    const summaries: string[] = [];
+    let failure: string | null = null;
+    let added = 0;
+    try {
+      for (const file of list) {
+        const payload = await readAsset(file, false);
+        const response = await authFetch(
+          `/api/agent-config/${encodeURIComponent(agentId)}/assets`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          },
+        );
+        const body = (await safeJson(response)) as { summary?: string; error?: string } | null;
+        if (!response.ok) throw new Error(body?.error || `${file.name} could not be ingested.`);
+        added += 1;
+        if (body?.summary) summaries.push(body.summary);
+        emitProductEvent({
+          event: "training_asset_added",
+          agentId,
+          metadata: {
+            source: "composer_upload",
+            file_name: file.name,
+            mime_type: payload.mimeType,
+          },
+        });
+      }
+    } catch (reason) {
+      failure = reason instanceof Error ? reason.message : "Knowledge could not be ingested.";
+    }
+    if (added > 0) {
+      setAttachNotice(summaries.length ? summaries.join(" ") : "Added to Knowledge.");
+    }
+    const problems = [failure, knowledgeAssetFileCountNotice(picked.length)].filter(Boolean);
+    if (problems.length) setAttachError(problems.join(" "));
+    setAttachBusy(false);
+    if (attachInputRef.current) attachInputRef.current.value = "";
+  };
   const split = layout === "split";
   const composerId = "studio-workroom-message";
   const quickPrompts = CONFIGURE_PROMPTS;
@@ -404,9 +472,9 @@ const StudioWorkroom = forwardRef<
     const textarea = inputRef.current;
     if (!textarea) return;
     const resize = () => {
-      textarea.style.minHeight = "52px";
+      textarea.style.minHeight = "76px";
       textarea.style.height = "0px";
-      textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 52), 160)}px`;
+      textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 76), 240)}px`;
     };
     resize();
     if (typeof ResizeObserver === "undefined") return;
@@ -693,6 +761,24 @@ const StudioWorkroom = forwardRef<
 
           <div className="wl-studio-chat__composer shrink-0 bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
             <div className="mx-auto max-w-3xl">
+              <input
+                ref={attachInputRef}
+                type="file"
+                multiple
+                accept=".txt,.csv,.md,.markdown,.pdf,.docx,.xlsx"
+                aria-label="Upload files to Knowledge"
+                className="sr-only"
+                onChange={onAttachPick}
+              />
+              {attachError ? (
+                <div className="mb-2">
+                  <StatusNotice tone="destructive" title={attachError} />
+                </div>
+              ) : attachNotice ? (
+                <div className="mb-2">
+                  <StatusNotice tone="success" title={attachNotice} />
+                </div>
+              ) : null}
               <div className={`${WL_COMPOSER_CLASSES.composerDock} wl-studio-composer`}>
                 <label className="sr-only" htmlFor={composerId}>
                   {`Message ${agentName}`}
@@ -719,9 +805,64 @@ const StudioWorkroom = forwardRef<
                   rows={1}
                   disabled={sending}
                   placeholder="Share knowledge or give instructions…"
-                  className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
+                  className="wl-composer-dock__input max-h-60 overflow-y-auto disabled:opacity-60"
                 />
                 <div className="wl-composer-dock__toolbar">
+                  <div className="relative">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="min-h-11 min-w-11 px-2"
+                      aria-haspopup="menu"
+                      aria-expanded={menuOpen}
+                      aria-label="Add"
+                      title="Add"
+                      onClick={() => setMenuOpen((open) => !open)}
+                    >
+                      <Plus className="size-4" aria-hidden="true" />
+                    </Button>
+                    {menuOpen ? (
+                      <>
+                        <button
+                          type="button"
+                          aria-hidden="true"
+                          tabIndex={-1}
+                          className="fixed inset-0 z-10 cursor-default"
+                          onClick={() => setMenuOpen(false)}
+                        />
+                        <div
+                          role="menu"
+                          aria-label="Add"
+                          className="absolute bottom-full left-0 z-20 mb-2 w-52 overflow-hidden rounded-xl border border-border bg-card p-1 shadow-lg"
+                        >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            disabled={attachBusy}
+                            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm hover:bg-accent disabled:opacity-50"
+                            onClick={() => {
+                              setMenuOpen(false);
+                              attachInputRef.current?.click();
+                            }}
+                          >
+                            <Paperclip className="size-4" aria-hidden="true" />
+                            Upload Files
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm hover:bg-accent"
+                            onClick={openConnectors}
+                          >
+                            <Blocks className="size-4" aria-hidden="true" />
+                            Connectors
+                          </button>
+                        </div>
+                      </>
+                    ) : null}
+                  </div>
+                  <div className="ml-auto flex items-center gap-1">
                   {mode === "configure" && modeControls === "composer" && onModeChange ? (
                     <Button
                       type="button"
@@ -754,6 +895,7 @@ const StudioWorkroom = forwardRef<
                       <ArrowUp size={18} aria-hidden="true" />
                     )}
                   </Button>
+                  </div>
                 </div>
               </div>
             </div>
