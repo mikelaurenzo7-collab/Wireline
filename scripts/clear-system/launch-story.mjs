@@ -47,7 +47,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /"name"\s*:\s*"BotBound \| For You\. For Your Business\."/,
+    /"name"\s*:\s*"BotBound"/,
     "install metadata must use BotBound",
   );
   mustExclude(

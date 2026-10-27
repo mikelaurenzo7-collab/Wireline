@@ -57,8 +57,7 @@ describe("usage rate card", () => {
     for (const [index, id] of (["lite", "standard", "plus"] as const).entries()) {
       const plan = USAGE_TIERS[id];
       const [, selectButton, details] = cards[index];
-      expect(selectButton).toContain("Includes");
-      expect(selectButton).not.toContain(`$${plan.includedWorkUsd}`);
+      expect(selectButton).toContain(`${plan.includedWorkUsd} usage included`);
       expect(selectButton).not.toMatch(/<(?:summary|details|a)\b/);
       expect(details).toContain(`aria-label="${plan.name} Plan Details"`);
       expect(details).toContain(`$${plan.includedWorkUsd} for calls, SMS, email, and Computer`);

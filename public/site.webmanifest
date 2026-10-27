@@ -1,5 +1,5 @@
 {
-  "name": "BotBound | For You. For Your Business.",
+  "name": "BotBound",
   "short_name": "BotBound",
   "description": "Voice Bots with a computer, phone number, and email address.",
   "id": "/",
@@ -8,8 +8,8 @@
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "any",
-  "theme_color": "#0A0A0E",
-  "background_color": "#0A0A0E",
+  "theme_color": "#F7F7F3",
+  "background_color": "#F7F7F3",
   "lang": "en-US",
   "categories": ["productivity", "utilities", "communications"],
   "icons": [

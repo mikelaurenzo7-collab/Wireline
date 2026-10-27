@@ -122,7 +122,8 @@ describe("BotBound static marketing metadata", () => {
       shortcuts: Array<{ name: string; description: string; url: string }>;
     };
 
-    expect(manifest.name).toBe("BotBound | For You. For Your Business.");
+    expect(manifest.name).toBe("BotBound");
+    expect((manifest as { theme_color?: string }).theme_color).toBe("#F7F7F3");
     expect(manifest.short_name).toBe("BotBound");
     expect(manifest.description).toBe(
       "Voice Bots with a computer, phone number, and email address.",
