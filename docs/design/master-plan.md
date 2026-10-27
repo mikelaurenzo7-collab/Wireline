@@ -14,7 +14,7 @@ The owner subsequently authorized account configuration, merging and deploying v
 
 The starting HEAD already contains [DS-A PR #1407](https://github.com/mikelaurenzo7-collab/Wireline/pull/1407). Its parent is `ebb280bd6322401d85b70fb246ad662d4cc3c1f7`. The diff changes only 35 test files: 32 repaired, three deleted. Do not make a duplicate repair PR or delete passing coverage.
 
-The original `uploads/ds-a-triage.md`, `visual-qa-public.md`, `findings.md` and Run 2 notes are not in this checkout or the supplied workspace. The PR body preserves the earlier audit reconciliation, but cannot substitute for independently checking the original list of 30 paths. A fresh literal-path inventory finds 55 absent source paths referenced across tests; many deliberately assert absence, and some are relative to other roots. This is not a count of broken suites. Never delete a test merely because a referenced path is absent.
+The original `uploads/ds-a-triage.md`, `visual-qa-public.md`, `findings.md` and Run 2 notes are not in this checkout or the supplied workspace. The PR body preserves the earlier audit reconciliation, but cannot substitute for independently checking the original list of 30 paths. A fresh literal-path inventory finds 55 absent source paths referenced across tests; many deliberately assert absence, and some are relative to other roots. This is not a count of broken suites. Never delete a test merely because a referenced path is absent. Earlier plan and walkthrough notes were subsequently recovered from [#1408](https://github.com/mikelaurenzo7-collab/Wireline/pull/1408) and [#1417](https://github.com/mikelaurenzo7-collab/Wireline/pull/1417); treat their observations as historical evidence, not a fresh walk of the candidate.
 
 Reconstructed audit corrections from #1407, consistent with inspection of the current tests:
 
@@ -37,6 +37,8 @@ Priorities: P0 blocks trustworthy purchase intent, account access or release; P1
 | P2 PUB-03 | Legal FAQ in `src/data/vertical-wedges.ts` says “Refusal is enforced in the directive layer.” | Remove that internal implementation sentence; retain the clear attorney handoff and no-legal-advice explanation. |
 | P2 PUB-04 | `public/site.webmanifest` uses an older tagline and dark `#0A0A0E`, while `index.html` and the default light canvas use `#F7F7F3`. | Use the current app name/description and default light canvas for launch chrome; preserve install identity, URLs and icons. |
 | P1 QA-01 | `marketing-metadata-contract` and the channel-branch case in `usage-pricing-note.test.tsx` still require retired pricing UI. | Repair assertions to require the current three-tier shared-work offer, including when availability returns a legacy billing model. Do not reintroduce retired prices to satisfy tests. |
+| P1 VOICE-01 | #1411's proposed price filter matches a customer's `$19/month`, `$190` and `$1900` prices. Seven failures reproduced in 17 focused regression cases. | Require an identifiable platform offer and complete amount; retain business facts beside retired offers in knowledge. Corrected on #1411 with phone/browser composition coverage. |
+| P1 STUDIO-01 | #1420 removes the unavailable notice from standalone Computer and says an unconfigured Computer turns on with the Bot. | Show one actionable setup notice. Suppress the browser-panel duplicate only when work chat owns the notice. Corrected on #1420. |
 
 ## Reported items requiring no blind rewrite
 
@@ -89,9 +91,27 @@ Copy diet (P1): short labels; one sentence of direction; keep terms needed to un
 
 1. **DS-A:** already merged as #1407 before this task. Reverify its exact changed suites and tests-only scope; report corrections rather than repeat it.
 2. **Master plan:** documentation PR containing this plan and its single index link. Remains incomplete until missing reports and real walkthrough are incorporated.
-3. **Tokens/primitives:** no speculative PR. Open only for a measured target, contrast or layout defect.
-4. **Public storefront:** PUB-01–04 plus stale pricing test repair. Keep this independent of auth, settings and infrastructure.
-5. **Auth/onboarding; app shell/Studio; Insights; settings/billing/states:** separate PRs only after their current defects are reproduced. Call out any permission, capacity, schedule or team behavior change explicitly.
+3. **Tokens/primitives:** inspect existing #1414; its width-based 44px height rule does not establish target width or rendered geometry. No additional speculative token PR.
+4. **Public storefront:** continue #1409 for PUB-01–04 plus stale pricing tests. Do not merge overlapping #1418 without reconciling its content and evidence.
+5. **Auth/onboarding; app shell/Studio; Insights; settings/billing/states:** review the existing area PRs below instead of duplicating them. Call out any permission, capacity, schedule or team behavior change explicitly.
+
+### Existing PR disposition
+
+| Priority | PR | Independent decision |
+| --- | --- | --- |
+| P2 | [#1408](https://github.com/mikelaurenzo7-collab/Wireline/pull/1408), [#1417](https://github.com/mikelaurenzo7-collab/Wireline/pull/1417) | Earlier plan and walkthrough recovered. This consolidated plan incorporates their existence and unresolved results; do not merge competing versions of the same document. |
+| P1 | [#1409](https://github.com/mikelaurenzo7-collab/Wireline/pull/1409) | Updated with pricing metadata parity, legal FAQ copy and current-offer tests. Eight files / 92 assertions pass. Existing PR screenshots predate this correction. |
+| P1 | [#1410](https://github.com/mikelaurenzo7-collab/Wireline/pull/1410), [#1419](https://github.com/mikelaurenzo7-collab/Wireline/pull/1419) | Overlapping auth alternatives. #1419 clears plain signup intent to null while `recommendedPlanFromIntent(null)` still returns Personal. Require full default Starter persistence and explicit-tier tests before accepting it. |
+| P1 | [#1411](https://github.com/mikelaurenzo7-collab/Wireline/pull/1411) | Updated to preserve customer prices and valid knowledge around old offers. Ten files / 90 assertions pass. New-Bot weekday defaults are an explicit behavior change; existing empty schedules remain unchanged. Call-specific root cause and greeting/personality inputs remain unverified. |
+| P1 | [#1412](https://github.com/mikelaurenzo7-collab/Wireline/pull/1412) | Two nested scroll owners removed; needs populated content and nested-container validation because flex/overflow-hidden wrappers remain. |
+| P1 | [#1413](https://github.com/mikelaurenzo7-collab/Wireline/pull/1413) | Do not merge unchanged: unconditional outbound carrier-pending copy does not read account readiness; public readiness direction has been superseded; team “coming soon” is an unsupported future promise. |
+| P1 | [#1414](https://github.com/mikelaurenzo7-collab/Wireline/pull/1414) | Measure width as well as height and enlarged-text layout. Source-string tests do not establish usable touch targets. |
+| P1 | [#1415](https://github.com/mikelaurenzo7-collab/Wireline/pull/1415) | Retargets deleted footer checks; remains a dependency of #1418–20. Its two repaired suites do not resolve the full 28-file baseline. |
+| P2 | [#1416](https://github.com/mikelaurenzo7-collab/Wireline/pull/1416) | A dev billing-response flag and POSIX-only npm command are not necessary to change production design. Prefer isolated test fixtures; retain the no-billing-change boundary. |
+| P2 | [#1418](https://github.com/mikelaurenzo7-collab/Wireline/pull/1418) | Overlaps #1409, replaces concrete examples with decoration, and adds public carrier-pending copy. Needs reconciliation with purposeful graphics and the latest marketing direction. |
+| P1 | [#1420](https://github.com/mikelaurenzo7-collab/Wireline/pull/1420) | Corrected the hidden standalone setup notice and automatic-activation implication. Two existing files / 44 assertions, changed-file ESLint, application TypeScript, production build and server import smoke pass. Rendered evidence remains outstanding. |
+
+The recovered #1417 walkthrough covers 390 and 1280 only. It reports a Billing `link-in-text-block` violation, an onboarding `scrollable-region-focusable` violation, and a setup input extending beyond the 390px viewport. These P1 items require reproduction and repair; the earlier walk is not a zero-violation release gate. Screenshots linked in #1409 provide historical before/after evidence but not certification of updated heads. No new screenshot, axe or Lighthouse result is claimed here.
 
 For each product PR: capture untouched-base and final screenshots at 390 and 1280, and walk 390/768/1280/1440. Use the same route, appearance, account data and state; include light/dark, 200% text, keyboard/focus and reduced motion where affected. axe must report zero violations. Check document and nested container widths, not merely `body` overflow. Measure Lighthouse mobile under the same production-build conditions before/after; the supplied approximate 86/83/85 for home/pricing/signup are reference values, not a freshly measured baseline. Keep raw reports and screenshots outside Git and link review artifacts.
 
