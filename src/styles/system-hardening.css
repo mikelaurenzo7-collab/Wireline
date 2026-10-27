@@ -197,13 +197,18 @@ summary {
   );
 }
 
-:focus-visible {
+/* Form fields are excluded from the offset outline + halo: fields carry
+ * their own flush focus in the atoms (border takes the focus color, ring
+ * sits on the box). Stacking an offset outline on top drew a second ring
+ * floating off the field with a gap — the QA B4 eyesore. Buttons, links,
+ * and other controls keep the offset ring. */
+:focus-visible:not(input, textarea, select) {
   outline: var(--wireline-interaction-focus-width, 2px) solid var(--wireline-color-focus-default);
   outline-offset: var(--wireline-interaction-focus-offset, 2px);
 }
 
 @supports (box-shadow: 0 0 0 4px color-mix(in srgb, white 10%, transparent)) {
-  :focus-visible {
+  :focus-visible:not(input, textarea, select) {
     box-shadow: 0 0 0 var(--wireline-interaction-focus-haloWidth, 4px)
       color-mix(in srgb, var(--wireline-color-focus-default) 20%, transparent);
   }

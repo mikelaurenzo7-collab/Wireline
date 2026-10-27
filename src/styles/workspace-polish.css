@@ -41,7 +41,10 @@
   gap: 0.5rem;
 }
 
-.wl-workspace-shell :where(a, button, input, textarea, select, [role="button"]):focus-visible {
+/* Buttons and links only: form fields focus flush via the atoms (see
+ * system-hardening.css) — an offset outline + halo on a field floats off
+ * the box (QA B4). */
+.wl-workspace-shell :where(a, button, [role="button"]):focus-visible {
   outline: 2px solid var(--wireline-color-focus-default);
   outline-offset: 3px;
   box-shadow: 0 0 0 5px color-mix(in srgb, var(--wireline-color-focus-default) 18%, transparent);
