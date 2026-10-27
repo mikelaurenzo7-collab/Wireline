@@ -61,11 +61,16 @@ export default function ChannelAccessNotice({
       </StatusNotice>
     );
   }
-  // SMS is included. A payment problem is the only SMS hold shown here.
-  if (channel === "sms") return null;
-  // Match the tab names owners see: Calls and Email.
+  // Match the tab names owners see: Calls, Texts, and Email. SMS used to
+  // return null here, which is why the Inbox SMS tab resolved to a blank
+  // dead end on accounts without the channel: the gate existed, its
+  // explanation was deleted. Every channel now renders its state.
   const notIncludedTitle =
-    channel === "voice" ? "Calls Aren't in Your Plan" : "Email Isn't in Your Plan";
+    channel === "voice"
+      ? "Calls Aren't in Your Plan"
+      : channel === "sms"
+        ? "Texts Aren't in Your Plan"
+        : "Email Isn't in Your Plan";
   const hasPlan = Boolean(access.data?.plan_id);
   return (
     <StatusNotice

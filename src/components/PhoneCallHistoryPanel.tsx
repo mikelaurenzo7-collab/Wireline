@@ -133,8 +133,8 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
 
   const livePhone = relevantAgents.find((agent) => agent.phone_number)?.phone_number ?? null;
   const setupHref = agentId
-    ? `/phone?tab=setup&agent=${encodeURIComponent(agentId)}`
-    : "/phone?tab=setup";
+    ? `/phone?tab=lines&agent=${encodeURIComponent(agentId)}`
+    : "/phone?tab=lines";
   const outboundHref = agentId
     ? `/phone?tab=outbound&agent=${encodeURIComponent(agentId)}`
     : "/phone?tab=outbound";

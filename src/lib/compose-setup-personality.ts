@@ -32,3 +32,40 @@ export function composeSetupPersonality(
   });
   return replaced ? updated.trimEnd() : `${existing}\n\n${DELIVERY_TONE_MARKER}\n${toneLine}`;
 }
+
+const KNOWN_TONE_LABELS: Record<string, string> = {
+  business: "Clear and professional",
+  clear: "Clear and professional",
+  professional: "Clear and professional",
+  personal: "Warm and natural",
+  warm: "Warm and natural",
+  friendly: "Friendly and conversational",
+  concise: "Concise and direct",
+  playful: "Playful",
+  authoritative: "Authoritative",
+  polished: "Polished",
+  energetic: "Energetic",
+};
+
+/**
+ * The one delivery-tone derivation. Every surface (Studio Summary, Setup,
+ * Knowledge) renders tone through this resolver: the label comes from the
+ * saved DELIVERY TONE stanza's first segment, mapped through the known-tone
+ * table. No stanza -> "Not set" — surfaces used to invent three different
+ * answers here (a lookup, a random first sentence, a hardcoded fallback).
+ * (Tone becomes a stored field with the schema pass; until then this
+ * resolver is the single source the surfaces share.)
+ */
+export function resolveDeliveryToneLabel(personality?: string | null): string {
+  const raw = personality ?? "";
+  if (!new RegExp(`(?:^|\n)${DELIVERY_TONE_MARKER}`, "i").test(raw)) return "Not set";
+  const value = readSetupDeliveryTone(raw);
+  const sentence = value.split(/[.
+]/)[0]?.trim() ?? "";
+  if (!sentence) return "Not set";
+  const normalized = sentence.toLowerCase().replace(/[\s_-]+/g, " ");
+  return (
+    KNOWN_TONE_LABELS[normalized] ??
+    (sentence.length > 80 ? `${sentence.slice(0, 77).trimEnd()}…` : sentence)
+  );
+}

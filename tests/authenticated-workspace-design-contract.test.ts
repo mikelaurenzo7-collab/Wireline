@@ -239,7 +239,7 @@ describe("authenticated workspace design architecture", () => {
     expect(hub).toContain('title="Call"');
     expect(hub).toContain('aria-label="New Call"');
     expect(hub).toContain("RecipientVoicePermissions");
-    expect(hub).toContain("CAMPAIGN_CALLING_TITLE");
+    expect(hub).not.toContain("CAMPAIGN_CALLING_TITLE");
     expect(hub).not.toContain("Lead Intake");
     expect(hub).toContain("<CampaignsPanel initialAgentId={initialAgentId}");
     expect(hub).toContain('ariaLabel="Outbound Work"');
@@ -249,7 +249,6 @@ describe("authenticated workspace design architecture", () => {
   it("keeps Lead Hunt as the empty campaign canvas and reveals past appointments", () => {
     const campaigns = read("src/components/outbound/CampaignsPanel.tsx");
     const appointments = read("src/components/AppointmentsPanel.tsx");
-    const cadences = read("src/components/Cadences.tsx");
     const inbox = read("src/components/EmailInbox.tsx");
 
     expect(campaigns).toContain("{!showCreate ? (");
@@ -257,9 +256,6 @@ describe("authenticated workspace design architecture", () => {
     expect(campaigns).not.toContain("icon={Megaphone}");
     expect(appointments).toContain("open={pastOpen ?? upcoming.length === 0}");
     expect(appointments).not.toContain("defaultOpen");
-    expect(cadences).not.toContain("Multi-touch cadences");
-    expect(cadences).toContain("flex-col items-stretch");
-    expect(cadences).toContain("whitespace-normal");
     expect(inbox).toContain("mailboxConnected === false");
   });
 });

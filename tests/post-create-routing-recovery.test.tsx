@@ -222,7 +222,7 @@ describe("setup guide requires confirmed calling", () => {
       await mount();
       if (route === "picker") {
         button("Choose a number")?.props.onClick?.();
-        expect(h.navigate).toHaveBeenCalledWith("/phone?tab=setup&agent=bot");
+        expect(h.navigate).toHaveBeenCalledWith("/phone?tab=lines&agent=bot");
       } else {
         const launchLater = button("Launch later");
         expect(launchLater).toBeDefined();
@@ -231,7 +231,7 @@ describe("setup guide requires confirmed calling", () => {
         const phoneSetup = elements(render()).find(
           (element) => element.type === "a" && text(element) === "Get a number",
         );
-        expect(phoneSetup?.props.to).toBe("/phone?tab=setup&agent=bot");
+        expect(phoneSetup?.props.to).toBe("/phone?tab=lines&agent=bot");
       }
       expect(h.fetch.mock.calls.some(([url]) => url === "/api/phone-numbers/provision")).toBe(
         false,

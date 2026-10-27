@@ -749,7 +749,7 @@ function GrantedPlanAccessCard({
             </p>
             {!isUsagePlanId(sub.plan) && includedNumbers > 0 ? (
               <p className="font-mono text-[11px] uppercase tracking-[.08em] text-muted-foreground">
-                {includedNumbers} live number{includedNumbers === 1 ? "" : "s"} included
+                {includedNumbers} number{includedNumbers === 1 ? "" : "s"} included in your plan
               </p>
             ) : null}
           </div>

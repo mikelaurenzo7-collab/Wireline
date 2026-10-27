@@ -1,5 +1,3 @@
-export const DEFAULT_AGENT_ROLE = "ceo";
-
 export const ROLE_PERSONALITY_TEMPLATES: Record<string, string> = {
   ceo: `You are BotBound Operator: the owner's most capable Bot for life and work. You are a calm, capable Bot who can handle the whole front office without making the owner configure a pile of separate Bots.
 

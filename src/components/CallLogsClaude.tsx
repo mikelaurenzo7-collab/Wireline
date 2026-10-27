@@ -322,7 +322,14 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
           <ul className="divide-y divide-border">
             {visibleCalls.map((call) => {
               const active = call.id === selectedId;
-              const meta = [call.agent_name, formatDuration(call.duration_seconds)]
+              // A missed call has no duration to show: the provider's
+              // ring/attempt seconds on missed rows (29s, 6s, 4s) read as
+              // talk time the call never had. The outcome is the taxonomy's
+              // (reportHappened, same row) — suppress on the missed set.
+              const meta = [
+                call.agent_name,
+                reportHappened(call) === "missed" ? "" : formatDuration(call.duration_seconds),
+              ]
                 .filter(Boolean)
                 .join(" · ");
               return (

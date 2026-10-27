@@ -94,7 +94,7 @@ export const OPS_CHANNEL_EMPTY = {
   phone: {
     title: "No Calls Yet",
     actions: [
-      { label: "Configure a Number", to: "/phone?tab=setup", primary: true },
+      { label: "Configure a Number", to: "/phone?tab=lines", primary: true },
       { label: "Start Outbound", to: "/phone?tab=outbound" },
     ],
   },
@@ -104,7 +104,7 @@ export const OPS_CHANNEL_EMPTY = {
   sms: {
     title: "No SMS Yet",
     actions: [
-      { label: "Configure SMS Sender", to: "/phone?tab=setup", primary: true },
+      { label: "Configure SMS Sender", to: "/phone?tab=lines", primary: true },
       { label: "Start Outbound", to: "/phone?tab=outbound" },
     ],
   },
@@ -460,7 +460,6 @@ export const OPS_ADMIN = {
     carrier: "Carrier & Routing",
     subscription: "Billing",
     team: "Team Access",
-    flywheel: "Growth Engine",
     system: "System Health",
     activity: "Audit Activity",
   },
@@ -554,7 +553,7 @@ export const OPS_INSIGHTS_GROUPS = [
   {
     id: "performance",
     label: "Performance",
-    tabs: ["funnel", "calls", "goals", "heatmap", "leaderboard"] as const,
+    tabs: ["funnel", "goals"] as const,
   },
   {
     id: "reliability",
@@ -564,12 +563,12 @@ export const OPS_INSIGHTS_GROUPS = [
   {
     id: "quality",
     label: "Quality",
-    tabs: ["failures"] as const,
+    tabs: ["quality"] as const,
   },
   {
-    id: "revenue",
+    id: "sources",
     label: "Sources",
-    tabs: ["attribution", "topics"] as const,
+    tabs: ["topics"] as const,
   },
 ] as const;
 
@@ -600,39 +599,11 @@ export const OPS_INSIGHTS_EMPTY = {
       { label: "Workspace", to: "/studio" },
     ],
   },
-  leaderboard: {
-    title: "No Ranked Bots",
-    actions: [
-      { label: "Create Bot", to: "/studio", primary: true },
-      { label: "Call History", to: "/phone?tab=logs" },
-    ],
-  },
-  latency: {
-    title: "No Latency Samples",
-    actions: [
-      { label: "Workspace", to: "/studio", primary: true },
-      { label: "Call History", to: "/phone?tab=logs" },
-    ],
-  },
   reliability: {
     title: "No Reliability Samples",
     actions: [
       { label: "Workspace", to: "/studio", primary: true },
       { label: "Call History", to: "/phone?tab=logs" },
-    ],
-  },
-  spend: {
-    title: "No AI Usage",
-    actions: [
-      { label: "Workspace", to: "/studio", primary: true },
-      { label: "Calls", to: "/phone" },
-    ],
-  },
-  attribution: {
-    title: "No Tagged Calls",
-    actions: [
-      { label: "Call Setup", to: "/phone?tab=setup", primary: true },
-      { label: "Call", to: "/phone?tab=outbound" },
     ],
   },
   quality: {
@@ -642,22 +613,11 @@ export const OPS_INSIGHTS_EMPTY = {
       { label: "Workspace", to: "/studio" },
     ],
   },
-  heatmap: {
-    title: "No Call Activity",
-    actions: [
-      { label: "Call History", to: "/phone?tab=logs", primary: true },
-      { label: "Workspace", to: "/studio" },
-    ],
-  },
   topics: {
     title: "Not Enough Calls",
     actions: [
       { label: "Call History", to: "/phone?tab=logs", primary: true },
       { label: "Workspace", to: "/studio" },
     ],
-  },
-  failureModesOk: {
-    title: "No Failure Clusters",
-    actions: [{ label: "Calls", to: "/phone?tab=logs", primary: true }],
   },
 } as const;

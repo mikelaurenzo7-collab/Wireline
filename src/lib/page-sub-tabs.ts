@@ -1,23 +1,18 @@
 import type { ComponentType } from "react";
 import {
-  AlertOctagon,
   BarChart3,
-  BookOpen,
   Calendar,
   CalendarClock,
-  Gauge,
+  Settings,
   ShieldAlert,
   History,
   Layers,
   Megaphone,
   Phone,
   PhoneOutgoing,
-  Receipt,
-  Repeat,
   Star,
   Target,
   TrendingUp,
-  Trophy,
   Zap,
 } from "lucide-react";
 import { OPS_INSIGHTS_GROUPS } from "./wireline-ops-design";
@@ -48,7 +43,7 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
     layoutIdPrefix: "phone-section",
     tabs: [
       { id: "logs", label: "History", icon: History },
-      { id: "reports", label: "Reports", icon: BookOpen },
+      { id: "settings", label: "Settings", icon: Settings },
       {
         id: "outbound",
         label: "Outbound",
@@ -56,7 +51,7 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
         ariaLabel: "Outbound",
         icon: PhoneOutgoing,
       },
-      { id: "setup", label: "Lines", icon: Phone },
+      { id: "lines", label: "Lines", icon: Phone },
     ],
   },
   {
@@ -91,7 +86,7 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
       },
       { id: "quality", label: "Quality", shortLabel: "Quality", ariaLabel: "Quality", icon: Star },
       {
-        id: "revenue",
+        id: "sources",
         label: "Sources",
         shortLabel: "Sources",
         ariaLabel: "Sources",
@@ -115,7 +110,12 @@ export function resolveAppPageSubTabRoute(pathname: string): AppPageSubTabRoute 
 }
 
 /** Human-friendly ?tab= values from docs, emails, and legacy links. */
-const APP_PAGE_TAB_ALIASES: Partial<Record<string, Record<string, string>>> = {};
+const APP_PAGE_TAB_ALIASES: Partial<Record<string, Record<string, string>>> = {
+  // Renamed 2026-10-26 (IA-3): tab ids now match their labels; the internal
+  // ids below keep resolving so old links, emails, and bookmarks land right.
+  "/phone": { setup: "lines", reports: "settings" },
+  "/insights": { revenue: "sources" },
+};
 
 export function normalizeAppPageSubTabParam(
   route: AppPageSubTabRoute,
@@ -153,24 +153,7 @@ export type AppPageSecondaryTabRoute = {
 
 export const INSIGHTS_VIEW_TABS: Record<string, AppPageSubTab> = {
   funnel: { id: "funnel", label: "Totals", icon: TrendingUp },
-  calls: { id: "calls", label: "Calls", icon: Phone },
   goals: { id: "goals", label: "Goals", icon: Target },
-  heatmap: {
-    id: "heatmap",
-    label: "Heatmap",
-    shortLabel: "Heat",
-    ariaLabel: "Heatmap",
-    icon: Calendar,
-  },
-  leaderboard: {
-    id: "leaderboard",
-    label: "Leaderboard",
-    shortLabel: "Ranks",
-    ariaLabel: "Leaderboard",
-    icon: Trophy,
-  },
-  failures: { id: "failures", label: "Failures", icon: AlertOctagon },
-  latency: { id: "latency", label: "Latency", icon: Gauge },
   reliability: {
     id: "reliability",
     label: "Reliability",
@@ -185,22 +168,7 @@ export const INSIGHTS_VIEW_TABS: Record<string, AppPageSubTab> = {
     ariaLabel: "Scorecards",
     icon: Star,
   },
-  learning: { id: "learning", label: "Learning", icon: BookOpen },
-  attribution: {
-    id: "attribution",
-    label: "Attribution",
-    shortLabel: "Attrib",
-    ariaLabel: "Attribution",
-    icon: Megaphone,
-  },
   topics: { id: "topics", label: "Topics", icon: Layers },
-  spend: {
-    id: "spend",
-    label: "AI Spend",
-    shortLabel: "Spend",
-    ariaLabel: "AI Spend",
-    icon: Receipt,
-  },
 };
 
 export const OUTBOUND_VIEW_TABS: AppPageSubTab[] = [
@@ -211,14 +179,6 @@ export const OUTBOUND_VIEW_TABS: AppPageSubTab[] = [
     shortLabel: "Camps",
     ariaLabel: "Hunt",
     icon: Megaphone,
-  },
-  { id: "sequences", label: "Sequences", shortLabel: "Seq", ariaLabel: "Sequences", icon: Repeat },
-  {
-    id: "callbacks",
-    label: "Callbacks",
-    shortLabel: "Cbks",
-    ariaLabel: "Callbacks",
-    icon: CalendarClock,
   },
 ];
 

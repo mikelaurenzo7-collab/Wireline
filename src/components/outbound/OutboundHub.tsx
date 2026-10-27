@@ -3,7 +3,6 @@ import { ChevronDown, Phone } from "lucide-react";
 import OutboundDialDialog from "../OutboundDialDialog";
 import { Button } from "../atoms";
 import { EmptyState } from "../ui/EmptyState";
-import { CAMPAIGN_CALLING_TITLE } from "../../lib/product-copy";
 import RecipientVoicePermissions from "./RecipientVoicePermissions";
 import CampaignsPanel from "./CampaignsPanel";
 import { WorkspaceTabStrip } from "../layout/WorkspaceTabStrip";
@@ -20,22 +19,8 @@ export default function OutboundHub({
   const [showDial, setShowDial] = useState(false);
   const [showPermissions, setShowPermissions] = useState(false);
 
-  // Keep older, unsupported bookmarks recoverable without starting outbound work.
-  if (activeView !== "dispatch" && activeView !== "campaigns") {
-    return (
-      <div className="flex flex-1 items-center justify-center p-6">
-        <EmptyState
-          icon={Phone}
-          title={CAMPAIGN_CALLING_TITLE}
-          description="Your Bot answers calls and places them. BotBound screens the list."
-          framed
-          density="compact"
-          withHalo={false}
-          actions={[{ label: "Call", onClick: () => onViewChange("dispatch"), primary: true }]}
-        />
-      </div>
-    );
-  }
+  // Retired views (sequences / callbacks) resolve to Dispatch upstream —
+  // every non-Campaigns view renders the Dispatch surface below.
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

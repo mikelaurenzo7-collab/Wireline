@@ -12,7 +12,6 @@ const MARKETING_PUBLIC_PATHS = new Set([
   "/contact",
   "/showcase",
   "/developers",
-  "/blog",
   "/changelog",
   "/security",
   "/trust",
@@ -25,7 +24,7 @@ const MARKETING_PUBLIC_PATHS = new Set([
   "/404",
 ]);
 
-const MARKETING_PUBLIC_PREFIXES = ["/blog/", "/for/", "/solutions/", "/use-cases/", "/trust/"];
+const MARKETING_PUBLIC_PREFIXES = ["/for/", "/solutions/", "/use-cases/", "/trust/"];
 
 /** Broader marketing surface — must not block on session hydration. */
 export function isMarketingPublicPath(pathname: string): boolean {

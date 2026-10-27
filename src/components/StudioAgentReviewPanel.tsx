@@ -9,7 +9,7 @@ import { authFetch } from "../lib/api";
 import { formatAgentRoleLabel, SMS_LAUNCH_UI_ENABLED } from "../lib/product-copy";
 import { resolveVoiceLabel } from "../lib/voice-catalog";
 import { resolveAgentGreeting } from "../lib/agent-greeting";
-import { readSetupDeliveryTone } from "../lib/compose-setup-personality";
+import { resolveDeliveryToneLabel } from "../lib/compose-setup-personality";
 import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
 import { useChannelEntitlements } from "../hooks/useChannelEntitlements";
 import ChannelAccessNotice from "./ChannelAccessNotice";
@@ -50,30 +50,6 @@ type MailboxState = {
   email: string | null;
   error?: string;
 };
-
-function toneLabel(personality?: string | null) {
-  const value = readSetupDeliveryTone(personality);
-  if (!value) return "Clear and professional";
-
-  const sentence = value.split(/[.\n]/)[0]?.trim() || "Clear and professional";
-  const normalized = sentence.toLowerCase().replace(/[\s_-]+/g, " ");
-  const knownTone: Record<string, string> = {
-    business: "Clear and professional",
-    clear: "Clear and professional",
-    professional: "Clear and professional",
-    personal: "Warm and natural",
-    warm: "Warm and natural",
-    friendly: "Friendly and conversational",
-    concise: "Concise and direct",
-    playful: "Playful",
-    authoritative: "Authoritative",
-    polished: "Polished",
-    energetic: "Energetic",
-  };
-  if (knownTone[normalized]) return knownTone[normalized];
-
-  return sentence.length > 80 ? `${sentence.slice(0, 77).trimEnd()}…` : sentence;
-}
 
 export default function StudioAgentReviewPanel({
   agentId,
@@ -344,7 +320,7 @@ export default function StudioAgentReviewPanel({
             <dl className="divide-y divide-border">
               {[
                 { label: "Role", value: role },
-                { label: "Tone", value: toneLabel(config?.personality) },
+                { label: "Tone", value: resolveDeliveryToneLabel(config?.personality) },
                 {
                   label: "Greeting",
                   value:
@@ -542,7 +518,7 @@ export default function StudioAgentReviewPanel({
             <div className="grid text-sm">
               {access.includes("voice") ? (
                 <Link
-                  to={`/phone?tab=setup&agent=${encodeURIComponent(agentId)}#company-identity`}
+                  to={`/phone?tab=lines&agent=${encodeURIComponent(agentId)}#company-identity`}
                   className="flex min-h-11 items-center rounded-md font-medium text-primary hover:underline wl-focus-ring-halo"
                 >
                   Caller Identity
