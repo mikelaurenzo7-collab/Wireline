@@ -32,7 +32,6 @@ import {
 import { clampRuntimePromptPreservingTail } from "../agent-runtime-helpers";
 import {
   currentPricingPromptBlock,
-  isStaleBotBoundPricing,
   withoutStaleBotBoundPricing,
 } from "../usage-billing-catalog";
 import {
@@ -297,7 +296,10 @@ export function composeOpenAILiveInstructions(
         ? ""
         : listBlock(
             "INITIAL APPROVED KNOWLEDGE",
-            knowledge.filter((item) => !isStaleBotBoundPricing(item.content ?? "")),
+            knowledge.map((item) => ({
+              ...item,
+              content: withoutStaleBotBoundPricing(item.content ?? ""),
+            })),
             MAX_INITIAL_KNOWLEDGE_ITEMS,
           ),
       `\n${RUNTIME_ACTION_SAFETY_BLOCK}`,

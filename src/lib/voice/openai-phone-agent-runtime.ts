@@ -31,7 +31,6 @@ import { drizzle, serialQueryBatch } from "../server-context";
 import { validateNativeCalendarSettings } from "../native-calendar-policy";
 import {
   currentPricingPromptBlock,
-  isStaleBotBoundPricing,
   withoutStaleBotBoundPricing,
 } from "../usage-billing-catalog";
 import {
@@ -382,7 +381,10 @@ export function composeOpenAIRealtimeInstructions(input: {
         ? ""
         : listBlock(
             "INITIAL APPROVED KNOWLEDGE",
-            input.knowledge.filter((item) => !isStaleBotBoundPricing(item.content ?? "")),
+            input.knowledge.map((item) => ({
+              ...item,
+              content: withoutStaleBotBoundPricing(item.content ?? ""),
+            })),
             MAX_INITIAL_KNOWLEDGE_ITEMS,
           ),
       `\n${RUNTIME_ACTION_SAFETY_BLOCK}`,
