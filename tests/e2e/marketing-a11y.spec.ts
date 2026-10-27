@@ -30,7 +30,7 @@ test("homepage mobile product and access path has clear branding and no serious 
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
   await expect(page.getByRole("link", { name: "BotBound home" })).toBeVisible();
   const actions = page.locator(".landing-prestige__hero .landing-prestige__actions");
-  await expect(actions.getByRole("link", { name: "GET YOUR SALES BOT" })).toBeVisible();
+  await expect(actions.getByRole("link", { name: "Get Started" })).toBeVisible();
   await expect(actions.getByRole("link", { name: "See Pricing", exact: true })).toBeVisible();
 
   const results = await new AxeBuilder({ page }).include("main").analyze();
@@ -48,13 +48,13 @@ test("homepage promise and access path stay centered inside the desktop viewport
   await gotoHomepageWithMain(page);
 
   const headline = page.getByRole("heading", {
-    name: "YOUR VOICE BOT FOR YOUR WORK.",
+    name: "Your Voice Bot for Your Work.",
     exact: true,
   });
   await expect(headline).toBeVisible();
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
   await expect(page.locator(".landing-prestige__identity-line")).toHaveText(
-    "A Phone Number. An Email Address. A Computer.",
+    "A phone number, an email address, and a computer.",
   );
   await expect(page.locator(".landing-prestige__description")).toHaveCount(0);
   await expect(page.locator(".landing-prestige__directions")).toHaveCount(0);
@@ -100,10 +100,10 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
   const calls = page.getByRole("tab", { name: "Calls", exact: true });
   await expect(calls).toBeFocused();
   await expect(calls).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByRole("tabpanel")).toContainText("Choose A Voice. Or Clone Your Own.");
+  await expect(page.getByRole("tabpanel")).toContainText("Choose a voice, or clone your own.");
   await calls.press("ArrowRight");
   await expect(page.getByRole("tab", { name: "SMS", exact: true })).toBeFocused();
-  await expect(page.getByRole("tabpanel")).toContainText("Keep The Conversation Going.");
+  await expect(page.getByRole("tabpanel")).toContainText("Keep the conversation going.");
   await page.getByRole("tab", { name: "Email", exact: true }).hover();
   await expect(page.getByRole("link", { name: "Explore Email" })).toHaveAttribute(
     "href",
@@ -116,7 +116,7 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
   await expect(page.getByRole("link", { name: "Explore Calls" })).toBeVisible();
   const start = page
     .locator(".landing-prestige__hero .landing-prestige__actions")
-    .getByRole("link", { name: "GET YOUR SALES BOT" });
+    .getByRole("link", { name: "Get Started" });
   await start.click();
   await expect(page).toHaveURL(/\/signup$/);
   await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
@@ -131,7 +131,7 @@ test("homepage channels stay clear and readable without decorative labels at 320
 
   const hero = page.locator(".landing-prestige__hero");
   const description = hero.locator(".landing-prestige__identity-line");
-  await expect(description).toHaveText("A Phone Number. An Email Address. A Computer.");
+  await expect(description).toHaveText("A phone number, an email address, and a computer.");
   await expect(hero.locator("p")).toHaveCount(1);
   await expect(hero.getByText("Choose calls, email, or both.", { exact: true })).toHaveCount(0);
   await expect(hero.getByText("For life. For work.", { exact: true })).toHaveCount(0);
@@ -141,7 +141,7 @@ test("homepage channels stay clear and readable without decorative labels at 320
       .locator(".landing-prestige__role-card")
       .getByText(/^(For You|For Your Business|Your Choice)$/),
   ).toHaveCount(0);
-  await expect(hero.getByRole("link", { name: "GET YOUR SALES BOT" })).toHaveAttribute("href", "/signup");
+  await expect(hero.getByRole("link", { name: "Get Started" })).toHaveAttribute("href", "/signup");
   await expect(
     page.getByRole("tablist", { name: "Bot capabilities" }).getByRole("tab"),
   ).toHaveCount(4);
@@ -210,7 +210,7 @@ test("homepage channels stay clear and readable without decorative labels at 320
     expect(line.left).toBeGreaterThanOrEqual(0);
     expect(line.right).toBeLessThanOrEqual(enlarged.width);
   }
-  await expect(hero.getByRole("link", { name: "GET YOUR SALES BOT" })).toBeVisible();
+  await expect(hero.getByRole("link", { name: "Get Started" })).toBeVisible();
   await page.screenshot({
     path: info.outputPath("landing-channels-320-enlarged.png"),
     fullPage: true,

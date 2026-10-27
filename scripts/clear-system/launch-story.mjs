@@ -123,7 +123,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /A Phone Number\. An Email Address\. A Computer\./,
+    /A phone number, an email address, and a computer\./,
     "landing must describe the calling, email and Computer product family",
   );
   mustExclude(

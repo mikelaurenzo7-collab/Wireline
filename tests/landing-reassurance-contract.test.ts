@@ -16,6 +16,6 @@ describe("minimal landing launch clarity", () => {
     expect(landing).toContain('role="tabpanel"');
     for (const key of ["ArrowRight", "ArrowLeft", "Home", "End"]) expect(landing).toContain(key);
     expect(landing).toContain("onClick={() => setSelected(index)}");
-    expect(landing).toContain("Choose A Voice. Or Clone Your Own.");
+    expect(landing).toContain("Choose a voice, or clone your own.");
   });
 });

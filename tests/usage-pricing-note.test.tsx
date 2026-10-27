@@ -52,25 +52,26 @@ beforeEach(() => {
 });
 
 describe("pricing branch notes", () => {
-  it("shows the shared-work note on the usage branch", () => {
+  it("shows included work on each card and does not restate it in a paragraph", () => {
     availability.billingModel = "usage";
     const html = renderPricing();
-    expect(html).toContain(sharedWorkNote());
-    expect(html).toContain("Lite is $12/month with $4 of included work");
-    expect(html).toContain("Starter is $24/month with $14 of included work");
-    expect(html).toContain("and Plus is $49/month with $36 of included work");
-    expect(html).toContain("Calls, texts, email, and Computer share that work.");
-    expect(html).toContain("Extra numbers are $3/month and extra email addresses are $4/month.");
+    expect(html).toContain("$4 usage included");
+    expect(html).toContain("$14 usage included");
+    expect(html).toContain("$36 usage included");
+    expect(html).toContain("$12");
+    expect(html).toContain("$24");
+    expect(html).toContain("$49");
+    expect(html).not.toContain(sharedWorkNote());
+    expect(html).not.toContain("Runtime Balance");
     expect(html).not.toContain("Extra minutes are");
     expect(html).not.toContain("botbound_work_credits");
   });
 
-  it("keeps the prepaid minute line on the channel branch", () => {
+  it("keeps the same cards when checkout is still on the plans model", () => {
     availability.billingModel = "plans";
     const html = renderPricing();
-    expect(html).toContain(
-      "Extra minutes are $0.22/min, paid from Runtime Balance you add ahead of time.",
-    );
-    expect(html).not.toContain("Lite is $12/month with $4 of included work");
+    expect(html).toContain("$4 usage included");
+    expect(html).not.toContain("Runtime Balance");
+    expect(html).not.toContain("Extra minutes are");
   });
 });

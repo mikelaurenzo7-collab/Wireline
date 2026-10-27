@@ -180,7 +180,7 @@ describe("E2E design and BotBound brand polish", () => {
     // Controls use authored Title Case like every other public CTA.
     expect(features).toContain("const signedIn = Boolean(useAuth().user)");
     expect(features).toContain('to={signedIn ? "/studio" : "/signup"}');
-    expect(features).toContain('{signedIn ? "Open Workspace" : "GET YOUR SALES BOT"}');
+    expect(features).toContain('{signedIn ? "Open Workspace" : "Get Started"}');
     expect(features).toContain(">\n                See Pricing\n");
     expect(features).not.toMatch(/START FREE|SEE PRICING/);
     const publicSystem = read("src/styles/public-design-system.css");
@@ -221,7 +221,7 @@ describe("E2E design and BotBound brand polish", () => {
     expect(landing).not.toContain("<AuthAccessPanel");
     expect(landing).toContain('signedIn ? "/studio" : "/signup"');
     expect(read("src/components/marketing/PrecisionPublicHeader.tsx")).toContain('to="/signin"');
-    expect(landing).toMatch(/<h1[^>]*>[\s\S]*YOUR VOICE BOT[\s\S]*FOR YOUR WORK\.[\s\S]*<\/h1>/);
+    expect(landing).toMatch(/<h1[^>]*>[\s\S]*Your Voice Bot[\s\S]*for Your Work\.[\s\S]*<\/h1>/);
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).toContain("<BotBoundMark");
     expect(landing).toContain("landing-prestige__hero-mark");

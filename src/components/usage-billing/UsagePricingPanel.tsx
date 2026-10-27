@@ -213,7 +213,7 @@ export default function UsagePricingPanel({
 
   if (availableTiers.length === 0) return null;
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
+    <div className="mx-auto max-w-4xl space-y-14">
       <div className="grid gap-4 sm:grid-cols-3" aria-label="Choose a Plan">
         {availableTiers.map((id) => {
           const option = USAGE_TIERS[id];
@@ -238,7 +238,9 @@ export default function UsagePricingPanel({
                   <strong className="text-4xl font-semibold">${option.monthlyUsd}</strong>
                   <span className="text-sm text-muted-foreground"> / Month</span>
                 </span>
-                <span className="mt-4 block text-sm font-semibold">Includes</span>
+                <span className="mt-4 block text-sm font-semibold">
+                  {usd(option.includedWorkUsd)} usage included
+                </span>
                 <span className="mt-2 block text-sm text-muted-foreground">
                   {option.includedNumbers} {option.includedNumbers === 1 ? "Number" : "Numbers"}
                   {" + "}
@@ -269,10 +271,6 @@ export default function UsagePricingPanel({
           );
         })}
       </div>
-      <p className="text-center text-sm text-muted-foreground">
-        Inbound, Outbound, SMS, Email & Computer. One allowance, any mix. Resets monthly.
-      </p>
-      <p className="text-center text-sm leading-6 text-muted-foreground">{sharedWorkNote()}</p>
       <article
         aria-label="Monthly estimate"
         className="grid gap-8 rounded-2xl border border-border bg-card p-5 sm:p-8 md:grid-cols-[1fr_17rem]"

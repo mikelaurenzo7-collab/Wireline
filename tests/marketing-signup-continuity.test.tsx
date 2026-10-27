@@ -110,7 +110,7 @@ describe("marketing signup continuity", () => {
     expect(renderedText).not.toContain("Personal Assistant");
     expect(renderedText).not.toContain("For Your Business");
     expect(renderedText).not.toContain("Front Desk");
-    expect(renderedText).toContain("A Phone Number. An Email Address. A Computer.");
+    expect(renderedText).toContain("A phone number, an email address, and a computer.");
     expect(renderedText).not.toContain("Choose calls, email, or both.");
     expect(renderedText).not.toContain("then sends you the summary");
     expect(renderedText).not.toContain("1 number + connected inbox");

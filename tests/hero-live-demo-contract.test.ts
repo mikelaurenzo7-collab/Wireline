@@ -9,7 +9,7 @@ describe("public voice-preview retirement contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const botProduct = read("src/lib/bot-product.ts");
 
-    expect(landing).toContain("A Phone Number. An Email Address. A Computer.");
+    expect(landing).toContain("A phone number, an email address, and a computer.");
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo|\/api\/public\/demo-/);
     expect(botProduct).toContain('slogan: "For You. For Your Business."');
