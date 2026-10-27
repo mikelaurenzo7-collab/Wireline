@@ -89,7 +89,9 @@ describe("sales trust copy contract", () => {
       /real Google or Outlook availability|Salesforce are supported today|reservation writes back|SMS activation is pending/i,
     );
     expect(wedges).toContain("Google or Outlook busy times can be imported when you sync.");
-    expect(features).toContain("Sync Google or Outlook busy times.");
+    expect(features).not.toMatch(
+      /real Google or Outlook availability|Salesforce are supported today|Sync Google or Outlook busy times/i,
+    );
     expect(compare).not.toContain("continues with shared context");
   });
 

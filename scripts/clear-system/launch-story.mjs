@@ -183,7 +183,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /<UsagePricingPanel availableTiers=\{usageTiers\}/,
+    /<UsagePricingPanel availableTiers=\{availableTiers\} \/>[\s\S]*<UsagePricing availableTiers=\{usageTiers\} \/>/,
     "pricing must render the shared-work plans from live availability",
   );
   mustInclude(
