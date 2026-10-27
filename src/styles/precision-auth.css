@@ -12,7 +12,10 @@
 .wl-auth-form-panel {
   position: relative;
   isolation: isolate;
-  align-items: flex-start;
+  align-items: center;
+  /* A classic scrollbar sits on the right and shoved the card off center.
+     Equal gutters keep the card on the viewport center. */
+  scrollbar-gutter: stable both-edges;
   background:
     radial-gradient(
       circle at 50% 0%,

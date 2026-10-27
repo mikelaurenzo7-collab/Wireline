@@ -1,5 +1,5 @@
 import { BOT_ROLE_TEMPLATES } from "./bot-product";
-import { isUsageTierId, DEFAULT_PUBLIC_USAGE_TIER, type UsageTierId } from "./usage-billing-catalog";
+import { isUsageTierId, type UsageTierId } from "./usage-billing-catalog";
 
 export const SIGNUP_INTENT_STORAGE_KEY = "wireline_signup_intent_v1";
 export const DEFAULT_ACTIVATION_PLAN_ID = "voice-regular";
@@ -385,6 +385,15 @@ export function getStoredSignupIntent(): SignupIntent | null {
   }
 }
 
+export function clearSignupIntent(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(SIGNUP_INTENT_STORAGE_KEY);
+  } catch {
+    // Storage can fail in private browsing; signup still works without attribution.
+  }
+}
+
 export function persistSignupIntent(intent: SignupIntent | null): SignupIntent | null {
   const safe = sanitizeSignupIntent(intent);
   if (typeof window === "undefined" || !safe) return null;
@@ -428,17 +437,14 @@ export function captureSignupIntentFromLocation(): SignupIntent | null {
       : fromUrl;
     return persistSignupIntent(next);
   }
-  const stored = getStoredSignupIntent();
-  if (stored) return stored;
-  if (window.location.pathname === "/signup" || window.location.pathname === "/signup/") {
-    return persistSignupIntent({
-      preferredPlanId: "usage",
-      preferredUsageTier: DEFAULT_PUBLIC_USAGE_TIER,
-      preferredBillingInterval: "month",
-      capturedAt: new Date().toISOString(),
-    });
+  const pathname = window.location.pathname;
+  if (pathname === "/signup" || pathname === "/signup/") {
+    // A plain Create Account visit is a new choice. Drop a plan left by an
+    // earlier link instead of signing the owner up for it.
+    clearSignupIntent();
+    return null;
   }
-  return null;
+  return getStoredSignupIntent();
 }
 
 export function recommendedPlanFromIntent(intent: SignupIntent | null | undefined): SignupPlanId {
