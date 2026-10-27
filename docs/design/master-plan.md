@@ -12,6 +12,14 @@ Owner-supplied Figma inspection lens (reference, not an attached source): ink/pa
 
 The owner subsequently authorized account configuration, merging and deploying verified work. That supersedes the original PR-only instruction, but not the quality gates or exclusions on billing logic, Stripe configuration, secrets, infrastructure, real payments, calls, SMS, email or voice cloning. No database changes are part of this design pass. Any eventual voice-service release requires its separate manual deployment and evidence.
 
+## Connector and permissioned automation plan
+
+P1 product foundation: keep the customer setup focused on Gmail/Google Workspace, Outlook/Microsoft 365, business calendars and file access. BotBound owns People, interaction history, follow-ups, approvals and its simple appointment flow. Do not expose a generic integration marketplace, duplicate full CRMs/team chat, or let a provider expand the agent's tools. The current code inventory and the source-backed connector market scan are in [docs/CONNECTORS.md](../CONNECTORS.md).
+
+Build small, allowlisted adapters behind stable BotBound actions. Full access, Auto and Ask for approval are owner choices enforced by BotBound before each provider call; consent, account scope, carrier rules, revocation, audit and safe retries still apply. All current accounts are founder/test accounts, so they do not establish market demand. Choose any P2 vertical adapter only after validating a target segment, owner demand, non-beta write access, plan requirements, partner approval, fees and support burden.
+
+P0 connector cleanup: remove customer-visible beta and retired offerings from setup and action catalogs, block new OAuth/action paths, and keep existing owners able to revoke saved grants. Do not erase historical records or change the database automatically. Report every retired or beta-marked item at the end. SMS and outbound remain marketed as ready; account setup and approval remain operational controls, not a roadmap or “coming soon” promise.
+
 ## Evidence and DS-A correction
 
 The starting HEAD already contains [DS-A PR #1407](https://github.com/mikelaurenzo7-collab/Wireline/pull/1407). Its parent is `ebb280bd6322401d85b70fb246ad662d4cc3c1f7`. The diff changes only 35 test files: 32 repaired, three deleted. Do not make a duplicate repair PR or delete passing coverage.
@@ -140,7 +148,7 @@ Copy diet (P1): short labels; one sentence of direction; keep terms needed to un
 ## Delivery and release evidence
 
 1. **DS-A:** already merged as #1407 before this task. Reverify its exact changed suites and tests-only scope; report corrections rather than repeat it.
-2. **Master plan:** documentation PR containing this plan and its single index link. Remains incomplete until missing reports and real walkthrough are incorporated.
+2. **Master plan and connector decision:** this PR contains the design plan plus the connector feature map, market scan and permissioned adapter contract in docs/CONNECTORS.md. The visual walk and full test evidence remain incomplete.
 3. **Tokens/primitives:** inspect existing #1414; its width-based 44px height rule does not establish target width or rendered geometry. No additional speculative token PR.
 4. **Public storefront:** continue #1409 for PUB-01–04 plus stale pricing tests. Do not merge overlapping #1418 without reconciling its content and evidence.
 5. **Auth/onboarding; app shell/Studio; Insights; settings/billing/states:** review the existing area PRs below instead of duplicating them. Call out any permission, capacity, schedule or team behavior change explicitly.
