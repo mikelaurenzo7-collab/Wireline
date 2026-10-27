@@ -4,7 +4,7 @@ Status: evidence-backed plan reviewed against origin/main at 36d4baac12426b8af26
 
 ## Decisions and scope
 
-Keep the existing BotBound identity, warm light default, optional dark appearance, type families, semantic tokens and shared components. Improve hierarchy and remove confirmed friction; do not introduce a replacement theme, another polish stylesheet, or resurrect retired pages. Judge every surface by whether a small-business owner can understand its purpose and complete its task.
+Keep BotBound’s company wordmark, warm light default, optional dark appearance, type families, semantic tokens and shared components. The owner dislikes the current abstract Bot marks and wants to explore an original, pre-made character catalog for individual Bot identities. Improve hierarchy and remove confirmed friction; do not introduce another theme, another polish stylesheet, or resurrect retired pages. Judge every surface by whether a small-business owner can understand its purpose and complete its task.
 
 Owner instructions: market calls, SMS, email and Computer as capabilities ready to use. Customer copy never says Wireline, AI employee or fully autonomous. Preserve actual permission, consent and provider controls. Show Lite $12/month, Starter $24/month (default), Plus $49/month with $4/$14/$36 of included work. No free-plan or trial offer. Technical compatibility identifiers and historical subscriptions are not customer offers and must not be renamed or repriced cosmetically.
 
@@ -20,11 +20,13 @@ Build small, allowlisted adapters behind stable BotBound actions. Full access, A
 
 P0 connector cleanup: remove customer-visible beta and retired offerings from setup and action catalogs, block new OAuth/action paths, and keep existing owners able to revoke saved grants. Do not erase historical records or change the database automatically. Report every retired or beta-marked item at the end. SMS and outbound remain marketed as ready; account setup and approval remain operational controls, not a roadmap or “coming soon” promise.
 
-## Bot identity and animated persona exploration
+## Bot identity catalog redesign
 
-P2, research only. The current product already assigns each Bot a curated BotBound identity mark (`src/lib/bot-mark.ts`, persisted through the agent routes); the design contract explicitly separates identity from status (`src/lib/wireline-design-vision.ts`). The Pets plugin tools are for animated companions in ChatGPT Work mode and do not provide a BotBound runtime or integration API. Their tool instructions say to use them only for ChatGPT Pets, not other apps; asset rights for redistribution are not established. Do not copy ChatGPT pet assets into BotBound.
+P1 design exploration, owner-directed. The owner dislikes the current abstract marks and wants a pre-made catalog of companion characters as Bot identities. Keep the BotBound company mark distinct from each Bot’s personal identity. Design original BotBound-owned artwork here; do not reuse assets from ChatGPT Pets. The Pets plugin operates only on animated companions inside ChatGPT Work mode, exposes no BotBound API, and says not to use it for other apps; reuse rights are not established.
 
-A feasible future direction is an optional BotBound-owned identity profile that combines a distinct mark, name and role, while keeping activity and Full access / Auto / Ask controls separate. Keep static identity as the default; consider subtle animation only if it helps recognition, works with reduced motion, and does not crowd the workspace. Validate whether small-business owners want character-like identities before calling them “pets” or building an avatar library. This is a discovery question, not an implementation commitment.
+Current code stores a curated `mark_key` per Bot (`src/db/schema-base.ts`, `src/lib/bot-mark.ts`) and shows a two-part Symbol/Color picker (`src/components/BotMarkPicker.tsx`). Its 15 motifs × 8 palettes produce 120 stable identity keys; the database constraint and trigger recognize those values, and capacity tests rely on the same 120-choice set. This makes a BotBound-owned catalog technically feasible without database writes if it preserves those stable keys and 15×8 allocation shape while changing only the artwork and customer-facing labels. If the data shape or capacity changes, prepare an explicit migration for the owner to apply by hand; never update the database automatically. Preserve a readable fallback for stored identities during rollout.
+
+Explore a single, visual catalog of 15 distinct character families with eight restrained colorways each, selected by owners and independent from role, connection, permissions, activity and runtime state. Use static art by default. Any motion must be subtle, tied to real activity, and reduced-motion safe. Before product code changes, present the character art direction and test recognizability, small-size legibility, professional fit for very small businesses, and mobile selection. This is a replacement candidate, not yet a production commitment.
 
 ## Evidence and DS-A correction
 
