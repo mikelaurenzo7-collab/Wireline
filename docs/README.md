@@ -73,7 +73,7 @@ The isolated speech worker has its own [setup guide](../services/voice-engine/RE
 | [VENDOR_LAUNCH_MAP.md](./VENDOR_LAUNCH_MAP.md)                                                   | Vendor and surface status: live, beta, planned, or retire.                                         |
 | [ACCESSIBILITY.md](./ACCESSIBILITY.md)                                                           | Product accessibility commitment.                                                                  |
 | [design-system-responsive-roadmap.md](./design-system-responsive-roadmap.md)                     | Responsive, spacing, and component-containment rules.                                              |
-| [design/master-plan.md](./design/master-plan.md)                                                 | Current design tokens, page templates, copy diet, and the verified cleanup list.                   |
+| [design/master-plan.md](./design/master-plan.md)                                                 | Design tokens, page templates, copy diet, and the signed-in walk.                                  |
 | [AGENT_CUSTOMIZATION_ARCHITECTURE.md](./AGENT_CUSTOMIZATION_ARCHITECTURE.md)                     | Agent customization client/domain boundary.                                                        |
 | [security/auth-password-controls.md](./security/auth-password-controls.md)                       | Custom scrypt and HIBP password-control posture.                                                   |
 | [soc2-policies.md](./soc2-policies.md)                                                           | SOC 2 control-policy map and evidence ownership.                                                   |

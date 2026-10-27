@@ -132,3 +132,39 @@ Before: installed name "For You. For Your Business." and theme `#0A0A0E` against
 - A new permission model.
 - A 1-Bot gate. The cap is already gone.
 - Production deploys. These changes ship as review PRs only.
+
+## Signed-in walk, 27 Oct 2026
+
+Local account on the dev database. No calls, payments, or voice cloning. Viewports 390 and 1280. `/pricing` showed Lite, Starter, and Plus because local `npm run dev` can preview the public cards while checkout stays closed. Axe was 0 on the public pages and on Studio, Calls, Inbox, Insights, and Settings. Billing had one link-in-text-block violation. Onboarding had one scrollable-region-focusable violation. No document overflow except an input on Bot setup at 390.
+
+This walk is the bar for the redesign PRs. It replaces the earlier "no new illustration" note with one rule: a single waveform, opacity or transform only, off under `prefers-reduced-motion`.
+
+### Casing and alignment
+
+Headlines and buttons are Title Case. The one supporting line is sentence case. Heroes are not ALL CAPS. Public heroes stay centered. App pages stay left-aligned under one title.
+
+Home is still ALL CAPS ("YOUR VOICE BOT FOR YOUR WORK.") and the button says "GET YOUR SALES BOT", while the header button says "Get Started". Pricing ("Room to Do More.") and signup ("Create Account") are already Title Case. Desktop billing reassurance renders as "ENCRYPTED PAYMENTS · CANCEL ANYTIME".
+
+### Public
+
+- Home repeats the product: the headline, a second line, a sales button, then a checklist ("Answer the call", "Book the appointment", "Send the confirmation").
+- Pricing cards show $12, $24, and $49. The included work ($4, $14, $36) is inside Plan Details, then repeated in a paragraph under the cards.
+- Features is "BOTS FOR EVERY JOB." plus a paragraph on every channel.
+- The cookie notice at 390 is a second block of copy over the page.
+
+### Account
+
+- A plain `/signup` shows "Starter · $24/month plus usage" and "Checkout is unavailable right now." The form is the only job on the page.
+- `/onboarding` redirects to `/studio?create=1`. The first paint is "Loading page…".
+
+### Workspace
+
+- An empty Studio is one headline, "Create Your Bot", and one button. That is the pattern to keep.
+- With a Bot, Studio stacks three explanations that Computer is off: "Computer work is unavailable", "Your Bot's Computer Is Being Set Up", and an empty browser.
+- Set Up already has Permission: Full access, Auto, and Ask for approval. The panel is a long form. At 390 an input extends past the viewport.
+- Calls is an empty "Create a Bot" while History, Settings, Outbound, and Lines stay in the chrome.
+- Inbox, before any plan, says "Email Isn't in Your Plan". SMS on this SHA still uses the same "isn't in your plan" pattern.
+- Insights empty state is one headline and one line. The page and the view can both scroll from the `md` breakpoint up.
+- Settings is a plain account form.
+- Billing says "Billing Is Unavailable". When the status request fails, a section titled "Runtime Balance" appears under the error. That name is internal.
+- The verify-email banner is one line on every signed-in page until the address is verified.
