@@ -257,6 +257,33 @@ projects:
                 sync: false
               - key: STRIPE_USAGE_SANDBOX_ACCOUNT_ID
                 sync: false
+              # Usage-billing names the code reads (USAGE_BILLING_ENV_VARS in
+              # src/lib/usage-billing-config.ts): the billing flag, the
+              # shared base/work prices, the work meter event, and the two
+              # addon prices. The per-tier LITE/STARTER/PLUS names above are
+              # the tier overrides. Names only — values live in the Dashboard.
+              - key: USAGE_BILLING_ENABLED
+                sync: false
+              - key: STRIPE_USAGE_BASE_PRICE_ID
+                sync: false
+              - key: STRIPE_USAGE_WORK_PRICE_ID
+                sync: false
+              - key: STRIPE_USAGE_WORK_METER_EVENT
+                sync: false
+              - key: STRIPE_USAGE_NUMBER_ADDON_PRICE_ID
+                sync: false
+              - key: STRIPE_USAGE_EMAIL_ADDON_PRICE_ID
+                sync: false
+              # Federal DNC screening (issue #1006). Declared so the slots
+              # exist; values are set in the Dashboard when the registry
+              # registration completes. Until then production stays
+              # fail-closed for unscreened outbound.
+              - key: FEDERAL_DNC_API_URL
+                sync: false
+              - key: FEDERAL_DNC_API_KEY
+                sync: false
+              - key: FEDERAL_DNC_PROVIDER
+                sync: false
               - key: STRIPE_STARTER_9_PRICE_ID
                 sync: false
               - key: STRIPE_STARTER_PRICE_ID
@@ -534,6 +561,23 @@ projects:
                   name: botbound-api
                   type: web
                   envVarKey: PLATFORM_SMS_FROM
+              # Federal DNC screening mirrors the API: the worker places
+              # outbound calls, so it screens from the same registry config.
+              - key: FEDERAL_DNC_API_URL
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: FEDERAL_DNC_API_URL
+              - key: FEDERAL_DNC_API_KEY
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: FEDERAL_DNC_API_KEY
+              - key: FEDERAL_DNC_PROVIDER
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: FEDERAL_DNC_PROVIDER
               - key: APNS_KEY_ID
                 fromService:
                   name: botbound-api
