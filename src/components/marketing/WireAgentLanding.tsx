@@ -41,7 +41,7 @@ const EXAMPLES: readonly {
 
 export default function WireAgentLanding() {
   const signedIn = Boolean(useAuth().user);
-  const [selected, setSelected] = useState(3);
+  const [selected, setSelected] = useState(0);
   const tabs = useRef<Array<HTMLButtonElement | null>>([]);
   const example = EXAMPLES[selected]!;
   useEffect(() => {
@@ -138,24 +138,51 @@ export default function WireAgentLanding() {
             className="landing-prestige__example"
           >
             <h2>{example.message}</h2>
-            {example.id === "computer" ? (
+            {example.id === "calls" || example.id === "computer" ? (
               <div className="mx-auto mt-6 max-w-md rounded-xl border border-border bg-card p-4 text-left shadow-sm">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Example task · Live in your workspace
+                  {example.id === "calls"
+                    ? "Example call · Live in your workspace"
+                    : "Example task · Live in your workspace"}
                 </p>
                 <ol className="mt-3 space-y-2 text-sm text-foreground">
-                  <li className="flex items-start gap-2">
-                    <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-                    Open the supplier portal
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-                    Compare this week's prices
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <ArrowRight className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-                    Draft the order summary for your approval
-                  </li>
+                  {example.id === "calls" ? (
+                    <>
+                      <li className="flex items-start gap-2">
+                        <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                        Answer the call and help the caller
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                        Book the appointment on your calendar
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <ArrowRight
+                          className="mt-0.5 size-4 shrink-0 text-primary"
+                          aria-hidden="true"
+                        />
+                        Send the confirmation and follow-up text
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li className="flex items-start gap-2">
+                        <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                        Open the supplier portal
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                        Compare this week's prices
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <ArrowRight
+                          className="mt-0.5 size-4 shrink-0 text-primary"
+                          aria-hidden="true"
+                        />
+                        Draft the order summary for your approval
+                      </li>
+                    </>
+                  )}
                 </ol>
               </div>
             ) : null}
@@ -170,3 +197,4 @@ export default function WireAgentLanding() {
     </div>
   );
 }
+
