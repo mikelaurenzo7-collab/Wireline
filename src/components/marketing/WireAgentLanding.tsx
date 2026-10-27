@@ -55,7 +55,7 @@ export default function WireAgentLanding() {
     emitProductEvent({
       event: "landing_primary_cta_clicked",
       surface: "marketing_web",
-      metadata: { source: "hero_primary", label: "GET YOUR SALES BOT" },
+      metadata: { source: "hero_primary", label: "Get Started" },
     });
 
   return (
@@ -74,6 +74,9 @@ export default function WireAgentLanding() {
               </span>
             </h1>
             <p className="landing-prestige__identity-line">
+              Answers calls. Books the job. Follows up.
+            </p>
+            <p className="landing-prestige__identity-line">
               A Phone Number. An Email Address. A Computer.
             </p>
             <div className="landing-prestige__actions">
@@ -82,7 +85,7 @@ export default function WireAgentLanding() {
                 className="landing-prestige__cta is-primary"
                 onClick={trackSignupIntent}
               >
-                {signedIn ? "Open Workspace" : "GET YOUR SALES BOT"} <ArrowRight aria-hidden="true" />
+                {signedIn ? "Open Workspace" : "Get Started"} <ArrowRight aria-hidden="true" />
               </Link>
               <Link to="/pricing" className="landing-prestige__cta is-text">
                 See Pricing

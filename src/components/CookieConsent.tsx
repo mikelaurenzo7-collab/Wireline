@@ -188,21 +188,17 @@ export default function CookieConsent() {
           <div
             className={cn(
               "relative rounded-md border border-border bg-background/95 backdrop-blur-xl shadow-lg flex items-start gap-2.5 sm:items-center",
-              hasSession ? "px-3 py-2.5" : "px-3.5 py-3",
+              hasSession ? "px-3 py-2" : "px-3 py-2",
             )}
           >
             <div className="hidden sm:flex w-7 h-7 rounded-md items-center justify-center shrink-0 mt-0.5 wl-cookie-icon">
               <Cookie className="w-3.5 h-3.5 text-brand" />
             </div>
 
-            <div className="flex-1 min-w-0 space-y-3 sm:flex sm:items-center sm:gap-3 sm:space-y-0">
-              <h2 className="pr-10 text-sm font-semibold leading-snug sm:sr-only">
-                Privacy Choices
-              </h2>
-              <p className="wl-balance break-words text-sm leading-relaxed text-foreground/80 sm:flex-1">
-                Essential storage keeps{" "}
-                <span className="font-semibold text-foreground">BotBound</span> working. Optional
-                measurement stays off until you allow it.{" "}
+            <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <h2 className="sr-only">Privacy Choices</h2>
+              <p className="break-words text-sm leading-5 text-foreground/80 sm:flex-1">
+                Optional measurement stays off until you allow it.{" "}
                 <Link
                   to="/privacy"
                   className="text-brand hover:text-brand/80 underline"
@@ -221,7 +217,7 @@ export default function CookieConsent() {
                   Your privacy signal keeps measurement off.
                 </p>
               ) : (
-                <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,8.5rem),1fr))] gap-2 sm:flex sm:shrink-0">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
                   <ShadButton
                     type="button"
                     variant="outline"

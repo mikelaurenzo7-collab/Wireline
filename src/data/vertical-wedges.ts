@@ -212,7 +212,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Does the Bot Give Legal Advice?",
-        a: "No. The Bot is an intake specialist: it captures the matter, schedules the consult, and hands off to an attorney. It explicitly tells callers it cannot provide legal advice and that anything substantive needs the attorney. Refusal is enforced in the directive layer.",
+        a: "No. Your Bot captures the matter, schedules a consult, and hands off to an attorney. It tells callers it cannot provide legal advice.",
       },
       {
         q: "How Does It Handle Conflict Checks?",
@@ -273,7 +273,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Does It Work for a Single Professional or a Full Brokerage?",
-        a: "A solo professional can start on a Calls plan and add more Bots in the same workspace. For brokerage needs beyond included phone capacity, contact BotBound to plan the rollout. Extra usage is billed at the listed rates.",
+        a: "Lite, Starter, and Plus each include a number, an email address, and shared usage. Extra usage is billed at the listed rates, up to your monthly limit.",
       },
       {
         q: "How Does It Qualify the Buyer?",
@@ -327,7 +327,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "How Does My Bot Answer Calls?",
-        a: "Create your Bot, add the information it can share, and rehearse its greeting and answers. Activate a Calls plan and choose a number for people to reach it. Review the conversation and captured requests in your workspace.",
+        a: "Create your Bot, add what it can share, and rehearse the greeting. Choose Lite, Starter, or Plus, then pick a number. Review conversations in your workspace.",
       },
       {
         q: "Can I Use the Same Bot for My Business?",
@@ -335,11 +335,11 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "What Can Its Computer Do?",
-        a: "Give it a task such as comparing services, finding opening hours, or summarizing a webpage. Your Bot can research online and return a useful result. Tasks use your plan's AI allowance, and actions that need approval wait for your review.",
+        a: "Give it a task such as comparing services, finding opening hours, or summarizing a webpage. That work uses the usage included in Lite, Starter, or Plus.",
       },
       {
         q: "Can I Start with Calls and Add Email Later?",
-        a: "Yes. Start with Calls, then contact us for an email setup and plan review. Activate your Bot's managed mailbox after that review is complete.",
+        a: "Every paid plan includes an email address. A setup review verifies your sending identity before the mailbox goes live.",
       },
       {
         q: "What Can't It Do?",
@@ -399,7 +399,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How Does It Compare with a 24/7 Answering Service?",
-        a: "Compare BotBound on the complete intake, conversation, follow up, and logged outcome, not only the per call price. Calls plans include voice minutes, and extra usage is billed at the listed rates.",
+        a: "Compare the intake, the conversation, and the logged outcome, not only the price of each call. Lite, Starter, and Plus include shared usage. Extra usage is billed at the listed rates, up to your monthly limit.",
       },
     ],
   },

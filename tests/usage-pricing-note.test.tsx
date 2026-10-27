@@ -65,12 +65,11 @@ describe("pricing branch notes", () => {
     expect(html).not.toContain("botbound_work_credits");
   });
 
-  it("keeps the prepaid minute line on the channel branch", () => {
+  it("keeps the current public offer when availability reports a legacy billing model", () => {
     availability.billingModel = "plans";
     const html = renderPricing();
-    expect(html).toContain(
-      "Extra minutes are $0.22/min, paid from Runtime Balance you add ahead of time.",
-    );
-    expect(html).not.toContain("Lite is $12/month with $4 of included work");
+    expect(html).toContain("Lite is $12/month with $4 of included work");
+    expect(html).not.toContain("Extra minutes are");
+    expect(html).not.toContain("Runtime Balance");
   });
 });
