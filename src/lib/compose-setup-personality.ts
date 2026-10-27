@@ -60,8 +60,7 @@ export function resolveDeliveryToneLabel(personality?: string | null): string {
   const raw = personality ?? "";
   if (!new RegExp(`(?:^|\n)${DELIVERY_TONE_MARKER}`, "i").test(raw)) return "Not set";
   const value = readSetupDeliveryTone(raw);
-  const sentence = value.split(/[.
-]/)[0]?.trim() ?? "";
+  const sentence = value.split(/[.\n]/)[0]?.trim() ?? "";
   if (!sentence) return "Not set";
   const normalized = sentence.toLowerCase().replace(/[\s_-]+/g, " ");
   return (
