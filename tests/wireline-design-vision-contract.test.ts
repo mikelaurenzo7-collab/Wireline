@@ -10,7 +10,6 @@ const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 const AUTHENTICATED_SURFACE_GLOBS = [
-  "src/pages/OverviewPage.tsx",
   "src/pages/SettingsPage.tsx",
   "src/pages/EmailPage.tsx",
   "src/pages/TemplatesPage.tsx",
@@ -150,6 +149,7 @@ describe("BotBound design vision", () => {
     expect(read("src/pages/TemplatesPage.tsx")).toContain("WorkspacePageIntro");
     expect(read("src/pages/ClientAppsPage.tsx")).toContain("WorkspacePageIntro");
     expect(existsSync("src/hooks/useLivePresence.ts")).toBe(false);
+    expect(existsSync("src/pages/OverviewPage.tsx")).toBe(false);
     expect(shellComponent).toContain("WorkspaceResizablePanel");
     expect(read("src/components/CallLogsClaude.tsx")).toContain("WorkspaceResizablePanel");
     expect(shellComponent).not.toContain('className="wl-rail-link');

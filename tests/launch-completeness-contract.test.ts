@@ -97,7 +97,6 @@ describe("launch completeness contracts", () => {
     const sitemap = source("public/sitemap.xml");
     const publicSurfaces = [
       "src/components/marketing/MarketingChromeBar.tsx",
-      "src/components/marketing/MarketingFooter.tsx",
       "src/components/marketing/TrustSignals.tsx",
       "src/components/marketing/WireAgentLanding.tsx",
       "src/components/auth/AuthAccessPanel.tsx",

@@ -124,7 +124,7 @@ describe("E2E design and BotBound brand polish", () => {
   it("keeps public navigation and mobile conversion targets clear", () => {
     const header = read("src/components/marketing/PrecisionPublicHeader.tsx");
     const sticky = read("src/components/marketing/MarketingStickyCta.tsx");
-    const footer = read("src/components/marketing/MarketingFooter.tsx");
+    const footer = read("src/styles/public-design-system.css");
     // The phone-Bot mascot belongs to the home hero; the shared bar carries the wordmark only.
     expect(header).toContain('<BotBoundWordmark className="wl-public-header__wordmark" />');
     expect(header).not.toContain("BotBoundLockup");
@@ -137,7 +137,8 @@ describe("E2E design and BotBound brand polish", () => {
     expect(sticky).toContain("min-h-[48px]");
     expect(sticky).toContain("marketing-sticky-cta__actions");
     expect(sticky).toContain("--wl-marketing-sticky-height");
-    expect(footer).toContain("min-h-11 items-center");
+    expect(footer).toContain(".marketing-surface .marketing-chrome-bar :is(a, button)");
+    expect(footer).toContain("min-height: 2.75rem");
   });
 
   it("lets the phone conversion actions stack before their labels clip", () => {
@@ -156,7 +157,7 @@ describe("E2E design and BotBound brand polish", () => {
       ".marketing-sticky-cta :is(.marketing-btn-primary, .marketing-btn-secondary)",
     );
     expect(polish).toContain("repeat(auto-fit, minmax(min(100%, 8rem), 1fr))");
-    expect(mobile).toContain('"/blog"');
+    expect(mobile).not.toContain('"/blog"');
     expect(mobile).toContain('"/security"');
     expect(mobile).toContain('"/trust"');
     expect(mobile).toContain('"/features"');
@@ -168,7 +169,6 @@ describe("E2E design and BotBound brand polish", () => {
     const pricing = read("src/pages/Pricing.tsx");
     const compare = read("src/pages/Compare.tsx");
     const solutions = read("src/pages/SolutionsPage.tsx");
-    const blog = read("src/pages/Blog.tsx");
     const support = read("src/components/SupportPage.tsx");
     const contact = read("src/components/ContactPage.tsx");
     const notFound = read("src/components/layout/NotFound.tsx");
@@ -191,7 +191,9 @@ describe("E2E design and BotBound brand polish", () => {
     expect(solutions).toContain("marketing-hero-title");
     expect(solutions).not.toContain("<MarketingHero");
     expect(solutions).toContain("marketing-hero-title");
-    expect(blog).toContain("marketing-hero-title");
+    expect(read("src/App.tsx")).toContain(
+      '<Route path="/blog" element={<PreservingRedirect to="/changelog" />} />',
+    );
     expect(support).not.toContain("marketing-hero-title");
     expect(contact).not.toContain("marketing-hero-title");
     expect(notFound).toContain("text-[4.25rem]");
@@ -256,7 +258,9 @@ describe("E2E design and BotBound brand polish", () => {
     expect(foundation).not.toMatch(/\.wl-ui-caps\s*>\s*:not\(\.wl-workspace-shell\)\s*\{/);
     const app = read("src/App.tsx");
     expect(app).toContain("<RouteChangeA11y />");
-    expect(read("src/components/RouteChangeA11y.tsx")).toContain('className="sr-only"');
+    const routeChange = read("src/components/RouteChangeA11y.tsx");
+    expect(routeChange).toContain("return null");
+    expect(routeChange).toContain('document.querySelector<HTMLElement>("main h1, h1")');
   });
 
   it("preserves authored case for controls, customer values, and BotBound", () => {

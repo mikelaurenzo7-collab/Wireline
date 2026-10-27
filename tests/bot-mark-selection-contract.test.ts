@@ -173,7 +173,6 @@ describe("customer-selectable Bot identity marks", () => {
   it("reserves customer Bot marks for authenticated product surfaces", () => {
     for (const path of [
       "src/components/marketing/WireAgentLanding.tsx",
-      "src/pages/Showcase.tsx",
       "src/pages/SolutionsPage.tsx",
     ]) {
       const source = read(path);

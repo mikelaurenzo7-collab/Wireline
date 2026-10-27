@@ -85,19 +85,19 @@ describe("authenticated Bot flow", () => {
     expect(carrierRoutes).toContain('"/api/phone-numbers/provision"');
   });
 
-  it("mounts operating truth on active Overview, Inbox, approvals, and analytics routes", () => {
+  it("mounts operating truth on Studio, Inbox, approvals, and analytics routes", () => {
     const appRoutes = read("src/routes/AppRoutes.tsx");
-    const overview = read("src/pages/OverviewPage.tsx");
     const nav = read("src/constants/navigation.ts");
+    const registry = read("src/server/register-api-routes.ts");
 
+    expect(appRoutes).toContain('path="/overview" element={<ToStudioRedirect />}');
     expect(appRoutes).toContain('path="/insights" element={<InsightsPage');
     expect(appRoutes).toContain('path="/inbox"');
     expect(appRoutes).toContain('path="/approvals"');
     expect(nav).toMatch(/href:\s*["']\/insights["']/);
-    expect(overview).toContain("UnifiedInbox");
-    expect(overview).toContain("OutcomeLedger");
-    expect(overview).toContain('followUpsHref="/approvals"');
-    expect(overview).not.toContain("DailyBriefPanel");
+    expect(registry).toContain("overviewOperatingMetricsRouter");
+    expect(appRoutes).not.toContain("OverviewPage");
+    expect(appRoutes).not.toContain("DailyBriefPanel");
   });
 
   it("gives first-time users real mailbox connection actions", () => {

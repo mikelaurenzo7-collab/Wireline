@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -18,32 +18,24 @@ describe("activation path contract", () => {
     expect(doc).toContain("SENTRY_DSN");
   });
 
-  it("keeps Bot activation direct in Studio while preserving the legacy Overview path", () => {
-    const overview = read("src/pages/OverviewPage.tsx");
-    const firstRun = read("src/components/overview/FirstRunWorkspace.tsx");
+  it("keeps Bot activation direct in Studio after Overview retired", () => {
+    expect(existsSync(resolve(root, "src/pages/OverviewPage.tsx"))).toBe(false);
+    expect(existsSync(resolve(root, "src/components/overview/FirstRunWorkspace.tsx"))).toBe(false);
     const studio = read("src/components/StudioWorkspaceV2.tsx");
     const studioSetup = read("src/components/StudioAgentWorkspacePanel.tsx");
+    const routes = read("src/routes/AppRoutes.tsx");
 
-    expect(overview).toContain("ActivationChecklist");
+    expect(routes).toContain('path="/overview" element={<ToStudioRedirect />}');
     expect(studioSetup).not.toContain("ActivationChecklist");
     expect(studioSetup).toContain("Bot Setup");
     expect(studioSetup).toContain('{applyingSetup ? "Saving…" : "Save Changes"}');
-    expect(overview).toContain("FirstRunWorkspace");
-    expect(overview).toContain("degraded && !hasBots");
-    expect(overview).toContain("WorkspaceRecovery");
-    expect(firstRun).toContain("Create Your Bot");
-    expect(firstRun).toContain("Create Your Own");
-    expect(firstRun).toContain("Browse Templates");
-    expect(firstRun).toContain('to="/studio?create=1"');
-    expect(firstRun).toContain('to="/templates"');
+    expect(studio).toContain("if (agents.length === 0 && degraded) return <WorkspaceRecovery");
     expect(studio).toContain("Create Your Bot");
     expect(studio).not.toMatch(/one (?:job|task)/i);
     expect(studio).toContain("BOT_LANGUAGE.setupPrompt");
     expect(studio).not.toContain("Describe the role and outcome.");
     expect(studio).toContain("to={createHref()}");
-    expect(`${overview}\n${firstRun}\n${studio}`).not.toMatch(
-      /posture=|personalAgents|businessAgents|dayGreeting/,
-    );
+    expect(studio).not.toMatch(/posture=|personalAgents|businessAgents|dayGreeting/);
   });
 
   it("aligns the activation checklist with verifiable live-work progress", () => {

@@ -33,7 +33,6 @@ describe("design consolidation contracts", () => {
 
   it("migrates hot-path surfaces off the legacy studio-card theme", () => {
     const migrated = [
-      "src/pages/OverviewPage.tsx",
       "src/components/CreateAgentDialog.tsx",
       "src/pages/KnowledgePage.tsx",
       "src/pages/SettingsPage.tsx",

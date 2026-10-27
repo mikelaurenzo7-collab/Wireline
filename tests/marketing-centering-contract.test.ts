@@ -133,12 +133,11 @@ describe("marketing centering contract", () => {
     expect(solutionsPage).not.toContain("MarketingHero");
   });
 
-  it("ships structured data on the blog for SEO", () => {
-    const blog = read("src/pages/Blog.tsx");
-    expect(blog).toContain("structuredData");
-    expect(blog).toContain("FAQPage");
-    expect(blog).toContain("BreadcrumbList");
-    expect(blog).toContain("structuredData={structuredData}");
+  it("sends the retired blog to the changelog", () => {
+    const app = read("src/App.tsx");
+    expect(existsSync(resolve(process.cwd(), "src/pages/Blog.tsx"))).toBe(false);
+    expect(app).toContain('<Route path="/blog" element={<PreservingRedirect to="/changelog" />} />');
+    expect(app).toContain('<Route path="/blog/*" element={<PreservingRedirect to="/changelog" />} />');
   });
 
   it("gives public marketing surfaces an explicit copy alignment", () => {
@@ -147,7 +146,6 @@ describe("marketing centering contract", () => {
       "src/pages/Pricing.tsx",
       "src/pages/About.tsx",
       "src/pages/Compare.tsx",
-      "src/pages/Blog.tsx",
       "src/pages/SolutionsPage.tsx",
       "src/pages/VerticalLanding.tsx",
     ]) {
@@ -156,6 +154,8 @@ describe("marketing centering contract", () => {
         `${path} should explicitly declare its copy alignment`,
       ).toBe(true);
     }
-    expect(read("src/pages/Showcase.tsx")).toContain('<Navigate to="/signup" replace />');
+    expect(read("src/App.tsx")).toContain(
+      '<Route path="/showcase" element={<PreservingRedirect to="/signup" />} />',
+    );
   });
 });

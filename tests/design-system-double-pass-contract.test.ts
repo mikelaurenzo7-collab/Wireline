@@ -114,7 +114,7 @@ describe("WIRELINE design-system double-pass contract", () => {
 
   it("keeps active customer-facing brand surfaces on Bot language", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    const footer = read("src/components/marketing/MarketingFooter.tsx");
+    const footer = read("src/components/marketing/MarketingChromeBar.tsx");
 
     expect(landing).not.toMatch(/\bvoice agents?\b/i);
     expect(footer).not.toMatch(/\bvoice agents?\b/i);

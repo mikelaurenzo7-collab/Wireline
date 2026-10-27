@@ -38,12 +38,12 @@ describe("launch readiness cross-surface contract", () => {
   });
 
   it("keeps public launch voice and customer errors owned by BotBound", () => {
-    const blog = read("src/pages/Blog.tsx");
+    const app = read("src/App.tsx");
+    const changelog = read("src/components/PublicChangelog.tsx");
     const pricing = read("src/pages/Pricing.tsx");
     const aiErrors = read("src/lib/ai-stream-errors.ts");
-    expect(blog).toContain("Practical guides for Bots");
-    expect(blog).toContain("Tell your Bot");
-    expect(blog).not.toContain("Wireline");
+    expect(app).toContain('<Route path="/blog" element={<PreservingRedirect to="/changelog" />} />');
+    expect(changelog).not.toContain("Wireline");
     expect(pricing).toMatch(/Bot/i);
     expect(pricing).not.toContain("AI conversation workforce");
     expect(aiErrors).toContain("BotBound AI is temporarily unavailable. Try again shortly.");

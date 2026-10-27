@@ -183,7 +183,7 @@ describe("signup intent contract", () => {
       "src/pages/Pricing.tsx",
       "src/pages/Features.tsx",
       "src/pages/Compare.tsx",
-      "src/pages/Showcase.tsx",
+      "src/components/usage-billing/UsagePricingPanel.tsx",
     ];
     for (const path of publicSurfaces) {
       expect(read(path), path).not.toMatch(/signup\?plan=(?:personal|team|business)\b/);

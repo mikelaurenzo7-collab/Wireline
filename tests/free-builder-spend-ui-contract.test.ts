@@ -1,38 +1,24 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const source = readFileSync(
-  resolve(process.cwd(), "src/components/insights/AISpendView.tsx"),
-  "utf8",
-);
+const root = process.cwd();
+const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("Free Builder spend UI truth", () => {
-  it("uses the server-owned guard scope rather than inferring from dollars", () => {
-    expect(source).toContain('type SpendGuardScope = "free_simulation_allowance" | "plan_funded";');
-    expect(source).toContain('status?.guard_scope === "free_simulation_allowance"');
-    expect(source).toContain("plan_name?: string;");
-    expect(source).toContain("live_provider_work_enabled?: boolean;");
-    expect(source).toContain("simulation_allowance_enabled?: boolean;");
+  it("keeps the retired customer AI-spend view off the product", () => {
+    expect(existsSync(resolve(root, "src/components/insights/AISpendView.tsx"))).toBe(false);
+    const insights = read("src/pages/InsightsPage.tsx");
+    expect(insights).not.toContain("AISpendView");
+    expect(insights).not.toContain("Recorded AI Cost");
   });
 
-  it("labels Free Builder as private simulation without claiming setup or training are capped", () => {
-    expect(source).toContain('"Simulation allowance"');
-    expect(source).toContain(
-      "Funds private setup, training, and simulation. Activate a paid plan to go live.",
+  it("uses the server-owned guard scope rather than a customer dollar label", () => {
+    const route = read("src/routes/spend-control-routes.ts");
+    expect(route).toContain(
+      'type SpendGuardScope = "plan_funded" | "free_simulation_allowance";',
     );
-    expect(source).toContain("Private simulation pauses at the monthly allowance.");
-    expect(source).not.toContain(
-      "Private setup, training, and simulation pause at the monthly allowance.",
-    );
-  });
-
-  it("distinguishes processing costs from customer billing", () => {
-    expect(source).toContain('"AI Processing Limit"');
-    expect(source).toContain("AI processing allowance funded by the plan");
-    expect(source).toContain("Completed in-flight work still settles.");
-    expect(source).toContain("Processing costs, separate from your bill.");
-    expect(source).toContain('label="Recorded AI Cost"');
-    expect(source).not.toContain('label="Total Spend"');
+    expect(route).toContain('guardScope === "free_simulation_allowance"');
+    expect(route).toContain("simulation_allowance_enabled:");
   });
 });

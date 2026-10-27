@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -80,9 +80,10 @@ describe("Bot roster: empty versus unreachable", () => {
     expect(dialEmptyState).toBeGreaterThan(-1);
     expect(dialGuard).toBeLessThan(dialEmptyState);
 
-    const overview = read("src/pages/OverviewPage.tsx");
-    expect(overview).toContain("degraded && !hasBots");
-    expect(overview).toContain("<WorkspaceRecovery onRetry={refresh} />");
+    expect(existsSync("src/pages/OverviewPage.tsx")).toBe(false);
+    expect(read("src/routes/AppRoutes.tsx")).toContain(
+      'path="/overview" element={<ToStudioRedirect />}',
+    );
   });
 
   it("still offers the unified create path when the roster is genuinely empty", () => {
@@ -96,12 +97,9 @@ describe("Bot roster: empty versus unreachable", () => {
     expect(read("src/components/OutboundDialDialog.tsx")).toContain(
       "Create a Bot",
     );
-    const overview = read("src/pages/OverviewPage.tsx");
-    const firstRun = read("src/components/overview/FirstRunWorkspace.tsx");
-    expect(overview).toContain("<FirstRunWorkspace />");
-    expect(firstRun).toContain("Create Your Own");
-    expect(firstRun).toContain('to="/studio?create=1"');
-    expect(`${overview}\n${firstRun}`).not.toContain("posture=");
+    expect(existsSync("src/components/overview/FirstRunWorkspace.tsx")).toBe(false);
+    expect(read("src/components/StudioWorkspaceV2.tsx")).toContain('to="/studio?create=1"');
+    expect(read("src/components/StudioWorkspaceV2.tsx")).not.toContain("posture=");
   });
 });
 
@@ -122,21 +120,18 @@ describe("Bot line readiness: attached, absent, or unknown", () => {
   });
 
   it("keeps the visible readiness surface on the shared helper", () => {
-    const source = read("src/components/overview/OverviewRail.tsx");
-    expect(source).toContain("agentReadinessLabel(");
-    expect(source).not.toMatch(/phone_number\s*\?\s*"Live"\s*:\s*"No phone number"/);
-
-    // The workspace shell now shows only the current Bot identity and makes no
-    // line-readiness claim, so it has no status label to normalize.
+    expect(existsSync("src/components/overview/OverviewRail.tsx")).toBe(false);
+    const chrome = read("src/components/studio/StudioContextChrome.tsx");
+    expect(chrome).toContain("agentReadinessLabel(");
+    expect(chrome).not.toMatch(/phone_number\s*\?\s*"Live"\s*:\s*"No phone number"/);
     expect(read("src/components/WorkspaceShell.tsx")).not.toContain("Needs setup");
   });
 
   it("says on screen when the line lookup is what failed", () => {
-    const overview = read("src/pages/OverviewPage.tsx");
-    const rail = read("src/components/overview/OverviewRail.tsx");
-    expect(overview).toContain("phoneLookupDegraded ? (");
-    expect(overview).toContain("Line Status Unavailable");
-    expect(rail).toContain("agentReadinessLabel(bot, phoneLookupDegraded)");
+    const history = read("src/components/PhoneCallHistoryPanel.tsx");
+    const chrome = read("src/components/studio/StudioContextChrome.tsx");
+    expect(history).toContain('title="Line Status Unavailable"');
+    expect(chrome).toContain("agentReadinessLabel(activeAgent, phoneLookupDegraded)");
 
     const dial = read("src/components/OutboundDialDialog.tsx");
     expect(dial).toContain("(degraded || phoneLookupDegraded)");

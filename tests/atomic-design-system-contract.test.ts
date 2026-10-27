@@ -36,13 +36,11 @@ describe("Atomic Design completion contract", () => {
     expect(developers).not.toContain("ShadButton");
   });
 
-  it("keeps the public molecule and organism barrels complete", () => {
+  it("keeps the public molecule barrel complete after the organism barrel retired", () => {
     const molecules = source("src/components/molecules/index.ts");
-    const organisms = source("src/components/organisms/index.ts");
     expect(molecules).toContain("CardContent");
     expect(molecules).toContain("cardVariants");
-    expect(organisms).toContain("PageShell, Panel, StatTile");
-    expect(organisms).toContain("CommandBar");
+    expect(existsSync(resolve(root, "src/components/organisms/index.ts"))).toBe(false);
   });
 
   it("declares checkboxes in exactly one place", () => {

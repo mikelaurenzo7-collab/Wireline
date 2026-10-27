@@ -106,13 +106,12 @@ describe("authenticated responsive polish contract", () => {
 
   it("keeps compact metric tiles from clipping their own icon", () => {
     const css = read("src/styles/letterpress-polish.css");
-    const overview = read("src/pages/OverviewPage.tsx");
 
     // Two tiles side by side leave ~113px of content on a 360px phone and the
     // longest label word needs ~106px alone, so the in-flow icon pushed the row
     // past the tile's overflow:hidden and got sliced (6px at 360px, 26px at
     // 320px). The icon is aria-hidden ornament, so it goes where it cannot fit.
-    expect(overview).toContain("wl-metric-tile__icon");
+    expect(read("src/components/atoms/MetricTile.tsx")).toContain("wl-metric-tile");
     expect(css).toMatch(
       /@media \(max-width: 26rem\)[\s\S]{0,160}\.wl-metric-tile__icon\s*\{[\s\S]{0,40}display: none/,
     );

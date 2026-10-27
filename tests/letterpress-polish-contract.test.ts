@@ -37,14 +37,13 @@ describe("Wireline design polish contract", () => {
     );
   });
 
-  it("uses the current Overview polish without requiring retired chip markup", () => {
-    const overview = read("src/pages/OverviewPage.tsx");
-    expect(overview).toContain("wl-metric-tile");
-    expect(overview).toContain("wl-reveal");
-    expect(overview).toContain("wl-focus-ring-halo");
-    expect(overview).toContain("wl-press");
-    expect(overview).toContain("data-tone={tone}");
-    expect(overview).toContain("StatusNotice");
+  it("uses the shared metric tile polish without a retired Overview page", () => {
+    const tile = read("src/components/atoms/MetricTile.tsx");
+    expect(existsSync(resolve(root, "src/pages/OverviewPage.tsx"))).toBe(false);
+    expect(tile).toContain("wl-metric-tile");
+    expect(tile).toContain("wl-reveal");
+    expect(tile).toContain('data-slot="metric-tile"');
+    expect(read("src/components/molecules/StatusNotice.tsx")).toContain("StatusNotice");
   });
 
   it("keeps canonical atoms and banners wired", () => {

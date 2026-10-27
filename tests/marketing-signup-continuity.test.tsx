@@ -4,7 +4,7 @@ import MarketingPageFrame from "../src/components/layout/MarketingPageFrame";
 import MarketingStickyCta from "../src/components/marketing/MarketingStickyCta";
 import VerticalLanding from "../src/pages/VerticalLanding";
 import SolutionsPage from "../src/pages/SolutionsPage";
-import Blog from "../src/pages/Blog";
+import { readFileSync } from "node:fs";
 import WireAgentLanding from "../src/components/marketing/WireAgentLanding";
 import { WEDGES, type VerticalKey } from "../src/data/vertical-wedges";
 
@@ -167,13 +167,9 @@ describe("marketing signup continuity", () => {
     expect(stickyDestination(page)).toBe("/signup");
   });
 
-  it("preserves the Blog signup intent with a single in-flow action", () => {
-    const page = Blog();
-    const signupLinks = elements(page).filter(
-      (element) => element.type === "a" && element.props.to?.startsWith("/signup"),
-    );
-    expect(signupLinks).toHaveLength(1);
-    expect(signupLinks[0].props.to).toBe("/signup");
-    expect(stickyDestination(page)).toBeUndefined();
+  it("sends the retired blog to the changelog instead of a second signup", () => {
+    const app = readFileSync("src/App.tsx", "utf8");
+    expect(app).toContain('<Route path="/blog" element={<PreservingRedirect to="/changelog" />} />');
+    expect(app).not.toMatch(/path="\/blog"[\s\S]{0,80}\/signup/);
   });
 });

@@ -50,10 +50,6 @@ describe("launch readiness quintuple-pass 2026-07-27", () => {
     const fleet = read("src/lib/fleet-setup-progress.ts");
     expect(fleet).toContain("if (!r.ok) return 0");
 
-    const learning = read("src/components/insights/LearningMetricsView.tsx");
-    expect(learning).toContain("if (!agentsResponse.ok)");
-    expect(learning).toContain("Learning Metrics Unavailable");
-
     const audit = read("src/components/admin/AuditActivityPanel.tsx");
     expect(audit).toContain("if (!r.ok)");
     expect(audit).toContain("summaryError");
