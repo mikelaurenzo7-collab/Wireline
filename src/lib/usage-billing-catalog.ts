@@ -366,6 +366,16 @@ export function currentPricingFacts(): string[] {
   ];
 }
 
+/** Drop sentences that still quote a retired BotBound price. */
+export function withoutStaleBotBoundPricing(text: string): string {
+  if (!text || !isStaleBotBoundPricing(text)) return text;
+  const kept = text
+    .split(/\n+/)
+    .flatMap((line) => line.split(/(?<=[.!?])\s+/))
+    .filter((part) => part.trim() && !isStaleBotBoundPricing(part));
+  return kept.join("\n").trim();
+}
+
 export function currentPricingPromptBlock(): string {
   return [
     "CURRENT BOTBOUND PRICING",
@@ -381,6 +391,10 @@ export function isStaleBotBoundPricing(text: string): boolean {
   return (
     text.includes(`${dollar}19/month`) ||
     text.includes(`${dollar}19 per month`) ||
+    text.includes(`${dollar}19/mo`) ||
+    text.includes(`${dollar}19 a month`) ||
+    lower.includes(`from ${dollar}19`) ||
+    lower.includes(`starts at ${dollar}19`) ||
     text.includes(`${dollar}190/year`) ||
     lower.includes(`${dollar}12 shared`) ||
     lower.includes("channel packages include one bot") ||

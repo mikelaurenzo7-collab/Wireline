@@ -29,7 +29,11 @@ import {
 } from "../runtime-template-personality";
 import { drizzle, serialQueryBatch } from "../server-context";
 import { validateNativeCalendarSettings } from "../native-calendar-policy";
-import { currentPricingPromptBlock, isStaleBotBoundPricing } from "../usage-billing-catalog";
+import {
+  currentPricingPromptBlock,
+  isStaleBotBoundPricing,
+  withoutStaleBotBoundPricing,
+} from "../usage-billing-catalog";
 import {
   OPENAI_REALTIME_DEFAULT_MODEL,
   OPENAI_REALTIME_DEFAULT_TRANSCRIBER,
@@ -300,7 +304,7 @@ export function composeOpenAIRealtimeInstructions(input: {
     ? ""
     : runtimeReviewRequired
       ? ""
-      : trimLine(input.agent.systemPromptOverride, 8_000);
+      : withoutStaleBotBoundPricing(trimLine(input.agent.systemPromptOverride, 8_000));
   const identity = runtimeReviewRequired
     ? [
         "You are a BotBound Bot in review-required hold mode.",
@@ -361,8 +365,19 @@ export function composeOpenAIRealtimeInstructions(input: {
         ? `\nPRIMARY OUTCOME:\n${trimLine(input.agent.kpiFocus, 600)}`
         : "",
       !runtimeReviewRequired && compliance ? `\nGUARDRAILS:\n${compliance}` : "",
-      runtimeReviewRequired ? "" : playbookBlock(input.agent.playbook),
-      runtimeReviewRequired ? "" : listBlock("OPERATING RULES", input.directives, 24),
+      runtimeReviewRequired
+        ? ""
+        : withoutStaleBotBoundPricing(playbookBlock(input.agent.playbook)),
+      runtimeReviewRequired
+        ? ""
+        : listBlock(
+            "OPERATING RULES",
+            input.directives.map((item) => ({
+              ...item,
+              content: withoutStaleBotBoundPricing(item.content ?? ""),
+            })),
+            24,
+          ),
       runtimeReviewRequired
         ? ""
         : listBlock(

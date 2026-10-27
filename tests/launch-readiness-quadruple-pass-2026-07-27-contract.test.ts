@@ -65,7 +65,10 @@ describe("launch readiness quadruple-pass 2026-07-27", () => {
     expect(read("src/lib/voice-pricing-display.ts")).toContain("Runtime Balance");
     expect(read("src/lib/voice-pricing-display.ts")).not.toContain("Conversation Balance");
     expect(read("src/data/vertical-wedges.ts")).not.toContain("Conversation Balance");
-    expect(read("src/lib/showcase-assistant.ts")).toContain("Runtime Balance");
+    expect(read("src/lib/showcase-assistant.ts")).toContain(
+      "Quote only the current Lite, Starter, and Plus prices.",
+    );
+    expect(read("src/lib/showcase-assistant.ts")).not.toContain("Runtime Balance");
     // The retired post-hoc voice debit (and its ledger copy) stays deleted;
     // the live settlement path owns the buyer-visible ledger reason.
     expect(read("src/lib/credit-wallet.ts")).not.toContain(

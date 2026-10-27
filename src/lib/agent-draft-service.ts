@@ -17,6 +17,7 @@ import {
   resolveAgentEntitlement,
 } from "./agent-entitlements";
 import { isOwnerEmail } from "./auth-service";
+import { DEFAULT_BUSINESS_HOURS } from "./agent-runtime";
 import { drizzle, tenantStore } from "./server-context";
 import { emitServerProductEventOnce } from "./product-event-server";
 import {
@@ -214,6 +215,7 @@ export async function createAgentDraft(
         voiceId,
         voiceProvider: "openai",
         autonomyLevel: "supervised",
+        businessHours: DEFAULT_BUSINESS_HOURS,
         // A draft records intended actions in its customization profile, but it
         // never receives external tools until the user configures and enables
         // them explicitly in BotBound.
