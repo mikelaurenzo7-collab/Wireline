@@ -39,7 +39,7 @@ test("minimal homepage keeps signup plan-neutral and channel links useful", asyn
     "href",
     "/features#email",
   );
-  await page.locator("main").getByRole("link", { name: "GET YOUR SALES BOT", exact: true }).click();
+  await page.locator("main").getByRole("link", { name: "GET STARTED", exact: true }).click();
   await expect(page).toHaveURL(/\/signup$/);
 });
 
@@ -125,3 +125,4 @@ test("mobile paid signup includes Personal status and keeps generic signup neutr
     access.getByRole("button", { name: "Create Account", exact: true }).last(),
   ).toBeVisible();
 });
+
