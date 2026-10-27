@@ -900,6 +900,13 @@ function TaskDetail({
   // Focus alone must not freeze redirects after the owner presses Enter.
   const ownerUrlEditedRef = useRef(false);
   const [handoffGoal, setHandoffGoal] = useState("");
+  // One owner composer (owner ruling, Oct 27, 2026): typing into the page and
+  // handing the browser back to the Bot are modes of a single input, never
+  // two stacked task boxes. Null = undecided: an eligible handoff defaults
+  // forward, ordinary owner control defaults to typing.
+  const [ownerMode, setOwnerMode] = useState<"type" | "handoff" | null>(null);
+  const ownerComposerMode =
+    ownerMode ?? (task.preparingBrowser && !chatControls ? "handoff" : "type");
   // A click can navigate, and a site can redirect after the click response.
   // Follow the active browser URL unless an unsent address draft exists.
   useEffect(() => {
@@ -1393,6 +1400,33 @@ function TaskDetail({
             navigationVersion={screenVersion.navigation}
           />
           <div className="wl-computer-control" aria-label="Browser controls">
+            {task.preparingBrowser && !chatControls ? (
+              <div
+                className="wl-computer-control__modes"
+                role="group"
+                aria-label="Browser input mode"
+              >
+                <Button
+                  type="button"
+                  variant={ownerComposerMode === "handoff" ? "secondary" : "outline"}
+                  size="sm"
+                  aria-pressed={ownerComposerMode === "handoff"}
+                  onClick={() => setOwnerMode("handoff")}
+                >
+                  Give to Bot
+                </Button>
+                <Button
+                  type="button"
+                  variant={ownerComposerMode === "type" ? "secondary" : "outline"}
+                  size="sm"
+                  aria-pressed={ownerComposerMode === "type"}
+                  onClick={() => setOwnerMode("type")}
+                >
+                  Type Myself
+                </Button>
+              </div>
+            ) : null}
+            {ownerComposerMode === "type" ? (
             <form
               className="wl-computer-control__form"
               aria-label="Type into the browser"
@@ -1436,6 +1470,8 @@ function TaskDetail({
                 Send to page
               </Button>
             </form>
+            ) : null}
+            {ownerComposerMode === "type" ? (
             <details className="wl-computer-control__more">
               <summary>Keyboard controls</summary>
               <p className="mt-2 text-xs">
@@ -1462,7 +1498,8 @@ function TaskDetail({
                 ))}
               </div>
             </details>
-            {task.preparingBrowser && !chatControls ? (
+            ) : null}
+            {task.preparingBrowser && !chatControls && ownerComposerMode === "handoff" ? (
               <div className="wl-computer-control__form">
                 <label htmlFor="computer-handoff-goal">What should your Bot do from here?</label>
                 <Textarea
