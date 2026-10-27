@@ -233,11 +233,11 @@
   box-shadow: none;
 }
 
+/* The composer dock focuses FLUSH: its border takes the focus color.
+   An offset outline around the dock floats off the surface (QA B4). */
 .wl-workspace-shell .wl-studio-task-chat__composer .wl-composer-dock:focus-within,
 .wl-workspace-shell .wl-studio-chat__composer .wl-composer-dock:focus-within {
-  border-color: var(--wireline-color-border-strong);
-  outline: 2px solid var(--wireline-color-focus-default);
-  outline-offset: 2px;
+  border-color: var(--wireline-color-focus-default);
   box-shadow: none;
 }
 
