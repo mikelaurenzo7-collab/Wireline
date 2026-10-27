@@ -180,7 +180,17 @@ function UnavailableNotice({ status }: { status: ComputerStatus }) {
       </StatusNotice>
     );
   }
-  return null;
+  return (
+    <StatusNotice
+      tone="info"
+      title="Computer Needs Setup"
+      action={
+        <Button asChild size="sm" variant="outline">
+          <Link to="/support">Get Help</Link>
+        </Button>
+      }
+    />
+  );
 }
 
 function LiveScreen({
@@ -1912,7 +1922,7 @@ export function ComputerWorkbench({
           The server outcome is uncertain. Refresh before starting or repeating work.
         </StatusNotice>
       ) : null}
-      {status && !status.available ? <UnavailableNotice status={status} /> : null}
+      {status && !status.available && !chatControls ? <UnavailableNotice status={status} /> : null}
       {!status && statusFailed ? (
         <StatusNotice
           tone="warning"
