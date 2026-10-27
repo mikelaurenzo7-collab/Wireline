@@ -506,6 +506,14 @@ router.get("/billing/plans", (_req: Request, res: Response) => {
     usageCheckoutConfigured(process.env, tier),
   );
   const usageCheckoutAvailable = checkoutAvailable && usageTiers.length > 0;
+  // Local `npm run dev` sets this so /pricing can show the public cards without
+  // Stripe price ids. Production, Preview, and the billing contract tests never
+  // set it, and a production Vercel/Render env cannot turn it on.
+  const devPlanPreview =
+    process.env.DEV_BILLING_PLAN_PREVIEW === "true" &&
+    process.env.NODE_ENV !== "production" &&
+    process.env.VERCEL_ENV !== "production" &&
+    !usageCheckoutAvailable;
   res.setHeader("Cache-Control", "no-store");
   res.json({
     plans: plansForClient({ usageCheckoutAvailable }),
@@ -514,7 +522,11 @@ router.get("/billing/plans", (_req: Request, res: Response) => {
     // Usage billing ships dark: "plans" until USAGE_BILLING_ENABLED is true.
     billing_model: usageBillingEnabled() ? "usage" : "plans",
     usage_checkout_available: usageCheckoutAvailable,
-    usage_tiers: usageCheckoutAvailable ? usageTiers : [],
+    usage_tiers: usageCheckoutAvailable
+      ? usageTiers
+      : devPlanPreview
+        ? [...PUBLIC_USAGE_TIERS]
+        : [],
   });
 });
 
