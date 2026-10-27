@@ -39,19 +39,20 @@ describe("channel access notice", () => {
     },
   );
 
-  it("presents SMS as included instead of a missing plan add-on", () => {
-    expect(
-      ChannelAccessNotice({
-        access: access("active", "voice"),
-        channel: "sms",
-      }),
-    ).toBeNull();
+  it("says SMS is pending carrier approval instead of missing from the plan", () => {
+    const notice = ChannelAccessNotice({
+      access: access("active", "voice"),
+      channel: "sms",
+    })!;
+    expect(notice.props.title).toBe("Texts are pending carrier approval");
+    expect(text(notice.props.children)).toContain("Carrier approval is still in progress");
   });
 
   it.each(["past_due", "unpaid", "incomplete"])(
     "does not turn a %s legacy Calls plan into an SMS upsell",
     (status) => {
-      expect(ChannelAccessNotice({ access: access(status), channel: "sms" })).toBeNull();
+      const notice = ChannelAccessNotice({ access: access(status), channel: "sms" })!;
+      expect(notice.props.title).toBe("Texts are pending carrier approval");
     },
   );
 
@@ -75,12 +76,11 @@ describe("channel access notice", () => {
     expect(text(notice.props.children)).toContain("Texts are paused");
   });
 
-  it("presents SMS as included for an account that has not chosen a plan", () => {
-    expect(
-      ChannelAccessNotice({
-        access: access("pending_activation", null),
-        channel: "sms",
-      }),
-    ).toBeNull();
+  it("says texts are pending carrier approval before a plan is chosen", () => {
+    const notice = ChannelAccessNotice({
+      access: access("pending_activation", null),
+      channel: "sms",
+    })!;
+    expect(notice.props.title).toBe("Texts are pending carrier approval");
   });
 });

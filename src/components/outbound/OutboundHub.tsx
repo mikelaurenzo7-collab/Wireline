@@ -3,6 +3,7 @@ import { ChevronDown, Phone } from "lucide-react";
 import OutboundDialDialog from "../OutboundDialDialog";
 import { Button } from "../atoms";
 import { EmptyState } from "../ui/EmptyState";
+import { StatusNotice } from "../molecules";
 import RecipientVoicePermissions from "./RecipientVoicePermissions";
 import CampaignsPanel from "./CampaignsPanel";
 import { WorkspaceTabStrip } from "../layout/WorkspaceTabStrip";
@@ -50,6 +51,13 @@ export default function OutboundHub({
         <>
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4">
             <div className="flex w-full flex-col items-center px-3 py-6 sm:px-6">
+              <StatusNotice
+                tone="info"
+                title="Outbound calling is pending carrier approval"
+                className="mb-4 w-full max-w-lg"
+              >
+                You can prepare a call. Placing it waits on carrier approval.
+              </StatusNotice>
               <EmptyState
                 icon={Phone}
                 title="Call"

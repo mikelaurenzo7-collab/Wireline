@@ -65,12 +65,15 @@ export default function ChannelAccessNotice({
   // return null here, which is why the Inbox SMS tab resolved to a blank
   // dead end on accounts without the channel: the gate existed, its
   // explanation was deleted. Every channel now renders its state.
+  if (channel === "sms") {
+    return (
+      <StatusNotice tone="info" title="Texts are pending carrier approval" className="my-3">
+        Carrier approval is still in progress. Your conversations stay here.
+      </StatusNotice>
+    );
+  }
   const notIncludedTitle =
-    channel === "voice"
-      ? "Calls Aren't in Your Plan"
-      : channel === "sms"
-        ? "Texts Aren't in Your Plan"
-        : "Email Isn't in Your Plan";
+    channel === "voice" ? "Calls Aren't in Your Plan" : "Email Isn't in Your Plan";
   const hasPlan = Boolean(access.data?.plan_id);
   return (
     <StatusNotice
