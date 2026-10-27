@@ -17,7 +17,7 @@ const EXAMPLES: readonly {
     id: "calls",
     label: "Calls",
     icon: Phone,
-    message: "Choose A Voice. Or Clone Your Own.",
+    message: "CHOOSE FROM A CATALOG OF VOICES OR CLONE YOUR OWN",
   },
   {
     id: "sms",
