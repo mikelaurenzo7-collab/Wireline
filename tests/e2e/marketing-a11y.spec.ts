@@ -100,7 +100,7 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
   const calls = page.getByRole("tab", { name: "Calls", exact: true });
   await expect(calls).toBeFocused();
   await expect(calls).toHaveAttribute("aria-selected", "true");
-  await expect(page.getByRole("tabpanel")).toContainText("Choose A Voice. Or Clone Your Own.");
+  await expect(page.getByRole("tabpanel")).toContainText("CHOOSE FROM A CATALOG OF VOICES OR CLONE YOUR OWN");
   await calls.press("ArrowRight");
   await expect(page.getByRole("tab", { name: "SMS", exact: true })).toBeFocused();
   await expect(page.getByRole("tabpanel")).toContainText("Keep The Conversation Going.");
