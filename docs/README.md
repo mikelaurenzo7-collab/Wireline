@@ -6,6 +6,12 @@ Broad public copy uses **Bot** or **Phone Bot** for personal users and small bus
 
 This file maps current doctrine, operating runbooks, and active plans. Dated audits and superseded decision evidence live in [AUDIT_INDEX.md](./AUDIT_INDEX.md).
 
+Repository workflow: [repo conventions](./REPO_CONVENTIONS.md).
+
+## Active design plan
+
+- [BotBound design master plan](./design/master-plan.md): verified work, historical audit corrections, and outstanding rendered release gates.
+
 ## Product surfaces
 
 | Surface          | Source                                                                                              | Release posture                                                                                                    |
