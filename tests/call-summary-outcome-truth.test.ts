@@ -21,9 +21,7 @@ describe("call summary and outcome truth", () => {
     expect(deterministicSummary(GREETING)).toBe(
       "The caller did not say anything the Bot could transcribe.",
     );
-    expect(deterministicSummary("")).toBe(
-      "Native voice call completed without a usable transcript.",
-    );
+    expect(deterministicSummary("")).toBe("No usable transcript was captured.");
     expect(callerTurnsText(transcript)).not.toContain("appointment");
   });
 

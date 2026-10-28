@@ -14,6 +14,7 @@ import {
   currentPricingFacts,
   estimateUsageBill,
   isStaleBotBoundPricing,
+  withoutStaleBotBoundPricing,
   marginalUnitUsd,
   minimumMonthlyCapUsd,
   priceMeter,
@@ -366,7 +367,17 @@ describe("Stripe setup script parity", () => {
     expect(facts).toContain("unlimited Bots");
     expect(facts).not.toContain(retired);
     expect(isStaleBotBoundPricing(`BotBound Calls plan is ${retired}`)).toBe(true);
+    expect(isStaleBotBoundPricing(`The ${retired} BotBound plan is retired`)).toBe(true);
+    expect(isStaleBotBoundPricing(`${retired} with $12 shared work`)).toBe(true);
+    expect(isStaleBotBoundPricing(`Our membership is ${retired}`)).toBe(false);
+    expect(isStaleBotBoundPricing("BotBound support costs $19.99/month")).toBe(false);
+    expect(isStaleBotBoundPricing("BotBound setup costs $1900")).toBe(false);
     expect(isStaleBotBoundPricing("A haircut is 19 dollars")).toBe(false);
+    expect(
+      withoutStaleBotBoundPricing(
+        "Our color service is $80. BotBound Starter is $19/month. Ask for the owner.",
+      ),
+    ).toBe("Our color service is $80.\nAsk for the owner.");
     const migration = readFileSync(
       "drizzle/migrations/0192_usage_tier_standard_default.sql",
       "utf8",

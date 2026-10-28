@@ -345,7 +345,7 @@ export function formatUsdCents(value: number): string {
   return value < 1 ? `${Math.round(value * 100)}¢` : `$${value.toFixed(2)}`;
 }
 
-/** Live prices for every Bot. These replace older prices saved in Training. */
+/** Current public prices for BotBound-owned sales and support surfaces. */
 export function currentPricingFacts(): string[] {
   const plans = PUBLIC_USAGE_TIERS.map((id) => {
     const plan = USAGE_TIERS[id];
@@ -366,24 +366,31 @@ export function currentPricingFacts(): string[] {
   ];
 }
 
-export function currentPricingPromptBlock(): string {
-  return [
-    "CURRENT BOTBOUND PRICING",
-    "These prices replace any older BotBound prices saved in Training.",
-    ...currentPricingFacts(),
-  ].join("\n");
-}
-
 /** Saved Training that still quotes a retired BotBound offer, not a customer's own price. */
 export function isStaleBotBoundPricing(text: string): boolean {
-  const dollar = String.fromCharCode(36);
   const lower = text.toLowerCase();
+  // A price alone belongs to the account holder. Only recognize a retired
+  // platform offer when BotBound is named, or when the old $19/$12 bundle is
+  // quoted together. Complete amount boundaries preserve $19.99 and $1900.
+  const retiredNamedOffer =
+    /(?:\b(?:BotBound|Wireline)\b[^.!?\n]{0,140}(?:\$19(?:\.00)?\s*(?:\/\s*month|per\s+month)\b|\$190(?:\.00)?\s*(?:\/\s*year|per\s+year)\b|\$12\s+(?:of\s+)?shared\b)|(?:\$19(?:\.00)?\s*(?:\/\s*month|per\s+month)\b|\$190(?:\.00)?\s*(?:\/\s*year|per\s+year)\b|\$12\s+(?:of\s+)?shared\b)[^.!?\n]{0,80}\b(?:BotBound|Wireline)\b)/i;
+  const retiredBundle =
+    /\$19(?:\.00)?\s*(?:\/\s*month|per\s+month)\b[^.!?\n]{0,100}\$12\s+(?:of\s+)?shared\b/i;
   return (
-    text.includes(`${dollar}19/month`) ||
-    text.includes(`${dollar}19 per month`) ||
-    text.includes(`${dollar}190/year`) ||
-    lower.includes(`${dollar}12 shared`) ||
+    retiredNamedOffer.test(text) ||
+    retiredBundle.test(text) ||
     lower.includes("channel packages include one bot") ||
     lower.includes("prepaid runtime balance")
   );
+}
+
+/** Remove retired BotBound claims while retaining the account holder's other facts. */
+export function withoutStaleBotBoundPricing(text: string): string {
+  if (!text || !isStaleBotBoundPricing(text)) return text;
+  return text
+    .split(/\n+/)
+    .flatMap((line) => line.split(/(?<=[.!?])\s+/))
+    .filter((part) => part.trim() && !isStaleBotBoundPricing(part))
+    .join("\n")
+    .trim();
 }

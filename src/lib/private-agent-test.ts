@@ -14,6 +14,7 @@ import {
   isSavedRuntimeReviewRequired,
   RUNTIME_REVIEW_REQUIRED_RESPONSE,
 } from "./runtime-template-personality";
+import { withoutStaleBotBoundPricing } from "./usage-billing-catalog";
 import * as schema from "../db/schema";
 
 export type PrivateAgentTestHistoryItem = {
@@ -64,7 +65,7 @@ export function privateTestConversationText(
 
 function compactLines(values: Array<string | null | undefined>, limit: number) {
   return values
-    .map((value) => value?.trim())
+    .map((value) => withoutStaleBotBoundPricing(value?.trim() || ""))
     .filter((value): value is string => Boolean(value))
     .slice(0, limit);
 }
@@ -126,8 +127,8 @@ export async function loadPrivateAgentTestContext(
 
   const agent = agentRows[0];
   if (!agent) throw AppError.fromHttpStatus(404, "Bot not found");
-  const savedPersonality = personalities[0]?.content || "";
-  const reviewRequired = isSavedRuntimeReviewRequired(savedPersonality, agent.role);
+  const storedPersonality = personalities[0]?.content || "";
+  const reviewRequired = isSavedRuntimeReviewRequired(storedPersonality, agent.role);
   if (reviewRequired) {
     return {
       agentId: agent.id,
@@ -136,6 +137,7 @@ export async function loadPrivateAgentTestContext(
       reviewRequired: true,
     };
   }
+  const savedPersonality = withoutStaleBotBoundPricing(storedPersonality);
 
   const directiveLines = compactLines(
     directives.map((directive) => directive.content),
@@ -155,6 +157,7 @@ export async function loadPrivateAgentTestContext(
     ? JSON.stringify(agent.businessVariables).slice(0, 6000)
     : "";
   const calendarContext = await nativeCalendarRehearsalContext(userId, agent.enabledTools);
+  const preferredOpening = withoutStaleBotBoundPricing(resolveAgentGreeting(agent, directives));
 
   const system = [
     `You are ${agent.name || "the Bot"}, a customer-facing Bot configured for this role: ${agent.role || "general support"}.`,
@@ -164,8 +167,8 @@ export async function loadPrivateAgentTestContext(
     "Do not invent prices, policies, availability, or unprovided facts. Do not claim a booking, transfer, message, payment, or other external action completed in this rehearsal.",
     calendarContext,
     savedPersonality ? `Tone: ${savedPersonality}` : "Tone: clear and professional.",
-    `Preferred opening: ${resolveAgentGreeting(agent, directives)}`,
-    playbookPromptBlock(agent.playbook),
+    preferredOpening ? `Preferred opening: ${preferredOpening}` : "",
+    withoutStaleBotBoundPricing(playbookPromptBlock(agent.playbook)),
     directiveLines.length ? `Operating rules:\n- ${directiveLines.join("\n- ")}` : "",
     knowledgeLines.length ? `Knowledge facts:\n- ${knowledgeLines.join("\n- ")}` : "",
     businessProfile ? `Workspace profile: ${businessProfile}` : "",

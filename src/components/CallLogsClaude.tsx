@@ -110,6 +110,9 @@ export function readableCallSummary(
 ) {
   const text = summary?.trim();
   if (!text) return "No summary is available for this call yet.";
+  if (/^Native voice call completed without a usable transcript\.?$/i.test(text)) {
+    return "No usable transcript was captured.";
+  }
   // Some older calls stored a clipped transcript in the summary field. Show
   // the full transcript once, under its own disclosure, instead of duplicating it.
   const excerpt = text.replace(/…$/, "").replace(/\s+/g, " ");

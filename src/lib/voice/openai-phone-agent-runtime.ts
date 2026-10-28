@@ -29,7 +29,7 @@ import {
 } from "../runtime-template-personality";
 import { drizzle, serialQueryBatch } from "../server-context";
 import { validateNativeCalendarSettings } from "../native-calendar-policy";
-import { currentPricingPromptBlock, isStaleBotBoundPricing } from "../usage-billing-catalog";
+import { withoutStaleBotBoundPricing } from "../usage-billing-catalog";
 import {
   OPENAI_REALTIME_DEFAULT_MODEL,
   OPENAI_REALTIME_DEFAULT_TRANSCRIBER,
@@ -185,7 +185,7 @@ function trimLine(value: unknown, max = MAX_PROMPT_LINE_LENGTH): string {
 }
 
 function playbookBlock(playbook: unknown): string {
-  const block = playbookPromptBlock(playbook);
+  const block = withoutStaleBotBoundPricing(playbookPromptBlock(playbook));
   return block ? `\n${block}` : "";
 }
 
@@ -295,12 +295,14 @@ export function composeOpenAIRealtimeInstructions(input: {
     ? null
     : resolveRuntimeTemplatePersonality(input.personality);
   const runtimeReviewRequired = isRuntimeReviewRequired(runtimeTemplate, input.agent.role);
-  const templateGuidance = runtimeTemplateGuidanceBlock(runtimeTemplate, input.agent.role);
+  const templateGuidance = withoutStaleBotBoundPricing(
+    runtimeTemplateGuidanceBlock(runtimeTemplate, input.agent.role),
+  );
   const customInstructions = internalPolicy
     ? ""
     : runtimeReviewRequired
       ? ""
-      : trimLine(input.agent.systemPromptOverride, 8_000);
+      : withoutStaleBotBoundPricing(trimLine(input.agent.systemPromptOverride, 8_000));
   const identity = runtimeReviewRequired
     ? [
         "You are a BotBound Bot in review-required hold mode.",
@@ -331,14 +333,16 @@ export function composeOpenAIRealtimeInstructions(input: {
   ]
     .filter(Boolean)
     .join("\n");
-  const tone = internalPolicy
-    ? input.agent.personalityVibe
-      ? `Tone: ${input.agent.personalityVibe}.`
-      : ""
-    : runtimeReviewRequired
-      ? ""
-      : trimLine(runtimeTemplate ? runtimeTemplate.rolePersonality : input.personality, 1_500) ||
-        (input.agent.personalityVibe ? `Tone: ${input.agent.personalityVibe}.` : "");
+  const tone = withoutStaleBotBoundPricing(
+    internalPolicy
+      ? input.agent.personalityVibe
+        ? `Tone: ${input.agent.personalityVibe}.`
+        : ""
+      : runtimeReviewRequired
+        ? ""
+        : trimLine(runtimeTemplate ? runtimeTemplate.rolePersonality : input.personality, 1_500) ||
+          (input.agent.personalityVibe ? `Tone: ${input.agent.personalityVibe}.` : ""),
+  );
   const surface = runtimeReviewRequired
     ? ""
     : input.surface === "browser_test"
@@ -358,16 +362,28 @@ export function composeOpenAIRealtimeInstructions(input: {
       tone ? `\nTONE:\n${tone}` : "",
       templateGuidance ? `\n${templateGuidance}` : "",
       !runtimeReviewRequired && input.agent.kpiFocus
-        ? `\nPRIMARY OUTCOME:\n${trimLine(input.agent.kpiFocus, 600)}`
+        ? `\nPRIMARY OUTCOME:\n${withoutStaleBotBoundPricing(trimLine(input.agent.kpiFocus, 600))}`
         : "",
       !runtimeReviewRequired && compliance ? `\nGUARDRAILS:\n${compliance}` : "",
       runtimeReviewRequired ? "" : playbookBlock(input.agent.playbook),
-      runtimeReviewRequired ? "" : listBlock("OPERATING RULES", input.directives, 24),
+      runtimeReviewRequired
+        ? ""
+        : listBlock(
+            "OPERATING RULES",
+            input.directives.map((item) => ({
+              ...item,
+              content: withoutStaleBotBoundPricing(item.content ?? ""),
+            })),
+            24,
+          ),
       runtimeReviewRequired
         ? ""
         : listBlock(
             "INITIAL APPROVED KNOWLEDGE",
-            input.knowledge.filter((item) => !isStaleBotBoundPricing(item.content ?? "")),
+            input.knowledge.map((item) => ({
+              ...item,
+              content: withoutStaleBotBoundPricing(item.content ?? ""),
+            })),
             MAX_INITIAL_KNOWLEDGE_ITEMS,
           ),
       `\n${RUNTIME_ACTION_SAFETY_BLOCK}`,
@@ -375,7 +391,6 @@ export function composeOpenAIRealtimeInstructions(input: {
       internalPolicy && !runtimeReviewRequired
         ? `\n${founderInternalRuntimeAuthorityBoundary(internalPolicy)}`
         : "",
-      `\n${currentPricingPromptBlock()}`,
     ]
       .filter(Boolean)
       .join("\n"),
@@ -598,7 +613,8 @@ export async function buildOpenAIRealtimeAgentRuntime(input: {
     catalogVoice: customVoice ? null : catalogVoice,
     greeting: reviewRequired
       ? RUNTIME_REVIEW_REQUIRED_GREETING
-      : resolveAgentGreeting(runtime.agent, runtime.directives),
+      : withoutStaleBotBoundPricing(resolveAgentGreeting(runtime.agent, runtime.directives)) ||
+        "Hi, how can I help?",
     session: commonSession,
     toolNames: tools.map((tool) => tool.name),
   };
