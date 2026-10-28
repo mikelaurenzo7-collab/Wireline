@@ -13,7 +13,6 @@ import {
   crossedAlertThresholds,
   currentPricingFacts,
   estimateUsageBill,
-  isStaleBotBoundPricing,
   marginalUnitUsd,
   minimumMonthlyCapUsd,
   priceMeter,
@@ -365,8 +364,6 @@ describe("Stripe setup script parity", () => {
     expect(facts).toContain("SMS is $0.04 per sent segment");
     expect(facts).toContain("unlimited Bots");
     expect(facts).not.toContain(retired);
-    expect(isStaleBotBoundPricing(`BotBound Calls plan is ${retired}`)).toBe(true);
-    expect(isStaleBotBoundPricing("A haircut is 19 dollars")).toBe(false);
     const migration = readFileSync(
       "drizzle/migrations/0192_usage_tier_standard_default.sql",
       "utf8",

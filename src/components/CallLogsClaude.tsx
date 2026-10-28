@@ -110,6 +110,9 @@ export function readableCallSummary(
 ) {
   const text = summary?.trim();
   if (!text) return "No summary is available for this call yet.";
+  if (/^Native voice call completed without a usable transcript\.?$/i.test(text)) {
+    return "No usable transcript was captured.";
+  }
   // Some older calls stored a clipped transcript in the summary field. Show
   // the full transcript once, under its own disclosure, instead of duplicating it.
   const excerpt = text.replace(/…$/, "").replace(/\s+/g, " ");
@@ -394,9 +397,9 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
 
       <header className="border-b border-border pb-4">
         <p className="text-xs font-semibold text-primary">Call report</p>
-        <h3 className="mt-1 font-mono text-xl font-semibold text-foreground">
+        <h2 className="mt-1 font-mono text-xl font-semibold text-foreground">
           {formatPhone(selected.customer_number, "Unknown Caller")}
-        </h3>
+        </h2>
         <p className="wl-preserve-case mt-1 text-xs text-muted-foreground">
           {[
             selected.agent_name,
@@ -410,9 +413,9 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
 
       <div className="space-y-5 py-5">
         <section>
-          <h4 className="text-xs font-semibold tracking-[0.08em] text-muted-foreground">
+          <h3 className="text-xs font-semibold tracking-[0.08em] text-muted-foreground">
             {selected.summary?.trim().startsWith("Caller:") ? "Caller Excerpt" : "Summary"}
-          </h4>
+          </h3>
           <p className="wl-preserve-case mt-2 text-sm leading-6 text-foreground">
             {readableCallSummary(selected.summary, selected.transcript)}
           </p>
@@ -448,9 +451,9 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
         {selected.recording_url ? (
           <section aria-label="Call recording">
             <div className="flex items-center justify-between gap-3">
-              <h4 className="text-xs font-semibold tracking-[0.08em] text-muted-foreground">
+              <h3 className="text-xs font-semibold tracking-[0.08em] text-muted-foreground">
                 Recording
-              </h4>
+              </h3>
               <a
                 href={selected.recording_url}
                 target="_blank"
