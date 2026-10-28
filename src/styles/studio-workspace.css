@@ -269,9 +269,10 @@
 .wl-workspace-shell .wl-studio-task-chat__composer .wl-composer-dock:focus-within,
 .wl-workspace-shell .wl-studio-chat__composer .wl-composer-dock:focus-within {
   border-color: var(--wireline-color-border-strong);
-  outline: 2px solid var(--wireline-color-focus-default);
-  outline-offset: 2px;
-  box-shadow: none;
+  outline: none;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--wireline-color-border-strong) 80%, transparent),
+    0 12px 32px -12px rgb(0 0 0 / 0.28);
 }
 
 .wl-workspace-shell .wl-studio-composer {
@@ -600,13 +601,18 @@
 }
 
 .wl-studio-chat__welcome > svg {
-  width: 2.25rem;
-  height: 2.25rem;
-  padding: 0.5rem;
-  border-radius: 0.75rem;
-  border: 1px solid var(--studio-rule);
-  background: var(--wireline-color-surface-default);
-  color: var(--wireline-color-action-primary-default);
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0.55rem;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--studio-rule) 70%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-default) 85%,
+    var(--wireline-color-surface-raised)
+  );
+  color: var(--wireline-color-text-primary);
+  box-shadow: 0 2px 8px -2px rgb(0 0 0 / 0.1);
 }
 
 .wl-studio-chat__welcome h2 {
