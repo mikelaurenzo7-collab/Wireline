@@ -38,7 +38,7 @@ export default function About() {
     <MarketingPageFrame className="wl-about-page">
       <PageMeta
         title="About BotBound"
-        description="BotBound is an independent platform for calls, email, and cloud browser tasks. Set your knowledge and rules, review outcomes, and reach the founder directly for support."
+        description="BotBound is an independent platform for calls, email, and Computer work. Set your knowledge and rules, review outcomes, and reach the founder for support."
         path="/about"
       />
 

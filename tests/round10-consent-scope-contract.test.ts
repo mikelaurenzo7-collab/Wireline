@@ -50,7 +50,9 @@ describe("round-10 consent placement cannot depend on probe timing", () => {
     // into the workspace on top of the Overview onboarding card. Observed in
     // the walkthrough recording.
     expect(consent).toContain("isMarketingPublicPath");
-    expect(consent).toContain("const onPublicSurface = isMarketingPublicPath(location.pathname)");
+    expect(consent).toContain(
+      "isMarketingHomePath(location.pathname) || isMarketingPublicPath(location.pathname)",
+    );
     expect(consent).toContain("if (!onPublicSurface && !explicitlyOpened) return null;");
   });
 
@@ -63,8 +65,8 @@ describe("round-10 consent placement cannot depend on probe timing", () => {
       consent.indexOf("window.addEventListener(OPEN_PRIVACY_CHOICES_EVENT"),
     );
     expect(listener).not.toContain("onPublicSurface");
-    expect(consent).toContain("privacyPanelRef.current?.focus()");
+    expect(consent).toContain("privacyPanelRef.current?.focus({ preventScroll: true });");
     expect(consent).toContain('role="region"');
-    expect(consent).not.toContain('aria-modal="true"');
+    expect(consent).not.toContain("aria-modal={");
   });
 });

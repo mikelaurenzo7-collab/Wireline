@@ -195,8 +195,8 @@ describe("E2E design and BotBound brand polish", () => {
     expect(read("src/App.tsx")).toContain(
       '<Route path="/blog" element={<PreservingRedirect to="/changelog" />} />',
     );
-    expect(support).not.toContain("marketing-hero-title");
-    expect(contact).not.toContain("marketing-hero-title");
+    expect(support).toContain("marketing-hero-title");
+    expect(contact).toContain("marketing-hero-title");
     expect(notFound).toContain("text-[4.25rem]");
     expect(notFound).not.toContain("xl:text-[12rem]");
     expect(responsive).not.toMatch(/\.wl-pricing-page h1\s*\{[^}]*10\.4vw/);

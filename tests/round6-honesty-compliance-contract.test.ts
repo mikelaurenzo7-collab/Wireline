@@ -64,9 +64,11 @@ describe("email unsubscribe endpoints honor the write result", () => {
     expect(routes).toContain("res.status(503).json({ ok: false, unsubscribed: false })");
   });
 
-  it("the human GET page never renders success over a failed write", () => {
+  it("the human GET page renders a confirmation instead of mutating on a prefetch", () => {
     const routes = read("src/routes/email-unsubscribe-routes.ts");
-    expect(routes).toContain('const recorded = await recordTarget(target, "link_unsubscribe")');
+    expect(routes).toContain("Mail gateways and link scanners prefetch GET links");
+    expect(routes).toContain('renderPage("Confirm unsubscribe", confirm)');
+    expect(routes).not.toContain('recordTarget(target, "link_unsubscribe")');
     expect(routes).toContain("We couldn't process that just now");
   });
 });

@@ -36,6 +36,7 @@ export const SPA_ROUTE_ROOTS: ReadonlySet<string> = new Set([
   "get-started",
   "inbox",
   "insights",
+  "integrations",
   "knowledge",
   "legal",
   "login",

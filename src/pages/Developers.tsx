@@ -102,7 +102,7 @@ export default function Developers() {
     <MarketingPageFrame className="wl-developers-page">
       <PageMeta
         title="Developers | BotBound"
-        description="Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first phone bot in the chat you already use, then continue in the same BotBound workspace. No public API keys."
+        description="Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first bot in the chat you use, and continue in the same workspace."
         path="/developers"
       />
 

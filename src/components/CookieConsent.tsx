@@ -133,7 +133,12 @@ export default function CookieConsent() {
   useEffect(() => {
     if (!visible) return;
     const frame = window.requestAnimationFrame(() => {
-      if (document.querySelector('[aria-modal="true"], dialog[open]')) return;
+      if (
+        typeof document.querySelector === "function" &&
+        document.querySelector('[aria-modal="true"], dialog[open]')
+      ) {
+        return;
+      }
       privacyPanelRef.current?.focus({ preventScroll: true });
     });
     return () => window.cancelAnimationFrame(frame);

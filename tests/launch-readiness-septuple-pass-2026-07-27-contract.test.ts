@@ -43,9 +43,9 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
     const cookie = read("src/components/CookieConsent.tsx");
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
     expect(cookie).toContain('role="region"');
-    expect(cookie).toContain("privacyPanelRef.current?.focus()");
+    expect(cookie).toContain("privacyPanelRef.current?.focus({ preventScroll: true });");
     expect(cookie).not.toContain("useModalFocusTrap");
-    expect(cookie).not.toContain('aria-modal="true"');
+    expect(cookie).not.toContain("aria-modal={");
     expect(wizard).toContain(
       "Couldn't refresh phone lines. Retry before provisioning another number.",
     );
