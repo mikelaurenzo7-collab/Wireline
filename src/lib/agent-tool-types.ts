@@ -16,6 +16,8 @@ export type ToolCallContext = {
   message: Record<string, any>;
   agent: { id: string; user_id: string };
   webhookAgentId: string;
+  userId?: string;
+  agentId?: string;
   agentVoiceName?: string;
   /** Cancels new live-call side effects when the durable call lease is lost. */
   abortSignal?: AbortSignal;

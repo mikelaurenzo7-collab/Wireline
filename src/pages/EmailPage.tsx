@@ -211,7 +211,7 @@ export default function EmailPage() {
             value={activeAgentId}
             onChange={(event) => setAgentScope(event.target.value)}
             aria-label="Filter Inbox by Bot"
-            className="min-h-[44px] w-0 min-w-0 flex-1 rounded-lg border border-border bg-card px-3 text-base font-semibold text-foreground sm:min-h-9 sm:w-auto sm:max-w-[10rem] sm:flex-none sm:px-2 sm:text-xs wl-focus-ring-halo"
+            className="min-h-[44px] w-0 min-w-0 flex-1 rounded-lg border border-border/80 bg-card/95 px-3 py-1.5 text-base font-medium text-foreground shadow-2xs transition-colors hover:border-border sm:min-h-9 sm:w-auto sm:max-w-[11rem] sm:flex-none sm:px-2.5 sm:text-xs wl-focus-ring-halo"
           >
             <option value="">All Bots</option>
             {activeAgentId && !hasRequestedAgent ? (
@@ -231,7 +231,7 @@ export default function EmailPage() {
             value={activeAccountId}
             onChange={(event) => setMailboxScope(event.target.value)}
             aria-label="Filter email by mailbox"
-            className="min-h-[44px] w-0 min-w-0 flex-1 rounded-lg border border-border bg-card px-3 text-base font-semibold text-foreground max-[359px]:flex-[1.25] sm:min-h-9 sm:w-auto sm:max-w-[13rem] sm:flex-none sm:px-2 sm:text-xs wl-focus-ring-halo"
+            className="min-h-[44px] w-0 min-w-0 flex-1 rounded-lg border border-border/80 bg-card/95 px-3 py-1.5 text-base font-medium text-foreground shadow-2xs transition-colors hover:border-border max-[359px]:flex-[1.25] sm:min-h-9 sm:w-auto sm:max-w-[13.5rem] sm:flex-none sm:px-2.5 sm:text-xs wl-focus-ring-halo"
           >
             <option value="">All Mailboxes</option>
             {activeAccountId && !hasRequestedAccount ? (
@@ -255,7 +255,7 @@ export default function EmailPage() {
         <WorkspacePageIntro title="Inbox" titleHidden />
         <WorkspaceControlBand
           ariaLabel="Inbox controls"
-          className="mb-0"
+          className="mb-0 gap-2.5 border-border/70 pb-2.5"
           primary={
             <WorkspaceTabStrip
               ariaLabel="Inbox sections"

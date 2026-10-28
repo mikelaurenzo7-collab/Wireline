@@ -1425,6 +1425,9 @@ export async function getComputerTask(userId: string, taskId: string): Promise<C
   return toView(row);
 }
 
+export const listComputerTasksForOwner = listComputerTasks;
+export const getComputerTaskForOwner = getComputerTask;
+
 type OwnerFrameState = Pick<
   LiveTask,
   | "session"

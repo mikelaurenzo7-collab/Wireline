@@ -134,7 +134,7 @@ export default function PhonePage() {
             ? "Choose Bot for Outbound"
             : "Filter call history by Bot"
       }
-      className="min-h-[44px] max-w-full shrink-0 rounded-lg border border-border bg-card px-3 text-base font-semibold text-foreground sm:min-h-9 sm:max-w-[10rem] sm:px-2 sm:text-xs wl-focus-ring-halo"
+      className="min-h-[44px] max-w-full shrink-0 rounded-lg border border-border/80 bg-card/95 px-3 py-1.5 text-base font-medium text-foreground shadow-2xs transition-colors hover:border-border sm:min-h-9 sm:max-w-[11rem] sm:px-2.5 sm:text-xs wl-focus-ring-halo"
     >
       <option value="">All Bots</option>
       {activeAgentId && !hasRequestedAgent ? (
@@ -163,6 +163,7 @@ export default function PhonePage() {
             <WorkspaceControlBand
               embedded
               ariaLabel="Call controls"
+              className="gap-2.5 sm:items-center"
               primary={
                 <WorkspaceTabStrip
                   tabs={[...PHONE_TABS]}

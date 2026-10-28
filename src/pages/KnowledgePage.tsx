@@ -98,7 +98,12 @@ export default function KnowledgePage() {
   const secondaryControls = (
     <>
       {agentId ? (
-        <Button asChild variant="secondary" size="sm" className="min-h-11 shrink-0 justify-center">
+        <Button
+          asChild
+          variant="secondary"
+          size="sm"
+          className="min-h-11 shrink-0 justify-center rounded-lg border-border/80 px-3.5 shadow-2xs sm:min-h-9"
+        >
           <Link to={`/studio?agent=${encodeURIComponent(agentId)}&workroom=test`}>
             <Mic size={15} aria-hidden="true" />
             Try It
@@ -120,7 +125,7 @@ export default function KnowledgePage() {
             )
           }
           aria-label="Choose Bot"
-          className="min-w-[160px] max-w-[12rem] sm:w-auto"
+          className="min-w-[160px] max-w-[13rem] rounded-lg border-border/80 bg-card/95 font-medium shadow-2xs sm:h-9 sm:w-auto sm:py-1.5 sm:text-xs"
         >
           {requestedAgentUnavailable ? (
             <option value="" disabled>
@@ -148,7 +153,10 @@ export default function KnowledgePage() {
         <WorkspacePageFrame mode="standard">
           <WorkspaceControlBand
             ariaLabel="Knowledge controls"
-            primary={<h1 className="text-lg font-semibold text-foreground">Knowledge</h1>}
+            className="gap-2.5 border-border/70 pb-3.5 sm:items-center"
+            primary={
+              <h1 className="text-lg font-semibold tracking-tight text-foreground">Knowledge</h1>
+            }
             secondary={secondaryControls}
           />
 

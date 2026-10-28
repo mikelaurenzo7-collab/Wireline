@@ -55,6 +55,80 @@
   box-shadow: none;
 }
 
+/* Native form controls and disclosures inside the authenticated workspace */
+.wl-workspace-shell select {
+  color-scheme: inherit;
+  border-color: var(--bb-shell-border);
+  background-color: var(--wireline-color-surface-default);
+  color: var(--wireline-color-text-primary);
+  transition:
+    border-color var(--bb-shell-fast),
+    background-color var(--bb-shell-fast),
+    color var(--bb-shell-fast),
+    box-shadow var(--bb-shell-fast);
+}
+
+.wl-workspace-shell select:not([data-slot="native-select"]):not([multiple]):not([size]) {
+  appearance: none;
+  padding-inline-end: 2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238a8f98' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.625rem center;
+  background-size: 0.875rem 0.875rem;
+}
+
+.wl-workspace-shell select option,
+.wl-workspace-shell select optgroup {
+  background-color: var(--wireline-color-surface-default);
+  color: var(--wireline-color-text-primary);
+}
+
+.wl-workspace-shell details {
+  border-radius: var(--wireline-radius-md);
+}
+
+.wl-workspace-shell details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.375rem 0.5rem;
+  margin: -0.375rem -0.5rem;
+  border-radius: var(--wireline-radius-sm);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  transition:
+    background-color var(--bb-shell-fast),
+    color var(--bb-shell-fast),
+    border-color var(--bb-shell-fast);
+}
+
+.wl-workspace-shell details > summary::-webkit-details-marker,
+.wl-workspace-shell details > summary::marker {
+  display: none;
+  content: "";
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .wl-workspace-shell select:hover:not(:disabled) {
+    border-color: var(--wireline-color-border-strong);
+  }
+
+  .wl-workspace-shell details > summary:hover {
+    background-color: var(--bb-shell-hover);
+  }
+}
+
+.wl-workspace-shell details[open] > summary {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--bb-shell-border);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
 /* Desktop rail */
 .wl-workspace-shell .wl-shell-rail {
   position: relative;

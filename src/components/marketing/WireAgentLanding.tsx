@@ -148,8 +148,8 @@ function CapabilityPreview({ channel }: { channel: ChannelId }) {
               <span className="landing-prestige__email-time">Just now</span>
             </div>
             <p className="landing-prestige__email-body">
-              We can be there at 10:30 AM on Saturday. Commercial dispatch is $45 plus $28 per
-              cylinder. Reply to confirm and I will lock in the slot.
+              We can be there at 10:30 AM on Saturday. Our standard commercial rekey rate applies.
+              Reply to confirm and I will lock in the slot.
             </p>
           </div>
         </div>

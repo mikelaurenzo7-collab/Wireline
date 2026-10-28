@@ -164,4 +164,44 @@ export const OPENAI_REALTIME_WIRELINE_TOOLS: OpenAIRealtimeToolDefinition[] = [
       additionalProperties: false,
     },
   },
+  {
+    type: "function",
+    name: "start_computer_task",
+    description:
+      "Starts an asynchronous supervised Cloud Computer browser task for the current Bot and immediately returns the task_id and status so you can acknowledge to the caller without dead air.",
+    parameters: {
+      type: "object",
+      properties: {
+        goal: {
+          type: "string",
+          description:
+            "Clear sentence or two describing the browser task for the Cloud Computer to perform.",
+        },
+        start_url: {
+          type: "string",
+          description:
+            "Optional full starting URL (https://...) to open first before performing the goal.",
+        },
+      },
+      required: ["goal"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "check_computer_task",
+    description:
+      "Checks the current status, summary, or pending question of a running or recent Cloud Computer browser task so you can report the live result to the caller.",
+    parameters: {
+      type: "object",
+      properties: {
+        task_id: {
+          type: "string",
+          description:
+            "Optional task_id returned by start_computer_task. Defaults to the latest task for this Bot.",
+        },
+      },
+      additionalProperties: false,
+    },
+  },
 ];

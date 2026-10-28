@@ -150,18 +150,23 @@ function DangerZone() {
         onToggle={(event) => setExpanded(event.currentTarget.open)}
         className="group"
       >
-        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md text-[var(--wireline-color-status-error)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
-          <h2 className="text-base font-semibold leading-6">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-2.5 py-2 -mx-2.5 -my-1 text-[var(--wireline-color-status-error)] transition-colors hover:bg-[var(--wireline-color-feedback-error-surface)]/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+          <h2 className="text-base font-semibold leading-6 tracking-tight">
             {deletionScheduled && !expanded
               ? "Deletion Scheduled"
               : working
                 ? "Scheduling Deletion…"
                 : "Delete Account"}
           </h2>
-          <ChevronDown
-            className="size-4 shrink-0 transition-transform group-open:rotate-180"
+          <span
             aria-hidden="true"
-          />
+            className="grid size-7 shrink-0 place-items-center rounded-md border border-[var(--wireline-color-feedback-error-border)]/70 bg-[var(--wireline-color-feedback-error-surface)]/50 transition-colors"
+          >
+            <ChevronDown
+              className="size-4 shrink-0 transition-transform duration-200 group-open:rotate-180"
+              aria-hidden="true"
+            />
+          </span>
         </summary>
         {!deletionScheduled && !message ? (
           <p className="mt-3 max-w-[48ch] text-sm leading-6 text-muted-foreground">
@@ -194,7 +199,7 @@ function DangerZone() {
                 value={confirmation}
                 onChange={(event) => setConfirmation(event.target.value.toUpperCase())}
                 placeholder="DELETE"
-                className="h-11 rounded-xl border border-border bg-background px-4 text-sm font-medium tracking-[0.18em] text-foreground outline-none focus:border-[var(--wireline-color-status-error)] sm:w-44"
+                className="h-11 rounded-lg border border-border/80 bg-background px-3.5 text-sm font-medium tracking-[0.18em] text-foreground shadow-2xs outline-none transition-colors focus:border-[var(--wireline-color-status-error)] sm:w-44"
               />
             </label>
             <Button
@@ -203,7 +208,7 @@ function DangerZone() {
               size="sm"
               disabled={confirmation !== "DELETE" || working}
               onClick={requestDeletion}
-              className="border-[var(--wireline-color-feedback-error-border)] text-[var(--wireline-color-status-error)] hover:bg-[var(--wireline-color-feedback-error-surface)]"
+              className="min-h-11 rounded-lg border-[var(--wireline-color-feedback-error-border)] px-3.5 text-[var(--wireline-color-status-error)] hover:bg-[var(--wireline-color-feedback-error-surface)]"
             >
               <Trash2 size={14} aria-hidden="true" />
               {working ? "Scheduling…" : "Delete Account"}
