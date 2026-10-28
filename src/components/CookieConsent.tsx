@@ -197,7 +197,7 @@ export default function CookieConsent() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 24, opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
-          className="fixed z-[9999] box-border wl-privacy-choices left-3 right-3 w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] sm:left-auto sm:right-4 sm:w-[480px] sm:max-w-[calc(100vw-2rem)] max-lg:bottom-[var(--wl-fixed-overlay-bottom)] lg:bottom-4 max-h-[calc(100dvh-var(--wl-fixed-overlay-bottom)-1rem)] lg:max-h-[calc(100dvh-2.5rem)] overflow-y-auto overscroll-contain rounded-xl"
+          className="fixed z-[9999] box-border wl-privacy-choices left-3 right-3 w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] sm:left-auto sm:right-4 sm:w-[720px] sm:max-w-[calc(100vw-2rem)] max-lg:bottom-[var(--wl-fixed-overlay-bottom)] lg:bottom-4 max-h-[calc(100dvh-var(--wl-fixed-overlay-bottom)-1rem)] lg:max-h-[calc(100dvh-2.5rem)] overflow-y-auto overscroll-contain rounded-xl"
           role="region"
           aria-label="Privacy Choices"
           tabIndex={-1}

@@ -254,6 +254,60 @@ describe("live tool channel entitlements", () => {
     ]);
   });
 
+  it("exposes only the individually selected Computer action, even from a stale cache", async () => {
+    const selectedComputer = ["check_computer_task"];
+    const computerNames = [
+      "start_computer_task",
+      "check_computer_task",
+      "reply_computer_task",
+      "stop_computer_task",
+    ];
+    const fresh = names(
+      await buildRoleToolDefsForTenant("front_desk", selectedComputer, "user-pilot", "standard", flags),
+    );
+    expect(fresh.filter((name) => computerNames.includes(name))).toEqual(selectedComputer);
+
+    h.cached.mockResolvedValue(computerNames.map((name) => ({ name })));
+    const cached = names(
+      await buildRoleToolDefsForTenant("front_desk", selectedComputer, "user-pilot", "standard", flags),
+    );
+    expect(cached.filter((name) => computerNames.includes(name))).toEqual(selectedComputer);
+  });
+
+  it("rechecks Computer selection at execution and fails closed without verified context", async () => {
+    let enabledTools: unknown = ["start_computer_task"];
+    const query = {
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      limit: vi.fn(async () => [{ enabledTools }]),
+    };
+    const ctx = {
+      ...context(),
+      drizzle: { select: vi.fn(() => query) },
+    } as unknown as ToolCallContext;
+
+    await expect(isAgentToolExecutionAuthorized("start_computer_task", ctx)).resolves.toBe(true);
+    await expect(isAgentToolExecutionAuthorized("reply_computer_task", ctx)).resolves.toBe(false);
+    enabledTools = [];
+    await expect(isAgentToolExecutionAuthorized("start_computer_task", ctx)).resolves.toBe(false);
+    enabledTools = null;
+    await expect(isAgentToolExecutionAuthorized("start_computer_task", ctx)).resolves.toBe(true);
+    enabledTools = { start_computer_task: true };
+    await expect(isAgentToolExecutionAuthorized("start_computer_task", ctx)).resolves.toBe(false);
+    await expect(
+      isAgentToolExecutionAuthorized("start_computer_task", {
+        ...ctx,
+        agent: { id: "agent-pilot", user_id: "" },
+      }),
+    ).resolves.toBe(false);
+    await expect(
+      isAgentToolExecutionAuthorized("start_computer_task", {
+        ...ctx,
+        drizzle: {} as ToolCallContext["drizzle"],
+      }),
+    ).resolves.toBe(false);
+  });
+
   it("preserves the identity-checked manual follow-up without Email or entitlement lookup", async () => {
     h.entitlements.mockRejectedValue(new Error("unavailable"));
     await expect(isAgentToolExecutionAuthorized("create_followup_task", context())).resolves.toBe(

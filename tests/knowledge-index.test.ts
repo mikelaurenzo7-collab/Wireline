@@ -108,6 +108,8 @@ describe("knowledge index", () => {
   });
 
   it("does not touch the database when the index is not configured", async () => {
+    vi.stubEnv("XAI_API_KEY", "");
+    vi.stubEnv("XAI_MANAGEMENT_API_KEY", "");
     const db = { select: vi.fn() };
     expect(
       await semanticKnowledgeMatches(db as never, {

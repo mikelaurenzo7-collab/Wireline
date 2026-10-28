@@ -65,10 +65,11 @@ describe("billable unusable Responses output", () => {
     },
   );
   it("retains usage when no fallback succeeds", async () => {
+    vi.stubEnv("XAI_API_KEY", "");
     vi.stubEnv("AI_GATEWAY_API_KEY", "");
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(response({ ...success, output: [], output_text: "" })),
+      vi.fn().mockImplementation(() => response({ ...success, output: [], output_text: "" })),
     );
     const { context, run } = await load();
     await expect(run()).rejects.toThrow("unusable response");
@@ -170,9 +171,11 @@ describe("billable unusable Responses output", () => {
     "uses authoritative Gateway cost %s when token usage is absent",
     async (cost) => {
       vi.stubEnv("OPENAI_API_KEY", "");
+      vi.stubEnv("XAI_API_KEY", "");
+      vi.stubEnv("AI_GATEWAY_API_KEY", "test-gateway-key");
       vi.stubGlobal(
         "fetch",
-        vi.fn().mockResolvedValue(
+        vi.fn().mockImplementation(() =>
           response({
             output_text: success.output_text,
             provider_metadata: { gateway: { cost } },

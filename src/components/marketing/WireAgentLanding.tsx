@@ -112,9 +112,10 @@ function CapabilityPreview({ channel }: { channel: ChannelId }) {
             </span>
             <span className="landing-prestige__sms-Sub">Instant text follow-up</span>
           </div>
-          <p className="landing-prestige__bubble">Can we move Saturday to 10:30 AM?</p>
+          <span className="sr-only">Customer question</span>
+          <p className="landing-prestige__bubble">Could I book for Thursday?</p>
           <p className="landing-prestige__bubble landing-prestige__bubble--bot">
-            Confirmed for Saturday at 10:30 AM. Your technician is booked.
+            Confirmed for Thursday at 10:30 AM. Your appointment is booked.
           </p>
         </div>
       </div>
@@ -176,7 +177,7 @@ function CapabilityPreview({ channel }: { channel: ChannelId }) {
           <span className="landing-prestige__task-step">
             <Clock className="size-3" /> Step 3 of 3
           </span>
-          <span className="landing-prestige__task-status">Checking Saturday technician slots</span>
+          <span className="landing-prestige__task-status">Find an open time · Checking Saturday technician slots</span>
         </div>
 
         <div className="landing-prestige__browser-card">
@@ -290,7 +291,7 @@ export default function WireAgentLanding() {
 
           <div className="landing-prestige__workflow-grid">
             {WORKSPACE_STEPS.map(({ step, title, detail, Icon }) => (
-              <article key={step} className="landing-prestige__step-card">
+              <div key={step} className="landing-prestige__step-card">
                 <div className="landing-prestige__step-head">
                   <span className="landing-prestige__step-num">{step}</span>
                   <span className="landing-prestige__step-icon" aria-hidden="true">
@@ -299,7 +300,7 @@ export default function WireAgentLanding() {
                 </div>
                 <h3 className="landing-prestige__step-title">{title}</h3>
                 <p className="landing-prestige__step-body">{detail}</p>
-              </article>
+              </div>
             ))}
           </div>
 
@@ -307,8 +308,8 @@ export default function WireAgentLanding() {
             <div className="landing-prestige__bottom-copy">
               <h3>Ready to put your Bot to work?</h3>
               <p>
-                Plans start at $12/month with shared usage across calls, SMS, email, and browser
-                tasks.
+                Shared usage across calls, SMS, email, and hosted browser tasks with transparent,
+                scalable plans.
               </p>
             </div>
             <div className="landing-prestige__bottom-actions">

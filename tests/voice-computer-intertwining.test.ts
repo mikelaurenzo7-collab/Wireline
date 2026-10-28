@@ -36,6 +36,11 @@ vi.mock("../src/lib/server-context", () => ({
 import { dispatchAgentToolCall } from "../src/lib/agent-tool-dispatch";
 
 function buildContext(overrides: Partial<ToolCallContext> = {}): ToolCallContext {
+  const query = {
+    from: vi.fn().mockReturnThis(),
+    where: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockResolvedValue([{ enabledTools: null }]),
+  };
   return {
     toolCallId: "call-computer-1",
     payload: {},
@@ -44,7 +49,7 @@ function buildContext(overrides: Partial<ToolCallContext> = {}): ToolCallContext
     webhookAgentId: "bot-alpha",
     userId: "owner-1",
     agentId: "bot-alpha",
-    drizzle: {},
+    drizzle: { select: vi.fn(() => query) },
     log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     ...overrides,
   };
@@ -234,7 +239,7 @@ describe("voice and cloud computer runtime intertwining", () => {
     ).toBe(true);
   });
 
-  it("fails gracefully with a clear structured message when userId is missing or Cloud Computer is unavailable", async () => {
+  it("fails closed when userId is missing and reports an unavailable Cloud Computer", async () => {
     const missingUser = await dispatchAgentToolCall(
       "start_computer_task",
       { goal: "Check inventory" },
@@ -244,8 +249,7 @@ describe("voice and cloud computer runtime intertwining", () => {
       }),
     );
 
-    expect(missingUser.result).toContain("COMPUTER_TASK_UNAVAILABLE");
-    expect(missingUser.result).toContain("userId");
+    expect(missingUser.result).toContain("not enabled");
     expect(h.startComputerTask).not.toHaveBeenCalled();
 
     h.startComputerTask.mockRejectedValueOnce(

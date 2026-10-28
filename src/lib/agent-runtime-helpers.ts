@@ -1265,11 +1265,26 @@ export async function buildRoleToolDefsForTenant(
   const legacyFounderSpecialist =
     role === "BotBound Specialist" && isLegacyFounderShowcaseToolSelection(enabledTools);
   const allowedTools = (tools: object[]) => {
+    const computerTools = [
+      AGENT_TOOL_DEFS.start_computer_task,
+      AGENT_TOOL_DEFS.check_computer_task,
+      AGENT_TOOL_DEFS.reply_computer_task,
+      AGENT_TOOL_DEFS.stop_computer_task,
+    ];
+    const selectedComputerTools =
+      enabledTools == null
+        ? computerTools
+        : Array.isArray(enabledTools)
+          ? computerTools.filter((tool) => enabledTools.includes(tool.name))
+          : [];
+    const computerNames = new Set(computerTools.map((tool) => tool.name));
+    const selectedComputerNames = new Set(selectedComputerTools.map((tool) => tool.name));
     const allowed = tools.filter((tool) => {
       const name = String((tool as { name?: unknown }).name || "");
       return (
         !UNVERIFIED_LIVE_TOOL_NAMES.has(name as AgentToolName) &&
-        isAgentToolChannelAllowed(name, entitlements.channels)
+        isAgentToolChannelAllowed(name, entitlements.channels) &&
+        (!computerNames.has(name) || selectedComputerNames.has(name))
       );
     });
     // Existing founder CS rows can still hold the old seeded selection until
@@ -1282,20 +1297,14 @@ export async function buildRoleToolDefsForTenant(
     ) {
       allowed.push(AGENT_TOOL_DEFS.create_followup_task);
     }
-    // Ensure Cloud Computer tools are available on live phone runtimes even for
-    // existing Bot records persisted before the Cloud Computer tool rollout,
-    // unless the Account Holder explicitly saved an empty tool selection ([]).
-    const explicitlyEmpty = Array.isArray(enabledTools) && enabledTools.length === 0;
-    if (!explicitlyEmpty) {
-      for (const computerTool of [
-        AGENT_TOOL_DEFS.start_computer_task,
-        AGENT_TOOL_DEFS.check_computer_task,
-        AGENT_TOOL_DEFS.reply_computer_task,
-        AGENT_TOOL_DEFS.stop_computer_task,
-      ]) {
-        if (!allowed.some((tool) => (tool as { name?: unknown }).name === computerTool.name)) {
-          allowed.push(computerTool);
-        }
+    // Reconcile stale schemas without expanding an explicit action selection.
+    for (const computerTool of selectedComputerTools) {
+      if (
+        !UNVERIFIED_LIVE_TOOL_NAMES.has(computerTool.name as AgentToolName) &&
+        isAgentToolChannelAllowed(computerTool.name, entitlements.channels) &&
+        !allowed.some((tool) => (tool as { name?: unknown }).name === computerTool.name)
+      ) {
+        allowed.push(computerTool);
       }
     }
     return allowed;

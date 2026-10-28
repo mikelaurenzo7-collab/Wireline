@@ -248,11 +248,19 @@ export async function isAgentToolExecutionAuthorized(
   }
 
   if (CLOUD_COMPUTER_RUNTIME_TOOL_NAMES.has(name)) {
-    if (!agentId || !userId) return true;
-    if (typeof (context.drizzle as { select?: unknown } | undefined)?.select === "function") {
-      return hasVerifiedAgentIdentity(context, agentId, userId);
-    }
-    return true;
+    if (
+      !agentId ||
+      !userId ||
+      typeof (context.drizzle as { select?: unknown } | undefined)?.select !== "function"
+    ) return false;
+    const [agent] = await context.drizzle
+      .select({ enabledTools: schema.agents.enabledTools })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+      .limit(1);
+    if (!agent) return false;
+    const selected = sanitizePersistedAgentToolSelection(agent.enabledTools);
+    return selected === null || selected.includes(name);
   }
 
   if (!agentId || !userId) return false;

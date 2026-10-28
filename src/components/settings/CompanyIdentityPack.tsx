@@ -10,7 +10,6 @@ import {
 
 import { authFetch } from "../../lib/api";
 import { cn } from "../../lib/utils";
-import { SMS_LAUNCH_UI_ENABLED } from "../../lib/product-copy";
 import { Button } from "../atoms";
 import { StatusNotice } from "../molecules";
 import { Checkbox } from "../ui/shadcn/Checkbox";
@@ -325,7 +324,15 @@ export default function CompanyIdentityPack() {
   const reviewRejected = savedReviewStatuses.includes("rejected");
   const summary = reviewSummary(identity);
   // Saved channels remain in the form payload when their setup UI is hidden.
-  const visibleChannels = CHANNELS.filter((channel) => channel !== "sms" || SMS_LAUNCH_UI_ENABLED);
+  // Keep saved SMS requests and provider decisions manageable, without offering
+  // a new SMS identity request during the voice and email launch.
+  const visibleChannels = CHANNELS.filter(
+    (channel) =>
+      channel !== "sms" ||
+      identity?.profile.requested_channels.includes("sms") ||
+      (identity?.channels.sms.provider_status &&
+        identity.channels.sms.provider_status !== "not_requested"),
+  );
 
   function updateField(field: keyof Omit<IdentityForm, "requested_channels">, value: string) {
     setForm((current) => ({ ...current, [field]: value }));

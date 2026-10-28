@@ -46,6 +46,10 @@ vi.mock("../src/lib/realtime-spend-reservation", () => ({
 }));
 vi.mock("../src/middleware/audit-middleware", () => ({
   extendCommittedPlatformCostReservation: vi.fn(),
+  getAiTokenQuotaExceeded: vi.fn().mockReturnValue(false),
+  reservePlatformCostRecord: vi.fn().mockResolvedValue({ reservationId: "res_test" }),
+  releasePlatformCostReservation: vi.fn().mockResolvedValue(undefined),
+  commitPlatformCostReservation: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("../src/lib/voice/openai-phone-agent-runtime", () => ({
   buildOpenAIRealtimeAgentRuntime: vi.fn(),

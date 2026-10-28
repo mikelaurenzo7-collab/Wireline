@@ -88,6 +88,8 @@ async function startVoiceWorker() {
   });
   let stopping = false;
   installClonedMediaServer(server, { port, maxCalls, canAdmit });
+  // Gemini media remains uninstalled until call-bound authentication, admission,
+  // spend accounting, and lifecycle handling are implemented and verified.
   const stop = async () => {
     if (stopping) return;
     stopping = true;
