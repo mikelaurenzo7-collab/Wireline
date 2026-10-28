@@ -7,6 +7,7 @@ import {
   parseSignupIntent,
   recommendedPlanFromIntent,
   sanitizeSignupIntent,
+  SIGNUP_INTENT_STORAGE_KEY,
   signupTemplateLabel,
   usageAddonsFromIntent,
 } from "./signup-intent";
@@ -28,6 +29,13 @@ describe("signup-intent", () => {
       number: true,
       emailAddress: false,
     });
+    const oldSelection = parseSignupIntent("?plan=usage&tier=plus&number=1&email_address=1");
+    const lite = mergeSignupIntent(oldSelection, parseSignupIntent("?plan=lite"));
+    expect(lite?.preferredUsageTier).toBe("lite");
+    expect(usageAddonsFromIntent(lite)).toEqual({ number: false, emailAddress: false });
+    const generic = mergeSignupIntent(oldSelection, parseSignupIntent("?plan=usage"));
+    expect(generic?.preferredUsageTier).toBeUndefined();
+    expect(usageAddonsFromIntent(generic)).toEqual({ number: false, emailAddress: false });
   });
   it("normalizes retired plan ids into the current commercial model", () => {
     expect(parseSignupIntent("?plan=personal-plus")?.preferredPlanId).toBe("team");
@@ -182,5 +190,56 @@ describe("signup-intent", () => {
       preferredBillingInterval: "month",
     });
     Object.defineProperty(globalThis, "window", { configurable: true, value: previous });
+  });
+
+  it("starts a new unqualified signup on Starter without stale paid extras", () => {
+    const storage = new Map<string, string>([
+      [
+        SIGNUP_INTENT_STORAGE_KEY,
+        JSON.stringify({
+          preferredPlanId: "usage",
+          preferredUsageTier: "lite",
+          preferredUsageAddons: { number: true, emailAddress: true },
+          preferredBillingInterval: "month",
+          preferredTemplateId: "front-desk",
+          signupWedge: "restaurants",
+          utmSource: "newsletter",
+          capturedAt: "2026-10-01T00:00:00Z",
+        }),
+      ],
+    ]);
+    const previous = globalThis.window;
+    const location = { search: "?utm_campaign=fall", pathname: "/signup" };
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: {
+        location,
+        localStorage: {
+          getItem: (key: string) => storage.get(key) ?? null,
+          setItem: (key: string, value: string) => storage.set(key, value),
+        },
+      },
+    });
+    try {
+      expect(captureSignupIntentFromLocation()).toMatchObject({
+        preferredPlanId: "usage",
+        preferredUsageTier: "standard",
+        preferredBillingInterval: "month",
+        preferredTemplateId: "front-desk",
+        signupWedge: "restaurants",
+        utmSource: "newsletter",
+        utmCampaign: "fall",
+      });
+      expect(captureSignupIntentFromLocation()?.preferredUsageAddons).toBeUndefined();
+      location.search = "?plan=lite";
+      expect(captureSignupIntentFromLocation()).toMatchObject({
+        preferredPlanId: "usage",
+        preferredUsageTier: "lite",
+        utmSource: "newsletter",
+      });
+      expect(captureSignupIntentFromLocation()?.preferredUsageTier).toBe("lite");
+    } finally {
+      Object.defineProperty(globalThis, "window", { configurable: true, value: previous });
+    }
   });
 });
