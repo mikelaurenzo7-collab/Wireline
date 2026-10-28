@@ -97,7 +97,7 @@ test("homepage has no axe violations or horizontal overflow at review widths", a
 });
 
 test("first-visit privacy choices stay compact on mobile pricing", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 320, height: 844 });
   await page.addInitScript(() => {
     localStorage.removeItem("wireline_cookie_consent");
     localStorage.removeItem("wireline_marketing_measurement_consent");
@@ -110,11 +110,29 @@ test("first-visit privacy choices stay compact on mobile pricing", async ({ page
   await expect(privacy.getByRole("button", { name: "Allow Optional", exact: true })).toBeVisible();
   await expect(privacy.getByRole("link", { name: "Privacy", exact: true })).toBeVisible();
 
-  const size = await privacy.evaluate((element) => ({
-    height: element.getBoundingClientRect().height,
-    viewportHeight: window.innerHeight,
-  }));
-  expect(size.height / size.viewportHeight).toBeLessThanOrEqual(0.16);
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    const size = await privacy.evaluate((element) => ({
+      height: element.getBoundingClientRect().height,
+      viewportHeight: window.innerHeight,
+    }));
+    expect(
+      size.height / size.viewportHeight,
+      `privacy notice height at ${width}px`,
+    ).toBeLessThanOrEqual(0.13);
+    const dimensions = await page.evaluate(() => ({
+      clientWidth: document.documentElement.clientWidth,
+      documentWidth: document.documentElement.scrollWidth,
+      bodyWidth: document.body.scrollWidth,
+    }));
+    expect(
+      dimensions.documentWidth,
+      `privacy notice document overflow at ${width}px`,
+    ).toBeLessThanOrEqual(dimensions.clientWidth);
+    expect(dimensions.bodyWidth, `privacy notice body overflow at ${width}px`).toBeLessThanOrEqual(
+      dimensions.clientWidth,
+    );
+  }
 
   const results = await new AxeBuilder({ page }).include(".wl-privacy-choices").analyze();
   expect(results.violations).toEqual([]);
