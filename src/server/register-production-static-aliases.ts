@@ -42,7 +42,9 @@ const LEGACY_CONTENT_REDIRECTS = [
   // links and crawlers deterministic, and still preserve the query string.
   ["/blog", "/changelog"],
   ["/security", "/trust"],
-  ["/showcase", "/features"],
+  // /showcase intentionally lands on plan-neutral account creation, keeping
+  // the historical funnel and its pinned contracts.
+  ["/showcase", "/signup"],
   ["/solutions", "/solutions/support"],
   ["/use-cases", "/solutions/support"],
   ["/login", "/signin"],

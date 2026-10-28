@@ -75,7 +75,7 @@ const PRERENDERED_HEAD = [
   { route: "/sms-consent", title: "SMS Consent | BotBound" },
   {
     route: "/for/legal",
-    title: "BotBound for Law Firms | Phone Bots for Intake and Consult Routing",
+    title: "BotBound for Law Firms | Phone Bots",
   },
 ];
 

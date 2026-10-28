@@ -4,10 +4,7 @@ import { STRIPE_PLANS } from "../../src/lib/plan-catalog";
 const plans = STRIPE_PLANS.filter(
   (plan) => plan.catalogFamily === "channels" && plan.id !== "personal",
 );
-const launchPlans = plans.filter((plan) => !plan.channels.includes("sms"));
-test("launch channel capacities retain exact annual signup intent in one readable selector", async ({
-  page,
-}) => {
+test("usage tiers retain exact signup intent in one readable selector", async ({ page }) => {
   test.setTimeout(60_000);
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -15,17 +12,12 @@ test("launch channel capacities retain exact annual signup intent in one readabl
       json:
         path === "/api/billing/plans"
           ? {
+              plans: [],
               stripe_configured: true,
-              checkout_available: true,
-              plans: plans.map((plan) => ({
-                ...plan,
-                catalog_family: plan.catalogFamily,
-                capacity_tier: plan.capacityTier,
-                checkout_availability: plan.checkoutAvailability,
-                configured: plan.checkoutAvailability === "available",
-                annual_configured: plan.checkoutAvailability === "available",
-                contact_sales: false,
-              })),
+              checkout_available: false,
+              billing_model: "usage",
+              usage_checkout_available: true,
+              usage_tiers: ["lite", "standard", "plus"],
             }
           : path === "/api/auth/session"
             ? { user: null }
@@ -33,7 +25,7 @@ test("launch channel capacities retain exact annual signup intent in one readabl
     });
   });
   await page.setViewportSize({ width: 320, height: 844 });
-  await page.goto("/pricing?interval=year");
+  await page.goto("/pricing");
   await page.evaluate(async () => {
     document.documentElement.style.fontSize = "200%";
     await document.fonts.ready;
@@ -41,37 +33,20 @@ test("launch channel capacities retain exact annual signup intent in one readabl
   const privacy = page.getByRole("region", { name: "Privacy Choices" });
   await privacy.getByRole("button", { name: "Essential Only", exact: true }).click();
   await expect(privacy).toBeHidden();
-  const labels = { voice: "Calls", email: "Email", sms: "SMS" } as const;
-  await expect(page.getByRole("checkbox", { name: "SMS", exact: true })).toHaveCount(0);
-  for (const plan of launchPlans) {
-    await page
-      .getByRole("radio", {
-        name: new RegExp(
-          `^${plan.capacityTier === "light" ? "Starter" : plan.capacityTier === "regular" ? "Plus" : "Pro"}\\b`,
-        ),
-      })
-      .check();
-    for (const channel of plan.channels)
-      await page.getByRole("checkbox", { name: labels[channel], exact: true }).check();
-    for (const channel of ["voice", "email"] as const)
-      if (!plan.channels.includes(channel))
-        await page.getByRole("checkbox", { name: labels[channel], exact: true }).uncheck();
-    const card = page.getByRole("article", { name: "Selected package" });
-    await expect(card).toHaveCount(1);
-    await expect(card).toContainText(`$${plan.price_usd_annual.toLocaleString()}`);
-    const signup = card.locator('a[href^="/signup?"]');
-    await expect(signup).toHaveAttribute("href", `/signup?plan=${plan.id}&interval=year`);
-    const usageNote = page.getByText("Included usage is shown per month.", { exact: false });
-    await expect(usageNote).toContainText("No automatic balance purchases or overage invoices.");
-    if (plan.channels.includes("voice"))
-      await expect(usageNote).toContainText(
-        "Extra minutes are $0.22/min, paid from balance you add ahead of time.",
-      );
-    else {
-      await expect(usageNote).not.toContainText("Extra minutes");
-      await expect(usageNote).not.toContainText("Outbound calls");
-    }
-    const overflow = await card.locator("..").evaluate((element) =>
+  // Shared Work is monthly-only: no annual interval selector survives.
+  await expect(page.getByRole("group", { name: "Billing interval" })).toHaveCount(0);
+  const tierOf = { Lite: "lite", Starter: "standard", Plus: "plus" } as const;
+  for (const label of Object.keys(tierOf) as Array<keyof typeof tierOf>) {
+    const card = page.getByRole("button", { name: new RegExp(`^${label}\\b`) });
+    await card.click();
+    await expect(card).toHaveAttribute("aria-pressed", "true");
+    const estimate = page.getByRole("article", { name: "Monthly estimate" });
+    const signup = estimate.locator('a[href^="/signup?"]');
+    const href = await signup.getAttribute("href");
+    expect(href).toContain("plan=usage");
+    expect(href).toContain(`tier=${tierOf[label]}`);
+    expect(href).toContain("interval=month");
+    const overflow = await estimate.evaluate((element) =>
       [element, ...element.querySelectorAll("*")]
         .filter((node) => node.clientWidth > 0 && node.scrollWidth > node.clientWidth + 2)
         .map((node) => ({
