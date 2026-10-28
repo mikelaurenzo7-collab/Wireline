@@ -12,10 +12,10 @@ interface PageMetaProps {
 
 const BRAND_SUFFIX = ` | ${BOTBOUND_BRAND_NAME}`;
 const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
-const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png?v=20261025`;
-const DEFAULT_TITLE = "BotBound | Your Bot for calls, texts, email, and computer.";
+const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png?v=20261028`;
+const DEFAULT_TITLE = "BotBound | Your next hire is a bot.";
 const DEFAULT_DESCRIPTION =
-  "Voice Bots with a computer, phone number, text, and email address. Answer calls, handle requests, and get everyday work done for you or your business.";
+  "Your next hire is a bot. Inbound and outbound calls, SMS, email, and computer tasks for small businesses.";
 
 function brandTitle(value: string): string {
   return value

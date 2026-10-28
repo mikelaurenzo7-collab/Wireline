@@ -249,7 +249,7 @@ describe("route meta prerendering", () => {
     expect(out).toContain('<link rel="manifest" href="/site.webmanifest" />');
     expect(out).toMatch(/"@type"\s*:\s*"WebSite"/);
     expect(out).toContain(
-      `<meta property="og:image" content="${BOTBOUND_PRODUCTION_ORIGIN}/og-image.png?v=20261025" />`,
+      `<meta property="og:image" content="${BOTBOUND_PRODUCTION_ORIGIN}/og-image.png?v=20261028" />`,
     );
   });
 

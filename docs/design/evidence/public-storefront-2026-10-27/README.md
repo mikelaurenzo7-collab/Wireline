@@ -1,6 +1,6 @@
 # Public storefront review evidence
 
-The “before” home and pricing screenshots were captured from production at `36d4baac` on 27 October 2026. The “after” screenshots were captured from a production build of the candidate at 390×844 and 1280×900 CSS pixels.
+The “before” home and pricing screenshots were captured from production at `36d4baac` on 27 October 2026. The “after” screenshots were captured from the first storefront candidate at 390×844 and 1280×900 CSS pixels. The homepage was subsequently simplified into three static product cards; use the 28 October [homepage evidence](../public-home-static-showcase-2026-10-28/README.md) for the current final before/after comparison. The pricing and privacy captures in this directory remain current for this PR.
 
 The candidate pricing capture uses a local `/api/billing/plans` fixture exposing only the Lite, Starter, and Plus usage-tier IDs so the real plan-card component can render. Stripe is marked unconfigured; no checkout, payment, account creation, message, or call was triggered.
 

@@ -1,22 +1,21 @@
-import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Mail, MessageSquare, Monitor, Phone, type LucideIcon } from "lucide-react";
+import { useEffect } from "react";
+import { ArrowRight, Mail, Monitor, Phone, type LucideIcon } from "lucide-react";
 import { Link } from "react-router";
 import BotBoundMark from "../brand/BotBoundMark";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { useAuth } from "../../contexts/AuthContext";
 
-type CapabilityId = "calls" | "sms" | "email" | "computer";
+type CapabilityId = "phone" | "email" | "computer";
 
 const EXAMPLES: readonly {
   id: CapabilityId;
   label: string;
   icon: LucideIcon;
 }[] = [
-  { id: "calls", label: "Calls", icon: Phone },
-  { id: "sms", label: "SMS", icon: MessageSquare },
-  { id: "email", label: "Email", icon: Mail },
-  { id: "computer", label: "Computer", icon: Monitor },
+  { id: "phone", label: "Phone Number", icon: Phone },
+  { id: "email", label: "Email Address", icon: Mail },
+  { id: "computer", label: "A Computer", icon: Monitor },
 ];
 
 const WAVEFORM = [
@@ -24,16 +23,16 @@ const WAVEFORM = [
 ];
 
 function CapabilityPreview({ channel }: { channel: CapabilityId }) {
-  if (channel === "calls") {
+  if (channel === "phone") {
     return (
-      <div className="landing-prestige__demo landing-prestige__demo--calls">
+      <div className="landing-prestige__demo landing-prestige__demo--phone">
         <div className="landing-prestige__call-contact">
           <span className="landing-prestige__call-mark" aria-hidden="true">
             <Phone />
           </span>
           <span className="landing-prestige__call-copy">
             <strong>Customer call</strong>
-            <span>Outbound example</span>
+            <span>Inbound and outbound</span>
           </span>
         </div>
         <div className="landing-prestige__waveform" aria-hidden="true">
@@ -41,19 +40,15 @@ function CapabilityPreview({ channel }: { channel: CapabilityId }) {
             <i key={index} style={{ height: `${height}px` }} />
           ))}
         </div>
-      </div>
-    );
-  }
-
-  if (channel === "sms") {
-    return (
-      <div className="landing-prestige__demo landing-prestige__demo--sms">
-        <p className="landing-prestige__message landing-prestige__message--incoming">
-          Could I book for Thursday?
-        </p>
-        <p className="landing-prestige__message landing-prestige__message--outgoing">
-          Absolutely. What time works?
-        </p>
+        <div className="landing-prestige__phone-thread">
+          <span>SMS</span>
+          <p className="landing-prestige__message landing-prestige__message--incoming">
+            Could I book for Thursday?
+          </p>
+          <p className="landing-prestige__message landing-prestige__message--outgoing">
+            Absolutely. What time works?
+          </p>
+        </div>
       </div>
     );
   }
@@ -87,7 +82,7 @@ function CapabilityPreview({ channel }: { channel: CapabilityId }) {
         <span>Appointments</span>
       </div>
       <div className="landing-prestige__browser-content">
-        <span className="landing-prestige__browser-label">THIS WEEK</span>
+        <span className="landing-prestige__browser-label">This week</span>
         <strong>Find an open time</strong>
         <div className="landing-prestige__time-options" aria-hidden="true">
           <span>
@@ -107,9 +102,6 @@ function CapabilityPreview({ channel }: { channel: CapabilityId }) {
 
 export default function WireAgentLanding() {
   const signedIn = Boolean(useAuth().user);
-  const [selected, setSelected] = useState(0);
-  const tabs = useRef<Array<HTMLButtonElement | null>>([]);
-  const example = EXAMPLES[selected]!;
 
   useEffect(() => {
     emitProductEventOnce({
@@ -141,9 +133,6 @@ export default function WireAgentLanding() {
                 is a bot.
               </span>
             </h1>
-            <p className="landing-prestige__identity-line">
-              Phone Number. Email Address. Computer Use
-            </p>
             <div className="landing-prestige__actions">
               <Link
                 to={signedIn ? "/studio" : "/signup"}
@@ -159,51 +148,25 @@ export default function WireAgentLanding() {
           </div>
         </section>
 
-        <section className="landing-prestige__showcase" aria-label="Explore BotBound capabilities">
-          <div className="landing-prestige__tabs" role="tablist" aria-label="Bot capabilities">
-            {EXAMPLES.map(({ id, label, icon: Icon }, index) => (
-              <button
-                key={id}
-                ref={(el) => {
-                  tabs.current[index] = el;
-                }}
-                id={`capability-${id}`}
-                role="tab"
-                type="button"
-                aria-selected={selected === index}
-                aria-controls="capability-preview"
-                tabIndex={selected === index ? 0 : -1}
-                onClick={() => setSelected(index)}
-                onKeyDown={(event) => {
-                  const next =
-                    event.key === "ArrowRight"
-                      ? (index + 1) % EXAMPLES.length
-                      : event.key === "ArrowLeft"
-                        ? (index + EXAMPLES.length - 1) % EXAMPLES.length
-                        : event.key === "Home"
-                          ? 0
-                          : event.key === "End"
-                            ? EXAMPLES.length - 1
-                            : null;
-                  if (next === null) return;
-                  event.preventDefault();
-                  setSelected(next);
-                  tabs.current[next]?.focus();
-                }}
-              >
-                <Icon aria-hidden="true" />
-                <span>{label}</span>
-              </button>
+        <section
+          className="landing-prestige__showcase"
+          aria-labelledby="landing-prestige-showcase-title"
+        >
+          <h2 id="landing-prestige-showcase-title" className="landing-prestige__showcase-title">
+            The Bot Gets:
+          </h2>
+          <div className="landing-prestige__showcase-grid">
+            {EXAMPLES.map(({ id, label, icon: Icon }) => (
+              <article key={id} className={`landing-prestige__card landing-prestige__card--${id}`}>
+                <header className="landing-prestige__card-header">
+                  <span className="landing-prestige__card-icon" aria-hidden="true">
+                    <Icon />
+                  </span>
+                  <h2>{label}</h2>
+                </header>
+                <CapabilityPreview channel={id} />
+              </article>
             ))}
-          </div>
-          <div
-            id="capability-preview"
-            role="tabpanel"
-            tabIndex={0}
-            aria-labelledby={`capability-${example.id}`}
-            className="landing-prestige__preview"
-          >
-            <CapabilityPreview channel={example.id} />
           </div>
         </section>
       </main>

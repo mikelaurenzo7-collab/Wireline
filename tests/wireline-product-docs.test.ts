@@ -135,8 +135,10 @@ describe("product documentation and compatibility contract", () => {
     const head = read("index.html");
     const ogImage = read("public/og-image.svg").replace(/<image\b[^>]*\/>/g, "");
 
-    expect(head).toContain("BotBound | Your Bot for calls, texts, email, and computer.");
-    expect(head).toContain("Voice Bots with a computer, phone number, and email address.");
+    expect(head).toContain("BotBound | Your next hire is a bot.");
+    expect(head).toContain(
+      "Your next hire is a bot. Inbound and outbound calls, SMS, email, and computer tasks for small businesses.",
+    );
     const graph = JSON.parse(
       head.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)![1],
     )["@graph"];
@@ -148,10 +150,10 @@ describe("product documentation and compatibility contract", () => {
     expect(head).not.toContain("—");
 
     expect(ogImage).toContain("BotBound");
-    expect(ogImage).toContain("YOUR VOICE BOT");
-    expect(ogImage).toContain("FOR YOUR WORK.");
-    expect(ogImage).toContain("AI Bots With Their Own Phone Number,");
-    expect(ogImage).toContain("Email Address, And Computer.");
+    expect(ogImage).toContain("YOUR NEXT HIRE");
+    expect(ogImage).toContain("IS A BOT.");
+    expect(ogImage).toContain("Inbound and outbound calls, SMS,");
+    expect(ogImage).toContain("email, and computer tasks for small businesses.");
     expect(ogImage).not.toContain("ONE BOT.");
     expect(ogImage).not.toContain("Find. Call. Book");
     expect(ogImage).toMatch(/phone|Phone/);

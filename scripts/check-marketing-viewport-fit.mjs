@@ -138,12 +138,9 @@ for (const [needle, description] of [
   ["<PrecisionPublicHeader />", "home must share the public header"],
   ["<BotBoundMark", "home must lead with the canonical phone-Bot mascot"],
   ['signedIn ? "/studio" : "/signup"', "home must keep neutral account creation"],
-  [
-    "Phone Number. Email Address. Computer Use",
-    "home must preserve the approved product identity line",
-  ],
-  ['role="tablist"', "home must expose its capability navigation"],
-  ["<CapabilityPreview channel={example.id} />", "each capability must display a compact demo"],
+  ["The Bot Gets:", "home must introduce the three product assets"],
+  ["landing-prestige__showcase-grid", "home must show its static capability cards"],
+  ["<CapabilityPreview channel={id} />", "each capability card must display a compact demo"],
   ['to="/pricing"', "home must link to pricing"],
 ]) {
   if (!executableHome.includes(needle)) {
@@ -193,8 +190,8 @@ if (!header.includes('aria-label="Account"')) {
 
 const landingPrestige = read("src/styles/landing-prestige.css");
 for (const [needle, description] of [
-  [".landing-prestige__tabs", "capability tabs are missing"],
-  [".landing-prestige__preview", "compact capability demo layout is missing"],
+  [".landing-prestige__showcase-grid", "static capability showcase is missing"],
+  [".landing-prestige__card", "capability demo cards are missing"],
   ["@media (max-width: 639px)", "mobile stacking rules are missing"],
 ]) {
   if (!landingPrestige.includes(needle)) {

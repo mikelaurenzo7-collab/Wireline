@@ -71,22 +71,18 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
 
   for (const [pattern, description] of [
     [/signedIn \? "\/studio" : "\/signup"/, "root landing must offer plan-neutral account access"],
-    [
-      /Phone Number\. Email Address\. Computer Use/,
-      "root landing must keep the approved product identity line",
-    ],
+    [/The Bot Gets:/, "root landing must introduce the Bot's three work surfaces"],
     [/<PrecisionPublicHeader \/>/, "root landing must share the public header"],
-    [/role="tablist"/, "landing must expose capability navigation"],
-    [/role="tabpanel"/, "capability details must be associated with their selected tab"],
-    [/onKeyDown/, "capability navigation must support keyboard selection"],
+    [/landing-prestige__showcase-grid/, "landing must show its static capability grid"],
+    [/aria-labelledby="landing-prestige-showcase-title"/, "static showcase must be named"],
+    [/label: "Phone Number"/, "phone and SMS work must have a clear card"],
+    [/label: "Email Address"/, "email work must have a clear card"],
+    [/label: "A Computer"/, "computer work must have a clear card"],
     [/to="\/pricing"/, "landing must link directly to pricing"],
+    [/landing-prestige__showcase-grid/, "landing must keep the focused static showcase"],
     [
-      /aria-label="Explore BotBound capabilities"/,
-      "landing must keep the focused channel showcase",
-    ],
-    [
-      /<CapabilityPreview channel=\{example\.id\} \/>/,
-      "each channel must display its compact demo",
+      /<CapabilityPreview channel=\{id\} \/>/,
+      "each channel must display its static demo",
     ],
   ])
     mustInclude("src/components/marketing/WireAgentLanding.tsx", landing, pattern, description);
@@ -125,14 +121,14 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
       "display headings must balance lines while retaining text enlargement",
     ],
     [
-      /\.landing-prestige__preview\s*\{[^}]*display:\s*grid;[^}]*place-items:\s*center;/,
-      "compact capability demos must stay centered in the landing canvas",
+      /\.landing-prestige__showcase-grid\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/,
+      "static capability demos must use a responsive card grid",
     ],
     [
       /\.landing-prestige__hero h1\s*\{[^}]*flex-wrap:\s*wrap;/,
       "hero phrases must reflow on narrow screens",
     ],
-    [/\.landing-prestige__tabs/, "landing must provide channel navigation"],
+    [/\.landing-prestige__card\s*\{/, "landing must style each capability card"],
   ])
     mustInclude("src/styles/landing-prestige.css", landingPrestigeCss, pattern, description);
   mustExclude(

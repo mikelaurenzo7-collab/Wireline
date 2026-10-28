@@ -83,19 +83,19 @@ describe("sales trust copy contract", () => {
 
   it("describes calendar imports and CRM availability accurately on public pages", () => {
     const wedges = read("src/data/vertical-wedges.ts");
-    const features = read("src/pages/Features.tsx");
+    const calendar = read("src/components/CalendarAvailabilityPanel.tsx");
     const compare = read("src/pages/Compare.tsx");
     expect(wedges).not.toMatch(
       /real Google or Outlook availability|Salesforce are supported today|reservation writes back|SMS activation is pending/i,
     );
     expect(wedges).toContain("Google or Outlook busy times can be imported when you sync.");
-    expect(features).toContain("Sync Google or Outlook busy times.");
+    expect(calendar).toContain("Import Google or Outlook busy times for the next 30 days.");
     expect(compare).not.toContain("continues with shared context");
   });
 
   it("keeps the landing customer-facing without internal design meta", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain("Phone Number. Email Address. Computer Use");
+    expect(landing).toContain("The Bot Gets:");
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toMatch(/homepage now leads/i);
     expect(landing).not.toMatch(/live desk/i);

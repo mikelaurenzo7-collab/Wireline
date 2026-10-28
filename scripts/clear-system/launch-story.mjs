@@ -23,25 +23,25 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "index.html",
     indexHtml,
-    /<title>BotBound \| Your Bot for calls, texts, email, and computer\.<\/title>/,
+    /<title>BotBound \| Your next hire is a bot\.<\/title>/,
     "static metadata must use the current BotBound offer",
   );
   mustInclude(
     "index.html",
     indexHtml,
-    /Voice Bots with a computer, phone number, text, and email address/,
+    /Your next hire is a bot\. Inbound and outbound calls, SMS, email, and computer tasks for small businesses/,
     "static metadata must describe the focused launch offer",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_TITLE = "BotBound \| Your Bot for calls, texts, email, and computer\."/,
+    /DEFAULT_TITLE = "BotBound \| Your next hire is a bot\."/,
     "runtime metadata must use the current BotBound offer",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_DESCRIPTION =\s*"Voice Bots with a computer, phone number, text, and email address/,
+    /DEFAULT_DESCRIPTION =\s*"Your next hire is a bot\. Inbound and outbound calls, SMS, email, and computer tasks for small businesses/,
     "runtime metadata must carry the focused voice Bot offer",
   );
   mustInclude(
@@ -123,8 +123,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /Phone Number\. Email Address\. Computer Use/,
-    "landing must keep the approved product identity line",
+    /The Bot Gets:/,
+    "landing must introduce the three BotBound work surfaces",
   );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
@@ -141,14 +141,27 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /role="tablist"[\s\S]*role="tabpanel"/,
-    "landing must expose accessible capability navigation",
+    /aria-labelledby="landing-prestige-showcase-title"[\s\S]*The Bot Gets:[\s\S]*EXAMPLES\.map[\s\S]*<CapabilityPreview channel=\{id\} \/>/,
+    "landing must show three named static capability demos",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /<CapabilityPreview channel=\{example\.id\} \/>/,
-    "each capability tab must show its compact product demo",
+    /<CapabilityPreview channel=\{id\} \/>/,
+    "each capability card must show its compact product demo",
+  );
+  for (const label of ["Phone Number", "Email Address", "A Computer"])
+    mustInclude(
+      "src/components/marketing/WireAgentLanding.tsx",
+      landing,
+      new RegExp(`label: "${label}"`),
+      `landing must show the ${label} work surface`,
+    );
+  mustInclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    landing,
+    /Inbound and outbound[\s\S]*>SMS<|>SMS<[\s\S]*Inbound and outbound/,
+    "the phone card must show call direction and SMS",
   );
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",

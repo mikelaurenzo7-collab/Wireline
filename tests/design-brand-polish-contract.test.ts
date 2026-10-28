@@ -205,7 +205,7 @@ describe("E2E design and BotBound brand polish", () => {
 
   it("keeps status foregrounds accessible while public entry paths remain text-labeled", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain('aria-label="Bot capabilities"');
+    expect(landing).toContain('aria-labelledby="landing-prestige-showcase-title"');
     expect(landing).not.toContain("FEATURED_TEMPLATES.map");
     expect(landing).not.toContain("encodeURIComponent(template.key)");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);

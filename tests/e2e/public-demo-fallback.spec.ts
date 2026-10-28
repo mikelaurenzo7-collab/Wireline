@@ -48,7 +48,7 @@ test("showcase redirects to account creation without selecting a plan or request
   expect(await page.evaluate(() => window.__botboundMicRequests ?? 0)).toBe(0);
 });
 
-test("home offers neutral signup without selecting a plan or exposing a public audio control", async ({
+test("home shows static call and SMS examples without a public audio control", async ({
   page,
 }) => {
   await installMicrophoneProbe(page);
@@ -65,8 +65,10 @@ test("home offers neutral signup without selecting a plan or exposing a public a
     "href",
     "/signup",
   );
-  await page.getByRole("tab", { name: "Calls", exact: true }).click();
-  await expect(page.getByRole("tabpanel")).toContainText("Customer call");
+  const phoneCard = page.locator(".landing-prestige__card--phone");
+  await expect(phoneCard).toContainText("Customer call");
+  await expect(phoneCard).toContainText("Inbound and outbound");
+  await expect(phoneCard).toContainText("SMS");
   await expect(page.locator(".marketing-chrome-bar")).toHaveCount(0);
   await expect(page.getByRole("button", { name: /talk to/i })).toHaveCount(0);
   await expect(page.locator("audio, video")).toHaveCount(0);
