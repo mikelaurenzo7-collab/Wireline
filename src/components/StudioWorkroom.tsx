@@ -25,6 +25,7 @@ import { reconcileStudioCommandDraft } from "../lib/studio-route-state";
 import { WL_COMPOSER_CLASSES } from "../lib/wireline-design-system";
 import { retainStudioConversationMessages } from "../lib/studio-session-state";
 import LinkifiedText from "./ui/LinkifiedText";
+import BotMark from "./BotMark";
 
 export type StudioMessage = {
   id: string;
@@ -674,7 +675,14 @@ const StudioWorkroom = forwardRef<
                   {sending ? (
                     <div className="max-w-[92%]" role="status">
                       <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-[13px] text-sm text-muted-foreground">
-                        <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
+                        <BotMark
+                          seed={agentId}
+                          name={agentName}
+                          markKey={markKey}
+                          size={20}
+                          working
+                          decorative
+                        />
                         {workingLabel}…
                       </div>
                     </div>

@@ -25,8 +25,12 @@ export const CATALOG_VERSION = "2026-10-usage-v2";
 export const BOTBOUND_STRIPE_ACCOUNT_ID = "acct_1TkyXL8e6If87QKm";
 export const BOTBOUND_LLC_STRIPE_ACCOUNT_IDS = ["acct_1UQBcs6Ph5cHChCS", "acct_1UQBcz65EUA2bfnZ"];
 
-/** Verify the selected account before creating any billing objects. */
-export async function assertUsageStripeAccount(stripe, { mode = "live", sandboxAccountId } = {}) {
+/**
+ * Verify the selected account before creating any billing objects.
+ * @param {{ mode?: string, sandboxAccountId?: string }} [options]
+ */
+export async function assertUsageStripeAccount(stripe, options = {}) {
+  const { mode = "live", sandboxAccountId } = options;
   const account = await stripe.accounts.retrieve();
   if (BOTBOUND_LLC_STRIPE_ACCOUNT_IDS.includes(account.id)) {
     throw new Error(

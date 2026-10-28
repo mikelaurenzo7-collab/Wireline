@@ -1,6 +1,5 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import Cadences from "../src/components/Cadences";
 import ApprovalInbox from "../src/components/ApprovalInbox";
 
 const h = vi.hoisted(() => ({
@@ -67,7 +66,7 @@ function textOf(node: ReactNode): string {
   if (Array.isArray(node)) return node.map(textOf).join(" ");
   return isValidElement<Props>(node) ? textOf(node.props.children) : "";
 }
-function render(component: () => ReactNode = Cadences) {
+function render(component: () => ReactNode) {
   h.stateCursor = 0;
   h.refCursor = 0;
   h.effects = [];
@@ -79,14 +78,6 @@ async function flush() {
 function json(value: unknown) {
   return new Response(JSON.stringify(value));
 }
-const sequence = (name = "Follow Up") => ({
-  id: "sequence",
-  name,
-  description: null,
-  active: false,
-  steps: [{ type: "sms", delayHours: 0 }],
-  createdAt: "2026-09-20T12:00:00Z",
-});
 const triage = {
   hot_leads: [{ id: "lead" }],
   compliance: [],
@@ -100,172 +91,6 @@ beforeEach(() => {
   h.refs = [];
   h.effects = [];
   h.fetch.mockReset();
-});
-
-describe("sequence load integrity", () => {
-  it.each(["network", "json", "shape"])(
-    "keeps sequences available when run status fails: %s",
-    async (failure) => {
-      h.fetch.mockImplementation((url: string) => {
-        if (url === "/api/cadences") return Promise.resolve(json({ cadences: [sequence()] }));
-        if (failure === "network") return Promise.reject(new Error("offline"));
-        return Promise.resolve(failure === "json" ? new Response("not json") : json({ runs: {} }));
-      });
-      render();
-      h.effects[0]();
-      await flush();
-      const tree = render();
-      expect(textOf(tree)).toContain("Follow Up");
-      expect(textOf(tree)).toContain("Run status unavailable");
-      expect(
-        elements(tree).find((node) => textOf(node.props.children) === "Retry")?.props.onClick,
-      ).toBeTypeOf("function");
-    },
-  );
-
-  it.each([{}, { cadences: {} }, { cadences: [{ ...sequence(), steps: null }] }])(
-    "shows a recoverable error for malformed sequences: %j",
-    async (body) => {
-      h.fetch.mockImplementation((url: string) =>
-        Promise.resolve(json(url === "/api/cadences" ? body : { runs: [] })),
-      );
-      render();
-      h.effects[0]();
-      await flush();
-      expect(
-        elements(render()).some((node) => node.props.title === "Couldn't Load Sequences"),
-      ).toBe(true);
-    },
-  );
-
-  it("recovers missing run status without losing the sequence", async () => {
-    let unavailable = true;
-    h.fetch.mockImplementation((url: string) => {
-      if (url === "/api/cadences") return Promise.resolve(json({ cadences: [sequence()] }));
-      return Promise.resolve(
-        unavailable
-          ? new Response("", { status: 503 })
-          : json({
-              runs: [
-                {
-                  id: "run",
-                  cadenceId: "sequence",
-                  leadId: "1",
-                  currentStep: 0,
-                  status: "active",
-                  nextDueAt: null,
-                  lastResult: null,
-                },
-              ],
-            }),
-      );
-    });
-    render();
-    h.effects[0]();
-    await flush();
-    const retry = elements(render()).find(
-      (node) => node.type === "button" && textOf(node.props.children) === "Retry",
-    );
-    expect(retry).toBeDefined();
-    unavailable = false;
-    retry!.props.onClick!();
-    await flush();
-    expect(textOf(render())).not.toContain("Run status unavailable");
-    expect(textOf(render())).toMatch(/1\s+Enrolled/);
-    expect(textOf(render())).not.toContain("active run");
-  });
-
-  it("ignores a superseded load even when its transport ignores abort", async () => {
-    let release!: () => void;
-    const oldLoad = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    let calls = 0;
-    h.fetch.mockImplementation((url: string) => {
-      calls++;
-      if (calls <= 2)
-        return oldLoad.then(() =>
-          json(url === "/api/cadences" ? { cadences: [sequence("Old Sequence")] } : { runs: [] }),
-        );
-      return Promise.resolve(
-        json(url === "/api/cadences" ? { cadences: [sequence("Current Sequence")] } : { runs: [] }),
-      );
-    });
-    render();
-    const start = h.effects[0];
-    start();
-    start();
-    await flush();
-    release();
-    await flush();
-    expect(textOf(render())).toContain("Current Sequence");
-    expect(textOf(render())).not.toContain("Old Sequence");
-  });
-});
-
-describe("sequence draft continuity", () => {
-  it("preserves the submitted draft through a failed save and allows a successful retry", async () => {
-    let finishSave!: (response: Response) => void;
-    const pendingSave = new Promise<Response>((resolve) => {
-      finishSave = resolve;
-    });
-    let attempts = 0;
-    h.fetch.mockImplementation((url: string, init?: RequestInit) => {
-      if (init?.method === "POST") {
-        attempts++;
-        return attempts === 1 ? pendingSave : Promise.resolve(json({ cadence: sequence() }));
-      }
-      return Promise.resolve(
-        json(url === "/api/cadences" ? { cadences: [sequence()] } : { runs: [] }),
-      );
-    });
-    const button = (label: string) =>
-      elements(render()).find(
-        (node) => node.type === "button" && textOf(node.props.children).trim() === label,
-      )!;
-    render();
-    h.effects[0]();
-    await flush();
-    button("Create Sequence").props.onClick!();
-    elements(render()).find((node) => node.props.id === "builder-name")!.props.onChange!({
-      target: { value: "Consultation Follow-Up" },
-    });
-    elements(render()).find((node) => node.props.onValueChange)!.props.onValueChange!("email");
-    const message = "Hi {{name}},\n\nThanks for your time.\nWhen would you like to meet?";
-    const messageField = () =>
-      elements(render()).find((node) => node.props["aria-label"] === "Step 1 Email Message")!;
-    messageField().props.onChange!({ target: { value: message } });
-
-    button("Save Sequence").props.onClick!();
-    expect(messageField().props.disabled).toBe(true);
-    expect(button("Cancel").props.disabled).toBe(true);
-    // Close and repeated save actions cannot discard or duplicate the draft
-    // while its first request is unresolved.
-    button("Cancel").props.onClick!();
-    elements(render()).find((node) => node.props["aria-label"] === "Close cadence builder")!.props
-      .onClick!();
-    button("Saving…").props.onClick!();
-    expect(attempts).toBe(1);
-    expect(messageField().props.value).toBe(message);
-
-    finishSave(new Response(JSON.stringify({ error: "Try Again" }), { status: 503 }));
-    await flush();
-    expect(messageField().props.disabled).toBe(false);
-    expect(messageField().props.value).toBe(message);
-    expect(elements(render()).find((node) => node.props.id === "builder-name")!.props.value).toBe(
-      "Consultation Follow-Up",
-    );
-    button("Save Sequence").props.onClick!();
-    await flush();
-    const posts = h.fetch.mock.calls.filter(([, init]) => init?.method === "POST");
-    expect(posts).toHaveLength(2);
-    for (const [, init] of posts) {
-      expect(JSON.parse(init.body).steps).toEqual([
-        { type: "email", delayHours: 0, template: message },
-      ]);
-    }
-    expect(elements(render()).some((node) => node.props.id === "builder-name")).toBe(false);
-  });
 });
 
 describe("approval count availability", () => {

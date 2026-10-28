@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { PUBLIC_USAGE_TIERS, USAGE_TIERS } from "../src/lib/usage-billing-catalog";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -67,12 +68,24 @@ describe("product doctrine parity", () => {
   it("allocates identity to active paid Bots without pre-provisioning unused capacity", () => {
     const root = read("README.md");
     const pricing = read("src/pages/Pricing.tsx");
+    const panel = read("src/components/usage-billing/UsagePricingPanel.tsx");
     const catalog = read("src/lib/plan-catalog.ts");
 
     expect(root).toContain("unused capacity does not pre-provision carrier numbers");
-    expect(pricing).toContain("Email-only does not include a phone number.");
-    expect(pricing).toContain("Personal and Calls packages include one local number.");
-    expect(pricing).toContain("Personal · $12/month");
+    expect(pricing).toContain("<UsagePricingPanel availableTiers={availableTiers} />");
+    expect(panel).toContain("option.includedNumbers");
+    expect(panel).toContain("option.includedEmailAddresses");
+    expect(
+      PUBLIC_USAGE_TIERS.map((id) => ({
+        id,
+        numbers: USAGE_TIERS[id].includedNumbers,
+        mailboxes: USAGE_TIERS[id].includedEmailAddresses,
+      })),
+    ).toEqual([
+      { id: "lite", numbers: 1, mailboxes: 1 },
+      { id: "standard", numbers: 1, mailboxes: 1 },
+      { id: "plus", numbers: 2, mailboxes: 2 },
+    ]);
     expect(root).toContain("BotBound Personal is a paid plan");
     expect(pricing).not.toContain("The Free plan");
     expect(catalog).toContain("included_mailboxes");

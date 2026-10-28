@@ -124,9 +124,10 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
 
 .marketing-surface.wl-features-page .wl-features-pillars {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.9rem;
-  margin: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.75rem;
+  max-width: 28rem;
+  margin: 3.5rem auto 0;
   padding: 0;
   list-style: none;
 }
@@ -136,25 +137,17 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
   display: flex;
   min-width: 0;
   flex-direction: column;
-  padding: 1.6rem;
-  overflow: hidden;
-  border: 1px solid var(--wireline-color-border-default);
-  border-radius: 1.1rem;
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-action-primary-default) 5%,
-    var(--wireline-color-surface-default)
-  );
-  text-align: left;
+  align-items: center;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: center;
 }
 
 .marketing-surface.wl-features-page .wl-features-pillar::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto auto 0;
-  width: 6rem;
-  height: 2px;
-  background: linear-gradient(90deg, var(--wireline-color-action-primary-default), transparent);
+  content: none;
 }
 
 .marketing-surface.wl-features-page .wl-features-pillar .wl-features-pillar__label {

@@ -403,7 +403,7 @@ export default function UsagePricingPanel({
           ))}
         </ul>
         <p className="mt-3 text-xs text-muted-foreground">
-          No per-Bot or role charge. Call and email summaries are included.
+          No charge per Bot. Call and email summaries are included.
         </p>
       </section>
 

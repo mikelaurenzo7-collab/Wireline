@@ -124,6 +124,32 @@
   grid-template-columns: minmax(0, 1fr);
   gap: 0.75rem;
 }
+.landing-prestige__utility-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 1.25rem;
+  margin: 1.25rem auto 0;
+}
+.landing-prestige__utility-links a,
+.landing-prestige__utility-links button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wireline-color-text-secondary);
+  font: inherit;
+  font-size: 0.8125rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+  cursor: pointer;
+}
+.landing-prestige__utility-links :is(a, button):focus-visible {
+  outline: 2px solid var(--wireline-color-action-primary-default);
+  outline-offset: 3px;
+}
 .landing-prestige__card {
   display: flex;
   min-height: 14rem;

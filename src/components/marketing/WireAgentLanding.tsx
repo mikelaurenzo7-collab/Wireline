@@ -169,6 +169,18 @@ export default function WireAgentLanding() {
             ))}
           </div>
         </section>
+        <nav className="landing-prestige__utility-links" aria-label="Information and privacy">
+          <Link to="/features">Product</Link>
+          <Link to="/privacy">Privacy</Link>
+          <Link to="/terms">Terms</Link>
+          <Link to="/contact">Contact</Link>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event("wireline:open-privacy-choices"))}
+          >
+            Privacy Choices
+          </button>
+        </nav>
       </main>
     </div>
   );

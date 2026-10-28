@@ -100,7 +100,7 @@ describe("round-11 review fixes", () => {
 
   it("routes the public 404 to useful live pages, not the retired browser demo", () => {
     const notFound = read("src/components/layout/NotFound.tsx");
-    expect(notFound).toContain('to="/features"');
+    expect(notFound).not.toContain('to="/features"');
     expect(notFound).toContain('to="/pricing"');
     expect(notFound).not.toContain('to="/showcase"');
     expect(notFound).not.toContain("Browser Demo");

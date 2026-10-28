@@ -25,17 +25,26 @@ describe("usage subscription tier identity", () => {
     ).toBe(tier);
   });
   it.each(PUBLIC_USAGE_TIERS)("rejects mismatched, duplicate or missing %s charges", (tier) => {
+    const otherTier = PUBLIC_USAGE_TIERS.find((candidate) => candidate !== tier)!;
     for (const prices of [
       [`price_${tier}_base`],
       [`price_${tier}_work`],
-      [`price_${tier}_base`, "price_starter_work"],
-      [`price_${tier}_base`, `price_${tier}_work`, "price_starter_base"],
+      [`price_${tier}_base`, `price_${otherTier}_work`],
+      [`price_${tier}_base`, `price_${tier}_work`, `price_${otherTier}_base`],
       [`price_${tier}_base`, `price_${tier}_work`, `price_${tier}_work`],
     ])
       expect(() => usageTierFromSubscription(subscription(prices), env)).toThrow(/incompatible/);
     expect(() =>
       usageTierFromSubscription(subscription([`price_${tier}_base`, `price_${tier}_work`], 2), env),
     ).toThrow(/incompatible/);
+  });
+  it("continues to allow separately priced add-ons beside a valid base and work pair", () => {
+    expect(
+      usageTierFromSubscription(
+        subscription(["price_lite_base", "price_lite_work", "price_number_addon"]),
+        env,
+      ),
+    ).toBe("lite");
   });
   it("refuses an unknown configuration instead of granting the cheapest allowance", () => {
     expect(() => usageTierFromSubscription(subscription(["price_unknown"]), {})).toThrow();

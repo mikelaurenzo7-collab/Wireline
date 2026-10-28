@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
@@ -15,7 +16,7 @@ function runWithGuard(snippet: string) {
       "tsx",
       "--input-type=module",
       "-e",
-      `await import(${JSON.stringify(resolve(root, "src/lib/fatal-process-guard.ts"))});\n${snippet}`,
+      `await import(${JSON.stringify(pathToFileURL(resolve(root, "src/lib/fatal-process-guard.ts")).href)});\nconsole.log("guard installed");\n${snippet}`,
     ],
     { cwd: root, encoding: "utf8", timeout: 20_000 },
   );
@@ -28,6 +29,7 @@ describe("voice worker process safety nets", () => {
       setTimeout(() => { console.log("still answering calls"); process.exit(0); }, 1500);
     `);
     expect(result.status).toBe(1);
+    expect(result.stdout).toContain("guard installed");
     expect(result.stdout).not.toContain("still answering calls");
     // The guard's listener suppresses Node's own stack trace, so nothing is logged.
     expect(result.stderr).not.toContain("stray rejection");
@@ -40,6 +42,7 @@ describe("voice worker process safety nets", () => {
       setTimeout(() => { console.log("still answering calls"); process.exit(0); }, 1500);
     `);
     expect(result.status).toBe(0);
+    expect(result.stdout).toContain("guard installed");
     expect(result.stdout).toContain("logged: stray rejection");
     expect(result.stdout).toContain("still answering calls");
   });

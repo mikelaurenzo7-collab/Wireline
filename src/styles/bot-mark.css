@@ -1,6 +1,6 @@
 /* Bot identity marks ------------------------------------------------------
  * Quiet, stable identifiers beside Bot names. Saved symbols and colors remain
- * recognizable without decorative effects or motion.
+ * recognizable. Motion is reserved for an explicitly working Bot.
  */
 
 .wl-bot-mark {
@@ -35,6 +35,22 @@
 
 .wl-bot-mark[data-active="true"] .wl-bot-mark__glyph {
   color: var(--wireline-color-text-primary);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .wl-bot-mark[data-working="true"] .wl-bot-mark__core {
+    animation: wl-bot-working 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes wl-bot-working {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
 }
 
 @media (forced-colors: active) {

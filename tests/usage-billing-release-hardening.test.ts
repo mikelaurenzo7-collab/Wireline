@@ -4,6 +4,7 @@ import type Stripe from "stripe";
 import {
   assertUsageStripeAccount,
   USAGE_STRIPE_PLAN,
+  USAGE_STRIPE_PLANS,
   validateUsageMeter,
   validateUsagePrice,
 } from "../scripts/stripe-usage-billing-setup.mjs";
@@ -11,7 +12,7 @@ vi.mock("../src/lib/server-context", () => ({ drizzle: {}, log: { error: vi.fn()
 import { meterErrorScope } from "../src/lib/usage-billing-reconciliation";
 import { stripeUsageIdentifier } from "../src/lib/usage-billing-ledger";
 import { validateUsageCheckoutCatalog } from "../src/lib/usage-stripe-validation";
-import { USAGE_PRICE_ENV } from "../src/lib/usage-billing-config";
+import { USAGE_PRICE_ENV, USAGE_TIER_PRICE_ENV } from "../src/lib/usage-billing-config";
 const meterCreate = vi.hoisted(() => vi.fn());
 vi.mock("../src/lib/stripe-helpers", () => ({
   stripe: { billing: { meterEvents: { create: meterCreate } } },
@@ -111,13 +112,12 @@ describe("usage catalog validation", () => {
 
 describe("checkout rate-card gate", () => {
   it("validates every offered object and rejects a mismatched optional add-on before checkout", async () => {
-    const specs = [
-      { key: "base", ...USAGE_STRIPE_PLAN.base },
-      ...USAGE_STRIPE_PLAN.meters,
-      ...USAGE_STRIPE_PLAN.addons,
-    ];
+    const plan = USAGE_STRIPE_PLANS.standard;
+    const specs = [{ key: "base", ...plan.base }, ...plan.meters, ...plan.addons];
     const env = Object.fromEntries(
-      Object.entries(USAGE_PRICE_ENV).map(([key, name]) => [name, `price_${key}`]),
+      Object.entries({ ...USAGE_PRICE_ENV, ...USAGE_TIER_PRICE_ENV.standard }).map(
+        ([key, name]) => [name, `price_${key}`],
+      ),
     );
     const prices = specs.map((spec) => {
       const tiered = "tiers" in spec;
@@ -166,8 +166,7 @@ describe("checkout rate-card gate", () => {
         meters: {
           retrieve: vi.fn(async (id: string) => ({
             status: "active",
-            event_name: USAGE_STRIPE_PLAN.meters.find((meter) => `mtr_${meter.key}` === id)
-              ?.event_name,
+            event_name: plan.meters.find((meter) => `mtr_${meter.key}` === id)?.event_name,
             default_aggregation: { formula: "sum" },
             customer_mapping: { type: "by_id", event_payload_key: "stripe_customer_id" },
             value_settings: { event_payload_key: "value" },
@@ -176,12 +175,12 @@ describe("checkout rate-card gate", () => {
       },
     };
     await expect(
-      validateUsageCheckoutCatalog(client as unknown as Stripe, env, "starter"),
+      validateUsageCheckoutCatalog(client as unknown as Stripe, env, "standard"),
     ).resolves.toBeUndefined();
     expect(client.prices.retrieve).toHaveBeenCalledTimes(4);
     prices.find((price) => price.id === "price_email_address")!.unit_amount = 999;
     await expect(
-      validateUsageCheckoutCatalog(client as unknown as Stripe, env, "starter"),
+      validateUsageCheckoutCatalog(client as unknown as Stripe, env, "standard"),
     ).rejects.toThrow("approved catalog");
   });
 });

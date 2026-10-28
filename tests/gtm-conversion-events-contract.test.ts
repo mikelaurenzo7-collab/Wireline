@@ -24,10 +24,9 @@ describe("GTM conversion events contract", () => {
     expect(spec).toContain("Conversation Balance");
   });
 
-  it("keeps script excerpts on vertical landing pages", () => {
+  it("does not render industry script excerpts on vertical landing pages", () => {
     const landing = read("src/pages/VerticalLanding.tsx");
-    const wedges = read("src/data/vertical-wedges.ts");
-    expect(landing).toContain("scriptPreview");
-    expect(wedges).toContain("scriptPreview:");
+    expect(landing).not.toContain("scriptPreview");
+    expect(landing).toContain("Create a Bot. Add another whenever you want one.");
   });
 });

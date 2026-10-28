@@ -2,41 +2,24 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-/**
- * Every plan card on /pricing ends in the same call to action, and case is what
- * ranks this design — so those six buttons have to speak in one voice.
- *
- * They did not. The paid tiers carried `marketing-btn-primary` /
- * `marketing-btn-secondary`, which puts them in the cased control tier, while
- * the Free and Scale cards were hand-rolled `border border-border` links. Those
- * two fell outside the tier entirely and rendered exactly as their strings were
- * typed, so one row of plan cards showed "BUILD FREE" and "Build free" styling
- * side by side on the highest-intent page in the product.
- *
- * The rule this pins: a plan CTA joins the shared button classes rather than
- * re-deriving a border. That keeps casing systematic — `text-transform` decides,
- * not how an individual label happened to be capitalized in the source.
- */
+/** The selected shared-work plan CTA must use the canonical marketing button. */
 
 const root = process.cwd();
-const pricing = readFileSync(resolve(root, "src/pages/Pricing.tsx"), "utf8");
+const pricing = readFileSync(
+  resolve(root, "src/components/usage-billing/UsagePricingPanel.tsx"),
+  "utf8",
+);
 
 /** The `<Link>` blocks that terminate a plan card. */
 function planCtaLinks(): string[] {
   return [...pricing.matchAll(/<Link\b[\s\S]*?<\/Link>/g)]
     .map((m) => m[0])
-    .filter((block) => /min-h-11/.test(block) && /rounded-xl/.test(block));
+    .filter((block) => /signupHrefForPlan\("usage"/.test(block));
 }
 
 describe("pricing plan CTA case contract", () => {
   it("finds the plan CTAs it is meant to guard", () => {
-    // Three call sites render six buttons: the Free card, one template mapped
-    // over the paid tiers, and the Scale strip. (Scale left the grid when five
-    // plans in one row squeezed the four comparable ones; it is a full-width
-    // strip now, so it is no longer `w-full`.) Asserting the count keeps a
-    // markup refactor from silently reducing this file to an empty loop that
-    // passes because it found nothing to check.
-    expect(planCtaLinks().length, "plan CTA links not found -- the markup changed").toBe(3);
+    expect(planCtaLinks().length, "shared-work CTA not found -- the markup changed").toBe(1);
   });
 
   it("puts every plan CTA in the shared cased button tier", () => {

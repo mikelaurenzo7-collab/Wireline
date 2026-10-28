@@ -6,6 +6,8 @@ import {
   publishedVoiceRates,
   voiceRateForPlan,
 } from "../src/lib/voice-pricing-display";
+import { USAGE_METERS } from "../src/lib/usage-billing-catalog";
+import { USAGE_RATE_LINES } from "../src/components/usage-billing/UsagePricingPanel";
 
 describe("voice-pricing-display", () => {
   it("publishes voice capacity and the prepaid rate only for public Calls packages", () => {
@@ -41,13 +43,15 @@ describe("voice-pricing-display", () => {
 
   it("derives the public rate from the catalog", () => {
     const pricing = readFileSync(resolve(process.cwd(), "src/pages/Pricing.tsx"), "utf8");
-    expect(pricing).toContain("FLAT_OVERAGE_PER_MIN_USD");
-    expect(pricing).toContain("TOPUP_RATE");
-    expect(pricing).toContain(
-      "Extra minutes are {TOPUP_RATE}, paid from Runtime Balance you add ahead of time.",
+    const panel = readFileSync(
+      resolve(process.cwd(), "src/components/usage-billing/UsagePricingPanel.tsx"),
+      "utf8",
     );
-    expect(pricing).not.toContain('"$0.22');
-    expect(pricing).not.toContain("Lite is $");
+    expect(pricing).toContain("<UsagePricingPanel availableTiers={availableTiers} />");
+    expect(panel).toContain("const CALLS = USAGE_METERS.call_minutes");
+    const calls = USAGE_RATE_LINES.find(([name]) => name === "Inbound & Outbound Calls");
+    expect(calls?.[1]).toContain(`$${USAGE_METERS.call_minutes.tiers[0].unitUsd}/min`);
+    expect(calls?.[1]).toContain("shared work allowance");
   });
 
   it("estimates minutes at the published rate", () => {

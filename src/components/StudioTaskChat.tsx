@@ -16,6 +16,7 @@ import LinkifiedText from "./ui/LinkifiedText";
 import { useComputerWorkspace, ACTIVE_COMPUTER_TASKS } from "../contexts/ComputerWorkspaceContext";
 import { useStudioSessionState } from "../contexts/StudioSessionContext";
 import { useAgents } from "../contexts/AgentsContext";
+import BotMark from "./BotMark";
 
 export default function StudioTaskChat({
   agentId,
@@ -29,6 +30,7 @@ export default function StudioTaskChat({
   const model = useComputerWorkspace();
   const { drafts } = useStudioSessionState();
   const { agents } = useAgents();
+  const markKey = agents.find((agent) => agent.id === agentId)?.mark_key;
   const [, updateDraft] = useState(0);
   const [pending, setPending] = useState<"send" | "stop" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -283,9 +285,13 @@ export default function StudioTaskChat({
                   ))}
                 {selected.status === "running" ? (
                   <p className="wl-work-current-step" role="status">
-                    <Loader2
-                      className="size-4 animate-spin motion-reduce:animate-none"
-                      aria-hidden="true"
+                    <BotMark
+                      seed={agentId}
+                      name={agentName}
+                      markKey={markKey}
+                      size={20}
+                      working={!selected.ownerControl && !selected.stopping}
+                      decorative
                     />
                     <span>
                       {selected.stopping

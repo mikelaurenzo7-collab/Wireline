@@ -65,7 +65,7 @@ describe("page metadata across client navigation", () => {
     expect(content("robots")).toBe("noindex, nofollow");
     expect(content("googlebot")).toBe("noindex, nofollow");
 
-    PageMeta({ title: "BotBound | A Bot for You", path: "/" });
+    PageMeta({ title: "BotBound | Bots for Your Work", path: "/" });
     expect(content("robots")).toBe("index, follow, max-image-preview:large, max-snippet:-1");
     expect(content("googlebot")).toBe("index, follow, max-image-preview:large");
     expect(select('link[rel="canonical"]')?.attributes.get("href")).toBe("https://botbound.app/");

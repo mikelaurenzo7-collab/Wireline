@@ -7,6 +7,7 @@ import {
 } from "../src/lib/account-type";
 import {
   MOBILE_MORE_NAV,
+  MOBILE_PRIMARY_NAV,
   desktopNavParentHref,
   scopedWorkspaceHref,
 } from "../src/constants/navigation";
@@ -36,24 +37,33 @@ describe("legacy account-type navigation compatibility", () => {
       "/inbox",
       "/phone",
       "/calendar",
+      "/computer",
     ]);
     expect(
       groups.find((group) => group.label === "Manage")?.items.map((item) => item.path),
     ).toEqual(["/knowledge", "/insights", "/connections", "/settings"]);
   });
 
-  it("keeps secondary tools out of the primary rail", () => {
+  it("keeps contextual tools and mobile destinations aligned", () => {
     const paths = accountSidebarItems("personal").map((item) => item.path);
     expect(paths).not.toContain("/approvals");
     expect(paths).not.toContain("/apps");
     expect(paths).toContain("/knowledge");
-    expect(paths).not.toContain("/computer");
+    expect(paths).toContain("/computer");
     expect(desktopNavParentHref("/computer")).toBe("/studio");
     expect(scopedWorkspaceHref("/computer", "bot-a")).toBe("/studio?panel=computer&agent=bot-a");
-    expect(MOBILE_MORE_NAV.map((item) => item.href)).toEqual([
+    expect(MOBILE_PRIMARY_NAV.map((item) => item.href)).toEqual([
+      "/studio",
+      "/inbox",
+      "/phone",
       "/knowledge",
+      "__more__",
+    ]);
+    expect(MOBILE_MORE_NAV.map((item) => item.href)).toEqual([
       "/calendar",
+      "/computer",
       "/connections",
+      "/insights",
       "/settings",
     ]);
   });

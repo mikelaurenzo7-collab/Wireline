@@ -76,7 +76,8 @@ describe("server-reachable data modules stay free of client-only weight", () => 
       expect(source).toContain("navIcon(item.icon)");
       expect(source).not.toContain("const Icon = item.icon;");
     }
-    expect(read("src/pages/VerticalLanding.tsx")).toContain("PAIN_ICONS[pain.icon]");
+    expect(read("src/data/vertical-wedges.ts")).not.toMatch(/from ["']lucide-react["']/);
+    expect(read("src/pages/VerticalLanding.tsx")).not.toContain("marketing-pain-card");
   });
 });
 

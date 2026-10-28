@@ -514,7 +514,7 @@ export default function CreateAgentDialog({
                 })}
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
-                Or describe any job below — the starter just fills in a first brief you can edit.
+                Or describe any job below. The starter fills in a first brief you can edit.
               </p>
             </div>
 
@@ -593,7 +593,7 @@ export default function CreateAgentDialog({
           {creating ? (
             <p aria-live="polite" className="mt-5 text-sm text-muted-foreground">
               {createStage === "training"
-                ? "Bot created — now teaching it the job from your brief. This can take a few seconds."
+                ? "Bot created. Now teaching it the job from your brief. This can take a few seconds."
                 : "Creating your Bot…"}
             </p>
           ) : null}

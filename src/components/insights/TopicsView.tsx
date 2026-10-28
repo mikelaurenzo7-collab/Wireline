@@ -12,18 +12,12 @@ export default function TopicsView() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
-  const load = (refresh = false, pollAttempt = 0) => {
+  const load = (refresh = false) => {
     setLoading(true);
     setErr(null);
     fetchInsight<InsightsTopicsResponse>(`/api/insights/topics${refresh ? "?refresh=1" : ""}`)
       .then((result) => {
         setData(result);
-        // Cold reads return immediately with a pending state while the
-        // cluster computes in the background; poll until it lands (or give
-        // up to the empty state after ~a minute).
-        if (result.pending && pollAttempt < 12) {
-          window.setTimeout(() => load(false, pollAttempt + 1), 5000);
-        }
       })
       .catch((e) => setErr(e instanceof Error ? e.message : "Request failed"))
       .finally(() => setLoading(false));
@@ -35,16 +29,6 @@ export default function TopicsView() {
   if (loading && !data) return <InsightSkeleton />;
   if (err) return <ErrCard error={err} onRetry={() => load()} />;
   if (!data) return null;
-  if (data.pending) {
-    return (
-      <div className="space-y-4">
-        <InsightSkeleton />
-        <p role="status" className="text-sm text-muted-foreground">
-          Clustering your recent calls…
-        </p>
-      </div>
-    );
-  }
   const topics = data.topics || [];
   if (data.message || topics.length === 0) {
     return <InsightEmpty configKey="topics" icon={RefreshCw} />;
@@ -65,8 +49,14 @@ export default function TopicsView() {
           {data.cached ? "Cached" : "Fresh"}
           {typeof data.total_analyzed === "number" ? ` · ${data.total_analyzed}` : null}
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={() => load(true)}>
-          <RefreshCw className="w-3 h-3" /> Refresh
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => load(true)}
+          disabled={loading}
+        >
+          <RefreshCw className="w-3 h-3" /> {loading ? "Refreshing…" : "Refresh"}
         </Button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

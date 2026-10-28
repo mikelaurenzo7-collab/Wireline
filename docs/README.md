@@ -11,6 +11,7 @@ Repository workflow: [repo conventions](./REPO_CONVENTIONS.md).
 ## Active design plan
 
 - [BotBound design master plan](./design/master-plan.md): verified work, historical audit corrections, and outstanding rendered release gates.
+- [Connector plan](./CONNECTORS.md): proposed integration priorities and operational boundaries.
 
 ## Product surfaces
 

@@ -99,13 +99,6 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
                 accent={BRAND.colors.primary}
               />
               <NotFoundCard
-                to="/features"
-                icon={LayoutGrid}
-                label="Product"
-                hint="See how BotBound works"
-                accent={BRAND.colors.primary}
-              />
-              <NotFoundCard
                 to="/pricing"
                 icon={Compass}
                 label="Pricing"

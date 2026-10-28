@@ -1,12 +1,10 @@
 import { Link } from "react-router";
-import { Mail, MessageSquare, MonitorSmartphone, Phone, type LucideIcon } from "lucide-react";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
 
 type Pillar = {
   id: string;
-  icon: LucideIcon;
   label: string;
   body: string;
 };
@@ -14,27 +12,23 @@ type Pillar = {
 const PILLARS: readonly Pillar[] = [
   {
     id: "calls",
-    icon: Phone,
     label: "Calls",
-    body: "Prospect, qualify leads, follow up on deals, and answer incoming calls. Choose a voice or clone your own.",
+    body: "Answer, call out, and follow up.",
   },
   {
     id: "sms",
-    icon: MessageSquare,
     label: "SMS",
-    body: "Keep conversations moving from your business number, with your knowledge, tone, and opt-out controls.",
+    body: "Text from the same Bot.",
   },
   {
     id: "email",
-    icon: Mail,
     label: "Email",
-    body: "Read requests, prepare replies, and send approved email with your business signature. Use a managed inbox or your verified domain.",
+    body: "Read and reply with your business identity.",
   },
   {
     id: "computer",
-    icon: MonitorSmartphone,
     label: "Cloud Computer",
-    body: "Compare options, research leads, and work through forms in a live browser. Watch, take control, or let your Bot continue.",
+    body: "Research and work on the web.",
   },
 ];
 
@@ -79,13 +73,12 @@ export default function Features() {
           </ul>
 
           <p className="mx-auto mt-8 max-w-2xl text-center text-xs leading-relaxed text-muted-foreground">
-            Every channel works under your rules: recipient permission for outbound calls and
-            texts, a setup review that verifies your sending identity, and up to 15 minutes per
-            Computer session with the result and its sources ready to review.
+            Every channel works under your rules: recipient permission for outbound calls and texts,
+            a setup review that verifies your sending identity, and up to 15 minutes per Computer
+            session with the result and its sources ready to review.
           </p>
         </div>
       </section>
     </MarketingPageFrame>
   );
 }
-

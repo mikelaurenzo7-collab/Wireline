@@ -102,12 +102,6 @@ export function SupportPage() {
           >
             Open Workspace
           </Link>
-          <Link
-            to="/features"
-            className="wl-focus-ring-halo inline-flex min-h-11 items-center rounded-md px-2 font-medium text-muted-foreground hover:text-foreground"
-          >
-            How It Works
-          </Link>
         </nav>
 
         <section className="mt-5 wl-stitch-card p-6 sm:p-8">

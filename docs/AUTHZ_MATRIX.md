@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 460
-**Protected:** 373
+**Routes scanned:** 459
+**Protected:** 372
 **Public (allowlisted):** 87
 **Violations:** 0
 
@@ -135,6 +135,7 @@
 | agent-routes-v2.ts | GET | `/api/agents/:id/deletion` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/agents/:id/import` | inline | — | — | Protected |
 | agent-routes-v2.ts | PATCH | `/api/agents/:id/mark` | inline | — | — | Protected |
+| agent-routes-v2.ts | PATCH | `/api/agents/:id/permission` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/agents/:id/tools` | inline | — | — | Protected |
 | agent-routes-v2.ts | GET | `/api/agents/roles` | inline | — | — | Protected |
 | agent-routes-v2.ts | POST | `/api/train/extract` | inline | — | — | Protected |
@@ -242,6 +243,7 @@
 | compliance-routes.ts | GET | `/api/compliance/dnc-registration` | inline | — | — | Protected |
 | compliance-routes.ts | PUT | `/api/compliance/dnc-registration` | inline | — | — | Protected |
 | compliance-routes.ts | DELETE | `/api/compliance/dnc-registration` | inline | — | — | Protected |
+| compliance-routes.ts | PUT | `/api/compliance/dnc-san` | inline | — | — | Protected |
 | compliance-routes.ts | GET | `/api/dnc` | inline | — | — | Protected |
 | compliance-routes.ts | POST | `/api/dnc` | inline | — | — | Protected |
 | compliance-routes.ts | DELETE | `/api/dnc/:id` | inline | — | — | Protected |
@@ -314,9 +316,7 @@
 | icloud-mail-routes.ts | POST | `/api/integrations/icloud/connect` | inline | — | — | Protected |
 | icloud-mail-routes.ts | POST | `/api/integrations/icloud/disconnect` | inline | — | — | Protected |
 | insights-routes.ts | GET | `/api/insights/daily-brief` | inline | — | — | Protected |
-| insights-routes.ts | GET | `/api/insights/failure-modes` | inline | — | — | Protected |
 | insights-routes.ts | GET | `/api/insights/funnel` | inline | — | — | Protected |
-| insights-routes.ts | GET | `/api/insights/heatmap` | inline | — | — | Protected |
 | insights-routes.ts | GET | `/api/insights/leaderboard` | inline | — | — | Protected |
 | insights-routes.ts | GET | `/api/insights/topics` | inline | — | — | Protected |
 | intake-routes.ts | GET | `/api/intake/keys` | inline | — | — | Protected |
@@ -463,6 +463,7 @@
 | outbound-routes.ts | GET | `/api/outbound` | inline | — | — | Protected |
 | outbound-routes.ts | DELETE | `/api/outbound/:id` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/outbound/bulk` | inline | — | — | Protected |
+| outbound-routes.ts | GET | `/api/outbound/contact-context` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/outbound/dial` | inline | — | — | Protected |
 | outbound-routes.ts | GET | `/api/outbound/dial/:requestKey` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/outbound/dial/:requestKey/cancel-missing` | inline | — | — | Protected |

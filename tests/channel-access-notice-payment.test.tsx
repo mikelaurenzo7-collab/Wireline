@@ -39,19 +39,21 @@ describe("channel access notice", () => {
     },
   );
 
-  it("presents SMS as included instead of a missing plan add-on", () => {
-    expect(
-      ChannelAccessNotice({
-        access: access("active", "voice"),
-        channel: "sms",
-      }),
-    ).toBeNull();
+  it("explains SMS is not in a legacy Calls-only plan", () => {
+    const notice = ChannelAccessNotice({ access: access("active", "voice"), channel: "sms" })!;
+    expect(notice.props.title).toBe("Texts Aren't in Your Plan");
+    expect(text(notice.props.children)).toContain("Saved conversations remain available");
+    expect(elements(notice).find((element) => element.type === "a")?.props.to).toBe(
+      "/settings/billing",
+    );
   });
 
   it.each(["past_due", "unpaid", "incomplete"])(
     "does not turn a %s legacy Calls plan into an SMS upsell",
     (status) => {
-      expect(ChannelAccessNotice({ access: access(status), channel: "sms" })).toBeNull();
+      const notice = ChannelAccessNotice({ access: access(status), channel: "sms" })!;
+      expect(notice.props.title).toBe("Texts Aren't in Your Plan");
+      expect(text(notice.props.children)).toContain("Saved conversations remain available");
     },
   );
 
@@ -75,12 +77,49 @@ describe("channel access notice", () => {
     expect(text(notice.props.children)).toContain("Texts are paused");
   });
 
-  it("presents SMS as included for an account that has not chosen a plan", () => {
+  it("offers a plan when an account has not chosen one", () => {
+    const notice = ChannelAccessNotice({
+      access: access("pending_activation", null),
+      channel: "sms",
+    })!;
+    expect(notice.props.title).toBe("Texts Aren't in Your Plan");
+    expect(text(notice.props.children)).toContain("Choose a plan to connect this channel");
+    expect(elements(notice).find((element) => element.type === "a")?.props.to).toBe(
+      "/settings/billing",
+    );
+  });
+
+  it("does not show a notice when SMS is included in current access", () => {
     expect(
       ChannelAccessNotice({
-        access: access("pending_activation", null),
+        access: { ...access("active", "usage"), includes: (channel) => channel === "sms" },
         channel: "sms",
       }),
     ).toBeNull();
   });
+
+  it.each(["active", "trialing"])(
+    "offers a retry when a %s plan includes SMS but access does not",
+    (status) => {
+      const state = access(status, "usage");
+      const notice = ChannelAccessNotice({ access: state, channel: "sms" })!;
+      expect(notice.props.title).toBe("Channel Access Unavailable");
+      expect(text(notice.props.children)).toContain("couldn't confirm this channel's access");
+      expect(elements(notice).find((element) => element.type === "a")).toBeUndefined();
+      (notice.props.action as ReactElement<{ onClick: () => void }>).props.onClick();
+      expect(state.retry).toHaveBeenCalledOnce();
+    },
+  );
+
+  it.each(["canceled", "paused", "incomplete_expired", "pending_activation"])(
+    "shows an inactive subscription rather than an absent channel for %s",
+    (status) => {
+      const notice = ChannelAccessNotice({ access: access(status, "usage"), channel: "sms" })!;
+      expect(notice.props.title).toBe("Subscription Not Active");
+      expect(text(notice.props.children)).toContain("subscription is inactive");
+      expect(elements(notice).find((element) => element.type === "a")?.props.to).toBe(
+        "/settings/billing",
+      );
+    },
+  );
 });

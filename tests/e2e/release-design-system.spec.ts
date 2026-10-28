@@ -277,13 +277,13 @@ test("pricing keeps its header, annual prices, and signup action readable at 320
 
   await page.locator(".pricing-more__summary").scrollIntoViewIfNeeded();
   await expect(page.locator(".marketing-sticky-cta")).toHaveCount(0);
-  await header.getByRole("button", { name: "Open navigation" }).click();
-  await expect(page.getByRole("menuitem", { name: "Pricing", exact: true })).toBeVisible();
-  const menuBox = (await page.getByRole("menu").boundingBox())!;
-  expect(menuBox.x).toBeGreaterThanOrEqual(0);
-  expect(menuBox.x + menuBox.width).toBeLessThanOrEqual(320);
-  await page.keyboard.press("Escape");
-  await expect(header.getByRole("button", { name: "Open navigation" })).toBeFocused();
+  await expect(header.getByRole("link", { name: "Product", exact: true })).toHaveCount(0);
+  await expect(header.getByRole("link", { name: "Pricing", exact: true })).toHaveCount(0);
+  const signIn = header.getByRole("link", { name: /Sign In|Open Workspace/ });
+  await expect(signIn).toBeVisible();
+  const signInBox = (await signIn.boundingBox())!;
+  expect(signInBox.x).toBeGreaterThanOrEqual(0);
+  expect(signInBox.x + signInBox.width).toBeLessThanOrEqual(320);
 });
 
 test("billing reflows its interval, cards, and dock without losing bottom actions", async ({

@@ -149,10 +149,10 @@ function expectBalancedHomeMessage(
   name: string,
 ) {
   expect(metrics.titleLines, `${name} short hero phrases`).toHaveLength(2);
-  expect(metrics.titleLines.map((line) => line.text), `${name} approved hero copy`).toEqual([
-    "Your next hire",
-    "is a bot.",
-  ]);
+  expect(
+    metrics.titleLines.map((line) => line.text),
+    `${name} approved hero copy`,
+  ).toEqual(["Your next hire", "is a bot."]);
   for (const line of metrics.titleLines) {
     expect(line.words, `${name} no isolated word`).toBeGreaterThanOrEqual(2);
     expect(line.boxes, `${name} phrase stays on one line`).toHaveLength(1);
@@ -199,8 +199,8 @@ test("supporting public headers keep signup and sign-in navigation reachable on 
     await openPublicRoute(page, path);
     const header = page.locator(".wl-public-header");
     const signup = header.getByRole("link", { name: "Get Started", exact: true });
-    const menu = header.getByRole("button", { name: "Open navigation" });
-    for (const target of [signup, menu]) {
+    const signin = header.getByRole("link", { name: "Sign In", exact: true });
+    for (const target of [signup, signin]) {
       await expect(target).toBeVisible();
       const box = await target.boundingBox();
       expect(box).not.toBeNull();
@@ -208,12 +208,7 @@ test("supporting public headers keep signup and sign-in navigation reachable on 
       expect(box!.x + box!.width).toBeLessThanOrEqual(390);
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }
-    await menu.click();
-    const signin = page.getByRole("menuitem", { name: "Sign In", exact: true });
-    await expect(signin).toBeInViewport();
     await expect(signin).toHaveAttribute("href", "/signin");
-    await signin.press("Escape");
-    await expect(menu).toBeFocused();
   }
 });
 
@@ -365,4 +360,3 @@ test("showcase redirects into plan-neutral account creation without horizontal e
   const metrics = await publicMetrics(page);
   expectDocumentInsideViewport(metrics, "showcase redirect");
 });
-

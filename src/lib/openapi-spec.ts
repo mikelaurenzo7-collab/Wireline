@@ -1062,6 +1062,25 @@ const PATHS: Record<string, PathItem> = {
       },
     },
   },
+  "/api/insights/leaderboard": {
+    get: {
+      summary: "Per-agent leaderboard",
+      operationId: "getLeaderboard",
+      tags: ["Insights"],
+      security: auth.bearer,
+      responses: {
+        "200": {
+          description: "Leaderboard rows.",
+          content: {
+            "application/json": { schema: { type: "object", additionalProperties: true } },
+          },
+        },
+        "401": COMMON_ERROR_RESPONSES["401"],
+      },
+    },
+  },
+
+  // ── Webhooks (CRUD over the outbound subscription list) ──────────
   "/api/insights/funnel": {
     get: {
       summary: "Conversion funnel for the calling tenant",

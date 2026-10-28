@@ -67,7 +67,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
       "Compare BotBound's Bot workspace with flat subscriptions, usage pricing, and developer voice infrastructure.",
   },
   "/about": {
-    title: "About BotBound | Your Bot for calls, texts, email, and computer.",
+    title: "About BotBound",
     description:
       "BotBound is an independent platform for calls, email, and cloud browser tasks. Set your knowledge and rules, review outcomes, and reach the founder directly for support.",
   },
@@ -139,14 +139,12 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
     noIndex: true,
   },
   "/solutions/sales": {
-    title: "Your Next Sales Bot. | BotBound",
-    description:
-      "Research prospects, make outbound calls, qualify interest, and move deals forward with SMS and email.",
+    title: "Sales",
+    description: "Create a Bot for sales. Add another whenever you want one.",
   },
   "/solutions/support": {
-    title: "Meet Your Front Desk | BotBound",
-    description:
-      "Give a Front Desk Bot your policies, calendar, and rules. It answers calls, captures requests, books available times, and keeps the outcome in your workspace. Add email for written replies and recaps.",
+    title: "Front Desk",
+    description: "Create a Bot for the front desk. Add another whenever you want one.",
   },
 };
 

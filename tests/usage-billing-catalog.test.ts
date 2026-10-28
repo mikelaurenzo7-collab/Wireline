@@ -181,7 +181,7 @@ describe("usage rate card", () => {
     expect(crossedAlertThresholds(0, 49)).toEqual([]);
     expect(crossedAlertThresholds(0, 85)).toEqual([50, 80]);
     expect(crossedAlertThresholds(80, 100)).toEqual([100]);
-    expect(USAGE_NEVER_PAY_FOR).toEqual(["Bots", "Roles", "Summaries"]);
+    expect(USAGE_NEVER_PAY_FOR).toEqual(["Bots", "Summaries"]);
   });
 
   it("estimates from the pricing sliders with optional add-ons", () => {

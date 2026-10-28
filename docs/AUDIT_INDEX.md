@@ -1,5 +1,9 @@
 # BotBound Audit Evidence Index
 
+- [Static homepage evidence](./design/evidence/public-home-static-showcase-2026-10-28/README.md): dated PR captures.
+- [Public storefront evidence](./design/evidence/public-storefront-2026-10-27/README.md): dated PR captures.
+
+
 Status: **Historical evidence index**
 
 This index preserves dated audits, launch passes, QA records, and superseded decision evidence. These files explain what was inspected and why a change landed. They are not current product doctrine. When an audit conflicts with code, `README.md`, `CODEBASE_HEALTH.md`, `ARCHITECTURE.md`, or a canonical document in `docs/README.md`, the current implementation and canonical document win.

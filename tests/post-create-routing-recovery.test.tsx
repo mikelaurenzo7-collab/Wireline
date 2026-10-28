@@ -1,6 +1,7 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PostCreateActivationWizard from "../src/components/onboarding/PostCreateActivationWizard";
+import { resolveAppPageSubTabId, resolveAppPageSubTabRoute } from "../src/lib/page-sub-tabs";
 
 vi.mock("../src/hooks/useChannelEntitlements", () => ({
   useChannelEntitlements: () => ({
@@ -222,7 +223,7 @@ describe("setup guide requires confirmed calling", () => {
       await mount();
       if (route === "picker") {
         button("Choose a number")?.props.onClick?.();
-        expect(h.navigate).toHaveBeenCalledWith("/phone?tab=lines&agent=bot");
+        expect(h.navigate).toHaveBeenCalledWith("/phone?tab=setup&agent=bot");
       } else {
         const launchLater = button("Launch later");
         expect(launchLater).toBeDefined();
@@ -231,8 +232,11 @@ describe("setup guide requires confirmed calling", () => {
         const phoneSetup = elements(render()).find(
           (element) => element.type === "a" && text(element) === "Get a number",
         );
-        expect(phoneSetup?.props.to).toBe("/phone?tab=lines&agent=bot");
+        expect(phoneSetup?.props.to).toBe("/phone?tab=setup&agent=bot");
       }
+      const phoneRoute = resolveAppPageSubTabRoute("/phone");
+      expect(phoneRoute).toBeDefined();
+      expect(resolveAppPageSubTabId(phoneRoute!, "setup")).toBe("lines");
       expect(h.fetch.mock.calls.some(([url]) => url === "/api/phone-numbers/provision")).toBe(
         false,
       );

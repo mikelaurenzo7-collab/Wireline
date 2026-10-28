@@ -49,6 +49,8 @@ export default function BotMark({
   size = 24,
   imageUrl,
   active = false,
+  working = false,
+  decorative = false,
   className = "",
   title,
 }: {
@@ -58,6 +60,8 @@ export default function BotMark({
   size?: number;
   imageUrl?: string | null;
   active?: boolean;
+  working?: boolean;
+  decorative?: boolean;
   className?: string;
   title?: string;
 }) {
@@ -74,10 +78,12 @@ export default function BotMark({
     <span
       className={`wl-bot-mark relative inline-flex shrink-0 items-center justify-center align-middle ${className}`.trim()}
       style={style}
-      role="img"
-      aria-label={accessibleLabel}
-      title={accessibleLabel}
+      role={decorative ? undefined : "img"}
+      aria-hidden={decorative || undefined}
+      aria-label={decorative ? undefined : accessibleLabel}
+      title={decorative ? undefined : accessibleLabel}
       data-active={active ? "true" : "false"}
+      data-working={working ? "true" : "false"}
       data-mark-key={mark.key}
       data-motif={mark.motif}
     >

@@ -35,13 +35,15 @@ describe("live research timeout is not a call-duration cap", () => {
     const source = readFileSync(resolve("src/pages/Pricing.tsx"), "utf8");
     expect(source).toMatch(/How long can a call last\?/i);
     expect(source).toContain("up to 60 minutes per session");
-    expect(source).toContain("unless a shorter limit is configured");
-    expect(source).toContain("Each call requires at least one funded minute");
-    expect(source).toContain(
-      "limited by available coverage, plus a completion buffer of up to 10 minutes",
-    );
-    expect(source).toContain("Unpaid completion usage pauses new calls and prepaid extras");
-    expect(source).toContain("Reaching a session limit ends the call.");
+    expect(source).toMatch(/unless a shorter limit is\s+configured/);
+    expect(source).toContain("spending limit can shorten the reserved duration");
+    expect(source).toContain("Reaching a session or reserved limit ends the call.");
+    const funding = readFileSync(resolve("src/lib/voice-call-funding.ts"), "utf8");
+    const usageBranch = funding.slice(funding.indexOf("if (isUsagePlanId(plan.id))"));
+    expect(usageBranch).toContain("await admitVoiceUsage(");
+    expect(usageBranch).toContain("graceMinutes: 0");
+    const usage = readFileSync(resolve("src/lib/usage-billing-store.ts"), "utf8");
+    expect(usage).toContain("Math.floor((admission.maxUnits ?? requestedSeconds / 60) * 60)");
     expect(source).not.toContain("Balance depletion does not cut off an active call");
     expect(source).not.toContain("Calls run as long as the conversation needs");
     expect(source).not.toContain("An active call is never cut off");

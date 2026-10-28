@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { parseSignupIntent, signupHrefForPlan } from "../src/lib/signup-intent";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -23,8 +24,24 @@ describe("a signed-in customer can reach Stripe", () => {
 
   it("keeps every public pricing CTA pointed at signup", () => {
     const pricing = read("src/pages/Pricing.tsx");
-    expect(pricing).toContain("signupHrefForPlan(plan.id as SignupPlanId");
-    expect(pricing).toContain('to={signupHrefForPlan("personal", { interval: billingInterval })}');
+    const panel = read("src/components/usage-billing/UsagePricingPanel.tsx");
+    expect(pricing).toContain("<UsagePricingPanel availableTiers={availableTiers} />");
+    expect(panel).toContain('signupHrefForPlan("usage", {');
+    expect(panel).toContain("usageTier: tier");
+    expect(panel).toContain("usageAddons: {");
+    const url = new URL(
+      signupHrefForPlan("usage", {
+        usageTier: "lite",
+        usageAddons: { number: true, emailAddress: false },
+      }),
+      "https://botbound.test",
+    );
+    expect(url.pathname).toBe("/signup");
+    expect(parseSignupIntent(url.search)).toMatchObject({
+      preferredPlanId: "usage",
+      preferredUsageTier: "lite",
+      preferredUsageAddons: { number: true, emailAddress: false },
+    });
   });
 });
 

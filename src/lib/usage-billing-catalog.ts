@@ -147,7 +147,7 @@ export const USAGE_MIN_CAP_HEADROOM_USD = 5;
 export const USAGE_MAX_MONTHLY_CAP_USD = 25_000;
 
 /** What every account gets without a meter. */
-export const USAGE_NEVER_PAY_FOR = ["Bots", "Roles", "Summaries"] as const;
+export const USAGE_NEVER_PAY_FOR = ["Bots", "Summaries"] as const;
 
 export interface UsageQuantities {
   smsSegments?: number;

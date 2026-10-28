@@ -1,5 +1,8 @@
 # BotBound design master plan
 
+> **October 27, 2026 direction:** The launch offer starts with incoming calls, requested email, and supervised Computer work. The founder chose to show SMS on the homepage phone card. Keep campaign calling outside launch promotion; capability descriptions and older proposed directions below do not establish provider approval or authorize activation. Product identity should stay compact and useful during live work; the use of pets remains undecided.
+
+
 Status: evidence-backed plan reviewed against origin/main at 36d4baac12426b8af265593887b12e6bd4bede5a on 27 October 2026 and updated for the owner’s 28 October homepage direction. Original task start remains fba3eccd9a13bb35f30bce81793f98c03e9e9bd5. The public-home candidate in #1432 now has screenshots at 390/768/1280/1440 and passes axe and horizontal-overflow checks at those widths. Full route/tab and authenticated walkthroughs, comparable Lighthouse, and review remain incomplete; this is not release certification.
 
 ## Decisions and scope

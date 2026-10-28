@@ -71,8 +71,11 @@ describe("marketing signup continuity", () => {
     (slug) => {
       const page = VerticalLanding({ slug });
       if (!page) throw new Error("Expected the industry landing page.");
-      const href = elements(page).find((element) => element.props.href?.startsWith("/signup"))
-        ?.props.href;
+      const link = elements(page).find(
+        (element) =>
+          element.props.href?.startsWith("/signup") || element.props.to?.startsWith("/signup"),
+      );
+      const href = link?.props.href ?? link?.props.to;
       expect(href).toBe(WEDGES[slug].primaryCta.href);
       expect(stickyDestination(page)).toBeUndefined();
       const destination = new URL(href!, "https://botbound.app");
@@ -147,9 +150,8 @@ describe("marketing signup continuity", () => {
       .map((element) => Children.toArray(element.props.children).join(""))
       .join(" ");
     if (wedge === "sales") {
-      expect(renderedText).toContain("Find the Right Prospects");
-      expect(renderedText).toContain("Start the Conversation");
-      expect(renderedText).toContain("Move the Deal Forward");
+      expect(renderedText).toContain("Create a Bot. Add another whenever you want one.");
+      expect(renderedText).not.toContain("Find the Right Prospects");
       expect(heroLink?.props.to).toBe("/signup?wedge=sales");
       expect(renderedText).not.toMatch(
         /server-verifiable consent records|Federal Do Not Call screening|not available yet|coming soon/i,
@@ -166,7 +168,7 @@ describe("marketing signup continuity", () => {
       const heroLink = elements(page).find(
         (element) => element.type === "a" && element.props.to?.startsWith("/signup"),
       );
-      expect(heading?.props.children).toBe("Meet Your Front Desk");
+      expect(heading?.props.children).toBe("Front Desk");
       expect(heroLink?.props.to).toBe("/signup?wedge=support");
       expect(stickyDestination(page)).toBeUndefined();
     },

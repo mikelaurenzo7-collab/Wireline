@@ -86,13 +86,14 @@ describe("legacy post-call review notes", () => {
     }
   });
 
-  it("excludes synthetic scores from failure modes and insight averages", () => {
+  it("excludes synthetic scores from the retained leaderboard average", () => {
     const source = readFileSync("src/routes/insights-routes.ts", "utf8");
-    const failureModes = source.slice(source.indexOf('"/api/insights/failure-modes"'));
-    expect(failureModes).toContain("LEGACY_CALL_REVIEW_FAILURE_NOTES[0]");
-    expect(failureModes).toContain("LEGACY_CALL_REVIEW_FAILURE_NOTES[1]");
-    expect(failureModes).toContain("btrim(coalesce(${schema.callLogs.coachingNote}, '')) NOT IN");
-    expect(source.match(/avg\(\$\{reviewableLeadScore\}\)/g)).toHaveLength(2);
+    expect(source).not.toContain('"/api/insights/failure-modes"');
+    expect(source).toContain("LEGACY_CALL_REVIEW_FAILURE_NOTES[0]");
+    expect(source).toContain("LEGACY_CALL_REVIEW_FAILURE_NOTES[1]");
+    expect(source).toContain("btrim(coalesce(${schema.callLogs.coachingNote}, '')) IN");
+    const leaderboard = source.slice(source.indexOf('"/api/insights/leaderboard"'));
+    expect(leaderboard).toContain("avg(${reviewableLeadScore})");
     expect(source).toContain("ELSE coalesce(${schema.callLogs.leadScore}, 0)");
   });
 });

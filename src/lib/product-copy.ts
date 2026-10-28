@@ -188,9 +188,8 @@ export const WORKSPACE_VOICE = {
 } as const;
 
 export const PRODUCT_VERSATILITY = {
-  eyebrow: "YOUR BOT. ANY USE CASE.",
-  tagline:
-    "Start with a Phone Bot, Conversation Bot, Human Bot, or role template. Add another only when a separate role or more capacity helps.",
+  eyebrow: "AS MANY BOTS AS YOU WANT.",
+  tagline: "Create a Bot for a job. Add another whenever you want one.",
   short:
     "Bots for incoming calls, reviewed service calls, email, web research, support, and appointment requests.",
   hero: "Give the Work a Bot. Step In Only When You Want To",

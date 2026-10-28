@@ -85,7 +85,7 @@ export const POST_CREATE_WIZARD_COPY = {
  * BotBound itself is paused.
  */
 export const SOFT_OPEN_CHECKOUT_COPY = {
-  title: "Activation completes when checkout opens",
+  title: "Live activation isn't available right now",
   detail: "Keep trying your Bot privately in Set Up, then check back soon.",
   savedDetail: (agentName: string) => `${agentName} is saved. Preview Voice is ready in Set Up.`,
   allowanceDetail: "This month's Preview Voice is used. We'll restore it when you go live.",

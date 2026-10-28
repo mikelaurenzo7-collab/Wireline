@@ -103,7 +103,10 @@ export async function assertPreparedCallMatches(
   const stored = await readPreparedCall(input.userId, input.preparedRequestId);
   if (!options.allowExpiredReceipt && Date.parse(stored.expires_at) <= Date.now())
     throw AppError.conflict("This call proposal expired. Prepare a new call before reviewing it.");
-  if (input.callPurpose === "marketing_or_sales" || input.customerName)
+  if (
+    (input.callPurpose !== "service_or_requested" && input.callPurpose !== "callback") ||
+    input.customerName
+  )
     throw AppError.conflict("The call does not match the reviewed proposal.");
   assertSamePreparedInput(stored, {
     request_key: input.requestKey?.toLowerCase() ?? "",

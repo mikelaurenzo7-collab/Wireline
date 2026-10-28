@@ -133,7 +133,8 @@ describe("E2E design and BotBound brand polish", () => {
     expect(header).toContain("min-h-11 px-4 text-sm font-semibold");
     expect(header).not.toContain("font-semibold uppercase");
     expect(sticky).toContain("MARKETING_VOICE.primaryCta");
-    expect(sticky).toContain('secondaryLabel = "How It Works"');
+    expect(sticky).toContain('secondaryLabel = "Get Started"');
+    expect(sticky).not.toContain('secondaryHref = "/features"');
     expect(sticky).toContain("min-h-[48px]");
     expect(sticky).toContain("marketing-sticky-cta__actions");
     expect(sticky).toContain("--wl-marketing-sticky-height");

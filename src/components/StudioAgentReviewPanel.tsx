@@ -370,12 +370,14 @@ export default function StudioAgentReviewPanel({
             title="Connect Live Channels"
             action={
               <Button asChild size="sm" variant="secondary">
-                <Link to={activationBillingHref(getStoredSignupIntent())}>See Plans to Go Live</Link>
+                <Link to={activationBillingHref(getStoredSignupIntent())}>
+                  See Plans to Go Live
+                </Link>
               </Button>
             }
           >
-            Keep rehearsing privately. A plan connects your phone, email, and texting — pick one
-            when you're ready to go live.
+            Keep rehearsing privately. A plan connects your phone, email, and texting. Pick one when
+            you're ready to go live.
           </StatusNotice>
         ) : null}
 

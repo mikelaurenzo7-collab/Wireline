@@ -1,13 +1,5 @@
-import { Menu } from "lucide-react";
 import { Link, NavLink } from "react-router";
 
-import { Button } from "../atoms/Button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../atoms/DropdownMenu";
 import { BotBoundWordmark } from "../brand/BotBoundBrand";
 import SkipToContentLink from "../layout/SkipToContentLink";
 import { useChromeHeight } from "../../hooks/useChromeHeight";
@@ -33,22 +25,19 @@ export default function PrecisionPublicHeader() {
         </Link>
 
         <nav className="ml-auto hidden items-center gap-1 md:flex" aria-label="Explore BotBound">
-          {[
-            { to: "/features", label: "Product" },
-            { to: "/pricing", label: "Pricing" },
-          ].map(({ to, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                `inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium transition-colors wl-focus-ring-halo ${isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`
-              }
-            >
-              {label}
-            </NavLink>
-          ))}
+          <NavLink
+            to="/features"
+            className="wl-focus-ring-halo inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            Product
+          </NavLink>
+          <NavLink
+            to="/pricing"
+            className="wl-focus-ring-halo inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            Pricing
+          </NavLink>
         </nav>
-
         <nav
           className="ml-auto flex min-w-0 shrink-0 items-center gap-1 md:ml-0 md:gap-3"
           aria-label="Account"
@@ -66,7 +55,7 @@ export default function PrecisionPublicHeader() {
             <>
               <Link
                 to="/signin"
-                className="hidden min-h-11 shrink-0 items-center whitespace-nowrap rounded-[var(--radius-md)] px-3 text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:inline-flex"
+                className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-[var(--radius-md)] px-3 text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
                 Sign In
               </Link>
@@ -79,34 +68,6 @@ export default function PrecisionPublicHeader() {
               </Link>
             </>
           )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="min-h-11 min-w-11 md:hidden"
-                aria-label="Open navigation"
-              >
-                <Menu size={20} aria-hidden="true" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-[100] w-44 min-w-0">
-              <DropdownMenuItem asChild className="min-h-11 px-3">
-                <NavLink to="/features">Product</NavLink>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild className="min-h-11 px-3">
-                <NavLink to="/pricing">Pricing</NavLink>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild className="min-h-11 px-3">
-                {signedIn ? (
-                  <Link to="/studio">Open Workspace</Link>
-                ) : (
-                  <Link to="/signin">Sign In</Link>
-                )}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </nav>
       </div>
     </header>

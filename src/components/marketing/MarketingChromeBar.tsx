@@ -51,6 +51,15 @@ export default function MarketingChromeBar({ className }: { className?: string }
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+  const previousLocationKey = useRef(location.key);
+
+  useEffect(() => {
+    // Preserve the initially open footer, but close it on later navigation.
+    if (previousLocationKey.current !== location.key) {
+      previousLocationKey.current = location.key;
+      setOpen(false);
+    }
+  }, [location.key]);
 
   useEffect(() => {
     // The panel precedes the trigger, so Tab would otherwise skip every link.

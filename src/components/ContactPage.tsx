@@ -181,12 +181,6 @@ export function ContactPage() {
             Email Us
           </a>
           <Link
-            to="/features"
-            className="wl-focus-ring-halo inline-flex min-h-11 items-center rounded-md px-2 font-medium text-muted-foreground hover:text-foreground"
-          >
-            How It Works
-          </Link>
-          <Link
             to="/pricing"
             className="wl-focus-ring-halo inline-flex min-h-11 items-center rounded-md px-2 font-medium text-muted-foreground hover:text-foreground"
           >

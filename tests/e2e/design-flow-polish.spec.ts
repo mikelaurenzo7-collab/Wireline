@@ -176,10 +176,8 @@ for (const width of [320, 390, 1440]) {
       .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
       .toBe(true);
     await capture(page, info, `features-${width}`);
-    if (width < 768) {
-      await header.getByRole("button", { name: "Open navigation" }).click();
-      await page.getByRole("menuitem", { name: "Pricing", exact: true }).click();
-    } else await header.getByRole("link", { name: "Pricing", exact: true }).click();
+    await page.goto("/");
+    await page.getByRole("link", { name: "See Pricing", exact: true }).click();
     await expect(page).toHaveURL(/\/pricing$/);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await header.getByRole("link", { name: "Get Started", exact: true }).click();

@@ -11,6 +11,7 @@ const hooks = vi.hoisted(() => ({
   setOpen: vi.fn(),
   focus: vi.fn(),
   firstLinkFocus: vi.fn(),
+  previousLocationKey: { current: "initial" },
   effects: [] as Array<{ effect: () => void; dependencies: unknown[] }>,
 }));
 
@@ -20,12 +21,15 @@ vi.mock("react", async (importOriginal) => {
     ...original,
     useId: () => "sitemap-panel",
     useState: () => [hooks.open, hooks.setOpen],
-    useRef: () => ({
-      current: {
-        focus: hooks.focus,
-        querySelector: () => ({ focus: hooks.firstLinkFocus, scrollIntoView: vi.fn() }),
-      },
-    }),
+    useRef: (initial: unknown) =>
+      typeof initial === "string"
+        ? hooks.previousLocationKey
+        : {
+            current: {
+              focus: hooks.focus,
+              querySelector: () => ({ focus: hooks.firstLinkFocus, scrollIntoView: vi.fn() }),
+            },
+          },
     useEffect: (effect: () => void, dependencies: unknown[]) => {
       hooks.effects.push({ effect, dependencies });
     },
@@ -94,6 +98,7 @@ beforeEach(() => {
   hooks.pathname = "/";
   hooks.search = "";
   hooks.hash = "";
+  hooks.previousLocationKey.current = "initial";
   hooks.effects = [];
   vi.clearAllMocks();
 });
@@ -166,6 +171,18 @@ describe("marketing exploration disclosure", () => {
     expect(hooks.setOpen).toHaveBeenCalledWith(false);
     expect(hooks.focus).not.toHaveBeenCalled();
     expect(hooks.firstLinkFocus).not.toHaveBeenCalled();
+  });
+
+  it("does not close the initially open disclosure on mount", () => {
+    hooks.open = true;
+    MarketingChromeBar({});
+    const navigationEffect = hooks.effects.find(({ dependencies }) =>
+      dependencies.includes("initial"),
+    );
+    expect(navigationEffect).toBeDefined();
+    navigationEffect?.effect();
+    expect(hooks.setOpen).not.toHaveBeenCalled();
+    expect(hooks.focus).not.toHaveBeenCalled();
   });
 
   it("dismisses on a new destination without taking route-owned focus", () => {

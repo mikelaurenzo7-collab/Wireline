@@ -1,6 +1,6 @@
 import { signupHrefForWedge } from "../lib/signup-intent";
 
-const PRODUCT_TOUR_CTA = { label: "See How It Works", href: "/features" } as const;
+const PRODUCT_TOUR_CTA = { label: "Create a Bot", href: "/signup" } as const;
 
 export type VerticalKey =
   | "home-services"

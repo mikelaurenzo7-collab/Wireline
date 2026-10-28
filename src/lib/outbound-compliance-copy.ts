@@ -57,11 +57,8 @@ function hourLabel(hour: number): string {
 }
 
 /** Quiet-hours block. End hour is exclusive, so 20 reads as 8pm. */
-export function quietHoursBlockedMessage(hours: {
-  startHour?: number;
-  endHour?: number;
-}): string {
+export function quietHoursBlockedMessage(hours: { startHour?: number; endHour?: number }): string {
   const start = hourLabel(hours.startHour ?? 8);
   const end = hourLabel(hours.endHour ?? 20);
-  return `It's outside ${start}–${end} where they are. Try after ${start} their time.`;
+  return `It's outside ${start} to ${end} where they are. Try after ${start} their time.`;
 }

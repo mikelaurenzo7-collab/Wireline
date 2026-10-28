@@ -59,12 +59,12 @@ describe("auth-redirect", () => {
     expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
   });
 
-  it("honors an explicit safe signup redirect and consumes stale redirect state", () => {
+  it("starts a fresh signup in Studio and consumes an incidental safe redirect", () => {
     localStorage.setItem(AUTH_REDIRECT_KEY, "/settings");
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
     expect(resolvePostAuthDestination("business", "?redirect=%2Fsettings%2Fphone")).toBe(
-      "/settings/phone",
+      "/studio?create=1",
     );
     expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBeNull();
     expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();

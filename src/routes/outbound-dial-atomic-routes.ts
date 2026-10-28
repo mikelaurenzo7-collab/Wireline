@@ -10,10 +10,7 @@ import { AppError } from "../lib/api-error";
 import { normalizeOutboundNumber } from "../lib/dialer-compliance";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import { CALL_NEEDS_PERMISSION_MESSAGE } from "../lib/outbound-compliance-copy";
-import {
-  OUTBOUND_CALL_PURPOSES,
-  outboundConsentMetadata,
-} from "../lib/outbound-call-purpose";
+import { OUTBOUND_CALL_PURPOSES, outboundConsentMetadata } from "../lib/outbound-call-purpose";
 import { screenManualOutbound } from "../lib/outbound-manual-screening";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { SentryEvents } from "../lib/sentry-events";
@@ -91,7 +88,10 @@ function gateResponse(res: Response, gate: DeniedOutboundDialGate) {
   if (gate.reason === "federal_dnc_unconfigured") {
     return res.status(503).json({
       code: gate.federalDncCode || "FEDERAL_DNC_UNCONFIGURED",
-      error: gate.federalDncMessage || gate.customerMessage || "Campaigns and automated sales need number screening before they can send.",
+      error:
+        gate.federalDncMessage ||
+        gate.customerMessage ||
+        "Campaigns and automated sales need number screening before they can send.",
     });
   }
   if (gate.reason === "sales_attestation_required") {
@@ -103,14 +103,19 @@ function gateResponse(res: Response, gate: DeniedOutboundDialGate) {
   if (gate.reason === "blocked_internal_dnc") {
     return res.status(403).json({
       code: "FORBIDDEN",
-      error: gate.customerMessage || "This person asked not to be contacted. We won't call or text them from this line.",
+      error:
+        gate.customerMessage ||
+        "This person asked not to be contacted. We won't call or text them from this line.",
       dncBlocked: true,
     });
   }
   if (gate.reason === "blocked_tcpa") {
     return res.status(403).json({
       code: "FORBIDDEN",
-      error: gate.customerMessage || gate.tcpaDecision?.disclosure_script || CALL_NEEDS_PERMISSION_MESSAGE,
+      error:
+        gate.customerMessage ||
+        gate.tcpaDecision?.disclosure_script ||
+        CALL_NEEDS_PERMISSION_MESSAGE,
       tcpaBlocked: true,
       tcpa: gate.tcpaDecision,
     });
@@ -118,14 +123,16 @@ function gateResponse(res: Response, gate: DeniedOutboundDialGate) {
   if (gate.reason === "outside_permitted_calling_hours") {
     return res.status(403).json({
       code: "OUTSIDE_PERMITTED_CALLING_HOURS",
-      error: gate.customerMessage || "It's outside 8am–8pm where they are. Try after 8am their time.",
+      error:
+        gate.customerMessage || "It's outside 8am to 8pm where they are. Try after 8am their time.",
       reason: gate.reason,
       calling_hours: gate.metadataPatch?.calling_hours,
     });
   }
   return res.status(409).json({
     code: "DUPLICATE_DIAL_SUPPRESSED",
-    error: gate.customerMessage || "This number already got a call today. You can try again tomorrow.",
+    error:
+      gate.customerMessage || "This number already got a call today. You can try again tomorrow.",
     reason: gate.reason,
     status: gate.status,
   });

@@ -123,6 +123,8 @@ describe("call proposal and receipt", () => {
       { requestKey: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" },
       { callPurpose: "callback" as const },
       { callPurpose: "marketing_or_sales" as const },
+      { callPurpose: "personal" as const },
+      { callPurpose: "appointment_service" as const },
     ])
       await expect(assertPreparedCallMatches({ ...placement, ...change })).rejects.toMatchObject({
         status: 409,

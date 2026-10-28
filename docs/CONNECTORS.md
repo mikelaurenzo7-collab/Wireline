@@ -1,5 +1,8 @@
 # BotBound connections and permissioned automation
 
+> **October 27, 2026 direction:** The launch offer starts with incoming calls, requested email, and supervised Computer work. The founder chose to show SMS on the homepage phone card. Keep campaign calling outside launch promotion; capability descriptions and older proposed directions below do not establish provider approval or authorize activation. Product identity should stay compact and useful during live work; the use of pets remains undecided.
+
+
 Status: research and source-code audit as of 27 October 2026, against main at 36d4baac12426b8af265593887b12e6bd4bede5a. This is a product direction, not proof that every vendor account, scope, or write action works. No customer demand is inferred from founder and demo accounts.
 
 ## Product decision

@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 import { PUBLIC_USAGE_TIERS, USAGE_TIERS } from "../src/lib/usage-billing-catalog";
 import {
   HOME_PLAN_IDS,
-  PERSONAL_PLAN,
   PUBLIC_CHANNEL_PLANS,
   PUBLIC_ENTRY_PLANS,
   publicPriceHint,
@@ -41,9 +40,19 @@ describe("public plan lineup", () => {
     }
   });
 
-  it("keeps the guarded Personal heading on /pricing in step with the catalog", () => {
+  it("draws the public shared-work plans on /pricing from the catalog", () => {
     const pricing = readFileSync("src/pages/Pricing.tsx", "utf8");
-    expect(pricing).toContain(`Personal · $${PERSONAL_PLAN.price_usd_monthly}/month`);
+    const panel = readFileSync("src/components/usage-billing/UsagePricingPanel.tsx", "utf8");
+    expect(pricing).toContain("<UsagePricingPanel availableTiers={availableTiers} />");
+    expect(panel).toContain("availableTiers.map((id) =>");
+    expect(panel).toContain("const option = USAGE_TIERS[id]");
+    expect(panel).toContain("option.monthlyUsd");
+    expect(panel).toContain("option.includedWorkUsd");
+    expect(PUBLIC_USAGE_TIERS.map((id) => USAGE_TIERS[id].name)).toEqual([
+      "Lite",
+      "Starter",
+      "Plus",
+    ]);
   });
 
   it("feeds Compare from the active catalog and keeps 404 navigation price-neutral", () => {

@@ -505,7 +505,9 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     const phone = typeof req.query.phone === "string" ? req.query.phone : "";
     if (!phone.trim()) {
-      return res.status(400).json({ code: "VALIDATION_ERROR", error: "A phone number is required." });
+      return res
+        .status(400)
+        .json({ code: "VALIDATION_ERROR", error: "A phone number is required." });
     }
     try {
       const [relationship, record, attestation, optedOut] = await Promise.all([
@@ -628,10 +630,7 @@ router.post(
           });
           return res.status(403).json({
             code: "FORBIDDEN",
-            error:
-              gate.customerMessage ||
-              tcpa?.disclosure_script ||
-              CALL_NEEDS_PERMISSION_MESSAGE,
+            error: gate.customerMessage || tcpa?.disclosure_script || CALL_NEEDS_PERMISSION_MESSAGE,
             tcpaBlocked: true,
             tcpa,
           });
@@ -641,7 +640,7 @@ router.post(
             code: "OUTSIDE_PERMITTED_CALLING_HOURS",
             error:
               gate.customerMessage ||
-              "It's outside 8am–8pm where they are. Try after 8am their time.",
+              "It's outside 8am to 8pm where they are. Try after 8am their time.",
             reason: gate.reason,
             calling_hours: gate.metadataPatch?.calling_hours,
           });
@@ -652,7 +651,9 @@ router.post(
         });
         return res.status(409).json({
           code: "DUPLICATE_DIAL_SUPPRESSED",
-          error: gate.customerMessage || "This number already got a call today. You can try again tomorrow.",
+          error:
+            gate.customerMessage ||
+            "This number already got a call today. You can try again tomorrow.",
           reason: gate.reason,
           status: gate.status,
         });

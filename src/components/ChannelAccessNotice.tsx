@@ -61,6 +61,42 @@ export default function ChannelAccessNotice({
       </StatusNotice>
     );
   }
+  if (channelInPlan && !["active", "trialing"].includes(access.data?.subscription_status ?? "")) {
+    return (
+      <StatusNotice
+        tone="info"
+        title="Subscription Not Active"
+        className="my-3"
+        action={
+          <Button asChild size="sm" variant="secondary">
+            <Link to="/settings/billing">View Billing</Link>
+          </Button>
+        }
+      >
+        This channel is unavailable while your subscription is inactive. Your saved conversations
+        remain available.
+      </StatusNotice>
+    );
+  }
+  // The plan includes this channel, but the returned access snapshot does not.
+  // Refresh without guessing whether provider setup or funding is responsible.
+  if (channelInPlan) {
+    return (
+      <StatusNotice
+        tone="warning"
+        title="Channel Access Unavailable"
+        className="my-3"
+        action={
+          <Button size="sm" variant="secondary" onClick={access.retry}>
+            Retry
+          </Button>
+        }
+      >
+        We couldn't confirm this channel's access. Try again. Your saved conversations are
+        unchanged.
+      </StatusNotice>
+    );
+  }
   // Match the tab names owners see: Calls, Texts, and Email. SMS used to
   // return null here, which is why the Inbox SMS tab resolved to a blank
   // dead end on accounts without the channel: the gate existed, its

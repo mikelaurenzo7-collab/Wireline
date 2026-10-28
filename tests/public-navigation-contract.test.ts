@@ -21,7 +21,7 @@ describe("public navigation contract", () => {
     expect(header).toContain("marketing-btn-primary");
   });
 
-  it("limits the compact navigation to the two buying questions and account entry", () => {
+  it("keeps Product and Pricing accessible without hiding account entry", () => {
     const header = source("src/components/marketing/PrecisionPublicHeader.tsx");
 
     expect(header).not.toContain("DialogContent");
@@ -29,9 +29,9 @@ describe("public navigation contract", () => {
     expect(header).not.toContain("SITE_NAV");
     expect(header).not.toContain('aria-label="Site"');
     expect(header).not.toContain('label: "Solutions"');
-    expect(header).toContain('label: "Product"');
-    expect(header).toContain('label: "Pricing"');
-    expect(header).toContain('aria-label="Open navigation"');
+    expect(header).toContain('to="/features"');
+    expect(header).toContain('to="/pricing"');
+    expect(header).not.toContain('aria-label="Open navigation"');
     const destinations = new Set(
       Array.from(header.matchAll(/\bto(?:=|:\s*)["']([^"']+)["']/g), (match) => match[1]),
     );

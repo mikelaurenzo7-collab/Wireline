@@ -15,11 +15,10 @@ describe("insights AI rate limiting", () => {
     expect(source).toContain("failClosedOnError: true");
     expect(source).toContain("insightsAiRateLimit");
 
-    for (const path of [
-      "/api/insights/topics",
-      "/api/insights/failure-modes",
-      "/api/insights/daily-brief",
-    ]) {
+    // Failure Modes was removed from Insights; the remaining LLM-backed routes
+    // must retain their authentication and shared cost-abuse limit.
+    expect(source).not.toContain('"/api/insights/failure-modes"');
+    for (const path of ["/api/insights/topics", "/api/insights/daily-brief"]) {
       const routeMatch = source.match(
         new RegExp(`router\\.get\\(\\s*"${path.replace(/\//g, "\\/")}"[\\s\\S]*?\\);`),
       );
