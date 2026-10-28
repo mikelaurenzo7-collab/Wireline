@@ -27,7 +27,7 @@ export default defineConfig({
     exclude: [
       "**/node_modules/**",
       "**/dist/**",
-      "tests/e2e/**",
+      "tests/e2e/**/*.spec.ts",
       "**/.worktrees/**",
       "tmp/**",
       ".tmp/**",

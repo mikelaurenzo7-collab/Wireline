@@ -29,7 +29,9 @@ describe("Twilio webhook external-origin binding", () => {
     vi.stubEnv("VERCEL", "1");
     vi.stubEnv("APP_URL", "https://botbound.app");
     vi.stubEnv("TWILIO_ACCOUNT_SID", ACCOUNT_SID);
+    vi.stubEnv("TWILIO_AUTH_TOKEN", "");
     vi.stubEnv("TWILIO_WEBHOOK_BASE_URL", "");
+    vi.stubEnv("TWILIO_WEBHOOK_DISABLE_AUTH", "");
   });
 
   afterEach(() => {

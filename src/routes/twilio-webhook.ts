@@ -16,6 +16,7 @@ import { opaqueIdSuffixForLog, phoneSuffixForLog } from "../lib/twilio-webhook-p
 import { sanitizePhone } from "../lib/agent-runtime-helpers";
 import baseRouter from "./twilio-webhook-base";
 import { lookupMessagingDestination, persistInboundSmsEvidence } from "./twilio-webhook-base";
+import tollfreeWebhookRouter from "./twilio-tollfree-webhook";
 
 const router = Router();
 const LEGACY_OPT_OUT_KEYWORDS = new Set([
@@ -673,6 +674,7 @@ router.post("/api/twilio-webhook/usage-alert", async (req: Request, res: Respons
   return res.status(204).end();
 });
 
+router.use(tollfreeWebhookRouter);
 router.use(baseRouter);
 
 export default router;

@@ -101,6 +101,7 @@ vi.mock("drizzle-orm", () => ({
   eq: (...args: unknown[]) => args,
   inArray: (...args: unknown[]) => args,
   sql: () => "sql",
+  relations: () => ({}),
 }));
 vi.mock("../src/db/schema", () => {
   const table = (name: string) =>
@@ -265,6 +266,10 @@ vi.mock("../src/lib/voice/funded-carrier-call", () => ({
 }));
 vi.mock("../src/middleware/audit-middleware", () => ({
   extendCommittedPlatformCostReservation: h.account,
+  getAiTokenQuotaExceeded: vi.fn(() => false),
+  reservePlatformCostRecord: vi.fn(),
+  releasePlatformCostReservation: vi.fn(),
+  commitPlatformCostReservation: vi.fn(),
 }));
 vi.mock("../src/lib/realtime-spend-reservation", () => ({
   reconcileOpenAISipDurationSpend: vi.fn(),
