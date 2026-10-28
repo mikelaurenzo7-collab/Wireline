@@ -101,8 +101,10 @@ describe("BotBound static marketing metadata", () => {
     expect(ogImage).toContain('width="1200" height="630"');
     expect(ogImage).not.toContain("PUT YOUR BOT ON THE LINE");
     expect(
-      readFileSync(resolve(process.cwd(), "public/brand/botbound-current-offer-og.png")),
-    ).toEqual(readFileSync(resolve(process.cwd(), "public/og-image.png")));
+      readFileSync(resolve(process.cwd(), "public/brand/botbound-current-offer-og.png")).equals(
+        readFileSync(resolve(process.cwd(), "public/og-image.png")),
+      ),
+    ).toBe(true);
   });
 
   it("ships the approved Bot mark in the warm 1200 by 630 OG raster", () => {

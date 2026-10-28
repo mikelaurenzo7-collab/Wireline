@@ -79,6 +79,7 @@ describe("non-production live-vendor mutation boundaries", () => {
     const email = read("src/lib/email-service.ts");
     const billing = read("src/routes/billing-routes.ts");
     const jobs = read("src/lib/job-worker-base.ts");
+    const reminder = read("src/lib/trial-ending-reminder.ts");
     const voicemail = read("src/routes/twilio-webhook-base.ts");
     const notifications = read("src/lib/notifications.ts");
 
@@ -86,7 +87,9 @@ describe("non-production live-vendor mutation boundaries", () => {
     expect(email).toContain("liveExternalActionPolicyForUser(userId)");
     expect(email).toContain("export async function sendTenantEmail");
     expect(billing).toMatch(/sendPaymentFailedEmail\(\{\s*userId: row\.userId,/);
-    expect(jobs).toMatch(/sendTrialEndingSoonEmail\(\{\s*userId: p\.userId,/);
+    expect(jobs).toContain("sendCurrentTrialReminder(job");
+    expect(jobs).toMatch(/sendTrialEndingSoonEmail\(\{\s*\.\.\.input,/);
+    expect(reminder).toContain("assertJobPayloadOwner(job, job.payload)");
     expect(notifications).toMatch(/sendUrgentEscalationEmail\(\{\s*userId: this\.userId,/);
     expect(voicemail).toContain("sendTenantEmail");
     expect(voicemail).toContain("userId: tenantUserId");

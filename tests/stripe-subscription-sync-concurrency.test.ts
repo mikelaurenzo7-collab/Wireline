@@ -17,6 +17,7 @@ const h = vi.hoisted(() => {
     reconcileIdentity: vi.fn(),
     spendBudget: vi.fn(),
     updateSubscription: vi.fn(),
+    setUsageAddonQuantities: vi.fn(),
     missingBinding: false,
   };
 });
@@ -93,6 +94,9 @@ vi.mock("../src/lib/founder-fleet-seed", () => ({
   seedFounderAssistant: vi.fn(),
 }));
 vi.mock("../src/lib/founder-showcase-seed", () => ({ ensureFounderShowcaseBots: vi.fn() }));
+vi.mock("../src/lib/usage-billing-store", () => ({
+  setUsageAddonQuantities: h.setUsageAddonQuantities,
+}));
 
 import * as schema from "../src/db/schema";
 import { syncSubscriptionFromStripe } from "../src/lib/stripe-helpers";
@@ -347,6 +351,26 @@ afterEach(() => {
 });
 
 describe("Stripe subscription synchronization concurrency", () => {
+  it("does not partially project an invalid usage price pair before reconciliation fails", async () => {
+    vi.stubEnv("STRIPE_USAGE_LITE_BASE_PRICE_ID", "price_lite_base");
+    vi.stubEnv("STRIPE_USAGE_STARTER_WORK_PRICE_ID", "price_standard_work");
+    const sub = subscription("active");
+    sub.items.data[0].price = {
+      id: "price_lite_base",
+      metadata: { wireline_plan_id: "usage" },
+      recurring: { interval: "month", interval_count: 1 },
+    } as Stripe.Price;
+    sub.items.data.push({
+      quantity: 1,
+      price: { id: "price_standard_work", metadata: {}, recurring: { interval: "month" } },
+    } as unknown as Stripe.SubscriptionItem);
+    h.authoritative = sub;
+    const before = { ...h.mirror };
+    await expect(syncSubscriptionFromStripe(sub)).rejects.toThrow("incompatible plan");
+    expect(h.mirror).toEqual(before);
+    expect(h.writes).toEqual([]);
+    expect(h.setUsageAddonQuantities).not.toHaveBeenCalled();
+  });
   it("makes an overlapping cancellation retry after the older snapshot completes", async () => {
     let invoiceStarted!: () => void;
     const started = new Promise<void>((resolve) => {

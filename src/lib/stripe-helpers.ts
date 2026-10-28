@@ -861,6 +861,28 @@ async function syncSubscriptionFromStripeUnderLease(
   const baseMaxAgents = plan?.max_agents ?? 1;
   const effectiveMaxAgents = clampAgentCapacity(baseMaxAgents + extraAgents);
 
+  // Validate the usage-plan projection before any tenant row or provider
+  // mutation. An incompatible base/work price pair is a fail-closed catalog
+  // drift: throwing here leaves the previous mirror intact so the webhook can
+  // retry once the Stripe configuration is corrected, instead of persisting a
+  // plan, period and add-on snapshot that the tier ledger never accepted.
+  const usageProjection =
+    plan && isUsagePlanId(plan.id)
+      ? (() => {
+          const tier = usageTierFromSubscription(sub);
+          const usagePeriod = subscriptionPeriod(sub);
+          if (!usagePeriod.start || !usagePeriod.end || usagePeriod.end <= usagePeriod.start) {
+            throw new Error("Stripe usage subscription is missing a usable billing period.");
+          }
+          return {
+            tier,
+            quantities: usageAddonQuantitiesFromSubscription(sub),
+            startsAt: new Date(usagePeriod.start * 1000),
+            endsAt: new Date(usagePeriod.end * 1000),
+          };
+        })()
+      : null;
+
   const localStatus =
     stripeStatus === "active" || stripeStatus === "trialing"
       ? "active"
@@ -980,18 +1002,18 @@ async function syncSubscriptionFromStripeUnderLease(
         .values({ userId, ...subscriptionMirror })
         .onConflictDoUpdate({ target: [schema.subscriptions.userId], set: subscriptionMirror });
 
-      if (plan && isUsagePlanId(plan.id)) {
+      if (usageProjection) {
         // Add-on quantities drive lazy provisioning: no number or BotBound email
-        // address exists unless the owner bought one.
+        // address exists unless the owner bought one. Tier, add-ons and period
+        // were validated before the mirror insert above.
         const { setUsageAddonQuantities } = await import("./usage-billing-store");
         await assertSyncLease();
-        const period = subscriptionPeriod(sub);
-        await setUsageAddonQuantities(userId, usageAddonQuantitiesFromSubscription(sub), {
-          tier: usageTierFromSubscription(sub),
+        await setUsageAddonQuantities(userId, usageProjection.quantities, {
+          tier: usageProjection.tier,
           stripeCustomerId: customerId,
           stripeSubscriptionId: sub.id,
-          startsAt: period.start ? new Date(period.start * 1000) : null,
-          endsAt: period.end ? new Date(period.end * 1000) : null,
+          startsAt: usageProjection.startsAt,
+          endsAt: usageProjection.endsAt,
         });
       }
 

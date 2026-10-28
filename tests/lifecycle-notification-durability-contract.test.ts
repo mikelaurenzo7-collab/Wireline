@@ -28,10 +28,12 @@ describe("lifecycle notification durability", () => {
 
   it("retries trial and margin alerts without duplicating accepted sends", () => {
     const worker = read("src/lib/job-worker-base.ts");
+    const reminder = read("src/lib/trial-ending-reminder.ts");
 
-    expect(worker).toContain("idempotencyKey: `trial-ending-soon/${job.id}`");
-    expect(worker).toContain('result.disposition === "suppressed"');
-    expect(worker).toContain(
+    expect(worker).toContain("sendCurrentTrialReminder(job");
+    expect(reminder).toContain("idempotencyKey: `trial-ending-soon/${job.id}`");
+    expect(reminder).toContain('result.disposition === "suppressed"');
+    expect(reminder).toContain(
       'throw new Error(result.error || "Trial-ending email was not accepted")',
     );
     expect(worker).toContain("idempotencyKey: `margin-at-risk/${job.id}`");

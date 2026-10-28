@@ -586,28 +586,25 @@ export async function sendTrialEndingSoonEmail(opts: {
   }
 
   const dayWord = opts.daysLeft === 1 ? "1 day" : `${opts.daysLeft} days`;
-  const subject = `Choose a live plan within ${dayWord}`;
+  const subject = `Your BotBound trial ends in ${dayWord}`;
   const text =
     [
       "Hi,",
       "",
-      `Your BotBound activation window closes in ${dayWord}.`,
+      `Your BotBound trial is scheduled to end in ${dayWord}.`,
       "",
-      "Choose a Calls, Email, or Calls + Email plan to keep your Bots live. Your phone number, call history, and Bot configuration all carry over. Runtime Balance covers overflow after a paid plan is active.",
+      "Review your account and current plan options before your trial ends. Review Billing in Settings for your account's current terms.",
       "",
       opts.checkoutUrl,
-      "",
-      "If you decide not to fund live work, your Bots will stop answering calls when activation lapses.",
       "",
       "BotBound",
     ].join("\n") + buildComplianceFooterText(opts.to);
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1A1A23;">
-      <h2 style="margin: 0 0 16px; font-weight: 600;">Fund live work within ${escapeHtml(dayWord)}</h2>
-      <p style="margin: 0 0 16px; line-height: 1.55;">Your BotBound activation window closes in <strong>${escapeHtml(dayWord)}</strong>.</p>
-      <p style="margin: 0 0 24px; line-height: 1.55;">Choose a Calls, Email, or Calls + Email plan to keep your Bots live. Your phone number, call history, and Bot configuration all carry over. Runtime Balance covers overflow after a paid plan is active.</p>
-      <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.checkoutUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: ${BRAND.colors.onPrimary}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Upgrade now</a></p>
-      <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you decide not to fund live work, your Bots will stop answering calls when activation lapses.</p>
+      <h2 style="margin: 0 0 16px; font-weight: 600;">Your BotBound Trial</h2>
+      <p style="margin: 0 0 16px; line-height: 1.55;">Your BotBound trial is scheduled to end in <strong>${escapeHtml(dayWord)}</strong>.</p>
+      <p style="margin: 0 0 24px; line-height: 1.55;">Review your account and current plan options before your trial ends. Review Billing in Settings for your account's current terms.</p>
+      <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.checkoutUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: ${BRAND.colors.onPrimary}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">View plans</a></p>
       ${buildComplianceFooterHtml(opts.to)}
     </div>
   `;

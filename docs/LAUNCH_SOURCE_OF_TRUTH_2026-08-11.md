@@ -1,5 +1,7 @@
 # BotBound Launch Source of Truth
 
+> **October 27, 2026 supersession:** The commercial and promotional statements below are historical where they conflict with the current [Shared Work offer](../README.md#current-shared-work-offer) and [usage billing reference](USAGE_BILLING.md#public-plans-shared-meter-catalog-2026-10-usage-v2-monthly-only). The founder chose to show SMS on the homepage phone card; see the [current design direction](design/master-plan.md). Campaign calling remains outside launch promotion. A displayed capability does not establish entitlement, funding, verified sender, recipient permission, carrier approval or provider readiness. Keep the earlier text below for its historical context, not as a current tie-breaker when it conflicts with a later decision.
+
 Established 2026-08-11; homepage headline revised 2026-09-24. Active launch guidance reconciled 2026-10-22; historical creative records below are preserved.
 
 **Active launch authority** for public positioning, launch creative, dogfood proof, and pre-customer GTM.

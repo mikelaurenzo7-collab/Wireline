@@ -23,6 +23,7 @@ import {
 import { acquireAccountDeletionFence, runTerminalDeletionSequence } from "./account-deletion-fence";
 import { getCanonicalAppUrl } from "./app-url";
 import { assertJobPayloadOwner } from "./job-owner";
+import { sendCurrentTrialReminder } from "./trial-ending-reminder";
 
 async function persistJobResult(jobId: string, result: Record<string, unknown>): Promise<void> {
   await drizzle
@@ -665,37 +666,32 @@ export async function handleJob(job: JobRow): Promise<void> {
   }
 
   if (job.type === "trial_ending_soon_email") {
-    const p = job.payload as { userId: string; daysLeft: number };
     try {
-      const [userRow] = await drizzle
-        .select({ email: schema.users.email })
-        .from(schema.users)
-        .where(eq(schema.users.id, p.userId))
-        .limit(1);
-      if (!userRow?.email) return;
-      const appUrl = getCanonicalAppUrl();
-      const { sendTrialEndingSoonEmail } = await import("./email-service");
-      const result = await sendTrialEndingSoonEmail({
-        userId: p.userId,
-        to: userRow.email,
-        daysLeft: p.daysLeft ?? 3,
-        checkoutUrl: `${appUrl}/pricing`,
-        idempotencyKey: `trial-ending-soon/${job.id}`,
-      });
-      if (!result.ok) {
-        if (result.disposition === "suppressed") {
-          log.info("trial_ending_soon_email suppressed", {
-            userId: p.userId,
-            reason: result.error,
+      const result = await sendCurrentTrialReminder(job, {
+        load: async (userId) => {
+          const [current] = await drizzle
+            .select({
+              email: schema.users.email,
+              status: schema.settings.subscriptionStatus,
+              trialEndsAt: schema.settings.trialEndsAt,
+            })
+            .from(schema.settings)
+            .innerJoin(schema.users, eq(schema.users.id, schema.settings.userId))
+            .where(eq(schema.settings.userId, userId))
+            .limit(1);
+          return current;
+        },
+        send: async (input) => {
+          const { sendTrialEndingSoonEmail } = await import("./email-service");
+          return sendTrialEndingSoonEmail({
+            ...input,
+            checkoutUrl: `${getCanonicalAppUrl()}/pricing`,
           });
-          return;
-        }
-        throw new Error(result.error || "Trial-ending email was not accepted");
-      } else {
-        log.info("trial_ending_soon_email sent", { userId: p.userId, daysLeft: p.daysLeft });
-      }
+        },
+      });
+      log.info(`trial_ending_soon_email ${result.status}`, { userId: result.userId });
     } catch (err: any) {
-      log.error("trial_ending_soon_email job failed", { userId: p.userId, error: err?.message });
+      log.error("trial_ending_soon_email job failed", { error: err?.message });
       throw err;
     }
   }

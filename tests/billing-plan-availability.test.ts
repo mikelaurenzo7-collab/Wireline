@@ -27,10 +27,12 @@ vi.mock("../src/lib/account-environment-policy", () => ({}));
 vi.mock("../src/lib/stripe-event-claim", () => ({}));
 vi.mock("../src/lib/voice-usage", () => ({}));
 vi.mock("../src/lib/spend-guards", () => ({}));
+vi.mock("../src/lib/webhook-helpers", () => ({ WEBHOOK_EVENTS: [] }));
 
 import router from "../src/routes/billing-routes";
 import { enforceLaunchHardGate } from "../src/middleware/launch-hard-gate";
 import { evaluateLaunchReadiness } from "../src/lib/launch-readiness";
+import { getOpenApiSpec } from "../src/lib/openapi-spec";
 
 type PublicPlans = {
   plans: Array<{ id: string; configured: boolean; annual_configured: boolean }>;
@@ -70,6 +72,19 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("public billing checkout availability", () => {
+  it("documents the actual response keys and shared-work tier values", () => {
+    const { body } = getPublicPlans();
+    const schema =
+      getOpenApiSpec().paths["/api/billing/plans"].get!.responses["200"].content![
+        "application/json"
+      ].schema;
+    expect(schema.additionalProperties).toBe(false);
+    expect(Object.keys(schema.properties!).sort()).toEqual(Object.keys(body).sort());
+    expect([...schema.required!].sort()).toEqual(Object.keys(body).sort());
+    expect(schema.properties!.billing_model.enum).toEqual(["plans", "usage"]);
+    expect(schema.properties!.usage_checkout_available.type).toBe("boolean");
+    expect(schema.properties!.usage_tiers.items?.enum).toEqual(["lite", "standard", "plus"]);
+  });
   it("reports an open released checkout without exposing operational details", () => {
     const { body, setHeader } = getPublicPlans();
     expect(body.stripe_configured).toBe(true);

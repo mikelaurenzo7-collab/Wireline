@@ -26,6 +26,7 @@
 //    documented path/method also exists in the codebase, so renames are caught.
 
 import { WEBHOOK_EVENTS } from "./webhook-helpers";
+import { PUBLIC_USAGE_TIERS } from "./usage-billing-catalog";
 
 // ──────────────────────────────────────────────────────────────────────
 //  Minimal OpenAPI 3.1 typing
@@ -1263,7 +1264,14 @@ const PATHS: Record<string, PathItem> = {
             "application/json": {
               schema: {
                 type: "object",
-                required: ["plans", "stripe_configured", "checkout_available"],
+                required: [
+                  "plans",
+                  "stripe_configured",
+                  "checkout_available",
+                  "billing_model",
+                  "usage_checkout_available",
+                  "usage_tiers",
+                ],
                 properties: {
                   plans: {
                     type: "array",
@@ -1296,6 +1304,18 @@ const PATHS: Record<string, PathItem> = {
                     type: "boolean",
                     description:
                       "True when Stripe is configured and the self-serve billing release and hard launch gates permit checkout. Does not expose operational blockers.",
+                  },
+                  billing_model: {
+                    type: "string",
+                    enum: ["plans", "usage"],
+                    description:
+                      "The configured billing model; checkout availability is reported separately.",
+                  },
+                  usage_checkout_available: { type: "boolean" },
+                  usage_tiers: {
+                    type: "array",
+                    items: { type: "string", enum: PUBLIC_USAGE_TIERS },
+                    description: "Shared-work tiers currently available for checkout.",
                   },
                 },
                 additionalProperties: false,
