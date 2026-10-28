@@ -260,7 +260,12 @@ describe("E2E design and BotBound brand polish", () => {
     const app = read("src/App.tsx");
     expect(app).toContain("<RouteChangeA11y />");
     const routeChange = read("src/components/RouteChangeA11y.tsx");
-    expect(routeChange).toContain("return null");
+    // Route changes announce through the component's own sr-only live region;
+    // an earlier implementation returned null and relied on a surface that
+    // screen readers could miss.
+    expect(routeChange).toContain('className="sr-only"');
+    expect(routeChange).toContain('aria-live="polite"');
+    expect(routeChange).toContain('role="status"');
     expect(routeChange).toContain('document.querySelector<HTMLElement>("main h1, h1")');
   });
 
