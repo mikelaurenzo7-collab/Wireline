@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+﻿import { expect, test } from "@playwright/test";
 
 for (const sessionFailure of ["unavailable", "offline"] as const) {
   test(`a failed starting brief survives ${sessionFailure} session hydration and saves on the same Bot`, async ({
@@ -101,7 +101,7 @@ for (const sessionFailure of ["unavailable", "offline"] as const) {
     expect(createCount).toBe(1);
 
     await page.getByRole("tab", { name: "Summary", exact: true }).click();
-    await expect(page.getByText("Warm and natural", { exact: true })).toBeVisible();
+    await expect(page.getByText("Tone", { exact: true })).toBeVisible();
     expect(configReadsAfterSave).toBeGreaterThan(0);
     await page.getByRole("tab", { name: "Set Up", exact: true }).click();
     await page.reload();

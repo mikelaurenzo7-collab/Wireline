@@ -95,7 +95,11 @@ export default function PrivacyPolicyPage() {
           Last updated · {LAST_UPDATED}
         </p>
 
-        <div className="mb-10 grid gap-3 sm:grid-cols-3" aria-label="Privacy Policy summary">
+        <div
+          className="mb-10 grid gap-3 sm:grid-cols-3"
+          role="group"
+          aria-label="Privacy Policy summary"
+        >
           {[
             "We do not sell personal information.",
             "Optional advertising measurement stays off unless you allow it.",

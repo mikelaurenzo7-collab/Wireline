@@ -27,7 +27,7 @@ const PILLARS: readonly Pillar[] = [
   },
   {
     id: "computer",
-    label: "Cloud Computer",
+    label: "A Computer",
     body: "Research and work on the web.",
   },
 ];
@@ -63,7 +63,11 @@ export default function Features() {
             </div>
           </header>
 
-          <ul className="wl-features-pillars" aria-label="Available Bot capabilities">
+          <ul
+            id="features-list-title"
+            className="wl-features-pillars"
+            aria-label="Available Bot capabilities"
+          >
             {PILLARS.map(({ id, label, body }) => (
               <li id={id} key={id} className="wl-features-pillar scroll-mt-24">
                 <h2 className="wl-features-pillar__title">{label}</h2>

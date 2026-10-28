@@ -472,6 +472,7 @@ export class AuditLogger {
       userId?: string;
       mode?: "cron" | "manual";
       processed?: number;
+      failed?: number;
       role?: string;
       ip?: string;
     },
@@ -487,7 +488,12 @@ export class AuditLogger {
       action,
       severity: action === "denied" ? "critical" : "info",
       resourceType: "job_queue",
-      metadata: { mode: params.mode, processed: params.processed, role: params.role },
+      metadata: {
+        mode: params.mode,
+        processed: params.processed,
+        failed: params.failed,
+        role: params.role,
+      },
       ip: params.ip,
     });
   }

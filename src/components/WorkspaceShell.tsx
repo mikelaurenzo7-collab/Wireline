@@ -82,7 +82,9 @@ function RailLink({
       <Link
         to={scopedWorkspaceHref(item.href, agentId)}
         aria-label={collapsed ? item.label : undefined}
-        aria-current={active ? "page" : undefined}
+        // A parent route that stays highlighted while a child destination is
+        // active is an ancestor in the page tree, not the current page itself.
+        aria-current={active ? (activeOverride ? "true" : "page") : undefined}
         title={!collapsed && hint ? `${item.label} · ${hint}` : undefined}
         data-wireline-nav-href={item.href}
         data-wireline-nav-active={active ? "true" : undefined}

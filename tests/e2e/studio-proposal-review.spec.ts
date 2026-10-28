@@ -370,7 +370,10 @@ test("Configure drafts survive navigation and voice rehearsal without a second c
   await buildInput.fill("Keep this unsent Build instruction.");
   await page.getByRole("tab", { name: "Rehearse", exact: true }).click();
   await expect(panel.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
-  await expect(panel.getByRole("textbox")).toHaveCount(0);
+  // Rehearsal owns its single typed test composer; it must not duplicate the
+  // conversation's "Message Front Desk" composer.
+  await expect(panel.getByRole("textbox")).toHaveCount(1);
+  await expect(panel.getByRole("textbox", { name: "Type a test", exact: true })).toBeVisible();
   await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
   await expect(panel.getByText(opening.value, { exact: true })).toHaveCount(0);
   await page.screenshot({
@@ -383,7 +386,7 @@ test("Configure drafts survive navigation and voice rehearsal without a second c
   await page.goBack();
   await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
   await expect(review).toBeVisible();
-  await expect(panel.getByRole("textbox")).toHaveCount(0);
+  await expect(panel.getByRole("textbox")).toHaveCount(1);
 
   // Phones keep private rehearsal behind one contextual action.
   await page.setViewportSize({ width: 390, height: 844 });

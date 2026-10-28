@@ -23,56 +23,63 @@ test("personal MCP proposal stays immutable, places once after review, and recon
     const json =
       path === "/api/auth/session"
         ? { user: { id: "personal-owner", email: "owner@example.test" } }
-        : path === "/api/agents"
+        : path.startsWith("/api/outbound/contact-context")
           ? {
-              agents: [
-                {
-                  id: "personal-bot",
-                  name: "Personal Assistant",
-                  role: "personal_assistant",
-                  isBusinessAgent: false,
-                  channel: "voice",
-                },
-              ],
+              // The recipient permission is already on record, so the dialog
+              // only asks for the one-time non-sales confirmation.
+              permissionConfirmed: true,
+              nonsalesConfirmed: false,
             }
-          : path === "/api/phone-numbers"
-            ? { numbers: [{ agent_id: "personal-bot", phone_number: "+13125550124" }] }
-            : path === "/api/billing/status"
-              ? {
-                  channel_entitlements: {
-                    plan_id: "voice",
-                    subscription_status: "active",
-                    channels: ["voice"],
-                    is_owner: false,
+          : path === "/api/agents"
+            ? {
+                agents: [
+                  {
+                    id: "personal-bot",
+                    name: "Personal Assistant",
+                    role: "personal_assistant",
+                    isBusinessAgent: false,
+                    channel: "voice",
                   },
-                }
-              : path === `/api/outbound/prepared/${requestKey}`
+                ],
+              }
+            : path === "/api/phone-numbers"
+              ? { numbers: [{ agent_id: "personal-bot", phone_number: "+13125550124" }] }
+              : path === "/api/billing/status"
                 ? {
-                    prepared,
-                    status: {
-                      request_key: requestKey,
-                      status: writes.length ? "accepted" : "awaiting_review",
+                    channel_entitlements: {
+                      plan_id: "voice",
+                      subscription_status: "active",
+                      channels: ["voice"],
+                      is_owner: false,
                     },
                   }
-                : path === "/api/voice-permissions"
+                : path === `/api/outbound/prepared/${requestKey}`
                   ? {
-                      calling: { general: false, nonMarketing: true },
-                      permissions: [
-                        {
-                          id: permissionId,
-                          agent_id: "personal-bot",
-                          bot_name: "Personal Assistant",
-                          recipient_phone_masked: "••• ••• 0123",
-                          purpose: "service_or_requested",
-                          status: "granted",
-                          request_expires_at: prepared.expires_at,
-                          expires_at: prepared.expires_at,
-                          created_at: new Date().toISOString(),
-                          identity_assurance: "bearer_link_and_typed_signature",
-                        },
-                      ],
+                      prepared,
+                      status: {
+                        request_key: requestKey,
+                        status: writes.length ? "accepted" : "awaiting_review",
+                      },
                     }
-                  : { accounts: [], agents: [], numbers: [], data: [] };
+                  : path === "/api/voice-permissions"
+                    ? {
+                        calling: { general: false, nonMarketing: true },
+                        permissions: [
+                          {
+                            id: permissionId,
+                            agent_id: "personal-bot",
+                            bot_name: "Personal Assistant",
+                            recipient_phone_masked: "••• ••• 0123",
+                            purpose: "service_or_requested",
+                            status: "granted",
+                            request_expires_at: prepared.expires_at,
+                            expires_at: prepared.expires_at,
+                            created_at: new Date().toISOString(),
+                            identity_assurance: "bearer_link_and_typed_signature",
+                          },
+                        ],
+                      }
+                    : { accounts: [], agents: [], numbers: [], data: [] };
     return route.fulfill({ json });
   });
   await page.setViewportSize({ width: 375, height: 812 });
@@ -86,6 +93,10 @@ test("personal MCP proposal stays immutable, places once after review, and recon
   await expect(dialog.getByRole("combobox", { name: "Call type" })).toHaveCount(0);
   await expect(dialog.getByRole("combobox", { name: "Recipient permission" })).toHaveCount(0);
   expect(writes).toHaveLength(0);
+  // Non-sales calls need the owner's one-time "this isn't selling" confirmation
+  // before the review dialog can place the call.
+  await expect(dialog.getByRole("button", { name: "Place call", exact: true })).toBeDisabled();
+  await dialog.getByRole("checkbox", { name: /This isn't selling anything\./ }).check();
   await expect(dialog.getByRole("button", { name: "Place call", exact: true })).toBeEnabled();
   expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(
     true,
@@ -99,7 +110,8 @@ test("personal MCP proposal stays immutable, places once after review, and recon
     agentId: prepared.agent_id,
     customerNumber: prepared.phone,
     context: prepared.instruction,
-    callPurpose: "marketing_or_sales",
+    // The prepared request's own purpose is preserved through review.
+    callPurpose: "service_or_requested",
   });
   expect(writes[0].consentArtifactId).toBeUndefined();
   await page.goto(url);

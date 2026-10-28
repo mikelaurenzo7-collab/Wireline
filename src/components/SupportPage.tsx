@@ -81,10 +81,16 @@ export function SupportPage() {
     <MarketingPageFrame longform className="wl-support-page">
       <PageMeta
         title="Support | BotBound"
-        description="Contact BotBound support."
+        description="Contact BotBound support by email or send a request; we reply to the address you provide."
         path="/support"
       />
       <section className="mx-auto max-w-4xl px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16">
+        <header className="text-center">
+          <h1 className="marketing-hero-title">Support</h1>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            Send a request and we will follow up by email.
+          </p>
+        </header>
         <nav
           aria-label="Support Options"
           className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm"

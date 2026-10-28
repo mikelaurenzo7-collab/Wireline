@@ -169,6 +169,12 @@ export function ContactPage() {
         path="/contact"
       />
       <section className="mx-auto max-w-4xl px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16">
+        <header className="text-center">
+          <h1 className="marketing-hero-title">Contact</h1>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            Tell us what you are building. We read every note.
+          </p>
+        </header>
         <nav
           aria-label="Contact Options"
           className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm"

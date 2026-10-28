@@ -14,15 +14,17 @@ test("a retired learning link opens the current quality view without requesting 
           ? { user: { id: "learning-owner", email: "owner@example.test" } }
           : path === "/api/agents"
             ? { agents: [{ id: "bot-desk", name: "Front Desk", role: "receptionist" }] }
-            : { accounts: [], data: [], numbers: [], integrations: [] },
+            : path.startsWith("/api/qa/stats")
+              ? { count: 0 }
+              : { accounts: [], data: [], numbers: [], integrations: [] },
     });
   });
 
   await page.goto("/insights?tab=quality&view=learning");
-  await expect(page.getByText("No Failure Clusters", { exact: true })).toBeVisible();
-  await expect(page.getByRole("combobox", { name: "Insights view", exact: true })).toHaveValue(
-    "failures",
-  );
+  // The retired Learning view resolves to the current Quality surface
+  // (Scorecards) without re-requesting retired digests or advertising the old
+  // view name. The view's empty state identifies the current surface.
+  await expect(page.getByText("No QA Scores", { exact: true })).toBeVisible();
   await expect(page.getByRole("option", { name: "Learning", exact: true })).toHaveCount(0);
   await expect(page.getByRole("region", { name: /learning summary/ })).toHaveCount(0);
   expect(digestRequests).toEqual([]);

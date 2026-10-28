@@ -131,7 +131,7 @@ export default function ResetPassword() {
     <MarketingChrome stickyCta={false} footer={false} authCanvas>
       <PageMeta
         title="Reset Password | BotBound"
-        description="Reset your BotBound account password."
+        description="Choose a new password for your BotBound account and get back to your Bots."
         path="/reset-password"
         noIndex
       />

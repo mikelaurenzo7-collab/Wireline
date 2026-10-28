@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import RouteChangeA11y from "../src/components/RouteChangeA11y";
+import { addTemporaryTabIndex } from "../src/lib/temporary-tab-index";
 
 const harness = vi.hoisted(() => ({
   location: { pathname: "/studio", search: "", hash: "" },
@@ -37,7 +38,7 @@ vi.mock("react", async (importOriginal) => ({
 }));
 vi.mock("react-router", () => ({ useLocation: () => harness.location }));
 vi.mock("../src/lib/temporary-tab-index", () => ({
-  addTemporaryTabIndex: () => harness.restoreTabIndex,
+  addTemporaryTabIndex: vi.fn(() => harness.restoreTabIndex),
 }));
 
 let focused: "heading" | "anchor" | "control" | null = null;
@@ -60,9 +61,12 @@ const sectionControl = {
 const scrollTo = vi.fn();
 const queryModals = vi.fn((): unknown[] => []);
 
-function render(location: Partial<typeof harness.location> = {}) {
+function render(
+  location: Partial<typeof harness.location> = {},
+  props: Parameters<typeof RouteChangeA11y>[0] = {},
+) {
   harness.location = { ...harness.location, ...location };
-  RouteChangeA11y();
+  RouteChangeA11y(props);
   if (harness.pendingEffect) {
     harness.cleanup?.();
     harness.cleanup = harness.pendingEffect() || undefined;
@@ -101,6 +105,15 @@ describe("route change focus", () => {
     render();
     expect(heading.focus).toHaveBeenCalledExactlyOnceWith({ preventScroll: true });
     expect(scrollTo).toHaveBeenCalledExactlyOnceWith({ top: 0, left: 0 });
+    expect(harness.message).toBe("");
+  });
+
+  it("keeps the initial load from moving focus when the document skips initial focus", () => {
+    // Public marketing pages opt out of initial heading focus so the header
+    // nav and skip link stay ahead of page content in forward tab order.
+    render({}, { skipInitialFocus: true });
+    expect(heading.focus).not.toHaveBeenCalled();
+    expect(scrollTo).not.toHaveBeenCalled();
     expect(harness.message).toBe("");
   });
 
@@ -154,7 +167,7 @@ describe("route change focus", () => {
 
     expect(heading.focus).toHaveBeenCalledExactlyOnceWith({ preventScroll: true });
     expect(scrollTo).toHaveBeenCalledExactlyOnceWith({ top: 0, left: 0 });
-    expect(harness.restoreTabIndex).toHaveBeenCalledOnce();
+    expect(vi.mocked(addTemporaryTabIndex)).toHaveBeenCalledOnce();
     expect(harness.message).toBe("Calls loaded");
   });
 

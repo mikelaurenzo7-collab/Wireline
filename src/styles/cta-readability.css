@@ -107,6 +107,10 @@ button[aria-label="Back to workspace"] {
   .marketing-btn-primary,
   .marketing-btn-secondary {
     min-height: 44px;
+    /* At 200% text the 16px rails leave a 320px column too narrow for a
+       single word; 10px keeps the same target height with room to wrap. */
+    padding-left: 10px;
+    padding-right: 10px;
   }
 
   button[aria-label="Back to workspace"] {

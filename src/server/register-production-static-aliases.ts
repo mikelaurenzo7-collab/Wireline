@@ -37,6 +37,16 @@ export function productionStaticHeaders(publicDirectory: string) {
 const LEGACY_CONTENT_REDIRECTS = [
   ["/legal", "/terms"],
   ["/docs", "/developers"],
+  // Retired destinations that previously relied on a client-side shell
+  // redirect (HTTP 200 + SPA navigation). Permanent server redirects keep old
+  // links and crawlers deterministic, and still preserve the query string.
+  ["/blog", "/changelog"],
+  ["/security", "/trust"],
+  ["/showcase", "/features"],
+  ["/solutions", "/solutions/support"],
+  ["/use-cases", "/solutions/support"],
+  ["/login", "/signin"],
+  ["/reset", "/reset-password"],
 ] as const;
 
 export function registerLegacyContentRedirects(app: Express): void {

@@ -258,7 +258,7 @@ describe("E2E design and BotBound brand polish", () => {
     expect(foundation).toContain(".wl-ui-caps > :not(.wl-workspace-shell, .sr-only) {");
     expect(foundation).not.toMatch(/\.wl-ui-caps\s*>\s*:not\(\.wl-workspace-shell\)\s*\{/);
     const app = read("src/App.tsx");
-    expect(app).toContain("<RouteChangeA11y />");
+    expect(app).toContain("<RouteChangeA11y skipInitialFocus />");
     const routeChange = read("src/components/RouteChangeA11y.tsx");
     // Route changes announce through the component's own sr-only live region;
     // an earlier implementation returned null and relied on a surface that

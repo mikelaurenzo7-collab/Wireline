@@ -161,7 +161,9 @@ function AdminWorkspace() {
 export default function AppRoutes() {
   return (
     <Suspense fallback={loading}>
-      <RouteChangeA11y />
+      {/* The workspace boundary focuses each page heading without the sr-only
+          document announcer; visible titles own the page context here. */}
+      <RouteChangeA11y announce={false} />
       <Routes>
         <Route path="/" element={<Navigate to="/studio" replace />} />
         {/* Overview is retired as a separate command center. Studio is home. */}
@@ -183,6 +185,7 @@ export default function AppRoutes() {
 
         <Route path="/connections" element={<ConnectionsPage />} />
         <Route path="/connections/salesforce" element={<SalesforceIntegrationPage />} />
+        <Route path="/integrations" element={<PreservingRedirect to="/connections" />} />
         <Route
           path="/call-logs"
           element={<PreservingRedirect to="/phone" searchParams={{ tab: "logs" }} />}

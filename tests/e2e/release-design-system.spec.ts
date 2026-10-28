@@ -233,11 +233,25 @@ test("workspace actions share readable typography in both themes", async ({ page
   expect(checkoutRequests).toEqual([{ plan_id: "voice-regular", interval: "month" }]);
 });
 
-test("pricing keeps its header, annual prices, and signup action readable at 320px and 200% text", async ({
+test("pricing keeps its header and shared-work plans readable at 320px and 200% text", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await mockWorkspace(page);
+  // The public pricing page reads the usage billing model; the shared mock
+  // only returns legacy channel plans.
+  await page.route("**/api/billing/plans", (route) =>
+    route.fulfill({
+      json: {
+        plans: [],
+        stripe_configured: true,
+        checkout_available: false,
+        billing_model: "usage",
+        usage_checkout_available: false,
+        usage_tiers: ["lite", "standard", "plus"],
+      },
+    }),
+  );
   await page.goto("/pricing");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await enlargeText(page);
@@ -252,38 +266,26 @@ test("pricing keeps its header, annual prices, and signup action readable at 320
   expect((await heading.boundingBox())!.y).toBeGreaterThanOrEqual(
     (await header.boundingBox())!.height,
   );
-  const interval = page.getByRole("group", { name: "Billing interval" });
-  await interval.getByRole("button", { name: "Annual", exact: true }).click();
-  await expect(interval.getByRole("button", { name: "Annual", exact: true })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
-  const currentPlan = STRIPE_PLANS.find((plan) => plan.id === "voice-regular")!;
-  const selectedPackage = page.getByRole("article", { name: "Selected package" });
-  await expect(
-    selectedPackage.getByRole("heading", {
-      name: "Calls",
-      exact: true,
-    }),
-  ).toBeVisible();
-  await expect(selectedPackage.getByText("Plus", { exact: true })).toBeVisible();
-  await expect(selectedPackage).toContainText(
-    `$${currentPlan.price_usd_annual.toLocaleString()}/year`,
-  );
-  await expect(
-    selectedPackage.getByRole("link", { name: "Set Up These Channels", exact: true }),
-  ).toHaveAttribute("href", `/signup?plan=${currentPlan.id}&interval=year`);
+  // Shared Work is a monthly-only usage offer: no annual interval toggle exists
+  // to stretch the header at 200% text.
+  await expect(page.getByRole("group", { name: "Billing interval" })).toHaveCount(0);
+  await expect(page.getByText("$12", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("$24", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("$49", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: /Get (Starter|Started)/ }).first()).toBeVisible();
   await expectContentFits(page.locator("#plans, #plans *"));
-
-  await page.locator(".pricing-more__summary").scrollIntoViewIfNeeded();
   await expect(page.locator(".marketing-sticky-cta")).toHaveCount(0);
-  await expect(header.getByRole("link", { name: "Product", exact: true })).toHaveCount(0);
-  await expect(header.getByRole("link", { name: "Pricing", exact: true })).toHaveCount(0);
   const signIn = header.getByRole("link", { name: /Sign In|Open Workspace/ });
-  await expect(signIn).toBeVisible();
-  const signInBox = (await signIn.boundingBox())!;
-  expect(signInBox.x).toBeGreaterThanOrEqual(0);
-  expect(signInBox.x + signInBox.width).toBeLessThanOrEqual(320);
+  if (await signIn.count()) {
+    await expect(signIn).toBeVisible();
+    const signInBox = (await signIn.boundingBox())!;
+    expect(signInBox.x).toBeGreaterThanOrEqual(0);
+    expect(signInBox.x + signInBox.width).toBeLessThanOrEqual(320);
+  } else {
+    // At 200% text the header collapses into the mobile menu; the menu trigger
+    // must stay reachable instead.
+    await expect(header.getByRole("button", { name: /Open navigation/ })).toBeVisible();
+  }
 });
 
 test("billing reflows its interval, cards, and dock without losing bottom actions", async ({
@@ -424,9 +426,13 @@ test("global overlays clear the workspace dock and fit the marketing viewport", 
   await mockWorkspace(page);
   for (const path of ["/settings/billing", "/pricing"]) {
     await page.goto(path);
-    await expect(page.getByRole("group", { name: "Billing interval" })).toBeVisible();
+    // The billing settings page owns the monthly/annual interval control; the
+    // public pricing page is a monthly-only usage offer.
+    if (path === "/settings/billing") {
+      await expect(page.getByRole("group", { name: "Billing interval" })).toBeVisible();
+    }
     await enlargeText(page);
-    if (path === "/pricing") await page.locator(".pricing-more__summary").scrollIntoViewIfNeeded();
+    if (path === "/pricing") await page.locator("#plans").scrollIntoViewIfNeeded();
     const lowerBoundary =
       path === "/settings/billing"
         ? (await page.locator(".wl-shell-dock").boundingBox())!.y

@@ -134,14 +134,14 @@ export default function MarketingChromeBar({ className }: { className?: string }
       </div>
 
       <div className="marketing-chrome-bar__row">
-        <div className="marketing-chrome-bar__rail wl-public-rail flex flex-nowrap items-center gap-x-4 overflow-hidden">
+        <div className="marketing-chrome-bar__rail wl-public-rail flex flex-wrap items-center gap-x-4 gap-y-1.5 overflow-hidden">
           <span className="marketing-chrome-bar__copy shrink-0 text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} <WirelineWordmark inline />
           </span>
 
           <nav
             aria-label="Legal"
-            className="flex min-w-0 flex-nowrap items-center gap-x-3 text-xs text-muted-foreground sm:gap-x-4"
+            className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground sm:gap-x-4"
           >
             {BAR_LINKS.map((link) => (
               <Link

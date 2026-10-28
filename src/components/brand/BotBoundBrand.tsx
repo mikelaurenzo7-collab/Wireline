@@ -26,7 +26,6 @@ export function BotBoundWordmark({
       className={cn("bb-wordmark", className)}
       data-inline={inline ? "true" : "false"}
       data-botbound-brand-name="true"
-      aria-label={BOTBOUND_BRAND_NAME}
     >
       <span className="bb-wordmark__bot">Bot</span>
       <span className="bb-wordmark__bound">Bound</span>

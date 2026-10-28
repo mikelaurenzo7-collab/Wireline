@@ -732,7 +732,7 @@ function GrantedPlanAccessCard({
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="wl-label-muted opacity-70">Current plan</span>
+              <span className="wl-label text-foreground/70 font-medium">Current plan</span>
               <Chip tone="success" dot>
                 Granted access
               </Chip>
@@ -819,7 +819,7 @@ function ActiveSubCard({
         <div className="min-w-0 flex-1 basis-96">
           <div className="min-w-0 space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="wl-label-muted opacity-70">Current Plan</span>
+              <span className="wl-label text-foreground/70 font-medium">Current Plan</span>
               <Chip tone={statusBadge.tone} dot>
                 {statusBadge.label}
               </Chip>

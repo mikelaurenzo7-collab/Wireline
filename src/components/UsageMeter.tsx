@@ -167,7 +167,7 @@ export default function UsageMeter({
                 <h4 className="font-display text-lg text-foreground leading-tight font-bold">
                   Voice Minutes
                 </h4>
-                <p className="wl-label text-foreground/55 font-medium">
+                <p className="wl-label text-foreground/70 font-medium">
                   Current allowance · through {resetLabel}
                 </p>
               </div>

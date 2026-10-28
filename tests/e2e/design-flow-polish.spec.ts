@@ -132,7 +132,7 @@ for (const width of [320, 390, 1440]) {
       "Calls",
       "SMS",
       "Email",
-      "Cloud Computer",
+      "A Computer",
     ]);
     if (width >= 1024) {
       const geometry = await page.evaluate(() => {
@@ -208,7 +208,12 @@ test("Studio settings and navigation reflow at 320px with enlarged text", async 
         ),
       ]
         .filter(
-          (element) => element.clientWidth > 0 && element.scrollWidth > element.clientWidth + 1,
+          (element) =>
+            element.clientWidth > 0 &&
+            element.scrollWidth > element.clientWidth + 1 &&
+            // Panel tabs scroll in one row on narrow screens by design; a
+            // scrollable control is not a layout overflow.
+            !["auto", "scroll"].includes(getComputedStyle(element).overflowX),
         )
         .map((element) => ({
           tag: element.tagName,

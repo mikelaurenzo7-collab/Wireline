@@ -261,6 +261,10 @@ export async function handleJob(job: JobRow): Promise<void> {
       log.warn("purge_old_data job missing user_id", { jobId: job.id });
       return;
     }
+    // The payload owner must match the immutable queue row even though only
+    // trusted enqueue sites exist today; this arm runs at root DB scope and is
+    // the last line of defense against a cross-tenant purge.
+    assertJobPayloadOwner(job, p);
     // Match the settings API's published 90-day floor even for old or malformed
     // job payloads. Financial admission receipts must survive their 31-day window.
     const retentionDays =
@@ -322,6 +326,9 @@ export async function handleJob(job: JobRow): Promise<void> {
       log.warn("purge_deleted_account job missing user_id", { jobId: job.id });
       return;
     }
+    // Terminal deletion runs the strongest cleanup in the product; require the
+    // payload owner to agree with the queue row before any account is erased.
+    assertJobPayloadOwner(job, p);
 
     const sequence = await runTerminalDeletionSequence({
       establishTerminalState: async () => {

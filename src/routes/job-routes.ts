@@ -470,10 +470,7 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
     }
 
     // Usage billing: report pending meter events about every five minutes.
-    if (
-      withinSweepBudget() &&
-      (req._sweepMode === "cron" || !req._sweepMode)
-    ) {
+    if (withinSweepBudget() && (req._sweepMode === "cron" || !req._sweepMode)) {
       const since5m = new Date(Date.now() - 5 * 60 * 1000);
       const recentUsageReport = await drizzle
         .select({ id: schema.jobs.id })
@@ -572,6 +569,7 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
     // tick that hits slow jobs.
     const SWEEP_MAX_JOBS = 40;
     let processed = 0;
+    let failed = 0;
     for (let i = 0; i < SWEEP_MAX_JOBS; i++) {
       if (!withinSweepBudget()) break;
       const job = await claim(drizzle);
@@ -581,6 +579,7 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
         await complete(drizzle, job);
         processed++;
       } catch (sweepErr: unknown) {
+        failed++;
         await settle(drizzle, job, sweepErr);
       }
     }
@@ -596,10 +595,7 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
 
     // Retention cleanup continues even when new customer previews are disabled.
     let voiceCloneAssetsExpired = 0;
-    if (
-      withinSweepBudget() &&
-      (req._sweepMode === "cron" || !req._sweepMode)
-    ) {
+    if (withinSweepBudget() && (req._sweepMode === "cron" || !req._sweepMode)) {
       try {
         const { voiceAssetService } = await import("../lib/voice/voice-asset-service");
         voiceCloneAssetsExpired = await voiceAssetService.expireDue();
@@ -678,6 +674,11 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
     const mode = req._sweepMode || "cron";
     res.json({
       processed,
+      // The scheduled caller treats a non-zero count as a failed run. The
+      // handler-level failures used to be swallowed by settle(), so a tick that
+      // dead-lettered customer work still returned 200 with processed: 0 and
+      // the schedule looked healthy.
+      failed,
       recovered,
       mode,
       trials_expired: trialsExpired,
@@ -685,12 +686,13 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
       voice_clone_assets_expired: voiceCloneAssetsExpired,
       live_voices_expired: liveVoicesExpired,
     });
-    if (processed > 0) {
+    if (processed > 0 || failed > 0) {
       void auditLogger
         .logJobSweep("completed", {
           userId: req.user?.id,
           mode: mode as "cron" | "manual",
           processed,
+          ...(failed > 0 ? { failed } : {}),
           ip: req.ip,
         })
         .catch(() => {});

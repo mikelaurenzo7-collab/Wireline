@@ -159,7 +159,7 @@ const PACKS: Record<string, TrustPack> = {
       {
         title: "Provider Spend Protection",
         detail:
-          "Shared Work plans reserve estimated spend before live work and pause at the account's pretax spending limit. Existing prepaid plans retain Runtime Balance controls. Billing shows usage and the controls available for your plan.",
+          "Shared Work plans reserve estimated spend before live work and pause at the account's pretax spending limit. Existing prepaid plans retain their prepaid balance and billing controls. Billing shows usage and the controls available for your plan.",
       },
       {
         title: "Data Lifecycle Controls",

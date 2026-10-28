@@ -165,7 +165,9 @@ function AppRouter() {
   return (
     <Suspense fallback={<RouteLoading />}>
       {/* Focus only after the lazy page commits. Workspace has its own boundary. */}
-      {!usesWorkspaceViewport(location.pathname, Boolean(user)) && <RouteChangeA11y />}
+      {!usesWorkspaceViewport(location.pathname, Boolean(user)) && (
+        <RouteChangeA11y skipInitialFocus />
+      )}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/features" element={<Features />} />

@@ -53,7 +53,27 @@ async function unsubscribeRateLimit(req: Request, res: Response, next: NextFunct
     }
   } catch (err) {
     if (err instanceof AppError) throw err;
-    log.warn("unsubscribe rate limiter error, fail open", { error: getErrorMessage(err) });
+    // The limiter guards an unauthenticated write. When it cannot adjudicate,
+    // fail closed like the other public write boundaries instead of admitting
+    // unbounded suppression writes while the dependency is down.
+    log.error("unsubscribe rate limiter unavailable; failing closed", {
+      error: getErrorMessage(err),
+    });
+    res.setHeader("Retry-After", "60");
+    if (req.method === "POST") {
+      res.status(503).json({ ok: false, unsubscribed: false });
+    } else {
+      res
+        .status(503)
+        .type("html")
+        .send(
+          renderPage(
+            "We couldn't process that just now",
+            "Your unsubscribe request was not recorded yet. Please try again in a minute, or email support@botbound.app and we'll remove you manually.",
+          ),
+        );
+    }
+    return;
   }
   next();
 }
@@ -83,7 +103,8 @@ router.post("/api/email/unsubscribe", unsubscribeRateLimit, async (req: Request,
 });
 
 router.get("/api/email/unsubscribe", unsubscribeRateLimit, async (req: Request, res: Response) => {
-  const target = targetFromToken(String(req.query.token || ""));
+  const token = String(req.query.token || "");
+  const target = targetFromToken(token);
   if (!target) {
     res
       .status(400)
@@ -92,28 +113,20 @@ router.get("/api/email/unsubscribe", unsubscribeRateLimit, async (req: Request, 
     return;
   }
 
-  const recorded = await recordTarget(target, "link_unsubscribe");
-  if (!recorded) {
-    log.error("GET /api/email/unsubscribe failed to record suppression", { scope: target.scope });
-    res
-      .status(503)
-      .type("html")
-      .send(
-        renderPage(
-          "We couldn't process that just now",
-          `Your unsubscribe request for <strong>${escapeHtml(target.email)}</strong> didn't go through. ` +
-            `Please refresh this page in a few minutes to try again, or email support@botbound.app and we'll remove you manually.`,
-        ),
-      );
-    return;
-  }
-
-  log.info("Email unsubscribe link recorded", { scope: target.scope });
+  // Mail gateways and link scanners prefetch GET links, and a prefetch must
+  // never be able to opt a recipient out of mail. GET therefore renders an
+  // explicit confirmation; only the human's POST (this form, or an RFC 8058
+  // one-click message) records the suppression.
   const body =
     target.scope === "tenant"
-      ? `<strong>${escapeHtml(target.email)}</strong> will no longer receive marketing email from this sender.`
-      : `<strong>${escapeHtml(target.email)}</strong> will no longer receive BotBound product &amp; billing reminders. You'll still get essential account email such as security notices and billing receipts.`;
-  res.status(200).type("html").send(renderPage("You're unsubscribed", body));
+      ? `<strong>${escapeHtml(target.email)}</strong> will stop receiving marketing email from this sender.`
+      : `<strong>${escapeHtml(target.email)}</strong> will stop receiving BotBound product &amp; billing reminders. You'll still get essential account email such as security notices and billing receipts.`;
+  const confirm = `
+    <p style="margin:0;line-height:1.65;color:#B6B1C6;font-size:14px;">${body}</p>
+    <form method="post" action="/api/email/unsubscribe?token=${encodeURIComponent(token)}" style="margin:18px 0 0;">
+      <button type="submit" style="display:inline-block;background:#7040D7;color:#FFFFFF;border:0;border-radius:10px;padding:12px 20px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;">Unsubscribe</button>
+    </form>`;
+  res.status(200).type("html").send(renderPage("Confirm unsubscribe", confirm));
 });
 
 function renderPage(title: string, body: string): string {

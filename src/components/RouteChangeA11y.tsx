@@ -12,7 +12,19 @@ function labelFromPath(pathname: string) {
   return segment.replace(/[-_]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-export default function RouteChangeA11y() {
+export default function RouteChangeA11y({
+  announce = true,
+  skipInitialFocus = false,
+}: {
+  /** Public document routes announce each navigation through this live region. */
+  announce?: boolean;
+  /**
+   * On the first document load the skip link and header nav must stay ahead of
+   * page content in forward tab order, so the initial heading must not take
+   * focus. Workspace shells keep their own initial focus convention.
+   */
+  skipInitialFocus?: boolean;
+} = {}) {
   const location = useLocation();
   const first = useRef(true);
   const label = useMemo(() => labelFromPath(location.pathname), [location.pathname]);
@@ -38,6 +50,12 @@ export default function RouteChangeA11y() {
         first.current = false;
         return;
       }
+
+      // Deep links with a hash always resolve their target; later client-side
+      // route changes keep the page-entry focus behaviour.
+      const firstLoad = first.current;
+      first.current = false;
+      if (firstLoad && skipInitialFocus && !location.hash) return;
 
       if (location.hash) {
         let targetId = "";
@@ -66,10 +84,7 @@ export default function RouteChangeA11y() {
         }
       }
 
-      if (first.current) {
-        first.current = false;
-        return;
-      }
+      if (firstLoad) return;
       setMessage(`${label} loaded`);
     }, 0);
 
@@ -79,7 +94,9 @@ export default function RouteChangeA11y() {
     };
     // Section switches and filters update the query within the current page.
     // Preserve their control's focus so keyboard navigation can continue.
-  }, [label, location.hash, location.pathname]);
+  }, [label, location.hash, location.pathname, skipInitialFocus]);
+
+  if (!announce) return null;
 
   return (
     <div aria-live="polite" className="sr-only" data-testid="route-announcer" role="status">

@@ -117,9 +117,9 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   medical: {
     slug: "medical",
-    metaTitle: "BotBound for Medical Practices | Phone Bots for Intake and Scheduling",
+    metaTitle: "BotBound for Medical Practices | Phone Bots",
     metaDescription:
-      "A voice first Bot for general practice information and scheduling demonstrations. Use fictional details for rehearsals. Do not use BotBound for protected health information without an approved configuration and signed BAA.",
+      "A voice first Bot for general practice information and scheduling demos. Use fictional details for rehearsals. Protected health information requires an approved BAA.",
     eyebrow: "For Medical Practices",
     headline: "Every Caller. Clear Limits.",
     pains: [
@@ -174,7 +174,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   legal: {
     slug: "legal",
-    metaTitle: "BotBound for Law Firms | Phone Bots for Intake and Consult Routing",
+    metaTitle: "BotBound for Law Firms | Phone Bots",
     metaDescription:
       "A voice first Bot for law firms. Capture new matters, qualify urgency, schedule consults, continue by email, and route conflict checks for staff review.",
     eyebrow: "For Law Firms",
@@ -406,7 +406,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   restaurants: {
     slug: "restaurants",
-    metaTitle: "BotBound for Restaurants | Phone Bots for Reservations and Takeout",
+    metaTitle: "BotBound for Restaurants | Phone Bots",
     metaDescription:
       "A voice first Bot for restaurants. Take reservations, capture takeout requests, handle event inquiries, continue by email, and route exceptions to staff.",
     eyebrow: "For Restaurants",

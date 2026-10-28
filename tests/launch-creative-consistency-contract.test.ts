@@ -130,13 +130,17 @@ describe("launch creative stays internally consistent", () => {
     }
   });
 
-  it("keeps the price line consistent with the plan catalog", () => {
-    // The campaign promises "from $19/mo"; Starter is the live floor.
-    const catalog = read("src/lib/plan-catalog.ts");
-    const starter = catalog.slice(catalog.indexOf('id: "starter"'));
-    expect(starter.slice(0, 400)).toContain("price_usd_monthly: 19");
+  it("keeps the current offer price line consistent with the usage catalog", () => {
+    // The Shared Work offer replaced the $19-era channel floor: Lite $12,
+    // Starter $24 (default), Plus $49, with $4/$14/$36 of included work.
+    const catalog = read("src/lib/usage-billing-catalog.ts");
+    expect(catalog).toContain("monthlyUsd: 12");
+    expect(catalog).toContain("monthlyUsd: 24");
+    expect(catalog).toContain("monthlyUsd: 49");
+    // The historical campaign documents keep their $19-era copy behind an
+    // explicit historical banner instead of reading as live offer prices.
     for (const doc of CREATIVE_DOCS) {
-      expect(read(doc), `${doc} lost the $19 price line`).toContain("$19/mo");
+      expect(read(doc), `${doc} is not marked historical`).toMatch(/Historical|superseded/i);
     }
   });
 });

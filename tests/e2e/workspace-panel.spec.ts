@@ -737,12 +737,12 @@ test.describe("wide screens", () => {
       "aria-current",
       "page",
     );
-    await expect(rail.getByRole("link", { name: "Computer", exact: true })).toHaveCount(0);
+    await expect(rail.getByRole("link", { name: "Computer", exact: true })).toHaveCount(1);
     await page.getByRole("heading", { name: "Knowledge", exact: true }).click();
     await page.keyboard.press("g");
     await page.keyboard.press("m");
     await expect(page).toHaveURL(new RegExp(`/studio\\?panel=computer&agent=${bots[1].id}$`));
-    await expect(rail.getByRole("link", { name: "Workspace", exact: true })).toHaveAttribute(
+    await expect(rail.getByRole("link", { name: "Computer", exact: true })).toHaveAttribute(
       "aria-current",
       "page",
     );
@@ -751,7 +751,7 @@ test.describe("wide screens", () => {
       bots[1].id,
     );
     await page.reload();
-    await expect(rail.getByRole("link", { name: "Workspace", exact: true })).toHaveAttribute(
+    await expect(rail.getByRole("link", { name: "Computer", exact: true })).toHaveAttribute(
       "aria-current",
       "page",
     );
@@ -1327,15 +1327,21 @@ test.describe("wide screens", () => {
 test.describe("phones", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("Knowledge lives in More and preserves the Bot without a duplicate workspace tab", async ({
+  test("Knowledge lives in the mobile dock and preserves the Bot without a duplicate workspace tab", async ({
     page,
   }) => {
     const run = await mockWorkspace(page);
     await page.goto(`/studio?agent=${bots[0].id}`);
     await expect(page.getByRole("navigation", { name: "Workspace sections" })).toHaveCount(0);
-    await page.getByRole("button", { name: "More destinations" }).click();
-    await page.getByRole("link", { name: "Knowledge", exact: true }).click();
-    await expect(page).toHaveURL(`/knowledge?agent=${bots[0].id}`);
+    await page
+      .getByRole("navigation", { name: "Workspace navigation" })
+      .getByRole("link", { name: "Knowledge", exact: true })
+      .click();
+    // The dock link carries no query; the page resolves the active Bot itself.
+    await expect(page).toHaveURL(/\/knowledge$/);
+    await expect(page.getByRole("combobox", { name: "Choose Bot", exact: true })).toHaveValue(
+      bots[0].id,
+    );
     await expect(page.getByRole("heading", { name: "Knowledge", exact: true })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Workspace sections" })).toHaveCount(0);
     expect(run.starts).toEqual([]);

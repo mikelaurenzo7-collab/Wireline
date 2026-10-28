@@ -35,6 +35,10 @@ function microphoneMessage(reason: unknown): string {
   if (name === "NotReadableError" || name === "TrackStartError")
     return "The microphone is busy in another app. Close it, or type a test below.";
   if (name === "SecurityError") return "The microphone needs a secure page. Type a test below.";
+  // Non-microphone failures carry their own truthful message (session refusal,
+  // missing cleanup capability, provider unavailability). Only collapse to the
+  // microphone guidance when no meaningful reason survived.
+  if (reason instanceof Error && reason.message.trim()) return reason.message;
   return "The microphone didn't start. Allow access, or type a test below.";
 }
 

@@ -69,7 +69,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/about": {
     title: "About BotBound",
     description:
-      "BotBound is an independent platform for calls, email, and cloud browser tasks. Set your knowledge and rules, review outcomes, and reach the founder directly for support.",
+      "BotBound is an independent platform for calls, email, and Computer work. Set your knowledge and rules, review outcomes, and reach the founder for support.",
   },
   "/blog": {
     title: "BotBound Notes | Guides for Your Life and Work",
@@ -78,7 +78,8 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   },
   "/support": {
     title: "Support | BotBound",
-    description: "Contact BotBound support.",
+    description:
+      "Contact BotBound support by email or send a request; we reply to the address you provide.",
   },
   "/contact": {
     title: "Contact BotBound",
@@ -117,7 +118,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/developers": {
     title: "Developers | BotBound",
     description:
-      "Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first phone bot in the chat you already use, then continue in the same BotBound workspace. No public API keys.",
+      "Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first bot in the chat you use, and continue in the same workspace.",
   },
   "/changelog": {
     title: "Changelog | BotBound",
@@ -151,7 +152,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
 const NON_INDEXED_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/signin": {
     title: "Sign In",
-    description: "Access your BotBound account.",
+    description: "Sign in to your BotBound account to manage Bots, calls, and messages.",
     noIndex: true,
   },
   "/signup": {
@@ -185,7 +186,7 @@ const NON_INDEXED_ROUTE_META: Record<string, StaticRouteMeta> = {
   },
   "/reset-password": {
     title: "Reset Your Password",
-    description: "Choose a new password for your BotBound account.",
+    description: "Choose a new password for your BotBound account and get back to your Bots.",
     noIndex: true,
   },
   "/accept-invite": {

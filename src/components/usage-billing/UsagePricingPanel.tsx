@@ -102,8 +102,8 @@ function Slider({
 }) {
   return (
     <div className="space-y-2">
-      <div className="flex items-baseline justify-between gap-3">
-        <label htmlFor={id} className="text-sm font-semibold">
+      <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <label htmlFor={id} className="min-w-0 text-sm font-semibold">
           {label}
         </label>
         <output htmlFor={id} className="text-sm tabular-nums text-muted-foreground">
@@ -138,14 +138,14 @@ function Toggle({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label htmlFor={id} className="flex min-h-11 cursor-pointer items-start gap-3">
+    <label htmlFor={id} className="flex min-h-11 cursor-pointer flex-wrap items-start gap-3">
       <Checkbox
         id={id}
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
         className="mt-1"
       />
-      <span>
+      <span className="min-w-0 flex-1 basis-full">
         <span className="block text-sm font-semibold">{label}</span>
         <span className="block text-xs text-muted-foreground">{detail}</span>
       </span>
@@ -263,7 +263,7 @@ export default function UsagePricingPanel({
       </p>
       <article
         aria-label="Monthly estimate"
-        className="grid gap-8 rounded-2xl border border-border bg-card p-5 sm:p-8 md:grid-cols-[1fr_17rem]"
+        className="grid grid-cols-1 gap-8 rounded-2xl border border-border bg-card p-3 sm:p-8 md:grid-cols-[1fr_17rem]"
       >
         <div className="space-y-5">
           <Slider
@@ -316,7 +316,7 @@ export default function UsagePricingPanel({
             suffix="min"
             onChange={setComputerMinutes}
           />
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <Toggle
               id="usage-number"
               label={`Extra Number, ${usd(USAGE_ADDONS.number.usdMonthly)}/mo`}
@@ -333,7 +333,7 @@ export default function UsagePricingPanel({
             />
           </div>
         </div>
-        <div className="flex flex-col justify-between gap-4 rounded-lg bg-muted/40 p-4">
+        <div className="flex flex-col justify-between gap-4 rounded-lg bg-muted/40 p-3 sm:p-4">
           <div>
             <p className="text-sm font-semibold text-muted-foreground">
               Monthly Estimate Before Tax
@@ -373,15 +373,16 @@ export default function UsagePricingPanel({
                   emailAddress,
                 },
               })}
-              className="marketing-btn-primary inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold"
+              className="marketing-btn-primary inline-flex min-h-11 w-full flex-wrap items-center justify-center gap-2 rounded-xl px-0 text-sm font-semibold sm:px-4"
             >
-              Get {plan.name} <ArrowRight className="size-4" aria-hidden="true" />
+              <span className="w-full">Get {plan.name}</span>{" "}
+              <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
             <Link
               to="/contact?topic=demo"
-              className="marketing-btn-secondary inline-flex min-h-11 w-full items-center justify-center rounded-xl px-4 text-sm font-semibold"
+              className="marketing-btn-secondary inline-flex min-h-11 w-full flex-wrap items-center justify-center rounded-xl px-0 text-sm font-semibold sm:px-4"
             >
-              Request a Demo
+              <span className="w-full">Request a Demo</span>
             </Link>
           </div>
         </div>

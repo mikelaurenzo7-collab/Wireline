@@ -5,7 +5,7 @@ import { Cookie, X } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { cn } from "../lib/utils";
-import { isAuthPortalPath, isMarketingPublicPath } from "../lib/public-routes";
+import { isAuthPortalPath, isMarketingHomePath, isMarketingPublicPath } from "../lib/public-routes";
 
 const NOTICE_STORAGE_KEY = "wireline_cookie_consent";
 const MEASUREMENT_STORAGE_KEY = "wireline_marketing_measurement_consent";
@@ -125,11 +125,19 @@ export default function CookieConsent() {
 
   const dismiss = useCallback(() => saveChoice("denied"), [saveChoice]);
 
+  // The consent panel is a labelled region, not a modal dialog. It must still
+  // be announced and immediately reachable: move focus into it whenever it
+  // appears (auto-invited or reopened from the footer) unless a real dialog is
+  // already open. The previous implementation only moved focus for an explicit
+  // re-open, leaving the first-visit notice far down the tab order.
   useEffect(() => {
-    if (!visible || !explicitlyOpened) return;
-    const frame = window.requestAnimationFrame(() => privacyPanelRef.current?.focus());
+    if (!visible) return;
+    const frame = window.requestAnimationFrame(() => {
+      if (document.querySelector('[aria-modal="true"], dialog[open]')) return;
+      privacyPanelRef.current?.focus({ preventScroll: true });
+    });
     return () => window.cancelAnimationFrame(frame);
-  }, [explicitlyOpened, visible]);
+  }, [visible]);
 
   // While the notice floats over the page, reserve the same space at the end of
   // the document so visitors can still scroll the last content (e.g. a plan
@@ -168,7 +176,12 @@ export default function CookieConsent() {
     new URLSearchParams(location.search).get("create") === "true";
   if (isAuthPortalPath(location.pathname) || createFlowOpen) return null;
 
-  const onPublicSurface = isMarketingPublicPath(location.pathname);
+  // The homepage is the marketing surface most first-time visitors see; it is
+  // intentionally not part of the broader marketing set because it must not
+  // wait on session hydration. Consent is a separate concern, and omitting the
+  // home path meant the notice never appeared there.
+  const onPublicSurface =
+    isMarketingHomePath(location.pathname) || isMarketingPublicPath(location.pathname);
   if (!onPublicSurface && !explicitlyOpened) return null;
 
   return createPortal(

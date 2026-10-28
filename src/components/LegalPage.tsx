@@ -38,7 +38,11 @@ function LegalLayout({
         </p>
 
         {summary?.length ? (
-          <div className="mb-10 grid gap-3 sm:grid-cols-3" aria-label={`${title} summary`}>
+          <div
+            className="mb-10 grid gap-3 sm:grid-cols-3"
+            role="group"
+            aria-label={`${title} summary`}
+          >
             {summary.map((item) => (
               <div
                 key={item}
@@ -182,9 +186,9 @@ export function TermsOfService() {
           screening is connected.
         </p>
         <p>
-          You agree to cover BotBound for claims under the Telephone Consumer Protection Act
-          (TCPA), the Telemarketing Sales Rule (TSR), and similar state calling and texting laws
-          that come from your calls or texts.
+          You agree to cover BotBound for claims under the Telephone Consumer Protection Act (TCPA),
+          the Telemarketing Sales Rule (TSR), and similar state calling and texting laws that come
+          from your calls or texts.
         </p>
         <p>
           BotBound may review how the product is used and may suspend calling or texting. BotBound
@@ -277,19 +281,19 @@ export function TermsOfService() {
         </p>
         <p>
           <strong>Existing prepaid channel plans.</strong> These plans retain the channels and
-          allowances selected at checkout. Calls use included minutes first, then prepaid Runtime
-          Balance at $0.22 per minute, rounded up per call. A funded call may use up to 10
-          additional minutes of paid completion credit ($2.20), within its admitted duration and the
-          session limit of 60 minutes. This buffer does not permit an unfunded new call. Only one
-          call may be active or awaiting settlement on a channel package.
+          allowances selected at checkout. Calls use included minutes first, then prepaid balance at
+          $0.22 per minute, rounded up per call. A funded call may use up to 10 additional minutes
+          of paid completion credit ($2.20), within its admitted duration and the session limit of
+          60 minutes. This buffer does not permit an unfunded new call. Only one call may be active
+          or awaiting settlement on a channel package.
         </p>
         <p>
           For those prepaid plans, we reserve available funds when a call starts and return unused
-          funds after settlement. Completion credit appears as an amount due in Runtime Balance. New
-          calls and prepaid extras pause until you top up; billing and saved records remain
-          accessible. We do not automatically charge your payment method for prepaid-plan usage or
-          issue an automatic usage invoice for those plans. A monthly allowance reset does not erase
-          an amount due.
+          funds after settlement. Completion credit appears as an amount due on your prepaid
+          balance. New calls and prepaid extras pause until you top up; billing and saved records
+          remain accessible. We do not automatically charge your payment method for prepaid-plan
+          usage or issue an automatic usage invoice for those plans. A monthly allowance reset does
+          not erase an amount due.
         </p>
         <p>
           <strong>Money back guarantee for 30 days.</strong> Submit a request to{" "}
