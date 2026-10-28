@@ -204,4 +204,43 @@ export const OPENAI_REALTIME_WIRELINE_TOOLS: OpenAIRealtimeToolDefinition[] = [
       additionalProperties: false,
     },
   },
+  {
+    type: "function",
+    name: "reply_computer_task",
+    description:
+      "Sends the caller's spoken answer to a paused Cloud Computer browser task (status=needs_input) so the browser can resume.",
+    parameters: {
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+          description:
+            "The exact answer or instruction from the caller to resume the paused browser task.",
+        },
+        task_id: {
+          type: "string",
+          description:
+            "Optional task_id of the paused browser task. Defaults to the active task waiting for input.",
+        },
+      },
+      required: ["message"],
+      additionalProperties: false,
+    },
+  },
+  {
+    type: "function",
+    name: "stop_computer_task",
+    description:
+      "Stops a running or paused Cloud Computer browser task when the caller cancels or changes their request.",
+    parameters: {
+      type: "object",
+      properties: {
+        task_id: {
+          type: "string",
+          description: "Optional task_id to stop. Defaults to the active browser task.",
+        },
+      },
+      additionalProperties: false,
+    },
+  },
 ];

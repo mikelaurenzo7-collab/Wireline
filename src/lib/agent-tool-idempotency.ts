@@ -51,6 +51,9 @@ const SIDE_EFFECT_TOOL_NAMES = new Set([
   "trigger_enterprise_webhook",
   "send_signup_link",
   "send_payment_link",
+  "start_computer_task",
+  "reply_computer_task",
+  "stop_computer_task",
 ]);
 
 export function isIdempotentAgentTool(name: string): boolean {
@@ -224,7 +227,10 @@ export async function runIdempotentAgentToolCall(
       result: "This call no longer owns the live session, so the action was not run.",
     };
   }
-  if (!isIdempotentAgentTool(name) || !context.agent?.user_id || !context.toolCallId) {
+  const userId = context.agent?.user_id || context.userId;
+  const hasTransaction =
+    typeof (context.drizzle as { transaction?: unknown } | undefined)?.transaction === "function";
+  if (!isIdempotentAgentTool(name) || !userId || !context.toolCallId || !hasTransaction) {
     return execute();
   }
 

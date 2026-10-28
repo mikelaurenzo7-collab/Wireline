@@ -61,6 +61,11 @@ export const AGENT_TOOL_NAME_VALUES = [
   // Advanced routing actions
   "route_to_business_unit",
   "trigger_enterprise_webhook",
+  // Cloud Computer browser actions
+  "start_computer_task",
+  "check_computer_task",
+  "reply_computer_task",
+  "stop_computer_task",
 ] as const;
 
 export type AgentToolName = (typeof AGENT_TOOL_NAME_VALUES)[number];
@@ -228,8 +233,7 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "send_text_message",
     label: "Send SMS",
-    description:
-      "Text follow-up after the customer agrees. Recipient permission still applies.",
+    description: "Text follow-up after the customer agrees. Recipient permission still applies.",
     group: "messaging",
     integration: "twilio",
   },
@@ -523,6 +527,33 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
       "Opens music playback for a song, artist, or playlist on the Account Holder's phone.",
     group: "device",
   },
+  {
+    name: "start_computer_task",
+    label: "Start Cloud Computer task",
+    description:
+      "Starts a supervised browser task on the Bot's Cloud Computer and returns the task ID immediately.",
+    group: "core",
+  },
+  {
+    name: "check_computer_task",
+    label: "Check Cloud Computer task",
+    description:
+      "Checks the live status, summary, or pending question of a running or recent Cloud Computer browser task.",
+    group: "core",
+  },
+  {
+    name: "reply_computer_task",
+    label: "Reply to Cloud Computer task",
+    description:
+      "Sends the caller's or owner's answer to a paused Cloud Computer task waiting for input.",
+    group: "core",
+  },
+  {
+    name: "stop_computer_task",
+    label: "Stop Cloud Computer task",
+    description: "Stops an active Cloud Computer browser task when no longer needed.",
+    group: "core",
+  },
 ] as const;
 
 /** Tool names that require a connected Shopify store. */
@@ -578,6 +609,10 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "meta_submit_lead",
     "log_to_excel",
     "log_to_google_sheets",
+    "start_computer_task",
+    "check_computer_task",
+    "reply_computer_task",
+    "stop_computer_task",
   ],
   customer_service: [
     "search_knowledge_base",
@@ -614,6 +649,10 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "square_create_payment_link",
     "log_to_excel",
     "log_to_google_sheets",
+    "start_computer_task",
+    "check_computer_task",
+    "reply_computer_task",
+    "stop_computer_task",
   ],
   // E-commerce support agents — order status, inventory, returns, address fixes.
   ecommerce: [
@@ -645,6 +684,10 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "square_create_payment_link",
     "log_to_excel",
     "log_to_google_sheets",
+    "start_computer_task",
+    "check_computer_task",
+    "reply_computer_task",
+    "stop_computer_task",
   ],
   scheduler: [
     "search_knowledge_base",
@@ -664,6 +707,10 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "send_teams_message",
     "generate_zoom_link",
     "crm_search_contacts",
+    "start_computer_task",
+    "check_computer_task",
+    "reply_computer_task",
+    "stop_computer_task",
   ],
   collections: [
     "search_knowledge_base",
@@ -684,6 +731,10 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "send_teams_message",
     "log_to_excel",
     "log_to_google_sheets",
+    "start_computer_task",
+    "check_computer_task",
+    "reply_computer_task",
+    "stop_computer_task",
   ],
   technical_support: [
     "search_knowledge_base",
@@ -711,6 +762,10 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "square_lookup_customer",
     "log_to_excel",
     "log_to_google_sheets",
+    "start_computer_task",
+    "check_computer_task",
+    "reply_computer_task",
+    "stop_computer_task",
   ],
   lead_qualifier: [
     "search_knowledge_base",
@@ -741,6 +796,10 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "meta_submit_lead",
     "log_to_excel",
     "log_to_google_sheets",
+    "start_computer_task",
+    "check_computer_task",
+    "reply_computer_task",
+    "stop_computer_task",
   ],
   receptionist: [
     "search_knowledge_base",
@@ -762,6 +821,10 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "generate_zoom_link",
     "gemini_ground",
     "crm_search_contacts",
+    "start_computer_task",
+    "check_computer_task",
+    "reply_computer_task",
+    "stop_computer_task",
   ],
   marketing: [
     "search_knowledge_base",
@@ -788,6 +851,10 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "crm_create_contact",
     "log_to_excel",
     "log_to_google_sheets",
+    "start_computer_task",
+    "check_computer_task",
+    "reply_computer_task",
+    "stop_computer_task",
   ],
   // Assistant roles focus on scheduling, message-taking, callbacks, and
   // general communication.
@@ -809,6 +876,10 @@ export const ROLE_TOOL_SETS: Record<string, readonly AgentToolName[]> = {
     "capture_customer_profile",
     "generate_zoom_link",
     "gemini_ground",
+    "start_computer_task",
+    "check_computer_task",
+    "reply_computer_task",
+    "stop_computer_task",
   ],
 };
 

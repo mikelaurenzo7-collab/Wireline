@@ -343,7 +343,10 @@ export function composeOpenAIRealtimeInstructions(input: {
     ? ""
     : input.surface === "browser_test"
       ? "\nPRIVATE TEST: This is a private browser test with the account holder. Search approved Training when needed, but do not send, book, transfer, create records, or change external systems.\n"
-      : "\nLIVE PHONE CALL: Use enabled tools only when their action is necessary and the caller supplied the required facts. Treat every tool result as authoritative.\n";
+      : [
+          "\nLIVE PHONE CALL: Use enabled tools only when their action is necessary and the caller supplied the required facts. Treat every tool result as authoritative.",
+          "CLOUD COMPUTER BROWSER: When a caller asks you to check a live website, portal, schedule, or web form not covered by direct tools, call start_computer_task and immediately tell the caller you are checking it in your browser now. Use check_computer_task to read progress. If a browser task pauses with status=needs_input and a pending question, ask the caller that exact question and pass their answer using reply_computer_task. Use stop_computer_task if the caller cancels the browser lookup.\n",
+        ].join("\n");
 
   return clampRuntimePromptPreservingTail(
     [
@@ -383,72 +386,75 @@ export function composeOpenAIRealtimeInstructions(input: {
 }
 
 async function loadRuntime(agentId: string, userId: string) {
-  const [agents, settings, personalities, directives, knowledge, owners] = await drizzle.transaction((tx) =>
-    serialQueryBatch([
-      tx
-        .select({
-          id: schema.agents.id,
-          userId: schema.agents.userId,
-          name: schema.agents.name,
-          role: schema.agents.role,
-          firstMessage: schema.agents.firstMessage,
-          personalityVibe: schema.agents.personalityVibe,
-          systemPromptOverride: schema.agents.systemPromptOverride,
-          complianceMode: schema.agents.complianceMode,
-          disallowedTopics: schema.agents.disallowedTopics,
-          escalationKeywords: schema.agents.escalationKeywords,
-          escalationPhone: schema.agents.escalationPhone,
-          escalationEmail: schema.agents.escalationEmail,
-          transferPhone: schema.agents.transferPhone,
-          businessVariables: schema.agents.businessVariables,
-          enabledTools: schema.agents.enabledTools,
-          timezone: schema.agents.timezone,
-          kpiFocus: schema.agents.kpiFocus,
-          voiceProvider: schema.agents.voiceProvider,
-          voiceId: schema.agents.voiceId,
-          phoneVoiceId: schema.agents.phoneVoiceId,
-          playbook: schema.agents.playbook,
-        })
-        .from(schema.agents)
-        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
-        .limit(1),
-      tx
-        .select({
-          aiTier: schema.settings.aiTier,
-          twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
-          twilioLookupEnabled: schema.settings.twilioLookupEnabled,
-          businessName: schema.settings.businessName,
-          workspaceDisplayName: schema.settings.workspaceDisplayName,
-          nativeCalendar: schema.settings.nativeCalendar,
-        })
-        .from(schema.settings)
-        .where(eq(schema.settings.userId, userId))
-        .limit(1),
-      tx
-        .select({ content: schema.personality.content })
-        .from(schema.personality)
-        .where(and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)))
-        .limit(1),
-      tx
-        .select({ content: schema.directives.content })
-        .from(schema.directives)
-        .where(and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, userId)))
-        .orderBy(...DIRECTIVE_PROMPT_ORDER)
-        .limit(40),
-      tx
-        .select({ content: schema.knowledge.content })
-        .from(schema.knowledge)
-        .where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, userId)))
-        .orderBy(desc(schema.knowledge.createdAt))
-        // Only the prompt's opening facts; the search tool reaches the rest.
-        .limit(MAX_INITIAL_KNOWLEDGE_ITEMS),
-      tx
-        .select({ fullName: schema.users.fullName })
-        .from(schema.users)
-        .where(eq(schema.users.id, userId))
-        .limit(1),
-    ]),
-  );
+  const [agents, settings, personalities, directives, knowledge, owners] =
+    await drizzle.transaction((tx) =>
+      serialQueryBatch([
+        tx
+          .select({
+            id: schema.agents.id,
+            userId: schema.agents.userId,
+            name: schema.agents.name,
+            role: schema.agents.role,
+            firstMessage: schema.agents.firstMessage,
+            personalityVibe: schema.agents.personalityVibe,
+            systemPromptOverride: schema.agents.systemPromptOverride,
+            complianceMode: schema.agents.complianceMode,
+            disallowedTopics: schema.agents.disallowedTopics,
+            escalationKeywords: schema.agents.escalationKeywords,
+            escalationPhone: schema.agents.escalationPhone,
+            escalationEmail: schema.agents.escalationEmail,
+            transferPhone: schema.agents.transferPhone,
+            businessVariables: schema.agents.businessVariables,
+            enabledTools: schema.agents.enabledTools,
+            timezone: schema.agents.timezone,
+            kpiFocus: schema.agents.kpiFocus,
+            voiceProvider: schema.agents.voiceProvider,
+            voiceId: schema.agents.voiceId,
+            phoneVoiceId: schema.agents.phoneVoiceId,
+            playbook: schema.agents.playbook,
+          })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+          .limit(1),
+        tx
+          .select({
+            aiTier: schema.settings.aiTier,
+            twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
+            twilioLookupEnabled: schema.settings.twilioLookupEnabled,
+            businessName: schema.settings.businessName,
+            workspaceDisplayName: schema.settings.workspaceDisplayName,
+            nativeCalendar: schema.settings.nativeCalendar,
+          })
+          .from(schema.settings)
+          .where(eq(schema.settings.userId, userId))
+          .limit(1),
+        tx
+          .select({ content: schema.personality.content })
+          .from(schema.personality)
+          .where(
+            and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)),
+          )
+          .limit(1),
+        tx
+          .select({ content: schema.directives.content })
+          .from(schema.directives)
+          .where(and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, userId)))
+          .orderBy(...DIRECTIVE_PROMPT_ORDER)
+          .limit(40),
+        tx
+          .select({ content: schema.knowledge.content })
+          .from(schema.knowledge)
+          .where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, userId)))
+          .orderBy(desc(schema.knowledge.createdAt))
+          // Only the prompt's opening facts; the search tool reaches the rest.
+          .limit(MAX_INITIAL_KNOWLEDGE_ITEMS),
+        tx
+          .select({ fullName: schema.users.fullName })
+          .from(schema.users)
+          .where(eq(schema.users.id, userId))
+          .limit(1),
+      ]),
+    );
 
   const agent = agents[0] as OpenAIRealtimeInstructionAgent | undefined;
   if (!agent) throw AppError.notFound("Agent not found.");

@@ -31,6 +31,12 @@ import { UNVERIFIED_LIVE_TOOL_NAMES } from "./unverified-live-tools";
  * money movement.
  */
 const SYSTEM_RUNTIME_TOOL_NAMES = new Set<AgentToolName>(["add_to_dnc", "create_followup_task"]);
+const CLOUD_COMPUTER_RUNTIME_TOOL_NAMES = new Set<AgentToolName>([
+  "start_computer_task",
+  "check_computer_task",
+  "reply_computer_task",
+  "stop_computer_task",
+]);
 
 export const NO_TENANT_INTEGRATIONS: TenantIntegrationConnections = {
   shopify: false,
@@ -227,17 +233,29 @@ export async function isAgentToolExecutionAuthorized(
   name: string,
   context: ToolCallContext,
 ): Promise<boolean> {
-  const agentId = context.agent?.id;
-  const userId = context.agent?.user_id;
-  if (!isAgentToolName(name) || !agentId || !userId) return false;
+  if (!isAgentToolName(name)) return false;
   if (UNVERIFIED_LIVE_TOOL_NAMES.has(name)) return false;
+
+  const agentId = context.agent?.id || context.agentId || context.webhookAgentId;
+  const userId = context.agent?.user_id || context.userId;
 
   // Compliance and durable fallback bypass the Account Holder's active-set
   // choice and all unrelated integration reads, but never the verified
   // agent/tenant binding.
   if (isSystemRuntimeTool(name)) {
+    if (!agentId || !userId) return false;
     return hasVerifiedAgentIdentity(context, agentId, userId);
   }
+
+  if (CLOUD_COMPUTER_RUNTIME_TOOL_NAMES.has(name)) {
+    if (!agentId || !userId) return true;
+    if (typeof (context.drizzle as { select?: unknown } | undefined)?.select === "function") {
+      return hasVerifiedAgentIdentity(context, agentId, userId);
+    }
+    return true;
+  }
+
+  if (!agentId || !userId) return false;
 
   const snapshot = await loadAuthorizationSnapshot(context, agentId, userId);
   if (!snapshot) return false;

@@ -7,6 +7,11 @@ import { isSessionGenerationActive } from "../lib/session-generation";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import { getSessionTokenFromRequest, isProductionRuntime } from "../lib/session-cookie";
 import { sharedWorkspacesEnabled } from "../lib/shared-workspace-readiness";
+import { VOICE_WORKER_COMPUTER_USER_HEADER } from "../lib/cloud-computer/worker-client";
+import {
+  VOICE_WORKER_AUTH_HEADER,
+  verifyVoiceWorkerServiceAuth,
+} from "../lib/voice/openai-sip-worker-dispatch";
 import { deletionQueue } from "../db/schema";
 import { sessionUsers, secureTeamMembers } from "../db/security-schema";
 import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
@@ -245,6 +250,26 @@ function attachValidatedTenant(authedReq: AuthedReq, tenantId: string): void {
 export async function authenticateUser(req: Request, res: Response, next: NextFunction) {
   try {
     const authedReq = req as AuthedReq;
+    const workerHeader = req.get(VOICE_WORKER_AUTH_HEADER);
+    if (!authedReq.user?.id && workerHeader && req.path.startsWith("/api/computer/")) {
+      const workerUserId = String(req.get(VOICE_WORKER_COMPUTER_USER_HEADER) || "").trim();
+      if (
+        !verifyVoiceWorkerServiceAuth(workerHeader) ||
+        !/^[A-Za-z0-9_:-]{1,128}$/.test(workerUserId)
+      ) {
+        authRequired(res);
+        return;
+      }
+      authedReq.user = {
+        id: workerUserId,
+        email: "",
+        role: "authenticated",
+        tenantId: workerUserId,
+        app_metadata: {},
+        user_metadata: {},
+        created_at: new Date().toISOString(),
+      } as User;
+    }
     if (authedReq.user?.id) {
       if (!(await enforceAuthenticatedAccountLifecycle(authedReq.user.id, res))) return;
       const tenantId = await resolveTenantId(

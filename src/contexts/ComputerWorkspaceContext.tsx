@@ -105,6 +105,7 @@ function useComputerTaskModel(enabled: boolean) {
   const mutationInFlight = useRef(false);
   const refreshInFlight = useRef(false);
   const uncertain = useRef(false);
+  const lastAutoSelectedActiveIdRef = useRef<string | null>(null);
   const scope = useRef({ owner, live: true });
   scope.current.owner = owner;
   const valid = useCallback(
@@ -180,6 +181,12 @@ function useComputerTaskModel(enabled: boolean) {
           ),
         );
         const active = next.find((task) => ACTIVE_COMPUTER_TASKS.includes(task.status));
+        const isNewlyDetectedActive = Boolean(
+          active && active.id !== lastAutoSelectedActiveIdRef.current,
+        );
+        if (active) {
+          lastAutoSelectedActiveIdRef.current = active.id;
+        }
         setListFailed(false);
         tasksRef.current = next;
         setTasks(next);
@@ -188,7 +195,7 @@ function useComputerTaskModel(enabled: boolean) {
           setRefreshRequired(false);
         }
         setSelectedId((current) =>
-          (focusActive || active?.status === "needs_input") && active
+          (focusActive || isNewlyDetectedActive || active?.status === "needs_input") && active
             ? active.id
             : current && next.some((task) => task.id === current)
               ? current
@@ -262,7 +269,7 @@ function useComputerTaskModel(enabled: boolean) {
     let inFlight = false;
     const poll = async () => {
       if (document.hidden || inFlight || refreshInFlight.current) {
-        timer = window.setTimeout(poll, activeId ? 2000 : 8000);
+        timer = window.setTimeout(poll, activeId ? 2000 : 3500);
         return;
       }
       inFlight = true;
@@ -291,7 +298,7 @@ function useComputerTaskModel(enabled: boolean) {
       } finally {
         inFlight = false;
       }
-      if (!controller.signal.aborted) timer = window.setTimeout(poll, activeId ? 2000 : 8000);
+      if (!controller.signal.aborted) timer = window.setTimeout(poll, activeId ? 2000 : 3500);
     };
     const onReturn = () => {
       if (document.hidden || inFlight || refreshInFlight.current) return;
@@ -300,7 +307,7 @@ function useComputerTaskModel(enabled: boolean) {
     };
     document.addEventListener("visibilitychange", onReturn);
     window.addEventListener("focus", onReturn);
-    timer = window.setTimeout(poll, activeId ? 2000 : 8000);
+    timer = window.setTimeout(poll, activeId ? 2000 : 3500);
     return () => {
       controller.abort();
       if (timer) window.clearTimeout(timer);

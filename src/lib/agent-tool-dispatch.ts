@@ -18,11 +18,20 @@ import { handleNativeVoiceToolCall } from "./agent-tool-native-voice";
 import { enforceAgentToolResultTruth } from "./agent-tool-result-truth";
 import { AppError } from "./api-error";
 import {
-  getComputerTaskForOwner,
-  listComputerTasksForOwner,
-  startComputerTask,
-} from "./cloud-computer/task-runner";
+  dispatchGetComputerTaskForOwner,
+  dispatchListComputerTasksForOwner,
+  dispatchReplyComputerTaskForOwner,
+  dispatchStartComputerTaskForOwner,
+  dispatchStopComputerTaskForOwner,
+} from "./cloud-computer/worker-client";
 import { drizzle, log } from "./server-context";
+
+const COMPUTER_TOOL_NAMES = new Set([
+  "start_computer_task",
+  "check_computer_task",
+  "reply_computer_task",
+  "stop_computer_task",
+]);
 
 function resolveComputerContextIds(
   context: Partial<ToolCallContext> | undefined,
@@ -50,7 +59,7 @@ export async function handleComputerToolCall(
   args: any,
   context: ToolCallContext,
 ): Promise<ToolCallResult | null> {
-  if (fn !== "start_computer_task" && fn !== "check_computer_task") {
+  if (!COMPUTER_TOOL_NAMES.has(fn)) {
     return null;
   }
 
@@ -89,7 +98,7 @@ export async function handleComputerToolCall(
     }
 
     try {
-      const task = await startComputerTask(userId, agentId, {
+      const task = await dispatchStartComputerTaskForOwner(userId, agentId, {
         goal,
         ...(startUrl ? { startUrl } : {}),
       });
@@ -122,10 +131,87 @@ export async function handleComputerToolCall(
         ? record.taskId.trim()
         : "";
 
+  if (fn === "reply_computer_task") {
+    const message = typeof record.message === "string" ? record.message.trim() : "";
+    if (!message) {
+      return {
+        toolCallId,
+        result:
+          "COMPUTER_TASK_INVALID: A non-empty message is required to reply to a paused Cloud Computer task.",
+      };
+    }
+    try {
+      const targetTaskId =
+        requestedTaskId ||
+        ((await dispatchListComputerTasksForOwner(userId, agentId || undefined)).find(
+          (item) => item.status === "needs_input" || item.status === "running",
+        )?.id ??
+          "");
+      if (!targetTaskId) {
+        return {
+          toolCallId,
+          result:
+            "COMPUTER_TASK_NONE: No active Cloud Computer task waiting for a reply was found for this Bot.",
+        };
+      }
+      const task = await dispatchReplyComputerTaskForOwner(userId, targetTaskId, message);
+      return {
+        toolCallId,
+        result: [
+          `COMPUTER_TASK_RESUMED: task_id=${task.id} status=${task.status}.`,
+          `Goal: ${task.goal}`,
+          "Your reply was sent to the browser task. Use check_computer_task to read the updated result.",
+        ].join(" "),
+      };
+    } catch (error) {
+      const code = error instanceof AppError ? error.code : "COMPUTER_UNAVAILABLE";
+      const errMessage =
+        error instanceof Error && error.message.trim()
+          ? error.message.trim()
+          : "Cloud Computer reply could not be delivered.";
+      return {
+        toolCallId,
+        result: `COMPUTER_TASK_UNAVAILABLE (${code}): ${errMessage}`,
+      };
+    }
+  }
+
+  if (fn === "stop_computer_task") {
+    try {
+      const targetTaskId =
+        requestedTaskId ||
+        ((await dispatchListComputerTasksForOwner(userId, agentId || undefined)).find(
+          (item) => item.status === "running" || item.status === "needs_input",
+        )?.id ??
+          "");
+      if (!targetTaskId) {
+        return {
+          toolCallId,
+          result: "COMPUTER_TASK_NONE: No running Cloud Computer task was found to stop.",
+        };
+      }
+      const task = await dispatchStopComputerTaskForOwner(userId, targetTaskId);
+      return {
+        toolCallId,
+        result: `COMPUTER_TASK_STOPPED: task_id=${task.id} status=${task.status}. Goal: ${task.goal}`,
+      };
+    } catch (error) {
+      const code = error instanceof AppError ? error.code : "COMPUTER_UNAVAILABLE";
+      const errMessage =
+        error instanceof Error && error.message.trim()
+          ? error.message.trim()
+          : "Cloud Computer task could not be stopped.";
+      return {
+        toolCallId,
+        result: `COMPUTER_TASK_UNAVAILABLE (${code}): ${errMessage}`,
+      };
+    }
+  }
+
   try {
     const task = requestedTaskId
-      ? await getComputerTaskForOwner(userId, requestedTaskId)
-      : ((await listComputerTasksForOwner(userId, agentId || undefined))[0] ?? null);
+      ? await dispatchGetComputerTaskForOwner(userId, requestedTaskId)
+      : ((await dispatchListComputerTasksForOwner(userId, agentId || undefined))[0] ?? null);
     if (!task) {
       return {
         toolCallId,
@@ -209,10 +295,6 @@ export async function dispatchAgentToolCall(
       toolCallId: context.toolCallId,
       result: "This call no longer owns the live session, so the action was not run.",
     };
-  }
-  const computerResult = await handleComputerToolCall(fn, args, context);
-  if (computerResult) {
-    return enforceAgentToolResultTruth(fn, computerResult);
   }
   let authorized = false;
   try {

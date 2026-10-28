@@ -1,18 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppError } from "../src/lib/api-error";
+import {
+  AGENT_TOOL_CATALOG,
+  AGENT_TOOL_NAME_VALUES,
+  ROLE_TOOL_SETS,
+} from "../src/lib/agent-capabilities";
+import { AGENT_TOOL_DEFS } from "../src/lib/agent-runtime-helpers";
 import type { ToolCallContext } from "../src/lib/agent-tool-types";
+import { shouldProxyComputerToBackend } from "../src/lib/cloud-computer/worker-client";
 import { OPENAI_REALTIME_WIRELINE_TOOLS } from "../src/lib/voice/openai-realtime-tools";
 
 const h = vi.hoisted(() => ({
   startComputerTask: vi.fn(),
   getComputerTaskForOwner: vi.fn(),
   listComputerTasksForOwner: vi.fn(),
+  replyToComputerTask: vi.fn(),
+  stopComputerTask: vi.fn(),
 }));
 
 vi.mock("../src/lib/cloud-computer/task-runner", () => ({
   startComputerTask: h.startComputerTask,
   getComputerTaskForOwner: h.getComputerTaskForOwner,
   listComputerTasksForOwner: h.listComputerTasksForOwner,
+  replyToComputerTask: h.replyToComputerTask,
+  stopComputerTask: h.stopComputerTask,
   getComputerTask: h.getComputerTaskForOwner,
   listComputerTasks: h.listComputerTasksForOwner,
 }));
@@ -44,23 +55,32 @@ describe("voice and cloud computer runtime intertwining", () => {
     vi.clearAllMocks();
   });
 
-  it("exposes start_computer_task and check_computer_task on OPENAI_REALTIME_WIRELINE_TOOLS", () => {
+  it("registers all 4 Cloud Computer tools across AGENT_TOOL_NAME_VALUES, AGENT_TOOL_CATALOG, ROLE_TOOL_SETS, AGENT_TOOL_DEFS, and OPENAI_REALTIME_WIRELINE_TOOLS", () => {
+    const computerTools = [
+      "start_computer_task",
+      "check_computer_task",
+      "reply_computer_task",
+      "stop_computer_task",
+    ] as const;
+
+    for (const toolName of computerTools) {
+      expect(AGENT_TOOL_NAME_VALUES).toContain(toolName);
+      expect(AGENT_TOOL_CATALOG.some((entry) => entry.name === toolName)).toBe(true);
+      expect(AGENT_TOOL_DEFS[toolName]).toBeDefined();
+      expect(OPENAI_REALTIME_WIRELINE_TOOLS.some((entry) => entry.name === toolName)).toBe(true);
+      for (const [role, tools] of Object.entries(ROLE_TOOL_SETS)) {
+        expect(tools, `role ${role} missing ${toolName}`).toContain(toolName);
+      }
+    }
+
     const startTool = OPENAI_REALTIME_WIRELINE_TOOLS.find(
       (tool) => tool.name === "start_computer_task",
     );
-    const checkTool = OPENAI_REALTIME_WIRELINE_TOOLS.find(
-      (tool) => tool.name === "check_computer_task",
+    const replyTool = OPENAI_REALTIME_WIRELINE_TOOLS.find(
+      (tool) => tool.name === "reply_computer_task",
     );
-
-    expect(startTool).toBeDefined();
     expect(startTool?.parameters.required).toEqual(["goal"]);
-    expect(startTool?.parameters.properties).toHaveProperty("goal");
-    expect(startTool?.parameters.properties).toHaveProperty("start_url");
-    expect(startTool?.parameters.additionalProperties).toBe(false);
-
-    expect(checkTool).toBeDefined();
-    expect(checkTool?.parameters.properties).toHaveProperty("task_id");
-    expect(checkTool?.parameters.additionalProperties).toBe(false);
+    expect(replyTool?.parameters.required).toEqual(["message"]);
   });
 
   it("dispatches start_computer_task asynchronously and returns task_id and status immediately", async () => {
@@ -140,6 +160,78 @@ describe("voice and cloud computer runtime intertwining", () => {
     expect(latest.result).toContain("task_id=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
     expect(latest.result).toContain("status=completed");
     expect(latest.result).toContain("Summary: Shipment arrives Tuesday by 5 PM.");
+  });
+
+  it("dispatches reply_computer_task and stop_computer_task for interactive caller loops", async () => {
+    h.listComputerTasksForOwner.mockResolvedValue([
+      {
+        id: "11111111-2222-3333-4444-555555555555",
+        agentId: "bot-alpha",
+        goal: "Check Saturday technician slots",
+        status: "needs_input",
+        summary: null,
+        question: "What service zip code should I enter?",
+      },
+    ]);
+    h.replyToComputerTask.mockResolvedValue({
+      id: "11111111-2222-3333-4444-555555555555",
+      agentId: "bot-alpha",
+      goal: "Check Saturday technician slots",
+      status: "running",
+      summary: null,
+      question: null,
+    });
+
+    const replied = await dispatchAgentToolCall(
+      "reply_computer_task",
+      { message: "60302" },
+      buildContext(),
+    );
+    expect(h.replyToComputerTask).toHaveBeenCalledWith(
+      "owner-1",
+      "11111111-2222-3333-4444-555555555555",
+      { message: "60302" },
+    );
+    expect(replied.result).toContain("COMPUTER_TASK_RESUMED");
+    expect(replied.result).toContain("status=running");
+
+    h.stopComputerTask.mockResolvedValue({
+      id: "11111111-2222-3333-4444-555555555555",
+      agentId: "bot-alpha",
+      goal: "Check Saturday technician slots",
+      status: "stopped",
+      summary: "Stopped by the owner.",
+      question: null,
+    });
+
+    const stopped = await dispatchAgentToolCall(
+      "stop_computer_task",
+      { task_id: "11111111-2222-3333-4444-555555555555" },
+      buildContext(),
+    );
+    expect(h.stopComputerTask).toHaveBeenCalledWith(
+      "owner-1",
+      "11111111-2222-3333-4444-555555555555",
+    );
+    expect(stopped.result).toContain("COMPUTER_TASK_STOPPED");
+    expect(stopped.result).toContain("status=stopped");
+  });
+
+  it("enables cross-service worker proxy only when WIRELINE_VOICE_WORKER=true and backend origin + secret exist", () => {
+    expect(
+      shouldProxyComputerToBackend({
+        WIRELINE_VOICE_WORKER: "false",
+        BOTBOUND_BACKEND_ORIGIN: "https://botbound.app",
+        WIRELINE_VOICE_WORKER_SECRET: "s".repeat(40),
+      }),
+    ).toBe(false);
+    expect(
+      shouldProxyComputerToBackend({
+        WIRELINE_VOICE_WORKER: "true",
+        BOTBOUND_BACKEND_ORIGIN: "https://botbound.app",
+        WIRELINE_VOICE_WORKER_SECRET: "s".repeat(40),
+      }),
+    ).toBe(true);
   });
 
   it("fails gracefully with a clear structured message when userId is missing or Cloud Computer is unavailable", async () => {

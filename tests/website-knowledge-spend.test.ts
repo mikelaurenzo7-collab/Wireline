@@ -35,6 +35,7 @@ afterEach(() => {
 function configureFetchRuntime(): void {
   vi.stubEnv("OPENAI_API_KEY", "test-openai-key");
   vi.stubEnv("GEMINI_API_KEY", "");
+  vi.stubEnv("XAI_API_KEY", "");
   vi.stubEnv("AI_GATEWAY_API_KEY", "test-gateway-key");
   vi.stubEnv("VERCEL_OIDC_TOKEN", "");
   vi.stubEnv("WIRELINE_STRUCTURED_PRIMARY_PROVIDER", "openai");

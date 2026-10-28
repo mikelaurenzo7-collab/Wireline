@@ -1137,6 +1137,77 @@ export const AGENT_TOOL_DEFS = {
       required: ["query"],
     },
   },
+  start_computer_task: {
+    name: "start_computer_task",
+    description:
+      "Starts an asynchronous supervised Cloud Computer browser task for the current Bot and immediately returns the task_id and status so you can acknowledge to the caller without dead air.",
+    parameters: {
+      type: "object",
+      properties: {
+        goal: {
+          type: "string",
+          description:
+            "Clear sentence or two describing the browser task for the Cloud Computer to perform.",
+        },
+        start_url: {
+          type: "string",
+          description:
+            "Optional full starting URL (https://...) to open first before performing the goal.",
+        },
+      },
+      required: ["goal"],
+    },
+  },
+  check_computer_task: {
+    name: "check_computer_task",
+    description:
+      "Checks the current status, summary, or pending question of a running or recent Cloud Computer browser task so you can report the live result to the caller.",
+    parameters: {
+      type: "object",
+      properties: {
+        task_id: {
+          type: "string",
+          description:
+            "Optional task_id returned by start_computer_task. Defaults to the latest task for this Bot.",
+        },
+      },
+    },
+  },
+  reply_computer_task: {
+    name: "reply_computer_task",
+    description:
+      "Sends the caller's or owner's answer to a paused Cloud Computer browser task (status=needs_input) so the browser can resume work.",
+    parameters: {
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+          description:
+            "The exact answer or instruction from the caller to resume the paused browser task.",
+        },
+        task_id: {
+          type: "string",
+          description:
+            "Optional task_id of the paused browser task. Defaults to the active task waiting for input.",
+        },
+      },
+      required: ["message"],
+    },
+  },
+  stop_computer_task: {
+    name: "stop_computer_task",
+    description:
+      "Stops a running or paused Cloud Computer browser task when the caller cancels or changes their request.",
+    parameters: {
+      type: "object",
+      properties: {
+        task_id: {
+          type: "string",
+          description: "Optional task_id to stop. Defaults to the active browser task.",
+        },
+      },
+    },
+  },
 } as const;
 
 export type AgentToolName = keyof typeof AGENT_TOOL_DEFS;
@@ -1210,6 +1281,22 @@ export async function buildRoleToolDefsForTenant(
       isAgentToolChannelAllowed("create_followup_task", entitlements.channels)
     ) {
       allowed.push(AGENT_TOOL_DEFS.create_followup_task);
+    }
+    // Ensure Cloud Computer tools are available on live phone runtimes even for
+    // existing Bot records persisted before the Cloud Computer tool rollout,
+    // unless the Account Holder explicitly saved an empty tool selection ([]).
+    const explicitlyEmpty = Array.isArray(enabledTools) && enabledTools.length === 0;
+    if (!explicitlyEmpty) {
+      for (const computerTool of [
+        AGENT_TOOL_DEFS.start_computer_task,
+        AGENT_TOOL_DEFS.check_computer_task,
+        AGENT_TOOL_DEFS.reply_computer_task,
+        AGENT_TOOL_DEFS.stop_computer_task,
+      ]) {
+        if (!allowed.some((tool) => (tool as { name?: unknown }).name === computerTool.name)) {
+          allowed.push(computerTool);
+        }
+      }
     }
     return allowed;
   };

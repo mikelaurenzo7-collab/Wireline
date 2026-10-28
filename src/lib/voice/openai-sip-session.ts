@@ -9,6 +9,7 @@ import * as schema from "../../db/schema";
 import { AppError } from "../api-error";
 import type { ToolCallContext } from "../agent-tool-types";
 import { dispatchAgentToolCall } from "../agent-tool-dispatch";
+import { dispatchGetComputerTaskForOwner } from "../cloud-computer/worker-client";
 import { isToolCallFailureResult } from "../call-reliability-capture";
 import { complianceFirstMessagePrefix, formatCallbackNumberForSpeech } from "../agent-runtime";
 import { spokenBusinessName } from "./spoken-business-name";
@@ -315,8 +316,7 @@ export function deterministicSummary(transcript: string): string {
 function buildOutboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRuntime): string {
   const purpose = input.callPurpose || "service_or_requested";
   const telemarketing = isMarketingCallPurpose(purpose);
-  const business =
-    spokenBusinessName({ businessName: input.businessName }) || "this business";
+  const business = spokenBusinessName({ businessName: input.businessName }) || "this business";
   const disclosure = complianceFirstMessagePrefix(input.complianceMode, business, {
     outboundAiCall: true,
     recordingEnabled: input.callRecordingEnabled === true,
@@ -324,9 +324,7 @@ function buildOutboundOpening(input: OpenAISipIncomingCall, runtime: RealtimeRun
   });
   const name = input.customerName?.trim();
   const namedBusiness = spokenBusinessName({ businessName: input.businessName });
-  const identity = namedBusiness
-    ? `${runtime.agentName} with ${namedBusiness}`
-    : runtime.agentName;
+  const identity = namedBusiness ? `${runtime.agentName} with ${namedBusiness}` : runtime.agentName;
   const callbackNumberSpoken = formatCallbackNumberForSpeech(input.calledNumber);
   const callbackSentence = callbackNumberSpoken
     ? ` You can call us back at ${callbackNumberSpoken}.`
@@ -2003,6 +2001,14 @@ async function runRealtimeSession(
   let xaiFailoverReason: string | null = null;
   let xaiFailedOver = false;
   let fallbackDrillTimer: ReturnType<typeof setTimeout> | null = null;
+  let computerWatchTimer: ReturnType<typeof setInterval> | null = null;
+  const watchedComputerTasks = new Map<string, { status: string; question: string | null }>();
+  const clearComputerWatchTimer = () => {
+    if (computerWatchTimer) {
+      clearInterval(computerWatchTimer);
+      computerWatchTimer = null;
+    }
+  };
   const customVoiceLatencyBudgetMs = resolveCustomVoiceLatencyBudgetMs();
   const applyStockVoice = (stockVoice: string) => {
     pendingStockVoice = null;
@@ -2222,6 +2228,76 @@ async function runRealtimeSession(
         output: boundedToolOutput(output),
       },
     });
+  };
+
+  let computerWatchBusy = false;
+  const pollWatchedComputerTasks = async () => {
+    if (computerWatchBusy) return;
+    if (!ownsSession() || endedAt !== null || ws.readyState !== WebSocket.OPEN) {
+      clearComputerWatchTimer();
+      return;
+    }
+    if (!watchedComputerTasks.size) {
+      clearComputerWatchTimer();
+      return;
+    }
+    computerWatchBusy = true;
+    try {
+      for (const [taskId, prev] of [...watchedComputerTasks.entries()]) {
+        if (!ownsSession() || endedAt !== null || ws.readyState !== WebSocket.OPEN) return;
+        const task = await dispatchGetComputerTaskForOwner(input.userId, taskId).catch(() => null);
+        if (!task || !ownsSession() || endedAt !== null || ws.readyState !== WebSocket.OPEN) {
+          continue;
+        }
+        if (task.status === "running") continue;
+        if (task.status === prev.status && task.question === prev.question) continue;
+
+        let updateText: string;
+        if (task.status === "needs_input") {
+          watchedComputerTasks.set(taskId, { status: task.status, question: task.question });
+          updateText = `[CLOUD COMPUTER UPDATE] Browser task ${task.id} is paused (status=needs_input) and needs an answer: "${task.question || "Please confirm the next step."}". Ask the caller this question now, then call reply_computer_task with their spoken answer.`;
+        } else {
+          watchedComputerTasks.delete(taskId);
+          updateText = `[CLOUD COMPUTER UPDATE] Browser task ${task.id} finished with status=${task.status}. ${task.summary ? `Summary: ${task.summary}` : ""} Share this outcome naturally with the caller now.`;
+        }
+
+        const watchId = `computer-watch:${task.id}:${task.status}`;
+        pendingToolOutputs.add(watchId);
+        acknowledgedToolOutputs.add(watchId);
+        sendJson(ws, {
+          type: "conversation.item.create",
+          item: {
+            type: "message",
+            role: "user",
+            content: [{ type: "input_text", text: updateText.slice(0, 1_500) }],
+          },
+        });
+        awaitingCallerResponse = false;
+        toolContinuationPending = true;
+        requestToolContinuationWhenReady();
+      }
+    } finally {
+      computerWatchBusy = false;
+      if (!watchedComputerTasks.size) clearComputerWatchTimer();
+    }
+  };
+
+  const trackComputerTaskFromToolOutput = (toolName: string, outputText: string) => {
+    if (toolName === "stop_computer_task") {
+      const match = /task_id=([0-9a-f-]{36})/i.exec(outputText);
+      if (match?.[1]) watchedComputerTasks.delete(match[1]);
+      if (!watchedComputerTasks.size) clearComputerWatchTimer();
+      return;
+    }
+    if (toolName !== "start_computer_task" && toolName !== "reply_computer_task") return;
+    const idMatch = /task_id=([0-9a-f-]{36})/i.exec(outputText);
+    const statusMatch = /status=([a-z_]+)/i.exec(outputText);
+    if (!idMatch?.[1] || statusMatch?.[1] !== "running") return;
+    watchedComputerTasks.set(idMatch[1], { status: "running", question: null });
+    if (!computerWatchTimer) {
+      computerWatchTimer = setInterval(() => void pollWatchedComputerTasks(), 2_500);
+      computerWatchTimer.unref?.();
+    }
   };
 
   // Update only control bookkeeping on receipt. Tool execution stays serialized
@@ -2485,6 +2561,7 @@ async function runRealtimeSession(
           transferCompleted = true;
         }
         sendToolOutput(call.callId, { result: outcome.result.result });
+        trackComputerTaskFromToolOutput(call.name, outcome.result.result);
         if (transferCompleted) {
           // REFER hands the PSTN call to the destination. Close only BotBound's
           // realtime session and disarm its watchdog; never hang up the new leg.
@@ -2945,6 +3022,7 @@ async function runRealtimeSession(
       ws.on("close", (code, reason) => {
         endedAt ??= Date.now();
         if (accountingTimer) clearInterval(accountingTimer);
+        clearComputerWatchTimer();
         if (code !== 1000 && endedReason === "provider-disconnected") {
           endedReason = `provider-close-${code}`;
         }
@@ -3073,6 +3151,7 @@ async function runRealtimeSession(
     if (fallbackDrillTimer) clearTimeout(fallbackDrillTimer);
     if (accountingTimer) clearInterval(accountingTimer);
     if (heartbeat) clearInterval(heartbeat);
+    clearComputerWatchTimer();
     if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
       ws.terminate();
     }
