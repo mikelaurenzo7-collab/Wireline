@@ -325,14 +325,7 @@ export default function CompanyIdentityPack() {
   const reviewRejected = savedReviewStatuses.includes("rejected");
   const summary = reviewSummary(identity);
   // Saved channels remain in the form payload when their setup UI is hidden.
-  const visibleChannels = CHANNELS.filter(
-    (channel) =>
-      channel !== "sms" ||
-      (SMS_LAUNCH_UI_ENABLED &&
-        (identity?.profile.requested_channels.includes("sms") ||
-          (identity?.channels.sms.provider_status &&
-            identity.channels.sms.provider_status !== "not_requested"))),
-  );
+  const visibleChannels = CHANNELS.filter((channel) => channel !== "sms" || SMS_LAUNCH_UI_ENABLED);
 
   function updateField(field: keyof Omit<IdentityForm, "requested_channels">, value: string) {
     setForm((current) => ({ ...current, [field]: value }));

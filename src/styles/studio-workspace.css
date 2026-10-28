@@ -321,25 +321,38 @@
 }
 
 .wl-studio-starters {
-  width: min(100%, 18rem);
+  width: min(100%, 26rem);
   color: var(--wireline-color-text-secondary);
   font-size: 0.8125rem;
   text-align: left;
 }
 
 .wl-studio-starters summary {
-  display: flex;
-  min-height: 2.75rem;
+  display: inline-flex;
+  min-height: 2.25rem;
   align-items: center;
   justify-content: center;
-  border-radius: 0.5rem;
+  margin: 0 auto;
+  padding: 0.35rem 0.875rem;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--studio-rule) 75%, transparent);
+  background: color-mix(in srgb, var(--wireline-color-surface-subtle) 65%, var(--wireline-color-canvas-default));
   cursor: pointer;
   list-style: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 140ms ease;
+}
+
+.wl-studio-starters summary::-webkit-details-marker {
+  display: none;
 }
 
 .wl-studio-starters summary::after {
-  margin-inline-start: 0.5rem;
+  margin-inline-start: 0.4rem;
   content: "+";
+  font-weight: 400;
+  opacity: 0.65;
 }
 
 .wl-studio-starters[open] summary::after {
@@ -347,22 +360,31 @@
 }
 
 .wl-studio-starters > div {
-  display: grid;
-  gap: 0.25rem;
-  padding-top: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.625rem;
 }
 
 .wl-studio-starters button {
-  min-height: 2.75rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--studio-rule) 75%, transparent);
+  background: var(--wireline-color-surface-default);
+  color: var(--wireline-color-text-primary);
+  font-size: 0.8125rem;
+  line-height: 1.45;
   text-align: left;
   overflow-wrap: anywhere;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.03);
+  transition: all 140ms ease;
 }
 
 .wl-studio-starters summary:hover,
 .wl-studio-starters button:hover {
-  background: var(--studio-hover);
+  border-color: var(--wireline-color-border-strong);
+  background: var(--wireline-color-surface-subtle);
   color: var(--wireline-color-text-primary);
 }
 
