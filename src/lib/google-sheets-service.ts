@@ -20,7 +20,7 @@
 
 import { drizzle, log, fetchWithTimeout } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or, isNull } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 import { LEGACY_WIRELINE_NAME } from "./brand";
@@ -139,6 +139,7 @@ async function getConnection(userId: string): Promise<SheetConnection | null> {
       and(
         eq(schema.crmConnections.userId, userId),
         eq(schema.crmConnections.provider, "google_sheets"),
+        or(eq(schema.crmConnections.active, true), isNull(schema.crmConnections.active)),
       ),
     )
     .limit(1);
@@ -171,8 +172,7 @@ async function getAccessToken(userId: string): Promise<string | null> {
   if (expiringSoon && refresh) {
     try {
       const refreshed = await refreshGoogleToken(refresh);
-      token = refreshed.access_token;
-      await drizzle
+      const updated = await drizzle
         .update(schema.crmConnections)
         .set({
           accessToken: encryptSecret(refreshed.access_token),
@@ -183,7 +183,19 @@ async function getAccessToken(userId: string): Promise<string | null> {
           expiresAt: new Date(Date.now() + (refreshed.expires_in || 3600) * 1000),
           updatedAt: new Date(),
         })
-        .where(eq(schema.crmConnections.id, conn.id));
+        .where(
+          and(
+            eq(schema.crmConnections.id, conn.id),
+            eq(schema.crmConnections.userId, userId),
+            eq(schema.crmConnections.provider, "google_sheets"),
+            or(eq(schema.crmConnections.active, true), isNull(schema.crmConnections.active)),
+            eq(schema.crmConnections.accessToken, conn.accessToken),
+            eq(schema.crmConnections.refreshToken, conn.refreshToken!),
+          ),
+        )
+        .returning({ id: schema.crmConnections.id });
+      if (!updated.length) return null;
+      token = refreshed.access_token;
     } catch (err) {
       const message = getErrorMessage(err);
       log.error("Google Sheets token refresh failed", { error: message });
@@ -197,11 +209,20 @@ async function getAccessToken(userId: string): Promise<string | null> {
             active: false,
             updatedAt: new Date(),
           })
-          .where(eq(schema.crmConnections.id, conn.id));
+          .where(
+            and(
+              eq(schema.crmConnections.id, conn.id),
+              eq(schema.crmConnections.userId, userId),
+              eq(schema.crmConnections.provider, "google_sheets"),
+              or(eq(schema.crmConnections.active, true), isNull(schema.crmConnections.active)),
+              eq(schema.crmConnections.accessToken, conn.accessToken),
+              eq(schema.crmConnections.refreshToken, conn.refreshToken!),
+            ),
+          );
         return null;
       }
-      // Soft refresh failures: keep serving the existing token briefly so a
-      // transient Google blip doesn't break mid-call sheet writes.
+      // A failed refresh cannot establish that the saved grant is still active.
+      return null;
     }
   }
   return token;
