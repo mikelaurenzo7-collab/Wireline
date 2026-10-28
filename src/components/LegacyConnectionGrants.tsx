@@ -72,8 +72,7 @@ export default function LegacyConnectionGrants() {
   }, [refresh]);
 
   async function disconnect(provider: Provider, label: string) {
-    if (!window.confirm(`Disconnect ${label}? Your Bots will lose access to this connection.`))
-      return;
+    if (!window.confirm(`Disconnect the saved ${label} account from BotBound?`)) return;
     setDisconnecting(provider);
     setError(null);
     try {
@@ -99,8 +98,8 @@ export default function LegacyConnectionGrants() {
     >
       <h2 className="text-base font-semibold text-foreground">Saved Tool Connections</h2>
       <p className="text-sm text-muted-foreground">
-        Disconnect removes access from BotBound. Check the provider account to manage any remaining
-        authorization.
+        Disconnect removes the saved account from BotBound. Check the provider account to manage any
+        remaining authorization.
       </p>
       {error ? (
         <StatusNotice
