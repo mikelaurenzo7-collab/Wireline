@@ -36,6 +36,7 @@ export default function LegacyConnectionGrants() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState<Provider | null>(null);
+  const [metaLocalRecovery, setMetaLocalRecovery] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -75,12 +76,39 @@ export default function LegacyConnectionGrants() {
     if (!window.confirm(`Disconnect the saved ${label} account from BotBound?`)) return;
     setDisconnecting(provider);
     setError(null);
+    setMetaLocalRecovery(false);
     try {
       const response = await authFetch(`/api/oauth/${provider}/disconnect`, { method: "POST" });
       if (!response.ok) throw new Error("Disconnect failed");
       await refresh();
     } catch {
       setError(`Could not disconnect ${label}. Try again.`);
+      if (provider === "meta") setMetaLocalRecovery(true);
+    } finally {
+      setDisconnecting(null);
+    }
+  }
+
+  async function removeMetaLocally() {
+    if (
+      !window.confirm(
+        "Remove the saved Meta account from BotBound only? Meta may still retain authorization; review it in your Meta account.",
+      )
+    )
+      return;
+    setDisconnecting("meta");
+    setError(null);
+    try {
+      const response = await authFetch("/api/oauth/meta/disconnect-local", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: "remove_local_only" }),
+      });
+      if (!response.ok) throw new Error("Local removal failed");
+      setMetaLocalRecovery(false);
+      await refresh();
+    } catch {
+      setError("Could not remove the saved Meta account. Try again.");
     } finally {
       setDisconnecting(null);
     }
@@ -112,6 +140,26 @@ export default function LegacyConnectionGrants() {
           }
         >
           {error}
+        </StatusNotice>
+      ) : null}
+      {metaLocalRecovery ? (
+        <StatusNotice
+          tone="warning"
+          title="Meta Disconnect Unconfirmed"
+          action={
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={disconnecting !== null}
+              onClick={() => void removeMetaLocally()}
+            >
+              Remove From BotBound Only
+            </Button>
+          }
+        >
+          You can retry, or remove the saved account from BotBound. Meta may still retain
+          authorization; review it in your Meta account.
         </StatusNotice>
       ) : null}
       {loading && !status ? <Skeleton className="h-12 w-full" shape="surface" /> : null}

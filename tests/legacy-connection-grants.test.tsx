@@ -30,7 +30,12 @@ vi.mock("../src/components/molecules", () => ({
 
 import LegacyConnectionGrants from "../src/components/LegacyConnectionGrants";
 
-type Props = { children?: ReactNode; onClick?: () => unknown; "aria-label"?: string };
+type Props = {
+  children?: ReactNode;
+  action?: ReactNode;
+  onClick?: () => unknown;
+  "aria-label"?: string;
+};
 function nodes(node: ReactNode): ReactElement<Props>[] {
   if (Array.isArray(node)) return node.flatMap(nodes);
   if (!isValidElement<Props>(node)) return [];
@@ -80,6 +85,43 @@ describe("saved tool connections", () => {
     await vi.waitFor(() =>
       expect(h.fetch).toHaveBeenCalledWith("/api/oauth/slack/disconnect", { method: "POST" }),
     );
+    vi.unstubAllGlobals();
+  });
+
+  it("offers local-only Meta removal after failure, with a separate confirmation", async () => {
+    h.states[0] = { meta: { connected: true } };
+    const confirm = vi.fn().mockReturnValue(true);
+    vi.stubGlobal("window", { confirm });
+    h.fetch.mockResolvedValueOnce(new Response(null, { status: 500 }));
+    await render()
+      .find((node) => node.props["aria-label"] === "Disconnect Meta Lead Ads")
+      ?.props.onClick?.();
+    expect(h.states[4]).toBe(true);
+    const recovery = render().find(
+      (node) =>
+        node.props.action &&
+        nodes(node.props.action).some(
+          (action) => action.props.children === "Remove From BotBound Only",
+        ),
+    );
+    const button = nodes(recovery?.props.action).find(
+      (node) => node.props.children === "Remove From BotBound Only",
+    );
+    confirm.mockReturnValueOnce(false);
+    await button?.props.onClick?.();
+    expect(h.fetch).toHaveBeenCalledTimes(1);
+    confirm.mockReturnValueOnce(true);
+    h.fetch.mockResolvedValueOnce(new Response('{"ok":true}', { status: 200 }));
+    h.fetch.mockResolvedValueOnce(new Response(null, { status: 500 }));
+    await button?.props.onClick?.();
+    await vi.waitFor(() =>
+      expect(h.fetch).toHaveBeenCalledWith("/api/oauth/meta/disconnect-local", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: "remove_local_only" }),
+      }),
+    );
+    expect(confirm.mock.calls[1][0]).toContain("Meta may still retain authorization");
     vi.unstubAllGlobals();
   });
 });

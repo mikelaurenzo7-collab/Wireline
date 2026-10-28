@@ -249,3 +249,16 @@ export async function disconnectMeta(userId: string): Promise<void> {
       and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "meta")),
     );
 }
+
+/**
+ * Remove a saved Meta credential after the owner explicitly chooses a local-only
+ * disconnect. Provider authorization may remain and must be managed in Meta.
+ */
+export async function disconnectMetaLocally(userId: string): Promise<void> {
+  await drizzle
+    .update(schema.crmConnections)
+    .set({ active: false, accessToken: "", refreshToken: null, updatedAt: new Date() })
+    .where(
+      and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "meta")),
+    );
+}

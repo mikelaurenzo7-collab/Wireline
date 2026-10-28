@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { PgDialect } from "drizzle-orm/pg-core";
 
 const h = vi.hoisted(() => ({ fetch: vi.fn(), set: vi.fn(), where: vi.fn(), row: vi.fn() }));
 vi.mock("../src/lib/server-context", () => ({
@@ -10,23 +11,21 @@ vi.mock("../src/lib/server-context", () => ({
   fetchWithTimeout: h.fetch,
 }));
 vi.mock("../src/lib/secret-vault", () => ({ decryptSecret: (value: string) => value }));
-import { disconnectMeta } from "../src/lib/meta-service";
+import { disconnectMeta, disconnectMetaLocally } from "../src/lib/meta-service";
 
 beforeEach(() => {
   h.fetch.mockReset();
   h.set.mockReset().mockReturnValue({ where: h.where });
   h.where.mockReset().mockResolvedValue(undefined);
-  h.row
-    .mockReset()
-    .mockResolvedValue([
-      {
-        provider: "meta",
-        accessToken: "test-token",
-        refreshToken: null,
-        instanceUrl: null,
-        metadata: null,
-      },
-    ]);
+  h.row.mockReset().mockResolvedValue([
+    {
+      provider: "meta",
+      accessToken: "test-token",
+      refreshToken: null,
+      instanceUrl: null,
+      metadata: null,
+    },
+  ]);
 });
 
 describe("Meta grant revocation at the provider boundary", () => {
@@ -59,5 +58,18 @@ describe("Meta grant revocation at the provider boundary", () => {
     expect(h.set).toHaveBeenCalledWith(
       expect.objectContaining({ active: false, accessToken: "", refreshToken: null }),
     );
+  });
+
+  it("allows an explicit local-only removal after a lost or ambiguous revoke", async () => {
+    h.fetch.mockRejectedValueOnce(new Error("response lost"));
+    await expect(disconnectMeta("owner-1")).rejects.toThrow("could not be revoked");
+    expect(h.set).not.toHaveBeenCalled();
+    await disconnectMetaLocally("owner-1");
+    expect(h.fetch).toHaveBeenCalledTimes(1);
+    expect(h.set).toHaveBeenCalledWith(
+      expect.objectContaining({ active: false, accessToken: "", refreshToken: null }),
+    );
+    const query = new PgDialect().sqlToQuery(h.where.mock.calls[0][0]);
+    expect(query.params).toEqual(["owner-1", "meta"]);
   });
 });
