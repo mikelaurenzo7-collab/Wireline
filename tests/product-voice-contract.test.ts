@@ -252,7 +252,7 @@ describe("BotBound product voice", () => {
     }
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
     expect(landing).not.toContain("<AuthAccessPanel");
-    expect(landing).toContain("Phone Number. Email Address. Computer Use");
+    expect(landing).toContain("The Bot Gets:");
     expect(landing).toContain('signedIn ? "/studio" : "/signup"');
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toContain("landing-prestige__directions");
@@ -261,7 +261,7 @@ describe("BotBound product voice", () => {
     expect(landing).not.toContain("FEATURED_TEMPLATES.map");
     expect(landing).not.toContain("{template.summary}");
     expect(landing).not.toContain("STRIPE_PLANS");
-    expect(landing).toContain("MarketingChromeBar");
+    expect(landing).not.toContain("MarketingChromeBar");
     expect(landing).toContain("<PrecisionPublicHeader />");
     expect(landing).not.toContain("Runtime Balance");
   });

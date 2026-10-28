@@ -1,49 +1,108 @@
-import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, Mail, MessageSquare, Monitor, Phone, type LucideIcon } from "lucide-react";
+import { useEffect } from "react";
+import { ArrowRight, Mail, Monitor, Phone, type LucideIcon } from "lucide-react";
 import { Link } from "react-router";
 import BotBoundMark from "../brand/BotBoundMark";
-import MarketingChromeBar from "./MarketingChromeBar";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { useAuth } from "../../contexts/AuthContext";
 
+type CapabilityId = "phone" | "email" | "computer";
+
 const EXAMPLES: readonly {
-  id: string;
+  id: CapabilityId;
   label: string;
   icon: LucideIcon;
-  message: string;
 }[] = [
-  {
-    id: "calls",
-    label: "Calls",
-    icon: Phone,
-    message: "CHOOSE FROM A CATALOG OF VOICES OR CLONE YOUR OWN",
-  },
-  {
-    id: "sms",
-    label: "SMS",
-    icon: MessageSquare,
-    message: "Keep The Conversation Going.",
-  },
-  {
-    id: "email",
-    label: "Email",
-    icon: Mail,
-    message: "Your Inbox. Your Knowledge. Your Signature.",
-  },
-  {
-    id: "computer",
-    label: "Computer",
-    icon: Monitor,
-    message: "Research. Compare. Get It Done.",
-  },
+  { id: "phone", label: "Phone Number", icon: Phone },
+  { id: "email", label: "Email Address", icon: Mail },
+  { id: "computer", label: "A Computer", icon: Monitor },
 ];
+
+const WAVEFORM = [
+  12, 19, 29, 18, 35, 24, 14, 30, 20, 36, 23, 15, 28, 18, 32, 21, 12, 25, 34, 17, 27, 14,
+];
+
+function CapabilityPreview({ channel }: { channel: CapabilityId }) {
+  if (channel === "phone") {
+    return (
+      <div className="landing-prestige__demo landing-prestige__demo--phone">
+        <div className="landing-prestige__call-contact">
+          <span className="landing-prestige__call-mark" aria-hidden="true">
+            <Phone />
+          </span>
+          <span className="landing-prestige__call-copy">
+            <strong>Customer call</strong>
+            <span>Inbound and outbound</span>
+          </span>
+        </div>
+        <div className="landing-prestige__waveform" aria-hidden="true">
+          {WAVEFORM.map((height, index) => (
+            <i key={index} style={{ height: `${height}px` }} />
+          ))}
+        </div>
+        <div className="landing-prestige__phone-thread">
+          <span>SMS</span>
+          <p className="landing-prestige__message landing-prestige__message--incoming">
+            Could I book for Thursday?
+          </p>
+          <p className="landing-prestige__message landing-prestige__message--outgoing">
+            Absolutely. What time works?
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (channel === "email") {
+    return (
+      <div className="landing-prestige__demo landing-prestige__demo--email">
+        <div className="landing-prestige__email-heading">
+          <span className="landing-prestige__email-avatar" aria-hidden="true">
+            C
+          </span>
+          <span className="landing-prestige__email-copy">
+            <strong>Customer question</strong>
+            <span>Can I book an appointment?</span>
+          </span>
+          <span className="landing-prestige__email-mark" aria-hidden="true">
+            <Mail />
+          </span>
+        </div>
+        <p className="landing-prestige__email-reply">Happy to help. What time works best?</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="landing-prestige__demo landing-prestige__demo--computer">
+      <div className="landing-prestige__browser-bar" aria-hidden="true">
+        <i />
+        <i />
+        <i />
+        <span>Appointments</span>
+      </div>
+      <div className="landing-prestige__browser-content">
+        <span className="landing-prestige__browser-label">This week</span>
+        <strong>Find an open time</strong>
+        <div className="landing-prestige__time-options" aria-hidden="true">
+          <span>
+            Tue <b>10:30</b>
+          </span>
+          <span className="is-selected">
+            Wed <b>2:00</b>
+          </span>
+          <span>
+            Thu <b>11:15</b>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function WireAgentLanding() {
   const signedIn = Boolean(useAuth().user);
-  const [selected, setSelected] = useState(0);
-  const tabs = useRef<Array<HTMLButtonElement | null>>([]);
-  const example = EXAMPLES[selected]!;
+
   useEffect(() => {
     emitProductEventOnce({
       event: "landing_viewed",
@@ -51,6 +110,7 @@ export default function WireAgentLanding() {
       metadata: { path: window.location.pathname || "/", scope: "prestige_access_home" },
     });
   }, []);
+
   const trackSignupIntent = () =>
     emitProductEvent({
       event: "landing_primary_cta_clicked",
@@ -73,9 +133,6 @@ export default function WireAgentLanding() {
                 is a bot.
               </span>
             </h1>
-            <p className="landing-prestige__identity-line">
-              Phone Number. Email Address. Computer Use
-            </p>
             <div className="landing-prestige__actions">
               <Link
                 to={signedIn ? "/studio" : "/signup"}
@@ -90,112 +147,29 @@ export default function WireAgentLanding() {
             </div>
           </div>
         </section>
+
         <section
-          className="landing-prestige__examples landing-prestige__rail"
-          aria-label="Explore BotBound"
+          className="landing-prestige__showcase"
+          aria-labelledby="landing-prestige-showcase-title"
         >
-          <div className="landing-prestige__tabs" role="tablist" aria-label="Bot capabilities">
-            {EXAMPLES.map(({ id, label, icon: Icon }, index) => (
-              <button
-                key={id}
-                ref={(el) => {
-                  tabs.current[index] = el;
-                }}
-                id={`capability-${id}`}
-                role="tab"
-                type="button"
-                aria-selected={selected === index}
-                aria-controls="capability-example"
-                tabIndex={selected === index ? 0 : -1}
-                onClick={() => setSelected(index)}
-                onKeyDown={(event) => {
-                  const next =
-                    event.key === "ArrowRight"
-                      ? (index + 1) % EXAMPLES.length
-                      : event.key === "ArrowLeft"
-                        ? (index + EXAMPLES.length - 1) % EXAMPLES.length
-                        : event.key === "Home"
-                          ? 0
-                          : event.key === "End"
-                            ? EXAMPLES.length - 1
-                            : null;
-                  if (next === null) return;
-                  event.preventDefault();
-                  setSelected(next);
-                  tabs.current[next]?.focus();
-                }}
-              >
-                <Icon aria-hidden="true" />
-                <span>{label}</span>
-              </button>
+          <h2 id="landing-prestige-showcase-title" className="landing-prestige__showcase-title">
+            The Bot Gets:
+          </h2>
+          <div className="landing-prestige__showcase-grid">
+            {EXAMPLES.map(({ id, label, icon: Icon }) => (
+              <article key={id} className={`landing-prestige__card landing-prestige__card--${id}`}>
+                <header className="landing-prestige__card-header">
+                  <span className="landing-prestige__card-icon" aria-hidden="true">
+                    <Icon />
+                  </span>
+                  <h2>{label}</h2>
+                </header>
+                <CapabilityPreview channel={id} />
+              </article>
             ))}
-          </div>
-          <div
-            id="capability-example"
-            role="tabpanel"
-            tabIndex={0}
-            aria-labelledby={`capability-${example.id}`}
-            className="landing-prestige__example"
-          >
-            <h2>{example.message}</h2>
-            {example.id === "calls" || example.id === "computer" ? (
-              <div className="mx-auto mt-6 max-w-md rounded-xl border border-border bg-card p-4 text-left shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {example.id === "calls"
-                    ? "Example call · Live in your workspace"
-                    : "Example task · Live in your workspace"}
-                </p>
-                <ol className="mt-3 space-y-2 text-sm text-foreground">
-                  {example.id === "calls" ? (
-                    <>
-                      <li className="flex items-start gap-2">
-                        <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-                        Answer the call and help the caller
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-                        Book the appointment on your calendar
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <ArrowRight
-                          className="mt-0.5 size-4 shrink-0 text-primary"
-                          aria-hidden="true"
-                        />
-                        Send the confirmation and follow-up text
-                      </li>
-                    </>
-                  ) : (
-                    <>
-                      <li className="flex items-start gap-2">
-                        <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-                        Open the supplier portal
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-                        Compare this week's prices
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <ArrowRight
-                          className="mt-0.5 size-4 shrink-0 text-primary"
-                          aria-hidden="true"
-                        />
-                        Draft the order summary for your approval
-                      </li>
-                    </>
-                  )}
-                </ol>
-              </div>
-            ) : null}
-            <Link to={`/features#${example.id}`} className="landing-prestige__example-link">
-              Explore {example.label}
-              <ArrowRight aria-hidden="true" />
-            </Link>
           </div>
         </section>
       </main>
-      <MarketingChromeBar />
     </div>
   );
 }
-
-

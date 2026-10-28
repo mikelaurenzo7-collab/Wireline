@@ -6,9 +6,9 @@ import { ACCOUNT_PRIVACY_DESCRIPTION, ACCOUNT_TERMS_DESCRIPTION } from "./legal-
 // origin. APP_URL remains independently configurable for provider callbacks.
 export const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 const BRAND_SUFFIX = ` | ${BOTBOUND_BRAND_NAME}`;
-export const HOME_TITLE = "BotBound | Your Bot for calls, texts, email, and computer.";
+export const HOME_TITLE = "BotBound | Your next hire is a bot.";
 export const HOME_DESCRIPTION =
-  "Voice Bots with a computer, phone number, text, and email address. Answer calls, handle requests, and get everyday work done for you or your business.";
+  "Your next hire is a bot. Inbound and outbound calls, SMS, email, and computer tasks for small businesses.";
 const HOME_ROBOTS_TAG =
   '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />';
 const HOME_GOOGLEBOT_TAG =
@@ -52,7 +52,7 @@ function withBrand(title: string): string {
 
 const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/pricing": {
-    title: "Pricing | Calls, Email, and a Computer",
+    title: "Pricing | Shared Work Allowance",
     description:
       "Monthly plans for calls, SMS, email and Computer. Compare included numbers, email addresses and shared work.",
   },

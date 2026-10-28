@@ -5,6 +5,7 @@ import MarketingStickyCta from "../src/components/marketing/MarketingStickyCta";
 import VerticalLanding from "../src/pages/VerticalLanding";
 import SolutionsPage from "../src/pages/SolutionsPage";
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import WireAgentLanding from "../src/components/marketing/WireAgentLanding";
 import { WEDGES, type VerticalKey } from "../src/data/vertical-wedges";
 
@@ -26,7 +27,6 @@ vi.mock("react-router", () => ({
 }));
 vi.mock("../src/components/marketing/PrecisionPublicHeader", () => ({ default: "header" }));
 vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: null }) }));
-vi.mock("../src/components/marketing/MarketingChromeBar", () => ({ default: "footer" }));
 vi.mock("../src/lib/page-meta", () => ({ PageMeta: "page-meta" }));
 vi.mock("../src/lib/product-event-client", () => ({
   emitProductEvent: vi.fn(),
@@ -93,7 +93,7 @@ describe("marketing signup continuity", () => {
     },
   );
 
-  it("keeps the minimal landing plan-neutral with accessible capability choices", () => {
+  it("keeps the minimal landing plan-neutral with three static capability demos", () => {
     const text = (node: ReactNode): string =>
       Array.isArray(node)
         ? node.map(text).join("")
@@ -110,7 +110,10 @@ describe("marketing signup continuity", () => {
     expect(renderedText).not.toContain("Personal Assistant");
     expect(renderedText).not.toContain("For Your Business");
     expect(renderedText).not.toContain("Front Desk");
-    expect(renderedText).toContain("Phone Number. Email Address. Computer Use");
+    expect(renderedText).toContain("The Bot Gets:");
+    expect(renderedText).toContain("Phone Number");
+    expect(renderedText).toContain("Email Address");
+    expect(renderedText).toContain("A Computer");
     expect(renderedText).not.toContain("Choose calls, email, or both.");
     expect(renderedText).not.toContain("then sends you the summary");
     expect(renderedText).not.toContain("1 number + connected inbox");
@@ -118,7 +121,14 @@ describe("marketing signup continuity", () => {
       element.props.to?.startsWith("/signup?template="),
     );
     expect(roleLinks).toHaveLength(0);
-    expect(elements(page).filter((element) => element.props.role === "tab")).toHaveLength(4);
+    expect(elements(page).filter((element) => element.type === "article")).toHaveLength(3);
+    const landingSource = readFileSync(
+      resolve(process.cwd(), "src/components/marketing/WireAgentLanding.tsx"),
+      "utf8",
+    );
+    expect(landingSource).toContain("Could I book for Thursday?");
+    expect(landingSource).toContain("Customer question");
+    expect(landingSource).toContain("Find an open time");
     expect(elements(page).some((element) => element.props.to === "/signup")).toBe(true);
     expect(renderedText).not.toContain("server-verifiable consent records");
     expect(renderedText).not.toContain("Federal Do Not Call screening");
@@ -169,7 +179,9 @@ describe("marketing signup continuity", () => {
 
   it("sends the retired blog to the changelog instead of a second signup", () => {
     const app = readFileSync("src/App.tsx", "utf8");
-    expect(app).toContain('<Route path="/blog" element={<PreservingRedirect to="/changelog" />} />');
+    expect(app).toContain(
+      '<Route path="/blog" element={<PreservingRedirect to="/changelog" />} />',
+    );
     expect(app).not.toMatch(/path="\/blog"[\s\S]{0,80}\/signup/);
   });
 });

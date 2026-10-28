@@ -205,7 +205,7 @@ describe("E2E design and BotBound brand polish", () => {
 
   it("keeps status foregrounds accessible while public entry paths remain text-labeled", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain('aria-label="Bot capabilities"');
+    expect(landing).toContain('aria-labelledby="landing-prestige-showcase-title"');
     expect(landing).not.toContain("FEATURED_TEMPLATES.map");
     expect(landing).not.toContain("encodeURIComponent(template.key)");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
@@ -233,7 +233,7 @@ describe("E2E design and BotBound brand polish", () => {
     expect(landing).not.toContain("{template.summary}");
     expect(landing).toContain('to="/pricing"');
     expect(landing).not.toContain("landing-prestige__trust");
-    expect(landing).toContain("<MarketingChromeBar />");
+    expect(landing).not.toContain("MarketingChromeBar");
     expect(landing).toContain("<PrecisionPublicHeader />");
     expect(landing).not.toContain("ONE WORKSPACE");
     expect(landing).not.toContain("Runtime Balance");
@@ -297,4 +297,3 @@ describe("E2E design and BotBound brand polish", () => {
     expect(caps).toContain("text-transform: none");
   });
 });
-

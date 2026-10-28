@@ -196,13 +196,9 @@ export default function CookieConsent() {
             </div>
 
             <div className="flex-1 min-w-0 space-y-3 sm:flex sm:items-center sm:gap-3 sm:space-y-0">
-              <h2 className="pr-10 text-sm font-semibold leading-snug sm:sr-only">
-                Privacy Choices
-              </h2>
+              <h2 className="sr-only">Privacy Choices</h2>
               <p className="wl-balance break-words text-sm leading-relaxed text-foreground/80 sm:flex-1">
-                Essential storage keeps{" "}
-                <span className="font-semibold text-foreground">BotBound</span> working. Optional
-                measurement stays off until you allow it.{" "}
+                Analytics are off by default.{" "}
                 <Link
                   to="/privacy"
                   className="text-brand hover:text-brand/80 underline"
@@ -221,7 +217,7 @@ export default function CookieConsent() {
                   Your privacy signal keeps measurement off.
                 </p>
               ) : (
-                <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,8.5rem),1fr))] gap-2 sm:flex sm:shrink-0">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
                   <ShadButton
                     type="button"
                     variant="outline"

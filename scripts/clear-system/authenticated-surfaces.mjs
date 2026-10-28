@@ -40,6 +40,12 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/routes/AppRoutes.tsx",
     appRoutes,
+    /path="\/overview" element=\{<ToStudioRedirect\s*\/>/,
+    "the retired overview route must redirect into Studio",
+  );
+  mustInclude(
+    "src/routes/AppRoutes.tsx",
+    appRoutes,
     /to="\/phone" searchParams=\{\{ tab: "logs" \}\}/,
     "legacy call-log routes must redirect to Phone logs",
   );
@@ -142,7 +148,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/CreateAgentDialog.tsx",
     createDialog,
-    /BOT_ROLE_TEMPLATES\.map/,
+    /role="group" aria-label="Role starters"[\s\S]*ROLE_PRESET_KEYS\.map\([\s\S]*templateForKey\(key\)/,
     "create flow must expose shared role starters",
   );
   mustInclude(
@@ -254,8 +260,8 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/pages/PhonePage.tsx",
     phonePage,
-    /primaryTab === "reports" && !scopeBlocked[\s\S]*<ReportingPreferences[\s\S]*<RecentCallArtifactRequests key=\{activeAgentId\} agentId=\{activeAgentId \|\| null\}/,
-    "Calls must own reporting preferences and Bot-scoped call files",
+    /primaryTab === "settings" && !scopeBlocked[\s\S]*<ReportingPreferences[\s\S]*<RecentCallArtifactRequests key=\{activeAgentId\} agentId=\{activeAgentId \|\| null\}/,
+    "Calls Settings must own reporting preferences and Bot-scoped call files",
   );
   mustInclude(
     "src/components/KnowledgeBaseClaude.tsx",
@@ -343,7 +349,6 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     "src/components/AuthPortal.tsx",
     "src/components/auth/AuthAccessPanel.tsx",
     "src/components/layout/AppShell.tsx",
-    "src/pages/OverviewPage.tsx",
     "src/pages/SettingsPage.tsx",
     "src/pages/BillingSettings.tsx",
     "src/components/StudioWorkroom.tsx",

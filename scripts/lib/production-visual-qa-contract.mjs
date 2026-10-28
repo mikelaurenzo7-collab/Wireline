@@ -24,9 +24,10 @@ export const PRODUCTION_VISUAL_MARKETING_EXPECTATIONS = Object.freeze([
   visualExpectation("/for/restaurants", "vertical", ["restaurants"]),
   visualExpectation("/for/sales", "vertical", ["sales"]),
   visualExpectation("/about", "about"),
-  visualExpectation("/blog", "blog"),
+  // These public legacy routes intentionally redirect to their current homes.
+  visualExpectation("/blog", "changelog"),
   visualExpectation("/changelog", "changelog"),
-  visualExpectation("/security", "trust-center", ["security"]),
+  visualExpectation("/security", "trust-center", ["trust"]),
   visualExpectation("/trust", "trust-center", ["trust"]),
   visualExpectation("/trust/medical", "trust-pack", ["medical"]),
   visualExpectation("/trust/legal", "trust-pack", ["legal"]),
@@ -106,6 +107,8 @@ export const PRODUCTION_VISUAL_COMPATIBILITY_ROUTES = Object.freeze(
 );
 
 export const PRODUCTION_VISUAL_REDIRECTS = new Map([
+  ["/blog", "/changelog"],
+  ["/security", "/trust"],
   ["/status", "/trust"],
   ["/overview", "/studio"],
   ["/studio/live-video", "/studio"],

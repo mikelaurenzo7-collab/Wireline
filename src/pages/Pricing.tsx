@@ -24,7 +24,7 @@ function UsagePricing({ availableTiers }: { availableTiers: readonly UsageTierId
           <div className="mx-auto mb-6 max-w-3xl text-center">
             <h1 className="marketing-hero-title mx-auto">Room to Do More.</h1>
             <p className="marketing-hero-lead mx-auto mt-4">
-              Calls, SMS, Email, And Computer. One Shared Allowance.
+              Calls, SMS, email, and Computer. One shared allowance.
             </p>
           </div>
           <UsagePricingPanel availableTiers={availableTiers} />

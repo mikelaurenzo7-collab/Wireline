@@ -57,12 +57,13 @@ describe("usage rate card", () => {
     for (const [index, id] of (["lite", "standard", "plus"] as const).entries()) {
       const plan = USAGE_TIERS[id];
       const [, selectButton, details] = cards[index];
-      expect(selectButton).toContain("Includes");
-      expect(selectButton).not.toContain(`$${plan.includedWorkUsd}`);
+      expect(selectButton).toContain(`$${plan.includedWorkUsd} shared work included`);
+      expect(selectButton).toContain(`${plan.includedNumbers} phone`);
+      expect(selectButton).toContain(`${plan.includedEmailAddresses} email`);
       expect(selectButton).not.toMatch(/<(?:summary|details|a)\b/);
       expect(details).toContain(`aria-label="${plan.name} Plan Details"`);
-      expect(details).toContain(`$${plan.includedWorkUsd} for calls, SMS, email, and Computer`);
-      expect(details).toContain("Resets monthly. No rollover.");
+      expect(details).toContain("Calls, SMS, email, and Computer share this allowance.");
+      expect(details).toContain("Resets monthly with no rollover.");
       expect(details).toContain('href="#usage-rates"');
     }
     expect(markup).toContain('id="usage-rates"');

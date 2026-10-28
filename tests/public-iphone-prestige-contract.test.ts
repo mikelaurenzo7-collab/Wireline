@@ -22,7 +22,10 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(landing).toMatch(
       /<h1[^>]*>[\s\S]*?>\s*Your next hire\s*<\/span>[\s\S]*?>\s*is a bot\.\s*<\/span>[\s\S]*?<\/h1>/,
     );
-    expect(landing).toContain("Phone Number. Email Address. Computer Use");
+    expect(landing).toContain("The Bot Gets:");
+    expect(landing).toContain('label: "Phone Number"');
+    expect(landing).toContain('label: "Email Address"');
+    expect(landing).toContain('label: "A Computer"');
     expect(landing).not.toContain("landing-prestige__promise");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).not.toContain("HERO_CHANNELS.map");
@@ -98,7 +101,7 @@ describe("BotBound public iPhone prestige contract", () => {
       'className="flex-1 min-w-0 space-y-3 sm:flex sm:items-center sm:gap-3 sm:space-y-0"',
     );
     expect(consent).toContain(
-      'className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,8.5rem),1fr))] gap-2 sm:flex sm:shrink-0"',
+      'className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0"',
     );
     expect(consent).toContain("sm:items-center");
   });

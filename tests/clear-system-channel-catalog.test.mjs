@@ -29,10 +29,10 @@ describe("Clear System channel catalog guard", () => {
       "src/components/marketing/WireAgentLanding.tsx",
       (source) =>
         source.replace(
-          "Phone Number. Email Address. Computer Use",
+          "The Bot Gets:",
           "Calling.",
         ),
-      "describe the product family together",
+      "root landing must introduce the Bot's three work surfaces",
     ],
     [
       "src/styles/landing-prestige.css",

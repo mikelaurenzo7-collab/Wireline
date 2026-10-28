@@ -77,8 +77,8 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /"theme_color": "#0A0A0E"/,
-    "manifest must use dark theme",
+    /"theme_color": "#F7F7F3"/,
+    "manifest must match the default light canvas",
   );
 
   for (const [file, source] of [

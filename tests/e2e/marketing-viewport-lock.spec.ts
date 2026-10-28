@@ -149,8 +149,11 @@ function expectBalancedHomeMessage(
   name: string,
 ) {
   expect(metrics.titleLines, `${name} short hero phrases`).toHaveLength(2);
+  expect(metrics.titleLines.map((line) => line.text), `${name} approved hero copy`).toEqual([
+    "Your next hire",
+    "is a bot.",
+  ]);
   for (const line of metrics.titleLines) {
-    expect(line.text, `${name} uppercase display`).toBe(line.text.toUpperCase());
     expect(line.words, `${name} no isolated word`).toBeGreaterThanOrEqual(2);
     expect(line.boxes, `${name} phrase stays on one line`).toHaveLength(1);
     expect(line.boxes[0].left, `${name} text left edge`).toBeGreaterThanOrEqual(0);
@@ -162,7 +165,7 @@ function expectBalancedHomeMessage(
   expect(
     Math.min(...widths) / Math.max(...widths),
     `${name} balanced line lengths`,
-  ).toBeGreaterThan(0.6);
+  ).toBeGreaterThan(0.5);
 }
 
 for (const { path, name } of PUBLIC_ROUTES) {
@@ -178,7 +181,7 @@ for (const { path, name } of PUBLIC_ROUTES) {
       expect(metrics.prestigeHeroDisplay).toBe("grid");
       expect(metrics.prestigeMainLeft).toBeGreaterThanOrEqual(-2);
       expect(metrics.prestigeMainRight).toBeLessThanOrEqual(metrics.viewportWidth + 2);
-      expect(metrics.prestigeHeroWidth).toBeGreaterThan(metrics.viewportWidth - 4);
+      expect(metrics.prestigeHeroWidth).toBeGreaterThan(metrics.viewportWidth - 48);
     } else {
       expect(metrics.flowOverflowY).toBe("visible");
       expect(metrics.surfaceOverflow).toBe("visible");
@@ -271,7 +274,8 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
     "href",
     "/pricing",
   );
-  await expect(page.getByRole("tablist", { name: "Bot capabilities" })).toBeAttached();
+  await expect(page.getByRole("heading", { name: "The Bot Gets:" })).toBeAttached();
+  await expect(page.locator(".landing-prestige__card")).toHaveCount(3);
 
   const metrics = await publicMetrics(page);
   expectNoHorizontalEscape(metrics, "desktop home");
@@ -301,7 +305,8 @@ test("home keeps the BotBound promise and account path in one mobile flow", asyn
   await expect(
     page.locator(".landing-prestige__getting-started, .landing-prestige__steps"),
   ).toHaveCount(0);
-  await expect(page.getByRole("tablist", { name: "Bot capabilities" })).toBeAttached();
+  await expect(page.getByRole("heading", { name: "The Bot Gets:" })).toBeAttached();
+  await expect(page.locator(".landing-prestige__card")).toHaveCount(3);
   const actions = page.locator(".landing-prestige__hero .landing-prestige__actions");
   await expect(actions.getByRole("link", { name: "GET STARTED" })).toBeInViewport();
   await expect(actions.getByRole("link", { name: "See Pricing", exact: true })).toBeInViewport();
@@ -314,18 +319,16 @@ test("home keeps the BotBound promise and account path in one mobile flow", asyn
   expectBalancedHomeMessage(metrics, "phone home");
 });
 
-test("home channels and hero fit the narrowest supported width", async ({ page }) => {
+test("home product cards and hero fit the narrowest supported width", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await openPublicRoute(page, "/");
-  const tabs = page.getByRole("tablist", { name: "Bot capabilities" }).getByRole("tab");
-  await expect(tabs).toHaveCount(4);
-  for (const tab of await tabs.all()) {
-    const box = await tab.boundingBox();
+  const cards = page.locator(".landing-prestige__card");
+  await expect(cards).toHaveCount(3);
+  for (const card of await cards.all()) {
+    const box = await card.boundingBox();
     expect(box!.x).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width).toBeLessThanOrEqual(320);
-    expect(box!.height).toBeGreaterThanOrEqual(44);
-    await tab.click();
-    await expect(tab).toHaveAttribute("aria-selected", "true");
+    expect(box!.width).toBeGreaterThan(250);
   }
   expectBalancedHomeMessage(await publicMetrics(page), "narrow phone home");
 });

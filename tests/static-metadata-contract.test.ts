@@ -14,8 +14,11 @@ describe("BotBound static marketing metadata", () => {
   it("keeps the HTML shell aligned with the BotBound promise", () => {
     const index = read("index.html");
 
-    expect(index).toContain("BotBound | Your Bot for calls, texts, email, and computer.");
-    expect(index).toContain("Voice Bots with a computer, phone number, text, and email address.");
+    expect(index).toContain("BotBound | Your next hire is a bot.");
+    expect(index).toContain(
+      "Your next hire is a bot. Inbound and outbound calls, SMS, email, and computer tasks for small businesses.",
+    );
+    expect(index).toContain('<meta name="msapplication-TileColor" content="#F7F7F3" />');
     expect(structuredData().find((entry) => entry["@type"] === "Organization")).toMatchObject({
       name: "BotBound",
       slogan: "Your next hire is a bot.",
@@ -24,7 +27,7 @@ describe("BotBound static marketing metadata", () => {
     expect(index).toContain('<link rel="canonical" href="https://botbound.app/" />');
     expect(index).toContain('<meta property="og:url" content="https://botbound.app/" />');
     expect(index).toContain(
-      '<meta property="og:image" content="https://botbound.app/og-image.png?v=20261025" />',
+      '<meta property="og:image" content="https://botbound.app/og-image.png?v=20261028" />',
     );
     expect(index).not.toContain("https://trywireline.com");
     expect(index).not.toContain("support@trywireline.com");
@@ -74,9 +77,9 @@ describe("BotBound static marketing metadata", () => {
     expect(landing).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(landing).not.toContain("LEGACY_PRODUCTION_ORIGIN");
     expect(landing).not.toContain("VITE_PUBLIC_SITE_URL");
-    expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | Your Bot for calls, texts, email, and computer."');
+    expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | Your next hire is a bot."');
     expect(pageMeta).toMatch(
-      /DEFAULT_DESCRIPTION =\s*"Voice Bots with a computer, phone number, text, and email address\./,
+      /DEFAULT_DESCRIPTION =\s*"Your next hire is a bot\. Inbound and outbound calls, SMS, email, and computer tasks for small businesses\./,
     );
     expect(pageMeta).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(pageMeta).not.toContain("VITE_PUBLIC_SITE_URL");
@@ -87,16 +90,19 @@ describe("BotBound static marketing metadata", () => {
     const ogImage = read("public/og-image.svg");
 
     expect(ogImage).toContain("BotBound");
-    expect(ogImage).toContain("YOUR VOICE BOT");
-    expect(ogImage).toContain("FOR YOUR WORK.");
-    expect(ogImage).toContain("AI Bots With Their Own Phone Number,");
-    expect(ogImage).toContain("Email Address, And Computer.");
+    expect(ogImage).toContain("YOUR NEXT HIRE");
+    expect(ogImage).toContain("IS A BOT.");
+    expect(ogImage).toContain("Inbound and outbound calls, SMS,");
+    expect(ogImage).toContain("email, and computer tasks for small businesses.");
     expect(ogImage).not.toContain("Start Free");
     expect(ogImage).not.toContain("ONE BOT");
     expect(ogImage).not.toContain("Find. Call. Book");
     expect(ogImage).toMatch(/phone|Phone/);
     expect(ogImage).toContain('width="1200" height="630"');
     expect(ogImage).not.toContain("PUT YOUR BOT ON THE LINE");
+    expect(
+      readFileSync(resolve(process.cwd(), "public/brand/botbound-current-offer-og.png")),
+    ).toEqual(readFileSync(resolve(process.cwd(), "public/og-image.png")));
   });
 
   it("ships the approved Bot mark in the warm 1200 by 630 OG raster", () => {
@@ -117,16 +123,20 @@ describe("BotBound static marketing metadata", () => {
       name: string;
       short_name: string;
       description: string;
+      theme_color: string;
+      background_color: string;
       start_url: string;
       icons: Array<{ src: string }>;
       shortcuts: Array<{ name: string; description: string; url: string }>;
     };
 
-    expect(manifest.name).toBe("BotBound | Your next hire is a bot.");
+    expect(manifest.name).toBe("BotBound");
     expect(manifest.short_name).toBe("BotBound");
     expect(manifest.description).toBe(
-      "Voice Bots with a computer, phone number, text, and email address.",
+      "Inbound and outbound calls, SMS, email, and computer tasks for small businesses.",
     );
+    expect(manifest.theme_color).toBe("#F7F7F3");
+    expect(manifest.background_color).toBe("#F7F7F3");
     expect(manifest.start_url).toBe("/studio");
     expect(manifest.icons[0]?.src).toBe("/botbound-icon-192.png");
     expect(manifest.shortcuts.map((shortcut) => shortcut.name)).toEqual([

@@ -271,6 +271,20 @@ describe("production visual QA safety gate", () => {
     expect(
       routeReachedExactly(
         CANONICAL_PRODUCTION_VISUAL_BASE_URL,
+        "/blog",
+        "https://botbound.app/changelog",
+      ),
+    ).toBe(true);
+    expect(
+      routeReachedExactly(
+        CANONICAL_PRODUCTION_VISUAL_BASE_URL,
+        "/security",
+        "https://botbound.app/trust",
+      ),
+    ).toBe(true);
+    expect(
+      routeReachedExactly(
+        CANONICAL_PRODUCTION_VISUAL_BASE_URL,
         "/studio",
         "https://botbound.app/studio-evil",
       ),

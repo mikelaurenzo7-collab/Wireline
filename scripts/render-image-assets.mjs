@@ -80,8 +80,8 @@ function writeStripeLogoSource(appIcon) {
 function writeOgSource(brandMark) {
   const embeddedImage = brandMark.toString("base64");
   const source = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
-  <title id="title">BotBound | Your Voice Bot for Your Work</title>
-  <desc id="description">Your Voice Bot for Your Work. AI Bots with their own phone number, email address, and computer.</desc>
+  <title id="title">BotBound | Your next hire is a bot.</title>
+  <desc id="description">Your next hire is a bot. Inbound and outbound calls, SMS, email, and computer tasks for small businesses.</desc>
   <metadata>BotBound launch identity. Generated from code and the approved phone Bot mark.</metadata>
   <defs><radialGradient id="wash"><stop stop-color="#eee7fc"/><stop offset="1" stop-color="#f7f7f3"/></radialGradient></defs>
   <rect width="1200" height="630" fill="#f7f7f3"/>
@@ -89,10 +89,10 @@ function writeOgSource(brandMark) {
   <image href="data:image/png;base64,${embeddedImage}" x="936" y="52" width="184" height="184"/>
   <g font-family="Inter, sans-serif">
     <text x="76" y="108" fill="#19191d" font-size="38" font-weight="800" letter-spacing="-1.8">Bot<tspan fill="#7040d7">Bound</tspan></text>
-    <text x="76" y="280" fill="#19191d" font-size="78" font-weight="800" letter-spacing="-3">YOUR VOICE BOT</text>
-    <text x="76" y="372" fill="#7040d7" font-size="78" font-weight="800" letter-spacing="-3">FOR YOUR WORK.</text>
-    <text x="80" y="449" fill="#626268" font-size="28">AI Bots With Their Own Phone Number,</text>
-    <text x="80" y="488" fill="#626268" font-size="28">Email Address, And Computer.</text>
+    <text x="76" y="280" fill="#19191d" font-size="78" font-weight="800" letter-spacing="-3">YOUR NEXT HIRE</text>
+    <text x="76" y="372" fill="#7040d7" font-size="78" font-weight="800" letter-spacing="-3">IS A BOT.</text>
+    <text x="80" y="449" fill="#626268" font-size="28">Inbound and outbound calls, SMS,</text>
+    <text x="80" y="488" fill="#626268" font-size="28">email, and computer tasks for small businesses.</text>
     <text x="80" y="568" fill="#626268" font-size="22">botbound.app</text>
   </g>
 </svg>\n`;
@@ -117,6 +117,7 @@ if (process.argv.includes("--og-only")) {
     .render()
     .asPng();
   writeFileSync(resolve(publicDir, "og-image.png"), png);
+  writeFileSync(resolve(publicDir, "brand/botbound-current-offer-og.png"), png);
   console.log(`✔ rendered public/og-image.png (${png.length} bytes)`);
   process.exit(0);
 }
@@ -134,6 +135,7 @@ const stripeLogoSource = writeStripeLogoSource(appIcon);
 const targets = [
   { source: appIconSource, out: "public/favicon.png", width: 64 },
   { source: ogImageSource, out: "public/og-image.png", width: 1200 },
+  { source: ogImageSource, out: "public/brand/botbound-current-offer-og.png", width: 1200 },
   { source: appIconSource, out: "public/apple-touch-icon.png", width: 180 },
   { source: appIconSource, out: "public/botbound-icon-192.png", width: 192 },
   { source: appIconSource, out: "public/botbound-icon-512.png", width: 512 },

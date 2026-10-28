@@ -7,7 +7,6 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   const marketingHero = read("src/components/marketing/MarketingHero.tsx");
   const publicHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
   const landing = read("src/components/marketing/WireAgentLanding.tsx");
-  const landingFooter = read("src/components/marketing/LandingFooter.tsx");
   const landingPrestigeCss = read("src/styles/landing-prestige.css");
   const authAccessCss = read("src/styles/auth-access-panel.css");
   const indexCss = read("src/index.css");
@@ -72,16 +71,19 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
 
   for (const [pattern, description] of [
     [/signedIn \? "\/studio" : "\/signup"/, "root landing must offer plan-neutral account access"],
-    [
-      /A Phone Number\. An Email Address\. A Computer\./,
-      "root landing must describe the product family together",
-    ],
+    [/The Bot Gets:/, "root landing must introduce the Bot's three work surfaces"],
     [/<PrecisionPublicHeader \/>/, "root landing must share the public header"],
-    [/role="tablist"/, "landing must expose capability navigation"],
-    [/role="tabpanel"/, "capability details must be associated with their selected tab"],
-    [/onKeyDown/, "capability navigation must support keyboard selection"],
+    [/landing-prestige__showcase-grid/, "landing must show its static capability grid"],
+    [/aria-labelledby="landing-prestige-showcase-title"/, "static showcase must be named"],
+    [/label: "Phone Number"/, "phone and SMS work must have a clear card"],
+    [/label: "Email Address"/, "email work must have a clear card"],
+    [/label: "A Computer"/, "computer work must have a clear card"],
     [/to="\/pricing"/, "landing must link directly to pricing"],
-    [/<LandingFooter\s*\/>/, "desktop landing must retain wayfinding"],
+    [/landing-prestige__showcase-grid/, "landing must keep the focused static showcase"],
+    [
+      /<CapabilityPreview channel=\{id\} \/>/,
+      "each channel must display its static demo",
+    ],
   ])
     mustInclude("src/components/marketing/WireAgentLanding.tsx", landing, pattern, description);
   mustInclude(
@@ -119,14 +121,14 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
       "display headings must balance lines while retaining text enlargement",
     ],
     [
-      /\.landing-prestige__example\s*\{[^}]*text-align:\s*center;/,
-      "capability details must align with centered content",
+      /\.landing-prestige__showcase-grid\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/,
+      "static capability demos must use a responsive card grid",
     ],
     [
       /\.landing-prestige__hero h1\s*\{[^}]*flex-wrap:\s*wrap;/,
       "hero phrases must reflow on narrow screens",
     ],
-    [/\.landing-prestige__tabs/, "landing must provide channel navigation"],
+    [/\.landing-prestige__card\s*\{/, "landing must style each capability card"],
   ])
     mustInclude("src/styles/landing-prestige.css", landingPrestigeCss, pattern, description);
   mustExclude(
@@ -153,11 +155,11 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
     /@import "\.\/styles\/landing-prestige\.css";/,
     "CSS stack must own landing styling",
   );
-  mustInclude(
-    "src/components/marketing/LandingFooter.tsx",
-    landingFooter,
-    /aria-label="Footer"[\s\S]*\/support[\s\S]*\/privacy[\s\S]*\/terms[\s\S]*wireline:open-privacy-choices/,
-    "minimal landing footer must retain support, legal links, and privacy controls",
+  mustExclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    landing,
+    /MarketingChromeBar|LandingFooter/,
+    "the focused home page must not restore its removed footer bar",
   );
   mustInclude(
     "src/lib/bot-product.ts",
@@ -194,7 +196,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /<UsagePricingPanel availableTiers=\{usageTiers\}/,
+    /<UsagePricingPanel availableTiers=\{availableTiers\}/,
     "pricing must render the shared-work plans from live availability",
   );
   mustExclude(
@@ -225,8 +227,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   mustInclude(
     "src/components/usage-billing/UsagePricingPanel.tsx",
     usagePricingPanel,
-    /Calls, texts, email, and Computer share that work/,
-    "pricing must explain shared work",
+    /Calls,\s*SMS,\s*email,\s*and Computer share this allowance/,
+    "pricing must explain the allowance beside each plan price",
   );
   mustExclude(
     "src/pages/Pricing.tsx",

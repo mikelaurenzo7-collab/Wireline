@@ -11,11 +11,16 @@ describe("minimal landing launch clarity", () => {
     );
     expect(landing).not.toMatch(/coming soon|Runtime Balance|\$19|\$12/i);
   });
-  it("keeps channels accessible by mouse, touch, and keyboard", () => {
-    expect(landing).toContain('role="tablist"');
-    expect(landing).toContain('role="tabpanel"');
-    for (const key of ["ArrowRight", "ArrowLeft", "Home", "End"]) expect(landing).toContain(key);
-    expect(landing).toContain("onClick={() => setSelected(index)}");
-    expect(landing).toContain("CHOOSE FROM A CATALOG OF VOICES OR CLONE YOUR OWN");
+  it("keeps three product assets visible without requiring interaction", () => {
+    expect(landing).toContain('aria-labelledby="landing-prestige-showcase-title"');
+    expect(landing).toContain("The Bot Gets:");
+    expect(landing).toContain("landing-prestige__showcase-grid");
+    expect(landing).toContain("<CapabilityPreview channel={id} />");
+    expect(landing).not.toContain('role="tablist"');
+    expect(landing).not.toContain('role="tabpanel"');
+    expect(landing).not.toMatch(
+      /CHOOSE FROM A CATALOG|clone your own|Explore \$\{example.label\}/i,
+    );
+    expect(landing).not.toContain("MarketingChromeBar");
   });
 });
