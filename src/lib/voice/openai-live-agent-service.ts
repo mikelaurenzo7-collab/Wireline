@@ -30,7 +30,6 @@ import {
   RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK,
 } from "../agent-runtime";
 import { clampRuntimePromptPreservingTail } from "../agent-runtime-helpers";
-import { withoutStaleBotBoundPricing } from "../usage-billing-catalog";
 import {
   founderInternalRuntimeAuthorityBoundary,
   founderInternalRuntimePolicyBlock,
@@ -226,13 +225,9 @@ export function composeOpenAILiveInstructions(
   });
   const runtimeTemplate = internalPolicy ? null : resolveRuntimeTemplatePersonality(personality);
   const runtimeReviewRequired = isRuntimeReviewRequired(runtimeTemplate, agent.role);
-  const templateGuidance = withoutStaleBotBoundPricing(
-    runtimeTemplateGuidanceBlock(runtimeTemplate, agent.role),
-  );
+  const templateGuidance = runtimeTemplateGuidanceBlock(runtimeTemplate, agent.role);
   const customInstructions =
-    internalPolicy || runtimeReviewRequired
-      ? ""
-      : withoutStaleBotBoundPricing(trimLine(agent.systemPromptOverride, 8_000));
+    internalPolicy || runtimeReviewRequired ? "" : trimLine(agent.systemPromptOverride, 8_000);
   const identity = runtimeReviewRequired
     ? [
         "You are a BotBound Bot in review-required hold mode.",
@@ -260,16 +255,14 @@ export function composeOpenAILiveInstructions(
   ]
     .filter(Boolean)
     .join("\n");
-  const tone = withoutStaleBotBoundPricing(
-    internalPolicy
-      ? agent.personalityVibe
-        ? `Tone: ${agent.personalityVibe}.`
-        : ""
-      : runtimeReviewRequired
-        ? ""
-        : trimLine(runtimeTemplate ? runtimeTemplate.rolePersonality : personality, 1_500) ||
-          (agent.personalityVibe ? `Tone: ${agent.personalityVibe}.` : ""),
-  );
+  const tone = internalPolicy
+    ? agent.personalityVibe
+      ? `Tone: ${agent.personalityVibe}.`
+      : ""
+    : runtimeReviewRequired
+      ? ""
+      : trimLine(runtimeTemplate ? runtimeTemplate.rolePersonality : personality, 1_500) ||
+        (agent.personalityVibe ? `Tone: ${agent.personalityVibe}.` : "");
   return clampRuntimePromptPreservingTail(
     [
       identity,
@@ -282,25 +275,13 @@ export function composeOpenAILiveInstructions(
       !runtimeReviewRequired && compliance ? `\nGUARDRAILS:\n${compliance}` : "",
       runtimeReviewRequired || !playbookPromptBlock(agent.playbook)
         ? ""
-        : `\n${withoutStaleBotBoundPricing(playbookPromptBlock(agent.playbook))}`,
-      runtimeReviewRequired
-        ? ""
-        : listBlock(
-            "OPERATING RULES",
-            directives.map((item) => ({
-              ...item,
-              content: withoutStaleBotBoundPricing(item.content ?? ""),
-            })),
-            24,
-          ),
+        : `\n${playbookPromptBlock(agent.playbook)}`,
+      runtimeReviewRequired ? "" : listBlock("OPERATING RULES", directives, 24),
       runtimeReviewRequired
         ? ""
         : listBlock(
             "INITIAL APPROVED KNOWLEDGE",
-            knowledge.map((item) => ({
-              ...item,
-              content: withoutStaleBotBoundPricing(item.content ?? ""),
-            })),
+            knowledge,
             MAX_INITIAL_KNOWLEDGE_ITEMS,
           ),
       `\n${RUNTIME_ACTION_SAFETY_BLOCK}`,
@@ -467,8 +448,7 @@ export async function createOpenAILiveVoiceCall(input: {
     voice,
     greeting: reviewRequired
       ? RUNTIME_REVIEW_REQUIRED_GREETING
-      : withoutStaleBotBoundPricing(resolveAgentGreeting(runtime.agent, runtime.directives)) ||
-        "Hi, how can I help?",
+      : resolveAgentGreeting(runtime.agent, runtime.directives),
     wireline: {
       provider: "openai_realtime",
       agentId: runtime.agent.id,
@@ -512,14 +492,10 @@ export async function runOpenAILiveVoiceTool(input: {
       query,
       limit: MAX_LIVE_KB_RESULTS,
     })
-  )
-    .map((match) => ({
-      source: match.source,
-      content: withoutStaleBotBoundPricing(
-        excerptAroundMatch(match.content, words, MAX_LIVE_KB_RESULT_CHARS),
-      ),
-    }))
-    .filter((match) => Boolean(match.content));
+  ).map((match) => ({
+    source: match.source,
+    content: excerptAroundMatch(match.content, words, MAX_LIVE_KB_RESULT_CHARS),
+  }));
   return matches.length
     ? { found: true, query, matches }
     : {

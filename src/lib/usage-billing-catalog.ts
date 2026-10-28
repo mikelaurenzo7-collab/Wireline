@@ -365,32 +365,3 @@ export function currentPricingFacts(): string[] {
     "Quote only these prices. If asked for a discount or a retired offer, give these prices and escalate instead of inventing an offer.",
   ];
 }
-
-/** Saved Training that still quotes a retired BotBound offer, not a customer's own price. */
-export function isStaleBotBoundPricing(text: string): boolean {
-  const lower = text.toLowerCase();
-  // A price alone belongs to the account holder. Only recognize a retired
-  // platform offer when BotBound is named, or when the old $19/$12 bundle is
-  // quoted together. Complete amount boundaries preserve $19.99 and $1900.
-  const retiredNamedOffer =
-    /(?:\b(?:BotBound|Wireline)\b[^.!?\n]{0,140}(?:\$19(?:\.00)?\s*(?:\/\s*month|per\s+month)\b|\$190(?:\.00)?\s*(?:\/\s*year|per\s+year)\b|\$12\s+(?:of\s+)?shared\b)|(?:\$19(?:\.00)?\s*(?:\/\s*month|per\s+month)\b|\$190(?:\.00)?\s*(?:\/\s*year|per\s+year)\b|\$12\s+(?:of\s+)?shared\b)[^.!?\n]{0,80}\b(?:BotBound|Wireline)\b)/i;
-  const retiredBundle =
-    /\$19(?:\.00)?\s*(?:\/\s*month|per\s+month)\b[^.!?\n]{0,100}\$12\s+(?:of\s+)?shared\b/i;
-  return (
-    retiredNamedOffer.test(text) ||
-    retiredBundle.test(text) ||
-    lower.includes("channel packages include one bot") ||
-    lower.includes("prepaid runtime balance")
-  );
-}
-
-/** Remove retired BotBound claims while retaining the account holder's other facts. */
-export function withoutStaleBotBoundPricing(text: string): string {
-  if (!text || !isStaleBotBoundPricing(text)) return text;
-  return text
-    .split(/\n+/)
-    .flatMap((line) => line.split(/(?<=[.!?])\s+/))
-    .filter((part) => part.trim() && !isStaleBotBoundPricing(part))
-    .join("\n")
-    .trim();
-}

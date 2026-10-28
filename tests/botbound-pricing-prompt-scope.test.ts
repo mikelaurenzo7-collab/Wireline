@@ -17,8 +17,7 @@ const businessAgent: OpenAILiveInstructionAgent = {
   role: "front desk",
   firstMessage: null,
   personalityVibe: "warm",
-  systemPromptOverride:
-    "Our drain cleanout is $190. BotBound Starter is $19/month. Keep answers brief.",
+  systemPromptOverride: "Our drain cleanout is $190. Keep answers brief.",
   complianceMode: "none",
   disallowedTopics: null,
   escalationKeywords: null,
@@ -29,10 +28,8 @@ const businessAgent: OpenAILiveInstructionAgent = {
     version: 1,
     exactLines: {},
     situations: [],
-    alwaysMention: [
-      "BotBound plans cost $19/month. Our annual maintenance agreement is $1900.",
-    ],
-    neverSay: [],
+    alwaysMention: ["Our annual maintenance agreement is $1900."],
+    neverSay: ["BotBound Starter is $19/month."],
   },
 };
 
@@ -54,17 +51,17 @@ const tenant: OpenAIRealtimeTenantSettings = {
 };
 
 describe("BotBound pricing prompt scope", () => {
-  it("keeps the account holder's prices and removes retired BotBound claims", () => {
+  it("preserves the account holder's facts and prohibitions without injecting platform prices", () => {
     const directives = [
       { content: "Our maintenance membership is $19/month." },
-      { content: "BotBound pricing starts at $19/month. Confirm the caller's ZIP code." },
+      { content: "Confirm the caller's ZIP code." },
     ];
     const knowledge = [
-      { content: "An emergency visit is $1900. BotBound Starter is $19/month." },
+      { content: "We use BotBound and our salon membership costs $19/month." },
+      { content: "An emergency visit is $1900." },
       { content: "A standard visit is $190." },
     ];
-    const personality =
-      "Our care plan is $19/month. BotBound Starter is $19/month. Speak clearly.";
+    const personality = "Our care plan is $19/month. Speak clearly.";
     const prompts = [
       composeOpenAILiveInstructions(businessAgent, personality, directives, knowledge),
       composeOpenAIRealtimeInstructions({
@@ -83,12 +80,11 @@ describe("BotBound pricing prompt scope", () => {
       expect(prompt).toContain("Our care plan is $19/month.");
       expect(prompt).toContain("Speak clearly.");
       expect(prompt).toContain("An emergency visit is $1900.");
+      expect(prompt).toContain("We use BotBound and our salon membership costs $19/month.");
       expect(prompt).toContain("A standard visit is $190.");
       expect(prompt).toContain("Confirm the caller's ZIP code.");
       expect(prompt).toContain("Our annual maintenance agreement is $1900.");
-      expect(prompt).not.toContain("BotBound Starter is $19/month");
-      expect(prompt).not.toContain("BotBound pricing starts at $19/month");
-      expect(prompt).not.toContain("BotBound plans cost $19/month");
+      expect(prompt).toContain("Never say, claim, or promise:\n- BotBound Starter is $19/month.");
       expect(prompt).not.toContain("CURRENT BOTBOUND PRICING");
       expect(prompt).not.toContain("Starter is $24/month");
     }

@@ -7,7 +7,6 @@ import { runStructured } from "./ai-structured";
 import { drizzle, serialQueryBatch } from "./server-context";
 import { STRUCTURED_RUNTIME_MODELS } from "./structured-runtime-models";
 import { isSavedRuntimeReviewRequired } from "./runtime-template-personality";
-import { withoutStaleBotBoundPricing } from "./usage-billing-catalog";
 
 export type TextConversationMessage = {
   direction: "in" | "out";
@@ -77,9 +76,7 @@ function compactLines(
   maxChars = MAX_TEXT_PROMPT_LINE_CHARS,
 ): string[] {
   return values
-    .map((value) =>
-      withoutStaleBotBoundPricing(value?.replace(/\s+/g, " ").trim().slice(0, maxChars) || ""),
-    )
+    .map((value) => value?.replace(/\s+/g, " ").trim().slice(0, maxChars))
     .filter((value): value is string => Boolean(value))
     .slice(0, limit);
 }
@@ -194,11 +191,10 @@ export async function generateAgentTextReply(input: {
 
   const agent = agentRows[0];
   if (!agent) throw new Error("Bot not found");
-  const storedPersonality = personalities[0]?.content || "";
-  if (isSavedRuntimeReviewRequired(storedPersonality, agent.role)) {
+  const savedPersonality = personalities[0]?.content || "";
+  if (isSavedRuntimeReviewRequired(savedPersonality, agent.role)) {
     throw new AgentTextReplyReviewRequiredError();
   }
-  const savedPersonality = withoutStaleBotBoundPricing(storedPersonality);
 
   const directiveLines = compactLines(
     directives.map((directive) => directive.content),
@@ -239,9 +235,6 @@ export async function generateAgentTextReply(input: {
         `${message.direction === "in" ? "Customer" : agent.name}: ${message.body.replace(/\s+/g, " ").trim().slice(0, MAX_TEXT_PROMPT_LINE_CHARS)}`,
     )
     .join("\n");
-  const preferredOpening = withoutStaleBotBoundPricing(
-    agent.firstMessage?.replace(/\s+/g, " ").trim().slice(0, 500) || "",
-  );
 
   const context = [
     `You are ${agent.name || "the Bot"}, the text-message Bot for this business. Your configured role is ${agent.role || "customer support"}.`,
@@ -249,9 +242,11 @@ export async function generateAgentTextReply(input: {
     savedPersonality
       ? `Tone: ${savedPersonality.replace(/\s+/g, " ").trim().slice(0, 1_500)}`
       : "Tone: clear, warm, and professional.",
-    preferredOpening ? `Preferred opening: ${preferredOpening}` : "",
+    agent.firstMessage
+      ? `Preferred opening: ${agent.firstMessage.replace(/\s+/g, " ").trim().slice(0, 500)}`
+      : "",
     // Same owner wording as calls; voice-only moments simply never come up in text.
-    withoutStaleBotBoundPricing(playbookPromptBlock(agent.playbook)),
+    playbookPromptBlock(agent.playbook),
     directiveLines.length ? `Operating rules:\n- ${directiveLines.join("\n- ")}` : "",
     knowledgeLines.length ? `Approved knowledge:\n- ${knowledgeLines.join("\n- ")}` : "",
     businessProfile ? `Workspace profile: ${businessProfile}` : "",

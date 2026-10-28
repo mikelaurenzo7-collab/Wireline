@@ -22,7 +22,6 @@ import {
   isSavedRuntimeReviewRequired,
   RUNTIME_REVIEW_REQUIRED_RESPONSE,
 } from "../lib/runtime-template-personality";
-import { withoutStaleBotBoundPricing } from "../lib/usage-billing-catalog";
 import type { AuthenticatedRequest } from "../types/auth";
 import * as schema from "../db/schema";
 
@@ -43,7 +42,7 @@ const customerTestMessageSchema = z.object({
 
 function compactLines(values: Array<string | null | undefined>, limit: number) {
   return values
-    .map((value) => withoutStaleBotBoundPricing(value?.trim() || ""))
+    .map((value) => value?.trim())
     .filter((value): value is string => Boolean(value))
     .slice(0, limit);
 }
@@ -113,8 +112,8 @@ router.post(
 
       const agent = agentRows[0];
       if (!agent) throw AppError.fromHttpStatus(404, "Bot not found");
-      const storedPersonality = personalities[0]?.content || "";
-      if (isSavedRuntimeReviewRequired(storedPersonality, agent.role)) {
+      const savedPersonality = personalities[0]?.content || "";
+      if (isSavedRuntimeReviewRequired(savedPersonality, agent.role)) {
         const { createSseStream, writeSseBootstrap } = await import("../lib/sse-stream");
         const sse = createSseStream(req, res);
         writeSseBootstrap(sse, { agentId, agentName: agent.name, mode: "customer_test" });
@@ -131,7 +130,6 @@ router.post(
         sse.end();
         return;
       }
-      const savedPersonality = withoutStaleBotBoundPricing(storedPersonality);
       if (!isRuntimeAvailable()) throw AppError.fromHttpStatus(503, "AI runtime not configured");
 
       const directiveLines = compactLines(
@@ -153,9 +151,6 @@ router.post(
         ? JSON.stringify(agent.businessVariables).slice(0, 6000)
         : "";
       const calendarContext = await nativeCalendarRehearsalContext(req.user.id, agent.enabledTools);
-      const preferredOpening = withoutStaleBotBoundPricing(
-        resolveAgentGreeting(agent, directives),
-      );
 
       const system = [
         `You are ${agent.name || "the Bot"}, a customer-facing Bot configured for this role: ${agent.role || "general support"}.`,
@@ -165,8 +160,8 @@ router.post(
         "Do not invent prices, policies, availability, or unprovided facts. Do not claim a booking, transfer, message, payment, or other external action completed in this browser roleplay.",
         calendarContext,
         savedPersonality ? `Tone: ${savedPersonality}` : "Tone: clear and professional.",
-        preferredOpening ? `Preferred opening: ${preferredOpening}` : "",
-        withoutStaleBotBoundPricing(playbookPromptBlock(agent.playbook)),
+        `Preferred opening: ${resolveAgentGreeting(agent, directives)}`,
+        playbookPromptBlock(agent.playbook),
         directiveLines.length ? `Operating rules:\n- ${directiveLines.join("\n- ")}` : "",
         knowledgeLines.length ? `Knowledge facts:\n- ${knowledgeLines.join("\n- ")}` : "",
         businessProfile ? `Workspace profile: ${businessProfile}` : "",
