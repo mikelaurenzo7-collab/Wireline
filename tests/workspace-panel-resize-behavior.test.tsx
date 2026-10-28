@@ -73,6 +73,7 @@ type PanelState = Parameters<PanelProps["children"]>[0];
 type NodeProps = {
   children?: ReactNode;
   role?: string;
+  "aria-label"?: string;
   id?: string;
   style?: { width?: number };
   "data-resizing"?: string;
@@ -206,6 +207,18 @@ afterEach(() => {
 });
 
 describe("workspace divider width and keyboard behavior", () => {
+  it("keeps the navigation divider and its help inside a named landmark", () => {
+    const panel = render({ landmarkLabel: "Navigation panel" });
+    expect(panel.element.props.role).toBe("region");
+    expect(panel.element.props["aria-label"]).toBe("Navigation panel");
+    expect(panel.separator?.props["aria-describedby"]).toBe(
+      panel.children.find((child) => child?.props?.id)?.props.id,
+    );
+    const event = key(panel.separator!, "ArrowLeft");
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(render().separator?.props["aria-valuenow"]).toBe(388);
+  });
+
   it.each([
     ['{"size":1e309}', 372],
     ['{"size":-900}', 312],

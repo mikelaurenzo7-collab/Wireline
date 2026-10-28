@@ -29,6 +29,8 @@ type WorkspaceResizablePanelProps = {
   /** Take all remaining width (an expanded panel). The drag handle hides and the saved width returns on exit. */
   fill?: boolean;
   className?: string;
+  /** Name the panel as a landmark when its resize handle sits outside another landmark. */
+  landmarkLabel?: string;
   resizeHandleLabel: string;
   /** Existing panel content region controlled by the separator. */
   controlsId?: string;
@@ -79,6 +81,7 @@ export default function WorkspaceResizablePanel({
   onCollapsedChange,
   fill = false,
   className,
+  landmarkLabel,
   resizeHandleLabel,
   controlsId,
   children,
@@ -268,6 +271,8 @@ export default function WorkspaceResizablePanel({
 
   return (
     <div
+      role={landmarkLabel ? "region" : undefined}
+      aria-label={landmarkLabel}
       data-wireline-resizable-panel={side}
       data-collapsed={collapsed ? "true" : "false"}
       data-resizing={resizing ? "true" : undefined}

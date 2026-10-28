@@ -426,6 +426,7 @@ export default function WorkspaceShell({
           maxSize={320}
           collapsedSize={68}
           defaultCollapsed={false}
+          landmarkLabel="Navigation panel"
           resizeHandleLabel="Resize workspace navigation"
           className="wl-workspace-rail-panel hidden lg:block"
         >
