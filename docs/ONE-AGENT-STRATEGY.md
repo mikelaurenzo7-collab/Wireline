@@ -31,13 +31,15 @@ Use:
 
 > Your Bot for calls, texts, and email.
 
-> Build free. Email from $9/month. Calls from $19/month.
+> Paid plans only. Shared work starts at $12/month.
+
+> Lite $12, Starter $24 (default), Plus $49, with $4 / $14 / $36 of included work.
 
 > Start with one job. Choose the channels you need.
 
-Calls + Email is $25/month. Calls capacity is 50 / 250 / 500 minutes per month;
-every capacity includes one Bot and one call at a time. SMS combinations remain visible with activation
-unavailable until messaging readiness and cost checks pass. Never imply that a
+Every plan includes one Bot and one call at a time; extra Bots, numbers, and email
+addresses are add-ons, and usage beyond the included work is metered at the rates on
+Pricing. Never imply that a
 Calls-only package includes a mailbox or that Email includes a phone number.
 
 Avoid:

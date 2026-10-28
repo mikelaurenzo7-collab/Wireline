@@ -1,6 +1,8 @@
 # Billing operations — September 27, 2026
 
-Status: **current source contract; provider/deployment verification required**. This document does not certify that new prices exist in Stripe or that checkout is released. Render is production. The user reports that current accounts are demo/test; preserve all Stripe history and verify live subscription inventory before any destructive operation.
+> **October 28, 2026:** Historical. The current offer is the Shared Work catalog in [USAGE_BILLING.md](./USAGE_BILLING.md) and `src/lib/usage-billing-catalog.ts`; treat the channel-package matrix below as record only, not current billing authority.
+
+Status: **historical source contract; provider/deployment verification completed by later releases**. This document does not certify that new prices exist in Stripe or that checkout is released. Render is production. The user reports that current accounts are demo/test; preserve all Stripe history and verify live subscription inventory before any destructive operation.
 
 The authoritative files are `src/lib/plan-catalog.ts`, `scripts/lib/stripe-founder-catalog.mjs`, and the strict checkout validator. Catalog version: `channel_plans_2026_09_v2`.
 

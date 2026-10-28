@@ -1,7 +1,7 @@
 # BotBound Launch Guru Playbook
 
 Updated: 2026-09-19
-Status: **Active founder launch sequence**  
+Status: **Historical** (superseded October 28, 2026; current direction is `docs/design/master-plan.md` with pricing in `docs/USAGE_BILLING.md`)
 Authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`
 
 > September 27 scope correction: the earlier funding/host table and offer statements below preserve prior planning, not current deployment or sales instructions. Render is production; use [Deployment Runbook](DEPLOYMENT_RUNBOOK.md) for release steps and [P0 Billing Ops](P0_BILLING_OPS_NOTE.md) for the one-Bot channel catalog and Calls-only launch boundary. Do not restore Vercel or enable unavailable channels from this historical sequence.

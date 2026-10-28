@@ -39,5 +39,5 @@ A workspace is activated when the user has:
 - The user thinks Free Builder includes a live production number.
 - The user thinks BotBound only supports one Bot forever.
 - Public-facing copy uses `AI employee` as the product noun.
-- Launch copy still uses sub-$19 pricing.
+- Launch copy still uses retired pre-Shared-Work ($19-era) pricing.
 - WhatsApp is described as publicly available before beta release.

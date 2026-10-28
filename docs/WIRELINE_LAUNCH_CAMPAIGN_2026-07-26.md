@@ -1,5 +1,7 @@
 # BotBound Launch Campaign
 
+> **October 28, 2026:** Historical campaign pack. Current positioning lives in `docs/design/master-plan.md`; current pricing in `docs/USAGE_BILLING.md`. Retained for creative provenance.
+
 Domain copy updated September 25, 2026 for `botbound.app`. Previously recorded audio and film must be regenerated and reviewed before publishing; this copy update does not certify old media.
 
 Updated: 2026-09-19

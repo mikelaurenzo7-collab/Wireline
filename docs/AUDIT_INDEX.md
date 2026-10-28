@@ -12,7 +12,6 @@ This index preserves dated audits, launch passes, QA records, and superseded dec
 
 | Evidence | Scope |
 | --- | --- |
-| [USAGE_BILLING.md](./USAGE_BILLING.md) | October 24 usage billing design, rate card with margins, spend caps, Stripe objects and staged rollout. Dark behind `USAGE_BILLING_ENABLED`; moves to the canonical index once it ships. |
 | [BOTBOUND-DOMAIN-AUDIT-2026-08-31.md](./BOTBOUND-DOMAIN-AUDIT-2026-08-31.md) | August 31 domain-by-domain audit of `main` `bc2e32d6f`. Design-partner conditional GO. Complementary activation-truth and public-loop code. PR #1186 owns sender identity, public-stats retirement, founder PSTN quarantine, and metering. |
 | [BOTBOUND-LAUNCH-GAP-AUDIT-2026-08-20.md](./BOTBOUND-LAUNCH-GAP-AUDIT-2026-08-20.md) | August 20 adversarial, evidence-backed launch-gap audit across public conversion, auth, workspace, billing, security, data, communications, companion clients, analytics, SEO, campaign delivery, and release operations. |
 | [BOTBOUND-LAUNCH-SURFACE-TEST-MATRIX-2026-08-20.md](./BOTBOUND-LAUNCH-SURFACE-TEST-MATRIX-2026-08-20.md) | August 20 surface-by-surface execution matrix for package gates, live public probes, CI, extension, native, media, accessibility, recovery, and unresolved release evidence. |
@@ -45,7 +44,7 @@ This index preserves dated audits, launch passes, QA records, and superseded dec
 | Evidence | Current interpretation |
 | --- | --- |
 | [PRICING_DECISION_2026-09-27.md](./PRICING_DECISION_2026-09-27.md) | Channel and capacity pricing decision, contribution assumptions, bounded call completion, and rollout limits. Current amounts and availability remain in the catalog and canonical billing documents. |
-| [PRICING_DECISION_2026-07-25.md](./PRICING_DECISION_2026-07-25.md) | Founder catalog v6 decision record. Current pricing source remains `src/lib/plan-catalog.ts` plus `business-usage-pricing-decision.md`. |
+| [PRICING_DECISION_2026-07-25.md](./PRICING_DECISION_2026-07-25.md) | Founder catalog v6 decision record. Historical; the current pricing source is `src/lib/usage-billing-catalog.ts` plus USAGE_BILLING.md. |
 | [PLAN_CAPACITY_HEADROOM_2026-07-25.md](./PLAN_CAPACITY_HEADROOM_2026-07-25.md) | Capacity method and prior-plan arithmetic. Later catalog decisions supersede its old plan conclusions. |
 | [RUNNING_COSTS_AUDIT_2026-07-06.md](./RUNNING_COSTS_AUDIT_2026-07-06.md) | Historical cost evidence referenced by launch margin planning. |
 | [SUPABASE_ADVISOR_POSTURE_2026-07-07.md](./SUPABASE_ADVISOR_POSTURE_2026-07-07.md) | Supabase advisor evidence and custom-auth interpretation. Recheck live advisors before acting. |

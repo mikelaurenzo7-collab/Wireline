@@ -1,9 +1,11 @@
 # BotBound Launch Creative Media Kit
 
+> **October 28, 2026:** Historical creative kit. Current positioning lives in `docs/design/master-plan.md`. Retained for asset provenance.
+
 Domain copy updated September 25, 2026 for `botbound.app`. Previously recorded audio and film must be regenerated and reviewed before publishing; this copy update does not certify old media.
 
 Updated: 2026-08-14  
-Status: **Active delivery and capture kit**  
+Status: **Historical delivery and capture kit**  
 Authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`  
 Copy owner: `docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md`
 

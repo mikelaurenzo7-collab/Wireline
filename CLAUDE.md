@@ -5,7 +5,7 @@ This file provides Claude Code with repository-specific context that is useful a
 ## Development model
 
 - `npm run dev` starts the single Express + Vite development service on `http://localhost:3000`.
-- `server.ts` is the canonical local, bundled, and Vercel entrypoint.
+- `server.ts` is the canonical local, bundled, and Render entrypoint. Vercel remains a legacy rollback path only.
 - `src/server/register-api-routes.ts` is the explicit API route registry; a route file is not live merely because it exists.
 - `src/routes/` owns HTTP handlers. `src/lib/` owns server-side domain and provider logic. `src/db/schema.ts` is the Drizzle schema source.
 - Browser extension and native clients are thin surfaces. Provider credentials, prompts, tenant enforcement, billing, and compliance gates remain server-owned.
@@ -36,7 +36,7 @@ npm run build
 npm run smoke:server
 ```
 
-Use `npm run verify:full` before merge for release-impacting work. GitHub Actions startup failures caused by the repository billing limit are infrastructure noise, not application proof; require exact-head Vercel, CodeRabbit, command-level evidence, and production verification as defined in `docs/DEPLOYMENT_RUNBOOK.md`.
+Use `npm run verify:full` before merge for release-impacting work. GitHub Actions startup failures caused by the repository billing limit are infrastructure noise, not application proof; require exact-head Render, command-level evidence, and production verification as defined in `docs/DEPLOYMENT_RUNBOOK.md`.
 
 ## Repository conventions
 

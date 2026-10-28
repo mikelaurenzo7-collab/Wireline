@@ -1,3 +1,5 @@
+> **October 28, 2026:** Superseded for all new-sale pricing by the Shared Work offer — Lite $12 / Starter $24 / Plus $49 — in [USAGE_BILLING.md](./USAGE_BILLING.md) and `src/lib/usage-billing-catalog.ts`. Retained as historical record.
+>
 > Superseded for new-sale package selection on September 27, 2026 by [Channel pricing decision](PRICING_DECISION_2026-09-27.md) and [Billing operations](P0_BILLING_OPS_NOTE.md). The earlier bundles below remain historical design/record compatibility, not current new-sale prices.
 
 # BotBound Billing Catalog Direction
