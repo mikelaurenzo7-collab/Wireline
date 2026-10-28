@@ -188,7 +188,7 @@ console.log(
   "UNPROVEN: actual voice/TTS and SMS carrier mix, inbound transport, retries, absorbed work, payment failures/refunds, tax variance and fixed overhead. Premium voice cost is not bounded by the blended reserve.",
 );
 console.log(
-  "Mailbox capacity allocation must not be counted again as the full AgentMail invoice. Browserless fixed-plan capacity and overage must also be reconciled without double counting.",
+  "Mailbox capacity allocation must not be counted again as the full AgentMail invoice. Hosted browser (Browserbase) fixed-plan capacity and overage must also be reconciled without double counting.",
 );
 console.log(
   `The ${money(USAGE_DEFAULT_MONTHLY_CAP_USD)} default cap includes base, add-ons and work before tax; included retail work resets each billing month without rollover. The Computer wholesale envelope can stop work earlier.`,

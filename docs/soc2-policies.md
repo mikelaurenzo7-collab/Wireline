@@ -14,7 +14,7 @@ Postgres on Supabase, Twilio for carrier/numbers/SMS, xAI Grok Voice for live
 phone calls (OpenAI Realtime as the fallback and for browser rehearsals), OpenAI
 TTS for approved campaign narration, the managed reasoning
 chain in `src/lib/ai-models.ts`, Stripe for billing, AgentMail for managed Bot
-mailboxes, Resend for transactional email, Browserless for hosted Computer
+mailboxes, Resend for transactional email, Browserbase for hosted Computer
 sessions, and Sentry for configured error reporting. Live phone calls use xAI's
 built-in Grok voices; browser rehearsals use OpenAI's. Optional operator voice-preview pilots
 are separate, disabled until their own readiness and processing gates are met.

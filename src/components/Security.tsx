@@ -198,7 +198,7 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
       "Payments: Stripe (PCI scope reduced, BotBound never stores card numbers).",
       "Data plane: Supabase Postgres. Rate limits: Upstash Redis. Hosting: Render.",
       "Email: AgentMail for Bot mailboxes managed by the platform and Bot email; Resend for transactional platform email.",
-      "Computer: Browserless hosts remote browser sessions. An AI model provider processes screen context to carry out tasks.",
+      "Computer: Browserbase hosts remote browser sessions. An AI model provider processes screen context to carry out tasks.",
       "Monitoring: Sentry receives redacted server error reports and operational diagnostics when configured.",
       "Provider credentials and routing stay on the server. BotBound owns the customer experience while this Trust Center names key subprocessors for transparency.",
     ],

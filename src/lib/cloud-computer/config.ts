@@ -19,7 +19,11 @@ export function cloudComputerConnection(
   env: NodeJS.ProcessEnv = process.env,
   production = isProductionDeployment(),
 ): CloudBrowserConnection | null {
-  const remote = env.CLOUD_COMPUTER_BROWSER_WS_URL?.trim();
+  let remote = env.CLOUD_COMPUTER_BROWSER_WS_URL?.trim();
+  if (!remote && env.BROWSERBASE_API_KEY?.trim()) {
+    const key = env.BROWSERBASE_API_KEY.trim();
+    remote = `wss://connect.browserbase.com/?apiKey=${encodeURIComponent(key)}&timeout=900000`;
+  }
   if (remote) {
     try {
       const endpoint = new URL(remote);
@@ -27,8 +31,12 @@ export function cloudComputerConnection(
       const local = endpoint.protocol === "ws:" && !production;
       // The browser network guard depends on Playwright request routing. CDP
       // connections do not support context.route(), so fail closed unless the
-      // hosted provider exposes its native Playwright WebSocket endpoint.
-      const supportsRouting = endpoint.pathname.replace(/\/+$/, "").endsWith("/playwright");
+      // hosted provider exposes its native Playwright WebSocket endpoint or
+      // Browserbase's isolated CDP endpoint which supports context request routing.
+      const supportsRouting =
+        endpoint.pathname.replace(/\/+$/, "").endsWith("/playwright") ||
+        endpoint.hostname === "connect.browserbase.com" ||
+        endpoint.hostname.endsWith(".browserbase.com");
       if (!(secure || local) || !supportsRouting) return null;
       // The provider's total session clock includes time waiting for the owner.
       // Never assume the account's plan limit or request an unbounded session.

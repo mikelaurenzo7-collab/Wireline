@@ -335,6 +335,14 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     formatHint: "wss://<hosted browser CDP endpoint>",
   },
   {
+    name: "BROWSERBASE_API_KEY",
+    group: "ai",
+    required: false,
+    description: "Browserbase API key for hosted browser automation and computer use",
+    validate: (value) => /^bb_[a-z0-9_-]+/i.test(value.trim()),
+    formatHint: "bb_live_... or bb_test_...",
+  },
+  {
     name: "WIRELINE_STRUCTURED_PRIMARY_PROVIDER",
     group: "ai",
     required: false,

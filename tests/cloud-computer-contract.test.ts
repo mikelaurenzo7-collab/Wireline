@@ -143,6 +143,29 @@ describe("cloud computer production gates", () => {
     });
     expect(
       cloudComputerConnection(
+        {
+          BROWSERBASE_API_KEY: "bb_live_testkey123",
+        },
+        true,
+      ),
+    ).toEqual({
+      kind: "remote",
+      wsEndpoint: "wss://connect.browserbase.com/?apiKey=bb_live_testkey123&timeout=900000",
+    });
+    expect(
+      cloudComputerConnection(
+        {
+          BROWSERBASE_API_KEY: "bb_live_testkey123",
+          CLOUD_COMPUTER_BROWSER_TIMEOUT_MS: "600000",
+        },
+        true,
+      ),
+    ).toEqual({
+      kind: "remote",
+      wsEndpoint: "wss://connect.browserbase.com/?apiKey=bb_live_testkey123&timeout=600000",
+    });
+    expect(
+      cloudComputerConnection(
         { CLOUD_COMPUTER_BROWSER_WS_URL: "ws://browser.example/chromium/playwright" },
         true,
       ),
@@ -355,11 +378,12 @@ describe("cloud computer source contracts", () => {
     expect(initialPrepare).not.toContain("waitForOwner(");
   });
 
-  it("uses the Playwright transport required by browser request guards", () => {
+  it("uses the Playwright and CDP transport required by browser request guards", () => {
     const browser = read("src/lib/cloud-computer/browser-session.ts");
     expect(browser).toContain("await chromium.connect(connection.wsEndpoint");
-    expect(browser).not.toContain("connectOverCDP");
+    expect(browser).toContain("connectOverCDP");
     expect(read("src/lib/cloud-computer/config.ts")).toContain('endsWith("/playwright")');
+    expect(read("src/lib/cloud-computer/config.ts")).toContain("connect.browserbase.com");
   });
 
   it("registers owner-authenticated routes only", () => {

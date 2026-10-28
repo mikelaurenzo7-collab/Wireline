@@ -71,8 +71,9 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     "OpenAI plans each Bot's web tasks in an isolated hosted browser.",
     "ai",
     false,
-    ["OPENAI_API_KEY", "CLOUD_COMPUTER_BROWSER_WS_URL"],
+    ["OPENAI_API_KEY"],
     "The Computer page shows the feature as being set up; nothing runs.",
+    [["CLOUD_COMPUTER_BROWSER_WS_URL", "BROWSERBASE_API_KEY"]],
   ),
   {
     ...item(

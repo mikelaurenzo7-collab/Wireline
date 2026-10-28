@@ -79,6 +79,8 @@ export function browserlessSessionCostUsd(connectionMs: number): number {
   if (!Number.isFinite(connectionMs) || connectionMs <= 0) return 0;
   return Math.ceil(connectionMs / BROWSERLESS_UNIT_MS) * BROWSERLESS_UNIT_USD;
 }
+export const browserbaseSessionCostUsd = browserlessSessionCostUsd;
+export const browserSessionCostUsd = browserlessSessionCostUsd;
 // A failed final write is retried before the outcome is left for a read to settle.
 const TERMINAL_PERSIST_BACKOFF_MS = [0, 500, 1_500] as const;
 const SHUTDOWN_DEADLINE_MS = 5_000;

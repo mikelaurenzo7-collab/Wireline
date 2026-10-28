@@ -143,7 +143,7 @@ No such provider resource or profile is provisioned by the current change.
 - [Chromium Fetch request-stage interception and redirect events](https://github.com/ChromeDevTools/devtools-protocol/blob/master/pdl/domains/Fetch.pdl)
 - [Chromium related-target attachment](https://github.com/ChromeDevTools/devtools-protocol/blob/master/pdl/domains/Target.pdl)
 - [WebSocket opening handshake and redirect restriction](https://websockets.spec.whatwg.org/#opening-handshake)
-- [Browserless connection documentation](https://docs.browserless.io/baas/quick-start)
+- [Browserbase documentation](https://docs.browserbase.com/welcome/introduction)
 
 Source implements these capabilities; a local synthetic test is not proof that a
 particular hosted provider configuration has completed a production workflow.

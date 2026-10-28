@@ -49,7 +49,7 @@ export type BrowserUnexpectedCloseReason =
 /**
  * One Bot's cloud computer: an isolated Chromium session driven through the
  * OpenAI computer tool. Production connects to a remote, sandboxed browser
- * over Browserless's native Playwright protocol so request and WebSocket
+ * over Browserbase or a Playwright-compatible remote protocol so request and WebSocket
  * routing stay available; a local Chromium launch is allowed only for tests.
  */
 
@@ -385,11 +385,17 @@ export class CloudBrowserSession {
   private static async openUnbounded(
     connection: CloudBrowserConnection,
   ): Promise<CloudBrowserSession> {
-    // Browserless meters connection time, including setup before the first page.
+    // Hosted providers meter connection time, including setup before the first page.
     const remoteConnectionStartedAt = connection.kind === "remote" ? Date.now() : null;
+    const isBrowserbase =
+      connection.kind === "remote" &&
+      (connection.wsEndpoint.includes("browserbase.com") ||
+        connection.wsEndpoint.includes("connect.browserbase"));
     const browser =
       connection.kind === "remote"
-        ? await chromium.connect(connection.wsEndpoint, { timeout: NAVIGATION_TIMEOUT_MS })
+        ? (isBrowserbase
+            ? await chromium.connectOverCDP(connection.wsEndpoint, { timeout: NAVIGATION_TIMEOUT_MS })
+            : await chromium.connect(connection.wsEndpoint, { timeout: NAVIGATION_TIMEOUT_MS }))
         : await chromium.launch({
             executablePath: connection.executablePath,
             headless: true,
@@ -716,10 +722,14 @@ export class CloudBrowserSession {
     void this.close();
   }
 
-  /** Browserless connection time; null for a local development browser. */
+  /** Hosted browser connection time; null for a local development browser. */
   get browserlessConnectionMs(): number | null {
     if (this.remoteConnectionStartedAt === null) return null;
     return Math.max(0, (this.disconnectedAt ?? Date.now()) - this.remoteConnectionStartedAt);
+  }
+
+  get remoteConnectionMs(): number | null {
+    return this.browserlessConnectionMs;
   }
 
   /**

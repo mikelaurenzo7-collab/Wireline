@@ -207,7 +207,7 @@ export default function PrivacyPolicyPage() {
               <strong>Computer task data</strong>: We save task instructions, activity, questions,
               replies, and results in your account. Live browser images are held temporarily in
               application memory rather than stored in task history; screen context may be sent to
-              our AI model providers to carry out your task. Browserless hosts the remote browser,
+              our AI model providers to carry out your task. Browserbase hosts the remote browser,
               and websites you visit process session data and the information you enter, including
               login information you choose to provide.
             </p>
@@ -287,7 +287,7 @@ export default function PrivacyPolicyPage() {
                 <strong>Render</strong>: Website and API hosting, and the persistent voice runtime
               </li>
               <li>
-                <strong>Browserless</strong>: Hosted browser sessions for Computer tasks, including
+                <strong>Browserbase</strong>: Hosted browser sessions for Computer tasks, including
                 webpages, browser session data, and information entered in the remote browser
               </li>
               <li>
