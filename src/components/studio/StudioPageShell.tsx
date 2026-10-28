@@ -7,7 +7,7 @@ export default function StudioPageShell({ children }: { children: ReactNode }) {
     <WorkspaceShell
       title=""
       eyebrow=""
-      contentClassName="h-full min-h-0 overflow-hidden p-0"
+      contentClassName="min-h-0 flex-1 overflow-hidden p-0"
       fullBleed
     >
       {children}

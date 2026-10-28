@@ -124,10 +124,10 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
 
 .marketing-surface.wl-features-page .wl-features-pillars {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 2.75rem;
-  max-width: 28rem;
-  margin: 3.5rem auto 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.125rem;
+  max-width: none;
+  margin: 2.5rem auto 0;
   padding: 0;
   list-style: none;
 }
@@ -137,13 +137,14 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
   display: flex;
   min-width: 0;
   flex-direction: column;
-  align-items: center;
-  padding: 0;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 1.5rem;
   overflow: visible;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  text-align: center;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: 1.125rem;
+  background: var(--wireline-color-surface-default);
+  text-align: left;
 }
 
 .marketing-surface.wl-features-page .wl-features-pillar::before {
@@ -249,7 +250,7 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
 
 @media (max-width: 960px) {
   .marketing-surface.wl-features-page .wl-features-pillars {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .marketing-surface.wl-features-page .wl-features-grid {
@@ -258,6 +259,7 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
 }
 
 @media (max-width: 600px) {
+  .marketing-surface.wl-features-page .wl-features-pillars,
   .marketing-surface.wl-features-page .wl-features-grid {
     grid-template-columns: minmax(0, 1fr);
   }

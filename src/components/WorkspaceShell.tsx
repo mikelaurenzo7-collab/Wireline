@@ -408,7 +408,7 @@ export default function WorkspaceShell({
     : "px-3 pt-2 pb-5 sm:px-6 sm:pt-3 lg:px-7 lg:pt-4 lg:pb-6";
   const contentInner = fullBleed
     ? `wl-workspace-content-inner flex w-full max-w-none flex-col ${
-        containScroll ? "min-h-0 flex-1" : "h-full min-h-0 shrink-0"
+        containScroll ? "min-h-0 flex-1" : "min-h-[26rem] flex-1 shrink-0"
       }`
     : // Document pages must grow with their content so overflow cannot consume
       // the scrollport's bottom padding and slide actions beneath the mobile dock.

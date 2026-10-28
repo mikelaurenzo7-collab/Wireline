@@ -62,9 +62,13 @@
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 1rem 0.75rem;
+  padding: 0.875rem 0.75rem;
   border-right: 1px solid var(--bb-shell-border);
-  background: var(--wireline-color-canvas-default);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-default) 42%,
+    var(--wireline-color-canvas-default)
+  );
   scrollbar-gutter: stable;
 }
 
@@ -145,13 +149,17 @@
 
 .wl-shell-search {
   width: 100%;
-  min-height: 2.75rem;
+  min-height: 2.5rem;
   gap: 0.5rem;
-  margin-top: 0.625rem;
+  margin-top: 0.5rem;
   padding-inline: 0.625rem;
-  border: 1px solid transparent;
-  border-radius: var(--wireline-radius-sm);
-  background: transparent;
+  border: 1px solid var(--bb-shell-border);
+  border-radius: var(--wireline-radius-md);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-default) 55%,
+    var(--wireline-color-canvas-default)
+  );
   color: var(--wireline-color-text-secondary);
   font-size: 0.8125rem;
   font-weight: 500;
@@ -226,13 +234,17 @@
 
 .wl-workspace-shell .wl-shell-bot-context {
   position: relative;
-  min-height: 3rem;
+  min-height: 2.875rem;
   gap: 0.625rem;
-  margin-top: 0.75rem;
+  margin-top: 0.625rem;
   padding: 0.4375rem 0.625rem;
   border: 1px solid var(--bb-shell-border);
   border-radius: var(--wireline-radius-md);
-  background: transparent;
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-default) 72%,
+    var(--wireline-color-canvas-default)
+  );
   color: var(--wireline-color-text-primary);
   text-decoration: none;
   box-shadow: none;
@@ -240,8 +252,16 @@
 }
 
 .wl-workspace-shell .wl-shell-bot-context[data-wireline-bot-selected="true"] {
-  border-color: var(--bb-shell-border);
-  background: transparent;
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 38%,
+    var(--bb-shell-border)
+  );
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 8%,
+    var(--wireline-color-surface-default)
+  );
 }
 
 .wl-shell-bot-copy,
@@ -372,8 +392,8 @@
 .wl-shell-notice-rail {
   display: grid;
   flex-shrink: 0;
-  gap: 0.625rem;
-  padding-inline: 0.75rem;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem 0.25rem;
 }
 
 .wl-shell-notice-rail:empty {

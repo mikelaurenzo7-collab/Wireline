@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { Globe, Mail, MessageSquare, Phone } from "lucide-react";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
@@ -7,28 +8,54 @@ type Pillar = {
   id: string;
   label: string;
   body: string;
+  points: readonly string[];
+  Icon: typeof Phone;
 };
 
 const PILLARS: readonly Pillar[] = [
   {
     id: "calls",
     label: "Calls",
-    body: "Answer, call out, and follow up.",
+    body: "Answer incoming callers around the clock, run reviewed outbound calls, and book or route callers under your rules.",
+    points: [
+      "Dedicated local phone number",
+      "Real-time voice with instant escalation",
+      "Full transcript and call summary",
+    ],
+    Icon: Phone,
   },
   {
     id: "sms",
     label: "SMS",
-    body: "Text from the same Bot.",
+    body: "Text from the same Bot number so confirmations, links, and follow-ups stay in one conversation.",
+    points: [
+      "Two-way SMS on your Bot line",
+      "Post-call text confirmations",
+      "Permission-aware messaging controls",
+    ],
+    Icon: MessageSquare,
   },
   {
     id: "email",
     label: "Email",
-    body: "Read and reply with your business identity.",
+    body: "Read incoming threads, draft or send replies with your business identity, and keep every commitment logged.",
+    points: [
+      "BotBound address or custom domain",
+      "Gmail and Outlook connection support",
+      "Rule-based auto-reply or draft review",
+    ],
+    Icon: Mail,
   },
   {
     id: "computer",
     label: "A Computer",
-    body: "Research and work on the web.",
+    body: "Research vendors, check schedules, and complete web tasks in a supervised cloud browser.",
+    points: [
+      "Live browser view beside your chat",
+      "One-click owner takeover for logins",
+      "Cited sources and step-by-step history",
+    ],
+    Icon: Globe,
   },
 ];
 
@@ -47,6 +74,10 @@ export default function Features() {
         <div className="wl-public-rail mx-auto max-w-6xl">
           <header className="wl-features-intro text-center">
             <h1 className="marketing-hero-title mx-auto">BOTS FOR EVERY JOB.</h1>
+            <p className="wl-public-copy mx-auto max-w-2xl">
+              Every Bot combines a phone line, an inbox, and a cloud computer in one workspace so
+              customer conversations and web tasks never fall through the cracks.
+            </p>
             <div className="marketing-hero__actions">
               <Link
                 to={signedIn ? "/studio" : "/signup"}
@@ -68,10 +99,20 @@ export default function Features() {
             className="wl-features-pillars"
             aria-label="Available Bot capabilities"
           >
-            {PILLARS.map(({ id, label, body }) => (
+            {PILLARS.map(({ id, label, body, points, Icon }) => (
               <li id={id} key={id} className="wl-features-pillar scroll-mt-24">
-                <h2 className="wl-features-pillar__title">{label}</h2>
+                <div className="landing-prestige__card-head">
+                  <span className="landing-prestige__card-icon" aria-hidden="true">
+                    <Icon className="size-4" />
+                  </span>
+                  <h2 className="wl-features-pillar__title">{label}</h2>
+                </div>
                 <p className="wl-features-pillar__body">{body}</p>
+                <ul className="wl-features-pillar__list">
+                  {points.map((point) => (
+                    <li key={point}>{point}</li>
+                  ))}
+                </ul>
               </li>
             ))}
           </ul>

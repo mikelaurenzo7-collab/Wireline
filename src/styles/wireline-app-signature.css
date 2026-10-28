@@ -19,14 +19,12 @@
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent 55px,
-    color-mix(in srgb, var(--wireline-color-text-primary) 2.5%, transparent) 55px,
-    color-mix(in srgb, var(--wireline-color-text-primary) 2.5%, transparent) 56px
+  background: radial-gradient(
+    ellipse 70% 24rem at 50% -8rem,
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 5%, transparent),
+    transparent 70%
   );
-  opacity: 0.55;
+  opacity: 0.65;
 }
 
 .wl-workspace-shell > .wl-workspace-frame {

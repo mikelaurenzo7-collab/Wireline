@@ -135,14 +135,14 @@
 }
 
 .marketing-surface.wl-features-page .wl-features-pillars {
-  gap: 2.75rem;
+  gap: 1.125rem;
 }
 
 .marketing-surface.wl-features-page .wl-features-pillar {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  padding: 1.5rem;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: 1.125rem;
+  background: var(--wireline-color-surface-default);
 }
 
 .marketing-surface.wl-features-page .wl-features-pillar::before {
@@ -150,8 +150,8 @@
 }
 
 .marketing-surface.wl-features-page .wl-features-pillar .wl-features-pillar__title {
-  margin-top: 1.5rem;
-  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  margin-top: 0.25rem;
+  font-size: clamp(1.15rem, 1.5vw, 1.375rem);
   letter-spacing: -0.02em;
 }
 

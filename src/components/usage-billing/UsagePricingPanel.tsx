@@ -373,16 +373,16 @@ export default function UsagePricingPanel({
                   emailAddress,
                 },
               })}
-              className="marketing-btn-primary inline-flex min-h-11 w-full flex-wrap items-center justify-center gap-2 rounded-xl px-0 text-sm font-semibold sm:px-4"
+              className="marketing-btn-primary inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold"
             >
-              <span className="w-full">Get {plan.name}</span>{" "}
-              <ArrowRight className="size-4" aria-hidden="true" />
+              <span>Get {plan.name}</span>{" "}
+              <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
             </Link>
             <Link
               to="/contact?topic=demo"
-              className="marketing-btn-secondary inline-flex min-h-11 w-full flex-wrap items-center justify-center rounded-xl px-0 text-sm font-semibold sm:px-4"
+              className="marketing-btn-secondary inline-flex min-h-11 w-full items-center justify-center rounded-xl px-4 text-sm font-semibold"
             >
-              <span className="w-full">Request a Demo</span>
+              <span>Request a Demo</span>
             </Link>
           </div>
         </div>

@@ -54,7 +54,7 @@ const PANEL_TABS: ReadonlyArray<{ id: PanelSection; label: string }> = [
 ];
 // The panel can be dragged as wide as the conversation allows; Full width
 // takes the rest. The conversation never narrows past a readable column.
-const PANEL_DEFAULT_WIDTH = 600;
+const PANEL_DEFAULT_WIDTH = 480;
 const PANEL_MIN_WIDTH = 384;
 const PANEL_MAX_CAP = 1120;
 const CONVERSATION_MIN_WIDTH = 420;
