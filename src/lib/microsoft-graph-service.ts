@@ -571,8 +571,8 @@ export async function disconnectMicrosoftGraph(
   userId: string,
   provider: MsGraphProvider,
 ): Promise<void> {
-  const { revokeCrmProviderTokens } = await import("./oauth-provider-revocation");
-  await revokeCrmProviderTokens(userId, provider);
+  // revokeSignInSessions affects the Microsoft account beyond this tool.
+  // Remove the tool's local credentials without revoking mail/calendar sessions.
   await drizzle
     .delete(schema.crmConnections)
     .where(

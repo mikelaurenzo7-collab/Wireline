@@ -21,8 +21,8 @@ describe("authenticated minimal copy contract", () => {
     const introTags = workspacePageIntroTags(connectionsPage);
 
     expect(connectionsPage).toContain("MailboxConnectionCard");
-    expect(connectionsPage).toContain("CrmConnectionCard");
-    expect(connectionsPage).toContain("Connected Tools");
+    expect(connectionsPage).toContain("LegacyConnectionGrants");
+    expect(connectionsPage).not.toContain("CrmConnectionCard");
     expect(connectionsPage).not.toMatch(/IntegrationOperatingMap|data-wireline-integration-map/);
     expect(introTags).toHaveLength(1);
     expect(introTags[0]).toContain('title="Connections"');

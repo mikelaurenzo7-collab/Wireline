@@ -363,8 +363,9 @@ export async function logToGoogleSheets(params: {
 }
 
 export async function disconnectGoogleSheets(userId: string): Promise<void> {
-  const { revokeCrmProviderTokens } = await import("./oauth-provider-revocation");
-  await revokeCrmProviderTokens(userId, "google_sheets");
+  // Sheets shares the Google OAuth client with mail/calendar. Revoking the
+  // provider grant can affect those retained connections; remove only this
+  // tool's local credentials instead.
   await drizzle
     .delete(schema.crmConnections)
     .where(

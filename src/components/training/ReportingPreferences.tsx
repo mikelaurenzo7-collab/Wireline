@@ -269,9 +269,8 @@ export default function ReportingPreferences() {
       </p>
 
       {noStorageConnected ? (
-        <StatusNotice tone="warning" title="Connect a Report Destination">
-          To save report files, use Google Sheets for Google Drive or Microsoft Excel for OneDrive.
-          Check which connections are available under Connected Tools.{" "}
+        <StatusNotice tone="warning" title="No Report Destination Connected">
+          Manage saved connections in Connections. Your call records stay available in BotBound.{" "}
           <Link to="/connections" className="font-semibold underline underline-offset-4">
             Open Connections
           </Link>

@@ -378,11 +378,10 @@ function boundedProviderUrl(value: unknown): string | undefined {
 }
 
 export async function disconnectApollo(userId: string): Promise<void> {
-  const { revokeCrmProviderTokens } = await import("./oauth-provider-revocation");
-  await revokeCrmProviderTokens(userId, "apollo");
+  // Apollo has no supported provider revoke here; clear the local credential.
   await drizzle
     .update(schema.crmConnections)
-    .set({ active: false, updatedAt: new Date() })
+    .set({ active: false, accessToken: "", refreshToken: null, updatedAt: new Date() })
     .where(
       and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "apollo")),
     );
