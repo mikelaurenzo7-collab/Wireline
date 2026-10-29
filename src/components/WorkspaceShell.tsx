@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactElement, type ReactNode, type RefObject } from "react";
 import { Link, useLocation } from "react-router";
-import { ChevronsLeft, ChevronsRight, Search } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, MoreHorizontal, Search } from "lucide-react";
 
 import ActivationNudge from "./ActivationNudge";
 import BotMark from "./BotMark";
@@ -212,7 +212,6 @@ function DesktopRail({
       ? "⌘K"
       : "Ctrl K";
   const secondaryRouteParent = desktopNavParentHref(navPathname);
-  const agent = resolvedId ? agents.find((candidate) => candidate.id === resolvedId) : undefined;
   const settingsActive = isNavActive(pathname, "/settings");
 
   return (
@@ -266,30 +265,50 @@ function DesktopRail({
           </button>
         </RailHint>
 
-        {/* The Bot every page acts on keeps one fixed slot, on every route, so
-          the nav below never shifts between pages. */}
-        {agent ? (
-          <RailHint label={agent.name} enabled={collapsed}>
-            <Link
-              to={`/studio?agent=${encodeURIComponent(agent.id)}`}
-              aria-label={`Current Bot: ${agent.name}`}
-              data-wireline-bot-selected="true"
-              className="wl-shell-bot-context wl-focus-ring-halo"
-            >
-              <BotMark
-                seed={agent.id}
-                name={agent.name}
-                markKey={agent.mark_key}
-                size={28}
-                title={agent.name}
-              />
-              {!collapsed ? (
-                <span className="wl-shell-bot-copy">
-                  <span className="wl-shell-bot-name">{agent.name}</span>
-                </span>
-              ) : null}
-            </Link>
-          </RailHint>
+        {/* Small persistent roster: a single Bot is one row, and up to three Bots
+            stay recognizable by identity. The full roster remains contextual. */}
+        {agents.length > 0 ? (
+          <nav aria-label="Your Bots" className="wl-shell-bot-roster">
+            {agents.slice(0, 3).map((item) => {
+              const selected = item.id === resolvedId;
+              return (
+                <RailHint key={item.id} label={item.name} enabled={collapsed}>
+                  <Link
+                    to={`/studio?agent=${encodeURIComponent(item.id)}`}
+                    aria-label={`${selected ? "Current Bot" : "Open Bot"}: ${item.name}`}
+                    data-wireline-bot-selected={selected ? "true" : undefined}
+                    className="wl-shell-bot-context wl-focus-ring-halo"
+                  >
+                    <BotMark
+                      seed={item.id}
+                      name={item.name}
+                      markKey={item.mark_key}
+                      active={selected}
+                      size={28}
+                      decorative
+                    />
+                    {!collapsed ? (
+                      <span className="wl-shell-bot-copy min-w-0">
+                        <span className="wl-shell-bot-name">{item.name}</span>
+                      </span>
+                    ) : null}
+                  </Link>
+                </RailHint>
+              );
+            })}
+            {agents.length > 3 ? (
+              <RailHint label="All Bots" enabled={collapsed}>
+                <Link
+                  to="/bots"
+                  aria-label="All Bots"
+                  className="wl-shell-bot-context wl-focus-ring-halo"
+                >
+                  <MoreHorizontal className="size-5 shrink-0" aria-hidden="true" />
+                  {!collapsed ? <span className="wl-shell-bot-copy">All Bots</span> : null}
+                </Link>
+              </RailHint>
+            ) : null}
+          </nav>
         ) : null}
 
         <DesktopNavGroup
