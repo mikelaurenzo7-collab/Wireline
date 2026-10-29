@@ -212,6 +212,9 @@ function DesktopRail({
       ? "⌘K"
       : "Ctrl K";
   const secondaryRouteParent = desktopNavParentHref(navPathname);
+  const visibleBots = agents.length > 3 && resolvedId && !agents.slice(0, 3).some((bot) => bot.id === resolvedId)
+    ? [...agents.slice(0, 2), agents.find((bot) => bot.id === resolvedId)!]
+    : agents.slice(0, 3);
   const settingsActive = isNavActive(pathname, "/settings");
 
   return (
@@ -269,7 +272,7 @@ function DesktopRail({
             stay recognizable by identity. The full roster remains contextual. */}
         {agents.length > 0 ? (
           <nav aria-label="Your Bots" className="wl-shell-bot-roster">
-            {agents.slice(0, 3).map((item) => {
+            {visibleBots.map((item) => {
               const selected = item.id === resolvedId;
               return (
                 <RailHint key={item.id} label={item.name} enabled={collapsed}>
@@ -313,7 +316,7 @@ function DesktopRail({
 
         <DesktopNavGroup
           label="Work"
-          items={WORKSPACE_NAV}
+          items={agents.length ? WORKSPACE_NAV.filter((item) => item.href !== "/studio") : WORKSPACE_NAV}
           pathname={navPathname}
           collapsed={collapsed}
           secondaryRouteParent={secondaryRouteParent}
