@@ -161,7 +161,12 @@ beforeEach(() => {
   h.setTimer.mockReset();
   h.writePreference.mockReset();
   h.refresh.mockReset();
-  vi.stubGlobal("window", { setTimeout: h.setTimer });
+  vi.stubGlobal("window", {
+    setTimeout: h.setTimer,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  });
 });
 afterEach(() => vi.unstubAllGlobals());
 

@@ -61,16 +61,18 @@ describe("authenticated Bot navigation contract", () => {
     expect(studioChrome).not.toContain("/phone?agent=");
     expect(navigation).toContain('href: "/inbox"');
     expect(navigation).toContain('href: "/phone"');
-    expect(shell).toContain("Current Bot");
-    expect(shell).not.toContain("orderedAgents");
+    expect(shell).toContain('aria-label="Bot conversations"');
+    expect(shell).toContain('data-wireline-bot-selected={selected ? "true" : undefined}');
+    expect(shell).toContain('aria-label="Add a Bot"');
   });
 
   it("separates Work and Set up with a shared browser and explicit private rehearsal", () => {
-    expect(studio).toContain('type InspectorSection = "setup" | "review"');
+    expect(studio).toContain('type InspectorSection = "details" | "setup" | "review"');
     expect(studio).toContain('type WorkroomMode = "configure" | "test"');
     expect(studio).toContain('{ id: "work", label: "Work" }');
     expect(studio).toContain('{ id: "computer", label: "Browser" }');
     expect(studio).toContain('{ id: "try", label: "Rehearse" }');
+    expect(studio).toContain('{ id: "details", label: "Details" }');
     expect(studio).toContain('{ id: "setup", label: "Set Up" }');
     expect(studio).toContain('{ id: "review", label: "Summary" }');
     expect(studio).toContain("<ComputerWorkspaceProvider>");

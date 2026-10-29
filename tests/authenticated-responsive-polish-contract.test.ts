@@ -24,7 +24,7 @@ describe("authenticated responsive polish contract", () => {
     // The title must force single-line truncation (beating the global rule) and
     // be allowed to grow into the row.
     expect(chrome).toContain("min-w-0 flex-1 truncate !whitespace-nowrap");
-    expect(chrome).toContain("sm:max-w-[18rem] sm:flex-none");
+    expect(read("src/styles/studio-workspace.css")).toContain("max-width: min(18rem, 48vw)");
     // A content-sized basis lets the controls wrap instead of starving the title.
     expect(chrome).toContain(
       'className="flex min-w-0 flex-[1_1_10rem] items-center gap-2.5 md:max-w-[18rem] md:flex-none"',

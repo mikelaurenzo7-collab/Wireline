@@ -25,6 +25,7 @@ import {
 import { customerAgentLanguage } from "../lib/product-copy";
 import StudioAgentReviewPanel from "./StudioAgentReviewPanel";
 import StudioAgentWorkspacePanel from "./StudioAgentWorkspacePanel";
+import StudioBotDetailsPanel from "./studio/StudioBotDetailsPanel";
 import StudioWorkroom, { type StudioWorkroomHandle } from "./StudioWorkroom";
 import WorkspaceRecovery from "./WorkspaceRecovery";
 import StudioTaskChat from "./StudioTaskChat";
@@ -35,7 +36,7 @@ const ComputerWorkbench = lazy(() =>
   import("../pages/ComputerPage").then((module) => ({ default: module.ComputerWorkbench })),
 );
 
-type InspectorSection = "setup" | "review";
+type InspectorSection = "details" | "setup" | "review";
 /** Panel tabs that are not route-owned: the panel returns to the last one used. */
 type RestingSection = "try" | "computer";
 type PanelSection = RestingSection | InspectorSection;
@@ -49,6 +50,7 @@ const STUDIO_PANEL_REST_STORAGE_KEY = "wireline:studio-panel-rest:v1";
 const PANEL_TABS: ReadonlyArray<{ id: PanelSection; label: string }> = [
   { id: "computer", label: "Browser" },
   { id: "try", label: "Rehearse" },
+  { id: "details", label: "Details" },
   { id: "setup", label: "Set Up" },
   { id: "review", label: "Summary" },
 ];
@@ -62,10 +64,10 @@ const CONVERSATION_MIN_WIDTH = 420;
 function readStoredPanelCollapsed(): boolean {
   try {
     const raw = window.localStorage.getItem(STUDIO_INSPECTOR_STORAGE_KEY);
-    if (!raw) return false;
+    if (!raw) return true;
     return (JSON.parse(raw) as { collapsed?: unknown })?.collapsed === true;
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -165,7 +167,12 @@ function StudioWorkspaceContent() {
     drafts: workroomDrafts,
     conversations: workroomConversations,
   } = studioSession;
-  const { requestedId, resolvedId: resolvedAgentId, agents } = useStudioActiveAgentId();
+  const {
+    requestedId,
+    resolvedId: resolvedAgentId,
+    agents,
+    phoneLookupDegraded,
+  } = useStudioActiveAgentId();
   const [params, setParams] = useSearchParams();
   const workroomRef = useRef<StudioWorkroomHandle>(null);
   const tryWorkroomRef = useRef<StudioWorkroomHandle>(null);
@@ -220,7 +227,7 @@ function StudioWorkspaceContent() {
   } | null>(null);
   // Details are requested explicitly, including links from creation and review.
   // The route owns visibility so a saved desktop collapse cannot hide a deep link.
-  const inspectorOpen = sectionParam === "setup" || sectionParam === "review";
+  const inspectorOpen = ["details", "setup", "review"].includes(sectionParam || "");
   const computerFocused = params.get("focus") === "computer" && !inspectorOpen;
   const panelSection: PanelSection = inspectorOpen
     ? inspectorSection
@@ -290,7 +297,7 @@ function StudioWorkspaceContent() {
   }, [panelOpen]);
 
   useEffect(() => {
-    const inspectorRequested = sectionParam === "setup" || sectionParam === "review";
+    const inspectorRequested = ["details", "setup", "review"].includes(sectionParam || "");
     if (inspectorRequested) {
       setInspectorSection(readStudioInspectorSection(sectionParam));
     }
@@ -373,6 +380,7 @@ function StudioWorkspaceContent() {
         (current) => {
           const next = setStudioInspectorSectionParams(current, section);
           next.delete("focus");
+          next.delete("detail");
           return next;
         },
         { replace: true },
@@ -389,6 +397,7 @@ function StudioWorkspaceContent() {
         setParams(
           (current) => {
             const next = clearStudioInspectorSectionParams(current);
+            next.delete("detail");
             if (section !== "computer") {
               next.delete("focus");
               next.delete("panel");
@@ -425,12 +434,14 @@ function StudioWorkspaceContent() {
       setPanelCollapsed(true);
       setParams(
         (current) => {
-          const next = setStudioWorkroomModeParams(
-            clearStudioInspectorSectionParams(current),
-            "configure",
-          );
+          const cleared = clearStudioInspectorSectionParams(current);
+          const next =
+            sectionParam === "details"
+              ? cleared
+              : setStudioWorkroomModeParams(cleared, "configure");
           next.delete("focus");
           next.delete("panel");
+          next.delete("detail");
           return next;
         },
         { replace: true },
@@ -441,33 +452,24 @@ function StudioWorkspaceContent() {
           const next = clearStudioInspectorSectionParams(current);
           next.delete("focus");
           next.delete("panel");
+          next.delete("detail");
           return next;
         },
         { replace: true },
       );
     }
-    requestAnimationFrame(() => document.getElementById("studio-settings-toggle")?.focus());
-  }, [setPanelCollapsed, setParams, splitWorkspace]);
-
-  useEffect(() => {
-    const handleToggle = () => {
-      if (panelOpen) {
-        closeInspector();
-      } else {
-        openPanelSection("computer");
-      }
-    };
-    window.addEventListener("wireline:studio-toggle-panel", handleToggle);
-    return () => window.removeEventListener("wireline:studio-toggle-panel", handleToggle);
-  }, [closeInspector, openPanelSection, panelOpen]);
-
-  useEffect(() => {
-    window.dispatchEvent(
-      new CustomEvent("wireline:studio-panel-state", {
-        detail: { open: panelOpen, section: panelSection },
-      }),
+    requestAnimationFrame(() =>
+      document
+        .getElementById(
+          sectionParam === "details"
+            ? "studio-bot-details-toggle"
+            : sectionParam
+              ? "studio-settings-toggle"
+              : "studio-panel-toggle",
+        )
+        ?.focus(),
     );
-  }, [panelOpen, panelSection]);
+  }, [sectionParam, setPanelCollapsed, setParams, splitWorkspace]);
 
   const setWorkroomMode = useCallback(
     (mode: WorkroomMode) => {
@@ -501,13 +503,40 @@ function StudioWorkspaceContent() {
     else
       setParams(
         (current) => {
-          const next = new URLSearchParams(current);
+          const next = clearStudioInspectorSectionParams(current);
           next.set("panel", "computer");
+          next.delete("detail");
+          next.delete("focus");
           return next;
         },
         { replace: true },
       );
   }, [openPanelSection, setParams, splitWorkspace]);
+
+  useEffect(() => {
+    const handleToggle = () => {
+      if ((panelOpen && panelSection === "computer") || mobileBrowserOpen) closeInspector();
+      else showBrowser();
+    };
+    const handleClose = () => closeInspector();
+    window.addEventListener("wireline:studio-toggle-panel", handleToggle);
+    window.addEventListener("wireline:studio-close-panel", handleClose);
+    return () => {
+      window.removeEventListener("wireline:studio-toggle-panel", handleToggle);
+      window.removeEventListener("wireline:studio-close-panel", handleClose);
+    };
+  }, [closeInspector, mobileBrowserOpen, panelOpen, panelSection, showBrowser]);
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("wireline:studio-panel-state", {
+        detail: {
+          open: panelOpen || mobileBrowserOpen,
+          section: mobileBrowserOpen ? "computer" : panelSection,
+        },
+      }),
+    );
+  }, [mobileBrowserOpen, panelOpen, panelSection]);
 
   useEffect(() => {
     if (!rehearsalFocusRequest) return;
@@ -608,8 +637,44 @@ function StudioWorkspaceContent() {
       phoneNumber={active.phone_number}
       onEdit={() => openInspector("setup")}
       onRehearse={startRehearsal}
+      focusEmail={params.get("detail") === "email"}
       className="h-full"
       compact={splitWorkspace}
+    />
+  );
+
+  const detailsPanel = (
+    <StudioBotDetailsPanel
+      key={active.id}
+      agent={active}
+      phoneLookupDegraded={phoneLookupDegraded}
+      onEmail={() => {
+        setInspectorSection("review");
+        setParams(
+          (current) => {
+            const next = setStudioInspectorSectionParams(current, "review");
+            next.set("detail", "email");
+            next.delete("focus");
+            return next;
+          },
+          { replace: true },
+        );
+      }}
+      onComputer={showBrowser}
+      onSetup={() => openInspector("setup")}
+      onConfigureConversation={() => {
+        setPanelCollapsed(true);
+        setParams(
+          (current) => {
+            const next = clearStudioInspectorSectionParams(current);
+            next.set("chat", "setup");
+            next.delete("panel");
+            next.delete("detail");
+            return next;
+          },
+          { replace: true },
+        );
+      }}
     />
   );
 
@@ -703,12 +768,13 @@ function StudioWorkspaceContent() {
       </Suspense>
     ) : null;
 
-  // Wide screens offer Browser, Rehearse, Set up and Summary in one pane.
-  // Phones keep Work, Configure, and Browser in one row.
-  const panelTabs = splitWorkspace
-    ? PANEL_TABS
-    : PANEL_TABS.filter((tab) => tab.id !== "try" && tab.id !== "computer");
   const activePanelSection: PanelSection = splitWorkspace ? panelSection : inspectorSection;
+  // Details replaces Summary while it is open, keeping the narrow panel's
+  // controls on one row. The Bot name always reopens Details; Email opens Summary.
+  const panelTabs = PANEL_TABS.filter((tab) => {
+    if (!splitWorkspace && (tab.id === "try" || tab.id === "computer")) return false;
+    return activePanelSection === "details" ? tab.id !== "review" : tab.id !== "details";
+  });
   const selectPanelSection = (section: PanelSection) =>
     section === "try" || section === "computer"
       ? openPanelSection(section)
@@ -819,9 +885,11 @@ function StudioWorkspaceContent() {
         ? tryWorkroom
         : activePanelSection === "computer"
           ? computerPanel
-          : activePanelSection === "review"
-            ? reviewPanel
-            : setupPanel}
+          : activePanelSection === "details"
+            ? detailsPanel
+            : activePanelSection === "review"
+              ? reviewPanel
+              : setupPanel}
     </div>
   );
 

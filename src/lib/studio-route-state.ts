@@ -3,7 +3,7 @@
  * and Summary (the setup review). Only Details and Summary are route-owned;
  * Try It is the panel's resting state on wide screens.
  */
-export type StudioInspectorSection = "setup" | "review";
+export type StudioInspectorSection = "details" | "setup" | "review";
 export type StudioPanelSection = "try" | StudioInspectorSection;
 export type StudioWorkroomMode = "configure" | "test";
 
@@ -15,7 +15,7 @@ export type StudioRouteStateInput = {
 };
 
 export function readStudioInspectorSection(value: string | null): StudioInspectorSection {
-  return value === "review" ? "review" : "setup";
+  return value === "review" || value === "details" ? value : "setup";
 }
 
 export function readStudioWorkroomMode(input: StudioRouteStateInput): StudioWorkroomMode {
@@ -90,6 +90,9 @@ export function setStudioInspectorSectionParams(
   const next = canonicalStudioParams(current);
   next.set("section", section);
   next.delete("panel");
+  // Looking at the Bot's identity should not switch the conversation or
+  // consume an in-flight rehearsal command.
+  if (section === "details") return next;
   next.set("chat", "setup");
   if (hadCommand) next.set("workroom", "test");
   next.delete("command");
@@ -99,7 +102,9 @@ export function setStudioInspectorSectionParams(
 
 export function clearStudioInspectorSectionParams(current: URLSearchParams): URLSearchParams {
   const next = canonicalStudioParams(current);
-  if (next.get("section") === "setup" || next.get("section") === "review") {
+  if (next.get("section") === "details") {
+    next.delete("section");
+  } else if (next.get("section") === "setup" || next.get("section") === "review") {
     next.set("chat", "setup");
     next.delete("section");
   }

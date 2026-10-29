@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactElement, type ReactNode, type RefObject } from "react";
 import { Link, useLocation } from "react-router";
-import { ChevronsLeft, ChevronsRight, Search } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, Plus, Search } from "lucide-react";
 
 import ActivationNudge from "./ActivationNudge";
 import BotMark from "./BotMark";
@@ -11,8 +11,10 @@ import WorkspaceResizablePanel from "./layout/WorkspaceResizablePanel";
 import { BotBoundWordmark } from "./brand/BotBoundBrand";
 import BotBoundMark from "./brand/BotBoundMark";
 import { useAuth } from "../contexts/AuthContext";
+import { useAgents } from "../contexts/AgentsContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { useChromeHeight } from "../hooks/useChromeHeight";
+import { buildAgentOptionLabels } from "../lib/agent-option-labels";
 import { workspaceSidebarLabel } from "../lib/user-display";
 import {
   MOBILE_MORE_HREF,
@@ -200,6 +202,7 @@ function DesktopRail({
 }) {
   const { user } = useAuth();
   const { agents, requestedId, resolvedId } = useStudioActiveAgentId();
+  const { loading, degraded, refresh: refreshAgents } = useAgents();
   const { search } = useLocation();
   const scopedAgentId = requestedId?.trim() || resolvedId;
   const navPathname =
@@ -212,7 +215,10 @@ function DesktopRail({
       ? "⌘K"
       : "Ctrl K";
   const secondaryRouteParent = desktopNavParentHref(navPathname);
-  const agent = resolvedId ? agents.find((candidate) => candidate.id === resolvedId) : undefined;
+  // An unavailable explicit ID must not highlight another Bot as its owner.
+  const selectedAgentId = requestedId?.trim() || resolvedId;
+  const selectedAgent = agents.find((candidate) => candidate.id === selectedAgentId);
+  const agentLabels = buildAgentOptionLabels(agents);
   const settingsActive = isNavActive(pathname, "/settings");
 
   return (
@@ -266,35 +272,69 @@ function DesktopRail({
           </button>
         </RailHint>
 
-        {/* The Bot every page acts on keeps one fixed slot, on every route, so
-          the nav below never shifts between pages. */}
-        {agent ? (
-          <RailHint label={agent.name} enabled={collapsed}>
-            <Link
-              to={`/studio?agent=${encodeURIComponent(agent.id)}`}
-              aria-label={`Current Bot: ${agent.name}`}
-              data-wireline-bot-selected="true"
-              className="wl-shell-bot-context wl-focus-ring-halo"
-            >
-              <BotMark
-                seed={agent.id}
-                name={agent.name}
-                markKey={agent.mark_key}
-                size={28}
-                title={agent.name}
-              />
-              {!collapsed ? (
-                <span className="wl-shell-bot-copy">
-                  <span className="wl-shell-bot-name">{agent.name}</span>
-                </span>
-              ) : null}
-            </Link>
-          </RailHint>
-        ) : null}
+        <nav className="wl-shell-bot-roster" aria-label="Bot conversations">
+          <div className="wl-shell-bot-roster-heading">
+            {!collapsed ? <span className="wl-shell-nav-heading">Your Bots</span> : null}
+            <RailHint label="Add a Bot" enabled={collapsed}>
+              <Link
+                to="/studio?create=1"
+                aria-label="Add a Bot"
+                title={collapsed ? undefined : "Add a Bot"}
+                className="wl-shell-bot-add wl-focus-ring-halo"
+              >
+                <Plus size={16} aria-hidden="true" />
+              </Link>
+            </RailHint>
+          </div>
+          <div className="wl-shell-bot-roster-list" aria-busy={loading}>
+            {agents.map((agent) => {
+              const selected = selectedAgent?.id === agent.id;
+              const label = agentLabels.get(agent.id) || agent.name;
+              return (
+                <RailHint key={agent.id} label={label} enabled={collapsed}>
+                  <Link
+                    to={`/studio?agent=${encodeURIComponent(agent.id)}`}
+                    aria-label={`Open ${label} conversation`}
+                    aria-current={selected && pathname === "/studio" ? "page" : undefined}
+                    data-wireline-bot-selected={selected ? "true" : undefined}
+                    className="wl-shell-bot-context wl-focus-ring-halo"
+                  >
+                    <BotMark
+                      seed={agent.id}
+                      name={agent.name}
+                      markKey={agent.mark_key}
+                      size={28}
+                      title={agent.name}
+                    />
+                    {!collapsed ? (
+                      <span className="wl-shell-bot-copy">
+                        <span className="wl-shell-bot-name">{label}</span>
+                      </span>
+                    ) : null}
+                  </Link>
+                </RailHint>
+              );
+            })}
+          </div>
+          {!collapsed && !loading && agents.length === 0 ? (
+            <p className="wl-shell-bot-empty">
+              {degraded ? (
+                <>
+                  Bots unavailable.{" "}
+                  <button type="button" onClick={refreshAgents}>
+                    Try again
+                  </button>
+                </>
+              ) : (
+                "Add your first Bot to get started."
+              )}
+            </p>
+          ) : null}
+        </nav>
 
         <DesktopNavGroup
           label="Work"
-          items={WORKSPACE_NAV}
+          items={WORKSPACE_NAV.filter((item) => item.href !== "/studio")}
           pathname={navPathname}
           collapsed={collapsed}
           secondaryRouteParent={secondaryRouteParent}
