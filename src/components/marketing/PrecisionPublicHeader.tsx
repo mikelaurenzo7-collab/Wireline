@@ -24,7 +24,7 @@ export default function PrecisionPublicHeader() {
           <BotBoundWordmark className="wl-public-header__wordmark" />
         </Link>
 
-        <nav className="ml-auto hidden items-center gap-1 md:flex" aria-label="Explore BotBound">
+        <nav className="order-3 flex w-full items-center justify-center gap-1 border-t border-border/50 pt-1 md:order-none md:ml-auto md:w-auto md:justify-start md:border-0 md:pt-0" aria-label="Explore BotBound">
           <NavLink
             to="/features"
             className="wl-focus-ring-halo inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -46,10 +46,10 @@ export default function PrecisionPublicHeader() {
             // A signed-in visitor goes back to work, not through sign-in again.
             <Link
               to="/studio"
-              aria-label="Open Workspace"
+              aria-label="Open Work"
               className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold shrink-0 whitespace-nowrap max-[430px]:px-3"
             >
-              Open Workspace
+              Open Work
             </Link>
           ) : (
             <>
