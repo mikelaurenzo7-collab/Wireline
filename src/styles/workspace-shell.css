@@ -306,19 +306,64 @@
   box-shadow: none;
 }
 
+.wl-shell-bot-roster {
+  margin-top: 1.125rem;
+}
+
+.wl-shell-bot-roster-heading {
+  display: flex;
+  min-height: 2.25rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-left: 0.625rem;
+}
+
+.wl-shell-bot-add {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 2.25rem;
+  place-items: center;
+  border-radius: var(--wireline-radius-sm);
+  color: var(--wireline-color-text-secondary);
+}
+
+.wl-shell-bot-add:hover {
+  background: var(--bb-shell-active);
+  color: var(--wireline-color-text-primary);
+}
+
+.wl-shell-bot-roster-list {
+  display: flex;
+  max-height: 15rem;
+  flex-direction: column;
+  gap: 0.1875rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.wl-shell-bot-empty {
+  padding: 0.35rem 0.625rem;
+  color: var(--wireline-color-text-tertiary);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.wl-shell-bot-empty button {
+  color: var(--wireline-color-text-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.125rem;
+}
+
 .wl-workspace-shell .wl-shell-bot-context {
   position: relative;
   min-height: 2.875rem;
   gap: 0.625rem;
-  margin-top: 0.625rem;
   padding: 0.4375rem 0.625rem;
-  border: 1px solid var(--bb-shell-border);
+  border: 1px solid transparent;
   border-radius: var(--wireline-radius-md);
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-surface-default) 72%,
-    var(--wireline-color-canvas-default)
-  );
+  background: transparent;
   color: var(--wireline-color-text-primary);
   text-decoration: none;
   box-shadow: none;
@@ -341,6 +386,10 @@
 .wl-shell-bot-copy,
 .wl-shell-account-copy {
   min-width: 0;
+}
+
+.wl-shell-bot-copy {
+  flex: 1;
 }
 
 .wl-shell-bot-name,
@@ -386,6 +435,11 @@
 .wl-shell-rail[data-wireline-rail-collapsed="true"] {
   padding-inline: 0.5rem;
   scrollbar-gutter: auto;
+}
+
+.wl-shell-rail[data-wireline-rail-collapsed="true"] .wl-shell-bot-roster-heading {
+  justify-content: center;
+  padding-left: 0;
 }
 
 /* Portaled labels stay visible beyond the rail's scroll container. */

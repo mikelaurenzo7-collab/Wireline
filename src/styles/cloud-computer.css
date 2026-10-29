@@ -323,7 +323,8 @@
 
 /* The side panel is a tool surface. Keep the finished report available without
  * repeating a full conversation beside the current one. */
-.wl-computer-completed-details > summary {
+.wl-workspace-shell .wl-computer-completed-details > summary {
+  margin: 0;
   display: flex;
   min-height: 2.75rem;
   align-items: center;

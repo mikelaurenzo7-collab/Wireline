@@ -459,7 +459,9 @@ export default function CreateAgentDialog({
                   {language.setupPrompt}
                 </h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Answers and calls, plus email and a computer.
+                  {agents.length > 0
+                    ? "One Bot can handle many jobs. Add another when you need a separate identity, role, phone number, or email address. Channels and usage depend on your plan."
+                    : "Answers and calls, plus email and a computer."}
                 </p>
               </div>
             </div>

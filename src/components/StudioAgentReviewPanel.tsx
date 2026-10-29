@@ -41,6 +41,7 @@ type StudioAgentReviewPanelProps = {
   onRehearse: () => void;
   className?: string;
   compact?: boolean;
+  focusEmail?: boolean;
 };
 
 type MailboxScope = { agentId: string; emailIncluded: boolean };
@@ -60,13 +61,22 @@ export default function StudioAgentReviewPanel({
   onRehearse,
   className = "",
   compact = false,
+  focusEmail = false,
 }: StudioAgentReviewPanelProps) {
+  const emailSectionRef = useRef<HTMLDivElement>(null);
   const access = useChannelEntitlements();
   const [config, setConfig] = useState<AgentConfigResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const emailIncluded = access.includes("email");
+  useEffect(() => {
+    if (!focusEmail) return;
+    const frame = requestAnimationFrame(() =>
+      emailSectionRef.current?.scrollIntoView({ block: "start" }),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [focusEmail, agentId]);
   const mailboxScope = useRef<MailboxScope>({ agentId, emailIncluded });
   if (
     mailboxScope.current.agentId !== agentId ||
@@ -381,82 +391,86 @@ export default function StudioAgentReviewPanel({
           </StatusNotice>
         ) : null}
 
-        {emailIncluded ? (
-          <StatusNotice
-            stacked={compact}
-            tone={
-              visibleMailbox.status === "error" || visibleMailbox.status === "setup_error"
-                ? "warning"
-                : "info"
-            }
-            title={
-              visibleMailbox.status === "error"
-                ? "Email Status Unavailable"
-                : visibleMailbox.status === "setup_error"
-                  ? "Email Setup Not Finished"
-                  : visibleMailbox.status === "loading"
-                    ? "Loading email"
-                    : visibleMailbox.status === "setting_up"
-                      ? visibleMailbox.email
-                        ? "Checking email setup"
-                        : "Setting up email"
-                      : visibleMailbox.email
-                        ? "Email address"
-                        : "Set up your Bot's email"
-            }
-            action={
-              visibleMailbox.status === "error" ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setMailboxReloadKey((value) => value + 1)}
-                >
-                  Retry
-                </Button>
-              ) : visibleMailbox.email ? (
-                <div className="flex flex-wrap gap-2">
-                  <Button asChild size="sm" variant="secondary">
-                    <Link to={`/inbox?tab=email&agent=${encodeURIComponent(agentId)}`}>
-                      Open Inbox
-                    </Link>
-                  </Button>
+        <div ref={emailSectionRef} className="scroll-mt-4" aria-label="Bot email setup">
+          {emailIncluded ? (
+            <StatusNotice
+              stacked={compact}
+              tone={
+                visibleMailbox.status === "error" || visibleMailbox.status === "setup_error"
+                  ? "warning"
+                  : "info"
+              }
+              title={
+                visibleMailbox.status === "error"
+                  ? "Email Status Unavailable"
+                  : visibleMailbox.status === "setup_error"
+                    ? "Email Setup Not Finished"
+                    : visibleMailbox.status === "loading"
+                      ? "Loading email"
+                      : visibleMailbox.status === "setting_up"
+                        ? visibleMailbox.email
+                          ? "Checking email setup"
+                          : "Setting up email"
+                        : visibleMailbox.email
+                          ? "Email address"
+                          : "Set up your Bot's email"
+              }
+              action={
+                visibleMailbox.status === "error" ? (
                   <Button
                     type="button"
                     size="sm"
                     variant="secondary"
-                    disabled={visibleMailbox.status === "setting_up"}
+                    onClick={() => setMailboxReloadKey((value) => value + 1)}
+                  >
+                    Retry
+                  </Button>
+                ) : visibleMailbox.email ? (
+                  <div className="flex flex-wrap gap-2">
+                    <Button asChild size="sm" variant="secondary">
+                      <Link to={`/inbox?tab=email&agent=${encodeURIComponent(agentId)}`}>
+                        Open Inbox
+                      </Link>
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      disabled={visibleMailbox.status === "setting_up"}
+                      onClick={() => void setUpEmail()}
+                    >
+                      Check setup
+                    </Button>
+                  </div>
+                ) : visibleMailbox.status === "ready" || visibleMailbox.status === "setup_error" ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
                     onClick={() => void setUpEmail()}
                   >
-                    Check setup
+                    Set up email
                   </Button>
-                </div>
-              ) : visibleMailbox.status === "ready" || visibleMailbox.status === "setup_error" ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => void setUpEmail()}
-                >
-                  Set up email
-                </Button>
-              ) : null
-            }
-          >
-            {visibleMailbox.email ? (
-              <>
-                <span className="wl-preserve-case break-all">{visibleMailbox.email}</span>
-                {visibleMailbox.status === "setup_error" ? (
-                  <span className="mt-1 block">{visibleMailbox.error}</span>
-                ) : null}
-              </>
-            ) : visibleMailbox.status === "error" ? (
-              "Try again to check this Bot's email."
-            ) : visibleMailbox.status === "setup_error" ? (
-              visibleMailbox.error
-            ) : null}
-          </StatusNotice>
-        ) : null}
+                ) : null
+              }
+            >
+              {visibleMailbox.email ? (
+                <>
+                  <span className="wl-preserve-case break-all">{visibleMailbox.email}</span>
+                  {visibleMailbox.status === "setup_error" ? (
+                    <span className="mt-1 block">{visibleMailbox.error}</span>
+                  ) : null}
+                </>
+              ) : visibleMailbox.status === "error" ? (
+                "Try again to check this Bot's email."
+              ) : visibleMailbox.status === "setup_error" ? (
+                visibleMailbox.error
+              ) : null}
+            </StatusNotice>
+          ) : (
+            <ChannelAccessNotice access={access} channel="email" />
+          )}
+        </div>
 
         <section className={sectionClass} aria-label="Next actions">
           <div className="flex flex-col gap-2.5">

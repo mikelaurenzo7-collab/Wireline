@@ -13,6 +13,7 @@ import { getPostgresErrorCode } from "../pg-errors";
 import { isProductionDeployment } from "../deployment-environment";
 import { isUsagePlanId, planById } from "../plan-catalog";
 import { runWithManagedAiSpend } from "../managed-ai-operation-spend";
+import { loadOwnerMemories } from "../owner-memory-store";
 import { getAgentCoachingBrief } from "../mcp-agent-coaching";
 import { rateLimit } from "../rate-limit";
 import { drizzle, log, tenantStore } from "../server-context";
@@ -545,6 +546,7 @@ async function admitComputerTask(
   connection: NonNullable<ReturnType<typeof cloudComputerConnection>>,
 ): Promise<ComputerTaskView> {
   const brief = await getAgentCoachingBrief(userId, agentId);
+  const memories = await loadOwnerMemories(userId, agentId);
   const entitlement = await getTenantChannelEntitlements(userId);
   if (!hasPaidComputerPlan(entitlement)) {
     throw new AppError(
@@ -656,6 +658,7 @@ async function admitComputerTask(
   live.set(row.id, task);
 
   const bot = {
+    memories: memories.map((note) => note.content),
     name: brief.agent_name,
     role: brief.role,
     facts: brief.training_facts.map((fact) => fact.content),
@@ -999,7 +1002,7 @@ async function executeTaskWithBrowser(
     startUrl: string | null;
     prepareBrowser: boolean;
     model: string;
-    bot: { name: string; role: string; facts: string[]; rules: string[] };
+    bot: { name: string; role: string; facts: string[]; rules: string[]; memories?: string[] };
     connection: NonNullable<ReturnType<typeof cloudComputerConnection>>;
   },
 ): Promise<void> {
@@ -1134,7 +1137,7 @@ async function executeTaskWithBrowser(
           controlRequested: () => task.controlRequested,
           askOwner: (question, waitMs, options) =>
             waitForComputerOwner(task, question, waitMs, options),
-          meter: async ({ reserveUsd, turn, operation }) => {
+          meter: async ({ reserveUsd, turn, operation, purpose }) => {
             task.turns = turn;
             // Each provider attempt is its own reservation: the SDK never retries
             // behind the meter, and a transient overload gets one metered retry.
@@ -1148,6 +1151,7 @@ async function executeTaskWithBrowser(
                 requestMeta: {
                   agent_id: task.agentId,
                   task_hash: taskHash,
+                  ...(purpose ? { operation_kind: purpose } : {}),
                   turn,
                   retry,
                   ...(task.usageMetered ? { usage_metered: true } : {}),

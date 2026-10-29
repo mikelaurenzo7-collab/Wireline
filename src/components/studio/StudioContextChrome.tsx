@@ -1,21 +1,20 @@
-import { ChevronDown, PanelRight, Plus, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, PanelRight, Plus, SlidersHorizontal, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 
 import { Button } from "../atoms/Button";
+import BotMark from "../BotMark";
 import { useStudioActiveAgentId } from "../../hooks/useStudioActiveAgentId";
 import { buildAgentOptionLabels } from "../../lib/agent-option-labels";
 import { agentLineStatus, agentReadinessLabel } from "../../lib/agent-readiness";
 import { customerAgentLanguage } from "../../lib/product-copy";
-import {
-  clearStudioInspectorSectionParams,
-  setStudioInspectorSectionParams,
-} from "../../lib/studio-route-state";
+import { setStudioInspectorSectionParams } from "../../lib/studio-route-state";
 
 export default function StudioContextChrome() {
   const { agents, requestedId, resolvedId, phoneLookupDegraded } = useStudioActiveAgentId();
   const [searchParams, setSearchParams] = useSearchParams();
   const inspectorOpen = ["setup", "review"].includes(searchParams.get("section") || "");
+  const detailsOpen = searchParams.get("section") === "details";
   const activeAgentId = requestedId?.trim() || resolvedId;
   const activeAgent = activeAgentId
     ? (agents.find((agent) => agent.id === activeAgentId) ?? null)
@@ -28,9 +27,9 @@ export default function StudioContextChrome() {
 
   useEffect(() => {
     const handleState = (event: Event) => {
-      const customEvent = event as CustomEvent<{ open?: boolean }>;
+      const customEvent = event as CustomEvent<{ open?: boolean; section?: string }>;
       if (typeof customEvent.detail?.open === "boolean") {
-        setPanelOpen(customEvent.detail.open);
+        setPanelOpen(customEvent.detail.open && customEvent.detail.section === "computer");
       }
     };
     window.addEventListener("wireline:studio-panel-state", handleState);
@@ -46,6 +45,7 @@ export default function StudioContextChrome() {
         next.set("agent", agentId);
         next.delete("command");
         next.delete("commandNonce");
+        if (next.get("section") === "details") next.delete("section");
         return next;
       },
       { replace: true },
@@ -63,34 +63,61 @@ export default function StudioContextChrome() {
           )}
           {activeAgent ? (
             <>
+              <h1 className="min-w-0">
+                <button
+                  id="studio-bot-details-toggle"
+                  type="button"
+                  aria-label={`${activeAgent.name} details`}
+                  aria-expanded={detailsOpen}
+                  aria-controls={detailsOpen ? "studio-inspector" : undefined}
+                  onClick={() => {
+                    if (detailsOpen) {
+                      window.dispatchEvent(new CustomEvent("wireline:studio-close-panel"));
+                    } else {
+                      setSearchParams(
+                        (current) => setStudioInspectorSectionParams(current, "details"),
+                        { replace: true },
+                      );
+                    }
+                  }}
+                  className="wl-studio-identity wl-focus-ring-halo"
+                >
+                  <BotMark
+                    seed={activeAgent.id}
+                    name={activeAgent.name}
+                    markKey={activeAgent.mark_key}
+                    size={30}
+                  />
+                  <span className="wl-preserve-case min-w-0 flex-1 truncate !whitespace-nowrap">
+                    {activeAgent.name}
+                  </span>
+                  <ChevronDown
+                    className="size-4 shrink-0 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                </button>
+              </h1>
               {agents.length > 1 ? (
-                <>
-                  <h1 className="sr-only">{activeAgent.name}</h1>
-                  <label className="relative min-w-0 max-w-[13rem] flex-1 sm:max-w-[18rem] sm:flex-none">
-                    <span className="sr-only">Active Bot</span>
-                    <select
-                      value={activeAgent.id}
-                      onChange={(event) => selectAgent(event.target.value)}
-                      aria-label="Switch Bot"
-                      className="wl-studio-bot-switch wl-preserve-case w-full appearance-none truncate pl-2 pr-8 text-base font-semibold text-foreground sm:text-sm"
-                    >
-                      {agents.map((agent) => (
-                        <option key={agent.id} value={agent.id}>
-                          {optionLabels.get(agent.id) || agent.name}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown
-                      className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                      aria-hidden="true"
-                    />
-                  </label>
-                </>
-              ) : (
-                <h1 className="wl-preserve-case min-w-0 flex-1 truncate !whitespace-nowrap text-sm font-semibold text-foreground sm:max-w-[18rem] sm:flex-none">
-                  {activeAgent.name}
-                </h1>
-              )}
+                <label className="wl-studio-switch-control" title="Switch Bot">
+                  <span className="sr-only">Active Bot</span>
+                  <select
+                    value={activeAgent.id}
+                    onChange={(event) => selectAgent(event.target.value)}
+                    aria-label="Switch Bot"
+                    className="wl-studio-bot-switch"
+                  >
+                    {agents.map((agent) => (
+                      <option key={agent.id} value={agent.id}>
+                        {optionLabels.get(agent.id) || agent.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Users
+                    className="pointer-events-none size-4 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                </label>
+              ) : null}
             </>
           ) : (
             <h1 className="sr-only">{language.plural}</h1>
@@ -103,7 +130,9 @@ export default function StudioContextChrome() {
               <Button
                 id="studio-panel-toggle"
                 type="button"
-                variant={panelOpen || searchParams.get("panel") === "computer" ? "secondary" : "ghost"}
+                variant={
+                  panelOpen || searchParams.get("panel") === "computer" ? "secondary" : "ghost"
+                }
                 size="sm"
                 className="min-h-[44px] px-2.5"
                 aria-label={panelOpen ? "Close Browser Panel" : "Open Browser Panel"}
@@ -113,33 +142,37 @@ export default function StudioContextChrome() {
                   window.dispatchEvent(new CustomEvent("wireline:studio-toggle-panel"));
                 }}
               >
-                <PanelRight className={`size-4 ${panelOpen ? "text-primary" : "text-muted-foreground"}`} aria-hidden="true" />
+                <PanelRight
+                  className={`size-4 ${panelOpen ? "text-primary" : "text-muted-foreground"}`}
+                  aria-hidden="true"
+                />
                 <span className="hidden sm:inline">Browser</span>
               </Button>
               <Button
                 id="studio-settings-toggle"
-              type="button"
-              variant={inspectorOpen ? "secondary" : "ghost"}
-              size="sm"
-              className="min-h-[44px] px-2.5"
-              aria-label="Set Up Bot"
-              aria-expanded={inspectorOpen}
-              aria-controls={inspectorOpen ? "studio-inspector" : undefined}
-              onClick={() =>
-                setSearchParams(
-                  (current) =>
-                    inspectorOpen
-                      ? clearStudioInspectorSectionParams(current)
-                      : setStudioInspectorSectionParams(current, "setup"),
-                  { replace: true },
-                )
-              }
-            >
-              <SlidersHorizontal className="size-4" aria-hidden="true" />
-              Set Up
-            </Button>
-          </>
-        ) : null}
+                type="button"
+                variant={inspectorOpen ? "secondary" : "ghost"}
+                size="sm"
+                className="min-h-[44px] px-2.5"
+                aria-label="Set Up Bot"
+                aria-expanded={inspectorOpen}
+                aria-controls={inspectorOpen ? "studio-inspector" : undefined}
+                onClick={() => {
+                  if (inspectorOpen) {
+                    window.dispatchEvent(new CustomEvent("wireline:studio-close-panel"));
+                  } else {
+                    setSearchParams(
+                      (current) => setStudioInspectorSectionParams(current, "setup"),
+                      { replace: true },
+                    );
+                  }
+                }}
+              >
+                <SlidersHorizontal className="size-4" aria-hidden="true" />
+                Set Up
+              </Button>
+            </>
+          ) : null}
           {readyLabel ? (
             // Status, not a control: quiet text with a state dot, so it never
             // reads as a third, disabled button between the real ones.
@@ -162,7 +195,7 @@ export default function StudioContextChrome() {
               asChild
               variant="secondary"
               size="sm"
-              className="min-h-11 min-w-11 px-0 sm:w-auto sm:px-3"
+              className="min-h-11 min-w-11 px-0 sm:w-auto sm:px-3 lg:hidden"
             >
               <Link to="/studio?create=1" aria-label={language.createCta}>
                 <Plus className="size-4" aria-hidden="true" />

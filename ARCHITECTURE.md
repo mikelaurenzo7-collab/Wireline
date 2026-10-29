@@ -21,6 +21,18 @@ A customer configures a Bot with durable knowledge and policy, connects it to nu
 
 Historic workspace URLs should redirect into the active Bot workflow rather than maintaining parallel management surfaces.
 
+## Conversation workspace
+
+Start with one Bot. Additional customer-facing Bots represent separate identities, roles, numbers, or inboxes under the existing plan capacity rules. The left rail selects the Bot; its conversation header opens Phone, Email, Knowledge, Memory, Computer, Automations, and Setup. No dedicated roster-management page is required for everyday work.
+
+Private messages and the selected Bot's computer task records share one chronological canvas. Message and Computer task are explicit composer choices with separate retained drafts; changing modes never starts work. The private planner receives the three most recent task summaries as bounded reference data. Rehearsal remains separate from live work.
+
+Owner-managed memory uses `wireline_agent_lessons.source = 'owner_memory'`. Only the authenticated owner can save or forget notes through `/api/agents/:id/workspace/memory`; writes lock the owned Bot row, cap at 20 notes of 500 characters, and repeated identical saves are idempotent. Reads and deletes filter owner, Bot, and source. These notes are loaded into private chat and new computer tasks, excluded from learning review/digests and fleet activity, and never added to customer-facing knowledge or voice/email prompts. Bot deletion cascades; account export/deletion retain their existing lesson-table coverage. Forgetting a note does not remove copies already present in chat or task history.
+
+Computer tasks may delegate up to two bounded analysis, drafting, or planning requests to internal text-only specialists. Each call uses the existing spend reservation and usage settlement, no tools or browser, no separate Bot row or identity, and no independent authority to act. Spend failures terminate the task through the existing runner. Stop and owner takeover are checked before and after helper work; takeover discards the stale result and plan.
+
+Automations links to the existing account-level post-call output and daily/weekly report controls. A general per-Bot recurring computer-task scheduler is not implemented. It requires durable schedule/occurrence records, idempotent task admission, pause/delete fencing, timezone handling, quota enforcement, and isolated database/worker certification before activation.
+
 ## Frontend surfaces
 
 | Concern              | Source                                                                                                                                                                                |

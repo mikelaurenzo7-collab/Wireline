@@ -25,17 +25,22 @@ import {
 import { customerAgentLanguage } from "../lib/product-copy";
 import StudioAgentReviewPanel from "./StudioAgentReviewPanel";
 import StudioAgentWorkspacePanel from "./StudioAgentWorkspacePanel";
+import StudioBotDetailsPanel from "./studio/StudioBotDetailsPanel";
 import StudioWorkroom, { type StudioWorkroomHandle } from "./StudioWorkroom";
 import WorkspaceRecovery from "./WorkspaceRecovery";
 import StudioTaskChat from "./StudioTaskChat";
-import { ComputerWorkspaceProvider } from "../contexts/ComputerWorkspaceContext";
+import StudioTaskMessages from "./StudioTaskMessages";
+import {
+  ComputerWorkspaceProvider,
+  useComputerWorkspace,
+} from "../contexts/ComputerWorkspaceContext";
 
 // The computer is a page of its own; load it only when its panel tab opens.
 const ComputerWorkbench = lazy(() =>
   import("../pages/ComputerPage").then((module) => ({ default: module.ComputerWorkbench })),
 );
 
-type InspectorSection = "setup" | "review";
+type InspectorSection = "details" | "setup" | "review";
 /** Panel tabs that are not route-owned: the panel returns to the last one used. */
 type RestingSection = "try" | "computer";
 type PanelSection = RestingSection | InspectorSection;
@@ -49,6 +54,7 @@ const STUDIO_PANEL_REST_STORAGE_KEY = "wireline:studio-panel-rest:v1";
 const PANEL_TABS: ReadonlyArray<{ id: PanelSection; label: string }> = [
   { id: "computer", label: "Browser" },
   { id: "try", label: "Rehearse" },
+  { id: "details", label: "Details" },
   { id: "setup", label: "Set Up" },
   { id: "review", label: "Summary" },
 ];
@@ -62,10 +68,10 @@ const CONVERSATION_MIN_WIDTH = 420;
 function readStoredPanelCollapsed(): boolean {
   try {
     const raw = window.localStorage.getItem(STUDIO_INSPECTOR_STORAGE_KEY);
-    if (!raw) return false;
+    if (!raw) return true;
     return (JSON.parse(raw) as { collapsed?: unknown })?.collapsed === true;
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -157,6 +163,7 @@ export default function StudioWorkspaceV2() {
 }
 
 function StudioWorkspaceContent() {
+  const computer = useComputerWorkspace();
   const { loading, degraded, refresh } = useAgents();
   const { user } = useAuth();
   const studioSession = useStudioSessionState();
@@ -165,7 +172,12 @@ function StudioWorkspaceContent() {
     drafts: workroomDrafts,
     conversations: workroomConversations,
   } = studioSession;
-  const { requestedId, resolvedId: resolvedAgentId, agents } = useStudioActiveAgentId();
+  const {
+    requestedId,
+    resolvedId: resolvedAgentId,
+    agents,
+    phoneLookupDegraded,
+  } = useStudioActiveAgentId();
   const [params, setParams] = useSearchParams();
   const workroomRef = useRef<StudioWorkroomHandle>(null);
   const tryWorkroomRef = useRef<StudioWorkroomHandle>(null);
@@ -196,7 +208,7 @@ function StudioWorkspaceContent() {
   const legacyMode = params.get("mode");
   const legacyView = params.get("view");
   const setupChat =
-    params.get("chat") === "setup" ||
+    params.get("chat") !== "computer" ||
     sectionParam === "setup" ||
     sectionParam === "review" ||
     workroomParam === "test" ||
@@ -220,7 +232,7 @@ function StudioWorkspaceContent() {
   } | null>(null);
   // Details are requested explicitly, including links from creation and review.
   // The route owns visibility so a saved desktop collapse cannot hide a deep link.
-  const inspectorOpen = sectionParam === "setup" || sectionParam === "review";
+  const inspectorOpen = ["details", "setup", "review"].includes(sectionParam || "");
   const computerFocused = params.get("focus") === "computer" && !inspectorOpen;
   const panelSection: PanelSection = inspectorOpen
     ? inspectorSection
@@ -238,7 +250,7 @@ function StudioWorkspaceContent() {
   const panelMaxSize =
     workspaceWidth > 0
       ? Math.min(PANEL_MAX_CAP, Math.max(PANEL_MIN_WIDTH, workspaceWidth - CONVERSATION_MIN_WIDTH))
-      : PANEL_DEFAULT_WIDTH;
+      : PANEL_MAX_CAP;
 
   // A callback ref: the layout mounts only after the roster resolves.
   const measureWorkspace = useCallback((node: HTMLDivElement | null) => {
@@ -290,7 +302,7 @@ function StudioWorkspaceContent() {
   }, [panelOpen]);
 
   useEffect(() => {
-    const inspectorRequested = sectionParam === "setup" || sectionParam === "review";
+    const inspectorRequested = ["details", "setup", "review"].includes(sectionParam || "");
     if (inspectorRequested) {
       setInspectorSection(readStudioInspectorSection(sectionParam));
     }
@@ -373,6 +385,7 @@ function StudioWorkspaceContent() {
         (current) => {
           const next = setStudioInspectorSectionParams(current, section);
           next.delete("focus");
+          next.delete("detail");
           return next;
         },
         { replace: true },
@@ -389,6 +402,7 @@ function StudioWorkspaceContent() {
         setParams(
           (current) => {
             const next = clearStudioInspectorSectionParams(current);
+            next.delete("detail");
             if (section !== "computer") {
               next.delete("focus");
               next.delete("panel");
@@ -425,12 +439,14 @@ function StudioWorkspaceContent() {
       setPanelCollapsed(true);
       setParams(
         (current) => {
-          const next = setStudioWorkroomModeParams(
-            clearStudioInspectorSectionParams(current),
-            "configure",
-          );
+          const cleared = clearStudioInspectorSectionParams(current);
+          const next =
+            sectionParam === "details"
+              ? cleared
+              : setStudioWorkroomModeParams(cleared, "configure");
           next.delete("focus");
           next.delete("panel");
+          next.delete("detail");
           return next;
         },
         { replace: true },
@@ -441,33 +457,24 @@ function StudioWorkspaceContent() {
           const next = clearStudioInspectorSectionParams(current);
           next.delete("focus");
           next.delete("panel");
+          next.delete("detail");
           return next;
         },
         { replace: true },
       );
     }
-    requestAnimationFrame(() => document.getElementById("studio-settings-toggle")?.focus());
-  }, [setPanelCollapsed, setParams, splitWorkspace]);
-
-  useEffect(() => {
-    const handleToggle = () => {
-      if (panelOpen) {
-        closeInspector();
-      } else {
-        openPanelSection("computer");
-      }
-    };
-    window.addEventListener("wireline:studio-toggle-panel", handleToggle);
-    return () => window.removeEventListener("wireline:studio-toggle-panel", handleToggle);
-  }, [closeInspector, openPanelSection, panelOpen]);
-
-  useEffect(() => {
-    window.dispatchEvent(
-      new CustomEvent("wireline:studio-panel-state", {
-        detail: { open: panelOpen, section: panelSection },
-      }),
+    requestAnimationFrame(() =>
+      document
+        .getElementById(
+          sectionParam === "details"
+            ? "studio-bot-details-toggle"
+            : sectionParam
+              ? "studio-settings-toggle"
+              : "studio-panel-toggle",
+        )
+        ?.focus(),
     );
-  }, [panelOpen, panelSection]);
+  }, [sectionParam, setPanelCollapsed, setParams, splitWorkspace]);
 
   const setWorkroomMode = useCallback(
     (mode: WorkroomMode) => {
@@ -501,13 +508,40 @@ function StudioWorkspaceContent() {
     else
       setParams(
         (current) => {
-          const next = new URLSearchParams(current);
+          const next = clearStudioInspectorSectionParams(current);
           next.set("panel", "computer");
+          next.delete("detail");
+          next.delete("focus");
           return next;
         },
         { replace: true },
       );
   }, [openPanelSection, setParams, splitWorkspace]);
+
+  useEffect(() => {
+    const handleToggle = () => {
+      if ((panelOpen && panelSection === "computer") || mobileBrowserOpen) closeInspector();
+      else showBrowser();
+    };
+    const handleClose = () => closeInspector();
+    window.addEventListener("wireline:studio-toggle-panel", handleToggle);
+    window.addEventListener("wireline:studio-close-panel", handleClose);
+    return () => {
+      window.removeEventListener("wireline:studio-toggle-panel", handleToggle);
+      window.removeEventListener("wireline:studio-close-panel", handleClose);
+    };
+  }, [closeInspector, mobileBrowserOpen, panelOpen, panelSection, showBrowser]);
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("wireline:studio-panel-state", {
+        detail: {
+          open: panelOpen || mobileBrowserOpen,
+          section: mobileBrowserOpen ? "computer" : panelSection,
+        },
+      }),
+    );
+  }, [mobileBrowserOpen, panelOpen, panelSection]);
 
   useEffect(() => {
     if (!rehearsalFocusRequest) return;
@@ -608,8 +642,31 @@ function StudioWorkspaceContent() {
       phoneNumber={active.phone_number}
       onEdit={() => openInspector("setup")}
       onRehearse={startRehearsal}
+      focusEmail={params.get("detail") === "email"}
       className="h-full"
       compact={splitWorkspace}
+    />
+  );
+
+  const detailsPanel = (
+    <StudioBotDetailsPanel
+      key={active.id}
+      agent={active}
+      phoneLookupDegraded={phoneLookupDegraded}
+      onEmail={() => {
+        setInspectorSection("review");
+        setParams(
+          (current) => {
+            const next = setStudioInspectorSectionParams(current, "review");
+            next.set("detail", "email");
+            next.delete("focus");
+            return next;
+          },
+          { replace: true },
+        );
+      }}
+      onComputer={showBrowser}
+      onSetup={() => openInspector("setup")}
     />
   );
 
@@ -638,6 +695,45 @@ function StudioWorkspaceContent() {
   const main = sessionFor(mainMode);
   // Legacy route commands focus private voice rehearsal without editing the Bot.
   const mainReceivesCommand = mainMode === "test";
+  const chatModes = (
+    <div className="wl-studio-chat-modes" role="group" aria-label="Conversation mode">
+      {(
+        [
+          { id: "setup", label: "Message" },
+          { id: "work", label: "Computer task" },
+        ] as const
+      ).map(({ id, label }) => (
+        <button
+          key={id}
+          type="button"
+          aria-pressed={!mobileBrowserOpen && (id === "setup") === setupChat}
+          onClick={() => {
+            setParams(
+              (current) => {
+                const next = setStudioWorkroomModeParams(current, "configure");
+                next.delete("panel");
+                if (id === "setup") next.set("chat", "setup");
+                else {
+                  next.set("chat", "computer");
+                  next.delete("section");
+                  next.delete("focus");
+                }
+                return next;
+              },
+              { replace: true },
+            );
+            if (id === "work" && splitWorkspace) {
+              setRestingSection("computer");
+              setPanelCollapsed(false);
+            }
+          }}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+
   const workroom = (
     <StudioWorkroom
       key={`${user?.id}:${main.key}`}
@@ -650,6 +746,60 @@ function StudioWorkspaceContent() {
       initialDraft={workroomDrafts.get(main.key)}
       onDraftChange={(draft) => workroomDrafts.set(main.key, draft)}
       conversationSession={main.session}
+      timelineExtras={[
+        ...new Map(
+          [
+            ...(computer.tasks || []),
+            ...(computer.selected ? [computer.selected] : []),
+            ...(computer.activeTask ? [computer.activeTask] : []),
+          ]
+            .filter((task) => task.agentId === active.id)
+            .map((task) => [task.id, task]),
+        ).values(),
+      ].map((task) => ({
+        id: `task-${task.id}`,
+        createdAt: task.startedAt,
+        updatedAt: task.updatedAt,
+        node: (
+          <StudioTaskMessages
+            selected={task}
+            agentId={active.id}
+            agentName={active.name}
+            markKey={active.mark_key}
+            onShowBrowser={() => {
+              computer.setSelectedId(task.id);
+              showBrowser();
+            }}
+          />
+        ),
+      }))}
+      composerChoice={<div className="wl-studio-composer-choice">{chatModes}</div>}
+      composerOverride={
+        !setupChat && mainMode === "configure" ? (
+          <StudioTaskChat
+            key={`${user?.id}:${active.id}`}
+            agentId={active.id}
+            agentName={active.name}
+            onShowBrowser={showBrowser}
+            composerOnly
+          />
+        ) : undefined
+      }
+      timelineNotice={
+        computer.listFailed ? (
+          <StatusNotice
+            tone="warning"
+            title="Computer history could not load"
+            action={
+              <Button size="sm" variant="secondary" onClick={() => void computer.loadTasks()}>
+                Retry
+              </Button>
+            }
+          >
+            Your conversation is still available.
+          </StatusNotice>
+        ) : undefined
+      }
       layout={splitWorkspace ? "split" : "standalone"}
       modeControls="composer"
       mode={mainMode}
@@ -703,12 +853,13 @@ function StudioWorkspaceContent() {
       </Suspense>
     ) : null;
 
-  // Wide screens offer Browser, Rehearse, Set up and Summary in one pane.
-  // Phones keep Work, Configure, and Browser in one row.
-  const panelTabs = splitWorkspace
-    ? PANEL_TABS
-    : PANEL_TABS.filter((tab) => tab.id !== "try" && tab.id !== "computer");
   const activePanelSection: PanelSection = splitWorkspace ? panelSection : inspectorSection;
+  // Details replaces Summary while it is open, keeping the narrow panel's
+  // controls on one row. The Bot name always reopens Details; Email opens Summary.
+  const panelTabs = PANEL_TABS.filter((tab) => {
+    if (!splitWorkspace && (tab.id === "try" || tab.id === "computer")) return false;
+    return activePanelSection === "details" ? tab.id !== "review" : tab.id !== "details";
+  });
   const selectPanelSection = (section: PanelSection) =>
     section === "try" || section === "computer"
       ? openPanelSection(section)
@@ -819,9 +970,11 @@ function StudioWorkspaceContent() {
         ? tryWorkroom
         : activePanelSection === "computer"
           ? computerPanel
-          : activePanelSection === "review"
-            ? reviewPanel
-            : setupPanel}
+          : activePanelSection === "details"
+            ? detailsPanel
+            : activePanelSection === "review"
+              ? reviewPanel
+              : setupPanel}
     </div>
   );
 
@@ -858,50 +1011,27 @@ function StudioWorkspaceContent() {
     </aside>
   );
 
-  const chatModes = (
-    <div className="wl-studio-chat-modes" role="group" aria-label="Conversation mode">
-      {(
-        [
-          { id: "work", label: "Work" },
-          { id: "setup", label: "Configure" },
-        ] as const
-      ).map(({ id, label }) => (
-        <button
-          key={id}
-          type="button"
-          aria-pressed={!mobileBrowserOpen && (id === "setup") === setupChat}
-          onClick={() => {
-            setParams(
-              (current) => {
-                const next = setStudioWorkroomModeParams(current, "configure");
-                next.delete("panel");
-                if (id === "setup") next.set("chat", "setup");
-                else {
-                  next.delete("chat");
-                  next.delete("section");
-                  next.delete("focus");
-                }
-                return next;
-              },
-              { replace: true },
-            );
-            if (id === "work" && splitWorkspace) {
-              setRestingSection("computer");
-              setPanelCollapsed(false);
-            }
-          }}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-
   return (
     <div className="wl-studio-workspace flex h-full min-h-0 flex-col overflow-hidden bg-background">
       {(!splitWorkspace || !panelOpen) && !inspectorOpen ? (
         <nav className="wl-studio-surface-nav" aria-label="Workspace view">
-          {chatModes}
+          <button
+            type="button"
+            aria-pressed={!mobileBrowserOpen}
+            onClick={() =>
+              setParams(
+                (current) => {
+                  const next = new URLSearchParams(current);
+                  next.delete("panel");
+                  next.delete("focus");
+                  return next;
+                },
+                { replace: true },
+              )
+            }
+          >
+            Conversation
+          </button>
           <button
             type="button"
             aria-pressed={mobileBrowserOpen}
@@ -931,20 +1061,7 @@ function StudioWorkspaceContent() {
           className={`${(!splitWorkspace && inspectorOpen) || mobileBrowserOpen || panelFill ? "hidden" : "block"} min-h-0 min-w-0 flex-1 overflow-hidden`}
         >
           <div className="flex h-full min-h-0 flex-col">
-            {splitWorkspace && panelOpen ? (
-              <header className="wl-studio-mode-header">{chatModes}</header>
-            ) : null}
-            <div hidden={!setupChat} className="min-h-0 flex-1">
-              {workroom}
-            </div>
-            <div hidden={setupChat} className="min-h-0 flex-1">
-              <StudioTaskChat
-                key={`${user?.id}:${active.id}`}
-                agentId={active.id}
-                agentName={active.name}
-                onShowBrowser={showBrowser}
-              />
-            </div>
+            <div className="min-h-0 flex-1">{workroom}</div>
           </div>
         </div>
         {splitWorkspace ? (

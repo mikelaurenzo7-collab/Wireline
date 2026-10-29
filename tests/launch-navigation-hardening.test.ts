@@ -134,6 +134,25 @@ describe("Studio route state", () => {
     expect(closed.toString()).toBe("agent=bot-1&workroom=test&chat=setup");
   });
 
+  it("opens and closes Bot details without changing the work conversation", () => {
+    const current = new URLSearchParams("agent=bot-1&panel=computer");
+    const details = setStudioInspectorSectionParams(current, "details");
+    expect(details.toString()).toBe("agent=bot-1&section=details");
+    expect(clearStudioInspectorSectionParams(details).toString()).toBe("agent=bot-1");
+  });
+
+  it("does not consume a rehearsal request when viewing Bot details", () => {
+    const current = new URLSearchParams(
+      "agent=bot-1&chat=setup&workroom=test&command=Hello&commandNonce=3",
+    );
+    const details = setStudioInspectorSectionParams(current, "details");
+    expect(details.get("chat")).toBe("setup");
+    expect(details.get("workroom")).toBe("test");
+    expect(details.get("command")).toBe("Hello");
+    expect(details.get("commandNonce")).toBe("3");
+    expect(clearStudioInspectorSectionParams(details).toString()).toBe(current.toString());
+  });
+
   it("writes canonical test state without disturbing inspector selection", () => {
     const test = setStudioWorkroomModeParams(
       new URLSearchParams("agent=bot-1&section=setup&panel=computer"),

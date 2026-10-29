@@ -65,6 +65,10 @@ vi.mock("react-router", () => ({
     },
   ],
 }));
+vi.mock("../src/contexts/ComputerWorkspaceContext", () => ({
+  ComputerWorkspaceProvider: "computer-provider",
+  useComputerWorkspace: () => ({ tasks: [], activeTask: null, selected: null, listFailed: false }),
+}));
 vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: h.ownerId } }) }));
 vi.mock("../src/contexts/AgentsContext", () => ({
   useAgents: () => ({
@@ -161,7 +165,12 @@ beforeEach(() => {
   h.setTimer.mockReset();
   h.writePreference.mockReset();
   h.refresh.mockReset();
-  vi.stubGlobal("window", { setTimeout: h.setTimer });
+  vi.stubGlobal("window", {
+    setTimeout: h.setTimer,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  });
 });
 afterEach(() => vi.unstubAllGlobals());
 

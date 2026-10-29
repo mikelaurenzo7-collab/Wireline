@@ -76,15 +76,12 @@ describe("authenticated workspace design architecture", () => {
     expect(team).toContain("overflow-y-auto overscroll-contain");
   });
 
-  it("keeps a Studio page heading when the active Bot name becomes a switcher", () => {
+  it("keeps the Bot name as the page heading and a details control alongside the switcher", () => {
     const chrome = read("src/components/studio/StudioContextChrome.tsx");
-    const multipleAgents = chrome.slice(
-      chrome.indexOf("{agents.length > 1 ? ("),
-      chrome.indexOf(") : (", chrome.indexOf("{agents.length > 1 ? (")),
-    );
-
-    expect(multipleAgents).toContain('<h1 className="sr-only">{activeAgent.name}</h1>');
-    expect(multipleAgents).toContain('aria-label="Switch Bot"');
+    expect(chrome).toContain('<h1 className="min-w-0">');
+    expect(chrome).toContain('id="studio-bot-details-toggle"');
+    expect(chrome).toContain("{activeAgent.name}");
+    expect(chrome).toContain('aria-label="Switch Bot"');
   });
 
   it("keeps daily navigation focused on Studio, Inbox, then Calls", () => {

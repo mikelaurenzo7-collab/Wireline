@@ -69,15 +69,15 @@ describe("authenticated mobile cleanup", () => {
     expect(studio).not.toContain("Good morning");
   });
 
-  it("uses Bot language and one compact current-Bot identity rather than a sidebar roster", () => {
+  it("uses Bot language, an identity roster, and a compact mobile switcher", () => {
     const shell = read("src/components/WorkspaceShell.tsx");
     const chrome = read("src/components/studio/StudioContextChrome.tsx");
     const create = read("src/components/CreateAgentDialog.tsx");
 
     expect(shell).toContain('singular: "Bot"');
     expect(shell).toContain('navLabel: "Workspace"');
-    expect(shell).toContain("Current Bot");
-    expect(shell).not.toContain("orderedAgents");
+    expect(shell).toContain('aria-label="Bot conversations"');
+    expect(shell).toContain('data-wireline-bot-selected={selected ? "true" : undefined}');
     expect(chrome).toContain('aria-label="Switch Bot"');
     expect(create).toContain("BOT_ROLE_TEMPLATES.find");
     expect(create).toContain("Cancel");
