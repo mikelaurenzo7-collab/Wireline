@@ -8,7 +8,7 @@
     "node": "22.x"
   },
   "scripts": {
-    "dev": "node --import tsx server.ts",
+    "dev": "DEV_BILLING_PLAN_PREVIEW=true node --import tsx server.ts",
     "build": "npm run assets && vite build && node scripts/quarantine-retired-public-assets.mjs && node --import tsx scripts/prerender-marketing-meta.mts && esbuild server.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/server.cjs --footer:js=\"module.exports.app = app;\"",
     "build:server": "esbuild server.ts --platform=node --packages=external --bundle --format=cjs --outfile=dist/server.cjs --footer:js=\"module.exports.app = app;\"",
     "build:vercel": "node scripts/vercel-build.mjs",

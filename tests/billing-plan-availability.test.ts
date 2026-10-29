@@ -132,6 +132,31 @@ describe("public billing checkout availability", () => {
     expect(blocked.plans.find((plan) => plan.id === "usage")).toBeUndefined();
   });
 
+  it("previews the public usage cards in local development without opening checkout", () => {
+    vi.stubEnv("DEV_BILLING_PLAN_PREVIEW", "true");
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("VERCEL_ENV", "");
+    vi.stubEnv("USAGE_BILLING_ENABLED", "false");
+    const preview = getPublicPlans().body;
+    expect(preview.checkout_available).toBe(false);
+    expect(preview.usage_checkout_available).toBe(false);
+    expect(preview.usage_tiers).toEqual(["lite", "standard", "plus"]);
+    expect(Object.keys(preview).sort()).toEqual([
+      "billing_model",
+      "checkout_available",
+      "plans",
+      "stripe_configured",
+      "usage_checkout_available",
+      "usage_tiers",
+    ]);
+
+    vi.stubEnv("VERCEL_ENV", "production");
+    expect(getPublicPlans().body.usage_tiers).toEqual([]);
+    vi.stubEnv("VERCEL_ENV", "development");
+    vi.stubEnv("NODE_ENV", "production");
+    expect(getPublicPlans().body.usage_tiers).toEqual([]);
+  });
+
   it("reports unavailable when the same hard launch gate rejects checkout despite configured prices", () => {
     vi.stubEnv("LAUNCH_HARD_GATE", "true");
     vi.stubEnv("OPENAI_API_KEY", "");
