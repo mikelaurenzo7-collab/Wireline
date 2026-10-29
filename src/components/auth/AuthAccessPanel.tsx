@@ -164,12 +164,7 @@ function signupIntentLabel(intent: SignupIntent | null): string | null {
 }
 
 function defaultFreeIntent(current: SignupIntent | null): SignupIntent | null {
-  if (current) return current;
-  return persistSignupIntent({
-    preferredPlanId: "personal",
-    preferredBillingInterval: "month",
-    capturedAt: new Date().toISOString(),
-  });
+  return current;
 }
 
 const PROVIDERS: Array<{

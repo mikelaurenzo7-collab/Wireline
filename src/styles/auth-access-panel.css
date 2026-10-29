@@ -5,6 +5,7 @@
 
 .wl-access-panel {
   width: min(100%, 30rem);
+  margin-inline: auto;
   color: var(--wireline-color-text-primary);
 }
 

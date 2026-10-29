@@ -158,8 +158,19 @@ describe("signup-intent", () => {
     },
   );
 
-  it("remembers Starter when signup has no plan in the address", () => {
-    const storage = new Map<string, string>();
+  it("does not keep an earlier plan chip on a plain signup visit", () => {
+    const storage = new Map<string, string>([
+      [
+        "wireline_signup_intent_v1",
+        JSON.stringify({
+          preferredPlanId: "usage",
+          preferredUsageTier: "plus",
+          preferredTemplateId: "front-desk",
+          preferredBillingInterval: "month",
+          capturedAt: "2026-10-01T00:00:00.000Z",
+        }),
+      ],
+    ]);
     const previous = globalThis.window;
     Object.defineProperty(globalThis, "window", {
       configurable: true,
@@ -176,11 +187,8 @@ describe("signup-intent", () => {
         },
       },
     });
-    expect(captureSignupIntentFromLocation()).toMatchObject({
-      preferredPlanId: "usage",
-      preferredUsageTier: "standard",
-      preferredBillingInterval: "month",
-    });
+    expect(captureSignupIntentFromLocation()).toBeNull();
+    expect(storage.has("wireline_signup_intent_v1")).toBe(false);
     Object.defineProperty(globalThis, "window", { configurable: true, value: previous });
   });
 });
