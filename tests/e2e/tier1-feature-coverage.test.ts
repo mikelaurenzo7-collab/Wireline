@@ -184,7 +184,7 @@ describe("Tier 1: Feature Coverage in Isolation", () => {
         businessType: "CORPORATION",
         website: "https://botbound.app",
         contactEmail: "compliance@botbound.app",
-        useCaseCategories: ["CUSTOMER_CARE", "ACCOUNT_NOTIFICATION"],
+        useCaseCategories: ["CUSTOMER_CARE", "ACCOUNT_NOTIFICATIONS"],
       };
 
       expect(entityDetails.ein).toBe("43-2610447");
@@ -199,7 +199,7 @@ describe("Tier 1: Feature Coverage in Isolation", () => {
         BusinessName: "BotBound Inc.",
         BusinessWebsite: "https://botbound.app",
         NotificationEmail: "compliance@botbound.app",
-        UseCaseCategories: ["CUSTOMER_CARE", "ACCOUNT_NOTIFICATION"],
+        UseCaseCategories: ["CUSTOMER_CARE", "ACCOUNT_NOTIFICATIONS"],
         UseCaseSummary: "Transactional appointment confirmations, operational call recap alerts, and customer care responses.",
         ProductionMessageSample: "Hi, this is BotBound confirming your appointment. Reply YES to confirm or STOP to unsubscribe.",
         OptInWorkflowUrl: "https://botbound.app/signup",

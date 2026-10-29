@@ -31,7 +31,7 @@ export const BOTBOUND_TRUST_HUB_ENTITY = Object.freeze({
     postalCode: "94104",
     country: "US",
   }),
-  useCases: Object.freeze(["CUSTOMER_CARE", "ACCOUNT_NOTIFICATION"]),
+  useCases: Object.freeze(["CUSTOMER_CARE", "ACCOUNT_NOTIFICATIONS"]),
   useCaseSummary:
     "Transactional appointment confirmations, account security notifications, and customer support for BotBound platform users.",
   productionMessageSample:

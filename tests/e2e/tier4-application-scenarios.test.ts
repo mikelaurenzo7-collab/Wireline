@@ -86,7 +86,7 @@ describe("Tier 4: Real-World Application Scenarios", () => {
       businessType: "CORPORATION",
       website: "https://botbound.app",
       contactEmail: "compliance@botbound.app",
-      useCaseCategories: ["CUSTOMER_CARE", "ACCOUNT_NOTIFICATION"],
+      useCaseCategories: ["CUSTOMER_CARE", "ACCOUNT_NOTIFICATIONS"],
       tollFreeNumber: "+18005550199",
       productionMessageSample:
         "Hi, this is BotBound confirming your appointment. Reply YES to confirm or STOP to unsubscribe.",

@@ -144,7 +144,7 @@ describe("Twilio Trust Hub & Toll-Free Verification Flow", () => {
       expect(BOTBOUND_TRUST_HUB_ENTITY.contactEmail).toBe("compliance@botbound.app");
       expect(BOTBOUND_TRUST_HUB_ENTITY.useCases).toEqual([
         "CUSTOMER_CARE",
-        "ACCOUNT_NOTIFICATION",
+        "ACCOUNT_NOTIFICATIONS",
       ]);
     });
 
