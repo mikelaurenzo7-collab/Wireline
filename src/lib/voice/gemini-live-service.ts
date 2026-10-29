@@ -12,6 +12,7 @@ import {
 import {
   GEMINI_3_8_LIVE_MODEL,
   GEMINI_3_8_LIVE_EXTENDED_THINKING_MODEL,
+  RESOLVED_GEMINI_LIVE_MODEL,
   type GeminiLiveModel,
 } from "./gemini-live-client";
 import { resolveGeminiLiveVoice } from "../voice-catalog";
@@ -26,7 +27,7 @@ import {
 } from "../runtime-template-personality";
 import { resolveAgentGreeting } from "../agent-greeting";
 
-export const GEMINI_LIVE_DEFAULT_MODEL = GEMINI_3_8_LIVE_MODEL;
+export const GEMINI_LIVE_DEFAULT_MODEL = RESOLVED_GEMINI_LIVE_MODEL;
 const MAX_INITIAL_KNOWLEDGE_ITEMS = 8;
 const MAX_LIVE_KB_RESULTS = 5;
 const MAX_LIVE_KB_RESULT_CHARS = 900;
@@ -174,7 +175,7 @@ export async function prepareGeminiLiveSessionConfig(input: {
       "Zephyr",
   );
 
-  const model = input.model || GEMINI_3_8_LIVE_MODEL;
+  const model = input.model || RESOLVED_GEMINI_LIVE_MODEL;
 
   const config: LiveConnectConfig = {
     responseModalities: [Modality.AUDIO],

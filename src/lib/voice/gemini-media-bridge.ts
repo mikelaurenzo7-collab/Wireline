@@ -3,7 +3,12 @@ import type { LiveServerMessage, Session } from "@google/genai";
 import WebSocket, { WebSocketServer } from "ws";
 import { z } from "zod";
 import { log } from "../server-context";
-import { getGeminiClient, mulawToPcm16_16k, pcm24ToMulawBuffer } from "./gemini-live-client";
+import {
+  getGeminiClient,
+  mulawToPcm16_16k,
+  pcm24ToMulawBuffer,
+  RESOLVED_GEMINI_LIVE_MODEL,
+} from "./gemini-live-client";
 import {
   prepareGeminiLiveSessionConfig,
   runGeminiLiveTool,
@@ -82,7 +87,7 @@ export function installGeminiMediaBridge(server: Server): WebSocketServer {
           const prepared = await prepareGeminiLiveSessionConfig({
             userId,
             agentId,
-            model: "gemini-3.8-live",
+            model: RESOLVED_GEMINI_LIVE_MODEL,
           });
 
           const ai = getGeminiClient();

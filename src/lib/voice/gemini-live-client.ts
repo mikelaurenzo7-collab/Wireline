@@ -3,6 +3,8 @@ import { GoogleGenAI } from "@google/genai";
 export const GEMINI_3_8_LIVE_MODEL = "gemini-3.8-live" as const;
 export const GEMINI_3_8_LIVE_EXTENDED_THINKING_MODEL =
   "gemini-3.8-live-extended-thinking" as const;
+export const RESOLVED_GEMINI_LIVE_MODEL =
+  process.env.GEMINI_LIVE_MODEL?.trim() || GEMINI_3_8_LIVE_MODEL;
 
 export type GeminiLiveModel =
   | typeof GEMINI_3_8_LIVE_MODEL

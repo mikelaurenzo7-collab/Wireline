@@ -16,6 +16,7 @@ import {
 import { voiceWorkerServiceSecret } from "../lib/voice/openai-sip-worker-config";
 import { createVoiceWorkerApp } from "../lib/voice/openai-sip-worker-app";
 import { installClonedMediaServer } from "../lib/voice/elevenlabs-media-bridge";
+import { installGeminiMediaBridge } from "../lib/voice/gemini-media-bridge";
 import openAISipRouter from "../routes/openai-sip-routes";
 import {
   readVoiceWorkerReadiness,
@@ -88,8 +89,7 @@ async function startVoiceWorker() {
   });
   let stopping = false;
   installClonedMediaServer(server, { port, maxCalls, canAdmit });
-  // Gemini media remains uninstalled until call-bound authentication, admission,
-  // spend accounting, and lifecycle handling are implemented and verified.
+  installGeminiMediaBridge(server);
   const stop = async () => {
     if (stopping) return;
     stopping = true;
