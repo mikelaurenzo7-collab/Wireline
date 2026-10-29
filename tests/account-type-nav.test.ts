@@ -37,7 +37,6 @@ describe("legacy account-type navigation compatibility", () => {
       "/inbox",
       "/phone",
       "/calendar",
-      "/computer",
     ]);
     expect(
       groups.find((group) => group.label === "Manage")?.items.map((item) => item.path),
@@ -49,7 +48,7 @@ describe("legacy account-type navigation compatibility", () => {
     expect(paths).not.toContain("/approvals");
     expect(paths).not.toContain("/apps");
     expect(paths).toContain("/knowledge");
-    expect(paths).toContain("/computer");
+    expect(paths).not.toContain("/computer");
     expect(desktopNavParentHref("/computer")).toBe("/studio");
     expect(scopedWorkspaceHref("/computer", "bot-a")).toBe("/studio?panel=computer&agent=bot-a");
     expect(MOBILE_PRIMARY_NAV.map((item) => item.href)).toEqual([
@@ -61,7 +60,6 @@ describe("legacy account-type navigation compatibility", () => {
     ]);
     expect(MOBILE_MORE_NAV.map((item) => item.href)).toEqual([
       "/calendar",
-      "/computer",
       "/connections",
       "/insights",
       "/settings",

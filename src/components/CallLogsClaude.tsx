@@ -119,6 +119,53 @@ export function readableCallSummary(
   return text;
 }
 
+type DialogueTurn = {
+  speaker: "bot" | "caller" | "system";
+  speakerName: string;
+  text: string;
+};
+
+export function parseDialogue(
+  transcript: string | null | undefined,
+  botName?: string | null,
+): DialogueTurn[] {
+  if (!transcript?.trim()) return [];
+  const lines = transcript
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const turns: DialogueTurn[] = [];
+
+  for (const line of lines) {
+    const match = line.match(
+      /^(Bot|Agent|Assistant|Caller|User|Customer|Human|System):\s*(.*)$/i,
+    );
+    if (match) {
+      const rawRole = match[1].toLowerCase();
+      const text = match[2].trim();
+      const isBot = ["bot", "agent", "assistant"].includes(rawRole);
+      const isSystem = rawRole === "system";
+      turns.push({
+        speaker: isBot ? "bot" : isSystem ? "system" : "caller",
+        speakerName: isBot ? botName || "Bot" : isSystem ? "System" : "Caller",
+        text,
+      });
+    } else {
+      if (turns.length > 0) {
+        turns[turns.length - 1].text += ` ${line}`;
+      } else {
+        turns.push({
+          speaker: "caller",
+          speakerName: "Caller",
+          text: line,
+        });
+      }
+    }
+  }
+
+  return turns;
+}
+
 export default function CallLogsClaude({ agentId }: { agentId?: string | null }) {
   const callLabel = "New Call";
   const [calls, setCalls] = useState<Call[]>([]);
@@ -338,31 +385,36 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
                     type="button"
                     onClick={() => setSelectedId(call.id)}
                     aria-pressed={active}
-                    className={`w-full px-4 py-3.5 text-left transition-colors ${
-                      active ? "bg-primary/7" : "hover:bg-muted/45"
+                    className={`w-full px-3.5 py-2.5 text-left transition-colors border-l-2 ${
+                      active
+                        ? "bg-primary/8 border-primary text-foreground"
+                        : "border-transparent hover:bg-muted/40 text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <strong className="block truncate font-mono text-sm font-semibold text-foreground">
-                          {formatPhone(call.customer_number, "Unknown caller")}
-                        </strong>
-                        <span className="wl-preserve-case mt-1 block truncate text-xs text-muted-foreground">
-                          {meta || humanize(call.direction, "Call")}
-                        </span>
+                    <div className="flex items-center justify-between gap-2">
+                      <strong
+                        className={`truncate font-mono text-xs font-semibold ${
+                          active ? "text-primary" : "text-foreground"
+                        }`}
+                      >
+                        {formatPhone(call.customer_number, "Unknown caller")}
+                      </strong>
+                      <span className="shrink-0 text-[10px] text-muted-foreground/75">
+                        {formatTime(call.created_at)}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <span className="wl-preserve-case block truncate text-[11px] text-muted-foreground">
+                        {meta || humanize(call.direction, "Call")}
+                      </span>
+                      <div className="flex shrink-0 items-center gap-1.5">
                         {call.recording_url ? (
-                          <span className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
-                            <Mic className="size-3" aria-hidden="true" />
-                            Recording
+                          <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-muted-foreground">
+                            <Mic className="size-2.5" aria-hidden="true" />
                           </span>
                         ) : null}
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <span className="block text-[10px] text-muted-foreground">
-                          {formatTime(call.created_at)}
-                        </span>
                         <span
-                          className={`mt-1 block text-[10px] font-semibold ${statusTone(callOutcomeLabel(reportHappened(call)))}`}
+                          className={`text-[10px] font-medium ${statusTone(callOutcomeLabel(reportHappened(call)))}`}
                         >
                           {callOutcomeLabel(reportHappened(call))}
                         </span>
@@ -382,94 +434,173 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
   const reportBody = !selected ? (
     <EmptyState title="Select a Call" density="compact" titleTone="ui" withHalo={false} />
   ) : (
-    <div className="mx-auto w-full max-w-3xl p-4 sm:p-6">
+    <div className="mx-auto w-full max-w-3xl p-4 sm:p-6 space-y-6">
       <button
         type="button"
         onClick={() => setSelectedId(null)}
-        className="mb-4 inline-flex items-center gap-1.5 text-xs font-semibold text-primary lg:hidden"
+        className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold text-primary lg:hidden"
       >
         <ArrowLeft className="size-4" aria-hidden="true" />
         Calls
       </button>
 
-      <header className="border-b border-border pb-4">
+      <header className="rounded-2xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs">
         <p className="text-xs font-semibold text-primary">Call report</p>
-        <h3 className="mt-1 font-mono text-xl font-semibold text-foreground">
-          {formatPhone(selected.customer_number, "Unknown Caller")}
-        </h3>
-        <p className="wl-preserve-case mt-1 text-xs text-muted-foreground">
-          {[
-            selected.agent_name,
-            formatTime(selected.created_at),
-            formatDuration(selected.duration_seconds),
-          ]
-            .filter(Boolean)
-            .join(" · ")}
-        </p>
+        <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <h3 className="font-mono text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate">
+              {formatPhone(selected.customer_number, "Unknown Caller")}
+            </h3>
+            <p className="wl-preserve-case mt-1 text-xs text-muted-foreground">
+              {[
+                selected.agent_name,
+                formatTime(selected.created_at),
+                formatDuration(selected.duration_seconds),
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <span
+              className={`inline-flex items-center rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-semibold ${statusTone(callOutcomeLabel(reportHappened(selected)))}`}
+            >
+              {callOutcomeLabel(reportHappened(selected))}
+            </span>
+            {selected.duration_seconds ? (
+              <span className="inline-flex items-center rounded-lg border border-border bg-card px-2.5 py-1 font-mono text-xs font-medium text-muted-foreground">
+                {formatDuration(selected.duration_seconds)}
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowOutboundDial(true)}
+            className="gap-1.5 text-xs"
+          >
+            <Phone className="size-3.5" aria-hidden="true" />
+            Call Back
+          </Button>
+          {selected.recording_url ? (
+            <a
+              href={selected.recording_url}
+              download
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+            >
+              <Download className="size-3.5" aria-hidden="true" />
+              Download Audio
+            </a>
+          ) : null}
+        </div>
       </header>
 
-      <div className="space-y-5 py-5">
-        <section>
-          <h4 className="text-xs font-semibold tracking-[0.08em] text-muted-foreground">
+      {selected.recording_url ? (
+        <section aria-label="Call recording" className="rounded-2xl border border-border/80 bg-card/60 p-4 shadow-xs">
+          <div className="flex items-center justify-between pb-2">
+            <h4 className="flex items-center gap-2 text-xs font-semibold text-foreground">
+              <Mic className="size-3.5 text-primary" aria-hidden="true" />
+              Recording
+            </h4>
+            <a
+              href={selected.recording_url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs font-semibold text-primary hover:underline"
+            >
+              Open
+            </a>
+          </div>
+          <audio
+            key={selected.id}
+            controls
+            preload="none"
+            src={selected.recording_url}
+            className="w-full accent-primary"
+          />
+        </section>
+      ) : null}
+
+      <section className="rounded-2xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs space-y-4">
+        <div>
+          <h4 className="text-xs font-semibold tracking-[0.08em] uppercase text-muted-foreground">
             {selected.summary?.trim().startsWith("Caller:") ? "Caller Excerpt" : "Summary"}
           </h4>
           <p className="wl-preserve-case mt-2 text-sm leading-6 text-foreground">
             {readableCallSummary(selected.summary, selected.transcript)}
           </p>
-        </section>
+        </div>
 
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 pt-3 border-t border-border/60">
           {[
             ["Outcome", callOutcomeLabel(reportHappened(selected))],
             ["What happened", callOutcomeDetail(reportHappened(selected))],
           ].map(([label, value]) => (
-            <div key={label} className="rounded-xl border border-border bg-card p-3">
+            <div key={label} className="rounded-xl border border-border/70 bg-background/50 p-3">
               <span className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 {label}
               </span>
-              <strong className="mt-1.5 block text-sm font-semibold text-foreground">
+              <strong className="mt-1 block text-sm font-semibold text-foreground">
                 {value}
               </strong>
             </div>
           ))}
         </div>
+      </section>
 
-        {selected.transcript ? (
-          <details className="rounded-xl border border-border bg-card">
-            <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-foreground">
+      {selected.transcript ? (
+        <section className="rounded-2xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs">
+          <div className="flex items-center justify-between pb-3 border-b border-border/60">
+            <h4 className="text-xs font-semibold tracking-[0.08em] uppercase text-muted-foreground">
               Transcript
-            </summary>
-            <div className="wl-preserve-case whitespace-pre-wrap border-t border-border px-4 py-4 text-sm leading-6 text-muted-foreground">
-              {selected.transcript}
-            </div>
-          </details>
-        ) : null}
+            </h4>
+            <span className="text-[11px] text-muted-foreground">
+              {parseDialogue(selected.transcript, selected.agent_name).length > 1
+                ? "Dialogue turns"
+                : "Continuous transcript"}
+            </span>
+          </div>
 
-        {selected.recording_url ? (
-          <section aria-label="Call recording">
-            <div className="flex items-center justify-between gap-3">
-              <h4 className="text-xs font-semibold tracking-[0.08em] text-muted-foreground">
-                Recording
-              </h4>
-              <a
-                href={selected.recording_url}
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs font-semibold text-primary"
-              >
-                Open
-              </a>
-            </div>
-            <audio
-              key={selected.id}
-              controls
-              preload="none"
-              src={selected.recording_url}
-              className="mt-2 w-full"
-            />
-          </section>
-        ) : null}
-      </div>
+          <div className="mt-4 space-y-3">
+            {(() => {
+              const turns = parseDialogue(selected.transcript, selected.agent_name);
+              if (turns.length > 1) {
+                return turns.map((turn, index) => {
+                  const isBot = turn.speaker === "bot";
+                  return (
+                    <div
+                      key={index}
+                      className={`flex flex-col gap-1 ${isBot ? "items-start" : "items-end"}`}
+                    >
+                      <span className="px-1 text-[11px] font-medium text-muted-foreground">
+                        {turn.speakerName}
+                      </span>
+                      <div
+                        className={`max-w-[88%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                          isBot
+                            ? "bg-muted/70 text-foreground rounded-tl-xs border border-border/60"
+                            : "bg-primary/10 text-foreground rounded-tr-xs border border-primary/20"
+                        }`}
+                      >
+                        {turn.text}
+                      </div>
+                    </div>
+                  );
+                });
+              }
+              return (
+                <div className="wl-preserve-case whitespace-pre-wrap rounded-xl border border-border/60 bg-background/60 p-4 text-sm leading-6 text-foreground">
+                  {selected.transcript}
+                </div>
+              );
+            })()}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 
@@ -535,9 +666,9 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
           <WorkspaceResizablePanel
             storageKey={CALL_LIST_PANEL_STORAGE_KEY}
             side="left"
-            defaultSize={340}
-            minSize={280}
-            maxSize={480}
+            defaultSize={300}
+            minSize={260}
+            maxSize={400}
             collapsedSize={44}
             resizeHandleLabel="Resize call list"
             className="border-r border-border bg-card/20"

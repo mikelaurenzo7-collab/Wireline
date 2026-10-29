@@ -27,9 +27,9 @@ import {
 // call log, outbound work, and the lines themselves.
 const PHONE_TABS = [
   { id: "logs", label: "History" },
-  { id: "settings", label: "Settings" },
   { id: "outbound", label: "Outbound" },
   { id: "lines", label: "Lines" },
+  { id: "settings", label: "Settings" },
 ] as const;
 
 /** Readable + legacy ?tab= values from links and emails (ids renamed to
@@ -154,7 +154,7 @@ export default function PhonePage() {
     <WorkspaceShell contentClassName="pt-0 pb-0" fullBleed>
       <WorkspacePageFrame
         mode="operate"
-        className="flex min-h-0 flex-1 flex-col gap-0 pb-5 lg:pb-4"
+        className="flex min-h-0 flex-1 flex-col !gap-0 !pt-0 !px-0 sm:!px-0 lg:!px-0 pb-0"
       >
         <WorkspaceOperateIntro
           title="Calls"
@@ -163,7 +163,7 @@ export default function PhonePage() {
             <WorkspaceControlBand
               embedded
               ariaLabel="Call controls"
-              className="gap-2.5 sm:items-center"
+              className="gap-2.5 sm:items-center px-3 sm:px-6 py-2 border-b border-border/80 bg-background/50"
               primary={
                 <WorkspaceTabStrip
                   tabs={[...PHONE_TABS]}

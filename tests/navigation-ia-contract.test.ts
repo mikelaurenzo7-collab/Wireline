@@ -22,7 +22,6 @@ describe("BotBound workspace information architecture", () => {
       "/inbox",
       "/phone",
       "/calendar",
-      "/computer",
     ]);
     expect(OPERATE_NAV.map((item) => item.href)).toEqual([
       "/knowledge",
@@ -75,7 +74,7 @@ describe("BotBound workspace information architecture", () => {
     expect(desktopNavParentHref("/templates")).toBe("/studio");
     expect(desktopNavParentHref("/computer")).toBe("/studio");
     expect(isNavActive("/computer", "/computer")).toBe(true);
-    expect(isNavActive("/computer", "/studio")).toBe(false);
+    expect(isNavActive("/computer", "/studio")).toBe(true);
     expect(desktopNavParentHref("/approvals")).toBe("/inbox");
     expect(desktopNavParentHref("/apps")).toBe("/settings");
     expect(desktopNavParentHref("/settings/compliance")).toBe("/settings");
@@ -94,8 +93,8 @@ describe("BotBound workspace information architecture", () => {
     expect(isMobileMoreActive("/knowledge")).toBe(false);
     expect(isMobilePrimaryActive("/knowledge", "/knowledge")).toBe(true);
     expect(isMobilePrimaryActive("/templates", "/studio")).toBe(true);
-    expect(isMobilePrimaryActive("/computer", "/studio")).toBe(false);
-    expect(isMobileMoreActive("/computer")).toBe(true);
+    expect(isMobilePrimaryActive("/computer", "/studio")).toBe(true);
+    expect(isMobileMoreActive("/computer")).toBe(false);
     expect(isMobileMoreActive("/approvals")).toBe(false);
     expect(isMobilePrimaryActive("/approvals", "/inbox")).toBe(true);
   });
@@ -103,7 +102,7 @@ describe("BotBound workspace information architecture", () => {
   it("groups the More sheet by task instead of exposing a flat admin list", () => {
     expect(MOBILE_MORE_GROUPS.map((group) => group.label)).toEqual(["Operate", "System"]);
     expect(MOBILE_MORE_GROUPS.map((group) => group.items.map((item) => item.href))).toEqual([
-      ["/calendar", "/computer", "/insights"],
+      ["/calendar", "/insights"],
       ["/connections", "/settings"],
     ]);
   });

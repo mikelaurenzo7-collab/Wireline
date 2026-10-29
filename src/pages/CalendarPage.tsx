@@ -17,7 +17,7 @@ import { WorkspaceOperateIntro, WorkspacePageFrame } from "../components/layout/
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 
 const CALENDAR_TABS = [
-  { id: "agenda", label: "Calendar" },
+  { id: "agenda", label: "Schedule" },
   { id: "availability", label: "Availability" },
 ];
 
@@ -78,7 +78,7 @@ export default function CalendarPage() {
     <WorkspaceShell contentClassName="pt-0 pb-0" fullBleed>
       <WorkspacePageFrame
         mode="operate"
-        className="flex min-h-0 flex-1 flex-col gap-0 pb-5 lg:pb-4"
+        className="flex min-h-0 flex-1 flex-col !gap-0 !pt-0 !px-0 sm:!px-0 lg:!px-0 pb-0"
       >
         <WorkspaceOperateIntro
           title="Calendar"
@@ -87,6 +87,7 @@ export default function CalendarPage() {
             <WorkspaceControlBand
               embedded
               ariaLabel="Calendar controls"
+              className="gap-2.5 sm:items-center px-3 sm:px-6 py-2 border-b border-border/80 bg-background/50"
               primary={
                 <WorkspaceTabStrip
                   tabs={CALENDAR_TABS}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDays, Clock3 } from "lucide-react";
+import { CalendarDays, CheckCircle2, Clock3, ExternalLink, RefreshCw } from "lucide-react";
 
 import { authFetch } from "../lib/api";
 import { formatPhone } from "../lib/safe-number";
@@ -102,6 +102,9 @@ export function AppointmentRow({
   const editable =
     appointment.booking_source === "native" &&
     ["Requested", "Confirmed", "Scheduled", "Rescheduled"].includes(appointment.status || "");
+  const isGoogle =
+    appointment.booking_source === "google" || appointment.booking_source === "google_calendar";
+
   return (
     <li className="flex items-start gap-3 rounded-xl border border-border bg-card px-3.5 py-3.5 sm:px-4">
       <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
@@ -109,9 +112,16 @@ export function AppointmentRow({
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
-          <strong className="min-w-0 break-words text-sm font-semibold text-foreground">
-            {appointment.customer_name || "Customer"}
-          </strong>
+          <div className="flex items-center gap-2">
+            <strong className="min-w-0 break-words text-sm font-semibold text-foreground">
+              {appointment.customer_name || "Customer"}
+            </strong>
+            {isGoogle ? (
+              <span className="inline-flex items-center rounded-md border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                Google Calendar
+              </span>
+            ) : null}
+          </div>
           <Badge
             variant={
               ["Scheduled", "Confirmed"].includes(appointment.status || "") ? "success" : "outline"
@@ -128,10 +138,20 @@ export function AppointmentRow({
             {formatPhone(appointment.phone_number)}
           </p>
         ) : null}
-        <span className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
-          <Clock3 className="size-3.5 shrink-0" aria-hidden="true" />
-          <span>{scheduleLabel(appointment)}</span>
-        </span>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <span className="flex items-start gap-1.5 text-xs text-muted-foreground">
+            <Clock3 className="size-3.5 shrink-0" aria-hidden="true" />
+            <span>{scheduleLabel(appointment)}</span>
+          </span>
+          <a
+            href="https://calendar.google.com/calendar/u/0/r"
+            target="_blank"
+            rel="noreferrer"
+            className="text-[11px] font-medium text-primary hover:underline"
+          >
+            Open in Google Calendar
+          </a>
+        </div>
         {editable && onStatus ? (
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {confirmingCancel ? (
@@ -180,6 +200,198 @@ export function AppointmentRow({
       </div>
     </li>
   );
+}
+
+function GoogleCalendarCard({ onSyncSuccess }: { onSyncSuccess?: () => void }) {
+  const [loading, setLoading] = useState(true);
+  const [connected, setConnected] = useState<boolean | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncNotice, setSyncNotice] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    authFetch("/api/calendar/accounts")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body: { accounts?: Array<{ provider?: string }> } | null) => {
+        if (cancelled) return;
+        const hasGoogle =
+          Array.isArray(body?.accounts) && body.accounts.some((a) => a.provider === "google");
+        setConnected(hasGoogle);
+      })
+      .catch(() => {
+        if (!cancelled) setConnected(false);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function handleSync() {
+    if (syncing) return;
+    setSyncing(true);
+    setSyncNotice(null);
+    setSyncError(null);
+    try {
+      const res = await authFetch("/api/calendar/sync", { method: "POST" });
+      if (!res.ok) throw new Error("Sync request failed.");
+      setSyncNotice(
+        `Synced with Google Calendar at ${new Date().toLocaleTimeString(undefined, {
+          hour: "numeric",
+          minute: "2-digit",
+        })}`,
+      );
+      onSyncSuccess?.();
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : "Sync failed. Check connection.");
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  async function handleConnect() {
+    try {
+      const res = await authFetch("/api/oauth/google/url?purpose=calendar");
+      const data = (await res.json().catch(() => null)) as { url?: string } | null;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        window.location.href = "/connections";
+      }
+    } catch {
+      window.location.href = "/connections";
+    }
+  }
+
+  if (loading) return null;
+
+  if (connected) {
+    return (
+      <div className="rounded-2xl border border-primary/25 bg-primary/5 p-4 sm:p-5 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
+              <CheckCircle2 className="size-4" aria-hidden="true" />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <strong className="text-sm font-semibold text-foreground">
+                  Google Workspace & Calendar Connected
+                </strong>
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                  2-way sync
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+                Your Bot checks your Google Calendar busy times to avoid double booking and adds
+                confirmed appointments automatically.
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={syncing}
+              onClick={handleSync}
+              className="gap-1.5 text-xs"
+            >
+              <RefreshCw
+                className={`size-3.5 ${syncing ? "animate-spin" : ""}`}
+                aria-hidden="true"
+              />
+              {syncing ? "Syncing…" : "Sync Now"}
+            </Button>
+            <a
+              href="https://calendar.google.com/calendar/u/0/r"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <ExternalLink className="size-3.5" aria-hidden="true" />
+              Open Calendar
+            </a>
+          </div>
+        </div>
+        {syncNotice ? (
+          <p role="status" className="mt-2.5 text-xs font-medium text-primary">
+            {syncNotice}
+          </p>
+        ) : null}
+        {syncError ? (
+          <p role="status" className="mt-2.5 text-xs font-medium text-destructive">
+            {syncError}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
+            <CalendarDays className="size-4" aria-hidden="true" />
+          </span>
+          <div>
+            <strong className="text-sm font-semibold text-foreground">
+              Connect Google Calendar
+            </strong>
+            <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+              Sync your Google Workspace or Personal Google Calendar so your Bot never double-books
+              during your busy events.
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button type="button" size="sm" onClick={handleConnect} className="text-xs">
+            Connect Google Calendar
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function groupAppointmentsByDay(items: Appointment[]) {
+  const groups: Array<{ label: string; date: string; items: Appointment[] }> = [];
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+  const tomorrow = new Date(now.getTime() + 86400000);
+  const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+
+  for (const item of items) {
+    const rawDate = item.start_at?.slice(0, 10) || item.date || "Upcoming";
+    let label = rawDate;
+    if (rawDate === todayStr) label = "Today";
+    else if (rawDate === tomorrowStr) label = "Tomorrow";
+    else if (rawDate !== "Upcoming") {
+      try {
+        const d = new Date(`${rawDate}T00:00:00Z`);
+        label = d.toLocaleDateString(undefined, {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          timeZone: "UTC",
+        });
+      } catch {
+        label = rawDate;
+      }
+    }
+
+    const existing = groups.find((g) => g.date === rawDate);
+    if (existing) {
+      existing.items.push(item);
+    } else {
+      groups.push({ label, date: rawDate, items: [item] });
+    }
+  }
+  return groups;
 }
 
 export default function AppointmentsPanel({
@@ -359,13 +571,14 @@ export default function AppointmentsPanel({
 
   if (appointments.length === 0) {
     return (
-      <div className="flex w-full flex-col items-center px-4 py-8 sm:px-6">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-5 sm:px-6">
+        <GoogleCalendarCard onSyncSuccess={() => void loadAppointments()} />
         <EmptyState
           framed
           density="compact"
           titleTone="ui"
           withHalo={false}
-          className="w-full max-w-lg"
+          className="w-full"
           icon={<CalendarDays className="size-5" aria-hidden="true" />}
           title="No Appointments Yet"
           description="Appointments your Bot books will appear here."
@@ -382,32 +595,48 @@ export default function AppointmentsPanel({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-5 sm:px-6">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-5 sm:px-6">
+      <GoogleCalendarCard onSyncSuccess={() => void loadAppointments()} />
+
       {mutationError ? (
         <StatusNotice tone="warning" title="Appointment Not Updated">
           {mutationError}
         </StatusNotice>
       ) : null}
       <section aria-labelledby="upcoming-appointments">
-        <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="mb-3 flex items-center justify-between gap-3">
           <h2 id="upcoming-appointments" className="text-sm font-semibold text-foreground">
             Upcoming
           </h2>
           <span className="text-xs tabular-nums text-muted-foreground">{upcoming.length}</span>
         </div>
         {upcoming.length ? (
-          <ul className="flex flex-col gap-2">
-            {upcoming.map((appointment) => (
-              <AppointmentRow
-                key={appointment.id}
-                appointment={appointment}
-                busy={mutatingId !== null}
-                confirmingCancel={cancelConfirmId === appointment.id}
-                onCancelIntent={setCancelConfirmId}
-                onStatus={changeStatus}
-              />
+          <div className="space-y-4">
+            {groupAppointmentsByDay(upcoming).map((group) => (
+              <div key={group.date} className="space-y-1.5">
+                <div className="flex items-center gap-2 px-0.5">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {group.label}
+                  </span>
+                  <span className="rounded-full bg-muted/80 px-1.5 py-0.2 text-[10px] font-mono text-muted-foreground">
+                    {group.items.length}
+                  </span>
+                </div>
+                <ul className="flex flex-col gap-2">
+                  {group.items.map((appointment) => (
+                    <AppointmentRow
+                      key={appointment.id}
+                      appointment={appointment}
+                      busy={mutatingId !== null}
+                      confirmingCancel={cancelConfirmId === appointment.id}
+                      onCancelIntent={setCancelConfirmId}
+                      onStatus={changeStatus}
+                    />
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
         ) : (
           <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
             {hasMore ? "No upcoming appointments in loaded history" : "No upcoming appointments"}

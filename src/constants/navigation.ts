@@ -153,8 +153,6 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     eyebrow: "Operate",
     description: "Give your Bot web tasks on its own secure cloud computer.",
     icon: "Monitor",
-    desktop: { group: "work", order: 50 },
-    mobile: { placement: "more", group: "Operate", order: 20 },
     parentHref: "/studio",
     shortcut: { key: "M", hint: "g m" },
   },
