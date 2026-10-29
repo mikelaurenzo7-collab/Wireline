@@ -15,7 +15,7 @@ describe("authenticated seeded-state visual QA contract", () => {
   it("keeps the technical integration inventory out of customer Connections", () => {
     const connections = read("src/pages/ConnectionsPage.tsx");
     expect(connections).toContain("MailboxConnectionCard");
-    expect(connections).toContain("CrmConnectionCard");
+    expect(connections).toContain("LegacyConnectionGrants");
     expect(connections).not.toMatch(/IntegrationOperatingMap|data-wireline-integration-map/);
   });
 

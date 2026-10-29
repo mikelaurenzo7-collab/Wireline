@@ -141,7 +141,7 @@ describe("authenticated Bot navigation contract", () => {
     const settingsTabs = read("src/components/settings/SettingsTabs.tsx");
     const billing = read("src/pages/BillingSettings.tsx");
     expect(connections).not.toContain("IntegrationOperatingMap");
-    expect(connections).toContain("CrmConnectionCard");
+    expect(connections).toContain("LegacyConnectionGrants");
     expect(knowledge).toContain("WorkspaceControlBand");
     expect(knowledge).not.toContain("WorkspaceTabStrip");
     expect(settingsTabs).toContain('href: "/settings/apps", label: "Apps"');

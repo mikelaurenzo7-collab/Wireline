@@ -20,6 +20,7 @@ import {
   getMetaUserInfo,
   subscribePageToLeadgen,
   disconnectMeta,
+  disconnectMetaLocally,
 } from "../../lib/meta-service";
 import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
 
@@ -188,6 +189,22 @@ router.post(
       log.error("Meta disconnect failed", { error: e?.message });
       throw AppError.fromHttpStatus(500, "Failed to disconnect Meta");
     }
+  },
+);
+
+// A separate, explicit operation for an unconfirmed remote revoke. It removes
+// the tenant's saved credential without asserting that Meta revoked access.
+router.post(
+  "/api/oauth/meta/disconnect-local",
+  authenticateUser,
+  async (req: express.Request, res: express.Response) => {
+    const userId = req.user?.id;
+    if (!userId) throw AppError.fromHttpStatus(401, "Unauthorized");
+    if (req.body?.confirm !== "remove_local_only") {
+      throw AppError.fromHttpStatus(400, "Confirm removal from BotBound only.");
+    }
+    await disconnectMetaLocally(userId);
+    res.json({ ok: true, providerAuthorization: "unconfirmed" });
   },
 );
 
