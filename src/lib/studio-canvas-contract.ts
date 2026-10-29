@@ -87,7 +87,7 @@ export const STUDIO_CANVAS_REQUIRED = {
   ],
   navigation: [
     { id: "studio-route", pattern: /target === "\/studio"/ },
-    { id: "studio-label", pattern: /label: "Workspace"/ },
+    { id: "studio-label", pattern: /label: "Work"/ },
     { id: "scoped-workspace-navigation", pattern: /scopedWorkspaceHref/ },
     {
       id: "daily-work-order",
