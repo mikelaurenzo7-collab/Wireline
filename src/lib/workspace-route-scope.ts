@@ -7,6 +7,7 @@ const WORKSPACE_ROUTE_ROOTS = ["/studio", "/connections", "/settings", "/admin",
 const WORKSPACE_EXACT_ROUTES = new Set([
   "/overview",
   "/agents",
+  "/bots",
   "/workspace",
   "/templates",
   "/knowledge",
