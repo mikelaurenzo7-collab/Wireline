@@ -81,7 +81,7 @@ export const MOBILE_MORE_HREF = "__more__" as const;
  * the derived runtime data below and may be removed when those checks import
  * the registry directly.
  *
- * { href: "/studio", label: "Workspace" }
+ * { href: "/studio", label: "Work" }
  * { href: "/inbox", label: "Inbox" }
  * { href: "/phone", label: "Calls" }
  * { href: "/insights", label: "Insights" }
@@ -100,18 +100,26 @@ export const MOBILE_MORE_HREF = "__more__" as const;
 export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
   {
     href: "/studio",
-    title: "Workspace",
-    label: "Workspace",
-    // The phone dock fits five tabs at 320px with enlarged text; the Bot icon
-    // and "Bot" name the same place ("Bot, Workspace" to assistive tech).
-    shortLabel: "Bot",
+    title: "Work",
+    label: "Work",
+    shortLabel: "Work",
     eyebrow: "Build",
-    description: "Set up your Bot, try it, and give it work.",
+    description: "Conversations, tasks, and the live browser.",
     icon: "Bot",
     matches: ["/agents", "/overview", "/workspace"],
     desktop: { group: "work", order: 10 },
     mobile: { placement: "primary", order: 10 },
     shortcut: { key: "S", hint: "g s", aliases: ["A"] },
+  },
+  {
+    href: "/bots",
+    title: "Bots",
+    label: "Bots",
+    eyebrow: "Build",
+    description: "Choose, create, and configure your Bots.",
+    icon: "Bot",
+    desktop: { group: "manage", order: 1 },
+    mobile: { placement: "more", group: "Build", order: 5 },
   },
   {
     href: "/inbox",
@@ -336,7 +344,7 @@ export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
   {
     href: MOBILE_MORE_HREF,
     label: "More",
-    description: "Insights, Calendar, Connections, and Settings.",
+    description: "Bots, Insights, Calendar, Connections, and Settings.",
     icon: "MoreHorizontal",
     section: "System",
   },
@@ -475,7 +483,7 @@ export const PAGE_TITLES: Record<string, string> = Object.fromEntries(
 );
 
 export function workspacePageTitle(pathname: string) {
-  return workspaceRouteMeta(pathname)?.title ?? "Workspace";
+  return workspaceRouteMeta(pathname)?.title ?? "Work";
 }
 
 export function workspacePageContext(pathname: string) {
