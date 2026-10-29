@@ -3,7 +3,7 @@ import { ChevronUp } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
 import { cn } from "../../lib/utils";
-import { WirelineWordmark } from "../brand/WirelineBrand";
+import { BotBoundWordmark } from "../brand/BotBoundBrand";
 
 const OPEN_PRIVACY_CHOICES_EVENT = "wireline:open-privacy-choices";
 
@@ -136,7 +136,7 @@ export default function MarketingChromeBar({ className }: { className?: string }
       <div className="marketing-chrome-bar__row">
         <div className="marketing-chrome-bar__rail wl-public-rail flex flex-wrap items-center gap-x-4 gap-y-1.5 overflow-hidden">
           <span className="marketing-chrome-bar__copy shrink-0 text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} <WirelineWordmark inline />
+            &copy; {new Date().getFullYear()} <BotBoundWordmark inline />
           </span>
 
           <nav

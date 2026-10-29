@@ -759,6 +759,18 @@
   color: var(--wireline-ink);
 }
 
+@media (max-width: 639px) {
+  .landing-prestige__utility-inner {
+    justify-content: center;
+    text-align: center;
+    gap: 1rem;
+  }
+  .landing-prestige__utility-links {
+    justify-content: center;
+    gap: 0.375rem 1rem;
+  }
+}
+
 /* Supporting Product (/features) page */
 .wl-features-page .marketing-section--screen {
   min-height: calc(100dvh - var(--wl-marketing-chrome-top, 4rem));

@@ -449,6 +449,18 @@ function StudioWorkspaceContent() {
     requestAnimationFrame(() => document.getElementById("studio-settings-toggle")?.focus());
   }, [setPanelCollapsed, setParams, splitWorkspace]);
 
+  useEffect(() => {
+    const handleToggle = () => {
+      if (panelOpen) {
+        closeInspector();
+      } else {
+        openPanelSection("computer");
+      }
+    };
+    window.addEventListener("wireline:studio-toggle-panel", handleToggle);
+    return () => window.removeEventListener("wireline:studio-toggle-panel", handleToggle);
+  }, [closeInspector, openPanelSection, panelOpen]);
+
   const setWorkroomMode = useCallback(
     (mode: WorkroomMode) => {
       setWorkroomModeState(mode);

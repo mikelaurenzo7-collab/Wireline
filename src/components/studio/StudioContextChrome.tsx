@@ -1,4 +1,4 @@
-import { ChevronDown, Plus, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, PanelRight, Plus, SlidersHorizontal } from "lucide-react";
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router";
 
@@ -87,8 +87,24 @@ export default function StudioContextChrome() {
 
         <div className="flex max-w-full flex-wrap items-center gap-1">
           {activeAgent ? (
-            <Button
-              id="studio-settings-toggle"
+            <>
+              <Button
+                id="studio-panel-toggle"
+                type="button"
+                variant={searchParams.get("panel") === "computer" ? "secondary" : "ghost"}
+                size="sm"
+                className="min-h-[44px] px-2.5"
+                aria-label="Toggle Browser Panel"
+                title="Toggle Browser Panel"
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent("wireline:studio-toggle-panel"));
+                }}
+              >
+                <PanelRight className="size-4" aria-hidden="true" />
+                <span className="hidden sm:inline">Browser</span>
+              </Button>
+              <Button
+                id="studio-settings-toggle"
               type="button"
               variant={inspectorOpen ? "secondary" : "ghost"}
               size="sm"
@@ -109,7 +125,8 @@ export default function StudioContextChrome() {
               <SlidersHorizontal className="size-4" aria-hidden="true" />
               Set Up
             </Button>
-          ) : null}
+          </>
+        ) : null}
           {readyLabel ? (
             // Status, not a control: quiet text with a state dot, so it never
             // reads as a third, disabled button between the real ones.
