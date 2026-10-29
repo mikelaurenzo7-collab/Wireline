@@ -38,7 +38,7 @@ import { APP_KEYBOARD_SHORTCUTS, scopedWorkspaceHref } from "../constants/naviga
 import { customerAgentLanguage } from "../lib/product-copy";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 
-type CommandCategory = "Workspace" | "Create" | "Manage";
+type CommandCategory = "Work" | "Create" | "Manage";
 
 type CommandItem = {
   id: string;
@@ -49,16 +49,24 @@ type CommandItem = {
   category: CommandCategory;
 };
 
-const COMMAND_CATEGORIES: readonly CommandCategory[] = ["Workspace", "Create", "Manage"];
+const COMMAND_CATEGORIES: readonly CommandCategory[] = ["Work", "Create", "Manage"];
 
 const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "agents",
-    label: "Workspace",
+    label: "Work",
     keywords: "workspace studio set up try rehearse bots agents voice manage live home",
     icon: Bot,
     href: "/studio",
-    category: "Workspace",
+    category: "Work",
+  },
+  {
+    id: "bots",
+    label: "Bots",
+    keywords: "manage bots agents configure setup create roster",
+    icon: Bot,
+    href: "/bots",
+    category: "Manage",
   },
   {
     id: "knowledge",
@@ -66,7 +74,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     keywords: "facts context sources policies rules memory training",
     icon: Database,
     href: "/knowledge",
-    category: "Workspace",
+    category: "Work",
   },
   {
     id: "connections",
@@ -74,7 +82,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     keywords: "accounts integrations tools actions",
     icon: Cable,
     href: "/connections",
-    category: "Workspace",
+    category: "Work",
   },
   {
     id: "inbox",
@@ -82,7 +90,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     keywords: "conversations outcomes handoffs",
     icon: Inbox,
     href: "/inbox",
-    category: "Workspace",
+    category: "Work",
   },
   {
     id: "phone",
@@ -92,7 +100,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     keywords: "phone calls history reviewed inbound service callback",
     icon: Phone,
     href: "/phone",
-    category: "Workspace",
+    category: "Work",
   },
   {
     id: "calendar",
@@ -100,7 +108,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     keywords: "appointments availability bookings schedule hours",
     icon: CalendarDays,
     href: "/calendar",
-    category: "Workspace",
+    category: "Work",
   },
   {
     id: "computer",
@@ -108,7 +116,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     keywords: "cloud computer browser web research task browse website",
     icon: Monitor,
     href: "/computer",
-    category: "Workspace",
+    category: "Work",
   },
   {
     id: "approvals",
@@ -116,7 +124,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     keywords: "review post-call actions",
     icon: CheckSquare,
     href: "/approvals",
-    category: "Workspace",
+    category: "Work",
   },
   {
     id: "insights",
@@ -124,7 +132,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     keywords: "activity analytics performance reliability quality revenue reports",
     icon: BarChart3,
     href: "/insights",
-    category: "Workspace",
+    category: "Work",
   },
   {
     id: "settings",
@@ -132,7 +140,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     keywords: "workspace preferences appearance account",
     icon: Settings,
     href: "/settings",
-    category: "Workspace",
+    category: "Work",
   },
   {
     id: "create-bot",
