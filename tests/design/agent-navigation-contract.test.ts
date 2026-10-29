@@ -55,8 +55,8 @@ describe("authenticated Bot navigation contract", () => {
 
   it("makes Studio the authenticated home and gives each Bot a scoped workspace", () => {
     expect(routes).toContain('<Route path="/" element={<Navigate to="/studio" replace />} />');
-    expect(studioChrome).toContain('aria-label="Switch Bot"');
-    expect(studioChrome).toContain("agents.map");
+    expect(studioChrome).toContain("BotDetailsMenu");
+    expect(read("src/components/studio/BotDetailsMenu.tsx")).toContain("agents.map");
     expect(studioChrome).not.toContain("/inbox?agent=");
     expect(studioChrome).not.toContain("/phone?agent=");
     expect(navigation).toContain('href: "/inbox"');
