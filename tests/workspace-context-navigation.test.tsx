@@ -61,6 +61,7 @@ vi.mock("react", async (original) => ({
       h.effects.push(effect);
     }
   },
+  useLayoutEffect: () => {},
   useMemo: (factory: () => unknown) => factory(),
   useCallback: (callback: unknown) => callback,
   useImperativeHandle: (ref: { current: unknown } | null, create: () => unknown) => {

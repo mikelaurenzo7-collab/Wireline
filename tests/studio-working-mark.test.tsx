@@ -23,6 +23,7 @@ vi.mock("react", async (original) => ({
   },
   useRef: (initial: unknown) => (h.refs[h.refCursor++] ??= { current: initial }),
   useEffect: () => {},
+  useLayoutEffect: () => {},
   useCallback: (callback: unknown) => callback,
   useImperativeHandle: () => {},
   useSyncExternalStore: (_subscribe: unknown, snapshot: () => unknown) => snapshot(),

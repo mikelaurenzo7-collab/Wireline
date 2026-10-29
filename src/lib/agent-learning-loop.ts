@@ -1,7 +1,8 @@
+import { OWNER_MEMORY_SOURCE } from "./owner-memory";
 /**
  * Lesson review and learning summaries.
  */
-import { and, desc, eq, gte } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 
@@ -20,7 +21,13 @@ export async function approveLesson(lessonId: bigint, userId: string): Promise<b
   const updated = await drizzle
     .update(schema.agentLessons)
     .set({ lessonStatus: "approved", updatedAt: new Date() })
-    .where(and(eq(schema.agentLessons.id, lessonId), eq(schema.agentLessons.userId, userId)))
+    .where(
+      and(
+        eq(schema.agentLessons.id, lessonId),
+        eq(schema.agentLessons.userId, userId),
+        sql`${schema.agentLessons.source} IS DISTINCT FROM ${OWNER_MEMORY_SOURCE}`,
+      ),
+    )
     .returning({ id: schema.agentLessons.id });
   return updated.length > 0;
 }
@@ -29,7 +36,13 @@ export async function rejectLesson(lessonId: bigint, userId: string): Promise<bo
   const updated = await drizzle
     .update(schema.agentLessons)
     .set({ lessonStatus: "rejected", updatedAt: new Date() })
-    .where(and(eq(schema.agentLessons.id, lessonId), eq(schema.agentLessons.userId, userId)))
+    .where(
+      and(
+        eq(schema.agentLessons.id, lessonId),
+        eq(schema.agentLessons.userId, userId),
+        sql`${schema.agentLessons.source} IS DISTINCT FROM ${OWNER_MEMORY_SOURCE}`,
+      ),
+    )
     .returning({ id: schema.agentLessons.id });
   return updated.length > 0;
 }
@@ -44,7 +57,13 @@ export async function getLearningDigest(userId: string, agentId: string): Promis
         status: schema.agentLessons.lessonStatus,
       })
       .from(schema.agentLessons)
-      .where(and(eq(schema.agentLessons.userId, userId), eq(schema.agentLessons.agentId, agentId)))
+      .where(
+        and(
+          eq(schema.agentLessons.userId, userId),
+          sql`${schema.agentLessons.source} IS DISTINCT FROM ${OWNER_MEMORY_SOURCE}`,
+          eq(schema.agentLessons.agentId, agentId),
+        ),
+      )
       .orderBy(desc(schema.agentLessons.createdAt))
       .limit(50),
     drizzle

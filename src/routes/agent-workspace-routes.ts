@@ -49,6 +49,9 @@ import {
   storedStudioMessageMetadata,
 } from "../lib/studio-proposal-state";
 
+import { loadOwnerMemories, changeOwnerMemory } from "../lib/owner-memory-store";
+import { ownerMemorySchema, ownerMemoryIdSchema } from "../lib/owner-memory";
+
 const router = express.Router();
 type WorkspaceTx = Parameters<Parameters<typeof drizzle.transaction>[0]>[0];
 
@@ -179,6 +182,20 @@ async function loadPlanningAgent(agentId: string, userId: string, userMessage: s
         firstMessage: resolveAgentGreeting(agent, directives),
         personality: personalities[0]?.content || "",
         directives,
+        memories: (await loadOwnerMemories(userId, agentId)).map((note) => note.content),
+        recentWork: await drizzle
+          .select({
+            goal: schema.computerTasks.goal,
+            summary: schema.computerTasks.summary,
+            status: schema.computerTasks.status,
+            finishedAt: schema.computerTasks.finishedAt,
+          })
+          .from(schema.computerTasks)
+          .where(
+            and(eq(schema.computerTasks.userId, userId), eq(schema.computerTasks.agentId, agentId)),
+          )
+          .orderBy(desc(schema.computerTasks.startedAt))
+          .limit(3),
         knowledge: await loadPromptKnowledge(drizzle, {
           userId,
           agentId,
@@ -1029,6 +1046,48 @@ router.get(
       log.error("workspace overview failed", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Failed to load overview");
     }
+  },
+);
+
+router.get(
+  "/api/agents/:id/workspace/memory",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (!(await findOwnedAgentProfile(req.params.id, req.user.id)))
+      throw AppError.notFound("Bot not found.");
+    res.json({ memories: await loadOwnerMemories(req.user.id, req.params.id) });
+  },
+);
+
+router.post(
+  "/api/agents/:id/workspace/memory",
+  authenticateUser,
+  smsRateLimit,
+  withAudit("workspace.memory"),
+  async (req: AuthenticatedRequest, res: Response) => {
+    const parsed = ownerMemorySchema.safeParse(req.body);
+    if (!parsed.success) throw AppError.badRequest("Write a memory between 1 and 500 characters.");
+    await changeOwnerMemory(req.user.id, req.params.id, {
+      action: "add",
+      content: parsed.data.content,
+    });
+    res.json({ memories: await loadOwnerMemories(req.user.id, req.params.id) });
+  },
+);
+
+router.delete(
+  "/api/agents/:id/workspace/memory/:memoryId",
+  authenticateUser,
+  smsRateLimit,
+  withAudit("workspace.memory"),
+  async (req: AuthenticatedRequest, res: Response) => {
+    const parsed = ownerMemoryIdSchema.safeParse(req.params.memoryId);
+    if (!parsed.success) throw AppError.badRequest("Choose a valid memory.");
+    await changeOwnerMemory(req.user.id, req.params.id, {
+      action: "delete",
+      id: BigInt(parsed.data),
+    });
+    res.json({ memories: await loadOwnerMemories(req.user.id, req.params.id) });
   },
 );
 

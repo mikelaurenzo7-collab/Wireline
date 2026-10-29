@@ -1,3 +1,5 @@
+import { useState } from "react";
+import StudioMemoryEditor from "./StudioMemoryEditor";
 import {
   BookOpen,
   Brain,
@@ -23,7 +25,6 @@ type Props = {
   onEmail: () => void;
   onComputer: () => void;
   onSetup: () => void;
-  onConfigureConversation: () => void;
 };
 
 export default function StudioBotDetailsPanel({
@@ -32,8 +33,8 @@ export default function StudioBotDetailsPanel({
   onEmail,
   onComputer,
   onSetup,
-  onConfigureConversation,
 }: Props) {
+  const [memoryOpen, setMemoryOpen] = useState(false);
   const lineStatus = agentLineStatus(agent, phoneLookupDegraded);
   const phoneDescription =
     lineStatus === "live"
@@ -87,22 +88,23 @@ export default function StudioBotDetailsPanel({
             </span>
             <ChevronRight size={16} aria-hidden="true" />
           </Link>
-          <details className="wl-bot-details-disclosure">
+          <details
+            className="wl-bot-details-disclosure"
+            onToggle={(event) => {
+              if (event.currentTarget.open) setMemoryOpen(true);
+            }}
+          >
             <summary className="wl-bot-details-row wl-focus-ring-halo">
               <Brain size={18} aria-hidden="true" />
               <span>
                 <strong>Memory</strong>
-                <small>Conversation and call context</small>
+                <small>Preferences and saved context</small>
               </span>
               <ChevronRight size={16} aria-hidden="true" />
             </summary>
-            <div className="wl-bot-details-explanation">
-              Configure chat uses this Bot's saved conversation and recent call summaries as
-              context. Work tasks have their own history. There is no separate memory editor yet.
-              <Button type="button" variant="secondary" size="sm" onClick={onConfigureConversation}>
-                Open Configure chat
-              </Button>
-            </div>
+            {memoryOpen ? (
+              <StudioMemoryEditor key={agent.id} agentId={agent.id} agentName={agent.name} />
+            ) : null}
           </details>
           <button
             className="wl-bot-details-row wl-focus-ring-halo"
@@ -126,8 +128,14 @@ export default function StudioBotDetailsPanel({
               <ChevronRight size={16} aria-hidden="true" />
             </summary>
             <div className="wl-bot-details-explanation">
-              Scheduled Bot automations are not available in this workspace yet. You can start work
-              from the conversation when you need it.
+              Daily or weekly reports and post-call outputs are managed for your whole account.
+              <Button asChild size="sm" variant="secondary">
+                <Link to="/phone?tab=settings">Manage scheduled reports</Link>
+              </Button>
+              <span>
+                Recurring computer tasks are not available yet. Start a task from the conversation
+                when you need it.
+              </span>
             </div>
           </details>
           <button className="wl-bot-details-row wl-focus-ring-halo" type="button" onClick={onSetup}>

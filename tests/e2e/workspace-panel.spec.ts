@@ -126,7 +126,14 @@ async function mockWorkspace(
                 ? { available: true, reason: "ready", limits: { maxMinutes: 15, maxSteps: 60 } }
                 : path === "/api/computer/tasks"
                   ? { tasks }
-                  : { accounts: [], data: [], numbers: [], integrations: [], messages: [] },
+                  : {
+                      accounts: [],
+                      data: [],
+                      numbers: [],
+                      integrations: [],
+                      messages: [],
+                      memories: [],
+                    },
     });
   });
   return {
@@ -188,7 +195,7 @@ test("the desktop roster opens each Bot's own work and its identity details", as
   const sales = roster.getByRole("link", { name: "Open Sales Bot conversation" });
   await expect(front).toHaveAttribute("aria-current", "page", { timeout: 20_000 });
   await expect(page.getByText("Front desk result")).toBeVisible();
-  await workConversation(page).fill("Keep this draft with Front Desk");
+  await conversation(page).fill("Keep this draft with Front Desk");
 
   await page.getByRole("button", { name: "Front Desk details" }).click();
   const panel = page.getByRole("complementary", { name: "Workspace panel" });
@@ -196,7 +203,7 @@ test("the desktop roster opens each Bot's own work and its identity details", as
     "aria-selected",
     "true",
   );
-  await expect(workConversation(page)).toBeVisible();
+  await expect(conversation(page)).toBeVisible();
   await expect(panel.getByRole("link", { name: /Phone/ })).toHaveAttribute(
     "href",
     `/phone?tab=lines&agent=${bots[0].id}`,
@@ -206,13 +213,16 @@ test("the desktop roster opens each Bot's own work and its identity details", as
     `/knowledge?agent=${bots[0].id}`,
   );
   await panel.getByText("Memory", { exact: true }).click();
-  await expect(panel.getByText(/There is no separate memory editor yet/)).toBeVisible();
+  await expect(panel.getByRole("textbox", { name: "Remember this" })).toBeVisible();
   await panel.getByText("Automations", { exact: true }).click();
-  await expect(panel.getByText(/Scheduled Bot automations are not available/)).toBeVisible();
+  await expect(panel.getByRole("link", { name: "Manage scheduled reports" })).toHaveAttribute(
+    "href",
+    "/phone?tab=settings",
+  );
   await proof(page, info, "bot-details-desktop");
 
   await page.getByRole("button", { name: "Front Desk details" }).click();
-  await expect(workConversation(page)).toHaveValue("Keep this draft with Front Desk");
+  await expect(conversation(page)).toHaveValue("Keep this draft with Front Desk");
   await page.getByRole("button", { name: "Front Desk details" }).click();
   await panel.getByRole("button", { name: /Email/ }).click();
   await expect(panel.getByLabel("Bot email setup")).toBeVisible();
@@ -221,9 +231,9 @@ test("the desktop roster opens each Bot's own work and its identity details", as
   await expect(sales).toHaveAttribute("aria-current", "page");
   await expect(page.getByText("Sales result")).toBeVisible();
   await expect(page.getByText("Front desk result")).toHaveCount(0);
-  await expect(workConversation(page, "Sales Bot")).toHaveValue("");
+  await expect(conversation(page, "Sales Bot")).toHaveValue("");
   await front.click();
-  await expect(workConversation(page)).toHaveValue("Keep this draft with Front Desk");
+  await expect(conversation(page)).toHaveValue("Keep this draft with Front Desk");
   await roster.getByRole("link", { name: "Add a Bot" }).click();
   await expect(page.getByRole("dialog").getByText(/One Bot can handle many jobs/)).toBeVisible();
   await page.getByRole("button", { name: "Close Bot setup" }).click();
@@ -236,7 +246,7 @@ test("mobile identity details and browser controls return to the same Bot conver
   await page.setViewportSize({ width: 390, height: 844 });
   const api = await mockWorkspace(page);
   await page.goto(`/studio?agent=${bots[0].id}`);
-  await workConversation(page).fill("Keep this mobile draft");
+  await conversation(page).fill("Keep this mobile draft");
   await page.getByRole("button", { name: "Front Desk details" }).click();
   const panel = page.getByRole("complementary", { name: "Workspace panel" });
   await expect(panel.getByRole("tab", { name: "Details" })).toHaveAttribute(
@@ -247,11 +257,11 @@ test("mobile identity details and browser controls return to the same Bot conver
   await panel.getByRole("button", { name: /Computer/ }).click();
   await expect(page).toHaveURL(/panel=computer/);
   await page.getByRole("button", { name: "Close Browser Panel" }).click();
-  await expect(workConversation(page)).toHaveValue("Keep this mobile draft");
+  await expect(conversation(page)).toHaveValue("Keep this mobile draft");
   await page.getByRole("combobox", { name: "Switch Bot" }).selectOption(bots[1].id);
-  await expect(workConversation(page, "Sales Bot")).toHaveValue("");
+  await expect(conversation(page, "Sales Bot")).toHaveValue("");
   await page.getByRole("combobox", { name: "Switch Bot" }).selectOption(bots[0].id);
-  await expect(workConversation(page)).toHaveValue("Keep this mobile draft");
+  await expect(conversation(page)).toHaveValue("Keep this mobile draft");
   expect(api.starts).toHaveLength(0);
 });
 
@@ -263,7 +273,7 @@ test("a stale Bot link never highlights another Bot as its owner", async ({ page
   const roster = page.getByRole("navigation", { name: "Bot conversations" });
   await expect(roster.locator('[data-wireline-bot-selected="true"]')).toHaveCount(0);
   await roster.getByRole("link", { name: "Open Sales Bot conversation" }).click();
-  await expect(workConversation(page, "Sales Bot")).toBeVisible();
+  await expect(conversation(page, "Sales Bot")).toBeVisible();
 });
 
 test("a long Bot name stays usable on a narrow phone", async ({ page }) => {
@@ -273,7 +283,7 @@ test("a long Bot name stays usable on a narrow phone", async ({ page }) => {
   await page.route("**/api/agents", (route) =>
     route.fulfill({ json: { agents: [{ ...bots[0], name }, bots[1]] } }),
   );
-  await page.goto(`/studio?agent=${bots[0].id}`);
+  await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
   const identity = page.getByRole("button", { name: `${name} details` });
   await expect(identity).toBeVisible();
   await expect
@@ -334,7 +344,7 @@ for (const width of [700, 1206]) {
     await input.fill("Keep this unsent instruction while I change views.");
 
     const modes = page.getByRole("group", { name: "Conversation mode" });
-    await modes.getByRole("button", { name: "Work", exact: true }).click();
+    await modes.getByRole("button", { name: "Computer task", exact: true }).click();
     const workDock = workConversation(page).locator("..");
     await expect(workDock).toHaveClass(/wl-studio-composer/);
     await expect(workDock.getByText("Supervised web work", { exact: true })).toHaveCount(0);
@@ -342,7 +352,7 @@ for (const width of [700, 1206]) {
       "background-color",
       sendBackground,
     );
-    await modes.getByRole("button", { name: "Configure", exact: true }).click();
+    await modes.getByRole("button", { name: "Message", exact: true }).click();
     await expect(input).toHaveValue("Keep this unsent instruction while I change views.");
 
     if (width < 1180) {
@@ -426,7 +436,7 @@ test("Configure with history keeps a usable composer and actions at 320px with e
   expect(inputBox?.width, JSON.stringify(inputBox)).toBeGreaterThanOrEqual(120);
   const views = page.getByRole("navigation", { name: "Workspace view" });
   const conversationBox = await views
-    .getByRole("button", { name: "Configure", exact: true })
+    .getByRole("button", { name: "Conversation", exact: true })
     .boundingBox();
   const browserBox = await views
     .getByRole("button", { name: "Browser", exact: true })
@@ -768,7 +778,8 @@ for (const width of [1206, 390, 320]) {
       false,
     );
     await image.scrollIntoViewIfNeeded();
-    await expect(image).toBeInViewport({ ratio: 1 });
+    // Nested scroll offsets round to whole pixels at enlarged text sizes.
+    await expect(image).toBeInViewport({ ratio: 1 - 0.5 / imageBox.height });
     await expect
       .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
       .toBe(true);
@@ -822,7 +833,7 @@ for (const width of [1206, 390, 320]) {
     await history.getByRole("button", { name: "Close", exact: true }).click();
     await expect(tasksAction).toBeFocused();
     await image.scrollIntoViewIfNeeded();
-    await expect(image).toBeInViewport({ ratio: 1 });
+    await expect(image).toBeInViewport({ ratio: 1 - 0.5 / imageBox.height });
     expect(frameTaskIds.length).toBeGreaterThan(0);
     expect(frameTaskIds.every((id) => id === active.id)).toBe(true);
     await detail.getByRole("button", { name: "Stop", exact: true }).click();
@@ -836,7 +847,7 @@ test.describe("wide screens", () => {
 
   test("Knowledge and the Browser shortcut retain the selected Bot", async ({ page }) => {
     const fixture = await mockWorkspace(page);
-    await page.goto(`/studio?agent=${bots[1].id}`);
+    await page.goto(`/studio?agent=${bots[1].id}&chat=computer`);
     const rail = page.getByRole("complementary", { name: "Workspace navigation", exact: true });
     await rail.getByRole("link", { name: "Knowledge", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/knowledge\\?agent=${bots[1].id}$`));
@@ -879,7 +890,7 @@ test.describe("wide screens", () => {
     page,
   }, testInfo) => {
     await mockWorkspace(page);
-    await page.goto(`/studio?agent=${bots[0].id}`);
+    await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
 
     const rail = page.getByRole("complementary", { name: "Workspace navigation", exact: true });
     const collapse = rail.getByRole("button", { name: "Collapse navigation", exact: true });
@@ -917,7 +928,7 @@ test.describe("wide screens", () => {
     page,
   }, testInfo) => {
     await mockWorkspace(page);
-    await page.goto(`/studio?agent=${bots[0].id}`);
+    await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
 
     const rail = page.getByRole("complementary", { name: "Workspace navigation", exact: true });
     await expect(rail.getByRole("link", { name: "Knowledge", exact: true })).toBeVisible({
@@ -940,7 +951,7 @@ test.describe("wide screens", () => {
     await expect(panel.getByRole("button", { name: "Open browser", exact: true })).toBeVisible();
     await page
       .getByRole("group", { name: "Conversation mode" })
-      .getByRole("button", { name: "Configure", exact: true })
+      .getByRole("button", { name: "Message", exact: true })
       .click();
     await panelTab(page, "Rehearse").click();
     await expect(panel.getByRole("button", { name: "Typed", exact: true })).toHaveCount(0);
@@ -1002,9 +1013,9 @@ test.describe("wide screens", () => {
     await page.goto(`/studio?agent=${bots[0].id}&focus=computer`);
     const panel = page.getByRole("complementary", { name: "Workspace panel", exact: true });
     await expect(panel).toBeVisible({ timeout: 20_000 });
-    await expect(workConversation(page)).toBeHidden();
+    await expect(conversation(page)).toBeHidden();
     await panel.getByRole("button", { name: "Restore split view", exact: true }).click();
-    await expect(workConversation(page)).toBeVisible();
+    await expect(conversation(page)).toBeVisible();
     await expect(panel).toBeVisible();
     await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true");
     await expect(page.getByRole("separator", { name: "Resize workspace panel" })).toHaveAttribute(
@@ -1023,7 +1034,7 @@ test.describe("wide screens", () => {
       question: "Sign in, then return control.",
     };
     await mockWorkspace(page, [task]);
-    await page.goto(`/studio?agent=${bots[0].id}`);
+    await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
     await page.getByRole("button", { name: "Open Browser Panel" }).click();
     await page.getByRole("button", { name: "Expand panel", exact: true }).click();
     const ownerInput = page.getByLabel("Type into selected field", { exact: true });
@@ -1046,7 +1057,7 @@ test.describe("wide screens", () => {
   }, info) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await mockWorkspace(page);
-    await page.goto(`/studio?agent=${bots[0].id}`);
+    await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
     await page.getByRole("button", { name: "Open Browser Panel" }).click();
     const panel = page.getByRole("complementary", { name: "Workspace panel", exact: true });
     const separator = page.getByRole("separator", { name: "Resize workspace panel" });
@@ -1130,7 +1141,7 @@ test.describe("wide screens", () => {
 
   test("dragging widens the panel but never squeezes the conversation", async ({ page }) => {
     await mockWorkspace(page);
-    await page.goto(`/studio?agent=${bots[0].id}`);
+    await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
     await page.getByRole("button", { name: "Open Browser Panel" }).click();
     const separator = page.getByRole("separator", { name: "Resize workspace panel" });
     await expect(separator).toBeVisible({ timeout: 20_000 });
@@ -1176,6 +1187,7 @@ test.describe("wide screens", () => {
     });
     await page.goto(`/studio?agent=${bots[0].id}&chat=setup`);
     await conversation(page).fill("Keep my configuration instruction.");
+    await page.getByRole("button", { name: "Open Browser Panel" }).click();
     await panelTab(page, "Browser").click();
     await expect(page.getByRole("figure", { name: "Ended browser", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Tasks", exact: true })).toHaveCount(1);
@@ -1239,7 +1251,7 @@ test.describe("wide screens", () => {
         "Sales Bot's earlier result.",
       );
       await mockWorkspace(page, hasSalesHistory ? [front, sales] : [front]);
-      await page.goto(`/studio?agent=${bots[0].id}`);
+      await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
       await page.getByRole("button", { name: "Open Browser Panel" }).click();
       const browser = page.getByRole("complementary", { name: "Workspace panel", exact: true });
       await expect(browser.getByRole("region", { name: front.goal, exact: true })).toBeVisible();
@@ -1252,7 +1264,7 @@ test.describe("wide screens", () => {
         await expect(browser.getByRole("region", { name: sales.goal, exact: true })).toBeVisible();
         await expect(
           page
-            .getByRole("log", { name: "Work conversation" })
+            .getByRole("log", { name: "Conversation", exact: true })
             .getByText(sales.summary, { exact: true }),
         ).toBeVisible();
       } else {
@@ -1297,7 +1309,7 @@ test.describe("wide screens", () => {
       "Sales Bot's earlier result.",
     );
     const fixture = await mockWorkspace(page, [front, previousFront, sales]);
-    await page.goto(`/studio?agent=${bots[0].id}`);
+    await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
     await page.getByRole("button", { name: "Open Browser Panel" }).click();
     const browser = page.getByRole("complementary", { name: "Workspace panel", exact: true });
     await expect(browser.getByRole("region", { name: front.goal, exact: true })).toBeVisible();
@@ -1316,7 +1328,7 @@ test.describe("wide screens", () => {
     );
     await expect(browser).toBeVisible();
     await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true");
-    await expect(workConversation(page, "Front Desk")).toBeVisible();
+    await expect(conversation(page, "Front Desk")).toBeVisible();
     await page.getByRole("combobox", { name: "Switch Bot", exact: true }).selectOption(bots[1].id);
     await expect(browser.getByText("Front Desk's active browser", { exact: true })).toBeVisible();
     await browser.getByRole("button", { name: "Tasks", exact: true }).click();
@@ -1361,7 +1373,7 @@ test.describe("wide screens", () => {
           errorCode: expired ? "COMPUTER_BROWSER_EXPIRED" : "COMPUTER_UNKNOWN_FAILURE",
         },
       ]);
-      await page.goto(`/studio?agent=${bots[0].id}`);
+      await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
       await page.getByRole("button", { name: "Open Browser Panel" }).click();
       const browser = page.getByRole("complementary", { name: "Workspace panel", exact: true });
       const recovery = browser.locator(".wl-computer-recovery");
@@ -1441,7 +1453,7 @@ test.describe("wide screens", () => {
     await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true", {
       timeout: 20_000,
     });
-    await expect(workConversation(page, "Sales Bot")).toBeVisible();
+    await expect(conversation(page, "Sales Bot")).toBeVisible();
   });
 
   test("a Try It link brings rehearsal forward over the computer", async ({ page }) => {
@@ -1461,7 +1473,7 @@ test.describe("phones", () => {
     page,
   }) => {
     const run = await mockWorkspace(page);
-    await page.goto(`/studio?agent=${bots[0].id}`);
+    await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
     await expect(page.getByRole("navigation", { name: "Workspace sections" })).toHaveCount(0);
     await page
       .getByRole("navigation", { name: "Workspace navigation" })
@@ -1501,7 +1513,7 @@ test.describe("phones", () => {
     await page.getByLabel("What should your Bot do?").fill("Compare suppliers.");
     await page
       .getByRole("navigation", { name: "Workspace view" })
-      .getByRole("button", { name: "Configure", exact: true })
+      .getByRole("button", { name: "Conversation", exact: true })
       .click();
     await expect(conversation(page)).toHaveValue("Keep this instruction while I browse.");
     await page
@@ -1536,11 +1548,11 @@ for (const width of [1440, 390]) {
       liveView: false,
     };
     const fixture = await mockWorkspace(page, [older], await syntheticFrame(page));
-    await page.goto(`/studio?agent=${bots[0].id}`);
+    await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
     await expect(
       page
         .getByRole("group", { name: "Conversation mode" })
-        .getByRole("button", { name: "Work", exact: true }),
+        .getByRole("button", { name: "Computer task", exact: true }),
     ).toHaveAttribute("aria-pressed", "true", { timeout: 20_000 });
     await workConversation(page).fill("Find three plumbers with Saturday hours.");
     await page.getByRole("button", { name: "Start work", exact: true }).click();
@@ -1550,7 +1562,7 @@ for (const width of [1440, 390]) {
     if (width < 1000)
       await page
         .getByRole("navigation", { name: "Workspace view" })
-        .getByRole("button", { name: "Work", exact: true })
+        .getByRole("button", { name: "Conversation", exact: true })
         .click();
     await expect(page.locator(".wl-work-current-step")).toContainText(
       "Reading the public directory.",
@@ -1571,7 +1583,7 @@ for (const width of [1440, 390]) {
       await proof(page, info, `work-browser-${width}`);
       await page
         .getByRole("navigation", { name: "Workspace view" })
-        .getByRole("button", { name: "Work", exact: true })
+        .getByRole("button", { name: "Conversation", exact: true })
         .click();
     }
     await page.getByRole("combobox", { name: "Switch Bot", exact: true }).selectOption(bots[1].id);
@@ -1601,7 +1613,7 @@ for (const width of [1440, 390]) {
         .click();
       await expect(
         page
-          .getByRole("log", { name: "Work conversation" })
+          .getByRole("log", { name: "Conversation", exact: true })
           .getByText("Should I include the nearby suburbs?", { exact: true }),
       ).toBeVisible();
       await expect(reply).toBeVisible();
@@ -1636,7 +1648,7 @@ for (const width of [1440, 390]) {
     if (width < 1000)
       await page
         .getByRole("navigation", { name: "Workspace view" })
-        .getByRole("button", { name: "Work", exact: true })
+        .getByRole("button", { name: "Conversation", exact: true })
         .click();
     await expect(reply).toBeVisible();
     // Hold a pre-reply poll: its older checkpoint must not overwrite the confirmed reply.
@@ -1660,7 +1672,7 @@ for (const width of [1440, 390]) {
     if (width < 1000)
       await page
         .getByRole("navigation", { name: "Workspace view" })
-        .getByRole("button", { name: "Work", exact: true })
+        .getByRole("button", { name: "Conversation", exact: true })
         .click();
     await expect(reply).toHaveCount(0);
     await expect(page.locator(".wl-work-current-step")).toBeVisible();
@@ -1681,7 +1693,7 @@ for (const width of [1440, 390]) {
     });
     await expect(
       page
-        .getByRole("log", { name: "Work conversation" })
+        .getByRole("log", { name: "Conversation", exact: true })
         .getByText("Three options", { exact: true }),
     ).toBeVisible();
     await expect(
@@ -1730,8 +1742,9 @@ test("Work follows a long result and preserves the owner's manual reading positi
       liveView: false,
     },
   ]);
-  await page.goto(`/studio?agent=${bots[0].id}`);
-  const log = page.getByRole("log", { name: "Work conversation" });
+  await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
+  await page.getByRole("button", { name: "Open Browser Panel" }).click();
+  const log = page.getByRole("log", { name: "Conversation", exact: true });
   await expect(
     page
       .locator(".wl-computer-completed-details > summary")
@@ -1809,7 +1822,7 @@ for (const receipt of ["unknown", "wrong-goal"] as const) {
               },
       });
     });
-    await page.goto(`/studio?agent=${bots[0].id}`);
+    await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
     await workConversation(page).fill("Read the current public hours.");
     await page.getByRole("button", { name: "Start work", exact: true }).click();
     await expect(page.getByRole("button", { name: "Refresh work", exact: true })).toBeVisible();
@@ -1849,7 +1862,7 @@ test("an authoritative held Refresh fences duplicate refreshes and old or new ac
       stopping: false,
     },
   ]);
-  await page.goto(`/studio?agent=${bots[0].id}`);
+  await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
   const chat = page.getByRole("region", { name: "Front Desk work conversation", exact: true });
   await expect(chat.getByRole("button", { name: "Stop", exact: true })).toBeVisible();
   let releasePoll: () => void = () => undefined;

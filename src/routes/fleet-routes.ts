@@ -1,3 +1,4 @@
+import { OWNER_MEMORY_SOURCE } from "../lib/owner-memory";
 /* eslint-disable @typescript-eslint/no-explicit-any -- task and job payloads are stored as Postgres jsonb. */
 import { isDeepStrictEqual } from "node:util";
 import { Router, Response } from "express";
@@ -5,7 +6,7 @@ import { AppError, rethrowIfAppError } from "../lib/api-error";
 
 import { log, drizzle, serialQueryBatch } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, desc, like, ne, gte, inArray, or } from "drizzle-orm";
+import { eq, and, desc, like, ne, gte, inArray, or, sql } from "drizzle-orm";
 import { presenceStreams } from "../services/presence-stream-service";
 import { getDeploymentIdentity } from "../lib/deployment-environment";
 import { authenticateUser, authenticateEventStream } from "../middleware/auth";
@@ -681,7 +682,12 @@ router.get(
               createdAt: schema.agentLessons.createdAt,
             })
             .from(schema.agentLessons)
-            .where(eq(schema.agentLessons.userId, req.user.id))
+            .where(
+              and(
+                eq(schema.agentLessons.userId, req.user.id),
+                sql`${schema.agentLessons.source} IS DISTINCT FROM ${OWNER_MEMORY_SOURCE}`,
+              ),
+            )
             .orderBy(desc(schema.agentLessons.createdAt))
             .limit(5),
           tx
@@ -777,6 +783,7 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
             .where(
               and(
                 eq(schema.agentLessons.userId, req.user.id),
+                sql`${schema.agentLessons.source} IS DISTINCT FROM ${OWNER_MEMORY_SOURCE}`,
                 like(schema.agentLessons.lesson, "[KNOWLEDGE GAP]%"),
               ),
             )

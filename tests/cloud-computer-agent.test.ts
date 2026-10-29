@@ -107,6 +107,206 @@ function userImages(request: Record<string, unknown>): Item[] {
 const bot = { name: "Repair Desk", role: "front desk", facts: ["We serve Austin."], rules: [] };
 
 describe("OpenAI cloud computer agent loop", () => {
+  it("uses a metered, tool-free internal specialist and returns its result to the same Bot", async () => {
+    const { session, calls } = fakeSession({}, "https://example.com/");
+    const openai = client([
+      response([
+        functionCall("helper-1", "delegate_specialist", {
+          specialty: "drafting",
+          task: "Draft a short follow-up",
+          context: "The customer asked for hours.",
+        }),
+      ]),
+      response([message("Draft: Here are our hours.")]),
+      response([
+        functionCall("finish", "finish_task", {
+          outcome: "completed",
+          summary: "Draft: Here are our hours.",
+          sources: [],
+        }),
+      ]),
+    ]);
+    const reservations: number[] = [];
+    const { hooks: h } = hooks({
+      meter: async ({ reserveUsd, operation }) => {
+        reservations.push(reserveUsd);
+        return operation();
+      },
+    });
+    const outcome = await runCloudComputerAgent({
+      client: openai.client,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Draft a follow-up.",
+      startUrl: "https://example.com/",
+      hooks: h,
+    });
+    expect(outcome).toMatchObject({ status: "completed", summary: "Draft: Here are our hours." });
+    expect(reservations).toHaveLength(3);
+    expect(reservations.every((amount) => amount > 0)).toBe(true);
+    expect(h.recordUsage).toHaveBeenCalledTimes(3);
+    expect(openai.requests[1]).toMatchObject({ store: false, max_output_tokens: 1_200 });
+    expect(openai.requests[1]).not.toHaveProperty("tools");
+    expect(JSON.stringify(openai.requests[1])).not.toContain("data:image");
+    expect(JSON.stringify(openai.requests[2])).toContain("Draft: Here are our hours.");
+    expect(calls).toHaveLength(0);
+  });
+
+  it("fails closed when the specialist reservation is denied", async () => {
+    const { session, calls } = fakeSession({}, "https://example.com/");
+    const openai = client([
+      response([
+        functionCall("helper", "delegate_specialist", {
+          specialty: "analysis",
+          task: "Review facts",
+          context: "A fact",
+        }),
+      ]),
+    ]);
+    const failure = new Error("COMPUTER_PROCESSING_LIMIT");
+    let reservations = 0;
+    const { hooks: h } = hooks({
+      meter: async ({ operation }) => {
+        if (++reservations === 2) throw failure;
+        return operation();
+      },
+    });
+    await expect(
+      runCloudComputerAgent({
+        client: openai.client,
+        model: OPENAI_MODELS.GPT_5_6_TERRA,
+        session,
+        bot,
+        goal: "Review facts",
+        startUrl: null,
+        hooks: h,
+      }),
+    ).rejects.toBe(failure);
+    expect(openai.requests).toHaveLength(1);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("discards specialist work when the owner takes control during the request", async () => {
+    const { session, calls } = fakeSession({}, "https://example.com/");
+    let control = false;
+    const openai = client([
+      response([
+        functionCall("helper", "delegate_specialist", {
+          specialty: "planning",
+          task: "Plan",
+          context: "",
+        }),
+        computerCall("stale-click", [{ type: "click", x: 12, y: 15, button: "left" }]),
+      ]),
+      response([message("STALE SPECIALIST PLAN")]),
+      response([
+        functionCall("finish", "finish_task", {
+          outcome: "completed",
+          summary: "Rechecked after owner control.",
+          sources: [],
+        }),
+      ]),
+    ]);
+    const askOwner = vi.fn(async () => {
+      control = false;
+      return "Returned control";
+    });
+    const { hooks: h } = hooks({
+      controlRequested: () => control,
+      askOwner,
+      meter: async ({ operation }) => {
+        const result = await operation();
+        if (openai.requests.length === 2) control = true;
+        return result;
+      },
+    });
+    await runCloudComputerAgent({
+      client: openai.client,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Review facts",
+      startUrl: null,
+      hooks: h,
+    });
+    expect(askOwner).toHaveBeenCalledTimes(1);
+    expect(calls).toHaveLength(0);
+    expect(JSON.stringify(openai.requests[2])).not.toContain("STALE SPECIALIST PLAN");
+    expect(JSON.stringify(openai.requests[2])).toContain("re-plan");
+  });
+
+  it("bounds specialist calls and never runs an invalid or third request", async () => {
+    const { session } = fakeSession({}, "https://example.com/");
+    const call = (id: string, specialty = "analysis") =>
+      functionCall(id, "delegate_specialist", {
+        specialty,
+        task: "Review the supplied facts",
+        context: "A bounded fact.",
+      });
+    const openai = client([
+      response([call("bad", "untrusted")]),
+      response([call("one")]),
+      response([message("First analysis")]),
+      response([call("two")]),
+      response([message("Second analysis")]),
+      response([call("three")]),
+      response([
+        functionCall("finish", "finish_task", {
+          outcome: "completed",
+          summary: "Reviewed.",
+          sources: [],
+        }),
+      ]),
+    ]);
+    const { hooks: h } = hooks();
+    const outcome = await runCloudComputerAgent({
+      client: openai.client,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Review the facts.",
+      startUrl: "https://example.com/",
+      hooks: h,
+    });
+    expect(outcome.status).toBe("completed");
+    expect(openai.requests.filter((request) => !Object.hasOwn(request, "tools"))).toHaveLength(2);
+    expect(JSON.stringify(openai.requests.at(-1))).toContain("specialist limit");
+  });
+
+  it("does not continue after the owner stops during specialist work", async () => {
+    const { session } = fakeSession({}, "https://example.com/");
+    let stopped = false;
+    const openai = client([
+      response([
+        functionCall("helper", "delegate_specialist", {
+          specialty: "planning",
+          task: "Plan the task",
+          context: "",
+        }),
+      ]),
+      response([message("A plan")]),
+    ]);
+    const { hooks: h } = hooks({
+      stopRequested: () => stopped,
+      meter: async ({ operation }) => {
+        const result = await operation();
+        if (openai.requests.length === 2) stopped = true;
+        return result;
+      },
+    });
+    const outcome = await runCloudComputerAgent({
+      client: openai.client,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Plan a task.",
+      startUrl: "https://example.com/",
+      hooks: h,
+    });
+    expect(outcome.status).toBe("stopped");
+    expect(openai.requests).toHaveLength(2);
+  });
   it.each([
     {
       label: "paragraphs and numbered findings",
@@ -591,6 +791,7 @@ describe("OpenAI cloud computer agent loop", () => {
         { type: "function", name: "inspect_visible_element" },
         { type: "function", name: "finish_task" },
         { type: "function", name: "ask_owner" },
+        { type: "function", name: "delegate_specialist" },
       ],
     });
     expect(requests[0]).not.toHaveProperty("tool_choice");

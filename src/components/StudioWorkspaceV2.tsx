@@ -29,7 +29,11 @@ import StudioBotDetailsPanel from "./studio/StudioBotDetailsPanel";
 import StudioWorkroom, { type StudioWorkroomHandle } from "./StudioWorkroom";
 import WorkspaceRecovery from "./WorkspaceRecovery";
 import StudioTaskChat from "./StudioTaskChat";
-import { ComputerWorkspaceProvider } from "../contexts/ComputerWorkspaceContext";
+import StudioTaskMessages from "./StudioTaskMessages";
+import {
+  ComputerWorkspaceProvider,
+  useComputerWorkspace,
+} from "../contexts/ComputerWorkspaceContext";
 
 // The computer is a page of its own; load it only when its panel tab opens.
 const ComputerWorkbench = lazy(() =>
@@ -159,6 +163,7 @@ export default function StudioWorkspaceV2() {
 }
 
 function StudioWorkspaceContent() {
+  const computer = useComputerWorkspace();
   const { loading, degraded, refresh } = useAgents();
   const { user } = useAuth();
   const studioSession = useStudioSessionState();
@@ -203,7 +208,7 @@ function StudioWorkspaceContent() {
   const legacyMode = params.get("mode");
   const legacyView = params.get("view");
   const setupChat =
-    params.get("chat") === "setup" ||
+    params.get("chat") !== "computer" ||
     sectionParam === "setup" ||
     sectionParam === "review" ||
     workroomParam === "test" ||
@@ -245,7 +250,7 @@ function StudioWorkspaceContent() {
   const panelMaxSize =
     workspaceWidth > 0
       ? Math.min(PANEL_MAX_CAP, Math.max(PANEL_MIN_WIDTH, workspaceWidth - CONVERSATION_MIN_WIDTH))
-      : PANEL_DEFAULT_WIDTH;
+      : PANEL_MAX_CAP;
 
   // A callback ref: the layout mounts only after the roster resolves.
   const measureWorkspace = useCallback((node: HTMLDivElement | null) => {
@@ -662,19 +667,6 @@ function StudioWorkspaceContent() {
       }}
       onComputer={showBrowser}
       onSetup={() => openInspector("setup")}
-      onConfigureConversation={() => {
-        setPanelCollapsed(true);
-        setParams(
-          (current) => {
-            const next = clearStudioInspectorSectionParams(current);
-            next.set("chat", "setup");
-            next.delete("panel");
-            next.delete("detail");
-            return next;
-          },
-          { replace: true },
-        );
-      }}
     />
   );
 
@@ -703,6 +695,45 @@ function StudioWorkspaceContent() {
   const main = sessionFor(mainMode);
   // Legacy route commands focus private voice rehearsal without editing the Bot.
   const mainReceivesCommand = mainMode === "test";
+  const chatModes = (
+    <div className="wl-studio-chat-modes" role="group" aria-label="Conversation mode">
+      {(
+        [
+          { id: "setup", label: "Message" },
+          { id: "work", label: "Computer task" },
+        ] as const
+      ).map(({ id, label }) => (
+        <button
+          key={id}
+          type="button"
+          aria-pressed={!mobileBrowserOpen && (id === "setup") === setupChat}
+          onClick={() => {
+            setParams(
+              (current) => {
+                const next = setStudioWorkroomModeParams(current, "configure");
+                next.delete("panel");
+                if (id === "setup") next.set("chat", "setup");
+                else {
+                  next.set("chat", "computer");
+                  next.delete("section");
+                  next.delete("focus");
+                }
+                return next;
+              },
+              { replace: true },
+            );
+            if (id === "work" && splitWorkspace) {
+              setRestingSection("computer");
+              setPanelCollapsed(false);
+            }
+          }}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+
   const workroom = (
     <StudioWorkroom
       key={`${user?.id}:${main.key}`}
@@ -715,6 +746,60 @@ function StudioWorkspaceContent() {
       initialDraft={workroomDrafts.get(main.key)}
       onDraftChange={(draft) => workroomDrafts.set(main.key, draft)}
       conversationSession={main.session}
+      timelineExtras={[
+        ...new Map(
+          [
+            ...(computer.tasks || []),
+            ...(computer.selected ? [computer.selected] : []),
+            ...(computer.activeTask ? [computer.activeTask] : []),
+          ]
+            .filter((task) => task.agentId === active.id)
+            .map((task) => [task.id, task]),
+        ).values(),
+      ].map((task) => ({
+        id: `task-${task.id}`,
+        createdAt: task.startedAt,
+        updatedAt: task.updatedAt,
+        node: (
+          <StudioTaskMessages
+            selected={task}
+            agentId={active.id}
+            agentName={active.name}
+            markKey={active.mark_key}
+            onShowBrowser={() => {
+              computer.setSelectedId(task.id);
+              showBrowser();
+            }}
+          />
+        ),
+      }))}
+      composerChoice={<div className="wl-studio-composer-choice">{chatModes}</div>}
+      composerOverride={
+        !setupChat && mainMode === "configure" ? (
+          <StudioTaskChat
+            key={`${user?.id}:${active.id}`}
+            agentId={active.id}
+            agentName={active.name}
+            onShowBrowser={showBrowser}
+            composerOnly
+          />
+        ) : undefined
+      }
+      timelineNotice={
+        computer.listFailed ? (
+          <StatusNotice
+            tone="warning"
+            title="Computer history could not load"
+            action={
+              <Button size="sm" variant="secondary" onClick={() => void computer.loadTasks()}>
+                Retry
+              </Button>
+            }
+          >
+            Your conversation is still available.
+          </StatusNotice>
+        ) : undefined
+      }
       layout={splitWorkspace ? "split" : "standalone"}
       modeControls="composer"
       mode={mainMode}
@@ -926,50 +1011,27 @@ function StudioWorkspaceContent() {
     </aside>
   );
 
-  const chatModes = (
-    <div className="wl-studio-chat-modes" role="group" aria-label="Conversation mode">
-      {(
-        [
-          { id: "work", label: "Work" },
-          { id: "setup", label: "Configure" },
-        ] as const
-      ).map(({ id, label }) => (
-        <button
-          key={id}
-          type="button"
-          aria-pressed={!mobileBrowserOpen && (id === "setup") === setupChat}
-          onClick={() => {
-            setParams(
-              (current) => {
-                const next = setStudioWorkroomModeParams(current, "configure");
-                next.delete("panel");
-                if (id === "setup") next.set("chat", "setup");
-                else {
-                  next.delete("chat");
-                  next.delete("section");
-                  next.delete("focus");
-                }
-                return next;
-              },
-              { replace: true },
-            );
-            if (id === "work" && splitWorkspace) {
-              setRestingSection("computer");
-              setPanelCollapsed(false);
-            }
-          }}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-
   return (
     <div className="wl-studio-workspace flex h-full min-h-0 flex-col overflow-hidden bg-background">
       {(!splitWorkspace || !panelOpen) && !inspectorOpen ? (
         <nav className="wl-studio-surface-nav" aria-label="Workspace view">
-          {chatModes}
+          <button
+            type="button"
+            aria-pressed={!mobileBrowserOpen}
+            onClick={() =>
+              setParams(
+                (current) => {
+                  const next = new URLSearchParams(current);
+                  next.delete("panel");
+                  next.delete("focus");
+                  return next;
+                },
+                { replace: true },
+              )
+            }
+          >
+            Conversation
+          </button>
           <button
             type="button"
             aria-pressed={mobileBrowserOpen}
@@ -999,20 +1061,7 @@ function StudioWorkspaceContent() {
           className={`${(!splitWorkspace && inspectorOpen) || mobileBrowserOpen || panelFill ? "hidden" : "block"} min-h-0 min-w-0 flex-1 overflow-hidden`}
         >
           <div className="flex h-full min-h-0 flex-col">
-            {splitWorkspace && panelOpen ? (
-              <header className="wl-studio-mode-header">{chatModes}</header>
-            ) : null}
-            <div hidden={!setupChat} className="min-h-0 flex-1">
-              {workroom}
-            </div>
-            <div hidden={setupChat} className="min-h-0 flex-1">
-              <StudioTaskChat
-                key={`${user?.id}:${active.id}`}
-                agentId={active.id}
-                agentName={active.name}
-                onShowBrowser={showBrowser}
-              />
-            </div>
+            <div className="min-h-0 flex-1">{workroom}</div>
           </div>
         </div>
         {splitWorkspace ? (

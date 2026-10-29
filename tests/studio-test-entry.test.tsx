@@ -65,6 +65,10 @@ vi.mock("react-router", () => ({
     },
   ],
 }));
+vi.mock("../src/contexts/ComputerWorkspaceContext", () => ({
+  ComputerWorkspaceProvider: "computer-provider",
+  useComputerWorkspace: () => ({ tasks: [], activeTask: null, selected: null, listFailed: false }),
+}));
 vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: h.ownerId } }) }));
 vi.mock("../src/contexts/AgentsContext", () => ({
   useAgents: () => ({
