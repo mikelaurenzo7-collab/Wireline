@@ -19,9 +19,7 @@ const header = readFileSync("src/components/marketing/PrecisionPublicHeader.tsx"
 describe("Work and Bots information architecture", () => {
   it("uses Work for execution and Bots for persistent resource management", () => {
     expect(WORKSPACE_NAV[0]).toMatchObject({ href: "/studio", label: "Work" });
-    expect(OPERATE_NAV).toEqual(
-      expect.arrayContaining([expect.objectContaining({ href: "/bots", label: "Bots" })]),
-    );
+    expect(OPERATE_NAV.map((item) => item.href)).not.toContain("/bots");
     expect(workspacePageTitle("/studio")).toBe("Work");
     expect(workspacePageTitle("/bots")).toBe("Bots");
     expect(desktopNavParentHref("/computer")).toBe("/studio");
@@ -39,9 +37,10 @@ describe("Work and Bots information architecture", () => {
 
   it("keeps the phone dock focused while making bot management discoverable", () => {
     expect(MOBILE_PRIMARY_NAV.map((item) => item.href)).not.toContain("/bots");
-    expect(MOBILE_MORE_NAV.map((item) => item.href)).toContain("/bots");
-    expect(isMobilePrimaryActive("/bots", "__more__")).toBe(true);
+    expect(MOBILE_MORE_NAV.map((item) => item.href)).not.toContain("/bots");
+    expect(isMobilePrimaryActive("/bots", "/studio")).toBe(true);
     expect(header).not.toContain("ml-auto hidden items-center gap-1 md:flex");
     expect(header).toContain('to="/pricing"');
+    expect(botPage).toContain("agents.map");
   });
 });
