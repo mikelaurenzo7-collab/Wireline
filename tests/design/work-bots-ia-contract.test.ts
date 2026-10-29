@@ -14,6 +14,8 @@ import { isWorkspaceRoute } from "../../src/lib/workspace-route-scope";
 
 const routes = readFileSync("src/routes/AppRoutes.tsx", "utf8");
 const botPage = readFileSync("src/pages/BotsPage.tsx", "utf8");
+const shell = readFileSync("src/components/WorkspaceShell.tsx", "utf8");
+const details = readFileSync("src/components/studio/BotDetailsMenu.tsx", "utf8");
 const header = readFileSync("src/components/marketing/PrecisionPublicHeader.tsx", "utf8");
 
 describe("Work and Bots information architecture", () => {
@@ -42,5 +44,12 @@ describe("Work and Bots information architecture", () => {
     expect(header).not.toContain("ml-auto hidden items-center gap-1 md:flex");
     expect(header).toContain('to="/pricing"');
     expect(botPage).toContain("agents.map");
+    expect(shell).toContain("visibleBots.map");
+    expect(shell).toContain('WORKSPACE_NAV.filter((item) => item.href !== "/studio")');
+    expect(details).toContain("agents.map");
+    expect(details).toContain("Add another Bot");
+    expect(details).toContain("Calls and number");
+    expect(details).toContain("Knowledge");
+    expect(details).toContain("Computer");
   });
 });
