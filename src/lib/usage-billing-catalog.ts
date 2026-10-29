@@ -366,6 +366,16 @@ export function currentPricingFacts(): string[] {
   ];
 }
 
+/** Drop sentences that still quote a retired BotBound price. */
+export function withoutStaleBotBoundPricing(text: string): string {
+  if (!text || !isStaleBotBoundPricing(text)) return text;
+  const kept = text
+    .split(/\n+/)
+    .flatMap((line) => line.split(/(?<=[.!?])\s+/))
+    .filter((part) => part.trim() && !isStaleBotBoundPricing(part));
+  return kept.join("\n").trim();
+}
+
 export function currentPricingPromptBlock(): string {
   return [
     "CURRENT BOTBOUND PRICING",
@@ -376,13 +386,15 @@ export function currentPricingPromptBlock(): string {
 
 /** Saved Training that still quotes a retired BotBound offer, not a customer's own price. */
 export function isStaleBotBoundPricing(text: string): boolean {
-  const dollar = String.fromCharCode(36);
   const lower = text.toLowerCase();
+  // Amounts alone are not platform pricing: a salon or plumber may sell its
+  // own $19/month membership. Require a named platform offer, and a complete
+  // amount so "from $19" never consumes a customer's $190 or $1900 service.
+  // Keep the vocabulary narrow; ambiguous customer-authored facts are retained.
+  const retiredOffer =
+    /\b(?:BotBound|Wireline)(?:\s+(?:starter|lite|plus|calls?|plans?|subscription|pricing|price|is|costs?|starts?|at|from|only|monthly))*\s*[:,-]?\s*\$(?:19(?:\.00)?(?!\d|\.\d)|190(?:\.00)?\s*\/\s*year\b|12\s+shared\b)/i;
   return (
-    text.includes(`${dollar}19/month`) ||
-    text.includes(`${dollar}19 per month`) ||
-    text.includes(`${dollar}190/year`) ||
-    lower.includes(`${dollar}12 shared`) ||
+    retiredOffer.test(text) ||
     lower.includes("channel packages include one bot") ||
     lower.includes("prepaid runtime balance")
   );

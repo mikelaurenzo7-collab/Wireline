@@ -30,7 +30,10 @@ import {
   RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK,
 } from "../agent-runtime";
 import { clampRuntimePromptPreservingTail } from "../agent-runtime-helpers";
-import { currentPricingPromptBlock, isStaleBotBoundPricing } from "../usage-billing-catalog";
+import {
+  currentPricingPromptBlock,
+  withoutStaleBotBoundPricing,
+} from "../usage-billing-catalog";
 import {
   founderInternalRuntimeAuthorityBoundary,
   founderInternalRuntimePolicyBlock,
@@ -228,7 +231,9 @@ export function composeOpenAILiveInstructions(
   const runtimeReviewRequired = isRuntimeReviewRequired(runtimeTemplate, agent.role);
   const templateGuidance = runtimeTemplateGuidanceBlock(runtimeTemplate, agent.role);
   const customInstructions =
-    internalPolicy || runtimeReviewRequired ? "" : trimLine(agent.systemPromptOverride, 8_000);
+    internalPolicy || runtimeReviewRequired
+      ? ""
+      : withoutStaleBotBoundPricing(trimLine(agent.systemPromptOverride, 8_000));
   const identity = runtimeReviewRequired
     ? [
         "You are a BotBound Bot in review-required hold mode.",
@@ -276,13 +281,25 @@ export function composeOpenAILiveInstructions(
       !runtimeReviewRequired && compliance ? `\nGUARDRAILS:\n${compliance}` : "",
       runtimeReviewRequired || !playbookPromptBlock(agent.playbook)
         ? ""
-        : `\n${playbookPromptBlock(agent.playbook)}`,
-      runtimeReviewRequired ? "" : listBlock("OPERATING RULES", directives, 24),
+        : `\n${withoutStaleBotBoundPricing(playbookPromptBlock(agent.playbook))}`,
+      runtimeReviewRequired
+        ? ""
+        : listBlock(
+            "OPERATING RULES",
+            directives.map((item) => ({
+              ...item,
+              content: withoutStaleBotBoundPricing(item.content ?? ""),
+            })),
+            24,
+          ),
       runtimeReviewRequired
         ? ""
         : listBlock(
             "INITIAL APPROVED KNOWLEDGE",
-            knowledge.filter((item) => !isStaleBotBoundPricing(item.content ?? "")),
+            knowledge.map((item) => ({
+              ...item,
+              content: withoutStaleBotBoundPricing(item.content ?? ""),
+            })),
             MAX_INITIAL_KNOWLEDGE_ITEMS,
           ),
       `\n${RUNTIME_ACTION_SAFETY_BLOCK}`,

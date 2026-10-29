@@ -259,7 +259,7 @@ const KNOWLEDGE_SNIPPETS: Record<string, string[]> = {
   ],
   collections: [
     "Always verify identity before discussing balances. Log every promise-to-pay immediately.",
-    "Billing questions resolve against the plan catalog and the account's Runtime Balance. Refunds and credits are escalated, never promised on the call.",
+    "Billing questions resolve against the published Lite, Starter, and Plus prices. Refunds and credits are escalated, never promised on the call.",
   ],
   marketing: [
     "Campaign brief template: Audience → Hook → Offer → CTA → Success metric.",

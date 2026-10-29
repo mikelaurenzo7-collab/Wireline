@@ -26,6 +26,21 @@ export interface DayHours {
 export type BusinessHours = Partial<Record<DayOfWeek, DayHours>>;
 
 /**
+ * New Bots start on the same window Calendar offers: Monday to Friday, 9 to 5.
+ * A saved empty schedule still means always open, so Bots created before this
+ * default keep answering overnight and on weekends.
+ */
+export const DEFAULT_BUSINESS_HOURS: BusinessHours = {
+  mon: { open: "09:00", close: "17:00" },
+  tue: { open: "09:00", close: "17:00" },
+  wed: { open: "09:00", close: "17:00" },
+  thu: { open: "09:00", close: "17:00" },
+  fri: { open: "09:00", close: "17:00" },
+  sat: { closed: true },
+  sun: { closed: true },
+};
+
+/**
  * The shape stored in wireline_agents — read-side only. The server is
  * tolerant of partial/null values; defaults are applied here.
  */

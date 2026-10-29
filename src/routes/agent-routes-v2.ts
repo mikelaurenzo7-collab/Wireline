@@ -37,6 +37,7 @@ import {
   isBotPermissionLevel,
   permissionLevelFromAutonomy,
 } from "../lib/bot-permission";
+import { DEFAULT_BUSINESS_HOURS } from "../lib/agent-runtime";
 import { normalizeManagedOpenAIVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
 import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/liveavatar-service";
 import {
@@ -590,6 +591,7 @@ router.post(
           voiceId,
           voiceProvider: "openai",
           autonomyLevel: "supervised",
+          businessHours: DEFAULT_BUSINESS_HOURS,
           ...(timezone ? { timezone } : {}),
           enabledTools,
           firstMessage,

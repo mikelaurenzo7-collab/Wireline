@@ -100,6 +100,35 @@ function composeAllProviders(personality: string, role = "customer_service") {
 }
 
 describe("template personality runtime composition", () => {
+  it("removes retired platform offers without discarding the business facts beside them", () => {
+    const retired = "BotBound Starter is $19/month.";
+    const membership = "Our membership is $19/month.";
+    const policy = "Refunds need the owner's approval.";
+    const knowledge = [{ content: `${membership} ${retired} ${policy}` }];
+    const directives = [{ content: `Call the owner for urgent requests. ${retired}` }];
+    const browserAgent = { ...openAIAgent(), systemPromptOverride: `Be concise. ${retired}` };
+    const pstnAgent = { ...phoneAgent(), systemPromptOverride: `Be concise. ${retired}` };
+    const prompts = [
+      composeOpenAILiveInstructions(browserAgent, "Friendly and concise.", directives, knowledge),
+      composeOpenAIRealtimeInstructions({
+        agent: pstnAgent,
+        tenant: phoneTenant,
+        personality: "Friendly and concise.",
+        directives,
+        knowledge,
+        surface: "phone",
+      }),
+    ];
+    for (const prompt of prompts) {
+      expect(prompt).not.toContain(retired);
+      expect(prompt).toContain(membership);
+      expect(prompt).toContain(policy);
+      expect(prompt).toContain("Call the owner for urgent requests.");
+      expect(prompt).toContain("Be concise.");
+      expect(prompt).toContain("Starter is $24/month");
+    }
+  });
+
   it("preserves legacy role-first specialty and appended custom guidance on every live surface", () => {
     const legacyPersonality = [
       ROLE_PREFIX,

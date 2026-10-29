@@ -29,6 +29,7 @@ import { authenticateUser } from "../middleware/auth";
 import { validate } from "../middleware/input-validation";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import { resolveAgentEntitlement, agentCapHit } from "../lib/agent-entitlements";
+import { DEFAULT_BUSINESS_HOURS } from "../lib/agent-runtime";
 import { isOwnerEmail } from "../lib/auth-service";
 import { planById } from "../lib/plan-catalog";
 import { resolveAccountType } from "../lib/account-type";
@@ -274,6 +275,7 @@ router.post(
           voiceId,
           voiceProvider: "openai",
           autonomyLevel: "supervised",
+          businessHours: DEFAULT_BUSINESS_HOURS,
           enabledTools,
           firstMessage: `Hi, this is ${name}. How can I help?`,
           isBusinessAgent,
