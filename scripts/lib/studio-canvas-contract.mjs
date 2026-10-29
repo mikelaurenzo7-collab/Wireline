@@ -100,9 +100,9 @@ export const STUDIO_CANVAS_REQUIRED = {
   studioChrome: [
     { id: "context-label", pattern: /aria-label=\{`\$\{language\.singular\} context`\}/ },
     { id: "readiness", pattern: /agentReadinessLabel/ },
-    { id: "create-entry", pattern: /\/studio\?create=1/ },
-    { id: "bot-switcher", pattern: /aria-label="Switch Bot"/ },
-    { id: "bot-switch-options", pattern: /agents\.map/ },
+    { id: "bot-details", pattern: /BotDetailsMenu/ },
+    { id: "bot-switcher", pattern: /onSelectAgent=\{selectAgent\}/ },
+    { id: "bot-switch-options", pattern: /agents=\{agents\}/ },
     { id: "settings-entry", pattern: /id="studio-settings-toggle"/ },
     { id: "settings-expanded-state", pattern: /aria-expanded=\{inspectorOpen\}/ },
   ],
