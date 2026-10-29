@@ -87,7 +87,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "double-click-reset", pattern: /onDoubleClick=\{resetSize\}/ },
   ],
   navigation: [
-    { id: "studio-label", pattern: /label: "Workspace"/ },
+    { id: "studio-label", pattern: /label: "Work"/ },
     { id: "scoped-workspace-navigation", pattern: /scopedWorkspaceHref/ },
     { id: "studio-active-state", pattern: /target === "\/studio"/ },
     {
