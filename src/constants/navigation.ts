@@ -118,8 +118,9 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     eyebrow: "Build",
     description: "Choose, create, and configure your Bots.",
     icon: "Bot",
-    desktop: { group: "manage", order: 1 },
-    mobile: { placement: "more", group: "Build", order: 5 },
+    // Available only when a user chooses to manage a larger roster.
+    // One to three Bots belong in Work, not another primary destination.
+    parentHref: "/studio",
   },
   {
     href: "/inbox",
@@ -344,7 +345,7 @@ export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
   {
     href: MOBILE_MORE_HREF,
     label: "More",
-    description: "Bots, Insights, Calendar, Connections, and Settings.",
+    description: "Insights, Calendar, Connections, and Settings.",
     icon: "MoreHorizontal",
     section: "System",
   },
