@@ -2,6 +2,12 @@
   "mcpServers": {
     "botbound": {
       "url": "https://botbound.app/mcp"
+    },
+    "browserbase": {
+      "url": "https://mcp.browserbase.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${BROWSERBASE_API_KEY}"
+      }
     }
   }
 }

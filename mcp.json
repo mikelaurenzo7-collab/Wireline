@@ -4,6 +4,13 @@
     "botbound": {
       "type": "streamable-http",
       "url": "https://botbound.app/mcp"
+    },
+    "browserbase": {
+      "type": "streamable-http",
+      "url": "https://mcp.browserbase.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${BROWSERBASE_API_KEY}"
+      }
     }
   }
 }
