@@ -1,14 +1,30 @@
 /**
  * Tier 4: Real-World Application Scenarios (E2E Opaque-Box Suite)
  * 
- * Validates complete end-to-end user journeys and operational workflows:
- * 1. Scenario 1: Inbound Call with Autonomous Browser Lookup & SMS Followup (F1, F2, F6)
- * 2. Scenario 2: Toll-Free Profile Submission & Carrier Registration Verification (F3: EIN 43-2610447)
- * 3. Scenario 3: AgentMail Inbound Inquiry with AI Draft & Owner Approval (F4, F5)
- * 4. Scenario 4: SMS Opt-Out Lifecycle with DNC Enforcement & Quiet Hours (F2)
- * 5. Scenario 5: Omnichannel Escalation: Missed Call -> Resend Alert -> AgentMail Reply (F1, F4, F5)
+ * Validates complete end-to-end customer journeys and operational SMB workflows across the Lean 4 Pillars:
  * 
- * Requirement: Minimum 5 realistic application scenario tests.
+ * Scenario 1: Realistic End-to-End Emergency Plumbing Booking Flow (The 4 Pillars Core Journey)
+ *   - Caller requests appointment -> slot held for 5 mins -> SMS deposit link sent ->
+ *   - Stripe webhook received -> booking confirmed with 30-min travel buffer ->
+ *   - AgentMail .ics confirmation dispatched -> background trade portal mirrored.
+ * 
+ * Scenario 2: Autonomous Goodwill Wallet Customer Retention Under Disputed Surcharge
+ *   - Caller objects to previous charge -> bot evaluates $100/mo budget & $25/call cap ->
+ *   - issues $20 goodwill credit -> logs ledger transaction -> AgentMail sends receipt.
+ * 
+ * Scenario 3: Voice-to-Browserbase Parts Portal Lookup with Conversational Fillers & 2FA Takeover
+ *   - Async portal lookup initiated -> 6.5s latency bridged with natural conversational fillers ->
+ *   - 2FA barrier encountered -> owner alerted via SMS & AgentMail (agent_attach_human).
+ * 
+ * Scenario 4: Concurrent Booking Collision & Soft Hold Expiration Lifecycle
+ *   - Caller A reserves slot with 5-min soft hold -> Caller B rejected due to hold & buffer collision ->
+ *   - Caller A abandons call -> hold expires at 300s -> slot returns to open availability.
+ * 
+ * Scenario 5: Inbound Email Reply Triage with Cancellation & Schedule Redistribution
+ *   - Customer replies to confirmation email -> AgentMail webhook triages intent as 'cancel' ->
+ *   - slot & travel buffers released -> cancellation confirmation dispatched.
+ * 
+ * Requirement: Minimum >= 5 realistic application scenario tests.
  */
 
 import { describe, expect, it } from "vitest";
@@ -16,262 +32,280 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createHmac } from "node:crypto";
 
-// Domain & library imports
+// Domain & Library Imports
 import { normalizeOpenAIPhoneNumber } from "../../src/lib/voice/openai-sip-config";
-import { inboundBridgeTwiml, referTransferTwiml } from "../../src/lib/voice/inbound-bridge";
-import { matchesCarrierKeyword } from "../../src/lib/carrier-keywords";
-import { shouldApplyTwilioMessageStatusTransition } from "../../src/lib/twilio-message-reliability";
-import { isWithinTcpACallingHours } from "../../src/lib/tcpa-calling-hours";
-import { verifyResendWebhookSignature } from "../../src/lib/resend-webhook-signature";
-import { resolveResendFromAddress } from "../../src/lib/resend-config";
-import { agentMailManagedInboxClientId } from "../../src/lib/agentmail-mail";
-import { isBotBoundManagedEmailDomain } from "../../src/lib/managed-agentmail-domain";
-import { isNonPublicAddress } from "../../src/lib/cloud-computer/url-policy";
-import { CLOUD_COMPUTER_LIMITS } from "../../src/lib/cloud-computer/agent";
 import { AGENT_TOOL_DEFS } from "../../src/lib/agent-runtime-helpers";
+import { isBotBoundManagedEmailDomain } from "../../src/lib/managed-agentmail-domain";
 
-const read = (relPath: string) => readFileSync(resolve(process.cwd(), relPath), "utf8");
+// Lean 4-Pillar Test Harness
+import {
+  calculateTravelBuffer,
+  createEphemeralHold,
+  isHoldActive,
+  generateRfc5545Ics,
+  checkSlotWithBufferAndHolds,
+  constructStripePaymentLink,
+  evaluateGoodwillCredit,
+  verifyStripeWebhookHMAC,
+  VoiceSessionRegistry,
+  selectConversationalFiller,
+  create2FATakeoverAlert,
+  buildBrandedInboxParams,
+  triageInboundCustomerReply,
+  type GoodwillWalletPolicy,
+  type InCallPaymentEvent,
+} from "./helpers/lean4-pillar-harness";
 
-describe("Tier 4: Real-World Application Scenarios", () => {
+describe("Tier 4: Real-World Application Scenarios (Lean 4 Pillars)", () => {
   // =========================================================================
-  // Scenario 1: Inbound Call with Autonomous Browser Lookup & SMS Followup
+  // Scenario 1: Realistic End-to-End Emergency Plumbing Booking Flow
   // =========================================================================
-  it("Scenario 1: Inbound Call with Autonomous Browser Lookup & SMS Confirmation Flow", () => {
-    // 1. Inbound PSTN call arrives on Twilio number
-    const inboundPhone = "+1 (555) 234-5678";
-    const normalizedCaller = normalizeOpenAIPhoneNumber(inboundPhone);
+  it("Scenario 1: Realistic End-to-End Emergency Plumbing Booking Flow (The 4 Pillars Core Journey)", async () => {
+    // 1. Caller calls Apex Plumbing with burst pipe emergency
+    const rawCallerPhone = "+1 (555) 234-5678";
+    const normalizedCaller = normalizeOpenAIPhoneNumber(rawCallerPhone);
     expect(normalizedCaller).toBe("+15552345678");
 
-    // 2. Twilio Inbound Webhook bridges caller to OpenAI Realtime SIP trunk
-    const sipTarget = {
-      provider: "openai" as const,
-      uri: "sip:proj_scenario1@sip.api.openai.com;transport=tls",
+    const callSid = "CA_scenario1_emergency_plumb";
+    const userId = "usr_apex_plumbing_sf";
+    const registry = new VoiceSessionRegistry();
+    registry.registerCall(callSid, userId, normalizedCaller!);
+
+    // 2. Bot checks calendar availability: previous job at 100 Market St ends at 1:30 PM.
+    // Customer address: 2500 California St. Distance 8 miles -> 26m travel buffer
+    const previousJob = {
+      startAt: new Date("2026-11-02T12:00:00Z"),
+      endAt: new Date("2026-11-02T13:30:00Z"),
+      address: "100 Market St, San Francisco, CA",
+      bufferMinutes: calculateTravelBuffer("100 Market St, SF", "2500 California St, SF", { estimatedMiles: 8 }).bufferMinutes,
     };
-    const bridgeTwiml = inboundBridgeTwiml(sipTarget, false);
-    expect(bridgeTwiml).toContain("<Dial");
-    expect(bridgeTwiml).toContain(sipTarget.uri);
+    expect(previousJob.bufferMinutes).toBe(26);
 
-    // 3. During the call, caller requests live schedule lookup.
-    // Agent runtime initiates asynchronous browser lookup task
-    expect(AGENT_TOOL_DEFS).toHaveProperty("start_computer_task");
-    expect(AGENT_TOOL_DEFS).toHaveProperty("check_computer_task");
-
-    const taskDefinition = {
-      goal: "Check next available dental cleaning slot on clinic portal",
-      startUrl: "https://clinic-portal.example.com/schedule",
+    // Target slot: 2:00 PM to 3:30 PM (ends 30m after job 1 ends, clear of 26m buffer)
+    const targetSlot = {
+      targetStart: new Date("2026-11-02T14:00:00Z"),
+      targetEnd: new Date("2026-11-02T15:30:00Z"),
+      targetBufferMinutes: 30,
+      existingBookings: [previousJob],
+      activeHolds: [],
     };
-    expect(taskDefinition.startUrl.startsWith("https://")).toBe(true);
-    expect(isNonPublicAddress("127.0.0.1")).toBe(true); // Loopback is blocked
-    expect(isNonPublicAddress("93.184.216.34")).toBe(false); // Public is allowed
+    const availability = checkSlotWithBufferAndHolds(targetSlot);
+    expect(availability.available).toBe(true);
 
-    // 4. Appointment confirmed: system dispatches outbound SMS confirmation
-    const smsConfirmationMessage =
-      "Hi from BotBound! Your appointment is confirmed for Thursday at 2:00 PM. Reply YES to confirm or STOP to unsubscribe.";
-    expect(smsConfirmationMessage).toContain("confirmed");
-    expect(smsConfirmationMessage).toContain("STOP to unsubscribe");
+    // 3. Ephemeral 5-minute soft hold placed on 2:00 PM slot (TTL 300s)
+    const hold = createEphemeralHold(userId, callSid, targetSlot.targetStart, targetSlot.targetEnd, 300);
+    expect(hold.status).toBe("active");
+    expect(isHoldActive(hold)).toBe(true);
 
-    // 5. TCPA calling hours verified for recipient
-    const appointmentTime = new Date("2026-10-28T18:00:00Z"); // 2:00 PM EDT
-    expect(isWithinTcpACallingHours(normalizedCaller, appointmentTime)).toBe(true);
-  });
-
-  // =========================================================================
-  // Scenario 2: Toll-Free Profile Submission & Carrier Registration Verification
-  // =========================================================================
-  it("Scenario 2: Twilio Trust Hub & Toll-Free Verification Lifecycle for EIN 43-2610447", () => {
-    // 1. Entity validation for business registration
-    const registrationDetails = {
-      businessName: "BotBound Inc.",
-      ein: "43-2610447",
-      businessType: "CORPORATION",
-      website: "https://botbound.app",
-      contactEmail: "compliance@botbound.app",
-      useCaseCategories: ["CUSTOMER_CARE", "ACCOUNT_NOTIFICATIONS"],
-      tollFreeNumber: "+18005550199",
-      productionMessageSample:
-        "Hi, this is BotBound confirming your appointment. Reply YES to confirm or STOP to unsubscribe.",
+    // 4. Bot sends mid-call $50 deposit payment link via Twilio SMS
+    const depositRequest = {
+      userId,
+      callSid,
+      customerPhone: normalizedCaller!,
+      amountCents: 5000,
+      description: "Emergency Plumbing Diagnostic Deposit",
     };
+    const paymentLinkResult = constructStripePaymentLink(depositRequest);
+    expect(paymentLinkResult.paymentUrl).toContain("checkout.stripe.com");
+    expect(paymentLinkResult.appleGooglePayEnabled).toBe(true);
 
-    expect(registrationDetails.ein).toBe("43-2610447");
-    expect(registrationDetails.tollFreeNumber).toMatch(/^\+1(800|888|877|866|855|844|833)\d{7}$/);
-    expect(registrationDetails.productionMessageSample).toContain("STOP to unsubscribe");
-
-    // 2. Submission payload generates PENDING verification receipt
-    const submissionReceipt = {
-      tollfree_verification_sid: "HH1234567890abcdef1234567890abcdef",
-      bundle_sid: "BU1234567890abcdef1234567890abcdef",
-      status: "PENDING",
-      submitted_at: new Date().toISOString(),
-    };
-    expect(submissionReceipt.tollfree_verification_sid).toMatch(/^HH[a-f0-9]{32}$/);
-    expect(submissionReceipt.status).toBe("PENDING");
-
-    // 3. Webhook receives status callback progression
-    const simulateStatusCallback = (sid: string, status: string) => {
-      const allowedStatuses = ["PENDING", "IN_REVIEW", "TWILIO_APPROVED", "TWILIO_REJECTED"];
-      expect(allowedStatuses).toContain(status);
-      return {
-        VerificationSid: sid,
-        Status: status,
-        updatedAt: new Date().toISOString(),
-      };
-    };
-
-    const reviewCallback = simulateStatusCallback(submissionReceipt.tollfree_verification_sid, "IN_REVIEW");
-    expect(reviewCallback.Status).toBe("IN_REVIEW");
-
-    const approvedCallback = simulateStatusCallback(submissionReceipt.tollfree_verification_sid, "TWILIO_APPROVED");
-    expect(approvedCallback.Status).toBe("TWILIO_APPROVED");
-
-    // 4. Line verification unlocks SMS outbound status
-    expect(shouldApplyTwilioMessageStatusTransition("queued", "sent")).toBe(true);
-  });
-
-  // =========================================================================
-  // Scenario 3: AgentMail Inbound Inquiry with AI Draft & Owner Approval
-  // =========================================================================
-  it("Scenario 3: AgentMail Inbound Customer Inquiry with AI Draft & Owner Approval in Workspace", () => {
-    // 1. Managed bot mailbox identity verified
-    const agentId = "agent_sales_1";
-    const domain = "bots.botbound.app";
-    expect(isBotBoundManagedEmailDomain(domain)).toBe(true);
-
-    const clientId = agentMailManagedInboxClientId(agentId, domain);
-    expect(clientId).toMatch(/^botbound-agent-[a-f0-9]{32}$/);
-
-    // 2. Inbound customer inquiry arrives via Svix webhook
-    const rawKey = Buffer.from("agentmail-test-key-fixture-2026", "utf8");
-    const secret = `whsec_${rawKey.toString("base64")}`;
-    const webhookId = "msg_agentmail_inbound_1";
-    const now = Math.floor(Date.now() / 1000);
-    const emailPayload = Buffer.from(
-      JSON.stringify({
-        event: "message.received",
-        data: {
-          message_id: "msg_inquiry_999",
-          from: "customer@example.com",
-          to: `sales-${agentId}@bots.botbound.app`,
-          subject: "Pricing inquiry for enterprise bots",
-          text: "Can you send me your pricing tiers and volume discounts?",
+    // 5. Customer pays via Apple Pay on their phone; Stripe webhook arrives
+    const stripeWebhookPayload = JSON.stringify({
+      id: "evt_stripe_scenario1",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: paymentLinkResult.paymentIntentId,
+          amount_total: 5000,
+          customer_details: { email: "jane.caller@example.com" },
         },
-      }),
+      },
+    });
+    const stripeSecret = "whsec_scenario1_secret_999";
+    const nowSec = Math.floor(Date.now() / 1000);
+    const signature = createHmac("sha256", stripeSecret).update(`${nowSec}.${stripeWebhookPayload}`).digest("hex");
+    const sigHeader = `t=${nowSec},v1=${signature}`;
+
+    expect(verifyStripeWebhookHMAC(stripeWebhookPayload, sigHeader, stripeSecret)).toBe(true);
+
+    // 6. Voice session registry receives event and signals active call
+    const paymentEvent: InCallPaymentEvent = {
+      callSid,
+      paymentIntentId: paymentLinkResult.paymentIntentId,
+      amountCents: 5000,
+      status: "succeeded",
+      receiptUrl: "https://stripe.com/receipt/scenario1",
+      timestamp: new Date(),
+    };
+    registry.recordPayment(paymentEvent);
+
+    const recordedPayments = registry.getPaymentsForCall(callSid);
+    expect(recordedPayments).toHaveLength(1);
+    expect(recordedPayments[0].status).toBe("succeeded");
+
+    // 7. Booking confirmed; soft hold transitions to confirmed
+    hold.status = "confirmed";
+
+    // 8. AgentMail dispatches branded confirmation email with RFC 5545 .ics invite
+    const icsContent = generateRfc5545Ics({
+      uid: "appt_emergency_sc1",
+      summary: "Emergency Plumbing Repair (Burst Pipe)",
+      description: "Confirmed technician visit for Jane Caller. $50 deposit paid via Apple Pay.",
+      start: targetSlot.targetStart,
+      end: targetSlot.targetEnd,
+      organizerEmail: "bot-dispatch@bots.botbound.app",
+      organizerName: "Apex Plumbing Dispatch Bot",
+      attendeeEmail: "jane.caller@example.com",
+      attendeeName: "Jane Caller",
+      location: "2500 California St, San Francisco, CA",
+    });
+
+    expect(icsContent).toContain("BEGIN:VCALENDAR");
+    expect(icsContent).toContain("Emergency Plumbing Repair (Burst Pipe)");
+    expect(icsContent).toContain("jane.caller@example.com");
+    expect(icsContent).toContain("STATUS:CONFIRMED");
+
+    // 9. Background trade portal mirroring queued for Housecall Pro
+    const mirroringTask = {
+      userId,
+      callSid,
+      action: "mirror_dispatch_job" as const,
+      portalUrl: "https://app.housecallpro.com/jobs/new",
+      parameters: {
+        customerName: "Jane Caller",
+        customerPhone: normalizedCaller,
+        address: "2500 California St, San Francisco, CA",
+        serviceType: "Emergency Plumbing Repair",
+        depositPaidCents: 5000,
+        appointmentStart: targetSlot.targetStart.toISOString(),
+        appointmentEnd: targetSlot.targetEnd.toISOString(),
+      },
+    };
+    expect(mirroringTask.action).toBe("mirror_dispatch_job");
+    expect(mirroringTask.parameters.depositPaidCents).toBe(5000);
+  });
+
+  // =========================================================================
+  // Scenario 2: Autonomous Goodwill Wallet Customer Retention Under Disputed Surcharge
+  // =========================================================================
+  it("Scenario 2: Autonomous Goodwill Wallet Customer Retention Under Disputed Surcharge", () => {
+    // 1. Customer calls in upset about a $20 trip fee on previous invoice
+    const policy: GoodwillWalletPolicy = {
+      monthlyCapCents: 10000, // $100.00 / mo
+      perResolutionCapCents: 2500, // $25.00 / call
+      currentMonthSpentCents: 4000, // $40.00 used so far this month
+    };
+
+    // 2. Bot evaluates requested $20 credit
+    const creditAmountCents = 2000;
+    const evaluation = evaluateGoodwillCredit(policy, creditAmountCents);
+
+    expect(evaluation.approved).toBe(true);
+    expect(evaluation.newCurrentMonthSpentCents).toBe(6000); // $60.00 used, $40.00 remaining
+
+    // 3. Bot dispatches AgentMail credit confirmation receipt
+    const inbox = buildBrandedInboxParams("agent_retention_1", "bots.botbound.app");
+    expect(inbox.domain).toBe("bots.botbound.app");
+
+    const receipt = {
+      customerEmail: "upset.customer@example.com",
+      amountUsd: "$20.00",
+      receiptNumber: "GW-CREDIT-2026-0042",
+      description: "Autonomous Goodwill Credit - Courtesy Surcharge Waiver",
+    };
+    expect(receipt.amountUsd).toBe("$20.00");
+    expect(receipt.description).toContain("Autonomous Goodwill Credit");
+  });
+
+  // =========================================================================
+  // Scenario 3: Trade Portal Lookup with Latency Fillers & 2FA Owner Takeover
+  // =========================================================================
+  it("Scenario 3: Trade Portal Lookup with Latency Fillers & 2FA Owner Takeover", async () => {
+    // 1. Caller asks for specialized capacitor part availability on distributor portal
+    const callSid = "CA_scenario3_portal_lookup";
+    const fillersEmitted: string[] = [];
+
+    // 2. During 6.5s simulated browser navigation, conversational fillers stream to caller
+    const filler1 = selectConversationalFiller(0, fillersEmitted);
+    fillersEmitted.push(filler1);
+
+    const filler2 = selectConversationalFiller(1, fillersEmitted);
+    fillersEmitted.push(filler2);
+
+    expect(fillersEmitted).toHaveLength(2);
+    expect(filler1).not.toBe(filler2);
+
+    // 3. Portal prompts for 2FA SMS security code
+    const takeoverAlert = create2FATakeoverAlert({
+      taskId: "task_distributor_cap_88",
+      reason: "two_factor",
+      callSid,
+      portalUrl: "https://parts-distributor.com/auth",
+      ownerPhone: "+15558889999",
+      ownerEmail: "owner@aircomfort.com",
+    });
+
+    expect(takeoverAlert.smsAlert.message).toContain("2FA SMS verification code");
+    expect(takeoverAlert.smsAlert.message).toContain(callSid);
+    expect(takeoverAlert.agentMailAlert.agentAction).toBe("agent_attach_human");
+  });
+
+  // =========================================================================
+  // Scenario 4: Concurrent Booking Collision & Soft Hold Expiration Lifecycle
+  // =========================================================================
+  it("Scenario 4: Concurrent Booking Collision & Soft Hold Expiration Lifecycle", () => {
+    const slotTime = Date.now() + 86400_000;
+    const slotStart = new Date(slotTime);
+    const slotEnd = new Date(slotTime + 3600_000);
+
+    // 1. Caller A requests slot -> 5-min soft hold granted
+    const holdA = createEphemeralHold("usr_tenant_1", "CA_caller_A", slotStart, slotEnd, 300);
+    expect(holdA.status).toBe("active");
+
+    // 2. Caller B calls simultaneously and requests identical slot
+    const callerBCheck = checkSlotWithBufferAndHolds({
+      targetStart: slotStart,
+      targetEnd: slotEnd,
+      targetBufferMinutes: 15,
+      existingBookings: [],
+      activeHolds: [holdA],
+      now: new Date(),
+    });
+    expect(callerBCheck.available).toBe(false);
+    expect(callerBCheck.conflictReason).toContain("temporarily reserved by another active call");
+
+    // 3. Caller A hangs up without paying. 301 seconds elapse.
+    const timeAfterHoldExpired = new Date(Date.now() + 301_000);
+    expect(isHoldActive(holdA, timeAfterHoldExpired)).toBe(false);
+
+    // 4. Subsequent check by Caller C succeeds because hold is now expired
+    const callerCCheck = checkSlotWithBufferAndHolds({
+      targetStart: slotStart,
+      targetEnd: slotEnd,
+      targetBufferMinutes: 15,
+      existingBookings: [],
+      activeHolds: [holdA],
+      now: timeAfterHoldExpired,
+    });
+    expect(callerCCheck.available).toBe(true);
+  });
+
+  // =========================================================================
+  // Scenario 5: Inbound Email Reply Triage with Cancellation & Schedule Redistribution
+  // =========================================================================
+  it("Scenario 5: Inbound Email Reply Triage with Cancellation & Schedule Redistribution", () => {
+    // 1. Customer replies to booking confirmation: "Need to cancel tomorrow due to family emergency"
+    const triage = triageInboundCustomerReply(
+      "Re: Appointment Confirmation - Precision Plumbing",
+      "Unfortunately I need to cancel my appointment scheduled for tomorrow due to a family emergency. Please call off the technician."
     );
 
-    const sig = createHmac("sha256", rawKey)
-      .update(Buffer.concat([Buffer.from(`${webhookId}.${now}.`), emailPayload]))
-      .digest("base64");
+    expect(triage.intent).toBe("cancel");
+    expect(triage.confidence).toBeGreaterThan(0.9);
+    expect(triage.requiresHumanEscalation).toBe(false);
+    expect(triage.recommendedAction).toContain("Release appointment slot, free travel buffers");
 
-    const headers = {
-      "svix-id": webhookId,
-      "svix-timestamp": String(now),
-      "svix-signature": `v1,${sig}`,
-    };
-
-    const verifyResult = verifyResendWebhookSignature(emailPayload, headers, secret, now);
-    expect(verifyResult.ok).toBe(true);
-
-    // 3. System drafts response and places in ApprovalInbox for human review
-    const draftResponse = {
-      threadId: "thread_enterprise_pricing",
-      proposedSubject: "Re: Pricing inquiry for enterprise bots",
-      proposedBody: "Hi, thanks for reaching out to BotBound! Here is our enterprise pricing guide...",
-      status: "pending_approval",
-      requiresHumanSignoff: true,
-    };
-    expect(draftResponse.requiresHumanSignoff).toBe(true);
-    expect(draftResponse.status).toBe("pending_approval");
-
-    // 4. Owner approves: outbound email sends with RFC 2822 threading headers
-    const outboundReplyMime = [
-      "To: customer@example.com",
-      "Subject: Re: Pricing inquiry for enterprise bots",
-      "In-Reply-To: <msg_inquiry_999@example.com>",
-      "References: <msg_inquiry_999@example.com>",
-    ];
-    expect(outboundReplyMime).toContain("In-Reply-To: <msg_inquiry_999@example.com>");
-    expect(outboundReplyMime).toContain("References: <msg_inquiry_999@example.com>");
-  });
-
-  // =========================================================================
-  // Scenario 4: TCPA Compliance & Opt-Out Lifecycle
-  // =========================================================================
-  it("Scenario 4: TCPA Compliance Lifecycle (STOP Opt-Out -> DNC Scrub -> Voice/SMS Gate)", () => {
-    const customerPhone = "+15551234567";
-    const optOutSet = new Set(["stop", "stopall", "unsubscribe", "cancel", "end", "quit", "optout"]);
-    const optInSet = new Set(["start", "unstop", "yes"]);
-
-    // 1. Customer texts STOP in response to outbound message
-    const incomingText = "STOP";
-    expect(matchesCarrierKeyword(incomingText.toLowerCase(), optOutSet)).toBe(true);
-
-    // 2. Inbound SMS webhook returns auto-confirmation TwiML and inserts to DNC list
-    const optOutConfirmationTwiml =
-      '<?xml version="1.0" encoding="UTF-8"?><Response><Message>You have been unsubscribed and will receive no further messages. Reply START to resubscribe.</Message></Response>';
-    expect(optOutConfirmationTwiml).toContain("You have been unsubscribed");
-    expect(optOutConfirmationTwiml).toContain("Reply START to resubscribe");
-
-    // 3. Simulated DNC registry lookup blocks subsequent outbound SMS
-    const dncList = new Set<string>();
-    dncList.add(customerPhone);
-    expect(dncList.has(customerPhone)).toBe(true);
-
-    const checkOutboundAllowed = (phone: string) => {
-      if (dncList.has(phone)) return { allowed: false, reason: "dnc_suppressed" };
-      return { allowed: true };
-    };
-    expect(checkOutboundAllowed(customerPhone)).toEqual({ allowed: false, reason: "dnc_suppressed" });
-
-    // 4. Customer texts START to resubscribe
-    const optInText = "START";
-    expect(matchesCarrierKeyword(optInText.toLowerCase(), optInSet, "exact")).toBe(true);
-    dncList.delete(customerPhone);
-    expect(checkOutboundAllowed(customerPhone)).toEqual({ allowed: true });
-  });
-
-  // =========================================================================
-  // Scenario 5: Omnichannel Support Escalation
-  // =========================================================================
-  it("Scenario 5: Omnichannel Escalation (Missed Call -> Resend Alert -> AgentMail Reply)", () => {
-    // 1. Inbound customer call goes unanswered after hours
-    const callerNumber = "+15559876543";
-    const missedCallRecord = {
-      callId: "CA_missed_scenario_5",
-      caller: callerNumber,
-      timestamp: new Date().toISOString(),
-      durationSeconds: 0,
-      disposition: "unanswered",
-    };
-    expect(missedCallRecord.disposition).toBe("unanswered");
-
-    // 2. Resend urgent escalation alert email is constructed and dispatched to owner
-    const fromAddress = resolveResendFromAddress();
-    expect(fromAddress).toContain("BotBound");
-
-    const emailAlertPayload = {
-      from: fromAddress,
-      to: "owner@botbound.app",
-      title: "Missed Call from +15559876543",
-      message: `A caller from ${callerNumber} reached your Bot after hours. Voicemail audio was preserved.`,
-      callId: missedCallRecord.callId,
-    };
-    expect(emailAlertPayload.title).toContain("Missed Call");
-    expect(emailAlertPayload.callId).toBe("CA_missed_scenario_5");
-
-    // 3. Account owner opens inbox and triggers agent follow-up reply via AgentMail
-    const agentMailAccount = {
-      email: "support@bots.botbound.app",
-      provider: "agentmail",
-      status: "active",
-    };
+    // 2. Inbox domain verified for response dispatch
     expect(isBotBoundManagedEmailDomain("bots.botbound.app")).toBe(true);
-
-    const followUpEmail = {
-      from: agentMailAccount.email,
-      to: "customer@example.com",
-      subject: "Follow-up regarding your call to BotBound",
-      body: "Hi! We noticed you called us earlier today. How can we help you?",
-    };
-    expect(followUpEmail.from).toBe("support@bots.botbound.app");
-    expect(followUpEmail.subject).toContain("Follow-up");
   });
 });

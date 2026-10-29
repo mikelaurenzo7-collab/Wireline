@@ -72,6 +72,11 @@ function notifyBookedAppointment(
     customerName: string;
     serviceType: string;
     displayTime: string;
+    customerPhone?: string;
+    customerEmail?: string;
+    serviceAddress?: any;
+    appointmentId?: string;
+    notes?: string;
   },
 ): void {
   const { agent, agentVoiceName, message } = context;
@@ -106,6 +111,26 @@ function notifyBookedAppointment(
         agentName: agentVoiceName,
         caller: booking.customerName,
         outcome: "booked",
+      });
+    }),
+    Promise.resolve().then(async () => {
+      const { enqueueTradePortalMirrorJob } = await import("../cloud-computer/trade-portal-mirroring");
+      const call = message.call as { id?: string; customer?: { number?: string } } | undefined;
+      return enqueueTradePortalMirrorJob(agent.user_id, agent.id, {
+        appointmentId: booking.appointmentId,
+        userId: agent.user_id,
+        agentId: agent.id,
+        customerName: booking.customerName,
+        customerPhone: booking.customerPhone || call?.customer?.number,
+        customerEmail: booking.customerEmail,
+        serviceAddress: booking.serviceAddress,
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        timeZone: booking.timeZone,
+        serviceType: booking.serviceType,
+        title: booking.title,
+        notes: booking.notes,
+        callId: call?.id,
       });
     }),
   ]);
@@ -200,6 +225,8 @@ export async function handleCalendarToolCall(
             customerName: customer_name.trim(),
             serviceType: service_type.trim(),
             displayTime,
+            customerPhone: appointment.phoneNumber || undefined,
+            appointmentId: appointment.id,
           });
         }
         return {
@@ -278,6 +305,7 @@ export async function handleCalendarToolCall(
           customerName: customer_name.trim(),
           serviceType: service_type.trim(),
           displayTime,
+          customerPhone: (message.call as { customer?: { number?: string } } | undefined)?.customer?.number,
         });
       }
       return {

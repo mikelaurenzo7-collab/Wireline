@@ -56,6 +56,88 @@ export const GEMINI_LIVE_TOOLS: Tool[] = [
         },
         behavior: Behavior.NON_BLOCKING,
       },
+      {
+        name: "lookup_customer",
+        description:
+          "Search and retrieve customer account history, past service notes, and equipment records from the trade portal without blocking speech.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            name: {
+              type: Type.STRING,
+              description: "The customer's full name.",
+            },
+            phone: {
+              type: Type.STRING,
+              description: "The customer's phone number.",
+            },
+            portal_url: {
+              type: Type.STRING,
+              description: "Optional custom URL for the customer portal.",
+            },
+          },
+        },
+        behavior: Behavior.NON_BLOCKING,
+      },
+      {
+        name: "check_parts_portal",
+        description:
+          "Search supplier catalogs for part availability, warehouse inventory levels, contractor pricing, and estimated delivery dates.",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            part_number: {
+              type: Type.STRING,
+              description: "The manufacturer or catalog part number.",
+            },
+            description: {
+              type: Type.STRING,
+              description: "Description or search query for the part or equipment.",
+            },
+            portal_url: {
+              type: Type.STRING,
+              description: "Optional custom URL for the parts supplier portal.",
+            },
+          },
+        },
+        behavior: Behavior.NON_BLOCKING,
+      },
+      {
+        name: "mirror_dispatch_job",
+        description:
+          "Mirror and create a confirmed service appointment directly on the vertical dispatch board (Housecall Pro or ServiceTitan).",
+        parameters: {
+          type: Type.OBJECT,
+          properties: {
+            customer_name: {
+              type: Type.STRING,
+              description: "Name of the customer.",
+            },
+            service_type: {
+              type: Type.STRING,
+              description: "Type of trade service (e.g., HVAC maintenance, leak repair).",
+            },
+            scheduled_time: {
+              type: Type.STRING,
+              description: "Confirmed date and arrival window.",
+            },
+            phone: {
+              type: Type.STRING,
+              description: "Customer contact phone number.",
+            },
+            address: {
+              type: Type.STRING,
+              description: "Service location street address.",
+            },
+            portal_url: {
+              type: Type.STRING,
+              description: "Optional dispatch portal URL.",
+            },
+          },
+          required: ["customer_name", "service_type", "scheduled_time"],
+        },
+        behavior: Behavior.NON_BLOCKING,
+      },
     ],
   },
 ];
@@ -213,6 +295,28 @@ export async function runGeminiLiveTool(input: {
   name: string;
   args: Record<string, unknown>;
 }) {
+  if (["lookup_customer", "check_parts_portal", "mirror_dispatch_job"].includes(input.name)) {
+    const [owned] = await drizzle
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(
+        and(
+          eq(schema.agents.id, input.agentId),
+          eq(schema.agents.userId, input.userId),
+        ),
+      )
+      .limit(1);
+
+    if (!owned) throw AppError.fromHttpStatus(404, "Bot not found.");
+
+    return {
+      status: "queued",
+      action: input.name,
+      parameters: input.args,
+      message: `Cloud browser task for ${input.name} accepted.`,
+    };
+  }
+
   if (input.name !== "search_agent_knowledge") {
     throw AppError.fromHttpStatus(400, `Unsupported live tool: ${input.name}`);
   }

@@ -13,6 +13,7 @@ import {
   prepareGeminiLiveSessionConfig,
   runGeminiLiveTool,
 } from "./gemini-live-service";
+import { VoiceBrowserBridge } from "../cloud-computer/voice-bridge";
 
 const startFrameSchema = z.object({
   event: z.literal("start"),
@@ -147,6 +148,75 @@ export function installGeminiMediaBridge(server: Server): WebSocketServer {
                       continue;
                     }
                     const session = geminiSession;
+
+                    // Non-blocking cloud browser and trade portal tools
+                    if (
+                      ["lookup_customer", "check_parts_portal", "mirror_dispatch_job"].includes(
+                        call.name,
+                      )
+                    ) {
+                      const callArgs = (call.args as Record<string, unknown>) || {};
+                      const portalUrl =
+                        typeof callArgs.portal_url === "string" && callArgs.portal_url.trim()
+                          ? callArgs.portal_url.trim()
+                          : "https://pro.housecallpro.com";
+
+                      void VoiceBrowserBridge.executeAsyncTask({
+                        userId,
+                        callSid,
+                        agentId,
+                        action: call.name as any,
+                        portalUrl,
+                        parameters: callArgs,
+                        fillerCallback: async (phrase: string) => {
+                          if (geminiSession && !isTerminating) {
+                            geminiSession.sendRealtimeInput({
+                              text: `[System Status Cue: Say naturally to the caller: "${phrase}"]`,
+                            });
+                          }
+                        },
+                        statusCallback: async (status, data) => {
+                          if (status === "completed") {
+                            session.sendToolResponse({
+                              functionResponses: [
+                                {
+                                  id: call.id,
+                                  response: {
+                                    output: (data as any)?.extractedData ?? data ?? { success: true },
+                                  },
+                                },
+                              ],
+                            });
+                          } else if (status === "failed") {
+                            session.sendToolResponse({
+                              functionResponses: [
+                                {
+                                  id: call.id,
+                                  response: {
+                                    error: (data as any)?.error || "Portal operation failed",
+                                  },
+                                },
+                              ],
+                            });
+                          }
+                        },
+                      }).catch((err) => {
+                        log.error("[gemini-media-bridge] VoiceBrowserBridge error", {
+                          name: call.name,
+                          error: String(err),
+                        });
+                        session.sendToolResponse({
+                          functionResponses: [
+                            {
+                              id: call.id,
+                              response: { error: String(err) },
+                            },
+                          ],
+                        });
+                      });
+                      continue;
+                    }
+
                     try {
                       const result = await runGeminiLiveTool({
                         userId,
