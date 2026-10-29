@@ -85,6 +85,9 @@ The isolated speech worker has its own [setup guide](../services/voice-engine/RE
 | [security/auth-password-controls.md](./security/auth-password-controls.md)                       | Custom scrypt and HIBP password-control posture.                                                   |
 | [soc2-policies.md](./soc2-policies.md)                                                           | SOC 2 control-policy map and evidence ownership.                                                   |
 | [AUTHZ_MATRIX.md](./AUTHZ_MATRIX.md)                                                             | Generated authorization-coverage artifact.                                                         |
+| [PROJECT.md](../PROJECT.md)                                                                      | Feature inventory, milestone coverage, and launch readiness tracking.                               |
+| [TEST_INFRA.md](../TEST_INFRA.md)                                                                | End-to-end 4-tier testing infrastructure, methodology, and matrix.                                  |
+| [TEST_READY.md](../TEST_READY.md)                                                                | Acceptance criteria, pass/fail thresholds, and verification commands.                                |
 
 ## Operating and release runbooks
 

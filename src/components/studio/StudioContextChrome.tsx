@@ -1,5 +1,5 @@
 import { ChevronDown, PanelRight, Plus, SlidersHorizontal } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 
 import { Button } from "../atoms/Button";
@@ -24,6 +24,18 @@ export default function StudioContextChrome() {
   const readyLabel = activeAgent ? agentReadinessLabel(activeAgent, phoneLookupDegraded) : null;
   const optionLabels = useMemo(() => buildAgentOptionLabels(agents), [agents]);
   const language = customerAgentLanguage();
+  const [panelOpen, setPanelOpen] = useState(() => searchParams.get("panel") === "computer");
+
+  useEffect(() => {
+    const handleState = (event: Event) => {
+      const customEvent = event as CustomEvent<{ open?: boolean }>;
+      if (typeof customEvent.detail?.open === "boolean") {
+        setPanelOpen(customEvent.detail.open);
+      }
+    };
+    window.addEventListener("wireline:studio-panel-state", handleState);
+    return () => window.removeEventListener("wireline:studio-panel-state", handleState);
+  }, []);
 
   function selectAgent(agentId: string) {
     setSearchParams(
@@ -91,16 +103,17 @@ export default function StudioContextChrome() {
               <Button
                 id="studio-panel-toggle"
                 type="button"
-                variant={searchParams.get("panel") === "computer" ? "secondary" : "ghost"}
+                variant={panelOpen || searchParams.get("panel") === "computer" ? "secondary" : "ghost"}
                 size="sm"
                 className="min-h-[44px] px-2.5"
-                aria-label="Toggle Browser Panel"
-                title="Toggle Browser Panel"
+                aria-label={panelOpen ? "Close Browser Panel" : "Open Browser Panel"}
+                aria-expanded={panelOpen}
+                title={panelOpen ? "Close Browser Panel" : "Open Browser Panel"}
                 onClick={() => {
                   window.dispatchEvent(new CustomEvent("wireline:studio-toggle-panel"));
                 }}
               >
-                <PanelRight className="size-4" aria-hidden="true" />
+                <PanelRight className={`size-4 ${panelOpen ? "text-primary" : "text-muted-foreground"}`} aria-hidden="true" />
                 <span className="hidden sm:inline">Browser</span>
               </Button>
               <Button

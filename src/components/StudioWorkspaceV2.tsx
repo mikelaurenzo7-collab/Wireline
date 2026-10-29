@@ -461,6 +461,14 @@ function StudioWorkspaceContent() {
     return () => window.removeEventListener("wireline:studio-toggle-panel", handleToggle);
   }, [closeInspector, openPanelSection, panelOpen]);
 
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("wireline:studio-panel-state", {
+        detail: { open: panelOpen, section: panelSection },
+      }),
+    );
+  }, [panelOpen, panelSection]);
+
   const setWorkroomMode = useCallback(
     (mode: WorkroomMode) => {
       setWorkroomModeState(mode);
