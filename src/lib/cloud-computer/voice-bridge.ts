@@ -6,7 +6,6 @@
  * portal data ingestion, and 2FA/CAPTCHA owner takeover alerts during active voice calls.
  */
 
-import { AppError } from "../api-error";
 import { log } from "../server-context";
 import {
   startComputerTask,
@@ -68,7 +67,7 @@ export const DEFAULT_TAKEOVER_FILLER =
 
 export const HOLD_TAKEOVER_FILLERS = [
   "Still waiting on that quick approval from our office team, won't be much longer...",
-  "Thanks for your patience—our manager is reviewing the portal verification now.",
+  "Thanks for your patience, our manager is reviewing the portal verification now.",
   "Almost there, just waiting for the screen to refresh...",
 ];
 
@@ -220,7 +219,9 @@ export class VoiceBrowserBridge {
 
                 // Voice 2FA wait timeout (60s)
                 if (now - (entry.waiting2faSince || now) > 60_000) {
-                  log.warn("[VoiceBrowserBridge] 2FA wait timeout reached in voice call", { taskId });
+                  log.warn("[VoiceBrowserBridge] 2FA wait timeout reached in voice call", {
+                    taskId,
+                  });
                   cleanup();
                   await statusCallback("failed", {
                     reason: "timeout_waiting_2fa",
@@ -230,7 +231,7 @@ export class VoiceBrowserBridge {
                     taskId,
                     success: false,
                     requiresTakeover: true,
-                    takeoverReason: barrier.barrierType as any,
+                    takeoverReason: barrier.barrierType as AsyncBrowserTaskResult["takeoverReason"],
                     error: "Takeover timed out after 60 seconds",
                   });
                   return;

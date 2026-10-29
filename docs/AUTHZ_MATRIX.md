@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 459
-**Protected:** 372
-**Public (allowlisted):** 87
+**Routes scanned:** 467
+**Protected:** 378
+**Public (allowlisted):** 89
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -46,6 +46,7 @@
 | `POST /api/intake/lead` | API-key auth via X-Wireline-Key + rate limit |
 | `POST /api/intake/leads` | API-key auth via X-Wireline-Key + rate limit |
 | `GET /api/integrations/certified` | Public certified-integration status; rate-limited, no tenant data |
+| `GET /api/voice/live/gemini/status` | Public Gemini Live voice status probe; rate-limited, no tenant data |
 | `GET /api/public/assistant/:agentName` | Retired 410 tombstone; no provider work or tenant data |
 | `POST /api/public/demo-call` | Retired 410 tombstone; no provider work or tenant data |
 | `POST /api/public/demo-session` | Retired 410 tombstone; no provider work or tenant data |
@@ -89,6 +90,7 @@
 | `POST /api/webhooks/resend` | Resend/Svix timestamped HMAC-SHA256 signature + replay window |
 | `GET /recap/:slug` | Signed shareable call/weekly recap; opaque slug + bearer token verified against stored SHA-256 hash, timing-safe; per-IP + per-slug rate limits |
 | `POST /api/support/ticket` | Public support/contact form; strict validation + 5/15min IP rate limit |
+| `POST /api/twilio-webhook/tollfree-verification-status` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/live-recording-complete` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/singing-receptionist` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/sms` | Twilio signature validation; valid provider retries are never IP-throttled |
@@ -340,12 +342,19 @@
 | launch-billing-checkout-atomic-routes.ts | POST | `/api/billing/checkout` | inline | — | — | Protected |
 | launch-billing-checkout-atomic-routes.ts | POST | `/api/billing/checkout/verify` | inline | — | — | Protected |
 | launch-billing-checkout-routes.ts | POST | `/api/billing/checkout` | inline | — | — | Protected |
+| lead-hunter-routes.ts | POST | `/api/lead-hunter/action` | inline | — | — | Protected |
+| lead-hunter-routes.ts | POST | `/api/lead-hunter/dial` | inline | — | — | Protected |
+| lead-hunter-routes.ts | POST | `/api/lead-hunter/discover` | inline | — | — | Protected |
+| lead-hunter-routes.ts | GET | `/api/lead-hunter/leads` | inline | — | — | Protected |
 | learning-routes.ts | GET | `/api/agents/:id/learning-digest` | inline | — | — | Protected |
 | learning-routes.ts | POST | `/api/agents/lessons/review` | inline | — | — | Protected |
 | legacy-knowledge-crawl-routes.ts | POST | `/api/jobs/knowledge-crawl` | inline | — | — | Protected |
 | live-voice-profile-routes.ts | PATCH | `/api/voice/live/custom` | inline | — | — | Protected |
 | live-voice-profile-routes.ts | GET | `/api/voice/live/profile` | inline | — | — | Protected |
 | live-voice-profile-routes.ts | PATCH | `/api/voice/live/profile` | inline | — | — | Protected |
+| live-voice-routes.ts | POST | `/api/voice/live/gemini/session` | inline | — | — | Protected |
+| live-voice-routes.ts | GET | `/api/voice/live/gemini/status` | — | — | yes | Public (allowlisted) |
+| live-voice-routes.ts | POST | `/api/voice/live/gemini/tool` | inline | — | — | Protected |
 | live-voice-routes.ts | POST | `/api/voice/live/session` | inline | — | — | Protected |
 | live-voice-routes.ts | POST | `/api/voice/live/session/stop` | inline | — | — | Protected |
 | live-voice-routes.ts | GET | `/api/voice/live/status` | inline | — | — | Protected |
@@ -530,6 +539,7 @@
 | team-routes.ts | POST | `/api/team/invite` | inline | permission | — | Protected |
 | team-routes.ts | GET | `/api/team/workspaces` | inline | — | — | Protected |
 | team-routes.ts | POST | `/api/team/workspaces/:tenantId/select` | inline | — | — | Protected |
+| twilio-tollfree-webhook.ts | POST | `/api/twilio-webhook/tollfree-verification-status` | — | — | yes | Public (allowlisted) |
 | twilio-webhook-base.ts | POST | `/api/twilio-webhook/live-recording-complete` | — | — | yes | Public (allowlisted) |
 | twilio-webhook-base.ts | POST | `/api/twilio-webhook/singing-receptionist` | — | — | yes | Public (allowlisted) |
 | twilio-webhook-base.ts | POST | `/api/twilio-webhook/sms` | — | — | yes | Public (allowlisted) |

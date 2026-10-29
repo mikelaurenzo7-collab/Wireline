@@ -55,26 +55,23 @@ export async function dispatchHumanTakeoverAlerts(
 
   // 2. Query tenant communication preferences & contact details
   let userEmail: string | null = null;
-  let userPhone: string | null = null;
   try {
     const [userRow] = await drizzle
       .select({
         email: schema.users.email,
-        phoneNumber: schema.users.phoneNumber,
       })
       .from(schema.users)
       .where(eq(schema.users.id, userId))
       .limit(1);
     if (userRow) {
       userEmail = userRow.email ?? null;
-      userPhone = userRow.phoneNumber ?? null;
     }
   } catch (err) {
     log.warn("[takeover-alerts] Could not fetch user record", { userId, error: String(err) });
   }
 
   let businessName = "BotBound";
-  let recipientPhone = userPhone;
+  let recipientPhone: string | null = null;
   let recipientEmail = userEmail;
   let smsFromNumber: string | undefined;
 
@@ -137,9 +134,12 @@ export async function dispatchHumanTakeoverAlerts(
       });
 
       smsSent = smsResult.ok;
-      smsMessageSid = smsResult.messageSid;
+      smsMessageSid = smsResult.sid;
     } catch (error) {
-      log.error("[takeover-alerts] Failed to send takeover SMS alert", { taskId, error: String(error) });
+      log.error("[takeover-alerts] Failed to send takeover SMS alert", {
+        taskId,
+        error: String(error),
+      });
     }
   }
 
@@ -183,7 +183,10 @@ export async function dispatchHumanTakeoverAlerts(
         htmlBody,
       });
     } catch (error) {
-      log.error("[takeover-alerts] Failed to send takeover AgentMail alert", { taskId, error: String(error) });
+      log.error("[takeover-alerts] Failed to send takeover AgentMail alert", {
+        taskId,
+        error: String(error),
+      });
     }
   }
 

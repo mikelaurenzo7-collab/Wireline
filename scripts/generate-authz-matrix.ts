@@ -103,6 +103,10 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     reason: "Public component status; rate-limited, no tenant data",
   },
   {
+    pattern: /^\/api\/voice\/live\/gemini\/status$/,
+    reason: "Public Gemini Live voice status probe; rate-limited, no tenant data",
+  },
+  {
     pattern: /^\/api\/health\/report$/,
     reason:
       "Browser client-error reports (pre-auth by design); rate-limited, size-bounded input, no data returned",

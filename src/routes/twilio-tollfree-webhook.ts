@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from "express";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { drizzle, log } from "../lib/server-context";
@@ -10,10 +10,7 @@ import type { CompanyIdentityProviderStatus } from "../lib/company-identity";
 const router = Router();
 
 export type TollfreeVerificationStatus =
-  | "PENDING"
-  | "IN_REVIEW"
-  | "TWILIO_APPROVED"
-  | "TWILIO_REJECTED";
+  "PENDING" | "IN_REVIEW" | "TWILIO_APPROVED" | "TWILIO_REJECTED";
 
 export function normalizeTollfreeVerificationStatus(raw: string): {
   normalized: TollfreeVerificationStatus;
@@ -50,25 +47,16 @@ router.post(
     }
 
     const verificationSid = String(
-      req.body?.VerificationSid ||
-        req.body?.verification_sid ||
-        req.body?.Sid ||
-        "",
+      req.body?.VerificationSid || req.body?.verification_sid || req.body?.Sid || "",
     ).trim();
 
     const rawStatus = String(
-      req.body?.Status ||
-        req.body?.status ||
-        req.body?.VerificationStatus ||
-        "",
+      req.body?.Status || req.body?.status || req.body?.VerificationStatus || "",
     ).trim();
 
     const customerProfileSid =
       String(
-        req.body?.CustomerProfileSid ||
-          req.body?.customer_profile_sid ||
-          req.body?.BundleSid ||
-          "",
+        req.body?.CustomerProfileSid || req.body?.customer_profile_sid || req.body?.BundleSid || "",
       ).trim() || null;
 
     const reason =
@@ -82,16 +70,13 @@ router.post(
 
     const phoneNumber =
       String(
-        req.body?.PhoneNumber ||
-          req.body?.phoneNumber ||
-          req.body?.To ||
-          req.body?.From ||
-          "",
+        req.body?.PhoneNumber || req.body?.phoneNumber || req.body?.To || req.body?.From || "",
       ).trim() || null;
 
     if (!verificationSid && !rawStatus) {
       return res.status(400).json({
         ok: false,
+        code: "TOLLFREE_CALLBACK_INVALID_PAYLOAD",
         error: "Missing VerificationSid or Status in callback payload.",
       });
     }
@@ -151,15 +136,13 @@ router.post(
             : {};
 
         const companyIdentity =
-          currentPrefs.company_identity &&
-          typeof currentPrefs.company_identity === "object"
+          currentPrefs.company_identity && typeof currentPrefs.company_identity === "object"
             ? { ...(currentPrefs.company_identity as Record<string, unknown>) }
             : null;
 
         if (companyIdentity) {
           const currentProviderStatus =
-            companyIdentity.providerStatus &&
-            typeof companyIdentity.providerStatus === "object"
+            companyIdentity.providerStatus && typeof companyIdentity.providerStatus === "object"
               ? { ...(companyIdentity.providerStatus as Record<string, unknown>) }
               : { voice: "not_requested", sms: "not_requested", email: "not_requested" };
 

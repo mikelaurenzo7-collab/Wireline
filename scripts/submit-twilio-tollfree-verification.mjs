@@ -182,7 +182,7 @@ async function main() {
       try {
         const trustHubResponse = await submitTrustHubCustomerProfile(credentials, trustHubPayload);
         customerProfileSid = trustHubResponse.sid || trustHubResponse.bundle_sid || null;
-      } catch (thErr) {
+      } catch (_thErr) {
         // Customer profile may already exist or bundle policy might be handled directly
         // Record warning and proceed with toll-free submission
       }

@@ -1277,8 +1277,8 @@ export async function buildRoleToolDefsForTenant(
         : Array.isArray(enabledTools)
           ? computerTools.filter((tool) => enabledTools.includes(tool.name))
           : [];
-    const computerNames = new Set(computerTools.map((tool) => tool.name));
-    const selectedComputerNames = new Set(selectedComputerTools.map((tool) => tool.name));
+    const computerNames = new Set<string>(computerTools.map((tool) => tool.name));
+    const selectedComputerNames = new Set<string>(selectedComputerTools.map((tool) => tool.name));
     const allowed = tools.filter((tool) => {
       const name = String((tool as { name?: unknown }).name || "");
       return (

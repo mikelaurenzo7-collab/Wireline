@@ -1,4 +1,4 @@
-import { Router, type Request, type Response } from "express";
+import { Router, type Response } from "express";
 import { z } from "zod";
 import { authenticateUser } from "../middleware/auth";
 import { validate } from "../middleware/input-validation";
@@ -8,6 +8,7 @@ import {
   globalLeadStore,
   type RawLeadListing,
 } from "../lib/lead-hunter/lead-scraper";
+import type { DiscoveredLead } from "../lib/lead-hunter/types";
 import { prepareLeadDial } from "../lib/lead-hunter/lead-dialer";
 import { processLeadCallAction } from "../lib/lead-hunter/lead-action-bridge";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -33,7 +34,9 @@ const discoverSchema = z.object({
 const dialSchema = z.object({
   leadId: z.string(),
   agentId: z.string(),
-  callPurpose: z.enum(["appointment_service", "existing_customer", "sales", "callback"]).default("sales"),
+  callPurpose: z
+    .enum(["appointment_service", "existing_customer", "sales", "callback"])
+    .default("sales"),
   recipientTimeZone: z.string().optional(),
 });
 
@@ -60,7 +63,7 @@ const actionSchema = z.object({
 router.post(
   "/api/lead-hunter/discover",
   authenticateUser,
-  validate(discoverSchema),
+  validate({ body: discoverSchema }),
   async (req: AuthenticatedRequest, res: Response) => {
     const { listings, category, minRating } = req.body;
     const qualified = processRawListings(listings as RawLeadListing[], category, minRating);
@@ -83,7 +86,7 @@ router.post(
 router.post(
   "/api/lead-hunter/dial",
   authenticateUser,
-  validate(dialSchema),
+  validate({ body: dialSchema }),
   async (req: AuthenticatedRequest, res: Response) => {
     const { leadId, agentId, callPurpose, recipientTimeZone } = req.body;
     const lead = globalLeadStore.getLead(leadId);
@@ -123,9 +126,10 @@ router.post(
 router.post(
   "/api/lead-hunter/action",
   authenticateUser,
-  validate(actionSchema),
+  validate({ body: actionSchema }),
   async (req: AuthenticatedRequest, res: Response) => {
-    const { leadId, callSid, outcome, appointmentTime, serviceAddress, depositAmountCents, notes } = req.body;
+    const { leadId, callSid, outcome, appointmentTime, serviceAddress, depositAmountCents, notes } =
+      req.body;
 
     const result = processLeadCallAction(
       {
@@ -158,11 +162,18 @@ router.post(
  * GET /api/lead-hunter/leads
  * Lists leads currently discovered in the hunter workspace
  */
-router.get("/api/lead-hunter/leads", authenticateUser, (req: AuthenticatedRequest, res: Response) => {
-  const category = req.query.category as string | undefined;
-  const status = req.query.status as any;
-  const leads = globalLeadStore.listLeads({ category, status });
-  res.json({ success: true, count: leads.length, leads });
-});
+router.get(
+  "/api/lead-hunter/leads",
+  authenticateUser,
+  (req: AuthenticatedRequest, res: Response) => {
+    const category = req.query.category as string | undefined;
+    const status =
+      typeof req.query.status === "string"
+        ? (req.query.status as DiscoveredLead["status"])
+        : undefined;
+    const leads = globalLeadStore.listLeads({ category, status });
+    res.json({ success: true, count: leads.length, leads });
+  },
+);
 
 export default router;

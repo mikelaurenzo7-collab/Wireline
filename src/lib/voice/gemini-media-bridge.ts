@@ -8,12 +8,10 @@ import {
   mulawToPcm16_16k,
   pcm24ToMulawBuffer,
   RESOLVED_GEMINI_LIVE_MODEL,
+  type GeminiLiveModel,
 } from "./gemini-live-client";
-import {
-  prepareGeminiLiveSessionConfig,
-  runGeminiLiveTool,
-} from "./gemini-live-service";
-import { VoiceBrowserBridge } from "../cloud-computer/voice-bridge";
+import { prepareGeminiLiveSessionConfig, runGeminiLiveTool } from "./gemini-live-service";
+import { VoiceBrowserBridge, type AsyncBrowserTaskRequest } from "../cloud-computer/voice-bridge";
 
 const startFrameSchema = z.object({
   event: z.literal("start"),
@@ -88,7 +86,7 @@ export function installGeminiMediaBridge(server: Server): WebSocketServer {
           const prepared = await prepareGeminiLiveSessionConfig({
             userId,
             agentId,
-            model: RESOLVED_GEMINI_LIVE_MODEL,
+            model: RESOLVED_GEMINI_LIVE_MODEL as GeminiLiveModel,
           });
 
           const ai = getGeminiClient();
@@ -165,7 +163,7 @@ export function installGeminiMediaBridge(server: Server): WebSocketServer {
                         userId,
                         callSid,
                         agentId,
-                        action: call.name as any,
+                        action: call.name as AsyncBrowserTaskRequest["action"],
                         portalUrl,
                         parameters: callArgs,
                         fillerCallback: async (phrase: string) => {
@@ -182,7 +180,9 @@ export function installGeminiMediaBridge(server: Server): WebSocketServer {
                                 {
                                   id: call.id,
                                   response: {
-                                    output: (data as any)?.extractedData ?? data ?? { success: true },
+                                    output: (data as Record<string, unknown> | undefined)
+                                      ?.extractedData ??
+                                      data ?? { success: true },
                                   },
                                 },
                               ],
@@ -193,7 +193,9 @@ export function installGeminiMediaBridge(server: Server): WebSocketServer {
                                 {
                                   id: call.id,
                                   response: {
-                                    error: (data as any)?.error || "Portal operation failed",
+                                    error:
+                                      (data as Record<string, unknown> | undefined)?.error ||
+                                      "Portal operation failed",
                                   },
                                 },
                               ],

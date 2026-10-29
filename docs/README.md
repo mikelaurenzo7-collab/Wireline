@@ -89,6 +89,14 @@ The isolated speech worker has its own [setup guide](../services/voice-engine/RE
 | [TEST_INFRA.md](../TEST_INFRA.md)                                                                | End-to-end 4-tier testing infrastructure, methodology, and matrix.                                  |
 | [TEST_READY.md](../TEST_READY.md)                                                                | Acceptance criteria, pass/fail thresholds, and verification commands.                                |
 
+## Launch and production architecture
+
+| Document                                                                                       | Role                                                                                                                                           |
+| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| [LAUNCH_READINESS.md](../LAUNCH_READINESS.md)                                                   | Executive launch readiness scorecard, domain verification status, and decision gates.                          |
+| [ENVIRONMENT_VARIABLES_MATRIX.md](./launch/ENVIRONMENT_VARIABLES_MATRIX.md)                     | Complete production secret/public environment matrix across all 10 services with safety rules.                                                  |
+| [FLAWLESS_LAUNCH_ROADMAP.md](./launch/FLAWLESS_LAUNCH_ROADMAP.md)                               | Prioritized remediation tasks, operational requirements, and pre-launch verification checks.                                                    |
+
 ## Operating and release runbooks
 
 | Document                                                                                       | Role                                                                                                                                           |
