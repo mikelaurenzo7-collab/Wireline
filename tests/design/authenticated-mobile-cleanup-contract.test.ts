@@ -75,7 +75,7 @@ describe("authenticated mobile cleanup", () => {
     const create = read("src/components/CreateAgentDialog.tsx");
 
     expect(shell).toContain('singular: "Bot"');
-    expect(shell).toContain('navLabel: "Workspace"');
+    expect(shell).toContain('navLabel: "Work"');
     expect(shell).toContain("Current Bot");
     expect(shell).not.toContain("orderedAgents");
     expect(chrome).toContain('aria-label="Switch Bot"');
