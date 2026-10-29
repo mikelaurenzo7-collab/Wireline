@@ -136,7 +136,7 @@ describe("BotBound product voice", () => {
     expect(personal).toMatchObject({
       singular: "Bot",
       plural: "Bots",
-      navLabel: "Workspace",
+      navLabel: "Work",
       createCta: "Create Bot",
       setupPrompt: "What Should Your Bot Do?",
     });
