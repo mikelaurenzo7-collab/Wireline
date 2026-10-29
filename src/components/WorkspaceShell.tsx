@@ -33,7 +33,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/s
 // visible BotBound rebrand so existing installs and saved UI state do not reset.
 const WORKSPACE_RAIL_STORAGE_KEY = "wireline:workspace-rail:v1";
 
-// Bot is a durable resource; Work is its task and browser execution surface.
+// Customer-language contract: singular: "Bot"; navLabel: "Work".
 
 function userInitial(name?: string | null, email?: string | null) {
   const source = (name || email || "B").trim();
