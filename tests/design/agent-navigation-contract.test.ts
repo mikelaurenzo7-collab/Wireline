@@ -19,7 +19,7 @@ describe("authenticated Bot navigation contract", () => {
   const copy = read("src/lib/product-copy.ts");
 
   it("keeps daily IA small and moves management destinations below it", () => {
-    expect(navigation).toMatch(/href: "\/studio"[\s\S]*label: "Workspace"/);
+    expect(navigation).toMatch(/href: "\/studio"[\s\S]*label: "Work"/);
     expect(navigation).toMatch(/href: "\/inbox", label: "Inbox"/);
     expect(navigation).toMatch(/href: "\/phone", label: "Calls"/);
     expect(navigation).toMatch(/href: "\/insights", label: "Insights"/);
@@ -31,7 +31,7 @@ describe("authenticated Bot navigation contract", () => {
     expect(navigation).toContain('route: "/approvals", parentHref: "/inbox"');
     expect(navigation).toContain('route: "/apps", parentHref: "/settings"');
     expect(shell).toContain("desktopNavParentHref(navPathname)");
-    expect(shell).toContain('navLabel: "Workspace"');
+    expect(shell).toContain('navLabel: "Work"');
     expect(shell).toContain("MobileNavMoreSheet");
     expect(shell).toContain("WorkspaceResizablePanel");
   });
