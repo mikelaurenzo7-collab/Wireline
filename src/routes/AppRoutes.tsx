@@ -11,6 +11,9 @@ const AgentStudioHome = lazy(() =>
   import("../pages/AgentStudioHome").then((module) => withVisualQaPage(module, "studio")),
 );
 const BrowserHandoffBridge = lazy(() => import("../pages/BrowserHandoffBridge"));
+const BotsPage = lazy(() =>
+  import("../pages/BotsPage").then((module) => withVisualQaPage(module, "bots")),
+);
 const SettingsPage = lazy(() =>
   import("../pages/SettingsPage").then((module) => withVisualQaPage(module, "settings", "account")),
 );
@@ -166,19 +169,20 @@ export default function AppRoutes() {
       <RouteChangeA11y announce={false} />
       <Routes>
         <Route path="/" element={<Navigate to="/studio" replace />} />
-        {/* Overview is retired as a separate command center. Studio is home. */}
+        {/* One Work surface remains at /studio for stable links and integrations. */}
         <Route path="/overview" element={<ToStudioRedirect />} />
 
         <Route path="/studio/handoff" element={<BrowserHandoffBridge />} />
         {/* Historical deep links land in Studio; Live Video is not an active product surface. */}
         <Route path="/studio/live-video" element={<Navigate to="/studio" replace />} />
         <Route path="/studio" element={<AgentStudioHome />} />
+        <Route path="/bots" element={<BotsPage />} />
         <Route path="/studio/*" element={<AgentStudioHome />} />
         <Route path="/agents" element={<ToStudioRedirect />} />
         <Route path="/voice" element={<VoiceToStudioRedirect />} />
         <Route path="/voices" element={<VoiceToStudioRedirect />} />
         <Route path="/voice-clone" element={<VoiceToStudioRedirect clone />} />
-        {/* The Workspace's canonical route stays /studio so saved links keep working. */}
+        {/* Legacy workspace links still resolve to Work without losing filters. */}
         <Route path="/workspace" element={<ToStudioRedirect />} />
         <Route path="/templates" element={<TemplatesPage />} />
         <Route path="/knowledge" element={<KnowledgePage />} />
