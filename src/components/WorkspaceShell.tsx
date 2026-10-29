@@ -33,7 +33,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/s
 // visible BotBound rebrand so existing installs and saved UI state do not reset.
 const WORKSPACE_RAIL_STORAGE_KEY = "wireline:workspace-rail:v1";
 
-// Customer-language contract: singular: "Bot"; navLabel: "Workspace".
+// Bot is a durable resource; Work is its task and browser execution surface.
 
 function userInitial(name?: string | null, email?: string | null) {
   const source = (name || email || "B").trim();
@@ -223,8 +223,8 @@ function DesktopRail({
         className="wl-shell-rail hidden h-full w-full min-w-0 flex-col lg:flex"
       >
         <div className="wl-shell-brand-row">
-          <RailHint label="BotBound Workspace" enabled={collapsed}>
-            <Link to="/studio" aria-label="BotBound Workspace" className="wl-shell-brand-link">
+          <RailHint label="BotBound Work" enabled={collapsed}>
+            <Link to="/studio" aria-label="BotBound Work" className="wl-shell-brand-link">
               <span className="wl-shell-brand-mark">
                 <BotBoundMark className="size-8" />
               </span>
