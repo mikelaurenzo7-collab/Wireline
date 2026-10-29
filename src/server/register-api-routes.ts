@@ -83,6 +83,7 @@ import mobileRouter from "../routes/mobile-routes";
 import activationRouter from "../routes/activation-routes";
 import outboundDialAtomicRouter from "../routes/outbound-dial-atomic-routes";
 import outboundRouter from "../routes/outbound-routes";
+import leadHunterRouter from "../routes/lead-hunter-routes";
 import cadenceRouter from "../routes/cadence-routes";
 import campaignRouter from "../routes/campaign-routes";
 import complianceRouter from "../routes/compliance-routes";
@@ -211,6 +212,7 @@ export function registerApiRoutes(app: Express): void {
 
   app.use(outboundDialAtomicRouter);
   app.use(outboundRouter);
+  app.use(leadHunterRouter);
 
   app.use("/api/qa", qaV2Router);
   app.use(cadenceRouter);
