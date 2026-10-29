@@ -408,6 +408,12 @@ export function mergeSignupIntent(
     ...next,
     capturedAt: next.capturedAt,
   };
+  // An explicit usage selection replaces the previous commercial choice.
+  // Only add-ons actually present on the new link may carry a charge.
+  if (next.preferredPlanId === "usage") {
+    if (!next.preferredUsageTier) delete merged.preferredUsageTier;
+    if (!next.preferredUsageAddons) delete merged.preferredUsageAddons;
+  }
   // A new solution selection replaces an earlier role choice, while an
   // explicit role on the same link still takes precedence over that solution.
   if (next.signupWedge && !next.preferredTemplateId) delete merged.preferredTemplateId;
@@ -417,6 +423,26 @@ export function mergeSignupIntent(
 export function captureSignupIntentFromLocation(): SignupIntent | null {
   if (typeof window === "undefined") return null;
   const fromUrl = parseSignupIntent(window.location.search);
+  const isSignup = window.location.pathname === "/signup" || window.location.pathname === "/signup/";
+  if (isSignup && !fromUrl?.preferredPlanId) {
+    // A new, unqualified signup starts at Starter. Keep the visitor's use case
+    // and campaign, but do not carry an earlier tier or paid add-ons into it.
+    const context = mergeSignupIntent(getStoredSignupIntent(), fromUrl);
+    const {
+      preferredPlanId: _plan,
+      preferredUsageTier: _tier,
+      preferredUsageAddons: _addons,
+      preferredBillingInterval: _interval,
+      ...attribution
+    } = context || { capturedAt: new Date().toISOString() };
+    return persistSignupIntent({
+      ...attribution,
+      preferredPlanId: "usage",
+      preferredUsageTier: DEFAULT_PUBLIC_USAGE_TIER,
+      preferredBillingInterval: "month",
+      capturedAt: new Date().toISOString(),
+    });
+  }
   if (fromUrl) {
     // Explicit plan CTAs (including generic Start free -> Free Builder) are
     // selection overrides, not attribution resets. Preserve the wedge, billing
@@ -430,14 +456,6 @@ export function captureSignupIntentFromLocation(): SignupIntent | null {
   }
   const stored = getStoredSignupIntent();
   if (stored) return stored;
-  if (window.location.pathname === "/signup" || window.location.pathname === "/signup/") {
-    return persistSignupIntent({
-      preferredPlanId: "usage",
-      preferredUsageTier: DEFAULT_PUBLIC_USAGE_TIER,
-      preferredBillingInterval: "month",
-      capturedAt: new Date().toISOString(),
-    });
-  }
   return null;
 }
 
