@@ -54,7 +54,7 @@ export default function BotDetailsMenu({
           align="start"
           sideOffset={7}
           collisionPadding={12}
-          className="z-[100] w-[min(21.5rem,calc(100vw-1.5rem))] rounded-xl border border-border bg-popover p-2 text-popover-foreground shadow-[var(--wireline-elevation-lg)] outline-none"
+          className="z-[100] max-h-[min(85dvh,36rem)] w-[min(21.5rem,calc(100vw-1.5rem))] overflow-y-auto rounded-xl border border-border bg-popover p-2 text-popover-foreground shadow-[var(--wireline-elevation-lg)] outline-none"
           aria-label="Bot details and tools"
         >
           <div className="px-2 pb-3 pt-2">
