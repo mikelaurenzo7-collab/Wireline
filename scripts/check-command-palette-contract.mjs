@@ -101,8 +101,8 @@ forbidPattern(
 requirePattern(
   "src/components/CommandBar.tsx",
   commandBar,
-  /label: "Workspace"[\s\S]*href: "\/studio"/,
-  "must expose the Workspace as home",
+  /label: "Work"[\s\S]*href: "\/studio"/,
+  "must expose Work as home",
 );
 requirePattern(
   "src/components/CommandBar.tsx",
