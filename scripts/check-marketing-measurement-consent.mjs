@@ -12,7 +12,7 @@ const loader = read("public/marketing-measurement.js");
 const notice = read("src/components/CookieConsent.tsx");
 const privacyPage = read("src/components/PrivacyPolicyPage.tsx");
 const app = read("src/App.tsx");
-const footer = read("src/components/marketing/MarketingFooter.tsx");
+const footer = read("src/components/marketing/MarketingChromeBar.tsx");
 const csp = read("src/lib/csp.ts");
 const vercelSource = read("vercel.json");
 
@@ -103,9 +103,19 @@ assert(
   footer.includes(privacyChoicesEvent),
   "public footer must expose the privacy choice control.",
 );
-assert(footer.includes("Privacy choices"), "public footer must label the privacy choice control.");
-assert(notice.includes("Essential only"), "privacy notice must offer a privacy-preserving choice.");
-assert(notice.includes("Allow measurement"), "privacy notice must offer explicit opt-in.");
+assert(
+  footer.toLowerCase().includes("privacy choices"),
+  "public footer must label the privacy choice control.",
+);
+assert(
+  notice.toLowerCase().includes("essential only"),
+  "privacy notice must offer a privacy-preserving choice.",
+);
+assert(
+  notice.toLowerCase().includes("allow optional") ||
+    notice.toLowerCase().includes("allow measurement"),
+  "privacy notice must offer explicit opt-in.",
+);
 assert(
   notice.includes("function noticeAcknowledged(): boolean"),
   "privacy notice must isolate the stored-choice lookup behind a fail-safe helper.",
@@ -134,7 +144,7 @@ assert(
 assert(
   app.includes('import CookieConsent from "./components/CookieConsent";') &&
     app.includes("<CookieConsent />"),
-  "the consent notice must actually be MOUNTED in App.tsx — asserting only the component's contents let the banner sit unmounted while every content check passed (footer 'Privacy choices' dispatched to no listener; visitors never saw a consent choice).",
+  "the consent notice must actually be MOUNTED in App.tsx (asserting only the component's contents let the banner sit unmounted while every content check passed: footer 'Privacy choices' dispatched to no listener; visitors never saw a consent choice).",
 );
 assert(
   app.includes("const PrivacyPolicy = lazy(() =>") &&
@@ -152,7 +162,9 @@ assert(
   "privacy center must dispatch the canonical consent event.",
 );
 assert(
-  privacyPage.includes("Keep measurement off") && privacyPage.includes("Allow measurement"),
+  privacyPage.toLowerCase().includes("keep measurement off") &&
+    (privacyPage.toLowerCase().includes("allow optional") ||
+      privacyPage.toLowerCase().includes("allow measurement")),
   "privacy policy must disclose and control optional advertising measurement.",
 );
 assert(

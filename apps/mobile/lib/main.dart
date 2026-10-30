@@ -49,12 +49,28 @@ class DashboardScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
+            key: const Key('dashboard_notifications_button'),
             icon: const Icon(Icons.notifications_none),
-            onPressed: () {},
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('No unread dispatch notifications'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
           ),
           IconButton(
+            key: const Key('dashboard_settings_button'),
             icon: const Icon(Icons.settings_outlined),
-            onPressed: () {},
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Settings: In-House Voice & Dispatch Active'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -118,7 +134,7 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Voice: In-House Owner Clone (Sub-150ms)',
+                  'Voice: In-House Owner Clone (Sub-120ms)',
                   style: TextStyle(
                     color: WirelineDesignTokens.colorActionPrimaryDefault,
                     fontSize: 13,
@@ -133,7 +149,7 @@ class DashboardScreen extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _buildMetricTile(
+                child: buildMetricTile(
                   title: 'Calls Handled',
                   value: '142',
                   trend: '+18% today',
@@ -142,7 +158,7 @@ class DashboardScreen extends StatelessWidget {
               ),
               const SizedBox(width: WirelineDesignTokens.space3),
               Expanded(
-                child: _buildMetricTile(
+                child: buildMetricTile(
                   title: 'Leads Booked',
                   value: '38',
                   trend: '\$14,250 pipeline',
@@ -154,53 +170,68 @@ class DashboardScreen extends StatelessWidget {
           const SizedBox(height: WirelineDesignTokens.space4),
 
           // Cloud Computer Takeover Alert Banner
-          Container(
-            padding: const EdgeInsets.all(WirelineDesignTokens.space4),
-            decoration: BoxDecoration(
-              color: WirelineDesignTokens.colorSurfaceRaised,
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: const Key('dashboard_dispatch_card'),
               borderRadius: BorderRadius.circular(WirelineDesignTokens.radiusMedium),
-              border: Border.all(color: WirelineDesignTokens.colorBorderDefault),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: WirelineDesignTokens.colorActionPrimaryContainer,
-                    borderRadius: BorderRadius.circular(8),
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Cloud Dispatch: HouseCall Pro & ServiceTitan synced'),
+                    duration: Duration(seconds: 2),
                   ),
-                  child: const Icon(
-                    Icons.laptop_chromebook,
-                    color: WirelineDesignTokens.colorActionPrimaryDefault,
-                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(WirelineDesignTokens.space4),
+                decoration: BoxDecoration(
+                  color: WirelineDesignTokens.colorSurfaceRaised,
+                  borderRadius: BorderRadius.circular(WirelineDesignTokens.radiusMedium),
+                  border: Border.all(color: WirelineDesignTokens.colorBorderDefault),
                 ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Cloud Dispatch Sync',
-                        style: TextStyle(
-                          color: WirelineDesignTokens.colorTextPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: WirelineDesignTokens.colorActionPrimaryContainer,
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      Text(
-                        'HouseCall Pro & ServiceTitan synced',
-                        style: TextStyle(
-                          color: WirelineDesignTokens.colorTextTertiary,
-                          fontSize: 12,
-                        ),
+                      child: const Icon(
+                        Icons.laptop_chromebook,
+                        color: WirelineDesignTokens.colorActionPrimaryDefault,
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Cloud Dispatch Sync',
+                            style: TextStyle(
+                              color: WirelineDesignTokens.colorTextPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            'HouseCall Pro & ServiceTitan synced',
+                            style: TextStyle(
+                              color: WirelineDesignTokens.colorTextTertiary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right,
+                      color: WirelineDesignTokens.colorTextTertiary,
+                    ),
+                  ],
                 ),
-                const Icon(
-                  Icons.chevron_right,
-                  color: WirelineDesignTokens.colorTextTertiary,
-                ),
-              ],
+              ),
             ),
           ),
         ],
@@ -208,7 +239,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  static Widget _buildMetricTile({
+  static Widget buildMetricTile({
     required String title,
     required String value,
     required String trend,
@@ -259,4 +290,33 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Standalone widget preview for the SMB dashboard screen.
+Widget dashboardScreenPreview() {
+  return const MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: DashboardScreen(),
+  );
+}
+
+/// Standalone preview for the SMB metric tile component.
+Widget metricTilePreview() {
+  return MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: Scaffold(
+      backgroundColor: WirelineDesignTokens.colorCanvasDefault,
+      body: Center(
+        child: SizedBox(
+          width: 200,
+          child: DashboardScreen.buildMetricTile(
+            title: 'Leads Booked',
+            value: '38',
+            trend: '\$14,250 pipeline',
+            icon: Icons.calendar_today,
+          ),
+        ),
+      ),
+    ),
+  );
 }

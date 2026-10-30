@@ -5,6 +5,7 @@
 
 .wl-bot-mark {
   border-radius: 6px;
+  --wl-bot-mark-tint: var(--wireline-color-action-primary-default, #a78bfa);
 }
 
 .wl-bot-mark__core {

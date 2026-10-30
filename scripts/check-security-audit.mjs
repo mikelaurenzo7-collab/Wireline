@@ -32,7 +32,15 @@ import { requestOsvAdvisories } from "./lib/osv-audit.mjs";
  * silently pre-approved any FUTURE advisory that happened to reuse the id.
  * An acceptance that no longer names a live risk is a hole, not a note.
  */
-const ACCEPTED = [];
+const ACCEPTED = [
+  {
+    id: "GHSA-MRHX-C7XC-M3W5",
+    reason:
+      "@browserbasehq/stagehand bundles nested zod@4.4.3 internally for server-side cloud computer tool-schema extraction; unreachable by untrusted public user inputs with unbounded collections (root project uses zod@4.6.6).",
+    retireWhen:
+      "@browserbasehq/stagehand upgrades its internal zod dependency to >=4.6.6 or replaces it.",
+  },
+];
 
 for (const entry of ACCEPTED) {
   if (!entry?.id || !entry?.reason || !entry?.retireWhen) {

@@ -350,13 +350,13 @@
   transform-box: fill-box;
   transform-origin: center;
   animation: wire-signal-bar 2.8s ease-in-out infinite;
-  animation-delay: calc(var(--wire-bar-index) * -0.09s);
+  animation-delay: calc(var(--wire-bar-index, 0) * -0.09s);
   opacity: 0.55;
 }
 
 .wire-signal-art__node {
   animation: wire-signal-node 2.8s ease-in-out infinite;
-  animation-delay: calc(var(--wire-bar-index) * 0.18s);
+  animation-delay: calc(var(--wire-bar-index, 0) * 0.18s);
   opacity: 0.5;
 }
 
