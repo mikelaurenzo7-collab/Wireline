@@ -116,7 +116,7 @@ describe("Challenger 3 — Empirical Pipeline Invariant Tests", () => {
 
     it("keeps the retired public status in the exact authorization allowlist", () => {
       const generator = fs.readFileSync(path.join(ROOT, "scripts/generate-authz-matrix.ts"), "utf8");
-      expect(generator).toContain("status$/");
+      expect(generator).toContain(String.raw`pattern: /^\/api\/voice\/live\/gemini\/status$/`);
       expect(generator).toContain("Retired Gemini voice status tombstone (410)");
     });
   });
