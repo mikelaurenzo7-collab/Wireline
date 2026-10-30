@@ -171,8 +171,11 @@ describe("signup intent contract", () => {
       parseSignupIntent("?plan=free&template=not-a-template")?.preferredTemplateId,
     ).toBeUndefined();
 
-    const access = read("src/components/auth/AuthAccessPanel.tsx");
-    expect(access).toContain("signupTemplateLabel(intent.preferredTemplateId)");
+    // P-4: signup no longer displays the template pill. The choice survives
+    // signup via stored intent into the post-auth redirect to bot creation.
+    const redirect = read("src/lib/auth-redirect.ts");
+    expect(redirect).toContain("currentIntent?.preferredTemplateId ||");
+    expect(redirect).toContain("`/studio?create=1&template=${encodeURIComponent(template)}`");
   });
 
   it("never emits legacy audience-shaped plan ids from public conversion surfaces", () => {
@@ -203,8 +206,10 @@ describe("signup intent contract", () => {
     );
 
     const access = read("src/components/auth/AuthAccessPanel.tsx");
-    expect(access).toContain("plan.price_usd_annual");
-    expect(access).toContain("candidate.public !== false");
+    // P-4: signup shows no plan prices; the annual choice is still recorded
+    // through signup to server attribution via the submit payload.
+    expect(access).not.toContain("plan.price_usd_annual");
+    expect(access).not.toContain("plan.price_usd_monthly");
     expect(access).toContain("preferredBillingInterval: effectiveIntent.preferredBillingInterval");
     expect(access).toContain("billing_interval: effectiveIntent?.preferredBillingInterval ?? null");
 

@@ -97,26 +97,9 @@
   line-height: 1.5;
 }
 
-.wl-access-panel__heading:has(.wl-access-panel__welcome, .wl-access-panel__intent) {
-  margin-bottom: 1rem;
-}
-
 .wl-access-panel__heading:has(.wl-access-panel__welcome) {
+  margin-bottom: 1rem;
   text-align: left;
-}
-
-.wl-access-panel__welcome + .wl-access-panel__intent {
-  margin-top: 0;
-}
-
-.wl-access-panel__intent {
-  display: inline-flex;
-  margin-top: 0.8rem;
-  padding: 0.35rem 0.65rem;
-  border: 1px solid var(--wireline-color-border-default);
-  border-radius: 999px;
-  color: var(--wireline-color-text-secondary);
-  font-size: 0.75rem;
 }
 
 .wl-access-panel__tabs {

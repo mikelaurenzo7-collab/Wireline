@@ -96,9 +96,13 @@ describe("current-state UI contract", () => {
     expect(hero).toContain("marketing-hero__actions");
     expect(authPortal).toContain('location.pathname.startsWith("/signup/")');
     expect(authPortal).toContain("AuthAccessPanel");
-    expect(authAccess).toContain("STRIPE_PLANS.find");
-    expect(authAccess).toContain("plan.price_usd_annual");
-    expect(authAccess).toContain("plan.price_usd_monthly");
+    // Car 1 (P-4): the panel no longer renders prices or resolves plan
+    // availability at signup; the explicit selection survives only as
+    // sanitized attribution intent, preselected at go-live activation.
+    expect(authAccess).not.toContain("STRIPE_PLANS.find");
+    expect(authAccess).not.toContain("plan.price_usd_annual");
+    expect(authAccess).not.toContain("plan.price_usd_monthly");
+    expect(authAccess).toContain("sanitizeSignupIntent");
     expect(authAccess).toContain("preferredPlanId");
     expect(authAccess).not.toContain('starter: "Starter · $9/month"');
   });

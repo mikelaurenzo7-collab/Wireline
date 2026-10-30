@@ -17,12 +17,9 @@ import {
 } from "../../lib/auth-redirect";
 import {
   captureSignupIntentFromLocation,
-  persistSignupIntent,
   sanitizeSignupIntent,
-  signupTemplateLabel,
   syncSignupIntent,
   type SignupIntent,
-  type SignupPlanId,
 } from "../../lib/signup-intent";
 import { getPasswordPolicyError } from "../../lib/password-policy";
 import {
@@ -30,9 +27,6 @@ import {
   readEmailVerificationReturn,
 } from "../../lib/email-verification-return";
 import { clearFreshSignupSession, markFreshSignupSession } from "../../lib/post-signup-onboarding";
-import { STRIPE_PLANS, USAGE_PLAN } from "../../lib/plan-catalog";
-import { usageTier, publicUsageTierId, type UsageTierId } from "../../lib/usage-billing-catalog";
-import { getPlanDisplayLabel } from "../../lib/plan-display";
 import {
   captureDemoSourceFromLocation,
   readDemoSourceCookie,
@@ -48,7 +42,6 @@ import {
 import { StatusNotice } from "../molecules";
 import { Checkbox } from "../ui/shadcn/Checkbox";
 import { WirelineLockup } from "../brand/WirelineBrand";
-import { usePaidPlanAvailability } from "../../hooks/usePaidPlanAvailability";
 
 type AuthMode = "signin" | "signup" | "reset";
 type AuthField = "email" | "password";
@@ -112,64 +105,6 @@ function cleanThrownMessage(error: unknown): string | null {
   const message = raw.trim();
   if (!message || message === "[object Object]" || !isSafeErrorMessage(message)) return null;
   return message;
-}
-
-function publicSignupPlan(planId: SignupPlanId | null | undefined) {
-  if (planId === "usage") return USAGE_PLAN;
-  return planId
-    ? STRIPE_PLANS.find((candidate) => candidate.id === planId && candidate.public !== false)
-    : undefined;
-}
-
-function signupPlanLabel(
-  planId: SignupPlanId,
-  interval: SignupIntent["preferredBillingInterval"],
-  tier?: UsageTierId,
-): string | null {
-  // Retired plans stay valid in old links but are never shown as an ID.
-  const plan = publicSignupPlan(planId);
-  if (!plan) return null;
-  const name = getPlanDisplayLabel(plan);
-  if (plan.id === "usage")
-    return `${usageTier(publicUsageTierId(tier)).name} · $${usageTier(publicUsageTierId(tier)).monthlyUsd}/month plus usage`;
-  if (plan.price_usd_monthly === 0) return name;
-  return interval === "year"
-    ? `${name} · $${plan.price_usd_annual}/year`
-    : `${name} · $${plan.price_usd_monthly}/month`;
-}
-
-function signupIntentLabel(intent: SignupIntent | null): string | null {
-  if (!intent?.preferredPlanId && !intent?.preferredTemplateId && !intent?.signupWedge) return null;
-  const parts: string[] = [];
-  const planLabel = intent.preferredPlanId
-    ? signupPlanLabel(
-        intent.preferredPlanId,
-        intent.preferredBillingInterval,
-        intent.preferredUsageTier,
-      )
-    : null;
-  if (planLabel) parts.push(planLabel);
-  if (intent.preferredTemplateId) {
-    parts.push(signupTemplateLabel(intent.preferredTemplateId));
-  }
-  if (intent.signupWedge) {
-    parts.push(
-      intent.signupWedge
-        .split("-")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" "),
-    );
-  }
-  return parts.length ? parts.join(" · ") : null;
-}
-
-function defaultFreeIntent(current: SignupIntent | null): SignupIntent | null {
-  if (current) return current;
-  return persistSignupIntent({
-    preferredPlanId: "personal",
-    preferredBillingInterval: "month",
-    capturedAt: new Date().toISOString(),
-  });
 }
 
 const PROVIDERS: Array<{
@@ -282,38 +217,6 @@ export default function AuthAccessPanel({
 
   const isSignUp = mode === "signup";
   const isReset = mode === "reset";
-  const intentLabel = signupIntentLabel(signupIntent);
-  const paidSignupPlan =
-    signupIntent?.preferredPlanId && publicSignupPlan(signupIntent.preferredPlanId)
-      ? signupIntent.preferredPlanId
-      : undefined;
-  const {
-    notice,
-    billingModel,
-    status: planStatus,
-  } = usePaidPlanAvailability({
-    enabled: isSignUp && Boolean(paidSignupPlan),
-    interval: signupIntent?.preferredBillingInterval === "year" ? "year" : "month",
-    planId: paidSignupPlan,
-  });
-  useEffect(() => {
-    if (
-      !isSignUp ||
-      !signupIntent ||
-      billingModel !== "usage" ||
-      !paidSignupPlan ||
-      paidSignupPlan === "usage"
-    )
-      return;
-    // A returning visitor can carry a retired offer in browser storage or an old link.
-    // Keep their use case while moving unpaid signup intent to the current offer.
-    const currentOffer = persistSignupIntent({
-      ...signupIntent,
-      preferredPlanId: "usage",
-      preferredBillingInterval: "month",
-    });
-    setSignupIntent(currentOffer);
-  }, [isSignUp, billingModel, paidSignupPlan, signupIntent]);
   const oauthProviders = availableProviders
     ? PROVIDERS.filter((provider) => availableProviders[provider.id] === true)
     : [];
@@ -385,9 +288,6 @@ export default function AuthAccessPanel({
     setError(null);
     setMessage(null);
     setInvalidField(null);
-    if (next === "signup") {
-      setSignupIntent((current) => defaultFreeIntent(current));
-    }
     if (!embedded && next !== "reset") {
       const nextPath = next === "signup" ? "/signup" : "/signin";
       if (location.pathname !== nextPath) navigate(`${nextPath}${location.search}`);
@@ -507,7 +407,7 @@ export default function AuthAccessPanel({
       }
 
       const effectiveIntent = isSignUp
-        ? defaultFreeIntent(sanitizeSignupIntent(signupIntent))
+        ? sanitizeSignupIntent(signupIntent)
         : null;
       if (isSignUp && effectiveIntent !== signupIntent) setSignupIntent(effectiveIntent);
       const demoSource = isSignUp ? readDemoSourceCookie() : null;
@@ -643,18 +543,6 @@ export default function AuthAccessPanel({
             </div>
           ) : null}
           {isReset ? <p>We’ll send a secure reset link.</p> : null}
-          {isSignUp && intentLabel && (!paidSignupPlan || planStatus === "ready") ? (
-            <span className="wl-access-panel__intent">
-              {intentLabel}
-              {signupIntent?.preferredPlanId ? (
-                <>
-                  {" · "}
-                  <Link to="/pricing">Change plan</Link>
-                </>
-              ) : null}
-            </span>
-          ) : null}
-          {isSignUp && paidSignupPlan ? <p role="status">{notice}</p> : null}
         </header>
 
         {!isReset ? (
