@@ -293,7 +293,17 @@ describe("Studio settings-to-Test handoff", () => {
   it("rehearses in the conversation on wide layout without a panel tab", () => {
     h.wide = true;
     h.params = new URLSearchParams("agent=bot-a&section=setup");
-    requestTest();
+    // On wide layouts the inspector lives inside the resizable panel's
+    // render-prop children, so reach the setup panel through it (same
+    // pattern as the bookmark-restoration test below).
+    const panel = render().find((node) => node.type === "resizable-panel")!;
+    const content = panel.props.children as unknown as (state: {
+      collapsed: boolean;
+    }) => ReactNode;
+    const setup = elements(content({ collapsed: false })).find(
+      (node) => node.type === "setup-panel",
+    )!;
+    setup.props.onRehearseVoiceInChat!();
     const workroom = render().find((node) => node.type === "workroom")!;
     expect(workroom.props.mode).toBe("test");
     expect(h.params.has("section")).toBe(false);
