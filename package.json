@@ -48,7 +48,6 @@
     "runtime:policy:check": "node scripts/check-runtime-policy.mjs",
     "stripe:setup": "node scripts/setup-stripe-catalog.mjs",
     "stripe:audit-live": "node scripts/run-stripe-audit-live.mjs",
-    "stripe:audit-legacy-vercel": "node scripts/run-stripe-audit-from-vercel.mjs",
     "stripe:deactivate-retired-defaults": "node scripts/run-stripe-deactivate-retired-defaults.mjs",
     "stripe:deactivate-stale-launch": "node scripts/deactivate-stale-launch-prices.mjs",
     "stripe:verify-vercel-parity": "node scripts/verify-stripe-vercel-parity.mjs",
