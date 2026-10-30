@@ -40,7 +40,7 @@ export const LIVE_VOICE_DELETED_REASONS = [
   "retention_expired",
   "create_failed",
 ] as const;
-export const LIVE_VOICE_PROVIDERS = ["xai", "elevenlabs"] as const;
+export const LIVE_VOICE_PROVIDERS = ["xai", "elevenlabs", "inhouse"] as const;
 export type LiveVoiceProvider = (typeof LIVE_VOICE_PROVIDERS)[number];
 export type LiveVoiceDeletedReason = (typeof LIVE_VOICE_DELETED_REASONS)[number];
 
@@ -97,7 +97,7 @@ export const liveVoices = pgTable(
     ),
     providerCheck: check(
       "wireline_live_voices_provider_check",
-      sql`${table.provider} IN ('xai', 'elevenlabs')`,
+      sql`${table.provider} IN ('xai', 'elevenlabs', 'inhouse')`,
     ),
     voiceIdCheck: check(
       "wireline_live_voices_voice_id_check",

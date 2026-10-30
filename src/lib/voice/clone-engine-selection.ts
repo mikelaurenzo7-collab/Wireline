@@ -131,7 +131,7 @@ export function resolvePreferredCloneEngine(
   env: NodeJS.ProcessEnv = process.env,
 ): CloneEngineId | null {
   const raw = String(env.VOICE_CLONE_ENGINE_DEFAULT || "").trim();
-  return raw === "xai" || raw === "elevenlabs" ? raw : null;
+  return raw === "inhouse" || raw === "xai" || raw === "elevenlabs" ? raw : null;
 }
 
 /** Errors that mean "this engine can't take the voice right now": try the next one. */
@@ -147,7 +147,8 @@ export type CloneEngineSelectionInput = {
   jurisdiction: SpeakerJurisdiction;
   xai: { configured: boolean; entitled: boolean; teamVoicesUsed: number; teamLimit: number };
   elevenlabs: { configured: boolean };
-  /** Unused by user-clone selection. Kept so older callers can still pass it. */
+  inhouse?: { configured: boolean };
+  /** Preferred clone engine, such as "inhouse" for self-sufficient local voice cloning. */
   preferred?: CloneEngineId | null;
 };
 
@@ -156,6 +157,8 @@ export type CloneEngineSelection =
   | { engine: null; reason: CloneSelectionReason; writtenReleaseRequired: boolean };
 
 export type CloneSelectionReason =
+  | "inhouse"
+  | "inhouse_preferred"
   | "elevenlabs"
   | "xai_eligible"
   | "operator_preferred_elevenlabs"
@@ -166,13 +169,16 @@ export type CloneSelectionReason =
   | "no_engine_available";
 
 /**
- * One clone path. ElevenLabs creates the voice. xAI still speaks stock phone
- * calls; it is not a second clone vendor. Illinois consent rules still apply.
+ * Primary clone path. In-house engine or ElevenLabs creates the voice.
+ * Illinois consent rules still apply universally.
  */
 export function selectCloneEngine(input: CloneEngineSelectionInput): CloneEngineSelection {
   const writtenReleaseRequired = requiresWrittenBiometricRelease(input.jurisdiction);
+  if (input.preferred === "inhouse" || (!input.elevenlabs.configured && !input.xai.configured)) {
+    return { engine: "inhouse", reason: "inhouse_preferred", writtenReleaseRequired };
+  }
   if (!input.elevenlabs.configured)
-    return { engine: null, reason: "no_engine_available", writtenReleaseRequired };
+    return { engine: "inhouse", reason: "inhouse", writtenReleaseRequired };
   return { engine: "elevenlabs", reason: "elevenlabs", writtenReleaseRequired };
 }
 
@@ -210,9 +216,10 @@ export function parseSignedLegalName(value: unknown): string | null {
   return name.includes(" ") ? name : null;
 }
 
-/** The only engine a new clone may use. There is no second vendor to fall through to. */
+/** The candidates a new clone may use. Returns inhouse or elevenlabs based on configuration. */
 export function cloneEngineCandidates(input: CloneEngineSelectionInput): CloneEngineId[] {
-  return selectCloneEngine(input).engine === "elevenlabs" ? ["elevenlabs"] : [];
+  const selected = selectCloneEngine(input).engine;
+  return selected ? [selected] : [];
 }
 
 /** Plain-language destruction schedule shown with the written release. */

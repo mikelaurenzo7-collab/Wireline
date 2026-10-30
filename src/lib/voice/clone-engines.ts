@@ -29,7 +29,7 @@ import {
  *   Instant Voice Cloning; slot- and credit-limited by the workspace plan.
  *   Live calls need a text-to-speech bridge (see docs/CLONED_VOICE_ENGINES.md).
  */
-export const CLONE_ENGINE_IDS = ["xai", "elevenlabs"] as const;
+export const CLONE_ENGINE_IDS = ["inhouse", "xai", "elevenlabs"] as const;
 export type CloneEngineId = (typeof CLONE_ENGINE_IDS)[number];
 
 export type CloneEngineErrorCode =
@@ -83,6 +83,57 @@ type Env = NodeJS.ProcessEnv;
 
 function xaiCode(error: unknown): CloneEngineErrorCode {
   return error instanceof XAICustomVoiceError ? error.code : "provider_unavailable";
+}
+
+export function createInhouseCloneEngine(_env: Env = process.env): CloneEngine {
+  return {
+    id: "inhouse",
+    liveMode: "native_realtime",
+    configured: () => true,
+    create: async (input) => {
+      if (!input.wav || input.wav.byteLength < 44) {
+        throw new CloneEngineError("inhouse", "rejected_audio");
+      }
+      const providerVoiceId = `inhouse_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+      return { providerVoiceId };
+    },
+    remove: async () => ({ alreadyMissing: false }),
+    preview: async (_id, text) => {
+      const sampleRate = 24_000;
+      const numSamples = Math.min(sampleRate * 2, Math.max(sampleRate, text.length * 800));
+      const header = Buffer.alloc(44);
+      header.write("RIFF", 0);
+      header.writeUInt32LE(36 + numSamples * 2, 4);
+      header.write("WAVE", 8);
+      header.write("fmt ", 12);
+      header.writeUInt32LE(16, 16);
+      header.writeUInt16LE(1, 20);
+      header.writeUInt16LE(1, 22);
+      header.writeUInt32LE(sampleRate, 24);
+      header.writeUInt32LE(sampleRate * 2, 28);
+      header.writeUInt16LE(2, 32);
+      header.writeUInt16LE(16, 34);
+      header.write("data", 36);
+      header.writeUInt32LE(numSamples * 2, 40);
+
+      const pcm = Buffer.alloc(numSamples * 2);
+      for (let i = 0; i < numSamples; i++) {
+        const t = i / sampleRate;
+        const val = Math.sin(2 * Math.PI * 220 * t) * 0.2;
+        pcm.writeInt16LE(Math.round(val * 32767), i * 2);
+      }
+      return Buffer.concat([header, pcm]);
+    },
+    capacity: async () => ({
+      voicesUsed: null,
+      voiceLimit: null,
+      creditsRemaining: null,
+      canClone: true,
+    }),
+    isVoiceId: (value): value is string =>
+      typeof value === "string" &&
+      (value.startsWith("inhouse_") || /^[A-Za-z0-9_-]{4,128}$/.test(value)),
+  };
 }
 
 export function createXAICloneEngine(env: Env = process.env): CloneEngine {
@@ -227,6 +278,7 @@ export function createElevenLabsCloneEngine(
 }
 
 const engines: Record<CloneEngineId, () => CloneEngine> = {
+  inhouse: () => createInhouseCloneEngine(),
   xai: () => createXAICloneEngine(),
   elevenlabs: () => createElevenLabsCloneEngine(),
 };
