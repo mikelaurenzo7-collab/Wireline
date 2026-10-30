@@ -11,6 +11,14 @@
 - The live privacy notice obscured content on home, pricing and features (both widths). This is a known cross-theme layout issue; the existing unmerged spring-cleaning PR #1444 contains a separate narrow-screen notice layout change. Do not merge overlapping privacy fixes without coordinated preview review.
 - Desktop pricing Plus action was displaced about 20px lower by a wrapping included-identities line. The plan card now stretches the descriptive button area to align the plan details and CTA row.
 
+## High-contrast true-white update
+
+- The previous light canvas `#F7F7F3` was warm beige while card surfaces were `#FFFFFF`; this produced visible inconsistent cream/white blocks. **The canonical light canvas and primary cards now both use `#FFFFFF`**, with `#F8F9FA` subtle surfaces, `#F3F4F6` neutral containers and `#E8EBEF` stronger surfaces. No beige canvas remains in the runtime light palette.
+- Primary ink is `#171717`; secondary labels and status inks have increased contrast. Light secondary action hover/pressed colors were darkened and strong borders moved to `#7C8590`. The light-only authentication field boundary uses the strong border while preserving its violet focus rule.
+- `index.html`, the initial no-JavaScript app shell, `ThemeContext` metadata, PWA manifest, design vision, UI contracts and current design guidance use the same white canvas. Existing dark-mode canvas and all user preferences are preserved.
+- A source-level computation across eight normal text/status roles on canvas, cards, strong gray and violet containers found a minimum **5.31:1 in light** and **4.94:1 in dark**. Strong light outlines measure **3.74:1 against white** and **3.13:1 against strong gray**. Secondary action default/hover/pressed states also met 4.5:1. These are color-token calculations rather than rendered contrast audits.
+- An authorized read-only login attempt to inspect the authenticated workspace was rejected by the production sign-in as invalid credentials. The attempt was stopped, no account content was accessed, and no credentials were written to the repository. Authenticated screenshots remain blocked pending working sign-in.
+
 ## Corrections in this branch
 
 1. Light-theme secondary ink and success/warning/error/neutral status inks were deepened so normal-sized labels can remain readable on stronger and violet-tinted surfaces. Status hue roles were preserved.
