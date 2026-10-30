@@ -12,7 +12,9 @@
 5. Set explicit POST methods on authentication, password reset, contact, and support forms. React handlers are unchanged; native browser fallback can no longer transmit entered fields in a GET URL. Added regression assertions.
 6. Reclassified the prior root launch score and sign-off as a historical claim, not approval of any later deployed revision.
 
-7. Retired the legacy Gemini HTTP session/tool/status handlers to explicit nonbillable HTTP 410 tombstones; POSTs retain authentication. Unmounted the historical Gemini media WebSocket bridge from the voice worker because it trusted tenant identifiers in a client-provided start frame without authenticated admission. Did not remove the current voice rehearsal or SIP paths.
+7. Retired the legacy Gemini HTTP session/tool/status handlers to explicit nonbillable HTTP 410 tombstones; POSTs retain authentication. Unmounted the historical Gemini media WebSocket bridge from the voice worker because it trusted tenant identifiers in a client-provided start frame without authenticated admission. Did not remove the current voice rehearsal or SIP paths. Removed the now-unreferenced Gemini media bridge and service implementation files from the PR branch; the lower-level live-client module remains because existing tests and compatibility types still import it.
+
+8. Moved the first-visit cookie/privacy notice into normal document flow on narrow screens while retaining a floating panel when choices are explicitly reopened. Corrected stale iPhone source-contract expectations. This requires preview-browser screenshot verification before merging.
 
 ## Independently observed, not modified
 
@@ -26,11 +28,11 @@
 
 ## Work intentionally deferred
 
-- Gemini legacy HTTP status/session/tool entry points and the unauthenticated Gemini media WebSocket mount are now retired in this **unmerged** branch. The legacy service source remains temporarily for history and rollback; do not assume the change is deployed. Verify voice-worker upgrade behavior and any external callback dependencies before merging.
+- Gemini legacy HTTP status/session/tool entry points and the unauthenticated Gemini media WebSocket mount are now retired in this **unmerged** branch. The deleted legacy source remains recoverable from Git history; do not assume the change is deployed. Verify voice-worker upgrade behavior and any external callback dependencies before merging.
 - Vercel names remain in deployment, compatibility, and tests. Remove only after the explicitly documented rollback path is retired.
 - Voice clones have separate feature gates, consent, provider retention, and legacy references. Preserve saved records and historical billing while feature rollout is paused.
 - Cloud Computer records use bounded browser sessions and provider-specific spend reservations. Reconcile actual remote-browser provider usage before changing accounting constants.
-- The mobile consent overlap requires visual QA on iOS and small Android sizes, including a reachable consent choice and unobscured pricing CTAs.
+- The mobile consent overlap has an **unmerged source fix**: first-visit notice now mounts before the app in normal mobile page flow; explicitly reopened choices still float. Verify at 320/375/390/430 px, including accessible focus, unobscured pricing CTAs, and both consent choices.
 - Do not drop purportedly unused database indexes without query plans, operational usage observation, and rollback-safe migrations.
 
 ## Acceptance criteria before merge or launch
