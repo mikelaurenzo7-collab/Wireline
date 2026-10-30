@@ -98,3 +98,10 @@
   --input: var(--wireline-color-border-default);
   --ring: var(--wireline-color-focus-default);
 }
+
+/* White canvas + white card calls for a visible field edge, not a cream fill.
+ * :where() keeps focus/error rules with greater specificity authoritative. */
+:where(:root.light) .wl-access-panel__field {
+  border-color: var(--wireline-color-border-strong);
+  background: var(--wireline-color-surface-default);
+}
