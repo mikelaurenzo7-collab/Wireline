@@ -9,16 +9,11 @@ describe("Stripe event ownership fencing", () => {
   const claim = read("src/lib/stripe-event-claim.ts");
   const billing = read("src/routes/billing-routes.ts");
   const preflight = read("src/middleware/stripe-runtime-allowance-retry.ts");
-  const vercel = JSON.parse(read("vercel.json")) as {
-    functions: Record<string, { maxDuration: number }>;
-  };
-
-  it("uses a UUID attempt token and a lease beyond the runtime ceiling", () => {
+  it("uses a UUID attempt token and a 15-minute lease", () => {
     expect(migration).toContain("ADD COLUMN IF NOT EXISTS claim_token uuid");
     expect(migration).toContain("INTERVAL '15 minutes'");
     expect(migration).toContain("FROM PUBLIC, anon, authenticated");
     expect(claim).toContain("STRIPE_EVENT_CLAIM_LEASE_MS = 15 * 60 * 1000");
-    expect(15 * 60).toBeGreaterThan(vercel.functions["api/index.ts"].maxDuration);
   });
 
   it("fences completion and release by event, state, and attempt token", () => {

@@ -20,17 +20,13 @@ describe("shareable-artifact route registration and public allowlist", () => {
     expect(generator).toMatch(/Signed shareable call\/weekly recap/);
   });
 
-  it("routes /recap/:path* to the API function in vercel.json", () => {
-    const vercel = JSON.parse(read("vercel.json")) as {
-      rewrites?: Array<{ source?: string; destination?: string }>;
-    };
-    const rewrites = vercel.rewrites ?? [];
-
-    expect(rewrites).toContainEqual({ source: "/recap/:path*", destination: "/api/index.ts" });
+  it("keeps /recap/ out of the SPA fallback so the API route serves it", () => {
+    const aliases = read("src/server/register-production-static-aliases.ts");
+    const route = read("src/routes/shareable-artifact-routes.ts");
 
     // SPA fallback must exclude the /recap/ prefix so it does not intercept.
-    const spaFallback = rewrites.find((rewrite) => rewrite.destination === "/index.html");
-    expect(spaFallback?.source).toContain("recap/");
+    expect(aliases).toContain("recap\\/");
+    expect(route).toContain('"/recap/:slug"');
   });
 
   it("public GET /recap/:slug is signed, distributed-rate-limited, and not session-authenticated", () => {

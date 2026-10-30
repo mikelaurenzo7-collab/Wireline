@@ -134,12 +134,4 @@ describe("repository and documentation organization", () => {
     expect(contributing).toContain("Render web/worker artifact and source parity");
     expect(contributing).toContain("docs/AUDIT_INDEX.md");
   });
-
-  it("runs repository and docs integrity checks in every Vercel build", () => {
-    const build = read("scripts/vercel-build.mjs");
-
-    expect(build).toContain('run("node", ["scripts/check-source-control-hygiene.mjs"])');
-    expect(build).toContain('run("node", ["scripts/check-docs-index.mjs"])');
-    expect(build).toContain('"tests/repo-documentation-organization-contract.test.ts"');
-  });
 });

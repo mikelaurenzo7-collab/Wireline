@@ -25,12 +25,10 @@ function declaredRoutePaths(appRoutes: string): Set<string> {
 }
 
 describe("launch completeness contracts", () => {
-  it("routes the launch-reel command through the certifying wrapper and Vercel gate", () => {
+  it("routes the launch-reel command through the certifying wrapper", () => {
     const pkg = JSON.parse(source("package.json")) as { scripts?: Record<string, string> };
-    const vercelBuild = source("scripts/vercel-build.mjs");
     expect(pkg.scripts?.["marketing:kit"]).toBe("node scripts/run-marketing-kit.mjs");
     expect(pkg.scripts?.["marketing:kit:raw"]).toBe("node scripts/marketing-kit.mjs");
-    expect(vercelBuild).toContain('"tests/launch-completeness-contract.test.ts"');
   });
 
   it("freezes the exact source before capture and rejects unsafe output", () => {
@@ -91,9 +89,9 @@ describe("launch completeness contracts", () => {
     const marketingMeta = source("src/lib/marketing-route-meta.ts");
     const publicRoutes = source("src/lib/public-routes.ts");
     const apiRoutes = source("src/server/register-api-routes.ts");
-    const vercel = JSON.parse(source("vercel.json")) as {
-      redirects?: Array<{ source: string; destination: string; permanent: boolean }>;
-    };
+    // T1 (Oct 30, 2026): the /status redirect moved from the retired edge
+    // config into the server's production static aliases.
+    const aliases = source("src/server/register-production-static-aliases.ts");
     const sitemap = source("public/sitemap.xml");
     const publicSurfaces = [
       "src/components/marketing/MarketingChromeBar.tsx",
@@ -110,11 +108,8 @@ describe("launch completeness contracts", () => {
     expect(marketingMeta).not.toContain('"/status":');
     expect(publicRoutes).not.toContain('"/status"');
     expect(sitemap).not.toContain("botbound.app/status");
-    expect(vercel.redirects).toContainEqual({
-      source: "/status",
-      destination: "/trust",
-      permanent: true,
-    });
+    expect(aliases).toContain('app.all("/status"');
+    expect(aliases).toContain("res.redirect(308, `/trust${query}`);");
     for (const surface of publicSurfaces) {
       expect(source(surface)).not.toContain('"/status"');
     }

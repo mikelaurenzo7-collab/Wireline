@@ -14,16 +14,6 @@ const privacyPage = read("src/components/PrivacyPolicyPage.tsx");
 const app = read("src/App.tsx");
 const footer = read("src/components/marketing/MarketingChromeBar.tsx");
 const csp = read("src/lib/csp.ts");
-const vercelSource = read("vercel.json");
-
-let vercel;
-try {
-  vercel = JSON.parse(vercelSource);
-} catch (error) {
-  failures.push(
-    `vercel.json must remain valid JSON: ${error instanceof Error ? error.message : error}`,
-  );
-}
 
 const consentKey = "wireline_marketing_measurement_consent";
 const consentEvent = "wireline:marketing-measurement-consent";
@@ -199,26 +189,17 @@ assert(
   "CSP source must not retain the removed inline Meta hash.",
 );
 assert(
-  !vercelSource.includes(removedInlineMetaHash),
-  "Vercel edge CSP must not retain the removed inline Meta hash.",
+  !csp.includes(removedInlineMetaHash),
+  "CSP source must not retain the removed inline Meta hash.",
 );
 for (const host of retiredAnalyticsHosts) {
   assert(!csp.includes(host), `CSP source must not allow retired analytics host ${host}.`);
-  assert(
-    !vercelSource.includes(host),
-    `Vercel edge CSP must not allow retired analytics host ${host}.`,
-  );
 }
 
-if (vercel) {
-  const globalHeaders = vercel.headers?.find((entry) => entry.source === "/(.*)")?.headers ?? [];
-  const edgeCsp = globalHeaders.find((header) => header.key === "Content-Security-Policy")?.value;
-  assert(typeof edgeCsp === "string", "vercel.json must publish a global Content-Security-Policy.");
-  assert(
-    edgeCsp?.includes("https://connect.facebook.net"),
-    "edge CSP must allow the post-consent Meta loader.",
-  );
-}
+assert(
+  csp.includes("https://connect.facebook.net"),
+  "CSP source must allow the post-consent Meta loader.",
+);
 
 if (failures.length > 0) {
   console.error("Marketing measurement consent contract failed:");

@@ -8,15 +8,10 @@ const root = resolve(import.meta.dirname, "..");
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("public route fallbacks", () => {
-  it("redirects the retired status alias at the edge and captures its canonical destination", () => {
-    const vercel = JSON.parse(read("vercel.json")) as {
-      redirects?: Array<{ source?: string; destination?: string; permanent?: boolean }>;
-    };
-    expect(vercel.redirects).toContainEqual({
-      source: "/status",
-      destination: "/trust",
-      permanent: true,
-    });
+  it("redirects the retired status alias at the server and captures its canonical destination", () => {
+    const aliases = read("src/server/register-production-static-aliases.ts");
+    expect(aliases).toContain('app.all("/status"');
+    expect(aliases).toContain("res.redirect(308, `/trust");
 
     const app = read("src/App.tsx");
     expect(app).not.toContain('path="/status"');

@@ -105,16 +105,11 @@ describe("production public route compatibility", () => {
   });
 
   it("keeps these aliases in agreement with the rollback host configuration", () => {
-    const config = JSON.parse(readFileSync(resolve("vercel.json"), "utf8"));
-    expect(config.redirects).toContainEqual({
-      source: "/status",
-      destination: "/trust",
-      permanent: true,
-    });
-    expect(config.rewrites).toContainEqual({
-      source: "/legal/data-deletion",
-      destination: "/legal/data-deletion.html",
-    });
+    const aliases = readFileSync(resolve("src/server/register-production-static-aliases.ts"), "utf8");
+    expect(aliases).toContain('app.all("/status"');
+    expect(aliases).toContain("res.redirect(308, `/trust");
+    expect(aliases).toContain('app.get("/legal/data-deletion"');
+    expect(aliases).toContain('data-deletion.html');
     const source = readFileSync(resolve("server.ts"), "utf8");
     expect(source.indexOf("registerProductionStaticAliases(app, dist)")).toBeLessThan(
       source.indexOf("app.use(express.static(dist"),
@@ -131,11 +126,8 @@ describe("production public route compatibility", () => {
     "/legal/missing",
     "/recap/missing/nested",
   ])("returns a non-cacheable 404 instead of SPA HTML for %s", async (path) => {
-    const config = JSON.parse(readFileSync(resolve("vercel.json"), "utf8"));
-    const spaRewrite = config.rewrites.find(
-      (rule: { destination: string }) => rule.destination === "/index.html",
-    );
-    expect(new RegExp(`^${spaRewrite.source}$`).test(path)).toBe(false);
+    // Live behavior is the check: a SPA-rewritten path would return SPA HTML,
+    // not the 404 below.
     const response = await fetch(`${origin}${path}`);
     expect(response.status).toBe(404);
     expect(response.headers.get("cache-control")).toBe("no-store");
@@ -175,18 +167,18 @@ describe("production public route compatibility", () => {
   });
 
   it("preserves edge browser isolation headers on pages, assets and API responses", async () => {
-    const config = JSON.parse(readFileSync(resolve("vercel.json"), "utf8"));
-    const globalHeaders = config.headers.find(
-      (rule: { source: string }) => rule.source === "/(.*)",
-    ).headers;
+    const aliases = readFileSync(resolve("src/server/register-production-static-aliases.ts"), "utf8");
+    const expectedHeaders: Array<[string, string]> = [
+      ["Cross-Origin-Opener-Policy", "same-origin-allow-popups"],
+      ["Cross-Origin-Resource-Policy", "same-origin"],
+      ["Origin-Agent-Cluster", "?1"],
+    ];
+    for (const [key, value] of expectedHeaders) {
+      expect(aliases).toContain(`"${key}", "${value}"`);
+    }
     for (const path of ["/studio", "/assets/app.js", "/api/test"]) {
       const response = await fetch(`${origin}${path}`);
-      for (const key of [
-        "Cross-Origin-Opener-Policy",
-        "Cross-Origin-Resource-Policy",
-        "Origin-Agent-Cluster",
-      ]) {
-        const expected = globalHeaders.find((header: { key: string }) => header.key === key).value;
+      for (const [key, expected] of expectedHeaders) {
         expect(response.headers.get(key)).toBe(expected);
       }
     }

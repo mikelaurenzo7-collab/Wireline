@@ -37,9 +37,9 @@ export default defineConfig(({ mode }) => {
     build: {
       // No client sourcemaps. "hidden" still WROTE all 159 maps (8.5 MB) into
       // dist/assets and only suppressed the //# sourceMappingURL comment, and
-      // vercel.json's SPA rewrite excludes assets/ — so every map stayed
-      // fetchable at a guessable /assets/<chunk>.js.map, publishing the whole
-      // first-party client source.
+      // A static host's SPA fallback serves assets/ directly — so every map
+      // stayed fetchable at a guessable /assets/<chunk>.js.map, publishing the
+      // whole first-party client source.
       //
       // Nothing consumed them: there is no @sentry/* dependency and no
       // client-side error reporting at all (error-reporter.ts is a

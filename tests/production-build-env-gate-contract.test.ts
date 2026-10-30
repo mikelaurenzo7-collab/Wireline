@@ -6,22 +6,8 @@ const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
 describe("production build environment gate", () => {
-  it("runs the authoritative required-variable check before migrations and build", () => {
-    const build = read("scripts/vercel-build.mjs");
+  it("requires the authoritative production-variable check", () => {
     const validator = read("scripts/check-prod-env.mjs");
-
-    expect(build).toContain("function validateProductionEnvironment()");
-    expect(build).toContain("if (!isCanonicalProduction) return;");
-    expect(build).toContain("CANONICAL_VERCEL_PROJECT_ID");
-    expect(build).toContain('run("node", ["scripts/check-prod-env.mjs"])');
-
-    const validationIndex = build.indexOf("validateProductionEnvironment();");
-    const migrationIndex = build.indexOf("if (shouldMigrate)");
-    const productBuildIndex = build.indexOf('run("npm", ["run", "build"])');
-
-    expect(validationIndex).toBeGreaterThan(-1);
-    expect(validationIndex).toBeLessThan(migrationIndex);
-    expect(validationIndex).toBeLessThan(productBuildIndex);
 
     expect(validator).toContain('"UPSTASH_REDIS_REST_URL"');
     expect(validator).toContain('"UPSTASH_REDIS_REST_TOKEN"');
@@ -31,40 +17,12 @@ describe("production build environment gate", () => {
     expect(validator).toContain('"WIRELINE_RECONCILE_STRIPE_PORTAL"');
   });
 
-  it("keeps preview builds isolated from production-only credentials", () => {
-    const build = read("scripts/vercel-build.mjs");
-
-    expect(build).toContain("if (!isCanonicalProduction) return;");
-    expect(build).toContain("configurePreviewEnvironment();\nvalidateProductionEnvironment();");
-    expect(build).not.toContain("PRODUCTION_CHECK=1");
-  });
-
   it("runs the fail-closed dependency audit in every canonical production certification", () => {
-    const build = read("scripts/vercel-build.mjs");
     const audit = read("scripts/check-security-audit.mjs");
     const bulkAudit = read("scripts/lib/npm-bulk-audit.mjs");
     const osvAudit = read("scripts/lib/osv-audit.mjs");
     const osvBehavior = read("tests/security-audit-osv-fallback.test.mjs");
     const runner = read("scripts/run-test-estate.mjs");
-    const releaseAuditStart = build.indexOf("function runCanonicalReleaseAudit()");
-    const nextFunction = build.indexOf("function syncShowcaseIfRequested()", releaseAuditStart);
-    const releaseAudit = build.slice(releaseAuditStart, nextFunction);
-
-    expect(releaseAuditStart).toBeGreaterThan(-1);
-    expect(releaseAudit).toContain('commitMessage.includes("[launch-deep-audit]")');
-    expect(releaseAudit).toContain("if (!isCanonicalProduction && !explicitlyRequested) return;");
-    expect(releaseAudit).toContain('run("npm", ["run", "runtime:policy:check"])');
-    expect(releaseAudit).toContain('run("npm", ["run", "security:audit"])');
-    expect(releaseAudit).toContain(
-      'run("node", ["scripts/run-test-estate.mjs", "--canonical-release-second-pass"])',
-    );
-    expect(releaseAudit.indexOf('run("npm", ["run", "lint:eslint"])')).toBeLessThan(
-      releaseAudit.indexOf('run("npm", ["run", "security:audit"])'),
-    );
-    expect(releaseAudit.indexOf('run("npm", ["run", "security:audit"])')).toBeLessThan(
-      releaseAudit.indexOf('run("node", ["scripts/run-test-estate.mjs"'),
-    );
-
     expect(audit).toContain("buildProductionPackagePayload");
     expect(audit).toContain("requestBulkAdvisories");
     expect(audit).toContain("requestOsvAdvisories");
@@ -95,29 +53,10 @@ describe("production build environment gate", () => {
   });
 
   it("runs every Vitest process from an isolated OS-only environment", () => {
-    const deploy = read("scripts/vercel-deploy.mjs");
-    const build = read("scripts/vercel-build.mjs");
     const runner = read("scripts/run-test-estate.mjs");
     const environment = read("scripts/lib/test-estate-environment.mjs");
     const behavior = read("tests/test-estate-environment.test.ts");
     const liveVideoSettlement = read("src/lib/video-presenter/live-video-settlement.ts");
-
-    expect(deploy).toContain(
-      'run(process.execPath, [\n  "scripts/run-test-estate.mjs",\n  "tests/retired-client-env-sanitizer-contract.test.ts"',
-    );
-    expect(deploy).not.toContain(
-      'run("npx", ["vitest", "run", "tests/retired-client-env-sanitizer-contract.test.ts"])',
-    );
-    expect(build).toContain(
-      'run("node", ["scripts/run-test-estate.mjs", "--canonical-release-second-pass"])',
-    );
-    expect(build).toContain(
-      'run("node", [\n  "scripts/run-test-estate.mjs",\n  "tests/runtime-provider-chain-contract.test.ts"',
-    );
-    expect(build).toContain('"tests/federal-dnc-service.test.ts"');
-    expect(build).toContain('"tests/outbound-runtime-behavior.test.ts"');
-    expect(build).toContain('"tests/outbound-compliance-contract.test.ts"');
-    expect(build).not.toContain('run("npx", [\n  "vitest",\n  "run"');
 
     expect(runner).toContain("import { buildTestEstateEnvironment }");
     expect(runner).toContain("mkdtempSync");

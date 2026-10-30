@@ -394,10 +394,10 @@ async function main() {
   };
 
   writeFileSync(CATALOG_MANIFEST_PATH, `${JSON.stringify(manifest, null, 2)}\n`);
-  // Version-stamped wrapper: consumers (sync-stripe-env-to-vercel,
-  // verify-stripe-vercel-parity) refuse a file whose catalog version does not
-  // match the code, so a stale local file from a prior catalog generation can
-  // never push retired price ids back over the live Vercel configuration.
+  // Version-stamped wrapper: any consumer can refuse a file whose catalog
+  // version does not match the code, so a stale local file from a prior
+  // catalog generation is detectable. The Vercel consumers that used to
+  // enforce this were retired with the Vercel surface (T1).
   writeFileSync(
     GENERATED_ENV_PATH,
     `${JSON.stringify({ wireline_catalog_version: FOUNDER_CATALOG_VERSION, env: generatedEnv }, null, 2)}\n`,

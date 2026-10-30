@@ -159,7 +159,6 @@ describe("Stripe customer portal reconciliation", () => {
 
   it("keeps production portal repair explicit, pinned, bounded, and idempotent", () => {
     const script = read("scripts/reconcile-stripe-customer-portal.mts");
-    const build = read("scripts/vercel-build.mjs");
     const providerPreflight = read("scripts/run-release-provider-preflight.mjs");
     const packageJson = JSON.parse(read("package.json")) as {
       scripts?: Record<string, string>;
@@ -169,8 +168,6 @@ describe("Stripe customer portal reconciliation", () => {
       read("scripts/generate-launch-status.mjs"),
       read("scripts/lib/stripe-launch-readiness.mjs"),
     ].join("\n");
-    const webhookSecretSync = read("scripts/sync-stripe-webhook-secret-to-vercel.mjs");
-
     expect(script).toContain("assertStripePortalOperatorEnvironment(process.env, {");
     expect(script).toContain('new URL("../dist/render-release.json", import.meta.url)');
     expect(script).toContain("const portalProducts: PortalProduct[] = []");
@@ -180,9 +177,6 @@ describe("Stripe customer portal reconciliation", () => {
     expect(script).toContain("staleManaged");
     expect(script).toContain("if (!apply)");
     expect(script).toContain("exactly one active BotBound-managed portal configuration");
-    expect(build).toContain("isCanonicalVercelProject");
-    expect(build).not.toContain("verifyStripePortalIfRequested");
-    expect(build).not.toContain("reconcile-stripe-customer-portal.mts");
     expect(providerPreflight).toContain('run("npm", ["run", "stripe:portal:verify"]');
     expect(providerPreflight).not.toContain("--apply");
     expect(packageJson.scripts?.["stripe:portal:verify"]).toBe(
@@ -200,29 +194,5 @@ describe("Stripe customer portal reconciliation", () => {
     expect(launchStatus).toContain("const PINNED_STRIPE_API_VERSION = getPinnedStripeApiVersion()");
     expect(launchStatus).toContain('"Stripe-Version": PINNED_STRIPE_API_VERSION');
     expect(launchStatus).toContain("runtime_env_price_id_mismatch");
-    expect(webhookSecretSync).toContain('target: ["production"]');
-    expect(webhookSecretSync).toContain('type: "sensitive"');
-    expect(webhookSecretSync).not.toContain("decrypt=true");
-    expect(webhookSecretSync).not.toContain("console.log(secret");
-  });
-
-  it("certifies local artifacts while keeping provider verification external", () => {
-    const build = read("scripts/vercel-build.mjs");
-    const providerPreflight = read("scripts/run-release-provider-preflight.mjs");
-    const auditCall = "runCanonicalReleaseAudit();";
-    const productBuildCall = 'run("npm", ["run", "build"]);';
-    const mcpBundle = '"src/entrypoints/chatgpt-mcp-api.ts"';
-    const migrationBranch = "if (shouldMigrate) {";
-
-    expect(build).toContain("function runCanonicalReleaseAudit()");
-    expect(build).toContain('commitMessage.includes("[launch-deep-audit]")');
-    expect(build).toContain("if (!isCanonicalProduction && !explicitlyRequested) return;");
-    expect(build).toContain("--canonical-release-second-pass");
-    expect(build.indexOf(auditCall)).toBeGreaterThanOrEqual(0);
-    expect(build.indexOf(productBuildCall)).toBeGreaterThan(build.indexOf(auditCall));
-    expect(build.indexOf(mcpBundle)).toBeGreaterThan(build.indexOf(productBuildCall));
-    expect(build.indexOf(migrationBranch)).toBeGreaterThan(build.indexOf(mcpBundle));
-    expect(build).not.toContain("reconcile-stripe-customer-portal.mts");
-    expect(providerPreflight).toContain('run("npm", ["run", "stripe:portal:verify"]');
   });
 });

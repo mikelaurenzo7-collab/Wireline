@@ -58,15 +58,13 @@ describe("launch artifact privacy and operations truth", () => {
 
   it("documents only monitoring cadences that exist in deployed configuration", () => {
     const runbook = read("docs/INCIDENT_RESPONSE.md");
-    const vercel = JSON.parse(read("vercel.json")) as {
-      crons?: Array<{ path?: string; schedule?: string }>;
+    const render = read("render.yaml");
+    const cronSchedule = (name: string) => {
+      const match = render.match(new RegExp(`name: ${name}[\\s\\S]{0,400}?schedule: "([^"]+)"`));
+      return match?.[1];
     };
-    expect(vercel.crons).toEqual(
-      expect.arrayContaining([
-        { path: "/api/jobs/sweep", schedule: "* * * * *" },
-        { path: "/api/daily-brief/schedule", schedule: "*/15 * * * *" },
-      ]),
-    );
+    expect(cronSchedule("botbound-jobs-sweep")).toBe("* * * * *");
+    expect(cronSchedule("botbound-daily-brief")).toBe("*/15 * * * *");
     expect(runbook).toContain("`/api/jobs/sweep` every **minute**");
     expect(runbook).toContain("`/api/daily-brief/schedule` every **15 minutes**");
     expect(runbook).toContain("The former public demo-line canary is retired");

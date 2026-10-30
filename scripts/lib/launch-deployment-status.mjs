@@ -15,8 +15,8 @@ function runWorkerProcess(command, args, options) {
 export function resolveLaunchProvider(args = []) {
   const index = args.indexOf("--provider");
   const provider = index < 0 ? "render" : args[index + 1];
-  if (provider !== "render" && provider !== "vercel") {
-    throw new Error("--provider must be render or vercel (legacy rollback only).");
+  if (provider !== "render") {
+    throw new Error("--provider must be render only (Vercel retired, T1).");
   }
   return provider;
 }
@@ -72,10 +72,8 @@ export async function readLaunchDeployment({
   productionUrl,
   expectedRevision,
   readJson,
-  readVercelStatus,
   readWorker = readLaunchWorker,
 }) {
-  if (provider === "vercel") return { ...(await readVercelStatus()), provider };
   if (provider !== "render") throw new Error("Unknown launch deployment provider.");
   if (!fullRevision.test(expectedRevision || "")) {
     return { provider, status: "blocked", blockers: ["expected_release_revision_invalid"] };

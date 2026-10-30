@@ -14,8 +14,8 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-// vercel.json routes every /api/:path* through one serverless function, so any
-// module-scope import in the server graph is paid on EVERY cold start — a
+// The old serverless routing ran every /api/:path* through one function, so any
+// module-scope import in the server graph was paid on EVERY cold start — a
 // Stripe webhook, a Twilio callback, a health probe — whether or not the
 // request touches that dependency. googleapis measured ~1,300 ms and ~1,000
 // modules on its own; deferring it took the bundle from 1,627 ms / 1,896

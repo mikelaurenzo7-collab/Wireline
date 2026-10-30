@@ -290,9 +290,7 @@ describe("Resend delivery-feedback contract", () => {
 
   it("makes production activation explicit and keeps live Resend credentials production-only", () => {
     const readiness = read("scripts/check-resend-webhook-readiness.mjs");
-    const sync = read("scripts/sync-resend-env-to-vercel.mjs");
     const docs = read("docs/RESEND_DELIVERY_FEEDBACK.md");
-    const build = read("scripts/vercel-build.mjs");
     const envExample = read(".env.example");
 
     expect(readiness).toContain("RESEND_WEBHOOK_SECRET");
@@ -301,18 +299,8 @@ describe("Resend delivery-feedback contract", () => {
     expect(readiness).toContain('detail?.status !== "enabled"');
     expect(readiness).toContain("!exactEvents(detail?.events)");
     expect(readiness).toContain("!sameSecret(detail?.signing_secret, webhookSecret)");
-    expect(sync).toContain('const PRODUCTION_TARGET = ["production"]');
-    expect(sync).not.toContain("ALL_TARGETS");
-    expect(sync).toContain(
-      '{ key: "RESEND_API_KEY", value: resendKey, targets: PRODUCTION_TARGET }',
-    );
-    expect(sync).toContain('key: "RESEND_WEBHOOK_SECRET"');
-    expect(sync).toContain("envEntries.length === 0");
     expect(envExample).toContain("RESEND_WEBHOOK_SECRET=");
     expect(envExample).toMatch(/Production-only Svix\/Resend signing secret/i);
-    expect(build).toContain("check-resend-webhook-readiness.mjs");
-    expect(build).toContain("tests/resend-webhook-feedback-contract.test.ts");
-
     for (const eventType of [
       "email.bounced",
       "email.complained",

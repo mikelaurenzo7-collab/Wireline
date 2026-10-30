@@ -19,6 +19,9 @@ describe("launch blockers distinguish a failed check from a failed probe", () =>
   const script = [
     read("scripts/generate-launch-status.mjs"),
     read("scripts/lib/stripe-launch-readiness.mjs"),
+    // T1 (Oct 30, 2026): the production probe moved to the Render-only
+    // launch-deployment-status lib when the Vercel branch was retired.
+    read("scripts/lib/launch-deployment-status.mjs"),
   ].join("\n");
 
   const PROBES = [
@@ -28,7 +31,7 @@ describe("launch blockers distinguish a failed check from a failed probe", () =>
       unreachable: "twilio_unreachable",
       derived: "twilio_usage_triggers_missing",
     },
-    { name: "vercel", unreachable: "vercel_unreachable", derived: "production_commit_mismatch" },
+    { name: "render", unreachable: "render_unreachable", derived: "production_commit_mismatch" },
     { name: "stripe", unreachable: "stripe_not_reachable", derived: "stripe_brand_not_wireline" },
   ];
 
@@ -47,7 +50,7 @@ describe("launch blockers distinguish a failed check from a failed probe", () =>
     for (const marker of [
       'if (database.status !== "reachable") {',
       'if (twilio.status !== "reachable") {',
-      'if (vercel.status !== "ready") {',
+      'if (!api.ok) blockers.push("render_unreachable");',
       'if (stripe.status !== "reachable") {',
     ]) {
       expect(script).toContain(marker);
@@ -92,7 +95,7 @@ describe("migration drift is answerable, and the tool is honest about its covera
     // positives would be worse than the gap it reports.
     const pkg = JSON.parse(read("package.json")) as { scripts: Record<string, string> };
     expect(pkg.scripts["db:drift"]).toBe("node scripts/check-migration-drift.mjs");
-    expect(read("scripts/vercel-build.mjs")).not.toContain("check-migration-drift");
+    expect(pkg.scripts["build"]).not.toContain("check-migration-drift");
     expect(script).toContain("STRICT && drifted.length ? 1 : 0");
   });
 

@@ -12,7 +12,6 @@ describe("Claude Connector Directory contract", () => {
   const account = read("src/routes/chatgpt-mcp-account-routes.ts");
   const oauth = read("src/routes/chatgpt-mcp-routes.ts");
   const stack = read("src/server/register-mcp-routes.ts");
-  const vercel = read("vercel.json");
   const docs = read("docs/CLAUDE_CONNECTOR.md");
   const packet = read("docs/CLAUDE_CONNECTOR_SUBMISSION.md");
   const privacy = read("public/mcp-privacy.html");
@@ -91,8 +90,6 @@ describe("Claude Connector Directory contract", () => {
     expect(oauth).toContain("local address");
     expect(oauth).toContain('"/mcp/server-card"');
     expect(oauth).toContain('"/.well-known/mcp/catalog.json"');
-    expect(vercel).toContain("/.well-known/mcp/catalog.json");
-    expect(vercel).toContain("/server-card");
   });
 
   it("serves a dual-host MCP App widget for Claude and ChatGPT", () => {

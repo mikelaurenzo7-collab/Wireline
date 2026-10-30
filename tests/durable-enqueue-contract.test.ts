@@ -174,9 +174,4 @@ describe("durable enqueue failure contract", () => {
     expect(claimJob).toContain("lte(schema.jobs.runAt, new Date())");
     expect(claimJobById).toContain("lte(schema.jobs.runAt, new Date())");
   });
-
-  it("remains part of the production-equivalent Vercel contract gate", () => {
-    const build = read("scripts/vercel-build.mjs");
-    expect(build).toContain('"tests/durable-enqueue-contract.test.ts"');
-  });
 });

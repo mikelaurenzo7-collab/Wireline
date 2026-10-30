@@ -106,10 +106,6 @@ describe("production schema database selection", () => {
   });
 
   it("passes only the normalized session URL into the explicit production migration command", () => {
-    const buildSource = readFileSync(
-      new URL("../scripts/vercel-build.mjs", import.meta.url),
-      "utf8",
-    );
     const promotionSource = readFileSync(
       new URL("../scripts/promote-production-schema.mjs", import.meta.url),
       "utf8",
@@ -123,10 +119,6 @@ describe("production schema database selection", () => {
     expect(promotionSource).toContain('run("npm", ["run", "db:migrate"], promotionEnv);');
     expect(promotionSource).toContain(
       'run("node", ["scripts/run-production-schema-effects.mjs"], promotionEnv);',
-    );
-    expect(buildSource).not.toContain("resolveProductionMigrationDatabaseUrl");
-    expect(buildSource).toContain(
-      "const shouldMigrate = !isCanonicalProduction && !migrationsDisabled && migrationsForced",
     );
     expect(drizzleSource).toContain("process.env.POSTGRES_URL || process.env.DATABASE_URL");
     expect(drizzleSource).not.toContain("DATABASE_POOL_URL");

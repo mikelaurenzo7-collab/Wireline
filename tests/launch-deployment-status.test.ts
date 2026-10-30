@@ -25,13 +25,12 @@ function probes() {
       status: 200,
       body: { alive: true, trafficEnabled: true, sourceCommit: revision },
     }),
-    readVercelStatus: vi.fn().mockResolvedValue({ status: "ready", production_commit: revision }),
     readWorker: vi.fn().mockResolvedValue(workerReady),
   };
 }
 
 describe("launch deployment selection", () => {
-  it("defaults to Render and verifies both services without contacting Vercel", async () => {
+  it("defaults to Render and verifies both services", async () => {
     const input = probes();
     await expect(readLaunchDeployment(input)).resolves.toMatchObject({
       provider: "render",
@@ -44,16 +43,11 @@ describe("launch deployment selection", () => {
       cache: "no-store",
     });
     expect(input.readWorker).toHaveBeenCalledWith(revision);
-    expect(input.readVercelStatus).not.toHaveBeenCalled();
   });
 
-  it("requires an explicit legacy provider selection", async () => {
-    const input = { ...probes(), provider: resolveLaunchProvider(["--provider", "vercel"]) };
-    await expect(readLaunchDeployment(input)).resolves.toMatchObject({ provider: "vercel" });
-    expect(input.readVercelStatus).toHaveBeenCalledOnce();
-    expect(input.readJson).not.toHaveBeenCalled();
-    expect(input.readWorker).not.toHaveBeenCalled();
+  it("rejects any non-Render provider selection", async () => {
     expect(() => resolveLaunchProvider(["--provider"])).toThrow("--provider must be");
+    expect(() => resolveLaunchProvider(["--provider", "vercel"])).toThrow("--provider must be");
     expect(() => resolveLaunchProvider(["--provider", "unknown"])).toThrow("--provider must be");
   });
 

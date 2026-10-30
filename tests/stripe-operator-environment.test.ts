@@ -1,7 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { resolveStripeOperatorKey } from "../scripts/lib/stripe-operator-key.mjs";
 import { assertStripePortalOperatorEnvironment } from "../scripts/lib/stripe-operator-policy.mts";
-import { PROJECT_ID } from "../scripts/lib/vercel-project.mjs";
 
 const source = "a".repeat(40);
 const operator = {
@@ -20,34 +19,22 @@ const render = {
 const renderRelease = { role: "api", revision: source };
 
 describe("production Stripe operator verification", () => {
-  it("uses the supplied key without reading Vercel, even with a stale token present", async () => {
-    const readVercel = vi.fn();
+  it("uses the supplied key and ignores a stale Vercel token", async () => {
     await expect(
-      resolveStripeOperatorKey({ ...operator, VERCEL_TOKEN: "unused" }, readVercel),
+      resolveStripeOperatorKey({ ...operator, VERCEL_TOKEN: "legacy" }),
     ).resolves.toBe(operator.STRIPE_SECRET_KEY);
-    expect(readVercel).not.toHaveBeenCalled();
   });
 
-  it("preserves explicitly configured legacy Vercel key lookup", async () => {
-    const readVercel = vi.fn().mockResolvedValue("rk_live_operator_fixture");
-    await expect(resolveStripeOperatorKey({ VERCEL_TOKEN: "legacy" }, readVercel)).resolves.toBe(
-      "rk_live_operator_fixture",
-    );
-    expect(readVercel).toHaveBeenCalledExactlyOnceWith("legacy", "STRIPE_SECRET_KEY");
-  });
 
   it("fails without credentials and does not silently replace an invalid supplied key", async () => {
-    const readVercel = vi.fn();
-    await expect(resolveStripeOperatorKey({}, readVercel)).rejects.toThrow(
+    await expect(resolveStripeOperatorKey({})).rejects.toThrow(
       "Provide STRIPE_SECRET_KEY",
     );
     await expect(
       resolveStripeOperatorKey(
         { STRIPE_SECRET_KEY: "sk_test_fixture", VERCEL_TOKEN: "legacy" },
-        readVercel,
       ),
     ).rejects.toThrow("live Stripe key");
-    expect(readVercel).not.toHaveBeenCalled();
   });
 
   it("allows a secure local read-only audit without platform metadata", () => {
@@ -100,17 +87,11 @@ describe("production Stripe operator verification", () => {
     ).toThrow("verified Render production main release");
   });
 
-  it("preserves the canonical Vercel rollback boundary", () => {
-    const legacy = { ...operator, VERCEL_ENV: "production", VERCEL_PROJECT_ID: PROJECT_ID };
-    expect(assertStripePortalOperatorEnvironment(legacy, { apply: true }).appUrl).toBe(
-      operator.APP_URL,
-    );
+  it("rejects Vercel environments outright (Vercel retired)", () => {
+    const legacy = { ...operator, VERCEL_ENV: "production", VERCEL_PROJECT_ID: "prj_anything" };
     expect(() =>
-      assertStripePortalOperatorEnvironment(
-        { ...legacy, VERCEL_PROJECT_ID: "another-project" },
-        { apply: true },
-      ),
-    ).toThrow("canonical BotBound project");
+      assertStripePortalOperatorEnvironment(legacy, { apply: true }),
+    ).toThrow("no longer supports Vercel");
     expect(() =>
       assertStripePortalOperatorEnvironment({ ...legacy, VERCEL_ENV: "preview" }, { apply: false }),
     ).toThrow("unambiguous production");

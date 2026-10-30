@@ -9,16 +9,15 @@ describe("daily brief scheduler launch contract", () => {
   const schema = read("src/db/schema-base.ts");
   const canonicalSchema = read("src/db/schema.ts");
   const migration = read("drizzle/migrations/0140_daily_brief_dispatch_lease.sql");
-  const vercel = JSON.parse(read("vercel.json")) as {
-    crons?: Array<{ path: string; schedule: string }>;
+  const render = read("render.yaml");
+  const cronSchedule = (name: string) => {
+    const match = render.match(new RegExp(`name: ${name}[\\s\\S]{0,400}?schedule: "([^"]+)"`));
+    return match?.[1];
   };
 
-  it("is actually reachable by Vercel Cron", () => {
+  it("is actually reachable by the Render cron", () => {
     expect(routes).toContain('router.get("/api/daily-brief/schedule", runDailyBriefSchedule)');
-    expect(vercel.crons).toContainEqual({
-      path: "/api/daily-brief/schedule",
-      schedule: "*/15 * * * *",
-    });
+    expect(cronSchedule("botbound-daily-brief")).toBe("*/15 * * * *");
     expect(routes).toContain('authz.startsWith("Bearer ")');
     expect(routes).toContain("cryptoTimingSafeEqual");
   });
