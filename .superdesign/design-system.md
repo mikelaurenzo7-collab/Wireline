@@ -37,7 +37,7 @@ Core jobs:
 
 ## Visual identity
 
-The canonical identity is the **BotBound Design System**: a warm off-white canvas, clean neutral surfaces, fine rules, violet primary actions, and restrained semantic status colors. Dark mode keeps the same hierarchy on near-black surfaces. Page backgrounds use a subtle neutral light falloff, never brand-colored washes or paper grain. Reserve violet for identity, actions, selection, and focus. Preserve the approved BotBound mascot without adding decorative illustration. Avoid glass-heavy decoration, excessive pills, and ornamental motion. Use semantic names for surfaces and colors; do not introduce separate named themes.
+The canonical identity is the **BotBound Design System**: a crisp white canvas, cool neutral surfaces, fine rules, violet primary actions, and restrained semantic status colors. Dark mode keeps the same hierarchy on near-black surfaces. Page backgrounds use a subtle neutral light falloff, never brand-colored washes or paper grain. Reserve violet for identity, actions, selection, and focus. Preserve the approved BotBound mascot without adding decorative illustration. Avoid glass-heavy decoration, excessive pills, and ornamental motion. Use semantic names for surfaces and colors; do not introduce separate named themes.
 
 Use only these type families:
 
@@ -55,7 +55,7 @@ Use only these core dark-mode colors:
 - Borders: soft `#1C1A22`; default `#262430`; strong `#3A3745`
 - Status: success `#4ADE9A`; warning `#E8B85C`; error `#EF7B92`; info `#93A0C7`
 
-Light is the first-visit appearance. A saved light, dark, or system preference always wins. Light mode uses `html.light`: canvas `#F7F7F3`, surface `#FFFFFF`, text `#19191D`, primary `#7040D7`. Both appearances use the same component and interaction system. The executable manifest is `src/lib/wireline-design-vision.ts`; `ThemeContext` applies the preference.
+Light is the first-visit appearance. A saved light, dark, or system preference always wins. Light mode uses `html.light`: canvas `#FFFFFF`, surface `#FFFFFF`, text `#171717`, primary `#7040D7`. Both appearances use the same component and interaction system. The executable manifest is `src/lib/wireline-design-vision.ts`; `ThemeContext` applies the preference.
 
 ## Typography
 
@@ -183,7 +183,7 @@ The JSON token source already supplies typed values and generated web, extension
 
 | Semantic role   | Dark      | Light     |
 | --------------- | --------- | --------- |
-| Canvas          | `#0A0A0E` | `#F7F7F3` |
+| Canvas          | `#0A0A0E` | `#FFFFFF` |
 | Default surface | `#141319` | `#FFFFFF` |
 | Subtle surface  | `#100F15` | `#F5F5F7` |
 | Raised surface  | `#201E29` | `#FFFFFF` |
