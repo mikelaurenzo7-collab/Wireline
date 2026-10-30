@@ -7,7 +7,7 @@
 }
 
 :root.light {
-  background: #F7F7F3;
+  background: #FFFFFF;
   color-scheme: light;
 }
 
@@ -21,6 +21,6 @@ body {
 }
 
 :root.light body {
-  background: #F7F7F3;
-  color: #19191d;
+  background: #FFFFFF;
+  color: #171717;
 }
