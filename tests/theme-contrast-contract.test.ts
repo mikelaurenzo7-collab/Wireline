@@ -103,6 +103,17 @@ describe("BotBound appearance contrast", () => {
     },
   );
 
+  it("keeps high-contrast white light surfaces with a distinguishable strong border", () => {
+    expect(light["color.canvas.default"]).toBe("#ffffff");
+    expect(light["color.surface.default"]).toBe("#ffffff");
+    for (const surface of ["canvas.default", "surface.strong"]) {
+      expect(contrast(light["color.border.strong"], light[`color.${surface}`])).toBeGreaterThanOrEqual(3);
+    }
+    const styles = readFileSync("src/styles/theme-light.css", "utf8");
+    expect(styles).toContain(":where(:root.light) .wl-access-panel__field");
+    expect(styles).not.toContain("#f7f7f3");
+  });
+
   it("keeps highlighted text readable instead of alpha-blending the selection into a surface", () => {
     const master = readFileSync("src/styles/botbound-master-polish.css", "utf8");
     expect(master).toMatch(
