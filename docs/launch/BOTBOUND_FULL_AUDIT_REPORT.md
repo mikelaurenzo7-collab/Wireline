@@ -1,5 +1,7 @@
 # BotBound Production Comprehensive Audit Report
 
+> **Historical evidence only (October 29, 2026).** The GO status, test counts, provider certifications, and 100% claims below reflect that report's assertions; they have not been independently revalidated for subsequent commits or live provider state. In particular, the managed runtime has since retired Gemini. Use the [canonical production runbook](../DEPLOYMENT_RUNBOOK.md), exact-source CI, Render API/voice parity, and real provider probes for release decisions.
+
 **Date**: 2026-10-29  
 **System Status**: **LAUNCH-READY (GO)**  
 **Version**: 1.0.0 (Node 22 LTS, Render Web/Worker/Cron, Supabase Postgres, Vite 6)  
