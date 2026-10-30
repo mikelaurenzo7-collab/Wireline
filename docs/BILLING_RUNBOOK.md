@@ -13,6 +13,14 @@ Status: **Active canonical runbook**. This is the operator proof path for Stripe
 - **Voice usage:** `src/lib/voice-usage.ts` consumes included voice capacity first and Runtime Balance only for explicit funded overflow.
 - **Live Video:** talking-head is retired. Leftover Stripe add-on price IDs remain so webhooks do not brick billing. Checkout and session mint stay closed.
 
+## Production Stripe account ownership (verified October 30, 2026)
+
+- The live billing merchant selected by `scripts/stripe-usage-billing-setup.mjs` is `acct_1TkyXL8e6If87QKm` (**BotBound**); `assertUsageStripeAccount` rejects the separate BOTBOUND LLC accounts rather than silently writing their catalogs. This is a merchant-identity safety rule, not merely a dashboard name.
+- Read-only Stripe verification found the `https://botbound.app/api/stripe-webhook` endpoint **enabled** in that canonical account. The similar endpoint in `acct_1UQBcs6Ph5cHChCS` (**BOTBOUND LLC**) was **disabled**. Do not enable the second endpoint or swap keys just to make the company name look consistent; reconcile signing secret, API billing key, catalog price ownership, customers, and customer migration first.
+- Both connected live accounts returned zero current subscriptions on October 30. Database `wireline_subscriptions` rows labeled active were demo/founder/QA grants with no Stripe subscription ID. These are **not** proof of paid subscribers.
+- An older `wireline_checkout_operations` row remained `open` after its recorded `expires_at` elapsed; Stripe listed the corresponding checkout as `expired`. The next checkout must reconcile remote status and must not reuse or display the expired payable URL. Do not edit an operation's status in SQL as a substitute for the idempotent reconciliation path.
+- Use separate read-only audits for the canonical account and any legacy account; never assume a legal-entity rename or Stripe dashboard label is evidence that a secret key has moved merchants.
+
 ## Commercial contract
 
 - New accounts begin in `pending_activation` and may prepare a draft; paid provider work requires the applicable activation and allowance checks. Personal is a paid plan. Historical `free`, `builder`, and `free-builder` slugs resolve to Personal for compatibility and do not grant paid access.
