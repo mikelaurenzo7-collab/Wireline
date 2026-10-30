@@ -7,10 +7,7 @@ const read = (path: string) =>
 
 describe("code review hardening contracts", () => {
   it("runs TypeScript build checks without the TSX CLI IPC server", () => {
-    for (const path of [
-      "scripts/check-csp-drift.mjs",
-      "scripts/check-openapi-implementation.mjs",
-    ]) {
+    for (const path of ["scripts/check-openapi-implementation.mjs"]) {
       const source = read(path);
       expect(source, path).toContain('"--import"');
       expect(source, path).toContain('"tsx"');

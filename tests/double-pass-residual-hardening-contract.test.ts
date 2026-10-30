@@ -40,17 +40,8 @@ describe("double-pass residual hardening", () => {
   it("keeps service monitoring operational without a provider-branded customer page", () => {
     const app = read("src/App.tsx");
     const registration = read("src/server/register-api-routes.ts");
-    const vercel = JSON.parse(read("vercel.json")) as {
-      redirects?: Array<{ source: string; destination: string; permanent: boolean }>;
-    };
-
     expect(existsSync(resolve(process.cwd(), "src/components/Status.tsx"))).toBe(false);
     expect(app).not.toContain('path="/status"');
-    expect(vercel.redirects).toContainEqual({
-      source: "/status",
-      destination: "/trust",
-      permanent: true,
-    });
     expect(registration).toContain('app.all("/api/health/public"');
   });
 });

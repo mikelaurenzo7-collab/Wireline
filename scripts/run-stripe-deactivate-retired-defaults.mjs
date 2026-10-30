@@ -2,18 +2,14 @@
 import { spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getVercelEnvValue } from "./lib/vercel-env-values.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const token = process.env.VERCEL_TOKEN?.trim();
+const stripeKey = process.env.STRIPE_SECRET_KEY?.trim();
 
-if (!token) {
-  console.error("Set VERCEL_TOKEN");
+if (!stripeKey) {
+  console.error("Set STRIPE_SECRET_KEY");
   process.exit(1);
 }
-
-const stripeKey = await getVercelEnvValue(token, "STRIPE_SECRET_KEY");
-if (!stripeKey) throw new Error("STRIPE_SECRET_KEY not found on Vercel project");
 
 const result = spawnSync(
   "node",
