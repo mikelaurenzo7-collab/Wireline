@@ -5,7 +5,27 @@ import {
   resolvePreviewMigrationDatabaseUrl,
 } from "./lib/preview-migration-database.mjs";
 
-const environment = process.env.VERCEL_ENV || process.env.NODE_ENV || "development";
+const value = (name) => String(process.env[name] || "").trim();
+const renderMetadataPresent = [
+  "RENDER", "RENDER_SERVICE_ID", "RENDER_GIT_BRANCH", "RENDER_GIT_COMMIT",
+].some((name) => Boolean(value(name)));
+const vercelMetadataPresent = [
+  "VERCEL", "VERCEL_ENV", "VERCEL_GIT_COMMIT_REF", "VERCEL_GIT_COMMIT_SHA",
+].some((name) => Boolean(value(name)));
+
+// Render previews also use NODE_ENV=production; never classify them as
+// production or inherit its credential policy from that Node setting.
+const renderEnvironment =
+  value("RENDER") === "true" && value("IS_PULL_REQUEST") === "true"
+    ? "preview"
+    : value("RENDER") === "true" &&
+        value("IS_PULL_REQUEST") === "false" &&
+        ["production", "preview", "development"].includes(value("WIRELINE_DEPLOYMENT_ENVIRONMENT"))
+      ? value("WIRELINE_DEPLOYMENT_ENVIRONMENT")
+      : "unknown";
+const environment = renderMetadataPresent
+  ? renderEnvironment
+  : process.env.VERCEL_ENV || process.env.NODE_ENV || "development";
 const isProduction = environment === "production";
 const isPreview = environment === "preview";
 const failures = [];
@@ -13,7 +33,12 @@ const notices = [];
 const CANONICAL_PRODUCTION_ORIGIN = "https://botbound.app";
 const CANONICAL_PRODUCTION_SUPABASE_PROJECT_REF = "ogenlhodmwvyacvnrsnj";
 
-const value = (name) => String(process.env[name] || "").trim();
+if (renderMetadataPresent && vercelMetadataPresent) {
+  failures.push("Render and Vercel deployment metadata must not be combined");
+}
+if (renderMetadataPresent && environment === "unknown") {
+  failures.push("Render deployment requires trusted host, pull-request, and deployment-environment metadata");
+}
 const affirmative = (name) => ["1", "true", "yes", "on"].includes(value(name).toLowerCase());
 const requireValue = (name, reason) => {
   if (!value(name)) failures.push(`${name}: ${reason}`);
@@ -197,12 +222,30 @@ if (isProduction) {
   }
 
   if (affirmative("WIRELINE_SELF_SERVE_BILLING_ENABLED")) {
-    const gitRef = value("VERCEL_GIT_COMMIT_REF").toLowerCase();
-    if (gitRef !== "main") {
-      failures.push(
-        "WIRELINE_SELF_SERVE_BILLING_ENABLED: self-serve billing may only ship from the audited main production release channel",
-      );
+    if (renderMetadataPresent) {
+      if (
+        value("RENDER") !== "true" ||
+        value("IS_PULL_REQUEST") !== "false" ||
+        value("WIRELINE_DEPLOYMENT_ENVIRONMENT") !== "production"
+      ) {
+        failures.push("WIRELINE_SELF_SERVE_BILLING_ENABLED: Render checkout requires an attested production deployment");
+      }
+      if (value("RENDER_GIT_BRANCH") !== "main") {
+        failures.push("WIRELINE_SELF_SERVE_BILLING_ENABLED: RENDER_GIT_BRANCH must be exactly main");
+      }
+      if (!/^[a-f0-9]{40}$/.test(value("RENDER_GIT_COMMIT").toLowerCase())) {
+        failures.push("WIRELINE_SELF_SERVE_BILLING_ENABLED: Render requires a complete source commit SHA");
+      }
     } else {
+      // Preserve the deliberately supported Vercel rollback channel only.
+      const gitRef = value("VERCEL_GIT_COMMIT_REF").toLowerCase();
+      if (value("VERCEL_ENV") !== "production" || gitRef !== "main") {
+        failures.push(
+          "WIRELINE_SELF_SERVE_BILLING_ENABLED: self-serve billing may only ship from the audited main production release channel",
+        );
+      }
+    }
+    if (!failures.length) {
       notices.push(
         "Self-serve billing is authorized for the audited main production release channel; per-commit release-SHA rotation is retired.",
       );
