@@ -14,6 +14,10 @@ const kotlinOutputPath = resolve(
   root,
   "android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt",
 );
+const dartOutputPath = resolve(
+  root,
+  "apps/mobile/lib/theme/wireline_tokens.generated.dart",
+);
 const extensionOutputPath = resolve(root, "apps/browser-extension/panel/tokens.generated.css");
 
 const tokens = JSON.parse(await readFile(sourcePath, "utf8"));
@@ -223,12 +227,37 @@ const kotlin = [
   "",
 ].join("\n");
 
+const dart = [
+  "// Generated from design-tokens/wireline.tokens.json. Do not edit by hand.",
+  "import 'package:flutter/material.dart';",
+  "",
+  "abstract final class WirelineDesignTokens {",
+  ...colorEntries.map(
+    ([path, value]) => `  static const ${camel(path)} = ${rgbaToCompose(value) ?? "Colors.transparent"};`,
+  ),
+  "",
+  ...dimensionEntries.map(
+    ([path, value]) => `  static const double ${camel(path)} = ${pxNumber(value)}.0;`,
+  ),
+  "",
+  ...durationEntries.map(
+    ([path, value]) => `  static const int ${camel(path)}Millis = ${millisecondNumber(value)};`,
+  ),
+  `  static const double motionPressScale = ${pressScaleValue};`,
+  `  static const double motionLiftPx = ${liftPxValue}.0;`,
+  "",
+  ...zIndexEntries.map(([path, value]) => `  static const int ${camel(path)} = ${value};`),
+  "}",
+  "",
+].join("\n");
+
 await Promise.all([
   mkdir(dirname(cssOutputPath), { recursive: true }),
   mkdir(dirname(tsOutputPath), { recursive: true }),
   mkdir(dirname(swiftOutputPath), { recursive: true }),
   mkdir(dirname(swiftSharedOutputPath), { recursive: true }),
   mkdir(dirname(kotlinOutputPath), { recursive: true }),
+  mkdir(dirname(dartOutputPath), { recursive: true }),
   mkdir(dirname(extensionOutputPath), { recursive: true }),
 ]);
 await Promise.all([
@@ -237,9 +266,10 @@ await Promise.all([
   writeFile(swiftOutputPath, swift),
   writeFile(swiftSharedOutputPath, swift),
   writeFile(kotlinOutputPath, kotlin),
+  writeFile(dartOutputPath, dart),
   writeFile(extensionOutputPath, css),
 ]);
 
 console.log(
-  `Generated ${orderedEntries.length} Wireline design tokens for web, extension, iOS, and Android.`,
+  `Generated ${orderedEntries.length} Wireline design tokens for web, extension, iOS, Android, and Flutter.`,
 );

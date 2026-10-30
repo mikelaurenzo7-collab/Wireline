@@ -12,6 +12,10 @@ const android = readFileSync(
   "android/app/src/main/java/com/wireline/app/ui/theme/WirelineDesignTokens.kt",
   "utf8",
 );
+const dart = readFileSync(
+  "apps/mobile/lib/theme/wireline_tokens.generated.dart",
+  "utf8",
+);
 
 // The token source is DTCG-shaped: leaves carry "$value", not the legacy
 // "value" key. Flattening on the wrong key silently yields zero leaves and
@@ -55,6 +59,7 @@ for (const [name, value] of flatten(canonical)) {
     ["iOS shared tokens", iosShared, `0x${hex}`],
     ["iOS app tokens", iosApp, `0x${hex}`],
     ["Android tokens", android, `0xff${hex}`],
+    ["Flutter Dart tokens", dart, `0xff${hex}`],
   ];
   for (const [label, text, literal] of surfaces) {
     if (!text.toLowerCase().includes(literal))
