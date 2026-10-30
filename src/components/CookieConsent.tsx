@@ -59,7 +59,7 @@ export default function CookieConsent() {
   }, []);
 
   useEffect(() => {
-    if (!narrowViewport || typeof document.createElement !== "function") return;
+    if (!narrowViewport || !visible || explicitlyOpened || typeof document.createElement !== "function") return;
     const host = document.createElement("div");
     host.className = "wl-mobile-privacy-host";
     const appRoot = document.getElementById("root");
@@ -67,7 +67,7 @@ export default function CookieConsent() {
     else document.body.prepend(host);
     setMobileInlineHost(host);
     return () => host.remove();
-  }, [narrowViewport]);
+  }, [narrowViewport, visible, explicitlyOpened]);
 
   useEffect(() => {
     if (noticeAcknowledged()) return;
