@@ -10,7 +10,7 @@ function luminance(hex: string): number {
     .map((part) => parseInt(part, 16) / 255)
     .map((channel) =>
       channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
-    );
+    ) as [number, number, number];
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
