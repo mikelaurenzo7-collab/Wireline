@@ -9,7 +9,6 @@ const prodCheck = readFileSync(resolve(process.cwd(), "scripts/check-prod-env.mj
 const envExample = readFileSync(resolve(process.cwd(), ".env.example"), "utf8");
 const deploymentBoundaryPath = resolve(process.cwd(), "scripts/check-deployment-boundaries.mjs");
 const deploymentBoundary = readFileSync(deploymentBoundaryPath, "utf8");
-const vercelBuild = readFileSync(resolve(process.cwd(), "scripts/vercel-build.mjs"), "utf8");
 const serverContext = readFileSync(resolve(process.cwd(), "src/lib/server-context.ts"), "utf8");
 const startup = readFileSync(resolve(process.cwd(), "src/lib/startup.ts"), "utf8");
 const server = readFileSync(resolve(process.cwd(), "server.ts"), "utf8");
@@ -400,8 +399,6 @@ describe("production environment launch policy", () => {
     expect(deploymentBoundary).toContain("WIRELINE_LAUNCH_DEMO_MODE=false");
     expect(deploymentBoundary).toContain('"XAI_API_KEY"');
     expect(deploymentBoundary).not.toContain("WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW");
-    expect(vercelBuild).toContain("configurePreviewEnvironment");
-    expect(vercelBuild).not.toContain("runtime will disable");
   }, 30_000);
 
   it("permits only the reviewed isolated database lane for authenticated Preview QA", () => {

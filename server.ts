@@ -154,8 +154,8 @@ app.use((_req, res, next) => {
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   if (IS_PROD) setPublicIsolationHeaders(res);
-  // Keep these values in lockstep with the static-header policy in vercel.json
-  // so API responses carry the same posture as statically served documents.
+  // The server sets the header policy for every response, static documents
+  // included (buildCSP below is the single source).
   res.setHeader(
     "Permissions-Policy",
     "camera=(), microphone=(self), geolocation=(), payment=(self), usb=(), accelerometer=(), gyroscope=(), magnetometer=()",

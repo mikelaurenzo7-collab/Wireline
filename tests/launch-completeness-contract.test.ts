@@ -25,12 +25,10 @@ function declaredRoutePaths(appRoutes: string): Set<string> {
 }
 
 describe("launch completeness contracts", () => {
-  it("routes the launch-reel command through the certifying wrapper and Vercel gate", () => {
+  it("routes the launch-reel command through the certifying wrapper", () => {
     const pkg = JSON.parse(source("package.json")) as { scripts?: Record<string, string> };
-    const vercelBuild = source("scripts/vercel-build.mjs");
     expect(pkg.scripts?.["marketing:kit"]).toBe("node scripts/run-marketing-kit.mjs");
     expect(pkg.scripts?.["marketing:kit:raw"]).toBe("node scripts/marketing-kit.mjs");
-    expect(vercelBuild).toContain('"tests/launch-completeness-contract.test.ts"');
   });
 
   it("freezes the exact source before capture and rejects unsafe output", () => {
