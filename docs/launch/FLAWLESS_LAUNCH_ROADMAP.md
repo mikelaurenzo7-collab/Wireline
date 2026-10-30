@@ -1,5 +1,7 @@
 # BotBound Flawless Launch Roadmap & Cutover Runbook
 
+> **Historical roadmap, not an executable current cutover authorization.** The October 29 provider assumptions, Gemini steps, test counts, and zero-downtime targets below require fresh validation. Current deployment doctrine is the [canonical runbook](../DEPLOYMENT_RUNBOOK.md); a green build or historical sign-off does not certify production voice calls, payments, or browser execution.
+
 **Document Version**: 1.0.0  
 **Effective Date**: 2026-10-29  
 **Target Production Origin**: `https://botbound.app`  
