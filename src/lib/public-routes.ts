@@ -1,57 +1,23 @@
-/** Marketing home — anonymous visitors should see the landing page immediately. */
+import { isAppRouteScope } from "./app-route-manifest";
+
+/** Marketing home - anonymous visitors should see the landing page immediately. */
 export function isMarketingHomePath(pathname: string): boolean {
-  return pathname === "/" || pathname === "";
+  return isAppRouteScope(pathname, "home");
 }
-
-const MARKETING_PUBLIC_PATHS = new Set([
-  "/features",
-  "/pricing",
-  "/compare",
-  "/about",
-  "/support",
-  "/contact",
-  "/showcase",
-  "/developers",
-  "/changelog",
-  "/security",
-  "/trust",
-  "/privacy",
-  "/terms",
-  "/sms-consent",
-  "/solutions",
-  "/use-cases",
-  "/not-found",
-  "/404",
-]);
-
-const MARKETING_PUBLIC_PREFIXES = ["/for/", "/solutions/", "/use-cases/", "/trust/"];
 
 /** Broader marketing surface — must not block on session hydration. */
 export function isMarketingPublicPath(pathname: string): boolean {
-  if (MARKETING_PUBLIC_PATHS.has(pathname)) return true;
-  return MARKETING_PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  return isAppRouteScope(pathname, "marketing");
 }
 
 /** Sign-in / sign-up gates (including legacy /auth aliases). */
 export function isAuthPortalPath(pathname: string): boolean {
-  return (
-    pathname === "/signin" ||
-    pathname.startsWith("/signin/") ||
-    pathname === "/signup" ||
-    pathname.startsWith("/signup/") ||
-    pathname === "/login" ||
-    pathname === "/get-started" ||
-    pathname === "/reset" ||
-    pathname === "/reset-password" ||
-    pathname === "/oauth-complete" ||
-    pathname === "/auth" ||
-    pathname.startsWith("/auth/")
-  );
+  return isAppRouteScope(pathname, "auth");
 }
 
 /** Opaque recipient capabilities are public without being marketing pages. */
 export function isPublicCapabilityPath(pathname: string): boolean {
-  return pathname === "/voice-permission" || pathname === "/voice-permission/";
+  return isAppRouteScope(pathname, "public-capability");
 }
 
 /**

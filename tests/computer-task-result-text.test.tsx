@@ -34,6 +34,20 @@ describe("Computer result text", () => {
     },
   );
 
+  it("recovers repeated labeled items from compact browsing summaries", () => {
+    const html = renderToStaticMarkup(
+      <TaskResultText>
+        {
+          "Pricing is configurable. Monthly: - Calls: Starter $19 - Email: Starter $9. Annual: - Calls: Starter $199 - Email: Starter $90"
+        }
+      </TaskResultText>,
+    );
+    expect(html.match(/<ul>/g)).toHaveLength(2);
+    expect(html.match(/<li>/g)).toHaveLength(4);
+    expect(html).toContain("Monthly:");
+    expect(html).toContain("Annual:");
+  });
+
   it("never interprets model HTML or credential-bearing links", () => {
     const html = renderToStaticMarkup(
       <TaskResultText>

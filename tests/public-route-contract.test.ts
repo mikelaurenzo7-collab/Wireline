@@ -83,6 +83,10 @@ describe("public route fallbacks", () => {
   it("keeps public aliases and redirects document-owned for authenticated visitors", () => {
     for (const path of [
       "/reset",
+      "/blog",
+      "/blog/release-notes",
+      "/docs",
+      "/legal",
       "/solutions",
       "/solutions/support",
       "/use-cases",
@@ -90,6 +94,13 @@ describe("public route fallbacks", () => {
     ]) {
       expect(isSessionOptionalPublicPath(path), path).toBe(true);
       expect(usesWorkspaceViewport(path, true), path).toBe(false);
+    }
+  });
+
+  it("keeps authenticated compatibility routes inside the workspace auth boundary", () => {
+    for (const path of ["/integrations", "/voice", "/voices", "/voice-clone"]) {
+      expect(isWorkspaceRoute(path), path).toBe(true);
+      expect(usesWorkspaceViewport(path, false), path).toBe(true);
     }
   });
 

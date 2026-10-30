@@ -1,6 +1,26 @@
 import type { ReactNode } from "react";
 import LinkifiedText from "../ui/LinkifiedText";
 
+const INLINE_LABELED_ITEM = /\s+-\s+(?=[A-Z][A-Za-z0-9 +/&'-]{0,32}:)/g;
+
+function readableBlocks(text: string): string[] {
+  // Browsing models sometimes return compact prose such as
+  // "Monthly: - Calls: ... - Email: ..." even when asked for Markdown.
+  // Preserve ordinary hyphenated prose, but recover repeated labeled items.
+  const sectioned = text.replace(
+    /([.!?])\s+([A-Z][A-Za-z ]{1,24}:)(?=\s+-\s+)/g,
+    "$1\n\n$2",
+  );
+
+  return sectioned.split(/\n\s*\n/).flatMap((block) => {
+    if (block.includes("\n")) return [block];
+    const [intro, ...items] = block.split(INLINE_LABELED_ITEM);
+    if (items.length < 2) return [block];
+    const list = items.map((item) => `- ${item.trim()}`).join("\n");
+    return intro.trim() ? [intro.trim(), list] : [list];
+  });
+}
+
 /** A small text-only Markdown subset. HTML is always rendered as literal text. */
 function inline(text: string): ReactNode[] {
   const parts: ReactNode[] = [];
@@ -35,7 +55,7 @@ function inline(text: string): ReactNode[] {
 export default function TaskResultText({ children }: { children: string }) {
   return (
     <div className="wl-task-result-text">
-      {children.split(/\n\s*\n/).map((block, index) => {
+      {readableBlocks(children).map((block, index) => {
         const lines = block.split("\n");
         if (lines.every((line) => /^\s*[-*]\s+/.test(line)))
           return (

@@ -54,8 +54,8 @@ export default function StudioContextChrome() {
 
   return (
     <header className="wl-studio-context shrink-0" aria-label={`${language.singular} context`}>
-      <div className="wl-studio-context-row flex min-h-[56px] flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-5">
-        <div className="flex min-w-0 flex-[1_1_10rem] items-center gap-2.5 md:max-w-[18rem] md:flex-none">
+      <div className="wl-studio-context-row flex min-h-[56px] flex-nowrap items-center justify-between gap-1 px-2 py-1.5 sm:gap-2 sm:px-5 sm:py-2">
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5 md:max-w-[18rem] md:flex-none">
           {activeAgent ? null : (
             <span className="inline-flex shrink-0 font-[var(--wireline-font-mono)] text-[10px] uppercase tracking-[0.16em] text-primary">
               {language.navLabel}
@@ -124,7 +124,7 @@ export default function StudioContextChrome() {
           )}
         </div>
 
-        <div className="flex max-w-full flex-wrap items-center gap-1">
+        <div className="flex shrink-0 flex-nowrap items-center gap-1">
           {activeAgent ? (
             <>
               <Button
@@ -134,7 +134,7 @@ export default function StudioContextChrome() {
                   panelOpen || searchParams.get("panel") === "computer" ? "secondary" : "ghost"
                 }
                 size="sm"
-                className="min-h-[44px] px-2.5"
+                className="hidden min-h-[44px] px-2.5 sm:inline-flex"
                 aria-label={panelOpen ? "Close Browser Panel" : "Open Browser Panel"}
                 aria-expanded={panelOpen}
                 title={panelOpen ? "Close Browser Panel" : "Open Browser Panel"}
@@ -153,7 +153,7 @@ export default function StudioContextChrome() {
                 type="button"
                 variant={inspectorOpen ? "secondary" : "ghost"}
                 size="sm"
-                className="min-h-[44px] px-2.5"
+                className="min-h-[44px] min-w-11 px-0 sm:w-auto sm:px-2.5"
                 aria-label="Set Up Bot"
                 aria-expanded={inspectorOpen}
                 aria-controls={inspectorOpen ? "studio-inspector" : undefined}
@@ -169,7 +169,7 @@ export default function StudioContextChrome() {
                 }}
               >
                 <SlidersHorizontal className="size-4" aria-hidden="true" />
-                Set Up
+                <span className="hidden sm:inline">Set Up</span>
               </Button>
             </>
           ) : null}
