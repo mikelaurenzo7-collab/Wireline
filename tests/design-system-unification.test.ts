@@ -224,9 +224,10 @@ describe("Milestone 3: Design System Unification & Workspace Polish Contracts", 
       expect(studioHome).toContain("<StudioContextChrome />");
       expect(studioHome).toContain("<StudioWorkspaceV2 />");
 
-      // Inspector panel with Computer, Rehearse, Setup, and Review
-      expect(studioV2).toContain('{ id: "computer", label: "Browser" }');
-      expect(studioV2).toContain('{ id: "try", label: "Rehearse" }');
+      // Panel tabs Computer + Configure; Configure sub-tabs Details, Set Up, Summary
+      expect(studioV2).toContain('{ id: "computer", label: "Computer" }');
+      expect(studioV2).toContain('{ id: "configure", label: "Configure" }');
+      expect(studioV2).toContain('{ id: "details", label: "Details" }');
       expect(studioV2).toContain('{ id: "setup", label: "Set Up" }');
       expect(studioV2).toContain('{ id: "review", label: "Summary" }');
       expect(studioV2).toContain('STUDIO_INSPECTOR_STORAGE_KEY = "wireline:studio-panel:v3"');

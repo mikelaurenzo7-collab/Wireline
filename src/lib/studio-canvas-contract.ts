@@ -107,16 +107,17 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "settings-expanded-state", pattern: /aria-expanded=\{inspectorOpen\}/ },
   ],
   canvas: [
-    // Browser work and rehearsal share the side panel without mixing chat scopes.
+    // Computer work and configuration share the side panel; rehearsal lives
+    // in the conversation, not a panel tab.
     { id: "single-workroom", pattern: /onModeChange=\{panelOpen \? undefined : setWorkroomMode\}/ },
-    { id: "panel-tabs", pattern: /\{ id: "try", label: "Rehearse" \}/ },
-    { id: "computer-panel", pattern: /\{ id: "computer", label: "Browser" \}/ },
+    { id: "panel-tabs", pattern: /\{ id: "configure", label: "Configure" \}/ },
+    { id: "computer-panel", pattern: /\{ id: "computer", label: "Computer" \}/ },
     { id: "mobile-surface-switch", pattern: /aria-label="Workspace view"/ },
     {
       id: "inspector-body",
       pattern: /activePanelSection === "review"\s*\? reviewPanel\s*: setupPanel/,
     },
-    { id: "try-it-beside", pattern: /mode="test"/ },
+    { id: "try-it-beside", pattern: /setWorkroomMode\("test"\)/ },
     { id: "deep-editor", pattern: /StudioAgentWorkspacePanel/ },
     { id: "chat-workroom", pattern: /<StudioWorkroom/ },
     { id: "review-panel", pattern: /StudioAgentReviewPanel/ },
