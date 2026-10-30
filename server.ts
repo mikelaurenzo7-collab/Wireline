@@ -306,7 +306,9 @@ async function startServer() {
   });
 }
 
-if (process.env.VERCEL !== "1") {
+// Import-only smoke checks must not pretend to be a Vercel deployment.
+// Keep the Vercel handler path exclusively for the supported rollback host.
+if (process.env.VERCEL !== "1" && process.env.WIRELINE_IMPORT_SMOKE_NO_SERVER !== "true") {
   void startServer().then(() => {
     const port = Number(process.env.PORT) || 3000;
     server = app.listen(port, () => log.info("BotBound server started", { port }));
