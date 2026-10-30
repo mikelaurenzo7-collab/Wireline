@@ -48,6 +48,7 @@ import {
   cloneEngine,
   CloneEngineError,
   isCloneEngineId,
+  sweepInhouseVoiceRetention,
   type CloneEngine,
   type CloneEngineErrorCode,
   type CloneEngineId,
@@ -62,6 +63,7 @@ import {
   parseSignedLegalName,
   parseSpeakerJurisdiction,
   requiresWrittenBiometricRelease,
+  resolvePreferredCloneEngine,
   WRITTEN_BIOMETRIC_RELEASE_JURISDICTIONS,
   type SpeakerJurisdiction,
 } from "./clone-engine-selection";
@@ -116,6 +118,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
  */
 export function liveVoiceCloneEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
   if (env.LIVE_VOICE_CLONE_ENABLED !== "true") return false;
+  if (resolvePreferredCloneEngine(env) === "inhouse") return true;
   // A key alone is not enough: the recorder stays closed until a call can
   // actually speak the clone (OpenAI text, ElevenLabs audio, voice worker).
   return elevenLabsCallsConfigured(env);
@@ -502,10 +505,13 @@ export const liveVoiceService = {
     const gender = input.gender === "male" || input.gender === "female" ? input.gender : undefined;
     const sourceSha256 = createHash("sha256").update(wav).digest("hex");
 
+    const preferred = resolvePreferredCloneEngine();
     const candidates = cloneEngineCandidates({
       jurisdiction,
       xai: { configured: false, entitled: false, teamVoicesUsed: 0, teamLimit: 0 },
       elevenlabs: { configured: cloneEngine("elevenlabs").configured() },
+      inhouse: { configured: cloneEngine("inhouse").configured() },
+      preferred,
     });
     if (candidates.length === 0)
       throw friendlyProviderError(new CloneEngineError("elevenlabs", "not_configured"));
@@ -552,24 +558,27 @@ export const liveVoiceService = {
             );
         });
         let lastError: unknown = null;
-        const engine = cloneEngine("elevenlabs");
-        try {
-          const { providerVoiceId } = await engine.create({
-            name,
-            wav,
-            gender,
-          });
-          created = { engine, providerVoiceId };
-        } catch (error) {
-          lastError = error;
-          const code = error instanceof CloneEngineError ? error.code : "provider_unavailable";
-          log.warn("Live voice clone failed at engine", {
-            userId: actor.id,
-            engine: "elevenlabs",
-            code,
-            status: error instanceof CloneEngineError ? error.status : null,
-          });
-          void alertCloneEngineCapacity("elevenlabs", code, { jurisdiction }).catch(() => {});
+        for (const candidateId of candidates) {
+          const engine = cloneEngine(candidateId);
+          try {
+            const { providerVoiceId } = await engine.create({
+              name,
+              wav,
+              gender,
+            });
+            created = { engine, providerVoiceId };
+            break;
+          } catch (error) {
+            lastError = error;
+            const code = error instanceof CloneEngineError ? error.code : "provider_unavailable";
+            log.warn("Live voice clone failed at engine", {
+              userId: actor.id,
+              engine: candidateId,
+              code,
+              status: error instanceof CloneEngineError ? error.status : null,
+            });
+            void alertCloneEngineCapacity(candidateId, code, { jurisdiction }).catch(() => {});
+          }
         }
         if (!created) throw friendlyProviderError(lastError);
         const savedClone = created;
@@ -660,6 +669,12 @@ export const liveVoiceService = {
         return audio;
       }
       // The same stock voice a call would fall back to, so the A/B is honest.
+      if (engineFor(row).id === "inhouse") {
+        return await cloneEngine("inhouse").preview(
+          stockFallbackVoiceFor(input.stockVoice, row.voiceGender),
+          line,
+        );
+      }
       if (engineFor(row).id === "elevenlabs") {
         const reservation = await reservePlatformCostRecord({
           userId: actor.id,
@@ -758,6 +773,14 @@ export const liveVoiceService = {
    * provider request; a voice already gone at the provider counts as destroyed.
    */
   async expireDue(now: Date = new Date()): Promise<number> {
+    const inhouseSweep = sweepInhouseVoiceRetention(now.getTime());
+    if (inhouseSweep.expiredCount > 0) {
+      log.info("In-house voice models swept on retention schedule", {
+        expiredCount: inhouseSweep.expiredCount,
+        removedIds: inhouseSweep.removedIds,
+      });
+    }
+
     const due = await tenantStore.exit(() =>
       drizzle
         .select({
@@ -808,7 +831,7 @@ export const liveVoiceService = {
         });
       }
     }
-    return expired;
+    return expired + inhouseSweep.expiredCount;
   },
 };
 
@@ -876,6 +899,8 @@ export async function resolveRuntimeCustomVoice(
     if (!row || !isCloneEngineId(row.provider)) return null;
     if (row.provider === "elevenlabs") {
       if (!elevenLabsCallsConfigured()) return null;
+    } else if (row.provider === "inhouse") {
+      if (!cloneEngine("inhouse").configured()) return null;
     } else if (row.provider !== "xai" || !cloneEngine("xai").configured()) return null;
     const engine = cloneEngine(row.provider);
     if (!engine.isVoiceId(row.providerVoiceId)) return null;

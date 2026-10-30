@@ -80,9 +80,13 @@ export function parseSpeakerJurisdiction(value: unknown): SpeakerJurisdiction | 
 /**
  * Jurisdictions whose biometric-privacy law requires a written release and a
  * published retention/destruction schedule before a voiceprint is collected
- * (Illinois BIPA, 740 ILCS 14/15). Applied regardless of engine.
+ * (Illinois BIPA, 740 ILCS 14/15, and Texas CUBI, Tex. Bus. & Com. Code Sec. 503.001).
+ * Applied regardless of engine.
  */
-export const WRITTEN_BIOMETRIC_RELEASE_JURISDICTIONS: readonly SpeakerJurisdiction[] = ["US-IL"];
+export const WRITTEN_BIOMETRIC_RELEASE_JURISDICTIONS: readonly SpeakerJurisdiction[] = [
+  "US-IL",
+  "US-TX",
+];
 
 export function requiresWrittenBiometricRelease(jurisdiction: SpeakerJurisdiction): boolean {
   return WRITTEN_BIOMETRIC_RELEASE_JURISDICTIONS.includes(jurisdiction);
@@ -174,11 +178,18 @@ export type CloneSelectionReason =
  */
 export function selectCloneEngine(input: CloneEngineSelectionInput): CloneEngineSelection {
   const writtenReleaseRequired = requiresWrittenBiometricRelease(input.jurisdiction);
-  if (input.preferred === "inhouse" || (!input.elevenlabs.configured && !input.xai.configured)) {
+  if (input.preferred === "inhouse") {
     return { engine: "inhouse", reason: "inhouse_preferred", writtenReleaseRequired };
   }
-  if (!input.elevenlabs.configured)
+  if (input.inhouse?.configured && !input.elevenlabs.configured) {
     return { engine: "inhouse", reason: "inhouse", writtenReleaseRequired };
+  }
+  if (!input.elevenlabs.configured && !input.xai.configured) {
+    return { engine: "inhouse", reason: "inhouse_preferred", writtenReleaseRequired };
+  }
+  if (!input.elevenlabs.configured) {
+    return { engine: null, reason: "no_engine_available", writtenReleaseRequired };
+  }
   return { engine: "elevenlabs", reason: "elevenlabs", writtenReleaseRequired };
 }
 
