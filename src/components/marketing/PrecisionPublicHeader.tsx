@@ -1,4 +1,6 @@
-import { Link, NavLink } from "react-router";
+import { useEffect, useState } from "react";
+import { Link, NavLink, useLocation } from "react-router";
+import { Menu, X } from "lucide-react";
 
 import { BotBoundWordmark } from "../brand/BotBoundBrand";
 import SkipToContentLink from "../layout/SkipToContentLink";
@@ -8,6 +10,23 @@ import { useAuth } from "../../contexts/AuthContext";
 export default function PrecisionPublicHeader() {
   const headerRef = useChromeHeight(".marketing-surface", "--wl-marketing-chrome-top");
   const signedIn = Boolean(useAuth().user);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+
+  // Close mobile navigation drawer on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname, location.search]);
+
+  // Close on Escape key
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileMenuOpen]);
 
   return (
     <header
@@ -68,8 +87,47 @@ export default function PrecisionPublicHeader() {
               </Link>
             </>
           )}
+
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            aria-expanded={mobileMenuOpen}
+            aria-label="Toggle navigation menu"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden wl-focus-ring-halo"
+          >
+            {mobileMenuOpen ? (
+              <X className="size-5" aria-hidden="true" />
+            ) : (
+              <Menu className="size-5" aria-hidden="true" />
+            )}
+          </button>
         </nav>
       </div>
+
+      {mobileMenuOpen && (
+        <div
+          className="border-t border-border bg-background/95 px-4 py-3 shadow-xl backdrop-blur-2xl md:hidden"
+          role="navigation"
+          aria-label="Mobile Navigation"
+        >
+          <div className="flex flex-col space-y-1">
+            <NavLink
+              to="/features"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex min-h-11 items-center rounded-lg px-3 text-base font-medium text-foreground transition-colors hover:bg-muted"
+            >
+              Product
+            </NavLink>
+            <NavLink
+              to="/pricing"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex min-h-11 items-center rounded-lg px-3 text-base font-medium text-foreground transition-colors hover:bg-muted"
+            >
+              Pricing
+            </NavLink>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

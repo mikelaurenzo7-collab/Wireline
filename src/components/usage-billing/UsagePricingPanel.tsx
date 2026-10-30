@@ -235,7 +235,7 @@ export default function UsagePricingPanel({
                   {option.includedEmailAddresses === 1 ? "email address" : "email addresses"}
                 </span>
               </button>
-              <details className="mx-6 mb-4">
+              <details className="mx-6 mb-3">
                 <summary
                   aria-label={`${option.name} Plan Details`}
                   className="cursor-pointer rounded-md py-2 text-sm font-semibold wl-focus-ring-halo"
@@ -254,6 +254,18 @@ export default function UsagePricingPanel({
                   .
                 </p>
               </details>
+              <div className="mx-6 mb-5">
+                <Link
+                  to={signupHrefForPlan("usage", { usageTier: id })}
+                  aria-label={`Get started with ${option.name}`}
+                  className={`inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl px-4 text-sm font-semibold transition-all ${
+                    tier === id ? "marketing-btn-primary" : "marketing-btn-secondary"
+                  }`}
+                >
+                  <span>Start with {option.name}</span>
+                  <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
+                </Link>
+              </div>
             </div>
           );
         })}

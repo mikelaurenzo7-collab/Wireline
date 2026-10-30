@@ -73,7 +73,7 @@ export default function Features() {
       <section className="marketing-section marketing-section--screen">
         <div className="wl-public-rail mx-auto max-w-6xl">
           <header className="wl-features-intro text-center">
-            <h1 className="marketing-hero-title mx-auto">BOTS FOR EVERY JOB.</h1>
+            <h1 className="marketing-hero-title mx-auto">Bots for every job.</h1>
             <p className="wl-public-copy mx-auto max-w-2xl">
               Every Bot combines a phone line, an inbox, and a cloud computer in one workspace so
               customer conversations and web tasks never fall through the cracks.
@@ -83,7 +83,7 @@ export default function Features() {
                 to={signedIn ? "/studio" : "/signup"}
                 className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
               >
-                {signedIn ? "Open Workspace" : "GET STARTED"}
+                {signedIn ? "Open Workspace" : "Get Started →"}
               </Link>
               <Link
                 to="/pricing"

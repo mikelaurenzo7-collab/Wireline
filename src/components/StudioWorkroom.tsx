@@ -674,14 +674,14 @@ const StudioWorkroom = forwardRef<
               setShowLatest(!followLatest.current);
             }}
             ref={scrollRef}
-            className="wl-studio-chat__transcript min-h-0 flex-1 overflow-y-auto px-4 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:px-6"
+            className="wl-studio-chat__transcript min-h-0 flex-1 overflow-y-auto px-4 pt-6 pb-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:px-6"
             role="log"
             aria-label="Conversation"
             aria-live="polite"
             aria-relevant="additions text"
             tabIndex={0}
           >
-            <div className="mx-auto h-full w-full max-w-3xl">
+            <div className="mx-auto min-h-full w-full max-w-3xl">
               {timelineNotice}
               {loading ? (
                 <MessageSkeletons />

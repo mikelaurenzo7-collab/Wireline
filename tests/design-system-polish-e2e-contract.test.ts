@@ -12,7 +12,7 @@ describe("design system polish e2e verified wins", () => {
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
 
     expect(features).not.toContain("wl-features-intro__steps");
-    expect(features).toContain("BOTS FOR EVERY JOB.");
+    expect(features).toContain("Bots for every job.");
     expect(features).not.toMatch(/One Bot\./i);
     expect(features).not.toContain("MARKETING_VOICE.channelProof.map");
     expect(features).not.toMatch(/wl-channel-chip[\s\S]{0,180}<Icon\b/);
@@ -43,7 +43,9 @@ describe("design system polish e2e verified wins", () => {
     const compare = withoutComments(read("src/pages/Compare.tsx"));
     const app = read("src/App.tsx");
 
-    expect(app).toContain('<Route path="/blog" element={<PreservingRedirect to="/changelog" />} />');
+    expect(app).toContain(
+      '<Route path="/blog" element={<PreservingRedirect to="/changelog" />} />',
+    );
     expect(compare).toContain("Get Started");
     expect(compare).not.toMatch(/START FREE|SEE PRICING/);
     expect(compare).not.toContain(">Start free</");

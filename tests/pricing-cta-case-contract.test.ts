@@ -19,7 +19,7 @@ function planCtaLinks(): string[] {
 
 describe("pricing plan CTA case contract", () => {
   it("finds the plan CTAs it is meant to guard", () => {
-    expect(planCtaLinks().length, "shared-work CTA not found -- the markup changed").toBe(1);
+    expect(planCtaLinks().length, "shared-work CTA not found -- the markup changed").toBe(2);
   });
 
   it("puts every plan CTA in the shared cased button tier", () => {

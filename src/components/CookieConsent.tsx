@@ -38,7 +38,7 @@ export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
   const [explicitlyOpened, setExplicitlyOpened] = useState(false);
   const location = useLocation();
-  const [hasSession, setHasSession] = useState(false);
+  const [_hasSession, setHasSession] = useState(false);
   const privacySignalEnabled = globalPrivacyControlEnabled();
   const privacyPanelRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
@@ -197,7 +197,7 @@ export default function CookieConsent() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 24, opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
-          className="fixed z-[9999] box-border wl-privacy-choices left-3 right-3 w-[calc(100vw-1.5rem)] max-w-[calc(100vw-1.5rem)] sm:left-auto sm:right-4 sm:w-[720px] sm:max-w-[calc(100vw-2rem)] max-lg:bottom-[var(--wl-fixed-overlay-bottom)] lg:bottom-4 max-h-[calc(100dvh-var(--wl-fixed-overlay-bottom)-1rem)] lg:max-h-[calc(100dvh-2.5rem)] overflow-y-auto overscroll-contain rounded-xl"
+          className="fixed z-[9999] box-border wl-privacy-choices left-2 right-2 sm:left-auto sm:right-4 w-[calc(100vw-1rem)] sm:w-[720px] max-w-[calc(100vw-1rem)] sm:max-w-[calc(100vw-2rem)] max-lg:bottom-[calc(var(--wl-fixed-overlay-bottom,0px)+0.5rem)] lg:bottom-4 max-h-[calc(100dvh-var(--wl-fixed-overlay-bottom,0px)-1rem)] lg:max-h-[calc(100dvh-2.5rem)] overflow-y-auto overscroll-contain rounded-xl shadow-xl"
           role="region"
           aria-label="Privacy Choices"
           tabIndex={-1}
@@ -205,21 +205,20 @@ export default function CookieConsent() {
         >
           <div
             className={cn(
-              "relative rounded-md border border-border bg-background/95 backdrop-blur-xl shadow-lg flex items-start gap-2.5 sm:items-center",
-              hasSession ? "px-3 py-2.5" : "px-3.5 py-3",
+              "relative rounded-xl border border-border bg-background/95 backdrop-blur-xl shadow-lg flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 p-2.5 sm:px-4 sm:py-3",
             )}
           >
-            <div className="hidden sm:flex w-7 h-7 rounded-md items-center justify-center shrink-0 mt-0.5 wl-cookie-icon">
+            <div className="hidden sm:flex w-7 h-7 rounded-md items-center justify-center shrink-0 wl-cookie-icon">
               <Cookie className="w-3.5 h-3.5 text-brand" />
             </div>
 
-            <div className="flex-1 min-w-0 space-y-3 sm:flex sm:items-center sm:gap-3 sm:space-y-0">
+            <div className="flex-1 min-w-0 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
               <h2 className="sr-only">Privacy Choices</h2>
-              <p className="wl-balance break-words text-sm leading-relaxed text-foreground/80 sm:flex-1">
+              <p className="wl-balance break-words text-xs sm:text-sm leading-normal text-foreground/80 flex-1 pr-6 sm:pr-0">
                 Analytics are off by default.{" "}
                 <Link
                   to="/privacy"
-                  className="text-brand hover:text-brand/80 underline"
+                  className="text-brand hover:text-brand/80 underline font-medium"
                   onClick={() => {
                     // The destination page owns focus after navigation.
                     returnFocusRef.current = null;
@@ -235,14 +234,14 @@ export default function CookieConsent() {
                   Your privacy signal keeps measurement off.
                 </p>
               ) : (
-                <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0 w-full sm:w-auto">
                   <ShadButton
                     type="button"
                     variant="outline"
                     size="sm"
                     disableAnimations
                     onClick={() => saveChoice("denied")}
-                    className="min-w-0 sm:min-w-[132px]"
+                    className="flex-1 sm:flex-initial h-8 px-2.5 text-xs font-medium sm:min-w-[110px]"
                   >
                     Essential Only
                   </ShadButton>
@@ -251,7 +250,7 @@ export default function CookieConsent() {
                     size="sm"
                     disableAnimations
                     onClick={() => saveChoice("granted")}
-                    className="min-w-0 sm:min-w-[148px]"
+                    className="flex-1 sm:flex-initial h-8 px-2.5 text-xs font-medium sm:min-w-[120px]"
                   >
                     Allow Optional
                   </ShadButton>
@@ -266,9 +265,9 @@ export default function CookieConsent() {
               disableAnimations
               onClick={dismiss}
               aria-label="Keep advertising measurement off and dismiss"
-              className="absolute right-1 top-1 sm:static shrink-0 w-9 h-9 sm:-mt-1 sm:-mr-1.5 text-muted hover:text-foreground touch-press hover:scale-[1.05]"
+              className="absolute right-1 top-1 sm:static shrink-0 w-7 h-7 text-muted-foreground hover:text-foreground touch-press"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </ShadButton>
           </div>
         </motion.div>

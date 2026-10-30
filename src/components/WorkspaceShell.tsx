@@ -424,7 +424,7 @@ export default function WorkspaceShell({
   title,
   action,
   children,
-  contentClassName = "pt-2 pb-5",
+  contentClassName = "pt-2 pb-24 md:pb-6",
   containScroll = false,
   fullBleed = false,
 }: {
@@ -445,7 +445,7 @@ export default function WorkspaceShell({
   const showHeader = Boolean(title || action);
   const mainSpacing = fullBleed
     ? "p-0 lg:pb-0"
-    : "px-3 pt-2 pb-5 sm:px-6 sm:pt-3 lg:px-7 lg:pt-4 lg:pb-6";
+    : "px-3 pt-2 pb-24 sm:px-6 sm:pt-3 md:pb-6 lg:px-7 lg:pt-4 lg:pb-6";
   const contentInner = fullBleed
     ? `wl-workspace-content-inner flex w-full max-w-none flex-col ${
         containScroll ? "min-h-0 flex-1" : "min-h-[26rem] flex-1 shrink-0"

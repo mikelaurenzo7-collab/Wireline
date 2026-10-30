@@ -27,5 +27,5 @@ test("home keeps compact access to information and privacy choices", async ({ pa
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await nav.getByRole("link", { name: "Product", exact: true }).click();
   await expect(page).toHaveURL(/\/features$/);
-  await expect(page.getByRole("heading", { name: "BOTS FOR EVERY JOB." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bots for every job." })).toBeVisible();
 });
