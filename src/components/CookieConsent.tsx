@@ -41,7 +41,33 @@ export default function CookieConsent() {
   const [_hasSession, setHasSession] = useState(false);
   const privacySignalEnabled = globalPrivacyControlEnabled();
   const privacyPanelRef = useRef<HTMLDivElement>(null);
+  const [narrowViewport, setNarrowViewport] = useState(false);
+  const [mobileInlineHost, setMobileInlineHost] = useState<HTMLElement | null>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
+
+  // For a first visit on phones, insert the consent notice into normal page
+  // flow before the app. A fixed bottom notice previously covered pricing CTAs
+  // and homepage cards at 390px. Explicitly reopened choices remain floating
+  // so they are reachable from the footer or an authenticated workspace.
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia("(max-width: 639px)");
+    const sync = () => setNarrowViewport(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
+    if (!narrowViewport || typeof document.createElement !== "function") return;
+    const host = document.createElement("div");
+    host.className = "wl-mobile-privacy-host";
+    const appRoot = document.getElementById("root");
+    if (appRoot?.parentNode) appRoot.parentNode.insertBefore(host, appRoot);
+    else document.body.prepend(host);
+    setMobileInlineHost(host);
+    return () => host.remove();
+  }, [narrowViewport]);
 
   useEffect(() => {
     if (noticeAcknowledged()) return;
@@ -142,7 +168,7 @@ export default function CookieConsent() {
       privacyPanelRef.current?.focus({ preventScroll: true });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [visible]);
+  }, [visible, mobileInlineHost]);
 
   // While the notice floats over the page, reserve the same space at the end of
   // the document so visitors can still scroll the last content (e.g. a plan
@@ -165,7 +191,7 @@ export default function CookieConsent() {
       root.removeAttribute("data-privacy-choices");
       root.style.removeProperty("--wl-privacy-choices-space");
     };
-  }, [visible]);
+  }, [visible, mobileInlineHost]);
 
   useEffect(() => {
     if (!visible) return;
@@ -188,6 +214,10 @@ export default function CookieConsent() {
   const onPublicSurface =
     isMarketingHomePath(location.pathname) || isMarketingPublicPath(location.pathname);
   if (!onPublicSurface && !explicitlyOpened) return null;
+
+  const inlineOnPhone = narrowViewport && !explicitlyOpened;
+  const portalTarget = inlineOnPhone ? mobileInlineHost : document.body;
+  if (!portalTarget) return null;
 
   return createPortal(
     <AnimatePresence>
@@ -273,6 +303,6 @@ export default function CookieConsent() {
         </motion.div>
       )}
     </AnimatePresence>,
-    document.body,
+    portalTarget,
   );
 }
