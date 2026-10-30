@@ -6,11 +6,6 @@ import process from "node:process";
 import pg from "pg";
 import { getPostgresConnectionConfig } from "../src/lib/postgres-tls.mjs";
 import {
-  CANONICAL_PROJECT_ID,
-  CANONICAL_TEAM_ID,
-  resolveVercelToken,
-} from "./lib/vercel-project.mjs";
-import {
   canonicalRuntimeCommitFinding,
   resolveCanonicalProductionUrl,
 } from "./lib/production-url.mjs";
@@ -182,98 +177,6 @@ async function twilioStatus() {
   };
 }
 
-async function vercelStatus() {
-  const token = resolveVercelToken();
-  const configuredTeamId = process.env.VERCEL_TEAM_ID?.trim();
-  const configuredProjectId = process.env.VERCEL_PROJECT_ID?.trim();
-  if (!token) {
-    return { status: "unknown", reason: "Vercel read credentials not supplied" };
-  }
-  if (
-    (configuredTeamId && configuredTeamId !== CANONICAL_TEAM_ID) ||
-    (configuredProjectId && configuredProjectId !== CANONICAL_PROJECT_ID)
-  ) {
-    return { status: "blocked", reason: "Ambient Vercel project identity is not canonical" };
-  }
-  const teamId = CANONICAL_TEAM_ID;
-  const projectId = CANONICAL_PROJECT_ID;
-  const query = new URLSearchParams({ projectId, teamId, target: "production", limit: "10" });
-  const headers = { Authorization: `Bearer ${token}` };
-  const [deploymentResult, environmentResult] = await Promise.all([
-    jsonFetch(`https://api.vercel.com/v6/deployments?${query}`, { headers }),
-    jsonFetch(
-      `https://api.vercel.com/v10/projects/${encodeURIComponent(projectId)}/env?${new URLSearchParams({ teamId })}`,
-      { headers },
-    ),
-  ]);
-  const deployment = Array.isArray(deploymentResult.body?.deployments)
-    ? deploymentResult.body.deployments.find((item) => item.state === "READY")
-    : null;
-  const environments = Array.isArray(environmentResult.body?.envs)
-    ? environmentResult.body.envs
-    : [];
-  const keyRecords = new Map();
-  for (const item of environments) {
-    if (!keyRecords.has(item.key)) keyRecords.set(item.key, []);
-    keyRecords.get(item.key).push(item);
-  }
-  const requiredParityKeys = [
-    "OAUTH_BRIDGE_SECRET",
-    "STRIPE_STARTER_9_ANNUAL_PRICE_ID",
-    "HEALTH_MONITOR_TOKEN",
-  ];
-  // Production is the only required target. scripts/check-deployment-boundaries.mjs
-  // fails every preview build that can see credential-like configuration or the
-  // production Stripe catalog, so demanding preview/development coverage here
-  // made this gate and the build-time boundary gate mutually unsatisfiable.
-  const requiredTargets = ["production"];
-  const parityGaps = requiredParityKeys.flatMap((key) => {
-    const targets = new Set((keyRecords.get(key) || []).flatMap((item) => item.target || []));
-    return requiredTargets
-      .filter((target) => !targets.has(target))
-      .map((target) => `${key}:${target}`);
-  });
-  const secretKeyPattern =
-    /(?:^|_)(?:SECRET(?:_KEY)?|TOKEN|PASSWORD|PRIVATE(?:_KEY)?|API_KEY|CLIENT_SECRET|DATA_KEY|ENCRYPTION_KEY|DATABASE_URL|POSTGRES_URL)(?:$|_)/i;
-  const potentiallyUnencryptedSecretKeys = environments
-    .filter(
-      (item) => secretKeyPattern.test(item.key) && !["encrypted", "sensitive"].includes(item.type),
-    )
-    .map((item) => item.key);
-  const overlappingDuplicateKeys = [...keyRecords.entries()]
-    .filter(([, items]) => {
-      const seen = new Set();
-      return items.some((item) =>
-        (item.target || []).some((target) => {
-          if (seen.has(target)) return true;
-          seen.add(target);
-          return false;
-        }),
-      );
-    })
-    .map(([key]) => key);
-  return {
-    status: deploymentResult.ok && environmentResult.ok && deployment ? "ready" : "blocked",
-    deployment_id: deployment?.uid ?? null,
-    production_commit: deployment?.meta?.githubCommitSha ?? null,
-    environment_audit: {
-      record_count: environments.length,
-      unique_key_count: keyRecords.size,
-      production_record_count: environments.filter((item) => item.target?.includes("production"))
-        .length,
-      preview_record_count: environments.filter((item) => item.target?.includes("preview")).length,
-      development_record_count: environments.filter((item) => item.target?.includes("development"))
-        .length,
-      duplicate_keys: [...keyRecords.entries()]
-        .filter(([, items]) => items.length > 1)
-        .map(([key]) => key),
-      overlapping_duplicate_keys: overlappingDuplicateKeys,
-      parity_gaps: parityGaps,
-      potentially_unencrypted_secret_keys: [...new Set(potentiallyUnencryptedSecretKeys)],
-    },
-  };
-}
-
 const sourceCommit = git("rev-parse", "HEAD");
 const sourceBranch = git("branch", "--show-current");
 const worktreeClean = git("status", "--porcelain") === "";
@@ -291,7 +194,6 @@ const [readiness, canonicalRuntime, stripe, database, twilio, production] = awai
     productionUrl,
     expectedRevision: sourceCommit,
     readJson: jsonFetch,
-    readVercelStatus: vercelStatus,
   }),
 ]);
 
@@ -359,23 +261,8 @@ if (twilio.status !== "reachable") {
     blockers.push("twilio_usage_triggers_missing");
   }
 }
-if (productionProvider === "render") {
-  blockers.push(...production.blockers);
-} else {
-  // Legacy rollback verification is explicit; Render never reads Vercel credentials.
-  const vercel = production;
-  if (vercel.status !== "ready") {
-    blockers.push("vercel_unreachable");
-  } else if (vercel.production_commit !== sourceCommit) {
-    blockers.push("production_commit_mismatch");
-  }
-  if ((vercel.environment_audit?.parity_gaps || []).length > 0) {
-    blockers.push("vercel_required_env_scope_gap");
-  }
-  if ((vercel.environment_audit?.potentially_unencrypted_secret_keys || []).length > 0) {
-    blockers.push("vercel_potential_unencrypted_secret");
-  }
-}
+// Render is the only production provider. The Vercel branch was retired (T1).
+blockers.push(...production.blockers);
 for (const item of readiness.blockers || []) {
   const label = typeof item === "string" ? item : item?.code || item?.capability;
   if (label) blockers.push(`readiness:${label}`);

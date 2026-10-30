@@ -100,31 +100,11 @@ requirePattern(
   "Preview runtimes must disable live Stripe webhook processing.",
 );
 
-requirePattern(
-  "scripts/vercel-build.mjs",
-  /const shouldMigrate = !isCanonicalProduction && !migrationsDisabled && migrationsForced/,
-  "Canonical Production artifact builds must never execute database migrations.",
-);
-requirePattern(
-  "scripts/vercel-build.mjs",
-  /WIRELINE_RUN_MIGRATIONS/,
-  "Isolated nonproduction migration execution must have an explicit environment override.",
-);
-requirePattern(
-  "scripts/vercel-build.mjs",
-  /isDuplicateV0Project/,
-  "Duplicate Vercel projects must remain visibly identifiable during isolated migration checks.",
-);
-requirePattern(
-  "scripts/vercel-build.mjs",
-  /check-deployment-boundaries\.mjs/,
-  "Vercel builds must enforce Preview and Production credential isolation before any optional nonproduction migration.",
-);
-requirePattern(
-  "scripts/vercel-build.mjs",
-  /configurePreviewEnvironment/,
-  "Preview builds must derive their public origin only after credential isolation passes.",
-);
+
+
+
+
+
 requirePattern(
   "scripts/check-deployment-boundaries.mjs",
   /productionOnlyPreviewKeys/,
@@ -135,11 +115,7 @@ requirePattern(
   /credentialLikeName/,
   "New credential-like variables must default to blocked in preview.",
 );
-forbidPattern(
-  "scripts/vercel-build.mjs",
-  /sanitizePreviewEnvironment|WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW/,
-  "Preview builds must fail on production credentials instead of masking them only during compilation.",
-);
+
 requirePattern(
   "scripts/check-deployment-boundaries.mjs",
   /WIRELINE_PREVIEW_DATABASE_ISOLATED/,

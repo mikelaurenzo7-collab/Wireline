@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { resolveStripeOperatorKey } from "../scripts/lib/stripe-operator-key.mjs";
 import { assertStripePortalOperatorEnvironment } from "../scripts/lib/stripe-operator-policy.mts";
 import { PROJECT_ID } from "../scripts/lib/vercel-project.mjs";
@@ -20,34 +20,23 @@ const render = {
 const renderRelease = { role: "api", revision: source };
 
 describe("production Stripe operator verification", () => {
-  it("uses the supplied key without reading Vercel, even with a stale token present", async () => {
-    const readVercel = vi.fn();
+  it("uses the supplied key and ignores a stale Vercel token", async () => {
     await expect(
-      resolveStripeOperatorKey({ ...operator, VERCEL_TOKEN: "unused" }, readVercel),
+      resolveStripeOperatorKey({ ...operator, VERCEL_TOKEN: "legacy" }),
     ).resolves.toBe(operator.STRIPE_SECRET_KEY);
-    expect(readVercel).not.toHaveBeenCalled();
   });
 
-  it("preserves explicitly configured legacy Vercel key lookup", async () => {
-    const readVercel = vi.fn().mockResolvedValue("rk_live_operator_fixture");
-    await expect(resolveStripeOperatorKey({ VERCEL_TOKEN: "legacy" }, readVercel)).resolves.toBe(
-      "rk_live_operator_fixture",
-    );
-    expect(readVercel).toHaveBeenCalledExactlyOnceWith("legacy", "STRIPE_SECRET_KEY");
-  });
+
 
   it("fails without credentials and does not silently replace an invalid supplied key", async () => {
-    const readVercel = vi.fn();
-    await expect(resolveStripeOperatorKey({}, readVercel)).rejects.toThrow(
+    await expect(resolveStripeOperatorKey({})).rejects.toThrow(
       "Provide STRIPE_SECRET_KEY",
     );
     await expect(
       resolveStripeOperatorKey(
         { STRIPE_SECRET_KEY: "sk_test_fixture", VERCEL_TOKEN: "legacy" },
-        readVercel,
       ),
     ).rejects.toThrow("live Stripe key");
-    expect(readVercel).not.toHaveBeenCalled();
   });
 
   it("allows a secure local read-only audit without platform metadata", () => {
