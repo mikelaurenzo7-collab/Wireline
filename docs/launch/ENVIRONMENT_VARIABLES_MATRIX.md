@@ -106,12 +106,12 @@ This matrix defines every environment variable and secret required across the 10
 | `AGENTMAIL_API_KEY` | `REQUIRED` | `SECRET` | API, Voice | Platform API credential for provisioning Bot mailboxes | High-entropy AgentMail API token | None |
 | `AGENTMAIL_DEFAULT_DOMAIN` | `REQUIRED` | `PUBLIC` | API, Voice | Domain/subdomain used for dedicated Bot email inboxes | Must be `bots.botbound.app` or `mail.botbound.app` | `bots.botbound.app` |
 
-### 2.8. Real-Time Gemini Voice & Multimodal Models (/gemini-live-api-dev & /gemini-api-dev)
+### 2.8. Retired Gemini Live Voice (historical; not an active deployment requirement)
 | Variable Name | Tier | Scope | Target Destination | Purpose | Constraints & Validation | Default / Fallback |
 |---|---|---|---|---|---|---|
-| `GEMINI_API_KEY` | `REQUIRED` | `SECRET` | API, Voice | Google Gemini API key for Live bidirectional voice and multimodal models | Valid Google GenAI API key string | None |
-| `GEMINI_LIVE_MODEL` | `OPTIONAL` | `PUBLIC` | API, Voice | Active Gemini Live model identifier | Must be `gemini-3.8-live` or `gemini-3.8-live-extended-thinking` | `gemini-3.8-live` |
-| `GEMINI_LIVE_VOICE_NAME` | `OPTIONAL` | `PUBLIC` | API, Voice | Synthesized voice personality for Gemini Live audio | Valid voice identifier (e.g. `Puck`, `Charon`, `Aoede`) | `Aoede` |
+| `GEMINI_API_KEY` | `RETIRED` | `SECRET` | None | Legacy Gemini Live credential; HTTP and voice-worker Gemini entry points are retired | Do not provision for the current voice runtime | Not required |
+| `GEMINI_LIVE_MODEL` | `RETIRED` | `PUBLIC` | None | Former Gemini Live model selector | Inactive; no effect on the supported voice runtime | Not required |
+| `GEMINI_LIVE_VOICE_NAME` | `RETIRED` | `PUBLIC` | None | Former Gemini voice selector | Inactive; no effect on the supported voice runtime | Not required |
 
 ### 2.9. Structured Reasoning & Voice Telephony (/xai)
 | Variable Name | Tier | Scope | Target Destination | Purpose | Constraints & Validation | Default / Fallback |
