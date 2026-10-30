@@ -103,30 +103,26 @@ describe("server-owned OpenAI Realtime call control", () => {
   });
 
   it("runs the authenticated durable sweep every minute with limiter headroom", () => {
-    const config = JSON.parse(read("vercel.json")) as {
-      crons: Array<{ path: string; schedule: string }>;
+    const render = read("render.yaml");
+    const cronSchedule = (name: string) => {
+      const match = render.match(new RegExp(`name: ${name}[\\s\\S]{0,400}?schedule: "([^"]+)"`));
+      return match?.[1];
     };
     const routes = read("src/routes/job-routes.ts");
     const rateLimits = read("src/middleware/api-rate-limits.ts");
-    const sweep = config.crons.find((cron) => cron.path === "/api/jobs/sweep");
 
-    expect(sweep?.schedule).toBe("* * * * *");
+    expect(cronSchedule("botbound-jobs-sweep")).toBe("* * * * *");
     expect(routes).toContain('router.get("/sweep", cronAuth, jobsSweepRateLimit');
     expect(routes).toContain("expectedCronSecret.length >= 16");
     expect(rateLimits).toContain("const JOBS_SWEEP_WINDOW_MS = 15 * 60 * 1000");
     expect(rateLimits).toContain("const JOBS_SWEEP_MAX = 20");
   });
 
-  it("keeps serverless functions alive through the exact browser-call deadline", () => {
-    const config = JSON.parse(read("vercel.json")) as {
-      functions: Record<string, { maxDuration: number }>;
-    };
+  it("keeps browser-call work alive through the exact browser-call deadline", () => {
     const service = read("src/lib/voice/openai-realtime-service.ts");
     expect(service).toContain("OPENAI_REALTIME_SIMULATION_MAX_SECONDS = 300");
     expect(service).toContain("runInBackground");
     expect(service).toContain("hangupOpenAIRealtimeCall");
-    expect(config.functions["api/mcp.ts"].maxDuration).toBeGreaterThanOrEqual(360);
-    expect(config.functions["api/index.ts"].maxDuration).toBeGreaterThanOrEqual(360);
   });
 
   it("keeps retired public voice endpoints outside provider call creation", () => {

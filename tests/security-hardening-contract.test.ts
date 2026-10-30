@@ -77,6 +77,5 @@ describe("security hardening contract", () => {
     const csp = buildCSP(false, undefined, "'self'");
     expect(csp).toContain("object-src 'none'");
     expect(csp).toContain("frame-ancestors 'none'");
-    expect(read("vercel.json")).toContain("object-src 'none'");
   });
 });
