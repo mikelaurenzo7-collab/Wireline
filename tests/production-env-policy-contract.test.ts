@@ -520,4 +520,47 @@ describe("production environment launch policy", () => {
     );
     expect(deploymentBoundary).not.toContain("releaseSha !== deploymentSha");
   });
+
+  it("accepts only attested Render main for the standalone production billing boundary", () => {
+    const render = {
+      VERCEL_ENV: undefined,
+      RENDER: "true",
+      IS_PULL_REQUEST: "false",
+      WIRELINE_DEPLOYMENT_ENVIRONMENT: "production",
+      RENDER_GIT_BRANCH: "main",
+      RENDER_GIT_COMMIT: "a".repeat(40),
+      WIRELINE_SELF_SERVE_BILLING_ENABLED: "true",
+      WIRELINE_LAUNCH_DEMO_MODE: "false",
+    };
+    const approved = runProductionBoundary("https://botbound.app", render);
+    expect(approved.status, approved.stdout + approved.stderr).toBe(0);
+
+    for (const overrides of [
+      { RENDER_GIT_BRANCH: "feature/unsafe" },
+      { RENDER_GIT_BRANCH: "" },
+      { RENDER_GIT_COMMIT: "short" },
+      { RENDER: "false" },
+      { IS_PULL_REQUEST: undefined },
+      { VERCEL_ENV: "production" },
+    ]) {
+      const rejected = runProductionBoundary("https://botbound.app", { ...render, ...overrides });
+      expect(rejected.status, rejected.stdout + rejected.stderr).toBe(1);
+    }
+  });
+
+  it("never classifies a Render pull-request preview as production", () => {
+    const result = runProductionBoundary("https://botbound.app", {
+      VERCEL_ENV: undefined,
+      RENDER: "true",
+      IS_PULL_REQUEST: "true",
+      WIRELINE_DEPLOYMENT_ENVIRONMENT: "production",
+      RENDER_GIT_BRANCH: "feature/preview",
+      RENDER_GIT_COMMIT: "a".repeat(40),
+      WIRELINE_SELF_SERVE_BILLING_ENABLED: "true",
+    });
+    expect(result.status).toBe(1);
+    expect(result.stdout + result.stderr).toContain(
+      "preview deployments must never expose self-serve paid checkout",
+    );
+  });
 });
