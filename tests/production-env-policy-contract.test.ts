@@ -362,6 +362,9 @@ describe("production environment launch policy", () => {
     const smokeServer = packageJson.scripts["smoke:server"];
 
     expect(smokeServer).toContain("WIRELINE_IMPORT_SMOKE_NO_DATABASE");
+    expect(smokeServer).toContain("WIRELINE_IMPORT_SMOKE_NO_SERVER");
+    expect(smokeServer).not.toContain("process.env.VERCEL='1'");
+    expect(server).toContain('process.env.WIRELINE_IMPORT_SMOKE_NO_SERVER !== "true"');
     expect(smokeServer).toContain("delete process.env.DATABASE_POOL_URL");
     expect(smokeServer).toContain("delete process.env.POSTGRES_URL");
     expect(serverContext).toContain(
