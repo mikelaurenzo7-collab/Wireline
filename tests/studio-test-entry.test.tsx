@@ -290,6 +290,19 @@ describe("Studio settings-to-Test handoff", () => {
     expect(h.focus).toHaveBeenCalledOnce();
   });
 
+  it("rehearses in the conversation on wide layout without a panel tab", () => {
+    h.wide = true;
+    h.params = new URLSearchParams("agent=bot-a&section=setup");
+    requestTest();
+    const workroom = render().find((node) => node.type === "workroom")!;
+    expect(workroom.props.mode).toBe("test");
+    expect(h.params.has("section")).toBe(false);
+    expect(render().find((node) => node.type === "resizable-panel")?.props.collapsed).toBe(
+      true,
+    );
+    expect(h.focus).toHaveBeenCalledExactlyOnceWith();
+  });
+
   it.each(["bot", "owner", "mode"])(
     "does not apply a stale Test request after a %s switch",
     (context) => {

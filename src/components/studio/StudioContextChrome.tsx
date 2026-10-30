@@ -135,9 +135,9 @@ export default function StudioContextChrome() {
                 }
                 size="sm"
                 className="hidden min-h-[44px] px-2.5 sm:inline-flex"
-                aria-label={panelOpen ? "Close Browser Panel" : "Open Browser Panel"}
+                aria-label={panelOpen ? "Close Computer Panel" : "Open Computer Panel"}
                 aria-expanded={panelOpen}
-                title={panelOpen ? "Close Browser Panel" : "Open Browser Panel"}
+                title={panelOpen ? "Close Computer Panel" : "Open Computer Panel"}
                 onClick={() => {
                   window.dispatchEvent(new CustomEvent("wireline:studio-toggle-panel"));
                 }}
@@ -146,7 +146,7 @@ export default function StudioContextChrome() {
                   className={`size-4 ${panelOpen ? "text-primary" : "text-muted-foreground"}`}
                   aria-hidden="true"
                 />
-                <span className="hidden sm:inline">Browser</span>
+                <span className="hidden sm:inline">Computer</span>
               </Button>
               <Button
                 id="studio-settings-toggle"
