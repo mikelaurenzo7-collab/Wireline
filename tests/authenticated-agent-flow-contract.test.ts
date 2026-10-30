@@ -54,10 +54,10 @@ describe("authenticated Bot flow", () => {
     const workspaceShell = read("src/components/WorkspaceShell.tsx");
 
     expect(authPortal).toContain("AuthAccessPanel");
-    expect(authAccess).toContain("function signupPlanLabel(");
-    expect(authAccess).toContain("STRIPE_PLANS.find");
-    expect(authAccess).toContain("plan.price_usd_annual");
-    expect(authAccess).toContain("plan.price_usd_monthly");
+    // P-4: signup shows no plan prices; the plan choice lives at go-live.
+    expect(authAccess).not.toContain("function signupPlanLabel(");
+    expect(authAccess).not.toContain("plan.price_usd_annual");
+    expect(authAccess).not.toContain("plan.price_usd_monthly");
     expect(authAccess).not.toContain("const SIGNUP_PLAN_LABELS");
     expect(authAccess).toContain("WirelineLockup");
     expect(authAccess).not.toContain('<span className="wl-auth-brand-badge">W</span>');

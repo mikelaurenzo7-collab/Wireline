@@ -38,8 +38,13 @@ describe("auth journey hardening contract", () => {
 
     expect(panel).toContain('import { isAllowedOAuthUrl } from "../../lib/oauth-url";');
     expect(panel).toContain("if (!isAllowedOAuthUrl(payload?.url))");
-    expect(panel).toContain("`${name} · $${plan.price_usd_annual}/year`");
-    expect(panel).toContain("`${name} · $${plan.price_usd_monthly}/month`");
+    // P-4: signup shows no plan prices. Currency-qualified prices live on
+    // the pricing surface (UsagePricingPanel formats with toFixed(2)).
+    expect(panel).not.toContain("plan.price_usd_annual");
+    expect(panel).not.toContain("plan.price_usd_monthly");
+    const pricing = read("src/components/usage-billing/UsagePricingPanel.tsx");
+    expect(pricing).toContain("formatUsdCents");
+    expect(pricing).toContain("toFixed(2)");
     expect(panel).toContain('<StatusNotice tone="success" title={message} />');
     expect(panel).not.toContain('startsWith("http")');
     expect(portal).toContain("<AuthAccessPanel");
