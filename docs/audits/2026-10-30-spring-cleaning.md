@@ -12,6 +12,8 @@
 5. Set explicit POST methods on authentication, password reset, contact, and support forms. React handlers are unchanged; native browser fallback can no longer transmit entered fields in a GET URL. Added regression assertions.
 6. Reclassified the prior root launch score and sign-off as a historical claim, not approval of any later deployed revision.
 
+7. Retired the legacy Gemini HTTP session/tool/status handlers to explicit nonbillable HTTP 410 tombstones; POSTs retain authentication. Unmounted the historical Gemini media WebSocket bridge from the voice worker because it trusted tenant identifiers in a client-provided start frame without authenticated admission. Did not remove the current voice rehearsal or SIP paths.
+
 ## Independently observed, not modified
 
 - The production Supabase project reported `ACTIVE_HEALTHY`. All returned public-schema tables reported RLS enabled; this is not a proof of tenant policy correctness.
@@ -24,7 +26,7 @@
 
 ## Work intentionally deferred
 
-- Retired Gemini voice modules and routes still have imports and historical contract tests. Their runtime reachability and callback expectations must be proven before deletion; retiring a provider must not silently disable an existing live call.
+- Gemini legacy HTTP status/session/tool entry points and the unauthenticated Gemini media WebSocket mount are now retired in this **unmerged** branch. The legacy service source remains temporarily for history and rollback; do not assume the change is deployed. Verify voice-worker upgrade behavior and any external callback dependencies before merging.
 - Vercel names remain in deployment, compatibility, and tests. Remove only after the explicitly documented rollback path is retired.
 - Voice clones have separate feature gates, consent, provider retention, and legacy references. Preserve saved records and historical billing while feature rollout is paused.
 - Cloud Computer records use bounded browser sessions and provider-specific spend reservations. Reconcile actual remote-browser provider usage before changing accounting constants.
