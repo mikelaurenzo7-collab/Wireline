@@ -95,6 +95,10 @@ describe("BotBound appearance contrast", () => {
           contrast(colors["color.text.onAction"], action),
           `button text on ${state} action`,
         ).toBeGreaterThanOrEqual(4.5);
+        const secondary = colors[`color.action.secondary.${state}`];
+        for (const surface of ["canvas.default", "surface.strong"]) {
+          expect(contrast(secondary, colors[`color.${surface}`])).toBeGreaterThanOrEqual(4.5);
+        }
       }
     },
   );
