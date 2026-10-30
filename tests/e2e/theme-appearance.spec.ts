@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const COLORS = {
-  light: "rgb(247, 247, 243)",
+  light: "rgb(255, 255, 255)",
   dark: "rgb(10, 10, 14)",
 } as const;
 
