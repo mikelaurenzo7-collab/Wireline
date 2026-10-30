@@ -218,7 +218,7 @@ export function ContactPage() {
               </p>
             </div>
           ) : (
-            <form onSubmit={onSubmit} noValidate className="mt-7 space-y-5">
+            <form method="post" onSubmit={onSubmit} noValidate className="mt-7 space-y-5">
               <fieldset>
                 <legend id={inquiryLabelId} className="mb-2 block wl-stitch-label">
                   What Can We Help With?
