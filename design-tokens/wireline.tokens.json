@@ -18,7 +18,7 @@
     "text": {
       "primary": { "$type": "color", "$value": "#F5F4F8" },
       "secondary": { "$type": "color", "$value": "#B6B1C6" },
-      "tertiary": { "$type": "color", "$value": "#908CA5" },
+      "tertiary": { "$type": "color", "$value": "#9A95AC" },
       "onAction": { "$type": "color", "$value": "#0E0B16" }
     },
     "action": {
