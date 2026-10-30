@@ -16,7 +16,7 @@ export const WIRELINE_DESIGN_VISION = {
   appearance: {
     default: "light",
     modes: ["light", "dark", "system"] as const,
-    lightCanvas: "#F7F7F3",
+    lightCanvas: "#FFFFFF",
     darkCanvas: "#0A0A0E",
     rule: "Light is the first-visit appearance. Saved customer preference always wins. Light and dark are appearances of the same BotBound Design System, never separate visual systems.",
   },
@@ -28,7 +28,7 @@ export const WIRELINE_DESIGN_VISION = {
     "Claude conversation readability",
   ],
   principles: [
-    "Warm off-white is the first-visit default; near-black dark remains a first-class appearance.",
+    "True white and cool gray create a high-contrast first-visit light appearance; near-black dark remains a first-class appearance.",
     "Electric violet identifies BotBound and active focus. Neutral ink carries conversation actions; semantic colors carry status. Platinum is the wire.",
     "There is one BotBound visual language across public, authenticated, extension, MCP, and native surfaces.",
     "Visual vocabulary is semantic, not thematic: light, dark, canvas, surface, elevation, ink, action, wire, signal, and status.",
