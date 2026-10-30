@@ -12,7 +12,7 @@ describe("post-merge UI and artifact hardening", () => {
     expect(theme).toContain('updateMetaContent("color-scheme", resolved)');
     expect(theme).toContain('updateMetaContent("theme-color", THEME_COLORS[resolved])');
     expect(theme).toContain('updateMetaContent("msapplication-TileColor", THEME_COLORS[resolved])');
-    expect(theme).toContain('light: "#F7F7F3"');
+    expect(theme).toContain('light: "#FFFFFF"');
     expect(theme).toContain('dark: "#0A0A0E"');
   });
 
