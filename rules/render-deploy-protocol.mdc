@@ -1,0 +1,12 @@
+---
+description: Render Production Deployment and Service Coordination Protocol
+globs: *
+---
+# Render Multi-Service Deployment Protocol
+
+For changes merged to `origin/main`:
+1. `botbound-api` (`srv-daqamngu01pc73ffteeg`) auto-deploys from `main`.
+2. `botbound-voice` (`srv-daqaoo97lnhs73cbapeg`) has `autoDeploy: no` configured. You MUST manually trigger its deploy via Render API:
+   `POST https://api.render.com/v1/services/srv-daqaoo97lnhs73cbapeg/deploys` with body `{"clearCache":"do_not_clear"}`.
+3. Poll both deploys until their status is `live`.
+4. Run a live production health probe to `https://botbound.app/api/health/public` and confirm the service responds with HTTP 200 OK.

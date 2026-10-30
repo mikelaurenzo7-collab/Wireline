@@ -1,0 +1,11 @@
+---
+description: Windows Node and NPM Toolchain Invocation for BotBound
+globs: *
+---
+# Windows Node & NPM Toolchain Invariant
+
+When executing verification, test, lint, or build commands on Windows:
+1. Prepend the cached Node v22 path to PATH before executing commands:
+   `$env:PATH = "C:\Users\MichaelLaurenzo\.cache\botbound-node22\node-v22.23.3-win-x64;$env:PATH"`
+2. Always execute `npm.cmd` rather than `npm` to bypass PowerShell script execution policy restrictions on `npm.ps1`.
+3. Ensure Git commit operations run with this PATH set so `.husky/pre-commit` finds `node` in its Bash subshell.

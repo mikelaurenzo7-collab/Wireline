@@ -1,0 +1,14 @@
+---
+description: Design Token Source of Truth and Multi-Platform Synchronization
+globs: *
+---
+# Design Token Synchronization Rule
+
+1. `design-tokens/wireline.tokens.json` is the single source of truth for all color, metric, motion, and typography tokens.
+2. After modifying tokens, run `node scripts/build-design-tokens.mjs` to synchronize all 5 targets:
+   - Web TypeScript: `src/lib/tokens.generated.ts`
+   - Web & Extension CSS: `src/styles/tokens.generated.css`, `apps/browser-extension/panel/tokens.generated.css`
+   - iOS Swift: `ios/Wireline/Theme/WirelineTokens.generated.swift`
+   - Android Kotlin: `android/app/src/main/java/app/wireline/theme/WirelineTokens.generated.kt`
+   - Flutter Dart: `apps/mobile/lib/theme/wireline_tokens.generated.dart`
+3. Always verify with `node scripts/check-design-token-parity.mjs` before committing.
