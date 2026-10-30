@@ -30,7 +30,7 @@ const extraArgs = process.argv.slice(2);
 const canonicalReleaseSecondPass =
   extraArgs.length === 1 && extraArgs[0] === "--canonical-release-second-pass";
 
-// The large launch-critical tranche is executed explicitly by vercel-build.mjs
+// The large launch-critical tranche runs as the default test pass
 // before this explicitly selected second pass. These additional files cover
 // late release-gate additions and migration surfaces. Keeping this list short
 // and explicit makes the release authority inspectable and prevents old
@@ -38,7 +38,6 @@ const canonicalReleaseSecondPass =
 const CANONICAL_RELEASE_SECOND_PASS = [
   "tests/security-audit-bulk.test.mjs",
   "tests/security-audit-osv-fallback.test.mjs",
-  "tests/vercel-ignore-build.test.ts",
   "tests/page-meta-navigation.test.ts",
   "tests/marketing-disclosure.test.tsx",
   "tests/privacy-choices-focus.test.tsx",
@@ -94,7 +93,7 @@ const effectiveArgs = canonicalReleaseSecondPass ? [...CANONICAL_RELEASE_SECOND_
 
 // Exact-head preview audits use the same clean-room environment through the
 // compact reporter, but print only actionable failures. The canonical tranche
-// already ran immediately before this second pass in scripts/vercel-build.mjs.
+// already ran immediately before this second pass.
 if (explicitPreviewAudit && canonicalReleaseSecondPass) {
   const compact = spawnSync(
     process.execPath,
