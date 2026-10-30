@@ -19,8 +19,8 @@
   --wireline-color-surface-recessed: #f0f0f4;
 
   --wireline-color-text-primary: #19191d;
-  --wireline-color-text-secondary: #626268;
-  /* At least 4.62:1 across the standard surfaces, including surface-strong. */
+  --wireline-color-text-secondary: #5b5b61;
+  /* Secondary and tertiary text remain readable on raised, strong and violet-tinted surfaces. */
   --wireline-color-text-tertiary: #606066;
   --wireline-color-text-onAction: #ffffff;
 
@@ -47,14 +47,13 @@
   --wireline-color-overlay-scrim: rgba(23, 20, 38, 0.42);
   --wireline-color-overlay-vignette: rgba(23, 20, 38, 0.12);
 
-  /* Darkened so status text clears WCAG AA (4.5:1) on both the near-white
-     canvas and the tinted feedback surfaces below. The prior values were
-     3.1-4.4:1 as small text; hues are preserved. */
-  --wireline-color-status-success: #127548;
-  --wireline-color-status-warning: #8a5c07;
-  --wireline-color-status-error: #b83648;
+  /* Deepened so status copy exceeds 4.5:1 even on the stronger neutral
+     and violet-tinted surfaces, not only on the white canvas. */
+  --wireline-color-status-success: #10663e;
+  --wireline-color-status-warning: #765006;
+  --wireline-color-status-error: #a52f40;
   --wireline-color-status-info: #46577a;
-  --wireline-color-status-neutral: #6b6678;
+  --wireline-color-status-neutral: #5c5669;
 
   --wireline-color-feedback-success-surface: #e7f5ec;
   --wireline-color-feedback-success-border: #b7dec5;
