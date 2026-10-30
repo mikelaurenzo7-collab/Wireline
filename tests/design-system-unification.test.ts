@@ -64,16 +64,16 @@ describe("Milestone 3: Design System Unification & Workspace Polish Contracts", 
       expect(tokens.interaction.focus.haloWidth.$value).toBe("4px");
     });
 
-    it("verifies warm parchment light appearance and contrast-tuned status tokens in theme-light.css", () => {
+    it("verifies crisp white light appearance and contrast-tuned status tokens in theme-light.css", () => {
       const themeLight = read("src/styles/theme-light.css");
 
-      expect(themeLight).toContain("--wireline-color-canvas-default: #f7f7f3;");
+      expect(themeLight).toContain("--wireline-color-canvas-default: #ffffff;");
       expect(themeLight).toContain("--wireline-color-surface-default: #ffffff;");
       expect(themeLight).toContain("--wireline-color-action-primary-default: #7040d7;");
       expect(themeLight).toContain("--wireline-color-action-secondary-default: #596170;");
-      expect(themeLight).toContain("--wireline-color-status-success: #127548;");
-      expect(themeLight).toContain("--wireline-color-status-warning: #8a5c07;");
-      expect(themeLight).toContain("--wireline-color-status-error: #b83648;");
+      expect(themeLight).toContain("--wireline-color-status-success: #10663e;");
+      expect(themeLight).toContain("--wireline-color-status-warning: #765006;");
+      expect(themeLight).toContain("--wireline-color-status-error: #a52f40;");
       expect(themeLight).toContain("--wireline-color-status-info: #46577a;");
       expect(themeLight).toContain("--background: var(--wireline-color-canvas-default);");
       expect(themeLight).toContain("--foreground: var(--wireline-color-text-primary);");
@@ -101,7 +101,7 @@ describe("Milestone 3: Design System Unification & Workspace Polish Contracts", 
     it("aligns the canonical design vision with the established multi-surface posture", () => {
       expect(WIRELINE_DESIGN_VISION.system).toBe("BotBound Design System");
       expect(WIRELINE_DESIGN_VISION.appearance.default).toBe("light");
-      expect(WIRELINE_DESIGN_VISION.appearance.lightCanvas).toBe("#F7F7F3");
+      expect(WIRELINE_DESIGN_VISION.appearance.lightCanvas).toBe("#FFFFFF");
       expect(WIRELINE_DESIGN_VISION.appearance.darkCanvas).toBe("#0A0A0E");
       expect(WIRELINE_DESIGN_VISION.tokens.action).toBe("#A78BFA");
       expect(WIRELINE_DESIGN_VISION.tokens.accent).toBe("#C7CCD6");
