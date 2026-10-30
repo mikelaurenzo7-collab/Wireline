@@ -1,10 +1,10 @@
 /**
- * Set Up's side panel: Try It (private rehearsal), Details (the setup form),
- * and Summary (the setup review). Only Details and Summary are route-owned;
- * Try It is the panel's resting state on wide screens.
+ * The side panel: Computer (the work panel), and Configure (Details, the
+ * setup form, and Summary, the setup review). Configure sections are
+ * route-owned; Rehearse lives in the conversation, not the panel.
  */
 export type StudioInspectorSection = "details" | "setup" | "review";
-export type StudioPanelSection = "try" | StudioInspectorSection;
+export type StudioPanelSection = StudioInspectorSection;
 export type StudioWorkroomMode = "configure" | "test";
 
 export type StudioRouteStateInput = {
