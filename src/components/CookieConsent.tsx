@@ -177,21 +177,22 @@ export default function CookieConsent() {
     const root = typeof document === "undefined" ? null : document.documentElement;
     const panel = privacyPanelRef.current;
     if (!visible || !root?.style || !panel || typeof ResizeObserver === "undefined") return;
+    const inlineOnPhone = narrowViewport && !explicitlyOpened;
     const reserve = () =>
       root.style.setProperty(
         "--wl-privacy-choices-space",
-        `${Math.ceil(panel.getBoundingClientRect().height)}px`,
+        inlineOnPhone ? "0px" : `${Math.ceil(panel.getBoundingClientRect().height)}px`,
       );
     reserve();
     const observer = new ResizeObserver(reserve);
     observer.observe(panel);
-    root.setAttribute("data-privacy-choices", "open");
+    root.setAttribute("data-privacy-choices", inlineOnPhone ? "inline" : "open");
     return () => {
       observer.disconnect();
       root.removeAttribute("data-privacy-choices");
       root.style.removeProperty("--wl-privacy-choices-space");
     };
-  }, [visible, mobileInlineHost]);
+  }, [visible, mobileInlineHost, narrowViewport, explicitlyOpened]);
 
   useEffect(() => {
     if (!visible) return;
