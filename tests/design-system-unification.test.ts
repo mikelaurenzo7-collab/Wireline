@@ -31,7 +31,7 @@ describe("Milestone 3: Design System Unification & Workspace Polish Contracts", 
       // Text tokens
       expect(tokens.color.text.primary.$value).toBe("#F5F4F8");
       expect(tokens.color.text.secondary.$value).toBe("#B6B1C6");
-      expect(tokens.color.text.tertiary.$value).toBe("#908CA5");
+      expect(tokens.color.text.tertiary.$value).toBe("#9A95AC");
       expect(tokens.color.text.onAction.$value).toBe("#0E0B16");
 
       // Status tokens
