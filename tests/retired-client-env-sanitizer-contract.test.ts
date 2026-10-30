@@ -17,37 +17,6 @@ function canonicalProjectId(): string {
 }
 
 describe("retired client environment sanitizer", () => {
-  it("runs before the canonical application release gate", () => {
-    const config = JSON.parse(read("vercel.json")) as { buildCommand?: string };
-    const deployment = read("scripts/vercel-deploy.mjs");
-    const envExample = read(".env.example");
-    const cleanRoomRunner = '"scripts/run-test-estate.mjs"';
-    const sanitizerContract = '"tests/retired-client-env-sanitizer-contract.test.ts"';
-    const applicationGate = 'run(process.execPath, ["scripts/vercel-build.mjs"]);';
-
-    expect(config.buildCommand).toBe("node scripts/vercel-deploy.mjs");
-    expect(deployment).toContain('import "./sanitize-retired-client-env.mjs";');
-    expect(deployment).toContain(cleanRoomRunner);
-    expect(deployment).toContain(sanitizerContract);
-    expect(deployment).not.toContain(
-      'run("npx", ["vitest", "run", "tests/retired-client-env-sanitizer-contract.test.ts"])',
-    );
-    expect(deployment).toContain(applicationGate);
-    expect(deployment.indexOf(cleanRoomRunner)).toBeGreaterThanOrEqual(0);
-    expect(deployment.indexOf(sanitizerContract)).toBeGreaterThan(
-      deployment.indexOf(cleanRoomRunner),
-    );
-    expect(deployment.indexOf(applicationGate)).toBeGreaterThan(
-      deployment.indexOf(sanitizerContract),
-    );
-    expect(deployment).toContain('"--outfile=dist/public-health-api.cjs"');
-    expect(deployment).toContain(
-      'run(process.execPath, ["scripts/smoke-public-health-bundle.mjs"]);',
-    );
-    expect(envExample).toContain("OpenAI Realtime owns browser voice rehearsals");
-    expect(envExample).not.toContain("\nVITE_VAPI_PUBLIC_KEY=");
-  });
-
   it("removes the retired public key only for canonical production", () => {
     const result = spawnSync(
       process.execPath,

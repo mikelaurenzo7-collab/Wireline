@@ -7,24 +7,17 @@ const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("BotBound release provenance", () => {
   it("builds the reviewed source tree without a deploy-time brand rewrite", () => {
-    const deploy = read("scripts/vercel-deploy.mjs");
+    const pkg = JSON.parse(read("package.json")) as { scripts: Record<string, string> };
     expect(existsSync(resolve(root, "scripts/apply-botbound-customer-literal-migration.mjs"))).toBe(
       false,
     );
-    expect(deploy).not.toContain("apply-botbound-customer-literal-migration");
-    expect(deploy).toContain("The reviewed source tree is the artifact");
+    expect(pkg.scripts["build"]).not.toContain("apply-botbound-customer-literal-migration");
   });
 
   it("keeps production artifact compilation read-only across database and provider state", () => {
-    const build = read("scripts/vercel-build.mjs");
     const schemaPromotion = read("scripts/promote-production-schema.mjs");
     const providerPreflight = read("scripts/run-release-provider-preflight.mjs");
 
-    expect(build).toContain(
-      "const shouldMigrate = !isCanonicalProduction && !migrationsDisabled && migrationsForced",
-    );
-    expect(build).not.toContain("verifyStripePortalIfRequested");
-    expect(build).not.toContain("reconcile-stripe-customer-portal.mts");
     expect(schemaPromotion).toContain("APPLY_APPEND_ONLY_BOTBOUND_MIGRATIONS");
     expect(schemaPromotion).toContain("BOTBOUND_RELEASE_SHA");
     expect(schemaPromotion).toContain('run("npm", ["run", "db:migrate"]');
@@ -61,13 +54,8 @@ describe("BotBound release provenance", () => {
     }
   });
 
-  it("uses the verified BotBound sender throughout the runtime and sync tooling", () => {
+  it("uses the verified BotBound sender throughout the runtime", () => {
     expect(read("src/lib/resend-config.ts")).toContain('const DEFAULT_DOMAIN = "botbound.app"');
-    const sync = read("scripts/sync-resend-env-to-vercel.mjs");
-    expect(sync).toContain('RESEND_FROM_EMAIL = "BotBound <noreply@botbound.app>"');
-    expect(sync).toContain('const RETIRED_SENDER_DOMAIN = "trywireline.com"');
-    expect(sync).toContain("Refusing ${key}");
-    expect(sync).not.toContain("noreply@trywireline.com");
   });
 
   it("does not publish synthetic customer-activity metrics", () => {

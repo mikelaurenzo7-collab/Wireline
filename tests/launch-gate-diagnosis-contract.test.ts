@@ -92,7 +92,7 @@ describe("migration drift is answerable, and the tool is honest about its covera
     // positives would be worse than the gap it reports.
     const pkg = JSON.parse(read("package.json")) as { scripts: Record<string, string> };
     expect(pkg.scripts["db:drift"]).toBe("node scripts/check-migration-drift.mjs");
-    expect(read("scripts/vercel-build.mjs")).not.toContain("check-migration-drift");
+    expect(pkg.scripts["build"]).not.toContain("check-migration-drift");
     expect(script).toContain("STRICT && drifted.length ? 1 : 0");
   });
 

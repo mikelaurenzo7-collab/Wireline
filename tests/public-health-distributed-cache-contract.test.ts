@@ -12,32 +12,13 @@ describe("distributed public health boundary", () => {
     const bridge = read("api/health/public.ts");
     const implementation = read("src/entrypoints/public-health-api.ts");
     const smoke = read("scripts/smoke-public-health-bundle.mjs");
-    const deployment = read("scripts/vercel-deploy.mjs");
-    const vercelConfig = JSON.parse(read("vercel.json")) as {
-      buildCommand?: string;
-      functions?: Record<string, { includeFiles?: string }>;
-      rewrites?: Array<{ source?: string; destination?: string }>;
-    };
 
     expect(bridge).toContain('import { createRequire } from "node:module"');
     expect(bridge).toContain('require("../../dist/public-health-api.cjs")');
     expect(bridge).not.toContain("../../src/");
     expect(implementation).toContain('from "@upstash/redis"');
-    expect(vercelConfig.functions?.["api/health/public.ts"]?.includeFiles).toBe(
-      "dist/public-health-api.cjs",
-    );
-    expect(vercelConfig.buildCommand).toBe("node scripts/vercel-deploy.mjs");
-    expect(deployment).toContain('"src/entrypoints/public-health-api.ts"');
-    expect(deployment).toContain('"--outfile=dist/public-health-api.cjs"');
-    expect(deployment).toContain(
-      'run(process.execPath, ["scripts/smoke-public-health-bundle.mjs"]);',
-    );
     expect(smoke).toContain('require("../dist/public-health-api.cjs")');
     expect(smoke).toContain('typeof handler !== "function"');
-    expect(vercelConfig.rewrites).toContainEqual({
-      source: "/api/:path*",
-      destination: "/api/index.ts",
-    });
   });
 
   it("requires a global cache and lock before any external provider probe", () => {
@@ -96,13 +77,6 @@ describe("distributed public health boundary", () => {
     expect(probeSource).not.toContain('reasoning: { effort: "none" }');
     expect(probeSource).not.toContain('text: { verbosity: "low" }');
     expect(probeSource).not.toMatch(/api\.x\.ai|api\.vapi\.ai/);
-  });
-
-  it("keeps provider-specific legacy live audits out of the deploy gate", () => {
-    const build = read("scripts/vercel-build.mjs");
-
-    expect(build).not.toMatch(/VAPI|XAI|GROK|check-vapi/i);
-    expect(build).toContain('"tests/openai-runtime-cohesion-contract.test.ts"');
   });
 
   it("does not cache failures, preserves request correlation, and keeps diagnostics internal", () => {

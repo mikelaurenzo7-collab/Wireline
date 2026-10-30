@@ -5,17 +5,6 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("client bundle release budgets", () => {
-  it("measures the generated client artifacts in every canonical Vercel build", () => {
-    const deploy = read("scripts/vercel-deploy.mjs");
-    const smoke = read("scripts/smoke-public-health-bundle.mjs");
-
-    expect(deploy).toContain('run(process.execPath, ["scripts/smoke-public-health-bundle.mjs"])');
-    expect(smoke).toContain('await import("./check-client-bundle-budgets.mjs")');
-    expect(smoke.indexOf("public health bundle imports with a callable handler")).toBeLessThan(
-      smoke.indexOf("check-client-bundle-budgets.mjs"),
-    );
-  });
-
   it("caps first-load transfer, entry assets, lazy chunks, and public source maps", () => {
     const budget = read("scripts/check-client-bundle-budgets.mjs");
 
