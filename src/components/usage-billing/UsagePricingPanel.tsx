@@ -206,13 +206,13 @@ export default function UsagePricingPanel({
           return (
             <div
               key={id}
-              className={`rounded-2xl border bg-card text-left transition-colors ${tier === id ? "border-primary" : "border-border hover:border-foreground/30"}`}
+              className={`flex h-full min-w-0 flex-col rounded-2xl border bg-card text-left transition-colors ${tier === id ? "border-primary" : "border-border hover:border-foreground/30"}`}
             >
               <button
                 type="button"
                 aria-pressed={tier === id}
                 onClick={() => setTier(id)}
-                className="w-full rounded-2xl p-6 pb-2 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+                className="w-full flex-1 rounded-2xl p-6 pb-2 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
               >
                 <span className="flex items-center justify-between gap-2 text-lg font-semibold">
                   {option.name}
