@@ -113,5 +113,17 @@ describe("BotBound appearance contrast", () => {
     expect(header).toContain("md:inline-flex");
     expect(header).toContain("setMobileMenuOpen(false);");
     expect(header).toContain("<span>Use {nextTheme} appearance</span>");
+
+    const auth = readFileSync("src/components/auth/AuthAccessPanel.tsx", "utf8");
+    expect(auth).toContain("const { resolvedTheme, toggleTheme } = useTheme();");
+    expect(auth).toContain('aria-label={`Switch to ${nextTheme} appearance`}');
+    expect(auth).toContain('onClick={toggleTheme}');
+    expect(auth).toContain('!embedded ? (');
+  });
+
+  it("keeps the three public pricing plan actions on a shared baseline", () => {
+    const pricing = readFileSync("src/components/usage-billing/UsagePricingPanel.tsx", "utf8");
+    expect(pricing).toContain("flex h-full min-w-0 flex-col rounded-2xl border bg-card");
+    expect(pricing).toContain("w-full flex-1 rounded-2xl p-6 pb-2");
   });
 });
