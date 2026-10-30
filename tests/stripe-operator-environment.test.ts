@@ -26,7 +26,6 @@ describe("production Stripe operator verification", () => {
   });
 
 
-
   it("fails without credentials and does not silently replace an invalid supplied key", async () => {
     await expect(resolveStripeOperatorKey({})).rejects.toThrow(
       "Provide STRIPE_SECRET_KEY",
