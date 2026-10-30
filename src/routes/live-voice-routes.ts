@@ -16,11 +16,6 @@ import {
   getOpenAILiveVoiceStatus,
   runOpenAILiveVoiceTool,
 } from "../lib/voice/openai-live-agent-service";
-import {
-  getGeminiLiveVoiceStatus,
-  prepareGeminiLiveSessionConfig,
-  runGeminiLiveTool,
-} from "../lib/voice/gemini-live-service";
 import { getEffectiveSubscriptionPlanId, subscriptionPlanToTier } from "../lib/plan-entitlements";
 import { OPENAI_FREE_REHEARSAL_SECONDS } from "../lib/voice/openai-realtime-pricing";
 import { stopOpenAILiveVoiceCall } from "../lib/voice/live-voice-cleanup";
@@ -147,51 +142,30 @@ router.post(
   },
 );
 
-const geminiSessionSchema = z.object({
-  agentId: z.string().min(1).max(200),
-  voiceName: z.string().min(1).max(100).optional(),
-});
+// Retired legacy provider entry points are explicit tombstones. Keep their
+// former URLs for predictable client failures without loading Gemini provider
+// code, accepting billable sessions, or revealing provider configuration.
+const retiredGeminiResponse = (_req: AuthenticatedRequest, res: Response) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.status(410).json({
+    ok: false,
+    code: "VOICE_PROVIDER_RETIRED",
+    error: "This voice provider is no longer available.",
+  });
+};
 
-const geminiToolSchema = z.object({
-  agentId: z.string().min(1).max(200),
-  name: z.string().min(1).max(100),
-  args: z.record(z.string(), z.unknown()).optional(),
-});
-
-router.get("/api/voice/live/gemini/status", statusLimiter, (_req, res) => {
-  res.json(getGeminiLiveVoiceStatus());
-});
-
+router.get("/api/voice/live/gemini/status", statusLimiter, retiredGeminiResponse);
 router.post(
   "/api/voice/live/gemini/session",
   authenticateUser,
   sessionLimiter,
-  validateBody(geminiSessionSchema),
-  async (req: AuthenticatedRequest, res: Response) => {
-    const session = await prepareGeminiLiveSessionConfig({
-      userId: req.user.id,
-      agentId: req.body.agentId,
-      voiceName: req.body.voiceName,
-    });
-    res.setHeader("Cache-Control", "no-store");
-    res.json(session);
-  },
+  retiredGeminiResponse,
 );
-
 router.post(
   "/api/voice/live/gemini/tool",
   authenticateUser,
   toolLimiter,
-  validateBody(geminiToolSchema),
-  async (req: AuthenticatedRequest, res: Response) => {
-    const result = await runGeminiLiveTool({
-      userId: req.user.id,
-      agentId: req.body.agentId,
-      name: req.body.name,
-      args: req.body.args || {},
-    });
-    res.json({ result });
-  },
+  retiredGeminiResponse,
 );
 
 export default router;
