@@ -26,6 +26,16 @@
 - Read-only Browser Use inspected public `/`, `/pricing`, `/features`, `/signin`, `/signup`, `/contact`, `/support`, and secondary pages at desktop and mobile viewports. No broken internal navigation or pricing-total inconsistency was found. The mobile privacy-consent notice overlapped lower-page content at 390 px width. This remains open pending screenshot-backed design verification and a separate fix.
 - Supabase job and computer-task records show ongoing activity, but completed DB jobs do not independently certify their external effects.
 
+## Additional live cross-platform investigation (October 30, UTC)
+
+- GitHub `main` remained `cf95cfa0d62b3fbd9c921b7d3aad18730fb10d41`; PR #1444 was open, unmerged, and had no successful PR CI run observed. The GitHub-browser workflow dispatcher could not run because that separate browser session was not authenticated.
+- Render's `My Workspace` (`tea-d6cgo7kr85hc738l3lh0`) hosts the real `botbound-api`, `botbound-voice`, jobs sweep and daily brief services. The separate `BEASTBOTS` workspace hosts an unrelated repository. API and cron live revision matched `cf95cfa`; voice initially served `af0a5cd` because its auto-deploy is deliberately **off**. The production runbook requires draining calls before manual voice promotion; never enable voice auto-deploy merely to hide revision drift.
+- Stripe canonical merchant is `acct_1TkyXL8e6If87QKm` (explicit account rejection guard in `scripts/stripe-usage-billing-setup.mjs`). Its BotBound webhook is enabled; the second connected BOTBOUND LLC account's similar webhook is disabled. Both reported zero current live Stripe subscriptions; database's six `active` subscription rows were exclusively demo/QA/founder grants with null Stripe subscription IDs, so do not report them as paying users.
+- The checkout table had one local `open` operation whose recorded expiry was October 27 and whose matching Stripe session was `expired`. Confirm retry-time reconciliation; do not force-update customer billing state with an ad hoc query.
+- Supabase project `ogenlhodmwvyacvnrsnj` was `ACTIVE_HEALTHY`; seven Stripe event audit rows were all `processed` (including a rotation probe). The jobs table showed 36,441 completed jobs, five historic dead jobs, and recent scheduler activity. Zero non-terminal OpenAI SIP leases were found. These counts are not end-to-end external delivery evidence.
+- AgentMail returned 13 managed inboxes, including company `@botbound.app` addresses and a `@bots.botbound.app` bot inbox. Existence does not verify a fresh inbound/outbound delivery or webhook callback.
+- Supabase's unused-index lint returned 70 informational candidates. Leave indexes intact until usage and query-plan review. The Auth leaked-password warning concerns Supabase Auth; inspect the application's separate scrypt/breached-password controls before declaring an auth bypass.
+
 ## Work intentionally deferred
 
 - Gemini legacy HTTP status/session/tool entry points and the unauthenticated Gemini media WebSocket mount are now retired in this **unmerged** branch. The deleted legacy source remains recoverable from Git history; do not assume the change is deployed. Verify voice-worker upgrade behavior and any external callback dependencies before merging.
