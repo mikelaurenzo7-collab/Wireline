@@ -49,7 +49,7 @@ Use only these core dark-mode colors:
 
 - Canvas: `#0A0A0E`; deeper `#050508`; warmer `#101018`
 - Surfaces: `#100F15`, `#141319`, `#18161E`, `#201E29`, `#262330`
-- Text: primary `#F5F4F8`; secondary `#B6B1C6`; tertiary `#908CA5`
+- Text: primary `#F5F4F8`; secondary `#B6B1C6`; tertiary `#9A95AC`
 - Primary action: `#A78BFA`; hover `#C4B5FD`; pressed `#8B5CF6`; container `#1E1730`
 - Secondary action: silver `#C7CCD6`; container `#1C1D22`
 - Borders: soft `#1C1A22`; default `#262430`; strong `#3A3745`
@@ -189,7 +189,7 @@ The JSON token source already supplies typed values and generated web, extension
 | Raised surface  | `#201E29` | `#FFFFFF` |
 | Primary text    | `#F5F4F8` | `#19191D` |
 | Secondary text  | `#B6B1C6` | `#626268` |
-| Tertiary text   | `#908CA5` | `#606066` |
+| Tertiary text   | `#9A95AC` | `#606066` |
 | Primary action  | `#A78BFA` | `#7040D7` |
 | Text on action  | `#0E0B16` | `#FFFFFF` |
 | Default border  | `#262430` | `#E5E5EB` |
