@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- auth endpoint payloads are intentionally defensive at this boundary. */
 import React, { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, Lock, Mail, Moon, Sun } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router";
 
 import { useAuth } from "../../contexts/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext";
 import { canonicalLegacyBrowserHandoff } from "../../lib/canonical-browser-origin";
 import {
   persistAuthRedirect,
@@ -172,6 +173,8 @@ export default function AuthAccessPanel({
   className,
 }: AuthAccessPanelProps) {
   const { signIn, user, loading: authLoading } = useAuth();
+  const { resolvedTheme, toggleTheme } = useTheme();
+  const nextTheme = resolvedTheme === "dark" ? "light" : "dark";
   const navigate = useNavigate();
   const location = useLocation();
   const verificationReturn = readEmailVerificationReturn(location.search);
@@ -775,6 +778,19 @@ export default function AuthAccessPanel({
           <Link to="/">Home</Link>
           <Link to="/pricing">Pricing</Link>
           <Link to="/support">Support</Link>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={`Switch to ${nextTheme} appearance`}
+            className="wl-focus-ring-halo inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {resolvedTheme === "dark" ? (
+              <Sun className="size-4" aria-hidden="true" />
+            ) : (
+              <Moon className="size-4" aria-hidden="true" />
+            )}
+            <span>{resolvedTheme === "dark" ? "Light" : "Dark"}</span>
+          </button>
         </nav>
       ) : null}
     </section>
