@@ -1,4 +1,4 @@
-import express, { type Response } from "express";
+import express, { type Request, type Response } from "express";
 import { z } from "zod";
 
 import { authenticateUser } from "../middleware/auth";
@@ -145,7 +145,7 @@ router.post(
 // Retired legacy provider entry points are explicit tombstones. Keep their
 // former URLs for predictable client failures without loading Gemini provider
 // code, accepting billable sessions, or revealing provider configuration.
-const retiredGeminiResponse = (_req: AuthenticatedRequest, res: Response) => {
+const retiredGeminiResponse = (_req: Request, res: Response) => {
   res.setHeader("Cache-Control", "no-store");
   res.status(410).json({
     ok: false,
