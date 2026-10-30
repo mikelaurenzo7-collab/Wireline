@@ -34,7 +34,7 @@ describe("BotBound design vision", () => {
     expect(WIRELINE_DESIGN_VISION.appearance).toEqual({
       default: "light",
       modes: ["light", "dark", "system"],
-      lightCanvas: "#F7F7F3",
+      lightCanvas: "#FFFFFF",
       darkCanvas: "#0A0A0E",
       rule: "Light is the first-visit appearance. Saved customer preference always wins. Light and dark are appearances of the same BotBound Design System, never separate visual systems.",
     });
