@@ -191,12 +191,15 @@ if (isProduction) {
       );
     }
   }
-  if (
-    value("WIRELINE_STRUCTURED_PRIMARY_PROVIDER") &&
-    value("WIRELINE_STRUCTURED_PRIMARY_PROVIDER").toLowerCase() !== "openai"
-  ) {
+  // The managed reasoning chain is xAI first, OpenAI backup. The Vercel
+  // AI Gateway is a compatibility lane only on legacy Vercel deployments.
+  const structuredPrimary = value("WIRELINE_STRUCTURED_PRIMARY_PROVIDER").toLowerCase();
+  const supportedPrimaryProviders = renderMetadataPresent
+    ? ["xai", "grok", "openai"]
+    : ["xai", "grok", "openai", "gateway", "ai-gateway", "vercel"];
+  if (structuredPrimary && !supportedPrimaryProviders.includes(structuredPrimary)) {
     failures.push(
-      "WIRELINE_STRUCTURED_PRIMARY_PROVIDER: production must be unset or openai; other providers are continuity lanes only",
+      "WIRELINE_STRUCTURED_PRIMARY_PROVIDER: production must select an eligible managed provider (xai or openai; gateway only on legacy Vercel)",
     );
   }
 
