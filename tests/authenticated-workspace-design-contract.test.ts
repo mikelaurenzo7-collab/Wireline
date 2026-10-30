@@ -139,7 +139,7 @@ describe("authenticated workspace design architecture", () => {
     );
     expect(studio).toContain("const panelFill = panelOpen && (panelExpanded || computerFocused);");
     expect(studio).toContain("aria-pressed={panelFill}");
-    expect(studio).toContain('{ id: "computer", label: "Browser" }');
+    expect(studio).toContain('{ id: "computer", label: "Computer" }');
     expect(studio).toContain("<ComputerWorkbench");
     expect(studio.match(/compact=\{splitWorkspace\}/g)).toHaveLength(2);
     expect(studio).toContain('layout={splitWorkspace ? "split" : "standalone"}');
