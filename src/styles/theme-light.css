@@ -32,14 +32,14 @@
 
   /* Wire-action labels stay readable on both default and hover containers. */
   --wireline-color-action-secondary-default: #596170;
-  --wireline-color-action-secondary-pressed: #4b5563;
-  --wireline-color-action-secondary-hover: #808895;
+  --wireline-color-action-secondary-pressed: #374151;
+  --wireline-color-action-secondary-hover: #4b5563;
   --wireline-color-action-secondary-container: #f2f4f6;
   --wireline-color-action-secondary-containerStrong: #e7eaef;
 
   --wireline-color-border-default: #d9dde3;
   --wireline-color-border-soft: #e7e9ee;
-  --wireline-color-border-strong: #aeb5bf;
+  --wireline-color-border-strong: #7c8590;
 
   --wireline-color-focus-default: #7040d7;
   --wireline-color-focus-wire: #596170;
