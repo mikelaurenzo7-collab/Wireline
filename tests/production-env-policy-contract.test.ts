@@ -96,21 +96,32 @@ describe("production environment launch policy", () => {
     expect(server).toContain("if (isProductionDeployment() && origins.length === 0)");
   });
 
-  it("fails production closed if an operator override moves structured primary off OpenAI", () => {
-    for (const provider of ["xai", "grok", "gateway", "gemini"]) {
+  it("accepts the xAI-first structured runtime and rejects retired production primaries", () => {
+    for (const provider of ["xai", "grok", "openai"]) {
+      const result = runProductionBoundary("https://botbound.app", {
+        WIRELINE_STRUCTURED_PRIMARY_PROVIDER: provider,
+      });
+      expect(result.status, result.stdout + result.stderr).toBe(0);
+    }
+    for (const provider of ["gemini", "unknown", "anthropic"]) {
       const result = runProductionBoundary("https://botbound.app", {
         WIRELINE_STRUCTURED_PRIMARY_PROVIDER: provider,
       });
       expect(result.status).toBe(1);
       expect(`${result.stdout}${result.stderr}`).toContain(
-        "WIRELINE_STRUCTURED_PRIMARY_PROVIDER: production must be unset or openai",
+        "WIRELINE_STRUCTURED_PRIMARY_PROVIDER: production must select an eligible managed provider",
       );
     }
-    expect(
-      runProductionBoundary("https://botbound.app", {
-        WIRELINE_STRUCTURED_PRIMARY_PROVIDER: "openai",
-      }).status,
-    ).toBe(0);
+    const renderGateway = runProductionBoundary("https://botbound.app", {
+      VERCEL_ENV: undefined,
+      RENDER: "true",
+      IS_PULL_REQUEST: "false",
+      WIRELINE_DEPLOYMENT_ENVIRONMENT: "production",
+      RENDER_GIT_BRANCH: "main",
+      RENDER_GIT_COMMIT: "a".repeat(40),
+      WIRELINE_STRUCTURED_PRIMARY_PROVIDER: "gateway",
+    });
+    expect(renderGateway.status).toBe(1);
   });
 
   it("fails production closed when the Realtime admission reserve is below its derived floor", () => {
