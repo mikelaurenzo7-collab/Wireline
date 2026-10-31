@@ -34,3 +34,14 @@
 - **Test execution:** Not yet verified in a runnable checkout. GitHub CI, TypeScript, lint, theme contrast tests and Playwright must pass on the exact PR head before merge.
 - **Visual QA pending:** Preview both appearances at 320/375/390/430/768/1440 widths; exercise homepage, pricing, features, sign-in/sign-up, overview, Studio, Inbox and Settings, plus system theme changes. Confirm CTA baseline, focus indicators, form contrast, dialogs, mobile nav, cookie notice and accessibility semantics. Separate native build checks must follow if native artifacts are included in release scope.
 - **Release:** Do not deploy or merge without CI and visual parity confirmation. Theme changes must not alter billing, customer data, voice runtime, or carrier callbacks.
+
+
+## Authenticated live double-pass — completed October 30
+
+A one-time login using the corrected account email succeeded without MFA. Read-only Browser Use inspected live Render-backed `main` at **1440×900** and **390×844** in both Light and Dark, including Studio, Inbox, Calls, Settings, and Appearance & Brand (`/settings/customization`). The actual Light → Dark → Light toggle operated without apparent reflow, clipping, color residue, or horizontal scroll; light preference was restored. Mobile More bottom sheet and desktop command palette opened with usable backdrop/close controls. No private account content was added to this audit.
+
+Sampled live computed contrast (not a full AA sweep): **light primary body 16.32:1**, **light muted text on white panel 6.02:1**, **dark primary body 18.05:1**. Live `main` still renders a warm off-white canvas and near-white panels, so these screenshots **do not visually certify** the PR's pure-white `#FFFFFF` replacement or its focused-auth-border override. There were no major defects in sampled live states, but passing visual inspection does not replace code-build and E2E checks.
+
+The browser observed `/overview` redirect to Studio, which source inspection confirmed **intentional**: `src/routes/AppRoutes.tsx` explicitly documents retired Overview and routes it to `ToStudioRedirect`. This is not a newly introduced bug.
+
+**Outstanding:** run CI on PR exact head (no Actions runs were visible), run preview screenshots for the new white palette, verify narrow first-visit cookie notice after separate PR #1444, and exercise additional focus, error and extended-text states. No production data or billing settings were modified; only the appearance preference was toggled and restored.
