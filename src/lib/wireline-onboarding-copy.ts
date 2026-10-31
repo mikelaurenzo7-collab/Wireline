@@ -43,7 +43,7 @@ export const POST_CREATE_WIZARD_COPY = {
     voice: {
       label: "Voice",
       title: "Choose Voice",
-      detail: "Pick a voice or clone your own. Change it anytime.",
+      detail: "Choose a built-in voice. You can change it anytime."
       primary: "Continue to Try It",
     },
     launch: {
@@ -61,7 +61,7 @@ export const POST_CREATE_WIZARD_COPY = {
       label: "Try It",
       title: "Hear It First",
       detail:
-        "Practice privately with your built-in voice. To hear a cloned voice in a conversation, connect a number and make a real test call.",
+        "Practice privately with your built-in voice. When you are ready, connect a number and make a real test call.",
       primary: "Continue to Launch",
       skip: "Skip Rehearsal",
     },
