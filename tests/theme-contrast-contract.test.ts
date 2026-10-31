@@ -208,6 +208,14 @@ describe("BotBound appearance contrast", () => {
     expect(entrypoint).toContain("@custom-variant dark (&:where(:not(.light, .light *)));");
   });
 
+  it("keeps retired overview route selectors out of active CSS", () => {
+    const routes = readFileSync("src/routes/AppRoutes.tsx", "utf8");
+    expect(routes).toContain('<Route path="/overview" element={<ToStudioRedirect />} />');
+    for (const file of ["src/styles/route-density-fixes.css", "src/styles/visual-qa-hotfix.css"]) {
+      expect(readFileSync(file, "utf8"), file).not.toContain('data-wireline-route="/overview"');
+    }
+  });
+
   it("keeps recipe fields, placeholders, and results on semantic theme tokens", () => {
     const shared = readFileSync("src/components/recipes/shared.tsx", "utf8");
     const playbook = readFileSync("src/components/recipes/forms/CallPlaybookForm.tsx", "utf8");
