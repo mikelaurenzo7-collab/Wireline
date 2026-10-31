@@ -78,6 +78,7 @@ export async function boundedAudio(
 export function createPhoneCatalogService(
   env: NodeJS.ProcessEnv = process.env,
   request: typeof fetch = fetch,
+  options: { enableElevenLabs?: boolean } = {},
 ) {
   const cache = new Map<
     CatalogVoiceProvider,
@@ -90,6 +91,7 @@ export function createPhoneCatalogService(
       provider === "cartesia" ? env.CARTESIA_API_KEY || "" : env.ELEVENLABS_API_KEY || "",
     ).trim();
   async function list(provider: CatalogVoiceProvider): Promise<CatalogPhoneVoice[]> {
+    if (provider === "elevenlabs" && !options.enableElevenLabs) return [];
     const credential = key(provider);
     if (!credential) return [];
     const fingerprint = createHash("sha256").update(credential).digest("hex");
@@ -144,7 +146,9 @@ export function createPhoneCatalogService(
     }
   }
   async function all() {
-    const providers: CatalogVoiceProvider[] = ["cartesia", "elevenlabs"];
+    const providers: CatalogVoiceProvider[] = options.enableElevenLabs
+      ? ["cartesia", "elevenlabs"]
+      : ["cartesia"];
     const results = await Promise.allSettled(providers.map(list));
     return {
       voices: results.flatMap((result) => (result.status === "fulfilled" ? result.value : [])),
@@ -156,6 +160,7 @@ export function createPhoneCatalogService(
   async function resolve(variables: unknown): Promise<CatalogPhoneVoice | null> {
     const selection = catalogVoiceSelection(variables);
     if (!selection) return null;
+    if (selection.provider === "elevenlabs" && !options.enableElevenLabs) return null;
     const credential = key(selection.provider);
     if (!credential) return null;
     const fingerprint = createHash("sha256").update(credential).digest("hex");
@@ -201,6 +206,8 @@ export function createPhoneCatalogService(
     voice: CatalogPhoneVoice,
     line: string,
   ): Promise<{ audio: Buffer; mime: string }> {
+    if (voice.provider === "elevenlabs" && !options.enableElevenLabs)
+      throw new Error("Voice provider unavailable");
     const response = await request(
       voice.provider === "cartesia"
         ? "https://api.cartesia.ai/tts/bytes"
