@@ -262,7 +262,7 @@ function CreateForm({ events, onCreated }: { events: string[]; onCreated: () => 
       <div className="space-y-1.5">
         <label className="app-section-title">
           Signing Secret{" "}
-          <span className="text-muted/70">
+          <span className="text-muted-foreground">
             (optional, when set, body is signed as X-BotBound-Signature: sha256=&lt;hex&gt;)
           </span>
         </label>
@@ -478,7 +478,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                 {"•".repeat(12)}
                 {hook.secret_last_four}
               </code>
-              <span className="uppercase tracking-[0.3em] text-muted/70">· last 4</span>
+              <span className="uppercase tracking-[0.3em] text-muted-foreground">· last 4</span>
             </div>
           )}
         </div>
