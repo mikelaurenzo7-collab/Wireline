@@ -45,3 +45,16 @@ Sampled live computed contrast (not a full AA sweep): **light primary body 16.32
 The browser observed `/overview` redirect to Studio, which source inspection confirmed **intentional**: `src/routes/AppRoutes.tsx` explicitly documents retired Overview and routes it to `ToStudioRedirect`. This is not a newly introduced bug.
 
 **Outstanding:** run CI on PR exact head (no Actions runs were visible), run preview screenshots for the new white palette, verify narrow first-visit cookie notice after separate PR #1444, and exercise additional focus, error and extended-text states. No production data or billing settings were modified; only the appearance preference was toggled and restored.
+
+
+## Narrow-viewport follow-up — 320px
+
+A second **live main** browser scan covered 320/390/768/1024/1440px and both appearances. Signed-in routes redirected to sign-in in this separate browser session, so the previous successful authenticated pass remains the source for Studio/Inbox/Calls/Settings. The live public scan found:
+- At **320px**, public header wraps into two rows (approximately 109px high), whereas at 390px it is about 65px.
+- At **320px**, the simulated browser address `.landing-prestige__browser-url` exceeded its browser-bar right edge.
+- The first-visit floating Privacy Choices panel overlapped homepage workflow content on the narrow phone.
+- The live `#f7f7f3` canvas and `#ffffff` card mismatch remained visible on Pricing and Features. This is addressed in the **unmerged PR light token**, not on live main.
+
+**Source fixes committed on this branch:** public header keeps its primary CTA and menu on one line below 360px while putting signed-out Sign In inside the menu; the browser URL now shrinks and ellipsizes; the recipe form/input/result system and selected shared/account-admin components use semantic readable text, field borders, and state surfaces in place of hardcoded white/black and `text-muted` surface-colored copy. The Tailwind dark variant now explicitly excludes the `html.light` root, not just its descendants. Contrast contract and 320px E2E regression coverage expanded.
+
+**Cookie notice:** Separate **PR #1444** already proposes an inline first-visit phone treatment. Do not duplicate or override that patch in #1445; coordinate merge and test the combined result. Any appearance/viewport fixes in this report are code changes pending local/CI build and rendered **PR preview**, not verified live fixes.
