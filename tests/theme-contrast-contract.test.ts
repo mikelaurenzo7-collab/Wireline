@@ -216,6 +216,7 @@ describe("BotBound appearance contrast", () => {
     const surfaces = [
       "src/components/ui/SegmentStrip.tsx",
       "src/components/PhoneNumberPicker.tsx",
+      "src/components/IntakeKeysManager.tsx",
       "src/components/admin/TeamPanel.tsx",
       "src/components/admin/GrowthPanel.tsx",
       "src/components/recipes/forms/ObjectionDrillForm.tsx",
