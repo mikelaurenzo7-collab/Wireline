@@ -361,9 +361,9 @@ export default function StudioAgentReviewPanel({
             title={hasPhone ? "Phone connected" : "No phone connected"}
             action={
               <Button asChild size="sm" variant="secondary">
-                <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=setup#voice-clone`}>
+                <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=setup#voice`}>
                   <Mic className="size-4" aria-hidden="true" />
-                  Clone Voice
+                  Choose Voice
                 </Link>
               </Button>
             }
