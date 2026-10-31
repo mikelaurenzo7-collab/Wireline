@@ -103,6 +103,37 @@ describe("BotBound appearance contrast", () => {
     },
   );
 
+  it("keeps the published token table synchronized with the light and dark sources", () => {
+    const designDoc = readFileSync(".superdesign/design-system.md", "utf8");
+    const table = designDoc.slice(designDoc.indexOf("## Semantic Token Architecture"));
+    const roles = [
+      ["Canvas", "canvas.default"],
+      ["Default surface", "surface.default"],
+      ["Subtle surface", "surface.subtle"],
+      ["Raised surface", "surface.raised"],
+      ["Primary text", "text.primary"],
+      ["Secondary text", "text.secondary"],
+      ["Tertiary text", "text.tertiary"],
+      ["Primary action", "action.primary.default"],
+      ["Text on action", "text.onAction"],
+      ["Default border", "border.default"],
+      ["Strong border", "border.strong"],
+      ["Success", "status.success"],
+      ["Warning", "status.warning"],
+      ["Error", "status.error"],
+      ["Information", "status.info"],
+    ] as const;
+    for (const [role, name] of roles) {
+      const row = table
+        .split("\n")
+        .map((line) => line.split("|").map((part) => part.trim().replaceAll("`", "")))
+        .find((fields) => fields[1] === role);
+      expect(row, `missing documented role: ${role}`).toBeDefined();
+      expect(row![2].toLowerCase(), `dark ${role}`).toBe(dark[`color.${name}`]);
+      expect(row![3].toLowerCase(), `light ${role}`).toBe(light[`color.${name}`]);
+    }
+  });
+
   it("keeps high-contrast white light surfaces with a distinguishable strong border", () => {
     expect(light["color.canvas.default"]).toBe("#ffffff");
     expect(light["color.surface.default"]).toBe("#ffffff");
