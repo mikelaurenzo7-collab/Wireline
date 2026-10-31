@@ -42,7 +42,7 @@ export function CoachForm({
         <Checkbox
           checked={isLive}
           onChange={(e) => setIsLive(e.target.checked)}
-          className="w-4 h-4 rounded border-white/20 bg-black/5 accent-brand"
+          className="w-4 h-4 rounded border-[var(--wireline-color-border-strong)] bg-muted accent-brand"
         />
         Treat as in-progress (live) call
       </label>
@@ -64,11 +64,11 @@ export function CoachForm({
                   coaching.sentiment === "delighted" && "wl-status-success border wl-text-success",
                   coaching.sentiment === "positive" && "wl-status-success border wl-text-success",
                   coaching.sentiment === "neutral" &&
-                    "bg-black/[0.06] text-foreground/50 border border-white/12",
+                    "bg-[var(--wireline-color-feedback-neutral-surface)] text-[var(--wireline-color-status-neutral)] border border-[var(--wireline-color-feedback-neutral-border)]",
                   coaching.sentiment === "frustrated" &&
-                    "bg-amber-500/15 text-amber-500 border border-amber-500/30",
+                    "bg-[var(--wireline-color-feedback-warning-surface)] text-[var(--wireline-color-status-warning)] border border-[var(--wireline-color-feedback-warning-border)]",
                   coaching.sentiment === "angry" &&
-                    "bg-rose-500/15 text-rose-500 border border-rose-500/30",
+                    "bg-[var(--wireline-color-feedback-error-surface)] text-[var(--wireline-color-status-error)] border border-[var(--wireline-color-feedback-error-border)]",
                 )}
               >
                 {coaching.sentiment}
@@ -84,13 +84,13 @@ export function CoachForm({
                 className={cn(
                   "inline-flex px-3 py-1 rounded-full text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]",
                   coaching.escalation_risk === "imminent" &&
-                    "bg-rose-500/30 text-rose-500 border border-rose-500/50 animate-pulse",
+                    "bg-[var(--wireline-color-feedback-error-surface)] text-[var(--wireline-color-status-error)] border border-[var(--wireline-color-feedback-error-border)] motion-safe:animate-pulse",
                   coaching.escalation_risk === "high" &&
-                    "bg-rose-500/15 text-rose-500 border border-rose-500/30",
+                    "bg-[var(--wireline-color-feedback-error-surface)] text-[var(--wireline-color-status-error)] border border-[var(--wireline-color-feedback-error-border)]",
                   coaching.escalation_risk === "medium" &&
-                    "bg-amber-500/15 text-amber-500 border border-amber-500/30",
+                    "bg-[var(--wireline-color-feedback-warning-surface)] text-[var(--wireline-color-status-warning)] border border-[var(--wireline-color-feedback-warning-border)]",
                   coaching.escalation_risk === "low" &&
-                    "bg-black/[0.06] text-foreground/50 border border-white/12",
+                    "bg-[var(--wireline-color-feedback-neutral-surface)] text-[var(--wireline-color-status-neutral)] border border-[var(--wireline-color-feedback-neutral-border)]",
                   coaching.escalation_risk === "none" && "wl-status-success border wl-text-success",
                 )}
               >
