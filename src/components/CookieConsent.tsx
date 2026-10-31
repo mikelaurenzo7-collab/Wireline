@@ -60,11 +60,16 @@ export default function CookieConsent() {
 
   useEffect(() => {
     if (!narrowViewport || typeof document.createElement !== "function") return;
-    const host = document.createElement("div");
-    host.className = "wl-mobile-privacy-host";
-    const appRoot = document.getElementById("root");
-    if (appRoot?.parentNode) appRoot.parentNode.insertBefore(host, appRoot);
-    else document.body.prepend(host);
+    // Reuse the before-React first-paint slot on the public homepage. On
+    // other entry points the host remains empty/hidden until a notice appears.
+    const prepaintHost = document.getElementById("wl-mobile-privacy-prepaint");
+    const host = prepaintHost ?? document.createElement("div");
+    if (!prepaintHost) {
+      host.className = "wl-mobile-privacy-host";
+      const appRoot = document.getElementById("root");
+      if (appRoot?.parentNode) appRoot.parentNode.insertBefore(host, appRoot);
+      else document.body.prepend(host);
+    }
 
     // The host lives outside the marketing-surface subtree, so it cannot
     // inherit the measured --wl-marketing-chrome-top variable. Mirror the
@@ -99,14 +104,14 @@ export default function CookieConsent() {
     setMobileInlineHost(host);
     return () => {
       observer?.disconnect();
-      host.remove();
+      if (!prepaintHost) host.remove();
     };
   }, [narrowViewport]);
 
   useEffect(() => {
     if (noticeAcknowledged()) return;
     let cancelled = false;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
 
     void (async () => {
       let sessionPresent = false;
@@ -125,15 +130,15 @@ export default function CookieConsent() {
       if (sessionPresent) return;
 
       if (!cancelled) {
-        timeoutId = setTimeout(() => {
-          if (!cancelled) setVisible(true);
-        }, 1200);
+        // The slot already occupies its mobile height at first paint; do not
+        // leave an empty reserved area while adding an artificial delay.
+        setVisible(true);
       }
     })();
 
     return () => {
       cancelled = true;
-      if (timeoutId) clearTimeout(timeoutId);
+
     };
   }, []);
 
@@ -182,6 +187,14 @@ export default function CookieConsent() {
     },
     [privacySignalEnabled],
   );
+
+  // Clear the first-paint reservation when signed in, leaving home, or after
+  // acknowledgement. The inline portal itself occupies the reserved space.
+  useEffect(() => {
+    if (visible || _hasSession || location.pathname !== "/" || noticeAcknowledged()) {
+      document.documentElement.removeAttribute("data-wl-privacy-prepaint");
+    }
+  }, [visible, _hasSession, location.pathname]);
 
   const dismiss = useCallback(() => saveChoice("denied"), [saveChoice]);
 
