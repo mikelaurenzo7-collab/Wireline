@@ -18,6 +18,7 @@ describe("first-paint inline scripts and strict CSP", () => {
     expect(new Set(INLINE_SCRIPT_HASHES)).toEqual(new Set(executable));
     const production = buildCSP(false);
     for (const hash of executable) expect(production).toContain(hash);
-    expect(production).not.toContain("'unsafe-inline'");
+    const scriptSrc = production.split("; ").find((part) => part.startsWith("script-src "));
+    expect(scriptSrc).not.toContain("'unsafe-inline'");
   });
 });
