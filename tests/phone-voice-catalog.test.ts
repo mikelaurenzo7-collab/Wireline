@@ -90,6 +90,7 @@ describe("public phone catalog isolation", () => {
     const service = createPhoneCatalogService(
       { CARTESIA_API_KEY: "cartesia-test", ELEVENLABS_API_KEY: "eleven-test" },
       request,
+      { enableElevenLabs: true },
     );
     const result = await service.all();
     expect(result.voices.map((voice) => voice.id)).toEqual([publicVoice.id]);
