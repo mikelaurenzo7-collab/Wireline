@@ -289,7 +289,7 @@ export default function CookieConsent() {
 
             <div className="flex-1 min-w-0 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
               <h2 className="sr-only">Privacy Choices</h2>
-              <p className="wl-balance break-words text-xs sm:text-sm leading-normal text-foreground/80 flex-1 pr-6 sm:pr-0">
+              <p className="wl-balance break-words text-xs sm:text-sm leading-normal text-foreground/80 flex-1 pr-12 sm:pr-0">
                 Analytics are off by default.{" "}
                 <Link
                   to="/privacy"
@@ -316,7 +316,7 @@ export default function CookieConsent() {
                     size="sm"
                     disableAnimations
                     onClick={() => saveChoice("denied")}
-                    className="flex-1 sm:flex-initial h-8 px-2.5 text-xs font-medium sm:min-w-[110px]"
+                    className="flex-1 sm:flex-initial min-h-11 sm:min-h-10 h-auto px-2.5 text-xs font-medium sm:min-w-[110px]"
                   >
                     Essential Only
                   </ShadButton>
@@ -325,7 +325,7 @@ export default function CookieConsent() {
                     size="sm"
                     disableAnimations
                     onClick={() => saveChoice("granted")}
-                    className="flex-1 sm:flex-initial h-8 px-2.5 text-xs font-medium sm:min-w-[120px]"
+                    className="flex-1 sm:flex-initial min-h-11 sm:min-h-10 h-auto px-2.5 text-xs font-medium sm:min-w-[120px]"
                   >
                     Allow Optional
                   </ShadButton>
@@ -340,7 +340,7 @@ export default function CookieConsent() {
               disableAnimations
               onClick={dismiss}
               aria-label="Keep advertising measurement off and dismiss"
-              className="absolute right-1 top-1 sm:static shrink-0 w-7 h-7 text-muted-foreground hover:text-foreground touch-press"
+              className="absolute right-0 top-0 sm:static shrink-0 min-h-11 min-w-11 sm:min-h-10 sm:min-w-0 h-11 w-11 sm:h-7 sm:w-7 text-muted-foreground hover:text-foreground touch-press"
             >
               <X className="w-3.5 h-3.5" />
             </ShadButton>
