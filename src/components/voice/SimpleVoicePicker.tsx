@@ -9,6 +9,7 @@ import OpenAILiveVoiceSandbox from "../OpenAILiveVoiceSandbox";
 import { StatusNotice } from "../molecules";
 import LiveVoiceCloneStudio, { LIVE_VOICE_ANCHOR_ID } from "./LiveVoiceCloneStudio";
 import VoiceClonePanel from "./VoiceClonePanel";
+import { VOICE_CLONING_UI_ENABLED } from "../../lib/voice-clone-release";
 import PhoneVoiceCatalog from "./PhoneVoiceCatalog";
 import type { CatalogPhoneVoice } from "../../lib/phone-voice-catalog";
 
@@ -376,7 +377,7 @@ export default function SimpleVoicePicker({
 
   return (
     <div className="min-w-0 space-y-3">
-      {showCloneShortcut && ownerId && !clonedVoiceName ? (
+      {VOICE_CLONING_UI_ENABLED && showCloneShortcut && ownerId && !clonedVoiceName ? (
         <button
           type="button"
           onClick={scrollToClone}
@@ -515,7 +516,7 @@ export default function SimpleVoicePicker({
           markKey={markKey}
         />
       ) : null}
-      {ownerId ? (
+      {VOICE_CLONING_UI_ENABLED && ownerId ? (
         <LiveVoiceCloneStudio
           key={`live:${ownerId}:${agentId}:${cloneCardEpoch}`}
           agentId={agentId}
@@ -526,7 +527,7 @@ export default function SimpleVoicePicker({
           onActiveVoiceChange={handleActiveClone}
         />
       ) : null}
-      {ownerId ? (
+      {VOICE_CLONING_UI_ENABLED && ownerId ? (
         <VoiceClonePanel
           key={`${ownerId}:${agentId}`}
           ownerId={ownerId}
