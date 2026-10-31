@@ -80,10 +80,12 @@ export default function CookieConsent() {
     const syncHeaderClearance = () => {
       if (!publicHeader || !headerRail) return;
       const border = Number.parseFloat(getComputedStyle(publicHeader).borderBottomWidth) || 0;
-      host.style.setProperty(
-        "--wl-mobile-privacy-header-clearance",
-        `${Math.ceil(headerRail.getBoundingClientRect().bottom - publicHeader.getBoundingClientRect().top + border)}px`,
+      const clearancePx = Math.ceil(
+        headerRail.getBoundingClientRect().bottom -
+          publicHeader.getBoundingClientRect().top +
+          border,
       );
+      host.style.setProperty("--wl-mobile-privacy-header-clearance", `${clearancePx}px`);
     };
     syncHeaderClearance();
     const observer =
