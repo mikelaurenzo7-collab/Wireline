@@ -1112,7 +1112,7 @@ html[data-privacy-choices="open"] body {
    never obscure the homepage product card or the Pricing plan controls. The
    explicitly reopened choices still use the original fixed panel. */
 @media (max-width: 639px) {
-  /* The static HTML slot exists before React. A first anonymous home visit
+  /* The static HTML slot exists before React. A first anonymous marketing visit
      reserves exactly the normal header clearance plus the phone notice,
      avoiding a post-hydration content jump. Returning visits reserve nothing. */
   html[data-wl-privacy-prepaint="pending"] .wl-mobile-privacy-host:empty {
