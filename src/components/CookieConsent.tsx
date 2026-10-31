@@ -65,8 +65,32 @@ export default function CookieConsent() {
     const appRoot = document.getElementById("root");
     if (appRoot?.parentNode) appRoot.parentNode.insertBefore(host, appRoot);
     else document.body.prepend(host);
+
+    // The host lives outside the marketing-surface subtree, so it cannot
+    // inherit the measured --wl-marketing-chrome-top variable. Mirror the
+    // actual fixed-header height (including safe area and text wrapping) into
+    // the host instead of using a brittle hard-coded phone offset.
+    const publicHeader = document.querySelector<HTMLElement>(".wl-public-header");
+    const syncHeaderClearance = () => {
+      if (publicHeader) {
+        host.style.setProperty(
+          "--wl-mobile-privacy-header-clearance",
+          `${Math.ceil(publicHeader.getBoundingClientRect().height)}px`,
+        );
+      }
+    };
+    syncHeaderClearance();
+    const observer =
+      publicHeader && typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(syncHeaderClearance)
+        : null;
+    if (publicHeader) observer?.observe(publicHeader);
+
     setMobileInlineHost(host);
-    return () => host.remove();
+    return () => {
+      observer?.disconnect();
+      host.remove();
+    };
   }, [narrowViewport]);
 
   useEffect(() => {
@@ -161,8 +185,12 @@ export default function CookieConsent() {
     const frame = window.requestAnimationFrame(() => {
       if (
         typeof document.querySelector === "function" &&
-        document.querySelector('[aria-modal="true"], dialog[open]')
+        document.querySelector(
+          '[aria-modal="true"], dialog[open], .wl-public-header [aria-label="Toggle navigation menu"][aria-expanded="true"]',
+        )
       ) {
+        // Do not pull focus out of a dialog or an expanded mobile menu when
+        // the delayed first-visit privacy notice appears.
         return;
       }
       privacyPanelRef.current?.focus({ preventScroll: true });
@@ -197,7 +225,15 @@ export default function CookieConsent() {
   useEffect(() => {
     if (!visible) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !e.defaultPrevented) dismiss();
+      if (
+        e.key === "Escape" &&
+        !e.defaultPrevented &&
+        !document.querySelector(
+          '.wl-public-header [aria-label="Toggle navigation menu"][aria-expanded="true"]',
+        )
+      ) {
+        dismiss();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
