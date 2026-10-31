@@ -48,7 +48,7 @@ Automations links to the existing account-level post-call output and daily/weekl
 | Bot roster/state     | `src/contexts/AgentsContext.tsx`                                                                                                                                                      |
 | Shared visual system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts`                                            |
 
-The visual layer is intentionally restrained: the BotBound Design System uses a warm light canvas, neutral surfaces, violet actions, generous space, and accessible focus states. Warm light is the first-visit appearance; saved light, dark, or system preferences take precedence. Both appearances share one component and interaction system. Titles and controls use Title Case or uppercase; generated conversation prose remains naturally cased.
+The visual layer is intentionally restrained: the BotBound Design System uses a true-white light canvas, cool-neutral surfaces, violet actions, generous space, and accessible focus states. Light is the first-visit appearance; saved light, dark, or system preferences take precedence. Both appearances share one component and interaction system. Titles and controls use Title Case or uppercase; generated conversation prose remains naturally cased.
 
 ## Core API flow
 
