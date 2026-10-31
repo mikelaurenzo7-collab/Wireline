@@ -65,8 +65,42 @@ export default function CookieConsent() {
     const appRoot = document.getElementById("root");
     if (appRoot?.parentNode) appRoot.parentNode.insertBefore(host, appRoot);
     else document.body.prepend(host);
+
+    // The host lives outside the marketing-surface subtree, so it cannot
+    // inherit the measured --wl-marketing-chrome-top variable. Mirror the
+    // actual fixed-header height (including safe area and text wrapping) into
+    // the host instead of using a brittle hard-coded phone offset.
+    const publicHeader = document.querySelector<HTMLElement>(".wl-public-header");
+    // Measure only the persistent header rail. The mobile menu opens INSIDE
+    // the header and increases its full height; using that expanded height
+    // would move the privacy notice and page content on every menu toggle.
+    // The rail bottom minus the header top includes iOS safe-area padding,
+    // which the rail's own height deliberately excludes.
+    const headerRail = publicHeader?.querySelector<HTMLElement>(".wl-public-header__rail");
+    const syncHeaderClearance = () => {
+      if (!publicHeader || !headerRail) return;
+      const border = Number.parseFloat(getComputedStyle(publicHeader).borderBottomWidth) || 0;
+      const clearancePx = Math.ceil(
+        headerRail.getBoundingClientRect().bottom -
+          publicHeader.getBoundingClientRect().top +
+          border,
+      );
+      host.style.setProperty("--wl-mobile-privacy-header-clearance", `${clearancePx}px`);
+    };
+    syncHeaderClearance();
+    const observer =
+      headerRail && typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(syncHeaderClearance)
+        : null;
+    if (headerRail) observer?.observe(headerRail);
+    // Header padding can change independently of rail size on device rotation.
+    if (publicHeader) observer?.observe(publicHeader);
+
     setMobileInlineHost(host);
-    return () => host.remove();
+    return () => {
+      observer?.disconnect();
+      host.remove();
+    };
   }, [narrowViewport]);
 
   useEffect(() => {
@@ -161,8 +195,12 @@ export default function CookieConsent() {
     const frame = window.requestAnimationFrame(() => {
       if (
         typeof document.querySelector === "function" &&
-        document.querySelector('[aria-modal="true"], dialog[open]')
+        document.querySelector(
+          '[aria-modal="true"], dialog[open], .wl-public-header [aria-label="Toggle navigation menu"][aria-expanded="true"]',
+        )
       ) {
+        // Do not pull focus out of a dialog or an expanded mobile menu when
+        // the delayed first-visit privacy notice appears.
         return;
       }
       privacyPanelRef.current?.focus({ preventScroll: true });
@@ -197,7 +235,15 @@ export default function CookieConsent() {
   useEffect(() => {
     if (!visible) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !e.defaultPrevented) dismiss();
+      if (
+        e.key === "Escape" &&
+        !e.defaultPrevented &&
+        !document.querySelector(
+          '.wl-public-header [aria-label="Toggle navigation menu"][aria-expanded="true"]',
+        )
+      ) {
+        dismiss();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -245,7 +291,7 @@ export default function CookieConsent() {
 
             <div className="flex-1 min-w-0 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
               <h2 className="sr-only">Privacy Choices</h2>
-              <p className="wl-balance break-words text-xs sm:text-sm leading-normal text-foreground/80 flex-1 pr-6 sm:pr-0">
+              <p className="wl-balance break-words text-xs sm:text-sm leading-normal text-foreground/80 flex-1 pr-12 sm:pr-0">
                 Analytics are off by default.{" "}
                 <Link
                   to="/privacy"
@@ -272,7 +318,7 @@ export default function CookieConsent() {
                     size="sm"
                     disableAnimations
                     onClick={() => saveChoice("denied")}
-                    className="flex-1 sm:flex-initial h-8 px-2.5 text-xs font-medium sm:min-w-[110px]"
+                    className="flex-1 sm:flex-initial min-h-11 sm:min-h-10 h-auto px-2.5 text-xs font-medium sm:min-w-[110px]"
                   >
                     Essential Only
                   </ShadButton>
@@ -281,7 +327,7 @@ export default function CookieConsent() {
                     size="sm"
                     disableAnimations
                     onClick={() => saveChoice("granted")}
-                    className="flex-1 sm:flex-initial h-8 px-2.5 text-xs font-medium sm:min-w-[120px]"
+                    className="flex-1 sm:flex-initial min-h-11 sm:min-h-10 h-auto px-2.5 text-xs font-medium sm:min-w-[120px]"
                   >
                     Allow Optional
                   </ShadButton>
@@ -296,7 +342,7 @@ export default function CookieConsent() {
               disableAnimations
               onClick={dismiss}
               aria-label="Keep advertising measurement off and dismiss"
-              className="absolute right-1 top-1 sm:static shrink-0 w-7 h-7 text-muted-foreground hover:text-foreground touch-press"
+              className="absolute right-0 top-0 sm:static shrink-0 min-h-11 min-w-11 sm:min-h-10 sm:min-w-0 h-11 w-11 sm:h-7 sm:w-7 text-muted-foreground hover:text-foreground touch-press"
             >
               <X className="w-3.5 h-3.5" />
             </ShadButton>

@@ -133,3 +133,59 @@ test("System follows OS changes, then an explicit choice persists across routes"
     )
     .toEqual({ isLight: true, browserColor: "#FFFFFF" });
 });
+
+for (const width of [320, 375, 390] as const) {
+  test(`first-visit privacy notice stays below the header and out of the mobile menu at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 760 });
+    await page.route("**/api/auth/session", (route) =>
+      route.fulfill({ status: 401, contentType: "application/json", body: "{}" }),
+    );
+    await page.goto("/");
+
+    const notice = page.getByRole("region", { name: "Privacy Choices" });
+    await expect(notice).toBeVisible({ timeout: 10_000 });
+    // Consent choices and dismiss are real touch controls, not micro-targets.
+    for (const control of await notice.getByRole("button").all()) {
+      const bounds = await control.boundingBox();
+      expect(bounds?.height).toBeGreaterThanOrEqual(44);
+      expect(bounds?.width).toBeGreaterThanOrEqual(44);
+    }
+    await expect
+      .poll(async () =>
+        page.evaluate(() => {
+          const header = document.querySelector(".wl-public-header");
+          const panel = document.querySelector('[role="region"][aria-label="Privacy Choices"]');
+          const host = document.querySelector(".wl-mobile-privacy-host");
+          if (!header || !panel || !host) return false;
+          return (
+            getComputedStyle(panel).position === "relative" &&
+            panel.getBoundingClientRect().top >= header.getBoundingClientRect().bottom - 1 &&
+            getComputedStyle(host).paddingTop !== "0px"
+          );
+        }),
+      )
+      .toBe(true);
+
+    const menu = page.getByRole("button", { name: "Toggle navigation menu" });
+    const headerSpaceBefore = await page.locator(".wl-mobile-privacy-host").evaluate(
+      (node) => getComputedStyle(node).paddingTop,
+    );
+    // A normal, unforced click must hit the menu rather than the privacy close button.
+    await menu.click();
+    await expect(page.getByRole("navigation", { name: "Mobile Navigation" })).toBeVisible();
+    await expect(notice).toBeHidden();
+    await expect(menu).toHaveAttribute("aria-expanded", "true");
+    // Expanding the menu increases the header's overall height, but must not
+    // change the inline privacy clearance or shift the whole document.
+    const headerSpaceAfter = await page.locator(".wl-mobile-privacy-host").evaluate(
+      (node) => getComputedStyle(node).paddingTop,
+    );
+    expect(headerSpaceAfter).toBe(headerSpaceBefore);
+
+    await menu.click();
+    await expect(notice).toBeVisible();
+    await expect(menu).toHaveAttribute("aria-expanded", "false");
+  });
+}

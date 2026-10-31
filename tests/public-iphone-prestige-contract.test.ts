@@ -100,6 +100,20 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(consent).toContain("const inlineOnPhone = narrowViewport && !explicitlyOpened;");
     expect(consent).toContain("const portalTarget = inlineOnPhone ? mobileInlineHost : document.body;");
     expect(consent).toContain("setMobileInlineHost(host)");
+    expect(consent).toContain("--wl-mobile-privacy-header-clearance");
+    expect(consent).toContain("new ResizeObserver(syncHeaderClearance)");
+    expect(consent).toContain("observer?.disconnect()");
+    expect(consent).toContain("headerRail.getBoundingClientRect().bottom");
+    expect(consent).toContain("observer?.observe(publicHeader)");
+    expect(consent).toContain("min-h-11 min-w-11");
+    expect(consent).toContain("flex-1 sm:flex-initial min-h-11");
+    expect(consent).toContain("flex-1 pr-12 sm:pr-0");
+    expect(consent).toContain('aria-expanded="true"');
+    const privacyStyles = read("src/styles/letterpress-polish.css");
+    expect(privacyStyles).toContain(".wl-mobile-privacy-host:not(:empty)");
+    expect(privacyStyles).toContain("padding-top: var(");
+    expect(privacyStyles).toContain("visibility: hidden;");
+    expect(privacyStyles).toContain("pointer-events: none;");
     expect(read("src/styles/letterpress-polish.css")).toContain(
       ".wl-mobile-privacy-host .wl-privacy-choices",
     );
