@@ -53,7 +53,7 @@ describe("BotBound design vision", () => {
     });
     expect(WIRELINE_DESIGN_VISION.tokens.action).toBe("#A78BFA");
     expect(WIRELINE_DESIGN_VISION.principles).toContain(
-      "Warm off-white is the first-visit default; near-black dark remains a first-class appearance.",
+      "True white and cool gray create a high-contrast first-visit light appearance; near-black dark remains a first-class appearance.",
     );
     expect(WIRELINE_DESIGN_VISION.principles).toContain(
       "There is one BotBound visual language across public, authenticated, extension, MCP, and native surfaces.",
