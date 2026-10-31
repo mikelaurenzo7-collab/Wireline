@@ -85,7 +85,7 @@ export function CallPlaybookForm({
                     <p className="text-foreground/90 text-sm font-medium">
                       {i + 1}. "{q.question}"
                     </p>
-                    <p className="text-muted text-[length:var(--wireline-typography-overline-size)] mt-0.5">
+                    <p className="text-muted-foreground text-[length:var(--wireline-typography-overline-size)] mt-0.5">
                       Intent: {q.intent}
                     </p>
                     {q.follow_up && (
@@ -109,10 +109,10 @@ export function CallPlaybookForm({
             <ResultCard title="Objection Handlers">
               <div className="space-y-4">
                 {playbook.objection_handlers.map((o: any, i: number) => (
-                  <div key={i} className="rounded-md bg-white/5 p-4 space-y-2">
+                  <div key={i} className="space-y-2 rounded-md bg-muted p-4">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-foreground/70 text-xs italic">"{o.objection}"</p>
-                      <span className="shrink-0 px-2 py-0.5 rounded-full wl-label bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                      <span className="shrink-0 rounded-full border border-[var(--wireline-color-feedback-warning-border)] bg-[var(--wireline-color-feedback-warning-surface)] px-2 py-0.5 wl-label text-[var(--wireline-color-status-warning)]">
                         {TECHNIQUE_LABEL[o.technique] ?? o.technique}
                       </span>
                     </div>
