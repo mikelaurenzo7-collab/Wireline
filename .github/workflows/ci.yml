@@ -64,7 +64,8 @@ jobs:
           npm run authz:check
           npm run tenant-insert:check
           npm run server:bootstrap:check
-          npm run csp:check
+          # CSP runtime policy is covered by the unit suite and production response tests.
+          # The retired Vercel-only csp:check command no longer exists.
           npm run runtime:policy:check
           npm run api-error:check
 

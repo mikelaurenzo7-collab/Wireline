@@ -96,21 +96,32 @@ describe("production environment launch policy", () => {
     expect(server).toContain("if (isProductionDeployment() && origins.length === 0)");
   });
 
-  it("fails production closed if an operator override moves structured primary off OpenAI", () => {
-    for (const provider of ["xai", "grok", "gateway", "gemini"]) {
+  it("accepts the xAI-first structured runtime and rejects retired production primaries", () => {
+    for (const provider of ["xai", "grok", "openai"]) {
+      const result = runProductionBoundary("https://botbound.app", {
+        WIRELINE_STRUCTURED_PRIMARY_PROVIDER: provider,
+      });
+      expect(result.status, result.stdout + result.stderr).toBe(0);
+    }
+    for (const provider of ["gemini", "unknown", "anthropic"]) {
       const result = runProductionBoundary("https://botbound.app", {
         WIRELINE_STRUCTURED_PRIMARY_PROVIDER: provider,
       });
       expect(result.status).toBe(1);
       expect(`${result.stdout}${result.stderr}`).toContain(
-        "WIRELINE_STRUCTURED_PRIMARY_PROVIDER: production must be unset or openai",
+        "WIRELINE_STRUCTURED_PRIMARY_PROVIDER: production must select an eligible managed provider",
       );
     }
-    expect(
-      runProductionBoundary("https://botbound.app", {
-        WIRELINE_STRUCTURED_PRIMARY_PROVIDER: "openai",
-      }).status,
-    ).toBe(0);
+    const renderGateway = runProductionBoundary("https://botbound.app", {
+      VERCEL_ENV: undefined,
+      RENDER: "true",
+      IS_PULL_REQUEST: "false",
+      WIRELINE_DEPLOYMENT_ENVIRONMENT: "production",
+      RENDER_GIT_BRANCH: "main",
+      RENDER_GIT_COMMIT: "a".repeat(40),
+      WIRELINE_STRUCTURED_PRIMARY_PROVIDER: "gateway",
+    });
+    expect(renderGateway.status).toBe(1);
   });
 
   it("fails production closed when the Realtime admission reserve is below its derived floor", () => {
@@ -351,6 +362,9 @@ describe("production environment launch policy", () => {
     const smokeServer = packageJson.scripts["smoke:server"];
 
     expect(smokeServer).toContain("WIRELINE_IMPORT_SMOKE_NO_DATABASE");
+    expect(smokeServer).toContain("WIRELINE_IMPORT_SMOKE_NO_SERVER");
+    expect(smokeServer).not.toContain("process.env.VERCEL='1'");
+    expect(server).toContain('process.env.WIRELINE_IMPORT_SMOKE_NO_SERVER !== "true"');
     expect(smokeServer).toContain("delete process.env.DATABASE_POOL_URL");
     expect(smokeServer).toContain("delete process.env.POSTGRES_URL");
     expect(serverContext).toContain(
@@ -519,5 +533,48 @@ describe("production environment launch policy", () => {
       "WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA is legacy configuration",
     );
     expect(deploymentBoundary).not.toContain("releaseSha !== deploymentSha");
+  });
+
+  it("accepts only attested Render main for the standalone production billing boundary", () => {
+    const render = {
+      VERCEL_ENV: undefined,
+      RENDER: "true",
+      IS_PULL_REQUEST: "false",
+      WIRELINE_DEPLOYMENT_ENVIRONMENT: "production",
+      RENDER_GIT_BRANCH: "main",
+      RENDER_GIT_COMMIT: "a".repeat(40),
+      WIRELINE_SELF_SERVE_BILLING_ENABLED: "true",
+      WIRELINE_LAUNCH_DEMO_MODE: "false",
+    };
+    const approved = runProductionBoundary("https://botbound.app", render);
+    expect(approved.status, approved.stdout + approved.stderr).toBe(0);
+
+    for (const overrides of [
+      { RENDER_GIT_BRANCH: "feature/unsafe" },
+      { RENDER_GIT_BRANCH: "" },
+      { RENDER_GIT_COMMIT: "short" },
+      { RENDER: "false" },
+      { IS_PULL_REQUEST: undefined },
+      { VERCEL_ENV: "production" },
+    ]) {
+      const rejected = runProductionBoundary("https://botbound.app", { ...render, ...overrides });
+      expect(rejected.status, rejected.stdout + rejected.stderr).toBe(1);
+    }
+  });
+
+  it("never classifies a Render pull-request preview as production", () => {
+    const result = runProductionBoundary("https://botbound.app", {
+      VERCEL_ENV: undefined,
+      RENDER: "true",
+      IS_PULL_REQUEST: "true",
+      WIRELINE_DEPLOYMENT_ENVIRONMENT: "production",
+      RENDER_GIT_BRANCH: "feature/preview",
+      RENDER_GIT_COMMIT: "a".repeat(40),
+      WIRELINE_SELF_SERVE_BILLING_ENABLED: "true",
+    });
+    expect(result.status).toBe(1);
+    expect(result.stdout + result.stderr).toContain(
+      "preview deployments must never expose self-serve paid checkout",
+    );
   });
 });

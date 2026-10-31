@@ -1108,6 +1108,32 @@ html[data-privacy-choices="open"] body {
   }
 }
 
+/* Small-screen first-visit notice participates in document flow. It must
+   never obscure the homepage product card or the Pricing plan controls. The
+   explicitly reopened choices still use the original fixed panel. */
+@media (max-width: 639px) {
+  .wl-mobile-privacy-host:empty {
+    display: none;
+  }
+
+  .wl-mobile-privacy-host .wl-privacy-choices {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    overflow: visible;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .wl-mobile-privacy-host .wl-privacy-choices > div {
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+}
+
 .wl-recipe-icon {
   color: var(--wireline-color-action-primary-default);
 }

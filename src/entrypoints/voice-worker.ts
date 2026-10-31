@@ -16,7 +16,6 @@ import {
 import { voiceWorkerServiceSecret } from "../lib/voice/openai-sip-worker-config";
 import { createVoiceWorkerApp } from "../lib/voice/openai-sip-worker-app";
 import { installClonedMediaServer } from "../lib/voice/elevenlabs-media-bridge";
-import { installGeminiMediaBridge } from "../lib/voice/gemini-media-bridge";
 import openAISipRouter from "../routes/openai-sip-routes";
 import {
   readVoiceWorkerReadiness,
@@ -89,7 +88,9 @@ async function startVoiceWorker() {
   });
   let stopping = false;
   installClonedMediaServer(server, { port, maxCalls, canAdmit });
-  installGeminiMediaBridge(server);
+  // The historical Gemini stream accepted tenant IDs from a WebSocket start
+  // frame without an authenticated admission token. Do not mount that legacy
+  // provider entry point on the persistent worker.
   const stop = async () => {
     if (stopping) return;
     stopping = true;

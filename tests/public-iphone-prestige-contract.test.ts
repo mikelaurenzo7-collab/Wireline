@@ -97,11 +97,11 @@ describe("BotBound public iPhone prestige contract", () => {
 
     expect(consent).toContain("sm:w-[720px] sm:max-w-[calc(100vw-2rem)]");
     expect(consent).not.toContain("lg:left-8 lg:right-8 lg:max-w-none");
-    expect(consent).toContain(
-      'className="flex-1 min-w-0 space-y-3 sm:flex sm:items-center sm:gap-3 sm:space-y-0"',
-    );
-    expect(consent).toContain(
-      'className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0"',
+    expect(consent).toContain("const inlineOnPhone = narrowViewport && !explicitlyOpened;");
+    expect(consent).toContain("const portalTarget = inlineOnPhone ? mobileInlineHost : document.body;");
+    expect(consent).toContain("setMobileInlineHost(host)");
+    expect(read("src/styles/letterpress-polish.css")).toContain(
+      ".wl-mobile-privacy-host .wl-privacy-choices",
     );
     expect(consent).toContain("sm:items-center");
   });

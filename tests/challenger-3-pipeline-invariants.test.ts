@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { getGeminiLiveVoiceStatus } from "../src/lib/voice/gemini-live-service";
 import tollfreeWebhookRouter from "../src/routes/twilio-tollfree-webhook";
 import * as twilioWebhookAuth from "../src/lib/twilio-webhook-auth";
 
@@ -87,50 +86,38 @@ describe("Challenger 3 — Empirical Pipeline Invariant Tests", () => {
   });
 
   describe("Invariant 2: AuthZ Default-Deny & Allowlist Verification", () => {
-    it("verifies public status endpoint /api/voice/live/gemini/status does not leak credentials", () => {
-      const status = getGeminiLiveVoiceStatus();
-
-      expect(status).toHaveProperty("configured");
-      expect(typeof status.configured).toBe("boolean");
-      expect(status).toHaveProperty("defaultProvider", "gemini_live");
-      expect(status).toHaveProperty("provider", "gemini");
-      expect(status).toHaveProperty("defaultModel");
-      expect(status).toHaveProperty("fallbackProvider", "xai_sip");
-
-      // Crucial: Must NEVER leak actual API keys or secrets
-      const serialized = JSON.stringify(status);
-      expect(serialized).not.toContain("AIza"); // common Google API key prefix
-      expect(serialized).not.toContain("sk-");
-      expect(serialized).not.toContain("secret");
-      expect(serialized).not.toContain("password");
+    it("keeps retired Gemini HTTP routes as nonbillable 410 tombstones", () => {
+      const routes = fs.readFileSync(path.join(ROOT, "src/routes/live-voice-routes.ts"), "utf8");
+      const section = routes.slice(routes.indexOf("// Retired legacy provider entry points"));
+      expect(section).toContain('"/api/voice/live/gemini/status"');
+      expect(section).toContain('"/api/voice/live/gemini/session"');
+      expect(section).toContain('"/api/voice/live/gemini/tool"');
+      expect(section).toContain('res.status(410).json({');
+      expect(section).toContain('code: "VOICE_PROVIDER_RETIRED"');
+      expect(routes).not.toContain("prepareGeminiLiveSessionConfig");
+      expect(routes).not.toContain("runGeminiLiveTool");
+      expect(routes).not.toContain("getGeminiLiveVoiceStatus");
     });
 
-    it("verifies PUBLIC_ALLOWLIST in generate-authz-matrix includes /api/voice/live/gemini/status", () => {
-      const generatorSource = fs.readFileSync(
-        path.join(ROOT, "scripts", "generate-authz-matrix.ts"),
-        "utf8",
-      );
-
-      // Must be an exact regex pattern to avoid wildcard bypasses
-      expect(generatorSource).toContain("pattern: /^\\/api\\/voice\\/live\\/gemini\\/status$/");
+    it("keeps authentication on retired Gemini POST entry points", () => {
+      const routes = fs.readFileSync(path.join(ROOT, "src/routes/live-voice-routes.ts"), "utf8");
+      for (const pathSuffix of ["session", "tool"]) {
+        const block = routes.slice(routes.indexOf(`"/api/voice/live/gemini/${pathSuffix}"`));
+        expect(block.slice(0, 110)).toContain("authenticateUser");
+      }
     });
 
-    it("verifies authenticated Gemini endpoints remain strictly protected", () => {
-      const routeSource = fs.readFileSync(
-        path.join(ROOT, "src", "routes", "live-voice-routes.ts"),
-        "utf8",
-      );
+    it("does not mount the legacy Gemini WebSocket on the persistent voice worker", () => {
+      const worker = fs.readFileSync(path.join(ROOT, "src/entrypoints/voice-worker.ts"), "utf8");
+      expect(worker).not.toContain('from "../lib/voice/gemini-media-bridge"');
+      expect(worker).not.toContain("installGeminiMediaBridge(");
+      expect(worker).toContain("installClonedMediaServer(server, { port, maxCalls, canAdmit });");
+    });
 
-      // Session creation must require authenticateUser
-      const sessionBlock = routeSource.slice(
-        routeSource.indexOf('"/api/voice/live/gemini/session"'),
-        routeSource.indexOf('"/api/voice/live/gemini/tool"'),
-      );
-      expect(sessionBlock).toContain("authenticateUser");
-
-      // Tool invocation must require authenticateUser
-      const toolBlock = routeSource.slice(routeSource.indexOf('"/api/voice/live/gemini/tool"'));
-      expect(toolBlock).toContain("authenticateUser");
+    it("keeps the retired public status in the exact authorization allowlist", () => {
+      const generator = fs.readFileSync(path.join(ROOT, "scripts/generate-authz-matrix.ts"), "utf8");
+      expect(generator).toContain(String.raw`pattern: /^\/api\/voice\/live\/gemini\/status$/`);
+      expect(generator).toContain("Retired Gemini voice status tombstone (410)");
     });
   });
 

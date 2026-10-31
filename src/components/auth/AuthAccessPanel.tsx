@@ -625,7 +625,7 @@ export default function AuthAccessPanel({
           </div>
         ) : null}
 
-        <form className="wl-access-panel__form" onSubmit={handleAuth} noValidate>
+        <form method="post" className="wl-access-panel__form" onSubmit={handleAuth} noValidate>
           <div className="wl-access-panel__field-group">
             <label htmlFor={emailInputId}>Email</label>
             <div className="wl-access-panel__field">

@@ -175,7 +175,7 @@ export default function ResetPassword() {
               .
             </StatusNotice>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form method="post" onSubmit={handleSubmit} className="space-y-4">
               <p className="text-sm text-muted/80 mb-6 leading-relaxed">
                 Pick a new password to finish resetting your <WirelineWordmark inline /> account.
                 Use at least 8 characters with uppercase, lowercase, and a number.

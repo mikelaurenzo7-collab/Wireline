@@ -46,7 +46,7 @@
 | `POST /api/intake/lead` | API-key auth via X-Wireline-Key + rate limit |
 | `POST /api/intake/leads` | API-key auth via X-Wireline-Key + rate limit |
 | `GET /api/integrations/certified` | Public certified-integration status; rate-limited, no tenant data |
-| `GET /api/voice/live/gemini/status` | Public Gemini Live voice status probe; rate-limited, no tenant data |
+| `GET /api/voice/live/gemini/status` | Retired Gemini voice status tombstone (410); no provider work, rate-limited |
 | `GET /api/public/assistant/:agentName` | Retired 410 tombstone; no provider work or tenant data |
 | `POST /api/public/demo-call` | Retired 410 tombstone; no provider work or tenant data |
 | `POST /api/public/demo-session` | Retired 410 tombstone; no provider work or tenant data |

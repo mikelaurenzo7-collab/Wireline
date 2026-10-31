@@ -104,7 +104,7 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
   },
   {
     pattern: /^\/api\/voice\/live\/gemini\/status$/,
-    reason: "Public Gemini Live voice status probe; rate-limited, no tenant data",
+    reason: "Retired Gemini voice status tombstone (410); no provider work, rate-limited",
   },
   {
     pattern: /^\/api\/health\/report$/,

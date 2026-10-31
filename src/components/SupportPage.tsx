@@ -133,7 +133,7 @@ export function SupportPage() {
               </p>
             </div>
           ) : (
-            <form onSubmit={onSubmit} className="mt-7 space-y-5">
+            <form method="post" onSubmit={onSubmit} className="mt-7 space-y-5">
               <fieldset>
                 <legend id={topicLabelId} className="block wl-stitch-label mb-2">
                   Topic
