@@ -146,6 +146,12 @@ for (const width of [320, 375, 390] as const) {
 
     const notice = page.getByRole("region", { name: "Privacy Choices" });
     await expect(notice).toBeVisible({ timeout: 10_000 });
+    // Consent choices and dismiss are real touch controls, not micro-targets.
+    for (const control of await notice.getByRole("button").all()) {
+      const bounds = await control.boundingBox();
+      expect(bounds?.height).toBeGreaterThanOrEqual(44);
+      expect(bounds?.width).toBeGreaterThanOrEqual(44);
+    }
     await expect
       .poll(async () =>
         page.evaluate(() => {
