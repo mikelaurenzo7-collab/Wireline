@@ -87,3 +87,49 @@ for (const width of [320, 375] as const) {
     await expect(page.getByRole("link", { name: "Sign In" })).toBeVisible();
   });
 }
+
+test("System follows OS changes, then an explicit choice persists across routes", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.addInitScript(() => localStorage.setItem("wireline-theme", "system"));
+  await page.goto("/");
+
+  await expect
+    .poll(() =>
+      page.evaluate(() => ({
+        isLight: document.documentElement.classList.contains("light"),
+        scheme: getComputedStyle(document.documentElement).colorScheme,
+        browserColor: document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.content,
+      })),
+    )
+    .toEqual({ isLight: false, scheme: "dark", browserColor: "#0A0A0E" });
+
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect
+    .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).colorScheme))
+    .toBe("light");
+  await page.goto("/pricing");
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.classList.contains("light")))
+    .toBe(true);
+
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect
+    .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).colorScheme))
+    .toBe("dark");
+
+  await page.getByRole("button", { name: "Toggle navigation menu" }).click();
+  await page.getByRole("button", { name: "Switch to light appearance" }).click();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("wireline-theme")))
+    .toBe("light");
+  await page.goto("/features");
+  await expect
+    .poll(() =>
+      page.evaluate(() => ({
+        isLight: document.documentElement.classList.contains("light"),
+        browserColor: document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.content,
+      })),
+    )
+    .toEqual({ isLight: true, browserColor: "#FFFFFF" });
+});
