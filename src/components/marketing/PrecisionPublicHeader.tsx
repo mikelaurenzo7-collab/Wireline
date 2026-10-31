@@ -84,13 +84,14 @@ export default function PrecisionPublicHeader() {
               aria-label="Open Workspace"
               className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold shrink-0 whitespace-nowrap max-[430px]:px-3"
             >
-              Open Workspace
+              <span className="max-[359px]:hidden">Open Workspace</span>
+              <span className="min-[360px]:hidden">Workspace</span>
             </Link>
           ) : (
             <>
               <Link
                 to="/signin"
-                className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-[var(--radius-md)] px-3 text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-[var(--radius-md)] px-3 text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 max-[359px]:hidden"
               >
                 Sign In
               </Link>
@@ -141,6 +142,15 @@ export default function PrecisionPublicHeader() {
             >
               Pricing
             </NavLink>
+            {!signedIn && (
+              <NavLink
+                to="/signin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="hidden min-h-11 items-center rounded-lg px-3 text-base font-medium text-foreground transition-colors hover:bg-muted max-[359px]:flex"
+              >
+                Sign In
+              </NavLink>
+            )}
             <button
               type="button"
               onClick={() => {
