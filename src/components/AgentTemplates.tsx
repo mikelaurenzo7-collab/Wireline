@@ -623,7 +623,7 @@ export default function AgentTemplates() {
         <div className="relative">
           <Search
             aria-hidden="true"
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted/70 pointer-events-none"
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none"
           />
           <Input
             type="search"
