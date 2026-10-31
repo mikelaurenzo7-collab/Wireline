@@ -79,6 +79,24 @@ describe("public phone catalog isolation", () => {
       await createPhoneCatalogService({ CARTESIA_API_KEY: "test-key" }, request).resolve(selection),
     ).toBeNull();
   });
+  it("does not list, select, preview, or contact ElevenLabs during the launch pause", async () => {
+    const request = vi.fn();
+    const service = createPhoneCatalogService({ ELEVENLABS_API_KEY: "configured-test-key" }, request);
+    expect(await service.all()).toEqual({ voices: [], unavailable: [] });
+    expect(
+      await service.resolve({
+        [PHONE_CATALOG_VOICE_KEY]: { id: "eleven-test-voice", provider: "elevenlabs" },
+      }),
+    ).toBeNull();
+    await expect(
+      service.preview(
+        { id: "eleven-test-voice", provider: "elevenlabs", name: "Test", language: "en", gender: null },
+        "Hello",
+      ),
+    ).rejects.toThrow("Voice provider unavailable");
+    expect(request).not.toHaveBeenCalled();
+  });
+
   it("keeps the working catalog available when the other provider is down", async () => {
     const request = vi
       .fn()
