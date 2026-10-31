@@ -14,18 +14,20 @@ for (const width of [320, 375] as const) {
       await new Promise<void>((resolve) => { answerSession = resolve; });
       await route.fulfill({ status: 401, contentType: "application/json", body: "{}" });
     });
-    await page.goto(path);
+    await page.goto(path, { waitUntil: "domcontentloaded" });
 
     const hero = page.getByRole("heading", { level: 1 }).first();
     await expect(hero).toBeVisible();
     await expect.poll(() => Boolean(answerSession)).toBe(true);
+    const notice = page.getByRole("region", { name: "Privacy Choices" });
+    // A slow session probe must not silently turn this into a post-notice measurement.
+    await expect(notice).toHaveCount(0);
     const before = await hero.boundingBox();
     const reserve = page.locator("#wl-mobile-privacy-prepaint");
     await expect(reserve).toHaveCSS("display", "block");
     expect(await reserve.evaluate((el) => el.getBoundingClientRect().height)).toBeGreaterThan(150);
     answerSession?.();
 
-    const notice = page.getByRole("region", { name: "Privacy Choices" });
     await expect(notice).toBeVisible();
     const after = await hero.boundingBox();
     expect(before).not.toBeNull();
