@@ -21,14 +21,6 @@
   align-self: start;
 }
 
-[data-wireline-route="/overview"] .wl-workspace-content-inner > .flex {
-  gap: 1.5rem;
-}
-
-[data-wireline-route="/overview"] .wl-metric-value {
-  font-size: clamp(2rem, 1.6rem + 1vw, 2.75rem);
-}
-
 [data-wireline-route="/insights"] .wl-workspace-content-inner > .flex.h-full {
   min-height: 0;
 }
