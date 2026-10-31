@@ -51,11 +51,11 @@ export function ThreadSummaryForm({
                   s.sentiment === "positive" && "wl-status-success border wl-text-success",
                   s.sentiment === "delighted" && "wl-status-success border wl-text-success",
                   s.sentiment === "neutral" &&
-                    "bg-black/[0.06] text-foreground/50 border border-white/12",
+                    "bg-[var(--wireline-color-feedback-neutral-surface)] text-[var(--wireline-color-status-neutral)] border border-[var(--wireline-color-feedback-neutral-border)]",
                   s.sentiment === "frustrated" &&
-                    "bg-amber-500/15 text-amber-500 border border-amber-500/30",
+                    "bg-[var(--wireline-color-feedback-warning-surface)] text-[var(--wireline-color-status-warning)] border border-[var(--wireline-color-feedback-warning-border)]",
                   s.sentiment === "angry" &&
-                    "bg-rose-500/15 text-rose-500 border border-rose-500/30",
+                    "bg-[var(--wireline-color-feedback-error-surface)] text-[var(--wireline-color-status-error)] border border-[var(--wireline-color-feedback-error-border)]",
                 )}
               >
                 {s.sentiment}
@@ -66,12 +66,12 @@ export function ThreadSummaryForm({
                 className={cn(
                   "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]",
                   s.urgency === "low" &&
-                    "bg-black/[0.06] text-foreground/50 border border-white/12",
+                    "bg-[var(--wireline-color-feedback-neutral-surface)] text-[var(--wireline-color-status-neutral)] border border-[var(--wireline-color-feedback-neutral-border)]",
                   s.urgency === "medium" && "bg-brand/15 text-brand border border-brand/30",
                   s.urgency === "high" &&
-                    "bg-amber-500/15 text-amber-500 border border-amber-500/30",
+                    "bg-[var(--wireline-color-feedback-warning-surface)] text-[var(--wireline-color-status-warning)] border border-[var(--wireline-color-feedback-warning-border)]",
                   s.urgency === "critical" &&
-                    "bg-rose-500/15 text-rose-500 border border-rose-500/30",
+                    "bg-[var(--wireline-color-feedback-error-surface)] text-[var(--wireline-color-status-error)] border border-[var(--wireline-color-feedback-error-border)]",
                 )}
               >
                 {s.urgency}
@@ -94,7 +94,7 @@ export function ThreadSummaryForm({
                       "shrink-0 px-2 py-0.5 rounded-full wl-label mt-0.5",
                       a.owner === "us"
                         ? "bg-brand/15 text-brand border border-brand/30"
-                        : "bg-rose-500/15 text-rose-500 border border-rose-500/30",
+                        : "bg-[var(--wireline-color-feedback-error-surface)] text-[var(--wireline-color-status-error)] border border-[var(--wireline-color-feedback-error-border)]",
                     )}
                   >
                     {a.owner}
