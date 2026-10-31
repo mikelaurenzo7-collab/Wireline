@@ -264,10 +264,10 @@
   }
 }
 
-/* At 320px, keep the brand, primary CTA and menu in one row. Sign In
+/* At narrow-phone widths, keep the brand, primary CTA and menu in one row. Sign In
    moves into the menu while its primary action stays available in the bar.
    This only tightens the small-screen edge; larger phone layouts are untouched. */
-@media (max-width: 359px) {
+@media (max-width: 389px) {
   .marketing-surface .wl-public-header__rail {
     flex-wrap: nowrap;
     gap: 0.25rem;
