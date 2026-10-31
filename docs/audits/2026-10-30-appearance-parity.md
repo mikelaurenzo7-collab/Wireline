@@ -67,3 +67,16 @@ The design pass also inspected the recipe result and sentiment views. Several ne
 The Open Graph image *generator* at `scripts/render-image-assets.mjs` also still emitted a cream canvas and old light ink; it now produces white and the current light text colors when `npm run assets` is executed. Generated public assets and build output **have not been rebuilt or inspected** in this session. No claim of production image parity is made.
 
 A browser-verified inline phone privacy notice remains a **separate PR #1444 change pending merger**, and the header/browser mock fixes on this PR remain **unrendered until a preview build**. New 320px and 375px Playwright cases document the desired compact header and truncation behavior.
+
+
+## Follow-up: missing brand utilities and exact-head release evidence
+
+The next source pass found unregistered Tailwind utility names `brand-2` and `brand-3` used in four active product components. The canonical `@theme inline` bridge does not register those tiers. These use sites now use supported semantic status/feedback colors or the registered primary action palette:
+- `src/components/insights/TopicsView.tsx` (new/steady/declining trend badges and track)
+- `src/components/admin/GrowthPanel.tsx` (Add Industry action; duplicate padding utility also removed)
+- `src/components/recipes/forms/AgentReviewForm.tsx` (high/critical risk indicators)
+- `src/components/IntakeKeysManager.tsx` (auto-dial state, enabled checkbox, agent tags, documentation labels)
+
+The contrast contract now rejects those undefined utilities in these active components, while the Playwright suite checks that System follows OS changes and that a manually selected Light appearance remains stable across routes. These are source-level changes; tests have not actually executed on the PR head.
+
+**CI audit:** The GitHub connection sees **zero Actions runs on this design branch and on separate spring-clean PR #1444**. The repository has older PR workflow history (recent visible pull_request runs from August 18) but this does not establish why current PR workflows are missing. The browser was not logged into the private GitHub account, and could not inspect Actions settings or dispatch a run. CI remains an explicit blocker. Local `git clone` from this execution environment could not resolve GitHub DNS, so no local install/build/test was run. Do not merge/deploy until an authorized runner has verified the exact resulting commit.
