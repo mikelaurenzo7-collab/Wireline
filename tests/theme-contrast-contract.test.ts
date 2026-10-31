@@ -141,4 +141,54 @@ describe("BotBound appearance contrast", () => {
     expect(pricing).toContain("flex h-full min-w-0 flex-col rounded-2xl border bg-card");
     expect(pricing).toContain("w-full flex-1 rounded-2xl p-6 pb-2");
   });
+
+  it.each([["Dark", dark], ["Light", light]] as const)(
+    "preserves %s feedback and subtle-surface readable copy",
+    (_label, colors) => {
+      for (const status of ["success", "warning", "error", "info", "neutral"] as const) {
+        const textColor = colors[`color.status.${status}`];
+        const surfaceColor = colors[`color.feedback.${status}.surface`];
+        expect(
+          contrast(textColor, surfaceColor),
+          `${status} on its own feedback background`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+      for (const role of ["primary", "secondary", "tertiary"] as const) {
+        for (const surface of [
+          "surface.subtle",
+          "surface.container",
+          "surface.recessed",
+          "feedback.success.surface",
+          "feedback.warning.surface",
+          "feedback.error.surface",
+          "feedback.info.surface",
+          "feedback.neutral.surface",
+        ] as const) {
+          const foreground = colors[`color.text.${role}`];
+          const background = colors[`color.${surface}`];
+          expect(contrast(foreground, background), `${role} on ${surface}`).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+    },
+  );
+
+  it("does not apply Tailwind dark styles to the light root itself", () => {
+    const entrypoint = readFileSync("src/index.css", "utf8");
+    expect(entrypoint).toContain("@custom-variant dark (&:where(:not(.light, .light *)));");
+  });
+
+  it("keeps recipe fields, placeholders, and results on semantic theme tokens", () => {
+    const shared = readFileSync("src/components/recipes/shared.tsx", "utf8");
+    const playbook = readFileSync("src/components/recipes/forms/CallPlaybookForm.tsx", "utf8");
+    expect(shared).toContain("placeholder:text-muted-foreground");
+    expect(shared).toContain("border-[var(--wireline-color-border-strong)]");
+    expect(shared).toContain("focus-visible:outline-primary");
+    expect(shared).toContain("wireline-color-feedback-error-surface");
+    expect(shared).not.toContain("placeholder:text-muted/70");
+    expect(shared).not.toContain("border-white/10");
+    expect(playbook).toContain("text-muted-foreground");
+    expect(playbook).toContain("wireline-color-feedback-warning-surface");
+    expect(playbook).not.toContain("text-muted text-");
+    expect(playbook).not.toContain("bg-white/5");
+  });
 });
