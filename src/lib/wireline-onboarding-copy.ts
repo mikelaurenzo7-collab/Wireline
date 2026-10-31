@@ -43,7 +43,7 @@ export const POST_CREATE_WIZARD_COPY = {
     voice: {
       label: "Voice",
       title: "Choose Voice",
-      detail: "Choose a built-in voice. You can change it anytime."
+      detail: "Choose a built-in voice. You can change it anytime.",
       primary: "Continue to Try It",
     },
     launch: {
