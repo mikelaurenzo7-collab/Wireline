@@ -292,7 +292,7 @@ There is no tailwind.config file. Tailwind CSS 4 is loaded through the Vite plug
  * `@media (prefers-color-scheme: dark)`, which tracks the OS/browser setting
  * instead of the theme the user actually picked in-app. Registering it here
  * makes every existing `dark:*` utility track the real resolved theme. */
-@custom-variant dark (&:where(:not(.light *)));
+@custom-variant dark (&:where(:not(.light, .light *)));
 
 /* Register the legacy brand/ink/paper and status color names as Tailwind
  * utilities so `text-brand`, `bg-brand`, `border-ink`, `text-paper`,
