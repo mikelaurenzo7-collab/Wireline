@@ -239,7 +239,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                       aria-label="Add industry"
                       onClick={() => addTag("target_industries", newIndustry, setNewIndustry)}
                       variant="outline"
-                      className="p-2.5 bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition-all border-input w-10 h-10 shrink-0 p-0"
+                      className="h-10 w-10 shrink-0 rounded-md border-input bg-primary/10 p-0 text-primary transition-colors hover:bg-primary/20"
                     >
                       <Plus className="w-4 h-4" aria-hidden="true" />
                     </ShadButton>
