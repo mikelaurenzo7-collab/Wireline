@@ -111,34 +111,40 @@ export default function CookieConsent() {
   useEffect(() => {
     if (noticeAcknowledged()) return;
     let cancelled = false;
-
+    const controller = new AbortController();
+    // An unreachable session endpoint must not leave an anonymous visitor
+    // with a blank reserved privacy slot indefinitely.
+    const timeoutId = window.setTimeout(() => controller.abort(), 2_000);
 
     void (async () => {
       let sessionPresent = false;
       try {
-        const sessionRes = await fetch("/api/auth/session", { credentials: "include" });
+        const sessionRes = await fetch("/api/auth/session", {
+          credentials: "include",
+          signal: controller.signal,
+        });
         if (cancelled) return;
         if (sessionRes.ok) {
           const body = (await sessionRes.json().catch(() => null)) as { user?: unknown } | null;
           sessionPresent = Boolean(body?.user);
         }
-        setHasSession(sessionPresent);
+        if (!cancelled) setHasSession(sessionPresent);
       } catch {
-        /* Session probe failed — treat as signed out so EU/UK visitors still get a consent choice. */
+        /* On failed/timed-out session checks, leave optional measurement off
+           and give visitors the consent choice rather than a blank slot. */
+      } finally {
+        window.clearTimeout(timeoutId);
       }
 
-      if (sessionPresent) return;
-
-      if (!cancelled) {
-        // The slot already occupies its mobile height at first paint; do not
-        // leave an empty reserved area while adding an artificial delay.
-        setVisible(true);
-      }
+      if (sessionPresent || cancelled) return;
+      // The mobile host was reserved at first paint, so no extra delay.
+      setVisible(true);
     })();
 
     return () => {
       cancelled = true;
-
+      window.clearTimeout(timeoutId);
+      controller.abort();
     };
   }, []);
 
