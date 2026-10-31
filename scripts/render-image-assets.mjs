@@ -83,17 +83,17 @@ function writeOgSource(brandMark) {
   <title id="title">BotBound | Your next hire is a bot.</title>
   <desc id="description">Your next hire is a bot. Inbound and outbound calls, SMS, email, and computer tasks for small businesses.</desc>
   <metadata>BotBound launch identity. Generated from code and the approved phone Bot mark.</metadata>
-  <defs><radialGradient id="wash"><stop stop-color="#eee7fc"/><stop offset="1" stop-color="#f7f7f3"/></radialGradient></defs>
-  <rect width="1200" height="630" fill="#f7f7f3"/>
+  <defs><radialGradient id="wash"><stop stop-color="#eee7fc"/><stop offset="1" stop-color="#ffffff"/></radialGradient></defs>
+  <rect width="1200" height="630" fill="#ffffff"/>
   <ellipse cx="1070" cy="100" rx="450" ry="440" fill="url(#wash)"/>
   <image href="data:image/png;base64,${embeddedImage}" x="936" y="52" width="184" height="184"/>
   <g font-family="Inter, sans-serif">
-    <text x="76" y="108" fill="#19191d" font-size="38" font-weight="800" letter-spacing="-1.8">Bot<tspan fill="#7040d7">Bound</tspan></text>
-    <text x="76" y="280" fill="#19191d" font-size="78" font-weight="800" letter-spacing="-3">YOUR NEXT HIRE</text>
+    <text x="76" y="108" fill="#171717" font-size="38" font-weight="800" letter-spacing="-1.8">Bot<tspan fill="#7040d7">Bound</tspan></text>
+    <text x="76" y="280" fill="#171717" font-size="78" font-weight="800" letter-spacing="-3">YOUR NEXT HIRE</text>
     <text x="76" y="372" fill="#7040d7" font-size="78" font-weight="800" letter-spacing="-3">IS A BOT.</text>
-    <text x="80" y="449" fill="#626268" font-size="28">Inbound and outbound calls, SMS,</text>
-    <text x="80" y="488" fill="#626268" font-size="28">email, and computer tasks for small businesses.</text>
-    <text x="80" y="568" fill="#626268" font-size="22">botbound.app</text>
+    <text x="80" y="449" fill="#50545c" font-size="28">Inbound and outbound calls, SMS,</text>
+    <text x="80" y="488" fill="#50545c" font-size="28">email, and computer tasks for small businesses.</text>
+    <text x="80" y="568" fill="#50545c" font-size="22">botbound.app</text>
   </g>
 </svg>\n`;
   writeFileSync(resolve(root, "public/og-image.svg"), source, "utf8");
