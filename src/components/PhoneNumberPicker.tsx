@@ -166,7 +166,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-2 py-10 text-muted text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]">
+      <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em]">
         <Loader2 className="w-3.5 h-3.5 animate-spin" />
         Loading available numbers
       </div>
@@ -180,7 +180,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
           <h3 className="font-display text-2xl text-foreground leading-none">
             {title || "Pick a Phone Number"}
           </h3>
-          <p className="text-[length:var(--wireline-typography-overline-size)] text-muted/70 mt-1.5">
+          <p className="text-[length:var(--wireline-typography-overline-size)] text-muted-foreground mt-1.5">
             One new number per included line every 31 days. Reassign existing lines anytime.
           </p>
         </div>
@@ -191,7 +191,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
           disableAnimations
           onClick={refresh}
           aria-label="Refresh available numbers"
-          className="shrink-0 rounded-full border-border text-muted hover:text-brand hover:border-brand/40"
+          className="shrink-0 rounded-full border-border text-muted-foreground hover:text-brand hover:border-brand/40"
         >
           <RefreshCw className="w-3.5 h-3.5" />
         </ShadButton>
@@ -273,7 +273,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
             </div>
           ) : (
             <div className="rounded-md wl-panel border border-border p-5 text-center">
-              <p className="text-[length:var(--wireline-typography-caption-size)] text-muted">
+              <p className="text-[length:var(--wireline-typography-caption-size)] text-muted-foreground">
                 No numbers in pool right now. Search by area code to preview available lines without
                 buying one until you pick it.
               </p>
@@ -281,11 +281,11 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
           )}
 
           {/* Area-code search */}
-          <div className="rounded-md border border-border bg-white/[0.02] p-4 space-y-3">
+          <div className="rounded-md border border-border bg-muted p-4 space-y-3">
             <p className="text-eyebrow/60">Search by area code</p>
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex-1 relative">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                 <Input
                   type="text"
                   inputMode="numeric"
@@ -296,7 +296,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
                   onKeyDown={(e) => {
                     if (e.key === "Enter") searchByAreaCode();
                   }}
-                  className="w-full h-10 pl-9 pr-3 rounded-full wl-panel border border-border text-sm text-foreground placeholder:text-muted/70 focus:border-brand/40 focus:outline-none transition-all font-mono"
+                  className="w-full h-10 pl-9 pr-3 rounded-full wl-panel border border-border text-sm text-foreground placeholder:text-muted-foreground focus:border-brand/40 focus:outline-none transition-all font-mono"
                 />
               </div>
               <ShadButton
