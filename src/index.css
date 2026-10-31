@@ -143,9 +143,7 @@ body {
     "calt" 1,
     "ss01" 1,
     "cv11" 1;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Platform typography rendering is owned by type-integrity.css. */
 }
 
 .wl-ui-caps > .marketing-surface,
