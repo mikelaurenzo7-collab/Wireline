@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import { VOICE_CLONING_UI_ENABLED } from "../lib/voice-clone-release";
 import type { BotMarkKey } from "../lib/bot-mark";
 import { Badge } from "./atoms";
 import OpenAILiveVoiceSandbox from "./OpenAILiveVoiceSandbox";
@@ -17,6 +18,8 @@ type ActiveClone = { id: string; name: string; speaksOnCalls: boolean };
 function useActiveClone(agentId: string): ActiveClone | null {
   const [active, setActive] = useState<ActiveClone | null>(null);
   useEffect(() => {
+    // Do not request or promote dormant cloned voices during the current launch.
+    if (!VOICE_CLONING_UI_ENABLED) return;
     let live = true;
     void authFetch("/api/voice/live-voices", { timeoutMs: 15_000 })
       .then((response) => (response.ok ? response.json() : null))
@@ -32,7 +35,7 @@ function useActiveClone(agentId: string): ActiveClone | null {
       live = false;
     };
   }, [agentId]);
-  return active;
+  return VOICE_CLONING_UI_ENABLED ? active : null;
 }
 
 export default function StudioVoiceRehearsal({
