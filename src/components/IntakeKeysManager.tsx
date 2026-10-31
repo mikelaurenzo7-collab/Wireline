@@ -381,7 +381,7 @@ export default function IntakeKeysManager() {
       {/* Key list */}
       <div className="space-y-2">
         {loading && (
-          <div className="flex items-center gap-2 text-muted text-xs">
+          <div className="flex items-center gap-2 text-muted-foreground text-xs">
             <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
           </div>
         )}
@@ -413,7 +413,7 @@ export default function IntakeKeysManager() {
                       "wl-label px-2 py-0.5 rounded-full border",
                       k.active
                         ? WL_APP_CLASSES.statusActive
-                        : "bg-muted/10 border-border text-muted",
+                        : "bg-muted/10 border-border text-muted-foreground",
                     )}
                   >
                     {k.active ? "Active" : "Paused"}
@@ -429,7 +429,7 @@ export default function IntakeKeysManager() {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-3 flex-wrap text-[length:var(--wireline-typography-overline-size)] text-muted">
+                <div className="flex items-center gap-3 flex-wrap text-[length:var(--wireline-typography-overline-size)] text-muted-foreground">
                   <span className="font-mono">{k.key_prefix}…</span>
                   <span>{k.use_count || 0} uses</span>
                   {k.last_used_at && <span>last {formatDateTime(k.last_used_at)}</span>}
@@ -525,7 +525,7 @@ export default function IntakeKeysManager() {
       <details
         className={cn(
           WL_APP_CLASSES.settingsRow,
-          "text-[length:var(--wireline-typography-overline-size)] text-muted leading-relaxed overflow-x-auto bg-muted/5",
+          "text-[length:var(--wireline-typography-overline-size)] text-muted-foreground leading-relaxed overflow-x-auto bg-muted/5",
         )}
       >
         <summary className="cursor-pointer list-none font-sans text-xs font-semibold text-foreground marker:hidden [&::-webkit-details-marker]:hidden">
