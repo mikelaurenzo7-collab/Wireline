@@ -130,8 +130,8 @@ export function AgentReviewForm({
                   className={cn(
                     "shrink-0 px-2 py-0.5 rounded-full wl-label mt-0.5",
                     d.priority === "critical" &&
-                      "bg-rose-500/15 text-rose-500 border border-rose-500/30",
-                    d.priority === "high" && "bg-brand-3/15 text-brand-3 border border-brand-3/30",
+                      "bg-[var(--wireline-color-feedback-error-surface)] text-[var(--wireline-color-status-error)] border border-[var(--wireline-color-feedback-error-border)]",
+                    d.priority === "high" && "bg-[var(--wireline-color-feedback-warning-surface)] text-[var(--wireline-color-status-warning)] border border-[var(--wireline-color-feedback-warning-border)]",
                     d.priority === "medium" && "bg-brand/15 text-brand border border-brand/30",
                     d.priority === "low" &&
                       "bg-[var(--wireline-color-feedback-neutral-surface)] text-[var(--wireline-color-status-neutral)] border border-[var(--wireline-color-feedback-neutral-border)]",
