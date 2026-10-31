@@ -1116,8 +1116,22 @@ html[data-privacy-choices="open"] body {
     display: none;
   }
 
+  /* The inline host is a body sibling immediately BEFORE #root. Reserve the
+     fixed-header footprint instead of drawing the notice at y=0, and keep the
+     portal in a lower stacking context than the live header / open menu. */
+  .wl-mobile-privacy-host:not(:empty) {
+    position: relative;
+    z-index: 0;
+    box-sizing: border-box;
+    padding-top: var(
+      --wl-mobile-privacy-header-clearance,
+      calc(4.125rem + env(safe-area-inset-top, 0px))
+    );
+  }
+
   .wl-mobile-privacy-host .wl-privacy-choices {
     position: relative;
+    z-index: 0;
     inset: auto;
     width: 100%;
     max-width: 100%;
@@ -1131,6 +1145,18 @@ html[data-privacy-choices="open"] body {
     border-radius: 0;
     border-left: 0;
     border-right: 0;
+  }
+
+  /* An expanded navigation menu temporarily owns the top of the viewport.
+     Conceal—not unmount—the inline notice so it cannot paint through or
+     receive keyboard focus behind the menu. Closing the menu restores it. */
+  body:has(
+      .wl-public-header [aria-label="Toggle navigation menu"][aria-expanded="true"]
+    )
+    .wl-mobile-privacy-host
+    .wl-privacy-choices {
+    visibility: hidden;
+    pointer-events: none;
   }
 }
 
