@@ -71,20 +71,24 @@ export default function CookieConsent() {
     // actual fixed-header height (including safe area and text wrapping) into
     // the host instead of using a brittle hard-coded phone offset.
     const publicHeader = document.querySelector<HTMLElement>(".wl-public-header");
+    // Measure only the persistent header rail. The mobile menu opens INSIDE
+    // the header and increases its full height; using that expanded height
+    // would move the privacy notice and page content on every menu toggle.
+    const headerRail = publicHeader?.querySelector<HTMLElement>(".wl-public-header__rail");
     const syncHeaderClearance = () => {
-      if (publicHeader) {
-        host.style.setProperty(
-          "--wl-mobile-privacy-header-clearance",
-          `${Math.ceil(publicHeader.getBoundingClientRect().height)}px`,
-        );
-      }
+      if (!publicHeader || !headerRail) return;
+      const border = Number.parseFloat(getComputedStyle(publicHeader).borderBottomWidth) || 0;
+      host.style.setProperty(
+        "--wl-mobile-privacy-header-clearance",
+        `${Math.ceil(headerRail.getBoundingClientRect().height + border)}px`,
+      );
     };
     syncHeaderClearance();
     const observer =
-      publicHeader && typeof ResizeObserver !== "undefined"
+      headerRail && typeof ResizeObserver !== "undefined"
         ? new ResizeObserver(syncHeaderClearance)
         : null;
-    if (publicHeader) observer?.observe(publicHeader);
+    if (headerRail) observer?.observe(headerRail);
 
     setMobileInlineHost(host);
     return () => {
