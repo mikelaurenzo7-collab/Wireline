@@ -91,6 +91,8 @@ export default function CookieConsent() {
         ? new ResizeObserver(syncHeaderClearance)
         : null;
     if (headerRail) observer?.observe(headerRail);
+    // Header padding can change independently of rail size on device rotation.
+    if (publicHeader) observer?.observe(publicHeader);
 
     setMobileInlineHost(host);
     return () => {
