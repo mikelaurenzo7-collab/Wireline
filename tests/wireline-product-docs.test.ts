@@ -41,7 +41,7 @@ describe("product documentation and compatibility contract", () => {
     );
     expect(readme).toContain("Current Shared Work Offer");
     expect(readme).toContain("Legacy Package Compatibility");
-    expect(readme).toContain("Warm light is the first-visit web appearance");
+    expect(readme).toContain("High-contrast white light is the first-visit web appearance");
     expect(readme).toContain("BotBound Personal is a paid plan");
     expect(readme).toContain("Paid packages include one Bot");
     expect(readme).toContain("Calls includes a local number; Email includes a managed mailbox.");
