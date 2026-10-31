@@ -230,7 +230,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
           {/* Available pool */}
           {available.length > 0 ? (
             <div>
-              <p className="text-eyebrow/60 mb-2">Available now ({available.length})</p>
+              <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-2">Available now ({available.length})</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {available.map((n) => (
                   <motion.button
@@ -282,7 +282,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
 
           {/* Area-code search */}
           <div className="rounded-md border border-border bg-muted p-4 space-y-3">
-            <p className="text-eyebrow/60">Search by area code</p>
+            <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">Search by area code</p>
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex-1 relative">
                 <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
