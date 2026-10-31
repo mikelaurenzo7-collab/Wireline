@@ -6,10 +6,10 @@ import { buildCSP, INLINE_SCRIPT_HASHES } from "../src/lib/csp";
 describe("first-paint inline scripts and strict CSP", () => {
   it("hash-allowlists every executable inline script in the actual HTML shell", () => {
     const html = readFileSync("index.html", "utf8");
-    const executable = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script>/g)]
+    const executable = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)]
       .filter(([, attributes, body]) => {
-        const external = /\\bsrc\\s*=/.test(attributes);
-        const dataOnly = /\\btype\\s*=\\s*["']application\\/ld\\+json["']/.test(attributes);
+        const external = /\bsrc\s*=/.test(attributes);
+        const dataOnly = /\btype\s*=\s*["']application\/ld\+json["']/.test(attributes);
         return !external && !dataOnly && Boolean(body.trim());
       })
       .map(([, , body]) => `'sha256-${createHash("sha256").update(body, "utf8").digest("base64")}'`);
