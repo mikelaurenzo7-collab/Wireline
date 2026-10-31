@@ -60,7 +60,7 @@ export default function CookieConsent() {
 
   useEffect(() => {
     if (!narrowViewport || typeof document.createElement !== "function") return;
-    // Reuse the before-React first-paint slot on the public homepage. On
+    // Reuse the before-React first-paint slot on direct public entry. On
     // other entry points the host remains empty/hidden until a notice appears.
     const prepaintHost = document.getElementById("wl-mobile-privacy-prepaint");
     const host = prepaintHost ?? document.createElement("div");
@@ -197,7 +197,7 @@ export default function CookieConsent() {
   // Clear the first-paint reservation when signed in, leaving home, or after
   // acknowledgement. The inline portal itself occupies the reserved space.
   useEffect(() => {
-    if (visible || _hasSession || location.pathname !== "/" || noticeAcknowledged()) {
+    if (visible || _hasSession || !["/", "/pricing", "/features"].includes(location.pathname) || noticeAcknowledged()) {
       document.documentElement.removeAttribute("data-wl-privacy-prepaint");
     }
   }, [visible, _hasSession, location.pathname]);
