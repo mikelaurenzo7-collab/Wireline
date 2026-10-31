@@ -185,18 +185,18 @@ The JSON token source already supplies typed values and generated web, extension
 | --------------- | --------- | --------- |
 | Canvas          | `#0A0A0E` | `#FFFFFF` |
 | Default surface | `#141319` | `#FFFFFF` |
-| Subtle surface  | `#100F15` | `#F5F5F7` |
+| Subtle surface  | `#100F15` | `#F8F9FA` |
 | Raised surface  | `#201E29` | `#FFFFFF` |
-| Primary text    | `#F5F4F8` | `#19191D` |
-| Secondary text  | `#B6B1C6` | `#626268` |
-| Tertiary text   | `#9A95AC` | `#606066` |
+| Primary text    | `#F5F4F8` | `#171717` |
+| Secondary text  | `#B6B1C6` | `#50545C` |
+| Tertiary text   | `#9A95AC` | `#5C5F66` |
 | Primary action  | `#A78BFA` | `#7040D7` |
 | Text on action  | `#0E0B16` | `#FFFFFF` |
-| Default border  | `#262430` | `#E5E5EB` |
-| Strong border   | `#3A3745` | `#C8C8D1` |
-| Success         | `#4ADE9A` | `#127548` |
-| Warning         | `#E8B85C` | `#8A5C07` |
-| Error           | `#EF7B92` | `#B83648` |
+| Default border  | `#262430` | `#D9DDE3` |
+| Strong border   | `#3A3745` | `#7C8590` |
+| Success         | `#4ADE9A` | `#10663E` |
+| Warning         | `#E8B85C` | `#765006` |
+| Error           | `#EF7B92` | `#A52F40` |
 | Information     | `#93A0C7` | `#46577A` |
 
 Working is an activity state, not a new status color. Use the primary action family for active focus, the information family for neutral progress, warning for a checkpoint, and error for failure. Pair status color with text or an icon. Do not make green mean both active and successfully finished.
