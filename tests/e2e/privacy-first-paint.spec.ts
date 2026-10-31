@@ -1,7 +1,8 @@
 import { test, expect } from "@playwright/test";
 
 for (const width of [320, 375] as const) {
-  test(`first-visit mobile privacy notice does not move the homepage at ${width}px`, async ({ page }) => {
+  for (const path of ["/", "/pricing", "/features"] as const) {
+  test(`first-visit mobile privacy notice does not move ${path} at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.addInitScript(() => {
       localStorage.removeItem("wireline_cookie_consent");
@@ -13,9 +14,9 @@ for (const width of [320, 375] as const) {
       await new Promise<void>((resolve) => { answerSession = resolve; });
       await route.fulfill({ status: 401, contentType: "application/json", body: "{}" });
     });
-    await page.goto("/");
+    await page.goto(path);
 
-    const hero = page.getByRole("heading", { level: 1 });
+    const hero = page.getByRole("heading", { level: 1 }).first();
     await expect(hero).toBeVisible();
     await expect.poll(() => Boolean(answerSession)).toBe(true);
     const before = await hero.boundingBox();
@@ -39,6 +40,7 @@ for (const width of [320, 375] as const) {
     await expect(notice).toBeVisible();
   });
 
+  }
   test(`returning visitor has no reserved mobile privacy gap at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.addInitScript(() => localStorage.setItem("wireline_cookie_consent", "acknowledged"));
