@@ -14,7 +14,6 @@
    * safe-area-ownership.css. Do not restack padding-bottom here. */
   [data-wireline-route^="/settings"] .wl-workspace-content,
   [data-wireline-route="/apps"] .wl-workspace-content,
-  [data-wireline-route="/overview"] .wl-workspace-content,
   [data-wireline-route="/inbox"] .wl-workspace-content {
     scroll-padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
   }
