@@ -85,7 +85,7 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
   mustInclude(
     "src/styles/theme-light.css",
     lightTheme,
-    /--wireline-color-text-tertiary:\s*#606066/i,
+    /--wireline-color-text-tertiary:\s*#5c5f66/i,
     "Light tertiary text must retain the audited AA-safe value",
   );
   mustInclude(
@@ -116,7 +116,7 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
     "src/contexts/ThemeContext.tsx",
     themeContext,
     /function readStoredTheme\(\): Theme \{[\s\S]*?return DEFAULT_THEME;\s*\}\s*function systemPrefersDark/,
-    "first-visit appearance must remain dark unless the customer explicitly chose otherwise",
+    "first-visit appearance must remain light unless the customer explicitly chose otherwise",
   );
   mustInclude(
     "src/contexts/ThemeContext.tsx",
