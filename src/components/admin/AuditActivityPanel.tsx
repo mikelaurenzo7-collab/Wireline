@@ -327,7 +327,7 @@ export function AuditActivityPanel() {
                     </div>
                     <div className="col-span-2 flex flex-wrap items-center justify-between gap-2 sm:col-auto sm:flex-col sm:items-end sm:gap-1">
                       {(entry.latencyMs || entry.latency_ms) && (
-                        <span className="wl-micro-badge font-mono text-muted/70 tabular-nums flex items-center gap-1">
+                        <span className="wl-micro-badge font-mono text-muted-foreground tabular-nums flex items-center gap-1">
                           <Clock className="w-2.5 h-2.5" />
                           {entry.latencyMs || entry.latency_ms}ms
                         </span>
