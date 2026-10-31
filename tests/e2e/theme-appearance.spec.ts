@@ -71,7 +71,7 @@ test("the 320px header and browser preview fit without hiding sign-in", async ({
   await expect(header).toBeVisible();
   const headerBounds = await header.boundingBox();
   expect(headerBounds?.height).toBeLessThanOrEqual(80);
-  await expect(page.getByRole("link", { name: "Get Started" })).toBeVisible();
+  await expect(header.getByRole("link", { name: "Get Started" })).toBeVisible();
 
   const browser = page.locator(".landing-prestige__browser-url");
   await expect(browser).toBeVisible();
