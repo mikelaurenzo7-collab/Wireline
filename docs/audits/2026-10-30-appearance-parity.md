@@ -80,3 +80,19 @@ The next source pass found unregistered Tailwind utility names `brand-2` and `br
 The contrast contract now rejects those undefined utilities in these active components, while the Playwright suite checks that System follows OS changes and that a manually selected Light appearance remains stable across routes. These are source-level changes; tests have not actually executed on the PR head.
 
 **CI audit:** The GitHub connection sees **zero Actions runs on this design branch and on separate spring-clean PR #1444**. The repository has older PR workflow history (recent visible pull_request runs from August 18) but this does not establish why current PR workflows are missing. The browser was not logged into the private GitHub account, and could not inspect Actions settings or dispatch a run. CI remains an explicit blocker. Local `git clone` from this execution environment could not resolve GitHub DNS, so no local install/build/test was run. Do not merge/deploy until an authorized runner has verified the exact resulting commit.
+
+
+## Cleanup pass — verification gates and legacy source ownership
+
+Follow-on audit inspected the actual CSS import graph and matched design verification scripts with the updated white-light theme. The 31 direct imports in `src/index.css` include deliberate sub-import aggregators (`wireline-layout-passes.css`, `wireline-product-surfaces.css`, `wireline-marketing-surfaces.css`) and a terminal `type-integrity.css` import nested under `safe-area-ownership.css`. These wrappers are not empty or unused and were **not deleted**.
+
+**Repairs on this branch:**
+- Updated stale pre-white checks in `scripts/clear-system/structure-hygiene.mjs` (light tertiary color) and `scripts/clear-system/design-tokens.mjs` (social preview should validate the current white **generator**, not demand a pre-build beige vector). The build asset script has already switched the authored OG background to white. Generated OG PNG/SVG assets still require `npm run assets` during CI/build; no claim is made that the checked-in raster has been updated.
+- Synced the canonical design principle and README assertions in `tests/wireline-design-vision-contract.test.ts` and `tests/wireline-product-docs.test.ts` with the true-white source; updated `README.md` and `ARCHITECTURE.md`.
+- Repaired nine stale light palette values in the semantic color table of `.superdesign/design-system.md` and added a test that compares 15 documentation roles directly to the dark DTCG source and light CSS overrides.
+- Removed `body` text-rendering/font-smoothing overrides in `src/index.css` because they followed the imported type-integrity rules in the cascade; added a source gate to prevent reintroduction.
+- Removed unreachable `/overview` CSS selectors from `visual-qa-hotfix.css` and `route-density-fixes.css` (the route redirects to Studio); added a source regression contract.
+- Replaced `text-muted` as an ink color and `text-muted/70` on Webhooks, Trial Gate, Agent Templates, Phone Picker and Audit Activity, replacing ineffective `text-eyebrow/60` headings with semantic ink/typography. Expanded guards on modified components.
+- Marked the previously asserted 100/100 launch-readiness document as a **historical snapshot**, not a release certification for the untested draft PR.
+
+Independent source-text checks of the seven key gate/doc/cascade conditions passed. The palette comparison of 15 dark/light documented roles found zero differences. **These are source checks only**, not a running Vitest/Playwright/build or preview. CI for this branch and PR #1444 remains unobserved; do not merge until full execution and visual parity at the exact head.
