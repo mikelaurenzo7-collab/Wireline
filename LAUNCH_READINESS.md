@@ -1,24 +1,25 @@
-# BotBound Launch Readiness Summary & Executive Checklist
+# BotBound Historical Launch Readiness Snapshot — October 29, 2026
 
-> **Historical verification snapshot — October 29, 2026.** This checklist records
-> its author's point-in-time assessment, not a continuously validated launch
-> certification. The displayed 100/100 score and individual “CERTIFIED” labels
-> should not be interpreted as independent verification of later commits.
-> As of October 30, the draft appearance branch (PR #1445) and spring-clean
-> branch (PR #1444) have no recorded branch GitHub Actions runs and are not
-> merged into production. Both require clean tests, build, and rendered QA
-> before their changes can receive a release verdict.
+> **Historical record, not current release approval.** The status, score, test
+> counts, provider list, and checkboxes below document what an earlier audit
+> claimed on October 29. They must not be interpreted as evidence that the
+> currently deployed API, voice worker, Stripe account, outbound compliance,
+> browser provider, or live customer workflows are certified. Gemini is retired
+> from the managed runtime; the canonical source of truth is
+> [the deployment runbook](docs/DEPLOYMENT_RUNBOOK.md) plus commit-specific CI,
+> Render revision parity, provider probes, and controlled production tests.
+> An unavailable or skipped check is **unverified**, not passed.
 
 
 **Date**: 2026-10-29  
-**Decision**: **GO FOR PRODUCTION LAUNCH**  
-**Readiness Score**: **100 / 100 (Pass)**  
+**Historical decision recorded**: GO FOR PRODUCTION LAUNCH (not current approval)  
+**Historical score claimed**: 100 / 100 (not independently re-certified)  
 **Target Environment**: Production (`https://botbound.app`)  
 **Runtime**: Node 22 LTS, Render Web/Worker/Cron, Supabase PostgreSQL, Vite 6  
 
 ---
 
-## 1. Executive Dashboard
+## 1. Historical Executive Dashboard (claims, not current certification)
 
 | System Dimension | Status | Verification Evidence |
 |---|---|---|
@@ -118,10 +119,10 @@ Comprehensive operational documentation has been authored and published to `docs
 
 ---
 
-## 7. Executive Sign-Off & Cutover Authorization
+## 7. Historical Sign-Off (not valid for a new release)
 
 - [x] All 5 code and copy remediations implemented and verified.
 - [x] 100% pass across static analysis, contract tests, and server smoke tests.
 - [x] Environment matrix and secret requirements fully documented.
 - [x] Zero-downtime voice worker drain protocol established.
-- [x] **AUTHORIZATION STATUS**: **APPROVED FOR PRODUCTION LAUNCH**.
+- [x] **HISTORICAL AUTHORIZATION CLAIM**: Previously approved. **Current production launch authorization must be re-established against the exact deployed revision and its real provider gates.**
