@@ -137,7 +137,7 @@ export function AuditActivityPanel() {
               aria-pressed={days === d}
               className={cn(
                 "h-auto px-3 py-1 rounded-full wl-label",
-                days === d ? "bg-primary/20 text-primary" : "text-muted hover:text-foreground",
+                days === d ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground",
               )}
             >
               {d}d
@@ -206,7 +206,7 @@ export function AuditActivityPanel() {
                   byAction.map((a) => (
                     <div key={a.action} className="space-y-1.5">
                       <div className="flex justify-between items-end wl-label">
-                        <span className="text-muted">{formatActionName(a.action)}</span>
+                        <span className="text-muted-foreground">{formatActionName(a.action)}</span>
                         <span className="font-mono text-foreground/70">
                           ${Number(a.cost).toFixed(4)}
                         </span>
@@ -286,7 +286,7 @@ export function AuditActivityPanel() {
           <div className="flex-1 min-h-[300px] p-6 rounded-md wl-panel border border-border flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h4 className="text-eyebrow">Recent Autonomous Actions</h4>
-              {recentLoading && <Loader2 className="w-3 h-3 animate-spin text-muted" />}
+              {recentLoading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
             </div>
             <div className="space-y-1">
               {recentError ? (
