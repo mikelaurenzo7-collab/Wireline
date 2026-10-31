@@ -12,6 +12,9 @@ describe("current customer voice offering", () => {
     expect(picker).toContain("VOICE_CLONING_UI_ENABLED && ownerId ? (\n        <VoiceClonePanel");
     expect(picker).toContain("OPENAI_REALTIME_VOICES");
     expect(picker).toContain("<PhoneVoiceCatalog");
+    const rehearsal = source("src/components/StudioVoiceRehearsal.tsx");
+    expect(rehearsal).toContain("if (!VOICE_CLONING_UI_ENABLED) return;");
+    expect(rehearsal).toContain("VOICE_CLONING_UI_ENABLED ? active : null");
   });
 
   it("removes dead-end clone promotion from setup while preserving historical voice links", () => {
