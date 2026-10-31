@@ -17,6 +17,7 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
   const legacyIcon = read("public/wireline-icon.svg");
   const favicon = read("public/favicon.svg");
   const ogImage = read("public/og-image.svg");
+  const ogImageGenerator = read("scripts/render-image-assets.mjs");
   const extensionIcon = read("apps/browser-extension/assets/icon.svg");
   const androidLauncherBg = read("android/app/src/main/res/drawable/ic_launcher_background.xml");
 
@@ -102,11 +103,20 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
     "legacy icon path must alias BotBound",
   );
   mustInclude("public/og-image.svg", ogImage, /BotBound/, "OG image must use BotBound");
+  // The OG SVG and PNG are generated assets. Build regenerates them from
+  // render-image-assets.mjs; guard the authored source here rather than
+  // requiring stale checked-in artifacts to match a new generator before build.
   mustInclude(
-    "public/og-image.svg",
-    ogImage,
-    /<rect[^>]+fill="#f7f7f3"/,
-    "OG image must use the approved warm light canvas",
+    "scripts/render-image-assets.mjs",
+    ogImageGenerator,
+    /<rect width="1200" height="630" fill="#ffffff"\/>/i,
+    "the OG image generator must use the canonical white light canvas",
+  );
+  mustExclude(
+    "scripts/render-image-assets.mjs",
+    ogImageGenerator,
+    /#f7f7f3/i,
+    "the OG image generator must not restore the retired beige canvas",
   );
   mustInclude(
     "android/app/src/main/res/drawable/ic_launcher_background.xml",
