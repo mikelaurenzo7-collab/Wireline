@@ -62,8 +62,9 @@ test("sign-in exposes an appearance switch without obstructing authentication", 
     .toBe("dark");
 });
 
-test("the 320px header and browser preview fit without hiding sign-in", async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 700 });
+for (const width of [320, 375] as const) {
+  test(`the ${width}px header and browser preview fit without hiding sign-in`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 700 });
   await page.addInitScript(() => localStorage.setItem("wireline-theme", "light"));
   await page.goto("/");
 
@@ -84,4 +85,5 @@ test("the 320px header and browser preview fit without hiding sign-in", async ({
 
   await page.getByRole("button", { name: "Toggle navigation menu" }).click();
   await expect(page.getByRole("link", { name: "Sign In" })).toBeVisible();
-});
+  });
+}
