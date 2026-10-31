@@ -80,10 +80,10 @@ for (const width of [320, 375] as const) {
       const url = node.getBoundingClientRect();
       const bar = node.parentElement!.getBoundingClientRect();
       return { urlRight: url.right, barRight: bar.right };
-  });
-  expect(geometry.urlRight).toBeLessThanOrEqual(geometry.barRight + 1);
+    });
+    expect(geometry.urlRight).toBeLessThanOrEqual(geometry.barRight + 1);
 
-  await page.getByRole("button", { name: "Toggle navigation menu" }).click();
-  await expect(page.getByRole("link", { name: "Sign In" })).toBeVisible();
+    await page.getByRole("button", { name: "Toggle navigation menu" }).click();
+    await expect(page.getByRole("link", { name: "Sign In" })).toBeVisible();
   });
 }
