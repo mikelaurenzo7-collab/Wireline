@@ -7,7 +7,9 @@
 /* BotBound defaults to light: ThemeProvider (src/contexts/ThemeContext.tsx)
  * only ever toggles a `.light` class on <html> for the light/system-resolved-
  * light appearance; there is no `.dark` class and dark is simply the absence
- * of `.light`. Exclude the root itself as well as its descendants so a\n * `dark:` class on `<html>` cannot leak into light mode. Without this override,\n * Tailwind's `dark:` variant defaults to
+ * of `.light`. Exclude the root itself as well as its descendants so a
+ * `dark:` class on `<html>` cannot leak into light mode. Without this override,
+ * Tailwind's `dark:` variant defaults to
  * `@media (prefers-color-scheme: dark)`, which tracks the OS/browser setting
  * instead of the appearance the user actually picked in-app. */
 @custom-variant dark (&:where(:not(.light, .light *)));
