@@ -506,6 +506,9 @@
 
 .landing-prestige__browser-url {
   display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   align-items: center;
   gap: 0.3rem;
   padding: 0.15rem 0.5rem;
@@ -516,6 +519,15 @@
   font-family: var(--wireline-font-mono);
   font-size: 0.75rem;
   line-height: 1.2;
+}
+
+/* URL and icon share a shrinking flex item, so a 320px phone never crops
+   the browser chrome or expands the page beyond the viewport. */
+.landing-prestige__browser-url > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .landing-prestige__browser-stage {

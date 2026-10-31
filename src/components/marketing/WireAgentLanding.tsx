@@ -167,8 +167,8 @@ function CapabilityPreview({ channel }: { channel: ChannelId }) {
           <i />
         </span>
         <span className="landing-prestige__browser-url">
-          <Lock className="size-2.5" />
-          dispatch.oakparklock.com/schedule
+          <Lock className="size-2.5 shrink-0" />
+          <span className="min-w-0 truncate">dispatch.oakparklock.com/schedule</span>
         </span>
       </div>
 

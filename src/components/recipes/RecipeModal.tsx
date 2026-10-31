@@ -138,10 +138,10 @@ export function RecipeModal({
             data-recipe-accent={meta.accent}
           />
 
-          <div className="relative z-10 flex items-center justify-between px-7 py-5 border-b border-white/8">
+          <div className="relative z-10 flex items-center justify-between px-7 py-5 border-b border-border">
             <div className="flex items-center gap-4">
               <div
-                className="w-11 h-11 rounded-md wl-panel border border-white/10 flex items-center justify-center wl-recipe-icon"
+                className="w-11 h-11 rounded-md wl-panel border border-border flex items-center justify-center wl-recipe-icon"
                 data-recipe-accent={meta.accent}
               >
                 <meta.icon className="w-5 h-5" />

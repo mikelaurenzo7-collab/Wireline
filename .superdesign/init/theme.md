@@ -7,10 +7,10 @@ This initialization snapshot provides source context. Current decisions belong i
 - Identity: BotBound Design System — near-black violet canvases, layered charcoal-violet surfaces, electric lavender actions, silver secondary controls, and restrained semantic status colors.
 - Dark canvas: default #0A0A0E, deeper #050508, warmer #101018.
 - Dark surfaces: subtle #100F15, default #141319, container #18161E, raised #201E29, strong #262330.
-- Dark text: primary #F5F4F8, secondary #B6B1C6, tertiary #908CA5.
+- Dark text: primary #F5F4F8, secondary #B6B1C6, tertiary #9A95AC.
 - Primary action: default #A78BFA, hover #C4B5FD, pressed #8B5CF6, container #1E1730.
 - Status: success #4ADE9A, warning #E8B85C, error #EF7B92, info #93A0C7.
-- Light mode: canvas #F6F5FA, surface #FFFFFF, text #171426, primary #6D28D9. The html.light class is the only override; dark is the default absence of that class.
+- Light mode: canvas #FFFFFF, surface #FFFFFF, subtle cool-gray #F8F9FA, text #171717, primary #7040D7. Strong borders #7C8590 keep inputs distinct; do not use beige/parchment canvases. The html.light class is the only override; dark is the default absence of that class.
 - Type: Inter for body, Inter Tight for display, IBM Plex Mono for operational data. Display 56/60 at 720; H1 40/46 at 700; H2 30/36 at 680; H3 22/30 at 650; body 16/26; caption 13/19; overline 11/16 with 0.09em tracking.
 - Spacing: 2, 4, 6, 8, 10, 12, 16, 24, 32, 40, 48, 64px. Standard section gap 48px.
 - Radius: 6, 8, 10, 12, 20, 28px and pill. Product surfaces favor restrained 10–12px radii.
@@ -77,7 +77,7 @@ There is no tailwind.config file. Tailwind CSS 4 is loaded through the Vite plug
   --wireline-color-text-onAction: #0E0B16;
   --wireline-color-text-primary: #F5F4F8;
   --wireline-color-text-secondary: #B6B1C6;
-  --wireline-color-text-tertiary: #908CA5;
+  --wireline-color-text-tertiary: #9A95AC;
   --wireline-elevation-card: 0 8px 24px -16px rgba(0, 0, 0, 0.6);
   --wireline-elevation-inset: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.4);
   --wireline-elevation-insetRaised: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -1px 0 rgba(0, 0, 0, 0.5);
@@ -292,7 +292,7 @@ There is no tailwind.config file. Tailwind CSS 4 is loaded through the Vite plug
  * `@media (prefers-color-scheme: dark)`, which tracks the OS/browser setting
  * instead of the theme the user actually picked in-app. Registering it here
  * makes every existing `dark:*` utility track the real resolved theme. */
-@custom-variant dark (&:where(:not(.light *)));
+@custom-variant dark (&:where(:not(.light, .light *)));
 
 /* Register the legacy brand/ink/paper and status color names as Tailwind
  * utilities so `text-brand`, `bg-brand`, `border-ink`, `text-paper`,

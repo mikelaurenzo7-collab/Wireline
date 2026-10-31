@@ -37,7 +37,7 @@ Core jobs:
 
 ## Visual identity
 
-The canonical identity is the **BotBound Design System**: a warm off-white canvas, clean neutral surfaces, fine rules, violet primary actions, and restrained semantic status colors. Dark mode keeps the same hierarchy on near-black surfaces. Page backgrounds use a subtle neutral light falloff, never brand-colored washes or paper grain. Reserve violet for identity, actions, selection, and focus. Preserve the approved BotBound mascot without adding decorative illustration. Avoid glass-heavy decoration, excessive pills, and ornamental motion. Use semantic names for surfaces and colors; do not introduce separate named themes.
+The canonical identity is the **BotBound Design System**: a crisp white canvas, cool neutral surfaces, fine rules, violet primary actions, and restrained semantic status colors. Dark mode keeps the same hierarchy on near-black surfaces. Page backgrounds use a subtle neutral light falloff, never brand-colored washes or paper grain. Reserve violet for identity, actions, selection, and focus. Preserve the approved BotBound mascot without adding decorative illustration. Avoid glass-heavy decoration, excessive pills, and ornamental motion. Use semantic names for surfaces and colors; do not introduce separate named themes.
 
 Use only these type families:
 
@@ -49,13 +49,13 @@ Use only these core dark-mode colors:
 
 - Canvas: `#0A0A0E`; deeper `#050508`; warmer `#101018`
 - Surfaces: `#100F15`, `#141319`, `#18161E`, `#201E29`, `#262330`
-- Text: primary `#F5F4F8`; secondary `#B6B1C6`; tertiary `#908CA5`
+- Text: primary `#F5F4F8`; secondary `#B6B1C6`; tertiary `#9A95AC`
 - Primary action: `#A78BFA`; hover `#C4B5FD`; pressed `#8B5CF6`; container `#1E1730`
 - Secondary action: silver `#C7CCD6`; container `#1C1D22`
 - Borders: soft `#1C1A22`; default `#262430`; strong `#3A3745`
 - Status: success `#4ADE9A`; warning `#E8B85C`; error `#EF7B92`; info `#93A0C7`
 
-Light is the first-visit appearance. A saved light, dark, or system preference always wins. Light mode uses `html.light`: canvas `#F7F7F3`, surface `#FFFFFF`, text `#19191D`, primary `#7040D7`. Both appearances use the same component and interaction system. The executable manifest is `src/lib/wireline-design-vision.ts`; `ThemeContext` applies the preference.
+Light is the first-visit appearance. A saved light, dark, or system preference always wins. Light mode uses `html.light`: canvas `#FFFFFF`, surface `#FFFFFF`, text `#171717`, primary `#7040D7`. Both appearances use the same component and interaction system. The executable manifest is `src/lib/wireline-design-vision.ts`; `ThemeContext` applies the preference.
 
 ## Typography
 
@@ -183,20 +183,20 @@ The JSON token source already supplies typed values and generated web, extension
 
 | Semantic role   | Dark      | Light     |
 | --------------- | --------- | --------- |
-| Canvas          | `#0A0A0E` | `#F7F7F3` |
+| Canvas          | `#0A0A0E` | `#FFFFFF` |
 | Default surface | `#141319` | `#FFFFFF` |
-| Subtle surface  | `#100F15` | `#F5F5F7` |
+| Subtle surface  | `#100F15` | `#F8F9FA` |
 | Raised surface  | `#201E29` | `#FFFFFF` |
-| Primary text    | `#F5F4F8` | `#19191D` |
-| Secondary text  | `#B6B1C6` | `#626268` |
-| Tertiary text   | `#908CA5` | `#606066` |
+| Primary text    | `#F5F4F8` | `#171717` |
+| Secondary text  | `#B6B1C6` | `#50545C` |
+| Tertiary text   | `#9A95AC` | `#5C5F66` |
 | Primary action  | `#A78BFA` | `#7040D7` |
 | Text on action  | `#0E0B16` | `#FFFFFF` |
-| Default border  | `#262430` | `#E5E5EB` |
-| Strong border   | `#3A3745` | `#C8C8D1` |
-| Success         | `#4ADE9A` | `#127548` |
-| Warning         | `#E8B85C` | `#8A5C07` |
-| Error           | `#EF7B92` | `#B83648` |
+| Default border  | `#262430` | `#D9DDE3` |
+| Strong border   | `#3A3745` | `#7C8590` |
+| Success         | `#4ADE9A` | `#10663E` |
+| Warning         | `#E8B85C` | `#765006` |
+| Error           | `#EF7B92` | `#A52F40` |
 | Information     | `#93A0C7` | `#46577A` |
 
 Working is an activity state, not a new status color. Use the primary action family for active focus, the information family for neutral progress, warning for a checkpoint, and error for failure. Pair status color with text or an icon. Do not make green mean both active and successfully finished.

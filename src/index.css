@@ -7,10 +7,12 @@
 /* BotBound defaults to light: ThemeProvider (src/contexts/ThemeContext.tsx)
  * only ever toggles a `.light` class on <html> for the light/system-resolved-
  * light appearance; there is no `.dark` class and dark is simply the absence
- * of `.light`. Without this override, Tailwind's `dark:` variant defaults to
+ * of `.light`. Exclude the root itself as well as its descendants so a
+ * `dark:` class on `<html>` cannot leak into light mode. Without this override,
+ * Tailwind's `dark:` variant defaults to
  * `@media (prefers-color-scheme: dark)`, which tracks the OS/browser setting
  * instead of the appearance the user actually picked in-app. */
-@custom-variant dark (&:where(:not(.light *)));
+@custom-variant dark (&:where(:not(.light, .light *)));
 
 /* Register legacy brand/ink/paper utility aliases plus status names so mature
  * Tailwind call sites keep resolving while visual decisions come from the same
@@ -141,9 +143,7 @@ body {
     "calt" 1,
     "ss01" 1,
     "cv11" 1;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Platform typography rendering is owned by type-integrity.css. */
 }
 
 .wl-ui-caps > .marketing-surface,

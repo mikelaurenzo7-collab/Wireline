@@ -79,7 +79,7 @@ export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled:
       {err && <ErrCard error={err} />}
       {enrichment && (
         <div className="space-y-4 pt-3">
-          <div className="rounded-md wl-panel-elevated border border-white/12 p-5 space-y-3">
+          <div className="rounded-md wl-panel-elevated border border-border p-5 space-y-3">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2">
                 <div
@@ -102,7 +102,7 @@ export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled:
               enrichment.role ||
               enrichment.industry ||
               enrichment.company_size) && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-white/8">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-border">
                 {enrichment.company_name && (
                   <Stat label="Company" value={enrichment.company_name} />
                 )}
@@ -142,7 +142,7 @@ export function EnrichLeadForm({ initial, disabled }: { initial?: any; disabled:
           )}
 
           {enrichment.sources?.length > 0 && (
-            <div className="rounded-md wl-panel border border-white/10 p-4">
+            <div className="rounded-md wl-panel border border-border p-4">
               <div className="app-section-title mb-2">Sources</div>
               <ul className="space-y-1 text-xs">
                 {enrichment.sources.map((s: string, i: number) => (

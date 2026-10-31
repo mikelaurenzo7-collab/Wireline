@@ -1,21 +1,13 @@
 import { useId } from "react";
+import { Monitor, Moon, Sun } from "lucide-react";
 
 import { useTheme, type Theme } from "../../contexts/ThemeContext";
 
-const OPTIONS: Array<{ id: Theme; label: string }> = [
-  {
-    id: "dark",
-    label: "Dark",
-  },
-  {
-    id: "light",
-    label: "Light",
-  },
-  {
-    id: "system",
-    label: "System",
-  },
-];
+const OPTIONS = [
+  { id: "light", label: "Light", Icon: Sun },
+  { id: "dark", label: "Dark", Icon: Moon },
+  { id: "system", label: "System", Icon: Monitor },
+] as const satisfies ReadonlyArray<{ id: Theme; label: string; Icon: typeof Sun }>;
 
 export default function AppearanceSettings() {
   const { theme, setTheme } = useTheme();
@@ -32,7 +24,7 @@ export default function AppearanceSettings() {
         aria-label="Theme"
         aria-describedby={helpId}
       >
-        {OPTIONS.map(({ id, label }) => {
+        {OPTIONS.map(({ id, label, Icon }) => {
           const selected = theme === id;
           return (
             <button
@@ -40,13 +32,14 @@ export default function AppearanceSettings() {
               type="button"
               onClick={() => setTheme(id)}
               aria-pressed={selected}
-              className={`min-h-[44px] min-w-0 rounded-lg border px-2 py-3 text-center text-sm font-semibold transition-colors ${
+              className={`inline-flex min-h-[44px] min-w-0 items-center justify-center gap-2 rounded-lg border px-2 py-3 text-center text-sm font-semibold transition-colors ${
                 selected
                   ? "border-primary/50 bg-primary/10 text-primary"
                   : "border-border bg-background text-foreground hover:border-primary/25"
               }`}
             >
-              {label}
+              <Icon className="size-4 shrink-0" aria-hidden="true" />
+              <span>{label}</span>
             </button>
           );
         })}

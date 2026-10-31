@@ -429,7 +429,7 @@ export default function TrialGateModal() {
               size="icon"
               onClick={closeModal}
               aria-label="Close"
-              className="absolute top-4 right-4 z-10 h-11 w-11 rounded-full text-muted hover:bg-muted/10 hover:text-foreground"
+              className="absolute top-4 right-4 z-10 h-11 w-11 rounded-full text-muted-foreground hover:bg-muted/10 hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </ShadButton>
@@ -629,7 +629,7 @@ export default function TrialGateModal() {
               )}
 
               {showPlanCheckout && (
-                <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-muted/70 wl-label">
+                <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground wl-label">
                   <Link
                     to="/settings/billing"
                     onClick={closeModal}

@@ -2,44 +2,44 @@
  * The generated base tokens provide dark mode; this is the default light appearance.
  * index.html applies `.light` before first paint on first visit, for saved light preferences,
  * and for saved system preferences that resolve to light.
- * Light uses a warm off-white canvas without grain and keeps the same
- * violet/platinum identity as dark mode, inverted for contrast. */
+ * Light uses one true-white canvas, clean neutral grays for hierarchy and
+ * violet actions. Avoid warm parchment/cream casts and preserve dark mode. */
 
 :root.light {
   color-scheme: light;
 
-  --wireline-color-canvas-default: #f7f7f3;
-  --wireline-color-canvas-deeper: #eeeef2;
+  --wireline-color-canvas-default: #ffffff;
+  --wireline-color-canvas-deeper: #f7f7f8;
   --wireline-color-canvas-warmer: #ffffff;
   --wireline-color-surface-default: #ffffff;
-  --wireline-color-surface-subtle: #f5f5f7;
-  --wireline-color-surface-container: #ededf1;
-  --wireline-color-surface-strong: #e0e0e6;
+  --wireline-color-surface-subtle: #f8f9fa;
+  --wireline-color-surface-container: #f3f4f6;
+  --wireline-color-surface-strong: #e8ebef;
   --wireline-color-surface-raised: #ffffff;
-  --wireline-color-surface-recessed: #f0f0f4;
+  --wireline-color-surface-recessed: #f4f5f6;
 
-  --wireline-color-text-primary: #19191d;
-  --wireline-color-text-secondary: #626268;
-  /* At least 4.62:1 across the standard surfaces, including surface-strong. */
-  --wireline-color-text-tertiary: #606066;
+  --wireline-color-text-primary: #171717;
+  --wireline-color-text-secondary: #50545c;
+  /* Neutral ink clears WCAG AA even against stronger cool-gray/tinted surfaces. */
+  --wireline-color-text-tertiary: #5c5f66;
   --wireline-color-text-onAction: #ffffff;
 
   --wireline-color-action-primary-default: #7040d7;
   --wireline-color-action-primary-pressed: #5e2fbd;
   --wireline-color-action-primary-hover: #6333c5;
-  --wireline-color-action-primary-container: #f0eafb;
-  --wireline-color-action-primary-containerStrong: #e3d8f6;
+  --wireline-color-action-primary-container: #f3effc;
+  --wireline-color-action-primary-containerStrong: #ede7fb;
 
   /* Wire-action labels stay readable on both default and hover containers. */
   --wireline-color-action-secondary-default: #596170;
-  --wireline-color-action-secondary-pressed: #4b5563;
-  --wireline-color-action-secondary-hover: #808895;
-  --wireline-color-action-secondary-container: #eef0f3;
-  --wireline-color-action-secondary-containerStrong: #dfe3e8;
+  --wireline-color-action-secondary-pressed: #374151;
+  --wireline-color-action-secondary-hover: #4b5563;
+  --wireline-color-action-secondary-container: #f2f4f6;
+  --wireline-color-action-secondary-containerStrong: #e7eaef;
 
-  --wireline-color-border-default: #e5e5eb;
-  --wireline-color-border-soft: #f0f0f4;
-  --wireline-color-border-strong: #c8c8d1;
+  --wireline-color-border-default: #d9dde3;
+  --wireline-color-border-soft: #e7e9ee;
+  --wireline-color-border-strong: #7c8590;
 
   --wireline-color-focus-default: #7040d7;
   --wireline-color-focus-wire: #596170;
@@ -47,14 +47,13 @@
   --wireline-color-overlay-scrim: rgba(23, 20, 38, 0.42);
   --wireline-color-overlay-vignette: rgba(23, 20, 38, 0.12);
 
-  /* Darkened so status text clears WCAG AA (4.5:1) on both the near-white
-     canvas and the tinted feedback surfaces below. The prior values were
-     3.1-4.4:1 as small text; hues are preserved. */
-  --wireline-color-status-success: #127548;
-  --wireline-color-status-warning: #8a5c07;
-  --wireline-color-status-error: #b83648;
+  /* Deepened so status copy exceeds 4.5:1 even on the stronger neutral
+     and violet-tinted surfaces, not only on the white canvas. */
+  --wireline-color-status-success: #10663e;
+  --wireline-color-status-warning: #765006;
+  --wireline-color-status-error: #a52f40;
   --wireline-color-status-info: #46577a;
-  --wireline-color-status-neutral: #6b6678;
+  --wireline-color-status-neutral: #5c5669;
 
   --wireline-color-feedback-success-surface: #e7f5ec;
   --wireline-color-feedback-success-border: #b7dec5;
@@ -64,8 +63,8 @@
   --wireline-color-feedback-error-border: #e7b7c0;
   --wireline-color-feedback-info-surface: #e9ebf3;
   --wireline-color-feedback-info-border: #c3c9dc;
-  --wireline-color-feedback-neutral-surface: #efedf4;
-  --wireline-color-feedback-neutral-border: #d8d4e3;
+  --wireline-color-feedback-neutral-surface: #f3f4f6;
+  --wireline-color-feedback-neutral-border: #d5d9e0;
 
   --wireline-color-glow-primary: rgba(109, 40, 217, 0.12);
   --wireline-color-glow-primarySoft: rgba(109, 40, 217, 0.06);
@@ -98,4 +97,11 @@
   --border: var(--wireline-color-border-default);
   --input: var(--wireline-color-border-default);
   --ring: var(--wireline-color-focus-default);
+}
+
+/* White canvas + white card calls for a visible field edge, not a cream fill.
+ * :where() keeps focus/error rules with greater specificity authoritative. */
+:where(:root.light) .wl-access-panel__field {
+  border-color: var(--wireline-color-border-strong);
+  background: var(--wireline-color-surface-default);
 }

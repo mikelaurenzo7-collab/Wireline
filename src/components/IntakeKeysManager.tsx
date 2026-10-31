@@ -328,9 +328,9 @@ export default function IntakeKeysManager() {
                 className={cn(
                   "h-auto w-full px-4 py-3 rounded-md flex items-start gap-3 text-left whitespace-normal justify-start",
                   !defaultAgentId
-                    ? "bg-black/20 border-white/5 text-muted/70"
+                    ? "bg-muted border-border text-muted-foreground"
                     : autoDial
-                      ? "bg-brand-2/15 border-brand-2/40 text-brand-2"
+                      ? "bg-[var(--wireline-color-action-primary-container)] border-primary/40 text-primary"
                       : "bg-muted/10 border-border text-foreground/80 hover:border-border/60",
                 )}
               >
@@ -338,8 +338,8 @@ export default function IntakeKeysManager() {
                   className={cn(
                     "shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center mt-0.5",
                     autoDial && defaultAgentId
-                      ? "bg-brand-2 border-brand-2 text-on-brand"
-                      : "border-white/30",
+                      ? "bg-primary border-primary text-primary-foreground"
+                      : "border-border",
                   )}
                 >
                   {autoDial && defaultAgentId && <Check className="w-2.5 h-2.5" strokeWidth={4} />}
@@ -381,7 +381,7 @@ export default function IntakeKeysManager() {
       {/* Key list */}
       <div className="space-y-2">
         {loading && (
-          <div className="flex items-center gap-2 text-muted text-xs">
+          <div className="flex items-center gap-2 text-muted-foreground text-xs">
             <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
           </div>
         )}
@@ -413,13 +413,13 @@ export default function IntakeKeysManager() {
                       "wl-label px-2 py-0.5 rounded-full border",
                       k.active
                         ? WL_APP_CLASSES.statusActive
-                        : "bg-muted/10 border-border text-muted",
+                        : "bg-muted/10 border-border text-muted-foreground",
                     )}
                   >
                     {k.active ? "Active" : "Paused"}
                   </span>
                   {agent && (
-                    <span className="wl-label px-2 py-0.5 rounded-full bg-brand-2/10 border border-brand-2/30 text-brand-2">
+                    <span className="wl-label px-2 py-0.5 rounded-full bg-[var(--wireline-color-action-primary-container)] border border-primary/30 text-primary">
                       Agent · {agent.name}
                     </span>
                   )}
@@ -429,7 +429,7 @@ export default function IntakeKeysManager() {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-3 flex-wrap text-[length:var(--wireline-typography-overline-size)] text-muted">
+                <div className="flex items-center gap-3 flex-wrap text-[length:var(--wireline-typography-overline-size)] text-muted-foreground">
                   <span className="font-mono">{k.key_prefix}…</span>
                   <span>{k.use_count || 0} uses</span>
                   {k.last_used_at && <span>last {formatDateTime(k.last_used_at)}</span>}
@@ -452,10 +452,10 @@ export default function IntakeKeysManager() {
                   className={cn(
                     "h-9 px-3 wl-label",
                     !k.default_agent_id
-                      ? "border-border text-muted/70"
+                      ? "border-border text-muted-foreground"
                       : k.auto_dial
                         ? "bg-brand/15 border-brand/40 text-brand hover:bg-brand/25"
-                        : "border-border text-muted hover:text-brand hover:border-brand/40",
+                        : "border-border text-muted-foreground hover:text-brand hover:border-brand/40",
                   )}
                 >
                   <PhoneOutgoing className="w-3 h-3" />
@@ -525,14 +525,14 @@ export default function IntakeKeysManager() {
       <details
         className={cn(
           WL_APP_CLASSES.settingsRow,
-          "text-[length:var(--wireline-typography-overline-size)] text-muted leading-relaxed overflow-x-auto bg-muted/5",
+          "text-[length:var(--wireline-typography-overline-size)] text-muted-foreground leading-relaxed overflow-x-auto bg-muted/5",
         )}
       >
         <summary className="cursor-pointer list-none font-sans text-xs font-semibold text-foreground marker:hidden [&::-webkit-details-marker]:hidden">
           Developer Quick Start
         </summary>
         <div className="mt-3 font-mono">
-          <div className="wl-label text-brand-2 mb-2">Quick start · curl</div>
+          <div className="wl-label text-primary mb-2">Quick start · curl</div>
           <pre className="whitespace-pre-wrap break-all">{`curl -X POST https://botbound.app/api/intake/lead \\
   -H "Content-Type: application/json" \\
   -H "X-BotBound-Key: wlk_..." \\
@@ -541,20 +541,20 @@ export default function IntakeKeysManager() {
         </div>
         <div className="mt-3 wl-micro-meta opacity-90 leading-relaxed font-sans space-y-1.5">
           <div>
-            <span className="text-brand-2 font-mono uppercase tracking-wider">Idempotency-Key</span>
+            <span className="text-primary font-mono uppercase tracking-wider">Idempotency-Key</span>
             : optional, any string ≤ 255 chars. Same key + same Account Holder returns the original{" "}
             <code className="text-foreground/80">lead_id</code> with{" "}
             <code className="text-foreground/80">idempotent_replay: true</code>. Safe for
             form-submission retries.
           </div>
           <div>
-            <span className="text-brand-2 font-mono uppercase tracking-wider">Rate limit</span>: 60
+            <span className="text-primary font-mono uppercase tracking-wider">Rate limit</span>: 60
             requests / minute per intake key. Excess returns{" "}
             <code className="text-foreground/80">HTTP 429</code> with{" "}
             <code className="text-foreground/80">Retry-After</code>.
           </div>
           <div>
-            <span className="text-brand-2 font-mono uppercase tracking-wider">Auto-dial</span>: when
+            <span className="text-primary font-mono uppercase tracking-wider">Auto-dial</span>: when
             on, the response includes{" "}
             <code className="text-foreground/80">auto_dial_initiated: true</code> and the call is
             dispatched in the background; the lead row gets{" "}

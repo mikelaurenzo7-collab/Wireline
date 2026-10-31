@@ -51,7 +51,7 @@ abstract final class WirelineDesignTokens {
   static const colorTextOnAction = Color(0xFF0E0B16);
   static const colorTextPrimary = Color(0xFFF5F4F8);
   static const colorTextSecondary = Color(0xFFB6B1C6);
-  static const colorTextTertiary = Color(0xFF908CA5);
+  static const colorTextTertiary = Color(0xFF9A95AC);
 
   static const double interactionFocusHaloWidth = 4.0;
   static const double interactionFocusOffset = 2.0;

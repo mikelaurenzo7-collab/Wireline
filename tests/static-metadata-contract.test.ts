@@ -18,7 +18,7 @@ describe("BotBound static marketing metadata", () => {
     expect(index).toContain(
       "Your next hire is a bot. Inbound and outbound calls, SMS, email, and computer tasks for small businesses.",
     );
-    expect(index).toContain('<meta name="msapplication-TileColor" content="#F7F7F3" />');
+    expect(index).toContain('<meta name="msapplication-TileColor" content="#FFFFFF" />');
     expect(structuredData().find((entry) => entry["@type"] === "Organization")).toMatchObject({
       name: "BotBound",
       slogan: "Your next hire is a bot.",
@@ -137,8 +137,8 @@ describe("BotBound static marketing metadata", () => {
     expect(manifest.description).toBe(
       "Inbound and outbound calls, SMS, email, and computer tasks for small businesses.",
     );
-    expect(manifest.theme_color).toBe("#F7F7F3");
-    expect(manifest.background_color).toBe("#F7F7F3");
+    expect(manifest.theme_color).toBe("#FFFFFF");
+    expect(manifest.background_color).toBe("#FFFFFF");
     expect(manifest.start_url).toBe("/studio");
     expect(manifest.icons[0]?.src).toBe("/botbound-icon-192.png");
     expect(manifest.shortcuts.map((shortcut) => shortcut.name)).toEqual([

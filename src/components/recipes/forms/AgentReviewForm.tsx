@@ -91,7 +91,7 @@ export function AgentReviewForm({
       {err && <ErrCard error={err} />}
       {review && (
         <div className="space-y-4 pt-3">
-          <div className="rounded-md wl-panel-elevated border border-white/12 p-6 flex items-center justify-between">
+          <div className="rounded-md wl-panel-elevated border border-border p-6 flex items-center justify-between">
             <div>
               <div className="app-section-title mb-2">Overall Grade</div>
               <div className="font-display text-7xl text-brand-display leading-none">
@@ -124,17 +124,17 @@ export function AgentReviewForm({
             {review.suggested_directives.map((d: any, i: number) => (
               <div
                 key={i}
-                className="rounded-md wl-panel border border-white/10 p-4 flex items-start gap-3"
+                className="rounded-md wl-panel border border-border p-4 flex items-start gap-3"
               >
                 <div
                   className={cn(
                     "shrink-0 px-2 py-0.5 rounded-full wl-label mt-0.5",
                     d.priority === "critical" &&
-                      "bg-rose-500/15 text-rose-500 border border-rose-500/30",
-                    d.priority === "high" && "bg-brand-3/15 text-brand-3 border border-brand-3/30",
+                      "bg-[var(--wireline-color-feedback-error-surface)] text-[var(--wireline-color-status-error)] border border-[var(--wireline-color-feedback-error-border)]",
+                    d.priority === "high" && "bg-[var(--wireline-color-feedback-warning-surface)] text-[var(--wireline-color-status-warning)] border border-[var(--wireline-color-feedback-warning-border)]",
                     d.priority === "medium" && "bg-brand/15 text-brand border border-brand/30",
                     d.priority === "low" &&
-                      "bg-black/[0.06] text-foreground/55 border border-white/12",
+                      "bg-[var(--wireline-color-feedback-neutral-surface)] text-[var(--wireline-color-status-neutral)] border border-[var(--wireline-color-feedback-neutral-border)]",
                   )}
                 >
                   {d.priority}

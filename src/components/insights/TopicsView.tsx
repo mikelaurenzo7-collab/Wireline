@@ -70,7 +70,7 @@ export default function TopicsView() {
               transition={{ delay: i * 0.05 }}
               className={cn(WL_APP_CLASSES.insightStatCard, "p-5")}
             >
-              <div className="absolute inset-x-0 bottom-0 h-1 bg-black/[0.05]" />
+              <div className="absolute inset-x-0 bottom-0 h-1 bg-muted" />
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${pct}%` }}
@@ -95,11 +95,11 @@ export default function TopicsView() {
                       className={cn(
                         "px-2 py-0.5 rounded-full font-mono text-[10px] uppercase tracking-[0.08em]",
                         t.trend === "growing" && "bg-brand/15 text-brand border border-brand/30",
-                        t.trend === "new" && "bg-brand-2/15 text-brand-2 border border-brand-2/30",
+                        t.trend === "new" && "bg-[var(--wireline-color-feedback-info-surface)] text-[var(--wireline-color-status-info)] border border-[var(--wireline-color-feedback-info-border)]",
                         t.trend === "steady" &&
-                          "bg-black/[0.06] dark:bg-white/5 text-foreground/50 border border-border",
+                          "bg-[var(--wireline-color-feedback-neutral-surface)] text-[var(--wireline-color-status-neutral)] border border-[var(--wireline-color-feedback-neutral-border)]",
                         t.trend === "declining" &&
-                          "bg-rose-500/15 text-rose-500 border border-rose-500/30",
+                          "bg-[var(--wireline-color-feedback-error-surface)] text-[var(--wireline-color-status-error)] border border-[var(--wireline-color-feedback-error-border)]",
                       )}
                     >
                       {t.trend}

@@ -42,8 +42,8 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
   const roles = [
     { id: "owner", label: "Owner", icon: Shield, color: "text-brand", bg: "bg-brand/10" },
     { id: "admin", label: "Admin", icon: ShieldCheck, color: "text-brand", bg: "bg-brand/10" },
-    { id: "member", label: "Member", icon: User, color: "text-foreground", bg: "bg-black/5" },
-    { id: "auditor", label: "Auditor", icon: KeyRound, color: "text-muted", bg: "bg-black/5" },
+    { id: "member", label: "Member", icon: User, color: "text-foreground", bg: "bg-muted" },
+    { id: "auditor", label: "Auditor", icon: KeyRound, color: "text-muted-foreground", bg: "bg-muted" },
   ];
 
   const handleInvite = async () => {
@@ -75,8 +75,8 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
             <p className="wl-micro-meta--muted">Independent readiness work and audit planning.</p>
           </div>
 
-          <div className="p-4 rounded-md wl-panel border border-white/10 bg-white/5">
-            <div className="flex items-center gap-2 wl-label text-muted mb-2">
+          <div className="p-4 rounded-md wl-panel border border-border bg-muted">
+            <div className="flex items-center gap-2 wl-label text-muted-foreground mb-2">
               <Fingerprint className="w-3.5 h-3.5" /> Identity & Access
             </div>
             <div className="flex items-baseline gap-2 mb-1">
@@ -88,8 +88,8 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
             <p className="wl-micro-meta--muted">Google and Microsoft sign-in with provider MFA.</p>
           </div>
 
-          <div className="p-4 rounded-md wl-panel border border-white/10 bg-white/5">
-            <div className="flex items-center gap-2 wl-label text-muted mb-2">
+          <div className="p-4 rounded-md wl-panel border border-border bg-muted">
+            <div className="flex items-center gap-2 wl-label text-muted-foreground mb-2">
               <Globe className="w-3.5 h-3.5" /> Data Residency
             </div>
             <div className="flex items-baseline gap-2 mb-1">
@@ -154,7 +154,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
             <div className="space-y-1">
               <div className="app-section-title mb-4 px-1 flex justify-between items-center border-b border-border pb-2">
                 <span className="text-foreground">Active Operational Roster</span>
-                <span className="wl-micro-badge bg-surface-container text-muted">
+                <span className="wl-micro-badge bg-surface-container text-muted-foreground">
                   {members.length} Provisioned
                 </span>
               </div>
@@ -162,8 +162,8 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
               <div className="grid grid-cols-1 gap-2">
                 {members.length === 0 ? (
                   <div className="py-20 text-center wl-panel border border-dashed border-input rounded-md">
-                    <User className="w-8 h-8 text-muted/50 mx-auto mb-3" />
-                    <p className="text-xs text-muted uppercase tracking-widest font-bold">
+                    <User className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">
                       No identities provisioned
                     </p>
                     <p className="wl-micro-meta--muted mt-1">
@@ -176,7 +176,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                     return (
                       <div
                         key={m.id}
-                        className="group flex items-center gap-4 p-4 rounded-md wl-panel border border-border hover:border-brand/30 transition-all hover:bg-white/5 hover:shadow-sm"
+                        className="group flex items-center gap-4 p-4 rounded-md wl-panel border border-border hover:border-brand/30 transition-all hover:bg-muted hover:shadow-sm"
                       >
                         <div
                           className={cn(
@@ -185,7 +185,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                             roleInfo.color,
                             roleInfo.id === "owner" || roleInfo.id === "admin"
                               ? "border-brand/20"
-                              : "border-white/10",
+                              : "border-border",
                           )}
                         >
                           {m.email.charAt(0)}
@@ -253,7 +253,7 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                           <ShadButton
                             onClick={() => onRemove(m.id)}
                             variant="outline"
-                            className="w-10 h-10 rounded-md border border-input flex items-center justify-center text-muted hover:text-rose-500 hover:border-rose-500/40 hover:bg-rose-500/5 transition-all p-0"
+                            className="w-10 h-10 rounded-md border border-input flex items-center justify-center text-muted-foreground hover:text-rose-500 hover:border-rose-500/40 hover:bg-rose-500/5 transition-all p-0"
                             title="Revoke Access"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -292,14 +292,14 @@ export function TeamPanel({ members, onInvite, onRemove }: TeamPanelProps) {
                 role: "Agent Account Holder",
                 desc: "Access to specific agents and call logs for day-to-day work.",
                 color: "text-foreground",
-                bg: "bg-surface-container/50 border-white/10",
+                bg: "bg-surface-container/50 border-border",
               },
               {
                 label: "Auditor",
                 role: "Read Only",
                 desc: "Secure read-only access to audit logs and compliance ledgers.",
-                color: "text-muted",
-                bg: "bg-surface-container/50 border-white/10",
+                color: "text-muted-foreground",
+                bg: "bg-surface-container/50 border-border",
               },
             ].map((p) => (
               <div

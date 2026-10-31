@@ -69,7 +69,7 @@ export function TextInput({ value, onChange, placeholder, ...rest }: any) {
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full h-12 px-4 rounded-md bg-black/5 dark:bg-white/5 border border-white/10 dark:border-white/10 outline-none text-foreground dark:text-foreground text-sm placeholder:text-muted/70 focus:border-brand/60 focus:bg-black/10 dark:focus:bg-white/10 transition-all"
+      className="w-full h-12 rounded-md border border-[var(--wireline-color-border-strong)] bg-muted px-4 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:bg-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       {...rest}
     />
   );
@@ -82,7 +82,7 @@ export function TextArea({ value, onChange, placeholder, rows = 5, ...rest }: an
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       rows={rows}
-      className="w-full px-4 py-3 rounded-md bg-black/5 dark:bg-white/5 border border-white/10 dark:border-white/10 outline-none text-foreground dark:text-foreground text-sm placeholder:text-muted/70 focus:border-brand/60 focus:bg-black/10 dark:focus:bg-white/10 transition-all resize-none leading-relaxed font-sans"
+      className="w-full resize-none rounded-md border border-[var(--wireline-color-border-strong)] bg-muted px-4 py-3 font-sans text-sm leading-relaxed text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:bg-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       {...rest}
     />
   );
@@ -101,7 +101,7 @@ export function Select({
     <ShadSelect value={value} onValueChange={onChange}>
       <SelectTrigger
         aria-label="Recipe option"
-        className="w-full h-12 px-4 rounded-md bg-black/5 dark:bg-white/5 border border-white/10 dark:border-white/10 text-foreground dark:text-foreground text-sm"
+        className="h-12 w-full rounded-md border border-[var(--wireline-color-border-strong)] bg-muted px-4 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         <SelectValue />
       </SelectTrigger>
@@ -146,7 +146,7 @@ export const ResultCard: React.FC<{ title: string; copyText?: string; children?:
 }) => {
   const [copied, setCopied] = useState(false);
   return (
-    <div className="rounded-md wl-panel border border-white/10 p-5 space-y-3 relative">
+    <div className="relative space-y-3 rounded-md border border-border wl-panel p-5">
       <div className="flex items-center justify-between">
         <h4 className="wl-label text-brand">{title}</h4>
         {copyText && (
@@ -184,7 +184,7 @@ export function ErrCard({ error }: { error: string }) {
     <div
       role="alert"
       className={cn(
-        "rounded-md bg-rose-500/10 border border-rose-500/30 p-4 text-rose-500 text-sm",
+        "rounded-md border border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] p-4 text-sm text-[var(--wireline-color-status-error)]",
         "flex items-start gap-3",
       )}
     >
@@ -209,8 +209,8 @@ export function NoKeyInline() {
   // problem to fix on the backend (alerted via service logs +
   // /api/health/integrations). UI just shows a soft "warming up" state.
   return (
-    <div className="px-7 py-4 bg-rose-500/10 border-y border-rose-500/30 flex items-center gap-3">
-      <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+    <div className="flex items-center gap-3 border-y border-[var(--wireline-color-feedback-error-border)] bg-[var(--wireline-color-feedback-error-surface)] px-7 py-4">
+      <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--wireline-color-status-error)]" />
       <p className="text-xs text-foreground/80 leading-relaxed">
         BotBound AI is warming up. Try again in a moment. If this persists, our team is on it.
       </p>

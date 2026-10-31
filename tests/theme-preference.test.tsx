@@ -41,7 +41,7 @@ vi.mock("react", async (original) => ({
 }));
 
 const preload = readFileSync("index.html", "utf8").match(/<script>\s*([\s\S]*?)<\/script>/)![1];
-const colors = { dark: "#0A0A0E", light: "#F7F7F3" };
+const colors = { dark: "#0A0A0E", light: "#FFFFFF" };
 let stored: string | null;
 let storageFailure: "getter" | "read" | "write" | null;
 let systemDark: boolean;

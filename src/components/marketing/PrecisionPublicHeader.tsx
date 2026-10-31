@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router";
-import { Menu, X } from "lucide-react";
+import { Menu, Moon, Sun, X } from "lucide-react";
 
 import { BotBoundWordmark } from "../brand/BotBoundBrand";
 import SkipToContentLink from "../layout/SkipToContentLink";
 import { useChromeHeight } from "../../hooks/useChromeHeight";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTheme } from "../../contexts/ThemeContext";
 
 export default function PrecisionPublicHeader() {
   const headerRef = useChromeHeight(".marketing-surface", "--wl-marketing-chrome-top");
   const signedIn = Boolean(useAuth().user);
+  const { resolvedTheme, toggleTheme } = useTheme();
+  const nextTheme = resolvedTheme === "dark" ? "light" : "dark";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
 
@@ -61,6 +64,19 @@ export default function PrecisionPublicHeader() {
           className="ml-auto flex min-w-0 shrink-0 items-center gap-1 md:ml-0 md:gap-3"
           aria-label="Account"
         >
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={`Switch to ${nextTheme} appearance`}
+            title={`Switch to ${nextTheme} appearance`}
+            className="wl-focus-ring-halo hidden min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:inline-flex"
+          >
+            {resolvedTheme === "dark" ? (
+              <Sun className="size-5" aria-hidden="true" />
+            ) : (
+              <Moon className="size-5" aria-hidden="true" />
+            )}
+          </button>
           {signedIn ? (
             // A signed-in visitor goes back to work, not through sign-in again.
             <Link
@@ -68,13 +84,14 @@ export default function PrecisionPublicHeader() {
               aria-label="Open Workspace"
               className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold shrink-0 whitespace-nowrap max-[430px]:px-3"
             >
-              Open Workspace
+              <span className="max-[389px]:hidden">Open Workspace</span>
+              <span className="min-[390px]:hidden">Workspace</span>
             </Link>
           ) : (
             <>
               <Link
                 to="/signin"
-                className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-[var(--radius-md)] px-3 text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-[var(--radius-md)] px-3 text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 max-[389px]:hidden"
               >
                 Sign In
               </Link>
@@ -125,6 +142,31 @@ export default function PrecisionPublicHeader() {
             >
               Pricing
             </NavLink>
+            {!signedIn && (
+              <NavLink
+                to="/signin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="hidden min-h-11 items-center rounded-lg px-3 text-base font-medium text-foreground transition-colors hover:bg-muted max-[389px]:flex"
+              >
+                Sign In
+              </NavLink>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                toggleTheme();
+                setMobileMenuOpen(false);
+              }}
+              className="wl-focus-ring-halo flex min-h-11 items-center gap-3 rounded-lg px-3 text-base font-medium text-foreground transition-colors hover:bg-muted"
+              aria-label={`Switch to ${nextTheme} appearance`}
+            >
+              {resolvedTheme === "dark" ? (
+                <Sun className="size-5 text-muted-foreground" aria-hidden="true" />
+              ) : (
+                <Moon className="size-5 text-muted-foreground" aria-hidden="true" />
+              )}
+              <span>Use {nextTheme} appearance</span>
+            </button>
           </div>
         </div>
       )}

@@ -58,9 +58,9 @@ export function SegmentStrip<T extends string = string>({
               variant === "filled" &&
                 (active
                   ? "bg-brand text-on-brand shadow-sm shadow-brand/25"
-                  : "text-muted hover:text-foreground"),
+                  : "text-muted-foreground hover:text-foreground"),
               variant === "soft" &&
-                (active ? "bg-brand/15 text-brand" : "text-muted hover:text-foreground"),
+                (active ? "bg-brand/15 text-brand" : "text-muted-foreground hover:text-foreground"),
             )}
           >
             {opt.label}

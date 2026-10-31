@@ -26,9 +26,12 @@
   --bb-polish-shadow-soft: var(--wireline-elevation-card);
 }
 
+/* Selection must be legible on either appearance, including text inside
+ * dark/raised cards. A translucent accent can fade into its host surface;
+ * solid action + on-action ink retain contrast on both light and dark. */
 ::selection {
-  background: color-mix(in srgb, var(--wireline-color-action-primary-default) 34%, transparent);
-  color: var(--wireline-color-text-primary);
+  background: var(--wireline-color-action-primary-default);
+  color: var(--wireline-color-text-onAction);
 }
 
 /* -------------------------------------------------------------------------- */

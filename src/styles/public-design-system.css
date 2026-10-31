@@ -264,6 +264,25 @@
   }
 }
 
+/* At narrow-phone widths, keep the brand, primary CTA and menu in one row. Sign In
+   moves into the menu while its primary action stays available in the bar.
+   This only tightens the small-screen edge; larger phone layouts are untouched. */
+@media (max-width: 389px) {
+  .marketing-surface .wl-public-header__rail {
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+    padding-inline: 0.5rem;
+  }
+
+  .marketing-surface .wl-public-header .bb-wordmark.wl-public-header__wordmark {
+    font-size: 1.125rem;
+  }
+
+  .marketing-surface .wl-public-header [aria-label="Account"] > a {
+    padding-inline: 0.5rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .marketing-surface :is(.wl-stitch-card, .marketing-btn-primary, .marketing-btn-secondary) {
     transition: none;
