@@ -156,6 +156,8 @@ function useBotRecentSources(agentId: string) {
   const [tasks, setTasks] = useState<FollowUpTaskRow[]>([]);
   const [calls, setCalls] = useState<CallRow[]>([]);
   const [threads, setThreads] = useState<EmailThreadRow[]>([]);
+  const [sourcesLoaded, setSourcesLoaded] = useState(false);
+  const [sourcesUnavailable, setSourcesUnavailable] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -167,6 +169,7 @@ function useBotRecentSources(agentId: string) {
         authFetch(`/api/emails/threads?agent_id=${encodeURIComponent(agentId)}&limit=6`),
       ]);
       if (cancelled) return;
+      let successfulSources = 0;
 
       if (taskResult.status === "fulfilled" && taskResult.value.ok) {
         const body = (await taskResult.value.json().catch(() => null)) as {
@@ -174,19 +177,30 @@ function useBotRecentSources(agentId: string) {
         } | null;
         if (!cancelled && Array.isArray(body?.tasks)) {
           setTasks(body.tasks.filter((task) => task.agentId === agentId));
+          successfulSources += 1;
         }
       }
       if (callResult.status === "fulfilled" && callResult.value.ok) {
         const body = (await callResult.value.json().catch(() => null)) as {
           calls?: CallRow[];
         } | null;
-        if (!cancelled && Array.isArray(body?.calls)) setCalls(body.calls);
+        if (!cancelled && Array.isArray(body?.calls)) {
+          setCalls(body.calls);
+          successfulSources += 1;
+        }
       }
       if (mailResult.status === "fulfilled" && mailResult.value.ok) {
         const body = (await mailResult.value.json().catch(() => null)) as {
           threads?: EmailThreadRow[];
         } | null;
-        if (!cancelled && Array.isArray(body?.threads)) setThreads(body.threads);
+        if (!cancelled && Array.isArray(body?.threads)) {
+          setThreads(body.threads);
+          successfulSources += 1;
+        }
+      }
+      if (!cancelled) {
+        setSourcesLoaded(true);
+        setSourcesUnavailable(successfulSources !== 3);
       }
     };
 
@@ -198,7 +212,7 @@ function useBotRecentSources(agentId: string) {
     };
   }, [agentId]);
 
-  return { tasks, calls, threads };
+  return { tasks, calls, threads, sourcesLoaded, sourcesUnavailable };
 }
 
 export default function BotLivePanel({
@@ -214,7 +228,7 @@ export default function BotLivePanel({
 }) {
   const signals = usePresenceSignals() as PresenceSignal[];
   const { tasks: computerTasks, setSelectedId } = useComputerWorkspace();
-  const { tasks, calls, threads } = useBotRecentSources(agentId);
+  const { tasks, calls, threads, sourcesLoaded, sourcesUnavailable } = useBotRecentSources(agentId);
 
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -251,7 +265,13 @@ export default function BotLivePanel({
         ? "Waiting for you"
         : activeComputerTask
           ? "On the computer"
-          : "Idle";
+          : waitingApprovals.length
+            ? "Needs review"
+            : !sourcesLoaded
+              ? "Checking activity"
+              : sourcesUnavailable
+                ? "Activity unavailable"
+                : "Idle";
   const busy = Boolean(liveCall || activeComputerTask);
 
   const feed = useMemo<FeedEntry[]>(() => {
@@ -429,6 +449,12 @@ export default function BotLivePanel({
         </Link>
       ) : null}
 
+      {sourcesUnavailable && feed.length ? (
+        <p role="status" className="mt-2 text-xs leading-5 text-muted-foreground">
+          Some recent activity could not be refreshed. The items shown may be incomplete.
+        </p>
+      ) : null}
+
       {feed.length ? (
         <ul className={`${compact ? "mt-3" : "mt-4"} grid gap-3 border-t border-border/70 pt-3`}>
           {feed.map((entry) => (
@@ -448,8 +474,11 @@ export default function BotLivePanel({
         </ul>
       ) : !busy ? (
         <p className={`${compact ? "mt-2" : "mt-3"} text-sm leading-6 text-muted-foreground`}>
-          Nothing yet. Calls, computer steps, emails, and approvals will appear here as{" "}
-          {agentName || "your Bot"} works.
+          {!sourcesLoaded
+            ? "Checking recent activity…"
+            : sourcesUnavailable
+              ? "Recent activity could not be loaded. This does not mean the Bot has done nothing."
+              : `Nothing yet. Calls, computer steps, emails, and approvals will appear here as ${agentName || "your Bot"} works.`}
         </p>
       ) : null}
     </section>
