@@ -428,7 +428,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
               onClick={toggleActive}
               className={cn(
                 "h-auto px-2 py-0.5 rounded-full wl-label border",
-                hook.active ? WL_APP_CLASSES.statusActive : "bg-muted/15 text-muted border-border",
+                hook.active ? WL_APP_CLASSES.statusActive : "bg-muted/15 text-muted-foreground border-border",
               )}
             >
               {hook.active ? "Active" : "Paused"}
@@ -563,7 +563,7 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="mt-4 pt-4 border-t border-white/10 space-y-2">
+            <div className="mt-4 pt-4 border-t border-border space-y-2">
               <div className="flex items-center justify-between">
                 <div className="wl-label-muted">Recent deliveries</div>
                 <ShadButton
@@ -621,13 +621,13 @@ const HookRow: React.FC<{ hook: WebhookRow; onChanged: () => void }> = ({ hook, 
                         {d.status}
                       </span>
                       <span className="font-mono text-foreground/80">{d.event}</span>
-                      <span className="text-muted">
+                      <span className="text-muted-foreground">
                         try {d.attempts}/{d.max_attempts}
                       </span>
                       {d.last_status_code !== null && d.last_status_code > 0 && (
-                        <span className="font-mono text-muted">HTTP {d.last_status_code}</span>
+                        <span className="font-mono text-muted-foreground">HTTP {d.last_status_code}</span>
                       )}
-                      <span className="text-muted">{formatDateTime(d.created_at)}</span>
+                      <span className="text-muted-foreground">{formatDateTime(d.created_at)}</span>
                       {d.last_error && (
                         <span
                           className="text-rose-400/80 font-mono truncate max-w-[40ch]"
