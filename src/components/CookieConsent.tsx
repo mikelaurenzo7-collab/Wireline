@@ -74,13 +74,15 @@ export default function CookieConsent() {
     // Measure only the persistent header rail. The mobile menu opens INSIDE
     // the header and increases its full height; using that expanded height
     // would move the privacy notice and page content on every menu toggle.
+    // The rail bottom minus the header top includes iOS safe-area padding,
+    // which the rail's own height deliberately excludes.
     const headerRail = publicHeader?.querySelector<HTMLElement>(".wl-public-header__rail");
     const syncHeaderClearance = () => {
       if (!publicHeader || !headerRail) return;
       const border = Number.parseFloat(getComputedStyle(publicHeader).borderBottomWidth) || 0;
       host.style.setProperty(
         "--wl-mobile-privacy-header-clearance",
-        `${Math.ceil(headerRail.getBoundingClientRect().height + border)}px`,
+        `${Math.ceil(headerRail.getBoundingClientRect().bottom - publicHeader.getBoundingClientRect().top + border)}px`,
       );
     };
     syncHeaderClearance();
