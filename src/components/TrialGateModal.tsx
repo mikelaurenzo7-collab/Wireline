@@ -429,7 +429,7 @@ export default function TrialGateModal() {
               size="icon"
               onClick={closeModal}
               aria-label="Close"
-              className="absolute top-4 right-4 z-10 h-11 w-11 rounded-full text-muted hover:bg-muted/10 hover:text-foreground"
+              className="absolute top-4 right-4 z-10 h-11 w-11 rounded-full text-muted-foreground hover:bg-muted/10 hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </ShadButton>
