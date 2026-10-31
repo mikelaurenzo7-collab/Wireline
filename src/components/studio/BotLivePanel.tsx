@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router";
 import { ClipboardCheck, Mail, Monitor, PhoneCall } from "lucide-react";
 
 import { useComputerWorkspace, type ComputerTask } from "../../contexts/ComputerWorkspaceContext";
@@ -48,10 +49,9 @@ type CallRow = {
 type EmailThreadRow = {
   id: string;
   subject?: string | null;
-  customerEmail?: string | null;
-  lastMessageAt?: string | null;
-  snapshotActivity?: string | null;
-  createdAt?: string | null;
+  customer_email?: string | null;
+  last_message_at?: string | null;
+  created_at?: string | null;
 };
 
 type FeedKind = "call" | "computer" | "email" | "approval";
@@ -213,7 +213,7 @@ export default function BotLivePanel({
   className?: string;
 }) {
   const signals = usePresenceSignals() as PresenceSignal[];
-  const { tasks: computerTasks } = useComputerWorkspace();
+  const { tasks: computerTasks, setSelectedId } = useComputerWorkspace();
   const { tasks, calls, threads } = useBotRecentSources(agentId);
 
   const [now, setNow] = useState(() => Date.now());
@@ -332,14 +332,14 @@ export default function BotLivePanel({
     }
 
     for (const thread of threads) {
-      const at = ts(thread.snapshotActivity || thread.lastMessageAt || thread.createdAt);
+      const at = ts(thread.last_message_at || thread.created_at);
       if (!at) continue;
       entries.push({
         id: `mail:${thread.id}`,
         at,
         kind: "email",
         title: "Email activity",
-        detail: preview(thread.subject, 80) || thread.customerEmail || undefined,
+        detail: preview(thread.subject, 80) || thread.customer_email || undefined,
       });
     }
 
@@ -402,6 +402,16 @@ export default function BotLivePanel({
         </p>
       ) : null}
 
+      {activeComputerTask ? (
+        <Link
+          to={`/computer?agent=${encodeURIComponent(agentId)}`}
+          onClick={() => setSelectedId(activeComputerTask.id)}
+          className="mt-2 inline-flex min-h-11 items-center rounded-md text-sm font-semibold text-primary hover:underline wl-focus-ring-halo"
+        >
+          {activeComputerTask.status === "needs_input" ? "Reply in Computer" : "Watch live work"}
+        </Link>
+      ) : null}
+
       {waitingApprovals.length ? (
         <p className={`${compact ? "mt-2" : "mt-3"} text-sm leading-6 text-foreground`}>
           <span className="font-semibold">
@@ -409,6 +419,14 @@ export default function BotLivePanel({
           </span>
           <span className="text-muted-foreground"> for your review.</span>
         </p>
+      ) : null}
+      {waitingApprovals.length ? (
+        <Link
+          to="/approvals"
+          className="mt-2 inline-flex min-h-11 items-center rounded-md text-sm font-semibold text-primary hover:underline wl-focus-ring-halo"
+        >
+          Review approvals
+        </Link>
       ) : null}
 
       {feed.length ? (
