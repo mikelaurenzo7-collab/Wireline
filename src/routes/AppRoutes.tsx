@@ -98,15 +98,15 @@ function ToStudioRedirect() {
 }
 
 /**
- * Voice lives in the Bot's setup. /voice, /voices and /voice-clone open that
- * panel and scroll to the picker or to cloning; `?agent=` still picks the Bot.
+ * Voice lives in the Bot's setup. Historical /voice-clone links lead to the
+ * built-in voice picker while cloned voices are deferred; preserve `?agent`.
  */
-function VoiceToStudioRedirect({ clone = false }: { clone?: boolean }) {
+function VoiceToStudioRedirect() {
   const location = useLocation();
   const search = new URLSearchParams(location.search);
   search.set("section", "setup");
   return (
-    <Navigate to={`/studio?${search.toString()}${clone ? "#voice-clone" : "#voice"}`} replace />
+    <Navigate to={`/studio?${search.toString()}#voice`} replace />
   );
 }
 
@@ -177,7 +177,7 @@ export default function AppRoutes() {
         <Route path="/agents" element={<ToStudioRedirect />} />
         <Route path="/voice" element={<VoiceToStudioRedirect />} />
         <Route path="/voices" element={<VoiceToStudioRedirect />} />
-        <Route path="/voice-clone" element={<VoiceToStudioRedirect clone />} />
+        <Route path="/voice-clone" element={<VoiceToStudioRedirect />} />
         {/* The Workspace's canonical route stays /studio so saved links keep working. */}
         <Route path="/workspace" element={<ToStudioRedirect />} />
         <Route path="/templates" element={<TemplatesPage />} />
