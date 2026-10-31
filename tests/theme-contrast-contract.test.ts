@@ -191,4 +191,33 @@ describe("BotBound appearance contrast", () => {
     expect(playbook).not.toContain("text-muted text-");
     expect(playbook).not.toContain("bg-white/5");
   });
+
+  it("guards semantic text and result-card borders across the BotBound UI", () => {
+    const surfaces = [
+      "src/components/ui/SegmentStrip.tsx",
+      "src/components/PhoneNumberPicker.tsx",
+      "src/components/admin/TeamPanel.tsx",
+      "src/components/admin/GrowthPanel.tsx",
+      "src/components/recipes/forms/ObjectionDrillForm.tsx",
+      "src/components/recipes/forms/EnrichLeadForm.tsx",
+      "src/components/recipes/forms/AgentReviewForm.tsx",
+      "src/components/recipes/forms/CoachForm.tsx",
+      "src/components/recipes/forms/ThreadSummaryForm.tsx",
+      "src/components/recipes/RecipeModal.tsx",
+    ];
+    for (const path of surfaces) {
+      const source = readFileSync(path, "utf8");
+      expect(source, path).not.toMatch(/(?:placeholder:)?text-muted(?:\/\d+)?(?=[\s"'])/);
+      expect(source, path).not.toMatch(/border-white\/(?:8|10|12|20)\b/);
+    }
+    for (const path of [
+      "src/components/recipes/forms/CoachForm.tsx",
+      "src/components/recipes/forms/ThreadSummaryForm.tsx",
+    ]) {
+      const source = readFileSync(path, "utf8");
+      expect(source).toContain("wireline-color-feedback-warning-surface");
+      expect(source).toContain("wireline-color-feedback-error-surface");
+      expect(source).toContain("wireline-color-feedback-neutral-surface");
+    }
+  });
 });
