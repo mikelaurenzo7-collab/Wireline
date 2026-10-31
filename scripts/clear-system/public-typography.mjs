@@ -54,6 +54,15 @@ export function checkPublicTypography({ failures, read, mustInclude, mustExclude
     /@import "\.\/styles\/safe-area-ownership\.css";\s*body\s*\{/,
     "safe-area ownership and terminal type integrity must remain the final imported tier",
   );
+  // The nested type-integrity import is evaluated before the final body
+  // declaration in index.css. Do not accidentally reintroduce competing
+  // lower-priority font-smoothing declarations after the imported tier.
+  mustExclude(
+    "src/index.css",
+    appCss,
+    /(?:text-rendering:\s*optimizeLegibility|-webkit-font-smoothing:\s*antialiased|-moz-osx-font-smoothing:\s*grayscale)/,
+    "root CSS must not override platform typography after the integrity import",
+  );
 
   for (const [pattern, description] of [
     [/font-synthesis:\s*none;/, "synthetic font weights must be disabled globally"],
