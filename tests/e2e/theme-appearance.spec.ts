@@ -163,10 +163,20 @@ for (const width of [320, 375, 390] as const) {
       .toBe(true);
 
     const menu = page.getByRole("button", { name: "Toggle navigation menu" });
+    const headerSpaceBefore = await page.locator(".wl-mobile-privacy-host").evaluate(
+      (node) => getComputedStyle(node).paddingTop,
+    );
+    // A normal, unforced click must hit the menu rather than the privacy close button.
     await menu.click();
     await expect(page.getByRole("navigation", { name: "Mobile Navigation" })).toBeVisible();
     await expect(notice).toBeHidden();
     await expect(menu).toHaveAttribute("aria-expanded", "true");
+    // Expanding the menu increases the header's overall height, but must not
+    // change the inline privacy clearance or shift the whole document.
+    const headerSpaceAfter = await page.locator(".wl-mobile-privacy-host").evaluate(
+      (node) => getComputedStyle(node).paddingTop,
+    );
+    expect(headerSpaceAfter).toBe(headerSpaceBefore);
 
     await menu.click();
     await expect(notice).toBeVisible();
