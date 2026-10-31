@@ -15,6 +15,19 @@
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- A first-visit phone notice must not push the hero after the first paint.
+         Only the public homepage needs this reserved slot before React mounts. -->
+    <script>
+      (function () {
+        if (location.pathname !== "/") return;
+        try {
+          if (localStorage.getItem("wireline_cookie_consent") !== null) return;
+        } catch (e) {
+          // Storage-blocked browsers still need a chance to see the notice.
+        }
+        document.documentElement.setAttribute("data-wl-privacy-prepaint", "pending");
+      })();
+    </script>
     <link rel="stylesheet" href="/app-shell.css" />
     <link rel="preload" as="style" href="/fonts.css" />
     <link rel="stylesheet" href="/fonts.css" />
@@ -145,6 +158,7 @@
     </script>
   </head>
   <body data-wireline-viewport="document">
+    <div id="wl-mobile-privacy-prepaint" class="wl-mobile-privacy-host"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
