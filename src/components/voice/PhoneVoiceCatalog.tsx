@@ -163,7 +163,9 @@ export default function PhoneVoiceCatalog({
           >
             <option value="all">All Voices</option>
             <option value="cartesia">Cartesia</option>
-            <option value="elevenlabs">ElevenLabs</option>
+            {voices?.some((voice) => voice.provider === "elevenlabs") ? (
+              <option value="elevenlabs">ElevenLabs</option>
+            ) : null}
           </select>
         </div>
         {error ? <StatusNotice tone="warning">{error}</StatusNotice> : null}
