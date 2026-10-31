@@ -58,3 +58,12 @@ A second **live main** browser scan covered 320/390/768/1024/1440px and both app
 **Source fixes committed on this branch:** public header keeps its primary CTA and menu on one line below 390px while putting signed-out Sign In inside the menu; the browser URL now shrinks and ellipsizes; the recipe form/input/result system and selected shared/account-admin components use semantic readable text, field borders, and state surfaces in place of hardcoded white/black and `text-muted` surface-colored copy. The Tailwind dark variant now explicitly excludes the `html.light` root, not just its descendants. Contrast contract and 320px E2E regression coverage expanded.
 
 **Cookie notice:** Separate **PR #1444** already proposes an inline first-visit phone treatment. Do not duplicate or override that patch in #1445; coordinate merge and test the combined result. Any appearance/viewport fixes in this report are code changes pending local/CI build and rendered **PR preview**, not verified live fixes.
+
+
+## Extended source follow-up
+
+The design pass also inspected the recipe result and sentiment views. Several neutral/warning/error badges relied on dark-only alpha fills or light-on-light borders; they now use the existing semantic feedback text/background/border variables. Admin team/growth panels, the phone-number picker, and the shared segmented control previously rendered `text-muted` as a **surface-fill color** (not a foreground role). They now use `text-muted-foreground`, and nearby controls use semantic surfaces. Expanded Vitest source contracts guard the repaired usage.
+
+The Open Graph image *generator* at `scripts/render-image-assets.mjs` also still emitted a cream canvas and old light ink; it now produces white and the current light text colors when `npm run assets` is executed. Generated public assets and build output **have not been rebuilt or inspected** in this session. No claim of production image parity is made.
+
+A browser-verified inline phone privacy notice remains a **separate PR #1444 change pending merger**, and the header/browser mock fixes on this PR remain **unrendered until a preview build**. New 320px and 375px Playwright cases document the desired compact header and truncation behavior.
