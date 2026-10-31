@@ -248,6 +248,10 @@ describe("BotBound appearance contrast", () => {
       "src/components/ui/SegmentStrip.tsx",
       "src/components/PhoneNumberPicker.tsx",
       "src/components/IntakeKeysManager.tsx",
+      "src/components/WebhooksManager.tsx",
+      "src/components/TrialGateModal.tsx",
+      "src/components/AgentTemplates.tsx",
+      "src/components/admin/AuditActivityPanel.tsx",
       "src/components/admin/TeamPanel.tsx",
       "src/components/admin/GrowthPanel.tsx",
       "src/components/recipes/forms/ObjectionDrillForm.tsx",
@@ -262,6 +266,8 @@ describe("BotBound appearance contrast", () => {
       expect(source, path).not.toMatch(/(?:placeholder:)?text-muted(?:\/\d+)?(?=[\s"'])/);
       expect(source, path).not.toMatch(/border-white\/(?:8|10|12|20)\b/);
     }
+    const phonePicker = readFileSync("src/components/PhoneNumberPicker.tsx", "utf8");
+    expect(phonePicker).not.toContain("text-eyebrow/60");
     for (const path of [
       "src/components/recipes/forms/CoachForm.tsx",
       "src/components/recipes/forms/ThreadSummaryForm.tsx",
