@@ -15,11 +15,11 @@
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <!-- A first-visit phone notice must not push the hero after the first paint.
-         Only the public homepage needs this reserved slot before React mounts. -->
+    <!-- First-visit mobile privacy must not displace public conversion surfaces.
+         Reserve only directly visited home, pricing and product pages. -->
     <script>
       (function () {
-        if (location.pathname !== "/") return;
+        if (!["/", "/pricing", "/features"].includes(location.pathname)) return;
         try {
           if (localStorage.getItem("wireline_cookie_consent") !== null) return;
         } catch (e) {
