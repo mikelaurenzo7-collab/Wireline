@@ -629,7 +629,7 @@ export default function TrialGateModal() {
               )}
 
               {showPlanCheckout && (
-                <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-muted/70 wl-label">
+                <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground wl-label">
                   <Link
                     to="/settings/billing"
                     onClick={closeModal}
