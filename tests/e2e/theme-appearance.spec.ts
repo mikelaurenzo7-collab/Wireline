@@ -64,22 +64,22 @@ test("sign-in exposes an appearance switch without obstructing authentication", 
 
 for (const width of [320, 375] as const) {
   test(`the ${width}px header and browser preview fit without hiding sign-in`, async ({ page }) => {
-  await page.setViewportSize({ width, height: 700 });
-  await page.addInitScript(() => localStorage.setItem("wireline-theme", "light"));
-  await page.goto("/");
+    await page.setViewportSize({ width, height: 700 });
+    await page.addInitScript(() => localStorage.setItem("wireline-theme", "light"));
+    await page.goto("/");
 
-  const header = page.locator(".wl-public-header");
-  await expect(header).toBeVisible();
-  const headerBounds = await header.boundingBox();
-  expect(headerBounds?.height).toBeLessThanOrEqual(80);
-  await expect(header.getByRole("link", { name: "Get Started" })).toBeVisible();
+    const header = page.locator(".wl-public-header");
+    await expect(header).toBeVisible();
+    const headerBounds = await header.boundingBox();
+    expect(headerBounds?.height).toBeLessThanOrEqual(80);
+    await expect(header.getByRole("link", { name: "Get Started" })).toBeVisible();
 
-  const browser = page.locator(".landing-prestige__browser-url");
-  await expect(browser).toBeVisible();
-  const geometry = await browser.evaluate((node) => {
-    const url = node.getBoundingClientRect();
-    const bar = node.parentElement!.getBoundingClientRect();
-    return { urlRight: url.right, barRight: bar.right };
+    const browser = page.locator(".landing-prestige__browser-url");
+    await expect(browser).toBeVisible();
+    const geometry = await browser.evaluate((node) => {
+      const url = node.getBoundingClientRect();
+      const bar = node.parentElement!.getBoundingClientRect();
+      return { urlRight: url.right, barRight: bar.right };
   });
   expect(geometry.urlRight).toBeLessThanOrEqual(geometry.barRight + 1);
 
