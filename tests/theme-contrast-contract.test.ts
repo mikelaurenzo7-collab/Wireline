@@ -192,6 +192,26 @@ describe("BotBound appearance contrast", () => {
     expect(playbook).not.toContain("bg-white/5");
   });
 
+  it("does not reference undefined brand tiers in active product controls", () => {
+    const components = [
+      "src/components/insights/TopicsView.tsx",
+      "src/components/admin/GrowthPanel.tsx",
+      "src/components/IntakeKeysManager.tsx",
+      "src/components/recipes/forms/AgentReviewForm.tsx",
+    ];
+    for (const path of components) {
+      const source = readFileSync(path, "utf8");
+      expect(source, path).not.toMatch(/(?:bg|text|border|hover:bg)-brand-[23](?:\/\d+)?\b/);
+    }
+    const topics = readFileSync("src/components/insights/TopicsView.tsx", "utf8");
+    expect(topics).toContain("wireline-color-feedback-info-surface");
+    expect(topics).toContain("wireline-color-feedback-neutral-surface");
+    const review = readFileSync("src/components/recipes/forms/AgentReviewForm.tsx", "utf8");
+    expect(review).toContain("wireline-color-feedback-warning-surface");
+    const intake = readFileSync("src/components/IntakeKeysManager.tsx", "utf8");
+    expect(intake).toContain("wireline-color-action-primary-container");
+  });
+
   it("guards semantic text and result-card borders across the BotBound UI", () => {
     const surfaces = [
       "src/components/ui/SegmentStrip.tsx",
