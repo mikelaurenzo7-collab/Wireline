@@ -43,6 +43,16 @@ for (const width of [320, 375] as const) {
     });
   }
 
+  for (const path of ["/", "/pricing", "/features"] as const) {
+    test(`Bot creation skips the privacy reservation on ${path} at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.addInitScript(() => localStorage.removeItem("wireline_cookie_consent"));
+      await page.goto(`${path}?create=1`, { waitUntil: "domcontentloaded" });
+      await expect(page.locator("#wl-mobile-privacy-prepaint")).toHaveCSS("display", "none");
+      await expect(page.getByRole("region", { name: "Privacy Choices" })).toHaveCount(0);
+    });
+  }
+
   test(`returning visitor has no reserved mobile privacy gap at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.addInitScript(() => localStorage.setItem("wireline_cookie_consent", "acknowledged"));
