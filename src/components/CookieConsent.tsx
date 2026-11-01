@@ -38,6 +38,9 @@ export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
   const [explicitlyOpened, setExplicitlyOpened] = useState(false);
   const location = useLocation();
+  const createFlowOpen =
+    new URLSearchParams(location.search).get("create") === "1" ||
+    new URLSearchParams(location.search).get("create") === "true";
   const [_hasSession, setHasSession] = useState(false);
   const privacySignalEnabled = globalPrivacyControlEnabled();
   const privacyPanelRef = useRef<HTMLDivElement>(null);
@@ -197,10 +200,10 @@ export default function CookieConsent() {
   // Clear the first-paint reservation when signed in, leaving home, or after
   // acknowledgement. The inline portal itself occupies the reserved space.
   useEffect(() => {
-    if (visible || _hasSession || !["/", "/pricing", "/features"].includes(location.pathname) || noticeAcknowledged()) {
+    if (visible || _hasSession || createFlowOpen || !["/", "/pricing", "/features"].includes(location.pathname) || noticeAcknowledged()) {
       document.documentElement.removeAttribute("data-wl-privacy-prepaint");
     }
-  }, [visible, _hasSession, location.pathname]);
+  }, [visible, _hasSession, createFlowOpen, location.pathname]);
 
   const dismiss = useCallback(() => saveChoice("denied"), [saveChoice]);
 
@@ -268,9 +271,6 @@ export default function CookieConsent() {
     return () => window.removeEventListener("keydown", onKey);
   }, [dismiss, visible]);
 
-  const createFlowOpen =
-    new URLSearchParams(location.search).get("create") === "1" ||
-    new URLSearchParams(location.search).get("create") === "true";
   if (isAuthPortalPath(location.pathname) || createFlowOpen) return null;
 
   // The homepage is the marketing surface most first-time visitors see; it is
