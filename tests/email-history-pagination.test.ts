@@ -498,6 +498,7 @@ describe("tenant-scoped email history pages", () => {
     };
     const first = await list({ limit: "2" });
     expect(first.threads.map((thread: TestRow) => thread.id)).toEqual(IDS.slice(0, 2));
+    expect(first.threads[0].activityAt).toBe("2026-09-21T04:50:00.000001Z");
     expect(decode(first.nextCursor).maxMessageId).toBe("3");
     h.simulation.threads[2].lastMessageAt = "2026-09-21T05:05:00.000000Z";
     h.simulation.messages.push(
@@ -515,6 +516,7 @@ describe("tenant-scoped email history pages", () => {
     expect(second.nextCursor).toBeNull();
     const refreshed = await list({ limit: "2" });
     expect(refreshed.threads[0].id).toBe(IDS[2]);
+    expect(refreshed.threads[0].activityAt).toBe("2026-09-21T05:05:00.000000Z");
   });
 
   it.each([
