@@ -50,6 +50,7 @@ type EmailThreadRow = {
   id: string;
   subject?: string | null;
   customer_email?: string | null;
+  activity_at?: string | null;
   last_message_at?: string | null;
   created_at?: string | null;
 };
@@ -352,7 +353,7 @@ export default function BotLivePanel({
     }
 
     for (const thread of threads) {
-      const at = ts(thread.last_message_at || thread.created_at);
+      const at = ts(thread.activity_at || thread.last_message_at || thread.created_at);
       if (!at) continue;
       entries.push({
         id: `mail:${thread.id}`,
