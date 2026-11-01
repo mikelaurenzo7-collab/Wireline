@@ -20,6 +20,8 @@
     <script>
       (function () {
         if (!["/", "/pricing", "/features"].includes(location.pathname)) return;
+        var create = new URLSearchParams(location.search).get("create");
+        if (create === "1" || create === "true") return;
         try {
           if (localStorage.getItem("wireline_cookie_consent") !== null) return;
         } catch (e) {
