@@ -415,7 +415,7 @@ describe("tenant-scoped email history pages", () => {
       ],
     ];
     const page = await list({ limit: "2" });
-    expect(page.threads).toEqual([{ id: IDS[0] }, { id: IDS[1] }]);
+    expect(page.threads).toEqual([{ id: IDS[0], activityAt: time }, { id: IDS[1], activityAt: time }]);
     expect(page.hasMore).toBe(true);
     expect(decode(page.nextCursor)).toMatchObject({
       asOf: AS_OF,
@@ -449,7 +449,7 @@ describe("tenant-scoped email history pages", () => {
         cursor: cursor({ agentId: "bot", accountId: "mailbox" }),
       }),
     ).toEqual({
-      threads: [{ id: "older" }],
+      threads: [{ id: "older", activityAt: AS_OF }],
       hasMore: false,
       nextCursor: null,
     });
