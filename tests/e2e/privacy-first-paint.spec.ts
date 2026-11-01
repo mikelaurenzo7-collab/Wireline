@@ -53,6 +53,26 @@ for (const width of [320, 375] as const) {
     });
   }
 
+  test(`in-app Bot creation clears an already reserved first-visit strip at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.addInitScript(() => localStorage.removeItem("wireline_cookie_consent"));
+    let releaseSession: (() => void) | undefined;
+    await page.route("**/api/auth/session", async (route) => {
+      await new Promise<void>((resolve) => { releaseSession = resolve; });
+      await route.fulfill({ status: 401, contentType: "application/json", body: "{}" });
+    });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const slot = page.locator("#wl-mobile-privacy-prepaint");
+    await expect(slot).toHaveCSS("display", "block");
+    await page.evaluate(() => {
+      window.history.pushState({}, "", "/?create=1");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    await expect(slot).toHaveCSS("display", "none");
+    releaseSession?.();
+    await expect(page.getByRole("region", { name: "Privacy Choices" })).toHaveCount(0);
+  });
+
   test(`returning visitor has no reserved mobile privacy gap at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.addInitScript(() => localStorage.setItem("wireline_cookie_consent", "acknowledged"));
