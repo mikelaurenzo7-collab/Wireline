@@ -7,8 +7,8 @@ const mailRoutes = readFileSync("src/routes/email-routes.ts", "utf8");
 describe("Bot Live activity source and action contracts", () => {
   it("reads email timestamps and recipients from the actual snake_case API payload", () => {
     expect(mailRoutes).toContain("mapObjectToSnake(");
-    expect(mailRoutes).toContain("snapshotActivity: _snapshotActivity");
-    expect(panel).toContain("thread.last_message_at || thread.created_at");
+    expect(mailRoutes).toContain("({ ...thread, activityAt: snapshotActivity })");
+    expect(panel).toContain("thread.activity_at || thread.last_message_at || thread.created_at");
     expect(panel).toContain("thread.customer_email");
     expect(panel).not.toContain("thread.snapshotActivity || thread.lastMessageAt");
   });
