@@ -8,7 +8,7 @@ export const INLINE_SCRIPT_HASHES = [
   // Theme-init boot script.
   "'sha256-+0K22Pi05pW1Xo84/hg0oXlIQOxJky/HLx56GrxZnDg='",
   // First-visit mobile privacy slot (home, pricing, features).
-  "'sha256-dI2jkWndE1IZiCmYJvGVAg5brkqI+A0QQv4Qhz9wkeQ='",
+  "'sha256-8On5a+JXqG9pLgJ8NxW1yPEyZ1SZOODiVWASMjhUu7k='",
   // Plausible analytics stub.
   "'sha256-DW2NBe3Fz6FPszNbns1IMdj7fIvsXZ5h3KkiKEoUbYc='",
 ] as const;
