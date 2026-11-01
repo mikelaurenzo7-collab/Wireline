@@ -269,7 +269,7 @@ router.get(
           : null;
       res.json({
         threads: mapObjectToSnake(
-          page.map(({ snapshotActivity: _snapshotActivity, ...thread }) => thread),
+          page.map(({ snapshotActivity, ...thread }) => ({ ...thread, activityAt: snapshotActivity })),
         ),
         hasMore,
         nextCursor,
