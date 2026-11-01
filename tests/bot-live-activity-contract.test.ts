@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const panel = readFileSync("src/components/studio/BotLivePanel.tsx", "utf8");
 const mailRoutes = readFileSync("src/routes/email-routes.ts", "utf8");
+const inbox = readFileSync("src/components/EmailInbox.tsx", "utf8");
 
 describe("Bot Live activity source and action contracts", () => {
   it("reads email timestamps and recipients from the actual snake_case API payload", () => {
@@ -10,6 +11,7 @@ describe("Bot Live activity source and action contracts", () => {
     expect(mailRoutes).toContain("({ ...thread, activityAt: snapshotActivity })");
     expect(panel).toContain("thread.activity_at || thread.last_message_at || thread.created_at");
     expect(panel).toContain("thread.customer_email");
+    expect(inbox).toContain("text(row.activity_at) || text(row.last_message_at) || text(row.created_at)");
     expect(panel).not.toContain("thread.snapshotActivity || thread.lastMessageAt");
   });
 
