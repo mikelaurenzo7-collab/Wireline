@@ -43,7 +43,7 @@ async function mockWorkspace(page: Page) {
   });
 }
 
-test("setup offers cloning at voice selection and resumes before rehearsal", async ({ page }) => {
+test("setup offers built-in voices without cloning and resumes before rehearsal", async ({ page }) => {
   await mockWorkspace(page);
   let cloneCreates = 0;
   await page.route("**/api/voice/live-voices", async (route) => {
@@ -86,12 +86,10 @@ test("setup offers cloning at voice selection and resumes before rehearsal", asy
   const guide = page.getByRole("dialog", { name: "Next Up for Front Desk" });
   await guide.getByRole("button", { name: "Choose Voice", exact: true }).click();
   await expect(guide.getByRole("heading", { name: "Choose Voice", exact: true })).toBeVisible();
-  const cloneVoice = guide.getByRole("button", { name: "Clone Voice", exact: true });
-  await expect(cloneVoice).toHaveCount(1);
-  await cloneVoice.click();
-  await expect(guide.getByText("Step 1 of 3 · Permission", { exact: true })).toBeVisible();
-  await expect(guide.getByRole("button", { name: "Continue", exact: true })).toBeDisabled();
-  await guide.getByRole("button", { name: "Cancel", exact: true }).click();
+  // Cloning is deferred: no customer launch entry point or provider creation call.
+  await expect(guide.getByRole("button", { name: "Clone Voice", exact: true })).toHaveCount(0);
+  await expect(guide.getByText("10 Built-In Voices", { exact: true })).toBeVisible();
+  await expect(guide.getByText("Choose a built-in voice. You can change it anytime.")).toBeVisible();
   await page.reload();
   await expect(guide.getByRole("heading", { name: "Choose Voice", exact: true })).toBeVisible();
   await guide.getByRole("button", { name: "Continue to Try It", exact: true }).click();
