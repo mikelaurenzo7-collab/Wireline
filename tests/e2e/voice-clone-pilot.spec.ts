@@ -1,6 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
+import { VOICE_CLONING_UI_ENABLED } from "../../src/lib/voice-clone-release";
 
 const CONSENT_VERSION = "voice-reference-self-speaker-v1-2026-10-17";
 const QUALITY_VERSION = "voice-reference-quality-v1-2026-10-17";
@@ -329,6 +330,7 @@ test("closed custom-voice pilot stays hidden while all ten OpenAI calling voices
 test("native voice pilot uploads, reviews, previews, and deletes without changing the calling voice", async ({
   page,
 }, info) => {
+  test.skip(!VOICE_CLONING_UI_ENABLED, "Private voice pilot is deferred for this launch.");
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.addInitScript(() => localStorage.setItem("wireline-theme", "light"));
   const state = await mockPilot(page);
@@ -395,6 +397,7 @@ for (const enlarged of [false, true]) {
   test(`private voice controls and dialog fit 320px${enlarged ? " at 200% text" : ""} in dark mode`, async ({
     page,
   }, info) => {
+    test.skip(!VOICE_CLONING_UI_ENABLED, "Private voice pilot is deferred for this launch.");
     await page.setViewportSize({ width: 320, height: 900 });
     await page.addInitScript(() => localStorage.setItem("wireline-theme", "dark"));
     const state = await mockPilot(page, { saved: [reference("Founder voice")] });
