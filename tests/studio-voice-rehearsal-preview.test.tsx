@@ -52,6 +52,9 @@ vi.mock("react", async (original) => ({
     }
   },
 }));
+// Exercise the preserved legacy preview cancellation logic in isolation.
+// Production and launch tests keep VOICE_CLONING_UI_ENABLED=false.
+vi.mock("../src/lib/voice-clone-release", () => ({ VOICE_CLONING_UI_ENABLED: true }));
 vi.mock("../src/lib/api", () => ({ authFetch: h.fetch }));
 vi.mock("../src/components/atoms", () => ({ Badge: "badge" }));
 vi.mock("../src/components/OpenAILiveVoiceSandbox", () => ({ default: "live-rehearsal" }));
