@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-for (const width of [320, 375] as const) {
+for (const width of [320, 375, 390] as const) {
   for (const path of ["/", "/pricing", "/features"] as const) {
     test(`first-visit mobile privacy notice does not move ${path} at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 844 });
