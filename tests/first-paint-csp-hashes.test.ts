@@ -4,6 +4,16 @@ import { describe, expect, it } from "vitest";
 import { buildCSP, INLINE_SCRIPT_HASHES } from "../src/lib/csp";
 
 describe("first-paint inline scripts and strict CSP", () => {
+  it("reserves first-visit mobile consent space in the head-loaded shell, before React", () => {
+    const index = readFileSync("index.html", "utf8");
+    const shell = readFileSync("public/app-shell.css", "utf8");
+    const appStyle = readFileSync("src/styles/letterpress-polish.css", "utf8");
+    expect(index).toContain('<link rel="stylesheet" href="/app-shell.css" />');
+    expect(shell).toContain('html[data-wl-privacy-prepaint="pending"] .wl-mobile-privacy-host:empty');
+    expect(shell).toContain("min-height: calc(4.125rem + env(safe-area-inset-top, 0px) + 5.75rem)");
+    expect(appStyle).not.toContain('html[data-wl-privacy-prepaint="pending"] .wl-mobile-privacy-host:empty');
+  });
+
   it("hash-allowlists every executable inline script in the actual HTML shell", () => {
     const html = readFileSync("index.html", "utf8");
     const executable = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)]
