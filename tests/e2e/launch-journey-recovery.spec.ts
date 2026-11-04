@@ -88,6 +88,7 @@ test("setup offers built-in voices without cloning and resumes before rehearsal"
   await expect(guide.getByRole("heading", { name: "Choose Voice", exact: true })).toBeVisible();
   // Cloning is deferred: no customer launch entry point or provider creation call.
   await expect(guide.getByRole("button", { name: "Clone Voice", exact: true })).toHaveCount(0);
+  await guide.locator("summary").filter({ hasText: "Change Voice" }).click();
   await expect(guide.getByText("10 Built-In Voices", { exact: true })).toBeVisible();
   await expect(guide.getByText("Choose a built-in voice. You can change it anytime.")).toBeVisible();
   await page.reload();
