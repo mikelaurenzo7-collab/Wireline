@@ -206,18 +206,19 @@ describe("clone discoverability and stock voice undo", () => {
   const routes = readFileSync("src/routes/AppRoutes.tsx", "utf8");
   const panel = readFileSync("src/components/StudioAgentWorkspacePanel.tsx", "utf8");
 
-  it("keeps a visible entry even when cloning is not on for the account", () => {
-    expect(studio).not.toContain("if (loading || !capabilities?.available) return null;");
+  it("retains the dormant clone implementation behind the deliberate customer release gate", () => {
+    const release = readFileSync("src/lib/voice-clone-release.ts", "utf8");
+    expect(release).toContain("VOICE_CLONING_UI_ENABLED = false");
     expect(studio).toContain("Voice cloning isn't on for this account yet.");
     expect(studio).toContain('LIVE_VOICE_ANCHOR_ID = "voice-clone"');
+    expect(picker).toContain("VOICE_CLONING_UI_ENABLED && showCloneShortcut");
   });
 
-  it("links the picker and short routes to the clone studio", () => {
-    expect(picker).toContain("Clone Voice");
-    expect(picker).toContain("LIVE_VOICE_ANCHOR_ID");
+  it("sends historical voice links to built-in voice setup rather than a hidden clone section", () => {
     for (const path of ['path="/voice"', 'path="/voices"', 'path="/voice-clone"'])
       expect(routes).toContain(path);
     expect(routes).toContain('search.set("section", "setup")');
+    expect(routes).toContain('to={`/studio?${search.toString()}#voice`}');
     expect(panel).toContain('id="voice"');
   });
 
