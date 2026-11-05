@@ -15,6 +15,18 @@ describe("Bot Live activity source and action contracts", () => {
     expect(panel).not.toContain("thread.snapshotActivity || thread.lastMessageAt");
   });
 
+  it("does not show a prior Bot's activity or let stale poll responses overwrite the current Bot", () => {
+    expect(panel).toContain("const [loadedAgentId, setLoadedAgentId] = useState(agentId)");
+    expect(panel).toContain("const current = loadedAgentId === agentId;");
+    expect(panel).toContain("tasks: current ? tasks : []");
+    expect(panel).toContain("calls: current ? calls : []");
+    expect(panel).toContain("threads: current ? threads : []");
+    expect(panel).toContain("setSourcesLoaded(false)");
+    expect(panel).toContain("setSourcesUnavailable(false)");
+    expect(panel).toContain("request !== latestRequest");
+    expect(panel).toContain("request === latestRequest");
+  });
+
   it("makes waiting computer work and pending approvals actionable without auto-running anything", () => {
     expect(panel).toContain("setSelectedId(activeComputerTask.id)");
     expect(panel).toContain("Reply in Computer");
