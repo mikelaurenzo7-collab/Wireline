@@ -77,7 +77,8 @@ function normalizeThread(row: Record<string, unknown>): EmailThread {
     subject: text(row.subject, "Untitled conversation"),
     sender: text(row.customer_email) || text(row.sender_email) || "Unknown sender",
     summary: text(row.summary, "No preview is available yet."),
-    lastMessageAt: text(row.last_message_at) || text(row.created_at),
+    // Match the history endpoint's tenant-scoped message-activity ordering.
+    lastMessageAt: text(row.activity_at) || text(row.last_message_at) || text(row.created_at),
     status: normalizeStatus(row.status),
   };
 }
