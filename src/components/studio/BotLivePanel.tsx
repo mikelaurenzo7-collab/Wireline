@@ -159,24 +159,35 @@ function useBotRecentSources(agentId: string) {
   const [threads, setThreads] = useState<EmailThreadRow[]>([]);
   const [sourcesLoaded, setSourcesLoaded] = useState(false);
   const [sourcesUnavailable, setSourcesUnavailable] = useState(false);
+  const [loadedAgentId, setLoadedAgentId] = useState(agentId);
 
   useEffect(() => {
     let cancelled = false;
+    let latestRequest = 0;
+    // A shared review panel can switch Bot without unmounting. Keep history
+    // from the previous Bot out of the newly selected Bot's live feed.
+    setLoadedAgentId(agentId);
+    setTasks([]);
+    setCalls([]);
+    setThreads([]);
+    setSourcesLoaded(false);
+    setSourcesUnavailable(false);
 
     const load = async () => {
+      const request = ++latestRequest;
       const [taskResult, callResult, mailResult] = await Promise.allSettled([
         authFetch("/api/Assistants/tasks"),
         authFetch(`/api/agents/${encodeURIComponent(agentId)}/calls?limit=6`),
         authFetch(`/api/emails/threads?agent_id=${encodeURIComponent(agentId)}&limit=6`),
       ]);
-      if (cancelled) return;
+      if (cancelled || request !== latestRequest) return;
       let successfulSources = 0;
 
       if (taskResult.status === "fulfilled" && taskResult.value.ok) {
         const body = (await taskResult.value.json().catch(() => null)) as {
           tasks?: FollowUpTaskRow[];
         } | null;
-        if (!cancelled && Array.isArray(body?.tasks)) {
+        if (!cancelled && request === latestRequest && Array.isArray(body?.tasks)) {
           setTasks(body.tasks.filter((task) => task.agentId === agentId));
           successfulSources += 1;
         }
@@ -185,7 +196,7 @@ function useBotRecentSources(agentId: string) {
         const body = (await callResult.value.json().catch(() => null)) as {
           calls?: CallRow[];
         } | null;
-        if (!cancelled && Array.isArray(body?.calls)) {
+        if (!cancelled && request === latestRequest && Array.isArray(body?.calls)) {
           setCalls(body.calls);
           successfulSources += 1;
         }
@@ -194,12 +205,12 @@ function useBotRecentSources(agentId: string) {
         const body = (await mailResult.value.json().catch(() => null)) as {
           threads?: EmailThreadRow[];
         } | null;
-        if (!cancelled && Array.isArray(body?.threads)) {
+        if (!cancelled && request === latestRequest && Array.isArray(body?.threads)) {
           setThreads(body.threads);
           successfulSources += 1;
         }
       }
-      if (!cancelled) {
+      if (!cancelled && request === latestRequest) {
         setSourcesLoaded(true);
         setSourcesUnavailable(successfulSources !== 3);
       }
@@ -213,7 +224,16 @@ function useBotRecentSources(agentId: string) {
     };
   }, [agentId]);
 
-  return { tasks, calls, threads, sourcesLoaded, sourcesUnavailable };
+  // Mask old content on the first render after a Bot switch, before the
+  // effect above gets a chance to clear state.
+  const current = loadedAgentId === agentId;
+  return {
+    tasks: current ? tasks : [],
+    calls: current ? calls : [],
+    threads: current ? threads : [],
+    sourcesLoaded: current && sourcesLoaded,
+    sourcesUnavailable: current && sourcesUnavailable,
+  };
 }
 
 export default function BotLivePanel({
