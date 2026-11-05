@@ -24,3 +24,13 @@ body {
   background: #FFFFFF;
   color: #171717;
 }
+
+/* First-visit phone consent reserves its height before the React stylesheet
+ * downloads. Keep this rule in the head-loaded shell, not the app bundle:
+ * otherwise the initial page paint has no reserved space and the hero jumps. */
+@media (max-width: 639px) {
+  html[data-wl-privacy-prepaint="pending"] .wl-mobile-privacy-host:empty {
+    display: block;
+    min-height: calc(4.125rem + env(safe-area-inset-top, 0px) + 5.75rem);
+  }
+}

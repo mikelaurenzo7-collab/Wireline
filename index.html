@@ -15,6 +15,21 @@
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- First-visit mobile privacy must not displace public conversion surfaces.
+         Reserve only directly visited home, pricing and product pages. -->
+    <script>
+      (function () {
+        if (!["/", "/pricing", "/features"].includes(location.pathname)) return;
+        var create = new URLSearchParams(location.search).get("create");
+        if (create === "1" || create === "true") return;
+        try {
+          if (localStorage.getItem("wireline_cookie_consent") !== null) return;
+        } catch (e) {
+          // Storage-blocked browsers still need a chance to see the notice.
+        }
+        document.documentElement.setAttribute("data-wl-privacy-prepaint", "pending");
+      })();
+    </script>
     <link rel="stylesheet" href="/app-shell.css" />
     <link rel="preload" as="style" href="/fonts.css" />
     <link rel="stylesheet" href="/fonts.css" />
@@ -145,6 +160,7 @@
     </script>
   </head>
   <body data-wireline-viewport="document">
+    <div id="wl-mobile-privacy-prepaint" class="wl-mobile-privacy-host"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

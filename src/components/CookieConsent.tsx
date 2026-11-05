@@ -38,6 +38,9 @@ export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
   const [explicitlyOpened, setExplicitlyOpened] = useState(false);
   const location = useLocation();
+  const createFlowOpen =
+    new URLSearchParams(location.search).get("create") === "1" ||
+    new URLSearchParams(location.search).get("create") === "true";
   const [_hasSession, setHasSession] = useState(false);
   const privacySignalEnabled = globalPrivacyControlEnabled();
   const privacyPanelRef = useRef<HTMLDivElement>(null);
@@ -60,11 +63,16 @@ export default function CookieConsent() {
 
   useEffect(() => {
     if (!narrowViewport || typeof document.createElement !== "function") return;
-    const host = document.createElement("div");
-    host.className = "wl-mobile-privacy-host";
-    const appRoot = document.getElementById("root");
-    if (appRoot?.parentNode) appRoot.parentNode.insertBefore(host, appRoot);
-    else document.body.prepend(host);
+    // Reuse the before-React first-paint slot on direct public entry. On
+    // other entry points the host remains empty/hidden until a notice appears.
+    const prepaintHost = document.getElementById("wl-mobile-privacy-prepaint");
+    const host = prepaintHost ?? document.createElement("div");
+    if (!prepaintHost) {
+      host.className = "wl-mobile-privacy-host";
+      const appRoot = document.getElementById("root");
+      if (appRoot?.parentNode) appRoot.parentNode.insertBefore(host, appRoot);
+      else document.body.prepend(host);
+    }
 
     // The host lives outside the marketing-surface subtree, so it cannot
     // inherit the measured --wl-marketing-chrome-top variable. Mirror the
@@ -99,41 +107,47 @@ export default function CookieConsent() {
     setMobileInlineHost(host);
     return () => {
       observer?.disconnect();
-      host.remove();
+      if (!prepaintHost) host.remove();
     };
   }, [narrowViewport]);
 
   useEffect(() => {
     if (noticeAcknowledged()) return;
     let cancelled = false;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const controller = new AbortController();
+    // An unreachable session endpoint must not leave an anonymous visitor
+    // with a blank reserved privacy slot indefinitely.
+    const timeoutId = window.setTimeout(() => controller.abort(), 2_000);
 
     void (async () => {
       let sessionPresent = false;
       try {
-        const sessionRes = await fetch("/api/auth/session", { credentials: "include" });
+        const sessionRes = await fetch("/api/auth/session", {
+          credentials: "include",
+          signal: controller.signal,
+        });
         if (cancelled) return;
         if (sessionRes.ok) {
           const body = (await sessionRes.json().catch(() => null)) as { user?: unknown } | null;
           sessionPresent = Boolean(body?.user);
         }
-        setHasSession(sessionPresent);
+        if (!cancelled) setHasSession(sessionPresent);
       } catch {
-        /* Session probe failed — treat as signed out so EU/UK visitors still get a consent choice. */
+        /* On failed/timed-out session checks, leave optional measurement off
+           and give visitors the consent choice rather than a blank slot. */
+      } finally {
+        window.clearTimeout(timeoutId);
       }
 
-      if (sessionPresent) return;
-
-      if (!cancelled) {
-        timeoutId = setTimeout(() => {
-          if (!cancelled) setVisible(true);
-        }, 1200);
-      }
+      if (sessionPresent || cancelled) return;
+      // The mobile host was reserved at first paint, so no extra delay.
+      setVisible(true);
     })();
 
     return () => {
       cancelled = true;
-      if (timeoutId) clearTimeout(timeoutId);
+      window.clearTimeout(timeoutId);
+      controller.abort();
     };
   }, []);
 
@@ -182,6 +196,14 @@ export default function CookieConsent() {
     },
     [privacySignalEnabled],
   );
+
+  // Clear the first-paint reservation when signed in, leaving home, or after
+  // acknowledgement. The inline portal itself occupies the reserved space.
+  useEffect(() => {
+    if (visible || _hasSession || createFlowOpen || !["/", "/pricing", "/features"].includes(location.pathname) || noticeAcknowledged()) {
+      document.documentElement.removeAttribute("data-wl-privacy-prepaint");
+    }
+  }, [visible, _hasSession, createFlowOpen, location.pathname]);
 
   const dismiss = useCallback(() => saveChoice("denied"), [saveChoice]);
 
@@ -249,9 +271,6 @@ export default function CookieConsent() {
     return () => window.removeEventListener("keydown", onKey);
   }, [dismiss, visible]);
 
-  const createFlowOpen =
-    new URLSearchParams(location.search).get("create") === "1" ||
-    new URLSearchParams(location.search).get("create") === "true";
   if (isAuthPortalPath(location.pathname) || createFlowOpen) return null;
 
   // The homepage is the marketing surface most first-time visitors see; it is

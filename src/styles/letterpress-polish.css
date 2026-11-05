@@ -1112,6 +1112,8 @@ html[data-privacy-choices="open"] body {
    never obscure the homepage product card or the Pricing plan controls. The
    explicitly reopened choices still use the original fixed panel. */
 @media (max-width: 639px) {
+  /* First-paint reservation is defined in head-loaded public/app-shell.css.
+     Keep normal empty hosts hidden on returning visits and non-public paths. */
   .wl-mobile-privacy-host:empty {
     display: none;
   }
