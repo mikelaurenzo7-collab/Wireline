@@ -1,6 +1,6 @@
 import { getTableName, SQL } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type Row = { id: string; userId: string; businessVariables: unknown };
 const h = vi.hoisted(() => ({
@@ -194,6 +194,13 @@ function pauseWrite(hook: "beforeAgentWrite" | "beforeVoiceWrite" = "beforeAgent
 }
 const selected = (cloneId = CLONE) => ({ [LIVE_CUSTOM_VOICE_KEY]: { cloneId } });
 beforeEach(() => {
+  // This suite checks DB selection/races for an explicitly approved provider.
+  // Production continues default-off, and tests never contact the provider.
+  vi.stubEnv("LIVE_VOICE_CLONE_ENABLED", "true");
+  vi.stubEnv("ELEVENLABS_API_KEY", "test-only-key");
+  vi.stubEnv("OPENAI_API_KEY", "test-only-openai-key");
+  vi.stubEnv("WIRELINE_VOICE_WORKER_URL", "https://voice.test.example");
+  vi.stubEnv("VOICE_CLONE_ENGINE_DEFAULT", "elevenlabs");
   h.agents = [
     { id: "bot", userId: OWNER, businessVariables: { ...selected(), greeting: "Original" } },
   ];
@@ -211,8 +218,20 @@ beforeEach(() => {
   h.voiceLockTail = Promise.resolve();
   h.remove.mockReset().mockResolvedValue(undefined);
 });
+afterEach(() => vi.unstubAllEnvs());
 
 describe("atomic cloned voice selection", () => {
+  it("cannot select a cloned phone voice when rollout is paused", async () => {
+    vi.stubEnv("LIVE_VOICE_CLONE_ENABLED", "false");
+    const prior = structuredClone(h.agents[0].businessVariables);
+    await expect(liveVoiceService.useOnBot(actor, CLONE, "bot")).rejects.toMatchObject({
+      status: 409,
+      code: "VOICE_CLONE_CALLS_UNAVAILABLE",
+    });
+    expect(h.agents[0].businessVariables).toEqual(prior);
+  });
+
+
   it("does not assign a provider voice when an operator requires another engine", async () => {
     const before = structuredClone(h.agents[0].businessVariables);
     vi.stubEnv("VOICE_CLONE_ENGINE_DEFAULT", "xai");
