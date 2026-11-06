@@ -751,6 +751,9 @@ export const liveVoiceService = {
             "VOICE_CLONE_PREVIEW_ONLY",
             "This legacy voice is a demo preview, not a live cloned voice. Choose a built-in voice for calls.",
           );
+        const preferred = resolvePreferredCloneEngine();
+        if (preferred && preferred !== row.provider)
+          throw new AppError(409, "VOICE_CLONE_PROVIDER_MISMATCH", "This voice is not available under the selected voice provider.");
         const selection = JSON.stringify({
           cloneId: row.id,
           name: row.name,
@@ -915,6 +918,10 @@ export async function resolveRuntimeCustomVoice(
       )
       .limit(1);
     if (!row || !isCloneEngineId(row.provider)) return null;
+    // A saved selection must not route speech to a provider the operator has
+    // explicitly excluded through VOICE_CLONE_ENGINE_DEFAULT.
+    const preferred = resolvePreferredCloneEngine();
+    if (preferred && preferred !== row.provider) return null;
     if (row.provider === "elevenlabs") {
       if (!elevenLabsCallsConfigured()) return null;
     } else if (row.provider === "inhouse") {
