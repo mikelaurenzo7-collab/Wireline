@@ -12,7 +12,7 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
   brand: {
     system: "BotBound Design System",
     doctrine:
-      "near-black canvas, restrained electric-violet action, off-white primary text, quiet secondary text, and semantic status",
+      "true-white (#FFFFFF) light-default canvas with near-black text, near-black canvas (#0A0A0E) as an optional dark mode with off-white text, restrained electric-violet actions, shared type, and semantic status",
     namingRule:
       "BotBound is the only customer-facing product name. Use functional visual terms only: canvas, surface, raised, recessed, text, violet, signal, and status.",
     typography:
@@ -59,7 +59,7 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
     studio: {
       fullBleed: true,
       header:
-        "Bot context and Set Up; Rehearse, Browser, and Summary share a side panel on wide screens",
+        "Bot context and Set Up; conversation and private rehearsal own the main canvas, Browser can sit alongside, and Details/Setup/Review share an optional inspector",
       surfaces: ["Workspace"],
     },
   },
