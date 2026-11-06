@@ -12,7 +12,7 @@ type ClientRouteViewportProps = {
   className?: string;
   /** When true, the outer shell scrolls (long-form pages like Help, Integrations). */
   scroll?: boolean;
-  /** Route-tinted ambient glow (off by default — solid cream canvas). */
+  /** Route-tinted ambient glow (off by default — semantic white/dark canvas). */
   ambience?: boolean;
 };
 
