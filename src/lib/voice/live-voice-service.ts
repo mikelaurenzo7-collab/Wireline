@@ -678,6 +678,15 @@ export const liveVoiceService = {
         "VOICE_CLONE_DEMO_UNAVAILABLE",
         "This legacy demo cannot generate a real voice preview. Delete it or choose a built-in voice.",
       );
+    // The separate in-house private-preview pilot has its own authorization.
+    // This live-phone clone endpoint cannot spend provider credits while its
+    // explicit rollout switch is off, even for an old saved provider voice.
+    if (!liveVoiceCloneEnabled())
+      throw new AppError(
+        409,
+        "VOICE_CLONE_PREVIEW_UNAVAILABLE",
+        "Live voice previews are not enabled for this account. Your built-in voice is unchanged.",
+      );
     const line = voiceSampleLine(input.agentName || "your Bot");
     try {
       if (input.variant === "clone") {
