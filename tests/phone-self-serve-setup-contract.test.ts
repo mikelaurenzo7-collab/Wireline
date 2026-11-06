@@ -25,6 +25,18 @@ describe("self-service calling setup", () => {
     expect(history).toContain("`/phone?tab=outbound&agent=${encodeURIComponent(agentId)}`");
   });
 
+  it("offers the missing phone connection before an outbound call, with private rehearsal as an alternative", () => {
+    const history = read("src/components/PhoneCallHistoryPanel.tsx");
+    expect(history).toContain('title: "Connect a Phone Line"');
+    expect(history).toContain('action: { label: "Add a Line", to: setupHref }');
+    expect(history).toContain('label: "Try It"');
+    expect(history).toContain('"/studio"');
+    expect(history).toContain('`/studio?agent=${encodeURIComponent(agentId)}&workroom=test`');
+    expect(history).toContain('title: agentId ? "No Calls for This Bot" : "No Calls Yet"');
+    expect(history).toContain('action: { label: "New Call", onClick: () => setShowDial(true) }');
+    expect(history).not.toContain('title: "Call with your Bot"');
+  });
+
   it("keeps self-service provisioning while presenting it as compact line management", () => {
     const setup = read("src/components/PhoneSetupPanel.tsx");
 
