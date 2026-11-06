@@ -129,6 +129,9 @@ export function liveVoiceCloneEnabled(env: NodeJS.ProcessEnv = process.env): boo
 
 /** Engines available to the native or streaming phone runtime. */
 export function engineSpeaksOnCalls(engine: CloneEngineId): boolean {
+  // A saved voice is not callable during the global launch pause, regardless
+  // of credentials, provider IDs, or legacy settings.
+  if (process.env.LIVE_VOICE_CLONE_ENABLED !== "true") return false;
   // The legacy in-process oscillator is a test fixture, never a callable clone.
   if (engine === "inhouse") return false;
   const preferred = resolvePreferredCloneEngine();
@@ -756,6 +759,12 @@ export const liveVoiceService = {
         const preferred = resolvePreferredCloneEngine();
         if (preferred && preferred !== row.provider)
           throw new AppError(409, "VOICE_CLONE_PROVIDER_MISMATCH", "This voice is not available under the selected voice provider.");
+        if (!engineSpeaksOnCalls(row.provider as CloneEngineId))
+          throw new AppError(
+            409,
+            "VOICE_CLONE_CALLS_UNAVAILABLE",
+            "This voice cannot be used for live calls under the current setup. Your built-in voice is unchanged.",
+          );
         const selection = JSON.stringify({
           cloneId: row.id,
           name: row.name,
