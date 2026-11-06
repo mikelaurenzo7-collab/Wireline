@@ -142,9 +142,16 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
     ? { title: "Create a Bot", action: { label: "New Bot", to: "/studio?create=1" } }
     : !livePhone
       ? {
-          title: "Call with your Bot",
-          action: { label: "New Call", onClick: () => setShowDial(true) },
-          secondary: { label: "Add a Line", to: setupHref },
+          // A direct call cannot start until at least one Bot has a connected
+          // line. Lead with the prerequisite, and offer private rehearsal.
+          title: "Connect a Phone Line",
+          action: { label: "Add a Line", to: setupHref },
+          secondary: {
+            label: "Try It",
+            to: agentId
+              ? `/studio?agent=${encodeURIComponent(agentId)}&workroom=test`
+              : "/studio",
+          },
         }
       : {
           title: agentId ? "No Calls for This Bot" : "No Calls Yet",
