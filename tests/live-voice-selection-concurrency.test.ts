@@ -213,6 +213,16 @@ beforeEach(() => {
 });
 
 describe("atomic cloned voice selection", () => {
+  it("refuses an old synthetic in-house profile without modifying any Bot's saved settings", async () => {
+    h.voice.provider = "inhouse";
+    const before = structuredClone(h.agents[0].businessVariables);
+    await expect(liveVoiceService.useOnBot(actor, CLONE, "bot")).rejects.toMatchObject({
+      status: 409,
+      code: "VOICE_CLONE_PREVIEW_ONLY",
+    });
+    expect(h.agents[0].businessVariables).toEqual(before);
+  });
+
   it("rejects assignment when deletion takes the voice lock first", async () => {
     const gate = pauseWrite("beforeVoiceWrite");
     const deleting = liveVoiceService.remove(actor, CLONE);
