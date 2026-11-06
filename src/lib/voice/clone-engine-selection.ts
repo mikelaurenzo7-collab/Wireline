@@ -152,7 +152,7 @@ export type CloneEngineSelectionInput = {
   xai: { configured: boolean; entitled: boolean; teamVoicesUsed: number; teamLimit: number };
   elevenlabs: { configured: boolean };
   inhouse?: { configured: boolean };
-  /** Preferred clone engine, such as "inhouse" for self-sufficient local voice cloning. */
+  /** Operator preference. "inhouse" fails closed on live calls until a real streaming speech engine exists. */
   preferred?: CloneEngineId | null;
 };
 
