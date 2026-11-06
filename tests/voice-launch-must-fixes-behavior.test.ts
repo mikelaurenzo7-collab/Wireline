@@ -247,6 +247,7 @@ describe("clone engine selection", () => {
         teamLimit: 30,
       },
       elevenlabs: { configured: true },
+      preferred: "elevenlabs" as const,
     };
     expect(cloneEngineCandidates({ ...base, jurisdiction: "US-IL" })).toEqual(["elevenlabs"]);
     expect(cloneEngineCandidates({ ...base, jurisdiction: "US-CA" })).toEqual(["elevenlabs"]);
@@ -266,7 +267,9 @@ describe("clone engine selection", () => {
       ELEVENLABS_API_KEY: "test-eleven-key",
       OPENAI_API_KEY: "test-openai-key",
       WIRELINE_VOICE_WORKER_URL: "https://voice.botbound.app",
+      VOICE_CLONE_ENGINE_DEFAULT: "elevenlabs",
     };
+    expect(liveVoiceCloneEnabled({ ...ready, VOICE_CLONE_ENGINE_DEFAULT: "" })).toBe(false);
     expect(liveVoiceCloneEnabled({ ...ready, LIVE_VOICE_CLONE_ENABLED: "" })).toBe(false);
     expect(liveVoiceCloneEnabled(ready)).toBe(true);
     expect(liveVoiceCloneEnabled({ ...ready, ELEVENLABS_API_KEY: "" })).toBe(false);
