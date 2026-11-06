@@ -184,7 +184,9 @@ export type CloneSelectionReason =
  */
 export function selectCloneEngine(input: CloneEngineSelectionInput): CloneEngineSelection {
   const writtenReleaseRequired = requiresWrittenBiometricRelease(input.jurisdiction);
-  if ((input.preferred !== null && input.preferred !== undefined && input.preferred !== "elevenlabs") || !input.elevenlabs.configured) {
+  // Provider selection must be deliberate; a configured vendor key is not consent
+  // to send a speaker\u0027s reference recording to that vendor.
+  if (input.preferred !== "elevenlabs" || !input.elevenlabs.configured) {
     return { engine: null, reason: "no_engine_available", writtenReleaseRequired };
   }
   return { engine: "elevenlabs", reason: "elevenlabs", writtenReleaseRequired };
