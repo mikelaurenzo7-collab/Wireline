@@ -729,7 +729,8 @@ export default function LiveVoiceCloneStudio({
                       : ""}
                   </span>
                 </span>
-                <button
+                {voice.speaksOnCalls !== false ? (
+                  <button
                   type="button"
                   onClick={() => void play(voice.id, "clone")}
                   aria-label={`${playing === `${voice.id}:clone` ? "Stop" : "Play"} ${voice.name}`}
@@ -742,6 +743,7 @@ export default function LiveVoiceCloneStudio({
                     <Play className="size-4" aria-hidden="true" />
                   )}
                 </button>
+                ) : null}
                 {!inUse && voice.speaksOnCalls !== false ? (
                   <button
                     type="button"
@@ -755,7 +757,7 @@ export default function LiveVoiceCloneStudio({
                     Use Voice
                   </button>
                 ) : !inUse && voice.speaksOnCalls === false ? (
-                  <span className="text-xs text-muted-foreground">Legacy demo · not callable</span>
+                  <span className="text-xs text-muted-foreground">Legacy demo · not playable or callable</span>
                 ) : null}
                 <button
                   type="button"
