@@ -172,6 +172,12 @@ describe("legacy in-process waveform fixture (NOT cloned speech)", () => {
       elevenlabs: { configured: true },
     });
     expect(selected.engine).toBeNull();
+    expect(cloneEngineCandidates({
+      jurisdiction: "US-CA",
+      preferred: "xai",
+      xai: { configured: true, entitled: true, teamVoicesUsed: 0, teamLimit: 30 },
+      elevenlabs: { configured: true },
+    })).toEqual([]);
   });
 
   it("enforces strict Illinois BIPA and Texas CUBI compliance with 3-year maximum retention limit", () => {
