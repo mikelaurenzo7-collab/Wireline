@@ -173,21 +173,18 @@ export type CloneSelectionReason =
   | "no_engine_available";
 
 /**
- * Primary clone path. In-house engine or ElevenLabs creates the voice.
- * Illinois consent rules still apply universally.
+ * Live-call clone admission is intentionally separate from the genuine,
+ * private self-hosted preview pilot in voice-asset-service.ts. The legacy
+ * "inhouse" engine in clone-engines.ts emits synthetic oscillator audio, NOT
+ * intelligible cloned speech. Never route a customer enrollment to it, even
+ * if an old environment explicitly prefers it or advertises it as configured.
+ * Nor silently upload a speaker's recording to an external provider when the
+ * operator requested in-house processing. An eligible provider is always an
+ * explicit, separately gated live-call decision.
  */
 export function selectCloneEngine(input: CloneEngineSelectionInput): CloneEngineSelection {
   const writtenReleaseRequired = requiresWrittenBiometricRelease(input.jurisdiction);
-  if (input.preferred === "inhouse") {
-    return { engine: "inhouse", reason: "inhouse_preferred", writtenReleaseRequired };
-  }
-  if (input.inhouse?.configured && !input.elevenlabs.configured) {
-    return { engine: "inhouse", reason: "inhouse", writtenReleaseRequired };
-  }
-  if (!input.elevenlabs.configured && !input.xai.configured) {
-    return { engine: "inhouse", reason: "inhouse_preferred", writtenReleaseRequired };
-  }
-  if (!input.elevenlabs.configured) {
+  if (input.preferred === "inhouse" || !input.elevenlabs.configured) {
     return { engine: null, reason: "no_engine_available", writtenReleaseRequired };
   }
   return { engine: "elevenlabs", reason: "elevenlabs", writtenReleaseRequired };
