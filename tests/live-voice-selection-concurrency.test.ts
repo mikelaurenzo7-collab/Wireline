@@ -228,6 +228,10 @@ describe("atomic cloned voice selection", () => {
       status: 409,
       code: "VOICE_CLONE_CALLS_UNAVAILABLE",
     });
+    await expect(liveVoiceService.preview(actor, CLONE, { variant: "clone" })).rejects.toMatchObject({
+      status: 409,
+      code: "VOICE_CLONE_PREVIEW_UNAVAILABLE",
+    });
     expect(h.agents[0].businessVariables).toEqual(prior);
   });
 
