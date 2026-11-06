@@ -273,6 +273,8 @@ describe("clone engine selection", () => {
     expect(liveVoiceCloneEnabled({ ...ready, OPENAI_API_KEY: "" })).toBe(false);
     expect(liveVoiceCloneEnabled({ ...ready, WIRELINE_VOICE_WORKER_URL: "" })).toBe(false);
     expect(liveVoiceCloneEnabled({ ...ready, LIVE_VOICE_CLONE_ENABLED: "false" })).toBe(false);
+    expect(liveVoiceCloneEnabled({ ...ready, VOICE_CLONE_ENGINE_DEFAULT: "inhouse" })).toBe(false);
+    expect(liveVoiceCloneEnabled({ ...ready, VOICE_CLONE_ENGINE_DEFAULT: "xai" })).toBe(false);
   });
 
   it("plays an ElevenLabs clone only when that phone path is configured", () => {
