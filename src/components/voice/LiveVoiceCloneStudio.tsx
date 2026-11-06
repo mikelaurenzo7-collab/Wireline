@@ -761,7 +761,7 @@ export default function LiveVoiceCloneStudio({
                 ) : null}
                 <button
                   type="button"
-                  onClick={() => void removeVoice(voice)
+                  onClick={() => void removeVoice(voice)}
                   disabled={busy !== null}
                   aria-label={`Delete ${voice.name}`}
                   className="grid size-11 place-items-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive wl-focus-ring-halo disabled:opacity-60"
