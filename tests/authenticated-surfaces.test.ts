@@ -4,8 +4,15 @@ import { AUTHENTICATED_SURFACE_CONTRACT } from "../src/lib/authenticated-surface
 describe("authenticated surfaces", () => {
   it("locks the single BotBound Design System and semantic doctrine", () => {
     expect(AUTHENTICATED_SURFACE_CONTRACT.brand.system).toBe("BotBound Design System");
+    expect(AUTHENTICATED_SURFACE_CONTRACT.brand.doctrine).toMatch(/true-white.*light-default/i);
     expect(AUTHENTICATED_SURFACE_CONTRACT.brand.doctrine).toMatch(/near-black canvas/i);
     expect(AUTHENTICATED_SURFACE_CONTRACT.brand.doctrine).toMatch(/violet/i);
+    expect(AUTHENTICATED_SURFACE_CONTRACT.pageChrome.studio.header).toMatch(
+      /conversation and private rehearsal own the main canvas/i,
+    );
+    expect(AUTHENTICATED_SURFACE_CONTRACT.pageChrome.studio.header).toMatch(
+      /Browser can sit alongside/i,
+    );
     expect(AUTHENTICATED_SURFACE_CONTRACT.brand.namingRule).toMatch(
       /only customer-facing product name/i,
     );
