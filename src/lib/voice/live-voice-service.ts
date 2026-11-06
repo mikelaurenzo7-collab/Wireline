@@ -120,7 +120,8 @@ export function liveVoiceCloneEnabled(env: NodeJS.ProcessEnv = process.env): boo
   if (env.LIVE_VOICE_CLONE_ENABLED !== "true") return false;
   // A preferred in-house engine must NEVER silently fall back to a vendor.
   // The old in-process waveform generator is not a real cloned-voice model.
-  if (resolvePreferredCloneEngine(env) === "inhouse") return false;
+  const preferred = resolvePreferredCloneEngine(env);
+  if (preferred && preferred !== "elevenlabs") return false;
   // A key alone is not enough: the recorder stays closed until a call can
   // actually speak the clone (OpenAI text, ElevenLabs audio, voice worker).
   return elevenLabsCallsConfigured(env);
