@@ -213,6 +213,20 @@ beforeEach(() => {
 });
 
 describe("atomic cloned voice selection", () => {
+  it("does not assign a provider voice when an operator requires another engine", async () => {
+    const before = structuredClone(h.agents[0].businessVariables);
+    vi.stubEnv("VOICE_CLONE_ENGINE_DEFAULT", "xai");
+    try {
+      await expect(liveVoiceService.useOnBot(actor, CLONE, "bot")).rejects.toMatchObject({
+        status: 409,
+        code: "VOICE_CLONE_PROVIDER_MISMATCH",
+      });
+      expect(h.agents[0].businessVariables).toEqual(before);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("refuses an old synthetic in-house profile without modifying any Bot's saved settings", async () => {
     h.voice.provider = "inhouse";
     const before = structuredClone(h.agents[0].businessVariables);
