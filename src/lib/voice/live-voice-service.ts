@@ -118,7 +118,9 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
  */
 export function liveVoiceCloneEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
   if (env.LIVE_VOICE_CLONE_ENABLED !== "true") return false;
-  if (resolvePreferredCloneEngine(env) === "inhouse") return true;
+  // A preferred in-house engine must NEVER silently fall back to a vendor.
+  // The old in-process waveform generator is not a real cloned-voice model.
+  if (resolvePreferredCloneEngine(env) === "inhouse") return false;
   // A key alone is not enough: the recorder stays closed until a call can
   // actually speak the clone (OpenAI text, ElevenLabs audio, voice worker).
   return elevenLabsCallsConfigured(env);
@@ -126,10 +128,11 @@ export function liveVoiceCloneEnabled(env: NodeJS.ProcessEnv = process.env): boo
 
 /** Engines available to the native or streaming phone runtime. */
 export function engineSpeaksOnCalls(engine: CloneEngineId): boolean {
-  return (
-    cloneEngine(engine).liveMode === "native_realtime" ||
-    (engine === "elevenlabs" && elevenLabsCallsConfigured())
-  );
+  // The legacy in-process oscillator is a test fixture, never a callable clone.
+  if (engine === "inhouse") return false;
+  return engine === "elevenlabs"
+    ? elevenLabsCallsConfigured()
+    : engine === "xai" && cloneEngine("xai").configured();
 }
 
 function voiceNotExpired() {
@@ -720,7 +723,7 @@ export const liveVoiceService = {
         // Revocation first updates this same voice row. Hold its lock until the
         // selection commits: deletion either wins first or clears this selection.
         const [row] = await tx
-          .select({ id: liveVoices.id, name: liveVoices.name })
+          .select({ id: liveVoices.id, name: liveVoices.name, provider: liveVoices.provider })
           .from(liveVoices)
           .where(
             and(
@@ -733,6 +736,12 @@ export const liveVoiceService = {
           .limit(1)
           .for("update");
         if (!row) throw AppError.notFound("Voice not found.");
+        if (row.provider === "inhouse")
+          throw new AppError(
+            409,
+            "VOICE_CLONE_PREVIEW_ONLY",
+            "This legacy voice is a demo preview, not a live cloned voice. Choose a built-in voice for calls.",
+          );
         const selection = JSON.stringify({
           cloneId: row.id,
           name: row.name,
@@ -900,7 +909,8 @@ export async function resolveRuntimeCustomVoice(
     if (row.provider === "elevenlabs") {
       if (!elevenLabsCallsConfigured()) return null;
     } else if (row.provider === "inhouse") {
-      if (!cloneEngine("inhouse").configured()) return null;
+      // A legacy oscillator profile must never be routed onto a customer's call.
+      return null;
     } else if (row.provider !== "xai" || !cloneEngine("xai").configured()) return null;
     const engine = cloneEngine(row.provider);
     if (!engine.isVoiceId(row.providerVoiceId)) return null;
