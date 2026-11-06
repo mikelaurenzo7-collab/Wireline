@@ -184,7 +184,7 @@ export type CloneSelectionReason =
  */
 export function selectCloneEngine(input: CloneEngineSelectionInput): CloneEngineSelection {
   const writtenReleaseRequired = requiresWrittenBiometricRelease(input.jurisdiction);
-  if (input.preferred === "inhouse" || !input.elevenlabs.configured) {
+  if ((input.preferred !== null && input.preferred !== undefined && input.preferred !== "elevenlabs") || !input.elevenlabs.configured) {
     return { engine: null, reason: "no_engine_available", writtenReleaseRequired };
   }
   return { engine: "elevenlabs", reason: "elevenlabs", writtenReleaseRequired };
