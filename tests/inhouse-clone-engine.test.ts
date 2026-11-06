@@ -35,7 +35,7 @@ describe("legacy in-process waveform fixture (NOT cloned speech)", () => {
     expect(engineSpeaksOnCalls("inhouse")).toBe(false);
   });
 
-  it("creates in-house voice clone and validates voice id format and style embedding", async () => {
+  it("constructs a test-only waveform profile without claiming speaker similarity", async () => {
     resetInhouseVoiceStoreForTests();
     const engine = createInhouseCloneEngine();
     // 44-byte minimal WAV header
@@ -69,7 +69,7 @@ describe("legacy in-process waveform fixture (NOT cloned speech)", () => {
     ).rejects.toThrow();
   });
 
-  it("synthesizes in-house preview audio at 24kHz without external API dependency", async () => {
+  it("renders transport-test WAV tones at 24kHz without external API dependency", async () => {
     const engine = createInhouseCloneEngine();
     const previewAudio = await engine.preview("inhouse_test_id", "Hello from BotBound voice!");
     expect(previewAudio.byteLength).toBeGreaterThan(44);
@@ -85,7 +85,7 @@ describe("legacy in-process waveform fixture (NOT cloned speech)", () => {
     expect(bitsPerSample).toBe(16);
   });
 
-  it("generates 24kHz PCM audio chunks with sub-120ms token-to-speech latency on CPU", async () => {
+  it("generates PCM fixture chunks without claiming spoken words or realtime latency", async () => {
     const engine = createInhouseCloneEngine();
     const sampleWav = Buffer.alloc(44);
     sampleWav.write("RIFF", 0);
@@ -109,12 +109,12 @@ describe("legacy in-process waveform fixture (NOT cloned speech)", () => {
     expect(firstChunk.sampleRate).toBe(24_000);
     expect(firstChunk.samples).toBeGreaterThan(0);
     expect(firstChunk.pcm.byteLength).toBe(firstChunk.samples * 2);
-    // Sub-120ms token-to-speech latency on CPU invariant
-    expect(firstChunk.latencyMs).toBeLessThan(120);
+    // This is oscillator generation, not TTS latency or spoken text fidelity.
+    expect(firstChunk.latencyMs).toBeGreaterThanOrEqual(0);
     expect(chunks[chunks.length - 1].isFinal).toBe(true);
   });
 
-  it("reports unlimited capacity without external API credits or quotas", async () => {
+  it("reports that test fixture generation is not eligible for customer cloning", async () => {
     const engine = createInhouseCloneEngine();
     const cap = await engine.capacity();
     expect(cap.canClone).toBe(false);
@@ -295,7 +295,7 @@ describe("legacy in-process waveform fixture (NOT cloned speech)", () => {
     expect(getInhouseVoiceProfile(providerVoiceId)).toBeNull();
   });
 
-  it("integrates with liveVoiceService.expireDue() to sweep in-house voice models atomically", async () => {
+  it("remains deletable by the retention sweep despite being disabled for live calling", async () => {
     resetInhouseVoiceStoreForTests();
     const engine = createInhouseCloneEngine();
     const sampleWav = Buffer.alloc(44);
@@ -379,7 +379,7 @@ describe("legacy in-process waveform fixture (NOT cloned speech)", () => {
     expect(profile?.sampleRate).toBe(24000);
   });
 
-  it("synthesizes stock voice previews for both female and male default voices", async () => {
+  it("generates male/female stock tone fixtures, not speech previews", async () => {
     const engine = createInhouseCloneEngine();
     const femalePreview = await engine.preview("eve", "Hello from stock female.");
     expect(femalePreview.byteLength).toBeGreaterThan(44);
