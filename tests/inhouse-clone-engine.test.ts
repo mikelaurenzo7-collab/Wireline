@@ -22,16 +22,17 @@ import {
   BIOMETRIC_IDLE_DAYS,
   BIOMETRIC_RETENTION_POLICY_VERSION,
 } from "../src/lib/voice/clone-engine-selection";
-import { liveVoiceService } from "../src/lib/voice/live-voice-service";
+import { liveVoiceService, engineSpeaksOnCalls, liveVoiceCloneEnabled } from "../src/lib/voice/live-voice-service";
 
-describe("in-house clone engine (self-sufficient voice synthesis)", () => {
+describe("legacy in-process waveform fixture (NOT cloned speech)", () => {
   it("registers inhouse in CLONE_ENGINE_IDS and clone engine registry", () => {
     expect(CLONE_ENGINE_IDS).toContain("inhouse");
     expect(isCloneEngineId("inhouse")).toBe(true);
     const engine = cloneEngine("inhouse");
     expect(engine.id).toBe("inhouse");
-    expect(engine.liveMode).toBe("native_realtime");
-    expect(engine.configured()).toBe(true);
+    expect(engine.liveMode).toBe("tts_bridge");
+    expect(engine.configured()).toBe(false);
+    expect(engineSpeaksOnCalls("inhouse")).toBe(false);
   });
 
   it("creates in-house voice clone and validates voice id format and style embedding", async () => {
@@ -116,7 +117,7 @@ describe("in-house clone engine (self-sufficient voice synthesis)", () => {
   it("reports unlimited capacity without external API credits or quotas", async () => {
     const engine = createInhouseCloneEngine();
     const cap = await engine.capacity();
-    expect(cap.canClone).toBe(true);
+    expect(cap.canClone).toBe(false);
     expect(cap.voiceLimit).toBeNull();
     expect(cap.creditsRemaining).toBeNull();
   });
@@ -143,13 +144,13 @@ describe("in-house clone engine (self-sufficient voice synthesis)", () => {
     expect(secondRemove.alreadyMissing).toBe(true);
   });
 
-  it("selects inhouse when preferred or when external vendors are unconfigured", () => {
+  it("never admits oscillator-generated demo audio into live cloning", () => {
     const selection = selectCloneEngine({
       jurisdiction: "US-IL",
       xai: { configured: false, entitled: false, teamVoicesUsed: 0, teamLimit: 30 },
       elevenlabs: { configured: false },
     });
-    expect(selection.engine).toBe("inhouse");
+    expect(selection.engine).toBeNull();
     expect(selection.writtenReleaseRequired).toBe(true);
 
     const candidates = cloneEngineCandidates({
@@ -157,11 +158,20 @@ describe("in-house clone engine (self-sufficient voice synthesis)", () => {
       xai: { configured: false, entitled: false, teamVoicesUsed: 0, teamLimit: 30 },
       elevenlabs: { configured: false },
     });
-    expect(candidates).toEqual(["inhouse"]);
+    expect(candidates).toEqual([]);
   });
 
-  it("resolves inhouse preferred clone engine from environment", () => {
+  it("refuses an inhouse live rollout rather than silently routing recordings to a vendor", () => {
     expect(resolvePreferredCloneEngine({ VOICE_CLONE_ENGINE_DEFAULT: "inhouse" })).toBe("inhouse");
+    expect(liveVoiceCloneEnabled({ LIVE_VOICE_CLONE_ENABLED: "true", VOICE_CLONE_ENGINE_DEFAULT: "inhouse" })).toBe(false);
+    const selected = selectCloneEngine({
+      jurisdiction: "US-IL",
+      preferred: "inhouse",
+      inhouse: { configured: true },
+      xai: { configured: false, entitled: false, teamVoicesUsed: 0, teamLimit: 30 },
+      elevenlabs: { configured: true },
+    });
+    expect(selected.engine).toBeNull();
   });
 
   it("enforces strict Illinois BIPA and Texas CUBI compliance with 3-year maximum retention limit", () => {
