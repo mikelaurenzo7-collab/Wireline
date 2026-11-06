@@ -108,6 +108,70 @@ OpenAI call path. It is not a measured cloned-call rate. No Stripe products,
 subscription prices, customer entitlements or Render billing variables are changed
 by this pilot.
 
+## November 6, 2026: actual voice-engine boundary and environment audit
+
+**Do not confuse three technologies under one “cloning” label:**
+
+1. **Legacy Node audio fixture** (`createInhouseCloneEngine`): samples a few
+   waveform characteristics and generates sine/formant tones. It does **not**
+   synthesize words or faithfully reproduce a speaker. It is retained solely
+   for PCM transport and deletion test fixtures. `configured() = false`,
+   `engineSpeaksOnCalls("inhouse") = false`; API creation, preview, Bot
+   selection, and phone runtime reject legacy in-house profiles. Never market
+   this fixture as a working cloned voice or use the waveform timing as speech latency.
+2. **Real self-hosted private preview** (`voice-asset-service` and the
+   independent Chatterbox Nano HTTP worker): consented, encrypted,
+   preview-only, admin/canary access, no Bot call assignment. Historical
+   CPU measurements were far too slow for natural phone conversations.
+   The Chatterbox repository is now archived, unmaintained research (as of
+   August 2026), so production model maintenance, provenance, watermarking,
+   security and commercialization require additional independent review.
+3. **Live phone cloning** (`live-voice-service` and the separate streaming
+   worker): is disabled by default and must use a *real* callable voice
+   provider, with signed recording consent, deletion receipts, jurisdiction
+   restrictions and a measured failover. An `inhouse` operator preference
+   must fail closed, **not silently send that person's recording to a
+   third-party vendor**. Cloning is not automatically enabled by configuring
+   an API key.
+
+**Production storage read-only audit (November 6):** The BotBound Supabase
+project is ACTIVE_HEALTHY. Migrations `0179_inhouse_voice_assets` and
+`0186_live_voice_clones` are recorded; `0185_voice_clone_customer_lane`
+was **not listed by migration history**, even though its customer-retention
+columns, clone event table, guarded triggers and retention constraints exist.
+All three voice tables checked have RLS enabled. Reconcile migration provenance,
+permissions, and constraints through the existing database operations process
+before promoting any preview canary. **Do not reapply 0185 blindly.** No
+schema, customer rows, credits or provider configuration were changed in
+this inspection.
+
+**Provider limitations, subject to live commercial eligibility checks:**
+xAI's recorded custom voices exclude Illinois and require Enterprise API
+access; recording-derived OpenAI custom voices are restricted to eligible
+customers and require a separate spoken consent recording. OpenAI's generally
+available prompt-designed voices are **not a clone of a customer's recorded
+voice** and should be labeled “Designed Voice,” never “Clone Voice.”
+
+### Genuine cloning test gate
+
+- Confirm on a separate preview host: pinned real model and weights, rights,
+  isolated tenant data, bounded memory/latency, encrypted storage and no
+  training or logging of supplied voices.
+- Run a self-consented adult reference through recording, audio-quality gate,
+  durable creation/review/preview, A/B text intelligibility and speaker
+  similarity, cancellation, expiry, revocation, tenant isolation and deletion.
+  Test noisy/silent clips, wrong-owner IDs, mismatched consent and stale
+  versions; an oscillator-based WAV is *not* a passing voice test.
+- Measure live phone streaming separately: time to first *spoken* audio,
+  interruptions and interruptions-after-fallback, disclosure, PII handling,
+  cost admission, last-used accounting, emergency fallback and saved voice
+  reconciliation. Never promote a preview-only asset into a call configuration.
+- Release to the existing private allowlist only after exact-head
+  TypeScript/Vitest/Playwright build and a staged deployment. The persistent
+  voice worker requires the authenticated `deploy/render/drain-voice.mjs`
+  procedure with zero active/pending calls before replacement. Do not
+  enable `LIVE_VOICE_CLONE_ENABLED` on live API/worker as a shortcut.
+
 ## Promotion checklist
 
 ### Independent ElevenLabs lane
