@@ -466,7 +466,7 @@ export default function LiveVoiceCloneStudio({
 
   async function applyVoice(voice: ClonedVoice | null) {
     if (voice?.speaksOnCalls === false) {
-      setError("This legacy demo cannot speak on phone calls. Choose a built-in voice instead.");
+      setError("This voice is not callable under the current setup. Choose a built-in voice instead.");
       return;
     }
     setBusy(voice ? `use:${voice.id}` : "stock");
@@ -667,7 +667,7 @@ export default function LiveVoiceCloneStudio({
             <Check className="mr-1.5 inline size-4 text-primary" aria-hidden="true" />
             {activeVoice.speaksOnCalls === false ? (
               <>
-                <strong>{activeVoice.name}</strong> is a legacy demo, not a callable cloned voice.
+                <strong>{activeVoice.name}</strong> is unavailable for live calls under the current setup.
                 Switch to a built-in voice for reliable calls.
               </>
             ) : (
@@ -731,18 +731,18 @@ export default function LiveVoiceCloneStudio({
                 </span>
                 {voice.speaksOnCalls !== false ? (
                   <button
-                  type="button"
-                  onClick={() => void play(voice.id, "clone")}
-                  aria-label={`${playing === `${voice.id}:clone` ? "Stop" : "Play"} ${voice.name}`}
-                  aria-pressed={playing === `${voice.id}:clone`}
-                  className="grid size-11 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground wl-focus-ring-halo"
-                >
-                  {playing === `${voice.id}:clone` ? (
-                    <Pause className="size-4" aria-hidden="true" />
-                  ) : (
-                    <Play className="size-4" aria-hidden="true" />
-                  )}
-                </button>
+                    type="button"
+                    onClick={() => void play(voice.id, "clone")}
+                    aria-label={`${playing === `${voice.id}:clone` ? "Stop" : "Play"} ${voice.name}`}
+                    aria-pressed={playing === `${voice.id}:clone`}
+                    className="grid size-11 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground wl-focus-ring-halo"
+                  >
+                    {playing === `${voice.id}:clone` ? (
+                      <Pause className="size-4" aria-hidden="true" />
+                    ) : (
+                      <Play className="size-4" aria-hidden="true" />
+                    )}
+                  </button>
                 ) : null}
                 {!inUse && voice.speaksOnCalls !== false ? (
                   <button
@@ -757,7 +757,7 @@ export default function LiveVoiceCloneStudio({
                     Use Voice
                   </button>
                 ) : !inUse && voice.speaksOnCalls === false ? (
-                  <span className="text-xs text-muted-foreground">Legacy demo · not playable or callable</span>
+                  <span className="text-xs text-muted-foreground">Not available for calls</span>
                 ) : null}
                 <button
                   type="button"
@@ -1128,7 +1128,7 @@ export default function LiveVoiceCloneStudio({
           <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <Check className="size-4 text-primary" aria-hidden="true" />
             {created.speaksOnCalls === false
-              ? `${created.name} is a legacy demo and cannot be used on calls.`
+              ? `${created.name} is saved, but is not available for phone calls.`
               : `${created.name} is ready. Hear the difference:`}
           </p>
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -1136,19 +1136,21 @@ export default function LiveVoiceCloneStudio({
             {playButton(created.id, "stock", "Built-In Voice")}
           </div>
           <div className="flex flex-wrap gap-2">
-            {created.speaksOnCalls !== false ? <button
-              type="button"
-              onClick={() => void applyVoice(created)}
-              disabled={busy !== null}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 wl-focus-ring-halo disabled:opacity-60"
-            >
-              {busy === `use:${created.id}` ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-              ) : (
-                <Check className="size-4" aria-hidden="true" />
-              )}
-              Use Voice
-            </button> : null}
+            {created.speaksOnCalls !== false ? (
+              <button
+                type="button"
+                onClick={() => void applyVoice(created)}
+                disabled={busy !== null}
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 wl-focus-ring-halo disabled:opacity-60"
+              >
+                {busy === `use:${created.id}` ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Check className="size-4" aria-hidden="true" />
+                )}
+                Use Voice
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => setStep("idle")}
