@@ -664,6 +664,14 @@ export const liveVoiceService = {
     },
   ): Promise<Buffer> {
     const row = await readyVoice(actor.id, id);
+    // Do not present synthetic test tones as a sampled speaker's voice.
+    // A genuine self-hosted model is admitted through the separate preview pilot.
+    if (row.provider === "inhouse")
+      throw new AppError(
+        409,
+        "VOICE_CLONE_DEMO_UNAVAILABLE",
+        "This legacy demo cannot generate a real voice preview. Delete it or choose a built-in voice.",
+      );
     const line = voiceSampleLine(input.agentName || "your Bot");
     try {
       if (input.variant === "clone") {
