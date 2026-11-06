@@ -132,7 +132,11 @@ by this pilot.
    restrictions and a measured failover. An `inhouse` operator preference
    must fail closed, **not silently send that person's recording to a
    third-party vendor**. Cloning is not automatically enabled by configuring
-   an API key.
+   an API key. The live path also requires an explicit provider decision
+   (`VOICE_CLONE_ENGINE_DEFAULT=elevenlabs` for the legacy provider pathway),
+   in addition to the rollout flag and worker readiness. Do not set it for
+   production during this private-model development pass; the founder's
+   prior no-ElevenLabs launch choice remains in effect.
 
 **Production storage read-only audit (November 6):** The BotBound Supabase
 project is ACTIVE_HEALTHY. Migrations `0179_inhouse_voice_assets` and
