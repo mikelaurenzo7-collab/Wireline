@@ -131,6 +131,8 @@ export function liveVoiceCloneEnabled(env: NodeJS.ProcessEnv = process.env): boo
 export function engineSpeaksOnCalls(engine: CloneEngineId): boolean {
   // The legacy in-process oscillator is a test fixture, never a callable clone.
   if (engine === "inhouse") return false;
+  const preferred = resolvePreferredCloneEngine();
+  if (preferred && preferred !== engine) return false;
   return engine === "elevenlabs"
     ? elevenLabsCallsConfigured()
     : engine === "xai" && cloneEngine("xai").configured();
