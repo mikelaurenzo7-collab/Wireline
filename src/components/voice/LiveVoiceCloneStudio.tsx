@@ -465,6 +465,10 @@ export default function LiveVoiceCloneStudio({
   }
 
   async function applyVoice(voice: ClonedVoice | null) {
+    if (voice?.speaksOnCalls === false) {
+      setError("This legacy demo cannot speak on phone calls. Choose a built-in voice instead.");
+      return;
+    }
     setBusy(voice ? `use:${voice.id}` : "stock");
     setError(null);
     setNotice(null);
@@ -663,8 +667,8 @@ export default function LiveVoiceCloneStudio({
             <Check className="mr-1.5 inline size-4 text-primary" aria-hidden="true" />
             {activeVoice.speaksOnCalls === false ? (
               <>
-                <strong>{activeVoice.name}</strong> is saved. Preview it below; phone setup needs
-                attention before callers can hear this voice.
+                <strong>{activeVoice.name}</strong> is a legacy demo, not a callable cloned voice.
+                Switch to a built-in voice for reliable calls.
               </>
             ) : (
               <>
@@ -738,7 +742,7 @@ export default function LiveVoiceCloneStudio({
                     <Play className="size-4" aria-hidden="true" />
                   )}
                 </button>
-                {!inUse ? (
+                {!inUse && voice.speaksOnCalls !== false ? (
                   <button
                     type="button"
                     onClick={() => void applyVoice(voice)}
@@ -750,10 +754,12 @@ export default function LiveVoiceCloneStudio({
                     ) : null}
                     Use Voice
                   </button>
+                ) : !inUse && voice.speaksOnCalls === false ? (
+                  <span className="text-xs text-muted-foreground">Legacy demo · not callable</span>
                 ) : null}
                 <button
                   type="button"
-                  onClick={() => void removeVoice(voice)}
+                  onClick={() => void removeVoice(voice)
                   disabled={busy !== null}
                   aria-label={`Delete ${voice.name}`}
                   className="grid size-11 place-items-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive wl-focus-ring-halo disabled:opacity-60"
@@ -1119,14 +1125,16 @@ export default function LiveVoiceCloneStudio({
         <div className="space-y-3 rounded-xl border border-primary/30 bg-background p-3">
           <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <Check className="size-4 text-primary" aria-hidden="true" />
-            {created.name} is ready. Hear the difference:
+            {created.speaksOnCalls === false
+              ? `${created.name} is a legacy demo and cannot be used on calls.`
+              : `${created.name} is ready. Hear the difference:`}
           </p>
           <div className="flex flex-col gap-2 sm:flex-row">
             {playButton(created.id, "clone", "Your Voice")}
             {playButton(created.id, "stock", "Built-In Voice")}
           </div>
           <div className="flex flex-wrap gap-2">
-            <button
+            {created.speaksOnCalls !== false ? <button
               type="button"
               onClick={() => void applyVoice(created)}
               disabled={busy !== null}
@@ -1138,7 +1146,7 @@ export default function LiveVoiceCloneStudio({
                 <Check className="size-4" aria-hidden="true" />
               )}
               Use Voice
-            </button>
+            </button> : null}
             <button
               type="button"
               onClick={() => setStep("idle")}
@@ -1163,7 +1171,9 @@ export default function LiveVoiceCloneStudio({
         </div>
       ) : null}
 
-      {activeVoice && botPhone ? <TestCallLink phone={botPhone} label="Test Call" /> : null}
+      {activeVoice?.speaksOnCalls !== false && activeVoice && botPhone ? (
+        <TestCallLink phone={botPhone} label="Test Call" />
+      ) : null}
     </section>
   );
 }
