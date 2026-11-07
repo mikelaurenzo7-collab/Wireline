@@ -53,8 +53,8 @@ describe("auth journey hardening contract", () => {
   it("associates field errors, exposes required semantics, and focuses the first invalid field", () => {
     const panel = read("src/components/auth/AuthAccessPanel.tsx");
 
-    expect(panel).toContain(
-      '<form className="wl-access-panel__form" onSubmit={handleAuth} noValidate>',
+    expect(panel).toMatch(
+      /<form\s+method="post"\s+className="wl-access-panel__form"\s+onSubmit=\{handleAuth\}\s+noValidate/,
     );
     expect(panel).toMatch(/ref=\{emailRef\}[\s\S]*?type="email"[\s\S]*?required/);
     expect(panel).toContain('aria-invalid={invalidField === "email"}');

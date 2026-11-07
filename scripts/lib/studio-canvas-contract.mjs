@@ -47,6 +47,7 @@ export const STUDIO_CANVAS_FORBIDDEN = {
   canvas: [
     { id: "agent-roster-grid", pattern: /Your agents/ },
     { id: "spatial-canvas", pattern: /StudioAgentCanvas/ },
+    { id: "rehearsal-peer-tab", pattern: /\{ id: "try", label: "Rehearse" \}/ },
   ],
   workspacePanel: [
     { id: "fake-badge", pattern: />\s*wired\s*</ },
@@ -107,17 +108,28 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "settings-expanded-state", pattern: /aria-expanded=\{inspectorOpen\}/ },
   ],
   canvas: [
-    // Browser work and rehearsal share the side panel without mixing chat scopes.
+    // One conversation owns messages, task history and rehearsal. The optional
+    // panel holds the computer and Bot details, never a second rehearsal chat.
     { id: "single-workroom", pattern: /onModeChange=\{panelOpen \? undefined : setWorkroomMode\}/ },
-    { id: "panel-tabs", pattern: /\{ id: "try", label: "Rehearse" \}/ },
-    { id: "computer-panel", pattern: /\{ id: "computer", label: "Browser" \}/ },
+    { id: "configure-panel", pattern: /\{ id: "configure", label: "Configure" \}/ },
+    { id: "computer-panel", pattern: /\{ id: "computer", label: "Computer" \}/ },
     { id: "accessible-panel-tabs", pattern: /role="tablist"[\s\S]*aria-label="Workspace panel"/ },
     { id: "mobile-surface-switch", pattern: /aria-label="Workspace view"/ },
     {
       id: "inspector-body",
       pattern: /activePanelSection === "review"\s*\? reviewPanel\s*: setupPanel/,
     },
-    { id: "try-it-beside", pattern: /mode="test"/ },
+    {
+      id: "rehearsal-in-conversation",
+      pattern: /setWorkroomMode\("test"\);[\s\S]*if \(splitWorkspace\) setPanelCollapsed\(true\)/,
+    },
+    { id: "conversation-modes", pattern: /role="group" aria-label="Conversation mode"/ },
+    { id: "shared-task-timeline", pattern: /timelineExtras=\{[\s\S]*<StudioTaskMessages/ },
+    {
+      id: "shared-task-composer",
+      pattern: /composerOverride=\{[\s\S]*<StudioTaskChat[\s\S]*composerOnly/,
+    },
+    { id: "workroom-mode", pattern: /mode=\{mainMode\}/ },
     { id: "deep-editor", pattern: /StudioAgentWorkspacePanel/ },
     { id: "chat-workroom", pattern: /<StudioWorkroom/ },
     { id: "review-panel", pattern: /StudioAgentReviewPanel/ },

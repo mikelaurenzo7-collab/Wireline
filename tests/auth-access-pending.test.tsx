@@ -51,6 +51,9 @@ vi.mock("react-router", () => ({
 vi.mock("../src/contexts/AuthContext", () => ({
   useAuth: () => ({ user: null, loading: false, signIn: harness.signIn }),
 }));
+vi.mock("../src/contexts/ThemeContext", () => ({
+  useTheme: () => ({ resolvedTheme: "light", toggleTheme: vi.fn() }),
+}));
 vi.mock("../src/lib/canonical-browser-origin", () => ({
   canonicalLegacyBrowserHandoff: () => null,
 }));

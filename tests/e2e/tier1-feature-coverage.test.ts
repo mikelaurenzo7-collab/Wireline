@@ -1,12 +1,12 @@
 /**
  * Tier 1: Feature Coverage in Isolation (E2E Opaque-Box Suite)
- * 
+ *
  * Validates primary behavior (happy paths) across the BotBound Lean 4 Pillars:
  * - Pillar 1: Zero-Conflict Calendar Engine (Travel Buffers, 5-min Soft Holds, RFC 5545 .ics Generation, Trade Portal Mirroring)
  * - Pillar 2: In-Call Stripe Settlements & Autonomous Goodwill Wallets ($100/mo cap, $25/resolution)
  * - Pillar 3: Voice-to-Browserbase Real-Time Bridge (Non-blocking async tools, conversational fillers during 3-8s latency, 2FA alerts)
  * - Pillar 4: Branded Bot Email Identity via AgentMail (Inbox provisioning, transactional confirmations, payment receipts, reply triage)
- * 
+ *
  * Requirement: Minimum >= 35 tests total across all 4 pillars.
  */
 
@@ -19,17 +19,11 @@ import { createHmac } from "node:crypto";
 import {
   validateNativeCalendarSettings,
   intervalsOverlap,
-  DEFAULT_NATIVE_CALENDAR,
   OCCUPIED_APPOINTMENT_STATUSES,
 } from "../../src/lib/native-calendar-policy";
-import {
-  OPENAI_REALTIME_WIRELINE_TOOLS,
-} from "../../src/lib/voice/openai-realtime-tools";
+import { OPENAI_REALTIME_WIRELINE_TOOLS } from "../../src/lib/voice/openai-realtime-tools";
 import { AGENT_TOOL_DEFS } from "../../src/lib/agent-runtime-helpers";
-import {
-  cloudComputerConnection,
-  cloudComputerModel,
-} from "../../src/lib/cloud-computer/config";
+import { cloudComputerConnection } from "../../src/lib/cloud-computer/config";
 import {
   shouldProxyComputerToBackend,
   VOICE_WORKER_COMPUTER_USER_HEADER,
@@ -74,12 +68,16 @@ describe("Tier 1: Feature Coverage in Isolation (Lean 4 Pillars)", () => {
   // =========================================================================
   describe("Pillar 1: Zero-Conflict Calendar Engine", () => {
     it("T1-P1-01: Calculates dynamic location travel buffer for consecutive appointment sites within [15, 60] min bounds", () => {
-      const calc10Miles = calculateTravelBuffer("100 Market St, SF", "500 Howard St, SF", { estimatedMiles: 10 });
+      const calc10Miles = calculateTravelBuffer("100 Market St, SF", "500 Howard St, SF", {
+        estimatedMiles: 10,
+      });
       expect(calc10Miles.bufferMinutes).toBe(30); // 10*2 + 10 = 30 min
       expect(calc10Miles.bufferMinutes).toBeGreaterThanOrEqual(MIN_TRAVEL_BUFFER_MINUTES);
       expect(calc10Miles.bufferMinutes).toBeLessThanOrEqual(MAX_TRAVEL_BUFFER_MINUTES);
 
-      const calcShort = calculateTravelBuffer("100 Market St, SF", "102 Market St, SF", { estimatedMiles: 1 });
+      const calcShort = calculateTravelBuffer("100 Market St, SF", "102 Market St, SF", {
+        estimatedMiles: 1,
+      });
       expect(calcShort.bufferMinutes).toBe(MIN_TRAVEL_BUFFER_MINUTES); // Clamped to min 15
 
       const calcLong = calculateTravelBuffer("SF", "San Jose", { estimatedMiles: 50 });
@@ -87,7 +85,9 @@ describe("Tier 1: Feature Coverage in Isolation (Lean 4 Pillars)", () => {
     });
 
     it("T1-P1-02: Returns zero travel buffer for remote virtual appointments or identical job site addresses", () => {
-      const remote = calculateTravelBuffer("Office HQ", "Remote Zoom Consultation", { isRemote: true });
+      const remote = calculateTravelBuffer("Office HQ", "Remote Zoom Consultation", {
+        isRemote: true,
+      });
       expect(remote.bufferMinutes).toBe(0);
 
       const sameAddress = calculateTravelBuffer("742 Evergreen Terrace", "742 Evergreen Terrace");
@@ -97,7 +97,13 @@ describe("Tier 1: Feature Coverage in Isolation (Lean 4 Pillars)", () => {
     it("T1-P1-03: Creates ephemeral 5-minute soft hold with 300s TTL reserving slot on live call", () => {
       const slotStart = new Date(Date.now() + 3600_000);
       const slotEnd = new Date(slotStart.getTime() + 1800_000);
-      const hold = createEphemeralHold("usr_test1", "CA1234567890", slotStart, slotEnd, DEFAULT_SOFT_HOLD_TTL_SECONDS);
+      const hold = createEphemeralHold(
+        "usr_test1",
+        "CA1234567890",
+        slotStart,
+        slotEnd,
+        DEFAULT_SOFT_HOLD_TTL_SECONDS,
+      );
 
       expect(hold.holdId).toMatch(/^hold_[a-f0-9]{16}$/);
       expect(hold.status).toBe("active");
@@ -141,7 +147,9 @@ describe("Tier 1: Feature Coverage in Isolation (Lean 4 Pillars)", () => {
       expect(ics).toContain("DTSTART:20261101T140000Z");
       expect(ics).toContain("DTEND:20261101T150000Z");
       expect(ics).toContain("SUMMARY:Emergency Water Heater Repair");
-      expect(ics).toContain("ORGANIZER;CN=Apex Plumbing Dispatch Bot:mailto:bot-dispatch@bots.botbound.app");
+      expect(ics).toContain(
+        "ORGANIZER;CN=Apex Plumbing Dispatch Bot:mailto:bot-dispatch@bots.botbound.app",
+      );
       expect(ics).toContain("ATTENDEE;CUTYPE=INDIVIDUAL");
       expect(ics).toContain("Jane Doe");
       expect(ics).toContain("STATUS:CONFIRMED");
@@ -399,7 +407,9 @@ describe("Tier 1: Feature Coverage in Isolation (Lean 4 Pillars)", () => {
       const conn = cloudComputerConnection(mockEnv, false);
       expect(conn).not.toBeNull();
       expect(conn?.kind).toBe("remote");
-      expect(conn?.wsEndpoint).toContain("wss://connect.browserbase.com/?apiKey=bb_test_api_key_777");
+      expect(conn?.wsEndpoint).toContain(
+        "wss://connect.browserbase.com/?apiKey=bb_test_api_key_777",
+      );
       expect(conn?.wsEndpoint).toContain("timeout=900000");
     });
 
@@ -525,7 +535,7 @@ describe("Tier 1: Feature Coverage in Isolation (Lean 4 Pillars)", () => {
     it("T1-P4-07: Inbound email reply triage classifies customer rescheduling requests with high confidence", () => {
       const triage = triageInboundCustomerReply(
         "Re: Appointment Confirmation",
-        "Hi, can we reschedule my appointment to Thursday at 2pm? Something came up."
+        "Hi, can we reschedule my appointment to Thursday at 2pm? Something came up.",
       );
       expect(triage.intent).toBe("reschedule");
       expect(triage.confidence).toBeGreaterThan(0.9);
@@ -536,7 +546,7 @@ describe("Tier 1: Feature Coverage in Isolation (Lean 4 Pillars)", () => {
     it("T1-P4-08: Inbound email reply triage classifies customer cancellation requests with high confidence", () => {
       const triage = triageInboundCustomerReply(
         "Re: Your Appointment",
-        "Please cancel my booking. We found another plumber who already fixed it."
+        "Please cancel my booking. We found another plumber who already fixed it.",
       );
       expect(triage.intent).toBe("cancel");
       expect(triage.confidence).toBeGreaterThan(0.9);
@@ -547,7 +557,7 @@ describe("Tier 1: Feature Coverage in Isolation (Lean 4 Pillars)", () => {
     it("T1-P4-09: Inbound email reply triage classifies urgent complaints and triggers human escalation", () => {
       const triage = triageInboundCustomerReply(
         "URGENT: Flooding in Basement!",
-        "Your technician left and now my basement has 3 inches of water! This is an emergency!"
+        "Your technician left and now my basement has 3 inches of water! This is an emergency!",
       );
       expect(triage.intent).toBe("urgent_complaint");
       expect(triage.confidence).toBeGreaterThan(0.9);

@@ -76,7 +76,16 @@ describe("design system class definition contract", () => {
         const name = match[1];
         const at = match.index ?? 0;
         const isCssCustomProperty = text.slice(Math.max(0, at - 2), at) === "--";
-        if (isCssCustomProperty || isFragmentOrKnownVariableFamily(name) || isDeclared(name))
+        const prefix = text.slice(Math.max(0, at - 24), at);
+        // A prepaint host ID and data attribute are DOM identifiers. Requiring
+        // empty CSS rules for them would conceal actual orphaned class names.
+        const isDomIdentifier = /(?:getElementById\(["']|\bid=["']|data-)$/.test(prefix);
+        if (
+          isCssCustomProperty ||
+          isDomIdentifier ||
+          isFragmentOrKnownVariableFamily(name) ||
+          isDeclared(name)
+        )
           continue;
         const seen = orphans.get(name) ?? [];
         if (!seen.includes(file)) seen.push(file);

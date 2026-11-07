@@ -69,7 +69,12 @@ const opener = new FocusTarget();
 const panel = new FocusTarget();
 const panelControl = new FocusTarget();
 const outsideControl = new FocusTarget();
-const documentState = { body, activeElement: body };
+const documentState = {
+  body,
+  activeElement: body,
+  documentElement: { removeAttribute: vi.fn() },
+  querySelector: vi.fn<() => FocusTarget | null>(() => null),
+};
 const panelContains = (target: unknown) => target === panel || target === panelControl;
 const localValues = new Map<string, string>();
 let events: EventTarget;
@@ -133,6 +138,7 @@ beforeEach(() => {
     target.hidden = false;
   }
   documentState.activeElement = body;
+  documentState.querySelector.mockReset().mockReturnValue(null);
   localValues.clear();
   localValues.set("wireline_cookie_consent", "acknowledged");
   events = new EventTarget();

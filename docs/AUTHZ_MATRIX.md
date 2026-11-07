@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 467
-**Protected:** 378
+**Routes scanned:** 470
+**Protected:** 381
 **Public (allowlisted):** 89
 **Violations:** 0
 
@@ -144,6 +144,9 @@
 | agent-test-routes.ts | POST | `/api/agents/:id/test/stream` | inline | — | — | Protected |
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/apply-change` | inline | — | — | Protected |
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/files` | inline | — | — | Protected |
+| agent-workspace-routes.ts | GET | `/api/agents/:id/workspace/memory` | inline | — | — | Protected |
+| agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/memory` | inline | — | — | Protected |
+| agent-workspace-routes.ts | DELETE | `/api/agents/:id/workspace/memory/:memoryId` | inline | — | — | Protected |
 | agent-workspace-routes.ts | GET | `/api/agents/:id/workspace/messages` | inline | — | — | Protected |
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/messages` | inline | — | — | Protected |
 | agent-workspace-routes.ts | DELETE | `/api/agents/:id/workspace/messages` | inline | — | — | Protected |

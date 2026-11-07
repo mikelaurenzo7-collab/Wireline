@@ -146,7 +146,7 @@ describe("authenticated Bot flow", () => {
     expect(studioHome).not.toContain('params.get("posture")');
     expect(studioHome).toContain("PostCreateActivationWizard");
     expect(studioHome).toContain("readPostCreateWizard");
-    expect(studioWorkspace).toContain('type InspectorSection = "setup" | "review"');
+    expect(studioWorkspace).toContain('type InspectorSection = "details" | "setup" | "review"');
     expect(studioWorkspace).toContain('type WorkroomMode = "configure" | "test"');
     expect(studioWorkspace).not.toContain("useAccount");
     expect(studioWorkspace).not.toContain("posture=");

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { DiscoveredLead, LeadDiscoveryParams } from "./types";
+import type { DiscoveredLead } from "./types";
 
 /**
  * Normalizes phone numbers to standard E.164 (+1XXXXXXXXXX for US/NANP)
@@ -42,7 +42,7 @@ export interface RawLeadListing {
 export function processRawListings(
   listings: RawLeadListing[],
   category = "trade_service",
-  minRating = 0
+  minRating = 0,
 ): DiscoveredLead[] {
   const seenPhones = new Set<string>();
   const qualified: DiscoveredLead[] = [];
