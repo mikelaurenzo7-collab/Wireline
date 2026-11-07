@@ -25,6 +25,9 @@ const h = vi.hoisted(() => ({
   createDraft: vi.fn(),
   getDraft: vi.fn(),
   updateDraft: vi.fn(),
+  accessScopes: "agents.read agents.write",
+  saveNote: vi.fn(),
+  findAgent: vi.fn(),
 }));
 
 vi.mock("express", () => {
@@ -65,6 +68,8 @@ vi.mock("../src/lib/agent-draft-service", () => ({
   getAgentDraft: h.getDraft,
   updateAgentDraft: h.updateDraft,
 }));
+vi.mock("../src/lib/owner-memory-store", () => ({ changeOwnerMemory: h.saveNote }));
+vi.mock("../src/lib/agent-ownership", () => ({ findOwnedAgentId: h.findAgent }));
 
 import "../src/routes/chatgpt-mcp-account-routes";
 import "../src/routes/chatgpt-mcp-routes";
@@ -146,6 +151,14 @@ beforeEach(() => {
   vi.stubEnv("MCP_OAUTH_ALLOWED_CLIENT_IDS", CLIENT_ID);
   vi.stubEnv("MCP_OAUTH_ALLOWED_REDIRECT_URIS", REDIRECT_URI);
   h.userExists = true;
+  h.accessScopes = "agents.read agents.write";
+  h.saveNote.mockReset().mockImplementation(async () => {
+    h.queryTenants.push(h.tenantGetStore());
+  });
+  h.findAgent.mockReset().mockImplementation(async () => {
+    h.queryTenants.push(h.tenantGetStore());
+    return "bot-a";
+  });
   h.deletionStates = [];
   h.beforeTransaction = undefined;
   h.selectedTables = [];
@@ -191,7 +204,7 @@ beforeEach(() => {
           {
             user_id: USER_ID,
             email: "old@example.test",
-            scope: "agents.read agents.write",
+            scope: h.accessScopes,
             resource: RESOURCE,
             client_id: CLIENT_ID,
             expires_at: new Date(NOW + 60_000),
@@ -229,6 +242,60 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllEnvs();
+});
+
+describe("hands-free MCP scopes and ownership", () => {
+  const note = { agent_id: "bot-a", content: "Inspect Oak Street next week.", confirmed: true };
+  const call = (name: string, args: Record<string, unknown>) =>
+    invoke("POST /mcp", { id: 7, method: "tools/call", params: { name, arguments: args } });
+  it("does not let existing agents.write grants write private notes", async () => {
+    const res = await call("save_botbound_private_note", note);
+    expect(res.statusCode).toBe(403);
+    expect(h.saveNote).not.toHaveBeenCalled();
+  });
+  it("saves a confirmed note only inside the authenticated account's tenant", async () => {
+    h.accessScopes = "notes.write";
+    const res = await call("save_botbound_private_note", note);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.result.structuredContent).toEqual({ status: "saved", agent_id: "bot-a" });
+    expect(h.saveNote).toHaveBeenCalledExactlyOnceWith(USER_ID, "bot-a", {
+      action: "add",
+      content: note.content,
+    });
+    expect(h.queryTenants.at(-1)).toBe(USER_ID);
+  });
+  it("does not write without confirmation of the exact note", async () => {
+    h.accessScopes = "notes.write";
+    const res = await call("save_botbound_private_note", { ...note, confirmed: false });
+    expect(res.body.result.isError).toBe(true);
+    expect(h.saveNote).not.toHaveBeenCalled();
+  });
+  it("prepares only an owned draft handoff without dispatch", async () => {
+    const res = await call("prepare_botbound_task", {
+      agent_id: "bot-a",
+      goal: "Compare roof repair services",
+    });
+    expect(res.body.result.structuredContent.status).toBe("review_required");
+    expect(res.body.result.structuredContent.review_url).toContain("#task=");
+    expect(h.findAgent).toHaveBeenCalledExactlyOnceWith("bot-a", USER_ID);
+    expect(h.queryTenants.at(-1)).toBe(USER_ID);
+    expect(h.saveNote).not.toHaveBeenCalled();
+  });
+  it.each(terminalStates)(
+    "blocks %s accounts before note or handoff work",
+    async (_label, state) => {
+      h.accessScopes = "agents.read notes.write";
+      h.deletionStates = [state];
+      for (const [name, args] of [
+        ["save_botbound_private_note", note],
+        ["prepare_botbound_task", { agent_id: "bot-a", goal: "Compare contractors" }],
+      ] as const) {
+        expect((await call(name, args)).statusCode).toBe(401);
+      }
+      expect(h.saveNote).not.toHaveBeenCalled();
+      expect(h.findAgent).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe("MCP terminal account lifecycle", () => {

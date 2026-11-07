@@ -54,6 +54,7 @@ const labels = {
   "agents.write": "Edit Drafts & Training",
   "demo.voice": "Private Rehearsals",
   "calls.prepare": "Prepare Calls for Review",
+  "notes.write": "Save Confirmed Private Notes",
   "calls.read": "Read Prepared Call Status",
   "computer.plan": "Plan Computer Tasks",
 };

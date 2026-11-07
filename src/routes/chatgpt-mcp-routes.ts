@@ -250,7 +250,9 @@ function oauthConsentPage(request: AuthorizationRequest, user: { email: string }
             ? "Prepare service calls for you to review and place in BotBound"
             : scope === "calls.read"
               ? "Read the status of calls prepared through connected apps"
-              : scope.replace(".", " "),
+              : scope === "notes.write"
+                ? "Save private owner notes in a chosen Bot's Memory after your confirmation"
+                : scope.replace(".", " "),
         )}</li>`,
     )
     .join("");

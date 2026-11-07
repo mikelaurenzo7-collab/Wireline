@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
+import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import BotMark from "../src/components/BotMark";
 import StudioTaskChat from "../src/components/StudioTaskChat";
@@ -35,7 +36,9 @@ const task = (overrides: Record<string, unknown> = {}) => ({
 });
 const renderTask = () =>
   renderToStaticMarkup(
-    <StudioTaskChat agentId="bot-a" agentName="Nora" onShowBrowser={() => {}} />,
+    <MemoryRouter>
+      <StudioTaskChat agentId="bot-a" agentName="Nora" onShowBrowser={() => {}} />
+    </MemoryRouter>,
   );
 
 describe("compact working Bot identity", () => {
