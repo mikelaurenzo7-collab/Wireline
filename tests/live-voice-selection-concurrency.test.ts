@@ -350,6 +350,15 @@ describe("consented private ElevenLabs A/B admission", () => {
     );
     expect(h.reserve.mock.calls[1][0]).toMatchObject({ provider: "openai", model: "tts-1" });
   });
+
+  it("does not prolong cloned-voice retention when only the stock comparison is played", async () => {
+    pilot();
+    const expires = new Date("2027-01-01T00:00:00Z");
+    h.voice.expiresAt = expires;
+    await liveVoiceService.preview(actor, CLONE, { variant: "stock" });
+    expect(h.voice.lastUsedAt).toBeNull();
+    expect(h.voice.expiresAt).toEqual(expires);
+  });
 });
 
 describe("atomic cloned voice selection", () => {

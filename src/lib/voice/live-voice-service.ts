@@ -784,7 +784,7 @@ export const liveVoiceService = {
         audio.fill(0);
         throw error;
       }
-      void touchLastUsed(actor.id, current);
+      if (input.variant === "clone") void touchLastUsed(actor.id, current);
       return audio;
     });
   },
