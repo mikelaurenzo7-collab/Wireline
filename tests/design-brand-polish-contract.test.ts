@@ -69,7 +69,7 @@ describe("E2E design and BotBound brand polish", () => {
     expect(shell).toContain("md:grid-cols-[minmax(0,1fr)_auto]");
     expect(shell).toContain("items-start text-left");
     expect(shell).not.toContain("wl-centered-header");
-    expect(shell).toContain("aria-label={`Current Bot: ${agent.name}`}");
+    expect(shell).toContain("aria-label={`Open ${label} conversation`}");
     expect(shell).toContain('import BotBoundMark from "./brand/BotBoundMark"');
     expect(shell).toContain('import { BotBoundWordmark } from "./brand/BotBoundBrand"');
     expect(shell).toContain('aria-label="BotBound Workspace"');
@@ -181,7 +181,7 @@ describe("E2E design and BotBound brand polish", () => {
     // Controls use authored Title Case like every other public CTA.
     expect(features).toContain("const signedIn = Boolean(useAuth().user)");
     expect(features).toContain('to={signedIn ? "/studio" : "/signup"}');
-    expect(features).toContain('{signedIn ? "Open Workspace" : "GET STARTED"}');
+    expect(features).toContain('{signedIn ? "Open Workspace" : "Get Started →"}');
     expect(features).toContain(">\n                See Pricing\n");
     expect(features).not.toMatch(/START FREE|SEE PRICING/);
     const publicSystem = read("src/styles/public-design-system.css");

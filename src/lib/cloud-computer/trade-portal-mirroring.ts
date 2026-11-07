@@ -8,12 +8,11 @@
  */
 
 import { and, eq, inArray } from "drizzle-orm";
-import type { Page } from "playwright-core";
+import type { Browser, Page } from "playwright-core";
 import { chromium } from "playwright-core";
 import * as schema from "../../db/schema";
 import { drizzle, log } from "../server-context";
-import { assertLiveExternalActionAllowed } from "../account-environment-policy";
-import { detectDOMAuthBarrier, type AuthBarrierDetection } from "./takeover-detector";
+import { detectDOMAuthBarrier } from "./takeover-detector";
 import { dispatchHumanTakeoverAlerts } from "./takeover-alerts";
 import { cloudComputerConnection } from "./config";
 
@@ -254,7 +253,9 @@ export async function executeHousecallProMirroring(
 
   // 4. Customer Lookup & Entry
   const customerSearchInput = page
-    .locator('input[name="customer_search"], [data-testid="customer-search-input"], input[placeholder*="customer" i]')
+    .locator(
+      'input[name="customer_search"], [data-testid="customer-search-input"], input[placeholder*="customer" i]',
+    )
     .first();
   if (await customerSearchInput.isVisible({ timeout: 5000 }).catch(() => false)) {
     if (booking.customerPhone) {
@@ -264,11 +265,15 @@ export async function executeHousecallProMirroring(
     }
     await page.waitForTimeout(500);
 
-    const resultItem = page.locator('[data-testid="customer-search-result"], .customer-search-item').first();
+    const resultItem = page
+      .locator('[data-testid="customer-search-result"], .customer-search-item')
+      .first();
     if (await resultItem.isVisible({ timeout: 2000 }).catch(() => false)) {
       await resultItem.click();
     } else {
-      const addNewBtn = page.locator('button:has-text("Add new customer"), [data-testid="add-new-customer"]').first();
+      const addNewBtn = page
+        .locator('button:has-text("Add new customer"), [data-testid="add-new-customer"]')
+        .first();
       if (await addNewBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
         await addNewBtn.click();
       }
@@ -276,16 +281,22 @@ export async function executeHousecallProMirroring(
       const firstName = names[0] || booking.customerName;
       const lastName = names.slice(1).join(" ") || "Customer";
 
-      const firstInput = page.locator('input[name="first_name"], #first_name, input[placeholder*="first name" i]').first();
+      const firstInput = page
+        .locator('input[name="first_name"], #first_name, input[placeholder*="first name" i]')
+        .first();
       if (await firstInput.isVisible({ timeout: 1000 }).catch(() => false)) {
         await firstInput.fill(firstName);
       }
-      const lastInput = page.locator('input[name="last_name"], #last_name, input[placeholder*="last name" i]').first();
+      const lastInput = page
+        .locator('input[name="last_name"], #last_name, input[placeholder*="last name" i]')
+        .first();
       if (await lastInput.isVisible({ timeout: 1000 }).catch(() => false)) {
         await lastInput.fill(lastName);
       }
       if (booking.customerPhone) {
-        const phoneInput = page.locator('input[name="mobile_number"], input[name="phone"], input[type="tel"]').first();
+        const phoneInput = page
+          .locator('input[name="mobile_number"], input[name="phone"], input[type="tel"]')
+          .first();
         if (await phoneInput.isVisible({ timeout: 1000 }).catch(() => false)) {
           await phoneInput.fill(booking.customerPhone);
         }
@@ -307,7 +318,9 @@ export async function executeHousecallProMirroring(
         : `${booking.serviceAddress.street}, ${booking.serviceAddress.city}, ${booking.serviceAddress.state} ${booking.serviceAddress.postalCode}`;
 
     const addressInput = page
-      .locator('input[name="street"], input[name="address"], input[placeholder*="street address" i]')
+      .locator(
+        'input[name="street"], input[name="address"], input[placeholder*="street address" i]',
+      )
       .first();
     if (await addressInput.isVisible({ timeout: 2000 }).catch(() => false)) {
       await addressInput.fill(addressStr);
@@ -316,7 +329,9 @@ export async function executeHousecallProMirroring(
 
   // 6. Schedule Arrival Window
   const startDate = booking.startTime.split("T")[0]; // YYYY-MM-DD
-  const dateInput = page.locator('input[name="start_date"], [data-testid="job-start-date"]').first();
+  const dateInput = page
+    .locator('input[name="start_date"], [data-testid="job-start-date"]')
+    .first();
   if (await dateInput.isVisible({ timeout: 2000 }).catch(() => false)) {
     await dateInput.fill(startDate || "");
   }
@@ -339,7 +354,9 @@ export async function executeHousecallProMirroring(
 
   // 8. Submit Form & Extract Job ID
   const saveBtn = page
-    .locator('button[type="submit"]:has-text("Save job"), button:has-text("Save job"), button:has-text("Create job")')
+    .locator(
+      'button[type="submit"]:has-text("Save job"), button:has-text("Save job"), button:has-text("Create job")',
+    )
     .first();
   if (await saveBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
     await saveBtn.click();
@@ -401,7 +418,9 @@ export async function executeServiceTitanMirroring(
 
   // 4. Fill Customer Details
   const nameInput = page
-    .locator('input[name="CustomerName"], #txt-customer-name, input[placeholder*="customer name" i]')
+    .locator(
+      'input[name="CustomerName"], #txt-customer-name, input[placeholder*="customer name" i]',
+    )
     .first();
   if (await nameInput.isVisible({ timeout: 2000 }).catch(() => false)) {
     await nameInput.fill(booking.customerName);
@@ -464,9 +483,7 @@ export async function executeServiceTitanMirroring(
   }
 
   let finalUrl = page.url();
-  await page
-    .waitForURL(/\/Job\/(?:Index|Details)\/([0-9]+)/, { timeout: 10000 })
-    .catch(() => null);
+  await page.waitForURL(/\/Job\/(?:Index|Details)\/([0-9]+)/, { timeout: 10000 }).catch(() => null);
   finalUrl = page.url();
 
   const match = finalUrl.match(/\/Job\/(?:Index|Details)\/([0-9]+)/);
@@ -487,7 +504,7 @@ export async function executeServiceTitanMirroring(
 export async function handleTradePortalMirrorJob(job: {
   id: string;
   userId: string;
-  payload: any;
+  payload: unknown;
 }): Promise<TradePortalMirrorResult> {
   const { userId, payload, id: jobId } = job;
   const { agentId, portal, booking } = payload as {
@@ -506,14 +523,12 @@ export async function handleTradePortalMirrorJob(job: {
     portal,
     enabled: true,
     portalUrl:
-      portal === "housecall_pro"
-        ? "https://pro.housecallpro.com"
-        : "https://go.servicetitan.com",
+      portal === "housecall_pro" ? "https://pro.housecallpro.com" : "https://go.servicetitan.com",
   };
 
   // Launch browser via Browserbase CDP or local chromium
   const connection = cloudComputerConnection();
-  let browser: any;
+  let browser: Browser;
   if (connection && connection.kind === "remote") {
     browser = await chromium.connectOverCDP(connection.wsEndpoint, { timeout: 30000 });
   } else {
@@ -579,7 +594,7 @@ export async function handleTradePortalMirrorJob(job: {
       .update(schema.jobs)
       .set({
         status: result.success ? "done" : "failed",
-        result: result as any,
+        result: { ...result },
         finishedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -598,34 +613,41 @@ export async function handleTradePortalMirrorJob(job: {
       );
 
     if (activeTasks.length === 0) {
-      await drizzle.insert(schema.computerTasks).values({
-        userId,
-        agentId,
-        goal: `Mirror booking for ${booking.customerName} into ${portal}`,
-        startUrl: config.portalUrl || `https://${portal}.com`,
-        status: result.success ? "completed" : "failed",
-        summary: result.success
-          ? `Successfully mirrored booking into ${portal}. External Job ID: ${result.externalJobId}.`
-          : `Failed to mirror into ${portal}: ${result.error}`,
-        turnCount: 1,
-        actionCount: 5,
-        events: [
-          { at: new Date().toISOString(), kind: "action", text: `Navigated to ${config.portalUrl}` },
-          {
-            at: new Date().toISOString(),
-            kind: "action",
-            text: `Filled customer details for ${booking.customerName}`,
-          },
-          {
-            at: new Date().toISOString(),
-            kind: "result",
-            text: `Job created with ID ${result.externalJobId}`,
-            ok: result.success,
-          },
-        ],
-      }).catch((e) => {
-        log.warn("[trade-portal-mirroring] Could not write audit task row", { error: String(e) });
-      });
+      await drizzle
+        .insert(schema.computerTasks)
+        .values({
+          userId,
+          agentId,
+          goal: `Mirror booking for ${booking.customerName} into ${portal}`,
+          startUrl: config.portalUrl || `https://${portal}.com`,
+          status: result.success ? "completed" : "failed",
+          summary: result.success
+            ? `Successfully mirrored booking into ${portal}. External Job ID: ${result.externalJobId}.`
+            : `Failed to mirror into ${portal}: ${result.error}`,
+          turnCount: 1,
+          actionCount: 5,
+          events: [
+            {
+              at: new Date().toISOString(),
+              kind: "action",
+              text: `Navigated to ${config.portalUrl}`,
+            },
+            {
+              at: new Date().toISOString(),
+              kind: "action",
+              text: `Filled customer details for ${booking.customerName}`,
+            },
+            {
+              at: new Date().toISOString(),
+              kind: "result",
+              text: `Job created with ID ${result.externalJobId}`,
+              ok: result.success,
+            },
+          ],
+        })
+        .catch((e) => {
+          log.warn("[trade-portal-mirroring] Could not write audit task row", { error: String(e) });
+        });
     }
 
     return result;

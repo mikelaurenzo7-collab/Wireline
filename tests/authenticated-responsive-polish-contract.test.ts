@@ -25,9 +25,9 @@ describe("authenticated responsive polish contract", () => {
     // be allowed to grow into the row.
     expect(chrome).toContain("min-w-0 flex-1 truncate !whitespace-nowrap");
     expect(read("src/styles/studio-workspace.css")).toContain("max-width: min(18rem, 48vw)");
-    // A content-sized basis lets the controls wrap instead of starving the title.
+    // The title owns the flexible space while the compact controls stay on one row.
     expect(chrome).toContain(
-      'className="flex min-w-0 flex-[1_1_10rem] items-center gap-2.5 md:max-w-[18rem] md:flex-none"',
+      'className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5 md:max-w-[18rem] md:flex-none"',
     );
     // Knowledge and Computer now live in the rail/More menu at every width.
     // A second navigation row must not crowd the Bot's own controls.

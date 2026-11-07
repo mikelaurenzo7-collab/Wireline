@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { Resvg } from "@resvg/resvg-js";
 import { describe, expect, it } from "vitest";
+import { renderBrandRaster } from "../scripts/lib/brand-raster.mjs";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 const structuredData = () =>
@@ -102,7 +103,7 @@ describe("BotBound static marketing metadata", () => {
     expect(ogImage).not.toContain("PUT YOUR BOT ON THE LINE");
     expect(
       readFileSync(resolve(process.cwd(), "public/brand/botbound-current-offer-og.png")).equals(
-        readFileSync(resolve(process.cwd(), "public/og-image.png")),
+        renderBrandRaster(ogImage, 1200),
       ),
     ).toBe(true);
   });

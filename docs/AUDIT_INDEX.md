@@ -13,6 +13,8 @@ This index preserves dated audits, launch passes, QA records, and superseded dec
 | Evidence | Scope |
 | --- | --- |
 | [2026-10-30 spring-cleaning](./audits/2026-10-30-spring-cleaning.md) | Exact-source October 30 cleanup baseline, verified fixes, production observations, and remaining launch/visual gates. |
+| [2026-10-30 appearance parity](./audits/2026-10-30-appearance-parity.md) | October 30 light and dark appearance review and verification evidence. |
+| [2026-10-30 stack review](./audits/2026-10-30-stack-review.md) | October 30 dependency and application stack review. |
 | [BOTBOUND_FULL_AUDIT_REPORT.md](./launch/BOTBOUND_FULL_AUDIT_REPORT.md) | October 29 comprehensive audit of all 10 services and plugins, code remediations, and verification posture. |
 | [BOTBOUND-DOMAIN-AUDIT-2026-08-31.md](./BOTBOUND-DOMAIN-AUDIT-2026-08-31.md) | August 31 domain-by-domain audit of `main` `bc2e32d6f`. Design-partner conditional GO. Complementary activation-truth and public-loop code. PR #1186 owns sender identity, public-stats retirement, founder PSTN quarantine, and metering. |
 | [BOTBOUND-LAUNCH-GAP-AUDIT-2026-08-20.md](./BOTBOUND-LAUNCH-GAP-AUDIT-2026-08-20.md) | August 20 adversarial, evidence-backed launch-gap audit across public conversion, auth, workspace, billing, security, data, communications, companion clients, analytics, SEO, campaign delivery, and release operations. |

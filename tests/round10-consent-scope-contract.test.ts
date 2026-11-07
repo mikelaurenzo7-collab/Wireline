@@ -11,9 +11,11 @@ describe("round-10 consent notice scope", () => {
     // onboarding card and the Billing subscription panel, and on phone it
     // covers the primary next action. A signed-in visitor already passed the
     // public site where the notice had its chance.
-    expect(consent).toContain("if (sessionPresent) return;");
+    expect(consent).toContain("if (sessionPresent || cancelled) return;");
     const probe = consent.slice(consent.indexOf("void (async () => {"));
-    expect(probe.indexOf("if (sessionPresent) return;")).toBeLessThan(probe.indexOf("setTimeout"));
+    expect(probe.indexOf("if (sessionPresent || cancelled) return;")).toBeLessThan(
+      probe.indexOf("setVisible(true)"),
+    );
   });
 
   it("keeps the notice reachable on demand from anywhere", () => {
@@ -34,7 +36,7 @@ describe("round-10 consent notice scope", () => {
     // network hiccup made auth state unknown. Anonymous 200 `{ user: null }`
     // must also count as signed out — only a real user suppresses auto-open.
     expect(consent).toContain("let sessionPresent = false;");
-    expect(consent).toContain("treat as signed out");
+    expect(consent).toMatch(/catch \{[\s\S]*?\} finally \{\s*window\.clearTimeout\(timeoutId\)/);
     expect(consent).toContain("sessionPresent = Boolean(body?.user)");
   });
 

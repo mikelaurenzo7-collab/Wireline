@@ -131,7 +131,7 @@ async function post(path: string, payload: Buffer, contentType: string, encoding
 
 describe("patched compressed request lifecycle", () => {
   beforeAll(async () => {
-    child = spawn(process.execPath, ["-e", serverSource], {
+    child = spawn(process.execPath, ["--disable-warning=UNDICI-EHPA", "-e", serverSource], {
       cwd: process.cwd(),
       stdio: ["ignore", "ignore", "pipe", "ipc"],
       windowsHide: true,

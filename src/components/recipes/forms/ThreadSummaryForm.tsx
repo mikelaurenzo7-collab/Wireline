@@ -26,7 +26,7 @@ export function ThreadSummaryForm({
     <FormShell>
       {!threadId && <ErrCard error="Open a thread to summarize it." />}
       {threadId && (
-        <p className="text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-muted">
+        <p className="text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-muted-foreground">
           Summarizing thread <span className="text-brand font-mono">{threadId.slice(0, 8)}…</span>
         </p>
       )}
@@ -102,7 +102,9 @@ export function ThreadSummaryForm({
                   <span>
                     {a.description}
                     {a.due_hint ? (
-                      <span className="text-muted ml-2 italic text-xs">({a.due_hint})</span>
+                      <span className="text-muted-foreground ml-2 italic text-xs">
+                        ({a.due_hint})
+                      </span>
                     ) : null}
                   </span>
                 </li>

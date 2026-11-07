@@ -1,3 +1,4 @@
+import { Resolver } from "node:dns/promises";
 import { existsSync } from "node:fs";
 import { Readable } from "node:stream";
 import { createServer, type Server } from "node:http";
@@ -47,6 +48,18 @@ describe.skipIf(!available)("owner browser tools (real Chromium, synthetic sites
   });
 
   beforeEach(async () => {
+    // The documents below are fulfilled by Playwright. Keep their DNS equally
+    // synthetic so the real egress guard does not depend on external DNS access.
+    // All URL/private-address checks and the live loopback probe remain real.
+    vi.spyOn(Resolver.prototype, "resolve4").mockImplementation(async (hostname, options) => {
+      if (hostname !== "example.com" && hostname !== "example.org") {
+        throw Object.assign(new Error("No synthetic DNS record"), { code: "ENOTFOUND" });
+      }
+      return options?.ttl ? [{ address: "93.184.216.34", ttl: 60 }] : ["93.184.216.34"];
+    });
+    vi.spyOn(Resolver.prototype, "resolve6").mockRejectedValue(
+      Object.assign(new Error("No synthetic IPv6 record"), { code: "ENODATA" }),
+    );
     session = await CloudBrowserSession.open({ kind: "local", executablePath });
     const page = session.activePage();
     await page.route(/^https:\/\/example\.(?:com|org)\//, (route) =>
@@ -60,6 +73,7 @@ describe.skipIf(!available)("owner browser tools (real Chromium, synthetic sites
 
   afterEach(async () => {
     await session?.close();
+    vi.restoreAllMocks();
   });
 
   it("opens, switches, and closes actual tabs while preserving the last tab", async () => {

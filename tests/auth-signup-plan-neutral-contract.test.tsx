@@ -51,6 +51,9 @@ vi.mock("react-router", () => ({
 vi.mock("../src/contexts/AuthContext", () => ({
   useAuth: () => ({ user: null, loading: false, signIn: harness.signIn }),
 }));
+vi.mock("../src/contexts/ThemeContext", () => ({
+  useTheme: () => ({ resolvedTheme: "light", toggleTheme: vi.fn() }),
+}));
 vi.mock("../src/lib/canonical-browser-origin", () => ({
   canonicalLegacyBrowserHandoff: () => null,
 }));
@@ -141,9 +144,9 @@ describe("signup stays plan-neutral (P-4)", () => {
     expect(allText).not.toContain("Change plan");
     expect(allText).not.toContain("Choose a plan and check out");
     expect(allText).not.toContain("$24");
-    expect(
-      elements.some((element) => element.props.className === "wl-access-panel__intent"),
-    ).toBe(false);
+    expect(elements.some((element) => element.props.className === "wl-access-panel__intent")).toBe(
+      false,
+    );
     expect(
       elements.some(
         (element) => element.props.role === "status" && textOf(element).includes("check out"),

@@ -1,6 +1,6 @@
 /**
  * Tier 3: Pairwise & Multi-Feature Cross-Pillar Interactions (E2E Opaque-Box Suite)
- * 
+ *
  * Validates cross-feature integrations across the BotBound Lean 4 Pillars:
  * 1. P1 + P2: Calendar soft hold reserves slot while Stripe SMS payment link is generated and sent
  * 2. P2 + P1: Stripe payment success webhook callback updates voice session and confirms soft hold into booking
@@ -12,13 +12,11 @@
  * 8. P1 + P1: Multi-job schedule enforcement incorporates location-aware travel buffers between consecutive service addresses
  * 9. P3 + P2: Async browser parts lookup with conversational fillers operates concurrently with text-to-pay deposit
  * 10. P4 + P1: Inbound customer email reply requesting reschedule triaged by AgentMail, releases old slot and holds new slot
- * 
+ *
  * Requirement: Minimum >= 10 tests total.
  */
 
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 
 // Lean 4-Pillar Test Harness
 import {
@@ -181,7 +179,9 @@ describe("Tier 3: Cross-Pillar Feature Interactions (Lean 4 Pillars)", () => {
     });
 
     expect(alert.agentMailAlert.to).toBe("owner@fastflowplumbing.com");
-    expect(alert.agentMailAlert.subject).toContain("[HUMAN TAKEOVER] 2FA Barrier on https://servicetitan.com/login");
+    expect(alert.agentMailAlert.subject).toContain(
+      "[HUMAN TAKEOVER] 2FA Barrier on https://servicetitan.com/login",
+    );
     expect(alert.agentMailAlert.agentAction).toBe("agent_attach_human");
     expect(alert.smsAlert.to).toBe("+15554443333");
     expect(alert.smsAlert.message).toContain("2FA SMS verification code");
@@ -230,7 +230,9 @@ describe("Tier 3: Cross-Pillar Feature Interactions (Lean 4 Pillars)", () => {
       startAt: new Date("2026-11-15T09:00:00Z"),
       endAt: new Date("2026-11-15T10:30:00Z"),
       address: "100 Broadway, New York, NY",
-      bufferMinutes: calculateTravelBuffer("100 Broadway, NY", "450 Lexington Ave, NY", { estimatedMiles: 8 }).bufferMinutes,
+      bufferMinutes: calculateTravelBuffer("100 Broadway, NY", "450 Lexington Ave, NY", {
+        estimatedMiles: 8,
+      }).bufferMinutes,
     };
     expect(job1.bufferMinutes).toBe(26); // 8*2 + 10 = 26 min buffer
 
@@ -288,7 +290,7 @@ describe("Tier 3: Cross-Pillar Feature Interactions (Lean 4 Pillars)", () => {
   it("T3-X10 [P4+P1]: Inbound customer email reply requesting reschedule triaged by AgentMail, releases old slot and holds new slot", () => {
     const triage = triageInboundCustomerReply(
       "Can we move my appointment?",
-      "Hi BotBound, I have a conflict on Tuesday morning. Can we reschedule to Wednesday afternoon?"
+      "Hi BotBound, I have a conflict on Tuesday morning. Can we reschedule to Wednesday afternoon?",
     );
     expect(triage.intent).toBe("reschedule");
     expect(triage.requiresHumanEscalation).toBe(false);
@@ -296,7 +298,13 @@ describe("Tier 3: Cross-Pillar Feature Interactions (Lean 4 Pillars)", () => {
     // Upon reschedule intent, new soft hold is reserved on alternative date
     const newSlotStart = new Date("2026-11-18T14:00:00Z");
     const newSlotEnd = new Date("2026-11-18T15:00:00Z");
-    const newHold = createEphemeralHold("usr_reschedule", "email_thread_123", newSlotStart, newSlotEnd, 300);
+    const newHold = createEphemeralHold(
+      "usr_reschedule",
+      "email_thread_123",
+      newSlotStart,
+      newSlotEnd,
+      300,
+    );
 
     expect(newHold.status).toBe("active");
     expect(isHoldActive(newHold)).toBe(true);

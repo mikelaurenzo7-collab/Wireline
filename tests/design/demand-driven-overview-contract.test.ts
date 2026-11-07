@@ -67,12 +67,15 @@ describe("demand-driven authenticated experience", () => {
     expect(activation).not.toContain("Test conversation completed");
   });
 
-  it("keeps real Work beside Browser, with separate Set up and progressive disclosure", () => {
+  it("keeps work in one conversation with a shared computer and progressive Bot details", () => {
     expect(studio).toContain('"setup" | "review"');
     expect(studio).toContain('"configure" | "test"');
-    expect(studio).toContain('{ id: "work", label: "Work" }');
-    expect(studio).toContain('{ id: "computer", label: "Browser" }');
-    expect(studio).toContain('{ id: "try", label: "Rehearse" }');
+    expect(studio).toContain('{ id: "work", label: "Computer task" }');
+    expect(studio).toContain('{ id: "computer", label: "Computer" }');
+    expect(studio).not.toContain('{ id: "try", label: "Rehearse" }');
+    expect(studio).toContain('setWorkroomMode("test")');
+    expect(studio).toContain("timelineExtras={");
+    expect(studio).toContain("composerOverride={");
     expect(studio).toContain('{ id: "setup", label: "Set Up" }');
     expect(studio).toContain("<StudioTaskChat");
     expect(studio).toContain("<ComputerWorkspaceProvider>");

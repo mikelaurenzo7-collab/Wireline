@@ -173,14 +173,20 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/auth/AuthAccessPanel.tsx",
     authAccessPanel,
-    /function defaultFreeIntent\(current:[\s\S]*if \(current\) return current;/,
-    "explicit paid signup intent must survive the default-free landing path",
+    /sanitizeSignupIntent\(signupIntent\)/,
+    "account entry must preserve and sanitize the selected signup intent",
   );
   mustInclude(
     "src/components/auth/AuthAccessPanel.tsx",
     authAccessPanel,
-    /signupPlanLabel[\s\S]*price_usd_annual[\s\S]*price_usd_monthly/,
-    "shared account entry must display truthful plan labels for the selected billing interval",
+    /preferredPlanId: effectiveIntent\.preferredPlanId,[\s\S]*preferredBillingInterval: effectiveIntent\.preferredBillingInterval/,
+    "account entry must submit the selected plan and billing interval together",
+  );
+  mustExclude(
+    "src/components/auth/AuthAccessPanel.tsx",
+    authAccessPanel,
+    /defaultFreeIntent|function signupPlanLabel\(/,
+    "account entry must not invent a retired free plan or duplicate pricing labels",
   );
   mustInclude(
     "src/components/auth/AuthAccessPanel.tsx",

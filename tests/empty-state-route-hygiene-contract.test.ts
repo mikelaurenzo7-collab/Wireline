@@ -22,8 +22,8 @@ describe("empty-state route hygiene", () => {
     expect(ops).toContain("&command=");
     expect(ops).not.toContain("&prompt=");
 
-    expect(shell).toContain('data-wireline-bot-selected="true"');
-    expect(shell).toContain("Current Bot");
+    expect(shell).toContain('data-wireline-bot-selected={selected ? "true" : undefined}');
+    expect(shell).toContain("aria-label={`Open ${label} conversation`}");
     expect(shell).not.toContain("agentReadinessLabel(");
     expect(studioChrome).toContain("agentReadinessLabel(activeAgent, phoneLookupDegraded)");
     expect(studioChrome).toContain("agentLineStatus(activeAgent, phoneLookupDegraded)");

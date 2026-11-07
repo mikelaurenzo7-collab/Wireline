@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { Buffer } from "node:buffer";
 import {
   createInhouseCloneEngine,
@@ -23,6 +23,7 @@ import {
   BIOMETRIC_RETENTION_POLICY_VERSION,
 } from "../src/lib/voice/clone-engine-selection";
 import { liveVoiceService } from "../src/lib/voice/live-voice-service";
+import { drizzle } from "../src/lib/server-context";
 
 describe("in-house clone engine (self-sufficient voice synthesis)", () => {
   it("registers inhouse in CLONE_ENGINE_IDS and clone engine registry", () => {
@@ -301,9 +302,26 @@ describe("in-house clone engine (self-sufficient voice synthesis)", () => {
     const profile = getInhouseVoiceProfile(providerVoiceId);
     profile!.expiresAt = Date.now() - 5000;
 
-    const totalExpired = await liveVoiceService.expireDue();
-    expect(totalExpired).toBeGreaterThanOrEqual(1);
-    expect(getInhouseVoiceProfile(providerVoiceId)).toBeNull();
+    // This unit fixture owns only in-memory retention. Persisted voices are
+    // covered by the service's database fixtures, never a real connection.
+    const query = {
+      from: vi.fn(() => query),
+      where: vi.fn(() => query),
+      orderBy: vi.fn(() => query),
+      limit: vi.fn(() => query),
+      execute: vi.fn(async () => []),
+    };
+    const select = vi
+      .spyOn(drizzle, "select")
+      .mockReturnValue(query as unknown as ReturnType<typeof drizzle.select>);
+    try {
+      const totalExpired = await liveVoiceService.expireDue();
+      expect(totalExpired).toBeGreaterThanOrEqual(1);
+      expect(getInhouseVoiceProfile(providerVoiceId)).toBeNull();
+      expect(query.execute).toHaveBeenCalledOnce();
+    } finally {
+      select.mockRestore();
+    }
   });
 
   it("handles WAV files with odd chunk sizes with standard RIFF word alignment", async () => {

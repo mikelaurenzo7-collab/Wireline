@@ -5,7 +5,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { Resvg } from "@resvg/resvg-js";
+import { renderBrandRaster } from "./lib/brand-raster.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
@@ -103,19 +103,7 @@ function writeOgSource(brandMark) {
 const ogImage = readFileSync(resolve(root, "public/brand/botbound-operator-polished.png"));
 const ogImageSource = writeOgSource(ogImage);
 if (process.argv.includes("--og-only")) {
-  const png = new Resvg(ogImageSource, {
-    fitTo: { mode: "width", value: 1200 },
-    font: {
-      fontFiles: [
-        resolve(root, "brand-work/fonts/Inter-Regular.ttf"),
-        resolve(root, "brand-work/fonts/Inter-ExtraBold.ttf"),
-      ],
-      loadSystemFonts: false,
-      defaultFontFamily: "Inter",
-    },
-  })
-    .render()
-    .asPng();
+  const png = renderBrandRaster(ogImageSource, 1200);
   writeFileSync(resolve(publicDir, "og-image.png"), png);
   writeFileSync(resolve(publicDir, "brand/botbound-current-offer-og.png"), png);
   console.log(`✔ rendered public/og-image.png (${png.length} bytes)`);
@@ -157,22 +145,7 @@ for (const target of targets) {
     console.log(`✔ copied ${target.out} (${target.copy.length} bytes)`);
     continue;
   }
-  const resvg = new Resvg(target.source, {
-    fitTo: { mode: "width", value: target.width },
-    font: {
-      fontFiles: [
-        resolve(root, "brand-work/fonts/InterTight-ExtraBold.ttf"),
-        resolve(root, "brand-work/fonts/Inter-Regular.ttf"),
-        resolve(root, "brand-work/fonts/Inter-SemiBold.ttf"),
-        resolve(root, "brand-work/fonts/Inter-Bold.ttf"),
-        resolve(root, "brand-work/fonts/Inter-ExtraBold.ttf"),
-        resolve(root, "brand-work/fonts/IBMPlexMono-Bold.ttf"),
-      ],
-      loadSystemFonts: false,
-      defaultFontFamily: "Inter Tight",
-    },
-  });
-  const png = resvg.render().asPng();
+  const png = renderBrandRaster(target.source, target.width);
   writeFileSync(outputPath, png);
   console.log(`✔ rendered ${target.out} (${png.length} bytes)`);
 }

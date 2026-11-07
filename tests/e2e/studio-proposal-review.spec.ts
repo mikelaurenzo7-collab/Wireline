@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-// Below 1180px, Set Up switches one conversation between Instructions and Try It. The
-// side-by-side layout above that width has its own spec (workspace-panel.spec.ts).
+// One conversation owns messages, tasks and private rehearsal. Bot details and
+// computer work share the contextual panel; mobile keeps two surface buttons.
 test.use({ viewport: { width: 1024, height: 800 } });
 
 const bots = [
@@ -42,6 +42,7 @@ async function mockWorkspace(page: Page) {
     if (path === "/api/billing/status") {
       await route.fulfill({
         json: {
+          email_verified: true,
           channel_entitlements: {
             plan_id: "omnichannel",
             subscription_status: "active",
@@ -64,7 +65,11 @@ async function mockWorkspace(page: Page) {
             ? { agents: bots }
             : path.startsWith("/api/agent-config/")
               ? { personality: "Clear", directives: [], mark_key: "spark-rose" }
-              : { accounts: [], data: [], numbers: [], integrations: [], messages: [] },
+              : path === "/api/computer/status"
+                ? { available: true, reason: "ready", limits: { maxMinutes: 15, maxSteps: 60 } }
+                : path === "/api/computer/tasks"
+                  ? { tasks: [] }
+                  : { accounts: [], data: [], numbers: [], integrations: [], messages: [] },
     });
   });
   await page.route("**/api/agents/*/workspace/messages/stream", (route) =>
@@ -169,7 +174,7 @@ test("Studio opens Computer for the Bot currently selected", async ({ page }) =>
 
   const browser = page
     .getByRole("navigation", { name: "Workspace view" })
-    .getByRole("button", { name: "Browser", exact: true });
+    .getByRole("button", { name: "Computer", exact: true });
   await browser.click();
   await expect(page).toHaveURL(
     (url) =>
@@ -184,12 +189,12 @@ test("Studio opens Computer for the Bot currently selected", async ({ page }) =>
   await expect(page.getByRole("button", { name: "Open browser", exact: true })).toBeVisible();
 });
 
-test("mobile Work, Configure, and Browser share one row without losing a task draft", async ({
+test("mobile Conversation and Computer share one row without losing a task draft", async ({
   page,
 }, info) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await mockWorkspace(page);
-  await page.goto(`/studio?agent=${bots[1].id}`);
+  await page.goto(`/studio?agent=${bots[1].id}&chat=computer`);
   const views = page.getByRole("navigation", { name: "Workspace view" });
   const draft = page.getByRole("textbox", { name: /^Task for / });
   await expect(draft).toBeVisible();
@@ -197,17 +202,27 @@ test("mobile Work, Configure, and Browser share one row without losing a task dr
     await draft.evaluate((element) => element.getBoundingClientRect().height),
   ).toBeLessThanOrEqual(54);
   await draft.fill("Keep this unsent task while I inspect my Bot.");
-  await views.getByRole("button", { name: "Browser", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Open browser", exact: true })).toBeVisible();
-  await views.getByRole("button", { name: "Configure", exact: true }).click();
-  await expect(views.getByRole("button", { name: "Configure", exact: true })).toHaveAttribute(
-    "aria-pressed",
-    "true",
+  const conversationButton = views.getByRole("button", { name: "Conversation", exact: true });
+  const computerButton = views.getByRole("button", { name: "Computer", exact: true });
+  expect(await conversationButton.evaluate((node) => node.getBoundingClientRect().top)).toBe(
+    await computerButton.evaluate((node) => node.getBoundingClientRect().top),
   );
-  await views.getByRole("button", { name: "Work", exact: true }).click();
+  await computerButton.click();
+  await expect(page.getByRole("button", { name: "Open browser", exact: true })).toBeVisible();
+  await conversationButton.click();
   await expect(draft).toHaveValue("Keep this unsent task while I inspect my Bot.");
-  await expect(page.getByRole("button", { name: "Work", exact: true })).toHaveCount(1);
-  await expect(page.getByRole("button", { name: "Configure", exact: true })).toHaveCount(1);
+  await page.getByRole("button", { name: "Set Up Bot", exact: true }).click();
+  await expect(
+    page.getByRole("complementary", { name: "Workspace panel", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Close panel", exact: true }).click();
+  const mode = page.getByRole("group", { name: "Conversation mode", exact: true });
+  await mode.getByRole("button", { name: "Message", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "Message Sales Bot", exact: true })).toBeVisible();
+  await mode.getByRole("button", { name: "Computer task", exact: true }).click();
+  await expect(draft).toHaveValue("Keep this unsent task while I inspect my Bot.");
+  await expect(views.getByRole("button")).toHaveCount(2);
+  await expect(conversationButton).toHaveAttribute("aria-pressed", "true");
   await draft.fill("");
   await page.evaluate(() =>
     document.documentElement.style.setProperty("font-size", "32px", "important"),
@@ -358,37 +373,40 @@ test("a tool proposal requires a confirmed enabled-tool result and remains retry
   ]);
 });
 
-test("Configure drafts survive navigation and voice rehearsal without a second composer", async ({
+test("message drafts survive navigation and private rehearsal without a second composer", async ({
   page,
 }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 960 });
   await mockWorkspace(page);
   const review = await requestProposal(page);
-  const buildInput = page.getByRole("textbox", { name: "Message Front Desk", exact: true });
-  // Voice rehearsal stays beside the one conversation that changes the Bot.
-  const panel = page.getByRole("complementary", { name: "Workspace panel" });
-  await buildInput.fill("Keep this unsent Build instruction.");
-  await page.getByRole("tab", { name: "Rehearse", exact: true }).click();
-  await expect(panel.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
-  // Rehearsal owns its single typed test composer; it must not duplicate the
-  // conversation's "Message Front Desk" composer.
-  await expect(panel.getByRole("textbox")).toHaveCount(1);
-  await expect(panel.getByRole("textbox", { name: "Type a test", exact: true })).toBeVisible();
-  await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
-  await expect(panel.getByText(opening.value, { exact: true })).toHaveCount(0);
+  const messageInput = page.getByRole("textbox", { name: "Message Front Desk", exact: true });
+  await messageInput.fill("Keep this unsent instruction.");
+  await page.getByRole("button", { name: "Rehearse", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("complementary", { name: "Workspace panel", exact: true }),
+  ).toBeHidden();
+  await expect(messageInput).toBeHidden();
+  await expect(page.getByRole("textbox", { name: "Type a test", exact: true })).toHaveCount(1);
+  await expect(page.getByRole("textbox")).toHaveCount(1);
+  await expect(review).toBeHidden();
   await page.screenshot({
-    path: testInfo.outputPath("studio-try-it-beside-desktop.png"),
+    path: testInfo.outputPath("studio-private-rehearsal-desktop.png"),
     fullPage: true,
     animations: "disabled",
   });
-  await page.getByRole("link", { name: "Open Inbox", exact: true }).click();
-  await expect(page).toHaveURL(/\/inbox\?tab=email&agent=bot-front-desk$/);
+  await page.getByRole("link", { name: "Inbox", exact: true }).click();
+  await expect(page).toHaveURL((url) => url.pathname === "/inbox");
   await page.goBack();
-  await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
+  await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+  await expect(messageInput).toHaveValue("Keep this unsent instruction.");
   await expect(review).toBeVisible();
-  await expect(panel.getByRole("textbox")).toHaveCount(1);
+  await expect(page.getByRole("textbox", { name: "Message Front Desk", exact: true })).toHaveCount(
+    1,
+  );
 
-  // Phones keep private rehearsal behind one contextual action.
+  // A smaller screen uses the same private session and preserves the same draft.
   await page.setViewportSize({ width: 390, height: 844 });
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
@@ -396,14 +414,14 @@ test("Configure drafts survive navigation and voice rehearsal without a second c
   await page.getByRole("button", { name: "Rehearse", exact: true }).click();
   await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
+  await expect(review).toBeHidden();
   await page.screenshot({
-    path: testInfo.outputPath("studio-try-it-mobile.png"),
+    path: testInfo.outputPath("studio-private-rehearsal-mobile.png"),
     fullPage: true,
     animations: "disabled",
   });
-  await expect(review).toHaveCount(0);
   await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
-  await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
+  await expect(messageInput).toHaveValue("Keep this unsent instruction.");
 });
 
 for (const section of ["Set Up", "Summary"] as const) {

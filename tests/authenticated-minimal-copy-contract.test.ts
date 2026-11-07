@@ -99,9 +99,9 @@ describe("authenticated minimal copy contract", () => {
     const composerPlaceholder = studio.match(/placeholder="([^"]+)"/)?.[1];
 
     expect(studio).not.toContain("What Should We Change?");
-    expect(studio).toContain("What should {agentName} know?");
+    expect(studio).toContain("What can {agentName} do for you?");
     expect(studio).not.toContain("Ask as a customer…");
-    expect(composerPlaceholder).toBe("Share knowledge or give instructions…");
+    expect(composerPlaceholder).toBe("Ask anything, or tell your Bot what you need…");
     expect(studio).not.toContain("Describe a change…");
   });
 
