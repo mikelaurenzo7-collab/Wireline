@@ -341,7 +341,9 @@ describe("consent and retention", () => {
     expect(record).not.toMatch(/authorized|on behalf of/i);
     expect(record.length).toBeGreaterThanOrEqual(200);
     expect(record.length).toBeLessThanOrEqual(8_000);
-    expect(record).not.toMatch(/xAI|Grok|ElevenLabs|OpenAI|Wireline/);
+    expect(record).toContain("ElevenLabs, our voice provider");
+    expect(record).toContain("at least 18 years old");
+    expect(record).not.toMatch(/xAI|Grok|OpenAI|Wireline/);
   });
 
   it("clone details travel in a header, never the query string", () => {

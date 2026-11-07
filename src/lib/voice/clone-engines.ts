@@ -96,7 +96,7 @@ export type CloneEngine = {
     name: string;
     wav: Buffer;
     gender?: "female" | "male";
-  }): Promise<{ providerVoiceId: string }>;
+  }): Promise<{ providerVoiceId: string; requiresVerification?: boolean }>;
   /** Idempotent: an id that is already gone at the provider counts as deleted. */
   remove(providerVoiceId: string): Promise<{ alreadyMissing: boolean }>;
   preview(providerVoiceId: string, text: string): Promise<Buffer>;
@@ -547,7 +547,10 @@ export function createElevenLabsCloneEngine(
           description: "BotBound consented live voice",
           samples: [{ bytes: new Uint8Array(input.wav), mimeType: "audio/wav" }],
         });
-        return { providerVoiceId: created.voiceId };
+        return {
+          providerVoiceId: created.voiceId,
+          requiresVerification: created.requiresVerification,
+        };
       }),
     remove: (id) =>
       wrap(async () => ({ alreadyMissing: (await client().deleteVoice(id)).alreadyMissing })),

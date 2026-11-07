@@ -22,7 +22,7 @@ import {
   BIOMETRIC_IDLE_DAYS,
   BIOMETRIC_RETENTION_POLICY_VERSION,
 } from "../src/lib/voice/clone-engine-selection";
-import { liveVoiceService, engineSpeaksOnCalls, liveVoiceCloneEnabled } from "../src/lib/voice/live-voice-service";
+import { engineSpeaksOnCalls, liveVoiceCloneEnabled } from "../src/lib/voice/live-voice-service";
 
 describe("legacy in-process waveform fixture (NOT cloned speech)", () => {
   it("registers inhouse in CLONE_ENGINE_IDS and clone engine registry", () => {
@@ -163,7 +163,12 @@ describe("legacy in-process waveform fixture (NOT cloned speech)", () => {
 
   it("refuses an inhouse live rollout rather than silently routing recordings to a vendor", () => {
     expect(resolvePreferredCloneEngine({ VOICE_CLONE_ENGINE_DEFAULT: "inhouse" })).toBe("inhouse");
-    expect(liveVoiceCloneEnabled({ LIVE_VOICE_CLONE_ENABLED: "true", VOICE_CLONE_ENGINE_DEFAULT: "inhouse" })).toBe(false);
+    expect(
+      liveVoiceCloneEnabled({
+        LIVE_VOICE_CLONE_ENABLED: "true",
+        VOICE_CLONE_ENGINE_DEFAULT: "inhouse",
+      }),
+    ).toBe(false);
     const selected = selectCloneEngine({
       jurisdiction: "US-IL",
       preferred: "inhouse",
@@ -172,12 +177,14 @@ describe("legacy in-process waveform fixture (NOT cloned speech)", () => {
       elevenlabs: { configured: true },
     });
     expect(selected.engine).toBeNull();
-    expect(cloneEngineCandidates({
-      jurisdiction: "US-CA",
-      preferred: "xai",
-      xai: { configured: true, entitled: true, teamVoicesUsed: 0, teamLimit: 30 },
-      elevenlabs: { configured: true },
-    })).toEqual([]);
+    expect(
+      cloneEngineCandidates({
+        jurisdiction: "US-CA",
+        preferred: "xai",
+        xai: { configured: true, entitled: true, teamVoicesUsed: 0, teamLimit: 30 },
+        elevenlabs: { configured: true },
+      }),
+    ).toEqual([]);
   });
 
   it("enforces strict Illinois BIPA and Texas CUBI compliance with 3-year maximum retention limit", () => {
@@ -317,8 +324,8 @@ describe("legacy in-process waveform fixture (NOT cloned speech)", () => {
     const profile = getInhouseVoiceProfile(providerVoiceId);
     profile!.expiresAt = Date.now() - 5000;
 
-    const totalExpired = await liveVoiceService.expireDue();
-    expect(totalExpired).toBeGreaterThanOrEqual(1);
+    const swept = sweepInhouseVoiceRetention();
+    expect(swept.expiredCount).toBeGreaterThanOrEqual(1);
     expect(getInhouseVoiceProfile(providerVoiceId)).toBeNull();
   });
 

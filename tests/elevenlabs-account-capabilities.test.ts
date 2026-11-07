@@ -4,6 +4,7 @@ import {
   createElevenLabsVoiceClient,
   ElevenLabsVoiceError,
 } from "../src/lib/voice/elevenlabs-voice-client";
+import { createElevenLabsCloneEngine } from "../src/lib/voice/clone-engines";
 
 const KEY = "private-test-vendor-key";
 const WORKSPACE = "workspace_123-abc";
@@ -68,6 +69,42 @@ async function failure(promise: Promise<unknown>): Promise<ElevenLabsVoiceError>
 }
 
 afterEach(() => vi.useRealTimers());
+
+describe("ElevenLabs clone enrollment boundary", () => {
+  it.each([false, true])(
+    "preserves the provider's verification requirement (%s)",
+    async (requiresVerification) => {
+      const fetchImpl = vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(new Response(JSON.stringify(subscription())))
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({ voice_id: "voice_123", requires_verification: requiresVerification }),
+          ),
+        );
+      const engine = createElevenLabsCloneEngine({ ELEVENLABS_API_KEY: KEY }, fetchImpl);
+      await expect(engine.create({ name: "My Voice", wav: Buffer.alloc(44) })).resolves.toEqual({
+        providerVoiceId: "voice_123",
+        requiresVerification,
+      });
+      expect(fetchImpl.mock.calls.map(([url]) => String(url))).toEqual([
+        "https://api.elevenlabs.io/v1/user/subscription",
+        "https://api.elevenlabs.io/v1/voices/add",
+      ]);
+    },
+  );
+
+  it("does not send a recording when the provider has no voice slots left", async () => {
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(new Response(JSON.stringify({ ...subscription(), voice_slots_used: 10 })));
+    const engine = createElevenLabsCloneEngine({ ELEVENLABS_API_KEY: KEY }, fetchImpl);
+    await expect(engine.create({ name: "My Voice", wav: Buffer.alloc(44) })).rejects.toMatchObject({
+      code: "limit_reached",
+    });
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+});
 
 describe("ElevenLabs account capability transport", () => {
   it("binds capabilities to the documented workspace in one atomic response", async () => {

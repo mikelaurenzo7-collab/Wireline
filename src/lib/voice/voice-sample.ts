@@ -1,5 +1,7 @@
 import { fetchWithTimeout } from "../server-context";
 import type { XAIGrokVoice } from "./xai-voice-config";
+import { voiceSampleLine } from "./voice-sample-copy";
+export { voiceSampleLine } from "./voice-sample-copy";
 
 /**
  * A few seconds of the exact voice phone callers hear, spoken as this Bot.
@@ -16,16 +18,6 @@ const cache = new Map<string, Buffer>();
 
 export function isVoiceSampleAvailable(env: NodeJS.ProcessEnv = process.env): boolean {
   return Boolean(env.XAI_API_KEY?.trim());
-}
-
-/** The greeting a caller would hear, kept short so a sample plays in about four seconds. */
-export function voiceSampleLine(agentName: string): string {
-  const name =
-    agentName
-      .replace(/[^\p{L}\p{N}' .&-]/gu, "")
-      .trim()
-      .slice(0, 40) || "your Bot";
-  return `Hi, thanks for calling. This is ${name}. How can I help you today?`;
 }
 
 export async function synthesizeVoiceSample(

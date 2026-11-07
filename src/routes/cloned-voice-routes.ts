@@ -89,19 +89,24 @@ router.post(
   async (req: AuthenticatedRequest, res) => {
     res.setHeader("Cache-Control", "no-store");
     const details = readCloneDetailsHeader(req.headers["x-voice-clone-details"]);
-    const result = await liveVoiceService.create(req.user, wavBody(req), {
-      name: details.name,
-      consentAccepted: details.consentAccepted === true,
-      consentVersion: details.consentVersion,
-      consentScope: details.consentScope,
-      gender: details.gender,
-      speakerJurisdiction: details.speakerJurisdiction,
-      biometricReleaseAccepted: details.biometricReleaseAccepted === true,
-      biometricReleaseVersion: details.biometricReleaseVersion,
-      biometricReleaseSignedName: details.biometricReleaseSignedName,
-      agentName: details.agentName,
-    });
-    res.status(201).json(result);
+    const wav = wavBody(req);
+    try {
+      const result = await liveVoiceService.create(req.user, wav, {
+        name: details.name,
+        consentAccepted: details.consentAccepted === true,
+        consentVersion: details.consentVersion,
+        consentScope: details.consentScope,
+        gender: details.gender,
+        speakerJurisdiction: details.speakerJurisdiction,
+        biometricReleaseAccepted: details.biometricReleaseAccepted === true,
+        biometricReleaseVersion: details.biometricReleaseVersion,
+        biometricReleaseSignedName: details.biometricReleaseSignedName,
+        agentName: details.agentName,
+      });
+      res.status(201).json(result);
+    } finally {
+      wav.fill(0);
+    }
   },
 );
 
@@ -120,6 +125,7 @@ router.get(
   authenticateUser,
   previews,
   async (req: AuthenticatedRequest, res) => {
+    const started = performance.now();
     const variant = req.query.variant === "stock" ? "stock" : "clone";
     const audio = await liveVoiceService.preview(req.user, req.params.voiceId, {
       variant,
@@ -128,7 +134,13 @@ router.get(
     });
     res.setHeader("Cache-Control", "private, no-store");
     res.setHeader("Content-Type", "audio/mpeg");
-    res.send(audio);
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Server-Timing", `voice-preview;dur=${Math.round(performance.now() - started)}`);
+    try {
+      res.send(Buffer.from(audio));
+    } finally {
+      audio.fill(0);
+    }
   },
 );
 

@@ -3,7 +3,6 @@ import {
   Check,
   Loader2,
   Mic,
-  Pause,
   Play,
   RotateCcw,
   Sparkles,
@@ -25,6 +24,7 @@ import { StatusNotice } from "../molecules";
 import { Checkbox } from "../ui/shadcn/Checkbox";
 import { encodeVoiceRecording } from "./voice-clone-recording";
 import TestCallLink from "./TestCallLink";
+import { voiceSampleLine } from "../../lib/voice/voice-sample-copy";
 import {
   biometricReleaseText,
   parseSignedLegalName,
@@ -47,11 +47,13 @@ type ClonedVoice = {
   createdAt: string;
   expiresAt?: string | null;
   speaksOnCalls?: boolean;
+  previewAvailable?: boolean;
   inUseByAgentIds: string[];
 };
 
 type Capabilities = {
   available: boolean;
+  callsAvailable?: boolean;
   consentVersion: string;
   minSeconds: number;
   recommendedSeconds: number;
@@ -147,6 +149,7 @@ export default function LiveVoiceCloneStudio({
   const [recording, setRecording] = useState<Recording | null>(null);
   const [created, setCreated] = useState<ClonedVoice | null>(null);
   const [playing, setPlaying] = useState<string | null>(null);
+  const [preparing, setPreparing] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [tipDismissed, setTipDismissed] = useState(true);
   const capture = useRef<Capture | null>(null);
@@ -154,6 +157,8 @@ export default function LiveVoiceCloneStudio({
   const audio = useRef<HTMLAudioElement | null>(null);
   const audioUrl = useRef<string | null>(null);
   const playRequest = useRef(0);
+  const playAbort = useRef<AbortController | null>(null);
+  const previewCache = useRef(new Map<string, Blob>());
   const generation = useRef(0);
   const fileInput = useRef<HTMLInputElement | null>(null);
 
@@ -162,8 +167,7 @@ export default function LiveVoiceCloneStudio({
   const consentReady = consent && Boolean(name.trim()) && Boolean(jurisdiction) && releaseReady;
   const activeVoice = voices.find((voice) => voice.inUseByAgentIds.includes(agentId)) ?? null;
   // Only a voice that callers actually hear is reported as the call voice.
-  const activeVoiceName =
-    activeVoice && activeVoice.speaksOnCalls !== false ? activeVoice.name : null;
+  const activeVoiceName = activeVoice?.speaksOnCalls === true ? activeVoice.name : null;
   useEffect(() => {
     onActiveVoiceChange?.(activeVoiceName);
   }, [activeVoiceName, onActiveVoiceChange]);
@@ -184,11 +188,14 @@ export default function LiveVoiceCloneStudio({
 
   const stopPlayback = useCallback(() => {
     playRequest.current += 1;
+    playAbort.current?.abort();
+    playAbort.current = null;
     audio.current?.pause();
     audio.current = null;
     if (audioUrl.current) URL.revokeObjectURL(audioUrl.current);
     audioUrl.current = null;
     setPlaying(null);
+    setPreparing(null);
   }, []);
 
   const releaseCapture = useCallback(() => {
@@ -222,17 +229,31 @@ export default function LiveVoiceCloneStudio({
   }, []);
 
   const load = useCallback(async () => {
+    const current = generation.current;
     const response = await authFetch("/api/voice/live-voices");
     if (!response.ok) throw new Error(await errorMessage(response, "Cloned voices didn't load."));
     const body = (await response.json()) as Capabilities & {
       voices: ClonedVoice[];
     };
+    if (current !== generation.current) return;
     setCapabilities(body);
     setVoices(body.voices ?? []);
   }, []);
 
   useLayoutEffect(() => {
     generation.current += 1;
+    clearRecording();
+    const samples = previewCache.current;
+    samples.clear();
+    setCapabilities(null);
+    setVoices([]);
+    setCreated(null);
+    setConsent(false);
+    setJurisdiction("");
+    setReleaseAccepted(false);
+    setSignedName("");
+    setBusy(null);
+    setRecordingState("idle");
     setName(`${agentName.trim() || "My"} voice`.slice(0, 80));
     setStep("idle");
     setError(null);
@@ -251,8 +272,9 @@ export default function LiveVoiceCloneStudio({
       generation.current += 1;
       releaseCapture();
       stopPlayback();
+      samples.clear();
     };
-  }, [agentId, agentName, load, releaseCapture, stopPlayback]);
+  }, [agentId, agentName, load, releaseCapture, stopPlayback, clearRecording]);
 
   useEffect(() => () => clearRecording(), [clearRecording]);
 
@@ -437,24 +459,66 @@ export default function LiveVoiceCloneStudio({
     }
     stopPlayback();
     const request = ++playRequest.current;
+    const controller = new AbortController();
+    playAbort.current = controller;
     setPlaying(key);
+    setPreparing(key);
     setError(null);
     try {
-      const params = new URLSearchParams({ variant, agentName });
-      if (stockVoiceId) params.set("stockVoice", stockVoiceId);
-      const response = await authFetch(
-        `/api/voice/live-voices/${encodeURIComponent(voiceId)}/preview?${params}`,
-        { timeoutMs: 30_000 },
-      );
-      if (!response.ok) throw new Error(await errorMessage(response, "That preview didn't play."));
-      const blob = await response.blob();
+      let blob = previewCache.current.get(key);
+      if (blob) {
+        // Local replay avoids synthesis cost, but still checks fresh ownership,
+        // revocation and the preview switch before playing private audio.
+        const response = await authFetch("/api/voice/live-voices", { signal: controller.signal });
+        if (!response.ok)
+          throw new Error(await errorMessage(response, "That preview is unavailable."));
+        const fresh = (await response.json()) as Capabilities & { voices?: ClonedVoice[] };
+        if (request !== playRequest.current) return;
+        setCapabilities(fresh);
+        setVoices(fresh.voices ?? []);
+        if (
+          !fresh.available ||
+          !fresh.voices?.some((voice) => voice.id === voiceId && voice.previewAvailable === true)
+        ) {
+          previewCache.current.delete(key);
+          if (created?.id === voiceId && step === "done") {
+            setCreated(null);
+            setStep("idle");
+          }
+          throw new Error("This voice preview is no longer available.");
+        }
+      }
+      if (!blob) {
+        const params = new URLSearchParams({ variant, agentName });
+        if (stockVoiceId) params.set("stockVoice", stockVoiceId);
+        const response = await authFetch(
+          `/api/voice/live-voices/${encodeURIComponent(voiceId)}/preview?${params}`,
+          { timeoutMs: 60_000, signal: controller.signal },
+        );
+        if (!response.ok)
+          throw new Error(await errorMessage(response, "That preview didn't play."));
+        if (!response.headers.get("content-type")?.toLowerCase().startsWith("audio/mpeg"))
+          throw new Error("The preview did not return playable audio. Please try again.");
+        blob = await response.blob();
+        if (request !== playRequest.current) return;
+        if (blob.size < 3 || blob.size > 2 * 1024 * 1024)
+          throw new Error("The preview audio was incomplete. Please try again.");
+        previewCache.current.set(key, blob);
+      }
       if (request !== playRequest.current) return;
+      setPreparing(null);
       const url = URL.createObjectURL(blob);
       audioUrl.current = url;
       const element = new Audio(url);
       audio.current = element;
       element.onended = () => {
         if (request === playRequest.current) stopPlayback();
+      };
+      element.onerror = () => {
+        if (request !== playRequest.current) return;
+        stopPlayback();
+        previewCache.current.delete(key);
+        setError("That preview could not be played. Please try again.");
       };
       await element.play();
     } catch (reason) {
@@ -465,19 +529,23 @@ export default function LiveVoiceCloneStudio({
   }
 
   async function applyVoice(voice: ClonedVoice | null) {
-    if (voice?.speaksOnCalls === false) {
-      setError("This voice is not callable under the current setup. Choose a built-in voice instead.");
+    if (voice && voice.speaksOnCalls !== true) {
+      setError(
+        "This voice is not callable under the current setup. Choose a built-in voice instead.",
+      );
       return;
     }
     setBusy(voice ? `use:${voice.id}` : "stock");
     setError(null);
     setNotice(null);
+    const current = generation.current;
     try {
       const response = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/live-voice`, {
         method: voice ? "POST" : "DELETE",
         body: voice ? JSON.stringify({ voiceId: voice.id }) : undefined,
       });
       if (!response.ok) throw new Error(await errorMessage(response, "That change didn't save."));
+      if (current !== generation.current) return;
       setVoices((list) =>
         list.map((item) => ({
           ...item,
@@ -496,9 +564,10 @@ export default function LiveVoiceCloneStudio({
       );
       if (voice) setStep("idle");
     } catch (reason) {
+      if (current !== generation.current) return;
       setError(reason instanceof Error ? reason.message : "That change didn't save.");
     } finally {
-      setBusy(null);
+      if (current === generation.current) setBusy(null);
     }
   }
 
@@ -507,11 +576,16 @@ export default function LiveVoiceCloneStudio({
       return;
     setBusy(`delete:${voice.id}`);
     setError(null);
+    stopPlayback();
+    previewCache.current.delete(`${voice.id}:clone`);
+    previewCache.current.delete(`${voice.id}:stock`);
+    const current = generation.current;
     try {
       const response = await authFetch(`/api/voice/live-voices/${encodeURIComponent(voice.id)}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error(await errorMessage(response, "That voice wasn't deleted."));
+      if (current !== generation.current) return;
       setVoices((list) => list.filter((item) => item.id !== voice.id));
       if (created?.id === voice.id) {
         setCreated(null);
@@ -519,9 +593,10 @@ export default function LiveVoiceCloneStudio({
       }
       setNotice(`${voice.name} was deleted.`);
     } catch (reason) {
+      if (current !== generation.current) return;
       setError(reason instanceof Error ? reason.message : "That voice wasn't deleted.");
     } finally {
-      setBusy(null);
+      if (current === generation.current) setBusy(null);
     }
   }
 
@@ -547,7 +622,7 @@ export default function LiveVoiceCloneStudio({
       </div>
     </div>
   );
-  const header = renderHeader("Clone once. Use on any of your Bots.");
+  const header = renderHeader("Record your voice. Hear it before you use it.");
   const shellClass =
     "min-w-0 scroll-mt-24 space-y-3 outline-none rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background p-3 sm:p-4";
 
@@ -638,7 +713,9 @@ export default function LiveVoiceCloneStudio({
             : "border-border bg-background text-foreground hover:bg-muted"
         }`}
       >
-        {active ? (
+        {preparing === `${voiceId}:${variant}` ? (
+          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+        ) : active ? (
           <Square className="size-3.5 fill-current" aria-hidden="true" />
         ) : (
           <Play className="size-4" aria-hidden="true" />
@@ -661,14 +738,26 @@ export default function LiveVoiceCloneStudio({
         ) : null}
       </div>
 
+      {!capabilities.callsAvailable ? (
+        <StatusNotice tone="info" title="Private Preview">
+          Compare your cloned voice with the stock fallback. Phone calls keep their current voice
+          until live calling is enabled.
+        </StatusNotice>
+      ) : null}
+      <p role="status" className="text-xs leading-5 text-muted-foreground">
+        {preparing
+          ? "Preparing your preview. You can stop it anytime; its AI allowance reservation may remain."
+          : "Previews use AI allowance. Replaying a prepared sample on this screen uses no additional allowance."}
+      </p>
+
       {activeVoice ? (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2.5">
           <span className="min-w-0 text-sm text-foreground">
             <Check className="mr-1.5 inline size-4 text-primary" aria-hidden="true" />
             {activeVoice.speaksOnCalls === false ? (
               <>
-                <strong>{activeVoice.name}</strong> is unavailable for live calls under the current setup.
-                Switch to a built-in voice for reliable calls.
+                <strong>{activeVoice.name}</strong> is unavailable for live calls under the current
+                setup. Switch to a built-in voice for reliable calls.
               </>
             ) : (
               <>
@@ -720,7 +809,13 @@ export default function LiveVoiceCloneStudio({
                     {voice.name}
                   </span>
                   <span className="block text-xs text-muted-foreground">
-                    {inUse ? "On this Bot" : "Ready"}
+                    {voice.speaksOnCalls === true
+                      ? inUse
+                        ? "On this Bot"
+                        : "Ready for calls"
+                      : voice.previewAvailable === true
+                        ? "Private preview only"
+                        : "Unavailable"}
                     {voice.qualityScore !== null
                       ? ` · Recording Quality ${voice.qualityScore}/100`
                       : ""}
@@ -729,22 +824,13 @@ export default function LiveVoiceCloneStudio({
                       : ""}
                   </span>
                 </span>
-                {voice.speaksOnCalls !== false ? (
-                  <button
-                    type="button"
-                    onClick={() => void play(voice.id, "clone")}
-                    aria-label={`${playing === `${voice.id}:clone` ? "Stop" : "Play"} ${voice.name}`}
-                    aria-pressed={playing === `${voice.id}:clone`}
-                    className="grid size-11 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground wl-focus-ring-halo"
-                  >
-                    {playing === `${voice.id}:clone` ? (
-                      <Pause className="size-4" aria-hidden="true" />
-                    ) : (
-                      <Play className="size-4" aria-hidden="true" />
-                    )}
-                  </button>
+                {voice.previewAvailable === true ? (
+                  <div className="flex w-full flex-col gap-2 sm:flex-row">
+                    {playButton(voice.id, "clone", "Your Voice")}
+                    {playButton(voice.id, "stock", "Stock Fallback")}
+                  </div>
                 ) : null}
-                {!inUse && voice.speaksOnCalls !== false ? (
+                {!inUse && voice.speaksOnCalls === true ? (
                   <button
                     type="button"
                     onClick={() => void applyVoice(voice)}
@@ -756,7 +842,7 @@ export default function LiveVoiceCloneStudio({
                     ) : null}
                     Use Voice
                   </button>
-                ) : !inUse && voice.speaksOnCalls === false ? (
+                ) : !inUse && voice.speaksOnCalls !== true ? (
                   <span className="text-xs text-muted-foreground">Not available for calls</span>
                 ) : null}
                 <button
@@ -809,6 +895,10 @@ export default function LiveVoiceCloneStudio({
         >
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Step 1 of 3 · Permission
+          </p>
+          <p className="text-sm leading-6 text-foreground">
+            ElevenLabs will process your recording to create your voice. Listen privately first;
+            creating a voice does not change your Bot's calls.
           </p>
           <label className="block text-sm font-medium text-foreground" htmlFor={`${id}-name`}>
             Voice Name
@@ -1127,16 +1217,29 @@ export default function LiveVoiceCloneStudio({
         <div className="space-y-3 rounded-xl border border-primary/30 bg-background p-3">
           <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <Check className="size-4 text-primary" aria-hidden="true" />
-            {created.speaksOnCalls === false
-              ? `${created.name} is saved, but is not available for phone calls.`
+            {created.speaksOnCalls !== true
+              ? created.previewAvailable === true
+                ? `${created.name} is ready for a private preview.`
+                : `${created.name} is saved. Previews are currently paused.`
               : `${created.name} is ready. Hear the difference:`}
           </p>
+          <p className="text-xs leading-5 text-muted-foreground">
+            Both samples say: “{voiceSampleLine(agentName || "your Bot")}”
+          </p>
           <div className="flex flex-col gap-2 sm:flex-row">
-            {playButton(created.id, "clone", "Your Voice")}
-            {playButton(created.id, "stock", "Built-In Voice")}
+            {created.previewAvailable === true ? (
+              <>
+                {playButton(created.id, "clone", "Your Voice")}
+                {playButton(created.id, "stock", "Stock Fallback")}
+              </>
+            ) : null}
           </div>
+          <p className="text-xs leading-5 text-muted-foreground">
+            Listen for clear words, natural pacing, and a recognizable voice. The recording score
+            measures audio quality; it does not measure clone similarity.
+          </p>
           <div className="flex flex-wrap gap-2">
-            {created.speaksOnCalls !== false ? (
+            {created.speaksOnCalls === true ? (
               <button
                 type="button"
                 onClick={() => void applyVoice(created)}
@@ -1156,7 +1259,7 @@ export default function LiveVoiceCloneStudio({
               onClick={() => setStep("idle")}
               className="inline-flex min-h-11 items-center rounded-xl px-4 text-sm font-semibold text-muted-foreground hover:bg-muted wl-focus-ring-halo"
             >
-              Not Now
+              Done
             </button>
           </div>
           {!tipDismissed ? (
@@ -1175,7 +1278,7 @@ export default function LiveVoiceCloneStudio({
         </div>
       ) : null}
 
-      {activeVoice?.speaksOnCalls !== false && activeVoice && botPhone ? (
+      {activeVoice?.speaksOnCalls === true && botPhone ? (
         <TestCallLink phone={botPhone} label="Test Call" />
       ) : null}
     </section>

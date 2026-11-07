@@ -83,7 +83,7 @@ const STATUS_COPY: Record<
   running: { label: "Working", variant: "info" },
   needs_input: { label: "Needs You", variant: "warning" },
   completed: { label: "Done", variant: "success" },
-  blocked: { label: "Needs You to Finish", variant: "warning" },
+  blocked: { label: "Could Not Finish", variant: "warning" },
   failed: { label: "Could Not Finish", variant: "destructive" },
   stopped: { label: "Stopped", variant: "default" },
   interrupted: { label: "Interrupted", variant: "default" },

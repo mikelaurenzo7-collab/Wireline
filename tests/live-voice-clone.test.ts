@@ -177,8 +177,9 @@ describe("clone studio copy", () => {
   const studio = readFileSync("src/components/voice/LiveVoiceCloneStudio.tsx", "utf8");
   const strings = (studio.match(/"[^"\n]*"|`[^`\n]*`|>[^<>{}\n]+</g) ?? []).join(" ");
 
-  it("never names the vendor or calls the clone slower", () => {
-    expect(strings).not.toMatch(/grok|xai|x\.ai|openai|elevenlabs|slower|latency/i);
+  it("discloses the reference processor without confusing the voice flow with model settings", () => {
+    expect(studio).toContain("ElevenLabs will process your recording");
+    expect(strings).not.toMatch(/grok|xai|x\.ai|slower|latency/i);
   });
 
   it("shows one neutral, dismissible tip and the premium flow pieces", () => {
@@ -192,7 +193,7 @@ describe("clone studio copy", () => {
       "Use Built-In Voice",
       "Use Voice",
       "<TestCallLink",
-      '"Built-In Voice"',
+      '"Stock Fallback"',
       'aria-live="polite"',
       "LIVE_VOICE_SCRIPT",
     ])
@@ -213,7 +214,7 @@ describe("clone discoverability and stock voice undo", () => {
   });
 
   it("links the picker and short routes to the clone studio", () => {
-    expect(picker).toContain("Clone Voice");
+    expect(picker).toContain("Clone or manage your voice");
     expect(picker).toContain("LIVE_VOICE_ANCHOR_ID");
     for (const path of ['path="/voice"', 'path="/voices"', 'path="/voice-clone"'])
       expect(routes).toContain(path);

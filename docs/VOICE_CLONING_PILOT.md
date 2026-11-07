@@ -1,6 +1,55 @@
 # Voice cloning: private preview pilot
 
-## Product decision
+## Current release direction, November 7, 2026
+
+ElevenLabs is the approved provider for new consented cloned-voice previews.
+Keep built-in voices as the default and stock speech as the call fallback.
+Ship Brand Voice as an optional capability; keep its retail price unpublished
+until full-call cost, quality and provider account eligibility are measured.
+No Stripe product or subscription change is part of this implementation.
+
+The guided recording flow in `LiveVoiceCloneStudio` now supports a private
+ElevenLabs A/B without activating phone calls. Set
+`VOICE_CLONE_ENGINE_DEFAULT=elevenlabs`, `LIVE_VOICE_PREVIEW_ENABLED=true`, and
+`LIVE_VOICE_PREVIEW_USER_IDS` to exact approved tenant UUIDs on the API only.
+ElevenLabs and OpenAI keys are required for the clone and stock-fallback samples.
+Keys remain in the production secret store. No worker URL is needed for this
+private canary. Leave `LIVE_VOICE_CLONE_ENABLED=false` until the separate phone
+worker deployment and call acceptance are verified.
+
+Before enabling the canary, promote the reviewed append-only
+`0196_live_voice_release_v3` migration through the schema release workflow.
+It preserves existing signed v2 records, admits the new v3 disclosure, and
+rejects missing release versions or signer names. The schema snapshot remains
+aligned with the database's real-provider constraint; the legacy waveform
+fixture is not an eligible persisted provider. This migration is not applied
+by an application build.
+
+Each enrollment requires the speaker's current signed adult self-speaker release,
+which names ElevenLabs, plus the existing recording quality and retention gates.
+A provider response requiring further verification cannot become a ready voice;
+it follows provider cleanup with durable retry evidence on failure. This is
+speaker attestation, not identity verification or a similarity certification.
+
+Both A/B variants reserve and commit a conservative character-based audio cost
+against AI allowance before synthesis. An uncertain provider attempt retains its
+reservation. Audio is private and uncached by HTTP; a bounded browser-memory
+sample can be replayed without another synthesis, after a fresh authorization
+and revocation check. Changing Bots or deleting the voice clears those samples.
+Server delivery rechecks revocation after synthesis and clears rejected bytes.
+`Server-Timing` reports complete-preview request time, not streamed first-audio
+latency. The stock sample is the cloned-call bridge's actual stock fallback,
+not a claim that the browser rehearsal uses a cloned voice.
+
+Release proof still requires a genuine consented recording, provider account
+eligibility, intelligibility and similarity listening, cost receipts, deletion,
+and an authenticated worker drain/readiness check before phone rollout. Mocked
+provider tests or the legacy waveform fixture do not satisfy these gates.
+
+The self-hosted research pilot described below remains separate and disabled by
+default. It is not the chosen path for the new ElevenLabs preview.
+
+## Self-hosted research pilot
 
 Keep all ten managed OpenAI voices as the default for browser rehearsals and
 phone calls. OpenAI continues to perform conversation reasoning and business
@@ -8,7 +57,7 @@ actions. Voice references are an independent, opt-in speech capability; creating
 reviewing, previewing or deleting one must never change a Bot's selected call
 voice.
 
-This implementation is a **private platform-admin pilot**, disabled by default.
+The self-hosted implementation is a **private platform-admin pilot**, disabled by default.
 It is not a customer voice-cloning launch or a second live-call runtime.
 
 The native enrollment experience records or uploads a 6-20 second mono PCM16 WAV,
@@ -243,7 +292,7 @@ Before adding ElevenLabs enrollment, implement a separate durable tenant asset
 and operation ledger, explicit provider-destination permission, retention and
 provider deletion receipts. Record an operation before sending paid or mutating
 work; preserve unknown outcomes for reconciliation instead of blindly retrying.
-The current native panel is the independent in-house preview pilot, not an
+The separate `VoiceClonePanel` is the independent in-house preview pilot, not an
 ElevenLabs upload or a cloned-call setting.
 
 ### Release and enrollment gates

@@ -216,7 +216,7 @@ export function biometricExpiresAt(createdAt: Date, lastUsedAt: Date | null): Da
  * the speaker is always the signer, typing their own full legal name.
  * Changing the text requires a new version.
  */
-export const BIOMETRIC_RELEASE_VERSION = "voice-release-v2-2026-10-24" as const;
+export const BIOMETRIC_RELEASE_VERSION = "voice-release-v3-2026-11-07" as const;
 
 export function parseSignedLegalName(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -246,10 +246,10 @@ export const BIOMETRIC_RETENTION_SUMMARY =
  */
 export function biometricReleaseText(agentName: string): string[] {
   return [
-    "I am the person whose voice is in this recording, and I am recording it myself.",
+    "I am at least 18 years old, I am the person whose voice is in this recording, and I recorded it myself.",
     "BotBound will create a voiceprint (a digital model of how my voice sounds) from this recording.",
     `Purpose: only to let ${agentName || "my Bot"} speak in my voice on my business's calls and previews. It is never sold, leased, traded, or used to identify anyone.`,
-    "A third-party voice provider processes this recording to create the voice and keeps the voice model until it is deleted. BotBound does not keep the recording itself, only the voice, a fingerprint of the file, its length, and its quality score.",
+    "ElevenLabs, our voice provider, processes this recording to create the voice and keeps the voice model until it is deleted. BotBound does not keep the recording itself, only the voice, a fingerprint of the file, its length, and its quality score.",
     BIOMETRIC_RETENTION_SUMMARY,
     "By typing my full legal name below, I give BotBound and its voice provider written permission to collect, store, and use my voiceprint as described.",
   ];
