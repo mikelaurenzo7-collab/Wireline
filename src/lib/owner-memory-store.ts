@@ -21,7 +21,7 @@ export async function loadOwnerMemories(userId: string, agentId: string): Promis
   return rows.map((row) => ({ id: String(row.id), content: row.content }));
 }
 
-/** Lock the owned Bot to serialize admission and deletion. No model can write memory. */
+/** Serialize confirmed owner writes and deletion. Models cannot invent write authority. */
 export async function changeOwnerMemory(
   userId: string,
   agentId: string,

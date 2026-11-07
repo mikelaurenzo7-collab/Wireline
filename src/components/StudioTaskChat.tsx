@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Link } from "react-router";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router";
 import { ArrowDown, ArrowUp, Globe, Loader2, Square } from "lucide-react";
 import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
@@ -7,6 +7,8 @@ import StudioTaskMessages from "./StudioTaskMessages";
 import { useComputerWorkspace } from "../contexts/ComputerWorkspaceContext";
 import { useStudioSessionState } from "../contexts/StudioSessionContext";
 import { useAgents } from "../contexts/AgentsContext";
+import StudioHandsFree from "./studio/StudioHandsFree";
+import { readWorkHandoff } from "../lib/work-handoff";
 
 export default function StudioTaskChat({
   agentId,
@@ -22,6 +24,10 @@ export default function StudioTaskChat({
   const model = useComputerWorkspace();
   const { drafts } = useStudioSessionState();
   const { agents } = useAgents();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const consumedHandoff = useRef("");
+  const [handoffDraft, setHandoffDraft] = useState<string | null>(null);
   const markKey = agents.find((agent) => agent.id === agentId)?.mark_key;
   const [, updateDraft] = useState(0);
   const [pending, setPending] = useState<"send" | "stop" | null>(null);
@@ -33,6 +39,7 @@ export default function StudioTaskChat({
   const conversationScope = useRef("");
   const [showLatest, setShowLatest] = useState(false);
   const active = model.activeTask;
+  const workHistoryLoaded = model.tasks !== null;
   const ownActive = active?.agentId === agentId ? active : null;
   const selected =
     ownActive ??
@@ -44,14 +51,37 @@ export default function StudioTaskChat({
   const draftKey = `${agentId}:${awaitingReply ? "work-reply" : "work"}`;
   const stored = drafts.get(draftKey);
   const draft = stored && (!awaitingReply || stored.command === ownActive?.id) ? stored.text : "";
-  const setDraft = (text: string) => {
-    drafts.set(draftKey, {
-      text,
-      command: awaitingReply ? (ownActive?.id ?? null) : null,
-      commandNonce: null,
-    });
-    updateDraft((revision) => revision + 1);
-  };
+  const setDraft = useCallback(
+    (text: string) => {
+      drafts.set(draftKey, {
+        text,
+        command: awaitingReply ? (ownActive?.id ?? null) : null,
+        commandNonce: null,
+      });
+      updateDraft((revision) => revision + 1);
+    },
+    [drafts, draftKey, awaitingReply, ownActive?.id],
+  );
+  useEffect(() => {
+    const goal = readWorkHandoff(location.hash);
+    const receipt = `${agentId}:${location.hash}`;
+    if (!workHistoryLoaded || !goal || receipt === consumedHandoff.current) return;
+    consumedHandoff.current = receipt;
+    // Never replace an existing draft or turn a new task into an active task's reply.
+    if (!draft.trim() && !active) setDraft(goal);
+    else setHandoffDraft(goal);
+    navigate({ pathname: location.pathname, search: location.search, hash: "" }, { replace: true });
+  }, [
+    agentId,
+    location.hash,
+    location.pathname,
+    location.search,
+    navigate,
+    draft,
+    active,
+    workHistoryLoaded,
+    setDraft,
+  ]);
   const canSend = Boolean(
     model.status?.available &&
     model.tasks !== null &&
@@ -97,8 +127,8 @@ export default function StudioTaskChat({
       setShowLatest(node.scrollHeight - node.scrollTop - node.clientHeight > 160);
     }
   }, [agentId, selected?.id, selected?.updatedAt]);
-  const send = async () => {
-    if (!canSend || pendingRef.current) return;
+  const send = async (openBrowser = true) => {
+    if (!canSend || pendingRef.current) return false;
     pendingRef.current = true;
     setPending("send");
     setError(null);
@@ -111,9 +141,11 @@ export default function StudioTaskChat({
       else await model.startTask({ agentId, goal: submitted });
       if (drafts.get(submittedKey)?.text.trim() === submitted) drafts.delete(submittedKey);
       updateDraft((revision) => revision + 1);
-      onShowBrowser();
+      if (openBrowser) onShowBrowser();
+      return true;
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Your task did not start. Try again.");
+      return false;
     } finally {
       pendingRef.current = false;
       setPending(null);
@@ -286,6 +318,56 @@ export default function StudioTaskChat({
               Finish your browser step, then return control to your Bot.
             </p>
           ) : null}
+          {handoffDraft ? (
+            <StatusNotice tone="info" title="Task from a connected assistant">
+              <p className="break-words">{handoffDraft}</p>
+              <p>Review this task before starting work. Your current draft is kept.</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  disabled={Boolean(active)}
+                  onClick={() => {
+                    setDraft(handoffDraft);
+                    setHandoffDraft(null);
+                    input.current?.focus();
+                  }}
+                >
+                  Use task draft
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setHandoffDraft(null)}
+                >
+                  Dismiss
+                </Button>
+              </div>
+            </StatusNotice>
+          ) : null}
+          <StudioHandsFree
+            key={`${agentId}:work`}
+            agentId={agentId}
+            draft={draft}
+            onDraftChange={setDraft}
+            canSubmit={canSend}
+            onSubmit={() => send(false)}
+            sendPhrase="send task"
+            maxLength={awaitingReply ? 1000 : 2000}
+            busy={Boolean(pending || model.starting || (active && !awaitingReply && !handoff))}
+            responseKey={
+              selected
+                ? `${selected.id}:${selected.status}:${selected.question || selected.summary || ""}`
+                : ""
+            }
+            response={
+              selected?.status === "needs_input"
+                ? selected.question || "Your Bot needs you in Studio."
+                : selected?.summary || ""
+            }
+          />
           <form
             className="wl-composer-dock wl-studio-composer"
             onSubmit={(event) => {

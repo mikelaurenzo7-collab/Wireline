@@ -28,6 +28,7 @@ import { WL_COMPOSER_CLASSES } from "../lib/wireline-design-system";
 import { retainStudioConversationMessages } from "../lib/studio-session-state";
 import LinkifiedText from "./ui/LinkifiedText";
 import BotMark from "./BotMark";
+import StudioHandsFree from "./studio/StudioHandsFree";
 
 export type StudioMessage = {
   id: string;
@@ -237,6 +238,11 @@ const StudioWorkroom = forwardRef<
     [updateSession],
   );
   const requestActive = useRef(false);
+  const submittedDraft = useRef<string | null>(null);
+  const handsFreeActive = useRef(false);
+  const setHandsFreeActive = useCallback((active: boolean) => {
+    handsFreeActive.current = active;
+  }, []);
   useEffect(
     () => () => {
       if (requestActive.current) updateSession({ interrupted: true });
@@ -342,6 +348,7 @@ const StudioWorkroom = forwardRef<
   } = useStreamingChat(endpoint, {
     onComplete: (payload) => {
       requestActive.current = false;
+      submittedDraft.current = null;
       setMessages((current) => [
         ...current,
         {
@@ -362,10 +369,13 @@ const StudioWorkroom = forwardRef<
       ]);
       setSending(false);
       resetStream();
-      requestAnimationFrame(() => inputRef.current?.focus());
+      if (!handsFreeActive.current) requestAnimationFrame(() => inputRef.current?.focus());
     },
     onError: (message) => {
       requestActive.current = false;
+      const retained = submittedDraft.current;
+      if (retained) setDraft((current) => current || retained);
+      submittedDraft.current = null;
       setError(message);
       setSending(false);
       resetStream();
@@ -439,9 +449,10 @@ const StudioWorkroom = forwardRef<
     return () => observer.disconnect();
   }, [draft, mode]);
 
-  const submit = useCallback(() => {
+  const submit = useCallback(async () => {
     const text = draft.trim();
-    if (mode !== "configure" || !text || sending || loading || clearing) return;
+    if (mode !== "configure" || !text || requestActive.current || sending || loading || clearing)
+      return false;
     setMessages((current) => [
       ...current,
       {
@@ -452,12 +463,25 @@ const StudioWorkroom = forwardRef<
       },
     ]);
     setDraft("");
+    submittedDraft.current = text;
     setError(null);
     setSending(true);
     requestActive.current = true;
     updateSession({ interrupted: false });
-    void streamSend({ content: text });
-  }, [clearing, draft, loading, mode, sending, streamSend, setMessages, setError, updateSession]);
+    await streamSend({ content: text });
+    return !requestActive.current && !session.snapshot.replyError;
+  }, [
+    clearing,
+    draft,
+    loading,
+    mode,
+    sending,
+    streamSend,
+    setMessages,
+    setError,
+    updateSession,
+    session,
+  ]);
 
   const clearConversation = useCallback(async () => {
     if (mode !== "configure" || clearing || sending || loading) return;
@@ -760,6 +784,20 @@ const StudioWorkroom = forwardRef<
           {composerOverride || (
             <div className="wl-studio-chat__composer shrink-0 bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
               <div className="mx-auto max-w-3xl">
+                <StudioHandsFree
+                  key={`${agentId}:message`}
+                  agentId={agentId}
+                  draft={draft}
+                  onDraftChange={setDraft}
+                  canSubmit={Boolean(draft.trim() && !sending && !loading && !clearing)}
+                  onSubmit={submit}
+                  sendPhrase="send message"
+                  maxLength={2000}
+                  busy={sending || loading || clearing}
+                  responseKey={messages.at(-1)?.role === "agent" ? messages.at(-1)?.id : ""}
+                  response={messages.at(-1)?.role === "agent" ? messages.at(-1)?.content : ""}
+                  onActiveChange={setHandsFreeActive}
+                />
                 <div className={`${WL_COMPOSER_CLASSES.composerDock} wl-studio-composer`}>
                   <label className="sr-only" htmlFor={composerId}>
                     {`Message ${agentName}`}

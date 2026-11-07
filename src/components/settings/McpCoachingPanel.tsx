@@ -239,7 +239,9 @@ export default function McpCoachingPanel() {
                               ? "Prepare Calls for Review"
                               : scope === "calls.read"
                                 ? "Read Prepared Call Status"
-                                : scope,
+                                : scope === "notes.write"
+                                  ? "Save Confirmed Private Notes"
+                                  : scope,
                     )
                     .join(" · ")}
                 </p>

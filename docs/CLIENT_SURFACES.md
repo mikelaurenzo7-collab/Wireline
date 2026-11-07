@@ -18,6 +18,8 @@ BotBound is one protected agent platform with multiple deliberate control surfac
 
 ## Immediate layout
 
+Studio also provides opt-in foreground English speech in its existing composers. The shared MCP server can save exact confirmed private owner notes with `notes.write` and return review-only task handoffs. These additions do not admit browser tasks, enable native outbound, certify Bluetooth routing/background operation, or establish Meta preview acceptance. The product and hardware acceptance contract is `docs/HANDS_FREE.md`.
+
 ```text
 /apps
   /browser-extension     # Wireline Command manifest overlays, service worker, panel, packaging
