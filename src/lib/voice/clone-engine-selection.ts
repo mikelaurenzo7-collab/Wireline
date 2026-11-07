@@ -152,7 +152,7 @@ export type CloneEngineSelectionInput = {
   xai: { configured: boolean; entitled: boolean; teamVoicesUsed: number; teamLimit: number };
   elevenlabs: { configured: boolean };
   inhouse?: { configured: boolean };
-  /** Preferred clone engine, such as "inhouse" for self-sufficient local voice cloning. */
+  /** Operator preference. "inhouse" fails closed on live calls until a real streaming speech engine exists. */
   preferred?: CloneEngineId | null;
 };
 
@@ -173,21 +173,20 @@ export type CloneSelectionReason =
   | "no_engine_available";
 
 /**
- * Primary clone path. In-house engine or ElevenLabs creates the voice.
- * Illinois consent rules still apply universally.
+ * Live-call clone admission is intentionally separate from the genuine,
+ * private self-hosted preview pilot in voice-asset-service.ts. The legacy
+ * "inhouse" engine in clone-engines.ts emits synthetic oscillator audio, NOT
+ * intelligible cloned speech. Never route a customer enrollment to it, even
+ * if an old environment explicitly prefers it or advertises it as configured.
+ * Nor silently upload a speaker's recording to an external provider when the
+ * operator requested in-house processing. An eligible provider is always an
+ * explicit, separately gated live-call decision.
  */
 export function selectCloneEngine(input: CloneEngineSelectionInput): CloneEngineSelection {
   const writtenReleaseRequired = requiresWrittenBiometricRelease(input.jurisdiction);
-  if (input.preferred === "inhouse") {
-    return { engine: "inhouse", reason: "inhouse_preferred", writtenReleaseRequired };
-  }
-  if (input.inhouse?.configured && !input.elevenlabs.configured) {
-    return { engine: "inhouse", reason: "inhouse", writtenReleaseRequired };
-  }
-  if (!input.elevenlabs.configured && !input.xai.configured) {
-    return { engine: "inhouse", reason: "inhouse_preferred", writtenReleaseRequired };
-  }
-  if (!input.elevenlabs.configured) {
+  // Provider selection must be deliberate; a configured vendor key is not consent
+  // to send a speaker\u0027s reference recording to that vendor.
+  if (input.preferred !== "elevenlabs" || !input.elevenlabs.configured) {
     return { engine: null, reason: "no_engine_available", writtenReleaseRequired };
   }
   return { engine: "elevenlabs", reason: "elevenlabs", writtenReleaseRequired };
@@ -217,7 +216,7 @@ export function biometricExpiresAt(createdAt: Date, lastUsedAt: Date | null): Da
  * the speaker is always the signer, typing their own full legal name.
  * Changing the text requires a new version.
  */
-export const BIOMETRIC_RELEASE_VERSION = "voice-release-v2-2026-10-24" as const;
+export const BIOMETRIC_RELEASE_VERSION = "voice-release-v3-2026-11-07" as const;
 
 export function parseSignedLegalName(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -247,10 +246,10 @@ export const BIOMETRIC_RETENTION_SUMMARY =
  */
 export function biometricReleaseText(agentName: string): string[] {
   return [
-    "I am the person whose voice is in this recording, and I am recording it myself.",
+    "I am at least 18 years old, I am the person whose voice is in this recording, and I recorded it myself.",
     "BotBound will create a voiceprint (a digital model of how my voice sounds) from this recording.",
     `Purpose: only to let ${agentName || "my Bot"} speak in my voice on my business's calls and previews. It is never sold, leased, traded, or used to identify anyone.`,
-    "A third-party voice provider processes this recording to create the voice and keeps the voice model until it is deleted. BotBound does not keep the recording itself, only the voice, a fingerprint of the file, its length, and its quality score.",
+    "ElevenLabs, our voice provider, processes this recording to create the voice and keeps the voice model until it is deleted. BotBound does not keep the recording itself, only the voice, a fingerprint of the file, its length, and its quality score.",
     BIOMETRIC_RETENTION_SUMMARY,
     "By typing my full legal name below, I give BotBound and its voice provider written permission to collect, store, and use my voiceprint as described.",
   ];

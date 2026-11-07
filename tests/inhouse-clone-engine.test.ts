@@ -22,19 +22,20 @@ import {
   BIOMETRIC_IDLE_DAYS,
   BIOMETRIC_RETENTION_POLICY_VERSION,
 } from "../src/lib/voice/clone-engine-selection";
-import { liveVoiceService } from "../src/lib/voice/live-voice-service";
+import { engineSpeaksOnCalls, liveVoiceCloneEnabled } from "../src/lib/voice/live-voice-service";
 
-describe("in-house clone engine (self-sufficient voice synthesis)", () => {
+describe("legacy in-process waveform fixture (NOT cloned speech)", () => {
   it("registers inhouse in CLONE_ENGINE_IDS and clone engine registry", () => {
     expect(CLONE_ENGINE_IDS).toContain("inhouse");
     expect(isCloneEngineId("inhouse")).toBe(true);
     const engine = cloneEngine("inhouse");
     expect(engine.id).toBe("inhouse");
-    expect(engine.liveMode).toBe("native_realtime");
-    expect(engine.configured()).toBe(true);
+    expect(engine.liveMode).toBe("tts_bridge");
+    expect(engine.configured()).toBe(false);
+    expect(engineSpeaksOnCalls("inhouse")).toBe(false);
   });
 
-  it("creates in-house voice clone and validates voice id format and style embedding", async () => {
+  it("constructs a test-only waveform profile without claiming speaker similarity", async () => {
     resetInhouseVoiceStoreForTests();
     const engine = createInhouseCloneEngine();
     // 44-byte minimal WAV header
@@ -68,7 +69,7 @@ describe("in-house clone engine (self-sufficient voice synthesis)", () => {
     ).rejects.toThrow();
   });
 
-  it("synthesizes in-house preview audio at 24kHz without external API dependency", async () => {
+  it("renders transport-test WAV tones at 24kHz without external API dependency", async () => {
     const engine = createInhouseCloneEngine();
     const previewAudio = await engine.preview("inhouse_test_id", "Hello from BotBound voice!");
     expect(previewAudio.byteLength).toBeGreaterThan(44);
@@ -84,7 +85,7 @@ describe("in-house clone engine (self-sufficient voice synthesis)", () => {
     expect(bitsPerSample).toBe(16);
   });
 
-  it("generates 24kHz PCM audio chunks with sub-120ms token-to-speech latency on CPU", async () => {
+  it("generates PCM fixture chunks without claiming spoken words or realtime latency", async () => {
     const engine = createInhouseCloneEngine();
     const sampleWav = Buffer.alloc(44);
     sampleWav.write("RIFF", 0);
@@ -108,15 +109,15 @@ describe("in-house clone engine (self-sufficient voice synthesis)", () => {
     expect(firstChunk.sampleRate).toBe(24_000);
     expect(firstChunk.samples).toBeGreaterThan(0);
     expect(firstChunk.pcm.byteLength).toBe(firstChunk.samples * 2);
-    // Sub-120ms token-to-speech latency on CPU invariant
-    expect(firstChunk.latencyMs).toBeLessThan(120);
+    // This is oscillator generation, not TTS latency or spoken text fidelity.
+    expect(firstChunk.latencyMs).toBeGreaterThanOrEqual(0);
     expect(chunks[chunks.length - 1].isFinal).toBe(true);
   });
 
-  it("reports unlimited capacity without external API credits or quotas", async () => {
+  it("reports that test fixture generation is not eligible for customer cloning", async () => {
     const engine = createInhouseCloneEngine();
     const cap = await engine.capacity();
-    expect(cap.canClone).toBe(true);
+    expect(cap.canClone).toBe(false);
     expect(cap.voiceLimit).toBeNull();
     expect(cap.creditsRemaining).toBeNull();
   });
@@ -143,13 +144,13 @@ describe("in-house clone engine (self-sufficient voice synthesis)", () => {
     expect(secondRemove.alreadyMissing).toBe(true);
   });
 
-  it("selects inhouse when preferred or when external vendors are unconfigured", () => {
+  it("never admits oscillator-generated demo audio into live cloning", () => {
     const selection = selectCloneEngine({
       jurisdiction: "US-IL",
       xai: { configured: false, entitled: false, teamVoicesUsed: 0, teamLimit: 30 },
       elevenlabs: { configured: false },
     });
-    expect(selection.engine).toBe("inhouse");
+    expect(selection.engine).toBeNull();
     expect(selection.writtenReleaseRequired).toBe(true);
 
     const candidates = cloneEngineCandidates({
@@ -157,11 +158,33 @@ describe("in-house clone engine (self-sufficient voice synthesis)", () => {
       xai: { configured: false, entitled: false, teamVoicesUsed: 0, teamLimit: 30 },
       elevenlabs: { configured: false },
     });
-    expect(candidates).toEqual(["inhouse"]);
+    expect(candidates).toEqual([]);
   });
 
-  it("resolves inhouse preferred clone engine from environment", () => {
+  it("refuses an inhouse live rollout rather than silently routing recordings to a vendor", () => {
     expect(resolvePreferredCloneEngine({ VOICE_CLONE_ENGINE_DEFAULT: "inhouse" })).toBe("inhouse");
+    expect(
+      liveVoiceCloneEnabled({
+        LIVE_VOICE_CLONE_ENABLED: "true",
+        VOICE_CLONE_ENGINE_DEFAULT: "inhouse",
+      }),
+    ).toBe(false);
+    const selected = selectCloneEngine({
+      jurisdiction: "US-IL",
+      preferred: "inhouse",
+      inhouse: { configured: true },
+      xai: { configured: false, entitled: false, teamVoicesUsed: 0, teamLimit: 30 },
+      elevenlabs: { configured: true },
+    });
+    expect(selected.engine).toBeNull();
+    expect(
+      cloneEngineCandidates({
+        jurisdiction: "US-CA",
+        preferred: "xai",
+        xai: { configured: true, entitled: true, teamVoicesUsed: 0, teamLimit: 30 },
+        elevenlabs: { configured: true },
+      }),
+    ).toEqual([]);
   });
 
   it("enforces strict Illinois BIPA and Texas CUBI compliance with 3-year maximum retention limit", () => {
@@ -285,7 +308,7 @@ describe("in-house clone engine (self-sufficient voice synthesis)", () => {
     expect(getInhouseVoiceProfile(providerVoiceId)).toBeNull();
   });
 
-  it("integrates with liveVoiceService.expireDue() to sweep in-house voice models atomically", async () => {
+  it("remains deletable by the retention sweep despite being disabled for live calling", async () => {
     resetInhouseVoiceStoreForTests();
     const engine = createInhouseCloneEngine();
     const sampleWav = Buffer.alloc(44);
@@ -301,8 +324,8 @@ describe("in-house clone engine (self-sufficient voice synthesis)", () => {
     const profile = getInhouseVoiceProfile(providerVoiceId);
     profile!.expiresAt = Date.now() - 5000;
 
-    const totalExpired = await liveVoiceService.expireDue();
-    expect(totalExpired).toBeGreaterThanOrEqual(1);
+    const swept = sweepInhouseVoiceRetention();
+    expect(swept.expiredCount).toBeGreaterThanOrEqual(1);
     expect(getInhouseVoiceProfile(providerVoiceId)).toBeNull();
   });
 
@@ -369,7 +392,7 @@ describe("in-house clone engine (self-sufficient voice synthesis)", () => {
     expect(profile?.sampleRate).toBe(24000);
   });
 
-  it("synthesizes stock voice previews for both female and male default voices", async () => {
+  it("generates male/female stock tone fixtures, not speech previews", async () => {
     const engine = createInhouseCloneEngine();
     const femalePreview = await engine.preview("eve", "Hello from stock female.");
     expect(femalePreview.byteLength).toBeGreaterThan(44);

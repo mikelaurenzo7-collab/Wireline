@@ -96,7 +96,7 @@ export type CloneEngine = {
     name: string;
     wav: Buffer;
     gender?: "female" | "male";
-  }): Promise<{ providerVoiceId: string }>;
+  }): Promise<{ providerVoiceId: string; requiresVerification?: boolean }>;
   /** Idempotent: an id that is already gone at the provider counts as deleted. */
   remove(providerVoiceId: string): Promise<{ alreadyMissing: boolean }>;
   preview(providerVoiceId: string, text: string): Promise<Buffer>;
@@ -236,9 +236,11 @@ function extractSpeakerEmbedding(
 }
 
 /**
- * Server-side in-house voice synthesis engine using Kokoro-82M / ONNX Runtime patterns in Node.js.
- * Generates 24kHz linear PCM audio chunks with sub-120ms token-to-speech latency on CPU
- * without any external API dependencies or provider fees.
+ * Legacy waveform generator for audio transport/retention tests ONLY.
+ * It synthesizes oscillators, not speech, and cannot reproduce a speaker's
+ * voice or pronounce the requested text. The genuine private-preview model
+ * is a separate bounded service in voice-asset-service.ts. Never promote this
+ * generator as a live cloning engine, irrespective of synthetic speed tests.
  */
 export async function* synthesizeInhouseVoiceChunks(
   providerVoiceId: string,
@@ -344,8 +346,9 @@ export async function* synthesizeInhouseVoiceChunks(
 export function createInhouseCloneEngine(_env: Env = process.env): CloneEngine {
   return {
     id: "inhouse",
-    liveMode: "native_realtime",
-    configured: () => true,
+    // Retain the fixture for tests and erasure of legacy ids, never live admission.
+    liveMode: "tts_bridge",
+    configured: () => false,
     create: async (input) => {
       if (!input.wav || input.wav.byteLength < 44) {
         throw new CloneEngineError("inhouse", "rejected_audio");
@@ -406,7 +409,7 @@ export function createInhouseCloneEngine(_env: Env = process.env): CloneEngine {
       voicesUsed: inhouseVoiceStore.size,
       voiceLimit: null,
       creditsRemaining: null,
-      canClone: true,
+      canClone: false,
     }),
     sweepRetention: (now?: number) => sweepInhouseVoiceRetention(now),
     isVoiceId: (value): value is string =>
@@ -544,7 +547,10 @@ export function createElevenLabsCloneEngine(
           description: "BotBound consented live voice",
           samples: [{ bytes: new Uint8Array(input.wav), mimeType: "audio/wav" }],
         });
-        return { providerVoiceId: created.voiceId };
+        return {
+          providerVoiceId: created.voiceId,
+          requiresVerification: created.requiresVerification,
+        };
       }),
     remove: (id) =>
       wrap(async () => ({ alreadyMissing: (await client().deleteVoice(id)).alreadyMissing })),

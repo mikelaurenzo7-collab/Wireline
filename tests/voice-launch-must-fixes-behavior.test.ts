@@ -247,6 +247,7 @@ describe("clone engine selection", () => {
         teamLimit: 30,
       },
       elevenlabs: { configured: true },
+      preferred: "elevenlabs" as const,
     };
     expect(cloneEngineCandidates({ ...base, jurisdiction: "US-IL" })).toEqual(["elevenlabs"]);
     expect(cloneEngineCandidates({ ...base, jurisdiction: "US-CA" })).toEqual(["elevenlabs"]);
@@ -266,13 +267,17 @@ describe("clone engine selection", () => {
       ELEVENLABS_API_KEY: "test-eleven-key",
       OPENAI_API_KEY: "test-openai-key",
       WIRELINE_VOICE_WORKER_URL: "https://voice.botbound.app",
+      VOICE_CLONE_ENGINE_DEFAULT: "elevenlabs",
     };
+    expect(liveVoiceCloneEnabled({ ...ready, VOICE_CLONE_ENGINE_DEFAULT: "" })).toBe(false);
     expect(liveVoiceCloneEnabled({ ...ready, LIVE_VOICE_CLONE_ENABLED: "" })).toBe(false);
     expect(liveVoiceCloneEnabled(ready)).toBe(true);
     expect(liveVoiceCloneEnabled({ ...ready, ELEVENLABS_API_KEY: "" })).toBe(false);
     expect(liveVoiceCloneEnabled({ ...ready, OPENAI_API_KEY: "" })).toBe(false);
     expect(liveVoiceCloneEnabled({ ...ready, WIRELINE_VOICE_WORKER_URL: "" })).toBe(false);
     expect(liveVoiceCloneEnabled({ ...ready, LIVE_VOICE_CLONE_ENABLED: "false" })).toBe(false);
+    expect(liveVoiceCloneEnabled({ ...ready, VOICE_CLONE_ENGINE_DEFAULT: "inhouse" })).toBe(false);
+    expect(liveVoiceCloneEnabled({ ...ready, VOICE_CLONE_ENGINE_DEFAULT: "xai" })).toBe(false);
   });
 
   it("plays an ElevenLabs clone only when that phone path is configured", () => {
@@ -336,7 +341,9 @@ describe("consent and retention", () => {
     expect(record).not.toMatch(/authorized|on behalf of/i);
     expect(record.length).toBeGreaterThanOrEqual(200);
     expect(record.length).toBeLessThanOrEqual(8_000);
-    expect(record).not.toMatch(/xAI|Grok|ElevenLabs|OpenAI|Wireline/);
+    expect(record).toContain("ElevenLabs, our voice provider");
+    expect(record).toContain("at least 18 years old");
+    expect(record).not.toMatch(/xAI|Grok|OpenAI|Wireline/);
   });
 
   it("clone details travel in a header, never the query string", () => {

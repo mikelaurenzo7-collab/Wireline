@@ -1,19 +1,24 @@
 # Help: Your Own Voice On Calls
 
-Last updated: October 25, 2026
+Last updated: November 7, 2026
 
-Your Bot can speak in your own voice.
+Create a private preview of your own voice, then use it on calls when live
+cloning is enabled for your account. Built-in voices remain available throughout.
 
 ## Create it
 
 1. Open your Bot, then **Voice**, then **Clone Voice**.
-2. Choose the state you live in, read the voice release, and sign it by typing
-   your full legal name. Only you can clone your voice.
+2. Choose the state you live in, read the voice release naming ElevenLabs, and
+   sign it with your full legal name. You must be an adult cloning your own voice.
 3. Read the on-screen script in a quiet room for about 90 seconds (10 seconds
    minimum, 2 minutes maximum). The meter shows your level as you go.
 4. Review the quality check. If it suggests a retake, follow the tip and record
    again.
-5. Compare your voice with the stock voice, then choose **Use This Voice**.
+5. Compare **Your Voice** with **Stock Fallback** reading the same sentence.
+   Previews use AI allowance. Replaying a prepared sample on the same screen
+   does not generate speech again; access and revocation are still checked.
+6. A **Private preview only** voice does not change calls. **Use Voice** appears
+   when live calling is enabled. Phone testing additionally needs a Bot number.
 
 **Switch back to stock voice** reverts in one tap, and deleting a voice removes
 it everywhere.
@@ -49,7 +54,7 @@ quality and interruption behavior.
 
 ## Your recording and your privacy
 
-- A voice provider that works for BotBound processes your recording to create
+- ElevenLabs, BotBound's voice provider, processes your recording to create
   the voice and keeps the voice model until it is deleted. BotBound does not
   keep the recording itself. It keeps the voice, a fingerprint of the file, its
   length, its quality score, and your signed release.

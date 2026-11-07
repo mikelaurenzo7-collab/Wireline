@@ -384,6 +384,26 @@ async function capture(page: Page, info: TestInfo, name: string) {
 
 const READY = { available: true, reason: "ready", limits: { maxMinutes: 15, maxSteps: 120 } };
 
+test("an ended blocked task does not ask the owner to finish an expired session", async ({
+  page,
+}) => {
+  await mockComputer(page, {
+    status: READY,
+    tasks: [
+      task({
+        id: "task-ended",
+        status: "blocked",
+        liveView: false,
+        errorCode: "COMPUTER_BROWSER_EXPIRED",
+        finishedAt: NOW,
+      }),
+    ],
+  });
+  await page.goto("/computer");
+  await expect(page.getByText("Needs You to Finish", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Could Not Finish", { exact: true }).first()).toBeVisible();
+});
+
 for (const width of [390, 1024]) {
   test(`a finished task opens on its result and keeps a new task one click away at ${width}px`, async ({
     page,

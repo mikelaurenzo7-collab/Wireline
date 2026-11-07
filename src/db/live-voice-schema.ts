@@ -97,7 +97,7 @@ export const liveVoices = pgTable(
     ),
     providerCheck: check(
       "wireline_live_voices_provider_check",
-      sql`${table.provider} IN ('xai', 'elevenlabs', 'inhouse')`,
+      sql`${table.provider} IN ('xai', 'elevenlabs')`,
     ),
     voiceIdCheck: check(
       "wireline_live_voices_voice_id_check",
@@ -125,7 +125,7 @@ export const liveVoices = pgTable(
     ),
     biometricReleaseCheck: check(
       "wireline_live_voices_biometric_release_check",
-      sql`${table.biometricReleaseVersion} = 'voice-release-v2-2026-10-24' AND char_length(${table.biometricReleaseSignedName}) BETWEEN 3 AND 120 AND ${table.biometricReleaseAcceptedAt} IS NOT NULL AND char_length(${table.consentNoticeText}) BETWEEN 200 AND 8000`,
+      sql`${table.biometricReleaseVersion} IS NOT NULL AND ${table.biometricReleaseVersion} IN ('voice-release-v2-2026-10-24', 'voice-release-v3-2026-11-07') AND ${table.biometricReleaseSignedName} IS NOT NULL AND char_length(${table.biometricReleaseSignedName}) BETWEEN 3 AND 120 AND ${table.biometricReleaseAcceptedAt} IS NOT NULL AND char_length(${table.consentNoticeText}) BETWEEN 200 AND 8000`,
     ),
     retentionCheck: check(
       "wireline_live_voices_retention_check",

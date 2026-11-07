@@ -15,6 +15,7 @@ import {
 } from "drizzle-orm";
 import { elevenLabsCallsConfigured } from "./cloned-media-config";
 import { renderClonedStockPreview } from "./cloned-speech-stream";
+import { ELEVENLABS_SPEECH_MODEL } from "./elevenlabs-speech-settings";
 import {
   reservePlatformCostRecord,
   commitPlatformCostReservation,
@@ -67,7 +68,6 @@ import {
   WRITTEN_BIOMETRIC_RELEASE_JURISDICTIONS,
   type SpeakerJurisdiction,
 } from "./clone-engine-selection";
-import { stockFallbackVoiceFor } from "./xai-voice-config";
 import { voiceSampleLine } from "./voice-sample";
 import { PHONE_CATALOG_VOICE_KEY } from "../phone-voice-catalog";
 
@@ -89,6 +89,8 @@ export type LiveVoiceSummary = {
   expiresAt: string | null;
   /** Whether live phone calls speak this voice today (else the closest stock voice answers). */
   speaksOnCalls: boolean;
+  /** Private listening is independent of the live phone-worker rollout. */
+  previewAvailable: boolean;
   inUseByAgentIds: string[];
 };
 
@@ -118,18 +120,45 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
  */
 export function liveVoiceCloneEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
   if (env.LIVE_VOICE_CLONE_ENABLED !== "true") return false;
-  if (resolvePreferredCloneEngine(env) === "inhouse") return true;
-  // A key alone is not enough: the recorder stays closed until a call can
-  // actually speak the clone (OpenAI text, ElevenLabs audio, voice worker).
+  // A preferred in-house engine must NEVER silently fall back to a vendor.
+  // The old in-process waveform generator is not a real cloned-voice model.
+  const preferred = resolvePreferredCloneEngine(env);
+  if (preferred !== "elevenlabs") return false;
+  // Call admission remains independent of the allowlisted private preview.
   return elevenLabsCallsConfigured(env);
+}
+
+/** A deliberately allowlisted private preview never grants phone-call admission. */
+export function liveVoicePreviewEnabled(
+  actor: Actor,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  if (liveVoiceCloneEnabled(env)) return true;
+  return (
+    env.LIVE_VOICE_PREVIEW_ENABLED === "true" &&
+    resolvePreferredCloneEngine(env) === "elevenlabs" &&
+    Boolean(env.ELEVENLABS_API_KEY?.trim()) &&
+    Boolean(env.OPENAI_API_KEY?.trim()) &&
+    String(env.LIVE_VOICE_PREVIEW_USER_IDS || "")
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean)
+      .includes(actor.id)
+  );
 }
 
 /** Engines available to the native or streaming phone runtime. */
 export function engineSpeaksOnCalls(engine: CloneEngineId): boolean {
-  return (
-    cloneEngine(engine).liveMode === "native_realtime" ||
-    (engine === "elevenlabs" && elevenLabsCallsConfigured())
-  );
+  // A saved voice is not callable during the global launch pause, regardless
+  // of credentials, provider IDs, or legacy settings.
+  if (!liveVoiceCloneEnabled()) return false;
+  // The legacy in-process oscillator is a test fixture, never a callable clone.
+  if (engine === "inhouse") return false;
+  const preferred = resolvePreferredCloneEngine();
+  if (preferred && preferred !== engine) return false;
+  return engine === "elevenlabs"
+    ? elevenLabsCallsConfigured()
+    : engine === "xai" && cloneEngine("xai").configured();
 }
 
 function voiceNotExpired() {
@@ -186,7 +215,7 @@ const FRIENDLY_PROVIDER_ERRORS: Record<CloneEngineErrorCode, { status: number; m
     provider_unavailable: {
       status: 503,
       message:
-        "We couldn't finish your voice just now. Nothing was charged. Please try again in a minute.",
+        "We couldn't finish your voice just now. Any preview allowance reservation may remain. Your built-in voice is unchanged.",
     },
   };
 
@@ -258,6 +287,7 @@ function summarize(
     lastUsedAt: row.lastUsedAt ? row.lastUsedAt.toISOString() : null,
     expiresAt: row.expiresAt ? row.expiresAt.toISOString() : null,
     speaksOnCalls: engineSpeaksOnCalls(engineFor(row).id),
+    previewAvailable: row.provider === "elevenlabs" && liveVoicePreviewEnabled({ id: row.userId }),
     inUseByAgentIds: agents
       .filter((agent) => customVoiceSelection(agent.businessVariables)?.cloneId === row.id)
       .map((agent) => agent.id),
@@ -391,9 +421,10 @@ async function discardOrphanedProviderVoice(
 
 export const liveVoiceService = {
   capabilities(actor: Actor) {
-    void actor;
     return {
-      available: liveVoiceCloneEnabled(),
+      available: liveVoicePreviewEnabled(actor),
+      callsAvailable: liveVoiceCloneEnabled(),
+      provider: "ElevenLabs" as const,
       consentVersion: LIVE_VOICE_CONSENT_VERSION,
       minSeconds: LIVE_VOICE_MIN_SECONDS,
       recommendedSeconds: LIVE_VOICE_RECOMMENDED_SECONDS,
@@ -432,7 +463,7 @@ export const liveVoiceService = {
   },
 
   async create(actor: Actor, wav: Buffer, input: CreateLiveVoiceInput) {
-    if (!liveVoiceCloneEnabled())
+    if (!liveVoicePreviewEnabled(actor))
       throw friendlyProviderError(new CloneEngineError("elevenlabs", "not_configured"));
     const name = typeof input.name === "string" ? input.name.trim() : "";
     // eslint-disable-next-line no-control-regex
@@ -561,14 +592,22 @@ export const liveVoiceService = {
         for (const candidateId of candidates) {
           const engine = cloneEngine(candidateId);
           try {
-            const { providerVoiceId } = await engine.create({
+            const { providerVoiceId, requiresVerification } = await engine.create({
               name,
               wav,
               gender,
             });
             created = { engine, providerVoiceId };
+            if (requiresVerification)
+              throw new AppError(
+                422,
+                "LIVE_VOICE_VERIFICATION_REQUIRED",
+                "The voice provider requires additional speaker verification. This voice has not been enabled. Your built-in voice is unchanged.",
+              );
             break;
           } catch (error) {
+            // A returned provider ID must stay attached to its cleanup receipt.
+            if (created) throw error;
             lastError = error;
             const code = error instanceof CloneEngineError ? error.code : "provider_unavailable";
             log.warn("Live voice clone failed at engine", {
@@ -661,55 +700,93 @@ export const liveVoiceService = {
     },
   ): Promise<Buffer> {
     const row = await readyVoice(actor.id, id);
-    const line = voiceSampleLine(input.agentName || "your Bot");
-    try {
-      if (input.variant === "clone") {
-        const audio = await engineFor(row).preview(row.providerVoiceId!, line);
-        void touchLastUsed(actor.id, row);
-        return audio;
-      }
-      // The same stock voice a call would fall back to, so the A/B is honest.
-      if (engineFor(row).id === "inhouse") {
-        return await cloneEngine("inhouse").preview(
-          stockFallbackVoiceFor(input.stockVoice, row.voiceGender),
-          line,
-        );
-      }
-      if (engineFor(row).id === "elevenlabs") {
-        const reservation = await reservePlatformCostRecord({
-          userId: actor.id,
-          action: "voice.clone.preview",
-          provider: "openai",
-          model: "tts-1",
-          costUsd: Math.max(0.000001, (Array.from(line).length * 0.015) / 1_000),
-          requestMeta: {
-            surface: "clone_preview",
-            characters: Array.from(line).length,
-            estimate: true,
-          },
-        });
-        if (!reservation.reserved)
-          throw AppError.serviceUnavailable(
-            "The preview could not reserve its audio cost. Try again shortly.",
-          );
-        await commitPlatformCostReservation(reservation.reservation);
-        return renderClonedStockPreview({
-          text: line,
-          gender: row.voiceGender ?? null,
-          apiKey: process.env.OPENAI_API_KEY ?? "",
-        });
-      }
-      return await cloneEngine("xai").preview(
-        stockFallbackVoiceFor(input.stockVoice, row.voiceGender),
-        line,
+    // Do not present synthetic test tones as a sampled speaker's voice.
+    // A genuine self-hosted model is admitted through the separate preview pilot.
+    if (row.provider === "inhouse")
+      throw new AppError(
+        409,
+        "VOICE_CLONE_DEMO_UNAVAILABLE",
+        "This legacy demo cannot generate a real voice preview. Delete it or choose a built-in voice.",
       );
-    } catch (error) {
-      if (error instanceof CloneEngineError)
-        void alertCloneEngineCapacity(error.engine, error.code, {
-          operation: "preview",
-        }).catch(() => {});
-      throw friendlyProviderError(error);
-    }
+    // The separate in-house private-preview pilot has its own authorization.
+    // Private previews require their own explicit owner canary or a live rollout.
+    if (!liveVoicePreviewEnabled(actor) || row.provider !== "elevenlabs")
+      throw new AppError(
+        409,
+        "VOICE_CLONE_PREVIEW_UNAVAILABLE",
+        "Private voice previews are not enabled for this account. Your built-in voice is unchanged.",
+      );
+    const line = voiceSampleLine(input.agentName || "your Bot");
+    return fenced(actor.id, "live_voice_preview", async () => {
+      // Recheck after the account deletion fence. Revoked references cannot
+      // start fresh provider work while a stale owner request is waiting.
+      const current = await readyVoice(actor.id, id);
+      const provider = input.variant === "clone" ? "elevenlabs" : "openai";
+      const reservation = await reservePlatformCostRecord({
+        userId: actor.id,
+        action: "voice.clone.preview",
+        provider,
+        model: provider === "elevenlabs" ? ELEVENLABS_SPEECH_MODEL : "tts-1",
+        // Conservative reservation, matching the phone speech cost envelope.
+        costUsd: Math.max(
+          0.000001,
+          (Array.from(line).length * (provider === "elevenlabs" ? 0.3 : 0.015)) / 1_000,
+        ),
+        requestMeta: {
+          surface: "clone_preview",
+          characters: Array.from(line).length,
+          estimate: true,
+        },
+      });
+      if (!reservation.reserved)
+        throw AppError.serviceUnavailable(
+          "The preview could not reserve its audio cost. Try again shortly.",
+        );
+      await commitPlatformCostReservation(reservation.reservation);
+      // A delete or rollout pause during reservation must win before synthesis.
+      await readyVoice(actor.id, id);
+      if (!liveVoicePreviewEnabled(actor))
+        throw new AppError(
+          409,
+          "VOICE_CLONE_PREVIEW_UNAVAILABLE",
+          "Private voice previews are paused. Your built-in voice is unchanged.",
+        );
+      let audio: Buffer;
+      try {
+        if (input.variant === "clone") {
+          audio = await engineFor(current).preview(current.providerVoiceId!, line);
+        } else {
+          // The stock speech fallback from the cloned-call bridge, same text.
+          audio = await renderClonedStockPreview({
+            text: line,
+            gender: current.voiceGender ?? null,
+            apiKey: process.env.OPENAI_API_KEY ?? "",
+          });
+        }
+      } catch (error) {
+        if (error instanceof AppError) throw error;
+        if (error instanceof CloneEngineError)
+          void alertCloneEngineCapacity(error.engine, error.code, {
+            operation: "preview",
+          }).catch(() => {});
+        throw friendlyProviderError(error);
+      }
+      try {
+        // Deletion while the provider was rendering also suppresses delivery.
+        await readyVoice(actor.id, id);
+        if (!liveVoicePreviewEnabled(actor))
+          throw new AppError(
+            409,
+            "VOICE_CLONE_PREVIEW_UNAVAILABLE",
+            "Private voice previews are paused.",
+          );
+      } catch (error) {
+        audio.fill(0);
+        throw error;
+      }
+      if (input.variant === "clone") void touchLastUsed(actor.id, current);
+      return audio;
+    });
   },
 
   async useOnBot(actor: Actor, id: string, agentId: string) {
@@ -720,7 +797,7 @@ export const liveVoiceService = {
         // Revocation first updates this same voice row. Hold its lock until the
         // selection commits: deletion either wins first or clears this selection.
         const [row] = await tx
-          .select({ id: liveVoices.id, name: liveVoices.name })
+          .select({ id: liveVoices.id, name: liveVoices.name, provider: liveVoices.provider })
           .from(liveVoices)
           .where(
             and(
@@ -733,6 +810,25 @@ export const liveVoiceService = {
           .limit(1)
           .for("update");
         if (!row) throw AppError.notFound("Voice not found.");
+        if (row.provider === "inhouse")
+          throw new AppError(
+            409,
+            "VOICE_CLONE_PREVIEW_ONLY",
+            "This legacy voice is a demo preview, not a live cloned voice. Choose a built-in voice for calls.",
+          );
+        const preferred = resolvePreferredCloneEngine();
+        if (preferred && preferred !== row.provider)
+          throw new AppError(
+            409,
+            "VOICE_CLONE_PROVIDER_MISMATCH",
+            "This voice is not available under the selected voice provider.",
+          );
+        if (!engineSpeaksOnCalls(row.provider as CloneEngineId))
+          throw new AppError(
+            409,
+            "VOICE_CLONE_CALLS_UNAVAILABLE",
+            "This voice cannot be used for live calls under the current setup. Your built-in voice is unchanged.",
+          );
         const selection = JSON.stringify({
           cloneId: row.id,
           name: row.name,
@@ -897,10 +993,15 @@ export async function resolveRuntimeCustomVoice(
       )
       .limit(1);
     if (!row || !isCloneEngineId(row.provider)) return null;
+    // A saved selection must not route speech to a provider the operator has
+    // explicitly excluded through VOICE_CLONE_ENGINE_DEFAULT.
+    const preferred = resolvePreferredCloneEngine();
+    if (preferred && preferred !== row.provider) return null;
     if (row.provider === "elevenlabs") {
       if (!elevenLabsCallsConfigured()) return null;
     } else if (row.provider === "inhouse") {
-      if (!cloneEngine("inhouse").configured()) return null;
+      // A legacy oscillator profile must never be routed onto a customer's call.
+      return null;
     } else if (row.provider !== "xai" || !cloneEngine("xai").configured()) return null;
     const engine = cloneEngine(row.provider);
     if (!engine.isVoiceId(row.providerVoiceId)) return null;

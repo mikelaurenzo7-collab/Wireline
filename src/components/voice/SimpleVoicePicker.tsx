@@ -383,7 +383,12 @@ export default function SimpleVoicePicker({
           className="flex min-h-11 w-full items-center gap-2 rounded-xl border border-primary/25 bg-primary/5 px-3 py-2 text-left text-sm font-semibold text-foreground transition-colors hover:bg-primary/10 wl-focus-ring-halo"
         >
           <Mic className="size-4 shrink-0 text-primary" aria-hidden="true" />
-          <span className="min-w-0 flex-1">Clone Voice</span>
+          <span className="min-w-0 flex-1">
+            <span className="block">Your Voices</span>
+            <span className="block text-xs font-normal text-muted-foreground">
+              Clone or manage your voice
+            </span>
+          </span>
         </button>
       ) : null}
       <div aria-live="polite">
@@ -416,9 +421,17 @@ export default function SimpleVoicePicker({
       ) : null}
 
       {loading ? (
-        <div className="flex min-h-24 items-center justify-center gap-2 rounded-xl border border-border bg-muted/30 text-sm text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-          Loading…
+        <div
+          role="status"
+          aria-busy="true"
+          className="min-h-24 space-y-3 rounded-xl border border-border bg-background p-4"
+        >
+          <span className="sr-only">Loading voice settings…</span>
+          <div aria-hidden="true" className="space-y-2 animate-pulse motion-reduce:animate-none">
+            <div className="h-4 w-36 rounded bg-muted" />
+            <div className="h-3 w-3/4 rounded bg-muted" />
+            <div className="h-3 w-1/2 rounded bg-muted" />
+          </div>
         </div>
       ) : (
         <details

@@ -1,6 +1,6 @@
 import { getTableName, SQL } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type Row = { id: string; userId: string; businessVariables: unknown };
 const h = vi.hoisted(() => ({
@@ -11,6 +11,10 @@ const h = vi.hoisted(() => ({
   voiceLockTail: Promise.resolve(),
   onVoiceLockRequested: null as null | (() => void),
   remove: vi.fn(),
+  preview: vi.fn(),
+  stock: vi.fn(),
+  reserve: vi.fn(),
+  commit: vi.fn(),
 }));
 vi.mock("../src/lib/server-context", () => ({
   drizzle: createDatabase(),
@@ -116,18 +120,25 @@ vi.mock("../src/lib/tenant-provider-deletion-fence", () => ({
   }) => ({ performed: true, result: await perform() }),
 }));
 vi.mock("../src/middleware/audit-middleware", () => ({
-  reservePlatformCostRecord: vi.fn(),
-  commitPlatformCostReservation: vi.fn(),
+  reservePlatformCostRecord: h.reserve,
+  commitPlatformCostReservation: h.commit,
 }));
 vi.mock("../src/lib/voice/clone-engines", () => ({
-  cloneEngine: () => ({ id: "elevenlabs", remove: h.remove }),
+  cloneEngine: () => ({ id: "elevenlabs", remove: h.remove, preview: h.preview }),
   isCloneEngineId: () => true,
   CloneEngineError: class extends Error {},
 }));
-vi.mock("../src/lib/voice/cloned-speech-stream", () => ({ renderClonedStockPreview: vi.fn() }));
-vi.mock("../src/lib/voice/voice-sample", () => ({ voiceSampleLine: vi.fn() }));
+vi.mock("../src/lib/voice/cloned-speech-stream", () => ({ renderClonedStockPreview: h.stock }));
+vi.mock("../src/lib/voice/voice-sample", () => ({
+  voiceSampleLine: () => "Hello, this is your Bot. How can I help?",
+}));
 
-import { liveVoiceService, LIVE_CUSTOM_VOICE_KEY } from "../src/lib/voice/live-voice-service";
+import {
+  liveVoiceService,
+  LIVE_CUSTOM_VOICE_KEY,
+  liveVoicePreviewEnabled,
+  liveVoiceCloneEnabled,
+} from "../src/lib/voice/live-voice-service";
 import { PHONE_CATALOG_VOICE_KEY } from "../src/lib/phone-voice-catalog";
 
 const dialect = new PgDialect();
@@ -194,6 +205,15 @@ function pauseWrite(hook: "beforeAgentWrite" | "beforeVoiceWrite" = "beforeAgent
 }
 const selected = (cloneId = CLONE) => ({ [LIVE_CUSTOM_VOICE_KEY]: { cloneId } });
 beforeEach(() => {
+  // This suite checks DB selection/races for an explicitly approved provider.
+  // Production continues default-off, and tests never contact the provider.
+  vi.stubEnv("LIVE_VOICE_CLONE_ENABLED", "true");
+  vi.stubEnv("ELEVENLABS_API_KEY", "test-only-key");
+  vi.stubEnv("OPENAI_API_KEY", "test-only-openai-key");
+  vi.stubEnv("WIRELINE_VOICE_WORKER_URL", "https://voice.test.example");
+  vi.stubEnv("VOICE_CLONE_ENGINE_DEFAULT", "elevenlabs");
+  vi.stubEnv("LIVE_VOICE_PREVIEW_ENABLED", "false");
+  vi.stubEnv("LIVE_VOICE_PREVIEW_USER_IDS", "");
   h.agents = [
     { id: "bot", userId: OWNER, businessVariables: { ...selected(), greeting: "Original" } },
   ];
@@ -204,15 +224,190 @@ beforeEach(() => {
     status: "ready",
     provider: "elevenlabs",
     providerVoiceId: "provider-voice",
+    createdAt: new Date(),
+    lastUsedAt: null,
   };
   h.beforeAgentWrite = null;
   h.beforeVoiceWrite = null;
   h.onVoiceLockRequested = null;
   h.voiceLockTail = Promise.resolve();
   h.remove.mockReset().mockResolvedValue(undefined);
+  h.preview.mockReset().mockResolvedValue(Buffer.from("clone-audio"));
+  h.stock.mockReset().mockResolvedValue(Buffer.from("stock-audio"));
+  h.reserve.mockReset().mockResolvedValue({ reserved: true, reservation: { auditId: "receipt" } });
+  h.commit.mockReset().mockResolvedValue(undefined);
+});
+afterEach(() => vi.unstubAllEnvs());
+
+describe("consented private ElevenLabs A/B admission", () => {
+  function pilot() {
+    vi.stubEnv("LIVE_VOICE_CLONE_ENABLED", "false");
+    vi.stubEnv("WIRELINE_VOICE_WORKER_URL", "");
+    vi.stubEnv("LIVE_VOICE_PREVIEW_ENABLED", "true");
+    vi.stubEnv("LIVE_VOICE_PREVIEW_USER_IDS", ` ${OWNER}, `);
+  }
+
+  it("admits an exact allowlisted owner without enabling the phone worker or Bot assignment", async () => {
+    pilot();
+    expect(liveVoicePreviewEnabled(actor)).toBe(true);
+    expect(liveVoiceCloneEnabled()).toBe(false);
+    expect(liveVoiceService.capabilities(actor)).toMatchObject({
+      available: true,
+      callsAvailable: false,
+    });
+    await expect(liveVoiceService.preview(actor, CLONE, { variant: "clone" })).resolves.toEqual(
+      Buffer.from("clone-audio"),
+    );
+    expect(h.reserve).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: "elevenlabs",
+        action: "voice.clone.preview",
+        costUsd: expect.any(Number),
+      }),
+    );
+    expect(h.commit).toHaveBeenCalledBefore(h.preview);
+    await expect(liveVoiceService.useOnBot(actor, CLONE, "bot")).rejects.toMatchObject({
+      code: "VOICE_CLONE_CALLS_UNAVAILABLE",
+    });
+  });
+
+  it("requires both explicit provider choice and the exact owner allowlist", () => {
+    pilot();
+    for (const change of [
+      { LIVE_VOICE_PREVIEW_USER_IDS: OTHER },
+      { LIVE_VOICE_PREVIEW_USER_IDS: `prefix-${OWNER}` },
+      { LIVE_VOICE_PREVIEW_ENABLED: "false" },
+      { VOICE_CLONE_ENGINE_DEFAULT: "inhouse" },
+      { ELEVENLABS_API_KEY: "" },
+      { OPENAI_API_KEY: "" },
+    ])
+      expect(liveVoicePreviewEnabled(actor, { ...process.env, ...change })).toBe(false);
+  });
+
+  it("does not reserve credits or render another tenant's voice", async () => {
+    pilot();
+    await expect(
+      liveVoiceService.preview({ id: OTHER }, CLONE, { variant: "clone" }),
+    ).rejects.toMatchObject({ status: 404 });
+    expect(h.reserve).not.toHaveBeenCalled();
+    expect(h.preview).not.toHaveBeenCalled();
+  });
+
+  it("blocks synthesis when funding is unavailable or its debit cannot be committed", async () => {
+    pilot();
+    h.reserve.mockResolvedValueOnce({ reserved: false, reason: "budget" });
+    await expect(
+      liveVoiceService.preview(actor, CLONE, { variant: "clone" }),
+    ).rejects.toMatchObject({ status: 503 });
+    expect(h.preview).not.toHaveBeenCalled();
+    h.commit.mockRejectedValueOnce(new Error("receipt write unavailable"));
+    await expect(liveVoiceService.preview(actor, CLONE, { variant: "clone" })).rejects.toThrow(
+      "receipt write unavailable",
+    );
+    expect(h.preview).not.toHaveBeenCalled();
+  });
+
+  it("honors a pause or revocation while funding is being reserved", async () => {
+    pilot();
+    h.reserve.mockImplementationOnce(async () => {
+      vi.stubEnv("LIVE_VOICE_PREVIEW_ENABLED", "false");
+      return { reserved: true, reservation: { auditId: "receipt" } };
+    });
+    await expect(
+      liveVoiceService.preview(actor, CLONE, { variant: "clone" }),
+    ).rejects.toMatchObject({ code: "VOICE_CLONE_PREVIEW_UNAVAILABLE" });
+    expect(h.preview).not.toHaveBeenCalled();
+    pilot();
+    h.reserve.mockImplementationOnce(async () => {
+      h.voice.status = "cleanup_pending";
+      return { reserved: true, reservation: { auditId: "receipt" } };
+    });
+    await expect(
+      liveVoiceService.preview(actor, CLONE, { variant: "clone" }),
+    ).rejects.toMatchObject({ status: 404 });
+    expect(h.preview).not.toHaveBeenCalled();
+  });
+
+  it("suppresses and clears audio revoked during provider synthesis", async () => {
+    pilot();
+    const audio = Buffer.from("private-render");
+    h.preview.mockImplementationOnce(async () => {
+      h.voice.status = "deleted";
+      return audio;
+    });
+    await expect(
+      liveVoiceService.preview(actor, CLONE, { variant: "clone" }),
+    ).rejects.toMatchObject({ status: 404 });
+    expect(audio.every((byte) => byte === 0)).toBe(true);
+  });
+
+  it("renders the same sentence through the clone and the real stock fallback", async () => {
+    pilot();
+    await liveVoiceService.preview(actor, CLONE, { variant: "clone" });
+    await liveVoiceService.preview(actor, CLONE, { variant: "stock" });
+    expect(h.stock).toHaveBeenCalledWith(
+      expect.objectContaining({ text: h.preview.mock.calls[0][1] }),
+    );
+    expect(h.reserve.mock.calls[1][0]).toMatchObject({ provider: "openai", model: "tts-1" });
+  });
+
+  it("does not prolong cloned-voice retention when only the stock comparison is played", async () => {
+    pilot();
+    const expires = new Date("2027-01-01T00:00:00Z");
+    h.voice.expiresAt = expires;
+    await liveVoiceService.preview(actor, CLONE, { variant: "stock" });
+    expect(h.voice.lastUsedAt).toBeNull();
+    expect(h.voice.expiresAt).toEqual(expires);
+  });
 });
 
 describe("atomic cloned voice selection", () => {
+  it("cannot select a cloned phone voice when rollout is paused", async () => {
+    vi.stubEnv("LIVE_VOICE_CLONE_ENABLED", "false");
+    const prior = structuredClone(h.agents[0].businessVariables);
+    await expect(liveVoiceService.useOnBot(actor, CLONE, "bot")).rejects.toMatchObject({
+      status: 409,
+      code: "VOICE_CLONE_CALLS_UNAVAILABLE",
+    });
+    await expect(
+      liveVoiceService.preview(actor, CLONE, { variant: "clone" }),
+    ).rejects.toMatchObject({
+      status: 409,
+      code: "VOICE_CLONE_PREVIEW_UNAVAILABLE",
+    });
+    expect(h.agents[0].businessVariables).toEqual(prior);
+  });
+
+  it("does not assign a provider voice when an operator requires another engine", async () => {
+    const before = structuredClone(h.agents[0].businessVariables);
+    vi.stubEnv("VOICE_CLONE_ENGINE_DEFAULT", "xai");
+    try {
+      await expect(liveVoiceService.useOnBot(actor, CLONE, "bot")).rejects.toMatchObject({
+        status: 409,
+        code: "VOICE_CLONE_PROVIDER_MISMATCH",
+      });
+      expect(h.agents[0].businessVariables).toEqual(before);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("refuses an old synthetic in-house profile without modifying any Bot's saved settings", async () => {
+    h.voice.provider = "inhouse";
+    const before = structuredClone(h.agents[0].businessVariables);
+    await expect(liveVoiceService.useOnBot(actor, CLONE, "bot")).rejects.toMatchObject({
+      status: 409,
+      code: "VOICE_CLONE_PREVIEW_ONLY",
+    });
+    await expect(
+      liveVoiceService.preview(actor, CLONE, { variant: "clone" }),
+    ).rejects.toMatchObject({
+      status: 409,
+      code: "VOICE_CLONE_DEMO_UNAVAILABLE",
+    });
+    expect(h.agents[0].businessVariables).toEqual(before);
+  });
+
   it("rejects assignment when deletion takes the voice lock first", async () => {
     const gate = pauseWrite("beforeVoiceWrite");
     const deleting = liveVoiceService.remove(actor, CLONE);
