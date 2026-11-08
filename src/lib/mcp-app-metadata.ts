@@ -6,7 +6,7 @@ import { mcpIssuer, mcpResourceUrl } from "./mcp-oauth-security";
 /** MCP serverInfo name. Legacy tool names stay callable as hidden aliases. */
 export const MCP_SERVER_NAME = "botbound";
 export const MCP_SERVER_TITLE = "BotBound";
-export const MCP_SERVER_VERSION = "2.6.0";
+export const MCP_SERVER_VERSION = "2.7.0";
 
 export const MCP_DOCUMENTATION_URL = "https://botbound.app/claude-connector.html";
 export const MCP_PRIVACY_URL = "https://botbound.app/mcp-privacy.html";
@@ -50,7 +50,7 @@ export function mcpServerCard(req?: Parameters<typeof mcpIssuer>[0]) {
     title: MCP_SERVER_TITLE,
     version: MCP_SERVER_VERSION,
     description:
-      "Build and privately rehearse your Bot from Cursor, ChatGPT, or Claude. Review its knowledge, save confirmed Training with permission, and continue in BotBound for live channels and computer tasks.",
+      "Build and privately rehearse your Bot from Cursor, ChatGPT, or Claude. Review its knowledge, save confirmed private notes or Training with their separate permissions, and prepare browser tasks for review in BotBound.",
     websiteUrl: issuer,
     repository: { url: "https://github.com/mikelaurenzo7-collab/Wireline", source: "github" },
     icons: [{ src: MCP_ICON_URL, mimeType: "image/png" }],

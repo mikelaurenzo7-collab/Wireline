@@ -10,6 +10,7 @@ import {
 } from "../lib/agent-draft-service";
 import { CHATGPT_MCP_RESOURCE_URI, MCP_SCOPES, type McpScope } from "../lib/chatgpt-mcp";
 import { prepareCall, preparedCallStatus } from "../lib/prepared-call";
+import { prepareConnectorTask, saveConfirmedConnectorNote } from "../lib/connector-work";
 import { OUTBOUND_REQUEST_ID_PATTERN } from "../lib/outbound-dial-recovery";
 import {
   CHATGPT_ACCOUNT_WIDGET_URI,
@@ -455,6 +456,63 @@ function toolDefinitions() {
 
   return [
     {
+      name: "save_botbound_private_note",
+      title: "Save a private BotBound note",
+      description:
+        "Save one owner-authored private note in a chosen Bot's Memory. Read back the exact note and get explicit confirmation before calling. Requires separately consented notes.write. Private Memory is reference context for owner chat and browser work, never customer Training or permission to contact someone.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          agent_id: { type: "string", minLength: 1, maxLength: 256 },
+          content: { type: "string", minLength: 1, maxLength: 500 },
+          confirmed: {
+            type: "boolean",
+            const: true,
+            description: "True only after the owner confirms this exact private note.",
+          },
+        },
+        required: ["agent_id", "content", "confirmed"],
+        additionalProperties: false,
+      },
+      outputSchema: {
+        type: "object",
+        properties: { status: { const: "saved" }, agent_id: { type: "string" } },
+        required: ["status", "agent_id"],
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: false, openWorldHint: false, destructiveHint: false },
+      securitySchemes: [{ type: "oauth2", scopes: ["notes.write"] }],
+      _meta: { securitySchemes: [{ type: "oauth2", scopes: ["notes.write"] }] },
+    },
+    {
+      name: "prepare_botbound_task",
+      title: "Prepare a task for review in BotBound",
+      description:
+        "Prepare a browser task handoff for an owned Bot. Returns a review URL that fills the Studio draft; it does not start work, open a browser session, place calls, send messages, or authorize an external action. The owner opens Studio, reviews the exact task, and chooses Start work. Do not include passwords, codes, or payment credentials.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          agent_id: { type: "string", minLength: 1, maxLength: 256 },
+          goal: { type: "string", minLength: 4, maxLength: 2000 },
+        },
+        required: ["agent_id", "goal"],
+        additionalProperties: false,
+      },
+      outputSchema: {
+        type: "object",
+        properties: {
+          status: { const: "review_required" },
+          agent_id: { type: "string" },
+          review_url: { type: "string" },
+        },
+        required: ["status", "agent_id", "review_url"],
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: true, openWorldHint: false, destructiveHint: false },
+      securitySchemes: [{ type: "oauth2", scopes: ["agents.read"] }],
+      _meta: { securitySchemes: [{ type: "oauth2", scopes: ["agents.read"] }] },
+    },
+    {
       name: "prepare_call",
       title: "Prepare a call",
       description:
@@ -885,7 +943,7 @@ router.post("/mcp", async (req, res) => {
         },
         serverInfo: { name: MCP_SERVER_NAME, title: MCP_SERVER_TITLE, version: MCP_SERVER_VERSION },
         instructions:
-          "BotBound is the system of record. Cursor, ChatGPT, and Claude share the same tools. Confirm every Bot create, update, rehearsal, and Training write. Training writes also require the Apps toggle. Service and requested calls can be prepared for review in BotBound; the account holder must open the review URL and place the call. Sales and marketing are not supported. Never approve a call for the user or claim preparation placed it. Read its status using get_call_status; carrier acceptance and completion do not prove the requested task succeeded. SMS, email, number attachment, and launch remain workspace actions.",
+          "BotBound is the system of record. Connected assistants share the same tools. Confirm every Bot create, update, rehearsal, and Training write. Training writes also require the Apps toggle. Private notes require notes.write and confirmation of the exact note; they never grant action permission. prepare_botbound_task only fills a review draft and never starts work. Service and requested calls can be prepared for review in BotBound; the account holder must open the review URL and place the call. Sales and marketing are not supported. Never approve a call for the user or claim preparation placed it. Read its status using get_call_status; carrier acceptance and completion do not prove the requested task succeeded. SMS, email, number attachment, and launch remain workspace actions.",
       });
     }
     if (method === "ping") return jsonRpc(res, id, {});
@@ -945,6 +1003,37 @@ router.post("/mcp", async (req, res) => {
         ? (params.arguments as Record<string, unknown>)
         : {};
 
+    if (name === "save_botbound_private_note") {
+      const authed = requireScope(principal, "notes.write");
+      await assertMcpDraftWriteRateLimit(authed.userId);
+      const saved = await tenantStore.run(authed.userId, () =>
+        saveConfirmedConnectorNote(authed.userId, args),
+      );
+      return jsonRpc(res, id, {
+        content: [
+          {
+            type: "text",
+            text: "Private note saved in the selected Bot's Memory. It is owner context, not customer Training or action authorization.",
+          },
+        ],
+        structuredContent: saved,
+      });
+    }
+    if (name === "prepare_botbound_task") {
+      const authed = requireScope(principal, "agents.read");
+      const prepared = await tenantStore.run(authed.userId, () =>
+        prepareConnectorTask(authed.userId, args, issuer(req)),
+      );
+      return jsonRpc(res, id, {
+        content: [
+          {
+            type: "text",
+            text: `Task prepared for review: ${prepared.review_url}. No work has started. Open Studio, review the task, and choose Start work.`,
+          },
+        ],
+        structuredContent: prepared,
+      });
+    }
     if (name === "prepare_call") {
       const authed = requireScope(principal, "calls.prepare");
       await assertMcpDraftWriteRateLimit(authed.userId);

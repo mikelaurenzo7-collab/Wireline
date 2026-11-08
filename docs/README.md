@@ -65,6 +65,7 @@ The isolated speech worker has its own [setup guide](../services/voice-engine/RE
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md)                                                       | Web, browser, native, ChatGPT, and presenter ownership and release boundaries.                     |
 | [CLOUD_COMPUTER_BROWSER.md](./CLOUD_COMPUTER_BROWSER.md)                                         | Owner browser tools, session privacy, provider limits, and extension/password implementation path. |
 | [CHATGPT_APP.md](./CHATGPT_APP.md)                                                               | ChatGPT App behavior, OAuth, tool boundaries, and release verification.                            |
+| [HANDS_FREE.md](./HANDS_FREE.md) | Studio speech, Bluetooth and wearable opportunities, private notes, reviewed task handoffs, and Meta preview acceptance. |
 | [CLAUDE_CONNECTOR.md](./CLAUDE_CONNECTOR.md)                                                     | Claude Connector Directory and MCP App behavior for the shared `/mcp` server.                      |
 | [CURSOR_PLUGIN.md](./CURSOR_PLUGIN.md)                                                           | Cursor Directory plugin package and account-bound MCP behavior.                                    |
 | [USAGE_BILLING.md](./USAGE_BILLING.md)                                                               | Canonical current shared-work offer: Lite $12 / Starter $24 / Plus $49, meters, caps, and checkout. |

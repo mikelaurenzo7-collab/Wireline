@@ -17,6 +17,8 @@ ChatGPT conversation
 
 ## What ChatGPT owns
 
+Connected assistants can also save exact confirmed private owner notes with the separately consented `notes.write` scope and prepare review-only Studio task handoffs. Existing grants do not acquire the new permission. These notes are separate from customer Training. See the hands-free contract for Meta preview status and platform acceptance; no Meta access is enabled automatically.
+
 - Conversational discovery of the user's first-agent job.
 - Turning a natural-language request into a structured customization profile.
 - Collecting explicit confirmation before a private draft is created or changed.
@@ -72,6 +74,8 @@ See `docs/AGENT_CUSTOMIZATION_ARCHITECTURE.md` for the client/domain boundary.
 | `start_private_voice_simulation` | `demo.voice`    | Starts a short, tool-free private simulation.                                                                                                               |
 | `list_botbound_agents`           | `agents.read`   | Lists the connected user's agents.                                                                                                                          |
 | `get_botbound_workspace_summary` | `agents.read`   | Returns tenant-scoped aggregate agent, phone-number, recent activity, unread, connection, activation, and subscription status without raw customer content. |
+| `save_botbound_private_note` | `notes.write` | Saves the exact owner-confirmed private Memory note. No customer Training or external action; existing grants do not gain this scope. |
+| `prepare_botbound_task` | `agents.read` | Returns an owned-Bot Studio draft handoff for review; never dispatches a task, spends provider credits or starts a browser. |
 | `get_botbound_agent_status`      | `agents.read`   | Returns one agent's next step and BotBound links without phone numbers or customer content.                                                                 |
 | `run_private_agent_turn`         | `demo.voice`    | Confirmed private text rehearsal of an owned agent. Not a live call.                                                                                        |
 | `get_agent_coaching_brief`       | `agents.read`   | Owner-authored Training facts and rules. Never customer communications.                                                                                     |
