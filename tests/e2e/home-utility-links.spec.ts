@@ -13,7 +13,7 @@ test("home keeps compact access to information and privacy choices", async ({ pa
     ["Product", "/features"],
     ["Privacy", "/privacy"],
     ["Terms", "/terms"],
-    ["Contact", "/contact"],
+    ["Support", "/support"],
   ]) {
     await expect(nav.getByRole("link", { name, exact: true })).toHaveAttribute("href", href);
   }

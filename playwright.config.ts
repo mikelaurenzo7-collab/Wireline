@@ -5,6 +5,14 @@ const preinstalledChromium = resolvePreinstalledChromium();
 
 export default defineConfig({
   testDir: "tests/e2e",
+  testMatch: "**/*.spec.ts",
+  reporter: [
+    ["list"],
+    [
+      "json",
+      { outputFile: process.env.PLAYWRIGHT_JSON_OUTPUT_FILE || "test-results/results.json" },
+    ],
+  ],
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,

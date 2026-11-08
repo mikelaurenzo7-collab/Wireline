@@ -263,9 +263,10 @@ test("pricing keeps its header and shared-work plans readable at 320px and 200% 
 
   const header = page.locator(".wl-public-header");
   const heading = page.getByRole("heading", { level: 1 });
-  expect((await heading.boundingBox())!.y).toBeGreaterThanOrEqual(
-    (await header.boundingBox())!.height,
-  );
+  // Text reflow schedules the header's ResizeObserver after font layout.
+  await expect
+    .poll(async () => (await heading.boundingBox())!.y - (await header.boundingBox())!.height)
+    .toBeGreaterThanOrEqual(0);
   // Shared Work is a monthly-only usage offer: no annual interval toggle exists
   // to stretch the header at 200% text.
   await expect(page.getByRole("group", { name: "Billing interval" })).toHaveCount(0);

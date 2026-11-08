@@ -14,9 +14,17 @@ import { resolveTakeoverUrl } from "../src/lib/cloud-computer/takeover-urls";
 import * as taskRunner from "../src/lib/cloud-computer/task-runner";
 import * as takeoverAlerts from "../src/lib/cloud-computer/takeover-alerts";
 
+const browserbaseDebug = vi.hoisted(() => vi.fn());
+vi.mock("@browserbasehq/sdk", () => ({
+  Browserbase: class {
+    sessions = { debug: browserbaseDebug };
+  },
+}));
+
 describe("VoiceBrowserBridge and Takeover System", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    browserbaseDebug.mockReset().mockRejectedValue(new Error("Debug URL unavailable in test"));
   });
 
   describe("Goal Composition & Filler Cadence", () => {
@@ -62,7 +70,11 @@ describe("VoiceBrowserBridge and Takeover System", () => {
     });
 
     it("has staged filler sequences for all three actions with at least 3 stages", () => {
-      for (const action of ["lookup_customer", "check_parts_portal", "mirror_dispatch_job"] as const) {
+      for (const action of [
+        "lookup_customer",
+        "check_parts_portal",
+        "mirror_dispatch_job",
+      ] as const) {
         const sequence = ACTION_FILLER_SEQUENCES[action];
         expect(sequence).toBeDefined();
         expect(sequence.length).toBeGreaterThanOrEqual(3);
@@ -88,31 +100,41 @@ describe("VoiceBrowserBridge and Takeover System", () => {
 
   describe("Barrier Classification & Detection", () => {
     it("classifies captcha challenges accurately", () => {
-      const turnstile = classifyBarrierFromQuestion("Please complete the Cloudflare turnstile challenge.");
+      const turnstile = classifyBarrierFromQuestion(
+        "Please complete the Cloudflare turnstile challenge.",
+      );
       expect(turnstile.detected).toBe(true);
       expect(turnstile.barrierType).toBe("captcha");
       expect(turnstile.provider).toBe("cloudflare_turnstile");
 
-      const recaptcha = classifyBarrierFromQuestion("Solve the Google recaptcha puzzle to continue.");
+      const recaptcha = classifyBarrierFromQuestion(
+        "Solve the Google recaptcha puzzle to continue.",
+      );
       expect(recaptcha.detected).toBe(true);
       expect(recaptcha.barrierType).toBe("captcha");
       expect(recaptcha.provider).toBe("google_recaptcha");
     });
 
     it("classifies 2FA / OTP challenges accurately", () => {
-      const otp = classifyBarrierFromQuestion("Enter the 6-digit SMS verification code sent to your phone.");
+      const otp = classifyBarrierFromQuestion(
+        "Enter the 6-digit SMS verification code sent to your phone.",
+      );
       expect(otp.detected).toBe(true);
       expect(otp.barrierType).toBe("two_factor");
       expect(otp.provider).toBe("sms_otp");
 
-      const authenticator = classifyBarrierFromQuestion("Please check your authenticator app for the 2FA passcode.");
+      const authenticator = classifyBarrierFromQuestion(
+        "Please check your authenticator app for the 2FA passcode.",
+      );
       expect(authenticator.detected).toBe(true);
       expect(authenticator.barrierType).toBe("two_factor");
       expect(authenticator.provider).toBe("totp_authenticator");
     });
 
     it("classifies credentials and login prompts accurately", () => {
-      const login = classifyBarrierFromQuestion("Please provide your login password for the Housecall Pro portal.");
+      const login = classifyBarrierFromQuestion(
+        "Please provide your login password for the Housecall Pro portal.",
+      );
       expect(login.detected).toBe(true);
       expect(login.barrierType).toBe("credential_required");
       expect(login.provider).toBe("login_form");
@@ -159,6 +181,23 @@ describe("VoiceBrowserBridge and Takeover System", () => {
       expect(urls.fallbackUrl).toContain("/computer?taskId=task-xyz-789&takeover=true");
       expect(urls.primaryUrl).toBe(urls.fallbackUrl);
       expect(urls.provider).toBe("studio");
+      expect(browserbaseDebug).toHaveBeenCalledExactlyOnceWith("session-invalid");
+    });
+
+    it("uses the provider's returned debug URL without a real provider request", async () => {
+      browserbaseDebug.mockResolvedValueOnce({
+        debuggerFullscreenUrl: "https://browser.example.test/debug/session-test",
+      });
+      const urls = await resolveTakeoverUrl({
+        taskId: "task-test",
+        browserbaseSessionId: "session-test",
+        env: { BROWSERBASE_API_KEY: "test-key" },
+      });
+      expect(urls).toMatchObject({
+        provider: "browserbase",
+        primaryUrl: "https://browser.example.test/debug/session-test",
+      });
+      expect(browserbaseDebug).toHaveBeenCalledExactlyOnceWith("session-test");
     });
   });
 
@@ -178,7 +217,7 @@ describe("VoiceBrowserBridge and Takeover System", () => {
       } as any);
 
       let pollCount = 0;
-      const getSpy = vi.spyOn(taskRunner, "getComputerTask").mockImplementation(async () => {
+      vi.spyOn(taskRunner, "getComputerTask").mockImplementation(async () => {
         pollCount++;
         if (pollCount >= 2) {
           return {
@@ -217,9 +256,13 @@ describe("VoiceBrowserBridge and Takeover System", () => {
       await Promise.resolve();
 
       // Verify start was called
-      expect(startSpy).toHaveBeenCalledWith("user-123", "default-voice-agent", expect.objectContaining({
-        startUrl: "https://pro.housecallpro.com",
-      }));
+      expect(startSpy).toHaveBeenCalledWith(
+        "user-123",
+        "default-voice-agent",
+        expect.objectContaining({
+          startUrl: "https://pro.housecallpro.com",
+        }),
+      );
 
       // Immediate Stage 0 filler
       expect(fillerCallback).toHaveBeenCalledWith(ACTION_FILLER_SEQUENCES.lookup_customer[0]);
@@ -235,9 +278,12 @@ describe("VoiceBrowserBridge and Takeover System", () => {
       expect(result.success).toBe(true);
       expect(result.taskId).toBe("task-test-1");
       expect(result.extractedData?.summary).toContain("Carrier 3-ton heat pump");
-      expect(statusCallback).toHaveBeenCalledWith("completed", expect.objectContaining({
-        extractedData: expect.any(Object),
-      }));
+      expect(statusCallback).toHaveBeenCalledWith(
+        "completed",
+        expect.objectContaining({
+          extractedData: expect.any(Object),
+        }),
+      );
     });
 
     it("handles 2FA/CAPTCHA barrier, sends takeover filler, and triggers human alerts", async () => {
@@ -286,19 +332,24 @@ describe("VoiceBrowserBridge and Takeover System", () => {
       await Promise.resolve();
 
       // Status callback should have received waiting_2fa
-      expect(statusCallback).toHaveBeenCalledWith("waiting_2fa", expect.objectContaining({
-        barrierType: "two_factor",
-      }));
+      expect(statusCallback).toHaveBeenCalledWith(
+        "waiting_2fa",
+        expect.objectContaining({
+          barrierType: "two_factor",
+        }),
+      );
 
       // Filler callback should have received DEFAULT_TAKEOVER_FILLER
       expect(fillerCallback).toHaveBeenCalledWith(DEFAULT_TAKEOVER_FILLER);
 
       // Alert dispatcher should have been invoked
-      expect(alertsSpy).toHaveBeenCalledWith(expect.objectContaining({
-        userId: "user-123",
-        taskId: "task-2fa-1",
-        customerPhone: "555-555-5555",
-      }));
+      expect(alertsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "user-123",
+          taskId: "task-2fa-1",
+          customerPhone: "555-555-5555",
+        }),
+      );
 
       // Abort to clean up timer
       await VoiceBrowserBridge.abortTask("user-123", "task-2fa-1");
@@ -342,9 +393,12 @@ describe("VoiceBrowserBridge and Takeover System", () => {
       expect(result.success).toBe(false);
       expect(result.taskId).toBe("task-failed-1");
       expect(result.error).toContain("Could not find part in catalog");
-      expect(statusCallback).toHaveBeenCalledWith("failed", expect.objectContaining({
-        error: "Could not find part in catalog",
-      }));
+      expect(statusCallback).toHaveBeenCalledWith(
+        "failed",
+        expect.objectContaining({
+          error: "Could not find part in catalog",
+        }),
+      );
     });
 
     it("aborts active task cleanly and invokes stopComputerTask", async () => {

@@ -4,8 +4,7 @@ import { Link, useLocation } from "react-router";
 
 import { cn } from "../../lib/utils";
 import { BotBoundWordmark } from "../brand/BotBoundBrand";
-
-const OPEN_PRIVACY_CHOICES_EVENT = "wireline:open-privacy-choices";
+import { OPEN_PRIVACY_CHOICES_EVENT } from "../../lib/privacy-choices";
 
 const PRODUCT_LINKS = [
   { to: "/features", label: "Product" },

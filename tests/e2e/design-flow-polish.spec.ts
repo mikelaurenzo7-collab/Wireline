@@ -217,6 +217,8 @@ test("Studio settings and navigation reflow at 320px with enlarged text", async 
         )
         .map((element) => ({
           tag: element.tagName,
+          class: element.className,
+          text: element.textContent?.slice(0, 160),
           width: element.clientWidth,
           scroll: element.scrollWidth,
         })),
@@ -270,7 +272,12 @@ test("Studio settings and navigation reflow at 320px with enlarged text", async 
     await workroom.evaluate((element) =>
       [element, ...element.querySelectorAll("header, header > div, header p, header h2")]
         .filter((item) => item.scrollWidth > item.clientWidth + 1)
-        .map((item) => ({ tag: item.tagName, width: item.clientWidth, scroll: item.scrollWidth })),
+        .map((item) => ({
+          tag: item.tagName,
+          class: item.className,
+          width: item.clientWidth,
+          scroll: item.scrollWidth,
+        })),
     ),
   ).toEqual([]);
   await workroom

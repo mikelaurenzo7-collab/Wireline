@@ -10,7 +10,9 @@ for (const width of [390, 1440] as const) {
     test(`public appearance persists at ${width}px in ${preference}`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.addInitScript((theme) => {
-        localStorage.setItem("wireline-theme", theme);
+        // Seed a fresh context without overwriting a choice on reload.
+        if (localStorage.getItem("wireline-theme") === null)
+          localStorage.setItem("wireline-theme", theme);
       }, preference);
       await page.goto("/");
       await expect
@@ -50,7 +52,9 @@ for (const width of [390, 1440] as const) {
   }
 }
 
-test("sign-in exposes an appearance switch without obstructing authentication", async ({ page }) => {
+test("sign-in exposes an appearance switch without obstructing authentication", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => localStorage.setItem("wireline-theme", "light"));
   await page.goto("/signin");
@@ -88,10 +92,15 @@ for (const width of [320, 375] as const) {
   });
 }
 
-test("System follows OS changes, then an explicit choice persists across routes", async ({ page }) => {
+test("System follows OS changes, then an explicit choice persists across routes", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ colorScheme: "dark" });
-  await page.addInitScript(() => localStorage.setItem("wireline-theme", "system"));
+  await page.addInitScript(() => {
+    if (localStorage.getItem("wireline-theme") === null)
+      localStorage.setItem("wireline-theme", "system");
+  });
   await page.goto("/");
 
   await expect
@@ -146,6 +155,12 @@ for (const width of [320, 375, 390] as const) {
 
     const notice = page.getByRole("region", { name: "Privacy Choices" });
     await expect(notice).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator(".wl-public-header")).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    // The JS spring's translated prepaint bounds can differ by a float epsilon.
+    // Measure the touch targets after the actual entrance has settled.
+    await expect(notice).toHaveCSS("opacity", "1");
+    await expect(notice).toHaveCSS("transform", "none");
     // Consent choices and dismiss are real touch controls, not micro-targets.
     for (const control of await notice.getByRole("button").all()) {
       const bounds = await control.boundingBox();
@@ -169,9 +184,9 @@ for (const width of [320, 375, 390] as const) {
       .toBe(true);
 
     const menu = page.getByRole("button", { name: "Toggle navigation menu" });
-    const headerSpaceBefore = await page.locator(".wl-mobile-privacy-host").evaluate(
-      (node) => getComputedStyle(node).paddingTop,
-    );
+    const headerSpaceBefore = await page
+      .locator(".wl-mobile-privacy-host")
+      .evaluate((node) => getComputedStyle(node).paddingTop);
     // A normal, unforced click must hit the menu rather than the privacy close button.
     await menu.click();
     await expect(page.getByRole("navigation", { name: "Mobile Navigation" })).toBeVisible();
@@ -179,13 +194,32 @@ for (const width of [320, 375, 390] as const) {
     await expect(menu).toHaveAttribute("aria-expanded", "true");
     // Expanding the menu increases the header's overall height, but must not
     // change the inline privacy clearance or shift the whole document.
-    const headerSpaceAfter = await page.locator(".wl-mobile-privacy-host").evaluate(
-      (node) => getComputedStyle(node).paddingTop,
-    );
+    const headerSpaceAfter = await page
+      .locator(".wl-mobile-privacy-host")
+      .evaluate((node) => getComputedStyle(node).paddingTop);
     expect(headerSpaceAfter).toBe(headerSpaceBefore);
 
     await menu.click();
     await expect(notice).toBeVisible();
     await expect(menu).toHaveAttribute("aria-expanded", "false");
+
+    if (width < 390) {
+      await page.evaluate(() => {
+        document.documentElement.style.fontSize = "200%";
+      });
+      await expect
+        .poll(() =>
+          notice.evaluate((panel) => {
+            const header = document.querySelector(".wl-public-header");
+            return header
+              ? panel.getBoundingClientRect().top - header.getBoundingClientRect().bottom
+              : -Infinity;
+          }),
+        )
+        .toBeGreaterThanOrEqual(-1);
+      await menu.click();
+      await expect(notice).toBeHidden();
+      await expect(page.getByRole("navigation", { name: "Mobile Navigation" })).toBeVisible();
+    }
   });
 }

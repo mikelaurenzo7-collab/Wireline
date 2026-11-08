@@ -47,9 +47,7 @@ describe("OAuth provider availability contract", () => {
     const panel = read("src/components/auth/AuthAccessPanel.tsx");
 
     expect(panel).toContain("type OAuthProviderAvailability = Record<OAuthProvider, boolean>;");
-    expect(panel).toMatch(
-      /useState<\s*OAuthProviderAvailability\s*\|\s*null\s*>\(\s*null,?\s*\)/,
-    );
+    expect(panel).toMatch(/useState<\s*OAuthProviderAvailability\s*\|\s*null\s*>\(\s*null,?\s*\)/);
     expect(panel).toContain('fetch("/api/auth/providers"');
     expect(panel).toContain("setAvailableProviders");
     expect(panel).toMatch(/const oauthProviders\s*=\s*availableProviders\s*\?\s*PROVIDERS\.filter/);
@@ -58,7 +56,7 @@ describe("OAuth provider availability contract", () => {
     expect(panel).not.toContain("PROVIDERS.map((provider)");
 
     const availabilityGate = panel.indexOf("oauthProviders.length > 0");
-    const emailForm = panel.indexOf('<form className="wl-access-panel__form"', availabilityGate);
+    const emailForm = panel.indexOf('className="wl-access-panel__form"', availabilityGate);
     expect(availabilityGate).toBeGreaterThanOrEqual(0);
     expect(emailForm).toBeGreaterThan(availabilityGate);
     const gatedProviderUi = panel.slice(availabilityGate, emailForm);

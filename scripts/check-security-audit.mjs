@@ -24,7 +24,8 @@ import {
 import { requestOsvAdvisories } from "./lib/osv-audit.mjs";
 
 /*
- * Empty by design. Retired 2026-08-10: GHSA-qwww-vcr4-c8h2 named
+ * Empty by design. On 2026-11-07 the unused Stagehand dependency and its
+ * nested-Zod exception were removed. Retired 2026-08-10: GHSA-qwww-vcr4-c8h2 named
  * react-router-dom 7.x, and its stated retirement condition - "publishes a
  * 7.x/8.x release above the advisory range" - has been met. The project now
  * depends on react-router ^8.3.0 and no longer depends on react-router-dom at
@@ -32,15 +33,7 @@ import { requestOsvAdvisories } from "./lib/osv-audit.mjs";
  * silently pre-approved any FUTURE advisory that happened to reuse the id.
  * An acceptance that no longer names a live risk is a hole, not a note.
  */
-const ACCEPTED = [
-  {
-    id: "GHSA-MRHX-C7XC-M3W5",
-    reason:
-      "@browserbasehq/stagehand bundles nested zod@4.4.3 internally for server-side cloud computer tool-schema extraction; unreachable by untrusted public user inputs with unbounded collections (root project uses zod@4.6.6).",
-    retireWhen:
-      "@browserbasehq/stagehand upgrades its internal zod dependency to >=4.6.6 or replaces it.",
-  },
-];
+const ACCEPTED = [];
 
 for (const entry of ACCEPTED) {
   if (!entry?.id || !entry?.reason || !entry?.retireWhen) {

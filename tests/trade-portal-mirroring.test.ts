@@ -158,7 +158,7 @@ describe("Trade Portal Mirroring (Housecall Pro & ServiceTitan)", () => {
       const mockPage = {
         url: () => "https://pro.housecallpro.com/app/jobs/new",
         title: async () => "New Job",
-        evaluate: async (fn: any, args: any) => {
+        evaluate: async (_fn: any, _args: any) => {
           // Simulate evaluate finding a turnstile iframe
           return { type: "captcha", provider: "cloudflare_turnstile", details: "Turnstile" };
         },
@@ -173,7 +173,7 @@ describe("Trade Portal Mirroring (Housecall Pro & ServiceTitan)", () => {
       const mockPage = {
         url: () => "https://go.servicetitan.com/verify",
         title: async () => "Two-Factor Verification",
-        evaluate: async (fn: any, args: any) => {
+        evaluate: async (_fn: any, _args: any) => {
           return { type: "two_factor", provider: "sms_otp", details: "OTP" };
         },
       } as any;
@@ -197,8 +197,6 @@ describe("Trade Portal Mirroring (Housecall Pro & ServiceTitan)", () => {
 
   describe("Housecall Pro Playwright Recipe", () => {
     it("navigates, fills customer and job details, and extracts created job ID", async () => {
-      const elements: Record<string, any> = {};
-
       const createMockLocator = (name: string) => ({
         first: () => createMockLocator(name),
         isVisible: vi.fn().mockResolvedValue(true),
@@ -214,7 +212,7 @@ describe("Trade Portal Mirroring (Housecall Pro & ServiceTitan)", () => {
         goto: vi.fn().mockImplementation(async (url: string) => {
           currentUrl = url;
         }),
-        waitForURL: vi.fn().mockImplementation(async (pattern: any) => {
+        waitForURL: vi.fn().mockImplementation(async (_pattern: any) => {
           currentUrl = "https://pro.housecallpro.com/app/jobs/job_hcp_98765";
         }),
         waitForTimeout: vi.fn().mockResolvedValue(undefined),
@@ -248,7 +246,10 @@ describe("Trade Portal Mirroring (Housecall Pro & ServiceTitan)", () => {
       expect(result.portal).toBe("housecall_pro");
       expect(result.externalJobId).toBe("job_hcp_98765");
       expect(result.externalJobUrl).toContain("/app/jobs/job_hcp_98765");
-      expect(mockPage.goto).toHaveBeenCalledWith("https://pro.housecallpro.com/app/jobs/new", expect.any(Object));
+      expect(mockPage.goto).toHaveBeenCalledWith(
+        "https://pro.housecallpro.com/app/jobs/new",
+        expect.any(Object),
+      );
     });
 
     it("halts and reports requiresTakeover when barrier is encountered during navigation", async () => {
@@ -302,7 +303,7 @@ describe("Trade Portal Mirroring (Housecall Pro & ServiceTitan)", () => {
         goto: vi.fn().mockImplementation(async (url: string) => {
           currentUrl = url;
         }),
-        waitForURL: vi.fn().mockImplementation(async (pattern: any) => {
+        waitForURL: vi.fn().mockImplementation(async (_pattern: any) => {
           currentUrl = "https://go.servicetitan.com/Job/Index/54321";
         }),
         waitForTimeout: vi.fn().mockResolvedValue(undefined),
@@ -371,7 +372,9 @@ describe("Trade Portal Mirroring (Housecall Pro & ServiceTitan)", () => {
           }),
           insert: vi.fn().mockReturnValue({
             values: vi.fn().mockReturnValue({
-              returning: vi.fn().mockResolvedValue([{ id: "apt-1", status: "Scheduled", created: true }]),
+              returning: vi
+                .fn()
+                .mockResolvedValue([{ id: "apt-1", status: "Scheduled", created: true }]),
             }),
           }),
         },

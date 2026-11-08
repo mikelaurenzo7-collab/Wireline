@@ -95,16 +95,21 @@ describe("BotBound public iPhone prestige contract", () => {
   it("keeps the desktop privacy choice clear of launch conversion controls", () => {
     const consent = read("src/components/CookieConsent.tsx");
 
-    expect(consent).toContain("sm:w-[720px] sm:max-w-[calc(100vw-2rem)]");
+    expect(consent).toContain("sm:w-[720px]");
+    expect(consent).toContain("sm:max-w-[calc(100vw-2rem)]");
     expect(consent).not.toContain("lg:left-8 lg:right-8 lg:max-w-none");
     expect(consent).toContain("const inlineOnPhone = narrowViewport && !explicitlyOpened;");
-    expect(consent).toContain("const portalTarget = inlineOnPhone ? mobileInlineHost : document.body;");
+    expect(consent).toContain(
+      "const portalTarget = inlineOnPhone ? mobileInlineHost : document.body;",
+    );
     expect(consent).toContain("setMobileInlineHost(host)");
-    expect(consent).toContain("--wl-mobile-privacy-header-clearance");
-    expect(consent).toContain("new ResizeObserver(syncHeaderClearance)");
-    expect(consent).toContain("observer?.disconnect()");
-    expect(consent).toContain("headerRail.getBoundingClientRect().bottom");
-    expect(consent).toContain("observer?.observe(publicHeader)");
+    const publicHeader = read("src/components/marketing/PrecisionPublicHeader.tsx");
+    expect(publicHeader).toContain("--wl-mobile-privacy-header-clearance");
+    expect(publicHeader).toContain("document.documentElement.style");
+    expect(publicHeader).toContain("new ResizeObserver(syncHeaderClearance)");
+    expect(publicHeader).toContain("observer?.disconnect()");
+    expect(publicHeader).toContain("headerRail.getBoundingClientRect().bottom");
+    expect(publicHeader).toContain("observer?.observe(publicHeader)");
     expect(consent).toContain("min-h-11 min-w-11");
     expect(consent).toContain("flex-1 sm:flex-initial min-h-11");
     expect(consent).toContain("flex-1 pr-12 sm:pr-0");

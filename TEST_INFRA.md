@@ -26,15 +26,17 @@
 
 ## Test Architecture
 
-- **Test Runner**: Node 22 execution via Vitest (`node node_modules/vitest/vitest.mjs run tests/e2e/`)
+These Vitest integration and model checks run with the unit/coverage commands. Playwright browser scenarios remain in `tests/e2e/*.spec.ts`. These checks do not certify live provider delivery.
+
+- **Test Runner**: Node 22 execution via Vitest (`node node_modules/vitest/vitest.mjs run tests/integration/`)
 - **Node 22 Path**: `C:\Users\MichaelLaurenzo\.cache\botbound-node22\node-v22.23.3-win-x64`
 - **Pass / Fail Semantics**: Zero test failures, exit code 0.
 - **Directory Layout**:
-  - `tests/e2e/helpers/lean4-pillar-harness.ts`: Authoritative interface contracts, reference models, and test oracles.
-  - `tests/e2e/tier1-feature-coverage.test.ts`: Isolated happy paths across all 4 pillars (38 tests).
-  - `tests/e2e/tier2-boundary-corner.test.ts`: Boundaries, TTL limits, budget caps, concurrency collisions, SSRF protection (36 tests).
-  - `tests/e2e/tier3-cross-feature.test.ts`: Pairwise & multi-pillar integration interactions (10 tests).
-  - `tests/e2e/tier4-application-scenarios.test.ts`: End-to-end customer emergency and operational journeys (5 tests).
+  - `tests/integration/helpers/lean4-pillar-harness.ts`: Authoritative interface contracts, reference models, and test oracles.
+  - `tests/integration/tier1-feature-coverage.test.ts`: Isolated happy paths across all 4 pillars (38 tests).
+  - `tests/integration/tier2-boundary-corner.test.ts`: Boundaries, TTL limits, budget caps, concurrency collisions, SSRF protection (36 tests).
+  - `tests/integration/tier3-cross-feature.test.ts`: Pairwise & multi-pillar integration interactions (10 tests).
+  - `tests/integration/tier4-application-scenarios.test.ts`: End-to-end customer emergency and operational journeys (5 tests).
 
 ---
 

@@ -795,16 +795,19 @@ test("a task started elsewhere appears on the idle page without losing a draft",
     window.dispatchEvent(new Event("focus"));
     document.dispatchEvent(new Event("visibilitychange"));
   });
-  await expect(page.getByRole("button", { name: "View active task" })).toBeVisible();
-  expect(mock.listReads).toBe(readsBeforeReturn + 1);
-  await page.getByRole("button", { name: "View active task" }).click();
+  // A newly discovered task now opens the live canvas immediately. The draft
+  // must still be there when the owner returns to the new-task composer.
   await expect(page.getByRole("region", { name: "Check live inventory." })).toBeVisible();
+  expect(mock.listReads).toBe(readsBeforeReturn + 1);
 
   mock.setTask("task-elsewhere", {
     status: "completed",
     summary: "Inventory checked.",
     liveView: false,
   });
+  await expect(page.getByText("Task completed.", { exact: true })).toBeAttached();
+  await expect(draft).toHaveValue("Compare two supplier prices tomorrow.");
+  await page.getByRole("button", { name: "Back to task", exact: true }).click();
   await expect(page.getByText("Inventory checked.")).toBeVisible({ timeout: 7000 });
   await page.getByRole("button", { name: "New task" }).click();
   await expect(draft).toHaveValue("Compare two supplier prices tomorrow.");

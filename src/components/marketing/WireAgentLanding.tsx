@@ -17,6 +17,7 @@ import BotBoundMark from "../brand/BotBoundMark";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import { useAuth } from "../../contexts/AuthContext";
 import { BOT_MARKETING_VOICE } from "../../lib/bot-product";
+import { OPEN_PRIVACY_CHOICES_EVENT } from "../../lib/privacy-choices";
 
 const EXAMPLES = [
   {
@@ -177,7 +178,9 @@ function CapabilityPreview({ channel }: { channel: ChannelId }) {
           <span className="landing-prestige__task-step">
             <Clock className="size-3" /> Step 3 of 3
           </span>
-          <span className="landing-prestige__task-status">Find an open time · Checking Saturday technician slots</span>
+          <span className="landing-prestige__task-status">
+            Find an open time · Checking Saturday technician slots
+          </span>
         </div>
 
         <div className="landing-prestige__browser-card">
@@ -336,7 +339,7 @@ export default function WireAgentLanding() {
           <span className="landing-prestige__utility-brand">
             BotBound · Autonomous Business Operations
           </span>
-          <div className="landing-prestige__utility-links">
+          <nav className="landing-prestige__utility-links" aria-label="Information and privacy">
             <Link to="/features">Product</Link>
             <Link to="/pricing">Pricing</Link>
             <Link to="/developers">Developers</Link>
@@ -344,7 +347,14 @@ export default function WireAgentLanding() {
             <Link to="/support">Support</Link>
             <Link to="/privacy">Privacy</Link>
             <Link to="/terms">Terms</Link>
-          </div>
+            <button
+              type="button"
+              className="wl-focus-ring-halo"
+              onClick={() => window.dispatchEvent(new Event(OPEN_PRIVACY_CHOICES_EVENT))}
+            >
+              Privacy Choices
+            </button>
+          </nav>
         </div>
       </footer>
     </div>

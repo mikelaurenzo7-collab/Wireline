@@ -262,7 +262,9 @@ export default function UsagePricingPanel({
                     tier === id ? "marketing-btn-primary" : "marketing-btn-secondary"
                   }`}
                 >
-                  <span>Start with {option.name}</span>
+                  <span className="min-w-0 whitespace-normal break-words text-center">
+                    Start with {option.name}
+                  </span>
                   <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
                 </Link>
               </div>
@@ -387,14 +389,18 @@ export default function UsagePricingPanel({
               })}
               className="marketing-btn-primary inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold"
             >
-              <span>Get {plan.name}</span>{" "}
+              <span className="min-w-0 whitespace-normal break-words text-center">
+                Get {plan.name}
+              </span>{" "}
               <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
             </Link>
             <Link
               to="/contact?topic=demo"
               className="marketing-btn-secondary inline-flex min-h-11 w-full items-center justify-center rounded-xl px-4 text-sm font-semibold"
             >
-              <span>Request a Demo</span>
+              <span className="min-w-0 whitespace-normal break-words text-center">
+                Request a Demo
+              </span>
             </Link>
           </div>
         </div>

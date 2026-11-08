@@ -66,12 +66,15 @@ describe("authenticated Bot navigation contract", () => {
     expect(shell).toContain('aria-label="Add a Bot"');
   });
 
-  it("separates Work and Set up with a shared browser and explicit private rehearsal", () => {
+  it("keeps one conversation for messages and tasks with explicit private rehearsal", () => {
     expect(studio).toContain('type InspectorSection = "details" | "setup" | "review"');
     expect(studio).toContain('type WorkroomMode = "configure" | "test"');
-    expect(studio).toContain('{ id: "work", label: "Work" }');
-    expect(studio).toContain('{ id: "computer", label: "Browser" }');
-    expect(studio).toContain('{ id: "try", label: "Rehearse" }');
+    expect(studio).toContain('{ id: "work", label: "Computer task" }');
+    expect(studio).toContain('{ id: "computer", label: "Computer" }');
+    expect(studio).not.toContain('{ id: "try", label: "Rehearse" }');
+    expect(studio).toContain('setWorkroomMode("test")');
+    expect(studio).toContain("timelineExtras={");
+    expect(studio).toContain("composerOverride={");
     expect(studio).toContain('{ id: "details", label: "Details" }');
     expect(studio).toContain('{ id: "setup", label: "Set Up" }');
     expect(studio).toContain('{ id: "review", label: "Summary" }');

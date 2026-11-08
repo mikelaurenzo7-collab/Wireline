@@ -28,17 +28,25 @@
     clamp(1.25rem, 3.5vw, 3rem)
     clamp(3rem, 5vh, 5rem);
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: clamp(3.5rem, 6vh, 5.5rem);
 }
 
 .landing-prestige__hero {
+  min-width: 0;
+  width: 100%;
   display: grid;
   place-items: center;
   text-align: center;
   gap: clamp(1.15rem, 2.2vh, 1.65rem);
   max-width: 54rem;
   margin-inline: auto;
+}
+
+.landing-prestige__hero > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .landing-prestige__hero-badge {
@@ -64,6 +72,8 @@
 }
 
 .landing-prestige__hero-badge-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -87,6 +97,12 @@
 
 .landing-prestige__hero-lead {
   color: var(--wireline-ink);
+}
+
+.landing-prestige__hero h1 > span {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .landing-prestige__hero-accent {
@@ -188,6 +204,7 @@
 
 .landing-prestige__card {
   min-width: 0;
+  overflow-wrap: anywhere;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -208,6 +225,11 @@
     box-shadow 180ms ease;
 }
 
+.landing-prestige__card :where(div, p, span, h3) {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .landing-prestige__card:hover {
   border-color: color-mix(in srgb, var(--wireline-action) 42%, var(--wireline-rule-strong));
   box-shadow: var(--wireline-elevation-card);
@@ -220,6 +242,7 @@
 
 .landing-prestige__card-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
 }
@@ -329,6 +352,7 @@
 
 .landing-prestige__call-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   font-size: 0.75rem;
@@ -384,6 +408,7 @@
 
 .landing-prestige__sms-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.4rem;
@@ -755,7 +780,7 @@
   gap: 0.5rem 1.25rem;
 }
 
-.landing-prestige__utility a {
+.landing-prestige__utility :is(a, button) {
   display: inline-flex;
   min-height: 2.25rem;
   align-items: center;
@@ -767,7 +792,7 @@
   transition: color 150ms ease;
 }
 
-.landing-prestige__utility a:hover {
+.landing-prestige__utility :is(a, button):hover {
   color: var(--wireline-ink);
 }
 
@@ -884,6 +909,7 @@
 @media (max-width: 639px) {
   .landing-prestige__main {
     padding-top: calc(var(--wl-marketing-chrome-top, 4rem) + 1.5rem);
+    padding-inline: min(1.25rem, 20px);
     gap: 2.75rem;
   }
 
@@ -898,7 +924,19 @@
 
   .landing-prestige__cta,
   .landing-prestige__secondary-cta {
+    min-width: 0;
+    max-width: 100%;
     width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .landing-prestige__card {
+    padding: min(1.375rem, 22px);
+  }
+
+  .landing-prestige__demo {
+    padding: min(0.875rem, 14px);
   }
 
   .wl-features-pillars {

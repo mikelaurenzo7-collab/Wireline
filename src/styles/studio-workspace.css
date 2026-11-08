@@ -179,6 +179,8 @@
 
 .wl-studio-chat-modes {
   display: inline-flex;
+  max-inline-size: 100%;
+  flex-wrap: wrap;
   gap: 0.2rem;
   padding: 0.2rem;
   border-radius: 0.65rem;
@@ -297,6 +299,24 @@
   flex: 0 0 auto;
   align-items: center;
   margin-inline-start: auto;
+}
+
+/* Keep the two navigation levels distinct in the narrow desktop inspector. */
+@media (min-width: 1180px) {
+  .wl-studio-panel-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .wl-studio-panel-tabs--configure {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .wl-studio-panel-actions {
+    grid-column: 2;
+    grid-row: 1;
+  }
 }
 
 .wl-studio-panel-action {

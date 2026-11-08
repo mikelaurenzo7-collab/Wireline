@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { isMarketingHomePath, isMarketingPublicPath } from "../../src/lib/public-routes";
 
 const routes = [
   "/",
@@ -18,7 +19,18 @@ test.describe("accessibility smoke gate", () => {
   for (const route of routes) {
     test(`${route} has no automated WCAG A/AA violations`, async ({ page }) => {
       await page.goto(route, { waitUntil: "commit" });
-      await expect(page.locator("body")).toBeVisible();
+      await expect(page.locator("main").first()).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+      const pathname = new URL(page.url()).pathname;
+      if (isMarketingHomePath(pathname) || isMarketingPublicPath(pathname)) {
+        // Motion's JS-driven entrance is not disabled by the CSS override
+        // below. Audit the complete notice, including its real contrast,
+        // once it has reached its rendered opacity rather than mid-fade.
+        await expect(page.getByRole("region", { name: "Privacy Choices" })).toHaveCSS(
+          "opacity",
+          "1",
+        );
+      }
 
       await page.addStyleTag({
         content:

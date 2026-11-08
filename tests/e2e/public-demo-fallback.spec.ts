@@ -48,9 +48,7 @@ test("showcase redirects to account creation without selecting a plan or request
   expect(await page.evaluate(() => window.__botboundMicRequests ?? 0)).toBe(0);
 });
 
-test("home shows static call and SMS examples without a public audio control", async ({
-  page,
-}) => {
+test("home shows static call and SMS examples without a public audio control", async ({ page }) => {
   await installMicrophoneProbe(page);
   const publicVoiceRequests: string[] = [];
   page.on("request", (request) => {
@@ -61,12 +59,14 @@ test("home shows static call and SMS examples without a public audio control", a
   await openPage(page, "/");
 
   const hero = page.locator(".landing-prestige__hero");
-  await expect(hero.getByRole("link", { name: "GET STARTED", exact: true })).toHaveAttribute(
+  await expect(hero.getByRole("link", { name: "Get Started", exact: true })).toHaveAttribute(
     "href",
     "/signup",
   );
-  const phoneCard = page.locator(".landing-prestige__card--phone");
-  await expect(phoneCard).toContainText("Customer call");
+  const phoneCard = page.getByRole("article").filter({
+    has: page.getByRole("heading", { name: "Phone Number", exact: true }),
+  });
+  await expect(phoneCard).toContainText("Front Desk Bot");
   await expect(phoneCard).toContainText("Inbound and outbound");
   await expect(phoneCard).toContainText("SMS");
   await expect(page.locator(".marketing-chrome-bar")).toHaveCount(0);

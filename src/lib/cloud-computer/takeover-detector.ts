@@ -44,20 +44,9 @@ export const BARRIER_PATTERNS = {
     ".g-recaptcha",
     "#g-recaptcha",
   ],
-  hcaptcha: [
-    'iframe[src*="hcaptcha.com"]',
-    ".h-captcha",
-    "#hcaptcha",
-  ],
-  arkose: [
-    'iframe[src*="arkoselabs.com"]',
-    'iframe[src*="funcaptcha"]',
-    "#fc-iframe-wrap",
-  ],
-  awsWaf: [
-    "#aws-waf-captcha",
-    'iframe[src*="awswaf"]',
-  ],
+  hcaptcha: ['iframe[src*="hcaptcha.com"]', ".h-captcha", "#hcaptcha"],
+  arkose: ['iframe[src*="arkoselabs.com"]', 'iframe[src*="funcaptcha"]', "#fc-iframe-wrap"],
+  awsWaf: ["#aws-waf-captcha", 'iframe[src*="awswaf"]'],
   twoFactorInputs: [
     'input[autocomplete="one-time-code"]',
     'input[name*="otp" i]',
@@ -72,7 +61,7 @@ export const BARRIER_PATTERNS = {
   loginIndicators: [
     'input[type="password"]',
     'input[name="password" i]',
-    '#password',
+    "#password",
     'form[action*="login" i]',
   ],
 };
@@ -83,7 +72,11 @@ export const BARRIER_PATTERNS = {
 export async function detectDOMAuthBarrier(page: Page): Promise<AuthBarrierDetection | null> {
   try {
     const title = await page.title().catch(() => "");
-    if (/Just a moment\.\.\.|Checking your browser\.\.\.|Attention Required! \| Cloudflare/i.test(title)) {
+    if (
+      /Just a moment\.\.\.|Checking your browser\.\.\.|Attention Required! \| Cloudflare/i.test(
+        title,
+      )
+    ) {
       return {
         detected: true,
         barrierType: "captcha",
@@ -97,14 +90,22 @@ export async function detectDOMAuthBarrier(page: Page): Promise<AuthBarrierDetec
       // 1. Cloudflare Turnstile
       for (const sel of patterns.cloudflare) {
         if (document.querySelector(sel)) {
-          return { type: "captcha", provider: "cloudflare_turnstile", details: "Cloudflare Turnstile verification challenge" };
+          return {
+            type: "captcha",
+            provider: "cloudflare_turnstile",
+            details: "Cloudflare Turnstile verification challenge",
+          };
         }
       }
 
       // 2. Google reCAPTCHA
       for (const sel of patterns.recaptcha) {
         if (document.querySelector(sel)) {
-          return { type: "captcha", provider: "google_recaptcha", details: "Google reCAPTCHA challenge" };
+          return {
+            type: "captcha",
+            provider: "google_recaptcha",
+            details: "Google reCAPTCHA challenge",
+          };
         }
       }
 
@@ -118,7 +119,11 @@ export async function detectDOMAuthBarrier(page: Page): Promise<AuthBarrierDetec
       // 4. Arkose FunCaptcha
       for (const sel of patterns.arkose) {
         if (document.querySelector(sel)) {
-          return { type: "captcha", provider: "arkose_funcaptcha", details: "Arkose Labs FunCaptcha puzzle" };
+          return {
+            type: "captcha",
+            provider: "arkose_funcaptcha",
+            details: "Arkose Labs FunCaptcha puzzle",
+          };
         }
       }
 
@@ -133,7 +138,11 @@ export async function detectDOMAuthBarrier(page: Page): Promise<AuthBarrierDetec
       for (const sel of patterns.twoFactorInputs) {
         const el = document.querySelector(sel);
         if (el && (el as HTMLElement).offsetParent !== null) {
-          return { type: "two_factor", provider: "sms_otp", details: "One-time verification code input required" };
+          return {
+            type: "two_factor",
+            provider: "sms_otp",
+            details: "One-time verification code input required",
+          };
         }
       }
 
@@ -144,13 +153,21 @@ export async function detectDOMAuthBarrier(page: Page): Promise<AuthBarrierDetec
           bodyText,
         )
       ) {
-        return { type: "two_factor", provider: "sms_otp", details: "Two-factor verification prompt on page" };
+        return {
+          type: "two_factor",
+          provider: "sms_otp",
+          details: "Two-factor verification prompt on page",
+        };
       }
 
       // 8. Login Form
       const passwordField = document.querySelector('input[type="password"]');
       if (passwordField && (passwordField as HTMLElement).offsetParent !== null) {
-        return { type: "credential_required", provider: "login_form", details: "Portal login credentials required" };
+        return {
+          type: "credential_required",
+          provider: "login_form",
+          details: "Portal login credentials required",
+        };
       }
 
       return null;
@@ -160,7 +177,7 @@ export async function detectDOMAuthBarrier(page: Page): Promise<AuthBarrierDetec
       return {
         detected: true,
         barrierType: detected.type as AuthBarrierType,
-        provider: detected.provider as any,
+        provider: detected.provider as AuthBarrierDetection["provider"],
         details: detected.details,
         detectedAt: Date.now(),
       };

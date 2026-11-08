@@ -1,40 +1,37 @@
 /**
  * Tier 4: Real-World Application Scenarios (E2E Opaque-Box Suite)
- * 
+ *
  * Validates complete end-to-end customer journeys and operational SMB workflows across the Lean 4 Pillars:
- * 
+ *
  * Scenario 1: Realistic End-to-End Emergency Plumbing Booking Flow (The 4 Pillars Core Journey)
  *   - Caller requests appointment -> slot held for 5 mins -> SMS deposit link sent ->
  *   - Stripe webhook received -> booking confirmed with 30-min travel buffer ->
  *   - AgentMail .ics confirmation dispatched -> background trade portal mirrored.
- * 
+ *
  * Scenario 2: Autonomous Goodwill Wallet Customer Retention Under Disputed Surcharge
  *   - Caller objects to previous charge -> bot evaluates $100/mo budget & $25/call cap ->
  *   - issues $20 goodwill credit -> logs ledger transaction -> AgentMail sends receipt.
- * 
+ *
  * Scenario 3: Voice-to-Browserbase Parts Portal Lookup with Conversational Fillers & 2FA Takeover
  *   - Async portal lookup initiated -> 6.5s latency bridged with natural conversational fillers ->
  *   - 2FA barrier encountered -> owner alerted via SMS & AgentMail (agent_attach_human).
- * 
+ *
  * Scenario 4: Concurrent Booking Collision & Soft Hold Expiration Lifecycle
  *   - Caller A reserves slot with 5-min soft hold -> Caller B rejected due to hold & buffer collision ->
  *   - Caller A abandons call -> hold expires at 300s -> slot returns to open availability.
- * 
+ *
  * Scenario 5: Inbound Email Reply Triage with Cancellation & Schedule Redistribution
  *   - Customer replies to confirmation email -> AgentMail webhook triages intent as 'cancel' ->
  *   - slot & travel buffers released -> cancellation confirmation dispatched.
- * 
+ *
  * Requirement: Minimum >= 5 realistic application scenario tests.
  */
 
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { createHmac } from "node:crypto";
 
 // Domain & Library Imports
 import { normalizeOpenAIPhoneNumber } from "../../src/lib/voice/openai-sip-config";
-import { AGENT_TOOL_DEFS } from "../../src/lib/agent-runtime-helpers";
 import { isBotBoundManagedEmailDomain } from "../../src/lib/managed-agentmail-domain";
 
 // Lean 4-Pillar Test Harness
@@ -77,7 +74,9 @@ describe("Tier 4: Real-World Application Scenarios (Lean 4 Pillars)", () => {
       startAt: new Date("2026-11-02T12:00:00Z"),
       endAt: new Date("2026-11-02T13:30:00Z"),
       address: "100 Market St, San Francisco, CA",
-      bufferMinutes: calculateTravelBuffer("100 Market St, SF", "2500 California St, SF", { estimatedMiles: 8 }).bufferMinutes,
+      bufferMinutes: calculateTravelBuffer("100 Market St, SF", "2500 California St, SF", {
+        estimatedMiles: 8,
+      }).bufferMinutes,
     };
     expect(previousJob.bufferMinutes).toBe(26);
 
@@ -93,7 +92,13 @@ describe("Tier 4: Real-World Application Scenarios (Lean 4 Pillars)", () => {
     expect(availability.available).toBe(true);
 
     // 3. Ephemeral 5-minute soft hold placed on 2:00 PM slot (TTL 300s)
-    const hold = createEphemeralHold(userId, callSid, targetSlot.targetStart, targetSlot.targetEnd, 300);
+    const hold = createEphemeralHold(
+      userId,
+      callSid,
+      targetSlot.targetStart,
+      targetSlot.targetEnd,
+      300,
+    );
     expect(hold.status).toBe("active");
     expect(isHoldActive(hold)).toBe(true);
 
@@ -123,7 +128,9 @@ describe("Tier 4: Real-World Application Scenarios (Lean 4 Pillars)", () => {
     });
     const stripeSecret = "whsec_scenario1_secret_999";
     const nowSec = Math.floor(Date.now() / 1000);
-    const signature = createHmac("sha256", stripeSecret).update(`${nowSec}.${stripeWebhookPayload}`).digest("hex");
+    const signature = createHmac("sha256", stripeSecret)
+      .update(`${nowSec}.${stripeWebhookPayload}`)
+      .digest("hex");
     const sigHeader = `t=${nowSec},v1=${signature}`;
 
     expect(verifyStripeWebhookHMAC(stripeWebhookPayload, sigHeader, stripeSecret)).toBe(true);
@@ -297,7 +304,7 @@ describe("Tier 4: Real-World Application Scenarios (Lean 4 Pillars)", () => {
     // 1. Customer replies to booking confirmation: "Need to cancel tomorrow due to family emergency"
     const triage = triageInboundCustomerReply(
       "Re: Appointment Confirmation - Precision Plumbing",
-      "Unfortunately I need to cancel my appointment scheduled for tomorrow due to a family emergency. Please call off the technician."
+      "Unfortunately I need to cancel my appointment scheduled for tomorrow due to a family emergency. Please call off the technician.",
     );
 
     expect(triage.intent).toBe("cancel");

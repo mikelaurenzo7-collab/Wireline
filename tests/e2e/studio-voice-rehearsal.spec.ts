@@ -289,11 +289,12 @@ test("leaving while a voice session is accepted closes its late provider session
   await page.goto("/studio?agent=bot-front-desk&workroom=test");
   await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
   await accepted;
-  await page.getByRole("button", { name: "Close panel", exact: true }).click();
+  await page.getByRole("link", { name: "Inbox", exact: true }).click();
+  await expect(page).toHaveURL(/\/inbox$/);
   releaseAnswer();
   await expect.poll(() => stops).toEqual(["late-accepted-call"]);
   expect(await microphoneCount(page)).toEqual({ microphones: 1, tracksStopped: 1, peersClosed: 1 });
-  await page.getByRole("button", { name: "Configure", exact: true }).click();
+  await page.getByRole("link", { name: "Open Front Desk conversation", exact: true }).click();
   await expect(
     page.getByRole("textbox", { name: "Message Front Desk", exact: true }),
   ).toBeVisible();
@@ -319,22 +320,38 @@ test("legacy customer commands stay in voice rehearsal without editing the Bot o
   page,
 }) => {
   const { sessions } = await mockRehearsal(page);
+  const writes: string[] = [];
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (
+      ["POST", "PUT", "PATCH", "DELETE"].includes(request.method()) &&
+      /^\/api\/(agents|agent-config|computer\/tasks)(\/|$)/.test(path)
+    )
+      writes.push(path);
+  });
   await page.goto(
     "/studio?agent=bot-front-desk&workroom=test&command=Can%20I%20book%20tomorrow%3F&commandNonce=one",
   );
   await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Typed", exact: true })).toHaveCount(0);
   await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "Type a test", exact: true })).toHaveValue("");
   expect((await microphoneCount(page)).microphones).toBe(0);
   expect(sessions).toEqual([]);
-  await page.getByRole("button", { name: "Close panel", exact: true }).click();
+  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+  await expect(page).not.toHaveURL(/command(?:Nonce)?=/);
+  const modes = page.getByRole("group", { name: "Conversation mode", exact: true });
+  await modes.getByRole("button", { name: "Computer task", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Task for Front Desk", exact: true })).toHaveValue(
     "",
   );
-  await page.getByRole("button", { name: "Configure", exact: true }).click();
+  await modes.getByRole("button", { name: "Message", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Message Front Desk", exact: true })).toHaveValue(
     "",
   );
+  expect(writes).toEqual([]);
+  expect(sessions).toEqual([]);
+  expect((await microphoneCount(page)).microphones).toBe(0);
 });
 
 test("opening mobile settings stops the hidden microphone rehearsal", async ({ page }) => {

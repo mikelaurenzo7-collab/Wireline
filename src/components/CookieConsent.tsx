@@ -6,11 +6,11 @@ import { Link, useLocation } from "react-router";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { cn } from "../lib/utils";
 import { isAuthPortalPath, isMarketingHomePath, isMarketingPublicPath } from "../lib/public-routes";
+import { OPEN_PRIVACY_CHOICES_EVENT } from "../lib/privacy-choices";
 
 const NOTICE_STORAGE_KEY = "wireline_cookie_consent";
 const MEASUREMENT_STORAGE_KEY = "wireline_marketing_measurement_consent";
 const MEASUREMENT_CONSENT_EVENT = "wireline:marketing-measurement-consent";
-const OPEN_PRIVACY_CHOICES_EVENT = "wireline:open-privacy-choices";
 
 type MeasurementConsent = "granted" | "denied";
 
@@ -74,39 +74,8 @@ export default function CookieConsent() {
       else document.body.prepend(host);
     }
 
-    // The host lives outside the marketing-surface subtree, so it cannot
-    // inherit the measured --wl-marketing-chrome-top variable. Mirror the
-    // actual fixed-header height (including safe area and text wrapping) into
-    // the host instead of using a brittle hard-coded phone offset.
-    const publicHeader = document.querySelector<HTMLElement>(".wl-public-header");
-    // Measure only the persistent header rail. The mobile menu opens INSIDE
-    // the header and increases its full height; using that expanded height
-    // would move the privacy notice and page content on every menu toggle.
-    // The rail bottom minus the header top includes iOS safe-area padding,
-    // which the rail's own height deliberately excludes.
-    const headerRail = publicHeader?.querySelector<HTMLElement>(".wl-public-header__rail");
-    const syncHeaderClearance = () => {
-      if (!publicHeader || !headerRail) return;
-      const border = Number.parseFloat(getComputedStyle(publicHeader).borderBottomWidth) || 0;
-      const clearancePx = Math.ceil(
-        headerRail.getBoundingClientRect().bottom -
-          publicHeader.getBoundingClientRect().top +
-          border,
-      );
-      host.style.setProperty("--wl-mobile-privacy-header-clearance", `${clearancePx}px`);
-    };
-    syncHeaderClearance();
-    const observer =
-      headerRail && typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(syncHeaderClearance)
-        : null;
-    if (headerRail) observer?.observe(headerRail);
-    // Header padding can change independently of rail size on device rotation.
-    if (publicHeader) observer?.observe(publicHeader);
-
     setMobileInlineHost(host);
     return () => {
-      observer?.disconnect();
       if (!prepaintHost) host.remove();
     };
   }, [narrowViewport]);
@@ -200,7 +169,13 @@ export default function CookieConsent() {
   // Clear the first-paint reservation when signed in, leaving home, or after
   // acknowledgement. The inline portal itself occupies the reserved space.
   useEffect(() => {
-    if (visible || _hasSession || createFlowOpen || !["/", "/pricing", "/features"].includes(location.pathname) || noticeAcknowledged()) {
+    if (
+      visible ||
+      _hasSession ||
+      createFlowOpen ||
+      !["/", "/pricing", "/features"].includes(location.pathname) ||
+      noticeAcknowledged()
+    ) {
       document.documentElement.removeAttribute("data-wl-privacy-prepaint");
     }
   }, [visible, _hasSession, createFlowOpen, location.pathname]);

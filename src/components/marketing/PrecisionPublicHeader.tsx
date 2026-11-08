@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router";
 import { Menu, Moon, Sun, X } from "lucide-react";
 
@@ -15,6 +15,33 @@ export default function PrecisionPublicHeader() {
   const nextTheme = resolvedTheme === "dark" ? "light" : "dark";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+
+  useLayoutEffect(() => {
+    const publicHeader = headerRef.current;
+    const headerRail = publicHeader?.querySelector<HTMLElement>(".wl-public-header__rail");
+    if (!publicHeader || !headerRail) return;
+
+    // The first-visit notice is outside the app root and can mount before this
+    // route loads. Publish the persistent rail clearance from the header itself.
+    const property = "--wl-mobile-privacy-header-clearance";
+    const rootStyle = document.documentElement.style;
+    const syncHeaderClearance = () => {
+      const border = Number.parseFloat(getComputedStyle(publicHeader).borderBottomWidth) || 0;
+      // Include safe-area padding while excluding the expanded mobile menu.
+      const height =
+        headerRail.getBoundingClientRect().bottom - publicHeader.getBoundingClientRect().top;
+      rootStyle.setProperty(property, `${Math.ceil(height + border)}px`);
+    };
+    syncHeaderClearance();
+    const observer =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(syncHeaderClearance) : null;
+    observer?.observe(headerRail);
+    observer?.observe(publicHeader);
+    return () => {
+      observer?.disconnect();
+      rootStyle.removeProperty(property);
+    };
+  }, [headerRef]);
 
   // Close mobile navigation drawer on route change
   useEffect(() => {

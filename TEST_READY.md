@@ -8,6 +8,8 @@
 
 ---
 
+Current location: the four Vitest suites and their shared harness now live in `tests/integration/` so the unit/coverage runner includes them. Browser scenarios remain in `tests/e2e/*.spec.ts`. The October 29 execution output below is historical.
+
 ## 1. Test Suite Summary
 
 The 4-tier requirement-driven, opaque-box E2E test suite for the BotBound Lean 4 Pillars has been authored, verified, and executed with a **100% pass rate** across all tiers:
@@ -50,7 +52,7 @@ Execute the following PowerShell command in the BotBound workspace:
 ```powershell
 cd C:\Users\MichaelLaurenzo\.gemini\antigravity\scratch\BotBound
 $env:PATH = "C:\Users\MichaelLaurenzo\.cache\botbound-node22\node-v22.23.3-win-x64;" + $env:PATH
-node node_modules/vitest/vitest.mjs run tests/e2e/
+node node_modules/vitest/vitest.mjs run tests/integration/
 ```
 
 ### Verification Execution Output

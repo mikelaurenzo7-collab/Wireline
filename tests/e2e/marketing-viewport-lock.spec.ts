@@ -59,7 +59,7 @@ async function publicMetrics(page: Page) {
       ".landing-prestige__hero .landing-prestige__actions",
     );
     const titleLines = Array.from(
-      document.querySelectorAll<HTMLElement>(".landing-prestige__title-line"),
+      document.querySelectorAll<HTMLElement>(".landing-prestige__hero h1 > span"),
     ).map((line) => {
       const range = document.createRange();
       range.selectNodeContents(line);
@@ -70,9 +70,9 @@ async function publicMetrics(page: Page) {
         boxes: boxes.map((box) => ({ left: box.left, right: box.right, width: box.width })),
       };
     });
-    const startFree = Array.from(document.querySelectorAll<HTMLAnchorElement>("a")).find(
-      (link) => link.textContent?.trim() === "GET STARTED",
-    );
+    const startFree = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>(".landing-prestige__hero a"),
+    ).find((link) => link.textContent?.trim().toLowerCase() === "get started");
     const rect = (element: Element | null | undefined) => element?.getBoundingClientRect();
     const rootRect = rect(root);
     const bodyRect = rect(body);
@@ -106,6 +106,8 @@ async function publicMetrics(page: Page) {
       prestigeMainLeft: prestigeMainRect?.left ?? 0,
       prestigeMainRight: prestigeMainRect?.right ?? 0,
       prestigeHeroWidth: prestigeHeroRect?.width ?? 0,
+      prestigeHeroLeft: prestigeHeroRect?.left ?? -1,
+      prestigeHeroRight: prestigeHeroRect?.right ?? Number.POSITIVE_INFINITY,
       prestigeHeroHeight: prestigeHeroRect?.height ?? 0,
       prestigeTitleLeft: prestigeTitleRect?.left ?? -1,
       prestigeTitleRight: prestigeTitleRect?.right ?? Number.POSITIVE_INFINITY,
@@ -181,7 +183,10 @@ for (const { path, name } of PUBLIC_ROUTES) {
       expect(metrics.prestigeHeroDisplay).toBe("grid");
       expect(metrics.prestigeMainLeft).toBeGreaterThanOrEqual(-2);
       expect(metrics.prestigeMainRight).toBeLessThanOrEqual(metrics.viewportWidth + 2);
-      expect(metrics.prestigeHeroWidth).toBeGreaterThan(metrics.viewportWidth - 48);
+      expect(metrics.prestigeHeroLeft).toBeGreaterThanOrEqual(0);
+      expect(metrics.prestigeHeroRight).toBeLessThanOrEqual(metrics.viewportWidth);
+      expect(metrics.prestigeTitleLeft).toBeGreaterThanOrEqual(metrics.prestigeHeroLeft);
+      expect(metrics.prestigeTitleRight).toBeLessThanOrEqual(metrics.prestigeHeroRight);
     } else {
       expect(metrics.flowOverflowY).toBe("visible");
       expect(metrics.surfaceOverflow).toBe("visible");

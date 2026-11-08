@@ -5,10 +5,10 @@ import { OWNER_BROWSER_CAPABILITIES } from "../../src/lib/cloud-computer/browser
 
 /**
  * The Workspace's Set Up page works like a modern AI workbench: the
- * conversation that changes the Bot stays on the left, and a resizable panel
- * on the right opens the Browser and holds Rehearse, Set up, and Summary. The
- * panel drags wider, goes full width, and closes. Phones switch Conversation /
- * Browser in place, preserving both drafts without starting external work.
+ * conversation and task timeline stay together. A resizable Computer / Configure
+ * panel holds the browser and Bot details; rehearsal replaces the conversation
+ * until the owner returns. Phones switch Conversation / Computer in place,
+ * preserving both drafts without starting external work.
  */
 
 const bots = [
@@ -175,6 +175,10 @@ async function syntheticFrame(page: Page) {
 const panelTabs = (page: Page) => page.getByRole("tablist", { name: "Workspace panel" });
 const panelTab = (page: Page, name: string) =>
   panelTabs(page).getByRole("tab", { name, exact: true });
+const configureTab = (page: Page, name: string) =>
+  page
+    .getByRole("tablist", { name: "Configure sections", exact: true })
+    .getByRole("tab", { name, exact: true });
 const conversation = (page: Page, botName = "Front Desk") =>
   page.getByRole("textbox", { name: `Message ${botName}`, exact: true });
 const workConversation = (page: Page, botName = "Front Desk") =>
@@ -256,7 +260,10 @@ test("mobile identity details and browser controls return to the same Bot conver
   await proof(page, info, "bot-details-mobile");
   await panel.getByRole("button", { name: /Computer/ }).click();
   await expect(page).toHaveURL(/panel=computer/);
-  await page.getByRole("button", { name: "Close Browser Panel" }).click();
+  await page
+    .getByRole("navigation", { name: "Workspace view" })
+    .getByRole("button", { name: "Conversation", exact: true })
+    .click();
   await expect(conversation(page)).toHaveValue("Keep this mobile draft");
   await page.getByRole("combobox", { name: "Switch Bot" }).selectOption(bots[1].id);
   await expect(conversation(page, "Sales Bot")).toHaveValue("");
@@ -363,11 +370,15 @@ for (const width of [700, 1206]) {
       await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
       await expect(input).toBeFocused();
     } else {
-      await panelTab(page, "Rehearse").click();
+      await page
+        .getByRole("complementary", { name: "Workspace panel", exact: true })
+        .getByRole("button", { name: "Close panel", exact: true })
+        .click();
+      await room.getByRole("button", { name: "Rehearse", exact: true }).click();
       await expect(
         page.getByRole("button", { name: "Start Rehearsal", exact: true }),
       ).toBeVisible();
-      await panelTab(page, "Browser").click();
+      await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
     }
     await expect(input).toHaveValue("Keep this unsent instruction while I change views.");
     expect(api.starts).toEqual([]);
@@ -439,7 +450,7 @@ test("Configure with history keeps a usable composer and actions at 320px with e
     .getByRole("button", { name: "Conversation", exact: true })
     .boundingBox();
   const browserBox = await views
-    .getByRole("button", { name: "Browser", exact: true })
+    .getByRole("button", { name: "Computer", exact: true })
     .boundingBox();
   expect(conversationBox && browserBox, "Both enlarged view controls have bounds").toBeTruthy();
   expect(browserBox!.y).toBeGreaterThanOrEqual(conversationBox!.y + conversationBox!.height - 1);
@@ -877,7 +888,15 @@ test.describe("wide screens", () => {
       "aria-current",
       "page",
     );
-    await panelTabs(page).getByRole("tab", { name: "Rehearse", exact: true }).click();
+    await page
+      .getByRole("complementary", { name: "Workspace panel", exact: true })
+      .getByRole("button", { name: "Close panel", exact: true })
+      .click();
+    await page
+      .getByRole("group", { name: "Conversation mode", exact: true })
+      .getByRole("button", { name: "Message", exact: true })
+      .click();
+    await page.getByRole("button", { name: "Rehearse", exact: true }).click();
     await expect(rail.getByRole("link", { name: "Open Sales Bot conversation" })).toHaveAttribute(
       "aria-current",
       "page",
@@ -924,58 +943,56 @@ test.describe("wide screens", () => {
     await expect(page.getByRole("tooltip")).toHaveCount(0);
   });
 
-  test("Workspace opens the browser on request and keeps rehearsal one tab away", async ({
+  test("Workspace opens Computer beside chat and keeps rehearsal in the conversation", async ({
     page,
   }, testInfo) => {
-    await mockWorkspace(page);
+    const fixture = await mockWorkspace(page);
     await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
 
     const rail = page.getByRole("complementary", { name: "Workspace navigation", exact: true });
-    await expect(rail.getByRole("link", { name: "Knowledge", exact: true })).toBeVisible({
-      timeout: 20_000,
-    });
+    await expect(rail.getByRole("link", { name: "Knowledge", exact: true })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Workspace sections" })).toBeHidden();
     await expect(panelTabs(page)).toHaveCount(0);
-    await page.getByRole("button", { name: "Open Browser Panel" }).click();
-    await expect(panelTabs(page).getByRole("tab")).toHaveText([
-      "Browser",
-      "Rehearse",
-      "Set Up",
-      "Summary",
-    ]);
-    await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true");
-
-    // Changing the Bot and trying it are on screen together.
+    await page.getByRole("button", { name: "Open Computer Panel" }).click();
+    await expect(panelTabs(page).getByRole("tab")).toHaveText(["Computer", "Configure"]);
+    await expect(panelTab(page, "Computer")).toHaveAttribute("aria-selected", "true");
+    const panel = page.getByRole("complementary", { name: "Workspace panel", exact: true });
     await expect(workConversation(page)).toBeVisible();
-    const panel = page.getByRole("complementary", { name: "Workspace panel" });
     await expect(panel.getByRole("button", { name: "Open browser", exact: true })).toBeVisible();
+
     await page
-      .getByRole("group", { name: "Conversation mode" })
+      .getByRole("group", { name: "Conversation mode", exact: true })
       .getByRole("button", { name: "Message", exact: true })
       .click();
-    await panelTab(page, "Rehearse").click();
-    await expect(panel.getByRole("button", { name: "Typed", exact: true })).toHaveCount(0);
+    await conversation(page).fill("Keep this unsent instruction.");
+    await panel.getByRole("button", { name: "Close panel", exact: true }).click();
+    await page.getByRole("button", { name: "Rehearse", exact: true }).click();
+    const rehearsal = page.getByRole("region", { name: "Front Desk voice rehearsal", exact: true });
     await expect(
-      panel.getByRole("textbox", { name: "Customer message for Front Desk", exact: true }),
+      rehearsal.getByRole("button", { name: "Start Rehearsal", exact: true }),
+    ).toBeVisible();
+    await expect(panelTabs(page)).toHaveCount(0);
+    await expect(
+      rehearsal.getByRole("textbox", { name: "Type a test", exact: true }),
+    ).toBeVisible();
+    await expect(
+      rehearsal.getByRole("textbox", { name: "Customer message for Front Desk", exact: true }),
     ).toHaveCount(0);
-    await expect(panel.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
-    await expect(conversation(page)).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("workspace-try-it.png") });
+    await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+    await expect(conversation(page)).toHaveValue("Keep this unsent instruction.");
 
-    await panelTab(page, "Browser").click();
-    await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true");
+    await page.getByRole("button", { name: "Open Computer Panel" }).click();
+    await expect(panelTab(page, "Computer")).toHaveAttribute("aria-selected", "true");
     await expect(panel.getByLabel("What should your Bot do?")).toHaveCount(0);
     await expect(panel.getByRole("button", { name: "Open browser", exact: true })).toBeVisible();
-    // The panel's computer belongs to the Bot being set up; no second Bot picker.
     await expect(panel.locator("#computer-agent")).toHaveCount(0);
     await expect(panel.getByRole("button", { name: "Tasks", exact: true })).toBeVisible();
     await expect(conversation(page)).toBeVisible();
     await expect(page.locator("textarea:visible")).toHaveCount(1);
     await page.screenshot({ path: testInfo.outputPath("workspace-computer-panel.png") });
 
-    // Full width takes the Workspace and gives it back without losing a draft.
-    await conversation(page).fill("Keep this unsent instruction.");
-    const fullWidth = page.getByRole("button", { name: /^(Expand panel|Restore split view)$/ });
+    const fullWidth = panel.getByRole("button", { name: /^(Expand panel|Restore split view)$/ });
     await fullWidth.click();
     await expect(fullWidth).toHaveAttribute("aria-pressed", "true");
     await expect(conversation(page)).toBeHidden();
@@ -987,19 +1004,18 @@ test.describe("wide screens", () => {
     await expect(fullWidth).toBeFocused();
     await expect(conversation(page)).toHaveValue("Keep this unsent instruction.");
 
-    // The panel returns to the last tab the owner used.
     await page.reload();
-    await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true", {
+    await expect(panelTab(page, "Computer")).toHaveAttribute("aria-selected", "true", {
       timeout: 20_000,
     });
-
-    // Close hands the width back without adding another mode header.
-    await page.getByRole("button", { name: "Close panel", exact: true }).click();
+    await panel.getByRole("button", { name: "Close panel", exact: true }).click();
     await expect(panelTabs(page)).toHaveCount(0);
     await expect(page.getByRole("group", { name: "Set Up view" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Rehearse", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Set Up Bot", exact: true }).click();
-    await expect(panelTab(page, "Set Up")).toHaveAttribute("aria-selected", "true");
+    await expect(panelTab(page, "Configure")).toHaveAttribute("aria-selected", "true");
+    await expect(configureTab(page, "Set Up")).toHaveAttribute("aria-selected", "true");
+    expect(fixture.starts).toEqual([]);
   });
 
   test("a focused browser restores split view even after a saved panel close", async ({ page }) => {
@@ -1017,7 +1033,7 @@ test.describe("wide screens", () => {
     await panel.getByRole("button", { name: "Restore split view", exact: true }).click();
     await expect(conversation(page)).toBeVisible();
     await expect(panel).toBeVisible();
-    await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true");
+    await expect(panelTab(page, "Computer")).toHaveAttribute("aria-selected", "true");
     await expect(page.getByRole("separator", { name: "Resize workspace panel" })).toHaveAttribute(
       "aria-valuenow",
       "520",
@@ -1035,7 +1051,7 @@ test.describe("wide screens", () => {
     };
     await mockWorkspace(page, [task]);
     await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
-    await page.getByRole("button", { name: "Open Browser Panel" }).click();
+    await page.getByRole("button", { name: "Open Computer Panel" }).click();
     await page.getByRole("button", { name: "Expand panel", exact: true }).click();
     const ownerInput = page.getByLabel("Type into selected field", { exact: true });
     await ownerInput.fill("synthetic local draft");
@@ -1045,8 +1061,8 @@ test.describe("wide screens", () => {
       page.getByRole("button", { name: "Restore split view", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
     await expect(workConversation(page)).toBeHidden();
-    await page.getByRole("tab", { name: "Browser", exact: true }).focus();
-    await page.getByRole("tab", { name: "Browser", exact: true }).press("Escape");
+    await page.getByRole("tab", { name: "Computer", exact: true }).focus();
+    await page.getByRole("tab", { name: "Computer", exact: true }).press("Escape");
     await expect(workConversation(page)).toBeVisible();
     await expect(ownerInput).toHaveValue("synthetic local draft");
     await expect(page.getByRole("button", { name: "Expand panel", exact: true })).toBeFocused();
@@ -1058,7 +1074,7 @@ test.describe("wide screens", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await mockWorkspace(page);
     await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
-    await page.getByRole("button", { name: "Open Browser Panel" }).click();
+    await page.getByRole("button", { name: "Open Computer Panel" }).click();
     const panel = page.getByRole("complementary", { name: "Workspace panel", exact: true });
     const separator = page.getByRole("separator", { name: "Resize workspace panel" });
     await expect(separator).toBeVisible({ timeout: 20_000 });
@@ -1095,20 +1111,33 @@ test.describe("wide screens", () => {
       })
       .toBeLessThanOrEqual(1);
     const normal = await geometry();
-    expect(normal.centers).toHaveLength(6);
+    expect(normal.centers).toHaveLength(4);
     expect(normal.heights.every((height) => height >= 44)).toBe(true);
     expect(normal.outsideHeader).toBe(0);
     expect(normal.overflow).toEqual([]);
     await page.screenshot({ path: info.outputPath("workspace-panel-384.png") });
 
     await page.getByRole("button", { name: "Front Desk details" }).click();
-    await expect(panelTab(page, "Details")).toHaveAttribute("aria-selected", "true");
+    await expect(panelTab(page, "Configure")).toHaveAttribute("aria-selected", "true");
+    await expect(configureTab(page, "Details")).toHaveAttribute("aria-selected", "true");
     const detailsGeometry = await geometry();
-    expect(
-      Math.max(...detailsGeometry.centers) - Math.min(...detailsGeometry.centers),
-    ).toBeLessThanOrEqual(1);
+    expect(detailsGeometry.centers).toHaveLength(7);
+    for (const row of [
+      panelTabs(page),
+      page.getByRole("tablist", { name: "Configure sections", exact: true }),
+    ]) {
+      const centers = await row.getByRole("tab").evaluateAll((tabs) =>
+        tabs.map((tab) => {
+          const bounds = tab.getBoundingClientRect();
+          return bounds.top + bounds.height / 2;
+        }),
+      );
+      expect(Math.max(...centers) - Math.min(...centers)).toBeLessThanOrEqual(1);
+    }
     expect(detailsGeometry.outsideHeader).toBe(0);
-    await panelTab(page, "Browser").click();
+    expect(detailsGeometry.overflow).toEqual([]);
+    await page.screenshot({ path: info.outputPath("workspace-configure-384.png") });
+    await panelTab(page, "Computer").click();
 
     await page.evaluate(() =>
       document.documentElement.style.setProperty("font-size", "32px", "important"),
@@ -1117,15 +1146,28 @@ test.describe("wide screens", () => {
       .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).fontSize))
       .toBe("32px");
     await page.evaluate(() => document.fonts.ready);
-    for (const name of ["Browser", "Rehearse", "Set Up", "Summary"])
-      await expect(panelTab(page, name)).toBeVisible();
-    await panelTab(page, "Browser").focus();
-    await panelTab(page, "Browser").press("End");
-    await expect(panelTab(page, "Summary")).toBeFocused();
-    await expect(panelTab(page, "Summary")).toHaveAttribute("aria-selected", "true");
-    await panelTab(page, "Summary").press("Home");
-    await expect(panelTab(page, "Browser")).toBeFocused();
-    await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true");
+    for (const name of ["Computer", "Configure"]) await expect(panelTab(page, name)).toBeVisible();
+    await panelTab(page, "Computer").focus();
+    await panelTab(page, "Computer").press("End");
+    await expect(panelTab(page, "Configure")).toBeFocused();
+    await expect(panelTab(page, "Configure")).toHaveAttribute("aria-selected", "true");
+    for (const name of ["Details", "Set Up", "Summary"])
+      await expect(configureTab(page, name)).toBeVisible();
+    await configureTab(page, "Details").focus();
+    await configureTab(page, "Details").press("End");
+    await expect(configureTab(page, "Summary")).toBeFocused();
+    await expect(configureTab(page, "Summary")).toHaveAttribute("aria-selected", "true");
+    await configureTab(page, "Summary").press("Home");
+    await expect(configureTab(page, "Details")).toBeFocused();
+    const enlargedConfigure = await geometry();
+    expect(enlargedConfigure.heights.every((height) => height >= 44)).toBe(true);
+    expect(enlargedConfigure.outsideHeader).toBe(0);
+    expect(enlargedConfigure.overflow).toEqual([]);
+    await page.screenshot({ path: info.outputPath("workspace-configure-384-enlarged.png") });
+    await panelTab(page, "Configure").focus();
+    await panelTab(page, "Configure").press("Home");
+    await expect(panelTab(page, "Computer")).toBeFocused();
+    await expect(panelTab(page, "Computer")).toHaveAttribute("aria-selected", "true");
     await expect(panel.getByRole("button", { name: "Expand panel", exact: true })).toBeVisible();
     await panel.getByRole("button", { name: "Close panel", exact: true }).focus();
     await expect(panel.getByRole("button", { name: "Close panel", exact: true })).toBeFocused();
@@ -1142,7 +1184,7 @@ test.describe("wide screens", () => {
   test("dragging widens the panel but never squeezes the conversation", async ({ page }) => {
     await mockWorkspace(page);
     await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
-    await page.getByRole("button", { name: "Open Browser Panel" }).click();
+    await page.getByRole("button", { name: "Open Computer Panel" }).click();
     const separator = page.getByRole("separator", { name: "Resize workspace panel" });
     await expect(separator).toBeVisible({ timeout: 20_000 });
     const panel = page.getByRole("complementary", { name: "Workspace panel" });
@@ -1187,8 +1229,8 @@ test.describe("wide screens", () => {
     });
     await page.goto(`/studio?agent=${bots[0].id}&chat=setup`);
     await conversation(page).fill("Keep my configuration instruction.");
-    await page.getByRole("button", { name: "Open Browser Panel" }).click();
-    await panelTab(page, "Browser").click();
+    await page.getByRole("button", { name: "Open Computer Panel" }).click();
+    await panelTab(page, "Computer").click();
     await expect(page.getByRole("figure", { name: "Ended browser", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Tasks", exact: true })).toHaveCount(1);
     const goal = page.getByLabel("What should your Bot do?", { exact: true });
@@ -1201,7 +1243,7 @@ test.describe("wide screens", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page
       .getByRole("navigation", { name: "Workspace view" })
-      .getByRole("button", { name: "Browser", exact: true })
+      .getByRole("button", { name: "Computer", exact: true })
       .click();
     await expect(page).toHaveURL(
       (url) => url.pathname === "/studio" && url.searchParams.get("panel") === "computer",
@@ -1220,13 +1262,14 @@ test.describe("wide screens", () => {
     await expect(url).toHaveValue("https://botbound.app/pricing");
 
     await page.setViewportSize({ width: 1440, height: 900 });
-    await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true");
+    await expect(panelTab(page, "Computer")).toHaveAttribute("aria-selected", "true");
     await expect(goal).toHaveCount(0);
     await expect(conversation(page)).toHaveValue("Keep my configuration instruction.");
     await expect(url).toHaveValue("https://botbound.app/pricing");
     await expect(page.locator("textarea:visible")).toHaveCount(1);
-    await panelTab(page, "Summary").click();
-    await panelTab(page, "Browser").click();
+    await panelTab(page, "Configure").click();
+    await configureTab(page, "Summary").click();
+    await panelTab(page, "Computer").click();
     await expect(goal).toHaveCount(0);
     await expect(conversation(page)).toHaveValue("Keep my configuration instruction.");
     await expect(url).toHaveValue("https://botbound.app/pricing");
@@ -1252,7 +1295,7 @@ test.describe("wide screens", () => {
       );
       await mockWorkspace(page, hasSalesHistory ? [front, sales] : [front]);
       await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
-      await page.getByRole("button", { name: "Open Browser Panel" }).click();
+      await page.getByRole("button", { name: "Open Computer Panel" }).click();
       const browser = page.getByRole("complementary", { name: "Workspace panel", exact: true });
       await expect(browser.getByRole("region", { name: front.goal, exact: true })).toBeVisible();
       await page
@@ -1310,7 +1353,7 @@ test.describe("wide screens", () => {
     );
     const fixture = await mockWorkspace(page, [front, previousFront, sales]);
     await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
-    await page.getByRole("button", { name: "Open Browser Panel" }).click();
+    await page.getByRole("button", { name: "Open Computer Panel" }).click();
     const browser = page.getByRole("complementary", { name: "Workspace panel", exact: true });
     await expect(browser.getByRole("region", { name: front.goal, exact: true })).toBeVisible();
     await page.getByRole("combobox", { name: "Switch Bot", exact: true }).selectOption(bots[1].id);
@@ -1327,7 +1370,7 @@ test.describe("wide screens", () => {
         url.searchParams.get("panel") === "computer",
     );
     await expect(browser).toBeVisible();
-    await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true");
+    await expect(panelTab(page, "Computer")).toHaveAttribute("aria-selected", "true");
     await expect(conversation(page, "Front Desk")).toBeVisible();
     await page.getByRole("combobox", { name: "Switch Bot", exact: true }).selectOption(bots[1].id);
     await expect(browser.getByText("Front Desk's active browser", { exact: true })).toBeVisible();
@@ -1374,7 +1417,7 @@ test.describe("wide screens", () => {
         },
       ]);
       await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
-      await page.getByRole("button", { name: "Open Browser Panel" }).click();
+      await page.getByRole("button", { name: "Open Computer Panel" }).click();
       const browser = page.getByRole("complementary", { name: "Workspace panel", exact: true });
       const recovery = browser.locator(".wl-computer-recovery");
       await expect(
@@ -1424,13 +1467,13 @@ test.describe("wide screens", () => {
     await mockWorkspace(page);
     await page.goto(`/studio?agent=${bots[1].id}&chat=setup`);
     await conversation(page, "Sales Bot").fill("Keep this while the computer opens.");
-    await page.getByRole("button", { name: "Open Browser Panel" }).click();
+    await page.getByRole("button", { name: "Open Computer Panel" }).click();
     await page.getByRole("button", { name: "Close panel", exact: true }).click();
     await page
       .getByRole("navigation", { name: "Workspace view" })
-      .getByRole("button", { name: "Browser", exact: true })
+      .getByRole("button", { name: "Computer", exact: true })
       .click();
-    await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true");
+    await expect(panelTab(page, "Computer")).toHaveAttribute("aria-selected", "true");
     await expect(page.getByRole("button", { name: "Expand panel", exact: true })).toHaveAttribute(
       "aria-pressed",
       "false",
@@ -1450,7 +1493,7 @@ test.describe("wide screens", () => {
         !url.searchParams.has("focus"),
       { timeout: 20_000 },
     );
-    await expect(panelTab(page, "Browser")).toHaveAttribute("aria-selected", "true", {
+    await expect(panelTab(page, "Computer")).toHaveAttribute("aria-selected", "true", {
       timeout: 20_000,
     });
     await expect(conversation(page, "Sales Bot")).toBeVisible();
@@ -1459,10 +1502,17 @@ test.describe("wide screens", () => {
   test("a Try It link brings rehearsal forward over the computer", async ({ page }) => {
     await mockWorkspace(page);
     await page.goto(`/studio?agent=${bots[0].id}&chat=setup`);
-    await page.getByRole("button", { name: "Open Browser Panel" }).click();
-    await panelTab(page, "Browser").click();
+    await page.getByRole("button", { name: "Open Computer Panel" }).click();
+    await panelTab(page, "Computer").click();
     await page.goto(`/studio?agent=${bots[0].id}&workroom=test`);
-    await expect(panelTab(page, "Rehearse")).toHaveAttribute("aria-selected", "true");
+    await expect(panelTabs(page)).toHaveCount(0);
+    await expect(
+      page.getByRole("region", { name: "Front Desk voice rehearsal", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Back to Configure", exact: true }),
+    ).toBeVisible();
   });
 });
 
@@ -1504,7 +1554,7 @@ test.describe("phones", () => {
 
     await page
       .getByRole("navigation", { name: "Workspace view" })
-      .getByRole("button", { name: "Browser", exact: true })
+      .getByRole("button", { name: "Computer", exact: true })
       .click();
     await expect(page).toHaveURL(
       (url) => url.pathname === "/studio" && url.searchParams.get("panel") === "computer",
@@ -1518,7 +1568,7 @@ test.describe("phones", () => {
     await expect(conversation(page)).toHaveValue("Keep this instruction while I browse.");
     await page
       .getByRole("navigation", { name: "Workspace view" })
-      .getByRole("button", { name: "Browser", exact: true })
+      .getByRole("button", { name: "Computer", exact: true })
       .click();
     await expect(page.getByLabel("What should your Bot do?")).toHaveValue("Compare suppliers.");
   });
@@ -1575,7 +1625,7 @@ for (const width of [1440, 390]) {
     if (width < 1000) {
       await page
         .getByRole("navigation", { name: "Workspace view" })
-        .getByRole("button", { name: "Browser", exact: true })
+        .getByRole("button", { name: "Computer", exact: true })
         .click();
       await expect(
         page.getByRole("img", { name: "What your Bot's cloud computer shows right now" }),
@@ -1637,7 +1687,7 @@ for (const width of [1440, 390]) {
     if (width < 1000)
       await page
         .getByRole("navigation", { name: "Workspace view" })
-        .getByRole("button", { name: "Browser", exact: true })
+        .getByRole("button", { name: "Computer", exact: true })
         .click();
     await expect(page.getByLabel("Type into selected field", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Open browser tools", exact: true }).click();
@@ -1743,7 +1793,7 @@ test("Work follows a long result and preserves the owner's manual reading positi
     },
   ]);
   await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
-  await page.getByRole("button", { name: "Open Browser Panel" }).click();
+  await page.getByRole("button", { name: "Open Computer Panel" }).click();
   const log = page.getByRole("log", { name: "Conversation", exact: true });
   await expect(
     page

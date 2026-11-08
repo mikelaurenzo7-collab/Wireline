@@ -33,7 +33,7 @@ export function CoachForm({
         </Field>
       )}
       {callId && (
-        <p className="text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-muted">
+        <p className="text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.3em] text-muted-foreground">
           Coaching call{" "}
           <span className="text-brand font-mono">{callId.toString().slice(0, 8)}…</span>
         </p>

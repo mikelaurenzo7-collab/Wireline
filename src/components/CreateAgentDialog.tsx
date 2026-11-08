@@ -458,11 +458,6 @@ export default function CreateAgentDialog({
                 >
                   {language.setupPrompt}
                 </h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {agents.length > 0
-                    ? "One Bot can handle many jobs. Add another when you need a separate identity, role, phone number, or email address. Channels and usage depend on your plan."
-                    : "Answers and calls, plus email and a computer."}
-                </p>
               </div>
             </div>
             <Button
@@ -480,6 +475,11 @@ export default function CreateAgentDialog({
         </div>
 
         <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-6">
+          <p className="mb-4 text-sm text-muted-foreground">
+            {agents.length > 0
+              ? "One Bot can handle many jobs. Add another when you need a separate identity, role, phone number, or email address. Channels and usage depend on your plan."
+              : "Answers and calls, plus email and a computer."}
+          </p>
           <div className="grid min-w-0 grid-cols-1 gap-5">
             <div>
               <span className="text-sm font-semibold text-foreground">Start from a role</span>

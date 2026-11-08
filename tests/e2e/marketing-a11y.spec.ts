@@ -49,8 +49,8 @@ test("homepage has no axe violations or horizontal overflow at review widths", a
       title: "Phone Number",
       text: ["Inbound and outbound", "Could I book for Thursday?", "SMS"],
     },
-    { title: "Email Address", text: ["Customer question", "Happy to help."] },
-    { title: "A Computer", text: ["This week", "Find an open time"] },
+    { title: "Email Address", text: ["Subject: Saturday lock change", "Bot Reply Sent"] },
+    { title: "A Computer", text: ["Step 3 of 3", "Find an open time"] },
   ];
 
   for (const [width, height] of [
@@ -130,6 +130,10 @@ test("first-visit privacy choices stay compact on mobile pricing", async ({ page
     );
   }
 
+  // The entrance is a JS spring; CSS animation overrides do not finish it.
+  // Audit the settled notice, including the unchanged contrast requirement.
+  await expect(privacy).toHaveCSS("opacity", "1");
+  await expect(privacy).toHaveCSS("transform", "none");
   const results = await new AxeBuilder({ page }).include(".wl-privacy-choices").analyze();
   expect(results.violations).toEqual([]);
 });
@@ -146,9 +150,8 @@ test("homepage promise and access path stay centered inside the desktop viewport
   });
   await expect(headline).toBeVisible();
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
-  await expect(page.locator(".landing-prestige__showcase-title")).toHaveText("The Bot Gets:");
-  await expect(page.locator(".landing-prestige__description")).toHaveCount(0);
-  await expect(page.locator(".landing-prestige__directions")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "The Bot Gets:", exact: true })).toBeVisible();
+  await expect(page.locator(".landing-prestige__hero-subcopy")).toContainText("under your rules");
 
   const bounds = await page.evaluate(() => {
     const headline = document.querySelector(".landing-prestige__hero h1")?.getBoundingClientRect();
@@ -173,7 +176,9 @@ test("homepage promise and access path stay centered inside the desktop viewport
   expect(bounds.actionsBottom).toBeLessThanOrEqual(bounds.viewportHeight);
 });
 
-test("homepage static examples stay visible and signup remains one action away", async ({ page }) => {
+test("homepage static examples stay visible and signup remains one action away", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1365, height: 900 });
   await gotoHomepageWithMain(page);
 
@@ -205,7 +210,7 @@ test("homepage static examples stay visible and signup remains one action away",
   await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
 });
 
-test("homepage channels stay clear and readable without decorative labels at 320px", async ({
+test("homepage channels and description stay readable at 320px and enlarged text", async ({
   page,
 }, info) => {
   await page.setViewportSize({ width: 320, height: 900 });
@@ -213,8 +218,8 @@ test("homepage channels stay clear and readable without decorative labels at 320
   await page.evaluate(() => document.fonts.ready);
 
   const hero = page.locator(".landing-prestige__hero");
-  await expect(hero.locator("p")).toHaveCount(0);
-  await expect(page.locator(".landing-prestige__showcase-title")).toHaveText("The Bot Gets:");
+  await expect(hero.locator(".landing-prestige__hero-subcopy")).toContainText("under your rules");
+  await expect(page.getByRole("heading", { name: "The Bot Gets:", exact: true })).toBeVisible();
   await expect(hero.getByText("Choose calls, email, or both.", { exact: true })).toHaveCount(0);
   await expect(hero.getByText("For life. For work.", { exact: true })).toHaveCount(0);
   await expect(page.locator("main").getByText("Life + work", { exact: true })).toHaveCount(0);
@@ -231,12 +236,12 @@ test("homepage channels stay clear and readable without decorative labels at 320
   await page.evaluate(() => {
     document.documentElement.style.fontSize = "200%";
   });
-  await page.locator(".landing-prestige__showcase-title").scrollIntoViewIfNeeded();
+  await page.getByRole("heading", { name: "The Bot Gets:", exact: true }).scrollIntoViewIfNeeded();
   const enlargedWidth = await page.evaluate(() => innerWidth);
   const enlargedControls = await page.evaluate(() =>
     [
       ...document.querySelectorAll<HTMLElement>(
-        ".landing-prestige__title-line, .landing-prestige__card",
+        ".landing-prestige__hero h1 > span, .landing-prestige__actions a, .landing-prestige__card",
       ),
     ].map((element) => {
       const bounds = element.getBoundingClientRect();

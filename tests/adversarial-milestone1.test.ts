@@ -5,26 +5,19 @@ import Twilio from "twilio";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  BOTBOUND_EIN,
-  BOTBOUND_TRUST_HUB_ENTITY,
   buildTollfreeVerificationPayload,
-  buildTrustHubCustomerProfilePayload,
   isTollFreePhoneNumber,
-  validateTollfreeVerificationPayload,
   submitTrustHubCustomerProfile,
   submitTollfreeVerification,
   fetchTollfreeVerificationStatus,
 } from "../scripts/lib/twilio-trust-hub.mjs";
-import tollfreeWebhookRouter, {
-  normalizeTollfreeVerificationStatus,
-} from "../src/routes/twilio-tollfree-webhook";
+import tollfreeWebhookRouter from "../src/routes/twilio-tollfree-webhook";
 import { evaluateTwilioWebhookAuth } from "../src/lib/twilio-webhook-auth";
 import { drizzle } from "../src/lib/server-context";
 
 const AUTH_TOKEN = "adversarial-test-auth-token-1234567890";
 const ACCOUNT_SID = "ACadversarial111111111111111111111";
-const WEBHOOK_URL =
-  "https://botbound.app/api/twilio-webhook/tollfree-verification-status";
+const WEBHOOK_URL = "https://botbound.app/api/twilio-webhook/tollfree-verification-status";
 
 function chainQuery<T>(rows: T[]) {
   const builder: Record<string, unknown> = {};
@@ -176,10 +169,10 @@ describe("Adversarial Stress Testing — Milestone 1", () => {
     it("rejects international phone numbers", () => {
       const intlNumbers = [
         "+442071838750", // UK
-        "+33123456789",  // France
-        "+4930123456",   // Germany
-        "+81312345678",  // Japan
-        "+61298765432",  // Australia
+        "+33123456789", // France
+        "+4930123456", // Germany
+        "+81312345678", // Japan
+        "+61298765432", // Australia
       ];
       for (const number of intlNumbers) {
         expect(isTollFreePhoneNumber(number)).toBe(false);
@@ -236,13 +229,10 @@ describe("Adversarial Stress Testing — Milestone 1", () => {
   });
 
   describe("Surface 2: CLI Argument Handling & Subprocess Verification", () => {
-    const scriptPath = resolve(
-      process.cwd(),
-      "scripts/submit-twilio-tollfree-verification.mjs",
-    );
+    const scriptPath = resolve(process.cwd(), "scripts/submit-twilio-tollfree-verification.mjs");
 
     it("CLI --help displays usage and exits with code 0", () => {
-      const output = execSync(`node "${scriptPath}" --help`, {
+      const output = execSync(`node --disable-warning=UNDICI-EHPA "${scriptPath}" --help`, {
         encoding: "utf8",
         cwd: process.cwd(),
       });
@@ -253,7 +243,7 @@ describe("Adversarial Stress Testing — Milestone 1", () => {
     });
 
     it("CLI --dry-run without args succeeds with default pinned entity", () => {
-      const output = execSync(`node "${scriptPath}" --dry-run`, {
+      const output = execSync(`node --disable-warning=UNDICI-EHPA "${scriptPath}" --dry-run`, {
         encoding: "utf8",
         cwd: process.cwd(),
       });
@@ -271,17 +261,22 @@ describe("Adversarial Stress Testing — Milestone 1", () => {
       for (const num of invalidNumbers) {
         let threw = false;
         try {
-          execSync(`node "${scriptPath}" --phone-number "${num}" --dry-run`, {
-            encoding: "utf8",
-            cwd: process.cwd(),
-            stdio: "pipe",
-          });
+          execSync(
+            `node --disable-warning=UNDICI-EHPA "${scriptPath}" --phone-number "${num}" --dry-run`,
+            {
+              encoding: "utf8",
+              cwd: process.cwd(),
+              stdio: "pipe",
+            },
+          );
         } catch (err: unknown) {
           threw = true;
           const stderr = (err as { stderr?: string }).stderr?.toString() || "";
           const parsed = JSON.parse(stderr);
           expect(parsed.ok).toBe(false);
-          expect(parsed.errors.some((e: string) => e.includes("not a valid US toll-free number"))).toBe(true);
+          expect(
+            parsed.errors.some((e: string) => e.includes("not a valid US toll-free number")),
+          ).toBe(true);
         }
         expect(threw).toBe(true);
       }
@@ -290,7 +285,7 @@ describe("Adversarial Stress Testing — Milestone 1", () => {
     it("CLI --apply fails closed when credentials are missing", () => {
       let threw = false;
       try {
-        execSync(`node "${scriptPath}" --apply`, {
+        execSync(`node --disable-warning=UNDICI-EHPA "${scriptPath}" --apply`, {
           encoding: "utf8",
           cwd: process.cwd(),
           stdio: "pipe",
@@ -314,7 +309,7 @@ describe("Adversarial Stress Testing — Milestone 1", () => {
     it("CLI --status fails closed when credentials are missing", () => {
       let threw = false;
       try {
-        execSync(`node "${scriptPath}" --status HH1234567890`, {
+        execSync(`node --disable-warning=UNDICI-EHPA "${scriptPath}" --status HH1234567890`, {
           encoding: "utf8",
           cwd: process.cwd(),
           stdio: "pipe",
@@ -387,11 +382,11 @@ describe("Adversarial Stress Testing — Milestone 1", () => {
 
     it("rejects replayed signature with tampered body parameters", async () => {
       // Valid signature for Status=PENDING replayed with Status=TWILIO_APPROVED
-      const originalSignature = Twilio.getExpectedTwilioSignature(
-        AUTH_TOKEN,
-        WEBHOOK_URL,
-        { AccountSid: ACCOUNT_SID, VerificationSid: "HH123", Status: "PENDING" },
-      );
+      const originalSignature = Twilio.getExpectedTwilioSignature(AUTH_TOKEN, WEBHOOK_URL, {
+        AccountSid: ACCOUNT_SID,
+        VerificationSid: "HH123",
+        Status: "PENDING",
+      });
 
       const tamperedReq = createMockReq(
         { VerificationSid: "HH123", Status: "TWILIO_APPROVED" },
@@ -453,17 +448,11 @@ describe("Adversarial Stress Testing — Milestone 1", () => {
     });
 
     it("rejects non-POST HTTP methods", () => {
-      const getReq = createMockReq(
-        { VerificationSid: "HH123" },
-        { method: "GET" },
-      );
+      const getReq = createMockReq({ VerificationSid: "HH123" }, { method: "GET" });
       const evalGet = evaluateTwilioWebhookAuth(getReq, AUTH_TOKEN);
       expect(evalGet.ok).toBe(false);
 
-      const putReq = createMockReq(
-        { VerificationSid: "HH123" },
-        { method: "PUT" },
-      );
+      const putReq = createMockReq({ VerificationSid: "HH123" }, { method: "PUT" });
       const evalPut = evaluateTwilioWebhookAuth(putReq, AUTH_TOKEN);
       expect(evalPut.ok).toBe(false);
     });
@@ -488,12 +477,10 @@ describe("Adversarial Stress Testing — Milestone 1", () => {
     });
 
     it("idempotently handles duplicate identical callback replays", async () => {
-      vi.spyOn(drizzle, "select").mockImplementation(() =>
-        chainQuery([{ userId: "user-test-id" }]) as never,
+      vi.spyOn(drizzle, "select").mockImplementation(
+        () => chainQuery([{ userId: "user-test-id" }]) as never,
       );
-      const insertSpy = vi
-        .spyOn(drizzle, "insert")
-        .mockImplementation(() => chainInsert() as never);
+      vi.spyOn(drizzle, "insert").mockImplementation(() => chainInsert() as never);
 
       const payload = {
         VerificationSid: "HH99999999999999999999999999999999",
@@ -524,8 +511,8 @@ describe("Adversarial Stress Testing — Milestone 1", () => {
     });
 
     it("gracefully processes long rejection reasons without failure", async () => {
-      vi.spyOn(drizzle, "select").mockImplementation(() =>
-        chainQuery([{ userId: "user-test-id" }]) as never,
+      vi.spyOn(drizzle, "select").mockImplementation(
+        () => chainQuery([{ userId: "user-test-id" }]) as never,
       );
       vi.spyOn(drizzle, "insert").mockImplementation(() => chainInsert() as never);
 
@@ -550,8 +537,8 @@ describe("Adversarial Stress Testing — Milestone 1", () => {
     });
 
     it("handles payload with unknown status values safely", async () => {
-      vi.spyOn(drizzle, "select").mockImplementation(() =>
-        chainQuery([{ userId: "user-test-id" }]) as never,
+      vi.spyOn(drizzle, "select").mockImplementation(
+        () => chainQuery([{ userId: "user-test-id" }]) as never,
       );
       vi.spyOn(drizzle, "insert").mockImplementation(() => chainInsert() as never);
 
@@ -591,7 +578,7 @@ describe("Adversarial Stress Testing — Milestone 1", () => {
         ]);
       }) as never);
 
-      const insertSpy = vi.spyOn(drizzle, "insert").mockImplementation((() => {
+      vi.spyOn(drizzle, "insert").mockImplementation((() => {
         const builder: Record<string, unknown> = {};
         builder.values = vi.fn((vals: { preferences: Record<string, unknown> }) => {
           if (vals?.preferences) {
@@ -616,9 +603,10 @@ describe("Adversarial Stress Testing — Milestone 1", () => {
       await res.done;
 
       expect(res.statusCode).toBe(200);
-      const companyIdentity = savedPreferences?.company_identity as Record<string, unknown> | undefined;
+      const companyIdentity = savedPreferences?.company_identity as
+        Record<string, unknown> | undefined;
       const providerStatus = companyIdentity?.providerStatus as Record<string, unknown> | undefined;
-      
+
       // EMPIRICAL OBSERVATION:
       // When a replayed or out-of-order callback with Status: PENDING arrives,
       // it overwrites the previously 'approved' status back to 'review_requested'!
@@ -648,10 +636,7 @@ describe("Adversarial Stress Testing — Milestone 1", () => {
 
     it("fetchTollfreeVerificationStatus requires verificationSid", async () => {
       await expect(
-        fetchTollfreeVerificationStatus(
-          { accountSid: ACCOUNT_SID, authToken: AUTH_TOKEN },
-          "",
-        ),
+        fetchTollfreeVerificationStatus({ accountSid: ACCOUNT_SID, authToken: AUTH_TOKEN }, ""),
       ).rejects.toThrow("verificationSid is required");
     });
   });

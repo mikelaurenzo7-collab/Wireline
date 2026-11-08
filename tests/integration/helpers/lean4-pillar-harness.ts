@@ -1,17 +1,14 @@
 /**
  * Lean 4-Pillar Test Harness & Reference Oracle
- * 
+ *
  * Implements authoritative interface contracts and reference behavioral models
  * for the BotBound Lean 4 Pillars as defined in PROJECT.md and ORIGINAL_REQUEST.md:
- * 
+ *
  * Pillar 1: Zero-Conflict Calendar Engine (Travel Buffers, 5-min Soft Holds, RFC 5545 .ics Generation, Trade Portal Mirroring)
  * Pillar 2: In-Call Stripe Settlements & Autonomous Goodwill Wallets ($100/mo cap, $25/resolution)
  * Pillar 3: Voice-to-Browserbase Real-Time Bridge (Non-blocking async tools, conversational fillers during 3-8s latency, 2FA alerts)
  * Pillar 4: Branded Bot Email Identity via AgentMail (Inbox provisioning, transactional confirmations, payment receipts, reply triage)
  */
-
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
-import { EventEmitter } from "node:events";
 
 // Re-export production implementations for single-source-of-truth
 export {
@@ -26,11 +23,7 @@ export {
   type TravelBufferCalculation,
 } from "../../../src/lib/calendar-holds";
 
-export {
-  escapeIcsText,
-  formatIcsDate,
-  generateRfc5545Ics,
-} from "../../../src/lib/ics-generator";
+export { escapeIcsText, formatIcsDate, generateRfc5545Ics } from "../../../src/lib/ics-generator";
 
 export {
   DEFAULT_MONTHLY_GOODWILL_CAP_CENTS,
@@ -70,7 +63,10 @@ export interface AsyncBrowserTaskRequest {
   portalUrl: string;
   parameters: Record<string, unknown>;
   fillerCallback?: (phrase: string) => Promise<void>;
-  statusCallback?: (status: "running" | "waiting_2fa" | "completed" | "failed", data?: unknown) => Promise<void>;
+  statusCallback?: (
+    status: "running" | "waiting_2fa" | "completed" | "failed",
+    data?: unknown,
+  ) => Promise<void>;
 }
 
 export interface AsyncBrowserTaskResult {
@@ -97,7 +93,10 @@ export const CONVERSATIONAL_STATUS_FILLERS = [
   "Almost there, just finalizing the portal lookup...",
 ] as const;
 
-export function selectConversationalFiller(turnIndex: number, previousFillers: string[] = []): string {
+export function selectConversationalFiller(
+  turnIndex: number,
+  previousFillers: string[] = [],
+): string {
   const available = CONVERSATIONAL_STATUS_FILLERS.filter((f) => !previousFillers.includes(f));
   const pool = available.length > 0 ? available : CONVERSATIONAL_STATUS_FILLERS;
   return pool[turnIndex % pool.length];
@@ -118,8 +117,8 @@ export function create2FATakeoverAlert(params: {
     params.reason === "two_factor"
       ? "2FA SMS verification code"
       : params.reason === "captcha"
-      ? "CAPTCHA puzzle verification"
-      : "Portal credentials";
+        ? "CAPTCHA puzzle verification"
+        : "Portal credentials";
 
   return {
     smsAlert: {

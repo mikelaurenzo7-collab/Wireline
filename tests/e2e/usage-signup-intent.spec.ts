@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { USAGE_PLAN } from "../../src/lib/plan-catalog";
 
-test("a retired signup link adopts shared usage without losing its use case", async ({ page }) => {
+test("a legacy Personal signup preserves its intent across reloads", async ({ page }) => {
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
     await route.fulfill({
@@ -31,20 +31,32 @@ test("a retired signup link adopts shared usage without losing its use case", as
     "/signup?plan=personal&interval=year&template=personal-assistant&utm_source=returning",
   );
   await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
-  await expect(page.getByText(/\$24\/month plus usage/)).toBeVisible();
+  // Account creation precedes the plan review; preserve this supported legacy
+  // channel intent instead of inventing a subscription or showing a checkout.
+  await expect(page.getByText(/\$24\/month plus usage/)).toHaveCount(0);
   await expect(page.getByText(/\$12\/month/)).toHaveCount(0);
   await expect
     .poll(() =>
       page.evaluate(() => JSON.parse(localStorage.getItem("wireline_signup_intent_v1") || "{}")),
     )
     .toMatchObject({
-      preferredPlanId: "usage",
-      preferredBillingInterval: "month",
+      preferredPlanId: "personal",
+      preferredBillingInterval: "year",
       preferredTemplateId: "personal-assistant",
       utmSource: "returning",
     });
   await page.reload();
-  await expect(page.getByText(/\$24\/month plus usage/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() => JSON.parse(localStorage.getItem("wireline_signup_intent_v1") || "{}")),
+    )
+    .toMatchObject({
+      preferredPlanId: "personal",
+      preferredBillingInterval: "year",
+      preferredTemplateId: "personal-assistant",
+      utmSource: "returning",
+    });
 });
 
 for (const [tier, name, price] of [

@@ -1,5 +1,4 @@
 import type { DiscoveredLead, LeadDialRequest } from "./types";
-import { AppError } from "../api-error";
 
 export interface OutboundDossier {
   leadId: string;
@@ -13,11 +12,12 @@ export interface OutboundDossier {
  * Generates contextual briefing for the Gemini Live voice agent before dialing
  */
 export function buildLeadDossier(lead: DiscoveredLead): OutboundDossier {
-  const ratingText = lead.rating ? `rated ${lead.rating} stars with ${lead.reviewCount || 0} reviews` : "local business";
+  const ratingText = lead.rating
+    ? `rated ${lead.rating} stars with ${lead.reviewCount || 0} reviews`
+    : "local business";
   const addressText = lead.address ? `located at ${lead.address}` : "in your local area";
 
-  const suggestedOpeningHook =
-    `Hi, I'm calling from BotBound for ${lead.businessName}. I saw your ${lead.tradeCategory} listing and wanted to see if you have capacity for dispatch referrals this week?`;
+  const suggestedOpeningHook = `Hi, I'm calling from BotBound for ${lead.businessName}. I saw your ${lead.tradeCategory} listing and wanted to see if you have capacity for dispatch referrals this week?`;
 
   const promptSystemPromptAddition = [
     `[OUTBOUND LEAD CONTEXT]`,
@@ -41,7 +41,10 @@ export function buildLeadDossier(lead: DiscoveredLead): OutboundDossier {
 /**
  * Validates TCPA calling hours (8:00 AM to 9:00 PM recipient local time)
  */
-export function isWithinPermittedCallingHours(now = new Date(), timeZone = "America/Chicago"): boolean {
+export function isWithinPermittedCallingHours(
+  now = new Date(),
+  timeZone = "America/Chicago",
+): boolean {
   try {
     const formatter = new Intl.DateTimeFormat("en-US", {
       timeZone,
@@ -68,7 +71,7 @@ export function prepareLeadDial(
     callPurpose?: LeadDialRequest["callPurpose"];
     now?: Date;
     recipientTimeZone?: string;
-  }
+  },
 ): {
   approved: boolean;
   dossier?: OutboundDossier;

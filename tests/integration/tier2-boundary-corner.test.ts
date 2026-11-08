@@ -1,35 +1,23 @@
 /**
  * Tier 2: Boundary & Corner Cases (E2E Opaque-Box Suite)
- * 
+ *
  * Validates boundaries, edge cases, invalid inputs, failure modes, and rate limiting across the Lean 4 Pillars:
  * - Pillar 1: Buffer boundaries (0 min, 15 min min, 60 min max), hold expiration (after 300s TTL), concurrent booking collisions
  * - Pillar 2: Wallet limit breaches ($100/mo cap, $25/resolution), invalid tokens, forged Stripe signatures, stale webhooks
  * - Pillar 3: Browserbase timeouts (60s-3600s), SSRF network guards (127.0.0.1, 169.254.169.254, RFC1918), filler cycling limits
  * - Pillar 4: AgentMail unmanaged domain rejection, username sanitization, malformed ICS validation, triage intent conflicts
- * 
+ *
  * Requirement: Minimum >= 35 tests total across all 4 pillars.
  */
 
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { createHmac } from "node:crypto";
 
 // Existing codebase imports
-import {
-  intervalsOverlap,
-  validateNativeCalendarSettings,
-} from "../../src/lib/native-calendar-policy";
-import {
-  cloudComputerConnection,
-} from "../../src/lib/cloud-computer/config";
-import {
-  isNonPublicAddress,
-  checkUrlAllowed,
-} from "../../src/lib/cloud-computer/url-policy";
-import {
-  agentMailManagedInboxClientId,
-} from "../../src/lib/agentmail-mail";
+import { validateNativeCalendarSettings } from "../../src/lib/native-calendar-policy";
+import { cloudComputerConnection } from "../../src/lib/cloud-computer/config";
+import { isNonPublicAddress, checkUrlAllowed } from "../../src/lib/cloud-computer/url-policy";
+import { agentMailManagedInboxClientId } from "../../src/lib/agentmail-mail";
 import { isBotBoundManagedEmailDomain } from "../../src/lib/managed-agentmail-domain";
 
 // Lean 4-Pillar Test Harness
@@ -37,7 +25,6 @@ import {
   calculateTravelBuffer,
   createEphemeralHold,
   isHoldActive,
-  generateRfc5545Ics,
   escapeIcsText,
   checkSlotWithBufferAndHolds,
   MIN_TRAVEL_BUFFER_MINUTES,
@@ -73,20 +60,30 @@ describe("Tier 2: Boundary & Corner Cases (Lean 4 Pillars)", () => {
 
     it("T2-P1-02: Buffer boundary: 15 minute lower bound enforcement (minimum travel buffer)", () => {
       // 0.5 miles: 0.5*2 + 10 = 11 mins -> must clamp to MIN_TRAVEL_BUFFER_MINUTES (15 mins)
-      const bufferShort = calculateTravelBuffer("100 Market St", "101 Market St", { estimatedMiles: 0.5 });
+      const bufferShort = calculateTravelBuffer("100 Market St", "101 Market St", {
+        estimatedMiles: 0.5,
+      });
       expect(bufferShort.bufferMinutes).toBe(MIN_TRAVEL_BUFFER_MINUTES);
     });
 
     it("T2-P1-03: Buffer boundary: 60 minute upper bound clamp (maximum travel buffer)", () => {
       // 100 miles: 100*2 + 10 = 210 mins -> must clamp to MAX_TRAVEL_BUFFER_MINUTES (60 mins)
-      const bufferLong = calculateTravelBuffer("San Francisco", "Sacramento", { estimatedMiles: 100 });
+      const bufferLong = calculateTravelBuffer("San Francisco", "Sacramento", {
+        estimatedMiles: 100,
+      });
       expect(bufferLong.bufferMinutes).toBe(MAX_TRAVEL_BUFFER_MINUTES);
     });
 
     it("T2-P1-04: Ephemeral hold exact TTL expiration: 300 seconds TTL expires at exactly t = 300.001s", () => {
       const start = new Date(Date.now() + 3600_000);
       const end = new Date(start.getTime() + 1800_000);
-      const hold = createEphemeralHold("usr_1", "CA_call_1", start, end, DEFAULT_SOFT_HOLD_TTL_SECONDS);
+      const hold = createEphemeralHold(
+        "usr_1",
+        "CA_call_1",
+        start,
+        end,
+        DEFAULT_SOFT_HOLD_TTL_SECONDS,
+      );
 
       // 299.9 seconds later: still active
       const justBeforeExpiry = new Date(hold.expiresAt.getTime() - 100);
@@ -145,7 +142,9 @@ describe("Tier 2: Boundary & Corner Cases (Lean 4 Pillars)", () => {
       });
 
       expect(caller2Attempt.available).toBe(false);
-      expect(caller2Attempt.conflictReason).toContain("temporarily reserved by another active call");
+      expect(caller2Attempt.conflictReason).toContain(
+        "temporarily reserved by another active call",
+      );
     });
 
     it("T2-P1-07: Sequential release: released soft hold immediately unlocks slot for subsequent callers", () => {
@@ -396,7 +395,9 @@ describe("Tier 2: Boundary & Corner Cases (Lean 4 Pillars)", () => {
     });
 
     it("T2-P3-09: Rejects URLs with embedded user credentials (http://user:pass@example.com)", () => {
-      expect(checkUrlAllowed(new URL("https://admin:secret@app.housecallpro.com")).allowed).toBe(false);
+      expect(checkUrlAllowed(new URL("https://admin:secret@app.housecallpro.com")).allowed).toBe(
+        false,
+      );
     });
   });
 
@@ -438,7 +439,7 @@ describe("Tier 2: Boundary & Corner Cases (Lean 4 Pillars)", () => {
     it("T2-P4-06: Inbound email triage with conflicting intents: prioritize urgent complaint over reschedule", () => {
       const triage = triageInboundCustomerReply(
         "Urgent: Water leak everywhere!",
-        "Can we reschedule because my house is flooding right now and water is leaking everywhere?!"
+        "Can we reschedule because my house is flooding right now and water is leaking everywhere?!",
       );
       expect(triage.intent).toBe("urgent_complaint");
       expect(triage.requiresHumanEscalation).toBe(true);

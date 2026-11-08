@@ -815,7 +815,6 @@ function StudioWorkspaceContent() {
     />
   );
 
-
   // Keyed by Bot: a different Bot's computer composer never inherits a draft.
   const computerPanel =
     (panelOpen && panelSection === "computer") || mobileBrowserOpen ? (
@@ -901,7 +900,11 @@ function StudioWorkspaceContent() {
         </div>
       ) : null}
       {activePanelTab === "configure" ? (
-        <div className="wl-studio-panel-tabs" role="tablist" aria-label="Configure sections">
+        <div
+          className="wl-studio-panel-tabs wl-studio-panel-tabs--configure"
+          role="tablist"
+          aria-label="Configure sections"
+        >
           {CONFIGURE_TABS.map(({ id, label }, index) => (
             <button
               key={id}
@@ -992,11 +995,11 @@ function StudioWorkspaceContent() {
     >
       {activePanelSection === "computer"
         ? computerPanel
-          : activePanelSection === "details"
-            ? detailsPanel
-            : activePanelSection === "review"
-              ? reviewPanel
-              : setupPanel}
+        : activePanelSection === "details"
+          ? detailsPanel
+          : activePanelSection === "review"
+            ? reviewPanel
+            : setupPanel}
     </div>
   );
 

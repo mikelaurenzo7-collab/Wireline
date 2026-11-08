@@ -36,9 +36,9 @@ function flattenColors(node: TokenNode, path = "color", output: Record<string, s
   return output;
 }
 
-const tokenSource = JSON.parse(
-  readFileSync("design-tokens/wireline.tokens.json", "utf8"),
-) as { color: TokenNode };
+const tokenSource = JSON.parse(readFileSync("design-tokens/wireline.tokens.json", "utf8")) as {
+  color: TokenNode;
+};
 const dark = flattenColors(tokenSource.color);
 const css = readFileSync("src/styles/theme-light.css", "utf8");
 const light = { ...dark };
@@ -48,9 +48,7 @@ for (const [, name, value] of css.matchAll(
 )) {
   // The light stylesheet uses flattened CSS custom-property keys, while
   // DTCG has nested groups. Convert by looking up each canonical path.
-  const path = Object.keys(dark).find(
-    (token) => token.replaceAll(".", "-") === `color-${name}`,
-  );
+  const path = Object.keys(dark).find((token) => token.replaceAll(".", "-") === `color-${name}`);
   expect(path, `unknown light appearance override ${name}`).toBeDefined();
   light[path!] = value;
 }
@@ -74,34 +72,34 @@ const surfaces = [
 ] as const;
 
 describe("BotBound appearance contrast", () => {
-  it.each([["Dark", dark], ["Light", light]] as const)(
-    "preserves WCAG AA normal-text contrast across %s surfaces",
-    (_label, colors) => {
-      for (const text of normalText) {
-        for (const surface of surfaces) {
-          const textColor = colors[`color.${text}`];
-          const surfaceColor = colors[`color.${surface}`];
-          expect(textColor, text).toBeDefined();
-          expect(surfaceColor, surface).toBeDefined();
-          expect(
-            contrast(textColor, surfaceColor),
-            `${text} on ${surface}: ${textColor} against ${surfaceColor}`,
-          ).toBeGreaterThanOrEqual(4.5);
-        }
-      }
-      for (const state of ["default", "hover", "pressed"]) {
-        const action = colors[`color.action.primary.${state}`];
+  it.each([
+    ["Dark", dark],
+    ["Light", light],
+  ] as const)("preserves WCAG AA normal-text contrast across %s surfaces", (_label, colors) => {
+    for (const text of normalText) {
+      for (const surface of surfaces) {
+        const textColor = colors[`color.${text}`];
+        const surfaceColor = colors[`color.${surface}`];
+        expect(textColor, text).toBeDefined();
+        expect(surfaceColor, surface).toBeDefined();
         expect(
-          contrast(colors["color.text.onAction"], action),
-          `button text on ${state} action`,
+          contrast(textColor, surfaceColor),
+          `${text} on ${surface}: ${textColor} against ${surfaceColor}`,
         ).toBeGreaterThanOrEqual(4.5);
-        const secondary = colors[`color.action.secondary.${state}`];
-        for (const surface of ["canvas.default", "surface.strong"]) {
-          expect(contrast(secondary, colors[`color.${surface}`])).toBeGreaterThanOrEqual(4.5);
-        }
       }
-    },
-  );
+    }
+    for (const state of ["default", "hover", "pressed"]) {
+      const action = colors[`color.action.primary.${state}`];
+      expect(
+        contrast(colors["color.text.onAction"], action),
+        `button text on ${state} action`,
+      ).toBeGreaterThanOrEqual(4.5);
+      const secondary = colors[`color.action.secondary.${state}`];
+      for (const surface of ["canvas.default", "surface.strong"]) {
+        expect(contrast(secondary, colors[`color.${surface}`])).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
 
   it("keeps the published token table synchronized with the light and dark sources", () => {
     const designDoc = readFileSync(".superdesign/design-system.md", "utf8");
@@ -129,8 +127,8 @@ describe("BotBound appearance contrast", () => {
         .map((line) => line.split("|").map((part) => part.trim().replaceAll("`", "")))
         .find((fields) => fields[1] === role);
       expect(row, `missing documented role: ${role}`).toBeDefined();
-      expect(row![2].toLowerCase(), `dark ${role}`).toBe(dark[`color.${name}`]);
-      expect(row![3].toLowerCase(), `light ${role}`).toBe(light[`color.${name}`]);
+      expect(row![2].toLowerCase(), `dark ${role}`).toBe(dark[`color.${name}`].toLowerCase());
+      expect(row![3].toLowerCase(), `light ${role}`).toBe(light[`color.${name}`].toLowerCase());
     }
   });
 
@@ -138,7 +136,9 @@ describe("BotBound appearance contrast", () => {
     expect(light["color.canvas.default"]).toBe("#ffffff");
     expect(light["color.surface.default"]).toBe("#ffffff");
     for (const surface of ["canvas.default", "surface.strong"]) {
-      expect(contrast(light["color.border.strong"], light[`color.${surface}`])).toBeGreaterThanOrEqual(3);
+      expect(
+        contrast(light["color.border.strong"], light[`color.${surface}`]),
+      ).toBeGreaterThanOrEqual(3);
     }
     const styles = readFileSync("src/styles/theme-light.css", "utf8");
     expect(styles).toContain(":where(:root.light) .wl-access-panel__field");
@@ -155,16 +155,16 @@ describe("BotBound appearance contrast", () => {
   it("exposes the resolved theme to visitors without adding a mobile header control", () => {
     const header = readFileSync("src/components/marketing/PrecisionPublicHeader.tsx", "utf8");
     expect(header).toContain("const { resolvedTheme, toggleTheme } = useTheme();");
-    expect(header).toContain('aria-label={`Switch to ${nextTheme} appearance`}');
+    expect(header).toContain("aria-label={`Switch to ${nextTheme} appearance`}");
     expect(header).toContain("md:inline-flex");
     expect(header).toContain("setMobileMenuOpen(false);");
     expect(header).toContain("<span>Use {nextTheme} appearance</span>");
 
     const auth = readFileSync("src/components/auth/AuthAccessPanel.tsx", "utf8");
     expect(auth).toContain("const { resolvedTheme, toggleTheme } = useTheme();");
-    expect(auth).toContain('aria-label={`Switch to ${nextTheme} appearance`}');
-    expect(auth).toContain('onClick={toggleTheme}');
-    expect(auth).toContain('!embedded ? (');
+    expect(auth).toContain("aria-label={`Switch to ${nextTheme} appearance`}");
+    expect(auth).toContain("onClick={toggleTheme}");
+    expect(auth).toContain("!embedded ? (");
   });
 
   it("keeps the three public pricing plan actions on a shared baseline", () => {
@@ -173,35 +173,37 @@ describe("BotBound appearance contrast", () => {
     expect(pricing).toContain("w-full flex-1 rounded-2xl p-6 pb-2");
   });
 
-  it.each([["Dark", dark], ["Light", light]] as const)(
-    "preserves %s feedback and subtle-surface readable copy",
-    (_label, colors) => {
-      for (const status of ["success", "warning", "error", "info", "neutral"] as const) {
-        const textColor = colors[`color.status.${status}`];
-        const surfaceColor = colors[`color.feedback.${status}.surface`];
-        expect(
-          contrast(textColor, surfaceColor),
-          `${status} on its own feedback background`,
-        ).toBeGreaterThanOrEqual(4.5);
+  it.each([
+    ["Dark", dark],
+    ["Light", light],
+  ] as const)("preserves %s feedback and subtle-surface readable copy", (_label, colors) => {
+    for (const status of ["success", "warning", "error", "info", "neutral"] as const) {
+      const textColor = colors[`color.status.${status}`];
+      const surfaceColor = colors[`color.feedback.${status}.surface`];
+      expect(
+        contrast(textColor, surfaceColor),
+        `${status} on its own feedback background`,
+      ).toBeGreaterThanOrEqual(4.5);
+    }
+    for (const role of ["primary", "secondary", "tertiary"] as const) {
+      for (const surface of [
+        "surface.subtle",
+        "surface.container",
+        "surface.recessed",
+        "feedback.success.surface",
+        "feedback.warning.surface",
+        "feedback.error.surface",
+        "feedback.info.surface",
+        "feedback.neutral.surface",
+      ] as const) {
+        const foreground = colors[`color.text.${role}`];
+        const background = colors[`color.${surface}`];
+        expect(contrast(foreground, background), `${role} on ${surface}`).toBeGreaterThanOrEqual(
+          4.5,
+        );
       }
-      for (const role of ["primary", "secondary", "tertiary"] as const) {
-        for (const surface of [
-          "surface.subtle",
-          "surface.container",
-          "surface.recessed",
-          "feedback.success.surface",
-          "feedback.warning.surface",
-          "feedback.error.surface",
-          "feedback.info.surface",
-          "feedback.neutral.surface",
-        ] as const) {
-          const foreground = colors[`color.text.${role}`];
-          const background = colors[`color.${surface}`];
-          expect(contrast(foreground, background), `${role} on ${surface}`).toBeGreaterThanOrEqual(4.5);
-        }
-      }
-    },
-  );
+    }
+  });
 
   it("does not apply Tailwind dark styles to the light root itself", () => {
     const entrypoint = readFileSync("src/index.css", "utf8");
