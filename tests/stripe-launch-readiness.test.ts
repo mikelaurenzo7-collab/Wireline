@@ -5,9 +5,13 @@ import {
   FOUNDER_CATALOG_VERSION,
   FOUNDER_PRICES,
   FOUNDER_PRODUCTS,
+  PUBLIC_SELF_SERVE_PLAN_IDS,
 } from "../scripts/lib/stripe-founder-catalog.mjs";
 
 const prices = FOUNDER_PRICES.filter((price) => price.recurring);
+const publicPrices = prices.filter((price) =>
+  PUBLIC_SELF_SERVE_PLAN_IDS.includes(price.metadata.wireline_plan_id),
+);
 const livePrice = (price: (typeof prices)[number]) => ({
   id: `price_${price.productKey.replaceAll("-", "")}${price.recurring!.interval}`,
   active: true,
@@ -69,6 +73,8 @@ async function audit(
     portals?: ReturnType<typeof portal>[];
     overrides?: Record<string, string>;
     truncated?: boolean;
+    failSecondPriceBatch?: boolean;
+    checkUsageTier?: (input: { tier: string }) => Promise<void>;
   } = {},
 ) {
   const selected =
@@ -89,11 +95,24 @@ async function audit(
   const result = await readStripeLaunchStatus({
     env,
     canonicalOrigin: "https://botbound.app",
+    checkUsageTier: options.checkUsageTier,
     jsonFetch: async (url: string) => {
       fetched.push(url);
-      const path = new URL(url).pathname;
-      if (path === "/v1/prices")
-        return { ok: true, body: { data: live, has_more: options.truncated ?? false } };
+      const request = new URL(url);
+      const path = request.pathname;
+      if (path === "/v1/prices") {
+        const keys = request.searchParams.getAll("lookup_keys[]");
+        const priceRequests = fetched.filter((entry) => new URL(entry).pathname === path);
+        if (keys.length > 10 || (options.failSecondPriceBatch && priceRequests.length === 2))
+          return { ok: false, body: null };
+        return {
+          ok: true,
+          body: {
+            data: live.filter((price) => price.lookup_key && keys.includes(price.lookup_key)),
+            has_more: options.truncated ?? false,
+          },
+        };
+      }
       if (path === "/v1/billing_portal/configurations")
         return { ok: true, body: { data: options.portals ?? [portal()], has_more: false } };
       return { ok: true, body: { data: [], has_more: false } };
@@ -143,6 +162,77 @@ describe("executable Stripe launch report", () => {
     expect(result.public_catalog.ready).toBe(false);
     expect(result.public_catalog.findings).toContain("no_configured_new_sale_prices");
     expect(fetched.some((url) => new URL(url).pathname === "/v1/prices")).toBe(false);
+  });
+
+  it("checks every enabled interval across Stripe's ten-key request limit", async () => {
+    const { result, fetched } = await audit({ selected: publicPrices });
+    const requests = fetched
+      .map((url) => new URL(url))
+      .filter((url) => url.pathname === "/v1/prices");
+    const batches = requests.map((url) => url.searchParams.getAll("lookup_keys[]"));
+    expect(batches.map((keys) => keys.length)).toEqual([10, 8]);
+    expect(batches.flat()).toEqual(publicPrices.map((price) => price.lookupKey));
+    expect(requests.every((url) => url.searchParams.get("expand[]") === "data.product")).toBe(true);
+    expect(result).toMatchObject({
+      status: "reachable",
+      public_catalog: { ready: true, expected_price_count: 18, live_price_count: 18, findings: [] },
+    });
+  });
+
+  it("blocks the catalog if the second batch fails", async () => {
+    const { result } = await audit({ selected: publicPrices, failSecondPriceBatch: true });
+    expect(result).toMatchObject({
+      status: "blocked",
+      public_catalog: { ready: false, expected_price_count: 18, live_price_count: 10 },
+    });
+  });
+
+  it("validates configured Shared Work tiers through checkout instead of legacy lookup keys", async () => {
+    const checked: string[] = [];
+    const { result, fetched } = await audit({
+      selected: publicPrices,
+      overrides: {
+        USAGE_BILLING_ENABLED: "true",
+        STRIPE_USAGE_LITE_BASE_PRICE_ID: "price_lite_base",
+        STRIPE_USAGE_LITE_WORK_PRICE_ID: "price_lite_work",
+        STRIPE_USAGE_STARTER_BASE_PRICE_ID: "price_starter_base",
+        STRIPE_USAGE_STARTER_WORK_PRICE_ID: "price_starter_work",
+        STRIPE_USAGE_NUMBER_ADDON_PRICE_ID: "price_number",
+        STRIPE_USAGE_EMAIL_ADDON_PRICE_ID: "price_email",
+      },
+      async checkUsageTier({ tier }) {
+        checked.push(tier);
+      },
+    });
+    expect(checked).toEqual(["lite", "standard"]);
+    expect(fetched.some((url) => new URL(url).pathname === "/v1/prices")).toBe(false);
+    expect(result.public_catalog).toMatchObject({
+      catalog_family: "shared_work",
+      plan_ids: ["lite", "standard"],
+      deferred_plan_ids: ["plus"],
+      ready: true,
+    });
+  });
+
+  it("keeps a failed Shared Work tier visible as a launch blocker", async () => {
+    const { result } = await audit({
+      overrides: {
+        USAGE_BILLING_ENABLED: "true",
+        STRIPE_USAGE_PLUS_BASE_PRICE_ID: "price_plus_base",
+        STRIPE_USAGE_PLUS_WORK_PRICE_ID: "price_plus_work",
+        STRIPE_USAGE_NUMBER_ADDON_PRICE_ID: "price_number",
+        STRIPE_USAGE_EMAIL_ADDON_PRICE_ID: "price_email",
+      },
+      async checkUsageTier() {
+        throw new Error("A configured price failed validation");
+      },
+    });
+    expect(result.public_catalog).toMatchObject({
+      catalog_family: "shared_work",
+      plan_ids: ["plus"],
+      ready: false,
+      findings: ["plus:checkout_catalog_unverified"],
+    });
   });
 
   it.each([
