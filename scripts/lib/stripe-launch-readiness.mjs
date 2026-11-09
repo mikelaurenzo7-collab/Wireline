@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import Stripe from "stripe";
+import { tsImport } from "tsx/esm/api";
 import { getHandledStripeWebhookEvents } from "./stripe-handled-events.mjs";
 import {
   evaluateStripeWebhookReadiness,
@@ -20,14 +22,65 @@ import {
   PUBLIC_SELF_SERVE_PLAN_IDS,
 } from "./stripe-founder-catalog.mjs";
 const PINNED_STRIPE_API_VERSION = getPinnedStripeApiVersion();
+const STRIPE_PRICE_LOOKUP_LIMIT = 10;
 
-export async function readStripeLaunchStatus({ env, jsonFetch, canonicalOrigin }) {
+async function checkSharedWorkTier({ stripe, env, tier }) {
+  const { validateUsageCheckoutCatalog } = await tsImport(
+    "../../src/lib/usage-stripe-validation.ts",
+    import.meta.url,
+  );
+  await validateUsageCheckoutCatalog(stripe, env, tier);
+}
+
+async function readSharedWorkCatalog({ key, env, usageCheckoutConfigured, checkUsageTier }) {
+  const { PUBLIC_USAGE_TIERS } = await tsImport(
+    "../../src/lib/usage-billing-catalog.ts",
+    import.meta.url,
+  );
+  const configured = PUBLIC_USAGE_TIERS.filter((tier) => usageCheckoutConfigured(env, tier));
+  const findings = [];
+  if (!configured.length) findings.push("no_configured_shared_work_tiers");
+  if (!/^(?:sk|rk)_live_/.test(key)) findings.push("shared_work_live_key_required");
+  if (!findings.length) {
+    const stripe = new Stripe(key, {
+      apiVersion: PINNED_STRIPE_API_VERSION,
+      timeout: 12_000,
+      maxNetworkRetries: 0,
+    });
+    const results = await Promise.allSettled(
+      configured.map((tier) => checkUsageTier({ stripe, env, tier })),
+    );
+    for (const [index, result] of results.entries()) {
+      if (result.status === "rejected")
+        findings.push(`${configured[index]}:checkout_catalog_unverified`);
+    }
+  }
+  return {
+    catalog_family: "shared_work",
+    plan_ids: configured,
+    deferred_plan_ids: PUBLIC_USAGE_TIERS.filter((tier) => !configured.includes(tier)),
+    findings,
+    ready: findings.length === 0,
+  };
+}
+
+export async function readStripeLaunchStatus({
+  env,
+  jsonFetch,
+  canonicalOrigin,
+  checkUsageTier = checkSharedWorkTier,
+}) {
   const key = env.STRIPE_SECRET_KEY?.trim();
   if (!key) return { status: "unknown", reason: "STRIPE_SECRET_KEY not supplied" };
   const headers = {
     Authorization: `Bearer ${key}`,
     "Stripe-Version": PINNED_STRIPE_API_VERSION,
   };
+  const { usageBillingEnabled, usageCheckoutConfigured } = await tsImport(
+    "../../src/lib/usage-billing-config.ts",
+    import.meta.url,
+  );
+  const sharedWork = usageBillingEnabled(env);
   const publicPlanIds = new Set(PUBLIC_SELF_SERVE_PLAN_IDS);
   const eligibleCatalogPrices = FOUNDER_PRICES.filter(
     (price) => price.recurring && publicPlanIds.has(price.metadata?.wireline_plan_id),
@@ -35,28 +88,34 @@ export async function readStripeLaunchStatus({ env, jsonFetch, canonicalOrigin }
   // Each interval is an explicit runtime opt-in. An absent Email price is a
   // deliberate capacity hold, not an incorrectly configured Calls launch.
   const publicCatalogPrices = eligibleCatalogPrices.filter(
-    (price) => price.envTarget && String(env[price.envTarget] || "").trim(),
+    (price) => !sharedWork && price.envTarget && String(env[price.envTarget] || "").trim(),
   );
   const deferredCatalogPrices = eligibleCatalogPrices.filter(
     (price) => !publicCatalogPrices.includes(price),
   );
-  const catalogParams = new URLSearchParams({ active: "true", limit: "100" });
-  for (const price of publicCatalogPrices) catalogParams.append("lookup_keys[]", price.lookupKey);
-  catalogParams.append("expand[]", "data.product");
+  const catalogPriceRequests = [];
+  for (let offset = 0; offset < publicCatalogPrices.length; offset += STRIPE_PRICE_LOOKUP_LIMIT) {
+    const catalogParams = new URLSearchParams({ active: "true", limit: "100" });
+    const batch = publicCatalogPrices.slice(offset, offset + STRIPE_PRICE_LOOKUP_LIMIT);
+    for (const price of batch) catalogParams.append("lookup_keys[]", price.lookupKey);
+    catalogParams.append("expand[]", "data.product");
+    catalogPriceRequests.push(
+      jsonFetch(`https://api.stripe.com/v1/prices?${catalogParams}`, { headers }),
+    );
+  }
   const productByKey = new Map(FOUNDER_PRODUCTS.map((product) => [product.key, product]));
   const [
     balanceResult,
-    catalogPriceResult,
+    catalogPriceResults,
     accountResult,
     portalResult,
     webhookResult,
     taxResult,
     taxRegistrationsResult,
+    sharedWorkCatalog,
   ] = await Promise.all([
     jsonFetch("https://api.stripe.com/v1/balance", { headers }),
-    publicCatalogPrices.length
-      ? jsonFetch(`https://api.stripe.com/v1/prices?${catalogParams.toString()}`, { headers })
-      : Promise.resolve({ ok: true, body: { data: [], has_more: false } }),
+    Promise.all(catalogPriceRequests),
     jsonFetch("https://api.stripe.com/v1/account", { headers }),
     // Stripe omits the allowed plan-switch catalog unless it is expanded.
     // Match the dedicated portal verifier so a valid live catalog can be audited.
@@ -69,6 +128,9 @@ export async function readStripeLaunchStatus({ env, jsonFetch, canonicalOrigin }
     jsonFetch("https://api.stripe.com/v1/tax/registrations?status=active&limit=100", {
       headers,
     }),
+    sharedWork
+      ? readSharedWorkCatalog({ key, env, usageCheckoutConfigured, checkUsageTier })
+      : null,
   ]);
 
   const available = Array.isArray(balanceResult.body?.available)
@@ -78,12 +140,14 @@ export async function readStripeLaunchStatus({ env, jsonFetch, canonicalOrigin }
     ? balanceResult.body.pending.find((item) => item.currency === "usd")?.amount
     : null;
 
-  const liveCatalogPrices = Array.isArray(catalogPriceResult.body?.data)
-    ? catalogPriceResult.body.data
-    : [];
+  const catalogPricesReachable = catalogPriceResults.every((result) => result.ok);
+  const liveCatalogPrices = catalogPriceResults.flatMap((result) =>
+    Array.isArray(result.body?.data) ? result.body.data : [],
+  );
   const catalogFindings = [];
   if (publicCatalogPrices.length === 0) catalogFindings.push("no_configured_new_sale_prices");
-  if (catalogPriceResult.body?.has_more === true) catalogFindings.push("price_audit_truncated");
+  if (catalogPriceResults.some((result) => result.body?.has_more === true))
+    catalogFindings.push("price_audit_truncated");
   for (const expected of publicCatalogPrices) {
     const matches = liveCatalogPrices.filter((price) => price?.lookup_key === expected.lookupKey);
     if (matches.length !== 1) {
@@ -345,7 +409,7 @@ export async function readStripeLaunchStatus({ env, jsonFetch, canonicalOrigin }
   return {
     status:
       balanceResult.ok &&
-      catalogPriceResult.ok &&
+      catalogPricesReachable &&
       accountResult.ok &&
       portalResult.ok &&
       webhookResult.ok &&
@@ -364,7 +428,7 @@ export async function readStripeLaunchStatus({ env, jsonFetch, canonicalOrigin }
       livemode: starterAnnualActual?.livemode === true,
       lookup_key: starterAnnualActual?.lookup_key ?? null,
     },
-    public_catalog: {
+    public_catalog: sharedWorkCatalog ?? {
       plan_ids: [...new Set(publicCatalogPrices.map((price) => price.metadata.wireline_plan_id))],
       deferred_plan_ids: PUBLIC_SELF_SERVE_PLAN_IDS.filter(
         (id) => !publicCatalogPrices.some((price) => price.metadata.wireline_plan_id === id),
@@ -379,7 +443,7 @@ export async function readStripeLaunchStatus({ env, jsonFetch, canonicalOrigin }
       live_price_count: liveCatalogPrices.length,
       findings: catalogFindings,
       ready:
-        catalogPriceResult.ok &&
+        catalogPricesReachable &&
         publicCatalogPrices.length > 0 &&
         liveCatalogPrices.length === publicCatalogPrices.length &&
         catalogFindings.length === 0,
