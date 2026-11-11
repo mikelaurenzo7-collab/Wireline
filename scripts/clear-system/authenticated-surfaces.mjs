@@ -112,7 +112,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/styles/safe-area-ownership.css",
     safeAreaOwnership,
-    /@media \(max-width: 1023px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[^}]*padding-bottom:\s*calc\(\s*var\(--wl-workspace-dock-height, 5\.25rem\) \+ 1rem - env\(safe-area-inset-bottom, 0px\)\s*\);/,
+    /@media \(max-width: 1023px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[^}]*padding-bottom:\s*calc\(\s*var\(--wl-workspace-dock-height, 5\.25rem\) \+ var\(--wl-workspace-dock-gap, 1rem\) -\s*env\(safe-area-inset-bottom, 0px\)\s*\);/,
     "workspace scrollers must clear the measured dock without repeating the device inset",
   );
   mustInclude(

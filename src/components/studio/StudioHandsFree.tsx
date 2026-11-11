@@ -106,25 +106,28 @@ export default function StudioHandsFree(props: Props) {
   }, [session]);
 
   return (
-    <div className="mb-2 min-w-0" data-testid="studio-hands-free">
+    <>
       <Button
         type="button"
         variant="ghost"
         size="sm"
+        className="wl-studio-hands-free-toggle"
+        aria-label={snapshot.active ? "Hands-free · On" : "Hands-free"}
         aria-expanded={expanded}
-        aria-controls={controlsId}
+        aria-controls={expanded ? controlsId : undefined}
+        title="Hands-free"
         onClick={() => {
           if (expanded) session.stop();
           setExpanded(!expanded);
         }}
       >
         <Headphones className="size-4" aria-hidden="true" />
-        Hands-free{snapshot.active ? " · On" : ""}
+        <span>Hands-free{snapshot.active ? " · On" : ""}</span>
       </Button>
       {expanded ? (
         <div
           id={controlsId}
-          className={`mt-2 ${snapshot.active ? "max-h-[20dvh]" : "max-h-[40dvh]"} space-y-3 overflow-y-auto rounded-xl border border-border bg-card p-3 text-sm`}
+          className={`wl-studio-hands-free-panel ${snapshot.active ? "max-h-[20dvh]" : "max-h-[40dvh]"} space-y-3 overflow-y-auto rounded-xl border border-border bg-card p-3 text-sm`}
           aria-label="Hands-free controls"
         >
           {!snapshot.active ? (
@@ -196,6 +199,6 @@ export default function StudioHandsFree(props: Props) {
           </details>
         </div>
       ) : null}
-    </div>
+    </>
   );
 }

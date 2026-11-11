@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { ArrowDown, ArrowUp, Globe, Loader2, Square } from "lucide-react";
 import { Button } from "./atoms";
@@ -14,9 +14,11 @@ export default function StudioTaskChat({
   agentId,
   agentName,
   onShowBrowser,
+  composerChoice,
   composerOnly = false,
 }: {
   composerOnly?: boolean;
+  composerChoice?: ReactNode;
   agentId: string;
   agentName: string;
   onShowBrowser: () => void;
@@ -291,20 +293,23 @@ export default function StudioTaskChat({
       <div className="wl-studio-task-chat__composer">
         <div className="wl-studio-task-chat__measure">
           {showLatest ? (
-            <div className="mb-2 flex justify-center">
+            <div className="wl-studio-jump-latest">
               <Button
                 type="button"
                 size="sm"
                 variant="secondary"
+                aria-label="Jump to latest"
                 onClick={() => {
                   followLatest.current = true;
-                  if (transcript.current)
+                  if (transcript.current) {
                     transcript.current.scrollTop = transcript.current.scrollHeight;
+                    transcript.current.focus({ preventScroll: true });
+                  }
                   setShowLatest(false);
                 }}
               >
                 <ArrowDown aria-hidden="true" />
-                Jump to latest
+                <span>Jump to latest</span>
               </Button>
             </div>
           ) : null}
@@ -347,27 +352,30 @@ export default function StudioTaskChat({
               </div>
             </StatusNotice>
           ) : null}
-          <StudioHandsFree
-            key={`${agentId}:work`}
-            agentId={agentId}
-            draft={draft}
-            onDraftChange={setDraft}
-            canSubmit={canSend}
-            onSubmit={() => send(false)}
-            sendPhrase="send task"
-            maxLength={awaitingReply ? 1000 : 2000}
-            busy={Boolean(pending || model.starting || (active && !awaitingReply && !handoff))}
-            responseKey={
-              selected
-                ? `${selected.id}:${selected.status}:${selected.question || selected.summary || ""}`
-                : ""
-            }
-            response={
-              selected?.status === "needs_input"
-                ? selected.question || "Your Bot needs you in Studio."
-                : selected?.summary || ""
-            }
-          />
+          <div className="wl-studio-composer-tools">
+            {composerChoice}
+            <StudioHandsFree
+              key={`${agentId}:work`}
+              agentId={agentId}
+              draft={draft}
+              onDraftChange={setDraft}
+              canSubmit={canSend}
+              onSubmit={() => send(false)}
+              sendPhrase="send task"
+              maxLength={awaitingReply ? 1000 : 2000}
+              busy={Boolean(pending || model.starting || (active && !awaitingReply && !handoff))}
+              responseKey={
+                selected
+                  ? `${selected.id}:${selected.status}:${selected.question || selected.summary || ""}`
+                  : ""
+              }
+              response={
+                selected?.status === "needs_input"
+                  ? selected.question || "Your Bot needs you in Studio."
+                  : selected?.summary || ""
+              }
+            />
+          </div>
           <form
             className="wl-composer-dock wl-studio-composer"
             onSubmit={(event) => {

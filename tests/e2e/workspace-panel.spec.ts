@@ -1763,6 +1763,51 @@ for (const width of [1440, 390]) {
   });
 }
 
+test("phone Studio keeps the composer compact while reading task history", async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 402, height: 681 });
+  await mockWorkspace(page, [
+    pastTask(
+      "phone-history",
+      bots[0].id,
+      "Compare the public directory listings. ".repeat(32),
+      "Here are the listings and their public contact details. ".repeat(32),
+    ),
+  ]);
+  await page.goto(`/studio?agent=${bots[0].id}`);
+  const log = page.getByRole("log", { name: "Conversation", exact: true });
+  const modes = page.getByRole("group", { name: "Conversation mode" });
+  const handsFree = page.getByRole("button", { name: "Hands-free", exact: true });
+  const send = page.getByRole("button", { name: "Send", exact: true });
+  const dock = page.getByRole("navigation", { name: "Workspace navigation" });
+  const jump = page.getByRole("button", { name: "Jump to latest", exact: true });
+  await expect.poll(() => log.evaluate((node) => node.scrollTop)).toBeGreaterThan(160);
+  const latestHeight = await log.evaluate((node) => node.clientHeight);
+  await log.evaluate((node) => {
+    node.scrollTop = 0;
+    node.dispatchEvent(new Event("scroll"));
+  });
+  await expect(jump).toBeInViewport();
+  await proof(page, info, "mobile-studio-history");
+  const modeBox = (await modes.boundingBox())!;
+  const speechBox = (await handsFree.boundingBox())!;
+  const sendBox = (await send.boundingBox())!;
+  const dockBox = (await dock.boundingBox())!;
+  const composerBox = (await page.locator(".wl-studio-composer").boundingBox())!;
+  expect(Math.abs((await log.evaluate((node) => node.clientHeight)) - latestHeight)).toBeLessThan(
+    2,
+  );
+  expect(speechBox.y).toBeLessThan(modeBox.y + modeBox.height);
+  expect(speechBox.x).toBeGreaterThanOrEqual(modeBox.x + modeBox.width);
+  expect(speechBox.height).toBeGreaterThanOrEqual(44);
+  expect(dockBox.y - (composerBox.y + composerBox.height)).toBeLessThanOrEqual(12);
+  expect(sendBox.y + sendBox.height).toBeLessThan(dockBox.y);
+  await jump.click();
+  await expect(jump).toBeHidden();
+  await expect(log).toBeFocused();
+});
+
 test("Work follows a long result and preserves the owner's manual reading position", async ({
   page,
 }) => {

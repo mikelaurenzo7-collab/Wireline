@@ -364,6 +364,7 @@
 }
 
 .wl-studio-task-chat__composer {
+  position: relative;
   flex: 0 0 auto;
   padding: 0.75rem 1.25rem max(1rem, env(safe-area-inset-bottom));
 }
@@ -441,7 +442,7 @@
   border: 0;
 }
 
-@container studio-composer (max-width: 21rem) {
+@container studio-composer (max-width: 17rem) {
   .wl-workspace-shell .wl-studio-composer {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -457,6 +458,50 @@
     flex-wrap: wrap;
     justify-content: flex-end;
   }
+}
+
+.wl-studio-chat__footer {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.wl-studio-jump-latest {
+  position: absolute;
+  z-index: 1;
+  inset: auto 0 calc(100% + 0.25rem);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.wl-studio-jump-latest button {
+  max-width: calc(100% - 1.5rem);
+  pointer-events: auto;
+}
+
+.wl-studio-composer-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.wl-studio-composer-tools .wl-studio-chat-modes {
+  justify-self: start;
+}
+
+.wl-studio-chat__composer .wl-studio-composer-tools {
+  margin-bottom: 0.375rem;
+}
+
+.wl-studio-hands-free-toggle {
+  grid-column: 2;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.wl-studio-hands-free-panel {
+  grid-column: 1 / -1;
 }
 
 .wl-studio-starters {
@@ -835,9 +880,43 @@
 }
 
 @media (max-width: 639px) {
+  .wl-studio-surface-nav {
+    padding-block: 0.25rem;
+  }
+
+  .wl-studio-task-chat__composer,
+  .wl-studio-chat__composer {
+    padding: 0.25rem 0.75rem 0.5rem;
+  }
+
+  .wl-studio-task-chat__composer .wl-studio-task-chat__measure {
+    gap: 0.375rem;
+  }
+
+  .wl-studio-chat__transcript {
+    padding-block: 0.875rem;
+  }
+
+  .wl-studio-jump-latest button {
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  .wl-studio-jump-latest button > span {
+    display: none;
+  }
+
   .wl-studio-message {
     font-size: 0.9rem;
     line-height: 1.65;
+  }
+}
+
+@container studio-composer (max-width: 22rem) {
+  .wl-studio-hands-free-toggle > span {
+    display: none;
   }
 }
 
@@ -900,10 +979,6 @@
   gap: 0.5rem;
 }
 
-.wl-studio-composer-choice {
-  padding: 0.5rem 1rem 0;
-  flex-shrink: 0;
-}
 .wl-studio-task-chat.is-composer-only {
   height: auto;
   flex: 0 0 auto;

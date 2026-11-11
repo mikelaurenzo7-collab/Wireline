@@ -311,7 +311,10 @@
     line-height: 1.25;
   }
 
-  main:has(#studio-workroom-message, #studio-workroom-test-message) section {
+  main:has(#studio-workroom-message, #studio-workroom-test-message):not(
+      [data-wireline-full-bleed="true"]
+    )
+    section {
     padding-block: 0.75rem;
   }
 

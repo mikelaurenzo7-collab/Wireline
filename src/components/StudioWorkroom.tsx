@@ -9,7 +9,16 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { ArrowDown, ArrowUp, Loader2, MessageCircle, Mic, Phone, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  AudioLines,
+  Loader2,
+  MessageCircle,
+  Mic,
+  Phone,
+  Trash2,
+} from "lucide-react";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
@@ -763,107 +772,114 @@ const StudioWorkroom = forwardRef<
             </div>
           </section>
 
-          {showLatest ? (
-            <div className="flex justify-center pt-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => {
-                  followLatest.current = true;
-                  if (scrollRef.current)
-                    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-                  setShowLatest(false);
-                }}
-              >
-                <ArrowDown size={14} aria-hidden="true" />
-                Jump to latest
-              </Button>
-            </div>
-          ) : null}
-          {composerChoice}
-          {composerOverride || (
-            <div className="wl-studio-chat__composer shrink-0 bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
-              <div className="mx-auto max-w-3xl">
-                <StudioHandsFree
-                  key={`${agentId}:message`}
-                  agentId={agentId}
-                  draft={draft}
-                  onDraftChange={setDraft}
-                  canSubmit={Boolean(draft.trim() && !sending && !loading && !clearing)}
-                  onSubmit={submit}
-                  sendPhrase="send message"
-                  maxLength={2000}
-                  busy={sending || loading || clearing}
-                  responseKey={messages.at(-1)?.role === "agent" ? messages.at(-1)?.id : ""}
-                  response={messages.at(-1)?.role === "agent" ? messages.at(-1)?.content : ""}
-                  onActiveChange={setHandsFreeActive}
-                />
-                <div className={`${WL_COMPOSER_CLASSES.composerDock} wl-studio-composer`}>
-                  <label className="sr-only" htmlFor={composerId}>
-                    {`Message ${agentName}`}
-                  </label>
-                  <textarea
-                    id={composerId}
-                    data-resize="none"
-                    ref={inputRef}
-                    value={draft}
-                    onChange={(event) => setDraft(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (
-                        event.nativeEvent.isComposing ||
-                        event.key !== "Enter" ||
-                        event.shiftKey ||
-                        sending
-                      )
-                        return;
-                      const finePointer = window.matchMedia("(pointer: fine)").matches;
-                      if (!finePointer && !event.metaKey && !event.ctrlKey) return;
-                      event.preventDefault();
-                      submit();
-                    }}
-                    rows={1}
-                    disabled={sending}
-                    placeholder="Ask anything, or tell your Bot what you need…"
-                    className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
-                  />
-                  <div className="wl-composer-dock__toolbar">
-                    {mode === "configure" && modeControls === "composer" && onModeChange ? (
+          <div className="wl-studio-chat__footer">
+            {showLatest ? (
+              <div className="wl-studio-jump-latest">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  aria-label="Jump to latest"
+                  onClick={() => {
+                    followLatest.current = true;
+                    if (scrollRef.current) {
+                      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+                      scrollRef.current.focus({ preventScroll: true });
+                    }
+                    setShowLatest(false);
+                  }}
+                >
+                  <ArrowDown size={14} aria-hidden="true" />
+                  <span>Jump to latest</span>
+                </Button>
+              </div>
+            ) : null}
+            {composerOverride || (
+              <div className="wl-studio-chat__composer shrink-0 bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
+                <div className="mx-auto max-w-3xl">
+                  <div className="wl-studio-composer-tools">
+                    {composerChoice}
+                    <StudioHandsFree
+                      key={`${agentId}:message`}
+                      agentId={agentId}
+                      draft={draft}
+                      onDraftChange={setDraft}
+                      canSubmit={Boolean(draft.trim() && !sending && !loading && !clearing)}
+                      onSubmit={submit}
+                      sendPhrase="send message"
+                      maxLength={2000}
+                      busy={sending || loading || clearing}
+                      responseKey={messages.at(-1)?.role === "agent" ? messages.at(-1)?.id : ""}
+                      response={messages.at(-1)?.role === "agent" ? messages.at(-1)?.content : ""}
+                      onActiveChange={setHandsFreeActive}
+                    />
+                  </div>
+                  <div className={`${WL_COMPOSER_CLASSES.composerDock} wl-studio-composer`}>
+                    <label className="sr-only" htmlFor={composerId}>
+                      {`Message ${agentName}`}
+                    </label>
+                    <textarea
+                      id={composerId}
+                      data-resize="none"
+                      ref={inputRef}
+                      value={draft}
+                      onChange={(event) => setDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (
+                          event.nativeEvent.isComposing ||
+                          event.key !== "Enter" ||
+                          event.shiftKey ||
+                          sending
+                        )
+                          return;
+                        const finePointer = window.matchMedia("(pointer: fine)").matches;
+                        if (!finePointer && !event.metaKey && !event.ctrlKey) return;
+                        event.preventDefault();
+                        submit();
+                      }}
+                      rows={1}
+                      disabled={sending}
+                      placeholder="Message your Bot…"
+                      className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
+                    />
+                    <div className="wl-composer-dock__toolbar">
+                      {mode === "configure" && modeControls === "composer" && onModeChange ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="min-h-11 min-w-11 px-2"
+                          onClick={() => selectMode("test")}
+                          aria-label="Rehearse"
+                          title="Rehearse privately"
+                        >
+                          <AudioLines className="size-4" aria-hidden="true" />
+                          <span className="hidden sm:inline">Rehearse</span>
+                        </Button>
+                      ) : null}
+                      {mode === "configure" && messages.length ? clearButton : null}
                       <Button
                         type="button"
                         size="sm"
                         variant="ghost"
-                        className="min-h-11 min-w-11 px-2"
-                        onClick={() => selectMode("test")}
-                        aria-label="Rehearse"
-                        title="Rehearse privately"
+                        disabled={!draft.trim() || sending || loading || clearing}
+                        onClick={submit}
+                        className="wl-work-send size-11 shrink-0 rounded-full p-0"
+                        aria-busy={sending}
+                        aria-label={sending ? "Sending" : "Send"}
+                        title={sending ? "Sending" : "Send"}
                       >
-                        <Mic className="size-4" aria-hidden="true" />
-                        <span className="hidden sm:inline">Rehearse</span>
+                        {sending ? (
+                          <Loader2 className="animate-spin" size={16} aria-hidden="true" />
+                        ) : (
+                          <ArrowUp size={18} aria-hidden="true" />
+                        )}
                       </Button>
-                    ) : null}
-                    {mode === "configure" && messages.length ? clearButton : null}
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      disabled={!draft.trim() || sending || loading || clearing}
-                      onClick={submit}
-                      className="wl-work-send size-11 shrink-0 rounded-full p-0"
-                      aria-busy={sending}
-                      aria-label={sending ? "Sending" : "Send"}
-                      title={sending ? "Sending" : "Send"}
-                    >
-                      {sending ? (
-                        <Loader2 className="animate-spin" size={16} aria-hidden="true" />
-                      ) : (
-                        <ArrowUp size={18} aria-hidden="true" />
-                      )}
-                    </Button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
 

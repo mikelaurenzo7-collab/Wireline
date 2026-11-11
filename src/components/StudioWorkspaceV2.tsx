@@ -776,7 +776,7 @@ function StudioWorkspaceContent() {
           />
         ),
       }))}
-      composerChoice={<div className="wl-studio-composer-choice">{chatModes}</div>}
+      composerChoice={chatModes}
       composerOverride={
         !setupChat && mainMode === "configure" ? (
           <StudioTaskChat
@@ -784,6 +784,7 @@ function StudioWorkspaceContent() {
             agentId={active.id}
             agentName={active.name}
             onShowBrowser={showBrowser}
+            composerChoice={chatModes}
             composerOnly
           />
         ) : undefined

@@ -122,13 +122,23 @@
    * dock, which left first-run Studio with a 200px void under the only card. */
   .wl-workspace-shell .wl-workspace-content {
     padding-bottom: calc(
-      var(--wl-workspace-dock-height, 5.25rem) + 1rem - env(safe-area-inset-bottom, 0px)
+      var(--wl-workspace-dock-height, 5.25rem) + var(--wl-workspace-dock-gap, 1rem) -
+        env(safe-area-inset-bottom, 0px)
     );
     /* Padding makes the final action reachable; scroll padding also keeps
      * focused/scroll-into-view targets clear of the fixed dock mid-scroll. */
     scroll-padding-bottom: calc(
-      var(--wl-workspace-dock-height, 5.25rem) + 1rem - env(safe-area-inset-bottom, 0px)
+      var(--wl-workspace-dock-height, 5.25rem) + var(--wl-workspace-dock-gap, 1rem) -
+        env(safe-area-inset-bottom, 0px)
     );
+  }
+
+  [data-wireline-route="/studio"] > .wl-workspace-content:has(.wl-studio-workspace) {
+    --wl-workspace-dock-gap: 0px;
+  }
+
+  [data-wireline-route="/studio"] .wl-workspace-content-inner:has(.wl-studio-workspace) {
+    padding-bottom: 0;
   }
 
   /* Inbox is a contained conversation surface. The scrollport above already
