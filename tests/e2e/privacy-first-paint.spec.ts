@@ -35,6 +35,15 @@ for (const width of [320, 375, 390] as const) {
       expect(Math.abs(after!.y - before!.y)).toBeLessThan(10);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
 
+      if (path === "/") {
+        await expect(notice).toHaveCSS("transform", "none");
+        const noticeBounds = (await notice.boundingBox())!;
+        const heroBounds = (await page.locator(".landing-prestige__hero").boundingBox())!;
+        const gap = heroBounds.y - (noticeBounds.y + noticeBounds.height);
+        expect(gap).toBeGreaterThanOrEqual(16);
+        expect(gap).toBeLessThanOrEqual(32);
+      }
+
       const menu = page.getByRole("button", { name: "Toggle navigation menu" });
       await menu.click();
       await expect(notice).toBeHidden();

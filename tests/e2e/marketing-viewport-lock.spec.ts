@@ -354,6 +354,48 @@ test("features and pricing remain scrollable without horizontal clipping", async
   }
 });
 
+for (const width of [390, 1365]) {
+  test(`pricing preserves the demo request through contact at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.addInitScript(() => localStorage.setItem("wireline_cookie_consent", "acknowledged"));
+    await page.route("**/api/billing/plans", (route) =>
+      route.fulfill({ json: { plans: [], usage_tiers: ["lite", "standard", "plus"] } }),
+    );
+    await openPublicRoute(page, "/pricing");
+    await page
+      .getByRole("link", { name: "Request a Demo", exact: true })
+      .click({ timeout: 10_000 });
+    await expect(page).toHaveURL(/\/contact\?topic=demo$/);
+
+    if (width < 640) {
+      await expect(page.getByRole("combobox", { name: "What Can We Help With?" })).toHaveValue(
+        "demo",
+      );
+    } else {
+      await expect(page.getByRole("button", { name: "Request a Demo" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+    }
+    await expect(page.getByLabel("Subject", { exact: true })).toHaveValue("Request a demo");
+
+    await page.route("**/api/support/ticket", (route) =>
+      route.fulfill({ json: { ok: true, sent: true } }),
+    );
+    await page.getByLabel("Email", { exact: true }).fill("demo@example.com");
+    await page
+      .getByLabel("Message", { exact: true })
+      .fill("I would like to see BotBound in action.");
+    const request = page.waitForRequest("**/api/support/ticket");
+    await page.getByRole("button", { name: "Send Message" }).click();
+    expect((await request).postDataJSON()).toMatchObject({
+      issueType: "sales",
+      subject: "Request a demo",
+    });
+    await expect(page.getByRole("heading", { name: "Message Received" })).toBeFocused();
+  });
+}
+
 test("showcase redirects into plan-neutral account creation without horizontal escape", async ({
   page,
 }) => {

@@ -913,6 +913,12 @@
     gap: 2.75rem;
   }
 
+  /* The inline privacy slot already clears the fixed public header. */
+  html[data-wl-privacy-prepaint="pending"] .landing-prestige__main,
+  .wl-mobile-privacy-host:not(:empty) + #root .landing-prestige__main {
+    padding-top: 1.5rem;
+  }
+
   .landing-prestige__hero h1 {
     font-size: clamp(2.15rem, 9.5vw, 2.85rem);
   }
