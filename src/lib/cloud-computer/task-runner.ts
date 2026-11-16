@@ -4,7 +4,6 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import * as schema from "../../db/schema";
 import type { ComputerTaskEvent, ComputerTaskStatus } from "../../db/computer-task-schema";
 import { assertLiveExternalActionAllowed } from "../account-environment-policy";
-import { loadPromptKnowledge } from "../agent-knowledge-search";
 import { recordAmbiguousProviderAttempt, recordUsage } from "../ai-audit";
 import { DefiniteProviderRejectionError, RuntimeUnavailableError } from "../ai-client";
 import { normalizeResponsesUsage } from "../ai-usage";
@@ -674,6 +673,9 @@ async function loadComputerBotContext(
   bot: Pick<BotContext, "name" | "role">,
   goal: string,
 ): Promise<BotContext> {
+  // Voice also imports the task runner. Load knowledge search only when
+  // preparing a browser assignment.
+  const { loadPromptKnowledge } = await import("../agent-knowledge-search");
   const [facts, rules, memories] = await Promise.all([
     loadPromptKnowledge(drizzle, { userId, agentId, text: goal, relevant: 12, total: 20 }),
     loadAgentOperatingRules(userId, agentId),
