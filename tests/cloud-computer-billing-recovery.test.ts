@@ -7,6 +7,12 @@ const h = vi.hoisted(() => ({
   failReceipts: 0,
   beforeWrite: null as (() => void | Promise<void>) | null,
   providerStarted: vi.fn(),
+  planId: "usage" as string | null,
+  executeBrowser: false,
+  browserOpen: vi.fn(),
+  executeModel: vi.fn(),
+  loadFacts: vi.fn(),
+  loadRules: vi.fn(),
 }));
 
 vi.mock("../src/lib/server-context", async () => {
@@ -162,23 +168,35 @@ vi.mock("../src/lib/account-environment-policy", () => ({
   assertLiveExternalActionAllowed: vi.fn(),
 }));
 vi.mock("../src/lib/channel-entitlements", () => ({
-  getTenantChannelEntitlements: async () => ({ planId: "usage", subscriptionStatus: "active" }),
+  getTenantChannelEntitlements: async () => ({
+    planId: h.planId,
+    subscriptionStatus: h.planId ? "active" : "pending_activation",
+  }),
+}));
+vi.mock("../src/lib/agent-knowledge-search", () => ({
+  loadPromptKnowledge: h.loadFacts,
 }));
 vi.mock("../src/lib/mcp-agent-coaching", () => ({
-  getAgentCoachingBrief: async () => ({
-    agent_id: "agent-owned",
-    agent_name: "Review",
+  assertOwnedAgent: async () => ({
+    id: "agent-owned",
+    name: "Review",
     role: "Research",
-    training_facts: [],
-    operating_rules: [],
   }),
+  loadAgentOperatingRules: h.loadRules,
 }));
 vi.mock("../src/lib/rate-limit", () => ({ rateLimit: async () => ({ allowed: true }) }));
 vi.mock("../src/lib/managed-ai-operation-spend", () => ({
-  runWithManagedAiSpend: () => {
+  runWithManagedAiSpend: ({ operation }: { operation: () => Promise<unknown> }) => {
     h.providerStarted();
-    return new Promise(() => {});
+    return h.executeBrowser ? operation() : new Promise(() => {});
   },
+}));
+vi.mock("../src/lib/cloud-computer/browser-session", () => ({
+  CloudBrowserSession: { open: h.browserOpen },
+}));
+vi.mock("../src/lib/cloud-computer/agent", async (original) => ({
+  ...(await original<typeof import("../src/lib/cloud-computer/agent")>()),
+  runCloudComputerAgent: h.executeModel,
 }));
 vi.mock("../src/lib/cloud-computer/config", () => ({
   cloudComputerReadiness: () => ({ available: true }),
@@ -199,6 +217,7 @@ import {
   __resetCloudComputerRunnerForTests,
   getComputerTask,
   interruptCloudComputerTasks,
+  returnComputerControlToBot,
   startComputerTask,
   stopComputerTask,
   takeComputerControl,
@@ -302,6 +321,18 @@ beforeEach(() => {
   h.failReceipts = 0;
   h.beforeWrite = null;
   h.providerStarted.mockReset();
+  h.planId = "usage";
+  h.executeBrowser = false;
+  h.loadFacts.mockReset().mockResolvedValue(["Older fixture fact: appliance diagnostics cost $89."]);
+  h.loadRules.mockReset().mockResolvedValue([{ content: "Ask for the appliance model." }]);
+  h.executeModel.mockReset().mockResolvedValue({ status: "completed", summary: "Done", sources: [] });
+  h.browserOpen.mockReset().mockResolvedValue({
+    activeUrl: () => "https://example.com/",
+    ownerTabs: () => [],
+    frame: async () => Buffer.from("synthetic screen"),
+    cancelCurrentInput: () => {},
+    close: async () => {},
+  });
   __resetCloudComputerRunnerForTests();
 });
 afterEach(() => {
@@ -310,6 +341,51 @@ afterEach(() => {
 });
 
 describe("Computer billing across process boundaries", () => {
+  it("denies a free workspace before fetching training or starting provider work", async () => {
+    h.planId = null;
+    await expect(
+      startComputerTask(USER, "agent-owned", { goal: "Check business hours" }),
+    ).rejects.toMatchObject({ code: "COMPUTER_PLAN_REQUIRED" });
+    expect(h.loadFacts).not.toHaveBeenCalled();
+    expect(h.loadRules).not.toHaveBeenCalled();
+    expect(h.providerStarted).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])(
+    "loads the task goal's training in the selected Bot scope (browse first %s)",
+    async (prepareBrowser) => {
+      h.executeBrowser = true;
+      const goal = "Look up the appliance diagnostics price";
+      await startComputerTask(USER, "agent-owned", prepareBrowser ? { prepareBrowser } : { goal });
+      if (prepareBrowser) {
+        await vi.waitFor(() => expect(h.tasks.get(ID)?.status).toBe("needs_input"));
+        expect(h.loadFacts).not.toHaveBeenCalled();
+        await returnComputerControlToBot(USER, ID, { goal });
+      }
+
+      await vi.waitFor(() => expect(h.tasks.get(ID)?.status).toBe("completed"));
+      expect(h.loadFacts).toHaveBeenCalledExactlyOnceWith(
+        expect.anything(),
+        expect.objectContaining({ userId: USER, agentId: "agent-owned", text: goal, total: 20 }),
+      );
+      expect(h.loadRules).toHaveBeenCalledExactlyOnceWith(USER, "agent-owned");
+      expect(h.executeModel).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          goal,
+          bot: expect.objectContaining({
+            facts: ["Older fixture fact: appliance diagnostics cost $89."],
+            rules: ["Ask for the appliance model."],
+          }),
+        }),
+      );
+      if (!prepareBrowser) {
+        expect(h.loadFacts.mock.invocationCallOrder[0]).toBeLessThan(
+          h.browserOpen.mock.invocationCallOrder[0],
+        );
+      }
+    },
+  );
+
   it("persists the original admission before provider work and does not bill a live checkpoint", async () => {
     h.providerStarted.mockImplementation(() => {
       expect(h.tasks.get(ID)?.usageReceipt).toEqual({

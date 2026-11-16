@@ -306,7 +306,7 @@ describe("cloud computer source contracts", () => {
 
   it("gates every task on ownership, a paid plan, live-action policy, and shared rate limits", () => {
     const runner = read("src/lib/cloud-computer/task-runner.ts");
-    expect(runner).toContain("getAgentCoachingBrief");
+    expect(runner).toContain("assertOwnedAgent(userId, agentId)");
     expect(runner).toContain('assertLiveExternalActionAllowed(userId, "computer.browse")');
     expect(runner).toContain("runWithManagedAiSpend");
     expect(runner).toContain("failClosedOnError: true");

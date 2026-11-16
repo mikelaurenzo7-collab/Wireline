@@ -4,6 +4,7 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import * as schema from "../../db/schema";
 import type { ComputerTaskEvent, ComputerTaskStatus } from "../../db/computer-task-schema";
 import { assertLiveExternalActionAllowed } from "../account-environment-policy";
+import { loadPromptKnowledge } from "../agent-knowledge-search";
 import { recordAmbiguousProviderAttempt, recordUsage } from "../ai-audit";
 import { DefiniteProviderRejectionError, RuntimeUnavailableError } from "../ai-client";
 import { normalizeResponsesUsage } from "../ai-usage";
@@ -14,7 +15,7 @@ import { isProductionDeployment } from "../deployment-environment";
 import { isUsagePlanId, planById } from "../plan-catalog";
 import { runWithManagedAiSpend } from "../managed-ai-operation-spend";
 import { loadOwnerMemories } from "../owner-memory-store";
-import { getAgentCoachingBrief } from "../mcp-agent-coaching";
+import { assertOwnedAgent, loadAgentOperatingRules } from "../mcp-agent-coaching";
 import { rateLimit } from "../rate-limit";
 import { drizzle, log, tenantStore } from "../server-context";
 import { getErrorMessage } from "../server-utils";
@@ -23,6 +24,7 @@ import {
   CONTEXT_LIMIT_OUTCOME,
   CLOUD_COMPUTER_TOOL_CALL_USD,
   runCloudComputerAgent,
+  type BotContext,
   type CloudComputerEvent,
   type CloudComputerOutcome,
 } from "./agent";
@@ -545,8 +547,7 @@ async function admitComputerTask(
   prepareBrowser: boolean,
   connection: NonNullable<ReturnType<typeof cloudComputerConnection>>,
 ): Promise<ComputerTaskView> {
-  const brief = await getAgentCoachingBrief(userId, agentId);
-  const memories = await loadOwnerMemories(userId, agentId);
+  const agent = await assertOwnedAgent(userId, agentId);
   const entitlement = await getTenantChannelEntitlements(userId);
   if (!hasPaidComputerPlan(entitlement)) {
     throw new AppError(
@@ -600,7 +601,7 @@ async function admitComputerTask(
       .insert(schema.computerTasks)
       .values({
         userId,
-        agentId: brief.agent_id,
+        agentId: agent.id,
         goal,
         startUrl,
         status: "running",
@@ -625,7 +626,7 @@ async function admitComputerTask(
   const task: LiveTask = {
     taskId: row.id,
     userId,
-    agentId: brief.agent_id,
+    agentId: agent.id,
     startedAt: startedAt.getTime(),
     usageMetered,
     usagePeriodKey,
@@ -657,13 +658,7 @@ async function admitComputerTask(
   };
   live.set(row.id, task);
 
-  const bot = {
-    memories: memories.map((note) => note.content),
-    name: brief.agent_name,
-    role: brief.role,
-    facts: brief.training_facts.map((fact) => fact.content),
-    rules: brief.operating_rules.map((rule) => rule.content),
-  };
+  const bot = { name: agent.name, role: agent.role || "assistant" };
   void tenantStore
     .run(userId, () =>
       executeTask(task, { goal, startUrl, prepareBrowser, model, bot, connection }),
@@ -672,6 +667,24 @@ async function admitComputerTask(
       log.error("Cloud computer task crashed", { taskId: row.id, error: getErrorMessage(error) });
     });
   return toView(row);
+}
+
+async function loadComputerBotContext(
+  { userId, agentId }: Pick<LiveTask, "userId" | "agentId">,
+  bot: Pick<BotContext, "name" | "role">,
+  goal: string,
+): Promise<BotContext> {
+  const [facts, rules, memories] = await Promise.all([
+    loadPromptKnowledge(drizzle, { userId, agentId, text: goal, relevant: 12, total: 20 }),
+    loadAgentOperatingRules(userId, agentId),
+    loadOwnerMemories(userId, agentId),
+  ]);
+  return {
+    ...bot,
+    facts,
+    rules: rules.map((rule) => rule.content),
+    memories: memories.map((note) => note.content),
+  };
 }
 
 /**
@@ -1002,7 +1015,7 @@ async function executeTaskWithBrowser(
     startUrl: string | null;
     prepareBrowser: boolean;
     model: string;
-    bot: { name: string; role: string; facts: string[]; rules: string[]; memories?: string[] };
+    bot: Pick<BotContext, "name" | "role">;
     connection: NonNullable<ReturnType<typeof cloudComputerConnection>>;
   },
 ): Promise<void> {
@@ -1012,6 +1025,12 @@ async function executeTaskWithBrowser(
   const heartbeat = setInterval(() => void heartbeatTick(task, heartbeat), HEARTBEAT_MS);
   heartbeat.unref?.();
   try {
+    // Direct assignments can load training before connecting the browser. A
+    // browse-first session has no assignment until the owner hands it back.
+    const directBot = input.prepareBrowser
+      ? null
+      : await loadComputerBotContext(task, input.bot, input.goal);
+    if (task.stop) throw AppError.conflict("The browser task was stopped.");
     const client = cloudComputerClient();
     try {
       // Playwright loads with the first task, never on an API cold start.
@@ -1107,11 +1126,13 @@ async function executeTaskWithBrowser(
         await persist(task, {});
       }
       const activeSession = session;
+      const bot = directBot ?? (await loadComputerBotContext(task, input.bot, input.goal));
+      if (task.stop) throw AppError.conflict("The browser task was stopped.");
       outcome = await runCloudComputerAgent({
         client,
         model: input.model,
         session: activeSession,
-        bot: input.bot,
+        bot,
         goal: input.goal,
         startUrl: input.startUrl,
         taskHash,

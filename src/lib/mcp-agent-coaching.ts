@@ -91,6 +91,19 @@ export async function addAgentTrainingItem(input: {
   };
 }
 
+export function loadAgentOperatingRules(userId: string, agentId: string) {
+  return drizzle
+    .select({
+      id: schema.directives.id,
+      content: schema.directives.content,
+      priority: schema.directives.priority,
+    })
+    .from(schema.directives)
+    .where(and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, userId)))
+    .orderBy(desc(schema.directives.priority), desc(schema.directives.id))
+    .limit(BRIEF_ITEM_LIMIT);
+}
+
 export async function getAgentCoachingBrief(
   userId: string,
   agentId: string,
@@ -115,16 +128,7 @@ export async function getAgentCoachingBrief(
     .where(and(eq(schema.knowledge.agentId, agent.id), eq(schema.knowledge.userId, userId)))
     .orderBy(desc(schema.knowledge.createdAt))
     .limit(BRIEF_ITEM_LIMIT);
-  const rules = await drizzle
-    .select({
-      id: schema.directives.id,
-      content: schema.directives.content,
-      priority: schema.directives.priority,
-    })
-    .from(schema.directives)
-    .where(and(eq(schema.directives.agentId, agent.id), eq(schema.directives.userId, userId)))
-    .orderBy(desc(schema.directives.priority))
-    .limit(BRIEF_ITEM_LIMIT);
+  const rules = await loadAgentOperatingRules(userId, agent.id);
   const onPhoneNetwork = Boolean(line);
   const factCount = Number(factCountRow?.count ?? 0);
   const ruleCount = Number(ruleCountRow?.count ?? 0);
