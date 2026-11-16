@@ -107,7 +107,8 @@ describe("authenticated mobile cleanup", () => {
     expect(setup).toContain("setupLoadError");
     expect(setup).toContain('title="Setup Unavailable"');
     expect(setup).toContain("setReloadKey((current) => current + 1)");
-    expect(setup).toContain("activeAgentIdRef.current === setupAgentId");
+    expect(setup).toContain("activeAgentIdRef.current === targetAgentId");
+    expect(setup).toContain("activeUserIdRef.current === targetUserId");
     expect(review).toContain("setConfig(null)");
     expect(review).toContain("hidden={Boolean(error)}");
     expect(phoneSetup.indexOf("{message ? (")).toBeLessThan(

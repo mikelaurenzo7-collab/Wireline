@@ -75,7 +75,8 @@ describe("customer-selectable Bot identity marks", () => {
     expect(create).toContain("mark_key: markKey");
     expect(setup).toContain("<BotMarkPicker");
     expect(setup).toContain('method: "PATCH"');
-    expect(setup).toContain("mark_key: setupMarkKey");
+    expect(setup).toContain("if (edits.markKey !== undefined)");
+    expect(setup).toContain("mark_key: edits.markKey");
   });
 
   it("supports wrapped arrow, Home, and End navigation while skipping unavailable marks", () => {

@@ -296,20 +296,27 @@ describe("Studio only clears the essentials box when something was stored", () =
 
   it("keeps the Account Holder's typing when nothing was captured", () => {
     const apply = source.slice(source.indexOf("async function applySetup"));
-    const guard = apply.slice(apply.indexOf("knowledgeCaptured = await"));
-    expect(guard).toContain("if (knowledgeCaptured && isCreateBriefRecoveryOwner(setupUserId))");
-    expect(guard).toContain(
-      'setupDrafts.confirm(setupAgentId, { knowledge: setupKnowledge }, { knowledge: "" })',
+    const capture = apply.indexOf("if (!(await extractionPersistedSomething(knowledgeResponse)))");
+    const clear = apply.indexOf(
+      'setupDrafts.confirm(setupAgentId, { knowledge: edits.knowledge }, { knowledge: "" })',
     );
-    expect(apply).toContain("if (!knowledgeCaptured)");
+    expect(capture).toBeGreaterThan(-1);
+    expect(clear).toBeGreaterThan(capture);
+    expect(apply.slice(capture, clear)).toMatch(
+      /if \(!\(await extractionPersistedSomething\(knowledgeResponse\)\)\) \{\s+throw new Error\(/,
+    );
+    expect(apply.slice(capture, clear)).toContain("if (!isCurrentOwner()) return;");
   });
 
   it("does not claim the setup is ready to test when the facts were dropped", () => {
     const apply = source.slice(source.indexOf("async function applySetup"));
-    const notCaptured = apply.slice(apply.indexOf("if (!knowledgeCaptured)"));
-    expect(notCaptured.slice(0, notCaptured.indexOf("setSetupNotice(\n"))).toContain(
-      "setSetupError",
-    );
+    const capture = apply.indexOf("if (!(await extractionPersistedSomething(knowledgeResponse)))");
+    const notice = apply.indexOf('setSetupNotice("Saved.');
+    const recovery = apply.indexOf("catch (reason)", notice);
+    expect(capture).toBeGreaterThan(-1);
+    expect(notice).toBeGreaterThan(capture);
+    expect(recovery).toBeGreaterThan(notice);
+    expect(apply.slice(recovery)).toContain("setSetupError(");
   });
 });
 

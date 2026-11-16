@@ -583,6 +583,7 @@ describe("Studio inspector draft lifecycle", () => {
         : usual(path, options),
     );
     await save();
+    expect(text(render())).not.toContain("Saved. Try the updated Bot");
     await mount();
     expect(field("setup-knowledge")!.props.value).toBe("Open at 7am.");
     expect(drafts.read(h.botId).dirty).toBe(true);
