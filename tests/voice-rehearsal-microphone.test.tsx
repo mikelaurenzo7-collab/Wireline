@@ -13,7 +13,8 @@ vi.mock("react", async (original) => ({
   ...(await original<typeof import("react")>()),
   useState: (initial: unknown) => {
     const index = h.stateCursor++;
-    if (!(index in h.states)) h.states[index] = initial;
+    if (!(index in h.states))
+      h.states[index] = typeof initial === "function" ? initial() : initial;
     return [
       h.states[index],
       (value: unknown) => {
@@ -124,6 +125,7 @@ it("keeps pending microphone mute, Bot activity and error recovery aligned with 
   await vi.waitFor(() => expect(addTrack).toHaveBeenCalledWith(false));
   expect(track.enabled).toBe(false);
 
+  events.readyState = "open";
   events.onopen!();
   expect(statusText()).toBe("Microphone Muted");
   events.onmessage!({

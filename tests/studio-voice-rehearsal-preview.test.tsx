@@ -53,6 +53,9 @@ vi.mock("react", async (original) => ({
   },
 }));
 vi.mock("../src/lib/api", () => ({ authFetch: h.fetch }));
+vi.mock("../src/contexts/AuthContext", () => ({
+  useAuth: () => ({ user: { id: "rehearsal-owner" } }),
+}));
 vi.mock("../src/components/atoms", () => ({ Badge: "badge" }));
 vi.mock("../src/components/OpenAILiveVoiceSandbox", () => ({ default: "live-rehearsal" }));
 vi.mock("../src/components/voice/TestCallLink", () => ({ default: "call-link" }));
