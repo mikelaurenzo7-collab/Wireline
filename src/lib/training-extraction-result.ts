@@ -1,15 +1,17 @@
 export type TrainingExtractionBody = {
   responseContent?: unknown;
+  alreadySaved?: unknown;
   readiness?: { rules?: unknown; facts?: unknown; tone?: unknown };
   directives?: unknown;
   knowledge?: unknown;
   personality?: unknown;
 };
 
-/** True when a parsed /api/train/extract body saved a fact, rule, or tone. */
+/** True when the submission has a saved fact, rule, or tone, including an exact repeat. */
 export function extractionBodyPersistedSomething(
   body: TrainingExtractionBody | null | undefined,
 ): boolean {
+  if (body?.alreadySaved === true) return true;
   const readiness = body?.readiness;
   if (readiness) {
     return (
@@ -26,7 +28,7 @@ export function extractionBodyPersistedSomething(
   );
 }
 
-/** /api/train/extract success must contain a persisted fact, rule, or tone. */
+/** /api/train/extract must confirm that it found or saved training. */
 export async function extractionPersistedSomething(response: Response): Promise<boolean> {
   if (!response.ok) return false;
   try {

@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppError } from "../src/lib/api-error";
+import * as schema from "../src/db/schema";
 
 type Handler = (req: unknown, res: unknown) => Promise<unknown>;
 const h = vi.hoisted(() => ({
   routes: new Map<string, Handler>(),
   owned: true,
+  alreadySaved: false,
   train: vi.fn(),
   image: vi.fn(),
   transaction: vi.fn(),
@@ -30,7 +32,11 @@ vi.mock("../src/lib/server-context", () => ({
   log: { warn: vi.fn(), error: vi.fn() },
   drizzle: {
     select: () => ({
-      from: () => ({ where: () => ({ limit: async () => (h.owned ? [{ id: "bot" }] : []) }) }),
+      from: () => ({
+        where: () => ({
+          limit: async () => (h.owned ? [{ id: "bot", alreadySaved: h.alreadySaved }] : []),
+        }),
+      }),
     }),
     transaction: h.transaction,
   },
@@ -45,14 +51,17 @@ vi.mock("../src/lib/product-event-server", () => ({ emitServerProductEventOnce: 
 vi.mock("../src/lib/paid-bot-identity", () => ({ PAID_BOT_IDENTITY_JOB_TYPE: "unused" }));
 import "../src/routes/agent-routes-v2";
 
-function request(path: string, body: unknown) {
-  return h.routes.get(`post ${path}`)!(
+async function request(path: string, body: unknown) {
+  const json = vi.fn();
+  await h.routes.get(`post ${path}`)!(
     { user: { id: "tenant" }, params: { id: "bot" }, body },
-    { json: vi.fn() },
+    { json },
   );
+  return json.mock.calls[0]?.[0];
 }
 beforeEach(() => {
   h.owned = true;
+  h.alreadySaved = false;
   h.train.mockReset();
   h.image.mockReset();
   h.transaction.mockReset();
@@ -105,21 +114,111 @@ describe("training routes reserve only validated, owned provider work", () => {
     const existing =
       "Laptop repair desk.\n\n## DELIVERY TONE\nClear.\n\n## ACCOUNT HOLDER INSTRUCTIONS\nNever quote parts before confirming the laptop model.";
     const values = vi.fn(() => ({ onConflictDoUpdate: vi.fn() }));
-    h.transaction.mockImplementation((operation) => operation({
-      execute: vi.fn(),
-      select: () => ({
-        from: () => ({ where: () => ({ limit: async () => [{ content: existing }] }) }),
+    h.transaction.mockImplementation((operation) =>
+      operation({
+        execute: vi.fn().mockResolvedValue({ rows: [{ id: "bot" }] }),
+        select: () => ({
+          from: () => ({ where: () => ({ limit: async () => [{ content: existing }] }) }),
+        }),
+        insert: () => ({ values }),
       }),
-      insert: () => ({ values }),
-    }));
-    h.train.mockResolvedValue({ directives: [], knowledge: [], personality: "Warm and plainspoken." });
+    );
+    h.train.mockResolvedValue({
+      directives: [],
+      knowledge: [],
+      personality: "Warm and plainspoken.",
+    });
 
-    await request("/api/train/extract", { agentId: "bot", message: "Use a warm, plainspoken tone" });
+    await request("/api/train/extract", {
+      agentId: "bot",
+      message: "Use a warm, plainspoken tone",
+    });
 
     expect(values).toHaveBeenCalledWith({
       agentId: "bot",
       userId: "tenant",
-      content: "Laptop repair desk.\n\n## DELIVERY TONE\nWarm and plainspoken.\n\n## ACCOUNT HOLDER INSTRUCTIONS\nNever quote parts before confirming the laptop model.",
+      content:
+        "Laptop repair desk.\n\n## DELIVERY TONE\nWarm and plainspoken.\n\n## ACCOUNT HOLDER INSTRUCTIONS\nNever quote parts before confirming the laptop model.",
     });
+  });
+
+  it("merges a Studio tone change into the latest saved instructions", async () => {
+    const existing = "## DELIVERY TONE\nClear.\n\n## INSTRUCTIONS\nLatest owner policy.";
+    const lock = vi.fn();
+    const values = vi.fn(() => ({ onConflictDoUpdate: vi.fn() }));
+    h.transaction.mockImplementation((operation) =>
+      operation({
+        execute: lock,
+        select: () => ({
+          from: () => ({ where: () => ({ limit: async () => [{ content: existing }] }) }),
+        }),
+        insert: () => ({ values }),
+      }),
+    );
+
+    await expect(
+      request("/api/agent-config/:id/manual", { type: "tone", content: "Warm" }),
+    ).resolves.toMatchObject({ success: true });
+    expect(lock).toHaveBeenCalledOnce();
+    expect(values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content:
+          "## DELIVERY TONE\nWarm. Concise, useful, and discreet.\n\n## INSTRUCTIONS\nLatest owner policy.",
+      }),
+    );
+  });
+
+  it("confirms verbatim saved training without paying for another extraction", async () => {
+    h.alreadySaved = true;
+    await expect(
+      request("/api/train/extract", { agentId: "bot", message: "Diagnostic visits cost $89." }),
+    ).resolves.toMatchObject({
+      alreadySaved: true,
+      readiness: { facts: 0, rules: 0, tone: false },
+    });
+    expect(h.train).not.toHaveBeenCalled();
+    expect(h.transaction).not.toHaveBeenCalled();
+  });
+
+  it("saves each identical extracted fact and rule once and reports an already-saved retry", async () => {
+    const saved = new Map<unknown, Array<{ content: string }>>();
+    const lock = vi.fn().mockResolvedValue({ rows: [{ id: "bot" }] });
+    h.transaction.mockImplementation((operation) =>
+      operation({
+        execute: lock,
+        select: () => ({
+          from: (table: unknown) => ({ where: async () => saved.get(table) ?? [] }),
+        }),
+        insert: (table: unknown) => ({
+          values: async (rows: Array<{ content: string }>) => {
+            saved.set(table, [...(saved.get(table) ?? []), ...rows]);
+          },
+        }),
+      }),
+    );
+    h.train.mockResolvedValue({
+      directives: [
+        { content: "Ask for the model number.", priority: 7 },
+        { content: "Ask for the model number.", priority: 7 },
+      ],
+      knowledge: [{ content: "Diagnostic visits cost $89." }],
+      personality: "",
+    });
+    const payload = {
+      agentId: "bot",
+      message: "Diagnostic visits cost $89. Ask for the model number.",
+    };
+    const first = await request("/api/train/extract", payload);
+    const retry = await request("/api/train/extract", payload);
+
+    expect(first).toMatchObject({ readiness: { facts: 1, rules: 1, tone: false } });
+    expect(retry).toMatchObject({
+      alreadySaved: true,
+      responseContent: "This training is already saved in Knowledge.",
+      readiness: { facts: 0, rules: 0, tone: false },
+    });
+    expect(saved.get(schema.directives)).toHaveLength(1);
+    expect(saved.get(schema.knowledge)).toHaveLength(1);
+    expect(lock).toHaveBeenCalledTimes(2);
   });
 });

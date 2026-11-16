@@ -7,10 +7,9 @@ export type StudioSetupValues = {
   markKey: BotMarkKey;
   greeting: string;
   knowledge: string;
-  loadedPersonality: string | null;
   permission: BotPermissionLevel;
 };
-type EditableValues = Omit<StudioSetupValues, "loadedPersonality" | "permission">;
+type EditableValues = Omit<StudioSetupValues, "permission">;
 type SetupSnapshot = {
   values: StudioSetupValues;
   edits: Readonly<Partial<EditableValues>>;
@@ -39,7 +38,6 @@ export function createStudioSetupDrafts(ownerId: string | null) {
         markKey: defaultBotMarkKey(agentId),
         greeting: "",
         knowledge: "",
-        loadedPersonality: null,
         permission: "auto",
       };
       entry = {

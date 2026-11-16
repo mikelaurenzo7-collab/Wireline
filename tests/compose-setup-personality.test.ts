@@ -11,7 +11,7 @@ import {
 
 describe("delivery-tone section replacement", () => {
   it("makes a new Bot's first selected tone visible on every surface", () => {
-    const result = composeSetupPersonality(null, "Warm", true);
+    const result = composeSetupPersonality(null, "Warm");
     expect(resolveDeliveryToneLabel(result)).toBe("Warm and natural");
   });
 
@@ -19,18 +19,18 @@ describe("delivery-tone section replacement", () => {
     const tail =
       "## ACCOUNT HOLDER INSTRUCTIONS\nAsk before booking.\n\n### Escalation\nNever promise availability.";
     const existing = `Warm support role.\n\n## DELIVERY TONE\nClear.\nKeep sentences short.\n\n${tail}`;
-    const result = composeSetupPersonality(existing, "Polished", true);
+    const result = composeSetupPersonality(existing, "Polished");
     expect(result).toBe(
       `Warm support role.\n\n## DELIVERY TONE\nPolished. Concise, useful, and discreet.\n\n${tail}`,
     );
     expect(readSetupDeliveryTone(result)).toBe("Polished. Concise, useful, and discreet.");
-    expect(composeSetupPersonality(result, "Polished", true)).toBe(result);
+    expect(composeSetupPersonality(result, "Polished")).toBe(result);
   });
 
   it("preserves regulated provenance when it follows the delivery tone", () => {
     const existing =
       "Saved role\n\n## DELIVERY TONE\nClear.\n\n## TEMPLATE SPECIALTY: Medical Office Scheduling\nRequires review.";
-    const result = composeSetupPersonality(existing, "Warm", true);
+    const result = composeSetupPersonality(existing, "Warm");
     expect(removesRegulatedTemplateProvenance(existing, result)).toBe(false);
     expect(isSavedRuntimeReviewRequired(result, "scheduler")).toBe(true);
     expect(result).toContain("## TEMPLATE SPECIALTY: Medical Office Scheduling\nRequires review.");
@@ -39,14 +39,14 @@ describe("delivery-tone section replacement", () => {
   it("recognizes legacy casing and CRLF without discarding later headings", () => {
     const existing =
       "Role\r\n\r\n## delivery tone\r\nClear.\r\n\r\n# Business policy\r\nKeep this exact instruction.";
-    const result = composeSetupPersonality(existing, "Warm", false);
+    const result = composeSetupPersonality(existing, "Warm");
     expect(result).toContain("# Business policy\r\nKeep this exact instruction.");
     expect(result).toContain("## DELIVERY TONE\nWarm. Concise, useful, and discreet.");
     expect(result).not.toContain("Clear.");
   });
 
   it("handles a tone-only document without introducing leading blank lines", () => {
-    expect(composeSetupPersonality("## DELIVERY TONE\nOld tone.", "Warm", false)).toBe(
+    expect(composeSetupPersonality("## DELIVERY TONE\nOld tone.", "Warm")).toBe(
       "## DELIVERY TONE\nWarm. Concise, useful, and discreet.",
     );
   });

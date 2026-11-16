@@ -1,6 +1,6 @@
 import { OPENING_GREETING_PREFIX, resolveAgentGreeting } from "../lib/agent-greeting";
 import { Router, type Response } from "express";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import type { z } from "zod";
 import { AppError } from "../lib/api-error";
@@ -8,7 +8,8 @@ import { validateBody } from "../lib/api-validation-base";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser } from "../middleware/auth";
 import { agentMutationRateLimit } from "../middleware/api-rate-limits";
-import { replaceDeliveryTone } from "../lib/compose-setup-personality";
+import { composeSetupPersonality, replaceDeliveryTone } from "../lib/compose-setup-personality";
+import { retainFirstUnique } from "../lib/knowledge-dedup";
 import { recordAmbiguousProviderAttempt, recordUsage } from "../lib/ai-audit";
 import { drizzle, log } from "../lib/server-context";
 import { phoneCallVoiceFor } from "../lib/voice/xai-voice-config";
@@ -111,6 +112,8 @@ type ExtractedConfig = {
   personality: string;
 };
 
+type SavedExtraction = ExtractedConfig & { alreadySaved: boolean };
+
 type AssetPayload = {
   fileName?: unknown;
   mimeType?: unknown;
@@ -210,7 +213,8 @@ function cleanText(value: unknown, max: number) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
-function extractionReply(parsed: ExtractedConfig) {
+function extractionReply(parsed: SavedExtraction) {
+  if (parsed.alreadySaved) return "This training is already saved in Knowledge.";
   const parts: string[] = [];
   if (parsed.directives.length)
     parts.push(
@@ -248,30 +252,77 @@ function normalizeExtraction(value: unknown): ExtractedConfig {
   };
 }
 
-async function persistExtraction(agentId: string, userId: string, extraction: ExtractedConfig) {
-  await drizzle.transaction(async (tx) => {
-    let personality: string | null = null;
+async function persistExtraction(
+  agentId: string,
+  userId: string,
+  extraction: ExtractedConfig,
+): Promise<SavedExtraction> {
+  if (!extraction.directives.length && !extraction.knowledge.length && !extraction.personality) {
+    return { ...extraction, alreadySaved: false };
+  }
+  return drizzle.transaction(async (tx) => {
+    // Serialize the duplicate check with writes for this Bot. Extraction runs
+    // before the lock, so a slow model never holds a database transaction.
+    const locked = await tx.execute(
+      sql`SELECT ${schema.agents.id} FROM ${schema.agents} WHERE ${schema.agents.id} = ${agentId} AND ${schema.agents.userId} = ${userId} FOR UPDATE`,
+    );
+    if (!locked.rows.length) throw AppError.notFound("Agent not found");
+
+    const existingRules = extraction.directives.length
+      ? await tx.select({ content: schema.directives.content }).from(schema.directives).where(
+          and(
+            eq(schema.directives.agentId, agentId),
+            eq(schema.directives.userId, userId),
+            inArray(schema.directives.content, extraction.directives.map((item) => item.content)),
+          ),
+        )
+      : [];
+    const existingFacts = extraction.knowledge.length
+      ? await tx.select({ content: schema.knowledge.content }).from(schema.knowledge).where(
+          and(
+            eq(schema.knowledge.agentId, agentId),
+            eq(schema.knowledge.userId, userId),
+            inArray(schema.knowledge.content, extraction.knowledge.map((item) => item.content)),
+          ),
+        )
+      : [];
+    const directives = retainFirstUnique(
+      extraction.directives,
+      new Set(existingRules.map((row) => row.content)),
+    );
+    const knowledge = retainFirstUnique(
+      extraction.knowledge,
+      new Set(existingFacts.map((row) => row.content)),
+    );
+    let personality = "";
     if (extraction.personality) {
-      await tx.execute(
-        sql`SELECT ${schema.agents.id} FROM ${schema.agents} WHERE ${schema.agents.id} = ${agentId} AND ${schema.agents.userId} = ${userId} FOR UPDATE`,
-      );
       const [current] = await tx
         .select({ content: schema.personality.content })
         .from(schema.personality)
         .where(and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)))
         .limit(1);
-      personality = replaceDeliveryTone(current?.content, extraction.personality);
-      if (removesRegulatedTemplateProvenance(current?.content, personality)) {
+      const savedContent = replaceDeliveryTone(current?.content, extraction.personality);
+      if (removesRegulatedTemplateProvenance(current?.content, savedContent)) {
         throw new AppError(
           409,
           "REGULATED_TEMPLATE_PROVENANCE_PROTECTED",
           "This review-required Bot's regulated template marker cannot be removed through Training extraction.",
         );
       }
+      if (savedContent !== current?.content) {
+        await tx
+          .insert(schema.personality)
+          .values({ agentId, userId, content: savedContent })
+          .onConflictDoUpdate({
+            target: schema.personality.agentId,
+            set: { userId, content: savedContent },
+          });
+        personality = extraction.personality;
+      }
     }
-    if (extraction.directives.length) {
+    if (directives.length) {
       await tx.insert(schema.directives).values(
-        extraction.directives.map((item) => ({
+        directives.map((item) => ({
           content: item.content,
           priority: item.priority || 5,
           agentId,
@@ -279,24 +330,21 @@ async function persistExtraction(agentId: string, userId: string, extraction: Ex
         })),
       );
     }
-    if (extraction.knowledge.length) {
+    if (knowledge.length) {
       await tx.insert(schema.knowledge).values(
-        extraction.knowledge.map((item) => ({
+        knowledge.map((item) => ({
           content: item.content,
           agentId,
           userId,
         })),
       );
     }
-    if (personality) {
-      await tx
-        .insert(schema.personality)
-        .values({ agentId, userId, content: personality })
-        .onConflictDoUpdate({
-          target: schema.personality.agentId,
-          set: { userId, content: personality },
-        });
-    }
+    return {
+      directives,
+      knowledge,
+      personality,
+      alreadySaved: !directives.length && !knowledge.length && !personality,
+    };
   });
 }
 
@@ -870,7 +918,7 @@ router.post(
     if (isPrefixReplace && content && !content.startsWith(replacePrefix)) {
       throw AppError.fromHttpStatus(400, "Content must start with replacePrefix");
     }
-    if (type === "personality") {
+    if (type === "personality" || type === "tone") {
       await drizzle.transaction(async (tx) => {
         await tx.execute(
           sql`SELECT ${schema.agents.id} FROM ${schema.agents} WHERE ${schema.agents.id} = ${req.params.id} AND ${schema.agents.userId} = ${req.user.id} FOR UPDATE`,
@@ -885,7 +933,9 @@ router.post(
             ),
           )
           .limit(1);
-        if (removesRegulatedTemplateProvenance(current?.content, content)) {
+        const savedContent =
+          type === "tone" ? composeSetupPersonality(current?.content, content) : content;
+        if (removesRegulatedTemplateProvenance(current?.content, savedContent)) {
           throw new AppError(
             409,
             "REGULATED_TEMPLATE_PROVENANCE_PROTECTED",
@@ -894,10 +944,10 @@ router.post(
         }
         await tx
           .insert(schema.personality)
-          .values({ agentId: req.params.id, userId: req.user.id, content })
+          .values({ agentId: req.params.id, userId: req.user.id, content: savedContent })
           .onConflictDoUpdate({
             target: schema.personality.agentId,
-            set: { userId: req.user.id, content },
+            set: { userId: req.user.id, content: savedContent },
           });
       });
     } else if (type === "directive") {
@@ -1453,16 +1503,16 @@ router.post(
         "Upload a text, PDF, DOCX, or XLSX document, or a PNG, JPG, WEBP, or GIF image.",
       );
     }
-    await persistExtraction(req.params.id, req.user.id, extraction);
+    const saved = await persistExtraction(req.params.id, req.user.id, extraction);
     const truncation = knowledgeTextTruncationNotice(rawText.length);
     res.json({
       success: true,
       summary: truncation
-        ? `${extractionReply(extraction)} ${truncation}`
-        : extractionReply(extraction),
-      factsAdded: extraction.knowledge.length,
-      rulesAdded: extraction.directives.length,
-      toneUpdated: Boolean(extraction.personality),
+        ? `${extractionReply(saved)} ${truncation}`
+        : extractionReply(saved),
+      factsAdded: saved.knowledge.length,
+      rulesAdded: saved.directives.length,
+      toneUpdated: Boolean(saved.personality),
       truncated: Boolean(truncation),
     });
   },
@@ -1549,32 +1599,55 @@ router.post(
     const message = cleanText(req.body?.message, 12000);
     if (!agentId || !message)
       throw AppError.fromHttpStatus(400, "agentId and message are required");
-    if (!(await owned(agentId, req.user.id))) throw AppError.fromHttpStatus(404, "Agent not found");
-    const parsed = normalizeExtraction(
-      await runTrainingStructured<ExtractedConfig>({
-        userId: req.user.id,
-        source: "training",
-        options: {
-          system:
-            "You are the BotBound Configuration Engine. Extract only explicit operating rules, concrete facts, and requested tone changes. Be conservative. Return empty arrays and an empty personality string when unclear.",
-          user: message,
-          tool: AI_TOOLS.trainingExtraction,
-          complexity: "simple",
-          maxTokens: 1200,
-        },
-      }),
-    );
-    await persistExtraction(agentId, req.user.id, parsed);
+    const userId = req.user.id;
+    // A verbatim retry of a saved entry can be confirmed without another model call.
+    const [agent] = await drizzle
+      .select({
+        alreadySaved: sql<boolean>`EXISTS (
+          SELECT 1 FROM ${schema.knowledge}
+          WHERE ${schema.knowledge.agentId} = ${agentId}
+            AND ${schema.knowledge.userId} = ${userId}
+            AND ${schema.knowledge.content} = ${message}
+        ) OR EXISTS (
+          SELECT 1 FROM ${schema.directives}
+          WHERE ${schema.directives.agentId} = ${agentId}
+            AND ${schema.directives.userId} = ${userId}
+            AND ${schema.directives.content} = ${message}
+        )`,
+      })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+      .limit(1);
+    if (!agent) throw AppError.notFound("Agent not found");
+
+    let saved: SavedExtraction;
+    if (agent.alreadySaved) {
+      saved = { knowledge: [], directives: [], personality: "", alreadySaved: true };
+    } else {
+      const parsed = normalizeExtraction(
+        await runTrainingStructured<ExtractedConfig>({
+          userId,
+          source: "training",
+          options: {
+            system:
+              "You are the BotBound Configuration Engine. Extract only explicit operating rules, concrete facts, and requested tone changes. Be conservative. Return empty arrays and an empty personality string when unclear.",
+            user: message,
+            tool: AI_TOOLS.trainingExtraction,
+            complexity: "simple",
+            maxTokens: 1200,
+          },
+        }),
+      );
+      saved = await persistExtraction(agentId, userId, parsed);
+    }
     res.json({
       success: true,
-      responseContent: extractionReply(parsed),
-      directives: parsed.directives,
-      knowledge: parsed.knowledge,
-      personality: parsed.personality,
+      responseContent: extractionReply(saved),
+      ...saved,
       readiness: {
-        rules: parsed.directives.length,
-        facts: parsed.knowledge.length,
-        tone: Boolean(parsed.personality),
+        rules: saved.directives.length,
+        facts: saved.knowledge.length,
+        tone: Boolean(saved.personality),
       },
     });
   },

@@ -628,7 +628,6 @@ function StudioWorkspaceContent() {
       key={active.id}
       agentId={active.id}
       agentName={active.name}
-      isBusinessAgent={Boolean(active.is_business_agent)}
       onRehearseVoiceInChat={startRehearsal}
       drafts={setupDrafts}
       className="h-full border-t-0"

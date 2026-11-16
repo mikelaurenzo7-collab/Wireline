@@ -76,11 +76,13 @@ export default function KnowledgeQuickAdd({
           ? body.responseContent
           : "Saved to Knowledge.",
       );
-      emitProductEvent({
-        event: "training_asset_added",
-        agentId,
-        metadata: { source: "typed_knowledge" },
-      });
+      if (body?.alreadySaved !== true) {
+        emitProductEvent({
+          event: "training_asset_added",
+          agentId,
+          metadata: { source: "typed_knowledge" },
+        });
+      }
       onSaved();
     } catch (reason) {
       if (!isCurrent()) return;

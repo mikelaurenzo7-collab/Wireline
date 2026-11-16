@@ -22,8 +22,8 @@ describe("Knowledge recipe endpoint contracts", () => {
     expect(documentForm).not.toContain("/api/claude/");
     expect(assetRoute).toContain('"/api/agent-config/:id/assets"');
     expect(assetRoute).toContain("extractKnowledgeDocumentWithOpenAI");
-    expect(assetRoute).toContain("factsAdded: extraction.knowledge.length");
-    expect(assetRoute).toContain("rulesAdded: extraction.directives.length");
+    expect(assetRoute).toContain("factsAdded: saved.knowledge.length");
+    expect(assetRoute).toContain("rulesAdded: saved.directives.length");
   });
 
   it("imports one public page through the supported OpenAI training route", () => {

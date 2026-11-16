@@ -4,7 +4,7 @@ import { Link } from "react-router";
 
 import { authFetch } from "../lib/api";
 import { defaultBotMarkKey, isBotMarkKey, type BotMarkKey } from "../lib/bot-mark";
-import { composeSetupPersonality, readSetupDeliveryTone } from "../lib/compose-setup-personality";
+import { readSetupDeliveryTone } from "../lib/compose-setup-personality";
 import { OPENING_GREETING_PREFIX } from "../lib/agent-greeting";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -15,7 +15,10 @@ import {
   readCreateBrief,
   rememberCreateBrief,
 } from "../lib/create-brief-recovery";
-import { extractionPersistedSomething } from "../lib/training-extraction-result";
+import {
+  extractionBodyPersistedSomething,
+  type TrainingExtractionBody,
+} from "../lib/training-extraction-result";
 import { createStudioSetupDrafts, type StudioSetupDrafts } from "../lib/studio-setup-drafts";
 import { isBotPermissionLevel, type BotPermissionLevel } from "../lib/bot-permission";
 import { Button, NativeSelect } from "./atoms";
@@ -33,7 +36,6 @@ const PERSONALITIES = ["Clear", "Warm", "Polished", "Energetic"] as const;
 type StudioAgentWorkspacePanelProps = {
   agentId: string;
   agentName: string;
-  isBusinessAgent?: boolean;
   onRehearseVoiceInChat: () => void;
   className?: string;
   compact?: boolean;
@@ -87,7 +89,6 @@ function existingGreeting(config: AgentSetupResponse) {
 export default function StudioAgentWorkspacePanel({
   agentId,
   agentName,
-  isBusinessAgent = true,
   onRehearseVoiceInChat,
   className = "",
   compact = false,
@@ -112,7 +113,6 @@ export default function StudioAgentWorkspacePanel({
   const {
     tone: setupPersonality,
     markKey: setupMarkKey,
-    loadedPersonality,
     greeting: setupGreeting,
     knowledge: setupKnowledge,
     permission,
@@ -216,7 +216,6 @@ export default function StudioAgentWorkspacePanel({
           agentId,
           {
             markKey: isBotMarkKey(data.mark_key) ? data.mark_key : defaultBotMarkKey(agentId),
-            loadedPersonality: personality || null,
             tone: inferPersonality(personality),
             greeting: existingGreeting(data),
             knowledge: "",
@@ -241,7 +240,7 @@ export default function StudioAgentWorkspacePanel({
   }, [agentId, reloadKey, user?.id, setupDrafts]);
 
   async function saveManual(
-    type: "personality" | "directive",
+    type: "tone" | "directive",
     content: string,
     replacePrefix?: string,
   ) {
@@ -251,7 +250,7 @@ export default function StudioAgentWorkspacePanel({
       body: JSON.stringify(replacePrefix ? { type, content, replacePrefix } : { type, content }),
     });
     if (!response.ok) {
-      throw new Error(`${type === "personality" ? "Tone" : "Greeting"} could not be saved.`);
+      throw new Error(`${type === "tone" ? "Tone" : "Greeting"} could not be saved.`);
     }
   }
 
@@ -315,6 +314,7 @@ export default function StudioAgentWorkspacePanel({
     setSetupError(null);
     setSetupNotice(null);
     let confirmedChange = false;
+    let trainingAlreadySaved = false;
     try {
       if (edits.markKey !== undefined) {
         const markResponse = await authFetch(
@@ -337,16 +337,11 @@ export default function StudioAgentWorkspacePanel({
       }
       if (!isCurrentOwner()) return;
       if (edits.tone !== undefined) {
-        const personalityText = composeSetupPersonality(
-          loadedPersonality,
-          edits.tone,
-          isBusinessAgent,
-        );
-        await saveManual("personality", personalityText);
+        await saveManual("tone", edits.tone);
         setupDrafts.confirm(
           setupAgentId,
           { tone: edits.tone },
-          { tone: edits.tone, loadedPersonality: personalityText },
+          { tone: edits.tone },
         );
         confirmedChange = true;
       }
@@ -369,29 +364,31 @@ export default function StudioAgentWorkspacePanel({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ agentId: setupAgentId, message: knowledge }),
         });
+        const body = (await knowledgeResponse.json().catch(() => null)) as
+          (TrainingExtractionBody & { error?: unknown }) | null;
         if (!knowledgeResponse.ok) {
-          const body = (await knowledgeResponse.json().catch(() => null)) as {
-            error?: unknown;
-          } | null;
           const detail =
             typeof body?.error === "string" && body.error.trim()
               ? body.error
               : "Knowledge and rules could not be saved.";
           throw new Error(detail);
         }
-        if (!(await extractionPersistedSomething(knowledgeResponse))) {
+        if (!extractionBodyPersistedSomething(body)) {
           throw new Error("Add a specific fact, preference, or operating rule and try again.");
         }
         if (!isCurrentOwner()) return;
         clearCreateBrief(setupUserId, setupAgentId, knowledge);
         if (showResult()) setRecoveringBrief(false);
-        confirmedChange = true;
+        trainingAlreadySaved = body?.alreadySaved === true;
+        confirmedChange ||= !trainingAlreadySaved;
       }
       if (edits.knowledge !== undefined) {
         setupDrafts.confirm(setupAgentId, { knowledge: edits.knowledge }, { knowledge: "" });
       }
       if (confirmedChange && showResult()) {
         setSetupNotice("Saved. Try the updated Bot before sending live traffic.");
+      } else if (trainingAlreadySaved && showResult()) {
+        setSetupNotice("This training is already saved in Knowledge.");
       }
     } catch (reason) {
       if (showResult()) {
@@ -400,7 +397,7 @@ export default function StudioAgentWorkspacePanel({
       }
     } finally {
       setupDrafts.endSave(setupAgentId);
-      if (confirmedChange && isCurrentOwner())
+      if ((confirmedChange || trainingAlreadySaved) && isCurrentOwner())
         window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
     }
   }

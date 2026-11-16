@@ -15,7 +15,6 @@ export function readSetupDeliveryTone(personality?: string | null): string {
 export function composeSetupPersonality(
   existingPersonality: string | null | undefined,
   toneLabel: string,
-  _isBusinessAgent: boolean,
 ): string {
   return replaceDeliveryTone(existingPersonality, `${toneLabel}. Concise, useful, and discreet.`);
 }

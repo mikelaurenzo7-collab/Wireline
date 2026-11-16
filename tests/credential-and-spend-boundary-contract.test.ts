@@ -289,28 +289,28 @@ describe("Studio only clears the essentials box when something was stored", () =
   const source = read("src/components/StudioAgentWorkspacePanel.tsx");
 
   it("reads the readiness counts rather than trusting the 200", () => {
-    expect(source).toContain("extractionPersistedSomething");
+    expect(source).toContain("extractionBodyPersistedSomething");
     const check = read("src/lib/training-extraction-result.ts");
     expect(check).toContain("readiness");
   });
 
   it("keeps the Account Holder's typing when nothing was captured", () => {
     const apply = source.slice(source.indexOf("async function applySetup"));
-    const capture = apply.indexOf("if (!(await extractionPersistedSomething(knowledgeResponse)))");
+    const capture = apply.indexOf("if (!extractionBodyPersistedSomething(body))");
     const clear = apply.indexOf(
       'setupDrafts.confirm(setupAgentId, { knowledge: edits.knowledge }, { knowledge: "" })',
     );
     expect(capture).toBeGreaterThan(-1);
     expect(clear).toBeGreaterThan(capture);
     expect(apply.slice(capture, clear)).toMatch(
-      /if \(!\(await extractionPersistedSomething\(knowledgeResponse\)\)\) \{\s+throw new Error\(/,
+      /if \(!extractionBodyPersistedSomething\(body\)\) \{\s+throw new Error\(/,
     );
     expect(apply.slice(capture, clear)).toContain("if (!isCurrentOwner()) return;");
   });
 
   it("does not claim the setup is ready to test when the facts were dropped", () => {
     const apply = source.slice(source.indexOf("async function applySetup"));
-    const capture = apply.indexOf("if (!(await extractionPersistedSomething(knowledgeResponse)))");
+    const capture = apply.indexOf("if (!extractionBodyPersistedSomething(body))");
     const notice = apply.indexOf('setSetupNotice("Saved.');
     const recovery = apply.indexOf("catch (reason)", notice);
     expect(capture).toBeGreaterThan(-1);

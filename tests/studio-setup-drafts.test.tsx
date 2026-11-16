@@ -5,6 +5,7 @@ import StudioAgentReviewPanel from "../src/components/StudioAgentReviewPanel";
 import { createStudioSetupDrafts, type StudioSetupDrafts } from "../src/lib/studio-setup-drafts";
 import { defaultBotMarkKey } from "../src/lib/bot-mark";
 import { setCreateBriefRecoveryOwner } from "../src/lib/create-brief-recovery";
+import { composeSetupPersonality } from "../src/lib/compose-setup-personality";
 
 vi.mock("../src/hooks/useChannelEntitlements", () => ({
   useChannelEntitlements: () => ({
@@ -202,8 +203,8 @@ beforeEach(() => {
     if (path === "/api/voice/live-voices") return json({ voices: [] });
     if (!options?.method) return json(h.config);
     if (path.endsWith("/mark")) h.config.mark_key = body.mark_key;
-    if (path.endsWith("/manual") && body.type === "personality")
-      h.config.personality = body.content;
+    if (path.endsWith("/manual") && body.type === "tone")
+      h.config.personality = composeSetupPersonality(h.config.personality, body.content);
     if (path.endsWith("/manual") && body.type === "directive")
       h.config.directives = [{ content: body.content }];
     return json({ readiness: { rules: 1, facts: 0, tone: false } });
@@ -293,7 +294,7 @@ describe("Studio inspector draft lifecycle", () => {
     const usual = h.fetch.getMockImplementation()!;
     h.fetch.mockImplementation((path: string, options?: RequestInit) => {
       const body = options?.body ? JSON.parse(String(options.body)) : null;
-      if (path === "/api/agent-config/bot-a/manual" && body?.type === "personality")
+      if (path === "/api/agent-config/bot-a/manual" && body?.type === "tone")
         return pending.promise;
       return usual(path, options);
     });

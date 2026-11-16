@@ -5,6 +5,7 @@ import { AI_TOOLS } from "./ai-tools";
 import { runTrainingStructured } from "./training-ai-spend";
 import { BOTBOUND_BRAND_NAME } from "./brand";
 import { KNOWLEDGE_TEXT_EXTRACT_CHARS } from "./knowledge-asset-limits";
+import { retainFirstUnique } from "./knowledge-dedup";
 import { fetchPublicWebsiteText } from "./safe-public-text-fetch";
 import { drizzle } from "./server-context";
 
@@ -64,15 +65,6 @@ function sourceHost(rawUrl: string): string {
 
 function normalizeForDedup(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
-}
-
-function retainFirstUnique<T extends { content: string }>(rows: T[], known: Set<string>): T[] {
-  return rows.filter((row) => {
-    const key = normalizeForDedup(row.content);
-    if (known.has(key)) return false;
-    known.add(key);
-    return true;
-  });
 }
 
 async function extractWebsiteConfig(input: {
@@ -148,8 +140,8 @@ export async function importWebsiteKnowledge(input: {
       );
     const knownFacts = new Set(existingKnowledge.map((row) => normalizeForDedup(row.content)));
     const knownRules = new Set(existingDirectives.map((row) => normalizeForDedup(row.content)));
-    const newKnowledge = retainFirstUnique(knowledgeRows, knownFacts);
-    const newDirectives = retainFirstUnique(directiveRows, knownRules);
+    const newKnowledge = retainFirstUnique(knowledgeRows, knownFacts, normalizeForDedup);
+    const newDirectives = retainFirstUnique(directiveRows, knownRules, normalizeForDedup);
 
     if (newKnowledge.length) await tx.insert(schema.knowledge).values(newKnowledge);
     if (newDirectives.length) await tx.insert(schema.directives).values(newDirectives);

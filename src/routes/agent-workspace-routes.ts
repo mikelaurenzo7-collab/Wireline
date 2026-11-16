@@ -778,7 +778,7 @@ router.post(
                 ),
               )
               .limit(1);
-            const content = composeSetupPersonality(current?.content, String(value), true);
+            const content = composeSetupPersonality(current?.content, String(value));
             if (removesRegulatedTemplateProvenance(current?.content, content)) {
               throw new AppError(
                 409,

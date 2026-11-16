@@ -194,8 +194,8 @@ describe("secure website knowledge ingestion", () => {
     expect(service).toContain("eq(schema.directives.agentId, input.agentId)");
     expect(service).toContain("eq(schema.directives.userId, input.userId)");
     expect(service).toContain("normalizeForDedup");
-    expect(service).toContain("retainFirstUnique");
-    expect(service).toContain("known.add(key)");
+    expect(service).toContain("retainFirstUnique(knowledgeRows, knownFacts, normalizeForDedup)");
+    expect(service).toContain("retainFirstUnique(directiveRows, knownRules, normalizeForDedup)");
     expect(service).toContain("if (newKnowledge.length)");
     expect(service).toContain("if (newDirectives.length)");
     expect(service).toContain("WEBSITE_PAGE_TITLE_MAX_CHARS = 500");

@@ -47,7 +47,7 @@ describe("restored launch regression guards", () => {
 
     const rich =
       "You are an elite personal assistant.\n\n## TEMPLATE SPECIALTY: Personal Concierge\nBook appointments and take messages.";
-    const composed = composeSetupPersonality(rich, "Warm", false);
+    const composed = composeSetupPersonality(rich, "Warm");
     expect(composed).toContain("elite personal assistant");
     expect(composed).toContain("TEMPLATE SPECIALTY: Personal Concierge");
     expect(composed).toContain("## DELIVERY TONE");

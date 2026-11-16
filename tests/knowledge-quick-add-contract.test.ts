@@ -29,10 +29,13 @@ describe("typed knowledge on the Knowledge page", () => {
     expect(route).not.toContain("readiness panel");
   });
 
-  it("counts a save only when a fact, rule, or tone was persisted", () => {
+  it("accepts new or previously saved training and leaves a non-result pending", () => {
     expect(extractionBodyPersistedSomething({ readiness: { rules: 0, facts: 2 } })).toBe(true);
     expect(extractionBodyPersistedSomething({ readiness: { rules: 0, facts: 0 } })).toBe(false);
     expect(extractionBodyPersistedSomething({ readiness: { tone: true } })).toBe(true);
+    expect(
+      extractionBodyPersistedSomething({ alreadySaved: true, readiness: { rules: 0, facts: 0 } }),
+    ).toBe(true);
     expect(extractionBodyPersistedSomething({ knowledge: ["Open 8-6"] })).toBe(true);
     expect(extractionBodyPersistedSomething(null)).toBe(false);
   });
