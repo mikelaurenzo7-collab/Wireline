@@ -254,6 +254,67 @@ describe("Studio inspector draft lifecycle", () => {
     expect(link?.props.to).toBe(`/knowledge?agent=${h.botId}`);
   });
 
+  it("saves a new fact without writing older setup fields back", async () => {
+    await mount();
+    change("setup-knowledge", "Diagnostic visits are $89.");
+    h.config.personality = "Updated support policy in another editor.";
+    h.config.directives = [{ content: "Opening greeting: New approved greeting" }];
+
+    await save();
+
+    expect(h.fetch.mock.calls.filter(([, options]) => options?.method).map(([path]) => path))
+      .toEqual(["/api/train/extract"]);
+    expect(h.config.personality).toBe("Updated support policy in another editor.");
+    expect(h.config.directives).toEqual([{ content: "Opening greeting: New approved greeting" }]);
+  });
+
+  it("keeps the confirmed permission until the only pending change is acknowledged", async () => {
+    const pending = deferred();
+    const usual = h.fetch.getMockImplementation()!;
+    h.fetch.mockImplementation((path: string, options?: RequestInit) =>
+      path.endsWith("/permission") ? pending.promise : usual(path, options),
+    );
+    await mount();
+    const original = field("bot-permission")!;
+    original.props.onChange!({ target: { value: "full" } });
+    const saving = field("bot-permission")!;
+    expect(saving.props.disabled).toBe(true);
+    expect(saving.props.value).toBe("auto");
+    original.props.onChange!({ target: { value: "ask" } });
+    expect(h.fetch.mock.calls.filter(([path]) => path.endsWith("/permission"))).toHaveLength(1);
+
+    pending.resolve(json({ id: "bot-a", permission: "full" }));
+    await vi.waitFor(() => expect(field("bot-permission")?.props.value).toBe("full"));
+    expect(field("bot-permission")?.props.disabled).toBe(false);
+  });
+
+  it("finishes the original Bot's save after switching to another Bot", async () => {
+    const pending = deferred();
+    const usual = h.fetch.getMockImplementation()!;
+    h.fetch.mockImplementation((path: string, options?: RequestInit) => {
+      const body = options?.body ? JSON.parse(String(options.body)) : null;
+      if (path === "/api/agent-config/bot-a/manual" && body?.type === "personality")
+        return pending.promise;
+      return usual(path, options);
+    });
+    await mount();
+    button("Warm").props.onClick!();
+    change("setup-greeting", "Welcome to our repair desk.");
+    button("Save Changes").props.onClick!();
+    await vi.waitFor(() => expect(drafts.read("bot-a").saving).toBe(true));
+
+    h.botId = "bot-b";
+    await mount();
+    pending.resolve(json({ success: true }));
+    await vi.waitFor(() => expect(drafts.read("bot-a").saving).toBe(false));
+    const mutations = h.fetch.mock.calls.filter(([, options]) => options?.method);
+    expect(mutations.map(([path]) => path)).toEqual([
+      "/api/agent-config/bot-a/manual", "/api/agent-config/bot-a/manual",
+    ]);
+    expect(drafts.read("bot-a").dirty).toBe(false);
+    expect(drafts.read("bot-b").dirty).toBe(false);
+  });
+
   it("refreshes approved Build changes on the event without overwriting a dirty greeting", async () => {
     await mount();
     change("setup-greeting", "My unsaved greeting");
@@ -546,7 +607,7 @@ describe("Studio inspector draft lifecycle", () => {
       await save();
       const content = text(render());
       expect(content).toContain(error);
-      expect(content).toContain("Tone and greeting were saved.");
+      expect(content).toContain("Earlier changes were saved.");
       // Confirmed manual changes trigger the normal configuration refresh.
       await vi.waitFor(() => expect(field("setup-knowledge")).toBeDefined());
       expect(field("setup-knowledge")!.props.value).toBe("Open at 7am.");

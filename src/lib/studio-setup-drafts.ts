@@ -1,4 +1,5 @@
 import { defaultBotMarkKey, type BotMarkKey } from "./bot-mark";
+import type { BotPermissionLevel } from "./bot-permission";
 import { sameHumanHandoff, type HumanHandoffDraft } from "./human-handoff-settings";
 
 export type StudioSetupValues = {
@@ -7,9 +8,15 @@ export type StudioSetupValues = {
   greeting: string;
   knowledge: string;
   loadedPersonality: string | null;
+  permission: BotPermissionLevel;
 };
-type EditableValues = Omit<StudioSetupValues, "loadedPersonality">;
-type SetupSnapshot = { values: StudioSetupValues; dirty: boolean; saving: boolean };
+type EditableValues = Omit<StudioSetupValues, "loadedPersonality" | "permission">;
+type SetupSnapshot = {
+  values: StudioSetupValues;
+  edits: Readonly<Partial<EditableValues>>;
+  dirty: boolean;
+  saving: boolean;
+};
 type Entry = {
   saved: StudioSetupValues;
   edits: Partial<EditableValues>;
@@ -33,12 +40,13 @@ export function createStudioSetupDrafts(ownerId: string | null) {
         greeting: "",
         knowledge: "",
         loadedPersonality: null,
+        permission: "auto",
       };
       entry = {
         saved,
         edits: {},
         confirmed: {},
-        snapshot: { values: saved, dirty: false, saving: false },
+        snapshot: { values: saved, edits: {}, dirty: false, saving: false },
       };
       entries.set(agentId, entry);
     }
@@ -47,6 +55,7 @@ export function createStudioSetupDrafts(ownerId: string | null) {
   const publish = (agentId: string, entry: Entry) => {
     entry.snapshot = {
       values: { ...entry.saved, ...entry.edits },
+      edits: { ...entry.edits },
       dirty: Object.keys(entry.edits).length > 0,
       saving: entry.snapshot.saving,
     };

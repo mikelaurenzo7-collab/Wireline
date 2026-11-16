@@ -115,6 +115,7 @@ export default function StudioAgentWorkspacePanel({
     loadedPersonality,
     greeting: setupGreeting,
     knowledge: setupKnowledge,
+    permission,
   } = snapshot.values;
   const applyingSetup = snapshot.saving;
   const toneOptions = PERSONALITIES.some((tone) => tone === setupPersonality)
@@ -135,7 +136,6 @@ export default function StudioAgentWorkspacePanel({
       ),
     [agentId, agents],
   );
-  const [permission, setPermission] = useState<BotPermissionLevel>("auto");
   const [permissionError, setPermissionError] = useState<string | null>(null);
   const [recoveringBrief, setRecoveringBrief] = useState(false);
   const [loadingSetup, setLoadingSetup] = useState(true);
@@ -158,6 +158,7 @@ export default function StudioAgentWorkspacePanel({
   useEffect(() => {
     setSetupError(null);
     setSetupNotice(null);
+    setPermissionError(null);
   }, [agentId, user?.id]);
 
   // /voice and /voice-clone land here with a hash; the voice controls load
@@ -206,7 +207,6 @@ export default function StudioAgentWorkspacePanel({
       })
       .then((data) => {
         if (cancelled) return;
-        if (isBotPermissionLevel(data.permission)) setPermission(data.permission);
         setKnowledgeSummary({
           facts: Array.isArray(data.knowledge) ? data.knowledge.length : 0,
           rules: Array.isArray(data.directives) ? data.directives.length : 0,
@@ -220,6 +220,7 @@ export default function StudioAgentWorkspacePanel({
             tone: inferPersonality(personality),
             greeting: existingGreeting(data),
             knowledge: "",
+            permission: isBotPermissionLevel(data.permission) ? data.permission : "auto",
           },
           startedRevision,
         );
@@ -254,64 +255,119 @@ export default function StudioAgentWorkspacePanel({
     }
   }
 
+  function isCurrentAgent(targetAgentId: string, targetUserId: string) {
+    return (
+      activeAgentIdRef.current === targetAgentId &&
+      activeUserIdRef.current === targetUserId &&
+      isCreateBriefRecoveryOwner(targetUserId)
+    );
+  }
+
+  async function savePermission(level: BotPermissionLevel) {
+    if (
+      !agentId ||
+      !user?.id ||
+      level === permission ||
+      !isCurrentAgent(agentId, user.id) ||
+      !setupDrafts.beginSave(agentId)
+    )
+      return;
+    const permissionAgentId = agentId;
+    const permissionUserId = user.id;
+    setPermissionError(null);
+    try {
+      const response = await authFetch(
+        `/api/agents/${encodeURIComponent(permissionAgentId)}/permission`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ level }),
+        },
+      );
+      if (!response.ok) throw new Error("Permission could not be saved.");
+      setupDrafts.confirm(permissionAgentId, {}, { permission: level });
+    } catch {
+      if (isCurrentAgent(permissionAgentId, permissionUserId)) {
+        setPermissionError(
+          "Permission could not be confirmed. Check the current setting and try again.",
+        );
+        setReloadKey((current) => current + 1);
+      }
+    } finally {
+      setupDrafts.endSave(permissionAgentId);
+    }
+  }
+
   async function applySetup() {
-    if (!agentId || !user?.id || !setupDrafts.beginSave(agentId)) return;
+    if (
+      !agentId ||
+      !user?.id ||
+      !snapshot.dirty ||
+      !isCurrentAgent(agentId, user.id) ||
+      !setupDrafts.beginSave(agentId)
+    )
+      return;
     const setupAgentId = agentId;
     const setupUserId = user.id;
-    const isCurrentAgent = () =>
-      activeAgentIdRef.current === setupAgentId &&
-      activeUserIdRef.current === setupUserId &&
-      isCreateBriefRecoveryOwner(setupUserId);
+    const isCurrentOwner = () => isCreateBriefRecoveryOwner(setupUserId);
+    const showResult = () => isCurrentAgent(setupAgentId, setupUserId);
+    const { edits } = snapshot;
     setSetupError(null);
     setSetupNotice(null);
     let confirmedChange = false;
     try {
-      const personalityText = composeSetupPersonality(
-        loadedPersonality,
-        setupPersonality,
-        isBusinessAgent,
-      );
-      const greetingTrimmed = setupGreeting.trim();
-      const knowledgeTrimmed = setupKnowledge.trim();
-
-      const markResponse = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/mark`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mark_key: setupMarkKey }),
-      });
-      if (!markResponse.ok) {
-        throw new Error(
-          markResponse.status === 409
-            ? "That identity is already used by another Bot. Choose another mark or color."
-            : "Bot mark could not be saved.",
+      if (edits.markKey !== undefined) {
+        const markResponse = await authFetch(
+          `/api/agents/${encodeURIComponent(setupAgentId)}/mark`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mark_key: edits.markKey }),
+          },
         );
+        if (!markResponse.ok) {
+          throw new Error(
+            markResponse.status === 409
+              ? "That identity is already used by another Bot. Choose another mark or color."
+              : "Bot mark could not be saved.",
+          );
+        }
+        setupDrafts.confirm(setupAgentId, { markKey: edits.markKey }, { markKey: edits.markKey });
+        confirmedChange = true;
       }
-      setupDrafts.confirm(setupAgentId, { markKey: setupMarkKey }, { markKey: setupMarkKey });
-      confirmedChange = true;
-      if (!isCurrentAgent()) return;
-      await saveManual("personality", personalityText);
-      setupDrafts.confirm(
-        setupAgentId,
-        { tone: setupPersonality },
-        {
-          tone: setupPersonality,
-          loadedPersonality: personalityText,
-        },
-      );
-      if (!isCurrentAgent()) return;
-      await saveManual(
-        "directive",
-        greetingTrimmed ? `${GREETING_PREFIX} ${greetingTrimmed}` : "",
-        GREETING_PREFIX,
-      );
-      setupDrafts.confirm(setupAgentId, { greeting: setupGreeting }, { greeting: greetingTrimmed });
-      let knowledgeCaptured = true;
-      if (!isCurrentAgent()) return;
-      if (knowledgeTrimmed) {
+      if (!isCurrentOwner()) return;
+      if (edits.tone !== undefined) {
+        const personalityText = composeSetupPersonality(
+          loadedPersonality,
+          edits.tone,
+          isBusinessAgent,
+        );
+        await saveManual("personality", personalityText);
+        setupDrafts.confirm(
+          setupAgentId,
+          { tone: edits.tone },
+          { tone: edits.tone, loadedPersonality: personalityText },
+        );
+        confirmedChange = true;
+      }
+      if (!isCurrentOwner()) return;
+      if (edits.greeting !== undefined) {
+        const greeting = edits.greeting.trim();
+        await saveManual(
+          "directive",
+          greeting ? `${GREETING_PREFIX} ${greeting}` : "",
+          GREETING_PREFIX,
+        );
+        setupDrafts.confirm(setupAgentId, { greeting: edits.greeting }, { greeting });
+        confirmedChange = true;
+      }
+      if (!isCurrentOwner()) return;
+      const knowledge = edits.knowledge?.trim();
+      if (knowledge) {
         const knowledgeResponse = await authFetch("/api/train/extract", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ agentId, message: knowledgeTrimmed }),
+          body: JSON.stringify({ agentId: setupAgentId, message: knowledge }),
         });
         if (!knowledgeResponse.ok) {
           const body = (await knowledgeResponse.json().catch(() => null)) as {
@@ -321,33 +377,30 @@ export default function StudioAgentWorkspacePanel({
             typeof body?.error === "string" && body.error.trim()
               ? body.error
               : "Knowledge and rules could not be saved.";
-          throw new Error(`${detail} Tone and greeting were saved.`);
+          throw new Error(detail);
         }
-        knowledgeCaptured = await extractionPersistedSomething(knowledgeResponse);
-        if (knowledgeCaptured && isCreateBriefRecoveryOwner(setupUserId)) {
-          setupDrafts.confirm(setupAgentId, { knowledge: setupKnowledge }, { knowledge: "" });
-          clearCreateBrief(setupUserId, setupAgentId, knowledgeTrimmed);
-          if (isCurrentAgent()) setRecoveringBrief(false);
+        if (!(await extractionPersistedSomething(knowledgeResponse))) {
+          throw new Error("Add a specific fact, preference, or operating rule and try again.");
         }
+        if (!isCurrentOwner()) return;
+        clearCreateBrief(setupUserId, setupAgentId, knowledge);
+        if (showResult()) setRecoveringBrief(false);
+        confirmedChange = true;
       }
-
-      if (isCurrentAgent()) {
-        if (!knowledgeCaptured) {
-          setSetupNotice(null);
-          setSetupError(
-            "Tone and greeting were saved, but the knowledge needs to be more specific. Add short facts, preferences, or handoff rules and try again.",
-          );
-          return;
-        }
+      if (edits.knowledge !== undefined) {
+        setupDrafts.confirm(setupAgentId, { knowledge: edits.knowledge }, { knowledge: "" });
+      }
+      if (confirmedChange && showResult()) {
         setSetupNotice("Saved. Try the updated Bot before sending live traffic.");
       }
     } catch (reason) {
-      if (isCurrentAgent()) {
-        setSetupError(reason instanceof Error ? reason.message : "Setup could not be saved.");
+      if (showResult()) {
+        const message = reason instanceof Error ? reason.message : "Setup could not be saved.";
+        setSetupError(confirmedChange ? `${message} Earlier changes were saved.` : message);
       }
     } finally {
       setupDrafts.endSave(setupAgentId);
-      if (confirmedChange && isCurrentAgent())
+      if (confirmedChange && isCurrentOwner())
         window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
     }
   }
@@ -535,19 +588,7 @@ export default function StudioAgentWorkspacePanel({
                   disabled={applyingSetup}
                   onChange={(event) => {
                     const level = event.target.value;
-                    if (!isBotPermissionLevel(level)) return;
-                    const previous = permission;
-                    setPermission(level);
-                    setPermissionError(null);
-                    void authFetch(`/api/agents/${encodeURIComponent(agentId)}/permission`, {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ level }),
-                    }).then(async (response) => {
-                      if (response.ok) return;
-                      setPermission(previous);
-                      setPermissionError("Permission could not be saved.");
-                    });
+                    if (isBotPermissionLevel(level)) void savePermission(level);
                   }}
                 >
                   <option value="full">Full access</option>
@@ -571,7 +612,7 @@ export default function StudioAgentWorkspacePanel({
                 size={compact ? "sm" : undefined}
                 className="h-auto whitespace-normal"
                 onClick={() => void applySetup()}
-                disabled={applyingSetup}
+                disabled={applyingSetup || !snapshot.dirty}
               >
                 {applyingSetup ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />

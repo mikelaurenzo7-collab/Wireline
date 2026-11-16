@@ -338,19 +338,19 @@ describe("pending brief ownership", () => {
     const pending = deferredResponse();
     const usualFetch = h.fetch.getMockImplementation()!;
     h.fetch.mockImplementation((path: string) =>
-      path.endsWith("/mark") ? pending.promise : usualFetch(path),
+      path.endsWith("/manual") ? pending.promise : usualFetch(path),
     );
-    const saving = elements(render()).find(
+    elements(render()).find(
+      (element) => element.type === "button" && text(element) === "Warm",
+    )!.props.onClick!();
+    elements(render()).find(
       (element) => element.type === "button" && text(element) === "Save Changes",
     )!.props.onClick!();
+    expect(h.fetch.mock.calls.filter(([path]) => path.endsWith("/manual"))).toHaveLength(1);
     setCreateBriefRecoveryOwner("other-owner");
     pending.resolve(json({ ok: true }));
-    await saving;
-    expect(
-      h.fetch.mock.calls.some(
-        ([path]) => path.endsWith("/manual") || path === "/api/train/extract",
-      ),
-    ).toBe(false);
+    await vi.waitFor(() => expect(text(render())).toContain("Save Changes"));
+    expect(h.fetch.mock.calls.some(([path]) => path === "/api/train/extract")).toBe(false);
     expect(window.dispatchEvent).not.toHaveBeenCalled();
     expect(text(render())).not.toContain("Saved. Run a test");
   });

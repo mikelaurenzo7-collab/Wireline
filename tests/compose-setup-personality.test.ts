@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   composeSetupPersonality,
   readSetupDeliveryTone,
+  resolveDeliveryToneLabel,
 } from "../src/lib/compose-setup-personality";
 import {
   isSavedRuntimeReviewRequired,
@@ -9,6 +10,11 @@ import {
 } from "../src/lib/runtime-template-personality";
 
 describe("delivery-tone section replacement", () => {
+  it("makes a new Bot's first selected tone visible on every surface", () => {
+    const result = composeSetupPersonality(null, "Warm", true);
+    expect(resolveDeliveryToneLabel(result)).toBe("Warm and natural");
+  });
+
   it("preserves every later custom section while replacing only the old tone", () => {
     const tail =
       "## ACCOUNT HOLDER INSTRUCTIONS\nAsk before booking.\n\n### Escalation\nNever promise availability.";

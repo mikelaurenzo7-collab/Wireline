@@ -100,4 +100,26 @@ describe("training routes reserve only validated, owned provider work", () => {
       }),
     );
   });
+
+  it("updates the delivery tone without replacing the saved operating playbook", async () => {
+    const existing =
+      "Laptop repair desk.\n\n## DELIVERY TONE\nClear.\n\n## ACCOUNT HOLDER INSTRUCTIONS\nNever quote parts before confirming the laptop model.";
+    const values = vi.fn(() => ({ onConflictDoUpdate: vi.fn() }));
+    h.transaction.mockImplementation((operation) => operation({
+      execute: vi.fn(),
+      select: () => ({
+        from: () => ({ where: () => ({ limit: async () => [{ content: existing }] }) }),
+      }),
+      insert: () => ({ values }),
+    }));
+    h.train.mockResolvedValue({ directives: [], knowledge: [], personality: "Warm and plainspoken." });
+
+    await request("/api/train/extract", { agentId: "bot", message: "Use a warm, plainspoken tone" });
+
+    expect(values).toHaveBeenCalledWith({
+      agentId: "bot",
+      userId: "tenant",
+      content: "Laptop repair desk.\n\n## DELIVERY TONE\nWarm and plainspoken.\n\n## ACCOUNT HOLDER INSTRUCTIONS\nNever quote parts before confirming the laptop model.",
+    });
+  });
 });

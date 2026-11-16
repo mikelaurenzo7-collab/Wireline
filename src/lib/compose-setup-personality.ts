@@ -17,9 +17,16 @@ export function composeSetupPersonality(
   toneLabel: string,
   _isBusinessAgent: boolean,
 ): string {
-  const toneLine = `${toneLabel}. Concise, useful, and discreet.`;
+  return replaceDeliveryTone(existingPersonality, `${toneLabel}. Concise, useful, and discreet.`);
+}
+
+export function replaceDeliveryTone(
+  existingPersonality: string | null | undefined,
+  tone: string,
+): string {
+  const toneLine = tone.replace(/\s+/g, " ").trim();
   const existing = (existingPersonality || "").trim();
-  if (!existing) return toneLine;
+  if (!existing) return `${DELIVERY_TONE_MARKER}\n${toneLine}`;
   // A tone stanza can appear before customer instructions or template policy.
   // Replace only its body; treating the rest of the document as tone erases
   // unrelated guidance and can remove a regulated template's review marker.

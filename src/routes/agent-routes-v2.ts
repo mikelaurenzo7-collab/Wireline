@@ -8,6 +8,7 @@ import { validateBody } from "../lib/api-validation-base";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser } from "../middleware/auth";
 import { agentMutationRateLimit } from "../middleware/api-rate-limits";
+import { replaceDeliveryTone } from "../lib/compose-setup-personality";
 import { recordAmbiguousProviderAttempt, recordUsage } from "../lib/ai-audit";
 import { drizzle, log } from "../lib/server-context";
 import { phoneCallVoiceFor } from "../lib/voice/xai-voice-config";
@@ -249,6 +250,7 @@ function normalizeExtraction(value: unknown): ExtractedConfig {
 
 async function persistExtraction(agentId: string, userId: string, extraction: ExtractedConfig) {
   await drizzle.transaction(async (tx) => {
+    let personality: string | null = null;
     if (extraction.personality) {
       await tx.execute(
         sql`SELECT ${schema.agents.id} FROM ${schema.agents} WHERE ${schema.agents.id} = ${agentId} AND ${schema.agents.userId} = ${userId} FOR UPDATE`,
@@ -258,7 +260,8 @@ async function persistExtraction(agentId: string, userId: string, extraction: Ex
         .from(schema.personality)
         .where(and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)))
         .limit(1);
-      if (removesRegulatedTemplateProvenance(current?.content, extraction.personality)) {
+      personality = replaceDeliveryTone(current?.content, extraction.personality);
+      if (removesRegulatedTemplateProvenance(current?.content, personality)) {
         throw new AppError(
           409,
           "REGULATED_TEMPLATE_PROVENANCE_PROTECTED",
@@ -285,13 +288,13 @@ async function persistExtraction(agentId: string, userId: string, extraction: Ex
         })),
       );
     }
-    if (extraction.personality) {
+    if (personality) {
       await tx
         .insert(schema.personality)
-        .values({ agentId, userId, content: extraction.personality })
+        .values({ agentId, userId, content: personality })
         .onConflictDoUpdate({
           target: schema.personality.agentId,
-          set: { userId, content: extraction.personality },
+          set: { userId, content: personality },
         });
     }
   });
