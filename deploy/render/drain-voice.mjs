@@ -2,13 +2,7 @@ import { pathToFileURL } from "node:url";
 
 // Operator command, never a Render preDeployCommand: drain BEFORE replacement.
 // An interrupted observation can resume without reopening voice admissions.
-export async function drainVoice({
-  env = process.env,
-  fetchImpl = fetch,
-  now = Date.now,
-  sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-  log = console.log,
-} = {}) {
+export function voiceDrainClient({ env = process.env, fetchImpl = fetch } = {}) {
   const origin = new URL(env.WIRELINE_VOICE_WORKER_URL || "");
   if (
     origin.protocol !== "https:" ||
@@ -55,23 +49,42 @@ export async function drainVoice({
       throw new Error("Invalid drain identity or work counts; do not replace the worker.");
   }
 
-  let state = await request("/drain");
-  validate(state);
-  const maxCallSeconds = state.max_call_seconds;
-  if (!state.draining) {
+  async function readState(method) {
+    const state = await request("/drain", method);
+    validate(state);
+    return state;
+  }
+
+  async function verifyReady(maxCallSeconds) {
     const readiness = await request("/readyz");
     if (
-      readiness.ready !== true ||
+      readiness?.ready !== true ||
       readiness.source_revision !== expectedRevision ||
       readiness.max_call_seconds !== maxCallSeconds
     )
       throw new Error("Worker identity/readiness does not match the instance selected for drain.");
-    state = await request("/drain", "POST");
+  }
+
+  return { expectedRevision, readState, verifyReady };
+}
+
+export async function drainVoice({
+  env = process.env,
+  fetchImpl = fetch,
+  now = Date.now,
+  sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  log = console.log,
+} = {}) {
+  const worker = voiceDrainClient({ env, fetchImpl });
+  let state = await worker.readState();
+  const maxCallSeconds = state.max_call_seconds;
+  if (!state.draining) {
+    await worker.verifyReady(maxCallSeconds);
+    state = await worker.readState("POST");
   }
   const deadline = now() + (maxCallSeconds + 300) * 1_000;
   let last = "";
   while (true) {
-    validate(state);
     if (!state.draining || state.max_call_seconds !== maxCallSeconds)
       throw new Error("Drain state changed; do not replace the worker.");
     const summary = JSON.stringify({
@@ -85,9 +98,9 @@ export async function drainVoice({
     if (now() >= deadline)
       throw new Error("Drain deadline elapsed with remaining work; leave the old worker running.");
     await sleep(5_000);
-    state = await request("/drain");
+    state = await worker.readState();
   }
-  log(JSON.stringify({ drained: true, source_revision: expectedRevision }));
+  log(JSON.stringify({ drained: true, source_revision: worker.expectedRevision }));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await drainVoice();

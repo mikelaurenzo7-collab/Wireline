@@ -142,6 +142,31 @@ readiness. This single-worker configuration pauses new admissions during drain.
 Platform maintenance can still interrupt connections; seamless continuity is
 not asserted by this deployment configuration.
 
+#### Check and drain a routine release
+
+From a clean checkout of the reviewed candidate, use the release command with
+full Git SHAs. The operator environment supplies `RENDER_API_KEY` with service
+and deploy read access and the existing `WIRELINE_VOICE_WORKER_SECRET`. Use the
+approved secret store for both values. Run the existing exact-candidate test
+gate before promotion.
+
+1. Run `node deploy/render/release.mjs plan <current-sha> <candidate-sha>`.
+   It reads GitHub main, the API, all four Render deployments, and authenticated
+   voice state. Inspect the live deploy IDs and work counts in the output.
+2. Run `node deploy/render/release.mjs drain <current-sha> <candidate-sha>`
+   when ready to pause new call admissions. The command waits for zero active
+   calls and pending handlers, then checks that main and the same four deploys
+   are still in place. Rerun the same command to resume observation if the
+   client connection drops. If the source or deploy ID changes, reconcile
+   the live services before replacing the worker.
+3. Fast-forward main to the reviewed candidate and deploy that exact commit
+   on the voice worker. The API and cron jobs follow main automatically.
+4. Once the four deployments are live, run
+   `node deploy/render/release.mjs verify <candidate-sha>`. The command checks
+   deployed revisions, public API traffic, and authenticated worker readiness.
+   Complete the provider preflight and the applicable live workflow checks
+   before recording the production release as verified.
+
 Run `npm run launch:status -- --output artifacts/launch-status.json` from the clean
 release checkout with the approved production probe credentials. The command
 defaults to Render, checks API source identity and traffic state, and requires
