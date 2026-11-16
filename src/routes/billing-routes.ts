@@ -331,28 +331,21 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
         }
         if (event.type === "customer.subscription.created")
           (sub as unknown as Record<string, unknown>)._auditCreate = true;
-        await syncSubscriptionFromStripe(sub);
+        const applied = await syncSubscriptionFromStripe(sub);
         const deletionBillingEnforced = await enforcePendingDeletionBillingForSubscription(sub);
-        const subscriptionUserId = sub.metadata?.wireline_user_id;
-        const subscriptionPlan = planById(sub.metadata?.wireline_plan);
+        // Delivery order can differ from the Stripe state that was applied.
         if (
           !deletionBillingEnforced &&
-          subscriptionUserId &&
-          subscriptionPlan &&
-          (sub.status === "active" || sub.status === "trialing")
+          applied?.planId &&
+          (applied.status === "active" || applied.status === "trialing")
         ) {
-          emitServerProductEventOnce({
-            event: "subscription_started",
-            userId: subscriptionUserId,
-            planId: subscriptionPlan.id,
-            metadata: { subscription_id: sub.id, status: sub.status },
-          });
-          emitServerProductEventOnce({
-            event: "upgrade_to_paid",
-            userId: subscriptionUserId,
-            planId: subscriptionPlan.id,
-            metadata: { subscription_id: sub.id, status: sub.status },
-          });
+          const milestone = {
+            userId: applied.userId,
+            planId: applied.planId,
+            metadata: { subscription_id: applied.subscriptionId, status: applied.status },
+          };
+          emitServerProductEventOnce({ event: "subscription_started", ...milestone });
+          emitServerProductEventOnce({ event: "upgrade_to_paid", ...milestone });
         }
         break;
       }

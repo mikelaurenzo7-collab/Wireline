@@ -671,7 +671,7 @@ async function mirrorPointsAtNewerSubscription(
   }
 }
 
-/** Sync a Stripe subscription into wireline_subscriptions + wireline_settings. */
+/** Mirror current Stripe state and return the subscription that was applied. */
 export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscription) {
   const customerId =
     typeof incomingSub.customer === "string" ? incomingSub.customer : incomingSub.customer.id;
@@ -937,12 +937,12 @@ async function syncSubscriptionFromStripeUnderLease(
   // customer lookup and metadata repair above stay at root scope on purpose;
   // they are how identity gets established when no tenant is known yet.
   const assertCustomerSyncLease = assertSyncLease;
-  await withBillingEntitlementLease(userId, async (assertEntitlementLease) => {
+  return withBillingEntitlementLease(userId, (assertEntitlementLease) => {
     const assertSyncLease = async () => {
       await assertCustomerSyncLease();
       await assertEntitlementLease();
     };
-    await tenantStore.run(userId, async () => {
+    return tenantStore.run(userId, async () => {
       await assertSyncLease();
       // Founder bootstrap can refresh the grant while Stripe reads its provider.
       // Read again under their shared per-user lease before projecting any access.
@@ -1119,6 +1119,8 @@ async function syncSubscriptionFromStripeUnderLease(
           },
         })
         .catch(() => {});
+
+      return { userId, planId: plan?.id ?? null, subscriptionId: sub.id, status: stripeStatus };
     });
   });
 }

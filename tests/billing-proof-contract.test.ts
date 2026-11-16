@@ -60,6 +60,7 @@ describe("billing proof contract", () => {
 
     expect(billingRoutes).toContain('case "checkout.session.completed"');
     expect(billingRoutes).toContain("await syncSubscriptionFromStripe(sub)");
+    expect(billingRoutes).toContain('applied.status === "active" || applied.status === "trialing"');
     expect(stripeHelpers).toContain("export async function syncSubscriptionFromStripe");
     expect(stripeHelpers).toContain("schema.subscriptions");
     expect(stripeHelpers).toContain("schema.settings");
@@ -349,7 +350,7 @@ describe("billing proof contract", () => {
     const sync = stripeHelpers.slice(
       stripeHelpers.indexOf("export async function syncSubscriptionFromStripe"),
     );
-    const scopeStart = sync.indexOf("await tenantStore.run(userId, async () => {");
+    const scopeStart = sync.indexOf("tenantStore.run(userId, async () => {");
     expect(scopeStart).toBeGreaterThan(-1);
     // The identity phase's mapping-repair insert stays before the scope by
     // design; the projection upsert, settings upsert, and allowance grant

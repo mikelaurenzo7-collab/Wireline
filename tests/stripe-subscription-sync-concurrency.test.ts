@@ -351,6 +351,17 @@ afterEach(() => {
 });
 
 describe("Stripe subscription synchronization concurrency", () => {
+  it("reports the applied cancellation when a delayed active snapshot arrives", async () => {
+    h.authoritative = subscription("canceled");
+    await expect(syncSubscriptionFromStripe(subscription("active"))).resolves.toEqual({
+      userId: "tenant-owned",
+      planId: "voice",
+      subscriptionId: "sub_owned",
+      status: "canceled",
+    });
+    expect(h.settings.subscriptionStatus).toBe("canceled");
+  });
+
   it("does not partially project an invalid usage price pair before reconciliation fails", async () => {
     vi.stubEnv("STRIPE_USAGE_LITE_BASE_PRICE_ID", "price_lite_base");
     vi.stubEnv("STRIPE_USAGE_STARTER_WORK_PRICE_ID", "price_standard_work");
