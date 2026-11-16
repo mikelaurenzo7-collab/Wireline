@@ -276,7 +276,10 @@ export type ComputerTaskView = {
 type TaskRow = typeof schema.computerTasks.$inferSelect;
 
 function toView(row: TaskRow): ComputerTaskView {
-  const task = live.get(row.id);
+  const local = live.get(row.id);
+  // A terminal row from another process takes precedence over a still-live
+  // local browser. Locally finished tasks can keep their final review frame.
+  const task = ACTIVE_STATUSES.includes(row.status) || local?.finished ? local : undefined;
   return {
     id: row.id,
     agentId: row.agentId,
@@ -756,6 +759,20 @@ async function persistNow(
   }
 }
 
+/** Stop before acting on a model turn whose task row cannot confirm progress. */
+async function confirmTaskProgress(task: LiveTask): Promise<void> {
+  if (task.stop || task.finished) throw AppError.conflict("The browser task ended.");
+  const result = await persist(task, {});
+  if (task.stop || task.finished) throw AppError.conflict("The browser task ended.");
+  if (result !== "written") {
+    throw new AppError(
+      503,
+      "COMPUTER_PROGRESS_UNAVAILABLE",
+      "BotBound could not save this browser task's progress. Verify any submitted changes before starting again.",
+    );
+  }
+}
+
 /** Publish a serialized owner checkpoint before accepting direct browser input. */
 export async function waitForComputerOwner(
   task: LiveTask,
@@ -832,7 +849,7 @@ const FINAL_EVENTS: Record<TerminalOutcome["status"], CloudComputerEvent> = {
   blocked: { kind: "result", text: "Needs you to finish" },
   stopped: { kind: "result", text: "Stopped" },
   failed: { kind: "error", text: "Could not finish" },
-  interrupted: { kind: "error", text: "Interrupted by a BotBound update" },
+  interrupted: { kind: "error", text: "Browser task interrupted" },
 };
 
 /**
@@ -1051,6 +1068,7 @@ async function executeTaskWithBrowser(
     }
     task.session = session;
     task.currentUrl = displayUrl(session.activeUrl()) || null;
+    await confirmTaskProgress(task);
     if (input.prepareBrowser && !task.stop) {
       if (input.startUrl) {
         // The owner may choose a start page before the remote browser opens.
@@ -1125,7 +1143,7 @@ async function executeTaskWithBrowser(
           task.frameUrl = displayUrl(session.activeUrl()) || null;
           task.currentUrl = task.frameUrl;
         }
-        await persist(task, {});
+        await confirmTaskProgress(task);
       }
       const activeSession = session;
       const bot = directBot ?? (await loadComputerBotContext(task, input.bot, input.goal));
@@ -1143,7 +1161,7 @@ async function executeTaskWithBrowser(
             if (event.kind === "action" || event.kind === "error") task.actions += 1;
             pushEvent(task, event);
             if (event.url) task.currentUrl = displayUrl(event.url) || task.currentUrl;
-            await persist(task, {});
+            await confirmTaskProgress(task);
           },
           frame: (jpeg) => {
             // A new screen may be a different page; the action callback below
@@ -1193,15 +1211,15 @@ async function executeTaskWithBrowser(
                   }
                 },
               });
-            try {
-              return await attempt(0);
-            } catch (error) {
+            const response = await attempt(0).catch(async (error: unknown) => {
               if (!(error instanceof RuntimeUnavailableError) || task.stop) throw error;
               await sleep(3_000);
               // Stop pressed during the backoff: reserve and send nothing more.
               if (task.stop) throw error;
               return attempt(1);
-            }
+            });
+            await confirmTaskProgress(task);
+            return response;
           },
           recordUsage: (model, response, latencyMs) => {
             const rawUsage =

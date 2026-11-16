@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, lt, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, lt, sql } from "drizzle-orm";
 
 import {
   computerTasks,
@@ -9,7 +9,7 @@ import { drizzle } from "../server-context";
 
 export const COMPUTER_TASK_STALE_AFTER_MS = 3 * 60_000;
 export const COMPUTER_INTERRUPTED_SUMMARY =
-  "This task was interrupted by a BotBound update. Start it again.";
+  "The browser task was interrupted. Review its activity and confirm any submitted changes before starting again.";
 
 type TaskRow = typeof computerTasks.$inferSelect;
 type CheckpointFor<Phase extends "admitted" | "settled"> = Phase extends "admitted"
@@ -102,60 +102,65 @@ export async function settleStoredComputerTask(
   throw new Error("Computer task changed while saving its outcome. Try again.");
 }
 
-/** Recover interrupted billing without relying on the owner opening task history. */
-export async function recoverStaleComputerUsageReceipts(
+/** End abandoned tasks and settle receipts even if the owner never opens History. */
+export async function recoverComputerTasksAndUsageReceipts(
   limit = 200,
   reader: Reader = drizzle,
   now = new Date(),
 ): Promise<void> {
   const cutoff = new Date(now.getTime() - COMPUTER_TASK_STALE_AFTER_MS);
-  const rows = await reader
-    .select({
-      id: computerTasks.id,
-      userId: computerTasks.userId,
-      updatedAt: computerTasks.updatedAt,
-      usageReceipt: computerTasks.usageReceipt,
-      status: computerTasks.status,
-    })
+  const checkpoint = {
+    id: computerTasks.id,
+    userId: computerTasks.userId,
+    updatedAt: computerTasks.updatedAt,
+    usageReceipt: computerTasks.usageReceipt,
+  };
+  // Give abandoned tasks their own batch so unfinished legacy receipts
+  // cannot keep an account's next browser task blocked.
+  const stale = await reader
+    .select(checkpoint)
     .from(computerTasks)
     .where(
       and(
-        or(
-          and(
-            inArray(computerTasks.status, ["running", "needs_input"]),
-            lt(computerTasks.updatedAt, cutoff),
-          ),
-          sql`${computerTasks.status} NOT IN ('running', 'needs_input') AND ${computerTasks.finishedAt} IS NOT NULL`,
-        ),
-        sql`${computerTasks.usageReceipt}->>'phase' = 'admitted'`,
+        inArray(computerTasks.status, ["running", "needs_input"]),
+        lt(computerTasks.updatedAt, cutoff),
       ),
     )
     .orderBy(asc(computerTasks.updatedAt))
     .limit(limit);
-  for (const row of rows) {
-    // Unknown legacy records are not assigned today's billing period.
-    const receipt = terminalCheckpoint(row);
-    if (!receipt) continue;
-    if (!["running", "needs_input"].includes(row.status)) {
-      // An older process may have stopped a new task during a rolling deploy.
-      // Freeze its saved usage without changing that process's terminal outcome.
-      await reader
-        .update(computerTasks)
-        .set({ usageReceipt: receipt })
-        .where(
-          and(
-            eq(computerTasks.id, row.id),
-            eq(computerTasks.userId, row.userId),
-            sql`${computerTasks.status} NOT IN ('running', 'needs_input')`,
-            sql`${computerTasks.usageReceipt} IS NOT DISTINCT FROM ${JSON.stringify(row.usageReceipt)}::jsonb`,
-          ),
-        );
-      continue;
-    }
+  for (const row of stale) {
     await settleStoredComputerTask(
       row,
       { status: "interrupted", summary: COMPUTER_INTERRUPTED_SUMMARY, finishedAt: now },
       { staleBefore: cutoff, reader },
     );
+  }
+
+  // An older process may have stopped a new task during a rolling deploy.
+  // Freeze its confirmed usage while preserving its terminal outcome.
+  const terminal = await reader
+    .select(checkpoint)
+    .from(computerTasks)
+    .where(
+      sql`${computerTasks.status} NOT IN ('running', 'needs_input')
+        AND ${computerTasks.finishedAt} IS NOT NULL
+        AND ${computerTasks.usageReceipt}->>'phase' = 'admitted'`,
+    )
+    .orderBy(asc(computerTasks.updatedAt))
+    .limit(limit);
+  for (const row of terminal) {
+    const receipt = terminalCheckpoint(row);
+    if (!receipt) continue;
+    await reader
+      .update(computerTasks)
+      .set({ usageReceipt: receipt })
+      .where(
+        and(
+          eq(computerTasks.id, row.id),
+          eq(computerTasks.userId, row.userId),
+          sql`${computerTasks.status} NOT IN ('running', 'needs_input')`,
+          sql`${computerTasks.usageReceipt} IS NOT DISTINCT FROM ${JSON.stringify(row.usageReceipt)}::jsonb`,
+        ),
+      );
   }
 }

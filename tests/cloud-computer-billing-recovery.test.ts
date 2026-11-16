@@ -27,27 +27,17 @@ vi.mock("../src/lib/server-context", async () => {
     let patch: Record<string, any> = {};
     let returning: Record<string, any> | undefined;
     const matches = (row: Record<string, any>) => {
-      const recoverySelection = condition.sql.includes("->>'phase' = 'admitted'");
       const active = ["running", "needs_input"].includes(row.status);
       for (const match of condition.sql.matchAll(/"(id|user_id|updated_at)"\s*(=|<)\s*\$(\d+)/g)) {
         const value = condition.params[Number(match[3]) - 1];
         const actual = row[camel(match[1])];
         if (match[2] === "=" && actual !== value) return false;
-        if (
-          match[2] === "<" &&
-          !(recoverySelection && !active) &&
-          !(new Date(actual).getTime() < new Date(String(value)).getTime())
-        )
+        if (match[2] === "<" && !(new Date(actual).getTime() < new Date(String(value)).getTime()))
           return false;
       }
-      if (!recoverySelection && /"status" in \(/i.test(condition.sql) && !active) return false;
-      if (!recoverySelection && /"status" NOT IN \(/.test(condition.sql) && active) return false;
-      if (
-        condition.sql.includes('"finished_at" IS NOT NULL') &&
-        !row.finishedAt &&
-        !(recoverySelection && active)
-      )
-        return false;
+      if (/"status" in \(/i.test(condition.sql) && !active) return false;
+      if (/"status" NOT IN \(/.test(condition.sql) && active) return false;
+      if (condition.sql.includes('"finished_at" IS NOT NULL') && !row.finishedAt) return false;
       if (
         condition.sql.includes("->>'phase' = 'admitted'") &&
         row.usageReceipt?.phase !== "admitted"
@@ -323,9 +313,13 @@ beforeEach(() => {
   h.providerStarted.mockReset();
   h.planId = "usage";
   h.executeBrowser = false;
-  h.loadFacts.mockReset().mockResolvedValue(["Older fixture fact: appliance diagnostics cost $89."]);
+  h.loadFacts
+    .mockReset()
+    .mockResolvedValue(["Older fixture fact: appliance diagnostics cost $89."]);
   h.loadRules.mockReset().mockResolvedValue([{ content: "Ask for the appliance model." }]);
-  h.executeModel.mockReset().mockResolvedValue({ status: "completed", summary: "Done", sources: [] });
+  h.executeModel
+    .mockReset()
+    .mockResolvedValue({ status: "completed", summary: "Done", sources: [] });
   h.browserOpen.mockReset().mockResolvedValue({
     activeUrl: () => "https://example.com/",
     ownerTabs: () => [],
@@ -400,6 +394,50 @@ describe("Computer billing across process boundaries", () => {
     await reconcileUsageReceipts();
     expect(h.receipts.size).toBe(0);
     expect(h.tasks.get(ID)?.status).toBe("running");
+  });
+
+  it("withholds a model result from browser execution when its progress write fails", async () => {
+    h.executeBrowser = true;
+    const wouldAct = vi.fn();
+    h.executeModel.mockImplementation(async ({ hooks }) => {
+      await hooks.meter({
+        reserveUsd: 0.01,
+        turn: 1,
+        operation: async () => {
+          h.failWrites = 1;
+          return { output: [{ type: "computer_call" }] };
+        },
+      });
+      wouldAct();
+      return { status: "completed", summary: "Done", sources: [] };
+    });
+    await startComputerTask(USER, "agent-owned", { goal: "Inspect the public page" });
+    await vi.waitFor(() => {
+      expect(h.tasks.get(ID)).toMatchObject({
+        status: "failed",
+        errorCode: "COMPUTER_PROGRESS_UNAVAILABLE",
+      });
+    });
+    expect(wouldAct).not.toHaveBeenCalled();
+  });
+
+  it("stops a browser batch when the previous action could not be recorded", async () => {
+    h.executeBrowser = true;
+    const nextAction = vi.fn();
+    h.executeModel.mockImplementation(async ({ hooks }) => {
+      h.failWrites = 1;
+      await hooks.emit({ kind: "action", text: "Opened the report" });
+      nextAction();
+      return { status: "completed", summary: "Done", sources: [] };
+    });
+    await startComputerTask(USER, "agent-owned", { goal: "Inspect the public page" });
+    await vi.waitFor(() => {
+      expect(h.tasks.get(ID)).toMatchObject({
+        status: "failed",
+        errorCode: "COMPUTER_PROGRESS_UNAVAILABLE",
+      });
+    });
+    expect(nextAction).not.toHaveBeenCalled();
   });
 
   it("saves observed usage at an owner checkpoint before another process stops the task", async () => {
@@ -488,6 +526,22 @@ describe("Computer billing across process boundaries", () => {
     vi.setSystemTime(new Date(NOW.getTime() + 60_000));
     await reconcileUsageReceipts();
     expect(h.receipts.get(KEY)).toMatchObject({ quantity: "5", periodKey: PERIOD });
+  });
+
+  it("hides a still-live local browser once another process settles its task", async () => {
+    const row = fixture();
+    const task = liveFixture(row);
+    task.frame = Buffer.from("earlier frame");
+    task.preparingBrowser = true;
+    __resetCloudComputerRunnerForTests([task]);
+    Object.assign(row, { status: "interrupted", finishedAt: NOW });
+    await expect(getComputerTask(USER, ID)).resolves.toMatchObject({
+      status: "interrupted",
+      liveView: false,
+      frameCapturedAt: null,
+      preparingBrowser: false,
+      ownerControl: false,
+    });
   });
 
   it("leaves admission recoverable when the terminal write fails", async () => {
@@ -599,8 +653,11 @@ describe("Computer billing across process boundaries", () => {
 
   it("does not invent billing identity for interrupted legacy tasks", async () => {
     const row = fixture({ stale: true, legacy: true });
-    expect((await getComputerTask(USER, ID)).status).toBe("interrupted");
     await reconcileUsageReceipts();
+    expect(row).toMatchObject({
+      status: "interrupted",
+      summary: expect.stringContaining("confirm any submitted changes"),
+    });
     expect(row.usageReceipt).toBeNull();
     expect(h.receipts.size).toBe(0);
   });

@@ -24,9 +24,14 @@ describe("durable usage receipt reconciliation", () => {
       receipt: { periodKey: "pe:2026-11-01", quantity: 1, occurredAt: "2026-10-24T12:05:00.000Z" },
     };
     const reader = {
-      select: () => ({
+      select: (fields: { receipt?: unknown }) => ({
         from: (table: Parameters<typeof getTableName>[0]) => {
-          const rows = getTableName(table) === "wireline_computer_tasks" ? [computer] : [email];
+          const rows =
+            getTableName(table) === "wireline_computer_tasks"
+              ? fields.receipt
+                ? [computer]
+                : []
+              : [email];
           const chain = { where: () => chain, orderBy: () => chain, limit: async () => rows };
           return chain;
         },

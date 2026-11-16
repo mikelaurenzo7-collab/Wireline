@@ -25,7 +25,7 @@ import {
   type UsageMeterKey,
 } from "./usage-billing-catalog";
 import { usageBillingEnabled } from "./usage-billing-config";
-import { recoverStaleComputerUsageReceipts } from "./cloud-computer/usage-receipts";
+import { recoverComputerTasksAndUsageReceipts } from "./cloud-computer/usage-receipts";
 import {
   admitUsage,
   emptyMeterTotals,
@@ -465,7 +465,7 @@ export async function reconcileUsageReceipts(
   reader: Pick<Reader, "select" | "update"> = drizzle,
   recordReceipt = recordSettledUsageReceipt,
 ): Promise<void> {
-  await recoverStaleComputerUsageReceipts(limit, reader);
+  await recoverComputerTasksAndUsageReceipts(limit, reader);
   const computers = await reader
     .select({
       userId: schema.computerTasks.userId,

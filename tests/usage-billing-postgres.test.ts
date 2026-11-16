@@ -214,7 +214,7 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
         status: status === "running" ? "interrupted" : "stopped",
         summary:
           status === "running"
-            ? "This task was interrupted by a BotBound update. Start it again."
+            ? "The browser task was interrupted. Review its activity and confirm any submitted changes before starting again."
             : "Stopped by an older process.",
         usage_receipt: { periodKey: originalPeriod, quantity: 5, occurredAt, phase: "settled" },
       });
@@ -233,6 +233,32 @@ describe.skipIf(!connectionString)("usage billing on disposable PostgreSQL", () 
       ]);
     },
   );
+
+  it("settles an abandoned unmetered task in the background and leaves a fresh checkpoint active", async () => {
+    const abandoned = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+    const active = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+    await pool.query(
+      `INSERT INTO wireline_computer_tasks
+       (id, user_id, status, updated_at, question)
+       VALUES ($1, $2, 'needs_input', $3, 'Confirm browser input'), ($4, $5, 'running', now(), null)`,
+      [abandoned, USER, new Date(Date.now() - 10 * 60_000), active, OTHER],
+    );
+    await Promise.all([reconcileUsageReceipts(), reconcileUsageReceipts()]);
+    const tasks = await pool.query(
+      "SELECT id, status, question, usage_receipt, finished_at FROM wireline_computer_tasks ORDER BY id",
+    );
+    expect(tasks.rows).toEqual([
+      {
+        id: abandoned,
+        status: "interrupted",
+        question: null,
+        usage_receipt: null,
+        finished_at: expect.any(Date),
+      },
+      { id: active, status: "running", question: null, usage_receipt: null, finished_at: null },
+    ]);
+    expect((await pool.query("SELECT id FROM wireline_usage_meter_events")).rowCount).toBe(0);
+  });
 
   it("keeps identical SMS operation keys independent across accounts and Stripe reports", async () => {
     await pool.query(
