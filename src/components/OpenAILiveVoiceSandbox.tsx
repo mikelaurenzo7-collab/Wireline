@@ -11,6 +11,11 @@ import {
 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import {
+  readTypedRehearsal,
+  saveTypedRehearsal,
+  type TextRehearsalLine,
+} from "../lib/typed-rehearsal-history";
 import { VOICE_PRESENCE } from "../lib/voice-presence";
 import type { BotMarkKey } from "../lib/bot-mark";
 import { ConversationMessage, StatusNotice } from "./molecules";
@@ -21,7 +26,7 @@ type SignalResponse = {
   greeting?: string;
   maxDurationSeconds?: number;
 };
-type Line = { id: string; role: "You" | "Bot"; text: string; channel: "text" | "voice" };
+type Line = TextRehearsalLine & { channel: "text" | "voice" };
 type VoiceState = "idle" | "connecting" | "listening" | "speaking" | "thinking" | "error";
 
 const RATE = 24_000;
@@ -135,6 +140,7 @@ function voiceActivity(state: VoiceState) {
 export default function OpenAILiveVoiceSandbox({
   agentId,
   agentName,
+  historyOwnerId,
   compact = false,
   startButtonId,
   onAgentAudioDelta,
@@ -144,6 +150,7 @@ export default function OpenAILiveVoiceSandbox({
 }: {
   agentId: string;
   agentName: string;
+  historyOwnerId?: string;
   markKey?: BotMarkKey | null;
   compact?: boolean;
   startButtonId?: string;
@@ -161,7 +168,10 @@ export default function OpenAILiveVoiceSandbox({
   // intent before attaching a newly acquired microphone to the connection.
   const desiredMuted = useRef(false);
   const [voiceError, setVoiceError] = useState("");
-  const [lines, setLines] = useState<Line[]>([]);
+  const [lines, setLines] = useState<Line[]>(() =>
+    readTypedRehearsal(historyOwnerId, agentId).map((line) => ({ ...line, channel: "text" })),
+  );
+  const completedText = useRef<TextRehearsalLine[]>(lines);
   const peer = useRef<RTCPeerConnection | null>(null);
   const channel = useRef<RTCDataChannel | null>(null);
   const microphone = useRef<MediaStream | null>(null);
@@ -179,6 +189,12 @@ export default function OpenAILiveVoiceSandbox({
   const generation = useRef(0);
   const deadlineTimer = useRef<number | null>(null);
   const cleanupToken = useRef<string | null>(null);
+
+  function clearTranscript() {
+    completedText.current = [];
+    setLines([]);
+    saveTypedRehearsal(historyOwnerId, agentId, []);
+  }
 
   const releaseServerCall = useCallback((token: string | null | undefined) => {
     if (!token) return;
@@ -407,7 +423,8 @@ export default function OpenAILiveVoiceSandbox({
   const sendTyped = async (event: FormEvent) => {
     event.preventDefault();
     const content = typed.trim();
-    if (!content || typing) return;
+    if (!content || typing || waitingForVoice) return;
+    const currentGeneration = generation.current;
     setTyped("");
     setTypedError("");
     if (state === "error") {
@@ -435,7 +452,7 @@ export default function OpenAILiveVoiceSandbox({
     try {
       const history = lines.slice(-12).map((item) => ({
         role: item.role === "You" ? "customer" : "employee",
-        content: item.text,
+        content: item.text.slice(0, 4000),
       }));
       const response = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/test/stream`, {
         method: "POST",
@@ -443,20 +460,22 @@ export default function OpenAILiveVoiceSandbox({
         body: JSON.stringify({ content, history }),
       });
       const raw = await response.text();
+      if (currentGeneration !== generation.current) return;
       const reply = rehearsalReply(raw);
       if (!response.ok || !reply) throw new Error("The typed test did not return a reply.");
-      setLines((current) => [
-        ...current,
-        { id: crypto.randomUUID(), role: "Bot", text: reply, channel: "text" },
-      ]);
+      const answer: Line = { id: crypto.randomUUID(), role: "Bot", text: reply, channel: "text" };
+      setLines((current) => [...current, answer]);
+      completedText.current = [...completedText.current, line, answer].slice(-12);
+      saveTypedRehearsal(historyOwnerId, agentId, completedText.current);
     } catch (reason) {
+      if (currentGeneration !== generation.current) return;
       setLines((current) => current.filter((item) => item.id !== line.id));
       setTyped(content);
       setTypedError(
         reason instanceof Error ? reason.message : "The typed test did not return a reply.",
       );
     } finally {
-      setTyping(false);
+      if (currentGeneration === generation.current) setTyping(false);
     }
   };
 
@@ -468,7 +487,6 @@ export default function OpenAILiveVoiceSandbox({
     reportedCompleted.current = false;
     setVoiceError("");
     setTypedError("");
-    setLines([]);
     setState("connecting");
     try {
       const mic = await navigator.mediaDevices.getUserMedia({
@@ -501,7 +519,8 @@ export default function OpenAILiveVoiceSandbox({
       };
       connection.onconnectionstatechange = () => {
         if (currentGeneration !== generation.current) return;
-        if (connection.connectionState === "connected") setState("listening");
+        if (connection.connectionState === "connected" && events.readyState === "open")
+          setState("listening");
         if (["failed", "closed"].includes(connection.connectionState))
           fail("Live voice connection ended. Start the rehearsal again to continue.");
       };
@@ -516,6 +535,7 @@ export default function OpenAILiveVoiceSandbox({
       };
       events.onopen = () => {
         if (currentGeneration !== generation.current) return;
+        clearTranscript();
         reportedStarted.current = true;
         onTestStarted?.();
         setState("listening");
@@ -583,6 +603,7 @@ export default function OpenAILiveVoiceSandbox({
 
   useEffect(() => () => stop(), [stop]);
   const active = ["connecting", "listening", "speaking", "thinking"].includes(state);
+  const waitingForVoice = state === "connecting";
   const activity = voiceActivity(state);
   const showActivity =
     !compact || state !== "idle" || lines.some((line) => line.channel === "voice");
@@ -597,7 +618,7 @@ export default function OpenAILiveVoiceSandbox({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-3">
           <div className="min-w-0">
-            {!compact ? <p className="wl-stitch-label">Voice Rehearsal</p> : null}
+            <p className="wl-stitch-label">Private Rehearsal</p>
             <h3
               className={
                 compact
@@ -640,13 +661,13 @@ export default function OpenAILiveVoiceSandbox({
           onChange={(event) => setTyped(event.target.value)}
           placeholder="Type a test line"
           maxLength={4000}
-          disabled={typing}
+          disabled={typing || waitingForVoice}
           className="min-h-11 min-w-0 flex-1 rounded-md border border-border bg-background px-3 text-sm"
         />
         <button
           type="submit"
           className="studio-secondary-button"
-          disabled={typing || !typed.trim()}
+          disabled={typing || waitingForVoice || !typed.trim()}
         >
           {typing ? "Sending…" : "Send test"}
         </button>
@@ -715,6 +736,12 @@ export default function OpenAILiveVoiceSandbox({
             </div>
           )}
         </div>
+      ) : null}
+
+      {lines.length > 0 && !active && !typing ? (
+        <button type="button" className="studio-secondary-button mt-3" onClick={clearTranscript}>
+          Clear transcript
+        </button>
       ) : null}
 
       {typedError ? (

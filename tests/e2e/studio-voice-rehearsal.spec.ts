@@ -262,6 +262,76 @@ test("a typed rehearsal clears a microphone warning and keeps a failed draft ava
   expect((await microphoneCount(page)).microphones).toBe(1);
 });
 
+test("completed typed rehearsal turns survive reload on their Bot and can be cleared", async ({
+  page,
+}) => {
+  const { sessions } = await mockRehearsal(page, "no-microphone");
+  const frontDesk = "/studio?agent=bot-front-desk&workroom=test";
+  const histories: unknown[] = [];
+  await page.route("**/api/agents/bot-front-desk/test/stream", async (route) => {
+    histories.push(route.request().postDataJSON().history);
+    await route.fulfill({
+      contentType: "text/event-stream",
+      body: `data: ${JSON.stringify({ reply: "Diagnostic visits cost $89." })}\n\n`,
+    });
+  });
+
+  await page.goto(frontDesk);
+  const transcript = page.locator('[aria-label="Rehearsal Transcript"]');
+  const draft = page.getByRole("textbox", { name: "Type a test", exact: true });
+  const send = page.getByRole("button", { name: "Send test", exact: true });
+  await draft.fill("What does a visit cost?");
+  await send.click();
+  await expect(transcript.getByText("Diagnostic visits cost $89.")).toBeVisible();
+
+  await page.reload();
+  await expect(transcript.getByText("What does a visit cost?")).toBeVisible();
+  await expect(transcript.getByText("Diagnostic visits cost $89.")).toBeVisible();
+  await expect(page.getByText("Private Rehearsal", { exact: true })).toBeVisible();
+  expect(histories).toEqual([[]]);
+  const start = page.getByRole("button", { name: "Start Rehearsal", exact: true });
+  await start.click();
+  await expect(page.getByText(/No microphone was found/)).toBeVisible();
+  await expect(transcript.getByText("Diagnostic visits cost $89.")).toBeVisible();
+
+  await draft.fill("Is that the diagnostic fee?");
+  await send.click();
+  await expect(transcript.locator("article")).toHaveCount(4);
+  expect(histories).toEqual([
+    [],
+    [
+      { role: "customer", content: "What does a visit cost?" },
+      { role: "employee", content: "Diagnostic visits cost $89." },
+    ],
+  ]);
+  expect(sessions).toEqual([]);
+
+  await page.goto("/studio?agent=bot-sales&workroom=test");
+  await expect(page.getByRole("heading", { name: "Speak With Sales Bot" })).toBeVisible();
+  await expect(transcript).toHaveCount(0);
+  await page.goto(frontDesk);
+  await expect(transcript.locator("article")).toHaveCount(4);
+  await page.getByRole("button", { name: "Clear transcript", exact: true }).click();
+  await expect(transcript).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Speak With Front Desk" })).toBeVisible();
+  await expect(transcript).toHaveCount(0);
+
+  await draft.fill("Is there a trip fee?");
+  await send.click();
+  await expect(transcript.locator("article")).toHaveCount(2);
+  let owner = "second-owner";
+  await page.route("**/api/auth/session", async (route) => {
+    await route.fulfill({ json: { user: { id: owner, email: "owner@example.test" } } });
+  });
+  for (const account of ["second-owner", "rehearsal-owner"]) {
+    owner = account;
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Speak With Front Desk" })).toBeVisible();
+    await expect(transcript).toHaveCount(0);
+  }
+});
+
 test("idle voice rehearsal fits 320px with enlarged text without starting a microphone", async ({
   page,
 }, testInfo) => {

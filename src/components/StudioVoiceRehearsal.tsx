@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
 
+import { useAuth } from "../contexts/AuthContext";
 import { authFetch } from "../lib/api";
 import type { BotMarkKey } from "../lib/bot-mark";
 import { Badge } from "./atoms";
@@ -46,6 +47,7 @@ export default function StudioVoiceRehearsal({
   markKey?: BotMarkKey | null;
   phoneNumber?: string | null;
 }) {
+  const ownerId = useAuth().user?.id;
   const phone = phoneNumber?.trim();
   const dialable = phone && /^\+?[\d ().-]{7,32}$/.test(phone) ? phone : null;
   const clone = useActiveClone(agentId);
@@ -141,9 +143,11 @@ export default function StudioVoiceRehearsal({
         </div>
       ) : null}
       <OpenAILiveVoiceSandbox
+        key={`${ownerId}:${agentId}`}
         agentId={agentId}
         agentName={agentName}
         markKey={markKey}
+        historyOwnerId={ownerId}
         compact
         startButtonId={studioVoiceStartId(agentId)}
       />

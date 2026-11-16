@@ -16,6 +16,12 @@ import {
   setCreateBriefRecoveryOwner,
   suspendCreateBriefRecovery,
 } from "../lib/create-brief-recovery";
+import { setTypedRehearsalOwner } from "../lib/typed-rehearsal-history";
+
+function setPrivateStudioOwner(userId: string | null): void {
+  setCreateBriefRecoveryOwner(userId);
+  setTypedRehearsalOwner(userId);
+}
 
 export interface User {
   id: string;
@@ -194,7 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const hydrated = await fetchSessionUser();
         if (!cancelled && authRevisionRef.current === authRevision) {
           if (hydrated.status === "user") {
-            setCreateBriefRecoveryOwner(hydrated.user.id);
+            setPrivateStudioOwner(hydrated.user.id);
             setUser(hydrated.user);
             setSession({ user: hydrated.user });
             setSessionUnavailable(false);
@@ -209,7 +215,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 // The sign-in screen still loads without the stored notice.
               }
             }
-            setCreateBriefRecoveryOwner(null);
+            setPrivateStudioOwner(null);
             setUser(null);
             setSession(null);
             setSessionUnavailable(false);
@@ -229,7 +235,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const onSessionExpired = (_event: Event) => {
       authRevisionRef.current += 1;
-      setCreateBriefRecoveryOwner(null);
+      setPrivateStudioOwner(null);
       removeStoredToken(LEGACY_STORAGE_KEY);
       clearStudioLastAgentId();
       setSession(null);
@@ -262,7 +268,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = useCallback((newSession: Session) => {
     authRevisionRef.current += 1;
-    setCreateBriefRecoveryOwner(newSession.user.id);
+    setPrivateStudioOwner(newSession.user.id);
     removeStoredToken(LEGACY_STORAGE_KEY);
     setSession({ user: newSession.user });
     setUser(newSession.user);
@@ -272,7 +278,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const requireServerConfirmation = options.requireServerConfirmation === true;
     if (!requireServerConfirmation) {
       authRevisionRef.current += 1;
-      setCreateBriefRecoveryOwner(null);
+      setPrivateStudioOwner(null);
     }
     const controller = requireServerConfirmation ? new AbortController() : null;
     const timeoutId = controller ? setTimeout(() => controller.abort(), SESSION_PROBE_MS) : null;
@@ -299,7 +305,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     if (requireServerConfirmation) {
       authRevisionRef.current += 1;
-      setCreateBriefRecoveryOwner(null);
+      setPrivateStudioOwner(null);
     }
     removeStoredToken(LEGACY_STORAGE_KEY);
     clearStudioLastAgentId();
