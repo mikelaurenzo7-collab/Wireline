@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, isNull, or, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
+import { getPostgresErrorCode } from "./pg-errors";
 import { drizzle } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 
@@ -21,8 +22,8 @@ export type StripeEventClaimResult =
   | { kind: "in_flight" };
 
 function isUniqueViolation(error: unknown): boolean {
-  const code = (error as { code?: string } | null)?.code;
-  return code === "23505" || /duplicate key|23505/i.test(getErrorMessage(error));
+  const code = getPostgresErrorCode(error);
+  return code === undefined ? /duplicate key|23505/i.test(getErrorMessage(error)) : code === "23505";
 }
 
 async function insertClaim(eventId: string, eventType: string): Promise<StripeEventClaimOwnership> {

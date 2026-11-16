@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { DrizzleQueryError } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
@@ -63,6 +64,28 @@ describe("Stripe event ownership fencing", () => {
     expect(tokens[0]).toMatch(/^[0-9a-f]{8}-[0-9a-f-]{27}$/i);
     expect(tokens[1]).toMatch(/^[0-9a-f]{8}-[0-9a-f-]{27}$/i);
     expect(tokens[0]).not.toBe(tokens[1]);
+  });
+
+  it.each([
+    ["processed", "already_processed"],
+    ["processing", "in_flight"],
+  ])("recognizes a Drizzle-wrapped duplicate of a %s event", async (status, kind) => {
+    vi.resetModules();
+    const databaseError = Object.assign(new Error("duplicate key value"), { code: "23505" });
+    const wrappedError = new DrizzleQueryError("insert into wireline_stripe_events", [], databaseError);
+    const limit = vi.fn().mockResolvedValue([{ status }]);
+    const returning = vi.fn().mockResolvedValue([]);
+    vi.doMock("../src/lib/server-context", () => ({
+      drizzle: {
+        insert: () => ({ values: vi.fn().mockRejectedValue(wrappedError) }),
+        select: () => ({ from: () => ({ where: () => ({ limit }) }) }),
+        delete: () => ({ where: () => ({ returning }) }),
+      },
+    }));
+    const { claimStripeEvent } = await import("../src/lib/stripe-event-claim");
+
+    await expect(claimStripeEvent("evt_1", "invoice.paid")).resolves.toEqual({ kind });
+    expect(returning).toHaveBeenCalledTimes(status === "processing" ? 1 : 0);
   });
 
   it("refuses stale-token completion and release while allowing the current owner", async () => {
