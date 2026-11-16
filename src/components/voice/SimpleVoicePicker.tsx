@@ -78,6 +78,7 @@ export default function SimpleVoicePicker({
   const [undoVoice, setUndoVoice] = useState<VoiceOption | null>(null);
   const [sampleVoiceId, setSampleVoiceId] = useState<string | null>(null);
   const [sampleLoading, setSampleLoading] = useState(false);
+  const [sampleNeedsTap, setSampleNeedsTap] = useState(false);
   const sampleAudioRef = useRef<HTMLAudioElement | null>(null);
   const sampleUrlRef = useRef<string | null>(null);
   const sampleRequestRef = useRef(0);
@@ -162,6 +163,7 @@ export default function SimpleVoicePicker({
     sampleUrlRef.current = null;
     setSampleVoiceId(null);
     setSampleLoading(false);
+    setSampleNeedsTap(false);
   }
 
   // A sample never keeps playing after the owner switches Bots or leaves.
@@ -174,13 +176,35 @@ export default function SimpleVoicePicker({
       sampleUrlRef.current = null;
       setSampleVoiceId(null);
       setSampleLoading(false);
+      setSampleNeedsTap(false);
     },
     [agentId, ownerId],
   );
 
+  async function startLoadedSample(audio: HTMLAudioElement, request: number) {
+    setSampleNeedsTap(false);
+    try {
+      await audio.play();
+    } catch (reason) {
+      if (request !== sampleRequestRef.current) return;
+      if (reason instanceof DOMException && reason.name === "NotAllowedError") {
+        // The fetch can outlast the browser's activation window. Keep the audio
+        // ready so the next click can play it immediately without another fetch.
+        setSampleNeedsTap(true);
+        return;
+      }
+      stopSample();
+      setError("That sample could not play. Try again.");
+    }
+  }
+
   async function playSample(voice: VoiceOption) {
     if (sampleVoiceId === voice.id) {
-      stopSample();
+      if (sampleNeedsTap && sampleAudioRef.current) {
+        await startLoadedSample(sampleAudioRef.current, sampleRequestRef.current);
+      } else {
+        stopSample();
+      }
       return;
     }
     stopSample();
@@ -206,7 +230,7 @@ export default function SimpleVoicePicker({
         if (request === sampleRequestRef.current) stopSample();
       };
       setSampleLoading(false);
-      await audio.play();
+      await startLoadedSample(audio, request);
     } catch (reason) {
       if (request !== sampleRequestRef.current) return;
       stopSample();
@@ -308,6 +332,7 @@ export default function SimpleVoicePicker({
       selectedVoiceId === voice.id &&
       selectedProvider === voice.provider;
     const saving = savingVoiceId === voice.id;
+    const sampleActive = sampleVoiceId === voice.id && !sampleNeedsTap;
     return (
       <div
         key={`${voice.provider}:${voice.id}`}
@@ -348,13 +373,13 @@ export default function SimpleVoicePicker({
           <button
             type="button"
             onClick={() => void playSample(voice)}
-            aria-label={`${sampleVoiceId === voice.id ? "Stop" : "Play"} ${voice.name.split("·")[0].trim()} sample`}
-            aria-pressed={sampleVoiceId === voice.id}
+            aria-label={`${sampleActive ? "Stop" : "Play"} ${voice.name.split("·")[0].trim()} sample`}
+            aria-pressed={sampleActive}
             className="grid size-11 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo"
           >
-            {sampleVoiceId === voice.id && sampleLoading ? (
+            {sampleActive && sampleLoading ? (
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-            ) : sampleVoiceId === voice.id ? (
+            ) : sampleActive ? (
               <Square className="size-3.5 fill-current" aria-hidden="true" />
             ) : (
               <Play className="size-4" aria-hidden="true" />
@@ -413,6 +438,9 @@ export default function SimpleVoicePicker({
         <StatusNotice tone="destructive" title="Voice Unavailable">
           {error}
         </StatusNotice>
+      ) : null}
+      {sampleNeedsTap ? (
+        <StatusNotice tone="info">The sample is ready. Select Play again to listen.</StatusNotice>
       ) : null}
 
       {loading ? (

@@ -326,6 +326,38 @@ test("closed custom-voice pilot stays hidden while all ten OpenAI calling voices
   expect(await microphones(page)).toBe(0);
 });
 
+test("a blocked stock sample can play on another tap without fetching it again", async ({ page }) => {
+  await mockPilot(page, { available: false });
+  await page.addInitScript(() => {
+    let playCount = 0;
+    HTMLMediaElement.prototype.play = async () => {
+      if (++playCount === 1) throw new DOMException("Playback blocked", "NotAllowedError");
+    };
+  });
+  await page.route("**/api/agent-config/voice-pilot-bot", (route) =>
+    route.fulfill({
+      json: {
+        voice: { voiceId: "marin", provider: "openai", phoneCall: { provider: "xai", voice: "eve" } },
+      },
+    }),
+  );
+  let sampleRequests = 0;
+  await page.route("**/voice/sample?voice=marin", (route) => {
+    sampleRequests += 1;
+    return route.fulfill({ contentType: "audio/wav", body: syntheticWav() });
+  });
+  const voice = await openVoice(page);
+  await voice.locator("summary").filter({ hasText: "Change Voice" }).click();
+  const play = voice.getByRole("button", { name: "Play Marin sample", exact: true });
+  await play.click();
+  await expect(voice.getByText("The sample is ready. Select Play again to listen.")).toBeVisible();
+  await play.click();
+  await expect(voice.getByRole("button", { name: "Stop Marin sample", exact: true })).toBeVisible();
+  await expect(voice.getByText("Voice Unavailable")).toHaveCount(0);
+  expect(sampleRequests).toBe(1);
+  expect(await microphones(page)).toBe(0);
+});
+
 test("native voice pilot uploads, reviews, previews, and deletes without changing the calling voice", async ({
   page,
 }, info) => {
