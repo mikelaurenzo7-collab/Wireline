@@ -21,7 +21,7 @@ type SignalResponse = {
   greeting?: string;
   maxDurationSeconds?: number;
 };
-type Line = { id: string; role: "You" | "Bot"; text: string };
+type Line = { id: string; role: "You" | "Bot"; text: string; channel: "text" | "voice" };
 type VoiceState = "idle" | "connecting" | "listening" | "speaking" | "thinking" | "error";
 
 const RATE = 24_000;
@@ -156,10 +156,11 @@ export default function OpenAILiveVoiceSandbox({
   const [muted, setMuted] = useState(false);
   const [typed, setTyped] = useState("");
   const [typing, setTyping] = useState(false);
+  const [typedError, setTypedError] = useState("");
   // Mute can be chosen while browser permission is pending. Apply the latest
   // intent before attaching a newly acquired microphone to the connection.
   const desiredMuted = useRef(false);
-  const [error, setError] = useState("");
+  const [voiceError, setVoiceError] = useState("");
   const [lines, setLines] = useState<Line[]>([]);
   const peer = useRef<RTCPeerConnection | null>(null);
   const channel = useRef<RTCDataChannel | null>(null);
@@ -192,23 +193,29 @@ export default function OpenAILiveVoiceSandbox({
     }).catch(() => undefined);
   }, []);
 
-  const upsertLine = (id: string, role: Line["role"], text: string, replace = false) => {
+  const upsertLine = (
+    id: string,
+    role: Line["role"],
+    text: string,
+    channel: Line["channel"],
+    replace = false,
+  ) => {
     if (!text) return;
     setLines((current) => {
       const index = current.findIndex((line) => line.id === id);
-      if (index < 0) return [...current, { id, role, text }].slice(-16);
+      if (index < 0) return [...current, { id, role, text, channel }].slice(-16);
       const next = [...current];
       next[index] = { ...next[index], text: replace ? text : `${next[index].text}${text}` };
       return next;
     });
   };
 
-  const appendAssistant = (text: string) => {
+  const appendAssistant = (text: string, channel: Line["channel"]) => {
     if (!text) return;
     const id =
       assistantLineId.current || `assistant-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     assistantLineId.current = id;
-    upsertLine(id, "Bot", text);
+    upsertLine(id, "Bot", text, channel);
   };
 
   const updateUserTranscript = (text: string, itemId?: unknown) => {
@@ -218,7 +225,7 @@ export default function OpenAILiveVoiceSandbox({
         ? `user-${itemId}`
         : userLineId.current || `user-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     userLineId.current = id;
-    upsertLine(id, "You", text, true);
+    upsertLine(id, "You", text, "voice", true);
   };
 
   const release = useCallback(() => {
@@ -266,7 +273,7 @@ export default function OpenAILiveVoiceSandbox({
       release();
       desiredMuted.current = false;
       setMuted(false);
-      setError(message);
+      setVoiceError(message);
       setState("error");
     },
     [release],
@@ -323,7 +330,7 @@ export default function OpenAILiveVoiceSandbox({
         type === "response.output_text.delta") &&
       typeof event.delta === "string"
     ) {
-      appendAssistant(event.delta);
+      appendAssistant(event.delta, type === "response.output_text.delta" ? "text" : "voice");
     }
     if (
       type === "conversation.item.input_audio_transcription.completed" ||
@@ -402,8 +409,12 @@ export default function OpenAILiveVoiceSandbox({
     const content = typed.trim();
     if (!content || typing) return;
     setTyped("");
-    setError("");
-    const line = { id: crypto.randomUUID(), role: "You" as const, text: content };
+    setTypedError("");
+    if (state === "error") {
+      setVoiceError("");
+      setState("idle");
+    }
+    const line: Line = { id: crypto.randomUUID(), role: "You", text: content, channel: "text" };
     setLines((current) => [...current, line]);
     const dataChannel = channel.current;
     if (dataChannel?.readyState === "open") {
@@ -434,9 +445,16 @@ export default function OpenAILiveVoiceSandbox({
       const raw = await response.text();
       const reply = rehearsalReply(raw);
       if (!response.ok || !reply) throw new Error("The typed test did not return a reply.");
-      setLines((current) => [...current, { id: crypto.randomUUID(), role: "Bot", text: reply }]);
+      setLines((current) => [
+        ...current,
+        { id: crypto.randomUUID(), role: "Bot", text: reply, channel: "text" },
+      ]);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "The typed test did not return a reply.");
+      setLines((current) => current.filter((item) => item.id !== line.id));
+      setTyped(content);
+      setTypedError(
+        reason instanceof Error ? reason.message : "The typed test did not return a reply.",
+      );
     } finally {
       setTyping(false);
     }
@@ -448,7 +466,8 @@ export default function OpenAILiveVoiceSandbox({
     const currentGeneration = generation.current;
     reportedStarted.current = false;
     reportedCompleted.current = false;
-    setError("");
+    setVoiceError("");
+    setTypedError("");
     setLines([]);
     setState("connecting");
     try {
@@ -565,7 +584,8 @@ export default function OpenAILiveVoiceSandbox({
   useEffect(() => () => stop(), [stop]);
   const active = ["connecting", "listening", "speaking", "thinking"].includes(state);
   const activity = voiceActivity(state);
-  const showActivity = !compact || state !== "idle" || lines.length > 0;
+  const showActivity =
+    !compact || state !== "idle" || lines.some((line) => line.channel === "voice");
   const mutedListening = muted && state === "listening";
   const StateIcon = mutedListening ? MicOff : activity.icon;
   const showTranscript = !compact || lines.length > 0;
@@ -592,6 +612,7 @@ export default function OpenAILiveVoiceSandbox({
         <button
           id={startButtonId}
           type="button"
+          disabled={typing && !active}
           onClick={active ? stop : () => void start()}
           className={active ? "studio-secondary-button" : "studio-primary-button"}
         >
@@ -672,14 +693,14 @@ export default function OpenAILiveVoiceSandbox({
         <div
           className="mt-4 min-h-[130px] space-y-3 rounded-lg border border-border bg-secondary p-4"
           aria-live="polite"
-          aria-label="Voice Rehearsal Transcript"
+          aria-label="Rehearsal Transcript"
         >
           {lines.length ? (
             lines.map((line) => (
               <ConversationMessage
                 key={line.id}
                 author={line.role === "You" ? "customer" : "assistant"}
-                channel="voice"
+                channel={line.channel}
                 label={line.role === "You" ? "You" : agentName}
               >
                 {line.text}
@@ -696,7 +717,13 @@ export default function OpenAILiveVoiceSandbox({
         </div>
       ) : null}
 
-      {error ? (
+      {typedError ? (
+        <StatusNotice tone="destructive" className="mt-3" title="Text Test Could Not Finish">
+          {typedError}
+        </StatusNotice>
+      ) : null}
+
+      {voiceError ? (
         <StatusNotice
           tone="destructive"
           className="mt-3"
@@ -706,7 +733,7 @@ export default function OpenAILiveVoiceSandbox({
               type="button"
               onClick={() => {
                 stop();
-                setError("");
+                setVoiceError("");
               }}
               aria-label="Reset Live Voice"
               className="grid h-11 w-11 place-items-center rounded-md hover:bg-secondary"
@@ -715,7 +742,7 @@ export default function OpenAILiveVoiceSandbox({
             </button>
           }
         >
-          {error}
+          {voiceError}
         </StatusNotice>
       ) : null}
     </section>

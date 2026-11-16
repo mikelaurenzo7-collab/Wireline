@@ -2,11 +2,11 @@ import { expect, test, type Page } from "@playwright/test";
 
 async function mockRehearsal(
   page: Page,
-  failure: "peer-constructor" | "data-channel" | null = null,
+  failure: "no-microphone" | "peer-constructor" | "data-channel" | null = null,
 ) {
   const stops: string[] = [];
   const sessions: string[] = [];
-  await page.addInitScript((failure: "peer-constructor" | "data-channel" | null) => {
+  await page.addInitScript((failure) => {
     const activity = { microphones: 0, tracksStopped: 0, peersClosed: 0 };
     Object.assign(window, { rehearsalActivity: activity, rehearsalAnswers: 0 });
     Object.defineProperty(navigator, "mediaDevices", {
@@ -14,6 +14,7 @@ async function mockRehearsal(
       value: {
         getUserMedia: async () => {
           activity.microphones += 1;
+          if (failure === "no-microphone") throw new DOMException("No device", "NotFoundError");
           const track = {
             enabled: true,
             stop: () => {
@@ -148,7 +149,7 @@ for (const width of [1440, 390]) {
     await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
     expect((await microphoneCount(page)).microphones).toBe(0);
     expect(sessions).toEqual([]);
-    await expect(page.locator('[aria-label="Voice Rehearsal Transcript"]')).toHaveCount(0);
+    await expect(page.locator('[aria-label="Rehearsal Transcript"]')).toHaveCount(0);
     await expect(page.getByText("Ready for a Voice Rehearsal", { exact: true })).toHaveCount(0);
     await expect(page.getByText("Call Your Live Bot", { exact: true })).toBeVisible();
     await expect(page.getByText("Actions Enabled", { exact: true })).toBeVisible();
@@ -184,7 +185,7 @@ test("compact voice reveals real transcript lines and keeps them after ending re
 }) => {
   await mockRehearsal(page);
   await page.goto("/studio?agent=bot-front-desk&workroom=test");
-  const transcript = page.locator('[aria-label="Voice Rehearsal Transcript"]');
+  const transcript = page.locator('[aria-label="Rehearsal Transcript"]');
   await expect(transcript).toHaveCount(0);
   await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
   await expect(page.getByText("Listening", { exact: true })).toBeVisible();
@@ -210,6 +211,55 @@ test("compact voice reveals real transcript lines and keeps them after ending re
   await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
   await expect(transcript.getByText("What time do you open?", { exact: true })).toBeVisible();
   await expect(transcript.getByText("We open at nine.", { exact: true })).toBeVisible();
+  await expect(transcript.locator('article[data-channel="voice"]')).toHaveCount(2);
+});
+
+test("a typed rehearsal clears a microphone warning and keeps a failed draft available", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const { sessions } = await mockRehearsal(page, "no-microphone");
+  let attempts = 0;
+  await page.route("**/api/agents/bot-front-desk/test/stream", async (route) => {
+    attempts += 1;
+    expect(route.request().postDataJSON()).toEqual({
+      content: "When do you open?",
+      history: [],
+    });
+    if (attempts === 1) {
+      await route.fulfill({ status: 503, body: "Unavailable" });
+    } else {
+      await route.fulfill({
+        contentType: "text/event-stream",
+        body: 'data: {"reply":"We open at nine."}\n\n',
+      });
+    }
+  });
+  await page.goto("/studio?agent=bot-front-desk&workroom=test");
+  const start = page.getByRole("button", { name: "Start Rehearsal", exact: true });
+  await start.click();
+  await expect(page.getByText("Live Voice Needs Attention")).toBeVisible();
+  await expect(page.getByText(/No microphone was found/)).toBeVisible();
+
+  const draft = page.getByRole("textbox", { name: "Type a test", exact: true });
+  const send = page.getByRole("button", { name: "Send test", exact: true });
+  await draft.fill("When do you open?");
+  await send.click();
+  await expect(page.getByText("Text Test Could Not Finish")).toBeVisible();
+  await expect(page.getByText("Live Voice Needs Attention")).toHaveCount(0);
+  await expect(page.getByText(/No microphone was found/)).toHaveCount(0);
+  await expect(draft).toHaveValue("When do you open?");
+
+  await send.click();
+  const transcript = page.locator('[aria-label="Rehearsal Transcript"]');
+  const messages = transcript.locator('article[data-channel="text"]');
+  await expect(messages).toHaveCount(2);
+  await expect(messages.first()).toContainText("When do you open?");
+  await expect(messages.last()).toContainText("We open at nine.");
+  await expect(transcript.getByText("voice message", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Text Test Could Not Finish")).toHaveCount(0);
+  expect(sessions).toEqual([]);
+  expect((await microphoneCount(page)).microphones).toBe(1);
 });
 
 test("idle voice rehearsal fits 320px with enlarged text without starting a microphone", async ({

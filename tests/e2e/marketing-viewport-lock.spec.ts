@@ -358,8 +358,13 @@ for (const width of [390, 1365]) {
   test(`pricing preserves the demo request through contact at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.addInitScript(() => localStorage.setItem("wireline_cookie_consent", "acknowledged"));
+    await page.route("**/api/billing/plans", (route) =>
+      route.fulfill({ json: { plans: [], usage_tiers: ["lite", "standard", "plus"] } }),
+    );
     await openPublicRoute(page, "/pricing");
-    await page.getByRole("link", { name: "Request a Demo", exact: true }).click();
+    await page
+      .getByRole("link", { name: "Request a Demo", exact: true })
+      .click({ timeout: 10_000 });
     await expect(page).toHaveURL(/\/contact\?topic=demo$/);
 
     if (width < 640) {
