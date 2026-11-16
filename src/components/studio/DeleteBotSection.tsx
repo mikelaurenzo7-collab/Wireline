@@ -8,6 +8,7 @@ import { AGENTS_CHANGED_EVENT, useAgents } from "../../contexts/AgentsContext";
 import { useToast } from "../../contexts/ToastContext";
 import { authFetch } from "../../lib/api";
 import { formatPhone } from "../../lib/safe-number";
+import { clearPostCreateWizard, readPostCreateWizard } from "../../lib/wireline-create-flow";
 
 type DeletionBlock = "live_call" | "outbound_call" | "computer_task" | "identity_setup";
 
@@ -40,7 +41,7 @@ export default function DeleteBotSection({
   compact?: boolean;
 }) {
   const navigate = useNavigate();
-  const { refresh } = useAgents();
+  const { forgetDeletedAgent } = useAgents();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<DeletionPreview | null>(null);
@@ -94,10 +95,11 @@ export default function DeleteBotSection({
       });
       const body = (await response.json().catch(() => null)) as { error?: string } | null;
       if (!response.ok) throw new Error(body?.error || "Couldn't delete this Bot. Try again.");
-      window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
-      refresh();
-      toast({ type: "success", title: "Bot Deleted", message: `${agentName} was deleted.` });
+      if (readPostCreateWizard()?.agentId === agentId) clearPostCreateWizard();
+      forgetDeletedAgent(agentId);
       navigate("/studio", { replace: true });
+      window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
+      toast({ type: "success", title: "Bot Deleted", message: `${agentName} was deleted.` });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't delete this Bot. Try again.");
       setDeleting(false);

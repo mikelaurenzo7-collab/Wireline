@@ -57,14 +57,16 @@ const KNOWN_TONE_LABELS: Record<string, string> = {
  * The one delivery-tone derivation. Every surface (Studio Summary, Setup,
  * Knowledge) renders tone through this resolver: the label comes from the
  * saved DELIVERY TONE stanza's first segment, mapped through the known-tone
- * table. No stanza -> "Not set" — surfaces used to invent three different
- * answers here (a lookup, a random first sentence, a hardcoded fallback).
- * (Tone becomes a stored field with the schema pass; until then this
- * resolver is the single source the surfaces share.)
+ * table. Older Studio saves used a single unmarked line for the first tone.
+ * Only recognize that saved format when there is no delivery tone stanza.
  */
 export function resolveDeliveryToneLabel(personality?: string | null): string {
-  const raw = personality ?? "";
-  if (!new RegExp(`(?:^|\n)${DELIVERY_TONE_MARKER}`, "i").test(raw)) return "Not set";
+  const raw = personality?.trim() ?? "";
+  if (!new RegExp(`(?:^|\n)${DELIVERY_TONE_MARKER}`, "i").test(raw)) {
+    const legacyTone = raw.match(/^([a-z ]+)\. Concise, useful, and discreet\.$/i)?.[1];
+    const key = legacyTone?.toLowerCase() ?? "";
+    return Object.hasOwn(KNOWN_TONE_LABELS, key) ? KNOWN_TONE_LABELS[key] : "Not set";
+  }
   const value = readSetupDeliveryTone(raw);
   const sentence = value.split(/[.\n]/)[0]?.trim() ?? "";
   if (!sentence) return "Not set";

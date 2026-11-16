@@ -135,6 +135,77 @@ test("a second Bot keeps its own activation selection and opens its new line", a
   await expect(page.getByRole("combobox", { name: "Assigned Bot" })).toHaveText("Sales Bot");
 });
 
+test("a saved setup guide follows its Bot across navigation and reloads", async ({ page }) => {
+  await mockWorkspace(page);
+  await page.goto("/studio?agent=bot-sales");
+  await page.evaluate(() => {
+    sessionStorage.setItem(
+      "wireline:post-create-wizard",
+      JSON.stringify({
+        agentId: "bot-front-desk",
+        agentName: "Front Desk",
+        phoneProvisionRequested: false,
+        phoneProvisioned: false,
+        identityBootstrapComplete: true,
+      }),
+    );
+    sessionStorage.setItem("wireline:post-create-wizard-step", "train");
+  });
+
+  const guide = page.getByRole("dialog", { name: "Next Up for Front Desk" });
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Sales Bot details" })).toBeVisible();
+  await expect(guide).toHaveCount(0);
+
+  await page.getByRole("combobox", { name: "Switch Bot" }).selectOption("bot-front-desk");
+  await expect(guide).toBeVisible();
+
+  await page.route("**/api/agents", (route) =>
+    route.fulfill({ json: { agents: [agents[1]] } }),
+  );
+  await page.reload();
+  await expect(page.getByText("Bot Unavailable", { exact: true })).toBeVisible();
+  await expect(guide).toHaveCount(0);
+});
+
+test("deleting the selected Bot clears its guide and selects the remaining Bot before reload", async ({ page }) => {
+  await mockWorkspace(page);
+  let deleted = false;
+  let releaseRoster: () => void = () => {};
+  const reload = new Promise<void>((resolve) => { releaseRoster = resolve; });
+  await page.route("**/api/agents", async (route) => {
+    if (deleted) await reload;
+    await route.fulfill({ json: { agents: deleted ? [agents[1]] : agents } });
+  });
+  await page.route("**/api/agents/bot-front-desk/deletion", (route) =>
+    route.fulfill({ json: { name: "Front Desk", phone_numbers: [], mailboxes: [], blocked_by: null } }),
+  );
+  await page.route("**/api/agents/bot-front-desk", async (route) => {
+    if (route.request().method() !== "DELETE") return route.fallback();
+    deleted = true;
+    await route.fulfill({ json: { ok: true } });
+  });
+
+  try {
+    await page.goto("/studio?agent=bot-front-desk&section=setup");
+    const section = page.getByRole("region", { name: "Delete Bot" });
+    await section.locator("summary").click();
+    await section.getByLabel("Type DELETE to Confirm").fill("DELETE");
+    await page.evaluate(() => {
+      sessionStorage.setItem(
+        "wireline:post-create-wizard",
+        JSON.stringify({ agentId: "bot-front-desk", agentName: "Front Desk" }),
+      );
+    });
+    await section.getByRole("button", { name: "Delete Bot", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Sales Bot details" })).toBeVisible();
+    await expect(page).toHaveURL(/agent=bot-sales/);
+    expect(await page.evaluate(() => sessionStorage.getItem("wireline:post-create-wizard"))).toBeNull();
+  } finally {
+    releaseRoster();
+  }
+});
+
 for (const failure of ["unavailable", "malformed"] as const) {
   test(`phone inventory ${failure} stays distinct from an empty account and can recover`, async ({
     page,

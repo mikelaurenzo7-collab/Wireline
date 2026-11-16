@@ -30,6 +30,7 @@ interface AgentsContextValue {
   refresh: () => void;
   /** Load the Bot list and resolve after it is stored, before a route change. */
   reload: () => Promise<void>;
+  forgetDeletedAgent: (agentId: string) => void;
 }
 
 const AgentsContext = createContext<AgentsContextValue>({
@@ -40,6 +41,7 @@ const AgentsContext = createContext<AgentsContextValue>({
   hasAgents: false,
   refresh: () => {},
   reload: async () => {},
+  forgetDeletedAgent: () => {},
 });
 
 /** Fired after an agent is created or removed so the Studio roster refreshes. */
@@ -179,6 +181,11 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user?.id]);
   const refresh = useCallback(() => setNonce((value) => value + 1), []);
+  const forgetDeletedAgent = useCallback((agentId: string) => {
+    // An inventory request started before deletion must not restore the old Bot.
+    generation.current += 1;
+    setAgents((current) => current.filter((agent) => agent.id !== agentId));
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -219,8 +226,9 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
       hasAgents: agents.length > 0,
       refresh,
       reload,
+      forgetDeletedAgent,
     }),
-    [agents, loading, degraded, phoneLookupDegraded, refresh, reload],
+    [agents, loading, degraded, phoneLookupDegraded, refresh, reload, forgetDeletedAgent],
   );
 
   return <AgentsContext.Provider value={value}>{children}</AgentsContext.Provider>;

@@ -15,6 +15,13 @@ describe("delivery-tone section replacement", () => {
     expect(resolveDeliveryToneLabel(result)).toBe("Warm and natural");
   });
 
+  it("renders the unmarked tone saved by older Studio versions", () => {
+    expect(resolveDeliveryToneLabel("Warm. Concise, useful, and discreet.")).toBe(
+      "Warm and natural",
+    );
+    expect(resolveDeliveryToneLabel("Warm support role. Ask for a model number.")).toBe("Not set");
+  });
+
   it("preserves every later custom section while replacing only the old tone", () => {
     const tail =
       "## ACCOUNT HOLDER INSTRUCTIONS\nAsk before booking.\n\n### Escalation\nNever promise availability.";

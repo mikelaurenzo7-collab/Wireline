@@ -6,6 +6,7 @@ import StudioPageShell from "../components/studio/StudioPageShell";
 import StudioWorkspaceV2 from "../components/StudioWorkspaceV2";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { useToast } from "../contexts/ToastContext";
+import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import {
   browserCommandBrief,
   clearBrowserCommandHash,
@@ -24,7 +25,8 @@ import { authFetch } from "../lib/api";
 
 export default function AgentStudioHome() {
   const [params, setParams] = useSearchParams();
-  const { loading, refresh } = useAgents();
+  const { loading, degraded, refresh } = useAgents();
+  const { agents, requestedId, resolvedId } = useStudioActiveAgentId();
   const { toast } = useToast();
   const [browserContext, setBrowserContext] = useState<BrowserCommandContext | null>(() =>
     readBrowserCommandContext(),
@@ -32,6 +34,12 @@ export default function AgentStudioHome() {
   const browserBrief = browserCommandBrief(browserContext);
   const [showCreate, setShowCreate] = useState(false);
   const [postCreateWizard, setPostCreateWizard] = useState<PostCreateWizardPayload | null>(null);
+  const wizardBotPresent =
+    !degraded && agents.some((agent) => agent.id === postCreateWizard?.agentId);
+  const activeWizard =
+    wizardBotPresent && postCreateWizard?.agentId === (requestedId?.trim() || resolvedId)
+      ? postCreateWizard
+      : null;
   const [signedBrief, setSignedBrief] = useState("");
   const identityBootstrapAgentIds = useRef(new Set<string>());
 
@@ -120,7 +128,7 @@ export default function AgentStudioHome() {
 
   useEffect(() => {
     const payload = postCreateWizard;
-    if (!payload || payload.identityBootstrapComplete) return;
+    if (!payload || !wizardBotPresent || payload.identityBootstrapComplete) return;
     if (identityBootstrapAgentIds.current.has(payload.agentId)) return;
     identityBootstrapAgentIds.current.add(payload.agentId);
 
@@ -167,7 +175,7 @@ export default function AgentStudioHome() {
     return () => {
       active = false;
     };
-  }, [postCreateWizard, refresh]);
+  }, [postCreateWizard, refresh, wizardBotPresent]);
 
   const initialBrief = signedBrief || browserBrief || params.get("brief") || "";
   const initialTemplateKey = params.get("template");
@@ -189,10 +197,10 @@ export default function AgentStudioHome() {
         initialBrief={initialBrief}
         initialTemplateKey={initialTemplateKey}
       />
-      {postCreateWizard ? (
+      {activeWizard ? (
         <PostCreateActivationWizard
-          key={postCreateWizard.agentId}
-          payload={postCreateWizard}
+          key={activeWizard.agentId}
+          payload={activeWizard}
           onClose={() => {
             setPostCreateWizard(null);
           }}
