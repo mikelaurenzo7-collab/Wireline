@@ -7,6 +7,7 @@ import { Input } from "./ui/shadcn/Input";
 
 const INQUIRY_TYPES = [
   { value: "personal", label: "Build a Bot" },
+  { value: "demo", label: "Request a Demo" },
   { value: "sales", label: "Team Rollout" },
   { value: "partnership", label: "Partnership" },
   { value: "general", label: "General" },
@@ -14,26 +15,30 @@ const INQUIRY_TYPES = [
 
 export function ContactPage() {
   const [searchParams] = useSearchParams();
-  const initialIntent = searchParams.get("intent") ?? searchParams.get("topic");
-  const startsAsBilling = initialIntent?.toLowerCase() === "billing";
-  const startsAsSales = ["sales", "business", "enterprise", "demo"].includes(
-    initialIntent?.toLowerCase() ?? "",
-  );
+  const initialIntent = (searchParams.get("intent") ?? searchParams.get("topic"))?.toLowerCase();
+  const startsAsBilling = initialIntent === "billing";
+  const startsAsSales = ["sales", "business", "enterprise"].includes(initialIntent ?? "");
   const [inquiryType, setInquiryType] = useState<(typeof INQUIRY_TYPES)[number]["value"]>(
-    startsAsBilling ? "general" : startsAsSales ? "sales" : "personal",
+    startsAsBilling
+      ? "general"
+      : initialIntent === "demo"
+        ? "demo"
+        : startsAsSales
+          ? "sales"
+          : "personal",
   );
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [subject, setSubject] = useState(
     startsAsBilling
       ? "Billing Help"
-      : initialIntent?.toLowerCase() === "enterprise"
+      : initialIntent === "enterprise"
         ? "Enterprise rollout"
-        : initialIntent?.toLowerCase() === "demo"
+        : initialIntent === "demo"
           ? "Request a demo"
-          : initialIntent?.toLowerCase() === "email"
+          : initialIntent === "email"
             ? "Email setup review"
-            : initialIntent?.toLowerCase() === "sms"
+            : initialIntent === "sms"
               ? "SMS setup"
               : "",
   );
@@ -66,6 +71,7 @@ export function ContactPage() {
   const normalizedEmail = email.trim();
   const normalizedSubject = subject.trim();
   const normalizedBody = body.trim();
+  const supportIssueType = inquiryType === "demo" ? "sales" : inquiryType;
   const contextLines = [
     company.trim() ? `Company: ${company.trim()}` : null,
     phone.trim() ? `Preferred callback: ${phone.trim()}` : null,
@@ -73,7 +79,7 @@ export function ContactPage() {
   const composedBody = contextLines.length
     ? `${contextLines.join("\n")}\n\n${normalizedBody}`
     : normalizedBody;
-  const emailFallbackHref = `mailto:support@botbound.app?subject=${encodeURIComponent(`[BotBound / ${inquiryType}] ${normalizedSubject}`)}&body=${encodeURIComponent(`From: ${normalizedEmail}\n\n${composedBody}`)}`;
+  const emailFallbackHref = `mailto:support@botbound.app?subject=${encodeURIComponent(`[BotBound / ${supportIssueType}] ${normalizedSubject}`)}&body=${encodeURIComponent(`From: ${normalizedEmail}\n\n${composedBody}`)}`;
 
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -114,7 +120,7 @@ export function ContactPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          issueType: inquiryType,
+          issueType: supportIssueType,
           email: normalizedEmail,
           subject: normalizedSubject,
           body: composedBody,
@@ -196,7 +202,7 @@ export function ContactPage() {
 
         <section className="mt-5 wl-stitch-card p-6 sm:p-8">
           <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">Send a Note</h2>
-          {!submitted && initialIntent?.toLowerCase() === "email" ? (
+          {!submitted && initialIntent === "email" ? (
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
               Include the business domain you want to use and whether you can update its DNS. Setup
               review confirms the next steps before email activation.
@@ -237,7 +243,7 @@ export function ContactPage() {
                     </option>
                   ))}
                 </select>
-                <div className="hidden gap-2 sm:grid sm:grid-cols-4">
+                <div className="hidden gap-2 sm:grid sm:grid-cols-3 md:grid-cols-5">
                   {INQUIRY_TYPES.map((item) => (
                     <button
                       type="button"
@@ -301,11 +307,13 @@ export function ContactPage() {
                   rows={6}
                   className="w-full rounded border border-border bg-card px-3 py-3 text-sm leading-6 text-foreground outline-none focus:border-primary"
                   placeholder={
-                    initialIntent?.toLowerCase() === "email"
+                    initialIntent === "email"
                       ? "Your domain, email provider, and the address you want your Bot to use."
-                      : inquiryType === "sales"
-                        ? "Team size, calls you need covered, systems you use today, and your timeline."
-                        : "Tell us the call or setup you need help with."
+                      : inquiryType === "demo"
+                        ? "What would you like to see your Bot do?"
+                        : inquiryType === "sales"
+                          ? "Team size, calls you need covered, systems you use today, and your timeline."
+                          : "Tell us the call or setup you need help with."
                   }
                 />
               </label>
