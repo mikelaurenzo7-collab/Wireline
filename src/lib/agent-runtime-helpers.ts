@@ -1168,7 +1168,7 @@ export const AGENT_TOOL_DEFS = {
         task_id: {
           type: "string",
           description:
-            "Optional task_id returned by start_computer_task. Defaults to the latest task for this Bot.",
+            "Optional task_id returned on this call. Defaults to the latest task started on this call.",
         },
       },
     },
@@ -1188,7 +1188,7 @@ export const AGENT_TOOL_DEFS = {
         task_id: {
           type: "string",
           description:
-            "Optional task_id of the paused browser task. Defaults to the active task waiting for input.",
+            "Optional task_id returned on this call. Defaults to the latest task started on this call.",
         },
       },
       required: ["message"],
@@ -1203,7 +1203,7 @@ export const AGENT_TOOL_DEFS = {
       properties: {
         task_id: {
           type: "string",
-          description: "Optional task_id to stop. Defaults to the active browser task.",
+          description: "Optional task_id returned on this call. Defaults to the latest task started on this call.",
         },
       },
     },

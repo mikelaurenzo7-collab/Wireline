@@ -189,6 +189,51 @@ test("Studio opens Computer for the Bot currently selected", async ({ page }) =>
   await expect(page.getByRole("button", { name: "Open browser", exact: true })).toBeVisible();
 });
 
+test("Studio reviews and saves distinct operating rules independently", async ({ page }) => {
+  await mockWorkspace(page);
+  const rules = ["Ask for the appliance model first.", "Never promise same-day service."].map(
+    (value) => ({ field: "operating_rule", label: "Operating rule", value, summary: value }),
+  );
+  const writes: Array<{ field: string; value: string; proposalKey: string }> = [];
+  await page.route("**/api/agents/bot-front-desk/workspace/messages/stream", (route) =>
+    route.fulfill({
+      contentType: "text/event-stream",
+      body: `event: done\ndata: ${JSON.stringify({
+        reply: "Review these two rules.",
+        changes: rules,
+        toolToggles: [],
+        actions: [],
+        messageId: "52",
+      })}\n\n`,
+    }),
+  );
+  await page.route("**/api/agents/bot-front-desk/workspace/apply-change", (route) => {
+    const body = route.request().postDataJSON();
+    writes.push(body);
+    return route.fulfill({
+      json: {
+        success: true,
+        field: body.field,
+        value: body.value,
+        savedProposalKey: body.proposalKey,
+      },
+    });
+  });
+  await page.goto("/studio?agent=bot-front-desk&chat=setup");
+  await page.getByRole("textbox", { name: "Message Front Desk", exact: true }).fill("Add both rules.");
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  const cards = page.getByRole("region", { name: "Review Operating rule", exact: true });
+  await expect(cards).toHaveCount(2);
+  await cards.first().getByRole("button", { name: "Save Operating rule", exact: true }).click();
+  await expect(cards.first().getByText("Saved", { exact: true })).toBeVisible();
+  await cards.last().getByRole("button", { name: "Save Operating rule", exact: true }).click();
+  await expect(cards.last().getByText("Saved", { exact: true })).toBeVisible();
+  expect(writes).toMatchObject([
+    { field: "operating_rule", value: rules[0].value, proposalKey: "change-0" },
+    { field: "operating_rule", value: rules[1].value, proposalKey: "change-1" },
+  ]);
+});
+
 test("mobile Conversation and Computer share one row without losing a task draft", async ({
   page,
 }, info) => {

@@ -30,6 +30,7 @@ import {
   type WorkspaceFieldKey,
 } from "../lib/workspace-planner";
 import {
+  isAgentToolConfigurable,
   isAgentToolName,
   resolveAgentTools,
   normalizeEnabledTools,
@@ -848,6 +849,9 @@ router.post(
         const current = resolveAgentTools(agent.role ?? undefined, agent.enabledTools);
         if (review.metadata.savedProposalKeys.includes(review.ref.key)) {
           return { enabledTools: current, previouslySaved: true };
+        }
+        if (enable && !isAgentToolConfigurable(tool)) {
+          throw AppError.conflict("This action is unavailable and cannot be enabled.");
         }
         const updated = enable
           ? Array.from(new Set([...current, tool]))

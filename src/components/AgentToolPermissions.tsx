@@ -5,13 +5,13 @@ import { Link } from "react-router";
 import { authFetch } from "../lib/api";
 import {
   AGENT_TOOL_CATALOG,
+  isAgentToolConfigurable,
   resolveAgentTools,
   type AgentToolCatalogEntry,
   type AgentToolName,
 } from "../lib/agent-capabilities";
 import { getAllIntegrationPlaybooks } from "../lib/integration-playbooks";
 import { resolveTenantToolIntegrationStatus } from "../lib/tenant-tool-integration-status";
-import { UNSCOPED_PLATFORM_LIVE_TOOL_NAMES } from "../lib/platform-live-tool-exclusions";
 import { cn } from "../lib/utils";
 import { SMS_LAUNCH_UI_ENABLED } from "../lib/product-copy";
 import { Button } from "./atoms";
@@ -39,7 +39,7 @@ type AgentToolPermissionsProps = {
 /** Tools with no merchant integration (platform capabilities like grounded search). */
 const VISIBLE_TOOLS = AGENT_TOOL_CATALOG.filter(
   (tool) =>
-    !UNSCOPED_PLATFORM_LIVE_TOOL_NAMES.has(tool.name) &&
+    isAgentToolConfigurable(tool.name) &&
     (SMS_LAUNCH_UI_ENABLED || tool.name !== "send_text_message"),
 );
 const PLATFORM_TOOLS = VISIBLE_TOOLS.filter((tool) => !tool.integration);

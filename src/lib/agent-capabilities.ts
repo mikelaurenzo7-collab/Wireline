@@ -1,3 +1,6 @@
+import { UNSCOPED_PLATFORM_LIVE_TOOL_NAMES } from "./platform-live-tool-exclusions";
+import { UNVERIFIED_LIVE_TOOL_NAMES } from "./unverified-live-tools";
+
 export const AGENT_TOOL_NAME_VALUES = [
   "search_knowledge_base",
   "view_recent_interactions",
@@ -69,6 +72,24 @@ export const AGENT_TOOL_NAME_VALUES = [
 ] as const;
 
 export type AgentToolName = (typeof AGENT_TOOL_NAME_VALUES)[number];
+
+// Keep these catalog names readable in stored selections. They have no
+// runtime implementation or can only decline the requested operation.
+const UNAVAILABLE_AGENT_TOOL_NAMES = new Set<AgentToolName>([
+  "route_to_business_unit",
+  "trigger_enterprise_webhook",
+  "shopify_apply_discount",
+  "square_send_invoice",
+]);
+
+/** Actions the owner can configure, independently of plans and connections. */
+export function isAgentToolConfigurable(name: AgentToolName): boolean {
+  return (
+    !UNSCOPED_PLATFORM_LIVE_TOOL_NAMES.has(name) &&
+    !UNVERIFIED_LIVE_TOOL_NAMES.has(name) &&
+    !UNAVAILABLE_AGENT_TOOL_NAMES.has(name)
+  );
+}
 
 export type ToolIntegration =
   | "twilio"

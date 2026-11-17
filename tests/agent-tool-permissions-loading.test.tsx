@@ -2,6 +2,8 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AgentToolPermissions from "../src/components/AgentToolPermissions";
 import IntegrationCapabilityPanel from "../src/components/IntegrationCapabilityPanel";
+import { AGENT_TOOL_CATALOG } from "../src/lib/agent-capabilities";
+import { UNVERIFIED_LIVE_TOOL_NAMES } from "../src/lib/unverified-live-tools";
 
 const h = vi.hoisted(() => ({
   states: [] as unknown[],
@@ -87,6 +89,11 @@ describe("agent action editor loading", () => {
         "meta_submit_lead",
         "list_x_ad_campaigns",
         "get_x_ad_campaign_stats",
+        ...UNVERIFIED_LIVE_TOOL_NAMES,
+        "route_to_business_unit",
+        "trigger_enterprise_webhook",
+        "shopify_apply_discount",
+        "square_send_invoice",
       ];
       h.fetch.mockImplementation((url: string) =>
         Promise.resolve(
@@ -107,6 +114,9 @@ describe("agent action editor loading", () => {
       expect(editorText).not.toContain("Submit lead to Meta");
       expect(editorText).not.toContain("X ad campaign");
       expect(editorText).toContain("Post on X");
+      for (const entry of AGENT_TOOL_CATALOG.filter((tool) => blocked.includes(tool.name))) {
+        expect(editorText).not.toContain(entry.label);
+      }
       elements(render()).find((node) => node.props["aria-label"] === "Enable all X actions")!.props
         .onClick!();
       elements(render()).find(
@@ -267,7 +277,7 @@ describe("agent action editor loading", () => {
       elements(group(label)).filter((node) => node.type === "input" && node.props.checked);
     elements(render()).find((node) => node.props["aria-label"] === "Enable all CRM actions")!.props
       .onClick!();
-    expect(selected("CRM")).toHaveLength(5);
+    expect(selected("CRM")).toHaveLength(3);
     expect(selected("Platform Actions")).toHaveLength(0);
     expect(selected("Slack")).toHaveLength(0);
     elements(group("Platform Actions")).find((node) => node.type === "input")!.props.onChange!();

@@ -49,6 +49,7 @@ function buildContext(overrides: Partial<ToolCallContext> = {}): ToolCallContext
     webhookAgentId: "bot-alpha",
     userId: "owner-1",
     agentId: "bot-alpha",
+    computerTaskIds: new Set(),
     drizzle: { select: vi.fn(() => query) },
     log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     ...overrides,
@@ -99,13 +100,14 @@ describe("voice and cloud computer runtime intertwining", () => {
       question: null,
     });
 
+    const currentCall = buildContext();
     const outcome = await dispatchAgentToolCall(
       "start_computer_task",
       {
         goal: "Verify live pricing on the vendor portal",
         start_url: "https://example.com/pricing",
       },
-      buildContext(),
+      currentCall,
     );
 
     expect(h.startComputerTask).toHaveBeenCalledWith("owner-1", "bot-alpha", {
@@ -116,9 +118,13 @@ describe("voice and cloud computer runtime intertwining", () => {
     expect(outcome.result).toContain("COMPUTER_TASK_STARTED");
     expect(outcome.result).toContain("task_id=11111111-2222-3333-4444-555555555555");
     expect(outcome.result).toContain("status=running");
+    expect(currentCall.computerTaskIds).toEqual(new Set(["11111111-2222-3333-4444-555555555555"]));
   });
 
-  it("dispatches check_computer_task with an explicit task_id or defaults to the latest Bot task", async () => {
+  it("checks an explicit task or the latest task from this call", async () => {
+    const firstId = "11111111-2222-3333-4444-555555555555";
+    const secondId = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+    const currentCall = buildContext({ computerTaskIds: new Set([firstId, secondId]) });
     h.getComputerTaskForOwner.mockResolvedValue({
       id: "11111111-2222-3333-4444-555555555555",
       agentId: "bot-alpha",
@@ -133,7 +139,7 @@ describe("voice and cloud computer runtime intertwining", () => {
     const explicit = await dispatchAgentToolCall(
       "check_computer_task",
       { task_id: "11111111-2222-3333-4444-555555555555" },
-      buildContext(),
+      currentCall,
     );
 
     expect(h.getComputerTaskForOwner).toHaveBeenCalledWith(
@@ -146,38 +152,29 @@ describe("voice and cloud computer runtime intertwining", () => {
       "Pending question: Please confirm the ZIP code on the quote screen.",
     );
 
-    h.listComputerTasksForOwner.mockResolvedValue([
-      {
-        id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-        agentId: "bot-alpha",
-        goal: "Check order shipment ETA",
-        status: "completed",
-        summary: "Shipment arrives Tuesday by 5 PM.",
-        question: null,
-        currentUrl: null,
-        errorCode: null,
-      },
-    ]);
+    h.getComputerTaskForOwner.mockResolvedValue({
+      id: secondId,
+      agentId: "bot-alpha",
+      goal: "Check order shipment ETA",
+      status: "completed",
+      summary: "Shipment arrives Tuesday by 5 PM.",
+      question: null,
+      currentUrl: null,
+      errorCode: null,
+    });
 
-    const latest = await dispatchAgentToolCall("check_computer_task", {}, buildContext());
+    const latest = await dispatchAgentToolCall("check_computer_task", {}, currentCall);
 
-    expect(h.listComputerTasksForOwner).toHaveBeenCalledWith("owner-1", "bot-alpha");
+    expect(h.getComputerTaskForOwner).toHaveBeenLastCalledWith("owner-1", secondId);
     expect(latest.result).toContain("task_id=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
     expect(latest.result).toContain("status=completed");
     expect(latest.result).toContain("Summary: Shipment arrives Tuesday by 5 PM.");
   });
 
   it("dispatches reply_computer_task and stop_computer_task for interactive caller loops", async () => {
-    h.listComputerTasksForOwner.mockResolvedValue([
-      {
-        id: "11111111-2222-3333-4444-555555555555",
-        agentId: "bot-alpha",
-        goal: "Check Saturday technician slots",
-        status: "needs_input",
-        summary: null,
-        question: "What service zip code should I enter?",
-      },
-    ]);
+    const currentCall = buildContext({
+      computerTaskIds: new Set(["11111111-2222-3333-4444-555555555555"]),
+    });
     h.replyToComputerTask.mockResolvedValue({
       id: "11111111-2222-3333-4444-555555555555",
       agentId: "bot-alpha",
@@ -190,7 +187,7 @@ describe("voice and cloud computer runtime intertwining", () => {
     const replied = await dispatchAgentToolCall(
       "reply_computer_task",
       { message: "60302" },
-      buildContext(),
+      currentCall,
     );
     expect(h.replyToComputerTask).toHaveBeenCalledWith(
       "owner-1",
@@ -212,7 +209,7 @@ describe("voice and cloud computer runtime intertwining", () => {
     const stopped = await dispatchAgentToolCall(
       "stop_computer_task",
       { task_id: "11111111-2222-3333-4444-555555555555" },
-      buildContext(),
+      currentCall,
     );
     expect(h.stopComputerTask).toHaveBeenCalledWith(
       "owner-1",
@@ -238,6 +235,37 @@ describe("voice and cloud computer runtime intertwining", () => {
       }),
     ).toBe(true);
   });
+
+  it.each(["check_computer_task", "reply_computer_task", "stop_computer_task"])(
+    "%s cannot reach a browser task from an earlier call, with or without its task ID",
+    async (tool) => {
+      const oldTask = {
+        id: "11111111-2222-3333-4444-555555555555",
+        agentId: "bot-alpha",
+        status: "needs_input",
+        goal: "Earlier caller's private task",
+        summary: "Private summary from an earlier call",
+        question: "Earlier caller's private question",
+      };
+      h.listComputerTasksForOwner.mockResolvedValue([oldTask]);
+      h.getComputerTaskForOwner.mockResolvedValue(oldTask);
+      h.replyToComputerTask.mockResolvedValue(oldTask);
+      h.stopComputerTask.mockResolvedValue(oldTask);
+      const currentCall = buildContext();
+      for (const args of [
+        { message: "Continue" },
+        { task_id: oldTask.id, message: "Continue" },
+      ]) {
+        const outcome = await dispatchAgentToolCall(tool, args, currentCall);
+        expect(outcome.result).toContain("started on this call");
+        expect(outcome.result).not.toContain(oldTask.summary);
+      }
+      expect(h.listComputerTasksForOwner).not.toHaveBeenCalled();
+      expect(h.getComputerTaskForOwner).not.toHaveBeenCalled();
+      expect(h.replyToComputerTask).not.toHaveBeenCalled();
+      expect(h.stopComputerTask).not.toHaveBeenCalled();
+    },
+  );
 
   it("fails closed when userId is missing and reports an unavailable Cloud Computer", async () => {
     const missingUser = await dispatchAgentToolCall(

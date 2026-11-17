@@ -19,7 +19,6 @@ import { enforceAgentToolResultTruth } from "./agent-tool-result-truth";
 import { AppError } from "./api-error";
 import {
   dispatchGetComputerTaskForOwner,
-  dispatchListComputerTasksForOwner,
   dispatchReplyComputerTaskForOwner,
   dispatchStartComputerTaskForOwner,
   dispatchStopComputerTaskForOwner,
@@ -74,6 +73,14 @@ export async function handleComputerToolCall(
     };
   }
 
+  const callTaskIds = context.computerTaskIds;
+  if (!callTaskIds) {
+    return {
+      toolCallId,
+      result: "COMPUTER_TASK_UNAVAILABLE: The browser action requires a live call session.",
+    };
+  }
+
   if (fn === "start_computer_task") {
     if (!agentId) {
       return {
@@ -102,6 +109,8 @@ export async function handleComputerToolCall(
         goal,
         ...(startUrl ? { startUrl } : {}),
       });
+      if (task.agentId !== agentId) throw AppError.notFound("Task not found.");
+      callTaskIds.add(task.id);
       return {
         toolCallId,
         result: [
@@ -129,7 +138,14 @@ export async function handleComputerToolCall(
       ? record.task_id.trim()
       : typeof record.taskId === "string" && record.taskId.trim()
         ? record.taskId.trim()
-        : "";
+        : null;
+  const targetTaskId = requestedTaskId ?? Array.from(callTaskIds).at(-1);
+  if (!targetTaskId || !callTaskIds.has(targetTaskId)) {
+    return {
+      toolCallId,
+      result: "COMPUTER_TASK_NONE: No Cloud Computer task started on this call matches the request.",
+    };
+  }
 
   if (fn === "reply_computer_task") {
     const message = typeof record.message === "string" ? record.message.trim() : "";
@@ -141,19 +157,6 @@ export async function handleComputerToolCall(
       };
     }
     try {
-      const targetTaskId =
-        requestedTaskId ||
-        ((await dispatchListComputerTasksForOwner(userId, agentId || undefined)).find(
-          (item) => item.status === "needs_input" || item.status === "running",
-        )?.id ??
-          "");
-      if (!targetTaskId) {
-        return {
-          toolCallId,
-          result:
-            "COMPUTER_TASK_NONE: No active Cloud Computer task waiting for a reply was found for this Bot.",
-        };
-      }
       const task = await dispatchReplyComputerTaskForOwner(userId, targetTaskId, message);
       return {
         toolCallId,
@@ -178,18 +181,6 @@ export async function handleComputerToolCall(
 
   if (fn === "stop_computer_task") {
     try {
-      const targetTaskId =
-        requestedTaskId ||
-        ((await dispatchListComputerTasksForOwner(userId, agentId || undefined)).find(
-          (item) => item.status === "running" || item.status === "needs_input",
-        )?.id ??
-          "");
-      if (!targetTaskId) {
-        return {
-          toolCallId,
-          result: "COMPUTER_TASK_NONE: No running Cloud Computer task was found to stop.",
-        };
-      }
       const task = await dispatchStopComputerTaskForOwner(userId, targetTaskId);
       return {
         toolCallId,
@@ -209,16 +200,7 @@ export async function handleComputerToolCall(
   }
 
   try {
-    const task = requestedTaskId
-      ? await dispatchGetComputerTaskForOwner(userId, requestedTaskId)
-      : ((await dispatchListComputerTasksForOwner(userId, agentId || undefined))[0] ?? null);
-    if (!task) {
-      return {
-        toolCallId,
-        result:
-          "COMPUTER_TASK_NONE: No running or recent Cloud Computer task was found for this Bot.",
-      };
-    }
+    const task = await dispatchGetComputerTaskForOwner(userId, targetTaskId);
     const parts = [
       `COMPUTER_TASK_STATUS: task_id=${task.id} status=${task.status}.`,
       `Goal: ${task.goal}`,

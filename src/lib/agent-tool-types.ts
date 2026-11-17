@@ -21,6 +21,8 @@ export type ToolCallContext = {
   agentVoiceName?: string;
   /** Cancels new live-call side effects when the durable call lease is lost. */
   abortSignal?: AbortSignal;
+  /** Task receipts issued to this live call. */
+  computerTaskIds?: Set<string>;
   drizzle: any;
   log: any;
 };

@@ -26,6 +26,7 @@ import { STRUCTURED_RUNTIME_MODELS } from "./structured-runtime-models";
 import {
   AGENT_TOOL_CATALOG,
   AGENT_TOOL_NAME_VALUES,
+  isAgentToolConfigurable,
   isAgentToolName,
   resolveAgentTools,
   type AgentToolName,
@@ -322,7 +323,7 @@ const DIRECT_AGENT_TOOL: ToolSchema = {
         items: {
           type: "object",
           properties: {
-            tool: { type: "string", enum: [...AGENT_TOOL_NAME_VALUES] },
+            tool: { type: "string", enum: AGENT_TOOL_NAME_VALUES.filter(isAgentToolConfigurable) },
             enable: { type: "boolean" },
             reason: { type: "string" },
           },
@@ -403,9 +404,9 @@ function buildSystemPrompt(input: PlanWorkspaceInput): string {
 
   const enabledTools = resolveAgentTools(agent.role ?? undefined, agent.enabledTools);
   const enabledSet = new Set(enabledTools);
-  const capabilityLines = AGENT_TOOL_CATALOG.map(
-    (t) => `- ${t.name} (${t.label})${enabledSet.has(t.name) ? ": ON" : ": off"}`,
-  ).join("\n");
+  const capabilityLines = AGENT_TOOL_CATALOG.filter((tool) => isAgentToolConfigurable(tool.name))
+    .map((tool) => `- ${tool.name} (${tool.label})${enabledSet.has(tool.name) ? ": ON" : ": off"}`)
+    .join("\n");
 
   const currentConfig = WORKSPACE_FIELD_KEYS.map((key) => {
     const spec = WORKSPACE_FIELDS[key];
@@ -451,7 +452,7 @@ Creative collaborator mode (chat-only, no extra tools required):
 Rules:
 - Never invent fields, tools, or recipients. Use only the allowlisted fields and listed capabilities.
 - For personality_vibe, value MUST be one of: warm, playful, authoritative.
-- For an explicit new operating rule, use operating_rule with one complete, concise instruction. This appends a rule without replacing existing rules. If the Account Holder asks to replace or edit an existing rule, explain that this chat cannot do that; direct them to Knowledge → Rules to edit the current rule. Do not propose an additive operating_rule as a replacement.
+- For explicit new operating rules, include one operating_rule proposal per distinct instruction. This appends rules without replacing existing rules. Describe only the changes included in the proposal cards. If the Account Holder asks to replace or edit an existing rule, explain that this chat cannot do that; direct them to Knowledge → Rules to edit the current rule. Do not propose an additive operating_rule as a replacement.
 - Approving transfer_phone turns on live transfer: callers who ask for a person are transferred to that number. Say so in that change's summary.
 - Never claim a proposal has been saved or an external action has happened. Saving and dispatch require separate approval.
 - Everything you propose is a PROPOSAL the Account Holder approves. Say so naturally ("I've drafted… approve it when ready").
@@ -556,16 +557,22 @@ export function normalizePlan(
 
   const changes: ProposedChange[] = [];
   const seenFields = new Set<WorkspaceFieldKey>();
+  const seenRules = new Set<string>();
   if (Array.isArray(raw.config_changes)) {
     for (const c of raw.config_changes) {
       if (!c || typeof c !== "object") continue;
       const field = (c as Record<string, unknown>).field;
       if (typeof field !== "string" || !Object.hasOwn(WORKSPACE_FIELDS, field)) continue;
       const key = field as WorkspaceFieldKey;
-      if (seenFields.has(key)) continue;
       const value = validateFieldValue(key, (c as Record<string, unknown>).value);
       if (value === null) continue;
-      seenFields.add(key);
+      if (key === "operating_rule") {
+        if (seenRules.has(value)) continue;
+        seenRules.add(value);
+      } else {
+        if (seenFields.has(key)) continue;
+        seenFields.add(key);
+      }
       changes.push({
         field: key,
         label: WORKSPACE_FIELDS[key].label,
@@ -584,7 +591,8 @@ export function normalizePlan(
       if (!t || typeof t !== "object") continue;
       const tool = (t as Record<string, unknown>).tool;
       const enable = (t as Record<string, unknown>).enable;
-      if (!isAgentToolName(tool) || typeof enable !== "boolean") continue;
+      if (!isAgentToolName(tool) || !isAgentToolConfigurable(tool) || typeof enable !== "boolean")
+        continue;
       if (seenTools.has(tool)) continue;
       seenTools.add(tool);
       const meta = AGENT_TOOL_CATALOG.find((m) => m.name === tool);

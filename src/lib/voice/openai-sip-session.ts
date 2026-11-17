@@ -1201,6 +1201,7 @@ function toolContext(input: {
   agentName: string;
   toolCallId: string;
   abortSignal?: AbortSignal;
+  computerTaskIds: Set<string>;
 }): ToolCallContext {
   const direction = callDirection(input.call);
   const call = {
@@ -1219,6 +1220,7 @@ function toolContext(input: {
     webhookAgentId: input.call.agentId,
     agentVoiceName: input.agentName,
     abortSignal: input.abortSignal,
+    computerTaskIds: input.computerTaskIds,
     drizzle,
     log,
   };
@@ -2002,6 +2004,7 @@ async function runRealtimeSession(
   let xaiFailedOver = false;
   let fallbackDrillTimer: ReturnType<typeof setTimeout> | null = null;
   let computerWatchTimer: ReturnType<typeof setInterval> | null = null;
+  const computerTaskIds = new Set<string>();
   const watchedComputerTasks = new Map<string, { status: string; question: string | null }>();
   const clearComputerWatchTimer = () => {
     if (computerWatchTimer) {
@@ -2292,7 +2295,8 @@ async function runRealtimeSession(
     if (toolName !== "start_computer_task" && toolName !== "reply_computer_task") return;
     const idMatch = /task_id=([0-9a-f-]{36})/i.exec(outputText);
     const statusMatch = /status=([a-z_]+)/i.exec(outputText);
-    if (!idMatch?.[1] || statusMatch?.[1] !== "running") return;
+    if (!idMatch?.[1] || !computerTaskIds.has(idMatch[1]) || statusMatch?.[1] !== "running")
+      return;
     watchedComputerTasks.set(idMatch[1], { status: "running", question: null });
     if (!computerWatchTimer) {
       computerWatchTimer = setInterval(() => void pollWatchedComputerTasks(), 2_500);
@@ -2460,6 +2464,7 @@ async function runRealtimeSession(
           agentName: runtime.agentName,
           toolCallId: call.callId,
           abortSignal: ownershipSignal,
+          computerTaskIds,
         }),
       );
       const outcome = await Promise.race([

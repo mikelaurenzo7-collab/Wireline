@@ -74,7 +74,7 @@ describe("reviewable Studio Build plans", () => {
           value: "Ask for a callback number.",
           summary: "Capture callbacks",
         },
-        { field: "operating_rule", value: "Duplicate field" },
+        { field: "operating_rule", value: "Ask for a callback number." },
         { field: "unknown_field", value: "Ignored" },
         { field: "constructor", value: "Ignored" },
       ],
@@ -105,6 +105,53 @@ describe("reviewable Studio Build plans", () => {
         actions: [{ kind: "unknown" }],
       }),
     ).toMatchObject({ changes: [], toolToggles: [], actions: [] });
+  });
+
+  it("keeps each distinct operating rule reviewable and deduplicates single-value fields", () => {
+    const rules = [
+      "Ask for the appliance model and ZIP.",
+      "Never promise same-day service.",
+      "Escalate requests outside warranty coverage.",
+    ];
+    const plan = normalizePlan({
+      reply: "Review these rules.",
+      config_changes: [
+        ...rules.map((value) => ({ field: "operating_rule", value })),
+        { field: "operating_rule", value: `  ${rules[0]}  ` },
+        { field: "first_message", value: "Welcome to Northwind Relay." },
+        { field: "first_message", value: "Discard the duplicate greeting." },
+      ],
+    });
+    expect(plan.changes.map((change) => change.value)).toEqual([
+      ...rules,
+      "Welcome to Northwind Relay.",
+    ]);
+  });
+
+  it("keeps unavailable actions out of the coach and approval cards", () => {
+    const { system } = buildWorkspaceStreamContext({
+      userMessage: "Enable automated callbacks.",
+      history: [],
+      agent: { enabledTools: ["schedule_callback", "send_email"] },
+      recentCalls: [],
+    });
+    expect(system).not.toContain("schedule_callback (");
+    expect(system).toContain("send_email (");
+    const plan = normalizePlan({
+      reply: "Review the proposal.",
+      tool_toggles: [
+        { tool: "schedule_callback", enable: true },
+        { tool: "route_to_business_unit", enable: true },
+        { tool: "send_email", enable: true },
+      ],
+      integration_jobs: [
+        { tool: "crm_search_contacts", label: "Search private CRM contacts", summary: "Look up" },
+        { tool: "square_send_invoice", label: "Send invoice", summary: "Collect payment" },
+        { tool: "crm_create_contact", label: "Draft contact", summary: "Save a new contact" },
+      ],
+    });
+    expect(plan.toolToggles.map((toggle) => toggle.tool)).toEqual(["send_email"]);
+    expect(plan.integrationJobs.map((job) => job.tool)).toEqual(["crm_create_contact"]);
   });
 
   it("canonicalizes boolean proposals to match the confirmed save receipt", () => {

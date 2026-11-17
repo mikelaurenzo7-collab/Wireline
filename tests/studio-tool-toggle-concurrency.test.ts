@@ -166,6 +166,13 @@ describe("reviewed tool proposal concurrency", () => {
     expect(h.writes).toBe(0);
   });
 
+  it("rejects enabling an unavailable action from a previously saved proposal", async () => {
+    await expect(toggle("schedule_callback", true)).rejects.toMatchObject({ status: 409 });
+    expect(h.writes).toBe(0);
+    h.tools = ["schedule_callback"];
+    expect(await toggle("schedule_callback", false)).toMatchObject({ enabledTools: [] });
+  });
+
   it("returns the saved receipt after a later card changes the same tool", async () => {
     expect(await toggle("send_email", true)).toMatchObject({ previouslySaved: false });
     expect(await toggle("send_email", false)).toMatchObject({ previouslySaved: false });

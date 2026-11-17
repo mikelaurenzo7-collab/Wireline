@@ -3,7 +3,6 @@ import { VOICE_WORKER_AUTH_HEADER } from "../voice/openai-sip-worker-dispatch";
 import { voiceWorkerServiceSecret } from "../voice/openai-sip-worker-config";
 import {
   getComputerTaskForOwner,
-  listComputerTasksForOwner,
   replyToComputerTask,
   startComputerTask,
   stopComputerTask,
@@ -118,22 +117,6 @@ export async function dispatchGetComputerTaskForOwner(
     throw AppError.notFound("Task not found.");
   }
   return data.task;
-}
-
-export async function dispatchListComputerTasksForOwner(
-  userId: string,
-  agentId?: string,
-): Promise<ComputerTaskView[]> {
-  if (!shouldProxyComputerToBackend()) {
-    return listComputerTasksForOwner(userId, agentId);
-  }
-  const query = agentId ? `?agentId=${encodeURIComponent(agentId)}` : "";
-  const data = await requestBackendComputer<{ tasks?: ComputerTaskView[] }>(
-    userId,
-    `/api/computer/tasks${query}`,
-    { method: "GET" },
-  );
-  return Array.isArray(data?.tasks) ? data.tasks : [];
 }
 
 export async function dispatchReplyComputerTaskForOwner(
