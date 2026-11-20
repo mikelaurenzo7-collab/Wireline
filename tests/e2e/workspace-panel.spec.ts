@@ -1469,10 +1469,8 @@ test.describe("wide screens", () => {
     await conversation(page, "Sales Bot").fill("Keep this while the computer opens.");
     await page.getByRole("button", { name: "Open Computer Panel" }).click();
     await page.getByRole("button", { name: "Close panel", exact: true }).click();
-    await page
-      .getByRole("navigation", { name: "Workspace view" })
-      .getByRole("button", { name: "Computer", exact: true })
-      .click();
+    await expect(page.getByRole("navigation", { name: "Workspace view" })).toHaveCount(0);
+    await page.getByRole("button", { name: "Open Computer Panel" }).click();
     await expect(panelTab(page, "Computer")).toHaveAttribute("aria-selected", "true");
     await expect(page.getByRole("button", { name: "Expand panel", exact: true })).toHaveAttribute(
       "aria-pressed",

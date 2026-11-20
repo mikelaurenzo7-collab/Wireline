@@ -104,7 +104,7 @@ export default function StudioTaskMessages({
                 {selected.status === "completed"
                   ? "Completed"
                   : selected.status === "blocked"
-                    ? "Needs your help"
+                    ? "Could not complete"
                     : "Task outcome"}
               </span>
               {selected.finishedAt ? (

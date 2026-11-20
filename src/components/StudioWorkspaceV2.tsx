@@ -1038,7 +1038,7 @@ function StudioWorkspaceContent() {
 
   return (
     <div className="wl-studio-workspace flex h-full min-h-0 flex-col overflow-hidden bg-background">
-      {(!splitWorkspace || !panelOpen) && !inspectorOpen ? (
+      {!splitWorkspace && !inspectorOpen ? (
         <nav className="wl-studio-surface-nav" aria-label="Workspace view">
           <button
             type="button"
