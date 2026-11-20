@@ -238,10 +238,26 @@ export async function sendMetaConversion(params: {
 
 export async function disconnectMeta(userId: string): Promise<void> {
   const { revokeCrmProviderTokens } = await import("./oauth-provider-revocation");
-  await revokeCrmProviderTokens(userId, "meta");
+  const result = await revokeCrmProviderTokens(userId, "meta");
+  if (result.attempted > 0 && result.revoked === 0) {
+    throw new Error("Meta authorization could not be revoked; try again.");
+  }
   await drizzle
     .update(schema.crmConnections)
-    .set({ active: false, updatedAt: new Date() })
+    .set({ active: false, accessToken: "", refreshToken: null, updatedAt: new Date() })
+    .where(
+      and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "meta")),
+    );
+}
+
+/**
+ * Remove a saved Meta credential after the owner explicitly chooses a local-only
+ * disconnect. Provider authorization may remain and must be managed in Meta.
+ */
+export async function disconnectMetaLocally(userId: string): Promise<void> {
+  await drizzle
+    .update(schema.crmConnections)
+    .set({ active: false, accessToken: "", refreshToken: null, updatedAt: new Date() })
     .where(
       and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "meta")),
     );

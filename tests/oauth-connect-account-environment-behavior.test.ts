@@ -17,6 +17,38 @@ async function attemptProviderExchange(userId: unknown, exchange: () => Promise<
 
 describe("integration OAuth account-environment fence", () => {
   it.each([
+    "Salesforce",
+    "HubSpot",
+    "Slack",
+    "X",
+    "Zoom",
+    "Apollo",
+    "Meta",
+    "Shopify",
+    "Square",
+    "microsoft_teams",
+    "microsoft_excel",
+    "Google Sheets",
+  ])("rejects new %s grants before provider or account work", async (provider) => {
+    liveActionGuard.mockReset();
+    await expect(assertOAuthProviderConnectAllowed("owner", provider)).rejects.toMatchObject({
+      status: 410,
+      code: "CONNECTION_RETIRED",
+    });
+    expect(liveActionGuard).not.toHaveBeenCalled();
+  });
+
+  it.each(["Google", "Microsoft", "Yahoo"])(
+    "preserves %s mail/calendar OAuth",
+    async (provider) => {
+      liveActionGuard.mockReset();
+      liveActionGuard.mockResolvedValueOnce(undefined);
+      await expect(assertOAuthProviderConnectAllowed("owner", provider)).resolves.toBe("owner");
+      expect(liveActionGuard).toHaveBeenCalledWith("owner", `${provider} OAuth connect`);
+    },
+  );
+
+  it.each([
     ["demo", 403, "NON_PRODUCTION_EXTERNAL_ACTION_BLOCKED"],
     ["test", 403, "NON_PRODUCTION_EXTERNAL_ACTION_BLOCKED"],
     ["missing", 503, "ACCOUNT_ENVIRONMENT_UNAVAILABLE"],

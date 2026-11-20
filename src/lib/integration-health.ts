@@ -153,17 +153,17 @@ export async function computeIntegrationHealth(userId: string): Promise<Integrat
 
   if (reconnect_hubspot) {
     reasons.push(
-      "HubSpot connection needs reconnect, CRM writeback is paused until you reconnect.",
+      "HubSpot is inactive. Manage the saved connection in Connections.",
     );
   }
   if (reconnect_salesforce) {
     reasons.push(
-      "Salesforce connection needs reconnect, CRM writeback is paused until you reconnect.",
+      "Salesforce is inactive. Manage the saved connection in Connections.",
     );
   }
   if (reconnect_google_sheets) {
     reasons.push(
-      "Google Sheets connection needs reconnect, call logging to Sheets is paused until you reconnect.",
+      "Google Sheets is inactive. Manage the saved connection in Connections.",
     );
   }
 

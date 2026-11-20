@@ -171,7 +171,11 @@ export async function revokeProviderGrant(conn: TokenBundle): Promise<boolean> {
           { method: "DELETE" },
           10_000,
         );
-        return r.ok || r.status === 400 || r.status === 401;
+        // Error responses (including 400/401) do not prove the authorization
+        // was revoked. Preserve the local credential so the owner can retry.
+        if (!r.ok) return false;
+        const body = (await r.json().catch(() => null)) as { success?: unknown } | null;
+        return body?.success === true;
       }
       case "x": {
         const id = process.env.X_CLIENT_ID;
@@ -234,9 +238,8 @@ export async function revokeProviderGrant(conn: TokenBundle): Promise<boolean> {
         // tenant webhook. Disconnect and GDPR purge must drop that
         // subscription or AgentMail keeps retrying a dead mailbox URL.
         if (!access) return false;
-        const { deleteAgentMailWebhooksForAccount, deleteWirelineAgentMailWebhooks } = await import(
-          "./agentmail-mail"
-        );
+        const { deleteAgentMailWebhooksForAccount, deleteWirelineAgentMailWebhooks } =
+          await import("./agentmail-mail");
         if (conn.accountId) {
           await deleteAgentMailWebhooksForAccount({ apiKey: access, accountId: conn.accountId });
         } else {

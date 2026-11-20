@@ -1,6 +1,6 @@
 import { drizzle, log, fetchWithTimeout } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or, isNull } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 import { LEGACY_WIRELINE_NAME } from "./brand";
@@ -171,7 +171,11 @@ async function getConnection(
     })
     .from(schema.crmConnections)
     .where(
-      and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, provider)),
+      and(
+        eq(schema.crmConnections.userId, userId),
+        eq(schema.crmConnections.provider, provider),
+        or(eq(schema.crmConnections.active, true), isNull(schema.crmConnections.active)),
+      ),
     )
     .limit(1);
   if (!conn) return null;
@@ -203,8 +207,7 @@ async function getAccessToken(userId: string, provider: MsGraphProvider): Promis
   if (expiringSoon && refresh) {
     try {
       const refreshed = await refreshGraphToken(refresh);
-      token = refreshed.access_token;
-      await drizzle
+      const updated = await drizzle
         .update(schema.crmConnections)
         .set({
           accessToken: encryptSecret(refreshed.access_token),
@@ -214,13 +217,26 @@ async function getAccessToken(userId: string, provider: MsGraphProvider): Promis
           expiresAt: new Date(Date.now() + (refreshed.expires_in || 3600) * 1000),
           updatedAt: new Date(),
         })
-        .where(eq(schema.crmConnections.id, conn.id));
+        .where(
+          and(
+            eq(schema.crmConnections.id, conn.id),
+            eq(schema.crmConnections.userId, userId),
+            eq(schema.crmConnections.provider, provider),
+            or(eq(schema.crmConnections.active, true), isNull(schema.crmConnections.active)),
+            eq(schema.crmConnections.accessToken, conn.accessToken),
+            eq(schema.crmConnections.refreshToken, conn.refreshToken!),
+          ),
+        )
+        .returning({ id: schema.crmConnections.id });
+      if (!updated.length) return null;
+      token = refreshed.access_token;
     } catch (err) {
       log.error("Microsoft Graph token refresh failed", {
         provider,
         error: getErrorMessage(err),
       });
-      // Fall through with the existing token — it may not be expired yet.
+      // A failed refresh cannot establish that the saved grant is still active.
+      return null;
     }
   }
   return token;
@@ -571,8 +587,8 @@ export async function disconnectMicrosoftGraph(
   userId: string,
   provider: MsGraphProvider,
 ): Promise<void> {
-  const { revokeCrmProviderTokens } = await import("./oauth-provider-revocation");
-  await revokeCrmProviderTokens(userId, provider);
+  // revokeSignInSessions affects the Microsoft account beyond this tool.
+  // Remove the tool's local credentials without revoking mail/calendar sessions.
   await drizzle
     .delete(schema.crmConnections)
     .where(

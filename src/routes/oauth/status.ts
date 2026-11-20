@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- OAuth provider responses include provider-specific extension fields. */
 import express from "express";
 import { AppError } from "../../lib/api-error";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { drizzle, log } from "../../lib/server-context";
 import * as schema from "../../db/schema";
 import { authenticateUser } from "../../middleware/auth";
@@ -50,6 +50,8 @@ router.get(
           updatedAt: schema.crmConnections.updatedAt,
           metadata: schema.crmConnections.metadata,
           active: schema.crmConnections.active,
+          // Return only existence, never the encrypted credential itself.
+          hasSavedGrant: sql<boolean>`(${schema.crmConnections.accessToken} <> '' OR coalesce(${schema.crmConnections.refreshToken}, '') <> '')`,
         })
         .from(schema.crmConnections)
         .where(eq(schema.crmConnections.userId, userId));
@@ -72,6 +74,22 @@ router.get(
       const sheetsConn = findBy("google_sheets");
 
       res.json({
+        saved_grants: Object.fromEntries(
+          [
+            "salesforce",
+            "hubspot",
+            "slack",
+            "x",
+            "zoom",
+            "apollo",
+            "meta",
+            "shopify",
+            "square",
+            "microsoft_teams",
+            "microsoft_excel",
+            "google_sheets",
+          ].map((provider) => [provider, findBy(provider)?.hasSavedGrant === true]),
+        ),
         salesforce: isLive(sfConn)
           ? {
               connected: true,

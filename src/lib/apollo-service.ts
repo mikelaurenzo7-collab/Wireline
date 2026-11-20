@@ -192,7 +192,7 @@ async function refreshApolloToken(refreshToken: string): Promise<{
  * within 60s of expiry. Returns null when the tenant has not
  * connected Apollo (callers fall back to APOLLO_API_KEY).
  */
-async function getApolloAccessToken(userId: string): Promise<string | null> {
+async function getApolloAccessToken(userId: string): Promise<string | null | false> {
   try {
     const [row] = await drizzle
       .select()
@@ -220,10 +220,10 @@ async function getApolloAccessToken(userId: string): Promise<string | null> {
 
     const refreshed = await refreshApolloToken(decryptSecret(row.refreshToken));
     const newAccess = encryptSecret(refreshed.access_token);
-    const newRefresh = encryptSecret(refreshed.refresh_token || row.refreshToken);
+    const newRefresh = refreshed.refresh_token ? encryptSecret(refreshed.refresh_token) : row.refreshToken;
     const newExpiresAt = new Date(now + refreshed.expires_in * 1000);
 
-    await drizzle
+    const updated = await drizzle
       .update(schema.crmConnections)
       .set({
         accessToken: newAccess,
@@ -231,15 +231,28 @@ async function getApolloAccessToken(userId: string): Promise<string | null> {
         expiresAt: newExpiresAt,
         updatedAt: new Date(),
       })
-      .where(eq(schema.crmConnections.id, row.id));
+      .where(
+        and(
+          eq(schema.crmConnections.id, row.id),
+          eq(schema.crmConnections.userId, userId),
+          eq(schema.crmConnections.provider, "apollo"),
+          eq(schema.crmConnections.active, true),
+          eq(schema.crmConnections.accessToken, row.accessToken),
+          eq(schema.crmConnections.refreshToken, row.refreshToken),
+        ),
+      )
+      .returning({ id: schema.crmConnections.id });
 
-    return refreshed.access_token;
+    // A disconnect or replacement that occurred while the provider request was
+    // in flight owns the row. Do not revive it or fall back to the platform key.
+    return updated.length ? refreshed.access_token : false;
   } catch (err) {
-    log.warn("Apollo token hydration failed; falling back to env key", {
+    log.warn("Apollo token hydration failed", {
       userId,
       error: getErrorMessage(err),
     });
-    return null;
+    // A database/provider failure cannot establish that a grant still exists.
+    return false;
   }
 }
 
@@ -254,6 +267,7 @@ async function getApolloAuth(userId?: string): Promise<ApolloAuth | null> {
   if (userId) {
     const token = await getApolloAccessToken(userId);
     if (token) return { header: { Authorization: `Bearer ${token}` }, source: "tenant" };
+    if (token === false) return null;
   }
   const apiKey = process.env.APOLLO_API_KEY;
   if (apiKey) return { header: { "x-api-key": apiKey }, source: "platform" };
@@ -378,11 +392,10 @@ function boundedProviderUrl(value: unknown): string | undefined {
 }
 
 export async function disconnectApollo(userId: string): Promise<void> {
-  const { revokeCrmProviderTokens } = await import("./oauth-provider-revocation");
-  await revokeCrmProviderTokens(userId, "apollo");
+  // Apollo has no supported provider revoke here; clear the local credential.
   await drizzle
     .update(schema.crmConnections)
-    .set({ active: false, updatedAt: new Date() })
+    .set({ active: false, accessToken: "", refreshToken: null, updatedAt: new Date() })
     .where(
       and(eq(schema.crmConnections.userId, userId), eq(schema.crmConnections.provider, "apollo")),
     );
