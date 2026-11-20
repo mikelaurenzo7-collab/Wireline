@@ -846,7 +846,7 @@ function terminalPatch(outcome: TerminalOutcome) {
 
 const FINAL_EVENTS: Record<TerminalOutcome["status"], CloudComputerEvent> = {
   completed: { kind: "result", text: "Finished the task" },
-  blocked: { kind: "result", text: "Needs you to finish" },
+  blocked: { kind: "result", text: "Could not complete" },
   stopped: { kind: "result", text: "Stopped" },
   failed: { kind: "error", text: "Could not finish" },
   interrupted: { kind: "error", text: "Browser task interrupted" },

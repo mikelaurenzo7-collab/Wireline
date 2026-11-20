@@ -192,9 +192,41 @@ afterEach(() => {
 });
 
 describe("report settings save continuity", () => {
+  it.each([
+    ["missing preferences", {}],
+    ["missing connections", { preferences }],
+    ["incomplete preferences", { ...payload(), preferences: { artifact_format: "docx" } }],
+    ["invalid schedule", payload({ scheduled_report_send_at_utc: "25:00" })],
+    ["invalid connections", { ...payload(), connections: { google_drive: "yes" } }],
+    ["different settings", payload()],
+    ["empty response", null],
+  ])("preserves a draft after an unconfirmed save: %s", async (_label, receipt) => {
+    saveResponses = [
+      () => Promise.resolve(response(receipt)),
+      () => Promise.resolve(response(payload({ artifact_format: "docx" }))),
+    ];
+    await settle();
+    control("Default format").props.onChange?.({ target: { value: "docx" } });
+    await settle();
+    button("Save Report Settings").props.onClick?.();
+    await settle();
+    expect(control("Default format").props.value).toBe("docx");
+    expect(text(tree)).not.toContain("Report preferences saved.");
+    expect(text(tree)).toContain("couldn't confirm");
+    expect(window.dispatchEvent).not.toHaveBeenCalled();
+    button("Save Report Settings").props.onClick?.();
+    await settle();
+    expect(posts()).toHaveLength(2);
+    expect(posts()[1][1].body).toBe(posts()[0][1].body);
+    expect(text(tree)).toContain("Report preferences saved.");
+  });
+
   it("locks submitted settings and duplicate saves, then displays the returned schedule", async () => {
     const pending = deferred();
     saveResponses = [() => pending.promise];
+    await settle();
+    control("Delivery time").props.onChange?.({ target: { value: "02:45" } });
+    control("Delivery day").props.onChange?.({ target: { value: "2" } });
     await settle();
     const changeFormat = control("Default format").props.onChange!;
     const changeTime = control("Delivery time").props.onChange!;
@@ -206,7 +238,7 @@ describe("report settings save continuity", () => {
     await settle();
     expect(posts()).toHaveLength(1);
     expect(control("Default format").props.value).toBe("pdf");
-    expect(control("Delivery time").props.value).toBe("13:00");
+    expect(control("Delivery time").props.value).toBe("02:45");
     expect(elements(tree).some((node) => node.type === "fieldset" && node.props.disabled)).toBe(
       true,
     );

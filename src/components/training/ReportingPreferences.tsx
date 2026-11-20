@@ -60,6 +60,47 @@ const FORMATS: Array<{ value: ArtifactFormat; label: string; detail: string }> =
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+/** Validate the full receipt before replacing any owner edits or saved state. */
+function readResponsePayload(value: unknown): ResponsePayload | null {
+  if (!isRecord(value) || !isRecord(value.preferences) || !isRecord(value.connections)) return null;
+  const p = value.preferences;
+  const formats = FORMATS.map((format) => format.value);
+  const validFormat = (format: unknown) => formats.some((value) => value === format);
+  const validDestination = (destination: unknown) =>
+    destination === null || destination === "google_drive" || destination === "onedrive";
+  if (
+    p.internal_record_enabled !== true ||
+    !["none", "google_sheets", "microsoft_excel", "both"].some(
+      (destination) => destination === p.spreadsheet_destination,
+    ) ||
+    (p.artifact_mode !== "off" && p.artifact_mode !== "manual") ||
+    !validFormat(p.artifact_format) ||
+    !validFormat(p.scheduled_report_format) ||
+    !validDestination(p.artifact_destination) ||
+    !validDestination(p.scheduled_report_destination) ||
+    !["off", "daily", "weekly"].some((frequency) => frequency === p.scheduled_report_frequency) ||
+    typeof p.scheduled_report_send_at_utc !== "string" ||
+    !/^([01]\d|2[0-3]):[0-5]\d$/.test(p.scheduled_report_send_at_utc) ||
+    !Number.isSafeInteger(p.scheduled_report_weekday) ||
+    Number(p.scheduled_report_weekday) < 0 ||
+    Number(p.scheduled_report_weekday) > 6 ||
+    !Number.isSafeInteger(p.scheduled_report_version) ||
+    Number(p.scheduled_report_version) < 0 ||
+    !["google_drive", "google_sheets", "onedrive", "microsoft_excel"].every(
+      (key) => typeof (value.connections as Record<string, unknown>)[key] === "boolean",
+    ) ||
+    (value.next_scheduled_report_at != null &&
+      (typeof value.next_scheduled_report_at !== "string" ||
+        !Number.isFinite(Date.parse(value.next_scheduled_report_at))))
+  )
+    return null;
+  return value as ResponsePayload;
+}
+
 function pad(value: number): string {
   return String(value).padStart(2, "0");
 }
@@ -127,9 +168,15 @@ export default function ReportingPreferences() {
     void (async () => {
       try {
         const response = await authFetch("/api/post-call-output-preferences");
-        const data = (await response.json()) as ResponsePayload & { error?: string };
-        if (!response.ok) throw new Error(data.error || "Could not load report settings.");
-        if (!data.preferences) throw new Error("Could not load report settings.");
+        const body: unknown = await response.json().catch(() => null);
+        if (!response.ok)
+          throw new Error(
+            isRecord(body) && typeof body.error === "string"
+              ? body.error
+              : "Could not load report settings.",
+          );
+        const data = readResponsePayload(body);
+        if (!data) throw new Error("Could not load report settings.");
         if (!active) return;
         setPreferences(data.preferences);
         setConnections(data.connections);
@@ -183,24 +230,40 @@ export default function ReportingPreferences() {
     setError(null);
     setMessage(null);
     const utc = localScheduleToUtc(localTime, localWeekday);
+    const submitted = {
+      spreadsheet_destination: preferences.spreadsheet_destination,
+      artifact_mode: preferences.artifact_mode,
+      artifact_format: preferences.artifact_format,
+      artifact_destination: preferences.artifact_destination,
+      scheduled_report_frequency: preferences.scheduled_report_frequency,
+      scheduled_report_format: preferences.scheduled_report_format,
+      scheduled_report_destination: preferences.scheduled_report_destination,
+      scheduled_report_send_at_utc: utc.time,
+      scheduled_report_weekday: utc.weekday,
+    };
     try {
       const response = await authFetch("/api/post-call-output-preferences", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          spreadsheet_destination: preferences.spreadsheet_destination,
-          artifact_mode: preferences.artifact_mode,
-          artifact_format: preferences.artifact_format,
-          artifact_destination: preferences.artifact_destination,
-          scheduled_report_frequency: preferences.scheduled_report_frequency,
-          scheduled_report_format: preferences.scheduled_report_format,
-          scheduled_report_destination: preferences.scheduled_report_destination,
-          scheduled_report_send_at_utc: utc.time,
-          scheduled_report_weekday: utc.weekday,
-        }),
+        body: JSON.stringify(submitted),
       });
-      const data = (await response.json()) as ResponsePayload & { error?: string };
-      if (!response.ok) throw new Error(data.error || "Could not save report settings.");
+      const body: unknown = await response.json().catch(() => null);
+      if (!response.ok)
+        throw new Error(
+          isRecord(body) && typeof body.error === "string"
+            ? body.error
+            : "Could not save report settings.",
+        );
+      const data = readResponsePayload(body);
+      if (
+        !data ||
+        !(Object.keys(submitted) as Array<keyof typeof submitted>).every(
+          (key) => data.preferences[key] === submitted[key],
+        )
+      )
+        throw new Error(
+          "We couldn't confirm the saved report settings. Your changes are still here. Check your settings before retrying.",
+        );
       setPreferences(data.preferences);
       setConnections(data.connections);
       setNextReportAt(data.next_scheduled_report_at || null);

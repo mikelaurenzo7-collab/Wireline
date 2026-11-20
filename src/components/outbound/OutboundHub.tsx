@@ -59,7 +59,6 @@ export default function OutboundHub({
                 titleTone="ui"
                 withHalo={false}
                 className="w-full max-w-lg"
-                actions={[{ label: "Call", onClick: () => setShowDial(true), primary: true }]}
               />
             </div>
             <div className="px-3 pb-4 sm:px-6">
