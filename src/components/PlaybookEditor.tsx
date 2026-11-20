@@ -7,6 +7,7 @@ import {
   PLAYBOOK_LIMITS,
   PLAYBOOK_MOMENTS,
   PLAYBOOK_NEXT_STEPS,
+  parseAgentPlaybook,
   readStoredAgentPlaybook,
   type AgentPlaybook,
   type PlaybookMomentId,
@@ -83,6 +84,13 @@ function summary(playbook: AgentPlaybook): string {
     playbook.alwaysMention.length || playbook.neverSay.length ? "must / never" : "",
   ].filter(Boolean);
   return parts.length ? parts.join(" · ") : "Not set";
+}
+
+function playbookSignature(playbook: AgentPlaybook): string {
+  return JSON.stringify({
+    ...playbook,
+    exactLines: PLAYBOOK_MOMENTS.map(({ id }) => playbook.exactLines[id] ?? ""),
+  });
 }
 
 /**
@@ -203,18 +211,36 @@ export default function PlaybookEditor({ agentId, compact }: Props) {
         },
       );
       const body = (await response.json().catch(() => null)) as {
-        playbook?: unknown;
+        success?: unknown;
+        playbook?: AgentPlaybook;
         error?: unknown;
       } | null;
       if (!response.ok)
         throw new Error(
           typeof body?.error === "string" ? body.error : "Your Playbook could not be saved.",
         );
-      const confirmed = readStoredAgentPlaybook(body?.playbook);
-      setSaved(confirmed);
-      setDraft(confirmed);
-      setAlwaysText(listToText(confirmed.alwaysMention));
-      setNeverText(listToText(confirmed.neverSay));
+      const receipt = body?.playbook;
+      const confirmed = parseAgentPlaybook(receipt);
+      const submitted = parseAgentPlaybook(current);
+      if (
+        body?.success !== true ||
+        receipt?.version !== 1 ||
+        !receipt.exactLines ||
+        typeof receipt.exactLines !== "object" ||
+        Array.isArray(receipt.exactLines) ||
+        !Array.isArray(receipt.situations) ||
+        !Array.isArray(receipt.alwaysMention) ||
+        !Array.isArray(receipt.neverSay) ||
+        !confirmed.ok ||
+        !submitted.ok ||
+        playbookSignature(confirmed.value) !== playbookSignature(submitted.value)
+      )
+        throw new Error("The save could not be confirmed. Your draft is preserved; try again.");
+      const savedPlaybook = confirmed.value;
+      setSaved(savedPlaybook);
+      setDraft(savedPlaybook);
+      setAlwaysText(listToText(savedPlaybook.alwaysMention));
+      setNeverText(listToText(savedPlaybook.neverSay));
       setNotice("Playbook saved. Your Bot uses it on the next call, text, or rehearsal.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Your Playbook could not be saved.");

@@ -124,6 +124,36 @@ function readSavedHours(profile: BusinessProfileBody | null | undefined): SavedH
   };
 }
 
+/** A read may use defaults; a save must confirm the settings that were submitted. */
+function confirmsSavedHours(
+  profile: BusinessProfileBody | null | undefined,
+  submitted: Required<BusinessProfileBody>,
+): boolean {
+  if (
+    !profile ||
+    profile.timezone !== submitted.timezone ||
+    profile.out_of_hours_message !== submitted.out_of_hours_message
+  )
+    return false;
+  const hours = profile.business_hours;
+  const expected = submitted.business_hours;
+  if (expected === null) return hours === null;
+  if (!hours || typeof hours !== "object" || Array.isArray(hours)) return false;
+  // PostgreSQL JSONB can reorder day keys, so compare the actual day fields.
+  return DAYS.every(({ key }) => {
+    const day = hours[key];
+    const wanted = expected[key];
+    return wanted === undefined
+      ? day === undefined
+      : Boolean(
+          day &&
+          day.open === wanted.open &&
+          day.close === wanted.close &&
+          day.closed === wanted.closed,
+        );
+  });
+}
+
 /** Before any hours are set, the stored zone is the UTC default; the owner's own zone is the likelier answer. */
 function startingTimeZone(saved: SavedHours): string {
   if (saved.hours || saved.timezone !== "UTC") return saved.timezone;
@@ -229,20 +259,22 @@ export default function BusinessHoursEditor({
     savingRef.current = true;
     setSaving(true);
     edited();
+    const submitted = {
+      business_hours: useHours ? businessHoursFromWeek(week) : null,
+      timezone,
+      out_of_hours_message: message.trim() || null,
+    };
     try {
       const response = await authFetch(
         `/api/agent-config/${encodeURIComponent(agentId)}/business`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            business_hours: useHours ? businessHoursFromWeek(week) : null,
-            timezone,
-            out_of_hours_message: message.trim() || null,
-          }),
+          body: JSON.stringify(submitted),
         },
       );
       const body = (await response.json().catch(() => null)) as {
+        success?: unknown;
         businessProfile?: BusinessProfileBody;
         error?: unknown;
       } | null;
@@ -253,6 +285,8 @@ export default function BusinessHoursEditor({
             : "Business hours could not be saved.",
         );
       }
+      if (body?.success !== true || !confirmsSavedHours(body.businessProfile, submitted))
+        throw new Error("The save could not be confirmed. Your draft is preserved; try again.");
       const confirmed = readSavedHours(body?.businessProfile);
       applySaved(confirmed);
       setNotice(
