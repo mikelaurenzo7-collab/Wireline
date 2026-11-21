@@ -8,13 +8,13 @@ const h = vi.hoisted(() => ({
   stateCursor: 0,
   refCursor: 0,
   fetch: vi.fn(),
+  completed: vi.fn(),
 }));
 vi.mock("react", async (original) => ({
   ...(await original<typeof import("react")>()),
   useState: (initial: unknown) => {
     const index = h.stateCursor++;
-    if (!(index in h.states))
-      h.states[index] = typeof initial === "function" ? initial() : initial;
+    if (!(index in h.states)) h.states[index] = typeof initial === "function" ? initial() : initial;
     return [
       h.states[index],
       (value: unknown) => {
@@ -52,7 +52,12 @@ function text(node: ReactNode): string {
 function render() {
   h.stateCursor = 0;
   h.refCursor = 0;
-  return OpenAILiveVoiceSandbox({ agentId: "bot-a", agentName: "Front Desk", compact: true });
+  return OpenAILiveVoiceSandbox({
+    agentId: "bot-a",
+    agentName: "Front Desk",
+    compact: true,
+    onTestCompleted: h.completed,
+  });
 }
 function click(label: string) {
   const button = elements(render()).find(
@@ -73,6 +78,7 @@ function statusText() {
 beforeEach(() => {
   h.states = [];
   h.refs = [];
+  h.completed.mockReset();
   h.fetch.mockReset().mockResolvedValue(new Response(JSON.stringify({ result: {} })));
 });
 afterEach(() => vi.unstubAllGlobals());
@@ -96,6 +102,7 @@ it("keeps pending microphone mute, Bot activity and error recovery aligned with 
     onmessage: null as ((event: { data: string }) => void) | null,
     onerror: null as (() => void) | null,
     close: vi.fn(),
+    send: vi.fn(),
   };
   vi.stubGlobal("navigator", { mediaDevices: { getUserMedia: () => microphone } });
   vi.stubGlobal("window", { clearTimeout: vi.fn() });
@@ -151,6 +158,27 @@ it("keeps pending microphone mute, Bot activity and error recovery aligned with 
   expect(statusText()).toContain("Microphone Muted");
   events.onmessage!({ data: JSON.stringify({ type: "response.done" }) });
   expect(statusText()).toContain("Checking Approved Knowledge");
+
+  function finish(status: string, output: unknown[]) {
+    events.onmessage!({
+      data: JSON.stringify({ type: "response.done", response: { status, output } }),
+    });
+  }
+  const spoken = [
+    {
+      type: "message",
+      role: "assistant",
+      content: [{ type: "output_audio", transcript: "We open at nine." }],
+    },
+  ];
+  finish("cancelled", spoken);
+  finish("incomplete", spoken);
+  finish("completed", [{ type: "function_call", name: "search_knowledge" }]);
+  finish("completed", [{ type: "message", role: "assistant", content: [] }]);
+  expect(h.completed).not.toHaveBeenCalled();
+  finish("completed", spoken);
+  finish("completed", spoken);
+  expect(h.completed).toHaveBeenCalledOnce();
 
   click("Unmute");
   expect(track.enabled).toBe(true);

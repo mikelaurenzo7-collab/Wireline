@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import { parseSseEvents } from "../hooks/useStreamingChat";
 import {
   readTypedRehearsal,
   saveTypedRehearsal,
@@ -49,21 +50,40 @@ function microphoneMessage(reason: unknown): string {
 
 function rehearsalReply(raw: string): string {
   let reply = "";
-  for (const block of raw.split("\n\n")) {
-    const data = block
-      .split("\n")
-      .filter((line) => line.startsWith("data:"))
-      .map((line) => line.slice(5).trim())
-      .join("");
-    if (!data) continue;
-    try {
-      const payload = JSON.parse(data) as { reply?: unknown };
-      if (typeof payload.reply === "string" && payload.reply.trim()) reply = payload.reply.trim();
-    } catch {
-      // Incomplete SSE blocks are ignored until a reply event arrives.
-    }
-  }
-  return reply;
+  let failed = false;
+  // A provisional reply can precede an error or a disconnected stream.
+  parseSseEvents(raw.split("\n"), (event, data) => {
+    if (event === "error") failed = true;
+    if (event === "done") reply = typeof data?.reply === "string" ? data.reply.trim() : "";
+  });
+  return failed ? "" : reply;
+}
+
+type VoiceResponse = {
+  status?: string;
+  output?: Array<{
+    type?: string;
+    role?: string;
+    content?: Array<{ transcript?: string; text?: string }>;
+  }>;
+};
+
+function completedAssistantReply(response?: VoiceResponse): boolean {
+  return (
+    response?.status === "completed" &&
+    Array.isArray(response.output) &&
+    response.output.some(
+      (item) =>
+        item?.type === "message" &&
+        item.role === "assistant" &&
+        Array.isArray(item.content) &&
+        item.content.some(
+          (part) =>
+            (typeof part?.transcript === "string" && part.transcript.trim()) ||
+            (typeof part?.text === "string" && part.text.trim()),
+        ),
+    )
+  );
 }
 
 // Signature and tenant checks belong to the server; the browser only requires
@@ -226,22 +246,29 @@ export default function OpenAILiveVoiceSandbox({
     });
   };
 
-  const appendAssistant = (text: string, channel: Line["channel"]) => {
+  const updateAssistant = (
+    text: string,
+    channel: Line["channel"],
+    itemId: unknown,
+    replace: boolean,
+  ) => {
     if (!text) return;
     const id =
-      assistantLineId.current || `assistant-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      typeof itemId === "string" && itemId
+        ? `assistant-${itemId}`
+        : assistantLineId.current || `assistant-${crypto.randomUUID()}`;
     assistantLineId.current = id;
-    upsertLine(id, "Bot", text, channel);
+    upsertLine(id, "Bot", text, channel, replace);
   };
 
-  const updateUserTranscript = (text: string, itemId?: unknown) => {
+  const updateUserTranscript = (text: string, itemId: unknown, replace: boolean) => {
     if (!text) return;
     const id =
       typeof itemId === "string" && itemId
         ? `user-${itemId}`
         : userLineId.current || `user-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     userLineId.current = id;
-    upsertLine(id, "You", text, "voice", true);
+    upsertLine(id, "You", text, "voice", replace);
   };
 
   const release = useCallback(() => {
@@ -346,8 +373,17 @@ export default function OpenAILiveVoiceSandbox({
         type === "response.output_text.delta") &&
       typeof event.delta === "string"
     ) {
-      appendAssistant(event.delta, type === "response.output_text.delta" ? "text" : "voice");
+      updateAssistant(
+        event.delta,
+        type === "response.output_text.delta" ? "text" : "voice",
+        event.item_id,
+        false,
+      );
     }
+    if (type === "response.output_audio_transcript.done" && typeof event.transcript === "string")
+      updateAssistant(event.transcript, "voice", event.item_id, true);
+    if (type === "response.output_text.done" && typeof event.text === "string")
+      updateAssistant(event.text, "text", event.item_id, true);
     if (
       type === "conversation.item.input_audio_transcription.completed" ||
       type === "conversation.item.input_audio_transcription.delta"
@@ -359,6 +395,7 @@ export default function OpenAILiveVoiceSandbox({
             ? event.delta
             : "",
         event.item_id,
+        typeof event.transcript === "string",
       );
     if (type === "input_audio_buffer.speech_started") updateActivity();
     if (type === "output_audio_buffer.started") {
@@ -373,7 +410,18 @@ export default function OpenAILiveVoiceSandbox({
       assistantLineId.current = null;
       userLineId.current = null;
       onAgentAudioEnd?.();
-      if (reportedStarted.current && !reportedCompleted.current) {
+      const response = event.response as VoiceResponse | undefined;
+      if (response?.status === "failed") {
+        fail(
+          "The Bot could not finish its voice reply. Start the rehearsal again or type a test below.",
+        );
+        return;
+      }
+      if (
+        reportedStarted.current &&
+        !reportedCompleted.current &&
+        completedAssistantReply(response)
+      ) {
         reportedCompleted.current = true;
         onTestCompleted?.();
       }

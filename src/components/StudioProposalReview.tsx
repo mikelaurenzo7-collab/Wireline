@@ -6,6 +6,7 @@ import OutboundDialDialog from "./OutboundDialDialog";
 import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
 import { SMS_LAUNCH_UI_ENABLED } from "../lib/product-copy";
+import { normalizeHandoffPhone } from "../lib/human-handoff-settings";
 
 export type StudioProposals = {
   changes?: unknown[];
@@ -93,7 +94,13 @@ function ReviewCard({
         payload.success === true &&
         (!persistedMessage || payload.savedProposalKey === item.key) &&
         (item.path === "apply-change"
-          ? payload.field === item.body.field && String(payload.value) === String(item.body.value)
+          ? payload.field === item.body.field &&
+            (["transfer_phone", "escalation_phone"].includes(String(item.body.field))
+              ? typeof payload.value === "string" &&
+                normalizeHandoffPhone(payload.value) !== null &&
+                normalizeHandoffPhone(payload.value) ===
+                  normalizeHandoffPhone(String(item.body.value))
+              : String(payload.value) === String(item.body.value))
           : payload.tool === item.body.tool &&
             payload.enable === item.body.enable &&
             (payload.previouslySaved === true ||

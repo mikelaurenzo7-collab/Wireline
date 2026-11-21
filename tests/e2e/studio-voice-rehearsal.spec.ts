@@ -214,6 +214,113 @@ test("compact voice reveals real transcript lines and keeps them after ending re
   await expect(transcript.locator('article[data-channel="voice"]')).toHaveCount(2);
 });
 
+test("live rehearsal keeps incremental words and applies corrections to their own turn", async ({
+  page,
+}) => {
+  await mockRehearsal(page);
+  await page.goto("/studio?agent=bot-front-desk&workroom=test");
+  await page.getByRole("button", { name: "Start Rehearsal", exact: true }).click();
+  await expect(page.getByText("Listening", { exact: true })).toBeVisible();
+  const transcript = page.locator('[aria-label="Rehearsal Transcript"]');
+  const emit = (event: Record<string, unknown>) =>
+    page.evaluate((value) => {
+      (
+        window as unknown as {
+          sendRehearsalEvent: (value: Record<string, unknown>) => void;
+        }
+      ).sendRehearsalEvent(value);
+    }, event);
+  const input = "conversation.item.input_audio_transcription.";
+  const output = "response.output_audio_transcript.";
+  await emit({ type: input + "delta", item_id: "caller", delta: "I meant " });
+  await emit({ type: input + "delta", item_id: "caller", delta: "Thursday." });
+  await expect(transcript.getByText("I meant Thursday.", { exact: true })).toBeVisible();
+  await emit({ type: input + "completed", item_id: "caller", transcript: "I meant Tuesday." });
+  await emit({ type: output + "delta", item_id: "first", delta: "I heard Thursday." });
+  await emit({ type: output + "delta", item_id: "second", delta: "What time?" });
+  await emit({ type: output + "done", item_id: "first", transcript: "I heard Tuesday." });
+  await expect(transcript.locator("article")).toHaveCount(3);
+  for (const text of ["I meant Tuesday.", "I heard Tuesday.", "What time?"]) {
+    await expect(transcript.getByText(text, { exact: true })).toBeVisible();
+  }
+  await expect(transcript).not.toContainText("Thursday");
+  await page.getByRole("button", { name: "End Rehearsal", exact: true }).click();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Speak With Front Desk" })).toBeVisible();
+  await expect(transcript).toHaveCount(0);
+});
+
+test("a failed voice reply releases the microphone and permits a fresh rehearsal", async ({
+  page,
+}) => {
+  const { sessions, stops } = await mockRehearsal(page);
+  await page.goto("/studio?agent=bot-front-desk&workroom=test");
+  const start = page.getByRole("button", { name: "Start Rehearsal", exact: true });
+  await start.click();
+  await expect(page.getByText("Listening", { exact: true })).toBeVisible();
+  await page.evaluate(() => {
+    (
+      window as unknown as { sendRehearsalEvent: (value: Record<string, unknown>) => void }
+    ).sendRehearsalEvent({
+      type: "response.done",
+      response: { status: "failed", output: [] },
+    });
+  });
+  await expect(page.getByText("Live Voice Interrupted", { exact: true })).toBeVisible();
+  await expect.poll(() => stops).toEqual(["token-1"]);
+  expect((await microphoneCount(page)).tracksStopped).toBe(1);
+  await start.click();
+  await expect(page.getByText("Listening", { exact: true })).toBeVisible();
+  expect(sessions).toEqual(["bot-front-desk", "bot-front-desk"]);
+});
+
+for (const ending of ["disconnect", "error", "empty completion"] as const) {
+  test(`a typed rehearsal retains the correction when a partial reply ends in ${ending}`, async ({
+    page,
+  }) => {
+    await mockRehearsal(page);
+    const question = "I meant Tuesday at noon. Is it booked?";
+    const partial = 'event: reply\ndata: {"reply":"Your visit is booked."}\n\n';
+    const finalReply = "I can take your request. Your visit still needs confirmation.";
+    const history: unknown[] = [];
+    await page.route("**/api/agents/bot-front-desk/test/stream", (route) => {
+      history.push(route.request().postDataJSON().history);
+      const failure =
+        ending === "error"
+          ? 'event: error\ndata: {"message":"Interrupted."}\n\n'
+          : ending === "empty completion"
+            ? 'event: done\ndata: {"reply":""}\n\n'
+            : "";
+      return route.fulfill({
+        contentType: "text/event-stream",
+        body:
+          history.length === 1
+            ? partial + failure
+            : partial +
+              "event: done\r\ndata: " +
+              JSON.stringify({ reply: finalReply }) +
+              "\r\n\r\n",
+      });
+    });
+    await page.goto("/studio?agent=bot-front-desk&workroom=test");
+    const draft = page.getByRole("textbox", { name: "Type a test", exact: true });
+    const send = page.getByRole("button", { name: "Send test", exact: true });
+    await draft.fill(question);
+    await send.click();
+    await expect(draft).toHaveValue(question);
+    await expect(page.getByText("Text Test Could Not Finish", { exact: true })).toBeVisible();
+    await expect(page.getByText("Your visit is booked.", { exact: true })).toHaveCount(0);
+    await send.click();
+    await expect(page.getByText(finalReply, { exact: true })).toBeVisible();
+    await page.reload();
+    const transcript = page.locator('[aria-label="Rehearsal Transcript"]');
+    await expect(transcript.locator("article")).toHaveCount(2);
+    await expect(transcript).toContainText(finalReply);
+    await expect(transcript).not.toContainText("Your visit is booked.");
+    expect(history).toEqual([[], []]);
+  });
+}
+
 test("a typed rehearsal clears a microphone warning and keeps a failed draft available", async ({
   page,
 }) => {
@@ -231,7 +338,7 @@ test("a typed rehearsal clears a microphone warning and keeps a failed draft ava
     } else {
       await route.fulfill({
         contentType: "text/event-stream",
-        body: 'data: {"reply":"We open at nine."}\n\n',
+        body: 'event: done\ndata: {"reply":"We open at nine."}\n\n',
       });
     }
   });
@@ -272,7 +379,7 @@ test("completed typed rehearsal turns survive reload on their Bot and can be cle
     histories.push(route.request().postDataJSON().history);
     await route.fulfill({
       contentType: "text/event-stream",
-      body: `data: ${JSON.stringify({ reply: "Diagnostic visits cost $89." })}\n\n`,
+      body: `event: done\ndata: ${JSON.stringify({ reply: "Diagnostic visits cost $89." })}\n\n`,
     });
   });
 

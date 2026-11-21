@@ -26,6 +26,7 @@ import { emitProductEventOnce } from "../lib/product-event-client";
 import { formatPhone } from "../lib/safe-number";
 import { isManualOperatorTask } from "../lib/operator-work-status";
 import { ownerWorkAge } from "../lib/owner-work-age";
+import { OCCUPIED_APPOINTMENT_STATUSES } from "../lib/native-calendar-policy";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
 import { StatusNotice } from "./molecules";
@@ -315,7 +316,7 @@ type ApprovalTaskCardProps = {
   task: FollowUpTaskRow;
   onResolved: () => void;
   onEditingChange: (editing: boolean) => void;
-  onConflict: () => void;
+  onConflict: (reason?: "changed" | "unconfirmed") => void;
   reviewConflict?: ApprovalReviewConflict;
   onReviewReset: () => void;
   preservedDraft?: ApprovalMessageDraft;
@@ -326,6 +327,7 @@ type ApprovalReviewConflict = {
   sourceTask: FollowUpTaskRow;
   requiredLoadGeneration: number;
   refreshed: boolean;
+  reason?: "changed" | "unconfirmed";
 };
 
 type ApprovalMessageDraft = {
@@ -357,7 +359,11 @@ function isReviewConflict(status: number, code: unknown): boolean {
   );
 }
 
-function reviewConflictMessage(editing: boolean): string {
+function reviewConflictMessage(editing: boolean, reason?: "changed" | "unconfirmed"): string {
+  if (reason === "unconfirmed")
+    return editing
+      ? "Action status could not be confirmed. Your draft is kept. Check the actual result, then review the refreshed details before trying again."
+      : "Action status could not be confirmed. Check the actual result, then review the refreshed details before trying again.";
   return editing
     ? "This action changed. Your draft is kept. Cancel it, review the refreshed details, then edit again."
     : "This action changed. Review the refreshed details before approving.";
@@ -385,6 +391,7 @@ function ApprovalTaskCard({
   const manualTask = manualHandoff || isManualOperatorTask(rawTaskType(task));
   const { success: toastSuccess } = useToast();
   const [busy, setBusy] = useState(false);
+  const decisionPending = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(preservedDraft !== undefined);
   const [editNotes, setEditNotes] = useState(preservedDraft?.notes ?? task.description ?? "");
@@ -430,6 +437,11 @@ function ApprovalTaskCard({
   const refreshedReviewReady = Boolean(
     reviewConflict?.refreshed && reviewConflict.sourceTask !== task,
   );
+  const decisionError =
+    error ??
+    (reviewConflict?.reason === "unconfirmed"
+      ? reviewConflictMessage(editing, "unconfirmed")
+      : null);
   const hasMoreDetails =
     !editing &&
     evidence &&
@@ -484,13 +496,16 @@ function ApprovalTaskCard({
   }
 
   async function approve() {
+    if (decisionPending.current) return;
     if (reviewConflict) {
-      setError(reviewConflictMessage(editing));
+      setError(reviewConflictMessage(editing, reviewConflict.reason));
       return;
     }
+    decisionPending.current = true;
     setBusy(true);
     setError(null);
     let reviewedPayload = savedPayload;
+    let awaitingReceipt = false;
     try {
       if (canEditMessage && editing) {
         if (recipient !== draftRef.current.expectedTo) {
@@ -522,6 +537,7 @@ function ApprovalTaskCard({
           }
         }
         const nextDescription = editNotes.trim();
+        awaitingReceipt = true;
         const patch = await authFetch(`/api/Assistants/tasks/${task.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -536,14 +552,17 @@ function ApprovalTaskCard({
             expected_description: draftRef.current.expectedDescription,
           }),
         });
+        const failure = await patch.json().catch(() => null);
         if (!patch.ok) {
-          const failure = await patch.json().catch(() => ({}));
+          if (patch.status < 500 && patch.status !== 408) awaitingReceipt = false;
           if (isReviewConflict(patch.status, failure?.code)) {
             onConflict();
             throw new Error(reviewConflictMessage(editing));
           }
           throw new Error(failure?.error || "Could not save edits before approval.");
         }
+        if (failure?.success !== true) throw new Error("Edit save was not confirmed.");
+        awaitingReceipt = false;
         // The saved edit becomes the next review snapshot. A failed provider
         // execution can then be retried without conflicting with our own save.
         draftRef.current = {
@@ -558,6 +577,7 @@ function ApprovalTaskCard({
           value: { ...savedTask, description: nextDescription, payload: nextPayload },
         });
       }
+      awaitingReceipt = true;
       const response = await authFetch(`/api/Assistants/tasks/${task.id}/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -576,8 +596,9 @@ function ApprovalTaskCard({
             canEditMessage && editing ? draftRef.current.expectedPriority : (task.priority ?? null),
         }),
       });
-      const body = await response.json().catch(() => ({}));
+      const body = await response.json().catch(() => null);
       if (!response.ok) {
+        if (response.status < 500 && response.status !== 408) awaitingReceipt = false;
         if (isReviewConflict(response.status, body?.code)) {
           onConflict();
           throw new Error(reviewConflictMessage(editing));
@@ -586,6 +607,13 @@ function ApprovalTaskCard({
           body?.error || (manualTask ? "Could not complete this task." : "Approval failed."),
         );
       }
+      if (
+        body?.success !== true ||
+        (body.calendar_status !== undefined &&
+          !OCCUPIED_APPOINTMENT_STATUSES.includes(body.calendar_status))
+      )
+        throw new Error("Approval was not confirmed.");
+      awaitingReceipt = false;
       if (!manualTask) {
         emitProductEventOnce({
           event: "first_next_action_approved",
@@ -596,21 +624,29 @@ function ApprovalTaskCard({
       toastSuccess(approvalResultMessage(savedTask, recipient, manualTask, body?.calendar_status));
       onResolved();
     } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : manualTask
-            ? "Could not complete this task."
-            : "Approval failed.",
-      );
+      if (awaitingReceipt) {
+        onConflict("unconfirmed");
+        setError(reviewConflictMessage(editing, "unconfirmed"));
+      } else
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : manualTask
+              ? "Could not complete this task."
+              : "Approval failed.",
+        );
     } finally {
+      decisionPending.current = false;
       setBusy(false);
     }
   }
 
   async function reject() {
+    if (decisionPending.current || reviewConflict?.reason === "unconfirmed") return;
+    decisionPending.current = true;
     setBusy(true);
     setError(null);
+    let awaitingReceipt = true;
     try {
       const response = manualHandoff
         ? await authFetch(`/api/Assistants/tasks/${task.id}/dismiss-handoff`, { method: "POST" })
@@ -622,23 +658,31 @@ function ApprovalTaskCard({
               resolution_notes: "Rejected from Approval Inbox",
             }),
           });
+      const failure = await response.json().catch(() => null);
       if (!response.ok) {
-        const failure = await response.json().catch(() => ({}));
+        if (response.status < 500 && response.status !== 408) awaitingReceipt = false;
         throw new Error(
           failure?.error ||
             (manualHandoff ? "Could not dismiss this handoff." : "Could not reject this action."),
         );
       }
+      if (failure?.success !== true) throw new Error("Decision was not confirmed.");
+      awaitingReceipt = false;
       onResolved();
     } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : manualHandoff
-            ? "Could not dismiss this handoff."
-            : "Reject failed.",
-      );
+      if (awaitingReceipt) {
+        onConflict("unconfirmed");
+        setError(reviewConflictMessage(editing, "unconfirmed"));
+      } else
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : manualHandoff
+              ? "Could not dismiss this handoff."
+              : "Reject failed.",
+        );
     } finally {
+      decisionPending.current = false;
       setBusy(false);
     }
   }
@@ -771,10 +815,10 @@ function ApprovalTaskCard({
             </details>
           </div>
         ) : null}
-        {error ? (
+        {decisionError ? (
           <p role="alert" className="mt-3 flex items-start gap-1.5 text-xs text-destructive">
             <AlertTriangle className="mt-0.5 shrink-0" size={12} aria-hidden="true" />
-            {error}
+            {decisionError}
           </p>
         ) : null}
         <div className="mt-3 flex flex-wrap gap-2">
@@ -805,7 +849,9 @@ function ApprovalTaskCard({
               <Check className="size-3.5" aria-hidden="true" />
             )}
             {reviewConflict && !canEditMessage
-              ? "Review changes"
+              ? reviewConflict.reason === "unconfirmed"
+                ? "Review status"
+                : "Review changes"
               : manualTask
                 ? "I handled this"
                 : "Approve"}
@@ -825,7 +871,7 @@ function ApprovalTaskCard({
             type="button"
             size="sm"
             variant="ghost"
-            disabled={busy}
+            disabled={busy || reviewConflict?.reason === "unconfirmed"}
             onClick={() => void reject()}
           >
             {manualHandoff ? "Dismiss" : "Reject"}
@@ -1149,7 +1195,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
                 task={task}
                 onResolved={() => resolveTask(task.id)}
                 onEditingChange={(editing) => setTaskEditing(task.id, editing)}
-                onConflict={() => {
+                onConflict={(reason = "changed") => {
                   const requiredLoadGeneration = loadGenerationRef.current + 1;
                   setReviewConflicts((current) => ({
                     ...current,
@@ -1157,6 +1203,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
                       sourceTask: task,
                       requiredLoadGeneration,
                       refreshed: false,
+                      reason,
                     },
                   }));
                   void load(true, true);

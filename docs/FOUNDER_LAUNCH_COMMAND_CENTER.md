@@ -49,15 +49,16 @@ Operational rules:
 
 A release is current only when evidence is collected against the exact `main` commit being promoted or already serving production.
 
-For every release, verify rather than copy forward:
+For every release, choose the risk class and required exact-head checks in
+[Contributing](../CONTRIBUTING.md). An isolated UI/copy change uses targeted tests
+and `npm run verify`; shared runtime, routes, providers, auth, billing, compliance
+or data access require `npm run verify:full`. Record rather than copy forward:
 
 - exact Git SHA and verified source state;
 - Render API, voice worker, and schedulers live on that exact source, with the intended production domain;
-- release-boundary and full non-E2E test results;
-- app, server, and audit-module TypeScript;
-- zero-warning ESLint;
-- production dependency security audit;
-- migrations and semantic schema-effects verification;
+- the required release-boundary and regression results for that change;
+- app, server and audit-module TypeScript, zero-warning ESLint and the production dependency audit when required by that risk class;
+- migrations and semantic schema-effects verification when schema or data access changes;
 - public health and authenticated voice-reliability evidence after promotion;
 - fresh production error/fatal logs after promotion.
 
@@ -98,7 +99,7 @@ domain. Activation, DNS, reconciliation, customer-domain guidance, and rollback 
 
 Reviewed service, coordination and requested callback calls for personal and business Bots have a separate runtime switch, `BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED`. They require paid voice, ownership of the line, captured recipient permission, a United States caller and recipient, quiet hours, funding and duplicate suppression. The hosted permission capture is the current supported evidence path. An existing client relationship or an unverified checkbox does not bypass these controls. MCP proposals remain private until the owner reviews and places the call. See [the current deployment policy](DEPLOYMENT_RUNBOOK.md#current-launch-posture); this description does not assert that a production switch is enabled.
 
-SMS and outbound calling are part of the launch offer. Present them as included and ready. The founder is completing carrier registration. That work is not a customer status. Marketing sends stay fail-closed until `FEDERAL_DNC_API_KEY` is configured. Completing registration does not by itself bypass recipient permission, quiet hours, funding, or ownership checks.
+SMS and reviewed outbound calling are product capabilities. Show the actual account's activation and delivery state; inclusion in an offer does not establish sender registration, eligibility or readiness. Marketing/campaign calling remains outside launch promotion and fail-closed until federal screening is configured. Completing registration does not bypass recipient permission, quiet hours, funding or ownership checks.
 
 Begin the first design partners with verified incoming calls, useful answers, request capture, approved email and supervised Computer work. Offer booking only where the configured calendar workflow has been proven; otherwise capture the appointment request for the owner.
 

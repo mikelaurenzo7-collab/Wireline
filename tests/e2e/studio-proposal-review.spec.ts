@@ -93,6 +93,53 @@ async function requestProposal(page: Page) {
   return review;
 }
 
+for (const field of ["transfer_phone", "escalation_phone"] as const) {
+  test(`a reviewed ${field} accepts only the matching normalized saved destination`, async ({
+    page,
+  }) => {
+    await mockWorkspace(page);
+    const change = {
+      field,
+      label: "Human handoff phone",
+      value: "+1 (512) 555-0100",
+      summary: "Use this destination.",
+    };
+    await page.route("**/api/agents/bot-front-desk/workspace/messages/stream", (route) =>
+      route.fulfill({
+        contentType: "text/event-stream",
+        body: `event: done\ndata: ${JSON.stringify({ reply: "Review this handoff destination.", changes: [change], toolToggles: [], actions: [], messageId: "42" })}\n\n`,
+      }),
+    );
+    const writes: unknown[] = [];
+    await page.route("**/api/agents/bot-front-desk/workspace/apply-change", (route) => {
+      writes.push(route.request().postDataJSON());
+      return route.fulfill({
+        json: {
+          success: true,
+          field,
+          value: writes.length === 1 ? "+15125550199" : "+15125550100",
+          savedProposalKey: "change-0",
+        },
+      });
+    });
+    await page.goto("/studio?agent=bot-front-desk");
+    await page
+      .getByRole("textbox", { name: "Message Front Desk", exact: true })
+      .fill("Update the handoff destination.");
+    await page.getByRole("button", { name: "Send", exact: true }).click();
+    const card = page.getByRole("region", { name: "Review Human handoff phone", exact: true });
+    await card.getByRole("button", { name: "Save Human handoff phone", exact: true }).click();
+    await expect(card.getByRole("alert")).toHaveText("Save was not confirmed. Try again.");
+    await expect(card.getByText(change.value, { exact: true })).toBeVisible();
+    await card.getByRole("button", { name: "Save Human handoff phone", exact: true }).click();
+    await expect(card.getByRole("status")).toHaveText("Saved");
+    expect(writes).toEqual([
+      { field, value: change.value, proposalMessageId: "42", proposalKey: "change-0" },
+      { field, value: change.value, proposalMessageId: "42", proposalKey: "change-0" },
+    ]);
+  });
+}
+
 test("Studio review cards and saved receipts survive a full page reload", async ({ page }) => {
   await mockWorkspace(page);
   let persisted = false;

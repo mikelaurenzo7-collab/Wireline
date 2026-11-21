@@ -52,6 +52,7 @@ import {
 
 import { loadOwnerMemories, changeOwnerMemory } from "../lib/owner-memory-store";
 import { ownerMemorySchema, ownerMemoryIdSchema } from "../lib/owner-memory";
+import { humanHandoffProblem, normalizeHandoffPhone } from "../lib/human-handoff-settings";
 
 const router = express.Router();
 type WorkspaceTx = Parameters<Parameters<typeof drizzle.transaction>[0]>[0];
@@ -703,12 +704,13 @@ router.post(
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
       ) {
         throw AppError.fromHttpStatus(400, "That doesn't look like a valid email.");
-      } else if (
-        spec.kind === "phone" &&
-        typeof value === "string" &&
-        !/^[+\d][\d\s()-]{5,19}$/.test(value)
-      ) {
-        throw AppError.fromHttpStatus(400, "That doesn't look like a valid phone number.");
+      } else if (spec.kind === "phone") {
+        // Validate the whole request before normalization; truncating it first
+        // can turn an invalid or extended number into a different destination.
+        const phone = normalizeHandoffPhone(rawValue);
+        if (!phone)
+          throw AppError.badRequest("Enter a complete phone number with its country code.");
+        value = phone;
       } else if (spec.kind === "url" && typeof value === "string" && !/^https?:\/\//.test(value)) {
         throw AppError.fromHttpStatus(400, "That doesn't look like a valid URL.");
       }
@@ -747,13 +749,44 @@ router.post(
           if (!spec.column) throw AppError.fromHttpStatus(400, "Unknown configuration field");
           // Approving a transfer number is the owner's opt-in to live transfer;
           // the call runtime only transfers when the handoff flag is on.
-          const handoff =
-            field === "transfer_phone"
-              ? { escalationHandoffEnabled: String(value).replace(/\D/g, "").length >= 10 }
-              : {};
+          const changesHandoff = field === "transfer_phone" || field === "escalation_phone";
+          let handoff: Partial<typeof schema.agents.$inferInsert> | null = null;
+          if (changesHandoff) {
+            const [current] = await tx
+              .select({
+                email: schema.agents.escalationEmail,
+                transfer: schema.agents.escalationHandoffEnabled,
+              })
+              .from(schema.agents)
+              .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+              .limit(1);
+            if (!current) throw AppError.fromHttpStatus(404, "Agent not found");
+            const lines = await tx
+              .select({ phone: schema.phoneNumbers.phoneNumber })
+              .from(schema.phoneNumbers)
+              .where(
+                and(
+                  eq(schema.phoneNumbers.agentId, agentId),
+                  eq(schema.phoneNumbers.userId, req.user.id),
+                ),
+              );
+            const transfer = field === "transfer_phone" ? true : (current.transfer ?? false);
+            const problem = humanHandoffProblem(
+              { phone: String(value), email: current.email || "", transfer, keywords: "" },
+              lines.map((line) => line.phone),
+            );
+            if (problem) throw AppError.badRequest(problem);
+            // Setup and reviewed chat must change the same effective phone.
+            // Keep the legacy field only as a read fallback for untouched Bots.
+            handoff = {
+              escalationPhone: String(value),
+              transferPhone: null,
+              ...(field === "transfer_phone" ? { escalationHandoffEnabled: true } : {}),
+            };
+          }
           await tx
             .update(schema.agents)
-            .set({ [spec.column]: value, ...handoff })
+            .set(handoff ?? { [spec.column]: value })
             .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)));
           if (field === "first_message") {
             // Retire the previous Studio override in the same transaction so

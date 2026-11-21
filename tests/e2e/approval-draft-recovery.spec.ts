@@ -1,5 +1,226 @@
 import { expect, test } from "@playwright/test";
 
+for (const status of ["Requested", "Scheduled", "Confirmed", "Rescheduled", "Cancelled"]) {
+  test(`a native Calendar approval reports its ${status} receipt`, async ({ page }) => {
+    let approvals = 0;
+    await page.route("**/api/**", (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (path === "/api/Assistants/tasks/appointment/approve") {
+        approvals++;
+        return route.fulfill({
+          json: { success: true, calendar_status: status, appointment_id: "appointment" },
+        });
+      }
+      if (path === "/api/Assistants/tasks") {
+        if (approvals && status !== "Cancelled") return route.fulfill({ json: { tasks: [] } });
+        return route.fulfill({
+          json: {
+            tasks: [
+              {
+                id: "appointment",
+                task_type: "schedule_calendar",
+                status: "pending",
+                description: "Review site visit",
+                payload: { event_name: "Site visit" },
+              },
+            ],
+          },
+        });
+      }
+      const json =
+        path === "/api/auth/session"
+          ? { user: { id: "calendar-owner", email: "owner@example.test" } }
+          : path === "/api/triage"
+            ? {
+                hot_leads: [],
+                compliance: [],
+                pending_tasks: [],
+                knowledge_gaps: [],
+                escalations: [],
+              }
+            : { agents: [], accounts: [], numbers: [], data: [] };
+      return route.fulfill({ json });
+    });
+    await page.goto("/approvals");
+    const card = page.getByRole("article").filter({ hasText: "Site visit" });
+    await card.getByRole("button", { name: "Approve", exact: true }).click();
+    if (status === "Cancelled") {
+      await expect(card.getByRole("alert")).toContainText("Action status could not be confirmed");
+      await expect(page.getByText("Booking confirmed.", { exact: true })).toHaveCount(0);
+    } else {
+      const message =
+        status === "Requested"
+          ? "Calendar request saved. Confirm it in Calendar."
+          : "Booking confirmed.";
+      await expect(page.getByText(message, { exact: true })).toBeVisible();
+      await expect(card).toHaveCount(0);
+    }
+    expect(approvals).toBe(1);
+  });
+}
+
+for (const stage of ["edit", "approve", "approve network"] as const) {
+  test(`an uncertain ${stage} result keeps the draft and requires fresh review without resending`, async ({
+    page,
+  }) => {
+    let payload = {
+      to: "customer@example.test",
+      subject: "Original subject",
+      body: "Original body",
+    };
+    let reads = 0;
+    let saves = 0;
+    let approvals = 0;
+    let recovered = false;
+    let resolved = false;
+    await page.route("**/api/**", async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      const method = route.request().method();
+      if (path === "/api/Assistants/tasks/email-draft" && method === "PATCH") {
+        saves += 1;
+        if (stage === "edit" && !recovered) return route.fulfill({ json: {} });
+        payload = route.request().postDataJSON().payload;
+        return route.fulfill({ json: { success: true } });
+      }
+      if (path === "/api/Assistants/tasks/email-draft/approve") {
+        approvals += 1;
+        if (!recovered)
+          return stage === "approve network"
+            ? route.abort("failed")
+            : route.fulfill({ json: { success: false } });
+        resolved = true;
+        return route.fulfill({ json: { success: true } });
+      }
+      if (path === "/api/Assistants/tasks") {
+        reads += 1;
+        return route.fulfill(
+          reads > 1 && !recovered
+            ? { status: 503, json: { error: "Refresh unavailable" } }
+            : {
+                json: {
+                  tasks: resolved
+                    ? []
+                    : [{ id: "email-draft", task_type: "send_email", status: "pending", payload }],
+                },
+              },
+        );
+      }
+      return route.fulfill({
+        json:
+          path === "/api/auth/session"
+            ? { user: { id: "approval-receipt-owner", email: "owner@example.test" } }
+            : path === "/api/triage"
+              ? {
+                  hot_leads: [],
+                  compliance: [],
+                  pending_tasks: [],
+                  knowledge_gaps: [],
+                  escalations: [],
+                }
+              : { agents: [], accounts: [], numbers: [], data: [] },
+      });
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/approvals");
+    const card = page.getByRole("article").filter({ hasText: "customer@example.test" });
+    await card.getByRole("button", { name: "Edit", exact: true }).click();
+    await card
+      .getByRole("textbox", { name: "Message", exact: true })
+      .fill("Keep this owner-edited reply.");
+    await card.getByRole("button", { name: "Approve", exact: true }).click();
+    await expect(card.getByRole("alert")).toContainText("Action status could not be confirmed");
+    await expect(page.getByText("Actions Unavailable", { exact: true })).toBeVisible();
+    await expect(card.getByRole("button", { name: "Approve", exact: true })).toBeDisabled();
+    await expect(card.getByRole("button", { name: "Reject", exact: true })).toBeDisabled();
+    await expect(card.getByRole("textbox", { name: "Message", exact: true })).toHaveValue(
+      "Keep this owner-edited reply.",
+    );
+    expect(approvals).toBe(stage === "edit" ? 0 : 1);
+    expect(saves).toBe(1);
+    await page.getByRole("button", { name: /^Compliance/ }).click();
+    await page.getByRole("button", { name: /^Pending Actions/ }).click();
+    await expect(card.getByRole("button", { name: "Approve", exact: true })).toBeDisabled();
+    recovered = true;
+    await page.getByRole("button", { name: "Retry", exact: true }).click();
+    await expect(page.getByText("Actions Unavailable", { exact: true })).toHaveCount(0);
+    await expect(card.getByRole("button", { name: "Approve", exact: true })).toBeDisabled();
+    expect(approvals).toBe(stage === "edit" ? 0 : 1);
+    await card.getByRole("button", { name: "Cancel", exact: true }).click();
+    await card.getByRole("button", { name: "Edit", exact: true }).click();
+    await expect(card.getByRole("textbox", { name: "Message", exact: true })).toHaveValue(
+      stage === "edit" ? "Original body" : "Keep this owner-edited reply.",
+    );
+    await card.getByRole("button", { name: "Approve", exact: true }).click();
+    await expect(card).toHaveCount(0);
+    expect(approvals).toBe(stage === "edit" ? 1 : 2);
+    expect(saves).toBe(2);
+  });
+}
+
+for (const kind of ["reject", "dismiss"] as const) {
+  test(`an uncertain ${kind} result remains visible until checked and reviewed`, async ({
+    page,
+  }) => {
+    let decisions = 0;
+    let resolved = false;
+    await page.route("**/api/**", (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (
+        (path === "/api/Assistants/tasks/manual-task" && route.request().method() === "PATCH") ||
+        path.endsWith("/manual-task/dismiss-handoff")
+      ) {
+        decisions += 1;
+        if (decisions === 1) return route.fulfill({ json: { success: false } });
+        resolved = true;
+        return route.fulfill({ json: { success: true } });
+      }
+      return route.fulfill({
+        json:
+          path === "/api/auth/session"
+            ? { user: { id: "approval-receipt-owner", email: "owner@example.test" } }
+            : path === "/api/Assistants/tasks"
+              ? {
+                  tasks: resolved
+                    ? []
+                    : [
+                        {
+                          id: "manual-task",
+                          task_type: kind === "dismiss" ? "human_handoff" : "follow_up",
+                          status: "pending",
+                          description: "Return the customer's call",
+                        },
+                      ],
+                }
+              : path === "/api/triage"
+                ? {
+                    hot_leads: [],
+                    compliance: [],
+                    pending_tasks: [],
+                    knowledge_gaps: [],
+                    escalations: [],
+                  }
+                : { agents: [], accounts: [], numbers: [], data: [] },
+      });
+    });
+    await page.goto("/approvals");
+    const card = page.getByRole("article").filter({ hasText: "Return the customer's call" });
+    const reject = card.getByRole("button", {
+      name: kind === "dismiss" ? "Dismiss" : "Reject",
+      exact: true,
+    });
+    await reject.click();
+    await expect(card.getByRole("alert")).toContainText("Action status could not be confirmed");
+    await expect(reject).toBeDisabled();
+    const review = card.getByRole("button", { name: "Review status", exact: true });
+    await expect(review).toBeEnabled();
+    await review.click();
+    expect(decisions).toBe(1);
+    await reject.click();
+    await expect(card).toHaveCount(0);
+    expect(decisions).toBe(2);
+  });
+}
+
 test("approvals show a short draft first and keep the full action available", async ({ page }) => {
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;

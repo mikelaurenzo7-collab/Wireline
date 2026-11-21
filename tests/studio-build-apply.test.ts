@@ -12,6 +12,8 @@ const h = vi.hoisted(() => ({
   lastAgentUpdate: null as Record<string, unknown> | null,
   metadata: null as Record<string, unknown> | null,
   messageOwner: "tenant" as string,
+  handoff: {} as Record<string, unknown>,
+  phones: [] as string[],
 }));
 vi.mock("express", () => ({
   default: {
@@ -73,28 +75,39 @@ vi.mock("../src/lib/server-context", async () => {
           },
           select: () => ({
             from: (table: Parameters<typeof getTableName>[0]) => ({
-              where: (statement: Parameters<typeof dialect.sqlToQuery>[0]) => ({
-                limit: () => {
-                  const query = dialect.sqlToQuery(statement);
-                  expect(query.params).toContain("tenant");
-                  const name = getTableName(table);
-                  const rows = name.includes("conversation_messages")
-                    ? h.messageOwner === "tenant" && query.params.includes(42n)
-                      ? [{ role: "agent", metadata: h.metadata }]
-                      : []
-                    : name.includes("personality")
-                      ? [{ content: h.personality }]
-                      : h.rules.includes(String(query.params.at(-1)))
-                        ? [{ id: 1n }]
-                        : [];
-                  return Object.assign(Promise.resolve(rows), {
+              where: (statement: Parameters<typeof dialect.sqlToQuery>[0]) => {
+                const query = dialect.sqlToQuery(statement);
+                expect(query.params).toContain("tenant");
+                const name = getTableName(table);
+                const rows = name.includes("conversation_messages")
+                  ? h.messageOwner === "tenant" && query.params.includes(42n)
+                    ? [{ role: "agent", metadata: h.metadata }]
+                    : []
+                  : name.includes("personality")
+                    ? [{ content: h.personality }]
+                    : name === "wireline_agents"
+                      ? [
+                          {
+                            phone: h.handoff.escalationPhone,
+                            legacyPhone: h.handoff.transferPhone,
+                            email: h.handoff.escalationEmail,
+                            transfer: h.handoff.escalationHandoffEnabled,
+                          },
+                        ]
+                      : name === "wireline_phone_numbers"
+                        ? h.phones.map((phone) => ({ phone }))
+                        : h.rules.includes(String(query.params.at(-1)))
+                          ? [{ id: 1n }]
+                          : [];
+                const result = () =>
+                  Object.assign(Promise.resolve(rows), {
                     for: async (mode: string) => {
                       expect(mode).toBe("update");
                       return rows;
                     },
                   });
-                },
-              }),
+                return Object.assign(Promise.resolve(rows), { limit: result });
+              },
             }),
           }),
           update: (table: Parameters<typeof getTableName>[0]) => ({
@@ -106,6 +119,7 @@ vi.mock("../src/lib/server-context", async () => {
                   return;
                 }
                 h.lastAgentUpdate = value;
+                Object.assign(h.handoff, value);
                 if (value.firstMessage) h.firstMessage = value.firstMessage;
               },
             }),
@@ -171,6 +185,13 @@ beforeEach(() => {
   h.lastAgentUpdate = null;
   h.metadata = null;
   h.messageOwner = "tenant";
+  h.handoff = {
+    escalationPhone: "+13125550120",
+    transferPhone: "+13125550121",
+    escalationEmail: "owner@example.test",
+    escalationHandoffEnabled: false,
+  };
+  h.phones = ["+15125550124"];
 });
 
 describe("explicit Studio proposal application", () => {
@@ -196,13 +217,43 @@ describe("explicit Studio proposal application", () => {
   });
 
   it("turns on live transfer only when the owner approves a transfer number", async () => {
-    await apply("transfer_phone", "+1 (512) 555-0100");
+    const receipt = await apply("transfer_phone", "+1 (512) 555-0100");
+    expect(receipt).toMatchObject({
+      success: true,
+      value: "+15125550100",
+    });
     expect(h.lastAgentUpdate).toEqual({
-      transferPhone: "+1 (512) 555-0100",
+      escalationPhone: "+15125550100",
+      transferPhone: null,
       escalationHandoffEnabled: true,
     });
+    expect(h.handoff.escalationPhone || h.handoff.transferPhone).toBe("+15125550100");
     await apply("escalation_phone", "+1 (512) 555-0101");
-    expect(h.lastAgentUpdate).toEqual({ escalationPhone: "+1 (512) 555-0101" });
+    expect(h.lastAgentUpdate).toEqual({ escalationPhone: "+15125550101", transferPhone: null });
+    expect(h.handoff.escalationPhone || h.handoff.transferPhone).toBe("+15125550101");
+    expect(h.handoff.escalationHandoffEnabled).toBe(true);
+  });
+
+  it.each([
+    ["transfer_phone", "(512) 555-0124"],
+    ["escalation_phone", "+15125550124"],
+    ["transfer_phone", "1234567"],
+    ["escalation_phone", "+13125550123 +13125550124"],
+    ["transfer_phone", "+13125550123 ext 8"],
+  ])("rejects an invalid or looping reviewed %s before saving", async (field, value) => {
+    await expect(apply(field, value)).rejects.toMatchObject({ status: 400 });
+    expect(h.lastAgentUpdate).toBeNull();
+    expect(h.metadata?.savedProposalKeys).toEqual([]);
+  });
+
+  it("a notification destination does not silently turn on live transfers", async () => {
+    await apply("escalation_phone", "(312) 555-0123");
+    expect(h.handoff).toMatchObject({
+      escalationPhone: "+13125550123",
+      transferPhone: null,
+      escalationHandoffEnabled: false,
+      escalationEmail: "owner@example.test",
+    });
   });
 
   it("updates the effective delivery tone without erasing saved instructions", async () => {
