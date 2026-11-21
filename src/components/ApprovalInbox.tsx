@@ -1063,6 +1063,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
     bucket === "pending" || bucket === "compliance" ? tasksUnavailable : triageUnavailable;
   const bucketLoaded =
     bucket === "pending" || bucket === "compliance" ? tasksLoaded : triage !== null;
+  const unavailableSourceLoaded = tasksUnavailable ? tasksLoaded : triage !== null;
 
   function resolveTask(id: string) {
     // The mutation has already succeeded. Remove only that item immediately,
@@ -1152,7 +1153,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
             </ShadButton>
           }
         >
-          {bucketLoaded
+          {unavailableSourceLoaded
             ? "Last loaded items remain available. Try again to refresh the queues."
             : "Other queues are still available."}
         </StatusNotice>

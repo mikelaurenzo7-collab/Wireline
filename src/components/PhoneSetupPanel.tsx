@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronRight, MapPin, Phone, Plus } from "lucide-react";
+import { Check, ChevronDown, MapPin, Phone, Plus } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
 import { Button, EmptyState } from "./atoms";
@@ -772,11 +772,11 @@ export default function PhoneSetupPanel({
 
       <details className="group rounded-xl border border-border bg-card">
         <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">
-          <ChevronRight
-            className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90 motion-reduce:transition-none"
+          <span>Use an Existing Number</span>
+          <ChevronDown
+            className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180 motion-reduce:transition-none"
             aria-hidden="true"
           />
-          Use an Existing Number
         </summary>
         <div className="space-y-2 border-t border-border p-4 text-sm text-muted-foreground">
           <p>
@@ -802,11 +802,11 @@ export default function PhoneSetupPanel({
         }
       >
         <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">
-          <ChevronRight
-            className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90 motion-reduce:transition-none"
+          <span>Caller Identity</span>
+          <ChevronDown
+            className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180 motion-reduce:transition-none"
             aria-hidden="true"
           />
-          Caller Identity
         </summary>
         <div className="border-t border-border p-4">
           <CompanyIdentityPack />

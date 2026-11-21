@@ -141,6 +141,9 @@ describe("approval count availability", () => {
       await flush();
       const nodes = elements(render(() => ApprovalInbox({})));
       expect(nodes.filter((node) => node.type === "notice")).toHaveLength(1);
+      expect(textOf(nodes.find((node) => node.type === "notice"))).toBe(
+        "Other queues are still available.",
+      );
       const tabs = nodes.find((node) => node.type === "tabs")!.props.tabs!;
       const pending = tabs.find((tab) => tab.id === "pending")!;
       const hot = tabs.find((tab) => tab.id === "hot_leads")!;
