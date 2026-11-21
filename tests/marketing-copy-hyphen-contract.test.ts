@@ -101,12 +101,12 @@ describe("marketing copy punctuation and retired-positioning contract", () => {
     }
   });
 
-  it("keeps the brand spine and product family explicit without compound hyphens", () => {
+  it("keeps the brand and current capabilities explicit without compound hyphens", () => {
     expect(HOME_TITLE).toBe("BotBound | Your next hire is a bot.");
     expect(HOME_DESCRIPTION).toBe(
       "Your next hire is a bot. Inbound and outbound calls, SMS, email, and computer tasks for small businesses.",
     );
-    expect(read("src/lib/bot-product.ts")).toContain('name: "Phone Bot"');
+    expect(read("src/lib/bot-product.ts")).toContain('name: "BotBound"');
     expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain("The Bot Gets:");
     expect(read("src/pages/Compare.tsx")).toContain("feature by feature");
   });

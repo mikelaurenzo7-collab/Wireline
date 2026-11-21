@@ -75,12 +75,18 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
     /supportingLine:\s*"CALL · TEXT · EMAIL · COMPUTER"/,
     "shared model must keep launch capabilities explicit in canonical order",
   );
-  for (const productType of ["Phone Bot", "Conversation Bot", "Human Bot"])
+  mustExclude(
+    "src/lib/bot-product.ts",
+    botProduct,
+    /BOT_PRODUCT_TYPES|BotProductTypeKey/,
+    "role starters must not restore a separate product taxonomy",
+  );
+  for (const role of ["Front Desk", "Sales Rep", "Personal Assistant"])
     mustInclude(
       "src/lib/bot-product.ts",
       botProduct,
-      new RegExp(`name:\\s*"${productType}"`),
-      `shared model must expose ${productType}`,
+      new RegExp(`name:\\s*"${role}"`),
+      `shared model must preserve the ${role} role starter`,
     );
   mustInclude(
     "src/lib/bot-product.ts",

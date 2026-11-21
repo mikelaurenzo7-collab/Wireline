@@ -1,11 +1,9 @@
 # Founder Launch Command Center
 
-Updated: 2026-10-23
-
 Status: **Active owner go/no-go runbook**  
-Primary authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`
+Primary authorities: `docs/ONE-AGENT-STRATEGY.md`, `docs/USAGE_BILLING.md` and `docs/DEPLOYMENT_RUNBOOK.md`.
 
-> Current launch boundary: lead with voice Bots with a computer, phone number, and email address. Start with one focused Bot and a verified incoming call workflow. Accounts may prepare a draft before activation; Personal is paid, and provider-backed rehearsal, live channels, and Computer remain subject to their current entitlement and allowance checks. Email requires completed setup and activation proof. SMS and campaign calling stay out of customer discovery. Reviewed personal and specific business service calls remain visible with the eligibility controls in [the Deployment Runbook](DEPLOYMENT_RUNBOOK.md#current-launch-posture). Personal branding does not exempt the actual call from those rules. Telegram and WhatsApp are not launch features until their product integration and delivery are proven. [P0 Billing Ops](P0_BILLING_OPS_NOTE.md) and the catalog govern package limits and availability.
+> Current launch boundary: lead with a Bot that can handle calls, SMS, email and supervised browser work. Start customer acceptance with one focused Bot and a verified incoming call workflow. Accounts may prepare a draft before activation; paid work and provider-backed rehearsal retain their entitlement, allowance and readiness checks. Displaying SMS does not establish carrier approval or recipient permission. Campaign calling remains outside launch promotion. Reviewed calls retain the eligibility controls in [the Deployment Runbook](DEPLOYMENT_RUNBOOK.md#current-launch-posture). Telegram and WhatsApp are not launch features until delivery is proven. [Usage Billing](USAGE_BILLING.md) and the usage catalog govern current enrollment; historical package limits remain account-specific.
 
 This file is deliberately short and state-light. Historical launch audits belong in Git history and `docs/AUDIT_INDEX.md`; provider balances, deployment SHAs, test totals, and temporary incident findings do **not** belong here as permanent operating truth.
 
@@ -14,9 +12,9 @@ This file is deliberately short and state-light. Historical launch audits belong
 When documents disagree, use this order:
 
 1. running code, production configuration, and current provider state;
-2. `src/lib/plan-catalog.ts` for plan economics and entitlements;
+2. `src/lib/usage-billing-catalog.ts` and `docs/USAGE_BILLING.md` for current economics; `src/lib/plan-catalog.ts` for plan compatibility and entitlements;
 3. `docs/CUSTOMER_TERMINOLOGY.md` for customer-facing nouns;
-4. `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md` for positioning, creative, proof, and pre-customer launch posture;
+4. `docs/ONE-AGENT-STRATEGY.md` for product focus, `docs/design/master-plan.md` for the active queue, and current creative ownership in `brand-work/CURRENT-ASSET-INDEX.md`;
 5. `docs/DEPLOYMENT_RUNBOOK.md` and vendor-specific runbooks for release operations;
 6. this command center for the founder checklist.
 
@@ -29,7 +27,7 @@ role; a use case never creates a separate account mode, package, or onboarding
 branch.
 
 - Customer-facing copy uses **Bot**, **Phone Bot**, or a concrete role.
-- Current channel packages include one Bot. Higher capacity increases usage allowances, not Bot count; new extra Bot sales remain deferred.
+- Start with one focused Bot. Shared Work has no per-Bot charge; included identity capacity, usage and execution limits remain finite. Retained channel-package subscriptions keep their existing Bot limits. Never apply an old one-Bot package limit to every account.
 - Technical APIs, routes, events, database fields, and legacy compatibility IDs may keep `agent`, `personal`, or `business` internally.
 
 Do not use `AI employee` as the launch noun. Do not pair `AI` with `agent` in customer-facing copy.

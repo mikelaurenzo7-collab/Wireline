@@ -1,4 +1,4 @@
-import { BOT_BRAND, BOT_PRODUCT_TYPES } from "./bot-product";
+import { BOT_BRAND } from "./bot-product";
 
 /** SMS and outbound calling are part of the product. Carrier setup stays with the founder. */
 export const SMS_LAUNCH_UI_ENABLED: boolean = true;
@@ -12,14 +12,12 @@ export const BRAND_SYSTEM = {
   productNoun: "Bot",
   buyingNoun: "Bot",
   defaultRole: "Your Bot",
-  productTypes: BOT_PRODUCT_TYPES,
   toneRules: [
     "Lead with the job or outcome before AI mechanics.",
     "Lead with Voice Bots with a computer, phone number, and email address. Call, Email, and Computer are the compact capability proof.",
     "Do not stack BotBound with Phone Bot or Voice Bot as a compound noun. The brand already contains Bot. Say BotBound, or say Phone Bot, not both.",
     "Treat workspace architecture as product proof, never as a marketing headline.",
     "Use Bot as the customer-facing object while keeping agent as the technical domain.",
-    "Use Phone Bot, Conversation Bot, and Human Bot as configuration lenses, never separate products or workspaces.",
     "Treat employee roles as starting templates, not product categories or permanent limits.",
     "Promote calls, texts, outbound calling, email, and computer tasks. SMS and outbound calling are included. Recipient permission still applies.",
     "Let customers train the playbook, channels, knowledge, tools, guardrails, approvals, and handoffs.",

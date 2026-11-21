@@ -1,6 +1,6 @@
 # BotBound Documentation
 
-BotBound's public story leads with capabilities, outcomes, and a clear signup action. It does not require a setup sequence. Inside the product, customers create a Bot, set it up, and rehearse privately before activating live work. Technical surface names such as Create, Training, Connections, Phone, Inbox, and Studio describe implementation ownership. Current launch positioning and creative status are governed by the launch source of truth indexed under Operating and release runbooks below.
+BotBound's public story leads with capabilities, outcomes, and a clear signup action. It does not require a setup sequence. Inside the product, customers create a Bot, set it up, and rehearse privately before activating live work. Technical surface names such as Create, Training, Connections, Phone, Inbox, and Studio describe implementation ownership. The One-Product Strategy owns current product focus, Usage Billing owns commercial terms, the design master plan owns the active queue, and the current asset index owns creative delivery. Historical launch records do not override these authorities.
 
 Broad public copy uses **Bot** or **Phone Bot** for personal users and small businesses. The launch story is voice Bots with a computer, phone number, text, and email address. Building and private rehearsal are separate from paid live channels and computer access. Email activation also depends on its current setup and readiness checks. Public pages present calls, SMS, email, and Computer; activation retains entitlement, verified sender, recipient permission, funding, and provider readiness checks. Reviewed service calls remain separate from campaign calling. Technical contracts retain `agent` and legacy plan/account identifiers for compatibility. The current shared offer is documented in `USAGE_BILLING.md`; `src/lib/plan-catalog.ts` retains legacy plan behavior.
 
@@ -10,7 +10,7 @@ Repository workflow: [repo conventions](./REPO_CONVENTIONS.md).
 
 ## Active design plan
 
-- [BotBound design master plan](./design/master-plan.md): verified work, historical audit corrections, and outstanding rendered release gates.
+- [BotBound design master plan](./design/master-plan.md): current work queue, retained design rules, and unresolved acceptance gates.
 - [Connector plan](./CONNECTORS.md): proposed integration priorities and operational boundaries.
 
 ## Product surfaces
@@ -61,7 +61,7 @@ The isolated speech worker has its own [setup guide](../services/voice-engine/RE
 | [CODEBASE_HEALTH.md](../CODEBASE_HEALTH.md)                                                      | Source-control boundaries, deletion policy, and maintainability standards.                         |
 | [ARCHITECTURE.md](../ARCHITECTURE.md)                                                            | Runtime boundaries, data flow, provider posture, and security invariants.                          |
 | [CUSTOMER_TERMINOLOGY.md](./CUSTOMER_TERMINOLOGY.md)                                             | One-product customer-language contract and compatibility boundary.                                 |
-| [ONE-AGENT-STRATEGY.md](./ONE-AGENT-STRATEGY.md)                                                 | Unified Bot positioning and roster-compatible launch framing.                                      |
+| [ONE-AGENT-STRATEGY.md](./ONE-AGENT-STRATEGY.md)                                                 | One-product business focus, role templates and roster-compatible launch framing.                    |
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md)                                                       | Web, browser, native, ChatGPT, and presenter ownership and release boundaries.                     |
 | [CLOUD_COMPUTER_BROWSER.md](./CLOUD_COMPUTER_BROWSER.md)                                         | Owner browser tools, session privacy, provider limits, and extension/password implementation path. |
 | [CHATGPT_APP.md](./CHATGPT_APP.md)                                                               | ChatGPT App behavior, OAuth, tool boundaries, and release verification.                            |
@@ -225,7 +225,6 @@ These files stay outside `docs/` because a development tool, compatibility path,
 | [DATABASE_SETUP.md](../DATABASE_SETUP.md)                                                     | Narrow compatibility pointer to the canonical database runbook.                                                             |
 | [DEPLOY.md](../DEPLOY.md)                                                                     | Narrow compatibility pointer retained for legacy links, development-tool discovery, and regression contracts.               |
 | [apps/browser-extension/README.md](../apps/browser-extension/README.md)                       | Browser-extension entry point beside its source and build script.                                                           |
-| [apps/mobile/README.md](../apps/mobile/README.md)                                             | Unified cross-platform Flutter mobile entry point, design tokens, Android CLI and Device Hub sidecar integration.            |
 | [android/README.md](../android/README.md)                                                     | Android build, signing, push, Telecom, consent, and release entry point beside its source.                                  |
 | [ios/README.md](../ios/README.md)                                                             | iOS architecture, build, widgets, intents, and release entry point beside its source.                                       |
 | [references/design-system-navigation-plan.md](../references/design-system-navigation-plan.md) | Exact path consumed by the design-system regression contract.                                                               |

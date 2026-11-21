@@ -16,7 +16,6 @@ import {
   BOT_BRAND,
   BOT_CHANNELS,
   BOT_MARKETING_VOICE,
-  BOT_PRODUCT_TYPES,
   BOT_ROLE_TEMPLATES,
 } from "../src/lib/bot-product";
 import { isReviewedOutboundCandidate } from "../src/lib/outbound-call-purpose";
@@ -91,9 +90,9 @@ describe("BotBound product voice", () => {
       productNoun: "Bot",
       buyingNoun: "Bot",
       defaultRole: "Your Bot",
-      productTypes: BOT_PRODUCT_TYPES,
     });
     expect(BRAND_SYSTEM).not.toHaveProperty("brandSpine");
+    expect(BRAND_SYSTEM).not.toHaveProperty("productTypes");
     expect(BRAND_SYSTEM).not.toHaveProperty("proofLoop");
     expect(MARKETING_VOICE).not.toHaveProperty("spine");
     expect(MARKETING_VOICE).not.toHaveProperty("proof");
@@ -178,26 +177,6 @@ describe("BotBound product voice", () => {
     expect(AGENT_NUMBER_PROMISE).toContain("BotBound number");
     expect(AGENT_NUMBER_PROMISE).toContain("answering incoming calls");
     expect(AGENT_NUMBER_PROMISE).not.toMatch(/personal plans|SMS|coming soon/i);
-  });
-
-  it("keeps Phone Bot, Conversation Bot, and Human Bot as configuration lenses", () => {
-    expect(BOT_PRODUCT_TYPES.map((type) => type.name)).toEqual([
-      "Phone Bot",
-      "Conversation Bot",
-      "Human Bot",
-    ]);
-    expect(BOT_PRODUCT_TYPES.find((type) => type.name === "Phone Bot")?.description).toContain(
-      "Answer incoming calls",
-    );
-    expect(BOT_PRODUCT_TYPES.find((type) => type.name === "Phone Bot")?.description).not.toContain(
-      "Live outbound dialing",
-    );
-    expect(
-      BOT_PRODUCT_TYPES.find((type) => type.name === "Conversation Bot")?.description,
-    ).toContain("calls and email");
-    expect(BOT_PRODUCT_TYPES.find((type) => type.name === "Human Bot")?.description).toContain(
-      "real human role",
-    );
   });
 
   it("keeps role starters materially differentiated without forcing marketing categories", () => {

@@ -1,18 +1,38 @@
 # BotBound One-Product Strategy
 
-Date: 2026-09-27
-Status: Active positioning note; commercial details in PRICING_DECISION_2026-09-27.md
+Status: Active product direction. Current commercial terms are owned by [Usage Billing](USAGE_BILLING.md) and `src/lib/usage-billing-catalog.ts`; legacy subscriptions retain their own contracts.
 
 ## Decision
 
 BotBound leads with one clear promise:
 
-> Your Bot for calls, texts, and email.
+> Your Bot for calls, email, and supervised browser work.
 
 Customers start with the job, not an audience classification. One Bot can carry
 the conversation across channels under shared knowledge, rules, approvals, and
-memory. Customers choose the channels they need. Launch packages include one
-Bot; additional-Bot subscriptions are not offered in the new catalog.
+memory. SMS retains its sender and recipient permission gates. Role templates change
+the Bot's job; they do not create separate products, account modes or backend policies.
+
+Start with one focused Bot. The current Shared Work offer has no per-Bot charge;
+included numbers, email addresses, work allowances and execution limits remain finite.
+Retained channel packages keep their saved Bot limits. Never infer a universal one-Bot
+limit or an extra-Bot charge from a historical package.
+
+## Focus and expansion
+
+The web workspace is the primary product. Make the first useful call, requested email
+or supervised browser task complete with a visible outcome and a recoverable failure.
+BotBound owns its conversation, People, appointments, approvals and work history;
+external adapters connect an existing customer tool when that tool is actually needed.
+An adapter does not require every customer or the founder to subscribe to its vendor.
+
+Browser and MCP clients reuse that workspace's server policy. Native iOS and Android
+retain their documented release gates. Hands-free is an opt-in input method; physical
+Bluetooth and Meta acceptance remain separate evidence. New mobile frameworks,
+standalone dashboards, speculative integrations, live video and voice-cloning expansion
+do not take priority over proving the core workflows. The current next-work queue is
+[the design master plan](design/master-plan.md); [Client surfaces](CLIENT_SURFACES.md)
+owns client release boundaries.
 
 ## Positioning rules
 
@@ -29,18 +49,16 @@ Bot; additional-Bot subscriptions are not offered in the new catalog.
 
 Use:
 
-> Your Bot for calls, texts, and email.
+> Your Bot for calls, email, and supervised browser work.
 
 > Paid plans only. Shared work starts at $12/month.
 
-> Lite $12, Starter $24 (default), Plus $49, with $4 / $14 / $36 of included work.
-
 > Start with one job. Choose the channels you need.
 
-Every plan includes one Bot and one call at a time; extra Bots, numbers, and email
-addresses are add-ons, and usage beyond the included work is metered at the rates on
-Pricing. Never imply that a
-Calls-only package includes a mailbox or that Email includes a phone number.
+Use the current rate card for allowances, identity capacity, add-ons and spending caps.
+Extra numbers and email addresses are paid identities; creating another Bot is not an
+extra-Bot subscription. Retained Calls-only and Email-only packages do not acquire
+each other's identities merely because the public offer changed.
 
 Avoid:
 
@@ -58,6 +76,7 @@ Bots use the owner's knowledge, tone, rules, tools, approvals, and handoffs. Pri
 
 ## Success metric
 
-Seventy percent of new signups complete one successful private simulation or
-test call within five minutes and understand that the same BotBound product can
-handle the job they describe, regardless of audience or organization type.
+Measure activation from a genuine new account: first Bot, successful private rehearsal,
+first eligible live outcome, failures and founder support time. A target of 70% reaching
+a successful private rehearsal within five minutes is a goal to measure, not an adoption
+claim. Do not add another product or client merely to improve a demo.

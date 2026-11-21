@@ -4,7 +4,7 @@ BotBound gives **your Bot calling, email, and a Computer**. Start with a focused
 
 Public pages present calls, SMS, email, and Computer. Activation still requires the applicable entitlement, verified sender, recipient permission, funding, and provider readiness. Reviewed service calls remain a separate workflow; campaign calling and unverified integrations are not certified by the public design release.
 
-Public marketing leads with capabilities, outcomes, and a clear signup action. Inside the product, customers create a Bot, set it up, and rehearse privately before activating live work. Product architecture supports these steps through Create, Training, and Wire:
+Public marketing leads with capabilities, outcomes, and a clear signup action. Inside the product, customers create a Bot, set it up, and rehearse privately before activating live work. The Bot workspace and its existing channel controls support these steps:
 
 1. **Create** a focused Bot for a specific job.
 2. **Set Up** its facts, sources, policies, voice, tone, tools, and workflows.
@@ -20,6 +20,8 @@ in Bot settings lets owners save notification contacts, escalation triggers, and
 optional live-transfer destination without using setup chat.
 
 ## Product surface
+
+BotBound is one product. Role templates configure the same Bot; browser, MCP and native surfaces are clients of the same server-owned policy. Prioritize the web workspace and completed call, email and supervised browser workflows. Extend another client only when it solves a verified customer need and passes its release checks in [Client surfaces](docs/CLIENT_SURFACES.md). A prototype, fixture or integration adapter is not evidence of a connected service.
 
 - **Web/API - core product:** canonical Create, Training, Wire, Studio, billing, provider, and account runtime. Availability and pilot admission depend on the release gates in `docs/DEPLOYMENT_RUNBOOK.md`.
 - **BotBound Command - early access:** explicit-action Manifest V3 browser handoff for page context, calls, texts, follow-up, and tasks. Technical package paths retain the `wireline` namespace for compatibility.
@@ -102,7 +104,7 @@ Phone-worker releases additionally require `npm run build:voice-worker`, contain
 | Documentation map                     | [docs/README.md](./docs/README.md)                                                                                                                   |
 | Audit evidence                        | [docs/AUDIT_INDEX.md](./docs/AUDIT_INDEX.md)                                                                                                         |
 | Client/release boundaries             | [docs/CLIENT_SURFACES.md](./docs/CLIENT_SURFACES.md)                                                                                                 |
-| Pricing and billing                   | `src/lib/plan-catalog.ts`, `src/lib/conversation-balance.ts`, [docs/business-usage-pricing-decision.md](./docs/business-usage-pricing-decision.md)   |
+| Current pricing and billing           | `src/lib/usage-billing-catalog.ts`, [docs/USAGE_BILLING.md](./docs/USAGE_BILLING.md); `src/lib/plan-catalog.ts` owns plan compatibility and entitlements |
 | Design system                         | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`                                                |
 | Voice and model policy                | `src/lib/ai-models.ts`, `src/lib/voice/`, [docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md](./docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md) |
 | Browser extension                     | `apps/browser-extension/`                                                                                                                            |

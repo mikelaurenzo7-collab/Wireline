@@ -25,7 +25,7 @@ Historic workspace URLs should redirect into the active Bot workflow rather than
 
 Start with one Bot. Additional customer-facing Bots represent separate identities, roles, numbers, or inboxes under the existing plan capacity rules. The left rail selects the Bot; its conversation header opens Phone, Email, Knowledge, Memory, Computer, Automations, and Setup. No dedicated roster-management page is required for everyday work.
 
-Private messages and the selected Bot's computer task records share one chronological canvas. Message and Computer task are explicit composer choices with separate retained drafts; changing modes never starts work. The private planner receives the three most recent task summaries as bounded reference data. Rehearsal remains separate from live work.
+Private messages and the selected Bot's browser task records share one chronological canvas and one persistent composer. **Use browser** explicitly selects a browser request; inline **Reply to task** targets the active task. Message and task drafts remain separate. Changing input scope or opening the browser view never starts work. The existing task controller owns admission, replies, Stop, handoff, receipts and billing. Automatic natural-language routing into browser tasks is not implemented. The private planner receives the three most recent task summaries as bounded reference data. Rehearsal remains separate from live work.
 
 Owner-managed memory uses `wireline_agent_lessons.source = 'owner_memory'`. Only the authenticated owner can save or forget notes through `/api/agents/:id/workspace/memory`; writes lock the owned Bot row, cap at 20 notes of 500 characters, and repeated identical saves are idempotent. Reads and deletes filter owner, Bot, and source. These notes are loaded into private chat and new computer tasks, excluded from learning review/digests and fleet activity, and never added to customer-facing knowledge or voice/email prompts. Bot deletion cascades; account export/deletion retain their existing lesson-table coverage. Forgetting a note does not remove copies already present in chat or task history.
 
@@ -127,7 +127,8 @@ Runtime execution reads the saved Bot profile, selected model/voice posture, con
 | Concern                                       | Canonical source                                                                                      |
 | --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | Product language                              | `src/lib/product-copy.ts`, `docs/README.md`                                                           |
-| Pricing                                       | `docs/business-usage-pricing-decision.md`, `src/lib/plan-catalog.ts`                                  |
+| Current pricing                               | `docs/USAGE_BILLING.md`, `src/lib/usage-billing-catalog.ts`                                            |
+| Plan compatibility and entitlements            | `src/lib/plan-catalog.ts`; historical billing decisions do not define new offers                    |
 | Runtime Balance (Conversation Balance module) | `src/lib/conversation-balance.ts`                                                                     |
 | Design                                        | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css` |
 | Models                                        | `src/lib/ai-models.ts`                                                                                |

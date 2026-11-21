@@ -1,7 +1,6 @@
 export type BotChannelKey = "voice" | "text" | "email";
 export type BotTemplateCategory = "Operations" | "Everyday" | "Custom";
 export type BotDirection = "inbound" | "outbound" | "hybrid";
-export type BotProductTypeKey = "voice" | "conversation" | "human";
 
 export const BOT_BRAND = {
   name: "BotBound",
@@ -9,34 +8,6 @@ export const BOT_BRAND = {
   supportingLine: "CALL · TEXT · EMAIL · COMPUTER",
   promise: "Your Bot for incoming calls, reviewed calls, email, and computer tasks.",
 } as const;
-
-export const BOT_PRODUCT_TYPES = [
-  {
-    key: "voice" as const,
-    name: "Phone Bot",
-    label: "PHONE BOT",
-    description:
-      "Answer incoming calls, place reviewed personal or business calls, and capture requests.",
-  },
-  {
-    key: "conversation" as const,
-    name: "Conversation Bot",
-    label: "CONVERSATION BOT",
-    description: "Keep calls and email together with shared context and clear next steps.",
-  },
-  {
-    key: "human" as const,
-    name: "Human Bot",
-    label: "HUMAN BOT",
-    description:
-      "Configure a Bot around a real human role, playbook, tone, approvals, tools, and handoffs.",
-  },
-] as const satisfies ReadonlyArray<{
-  key: BotProductTypeKey;
-  name: string;
-  label: string;
-  description: string;
-}>;
 
 export const BOT_CHANNELS = [
   {
