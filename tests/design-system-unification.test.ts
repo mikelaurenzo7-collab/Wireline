@@ -180,7 +180,7 @@ describe("Milestone 3: Design System Unification & Workspace Polish Contracts", 
       const shell = read("src/components/WorkspaceShell.tsx");
 
       expect(shell).toContain("WorkspaceResizablePanel");
-      expect(shell).toContain("WORKSPACE_RAIL_STORAGE_KEY = \"wireline:workspace-rail:v1\"");
+      expect(shell).toContain('WORKSPACE_RAIL_STORAGE_KEY = "wireline:workspace-rail:v1"');
       expect(shell).toContain("storageKey={WORKSPACE_RAIL_STORAGE_KEY}");
       expect(shell).toContain("defaultSize={232}");
       expect(shell).toContain("minSize={208}");
@@ -214,7 +214,7 @@ describe("Milestone 3: Design System Unification & Workspace Polish Contracts", 
   });
 
   describe("4. Workspace Primary Views Contracts", () => {
-    it("verifies Studio (/studio): two-pane conversational workbench and inspector dock", () => {
+    it("verifies Studio (/studio): one conversation with Computer beside it and a separate Bot setup", () => {
       const studioHome = read("src/pages/AgentStudioHome.tsx");
       const studioV2 = read("src/components/StudioWorkspaceV2.tsx");
       const workroom = read("src/components/StudioWorkroom.tsx");
@@ -224,9 +224,9 @@ describe("Milestone 3: Design System Unification & Workspace Polish Contracts", 
       expect(studioHome).toContain("<StudioContextChrome />");
       expect(studioHome).toContain("<StudioWorkspaceV2 />");
 
-      // Panel tabs Computer + Configure; Configure sub-tabs Details, Set Up, Summary
-      expect(studioV2).toContain('{ id: "computer", label: "Computer" }');
-      expect(studioV2).toContain('{ id: "configure", label: "Configure" }');
+      expect(studioV2).toContain('id="studio-computer-panel"');
+      expect(studioV2).toContain('aria-label="Bot setup sections"');
+      expect(studioV2).not.toContain('{ id: "configure", label: "Configure" }');
       expect(studioV2).toContain('{ id: "details", label: "Details" }');
       expect(studioV2).toContain('{ id: "setup", label: "Set Up" }');
       expect(studioV2).toContain('{ id: "review", label: "Summary" }');
@@ -306,7 +306,9 @@ describe("Milestone 3: Design System Unification & Workspace Polish Contracts", 
       const settingsTabs = read("src/components/settings/SettingsTabs.tsx");
 
       expect(settingsTabs).toContain('{ id: "account", href: "/settings", label: "Account" }');
-      expect(settingsTabs).toContain('{ id: "billing", href: "/settings/billing", label: "Billing" }');
+      expect(settingsTabs).toContain(
+        '{ id: "billing", href: "/settings/billing", label: "Billing" }',
+      );
       expect(settingsTabs).toContain('{ id: "team", href: "/settings/team", label: "Team" }');
       expect(settingsTabs).toContain('{ id: "apps", href: "/settings/apps", label: "Apps" }');
       expect(settingsTabs).toContain('href: "/settings/customization"');
@@ -368,9 +370,7 @@ describe("Milestone 3: Design System Unification & Workspace Polish Contracts", 
         expect(existsSync(resolve(root, file))).toBe(true);
         const content = read(file);
         // Strip comments to test shipped code and copy
-        const stripped = content
-          .replace(/\/\*[\s\S]*?\*\//g, "")
-          .replace(/^\s*\/\/.*$/gm, "");
+        const stripped = content.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
         expect(stripped, `${file} must not contain em/en dashes in shipped code/copy`).not.toMatch(
           dashRegex,
         );

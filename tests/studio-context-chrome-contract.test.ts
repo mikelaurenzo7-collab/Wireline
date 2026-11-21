@@ -8,10 +8,11 @@ const source = readFileSync(
 );
 
 describe("Studio context chrome", () => {
-  it("keeps narrow mobile headers on one row without duplicating the Browser tab", () => {
+  it("keeps narrow mobile headers on one row with a visible Set Up action and no browser control", () => {
     expect(source).toContain("flex min-h-[56px] flex-nowrap");
     expect(source).toContain('className="flex shrink-0 flex-nowrap items-center gap-1"');
-    expect(source).toContain('className="hidden min-h-[44px] px-2.5 sm:inline-flex"');
-    expect(source).toContain('<span className="hidden sm:inline">Set Up</span>');
+    expect(source).not.toContain('id="studio-panel-toggle"');
+    expect(source).toContain('aria-label="Set Up Bot"');
+    expect(source).toContain("<span>Set Up</span>");
   });
 });

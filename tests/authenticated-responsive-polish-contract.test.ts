@@ -26,11 +26,8 @@ describe("authenticated responsive polish contract", () => {
     expect(chrome).toContain("min-w-0 flex-1 truncate !whitespace-nowrap");
     expect(read("src/styles/studio-workspace.css")).toContain("max-width: min(18rem, 48vw)");
     // The title owns the flexible space while the compact controls stay on one row.
-    expect(chrome).toContain(
-      'className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5 md:max-w-[18rem] md:flex-none"',
-    );
-    // Knowledge and Computer now live in the rail/More menu at every width.
-    // A second navigation row must not crowd the Bot's own controls.
+    expect(chrome).toContain('className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5"');
+    // Computer lives with the composer, leaving the header for Bot controls.
     expect(chrome).not.toContain("WorkspaceSectionNav");
     // The redundant kicker and separator stay for the no-agent state only, so
     // the selected agent name owns the row on every width.

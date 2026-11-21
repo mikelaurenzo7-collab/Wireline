@@ -114,7 +114,8 @@ describe("customer-selectable Bot identity marks", () => {
       )?.markKey,
     ).toBe(null);
 
-    expect(create).toContain("markKey: isBotMarkKey(body.mark_key) ? body.mark_key : null");
+    expect(create).toContain("mark_key: isBotMarkKey(body.mark_key) ? body.mark_key : null");
+    expect(create).toContain("markKey: savedAgent.mark_key ?? null");
     expect(wizard).toContain("markKey={payload.markKey}");
     expect(roleplay).toContain("markKey={markKey}");
     expect(openai).toContain("markKey?: BotMarkKey | null");

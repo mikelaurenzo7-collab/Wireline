@@ -78,7 +78,7 @@ describe("authenticated workspace design architecture", () => {
 
   it("keeps the Bot name as the page heading and a details control alongside the switcher", () => {
     const chrome = read("src/components/studio/StudioContextChrome.tsx");
-    expect(chrome).toContain('<h1 className="min-w-0">');
+    expect(chrome).toContain('<h1 className="min-w-0 md:max-w-[18rem]">');
     expect(chrome).toContain('id="studio-bot-details-toggle"');
     expect(chrome).toContain("{activeAgent.name}");
     expect(chrome).toContain('aria-label="Switch Bot"');
@@ -116,7 +116,7 @@ describe("authenticated workspace design architecture", () => {
     }
   });
 
-  it("keeps Studio conversation-first on wide screens with a compact adjustable inspector", () => {
+  it("keeps Studio conversation-first on wide screens with an adjustable Computer pane and a separate setup view", () => {
     const studio = read("src/components/StudioWorkspaceV2.tsx");
     const setup = read("src/components/StudioAgentWorkspacePanel.tsx");
     const review = read("src/components/StudioAgentReviewPanel.tsx");
@@ -139,9 +139,11 @@ describe("authenticated workspace design architecture", () => {
     );
     expect(studio).toContain("const panelFill = panelOpen && (panelExpanded || computerFocused);");
     expect(studio).toContain("aria-pressed={panelFill}");
-    expect(studio).toContain('{ id: "computer", label: "Computer" }');
+    expect(studio).toContain('id="studio-computer-panel"');
     expect(studio).toContain("<ComputerWorkbench");
-    expect(studio.match(/compact=\{splitWorkspace\}/g)).toHaveLength(2);
+    expect(studio).toContain('aria-label="Bot setup sections"');
+    expect(studio).toContain("splitWorkspace && !inspectorOpen");
+    expect(studio).not.toContain('aria-label="Workspace panel"');
     expect(studio).toContain('layout={splitWorkspace ? "split" : "standalone"}');
     expect(setup).toContain('data-wireline-studio-setup-density={compact ? "inspector" : "page"}');
     expect(setup).toContain("Bot Setup");

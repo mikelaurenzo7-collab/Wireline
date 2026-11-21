@@ -71,7 +71,9 @@ describe("demand-driven authenticated experience", () => {
     expect(studio).toContain('"setup" | "review"');
     expect(studio).toContain('"configure" | "test"');
     expect(studio).toContain("onRequestBrowserTask={requestBrowserTask}");
-    expect(studio).toContain('{ id: "computer", label: "Computer" }');
+    expect(studio).toContain('id="studio-computer-panel"');
+    expect(studio).toContain('aria-label="Bot setup sections"');
+    expect(workroom).toContain('id="studio-panel-toggle"');
     expect(studio).not.toContain('{ id: "try", label: "Rehearse" }');
     expect(studio).toContain('setWorkroomMode("test")');
     expect(studio).toContain("timelineExtras={");

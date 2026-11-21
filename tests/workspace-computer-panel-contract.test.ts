@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(path, "utf8");
 
 /**
- * Computer opens beside Work/Set up chat. Explicit full-width remains optional;
- * phones switch browser/conversation without discarding either draft.
+ * Computer opens beside the work conversation and can expand to full width.
+ * Opening Bot setup or the phone's browser keeps the conversation mounted.
  */
 describe("Workspace computer panel", () => {
   const studio = read("src/components/StudioWorkspaceV2.tsx");
@@ -17,10 +17,11 @@ describe("Workspace computer panel", () => {
     expect(computer).toContain('new URLSearchParams({ panel: "computer" })');
     expect(computer).toContain("<Navigate to={`/studio?${next.toString()}`} replace />");
     expect(studio).toContain('useMediaQuery("(min-width: 1180px)")');
-    expect(studio).toContain('panelParam !== "computer" || !splitWorkspace');
+    expect(studio).toContain('panelParam === "computer" || !panelCollapsed');
     expect(studio).toContain(
-      "if (requestedAgentUnavailable || computerRouteApplied.current) return;",
+      "if (!splitWorkspace || inspectorOpen || requestedAgentUnavailable) return;",
     );
+    expect(studio).toContain("onActivateComputer={openComputerMode}");
   });
 
   it("shares one workbench between the panel and the Computer page", () => {
@@ -42,9 +43,9 @@ describe("Workspace computer panel", () => {
   it("keeps the conversation mounted behind focused Computer and manual Full width", () => {
     expect(studio).toContain("const panelFill = panelOpen && (panelExpanded || computerFocused);");
     expect(studio).toContain(
-      '(!splitWorkspace && inspectorOpen) || mobileBrowserOpen || panelFill ? "hidden" : "block"',
+      'inspectorOpen || mobileBrowserOpen || panelFill ? "hidden" : "block"',
     );
-    expect(studio).toContain("if (!panelOpen) setPanelExpanded(false);");
+    expect(studio).toContain("if (!splitWorkspace) setPanelExpanded(false);");
     expect(panel).toContain('fill ? "min-w-0 flex-1" : "shrink-0"');
     expect(panel).toContain("{!collapsed && !fill ? (");
   });
