@@ -101,9 +101,8 @@ describe("activation path contract", () => {
     expect(billing).toContain("shouldResumePostCreateLaunch(");
     expect(billing).toContain("Boolean(readPostCreateWizard())");
     expect(billing).toContain("readPostCreateWizardStep()");
-    expect(billing).toContain('window.location.replace("/studio")');
-    expect(billing.indexOf("window.history.replaceState")).toBeLessThan(
-      billing.indexOf('window.location.replace("/studio")'),
-    );
+    const resume = "window.location.replace(`/studio?agent=${encodeURIComponent(wizard.agentId)}`)";
+    expect(billing).toContain(resume);
+    expect(billing.indexOf("window.history.replaceState")).toBeLessThan(billing.indexOf(resume));
   });
 });

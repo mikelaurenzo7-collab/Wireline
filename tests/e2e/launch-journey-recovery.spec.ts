@@ -421,9 +421,7 @@ for (const failure of ["unavailable", "malformed"] as const) {
   });
 }
 
-test("a paid Bot's setup guide still opens number selection while new checkout is paused", async ({
-  page,
-}) => {
+test("a newly paid Bot can choose a number while new checkout is paused", async ({ page }) => {
   await mockWorkspace(page);
   await page.route("**/api/billing/plans", (route) =>
     route.fulfill({ json: { checkout_available: false, stripe_configured: true, plans: [] } }),
@@ -436,19 +434,55 @@ test("a paid Bot's setup guide still opens number selection while new checkout i
         agentName: "Front Desk",
         phoneProvisionRequested: true,
         phoneProvisioned: false,
-        phoneActivationRequired: false,
+        phoneActivationRequired: true,
+        identityBootstrapComplete: true,
       }),
     );
     sessionStorage.setItem("wireline:post-create-wizard-step", "launch");
   });
   await page.goto("/studio?agent=bot-front-desk");
   const guide = page.getByRole("dialog", { name: "Next Up for Front Desk" });
+  const chooseNumber = guide.getByRole("button", { name: "Choose a number", exact: true });
+  await expect(chooseNumber).toBeEnabled();
   await expect(
     guide.getByText("Live activation isn't available right now", { exact: true }),
   ).toHaveCount(0);
-  await guide.getByRole("button", { name: "Choose a number", exact: true }).click();
+  await chooseNumber.click();
   await expect(page).toHaveURL(/\/phone\?tab=setup&agent=bot-front-desk$/);
   await expect(page.getByRole("button", { name: "Find Numbers", exact: true })).toBeVisible();
+});
+
+test("a verified checkout returns to the Bot that was being launched", async ({ page }) => {
+  await mockWorkspace(page);
+  let verifiedSession: string | undefined;
+  await page.route("**/api/billing/checkout/verify", async (route) => {
+    verifiedSession = route.request().postDataJSON().session_id;
+    await route.fulfill({ json: { status: "complete", payment_status: "paid", synced: true } });
+  });
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem("wireline:post-create-wizard")) return;
+    localStorage.setItem("wireline:studio:last-agent-id", "bot-sales");
+    sessionStorage.setItem(
+      "wireline:post-create-wizard",
+      JSON.stringify({
+        agentId: "bot-front-desk",
+        agentName: "Front Desk",
+        phoneProvisionRequested: true,
+        phoneProvisioned: false,
+        phoneActivationRequired: true,
+        identityBootstrapComplete: true,
+      }),
+    );
+    sessionStorage.setItem("wireline:post-create-wizard-step", "launch");
+  });
+
+  await page.goto("/settings/billing?billing=success&session_id=cs_setup_fixture");
+  await expect(page).toHaveURL(/\/studio\?agent=bot-front-desk$/);
+  expect(verifiedSession).toBe("cs_setup_fixture");
+  const guide = page.getByRole("dialog", { name: "Next Up for Front Desk" });
+  await guide.getByRole("button", { name: "Choose a number", exact: true }).click();
+  await expect(page).toHaveURL(/\/phone\?tab=setup&agent=bot-front-desk$/);
+  await expect(page.getByRole("combobox", { name: "Bot for this line" })).toHaveText("Front Desk");
 });
 
 test("caller identity deep links reveal the section", async ({ page }) => {

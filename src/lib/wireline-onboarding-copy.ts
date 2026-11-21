@@ -52,10 +52,6 @@ export const POST_CREATE_WIZARD_COPY = {
       detail: "Connect a dedicated number so callers can reach this Bot directly.",
       primary: "Choose a number",
       skip: "Launch later",
-      activationRequired: "Your Bot is created. A live number needs a plan.",
-      activationDetail: (starterPriceUsd: number) =>
-        `Every paid plan includes a dedicated number and live call minutes. Starter begins at $${starterPriceUsd}/mo.`,
-      activationCta: "Choose your plan",
     },
     test: {
       label: "Rehearse",
@@ -87,7 +83,6 @@ export const POST_CREATE_WIZARD_COPY = {
 export const SOFT_OPEN_CHECKOUT_COPY = {
   title: "Live activation isn't available right now",
   detail: "Keep trying your Bot privately in Set Up, then check back soon.",
-  savedDetail: (agentName: string) => `${agentName} is saved. Preview Voice is ready in Set Up.`,
   allowanceDetail: "This month's Preview Voice is used. We'll restore it when you go live.",
   cta: "Contact support",
   href: "/contact?topic=billing",

@@ -230,7 +230,7 @@ export default function BillingSettings() {
           // Persist the fulfilled plan before reopening this same Bot's guide.
           // A dismissed or replaced guide must not be resumed by a late return.
           if (wizard && updatePostCreateWizard(wizard)) {
-            window.location.replace("/studio");
+            window.location.replace(`/studio?agent=${encodeURIComponent(wizard.agentId)}`);
             return;
           }
         }
