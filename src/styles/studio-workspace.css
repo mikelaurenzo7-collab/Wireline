@@ -177,51 +177,6 @@
   );
 }
 
-.wl-studio-chat-modes {
-  display: inline-flex;
-  max-inline-size: 100%;
-  flex-wrap: wrap;
-  gap: 0.2rem;
-  padding: 0.2rem;
-  border-radius: 0.65rem;
-  border: 1px solid color-mix(in srgb, var(--studio-rule) 85%, transparent);
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-surface-subtle) 65%,
-    var(--wireline-color-canvas-default)
-  );
-}
-
-.wl-studio-chat-modes button {
-  position: relative;
-  min-height: 2.25rem;
-  padding: 0.375rem 0.875rem;
-  border-radius: 0.475rem;
-  color: var(--wireline-color-text-secondary);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  transition:
-    background-color 140ms ease,
-    color 140ms ease,
-    box-shadow 140ms ease;
-}
-
-.wl-studio-chat-modes button[aria-pressed="true"] {
-  background: var(--wireline-color-surface-default);
-  color: var(--wireline-color-text-primary);
-  font-weight: 600;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.14);
-}
-
-.wl-studio-chat-modes button:hover {
-  color: var(--wireline-color-text-primary);
-}
-
-.wl-studio-chat-modes button:focus-visible {
-  outline: 2px solid var(--wireline-color-focus-default);
-  outline-offset: 2px;
-}
-
 .wl-studio-panel-header {
   display: flex;
   min-height: 3.25rem;
@@ -337,61 +292,16 @@
   flex-shrink: 0;
 }
 
-.wl-studio-task-chat {
-  display: flex;
-  height: 100%;
-  min-height: 0;
-  flex-direction: column;
-}
-
-.wl-studio-task-chat__log {
-  min-height: 0;
-  flex: 1;
-  padding: 1.75rem clamp(1rem, 2.5vw, 2rem);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
-}
-
-.wl-studio-task-chat__measure {
-  display: flex;
-  width: 100%;
-  max-width: 46rem;
-  min-height: 100%;
-  flex-direction: column;
-  gap: 1.5rem;
-  margin-inline: auto;
-}
-
-.wl-studio-task-chat__composer {
-  position: relative;
-  flex: 0 0 auto;
-  padding: 0.75rem 1.25rem max(1rem, env(safe-area-inset-bottom));
-}
-
-.wl-studio-task-chat__composer,
 .wl-studio-chat__composer {
   container: studio-composer / inline-size;
 }
 
-.wl-studio-task-chat__composer .wl-studio-task-chat__measure {
-  gap: 0.75rem;
-}
-
-.wl-studio-task-chat__composer textarea {
-  max-height: 10rem;
-  resize: none;
-  overflow-y: auto;
-}
-
-.wl-studio-task-chat__composer .wl-composer-dock,
 .wl-studio-chat__composer .wl-composer-dock {
   border-radius: 1.25rem;
   box-shadow: 0 8px 24px -14px rgb(0 0 0 / 0.22);
 }
 
 /* One restrained writing surface, with the send action in its own clear tier. */
-.wl-workspace-shell .wl-studio-task-chat__composer .wl-composer-dock,
 .wl-workspace-shell .wl-studio-chat__composer .wl-composer-dock {
   border-color: color-mix(
     in srgb,
@@ -406,7 +316,6 @@
   box-shadow: 0 8px 24px -14px rgb(0 0 0 / 0.22);
 }
 
-.wl-workspace-shell .wl-studio-task-chat__composer .wl-composer-dock:focus-within,
 .wl-workspace-shell .wl-studio-chat__composer .wl-composer-dock:focus-within {
   border-color: var(--wireline-color-border-strong);
   outline: none;
@@ -484,10 +393,6 @@
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.375rem;
-}
-
-.wl-studio-composer-tools .wl-studio-chat-modes {
-  justify-self: start;
 }
 
 .wl-studio-chat__composer .wl-studio-composer-tools {
@@ -744,10 +649,6 @@
   border-bottom: 1px solid var(--studio-rule);
 }
 
-.wl-studio-surface-nav .wl-studio-chat-modes {
-  display: contents;
-}
-
 .wl-studio-surface-nav button {
   display: inline-flex;
   min-width: 0;
@@ -884,13 +785,8 @@
     padding-block: 0.25rem;
   }
 
-  .wl-studio-task-chat__composer,
   .wl-studio-chat__composer {
     padding: 0.25rem 0.75rem 0.5rem;
-  }
-
-  .wl-studio-task-chat__composer .wl-studio-task-chat__measure {
-    gap: 0.375rem;
   }
 
   .wl-studio-chat__transcript {
@@ -977,17 +873,6 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-}
-
-.wl-studio-task-chat.is-composer-only {
-  height: auto;
-  flex: 0 0 auto;
-  min-height: 0;
-}
-.wl-studio-task-chat.is-composer-only .wl-studio-task-chat__log {
-  flex: 0 1 auto;
-  max-height: 12rem;
-  padding-block: 0;
 }
 
 .wl-workspace-shell .wl-bot-details-disclosure > summary,

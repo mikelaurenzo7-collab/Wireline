@@ -236,7 +236,7 @@ describe("Milestone 3: Design System Unification & Workspace Polish Contracts", 
       // Studio composer dock
       expect(workroom).toContain("showStarterPrompts");
       expect(workroom).toContain("quickPrompts.slice(0, 3)");
-      expect(workroom).toContain('textarea.style.minHeight = "52px"');
+      expect(workroom).toContain('textarea.style.minHeight = "3.25rem"');
 
       // Context chrome with switchable bot roster
       expect(contextChrome).toContain('aria-label="Switch Bot"');

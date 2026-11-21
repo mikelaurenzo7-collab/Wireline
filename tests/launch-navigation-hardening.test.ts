@@ -7,6 +7,7 @@ import {
   reconcileStudioCommandDraft,
   setStudioInspectorSectionParams,
   setStudioWorkroomModeParams,
+  setStudioBrowserTaskParams,
 } from "../src/lib/studio-route-state";
 import { addTemporaryTabIndex, type TemporaryTabIndexTarget } from "../src/lib/temporary-tab-index";
 
@@ -119,6 +120,14 @@ describe("Studio route state", () => {
     expect(next.has("command")).toBe(false);
     expect(next.has("commandNonce")).toBe(false);
     expect(next.has("mode")).toBe(false);
+  });
+
+  it("prepares a browser task without leaving sticky views or rehearsal commands", () => {
+    const current = new URLSearchParams(
+      "agent=bot-1&section=review&panel=computer&focus=computer&workroom=test&command=Hello&commandNonce=3&mode=workroom",
+    );
+    expect(setStudioBrowserTaskParams(current).toString()).toBe("agent=bot-1&chat=computer");
+    expect(current.get("section")).toBe("review");
   });
 
   it("preserves test mode while opening and closing the inspector", () => {

@@ -180,21 +180,58 @@ for (const width of [390, 1440]) {
     await expect(log.getByText("I can help with your day.")).toBeVisible();
     await expect(log.getByText("The office opens at nine.")).toBeVisible();
     const message = page.getByRole("textbox", { name: "Message Front Desk", exact: true });
+    const inputNode = await message.elementHandle();
+    await expect(page.getByRole("group", { name: "Conversation mode" })).toHaveCount(0);
+    await expect(page.locator(".wl-studio-chat__composer textarea")).toHaveCount(1);
     await message.fill("Keep my message draft.");
-    await page.getByRole("button", { name: "Computer task", exact: true }).click();
+    await page.getByRole("button", { name: "Use browser", exact: true }).click();
     const task = page.getByRole("textbox", { name: "Task for Front Desk", exact: true });
+    expect(await inputNode!.evaluate((node) => node.isConnected)).toBe(true);
     await task.fill("Find public opening hours.");
-    await page.getByRole("button", { name: "Message", exact: true }).click();
+    await page.getByRole("button", { name: /message instead$/i }).click();
     await expect(message).toHaveValue("Keep my message draft.");
-    await page.getByRole("button", { name: "Computer task", exact: true }).click();
+    await page.getByRole("button", { name: "Use browser", exact: true }).click();
     await expect(task).toHaveValue("Find public opening hours.");
+    let acceptStart: () => void = () => undefined;
+    const startGate = new Promise<void>((resolve) => {
+      acceptStart = resolve;
+    });
+    await page.route("**/api/computer/tasks", async (route) => {
+      if (route.request().method() !== "POST") return route.fallback();
+      await startGate;
+      return route.fallback();
+    });
     await page.getByRole("button", { name: "Start work", exact: true }).click();
+    await expect(task).toBeEnabled();
+    await task.fill("Keep my next browser request.");
+    acceptStart();
     await expect.poll(() => api.starts.length).toBe(1);
-    if (width < 1180)
-      await page
-        .getByRole("navigation", { name: "Workspace view" })
-        .getByRole("button", { name: "Conversation", exact: true })
-        .click();
+    expect(api.starts[0]).toEqual({ agentId: bots[0].id, goal: "Find public opening hours." });
+    await expect(task).toHaveValue("Keep my next browser request.");
+    if (width < 1180) {
+      await expect(
+        page
+          .getByRole("navigation", { name: "Workspace view" })
+          .getByRole("button", { name: "Conversation", exact: true }),
+      ).toHaveAttribute("aria-pressed", "true");
+    }
+    await page.getByRole("button", { name: /message instead$/i }).click();
+    await expect(message).toHaveValue("Keep my message draft.");
+    api.setTask("work-task-1", { status: "needs_input", question: "Which city should I search?" });
+    await expect(log.getByText("Which city should I search?", { exact: true })).toBeVisible();
+    await expect(message).toHaveValue("Keep my message draft.");
+    await log.getByRole("button", { name: "Reply to task", exact: true }).click();
+    const answer = page.getByRole("textbox", { name: "Reply to Front Desk", exact: true });
+    expect(await inputNode!.evaluate((node) => node.isConnected)).toBe(true);
+    await answer.fill("Chicago");
+    await page.getByRole("button", { name: "Reply to Bot", exact: true }).click();
+    await expect.poll(() => api.replies).toEqual([{ message: "Chicago" }]);
+    await page.getByRole("button", { name: /message instead$/i }).click();
+    await expect(message).toHaveValue("Keep my message draft.");
+    await page.getByRole("button", { name: "Stop task", exact: true }).click();
+    await expect.poll(() => api.stops).toEqual(["work-task-1"]);
+    expect(api.starts).toHaveLength(1);
+    await expect(page.locator(".wl-studio-chat__composer textarea")).toHaveCount(1);
     await expect(log.getByText("Find public opening hours.", { exact: true })).toBeVisible();
     await expect(log.getByText("I can help with your day.")).toBeVisible();
     await expect

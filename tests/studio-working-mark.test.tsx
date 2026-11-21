@@ -9,6 +9,10 @@ const h = vi.hoisted(() => ({
   refCursor: 0,
   options: {} as { onError?: (message: string) => void; onComplete?: (data: object) => void },
 }));
+vi.mock("../src/hooks/useStudioTaskComposer", () => ({
+  useStudioTaskComposer: () => ({ taskMode: false, busy: false, notice: null, ownActive: null }),
+}));
+
 vi.mock("react", async (original) => ({
   ...(await original<typeof import("react")>()),
   useState(initial: unknown) {

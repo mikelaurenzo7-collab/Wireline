@@ -13,11 +13,14 @@ import {
   ArrowDown,
   ArrowUp,
   AudioLines,
+  Globe,
   Loader2,
   MessageCircle,
   Mic,
   Phone,
+  Square,
   Trash2,
+  X,
 } from "lucide-react";
 
 import { Button } from "../components/atoms";
@@ -38,6 +41,7 @@ import { retainStudioConversationMessages } from "../lib/studio-session-state";
 import LinkifiedText from "./ui/LinkifiedText";
 import BotMark from "./BotMark";
 import StudioHandsFree from "./studio/StudioHandsFree";
+import { useStudioTaskComposer } from "../hooks/useStudioTaskComposer";
 
 export type StudioMessage = {
   id: string;
@@ -158,8 +162,11 @@ const StudioWorkroom = forwardRef<
     phoneNumber?: string | null;
     voiceVisible?: boolean;
     timelineExtras?: Array<{ id: string; createdAt: string; updatedAt?: string; node: ReactNode }>;
-    composerChoice?: ReactNode;
-    composerOverride?: ReactNode;
+    browserRequested: boolean;
+    autoReply: boolean;
+    onRequestBrowserTask: () => void;
+    onRequestMessage: () => void;
+    onShowBrowser: () => void;
     timelineNotice?: ReactNode;
   }
 >(function StudioWorkroom(
@@ -180,8 +187,11 @@ const StudioWorkroom = forwardRef<
     phoneNumber,
     voiceVisible = true,
     timelineExtras = [],
-    composerChoice,
-    composerOverride,
+    browserRequested,
+    autoReply,
+    onRequestBrowserTask,
+    onRequestMessage,
+    onShowBrowser,
     timelineNotice,
   },
   ref,
@@ -280,12 +290,30 @@ const StudioWorkroom = forwardRef<
   const [voiceStartFocusRequested, setVoiceStartFocusRequested] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const taskComposer = useStudioTaskComposer({
+    agentId,
+    agentName,
+    enabled: mode === "configure",
+    autoReply: autoReply && !sending && !loading && !clearing && !handsFreeActive.current,
+    requested: browserRequested,
+    messageDraft: draft,
+    onRequest: onRequestBrowserTask,
+    onShowBrowser,
+    onFocus: () => requestAnimationFrame(() => inputRef.current?.focus()),
+  });
+  const composerDraft = taskComposer.taskMode ? taskComposer.draft : draft;
+  const setComposerDraft = taskComposer.taskMode ? taskComposer.setDraft : setDraft;
+  const composerBusy = sending || taskComposer.busy;
+  const canSubmit = taskComposer.taskMode
+    ? taskComposer.canSend && !sending && !clearing
+    : Boolean(draft.trim() && !composerBusy && !loading && !clearing);
   const injectedCommandRef = useRef<string | null>(initialCommand?.trim() || null);
   const injectedCommandNonceRef = useRef<string | null>(commandNonce || null);
   const split = layout === "split";
   const composerId = "studio-workroom-message";
   const quickPrompts = CONFIGURE_PROMPTS;
-  const showStarterPrompts = !loading && !sending && messages.length === 0 && !draft.trim();
+  const showStarterPrompts =
+    !taskComposer.taskMode && !loading && !sending && messages.length === 0 && !draft.trim();
 
   useImperativeHandle(
     ref,
@@ -439,7 +467,7 @@ const StudioWorkroom = forwardRef<
     const textarea = inputRef.current;
     if (!textarea) return;
     const resize = () => {
-      textarea.style.minHeight = "52px";
+      textarea.style.minHeight = "3.25rem";
       textarea.style.height = "0px";
       textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 52), 160)}px`;
     };
@@ -456,12 +484,18 @@ const StudioWorkroom = forwardRef<
     });
     observer.observe(textarea);
     return () => observer.disconnect();
-  }, [draft, mode]);
+  }, [composerDraft, mode]);
 
   const submit = useCallback(async () => {
+    if (taskComposer.taskMode) {
+      if (sending || clearing || !taskComposer.canSend) return false;
+      followLatest.current = true;
+      return taskComposer.send();
+    }
     const text = draft.trim();
     if (mode !== "configure" || !text || requestActive.current || sending || loading || clearing)
       return false;
+    followLatest.current = true;
     setMessages((current) => [
       ...current,
       {
@@ -490,6 +524,7 @@ const StudioWorkroom = forwardRef<
     setError,
     updateSession,
     session,
+    taskComposer,
   ]);
 
   const clearConversation = useCallback(async () => {
@@ -793,92 +828,171 @@ const StudioWorkroom = forwardRef<
                 </Button>
               </div>
             ) : null}
-            {composerOverride || (
-              <div className="wl-studio-chat__composer shrink-0 bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
-                <div className="mx-auto max-w-3xl">
-                  <div className="wl-studio-composer-tools">
-                    {composerChoice}
-                    <StudioHandsFree
-                      key={`${agentId}:message`}
-                      agentId={agentId}
-                      draft={draft}
-                      onDraftChange={setDraft}
-                      canSubmit={Boolean(draft.trim() && !sending && !loading && !clearing)}
-                      onSubmit={submit}
-                      sendPhrase="send message"
-                      maxLength={2000}
-                      busy={sending || loading || clearing}
-                      responseKey={messages.at(-1)?.role === "agent" ? messages.at(-1)?.id : ""}
-                      response={messages.at(-1)?.role === "agent" ? messages.at(-1)?.content : ""}
-                      onActiveChange={setHandsFreeActive}
-                    />
-                  </div>
-                  <div className={`${WL_COMPOSER_CLASSES.composerDock} wl-studio-composer`}>
-                    <label className="sr-only" htmlFor={composerId}>
-                      {`Message ${agentName}`}
-                    </label>
-                    <textarea
-                      id={composerId}
-                      data-resize="none"
-                      ref={inputRef}
-                      value={draft}
-                      onChange={(event) => setDraft(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (
-                          event.nativeEvent.isComposing ||
-                          event.key !== "Enter" ||
-                          event.shiftKey ||
-                          sending
-                        )
-                          return;
-                        const finePointer = window.matchMedia("(pointer: fine)").matches;
-                        if (!finePointer && !event.metaKey && !event.ctrlKey) return;
-                        event.preventDefault();
-                        submit();
-                      }}
-                      rows={1}
-                      disabled={sending}
-                      placeholder="Message your Bot…"
-                      className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
-                    />
-                    <div className="wl-composer-dock__toolbar">
-                      {mode === "configure" && modeControls === "composer" && onModeChange ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          className="min-h-11 min-w-11 px-2"
-                          onClick={() => selectMode("test")}
-                          aria-label="Rehearse"
-                          title="Rehearse privately"
-                        >
-                          <AudioLines className="size-4" aria-hidden="true" />
-                          <span className="hidden sm:inline">Rehearse</span>
-                        </Button>
-                      ) : null}
-                      {mode === "configure" && messages.length ? clearButton : null}
+            <div className="wl-studio-chat__composer shrink-0 bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
+              <div className="mx-auto max-w-3xl">
+                {taskComposer.notice}
+                <div className="wl-studio-composer-tools">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="min-h-11 justify-self-start gap-2"
+                    disabled={composerBusy}
+                    aria-label={
+                      taskComposer.taskMode
+                        ? `${taskComposer.label}, message instead`
+                        : "Use browser"
+                    }
+                    aria-pressed={taskComposer.taskMode}
+                    title={
+                      taskComposer.taskMode
+                        ? "Return to your message draft"
+                        : "Give your Bot a browser task"
+                    }
+                    onClick={() => {
+                      if (taskComposer.taskMode) onRequestMessage();
+                      else onRequestBrowserTask();
+                      requestAnimationFrame(() => inputRef.current?.focus());
+                    }}
+                  >
+                    <Globe size={16} aria-hidden="true" />
+                    <span>{taskComposer.taskMode ? taskComposer.label : "Use browser"}</span>
+                    {taskComposer.taskMode ? <X size={14} aria-hidden="true" /> : null}
+                  </Button>
+                  <StudioHandsFree
+                    key={`${agentId}:${taskComposer.taskMode ? "work" : "message"}`}
+                    agentId={agentId}
+                    draft={composerDraft}
+                    onDraftChange={setComposerDraft}
+                    canSubmit={canSubmit}
+                    onSubmit={submit}
+                    sendPhrase={taskComposer.taskMode ? "send task" : "send message"}
+                    maxLength={taskComposer.taskMode ? taskComposer.maxLength : 2000}
+                    busy={
+                      composerBusy ||
+                      loading ||
+                      clearing ||
+                      (taskComposer.taskMode && taskComposer.speechBusy)
+                    }
+                    responseKey={
+                      taskComposer.taskMode
+                        ? taskComposer.responseKey
+                        : messages.at(-1)?.role === "agent"
+                          ? messages.at(-1)?.id
+                          : ""
+                    }
+                    response={
+                      taskComposer.taskMode
+                        ? taskComposer.response
+                        : messages.at(-1)?.role === "agent"
+                          ? messages.at(-1)?.content
+                          : ""
+                    }
+                    onActiveChange={setHandsFreeActive}
+                  />
+                </div>
+                <form
+                  className={`${WL_COMPOSER_CLASSES.composerDock} wl-studio-composer`}
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void submit();
+                  }}
+                >
+                  <label className="sr-only" htmlFor={composerId}>
+                    {taskComposer.taskMode ? taskComposer.inputLabel : `Message ${agentName}`}
+                  </label>
+                  <textarea
+                    id={composerId}
+                    data-resize="none"
+                    ref={inputRef}
+                    value={composerDraft}
+                    onChange={(event) => setComposerDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (
+                        event.nativeEvent.isComposing ||
+                        event.key !== "Enter" ||
+                        event.shiftKey ||
+                        composerBusy
+                      )
+                        return;
+                      const finePointer = window.matchMedia("(pointer: fine)").matches;
+                      if (!finePointer && !event.metaKey && !event.ctrlKey) return;
+                      event.preventDefault();
+                      submit();
+                    }}
+                    rows={1}
+                    disabled={sending}
+                    maxLength={taskComposer.taskMode ? taskComposer.maxLength : 4000}
+                    placeholder={
+                      taskComposer.taskMode ? taskComposer.placeholder : "Message your Bot…"
+                    }
+                    className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
+                  />
+                  <div className="wl-composer-dock__toolbar">
+                    {mode === "configure" && modeControls === "composer" && onModeChange ? (
                       <Button
                         type="button"
                         size="sm"
                         variant="ghost"
-                        disabled={!draft.trim() || sending || loading || clearing}
-                        onClick={submit}
-                        className="wl-work-send size-11 shrink-0 rounded-full p-0"
-                        aria-busy={sending}
-                        aria-label={sending ? "Sending" : "Send"}
-                        title={sending ? "Sending" : "Send"}
+                        className="min-h-11 min-w-11 px-2"
+                        onClick={() => selectMode("test")}
+                        aria-label="Rehearse"
+                        title="Rehearse privately"
                       >
-                        {sending ? (
-                          <Loader2 className="animate-spin" size={16} aria-hidden="true" />
-                        ) : (
-                          <ArrowUp size={18} aria-hidden="true" />
-                        )}
+                        <AudioLines className="size-4" aria-hidden="true" />
+                        <span className="hidden sm:inline">Rehearse</span>
                       </Button>
-                    </div>
+                    ) : null}
+                    {taskComposer.ownActive ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => void taskComposer.stop()}
+                        className="min-h-11 min-w-11 px-2"
+                        disabled={taskComposer.pending !== null || taskComposer.ownActive.stopping}
+                        aria-label={taskComposer.ownActive.stopping ? "Stopping task" : "Stop task"}
+                        title={taskComposer.ownActive.stopping ? "Stopping task" : "Stop task"}
+                        aria-busy={taskComposer.ownActive.stopping}
+                      >
+                        <Square size={16} aria-hidden="true" />
+                      </Button>
+                    ) : mode === "configure" && messages.length ? (
+                      clearButton
+                    ) : null}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      disabled={!canSubmit}
+                      onClick={submit}
+                      className="wl-work-send size-11 shrink-0 rounded-full p-0"
+                      aria-busy={composerBusy}
+                      aria-label={
+                        composerBusy
+                          ? "Sending"
+                          : taskComposer.taskMode
+                            ? taskComposer.sendLabel
+                            : "Send"
+                      }
+                      title={
+                        composerBusy
+                          ? "Sending"
+                          : taskComposer.taskMode
+                            ? taskComposer.sendLabel
+                            : "Send"
+                      }
+                    >
+                      {composerBusy ? (
+                        <Loader2 className="animate-spin" size={16} aria-hidden="true" />
+                      ) : (
+                        <ArrowUp size={18} aria-hidden="true" />
+                      )}
+                    </Button>
                   </div>
-                </div>
+                </form>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}

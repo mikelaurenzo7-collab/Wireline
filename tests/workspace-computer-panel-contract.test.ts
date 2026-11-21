@@ -36,7 +36,7 @@ describe("Workspace computer panel", () => {
       /<ComputerWorkbench\s+key=\{active.id\}\s+agentId=\{active.id\}\s+layout="panel"\s+chatControls=/,
     );
     expect(studio).toContain("<ComputerWorkspaceProvider>");
-    expect(studio).toContain("<StudioTaskChat");
+    expect(studio).toContain("browserRequested={!setupChat}");
   });
 
   it("keeps the conversation mounted behind focused Computer and manual Full width", () => {

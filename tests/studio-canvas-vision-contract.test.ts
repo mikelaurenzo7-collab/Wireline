@@ -96,6 +96,16 @@ describe("Studio Canvas vision contract", () => {
       "workroom-key",
       "workroom-mode-isolation",
       "workroom-draft-preservation",
+      "conversation-modes",
+      "separate-task-composer",
+      "duplicate-composer-input",
+      "composer-intent",
+      "shared-task-composer",
+      "shared-composer-input",
+      "existing-task-controller",
+      "existing-task-admission",
+      "task-reply-scope",
+      "uncertain-task-recovery",
     ]) {
       expect(tsManifest, id).toContain(`id: "${id}"`);
       expect(deployManifest, id).toContain(`id: "${id}"`);

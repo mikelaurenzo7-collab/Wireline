@@ -1,4 +1,4 @@
-import { CheckCircle2, ExternalLink, Globe } from "lucide-react";
+import { CheckCircle2, ExternalLink, Globe, MessageCircle } from "lucide-react";
 import { Button } from "./atoms";
 import TaskResultText from "./computer/TaskResultText";
 import LinkifiedText from "./ui/LinkifiedText";
@@ -12,12 +12,14 @@ export default function StudioTaskMessages({
   agentName,
   markKey,
   onShowBrowser,
+  onReply,
 }: {
   selected: ComputerTask;
   agentId: string;
   agentName: string;
   markKey?: BotMarkKey | null;
   onShowBrowser: () => void;
+  onReply?: () => void;
 }) {
   return (
     <>
@@ -82,15 +84,18 @@ export default function StudioTaskMessages({
                 ? "Browse first. Then give your Bot a task from this page."
                 : selected.question || "Your Bot needs you to continue."}
             </TaskResultText>
+            {!selected.ownerControl && onReply ? (
+              <Button type="button" size="sm" variant="secondary" onClick={onReply}>
+                <MessageCircle aria-hidden="true" />
+                Reply to task
+              </Button>
+            ) : null}
             <Button type="button" size="sm" variant="secondary" onClick={onShowBrowser}>
               <Globe aria-hidden="true" />
               {selected.ownerControl ? "Open browser" : "Use browser controls"}
             </Button>
             {!selected.ownerControl ? (
-              <p>
-                Choose Computer task below to reply. Use browser control for passwords, codes, or
-                private details.
-              </p>
+              <p>Use browser controls for passwords, codes, or private details.</p>
             ) : null}
           </div>
         ) : null}

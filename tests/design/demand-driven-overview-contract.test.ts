@@ -70,14 +70,14 @@ describe("demand-driven authenticated experience", () => {
   it("keeps work in one conversation with a shared computer and progressive Bot details", () => {
     expect(studio).toContain('"setup" | "review"');
     expect(studio).toContain('"configure" | "test"');
-    expect(studio).toContain('{ id: "work", label: "Computer task" }');
+    expect(studio).toContain("onRequestBrowserTask={requestBrowserTask}");
     expect(studio).toContain('{ id: "computer", label: "Computer" }');
     expect(studio).not.toContain('{ id: "try", label: "Rehearse" }');
     expect(studio).toContain('setWorkroomMode("test")');
     expect(studio).toContain("timelineExtras={");
-    expect(studio).toContain("composerOverride={");
+    expect(studio).not.toContain("composerOverride={");
     expect(studio).toContain('{ id: "setup", label: "Set Up" }');
-    expect(studio).toContain("<StudioTaskChat");
+    expect(studio).toContain("browserRequested={!setupChat}");
     expect(studio).toContain("<ComputerWorkspaceProvider>");
     expect(studio).toContain("StudioAgentReviewPanel");
     expect(studio).not.toContain("StudioAgentCanvas");

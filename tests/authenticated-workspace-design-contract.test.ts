@@ -159,7 +159,7 @@ describe("authenticated workspace design architecture", () => {
     expect(workroom).toContain("showStarterPrompts");
     expect(workroom).toContain("quickPrompts.slice(0, 3)");
     expect(workroom).toContain("rows={1}");
-    expect(workroom).toContain('textarea.style.minHeight = "52px"');
+    expect(workroom).toContain('textarea.style.minHeight = "3.25rem"');
     expect(workroom).toContain("Math.min(Math.max(textarea.scrollHeight, 52), 160)");
     expect(workroom).toContain('window.matchMedia("(pointer: fine)").matches');
     expect(workroom).toContain("event.shiftKey");

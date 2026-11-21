@@ -96,7 +96,9 @@ describe("authenticated minimal copy contract", () => {
 
   it("keeps the instructions canvas clear and the composer neutral", () => {
     const studio = read("src/components/StudioWorkroom.tsx");
-    const composerPlaceholder = studio.match(/placeholder="([^"]+)"/)?.[1];
+    const composerPlaceholder = studio.match(
+      /placeholder=\{\s*taskComposer\.taskMode\s*\?\s*taskComposer\.placeholder\s*:\s*"([^"]+)"\s*\}/,
+    )?.[1];
 
     expect(studio).not.toContain("What Should We Change?");
     expect(studio).toContain("What can {agentName} do for you?");

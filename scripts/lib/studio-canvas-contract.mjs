@@ -25,6 +25,7 @@ export const STUDIO_CANVAS_SURFACES = {
   studioChrome: "src/components/studio/StudioContextChrome.tsx",
   canvas: "src/components/StudioWorkspaceV2.tsx",
   workroom: "src/components/StudioWorkroom.tsx",
+  taskComposer: "src/hooks/useStudioTaskComposer.tsx",
   workspacePanel: "src/components/StudioAgentWorkspacePanel.tsx",
   reviewPanel: "src/components/StudioAgentReviewPanel.tsx",
   studioHome: "src/pages/AgentStudioHome.tsx",
@@ -47,8 +48,15 @@ export const STUDIO_CANVAS_FORBIDDEN = {
   canvas: [
     { id: "agent-roster-grid", pattern: /Your agents/ },
     { id: "spatial-canvas", pattern: /StudioAgentCanvas/ },
+    { id: "separate-task-composer", pattern: /StudioTaskChat|composerOverride/ },
+    { id: "conversation-modes", pattern: /aria-label="Conversation mode"/ },
     { id: "rehearsal-peer-tab", pattern: /\{ id: "try", label: "Rehearse" \}/ },
   ],
+  workroom: [
+    { id: "duplicate-composer-input", pattern: /<textarea[\s\S]*<textarea/ },
+    { id: "composer-replacement", pattern: /composerOverride/ },
+  ],
+  taskComposer: [{ id: "direct-task-transport", pattern: /authFetch|fetch\(/ }],
   workspacePanel: [
     { id: "fake-badge", pattern: />\s*wired\s*</ },
     { id: "external-voice", pattern: /VoiceGallery|AgentPresenceLivePreview/ },
@@ -123,15 +131,12 @@ export const STUDIO_CANVAS_REQUIRED = {
       id: "rehearsal-in-conversation",
       pattern: /setWorkroomMode\("test"\);[\s\S]*if \(splitWorkspace\) setPanelCollapsed\(true\)/,
     },
-    { id: "conversation-modes", pattern: /role="group" aria-label="Conversation mode"/ },
     { id: "shared-task-timeline", pattern: /timelineExtras=\{[\s\S]*<StudioTaskMessages/ },
-    {
-      id: "shared-task-composer",
-      pattern: /composerOverride=\{[\s\S]*<StudioTaskChat[\s\S]*composerOnly/,
-    },
+
     { id: "workroom-mode", pattern: /mode=\{mainMode\}/ },
     { id: "deep-editor", pattern: /StudioAgentWorkspacePanel/ },
     { id: "chat-workroom", pattern: /<StudioWorkroom/ },
+    { id: "composer-intent", pattern: /browserRequested=\{!setupChat\}/ },
     { id: "review-panel", pattern: /StudioAgentReviewPanel/ },
     // Request lifetimes are isolated by account, Bot and mode; drafts live above them.
     {
@@ -157,6 +162,8 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "composer-dock", pattern: /wl-composer-dock/ },
     { id: "split-layout", pattern: /split/ },
     { id: "composer-focus", pattern: /focusComposer/ },
+    { id: "shared-task-composer", pattern: /useStudioTaskComposer/ },
+    { id: "shared-composer-input", pattern: /value=\{composerDraft\}/ },
   ],
   workspacePanel: [
     { id: "real-config", pattern: /agent-config/ },
@@ -167,6 +174,12 @@ export const STUDIO_CANVAS_REQUIRED = {
   reviewPanel: [
     { id: "go-live-review", pattern: /onRehearse|onEdit/ },
     { id: "phone-readiness", pattern: /phoneNumber/ },
+  ],
+  taskComposer: [
+    { id: "existing-task-controller", pattern: /useComputerWorkspace/ },
+    { id: "existing-task-admission", pattern: /await model\.startTask/ },
+    { id: "task-reply-scope", pattern: /stored\.command === ownActive\?\.id/ },
+    { id: "uncertain-task-recovery", pattern: /model\.refreshRequired/ },
   ],
   agentPreference: [{ id: "mru-key", pattern: /wireline:studio:last-agent-id/ }],
   activeAgentHook: [{ id: "url-agent-param", pattern: /params\.get\("agent"\)/ }],

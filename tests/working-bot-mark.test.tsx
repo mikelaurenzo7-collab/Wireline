@@ -3,7 +3,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import BotMark from "../src/components/BotMark";
-import StudioTaskChat from "../src/components/StudioTaskChat";
+import StudioTaskMessages from "../src/components/StudioTaskMessages";
+import type { ComputerTask } from "../src/contexts/ComputerWorkspaceContext";
 
 const state = vi.hoisted(() => ({ task: null as Record<string, unknown> | null }));
 vi.mock("../src/contexts/ComputerWorkspaceContext", () => ({
@@ -37,7 +38,13 @@ const task = (overrides: Record<string, unknown> = {}) => ({
 const renderTask = () =>
   renderToStaticMarkup(
     <MemoryRouter>
-      <StudioTaskChat agentId="bot-a" agentName="Nora" onShowBrowser={() => {}} />
+      <StudioTaskMessages
+        selected={state.task as ComputerTask}
+        agentId="bot-a"
+        agentName="Nora"
+        markKey="spark-rose"
+        onShowBrowser={() => {}}
+      />
     </MemoryRouter>,
   );
 

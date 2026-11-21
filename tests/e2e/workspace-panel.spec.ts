@@ -350,8 +350,7 @@ for (const width of [700, 1206]) {
     await expect(suggestions).toHaveCount(0);
     await input.fill("Keep this unsent instruction while I change views.");
 
-    const modes = page.getByRole("group", { name: "Conversation mode" });
-    await modes.getByRole("button", { name: "Computer task", exact: true }).click();
+    await page.getByRole("button", { name: "Use browser", exact: true }).click();
     const workDock = workConversation(page).locator("..");
     await expect(workDock).toHaveClass(/wl-studio-composer/);
     await expect(workDock.getByText("Supervised web work", { exact: true })).toHaveCount(0);
@@ -359,7 +358,7 @@ for (const width of [700, 1206]) {
       "background-color",
       sendBackground,
     );
-    await modes.getByRole("button", { name: "Message", exact: true }).click();
+    await page.getByRole("button", { name: /message instead$/i }).click();
     await expect(input).toHaveValue("Keep this unsent instruction while I change views.");
 
     if (width < 1180) {
@@ -892,10 +891,11 @@ test.describe("wide screens", () => {
       .getByRole("complementary", { name: "Workspace panel", exact: true })
       .getByRole("button", { name: "Close panel", exact: true })
       .click();
-    await page
-      .getByRole("group", { name: "Conversation mode", exact: true })
-      .getByRole("button", { name: "Message", exact: true })
-      .click();
+    await expect(conversation(page, "Sales Bot")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Use browser", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
     await page.getByRole("button", { name: "Rehearse", exact: true }).click();
     await expect(rail.getByRole("link", { name: "Open Sales Bot conversation" })).toHaveAttribute(
       "aria-current",
@@ -960,10 +960,7 @@ test.describe("wide screens", () => {
     await expect(workConversation(page)).toBeVisible();
     await expect(panel.getByRole("button", { name: "Open browser", exact: true })).toBeVisible();
 
-    await page
-      .getByRole("group", { name: "Conversation mode", exact: true })
-      .getByRole("button", { name: "Message", exact: true })
-      .click();
+    await page.getByRole("button", { name: /message instead$/i }).click();
     await conversation(page).fill("Keep this unsent instruction.");
     await panel.getByRole("button", { name: "Close panel", exact: true }).click();
     await page.getByRole("button", { name: "Rehearse", exact: true }).click();
@@ -1597,11 +1594,11 @@ for (const width of [1440, 390]) {
     };
     const fixture = await mockWorkspace(page, [older], await syntheticFrame(page));
     await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
-    await expect(
-      page
-        .getByRole("group", { name: "Conversation mode" })
-        .getByRole("button", { name: "Computer task", exact: true }),
-    ).toHaveAttribute("aria-pressed", "true", { timeout: 20_000 });
+    await expect(page.getByRole("button", { name: /message instead$/i })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+      { timeout: 20_000 },
+    );
     await workConversation(page).fill("Find three plumbers with Saturday hours.");
     await page.getByRole("button", { name: "Start work", exact: true }).click();
     await expect
@@ -1615,10 +1612,12 @@ for (const width of [1440, 390]) {
     await expect(page.locator(".wl-work-current-step")).toContainText(
       "Reading the public directory.",
     );
-    if (width > 1000)
+    if (width > 1000) {
+      await page.getByRole("button", { name: "Open Computer Panel", exact: true }).click();
       await expect(
         page.getByRole("img", { name: "What your Bot's cloud computer shows right now" }),
       ).toBeVisible();
+    }
     await proof(page, info, `work-running-${width}`);
     if (width < 1000) {
       await page
@@ -1775,7 +1774,7 @@ test("phone Studio keeps the composer compact while reading task history", async
   ]);
   await page.goto(`/studio?agent=${bots[0].id}`);
   const log = page.getByRole("log", { name: "Conversation", exact: true });
-  const modes = page.getByRole("group", { name: "Conversation mode" });
+  const browserTool = page.getByRole("button", { name: "Use browser", exact: true });
   const handsFree = page.getByRole("button", { name: "Hands-free", exact: true });
   const send = page.getByRole("button", { name: "Send", exact: true });
   const dock = page.getByRole("navigation", { name: "Workspace navigation" });
@@ -1788,7 +1787,7 @@ test("phone Studio keeps the composer compact while reading task history", async
   });
   await expect(jump).toBeInViewport();
   await proof(page, info, "mobile-studio-history");
-  const modeBox = (await modes.boundingBox())!;
+  const modeBox = (await browserTool.boundingBox())!;
   const speechBox = (await handsFree.boundingBox())!;
   const sendBox = (await send.boundingBox())!;
   const dockBox = (await dock.boundingBox())!;
@@ -1804,6 +1803,35 @@ test("phone Studio keeps the composer compact while reading task history", async
   await jump.click();
   await expect(jump).toBeHidden();
   await expect(log).toBeFocused();
+});
+
+test("sending a browser task brings the new turn into view from older history", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 720 });
+  const api = await mockWorkspace(page, [
+    pastTask(
+      "long-history",
+      bots[0].id,
+      "A previous directory search. ".repeat(40),
+      "A previous result with public sources. ".repeat(80),
+    ),
+  ]);
+  await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
+  const log = page.getByRole("log", { name: "Conversation", exact: true });
+  await expect.poll(() => log.evaluate((node) => node.scrollTop)).toBeGreaterThan(160);
+  await log.evaluate((node) => {
+    node.scrollTop = 0;
+    node.dispatchEvent(new Event("scroll"));
+  });
+  await expect(page.getByRole("button", { name: "Jump to latest", exact: true })).toBeVisible();
+  await workConversation(page).fill("Find the current public opening hours.");
+  await page.getByRole("button", { name: "Start work", exact: true }).click();
+  await expect.poll(() => api.starts.length).toBe(1);
+  await expect(log.locator(".wl-work-current-step")).toBeInViewport();
+  await expect
+    .poll(() => log.evaluate((node) => node.scrollHeight - node.clientHeight - node.scrollTop))
+    .toBeLessThan(3);
 });
 
 test("Work follows a long result and preserves the owner's manual reading position", async ({
@@ -1956,8 +1984,8 @@ test("an authoritative held Refresh fences duplicate refreshes and old or new ac
     },
   ]);
   await page.goto(`/studio?agent=${bots[0].id}&chat=computer`);
-  const chat = page.getByRole("region", { name: "Front Desk work conversation", exact: true });
-  await expect(chat.getByRole("button", { name: "Stop", exact: true })).toBeVisible();
+  const chat = page.getByRole("region", { name: "Front Desk workroom", exact: true });
+  await expect(chat.getByRole("button", { name: "Stop task", exact: true })).toBeVisible();
   let releasePoll: () => void = () => undefined;
   const pollGate = new Promise<void>((resolve) => {
     releasePoll = resolve;
@@ -1976,7 +2004,7 @@ test("an authoritative held Refresh fences duplicate refreshes and old or new ac
     fixture.setTask("held-refresh-task", { stopping: true });
     await route.fulfill({ json: { success: true } });
   });
-  await chat.getByRole("button", { name: "Stop", exact: true }).click();
+  await chat.getByRole("button", { name: "Stop task", exact: true }).click();
   const refresh = page.getByRole("button", { name: "Refresh work", exact: true });
   await expect(refresh).toBeVisible();
   let releaseRefresh: () => void = () => undefined;
@@ -2002,5 +2030,5 @@ test("an authoritative held Refresh fences duplicate refreshes and old or new ac
   expect(refreshReads).toBe(1);
   releaseRefresh();
   await expect(refresh).toHaveCount(0);
-  await expect(chat.getByRole("button", { name: "Stopping…", exact: true })).toBeDisabled();
+  await expect(chat.getByRole("button", { name: "Stopping task", exact: true })).toBeDisabled();
 });

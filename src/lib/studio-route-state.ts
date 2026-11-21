@@ -82,6 +82,16 @@ export function setStudioWorkroomModeParams(
   return next;
 }
 
+/** A browser task is a deliberate composer intent, separate from opening its view. */
+export function setStudioBrowserTaskParams(current: URLSearchParams): URLSearchParams {
+  const next = setStudioWorkroomModeParams(current, "configure");
+  next.set("chat", "computer");
+  next.delete("section");
+  next.delete("focus");
+  next.delete("panel");
+  return next;
+}
+
 export function setStudioInspectorSectionParams(
   current: URLSearchParams,
   section: StudioInspectorSection,

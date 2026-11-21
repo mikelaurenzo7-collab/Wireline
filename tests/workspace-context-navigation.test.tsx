@@ -5,6 +5,10 @@ import StudioAgentReviewPanel from "../src/components/StudioAgentReviewPanel";
 import StudioWorkroom from "../src/components/StudioWorkroom";
 import KnowledgePage, { KnowledgeEditor } from "../src/pages/KnowledgePage";
 
+vi.mock("../src/hooks/useStudioTaskComposer", () => ({
+  useStudioTaskComposer: () => ({ taskMode: false, busy: false, notice: null, ownActive: null }),
+}));
+
 vi.mock("../src/hooks/useChannelEntitlements", () => ({
   useChannelEntitlements: () => ({
     status: "ready",

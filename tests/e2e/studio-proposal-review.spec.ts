@@ -220,7 +220,9 @@ test("Studio reviews and saves distinct operating rules independently", async ({
     });
   });
   await page.goto("/studio?agent=bot-front-desk&chat=setup");
-  await page.getByRole("textbox", { name: "Message Front Desk", exact: true }).fill("Add both rules.");
+  await page
+    .getByRole("textbox", { name: "Message Front Desk", exact: true })
+    .fill("Add both rules.");
   await page.getByRole("button", { name: "Send", exact: true }).click();
   const cards = page.getByRole("region", { name: "Review Operating rule", exact: true });
   await expect(cards).toHaveCount(2);
@@ -261,10 +263,8 @@ test("mobile Conversation and Computer share one row without losing a task draft
     page.getByRole("complementary", { name: "Workspace panel", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Close panel", exact: true }).click();
-  const mode = page.getByRole("group", { name: "Conversation mode", exact: true });
-  await mode.getByRole("button", { name: "Message", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Message Sales Bot", exact: true })).toBeVisible();
-  await mode.getByRole("button", { name: "Computer task", exact: true }).click();
+  await page.getByRole("button", { name: "Use browser", exact: true }).click();
   await expect(draft).toHaveValue("Keep this unsent task while I inspect my Bot.");
   await expect(views.getByRole("button")).toHaveCount(2);
   await expect(conversationButton).toHaveAttribute("aria-pressed", "true");

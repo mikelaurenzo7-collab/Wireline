@@ -21,6 +21,7 @@ import {
   normalizeStudioRouteParams,
   setStudioInspectorSectionParams,
   setStudioWorkroomModeParams,
+  setStudioBrowserTaskParams,
 } from "../lib/studio-route-state";
 import { customerAgentLanguage } from "../lib/product-copy";
 import StudioAgentReviewPanel from "./StudioAgentReviewPanel";
@@ -28,7 +29,6 @@ import StudioAgentWorkspacePanel from "./StudioAgentWorkspacePanel";
 import StudioBotDetailsPanel from "./studio/StudioBotDetailsPanel";
 import StudioWorkroom, { type StudioWorkroomHandle } from "./StudioWorkroom";
 import WorkspaceRecovery from "./WorkspaceRecovery";
-import StudioTaskChat from "./StudioTaskChat";
 import StudioTaskMessages from "./StudioTaskMessages";
 import {
   ComputerWorkspaceProvider,
@@ -393,6 +393,26 @@ function StudioWorkspaceContent() {
     [setParams],
   );
 
+  const requestBrowserTask = useCallback(() => {
+    setParams(
+      (current) => {
+        return setStudioBrowserTaskParams(current);
+      },
+      { replace: true },
+    );
+  }, [setParams]);
+
+  const requestMessage = useCallback(() => {
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.set("chat", "setup");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [setParams]);
+
   const openPanelSection = useCallback(
     (section: PanelSection) => {
       if (section === "computer") {
@@ -697,44 +717,6 @@ function StudioWorkspaceContent() {
   const main = sessionFor(mainMode);
   // Legacy route commands focus private voice rehearsal without editing the Bot.
   const mainReceivesCommand = mainMode === "test";
-  const chatModes = (
-    <div className="wl-studio-chat-modes" role="group" aria-label="Conversation mode">
-      {(
-        [
-          { id: "setup", label: "Message" },
-          { id: "work", label: "Computer task" },
-        ] as const
-      ).map(({ id, label }) => (
-        <button
-          key={id}
-          type="button"
-          aria-pressed={!mobileBrowserOpen && (id === "setup") === setupChat}
-          onClick={() => {
-            setParams(
-              (current) => {
-                const next = setStudioWorkroomModeParams(current, "configure");
-                next.delete("panel");
-                if (id === "setup") next.set("chat", "setup");
-                else {
-                  next.set("chat", "computer");
-                  next.delete("section");
-                  next.delete("focus");
-                }
-                return next;
-              },
-              { replace: true },
-            );
-            if (id === "work" && splitWorkspace) {
-              setRestingSection("computer");
-              setPanelCollapsed(false);
-            }
-          }}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  );
 
   const workroom = (
     <StudioWorkroom
@@ -768,6 +750,14 @@ function StudioWorkspaceContent() {
             agentId={active.id}
             agentName={active.name}
             markKey={active.mark_key}
+            onReply={
+              task.id === computer.activeTask?.id
+                ? () => {
+                    requestBrowserTask();
+                    requestAnimationFrame(() => workroomRef.current?.focusComposer());
+                  }
+                : undefined
+            }
             onShowBrowser={() => {
               computer.setSelectedId(task.id);
               showBrowser();
@@ -775,19 +765,11 @@ function StudioWorkspaceContent() {
           />
         ),
       }))}
-      composerChoice={chatModes}
-      composerOverride={
-        !setupChat && mainMode === "configure" ? (
-          <StudioTaskChat
-            key={`${user?.id}:${active.id}`}
-            agentId={active.id}
-            agentName={active.name}
-            onShowBrowser={showBrowser}
-            composerChoice={chatModes}
-            composerOnly
-          />
-        ) : undefined
-      }
+      browserRequested={!setupChat}
+      autoReply={!inspectorOpen && !mobileBrowserOpen}
+      onRequestBrowserTask={requestBrowserTask}
+      onRequestMessage={requestMessage}
+      onShowBrowser={showBrowser}
       timelineNotice={
         computer.listFailed ? (
           <StatusNotice
@@ -811,7 +793,7 @@ function StudioWorkspaceContent() {
       onModeChange={panelOpen ? undefined : setWorkroomMode}
       allowOutbound={Boolean(active.phone_number)}
       phoneNumber={active.phone_number}
-      voiceVisible={setupChat && (splitWorkspace || !inspectorOpen) && !mobileBrowserOpen}
+      voiceVisible={(splitWorkspace || !inspectorOpen) && !mobileBrowserOpen}
     />
   );
 
