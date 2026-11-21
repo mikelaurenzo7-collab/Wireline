@@ -261,7 +261,7 @@ export default function EmailVerifyBanner() {
     >
       <div className="wl-banner__body">
         <Mail className="wl-banner__icon" aria-hidden />
-        <span className="text-left text-[13px] leading-4">
+        <span className="text-left">
           {outcome === "sent" ? (
             <>Verification email resent. Check your inbox + spam folder.</>
           ) : outcome === "no-transport" ? (

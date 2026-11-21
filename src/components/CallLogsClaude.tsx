@@ -464,7 +464,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
         <p className="text-xs font-semibold text-primary">Call report</p>
         <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
-            <h2 className="font-mono text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate">
+            <h2 className="break-words font-mono text-xl font-bold tracking-tight text-foreground sm:text-2xl">
               {formatPhone(selected.customer_number, "Unknown Caller")}
             </h2>
             <p className="wl-preserve-case mt-1 text-xs text-muted-foreground">
@@ -626,8 +626,8 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
-      <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5 sm:px-5">
-        <span className="text-xs font-medium text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2.5 sm:px-5">
+        <span className="min-w-0 text-xs font-medium text-muted-foreground">
           {loading && calls.length === 0 ? (
             // Avoid flashing "0 calls" before the first page arrives.
             <>
@@ -647,7 +647,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
             `${calls.length} ${calls.length === 1 ? "call" : "calls"}`
           )}
         </span>
-        <div className="flex items-center gap-1.5">
+        <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-1.5">
           <Button
             type="button"
             variant="ghost"

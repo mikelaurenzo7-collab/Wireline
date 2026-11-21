@@ -134,7 +134,8 @@
   }
 
   [data-wireline-route="/studio"] > .wl-workspace-content:has(.wl-studio-workspace) {
-    --wl-workspace-dock-gap: 0px;
+    /* Scroll offsets can round a fraction of a pixel under the fixed dock. */
+    --wl-workspace-dock-gap: 1px;
   }
 
   [data-wireline-route="/studio"] .wl-workspace-content-inner:has(.wl-studio-workspace) {

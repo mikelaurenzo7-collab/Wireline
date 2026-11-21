@@ -155,6 +155,9 @@ for (const scale of [100, 200]) {
     const message = page.getByText("Couldn't check your email status. Try checking again.");
     await expect(message).toBeVisible();
     await expect(page.getByRole("button", { name: "Check Status", exact: true })).toBeVisible();
+    expect(
+      await message.evaluate((element) => parseFloat(getComputedStyle(element).fontSize)),
+    ).toBeGreaterThanOrEqual((13 * scale) / 100);
     await expect
       .poll(() =>
         message.evaluate((element) => {
@@ -172,7 +175,18 @@ for (const scale of [100, 200]) {
         }),
       )
       .toBe(true);
+    const newCall = page.getByRole("button", { name: "New Call", exact: true });
+    await expect
+      .poll(() =>
+        newCall.evaluate((button) => {
+          const bounds = button.getBoundingClientRect();
+          return bounds.left >= 0 && bounds.right <= window.innerWidth;
+        }),
+      )
+      .toBe(true);
     const proofDir = process.env.BOTBOUND_WORKSPACE_PROOF_DIR;
     if (proofDir) await page.screenshot({ path: join(proofDir, `email-status-320-${scale}.png`) });
+    await newCall.click();
+    await expect(page.getByRole("dialog", { name: "New Call", exact: true })).toBeVisible();
   });
 }
