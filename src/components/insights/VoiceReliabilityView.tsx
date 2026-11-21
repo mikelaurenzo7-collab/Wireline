@@ -292,7 +292,12 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
 
         <div className="rounded-md wl-panel border border-border p-5">
           <p className="wl-insight-label text-brand/70 mb-4">Recent Calls</p>
-          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+          <div
+            role="region"
+            aria-label="Recent Calls"
+            tabIndex={recent.length ? 0 : undefined}
+            className="wl-focus-ring-halo space-y-2 max-h-64 overflow-y-auto pr-1"
+          >
             {recent.length === 0 ? (
               <p className="text-sm text-muted">No recent calls with metrics.</p>
             ) : (

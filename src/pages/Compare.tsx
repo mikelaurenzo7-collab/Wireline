@@ -1,9 +1,8 @@
 import { Link } from "react-router";
 import { ArrowRight, Check, ChevronDown, ExternalLink } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
-import { PUBLIC_ENTRY_PLANS, publicPriceSummary } from "../lib/public-plan-lineup";
+import { publicPriceSummary } from "../lib/public-plan-lineup";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
-import { usePaidPlanAvailability } from "../hooks/usePaidPlanAvailability";
 import { PUBLIC_USAGE_TIERS, USAGE_TIERS } from "../lib/usage-billing-catalog";
 
 const entryUsageTier = USAGE_TIERS[PUBLIC_USAGE_TIERS[0]];
@@ -39,7 +38,7 @@ const MARKET_OPTIONS = [
   {
     name: "BotBound",
     price: publicPriceSummary(),
-    usage: `The entry Calls plan includes ${PUBLIC_ENTRY_PLANS.calls.voice_minutes_monthly} minutes and one local number. Email and combined channel activation follow a setup review.`,
+    usage: `${entryUsageTier.name} includes $${entryUsageTier.includedWorkUsd} of shared work across calls, SMS, email, and Computer. Phone numbers and email addresses are included with each plan.`,
     fit: "Owners who want a Bot with the channels they choose, connected tools, and logged outcomes",
     href: "/pricing",
     source: "BotBound pricing",
@@ -102,16 +101,6 @@ const TABLE_ROWS = [
 ] as const;
 
 export default function Compare() {
-  const { billingModel } = usePaidPlanAvailability({ planId: "usage" });
-  const marketOptions = MARKET_OPTIONS.map((option) =>
-    option.internal && billingModel === "usage"
-      ? {
-          ...option,
-          price: `From $${entryUsageTier.monthlyUsd}/month + usage`,
-          usage: `$${entryUsageTier.includedWorkUsd} of shared work included across calls, SMS, email, and Computer. One phone number and email address included.`,
-        }
-      : option,
-  );
   return (
     <MarketingPageFrame className="wl-compare-page">
       <PageMeta
@@ -142,7 +131,7 @@ export default function Compare() {
           <h2 className="sr-only">Compare Pricing Models</h2>
 
           <div className="mt-8 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card lg:hidden">
-            {marketOptions.map((option) => (
+            {MARKET_OPTIONS.map((option) => (
               <article
                 key={option.name}
                 className={`p-5 ${option.internal ? "bg-primary/[0.06]" : ""}`}
@@ -195,7 +184,7 @@ export default function Compare() {
                 </tr>
               </thead>
               <tbody>
-                {marketOptions.map((option, index) => (
+                {MARKET_OPTIONS.map((option, index) => (
                   <tr
                     className={
                       (index ? "border-t border-border " : "") +

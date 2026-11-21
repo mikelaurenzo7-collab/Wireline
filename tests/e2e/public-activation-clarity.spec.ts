@@ -46,6 +46,19 @@ async function attemptSignup(page: Page) {
   await expect(access.getByText(SYNTHETIC_SIGNUP_ERROR, { exact: true })).toBeVisible();
 }
 
+test("Compare quotes the same public allowance when checkout availability is unknown", async ({
+  page,
+}) => {
+  await mockPublicAccount(page, {}, 503);
+  await page.goto("/compare");
+  const comparison = page.getByRole("row").filter({
+    has: page.getByRole("link", { name: "BotBound pricing" }),
+  });
+  await expect(comparison).toContainText("Lite $12/mo");
+  await expect(comparison).toContainText("Lite includes $4 of shared work");
+  await expect(comparison).not.toContainText("50 minutes");
+});
+
 test("homepage keeps account entry separate from plan activation and shows its email example", async ({
   page,
 }) => {

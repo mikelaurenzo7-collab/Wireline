@@ -1786,6 +1786,7 @@ export function ComputerWorkbench({
   // An explicit Bot link is authoritative. Never fall back to another Bot if
   // the linked one is gone, or keep an earlier Bot when the URL changes.
   const composerBot = degraded ? undefined : agents.find((agent) => agent.id === composerAgentId);
+  const rosterEmpty = !agentsLoading && !degraded && agents.length === 0;
   const scopedAgentUnavailable =
     hasScopedAgent && !agentsLoading && !degraded && agents.length > 0 && !composerBot;
   // A shared model remembers account-wide history. An explicitly scoped Bot
@@ -1954,8 +1955,8 @@ export function ComputerWorkbench({
           The server outcome is uncertain. Refresh before starting or repeating work.
         </StatusNotice>
       ) : null}
-      {status && !status.available ? <UnavailableNotice status={status} /> : null}
-      {!status && statusFailed ? (
+      {composerBot && status && !status.available ? <UnavailableNotice status={status} /> : null}
+      {composerBot && !status && statusFailed ? (
         <StatusNotice
           tone="warning"
           title="Your Bot's Computer Did Not Load"
@@ -1975,7 +1976,7 @@ export function ComputerWorkbench({
       {/* An unreachable roster is not an empty one: never invite a duplicate Bot. */}
       {degraded ? (
         <WorkspaceRecovery onRetry={refresh} />
-      ) : !agentsLoading && !agents.length ? (
+      ) : rosterEmpty ? (
         <StatusNotice
           tone="info"
           title="Create a Bot First"
@@ -2042,7 +2043,7 @@ export function ComputerWorkbench({
           ) : null}
           {anyActive ? taskDetail : null}
           {!anyActive && selected && (layout === "panel" || !showComposer) ? taskDetail : null}
-          {!anyActive && (!selected || showComposer) && !scopedAgentUnavailable ? (
+          {!anyActive && (!selected || showComposer) && !scopedAgentUnavailable && !rosterEmpty ? (
             <form
               className="wl-computer-composer"
               onSubmit={(event) => {
