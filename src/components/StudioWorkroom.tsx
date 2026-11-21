@@ -620,7 +620,7 @@ const StudioWorkroom = forwardRef<
                   {(
                     [
                       { id: "configure", label: "Instructions", Icon: MessageCircle },
-                      { id: "test", label: "Try It", Icon: Mic },
+                      { id: "test", label: "Rehearse", Icon: Mic },
                     ] as const
                   ).map(({ id, label, Icon }) => (
                     <Button

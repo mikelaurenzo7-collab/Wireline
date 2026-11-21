@@ -429,7 +429,7 @@ export default function KnowledgeBaseClaude({
       // refetched, so the screen claimed nothing had been saved while the server
       // held the opposite. Report whatever landed before reporting what did not.
       if (ingested > 0) {
-        setNotice(summaries.length ? summaries.join(" ") : "Knowledge ingested.");
+        setNotice(summaries.length ? summaries.join(" ") : "Knowledge added.");
         // Prevent a rule edit until the post-ingestion snapshot has arrived.
         setLoading(true);
         setVersion((value) => value + 1);

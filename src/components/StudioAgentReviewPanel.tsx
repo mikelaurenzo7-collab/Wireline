@@ -516,10 +516,11 @@ export default function StudioAgentReviewPanel({
                 size={compact ? "sm" : undefined}
                 variant="secondary"
                 onClick={onRehearse}
+                aria-label={`Rehearse with ${agentName}`}
                 className="justify-center"
               >
                 <Mic className="size-4" aria-hidden="true" />
-                Try It
+                Rehearse
               </Button>
             </div>
           </div>

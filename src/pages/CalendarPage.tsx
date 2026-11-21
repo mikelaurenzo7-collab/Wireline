@@ -154,6 +154,7 @@ export default function CalendarPage() {
                 }
                 onConfigure={() => selectTab("availability")}
                 reloadKey={agendaReload}
+                onAppointmentUpdated={() => setBookingNotice(null)}
               />
             </>
           ) : null}

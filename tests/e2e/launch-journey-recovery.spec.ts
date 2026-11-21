@@ -94,7 +94,7 @@ test("setup offers cloning at voice selection and resumes before rehearsal", asy
   await guide.getByRole("button", { name: "Cancel", exact: true }).click();
   await page.reload();
   await expect(guide.getByRole("heading", { name: "Choose Voice", exact: true })).toBeVisible();
-  await guide.getByRole("button", { name: "Continue to Try It", exact: true }).click();
+  await guide.getByRole("button", { name: "Continue to Rehearse", exact: true }).click();
   await expect(guide.getByText("Hear It First", { exact: true })).toBeVisible();
   expect(cloneCreates).toBe(0);
 });
@@ -360,7 +360,7 @@ test("switching from Build to Test isolates an unfinished configuration response
   page,
 }) => {
   await mockWorkspace(page);
-  // Below 1180px, one conversation switches between Instructions and Try It.
+  // Below 1180px, one conversation switches between Instructions and Rehearse.
   await page.setViewportSize({ width: 1024, height: 800 });
   let releaseBuild!: () => void;
   const buildReady = new Promise<void>((resolve) => {
@@ -398,7 +398,7 @@ test("Studio preserves each Bot's configuration draft through voice rehearsal", 
   page,
 }) => {
   await mockWorkspace(page);
-  // Below 1180px, one conversation switches between Instructions and Try It.
+  // Below 1180px, one conversation switches between Instructions and Rehearse.
   await page.setViewportSize({ width: 1024, height: 800 });
   await page.goto("/studio?agent=bot-front-desk&chat=setup");
   await page
@@ -431,7 +431,7 @@ test("a legacy rehearsal command never becomes a configuration instruction after
   page,
 }) => {
   await mockWorkspace(page);
-  // Below 1180px, one conversation switches between Instructions and Try It.
+  // Below 1180px, one conversation switches between Instructions and Rehearse.
   await page.setViewportSize({ width: 1024, height: 800 });
   await page.goto(
     "/studio?agent=bot-front-desk&workroom=test&command=Original%20question&commandNonce=first",

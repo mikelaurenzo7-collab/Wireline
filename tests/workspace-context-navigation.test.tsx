@@ -314,7 +314,7 @@ describe("Bot context across workspace pages", () => {
         expect(editorNodes.find((node) => node.type === type)?.props.agentId).toBe(expected);
       }
       expect(nodes.find((node) => node.type === "select")?.props.value).toBe(expected);
-      expect(nodes.find((node) => text(node) === "Try It" && node.type === "a")?.props.to).toBe(
+      expect(nodes.find((node) => text(node) === "Rehearse" && node.type === "a")?.props.to).toBe(
         `/studio?agent=${expected}&workroom=test`,
       );
     },
@@ -724,7 +724,7 @@ describe("Workroom setup and rehearsal flow", () => {
     const action = (label: string) =>
       all().find((node) => node.type === "button" && text(node) === label)!;
 
-    // Instructions and Try It are two views of one Set Up job, not tabs to separate pages.
+    // Instructions and Rehearse are two views of one Set Up job, not tabs to separate pages.
     expect(all().some((node) => node.props.role === "tablist")).toBe(false);
     expect(all().find((node) => node.props.role === "group")?.props["aria-label"]).toBe(
       "Set Up view",
@@ -732,11 +732,11 @@ describe("Workroom setup and rehearsal flow", () => {
     expect(action("Instructions").props["aria-pressed"]).toBe(true);
     const tryFocus = vi.fn();
     focused.set("studio-workroom-bot-b-mode-test", tryFocus);
-    action("Try It").props.onClick!();
+    action("Rehearse").props.onClick!();
     frames.splice(0).forEach((frame) => frame());
     expect(changed).toHaveBeenLastCalledWith("test");
     expect(tryFocus).toHaveBeenCalledOnce();
-    expect(action("Try It").props["aria-pressed"]).toBe(true);
+    expect(action("Rehearse").props["aria-pressed"]).toBe(true);
 
     const changeFocus = vi.fn();
     focused.set("studio-workroom-bot-b-mode-configure", changeFocus);

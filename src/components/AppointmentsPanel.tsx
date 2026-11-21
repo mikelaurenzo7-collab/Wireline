@@ -143,14 +143,16 @@ export function AppointmentRow({
             <Clock3 className="size-3.5 shrink-0" aria-hidden="true" />
             <span>{scheduleLabel(appointment)}</span>
           </span>
-          <a
-            href="https://calendar.google.com/calendar/u/0/r"
-            target="_blank"
-            rel="noreferrer"
-            className="text-[11px] font-medium text-primary hover:underline"
-          >
-            Open in Google Calendar
-          </a>
+          {isGoogle ? (
+            <a
+              href="https://calendar.google.com/calendar/u/0/r"
+              target="_blank"
+              rel="noreferrer"
+              className="text-[11px] font-medium text-primary hover:underline"
+            >
+              Open Google Calendar
+            </a>
+          ) : null}
         </div>
         {editable && onStatus ? (
           <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -202,25 +204,30 @@ export function AppointmentRow({
   );
 }
 
-function GoogleCalendarCard({ onSyncSuccess }: { onSyncSuccess?: () => void }) {
+function GoogleCalendarCard() {
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState<boolean | null>(null);
+  const [connectionError, setConnectionError] = useState(false);
+  const [connectionRevision, setConnectionRevision] = useState(0);
   const [syncing, setSyncing] = useState(false);
+  const syncingRef = useRef(false);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setConnectionError(false);
     authFetch("/api/calendar/accounts")
       .then((res) => (res.ok ? res.json() : null))
       .then((body: { accounts?: Array<{ provider?: string }> } | null) => {
         if (cancelled) return;
-        const hasGoogle =
-          Array.isArray(body?.accounts) && body.accounts.some((a) => a.provider === "google");
+        if (!Array.isArray(body?.accounts)) throw new Error("Calendar connection unavailable.");
+        const hasGoogle = body.accounts.some((a) => a.provider === "google");
         setConnected(hasGoogle);
       })
       .catch(() => {
-        if (!cancelled) setConnected(false);
+        if (!cancelled) setConnectionError(true);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -228,26 +235,33 @@ function GoogleCalendarCard({ onSyncSuccess }: { onSyncSuccess?: () => void }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [connectionRevision]);
 
   async function handleSync() {
-    if (syncing) return;
+    if (syncingRef.current) return;
+    syncingRef.current = true;
     setSyncing(true);
     setSyncNotice(null);
     setSyncError(null);
     try {
       const res = await authFetch("/api/calendar/sync", { method: "POST" });
-      if (!res.ok) throw new Error("Sync request failed.");
+      const body = (await res.json().catch(() => null)) as {
+        google?: { status?: string };
+      } | null;
+      if (!res.ok || body?.google?.status !== "success")
+        throw new Error(
+          "Google busy times could not be fully refreshed. Check the connection and retry; saved busy times may be incomplete.",
+        );
       setSyncNotice(
-        `Synced with Google Calendar at ${new Date().toLocaleTimeString(undefined, {
+        `Google busy times refreshed at ${new Date().toLocaleTimeString(undefined, {
           hour: "numeric",
           minute: "2-digit",
-        })}`,
+        })}.`,
       );
-      onSyncSuccess?.();
     } catch (err) {
-      setSyncError(err instanceof Error ? err.message : "Sync failed. Check connection.");
+      setSyncError(err instanceof Error ? err.message : "Could not refresh busy times. Retry.");
     } finally {
+      syncingRef.current = false;
       setSyncing(false);
     }
   }
@@ -268,6 +282,24 @@ function GoogleCalendarCard({ onSyncSuccess }: { onSyncSuccess?: () => void }) {
 
   if (loading) return null;
 
+  if (connectionError) {
+    return (
+      <StatusNotice
+        tone="warning"
+        title="Couldn’t check connected calendars"
+        action={
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setConnectionRevision((value) => value + 1)}
+          >
+            Retry
+          </Button>
+        }
+      />
+    );
+  }
+
   if (connected) {
     return (
       <div className="rounded-2xl border border-primary/25 bg-primary/5 p-4 sm:p-5 shadow-2xs">
@@ -279,15 +311,11 @@ function GoogleCalendarCard({ onSyncSuccess }: { onSyncSuccess?: () => void }) {
             <div>
               <div className="flex items-center gap-2">
                 <strong className="text-sm font-semibold text-foreground">
-                  Google Workspace & Calendar Connected
+                  Google Calendar connected
                 </strong>
-                <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                  2-way sync
-                </span>
               </div>
               <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
-                Your Bot checks your Google Calendar busy times to avoid double booking and adds
-                confirmed appointments automatically.
+                Refresh busy times after calendar changes. BotBound bookings stay here.
               </p>
             </div>
           </div>
@@ -304,7 +332,7 @@ function GoogleCalendarCard({ onSyncSuccess }: { onSyncSuccess?: () => void }) {
                 className={`size-3.5 ${syncing ? "animate-spin" : ""}`}
                 aria-hidden="true"
               />
-              {syncing ? "Syncing…" : "Sync Now"}
+              {syncing ? "Refreshing…" : "Refresh busy times"}
             </Button>
             <a
               href="https://calendar.google.com/calendar/u/0/r"
@@ -339,12 +367,9 @@ function GoogleCalendarCard({ onSyncSuccess }: { onSyncSuccess?: () => void }) {
             <CalendarDays className="size-4" aria-hidden="true" />
           </span>
           <div>
-            <strong className="text-sm font-semibold text-foreground">
-              Connect Google Calendar
-            </strong>
+            <strong className="text-sm font-semibold text-foreground">Google Calendar</strong>
             <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
-              Sync your Google Workspace or Personal Google Calendar so your Bot never double-books
-              during your busy events.
+              Import busy times to help avoid scheduling conflicts.
             </p>
           </div>
         </div>
@@ -398,10 +423,12 @@ export default function AppointmentsPanel({
   calendarConfigured = null,
   onConfigure,
   reloadKey = 0,
+  onAppointmentUpdated,
 }: {
   calendarConfigured?: boolean | null;
   onConfigure?: () => void;
   reloadKey?: number;
+  onAppointmentUpdated?: () => void;
 } = {}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -500,6 +527,7 @@ export default function AppointmentsPanel({
         current.map((row) => (row.id === appointment.id ? { ...row, status } : row)),
       );
       setCancelConfirmId(null);
+      onAppointmentUpdated?.();
     } catch (reason) {
       setMutationError(
         reason instanceof Error
@@ -572,7 +600,7 @@ export default function AppointmentsPanel({
   if (appointments.length === 0) {
     return (
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-5 sm:px-6">
-        <GoogleCalendarCard onSyncSuccess={() => void loadAppointments()} />
+        <GoogleCalendarCard />
         <EmptyState
           framed
           density="compact"
@@ -596,7 +624,7 @@ export default function AppointmentsPanel({
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-5 sm:px-6">
-      <GoogleCalendarCard onSyncSuccess={() => void loadAppointments()} />
+      <GoogleCalendarCard />
 
       {mutationError ? (
         <StatusNotice tone="warning" title="Appointment Not Updated">

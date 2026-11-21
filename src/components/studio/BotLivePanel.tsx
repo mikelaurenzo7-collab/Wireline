@@ -449,7 +449,7 @@ export default function BotLivePanel({
           onClick={() => setSelectedId(activeComputerTask.id)}
           className="mt-2 inline-flex min-h-11 items-center rounded-md text-sm font-semibold text-primary hover:underline wl-focus-ring-halo"
         >
-          {activeComputerTask.status === "needs_input" ? "Reply in Computer" : "Watch live work"}
+          {activeComputerTask.status === "needs_input" ? "Reply to task" : "Watch live work"}
         </Link>
       ) : null}
 
@@ -498,8 +498,8 @@ export default function BotLivePanel({
           {!sourcesLoaded
             ? "Checking recent activity…"
             : sourcesUnavailable
-              ? "Recent activity could not be loaded. This does not mean the Bot has done nothing."
-              : `Nothing yet. Calls, computer steps, emails, and approvals will appear here as ${agentName || "your Bot"} works.`}
+              ? "Couldn’t load recent activity."
+              : "No recent activity."}
         </p>
       ) : null}
     </section>

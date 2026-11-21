@@ -482,7 +482,7 @@ for (const section of ["Set Up", "Summary"] as const) {
     await page.getByRole("tab", { name: section, exact: true }).click();
     await page
       .getByRole("button", {
-        name: "Try It",
+        name: "Rehearse with Front Desk",
         exact: true,
       })
       .click();
@@ -508,7 +508,7 @@ test("setup focuses voice without seeding a customer message or replacing the Se
   expect(await greeting.evaluate((element) => getComputedStyle(element).resize)).toMatch(
     /^(block|vertical)$/,
   );
-  await page.getByRole("button", { name: "Try It", exact: true }).click();
+  await page.getByRole("button", { name: "Rehearse with Front Desk", exact: true }).click();
   const testInput = page.getByRole("textbox", {
     name: "Customer message for Front Desk",
     exact: true,

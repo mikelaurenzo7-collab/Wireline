@@ -147,7 +147,7 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
           title: "Connect a Phone Line",
           action: { label: "Add a Line", to: setupHref },
           secondary: {
-            label: "Try It",
+            label: "Rehearse",
             to: agentId
               ? `/studio?agent=${encodeURIComponent(agentId)}&workroom=test`
               : "/studio",

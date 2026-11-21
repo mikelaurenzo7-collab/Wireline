@@ -75,6 +75,17 @@ async function mockCalendar(
       });
       return;
     }
+    if (
+      path === "/api/appointments/11111111-1111-4111-8111-111111111111" &&
+      route.request().method() === "PATCH"
+    ) {
+      const { status } = route.request().postDataJSON();
+      saved = { ...saved, status };
+      await route.fulfill({
+        json: { appointment: { id: "11111111-1111-4111-8111-111111111111", status } },
+      });
+      return;
+    }
     const json =
       path === "/api/auth/session"
         ? {
@@ -93,7 +104,7 @@ async function mockCalendar(
                   ? [
                       {
                         id: "11111111-1111-4111-8111-111111111111",
-                        status: "Requested",
+                        status: saved.status || "Requested",
                         booking_source: "native",
                         customer_name: saved.customer_name,
                         date: saved.date,
@@ -217,6 +228,26 @@ for (const width of [320, 1440]) {
       time_zone: "UTC",
       notes: "Private QA note retained across retry.",
     });
+    if (width === 1440) {
+      const notice = page.getByText("Appointment requested. Confirm it in Calendar.", {
+        exact: true,
+      });
+      await page.route("**/api/appointments/11111111-1111-4111-8111-111111111111", (route) =>
+        route.fulfill({ status: 503, json: { error: "Could not confirm appointment." } }),
+        { times: 1 },
+      );
+      await page.getByRole("button", { name: "Confirm", exact: true }).click();
+      await expect(page.getByText("Could not confirm appointment.", { exact: true })).toBeVisible();
+      await expect(notice).toBeVisible();
+      await page.getByRole("button", { name: "Confirm", exact: true }).click();
+      await expect(page.getByText("Confirmed", { exact: true })).toBeVisible();
+      await expect(notice).toHaveCount(0);
+      await page.reload();
+      await expect(page.getByText("Confirmed", { exact: true })).toBeVisible();
+      await page.getByRole("button", { name: "Cancel", exact: true }).click();
+      await page.getByRole("button", { name: "Cancel Appointment", exact: true }).click();
+      await expect(page.getByText("Cancelled", { exact: true })).toBeVisible();
+    }
   });
 }
 

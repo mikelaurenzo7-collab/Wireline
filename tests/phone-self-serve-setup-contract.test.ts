@@ -29,7 +29,7 @@ describe("self-service calling setup", () => {
     const history = read("src/components/PhoneCallHistoryPanel.tsx");
     expect(history).toContain('title: "Connect a Phone Line"');
     expect(history).toContain('action: { label: "Add a Line", to: setupHref }');
-    expect(history).toContain('label: "Try It"');
+    expect(history).toContain('label: "Rehearse"');
     expect(history).toContain('"/studio"');
     expect(history).toContain('`/studio?agent=${encodeURIComponent(agentId)}&workroom=test`');
     expect(history).toContain('title: agentId ? "No Calls for This Bot" : "No Calls Yet"');

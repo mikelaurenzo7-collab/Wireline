@@ -231,7 +231,7 @@ export default function OutcomeLedger({
                   : "/studio?create=1"
               }
             >
-              {agentId ? "Try It" : "Create a Bot"}
+              {agentId ? "Rehearse" : "Create a Bot"}
             </Link>
           </Button>
         }

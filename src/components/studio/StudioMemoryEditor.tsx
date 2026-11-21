@@ -90,10 +90,7 @@ export default function StudioMemoryEditor({
 
   return (
     <div className="wl-memory-editor" aria-label={`${agentName} saved memory`}>
-      <p>
-        Things you want {agentName} to remember in private chat and new computer tasks. Customer
-        calls and email use Knowledge instead.
-      </p>
+      <p>Private notes for chat and browser tasks. Customer calls and email use Knowledge.</p>
       <p className="text-xs text-muted-foreground">
         Changes apply to future requests. Removing a note does not erase earlier conversations or
         task results.
@@ -133,9 +130,7 @@ export default function StudioMemoryEditor({
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              No saved memories yet. Add a preference or a detail you often repeat.
-            </p>
+            <p className="text-sm text-muted-foreground">No saved memories yet.</p>
           )}
           <form
             onSubmit={(event) => {

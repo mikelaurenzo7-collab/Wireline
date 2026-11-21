@@ -66,6 +66,91 @@ async function mockCalendar(page: Page) {
   return writes;
 }
 
+for (const receipt of [
+  { name: "partial", body: { google: { status: "partial" } } },
+  { name: "failed", body: { google: { status: "error" } } },
+  { name: "disconnected", body: { google: { status: "no_accounts" } } },
+  { name: "missing", body: { outlook: { status: "success" } } },
+  { name: "malformed", body: null },
+  { name: "HTTP failure", body: { google: { status: "success" } }, status: 503 },
+]) {
+  test(`Google calendar does not claim success for a ${receipt.name} sync and can retry`, async ({
+    page,
+  }) => {
+    await mockCalendar(page);
+    await page.route("**/api/calendar/accounts", (route) =>
+      route.fulfill({ json: { accounts: [{ provider: "google" }] } }),
+    );
+    let retry = false;
+    await page.route("**/api/calendar/sync", (route) =>
+      route.fulfill({
+        status: retry ? 200 : receipt.status || 200,
+        json: retry ? { google: { status: "success", syncedCount: 0 } } : receipt.body,
+      }),
+    );
+    await page.goto("/calendar");
+    await expect(page.getByText("Google Calendar connected", { exact: true })).toBeVisible();
+    await expect(page.getByText("2-way sync", { exact: true })).toHaveCount(0);
+    await expect(
+      page.getByText("Refresh busy times after calendar changes. BotBound bookings stay here."),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Refresh busy times", exact: true }).click();
+    await expect(page.getByText(/Google busy times could not be fully refreshed/)).toBeVisible();
+    await expect(page.getByText(/Google busy times refreshed at/)).toHaveCount(0);
+    retry = true;
+    await page.getByRole("button", { name: "Refresh busy times", exact: true }).click();
+    await expect(page.getByText(/Google busy times refreshed at/)).toBeVisible();
+    await expect(page.getByText(/Google busy times could not be fully refreshed/)).toHaveCount(0);
+  });
+}
+
+test("Calendar connection failure offers retry instead of claiming Google is disconnected", async ({
+  page,
+}) => {
+  await mockCalendar(page);
+  let retry = false;
+  await page.route("**/api/calendar/accounts", (route) =>
+    retry
+      ? route.fulfill({ json: { accounts: [{ provider: "google" }] } })
+      : route.fulfill({ status: 503, json: { error: "Unavailable" } }),
+  );
+  await page.goto("/calendar");
+  await expect(page.getByText("Couldn’t check connected calendars", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Connect Google Calendar", exact: true }),
+  ).toHaveCount(0);
+  retry = true;
+  await page.getByRole("button", { name: "Retry", exact: true }).click();
+  await expect(page.getByText("Google Calendar connected", { exact: true })).toBeVisible();
+});
+
+test("native bookings do not imply that a Google Calendar event exists", async ({ page }) => {
+  await mockCalendar(page);
+  await page.route(/\/api\/appointments(?:\?.*)?$/, (route) =>
+    route.fulfill({
+      json: {
+        appointments: [
+          {
+            id: "native-booking",
+            customer_name: "Native booking",
+            booking_source: "native",
+            status: "Confirmed",
+            start_at: "2099-12-01T10:00:00Z",
+            end_at: "2099-12-01T10:30:00Z",
+            time_zone: "UTC",
+          },
+        ],
+        hasMore: false,
+        nextCursor: null,
+      },
+    }),
+  );
+  await page.goto("/calendar");
+  const booking = page.getByRole("listitem").filter({ hasText: "Native booking" });
+  await expect(booking).toBeVisible();
+  await expect(booking.getByRole("link", { name: /Google Calendar/ })).toHaveCount(0);
+});
+
 for (const width of [320, 1440]) {
   test(`Calendar availability preserves failed drafts and fits ${width}px${width === 320 ? " at 200% text" : ""}`, async ({
     page,

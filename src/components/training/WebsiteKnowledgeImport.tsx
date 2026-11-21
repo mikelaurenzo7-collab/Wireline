@@ -1,5 +1,5 @@
 import { type FormEvent, useLayoutEffect, useRef, useState } from "react";
-import { Globe2, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import { authFetch, safeJson } from "../../lib/api";
 import { emitProductEvent } from "../../lib/product-event-client";
@@ -116,18 +116,15 @@ export default function WebsiteKnowledgeImport({
   return (
     <section className="wl-paper wl-paper-elevated p-5" aria-labelledby="website-knowledge-title">
       <div className="flex items-start gap-3">
-        <div className="grid size-9 shrink-0 place-items-center rounded-[var(--wireline-radius-md)] bg-[var(--wireline-color-action-primary-container)] text-[var(--wireline-color-action-primary-default)]">
-          <Globe2 size={18} aria-hidden="true" />
-        </div>
         <div className="min-w-0 flex-1">
           <h2
             id="website-knowledge-title"
             className="text-sm font-semibold text-[var(--wireline-color-text-primary)]"
           >
-            Website Knowledge
+            Import a page
           </h2>
           <p className="mt-1 max-w-[72ch] text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
-            Add facts and rules from one public page of your website.
+            Add knowledge from one public website page.
           </p>
         </div>
       </div>

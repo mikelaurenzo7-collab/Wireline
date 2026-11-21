@@ -522,7 +522,7 @@ export default function PlaybookEditor({ agentId, compact }: Props) {
               )}
               {saving ? "Saving…" : "Save Playbook"}
             </Button>
-            <span className={hintClass}>Applies to calls, texts, and Try It.</span>
+            <span className={hintClass}>Applies to calls, texts, and Rehearse.</span>
           </div>
         </form>
       ) : null}

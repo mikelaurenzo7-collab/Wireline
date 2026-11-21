@@ -671,9 +671,10 @@ export default function StudioAgentWorkspacePanel({
             size={compact ? "sm" : undefined}
             variant="secondary"
             onClick={onRehearseVoiceInChat}
+            aria-label={`Rehearse with ${agentName}`}
             className="h-auto justify-center whitespace-normal"
           >
-            Try It
+            Rehearse
           </Button>
           <Button
             asChild
