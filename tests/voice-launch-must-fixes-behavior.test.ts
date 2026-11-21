@@ -177,7 +177,7 @@ describe("greeting discloses AI first", () => {
       recordingEnabled: true,
     });
     expect(line).toBe(
-      "Hi, I'm Ava, and I'm an AI assistant. This call may be recorded for quality and compliance.",
+      "Hi, I'm Ava, and I'm an AI assistant, and this call may be recorded for quality and compliance.",
     );
     expect(detectAiDisclosure(line).found).toBe(true);
     expect(detectRecordingDisclosure(line).found).toBe(true);

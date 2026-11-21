@@ -36,11 +36,11 @@ export function inboundDisclosureLine(input: {
   const namedAgent = agent && agent.toLowerCase() !== business.toLowerCase();
   const introduction = namedAgent ? `Hi, I'm ${agent}, and I'm` : "Hi, I'm";
   const affiliation = business ? ` with ${business}` : "";
-  return `${introduction} an AI assistant${affiliation}.${recordingNotice(input.recordingEnabled)}`;
+  return `${introduction} an AI assistant${affiliation}${disclosureEnding(input.recordingEnabled)}`;
 }
 
-function recordingNotice(enabled: boolean): string {
-  return enabled ? " This call may be recorded for quality and compliance." : "";
+function disclosureEnding(recordingEnabled: boolean): string {
+  return recordingEnabled ? ", and this call may be recorded for quality and compliance." : ".";
 }
 
 export function composeInboundOpening(input: {
@@ -57,7 +57,7 @@ export function composeInboundOpening(input: {
     // the disclosure first, then pick the conversation back up.
     const business = clean(input.businessName);
     const affiliation = business ? ` with ${business}` : "";
-    return `You're still speaking with an AI assistant${affiliation}.${recordingNotice(input.recordingEnabled)} Sorry, we got cut off for a moment. What can I help you with?`;
+    return `You're still speaking with an AI assistant${affiliation}${disclosureEnding(input.recordingEnabled)} Sorry, we got cut off for a moment. What can I help you with?`;
   }
   const greeting = input.greeting.replace(/\s+/g, " ").trim();
   const { first, rest } = firstSentence(greeting);
