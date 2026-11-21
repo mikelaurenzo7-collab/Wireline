@@ -97,12 +97,7 @@ function nextActionsFor(tag: string): CallRecapAction[] {
         },
       ];
     case "info":
-      return [
-        {
-          description:
-            "Review the caller's unanswered question and add verified guidance to Training.",
-        },
-      ];
+      return [{ description: "Check the transcript for questions that still need an answer." }];
     case "dnc":
       return [
         {

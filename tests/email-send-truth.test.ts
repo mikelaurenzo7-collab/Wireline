@@ -97,6 +97,13 @@ describe("classifyCallHappened email states", () => {
     expect(callHappenedLabel("email_sent")).toBe("Email sent");
   });
 
+  it("describes a completed approval send without assuming when it happened", () => {
+    const emailState = deriveCallEmailState({ taskStatuses: ["completed"] });
+    const happened = classifyCallHappened({ emailState });
+
+    expect(callHappenedDetail(happened)).toBe("An email from this call was sent.");
+  });
+
   it("never claims delivery in any email label or detail", () => {
     for (const happened of ["email_sent", "email_pending", "email_failed"] as const) {
       expect(callHappenedLabel(happened)).not.toMatch(/deliver/i);

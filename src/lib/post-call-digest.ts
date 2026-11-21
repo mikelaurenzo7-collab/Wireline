@@ -96,10 +96,19 @@ export function classifyCallOutcome(input: {
     const said = `${caller} ${input.intentLabel || ""}`.toLowerCase();
     if (/\b(not interested|no thanks|no thank you)\b/.test(said)) return "other";
     if (/\b(qualified|interested|hot lead|budget|good fit)\b/.test(said)) return "qualified";
-    if (/\b(callback|follow.?up|call.?back|reach out later|next week|send me an? (?:email|text))\b/.test(said)) {
+    if (
+      /\b(callback|follow.?up|call.?back|call (?:me|us) back|reach out later|next week|send me an? (?:email|text))\b/.test(
+        said,
+      )
+    ) {
       return "followup";
     }
-    if (/\b(question|info|how does|pricing|price|cost|what is|hours)\b/.test(said)) return "info";
+    if (
+      /\b(question|info|how does|pricing|price|cost|what is|hours)\b/.test(said) ||
+      /\btell me\s+(what|how|when|where|who|why|which|if|whether)\b/i.test(caller)
+    ) {
+      return "info";
+    }
     return "other";
   }
   const s = `${input.summary || ""} ${input.intentLabel || ""}`.toLowerCase();

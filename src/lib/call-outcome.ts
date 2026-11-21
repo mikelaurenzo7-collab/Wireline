@@ -241,7 +241,7 @@ export function callOutcomeLabel(outcome: CallOutcome): string {
 export function callOutcomeDetail(outcome: CallOutcome): string {
   switch (outcome) {
     case "email_sent":
-      return "The Bot sent the email during the call.";
+      return "An email from this call was sent.";
     case "email_pending":
       return "An email from this call is waiting for approval. It has not been sent yet.";
     case "email_failed":

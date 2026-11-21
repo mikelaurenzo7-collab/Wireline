@@ -1,10 +1,22 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { WorkspaceBrand } from "../src/lib/shareable-artifact/brand";
+import { maybePublishCallRecap } from "../src/lib/shareable-artifact/publish-call-recap";
+import { publishCallRecap } from "../src/lib/shareable-artifact/service";
 import { renderCallRecap } from "../src/lib/shareable-artifact/template/render-call-recap";
 import { renderNotFound } from "../src/lib/shareable-artifact/template/render-not-found";
 import { renderWeeklyRecap } from "../src/lib/shareable-artifact/template/render-weekly-recap";
 import type { CallRecapContent, WeeklyRecapContent } from "../src/lib/shareable-artifact/types";
+
+vi.mock("../src/lib/server-context", () => {
+  const subscriptionQuery = {
+    from: () => subscriptionQuery,
+    where: () => subscriptionQuery,
+    limit: async () => [{ plan: "team" }],
+  };
+  return { drizzle: { select: () => subscriptionQuery }, log: { warn: vi.fn() } };
+});
+vi.mock("../src/lib/shareable-artifact/service", () => ({ publishCallRecap: vi.fn() }));
 
 const BRAND: WorkspaceBrand = {
   displayName: "Rita's Dental",
@@ -91,6 +103,26 @@ const CUSTOMER_SURFACE_VENDOR_FORBIDDEN = [
 ];
 
 describe("shareable-artifact templates", () => {
+  it("publishes and renders an information request without assuming it went unanswered", async () => {
+    await maybePublishCallRecap({
+      userId: "example-owner",
+      callLogId: 42n,
+      durationSeconds: 37,
+      outcomeTag: "info",
+      campaignSource: null,
+      transcript:
+        "Caller: Can you tell me how this works?\nAgent: I can collect estimate requests.",
+    });
+
+    expect(publishCallRecap).toHaveBeenCalledOnce();
+    const content = vi.mocked(publishCallRecap).mock.calls[0][0].content;
+    expect(content.outcome).toBe("info");
+    const html = renderCallRecap(content, BRAND);
+    expect(html).toContain("Info request");
+    expect(html).toContain("Check the transcript for questions that still need an answer.");
+    expect(html).not.toContain("unanswered question");
+  });
+
   it("renders the Wireline shell contract on the call recap", () => {
     const html = renderCallRecap(CALL_CONTENT, BRAND);
     expect(html).toContain('meta name="robots"');

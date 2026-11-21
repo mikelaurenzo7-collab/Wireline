@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import {
+  callOutcomeLabel,
+  classifyCallOutcome as classifyDisplayedOutcome,
+} from "../src/lib/call-outcome";
 import { callerTurnsText, classifyCallOutcome } from "../src/lib/post-call-digest";
 import { deterministicSummary } from "../src/lib/voice/openai-sip-session";
 
@@ -63,6 +67,27 @@ describe("call summary and outcome truth", () => {
         observed: { callerText: "Please stop calling me.", appointmentBooked: true },
       }),
     ).toBe("dnc");
+  });
+
+  it("shows indirect caller questions as information requests in Call History", () => {
+    const transcript = [
+      GREETING,
+      "Caller: Can you tell me what BotBound does for a carpeting business?",
+      "Agent: I can take calls and collect flooring estimate requests.",
+    ].join("\n");
+    const classify = (callerText: string, appointmentBooked = false) =>
+      classifyCallOutcome({ durationSeconds: 37, observed: { callerText, appointmentBooked } });
+    const outcomeTag = classify(callerTurnsText(transcript));
+
+    expect(callOutcomeLabel(classifyDisplayedOutcome({ outcomeTag }))).toBe("Info request");
+    expect(classify("Could you please tell me how the service works?")).toBe("info");
+    expect(classify("Tell me when your office opens.")).toBe("info");
+    expect(classify("Can you tell me what BotBound does? Please call me back.")).toBe("followup");
+    expect(classify("Can you tell me what BotBound does?", true)).toBe("booked");
+    expect(classify("Can you tell me what BotBound does? Please stop calling me.", true)).toBe(
+      "dnc",
+    );
+    expect(classify("Can you tell me a joke?")).toBe("other");
   });
 
   it("uses explicit revocation language for opt-outs, not ordinary words", () => {
