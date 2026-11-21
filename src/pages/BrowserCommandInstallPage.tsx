@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, ChevronDown, Download } from "lucide-react";
 import { Link } from "react-router";
 
 import { Badge, Button } from "../components/atoms";
@@ -48,7 +48,7 @@ export default function BrowserCommandInstallPage() {
         </Button>
         <WorkspacePageIntro
           title="Install BotBound Command"
-          description="Send page details, selected text, and phone links to your Workspace."
+          description="Send page details, selected text, and phone links from a desktop browser to your Workspace."
           action={
             <div>
               <Badge variant="info">{CLIENT_SURFACE_POSTURE.browser.status}</Badge>
@@ -92,13 +92,17 @@ export default function BrowserCommandInstallPage() {
             ))}
           </ol>
           <p className="text-sm text-muted-foreground">
-            Sign in to BotBound to continue in Studio.
+            Open BotBound Command on a page you want to share, then choose Send to Workspace.
           </p>
         </section>
 
-        <details className="border-t border-border/60 py-3">
+        <details className="group border-t border-border/60 py-3">
           <summary className="cursor-pointer py-2 text-sm font-semibold text-foreground wl-focus-ring-halo">
-            Privacy
+            <span>Privacy</span>
+            <ChevronDown
+              className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180 motion-reduce:transition-none"
+              aria-hidden="true"
+            />
           </summary>
           <p className="max-w-prose py-3 text-sm leading-relaxed text-muted-foreground">
             Reads pages only when you ask. No background browsing, account token storage, or live

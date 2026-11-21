@@ -44,6 +44,37 @@ async function openPublicRoute(page: Page, path: string) {
   throw lastError;
 }
 
+test("homepage capability previews start at the same height on desktop", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await openPublicRoute(page, "/");
+  const previews = page.locator(".landing-prestige__demo");
+  await expect(previews).toHaveCount(3);
+  const positions = await previews.evaluateAll((elements) =>
+    elements.map((element) => element.getBoundingClientRect().top),
+  );
+  expect(Math.max(...positions) - Math.min(...positions)).toBeLessThanOrEqual(1);
+});
+
+test("pricing names and prices line up when a tier has a longer description", async ({ page }) => {
+  await page.setViewportSize({ width: 1365, height: 900 });
+  await page.route("**/api/billing/plans", (route) =>
+    route.fulfill({ json: { plans: [], usage_tiers: ["lite", "standard", "plus"] } }),
+  );
+  await openPublicRoute(page, "/pricing");
+  const choices = page.locator('[aria-label="Choose a Plan"] button[aria-pressed]');
+  await expect(choices).toHaveCount(3);
+  const positions = await choices.evaluateAll((buttons) =>
+    buttons.map((button) => ({
+      title: button.firstElementChild!.getBoundingClientRect().top,
+      price: button.querySelector("strong")!.getBoundingClientRect().top,
+    })),
+  );
+  for (const key of ["title", "price"] as const) {
+    const tops = positions.map((position) => position[key]);
+    expect(Math.max(...tops) - Math.min(...tops)).toBeLessThanOrEqual(1);
+  }
+});
+
 async function publicMetrics(page: Page) {
   return page.evaluate(() => {
     const root = document.documentElement;

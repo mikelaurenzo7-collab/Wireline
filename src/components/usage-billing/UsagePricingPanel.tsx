@@ -212,7 +212,7 @@ export default function UsagePricingPanel({
                 type="button"
                 aria-pressed={tier === id}
                 onClick={() => setTier(id)}
-                className="w-full flex-1 rounded-2xl p-6 pb-2 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+                className="flex w-full flex-1 flex-col rounded-2xl p-6 pb-2 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
               >
                 <span className="flex items-center justify-between gap-2 text-lg font-semibold">
                   {option.name}
