@@ -23,6 +23,16 @@ export type OutboundCallPurpose = (typeof OUTBOUND_CALL_PURPOSES)[number];
 
 export type OutboundCallingAvailability = { general: boolean; nonMarketing: boolean };
 
+export type OutboundContactContext = {
+  relationship?: unknown;
+  permissionConfirmed?: boolean;
+  nonsalesConfirmed?: boolean;
+  customerSince?: string | null;
+  suggestedPurpose?: OutboundPurpose;
+  salesAttestationRecorded?: boolean;
+  optedOut?: boolean;
+};
+
 /** Inbound call or text within this window is a returning-contact relationship. */
 export const OUTBOUND_RELATIONSHIP_WINDOW_MS = 90 * 24 * 60 * 60 * 1000;
 

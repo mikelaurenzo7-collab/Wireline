@@ -7,7 +7,7 @@ import { authenticateUser } from "../middleware/auth";
 import { outboundStatusRateLimit } from "../middleware/api-rate-limits";
 import { validate } from "../middleware/input-validation";
 import { AppError } from "../lib/api-error";
-import { normalizeOutboundNumber } from "../lib/dialer-compliance";
+import { normalizeOutboundRecipient } from "../lib/dialer-compliance";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
 import {
   CALL_NEEDS_PERMISSION_MESSAGE,
@@ -194,10 +194,8 @@ router.post(
       requestKey,
       preparedRequestId,
     } = req.body;
-    const normalized = normalizeOutboundNumber(customerNumber);
-    const digits = normalized.replace(/\D/g, "");
-    const phoneE164 = normalized.startsWith("+") ? normalized : `+${digits}`;
-    if (!/^\+[1-9]\d{6,14}$/.test(phoneE164)) {
+    const phoneE164 = normalizeOutboundRecipient(customerNumber);
+    if (!phoneE164) {
       return res.status(400).json({
         code: "VALIDATION_ERROR",
         error: "Invalid phone number. Use E.164 format like +14155551234.",

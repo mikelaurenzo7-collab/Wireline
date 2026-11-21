@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeOutboundNumber } from "../src/lib/dialer-compliance";
+import { normalizeOutboundNumber, normalizeOutboundRecipient } from "../src/lib/dialer-compliance";
 
 describe("normalizeOutboundNumber (E.164 for the dial site)", () => {
   it("adds +1 to a bare 10-digit North American number", () => {
@@ -23,4 +23,13 @@ describe("normalizeOutboundNumber (E.164 for the dial site)", () => {
     expect(normalizeOutboundNumber("")).toBe("");
     expect(normalizeOutboundNumber("   ")).toBe("");
   });
+});
+
+it.each([
+  ["(312) 555-0160", "+13125550160"],
+  ["+44 20 7946 0000", "+442079460000"],
+  ["312 55", null],
+  ["+03125550160", null],
+])("uses one dial recipient for %s in the form and route", (raw, expected) => {
+  expect(normalizeOutboundRecipient(raw)).toBe(expected);
 });

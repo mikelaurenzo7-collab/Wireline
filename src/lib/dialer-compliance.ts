@@ -22,3 +22,10 @@ export function normalizeOutboundNumber(raw: string): string {
   }
   return digits;
 }
+
+/** The exact recipient used for review, consent lookup, and dispatch. */
+export function normalizeOutboundRecipient(raw: string): string | null {
+  const normalized = normalizeOutboundNumber(raw);
+  const phone = `+${normalized.replace(/\D/g, "")}`;
+  return /^\+[1-9]\d{6,14}$/.test(phone) ? phone : null;
+}

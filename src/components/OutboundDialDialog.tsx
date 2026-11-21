@@ -14,7 +14,12 @@ import { Button } from "./atoms";
 import { useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
-import { isReviewedOutboundCandidate, salesContentWarning } from "../lib/outbound-call-purpose";
+import { normalizeOutboundRecipient } from "../lib/dialer-compliance";
+import {
+  isReviewedOutboundCandidate,
+  salesContentWarning,
+  type OutboundContactContext,
+} from "../lib/outbound-call-purpose";
 import { OUTBOUND_CONSENT_LABEL, OUTBOUND_CONSENT_LEGAL_PATH } from "../lib/outbound-consent-copy";
 import { INTERNAL_DNC_MESSAGE } from "../lib/outbound-compliance-copy";
 import OutboundPurposePicker, {
@@ -68,23 +73,25 @@ function DirectOutboundDialDialog({
 }: OutboundDialDialogProps & { userId: string }) {
   const { agents, loading, degraded, phoneLookupDegraded } = useAgents();
   const { toast } = useToast();
-  const [purpose, setPurpose] = useState<OutboundPurposeChoice>("appointment_service");
-  const [relationship, setRelationship] = useState(false);
-  const [permissionStored, setPermissionStored] = useState(false);
-  const [nonsalesStored, setNonsalesStored] = useState(false);
+  const [selectedPurpose, setPurpose] = useState<OutboundPurposeChoice | null>(null);
+  const [contactLookup, setContactLookup] = useState<{
+    phone: string;
+    context: OutboundContactContext;
+  } | null>(null);
   const [permissionChecked, setPermissionChecked] = useState(false);
   const [nonsalesChecked, setNonsalesChecked] = useState(false);
-  const [customerSince, setCustomerSince] = useState("");
-  const [salesAttestationRecorded, setSalesAttestationRecorded] = useState(false);
+  const [customerSinceDraft, setCustomerSince] = useState<string | null>(null);
   const [salesAttestationChecked, setSalesAttestationChecked] = useState(false);
-  const [optedOut, setOptedOut] = useState(false);
-  const [purposeTouched, setPurposeTouched] = useState(false);
-  const preparedPurpose = preparedCall?.call_purpose ?? null;
-  const callPurpose = preparedPurpose ?? purpose;
-  const salesCall = callPurpose === "sales";
 
   const [agentId, setAgentId] = useState(initialAgentId);
   const [number, setNumber] = useState(preparedCall?.phone || initialNumber);
+  const phone = normalizeOutboundRecipient(preparedCall?.phone || number);
+  const contact = contactLookup?.phone === phone ? contactLookup.context : null;
+  const purpose = selectedPurpose ?? contact?.suggestedPurpose ?? "appointment_service";
+  const callPurpose = preparedCall?.call_purpose ?? purpose;
+  const salesCall = callPurpose === "sales";
+  const optedOut = contact?.optedOut === true;
+  const customerSince = customerSinceDraft ?? contact?.customerSince?.slice(0, 10) ?? "";
   const [context, setContext] = useState(initialContext);
   const [placing, setPlacing] = useState(false);
   const [placementError, setPlacementError] = useState<string | null>(null);
@@ -107,8 +114,10 @@ function DirectOutboundDialDialog({
   const placingRef = useRef(false);
   const requestRef = useRef<{ fingerprint: string; key: string } | null>(null);
   const openerRef = useRef<HTMLElement | null>(null);
+  const titleRef = useRef<HTMLHeadingElement | null>(null);
   const openingUrlRef = useRef("");
   const closingForNavigationRef = useRef(false);
+  const reviewingCall = Boolean(preparedCall || initialNumber);
 
   const closeForNavigation = () => {
     closingForNavigationRef.current = true;
@@ -124,60 +133,30 @@ function DirectOutboundDialDialog({
     setAgentId(initialAgentId);
     setNumber(preparedCall?.phone || initialNumber);
     setContext(preparedCall?.instruction || initialContext);
-    setPurpose("appointment_service");
-    setRelationship(false);
-    setPermissionStored(false);
-    setNonsalesStored(false);
+    setPurpose(null);
+    setContactLookup(null);
     setPermissionChecked(false);
     setNonsalesChecked(false);
-    setCustomerSince("");
-    setSalesAttestationRecorded(false);
+    setCustomerSince(null);
     setSalesAttestationChecked(false);
-    setOptedOut(false);
-    setPurposeTouched(false);
     setUncertain(false);
     setPlacementError(null);
     requestRef.current = null;
   }, [open, initialAgentId, initialNumber, initialContext, preparedCall]);
 
   useEffect(() => {
-    if (!open) return;
-    const source = preparedCall?.phone || number;
-    const digits = source.replace(/\D/g, "");
-    if (digits.length < 10) return;
-    const phone = `+${digits.length === 10 ? `1${digits}` : digits}`;
+    if (!open || !phone) return;
     const controller = new AbortController();
     void authFetch(`/api/outbound/contact-context?phone=${encodeURIComponent(phone)}`, {
       signal: controller.signal,
     })
       .then(async (response) => (response.ok ? response.json() : null))
-      .then(
-        (
-          body: {
-            relationship?: unknown;
-            permissionConfirmed?: boolean;
-            nonsalesConfirmed?: boolean;
-            customerSince?: string | null;
-            suggestedPurpose?: OutboundPurposeChoice;
-            salesAttestationRecorded?: boolean;
-            optedOut?: boolean;
-          } | null,
-        ) => {
-          if (!body || controller.signal.aborted) return;
-          const hasRelationship = Boolean(body.relationship);
-          setRelationship(hasRelationship);
-          setOptedOut(body.optedOut === true);
-          setPermissionStored(body.permissionConfirmed === true);
-          setNonsalesStored(body.nonsalesConfirmed === true);
-          setSalesAttestationRecorded(body.salesAttestationRecorded === true);
-          if (!preparedCall && !purposeTouched && body.suggestedPurpose)
-            setPurpose(body.suggestedPurpose);
-          if (body.customerSince) setCustomerSince(body.customerSince.slice(0, 10));
-        },
-      )
+      .then((body: OutboundContactContext | null) => {
+        if (body && !controller.signal.aborted) setContactLookup({ phone, context: body });
+      })
       .catch(() => undefined);
     return () => controller.abort();
-  }, [open, number, preparedCall, purposeTouched]);
+  }, [open, phone]);
 
   const refreshCallStatus = useCallback(
     async (signal?: AbortSignal) => {
@@ -290,9 +269,9 @@ function DirectOutboundDialDialog({
   const setupHref = resolvedAgentId
     ? `/phone?tab=setup&agent=${encodeURIComponent(resolvedAgentId)}`
     : "/phone?tab=setup";
-  const showPermission = !optedOut && !permissionStored;
-  const showNonsales = !optedOut && !salesCall && !nonsalesStored;
-  const showSalesAttestation = !optedOut && salesCall && !salesAttestationRecorded;
+  const showPermission = !optedOut && contact?.permissionConfirmed !== true;
+  const showNonsales = !optedOut && !salesCall && contact?.nonsalesConfirmed !== true;
+  const showSalesAttestation = !optedOut && salesCall && contact?.salesAttestationRecorded !== true;
   const contentWarning = salesCall ? null : salesContentWarning(context);
   const canPlace =
     !placing &&
@@ -301,7 +280,7 @@ function DirectOutboundDialDialog({
     selectedReady &&
     (!preparedCall || Date.parse(preparedCall.expires_at) > Date.now()) &&
     !!resolvedAgentId &&
-    number.trim().length > 0 &&
+    !!phone &&
     !optedOut &&
     (!showPermission || permissionChecked) &&
     (!showNonsales || nonsalesChecked) &&
@@ -309,20 +288,19 @@ function DirectOutboundDialDialog({
     (callPurpose !== "existing_customer" || customerSince.length > 0);
 
   const placeCall = async () => {
-    if (!canPlace || placingRef.current) return;
+    if (!canPlace || !phone || placingRef.current) return;
     placingRef.current = true;
     setPlacing(true);
     setPlacementError(null);
     try {
-      const digits = number.replace(/\D/g, "");
       const payload = {
         agentId: resolvedAgentId,
-        customerNumber: `+${digits.length === 10 ? `1${digits}` : digits}`,
+        customerNumber: phone,
         customerName: "",
         context: context.trim() || undefined,
         callPurpose,
-        permissionConfirmed: permissionChecked || permissionStored,
-        nonsalesConfirmed: nonsalesChecked || nonsalesStored,
+        permissionConfirmed: showPermission && permissionChecked,
+        nonsalesConfirmed: showNonsales && nonsalesChecked,
         customerSince: callPurpose === "existing_customer" ? customerSince : undefined,
         salesAttestationConfirmed: salesAttestationChecked,
       };
@@ -412,7 +390,7 @@ function DirectOutboundDialDialog({
       <DialogContent
         showClose={!placing}
         aria-busy={placing}
-        onOpenAutoFocus={() => {
+        onOpenAutoFocus={(event) => {
           // Controlled callers have no DialogTrigger for Radix to restore.
           openerRef.current =
             document.activeElement instanceof HTMLElement &&
@@ -421,6 +399,10 @@ function DirectOutboundDialDialog({
               : null;
           openingUrlRef.current = window.location.href;
           closingForNavigationRef.current = false;
+          if (reviewingCall && titleRef.current) {
+            event.preventDefault();
+            titleRef.current.focus({ preventScroll: true });
+          }
         }}
         onCloseAutoFocus={(event) => {
           event.preventDefault();
@@ -447,12 +429,16 @@ function DirectOutboundDialDialog({
         className="flex max-w-md flex-col gap-0 overflow-hidden border-border bg-[var(--wireline-color-surface-default)] p-0 shadow-2xl"
       >
         <DialogHeader className="shrink-0 border-b border-border px-6 py-5">
-          <DialogTitle className="flex items-center gap-2 font-[var(--wireline-font-family-display)] text-xl font-normal tracking-[-0.02em]">
+          <DialogTitle
+            ref={titleRef}
+            tabIndex={-1}
+            className="flex items-center gap-2 font-[var(--wireline-font-family-display)] text-xl font-normal tracking-[-0.02em] focus:outline-none"
+          >
             <Phone className="h-4 w-4 text-primary" aria-hidden />
-            {preparedCall ? "Review call" : "New Call"}
+            {reviewingCall ? "Review call" : "New Call"}
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Enter a number and an optional instruction. Your Bot places the call.
+            Review the number, Bot, and purpose before placing the call.
           </DialogDescription>
         </DialogHeader>
 
@@ -525,21 +511,42 @@ function DirectOutboundDialDialog({
                   value={number}
                   disabled={placing || uncertain || !!preparedCall}
                   onChange={(event) => {
-                    setNumber(event.target.value);
+                    const next = event.target.value;
+                    if (normalizeOutboundRecipient(next) !== phone) {
+                      setContactLookup(null);
+                      setPermissionChecked(false);
+                      setNonsalesChecked(false);
+                      setCustomerSince(null);
+                    }
+                    setNumber(next);
                     setPlacementError(null);
                   }}
                 />
               </label>
+              <label className="block space-y-1.5">
+                <span className="block text-sm font-semibold text-foreground">Bot</span>
+                <select
+                  className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
+                  value={resolvedAgentId}
+                  disabled={placing || uncertain || !!preparedCall}
+                  onChange={(event) => setAgentId(event.target.value)}
+                >
+                  {agents.map((agent) => (
+                    <option key={agent.id} value={agent.id}>
+                      {agent.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <OutboundPurposePicker
                 purpose={purpose}
                 onPurpose={(next) => {
-                  setPurposeTouched(true);
                   setPurpose(next);
                   setPlacementError(null);
                   setPermissionChecked(false);
                   setNonsalesChecked(false);
                 }}
-                relationship={relationship}
+                relationship={Boolean(contact?.relationship)}
                 customerSince={customerSince}
                 onCustomerSince={setCustomerSince}
                 showPermission={showPermission}
@@ -588,21 +595,6 @@ function DirectOutboundDialDialog({
                 />
               </label>
 
-              <label className="block space-y-1.5">
-                <span className="block text-sm font-semibold text-foreground">Bot</span>
-                <select
-                  className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
-                  value={resolvedAgentId}
-                  disabled={placing || uncertain || !!preparedCall}
-                  onChange={(event) => setAgentId(event.target.value)}
-                >
-                  {agents.map((agent) => (
-                    <option key={agent.id} value={agent.id}>
-                      {agent.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
               {preparedCall && Date.parse(preparedCall.expires_at) <= Date.now() ? (
                 <p role="alert" className="text-sm text-destructive">
                   This proposal expired. Prepare a new call from your connected app.

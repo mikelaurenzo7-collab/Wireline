@@ -1,6 +1,7 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import SmsThreads from "../src/components/SmsThreads";
+import OutboundPurposePicker from "../src/components/outbound/OutboundPurposePicker";
 import { smsOutcomeOperations } from "../src/lib/conversation-outcome-operations";
 
 const harness = vi.hoisted(() => ({
@@ -257,6 +258,49 @@ afterEach(() => {
 });
 
 describe("SMS conversation drafts", () => {
+  it.each(["saved", "checked"])(
+    "keeps %s contact confirmations on their own recipient during a thread switch",
+    async (kind) => {
+      const lookup = deferredResponse();
+      const originalFetch = harness.authFetch.getMockImplementation()!;
+      harness.authFetch.mockImplementation((url: string, options?: RequestInit) => {
+        if (!url.startsWith("/api/outbound/contact-context")) return originalFetch(url, options);
+        if (url.includes(encodeURIComponent(threads[1].customer_number))) return lookup.promise;
+        return Promise.resolve(
+          response({ permissionConfirmed: kind === "saved", nonsalesConfirmed: kind === "saved" }),
+        );
+      });
+      await settle();
+      await selectThread(0);
+      if (kind === "checked") {
+        const picker = find((node) => node.type === OutboundPurposePicker).props as {
+          onPermission: (value: boolean) => void;
+          onNonsales: (value: boolean) => void;
+        };
+        picker.onPermission(true);
+        picker.onNonsales(true);
+        await settle();
+      }
+
+      await backToList();
+      await selectThread(1);
+      await typeReply("Please confirm the inspection time.");
+      replyResponses.push(() => Promise.resolve(response({ error: "Permission required" }, 403)));
+      submit();
+      await settle();
+
+      expect(sendRequests()).toHaveLength(1);
+      const [url, options] = sendRequests()[0];
+      expect(url).toBe("/api/sms/threads/thread-b/reply");
+      expect(JSON.parse(options.body)).toMatchObject({
+        permissionConfirmed: false,
+        nonsalesConfirmed: false,
+      });
+      lookup.resolve(response({}));
+      await settle();
+    },
+  );
+
   it("shows matching search results instead of an excluded conversation without losing drafts", async () => {
     await settle();
     await selectThread(0);

@@ -257,14 +257,11 @@ export default function EmailVerifyBanner() {
       aria-live="polite"
       initial={{ height: 0, opacity: 0 }}
       animate={{ height: "auto", opacity: 1 }}
-      className={cn(
-        "wl-banner wl-banner--compact flex-row items-center gap-2 py-1.5",
-        bannerTone,
-      )}
+      className={cn("wl-banner wl-banner--compact flex-row items-center gap-2 py-1.5", bannerTone)}
     >
-      <div className="wl-banner__body w-full min-w-0">
+      <div className="wl-banner__body">
         <Mail className="wl-banner__icon" aria-hidden />
-        <span className="min-w-0 truncate text-left text-[13px] leading-4">
+        <span className="text-left text-[13px] leading-4">
           {outcome === "sent" ? (
             <>Verification email resent. Check your inbox + spam folder.</>
           ) : outcome === "no-transport" ? (
@@ -307,7 +304,7 @@ export default function EmailVerifyBanner() {
           )}
         </span>
       </div>
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="flex max-w-full flex-wrap items-center gap-1">
         <Button
           type="button"
           variant="secondary"

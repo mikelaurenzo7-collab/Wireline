@@ -18,6 +18,7 @@ import {
   type CallOutcome,
 } from "../lib/call-outcome";
 import { formatPhone } from "../lib/safe-number";
+import { normalizeOutboundRecipient } from "../lib/dialer-compliance";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { Button, EmptyState, Skeleton } from "./atoms";
 import OutboundDialDialog from "./OutboundDialDialog";
@@ -146,9 +147,7 @@ export function parseDialogue(
   const turns: DialogueTurn[] = [];
 
   for (const line of lines) {
-    const match = line.match(
-      /^(Bot|Agent|Assistant|Caller|User|Customer|Human|System):\s*(.*)$/i,
-    );
+    const match = line.match(/^(Bot|Agent|Assistant|Caller|User|Customer|Human|System):\s*(.*)$/i);
     if (match) {
       const rawRole = match[1].toLowerCase();
       const text = match[2].trim();
@@ -185,7 +184,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showOutboundDial, setShowOutboundDial] = useState(false);
+  const [dialDraft, setDialDraft] = useState<{ agentId?: string; number?: string } | null>(null);
   const [query, setQuery] = useState("");
   const desktop = useMediaQuery("(min-width: 1024px)");
   const requestState = useRef({ generation: 0, pageInFlight: false });
@@ -232,6 +231,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
     setLoadingMore(false);
     setLoadMoreError(null);
     setSelectedId(null);
+    setDialDraft(null);
     setQuery("");
     void loadCalls();
     return () => {
@@ -284,6 +284,13 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
     () => calls.find((call) => call.id === selectedId) || null,
     [calls, selectedId],
   );
+  const reviewNumber =
+    selected?.customer_number && !selected.demo && selected.outcome_tag !== "dnc"
+      ? normalizeOutboundRecipient(selected.customer_number)
+      : null;
+  const reviewRetry =
+    selected?.ended_reason === "carrier-busy" || selected?.ended_reason === "carrier-no-answer";
+  const newCall = () => setDialDraft({ agentId: agentId || undefined });
   const visibleCalls = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return calls;
@@ -358,7 +365,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
           titleTone="ui"
           withHalo={false}
           action={
-            <Button type="button" size="sm" onClick={() => setShowOutboundDial(true)}>
+            <Button type="button" size="sm" onClick={newCall}>
               {callLabel}
             </Button>
           }
@@ -461,12 +468,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
               {formatPhone(selected.customer_number, "Unknown Caller")}
             </h2>
             <p className="wl-preserve-case mt-1 text-xs text-muted-foreground">
-              {[
-                selected.agent_name,
-                formatTime(selected.created_at),
-              ]
-                .filter(Boolean)
-                .join(" · ")}
+              {[selected.agent_name, formatTime(selected.created_at)].filter(Boolean).join(" · ")}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -483,32 +485,44 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => setShowOutboundDial(true)}
-            className="gap-1.5 text-xs"
-          >
-            <Phone className="size-3.5" aria-hidden="true" />
-            Call Back
-          </Button>
-          {selected.recording_url ? (
-            <a
-              href={selected.recording_url}
-              download
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
-            >
-              <Download className="size-3.5" aria-hidden="true" />
-              Download Audio
-            </a>
-          ) : null}
-        </div>
+        {reviewNumber || selected.recording_url ? (
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
+            {reviewNumber ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() =>
+                  setDialDraft({
+                    agentId: selected.agent_id || agentId || undefined,
+                    number: reviewNumber,
+                  })
+                }
+                className="gap-1.5 text-xs"
+              >
+                <Phone className="size-3.5" aria-hidden="true" />
+                {reviewRetry ? "Review Retry" : "Call Back"}
+              </Button>
+            ) : null}
+            {selected.recording_url ? (
+              <a
+                href={selected.recording_url}
+                download
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+              >
+                <Download className="size-3.5" aria-hidden="true" />
+                Download Audio
+              </a>
+            ) : null}
+          </div>
+        ) : null}
       </header>
 
       {selected.recording_url ? (
-        <section aria-label="Call recording" className="rounded-2xl border border-border/80 bg-card/60 p-4 shadow-xs">
+        <section
+          aria-label="Call recording"
+          className="rounded-2xl border border-border/80 bg-card/60 p-4 shadow-xs"
+        >
           <div className="flex items-center justify-between pb-2">
             <h3 className="flex items-center gap-2 text-xs font-semibold text-foreground">
               <Mic className="size-3.5 text-primary" aria-hidden="true" />
@@ -552,9 +566,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
               <span className="block text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 {label}
               </span>
-              <strong className="mt-1 block text-sm font-semibold text-foreground">
-                {value}
-              </strong>
+              <strong className="mt-1 block text-sm font-semibold text-foreground">{value}</strong>
             </div>
           ))}
         </div>
@@ -656,7 +668,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
               <Download className="size-4" aria-hidden="true" />
             </a>
           ) : null}
-          <Button type="button" size="sm" onClick={() => setShowOutboundDial(true)}>
+          <Button type="button" size="sm" onClick={newCall}>
             <Phone className="size-4" aria-hidden="true" />
             {callLabel}
           </Button>
@@ -755,9 +767,10 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
       )}
 
       <OutboundDialDialog
-        open={showOutboundDial}
-        onClose={() => setShowOutboundDial(false)}
-        initialAgentId={agentId || undefined}
+        open={dialDraft !== null}
+        onClose={() => setDialDraft(null)}
+        initialAgentId={dialDraft?.agentId}
+        initialNumber={dialDraft?.number}
       />
     </div>
   );
