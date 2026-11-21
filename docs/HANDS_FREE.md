@@ -36,6 +36,8 @@ Prioritize repeated owner jobs: unread-work briefing, job-site/property notes, r
 
 Web Bluetooth is not an audio-routing API. Never use `requestDevice` to promise headset audio. The OS/browser chooses Web Speech's microphone and output. This implementation does not infer a device from its name, promise an HFP/LE Audio codec, or claim screen-lock listening. `devicechange` is a useful stop signal but cannot detect every OS route change. Real-device acceptance must check intended input/output and disconnect during playback.
 
+Opt-in native device tools wait for the push-service receipt. A notification accepted for delivery does not confirm that Maps opened, a reminder was saved, or music started. Missing or failed notification receipts remain unconfirmed; ask the owner to check the phone before retrying. These tools do not establish native-client or physical-device launch acceptance.
+
 ## Connector and Meta onboarding
 
 Reuse `https://botbound.app/mcp` and the existing OAuth protected-resource and authorization-server metadata. Provider secrets stay server-side.
