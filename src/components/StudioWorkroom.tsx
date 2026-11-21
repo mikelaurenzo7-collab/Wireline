@@ -13,10 +13,10 @@ import {
   ArrowDown,
   ArrowUp,
   AudioLines,
-  Globe,
   Loader2,
   MessageCircle,
   Mic,
+  Monitor,
   Phone,
   Square,
   Trash2,
@@ -160,8 +160,10 @@ const StudioWorkroom = forwardRef<
     voiceVisible?: boolean;
     timelineExtras?: Array<{ id: string; createdAt: string; updatedAt?: string; node: ReactNode }>;
     browserRequested: boolean;
+    computerViewOpen?: boolean;
     autoReply: boolean;
     onRequestBrowserTask: () => void;
+    onActivateComputer?: () => void;
     onRequestMessage: () => void;
     onShowBrowser: () => void;
     timelineNotice?: ReactNode;
@@ -185,8 +187,10 @@ const StudioWorkroom = forwardRef<
     voiceVisible = true,
     timelineExtras = [],
     browserRequested,
+    computerViewOpen = false,
     autoReply,
     onRequestBrowserTask,
+    onActivateComputer = onRequestBrowserTask,
     onRequestMessage,
     onShowBrowser,
     timelineNotice,
@@ -799,33 +803,40 @@ const StudioWorkroom = forwardRef<
               <div className="mx-auto max-w-3xl">
                 {taskComposer.notice}
                 <div className="wl-studio-composer-tools">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="min-h-11 justify-self-start gap-2"
-                    disabled={composerBusy}
-                    aria-label={
-                      taskComposer.taskMode
-                        ? `${taskComposer.label}, message instead`
-                        : "Use browser"
-                    }
-                    aria-pressed={taskComposer.taskMode}
-                    title={
-                      taskComposer.taskMode
-                        ? "Return to your message draft"
-                        : "Give your Bot a browser task"
-                    }
-                    onClick={() => {
-                      if (taskComposer.taskMode) onRequestMessage();
-                      else onRequestBrowserTask();
-                      requestAnimationFrame(() => inputRef.current?.focus());
-                    }}
-                  >
-                    <Globe size={16} aria-hidden="true" />
-                    <span>{taskComposer.taskMode ? taskComposer.label : "Use browser"}</span>
-                    {taskComposer.taskMode ? <X size={14} aria-hidden="true" /> : null}
-                  </Button>
+                  <div className="flex min-w-0 flex-wrap items-center gap-1">
+                    <Button
+                      id="studio-panel-toggle"
+                      type="button"
+                      size="sm"
+                      variant={taskComposer.taskMode ? "secondary" : "ghost"}
+                      className="min-h-11 gap-2"
+                      disabled={composerBusy}
+                      aria-pressed={taskComposer.taskMode}
+                      title={
+                        taskComposer.taskMode ? "Back to chat" : "Give your Bot a computer task"
+                      }
+                      onClick={() => {
+                        if (taskComposer.taskMode) onRequestMessage();
+                        else onActivateComputer();
+                        requestAnimationFrame(() => inputRef.current?.focus());
+                      }}
+                    >
+                      <Monitor size={16} aria-hidden="true" />
+                      Computer
+                      {taskComposer.taskMode ? <X size={14} aria-hidden="true" /> : null}
+                    </Button>
+                    {taskComposer.taskMode && !computerViewOpen ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="min-h-11"
+                        onClick={onShowBrowser}
+                      >
+                        View browser
+                      </Button>
+                    ) : null}
+                  </div>
                   <StudioHandsFree
                     key={`${agentId}:${taskComposer.taskMode ? "work" : "message"}`}
                     agentId={agentId}

@@ -269,11 +269,7 @@ describe("Studio settings-to-Test handoff", () => {
     panelNodes().find((node) => node.props["aria-label"] === "Restore split view")!.props
       .onClick!();
     expect(render().find((node) => node.type === "resizable-panel")?.props.fill).toBe(false);
-    expect(
-      panelNodes().find((node) => node.props.id === "studio-inspector-tab-computer")?.props[
-        "aria-selected"
-      ],
-    ).toBe(true);
+    expect(panelNodes().some((node) => node.props.id === "studio-computer-panel")).toBe(true);
     expect(h.params.get("agent")).toBe("bot-a");
     expect(h.params.has("focus")).toBe(false);
   });
@@ -293,23 +289,14 @@ describe("Studio settings-to-Test handoff", () => {
   it("rehearses in the conversation on wide layout without a panel tab", () => {
     h.wide = true;
     h.params = new URLSearchParams("agent=bot-a&section=setup");
-    // On wide layouts the inspector lives inside the resizable panel's
-    // render-prop children, so reach the setup panel through it (same
-    // pattern as the bookmark-restoration test below).
-    const panel = render().find((node) => node.type === "resizable-panel")!;
-    const content = panel.props.children as unknown as (state: {
-      collapsed: boolean;
-    }) => ReactNode;
-    const setup = elements(content({ collapsed: false })).find(
-      (node) => node.type === "setup-panel",
-    )!;
+    const nodes = render();
+    expect(nodes.some((node) => node.type === "resizable-panel")).toBe(false);
+    const setup = nodes.find((node) => node.type === "setup-panel")!;
     setup.props.onRehearseVoiceInChat!();
     const workroom = render().find((node) => node.type === "workroom")!;
     expect(workroom.props.mode).toBe("test");
     expect(h.params.has("section")).toBe(false);
-    expect(render().find((node) => node.type === "resizable-panel")?.props.collapsed).toBe(
-      true,
-    );
+    expect(render().find((node) => node.type === "resizable-panel")?.props.collapsed).toBe(true);
     expect(h.focus).toHaveBeenCalledExactlyOnceWith();
   });
 

@@ -15,10 +15,7 @@ import { useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { isReviewedOutboundCandidate, salesContentWarning } from "../lib/outbound-call-purpose";
-import {
-  OUTBOUND_CONSENT_LABEL,
-  OUTBOUND_CONSENT_LEGAL_PATH,
-} from "../lib/outbound-consent-copy";
+import { OUTBOUND_CONSENT_LABEL, OUTBOUND_CONSENT_LEGAL_PATH } from "../lib/outbound-consent-copy";
 import { INTERNAL_DNC_MESSAGE } from "../lib/outbound-compliance-copy";
 import OutboundPurposePicker, {
   SalesAttestationCheckbox,
@@ -36,7 +33,7 @@ import {
 } from "../lib/outbound-dial-recovery";
 
 function preparedPurposeLabel(purpose: string): string {
-  if (purpose === "callback") return "Callback";
+  if (purpose === "callback") return "Requested callback";
   if (purpose === "service_or_requested" || purpose === "appointment_service")
     return "Appointment/service";
   if (purpose === "returning_contact") return "Returning their call";
@@ -83,14 +80,14 @@ function DirectOutboundDialDialog({
   const [optedOut, setOptedOut] = useState(false);
   const [purposeTouched, setPurposeTouched] = useState(false);
   const preparedPurpose = preparedCall?.call_purpose ?? null;
-  const callPurpose =
-    preparedPurpose ?? (relationship && purpose === "sales" ? "returning_contact" : purpose);
+  const callPurpose = preparedPurpose ?? purpose;
   const salesCall = callPurpose === "sales";
 
   const [agentId, setAgentId] = useState(initialAgentId);
   const [number, setNumber] = useState(preparedCall?.phone || initialNumber);
   const [context, setContext] = useState(initialContext);
   const [placing, setPlacing] = useState(false);
+  const [placementError, setPlacementError] = useState<string | null>(null);
   const [savedRecovery] = useState(() => {
     try {
       return { pending: readPendingOutboundDial(userId, sessionStorage), error: "" };
@@ -139,6 +136,7 @@ function DirectOutboundDialDialog({
     setOptedOut(false);
     setPurposeTouched(false);
     setUncertain(false);
+    setPlacementError(null);
     requestRef.current = null;
   }, [open, initialAgentId, initialNumber, initialContext, preparedCall]);
 
@@ -153,25 +151,30 @@ function DirectOutboundDialDialog({
       signal: controller.signal,
     })
       .then(async (response) => (response.ok ? response.json() : null))
-      .then((body: {
-        relationship?: unknown;
-        permissionConfirmed?: boolean;
-        nonsalesConfirmed?: boolean;
-        customerSince?: string | null;
-        suggestedPurpose?: OutboundPurposeChoice;
-        salesAttestationRecorded?: boolean;
-        optedOut?: boolean;
-      } | null) => {
-        if (!body || controller.signal.aborted) return;
-        const hasRelationship = Boolean(body.relationship);
-        setRelationship(hasRelationship);
-        setOptedOut(body.optedOut === true);
-        setPermissionStored(body.permissionConfirmed === true);
-        setNonsalesStored(body.nonsalesConfirmed === true);
-        setSalesAttestationRecorded(body.salesAttestationRecorded === true);
-        if (!preparedCall && !purposeTouched && body.suggestedPurpose) setPurpose(body.suggestedPurpose);
-        if (body.customerSince) setCustomerSince(body.customerSince.slice(0, 10));
-      })
+      .then(
+        (
+          body: {
+            relationship?: unknown;
+            permissionConfirmed?: boolean;
+            nonsalesConfirmed?: boolean;
+            customerSince?: string | null;
+            suggestedPurpose?: OutboundPurposeChoice;
+            salesAttestationRecorded?: boolean;
+            optedOut?: boolean;
+          } | null,
+        ) => {
+          if (!body || controller.signal.aborted) return;
+          const hasRelationship = Boolean(body.relationship);
+          setRelationship(hasRelationship);
+          setOptedOut(body.optedOut === true);
+          setPermissionStored(body.permissionConfirmed === true);
+          setNonsalesStored(body.nonsalesConfirmed === true);
+          setSalesAttestationRecorded(body.salesAttestationRecorded === true);
+          if (!preparedCall && !purposeTouched && body.suggestedPurpose)
+            setPurpose(body.suggestedPurpose);
+          if (body.customerSince) setCustomerSince(body.customerSince.slice(0, 10));
+        },
+      )
       .catch(() => undefined);
     return () => controller.abort();
   }, [open, number, preparedCall, purposeTouched]);
@@ -309,6 +312,7 @@ function DirectOutboundDialDialog({
     if (!canPlace || placingRef.current) return;
     placingRef.current = true;
     setPlacing(true);
+    setPlacementError(null);
     try {
       const digits = number.replace(/\D/g, "");
       const payload = {
@@ -357,6 +361,7 @@ function DirectOutboundDialDialog({
         pendingRef.current = null;
         requestRef.current = null;
         setUncertain(false);
+        setPlacementError(body.error || "Outbound dial was blocked.");
         toast({
           type: "error",
           title: "Call Not Placed",
@@ -519,14 +524,18 @@ function DirectOutboundDialDialog({
                   className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                   value={number}
                   disabled={placing || uncertain || !!preparedCall}
-                  onChange={(event) => setNumber(event.target.value)}
+                  onChange={(event) => {
+                    setNumber(event.target.value);
+                    setPlacementError(null);
+                  }}
                 />
               </label>
               <OutboundPurposePicker
-                purpose={purpose === "sales" && relationship ? "returning_contact" : purpose}
+                purpose={purpose}
                 onPurpose={(next) => {
                   setPurposeTouched(true);
                   setPurpose(next);
+                  setPlacementError(null);
                   setPermissionChecked(false);
                   setNonsalesChecked(false);
                 }}
@@ -542,8 +551,11 @@ function DirectOutboundDialDialog({
                 contentWarning={contentWarning}
                 disabled={placing || uncertain}
                 purposeLocked={!!preparedCall}
-                lockedPurposeLabel={preparedCall ? preparedPurposeLabel(preparedCall.call_purpose) : undefined}
+                lockedPurposeLabel={
+                  preparedCall ? preparedPurposeLabel(preparedCall.call_purpose) : undefined
+                }
                 permissionLabel={OUTBOUND_CONSENT_LABEL}
+                channel="call"
               />
               {optedOut ? (
                 <p className="text-sm text-foreground" role="status">
@@ -598,7 +610,7 @@ function DirectOutboundDialDialog({
               ) : null}
             </div>
           )}
-          {uncertain || recoveryError ? (
+          {uncertain || recoveryError || placementError ? (
             <div className="space-y-3 px-6 py-4">
               {uncertain ? (
                 <p role="status" className="text-sm text-foreground">
@@ -608,6 +620,11 @@ function DirectOutboundDialDialog({
               {recoveryError ? (
                 <p role="alert" className="text-sm text-destructive">
                   {recoveryError}
+                </p>
+              ) : null}
+              {placementError ? (
+                <p role="alert" className="text-sm text-destructive">
+                  {placementError}
                 </p>
               ) : null}
               {uncertain && missingRequest ? (

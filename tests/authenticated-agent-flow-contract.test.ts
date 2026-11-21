@@ -45,7 +45,7 @@ describe("authenticated Bot flow", () => {
     expect(permissions).toContain("encodeURIComponent(savedFor)");
   });
 
-  it("routes every fresh signup into the same real Bot create flow", () => {
+  it("keeps the signup form focused and offers direct plan review and Bot setup", () => {
     const authPortal = read("src/components/AuthPortal.tsx");
     const authAccess = read("src/components/auth/AuthAccessPanel.tsx");
     const authRedirect = read("src/lib/auth-redirect.ts");
@@ -54,7 +54,7 @@ describe("authenticated Bot flow", () => {
     const workspaceShell = read("src/components/WorkspaceShell.tsx");
 
     expect(authPortal).toContain("AuthAccessPanel");
-    // P-4: signup shows no plan prices; the plan choice lives at go-live.
+    // Account creation precedes plan review.
     expect(authAccess).not.toContain("function signupPlanLabel(");
     expect(authAccess).not.toContain("plan.price_usd_annual");
     expect(authAccess).not.toContain("plan.price_usd_monthly");
@@ -66,6 +66,7 @@ describe("authenticated Bot flow", () => {
     expect(workspaceShell).not.toContain("WirelineMark");
     expect(workspaceShell).not.toMatch(/>\s*W\s*<\/span>/);
     expect(authRedirect).toContain('return "/studio?create=1"');
+    expect(authRedirect).toContain("&onboarding=1");
     expect(authRedirect).not.toContain("create=1&posture=");
     expect(authAccess.match(/navigate\(resolvePostAuthDestination/g)).toHaveLength(1);
     expect(onboardingFlow).toContain("language.createCta");

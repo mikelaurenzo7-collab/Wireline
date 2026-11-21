@@ -29,11 +29,10 @@ export const OUTBOUND_RELATIONSHIP_WINDOW_MS = 90 * 24 * 60 * 60 * 1000;
 /** Purchase established-business-relationship window. Older dates revert to sales. */
 export const EXISTING_CUSTOMER_WINDOW_MONTHS = 18;
 
-export const SALES_CONTENT_WARNING =
-  "This sounds like a sales call. Switch to Sales?";
+export const SALES_CONTENT_WARNING = "This sounds like a sales call. Switch to Sales?";
 
 const PROMO_PATTERN =
-  /\b(discount|offer|special|%\s*off|percent off|limited time|sign up today|act now|free trial)\b/i;
+  /\b(?:discount|promotional|(?:special|limited[ -]time|introductory|exclusive) (?:offer|deal|price)|\d+\s*(?:%|percent)\s*off|sign up today|act now|free trial)\b/i;
 
 export function outboundCallingAvailability(): OutboundCallingAvailability {
   return {

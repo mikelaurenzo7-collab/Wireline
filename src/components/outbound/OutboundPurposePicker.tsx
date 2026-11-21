@@ -1,4 +1,8 @@
-import { CONTACT_PERMISSION_LABEL, NONSALES_CONFIRMATION_LABEL, SALES_DNC_ATTESTATION_LABEL } from "../../lib/outbound-compliance-copy";
+import {
+  CONTACT_PERMISSION_LABEL,
+  NONSALES_CONFIRMATION_LABEL,
+  SALES_DNC_ATTESTATION_LABEL,
+} from "../../lib/outbound-compliance-copy";
 import { SALES_CONTENT_WARNING } from "../../lib/outbound-call-purpose";
 import { Checkbox } from "../ui/shadcn/Checkbox";
 import { Link } from "react-router";
@@ -8,6 +12,7 @@ export const OUTBOUND_PURPOSE_CHOICES = [
   { id: "returning_contact", label: "Returning their call" },
   { id: "appointment_service", label: "Appointment/service" },
   { id: "existing_customer", label: "Existing customer" },
+  { id: "callback", label: "Requested callback" },
   { id: "sales", label: "Sales" },
 ] as const;
 
@@ -32,6 +37,7 @@ type OutboundPurposePickerProps = {
   /** Replaces the purpose chips with the human label of a prepared call. */
   lockedPurposeLabel?: string;
   permissionLabel?: string;
+  channel?: "call" | "sms";
 };
 
 export default function OutboundPurposePicker({
@@ -51,17 +57,22 @@ export default function OutboundPurposePicker({
   purposeLocked,
   lockedPurposeLabel,
   permissionLabel = CONTACT_PERMISSION_LABEL,
+  channel = "sms",
 }: OutboundPurposePickerProps) {
   return (
     <div className="space-y-3">
       <div>
-        <span className="block text-sm font-semibold text-foreground">Why are you contacting them?</span>
+        <span className="block text-sm font-semibold text-foreground">
+          Why are you contacting them?
+        </span>
         {lockedPurposeLabel ? (
           <p className="mt-2 text-sm text-foreground">{lockedPurposeLabel}</p>
         ) : (
           <div className="mt-2 flex flex-wrap gap-2">
-            {OUTBOUND_PURPOSE_CHOICES.map((choice) => {
-              const lockedSales = relationship && choice.id === "sales";
+            {OUTBOUND_PURPOSE_CHOICES.filter(
+              (choice) => channel === "call" || choice.id !== "callback",
+            ).map((choice) => {
+              const lockedSales = channel === "sms" && relationship && choice.id === "sales";
               const selected = purpose === choice.id;
               return (
                 <button
@@ -84,11 +95,17 @@ export default function OutboundPurposePicker({
         )}
         {relationship ? (
           <p className="mt-2 text-xs leading-5 text-muted-foreground">
-            They contacted you in the last 90 days, so Returning their call is selected. That can
-            only loosen a sales choice.
+            {channel === "call"
+              ? "They contacted you in the last 90 days. Choose the reason for this call."
+              : "They contacted you in the last 90 days, so Returning their call is selected."}
           </p>
         ) : null}
       </div>
+      {purpose === "callback" && !lockedPurposeLabel ? (
+        <p className="text-xs leading-5 text-muted-foreground">
+          Choose this when the person specifically asked you to call them again.
+        </p>
+      ) : null}
       {purpose === "existing_customer" ? (
         <label className="block space-y-1.5">
           <span className="block text-sm font-semibold text-foreground">

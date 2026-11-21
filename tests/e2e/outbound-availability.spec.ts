@@ -113,6 +113,13 @@ for (const width of [320, 1280]) {
     await expect(dialog.getByRole("textbox", { name: "Phone number", exact: true })).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Place call", exact: true })).toBeDisabled();
     await expect(dialog.getByRole("option", { name: "Marketing or sales" })).toHaveCount(0);
+    await dialog.getByRole("button", { name: "Requested callback", exact: true }).click();
+    await expect(dialog.getByText(/specifically asked you to call them again/)).toBeVisible();
+    await dialog
+      .getByRole("textbox", { name: "Instruction (optional)", exact: true })
+      .fill("Offer Tuesday at 10 a.m. for the appraisal inspection.");
+    await expect(dialog.getByText(/Switch to Sales/)).toHaveCount(0);
+    await expect(dialog.getByRole("button", { name: "Place call", exact: true })).toBeDisabled();
     for (const control of [
       dialog.getByRole("textbox", { name: "Phone number", exact: true }),
       dialog.getByRole("button", { name: "Close", exact: true }).last(),

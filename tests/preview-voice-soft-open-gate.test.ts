@@ -137,7 +137,8 @@ describe("Studio Preview Voice during a closed self-serve checkout", () => {
     expect(setup).toContain("const showSoftOpen = liveNumberClosed");
     expect(setup).not.toContain("const checkoutClosed");
     expect(wizard).toContain("SoftOpenCheckoutNote");
-    expect(wizard).toContain("canProvisionNumber");
+    expect(wizard).toContain('step === "launch" && hasVoiceAccess');
+    expect(wizard).toContain("disabled={refreshingPhone || phoneLookupFailed}");
     expect(roleplay).toContain("SOFT_OPEN_CHECKOUT_COPY");
     expect(roleplay).toContain("fetchSelfServeCheckoutAvailable");
   });

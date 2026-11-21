@@ -130,24 +130,20 @@ describe("Studio route state", () => {
     expect(current.get("section")).toBe("review");
   });
 
-  it("preserves test mode while opening and closing the inspector", () => {
-    const inspector = setStudioInspectorSectionParams(
-      new URLSearchParams("agent=bot-1&workroom=test&command=Hello&commandNonce=3&panel=computer"),
-      "review",
+  it("preserves a rehearsal command and Computer bookmark while visiting Bot setup", () => {
+    const current = new URLSearchParams(
+      "agent=bot-1&workroom=test&command=Hello&commandNonce=3&panel=computer&chat=computer",
     );
-    expect(inspector.toString()).toBe("agent=bot-1&workroom=test&section=review&chat=setup");
-    expect(inspector.has("command")).toBe(false);
-    expect(inspector.has("commandNonce")).toBe(false);
-
-    const closed = clearStudioInspectorSectionParams(inspector);
-    expect(closed.toString()).toBe("agent=bot-1&workroom=test&chat=setup");
+    const inspector = setStudioInspectorSectionParams(current, "review");
+    expect(inspector.get("section")).toBe("review");
+    expect(clearStudioInspectorSectionParams(inspector).toString()).toBe(current.toString());
   });
 
   it("opens and closes Bot details without changing the work conversation", () => {
     const current = new URLSearchParams("agent=bot-1&panel=computer");
     const details = setStudioInspectorSectionParams(current, "details");
-    expect(details.toString()).toBe("agent=bot-1&section=details");
-    expect(clearStudioInspectorSectionParams(details).toString()).toBe("agent=bot-1");
+    expect(details.toString()).toBe("agent=bot-1&panel=computer&section=details");
+    expect(clearStudioInspectorSectionParams(details).toString()).toBe(current.toString());
   });
 
   it("does not consume a rehearsal request when viewing Bot details", () => {

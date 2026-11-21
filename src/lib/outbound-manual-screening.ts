@@ -16,10 +16,7 @@ import {
   NONSALES_REQUIRED_MESSAGE,
   PERMISSION_REQUIRED_MESSAGE,
 } from "./outbound-compliance-copy";
-import {
-  readContactOutboundRecord,
-  rememberContactOutbound,
-} from "./outbound-contact-consent";
+import { readContactOutboundRecord, rememberContactOutbound } from "./outbound-contact-consent";
 import { recordOutboundPurposeAudit } from "./outbound-purpose-audit";
 import { deriveRelationship, type DerivedRelationship } from "./outbound-relationship";
 import { recordSalesDncAttestation } from "./sales-dnc-attestation";
@@ -50,7 +47,8 @@ function parseCustomerSince(value: string | null | undefined): Date | null {
 }
 
 /**
- * Manual dial and non-automated SMS. Relationship can only loosen sales.
+ * Manual dial and non-automated SMS. A direct voice caller can explicitly
+ * select sales for a recipient who previously contacted the business.
  * Confirmations are required once per contact. Campaigns, cadences, intake,
  * and callbacks do not use this helper.
  */
@@ -94,11 +92,14 @@ export async function screenManualOutbound(input: {
       : input.relationship;
   const suppliedDate = parseCustomerSince(input.customerSince);
   const requested = input.requestedPurpose;
-  if (
-    requested === "existing_customer" &&
-    (!suppliedDate || suppliedDate.getTime() > Date.now())
-  ) {
-    await block(input, relationship, "existing_customer", "existing_customer", CUSTOMER_SINCE_REQUIRED_MESSAGE);
+  if (requested === "existing_customer" && (!suppliedDate || suppliedDate.getTime() > Date.now())) {
+    await block(
+      input,
+      relationship,
+      "existing_customer",
+      "existing_customer",
+      CUSTOMER_SINCE_REQUIRED_MESSAGE,
+    );
     return {
       ok: false,
       status: 400,
@@ -109,7 +110,8 @@ export async function screenManualOutbound(input: {
 
   const resolved = resolveEffectiveOutboundPurpose({
     requested,
-    relationshipReturning: Boolean(relationship),
+    relationshipReturning:
+      Boolean(relationship) && (input.channel === "sms" || requested !== "sales"),
     customerSince: suppliedDate,
   });
 
@@ -138,12 +140,36 @@ export async function screenManualOutbound(input: {
         : null;
 
   if (!permissionOk) {
-    await block(input, relationship, resolved.requested, resolved.effective, PERMISSION_REQUIRED_MESSAGE, record);
-    return { ok: false, status: 403, code: "CONTACT_PERMISSION_REQUIRED", error: PERMISSION_REQUIRED_MESSAGE };
+    await block(
+      input,
+      relationship,
+      resolved.requested,
+      resolved.effective,
+      PERMISSION_REQUIRED_MESSAGE,
+      record,
+    );
+    return {
+      ok: false,
+      status: 403,
+      code: "CONTACT_PERMISSION_REQUIRED",
+      error: PERMISSION_REQUIRED_MESSAGE,
+    };
   }
   if (!nonsalesOk) {
-    await block(input, relationship, resolved.requested, resolved.effective, NONSALES_REQUIRED_MESSAGE, record);
-    return { ok: false, status: 403, code: "NONSALES_CONFIRMATION_REQUIRED", error: NONSALES_REQUIRED_MESSAGE };
+    await block(
+      input,
+      relationship,
+      resolved.requested,
+      resolved.effective,
+      NONSALES_REQUIRED_MESSAGE,
+      record,
+    );
+    return {
+      ok: false,
+      status: 403,
+      code: "NONSALES_CONFIRMATION_REQUIRED",
+      error: NONSALES_REQUIRED_MESSAGE,
+    };
   }
 
   try {
@@ -164,8 +190,7 @@ export async function screenManualOutbound(input: {
     return { ok: false, status: 503, code: "CONTACT_CONFIRMATION_UNAVAILABLE", error: errorText };
   }
 
-  const warning =
-    resolved.effective === "sales" ? null : salesContentWarning(input.content);
+  const warning = resolved.effective === "sales" ? null : salesContentWarning(input.content);
   if (warning) {
     log.warn("non-sales outbound content looks like a sales pitch", {
       userId: input.userId,

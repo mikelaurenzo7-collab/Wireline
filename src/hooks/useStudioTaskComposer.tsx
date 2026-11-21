@@ -316,7 +316,6 @@ export function useStudioTaskComposer({
     pending,
     ownActive,
     notice,
-    label: awaitingReply ? "Reply to task" : handoff ? "Give task to Bot" : "Browser task",
     inputLabel: awaitingReply ? `Reply to ${agentName}` : `Task for ${agentName}`,
     sendLabel: handoff ? "Give task to Bot" : awaitingReply ? "Reply to Bot" : "Start work",
     placeholder: awaitingReply

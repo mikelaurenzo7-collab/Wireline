@@ -1427,77 +1427,77 @@ function TaskDetail({
               </div>
             ) : null}
             {ownerComposerMode === "type" ? (
-            <form
-              className="wl-computer-control__form"
-              aria-label="Type into the browser"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (ownerText && busy === null) {
-                  void ownerAction("input", { kind: "type", text: ownerText });
-                }
-              }}
-            >
-              <label htmlFor="computer-owner-input">Type into selected field</label>
-              <Input
-                id="computer-owner-input"
-                type={showOwnerText ? "text" : "password"}
-                value={ownerText}
-                onChange={(event) => setOwnerText(event.target.value)}
-                autoComplete="off"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                maxLength={1000}
-                disabled={busy !== null || refreshRequired}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                aria-label={showOwnerText ? "Hide entered text" : "Show entered text"}
-                aria-pressed={showOwnerText}
-                disabled={refreshRequired}
-                onClick={() => setShowOwnerText((current) => !current)}
+              <form
+                className="wl-computer-control__form"
+                aria-label="Type into the browser"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (ownerText && busy === null) {
+                    void ownerAction("input", { kind: "type", text: ownerText });
+                  }
+                }}
               >
-                {showOwnerText ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-              </Button>
-              <Button
-                type="submit"
-                disabled={!ownerText || busy !== null || refreshRequired}
-                aria-busy={busy === "input"}
-              >
-                <Send aria-hidden="true" />
-                Send to page
-              </Button>
-            </form>
+                <label htmlFor="computer-owner-input">Type into selected field</label>
+                <Input
+                  id="computer-owner-input"
+                  type={showOwnerText ? "text" : "password"}
+                  value={ownerText}
+                  onChange={(event) => setOwnerText(event.target.value)}
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  maxLength={1000}
+                  disabled={busy !== null || refreshRequired}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  aria-label={showOwnerText ? "Hide entered text" : "Show entered text"}
+                  aria-pressed={showOwnerText}
+                  disabled={refreshRequired}
+                  onClick={() => setShowOwnerText((current) => !current)}
+                >
+                  {showOwnerText ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!ownerText || busy !== null || refreshRequired}
+                  aria-busy={busy === "input"}
+                >
+                  <Send aria-hidden="true" />
+                  Send to page
+                </Button>
+              </form>
             ) : null}
             {ownerComposerMode === "type" ? (
-            <details className="wl-computer-control__more">
-              <summary>Keyboard controls</summary>
-              <p className="mt-2 text-xs">
-                Move site focus with Tab or Shift + Tab, then activate with Enter or Space.
-              </p>
-              <div
-                className="wl-computer-control__keys"
-                role="group"
-                aria-label="Browser navigation keys"
-              >
-                {OWNER_KEY_CONTROLS.map(({ key, label }) => (
-                  <Button
-                    key={key}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    // Keep the focused key in the tab order while its remote
-                    // action runs, so Enter can repeat it when the response lands.
-                    aria-disabled={busy !== null || refreshRequired}
-                    onClick={() => void ownerAction("input", { kind: "key", key })}
-                  >
-                    {label}
-                  </Button>
-                ))}
-              </div>
-            </details>
+              <details className="wl-computer-control__more">
+                <summary>Keyboard controls</summary>
+                <p className="mt-2 text-xs">
+                  Move site focus with Tab or Shift + Tab, then activate with Enter or Space.
+                </p>
+                <div
+                  className="wl-computer-control__keys"
+                  role="group"
+                  aria-label="Browser navigation keys"
+                >
+                  {OWNER_KEY_CONTROLS.map(({ key, label }) => (
+                    <Button
+                      key={key}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      // Keep the focused key in the tab order while its remote
+                      // action runs, so Enter can repeat it when the response lands.
+                      aria-disabled={busy !== null || refreshRequired}
+                      onClick={() => void ownerAction("input", { kind: "key", key })}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+              </details>
             ) : null}
             {task.preparingBrowser && !chatControls && ownerComposerMode === "handoff" ? (
               <div className="wl-computer-control__form">
@@ -2069,7 +2069,6 @@ export function ComputerWorkbench({
                   </Button>
                 </div>
               ) : null}
-              {/* In the Workspace panel the Bot is the one being set up beside it. */}
               {agents.length > 1 && !pinned ? (
                 <div className="wl-computer-field">
                   <label htmlFor="computer-agent">Bot</label>
@@ -2374,7 +2373,7 @@ export function ComputerWorkbench({
   );
 }
 
-/** The width where Set Up shows its panel beside the conversation. */
+/** The width where Computer opens beside the conversation. */
 const SIDE_BY_SIDE_QUERY = "(min-width: 1180px)";
 
 export default function ComputerPage() {

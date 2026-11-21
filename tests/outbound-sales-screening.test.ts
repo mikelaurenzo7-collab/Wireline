@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { SALES_DNC_ATTESTATION_VERSION, SALES_DNC_LISTED_MESSAGE } from "../src/lib/outbound-compliance-copy";
+import {
+  SALES_DNC_ATTESTATION_VERSION,
+  SALES_DNC_LISTED_MESSAGE,
+} from "../src/lib/outbound-compliance-copy";
 import { currentSalesDncAttestation } from "../src/lib/sales-dnc-attestation";
 import { screenedDirectOutboundCall } from "../src/lib/outbound-call-purpose";
+import type { OutboundPurpose } from "../src/lib/outbound-call-purpose";
 
 const ATTESTATION_AT = new Date("2026-10-26T15:00:00.000Z");
 
@@ -15,9 +19,10 @@ function attestedRow(san: string | null) {
   };
 }
 
-async function loadGate(selectRows: unknown[][]) {
+async function loadGate(selectRows: unknown[][], optedOut = false) {
   vi.resetModules();
   let calls = 0;
+  const limit = async () => selectRows[calls++] ?? [];
   const isFederalDncListed = vi.fn(async () => false);
   const assertFederalDncForMarketing = vi.fn(() => ({
     allowed: false as const,
@@ -30,7 +35,8 @@ async function loadGate(selectRows: unknown[][]) {
       select: () => ({
         from: () => ({
           where: () => ({
-            limit: async () => selectRows[calls++] ?? [],
+            limit,
+            orderBy: () => ({ limit }),
           }),
         }),
       }),
@@ -44,7 +50,7 @@ async function loadGate(selectRows: unknown[][]) {
     assertFederalDncForMarketing,
     isFederalDncListed,
   }));
-  vi.doMock("../src/lib/compliance", () => ({ isDncBlocked: async () => false }));
+  vi.doMock("../src/lib/compliance", () => ({ isDncBlocked: async () => optedOut }));
   const { evaluateOutboundDialGate } = await import("../src/lib/outbound-dial-gate");
   return { evaluateOutboundDialGate, isFederalDncListed, assertFederalDncForMarketing };
 }
@@ -111,7 +117,9 @@ describe("one-off and bulk sales screening", () => {
       salesScreening: "one_off",
     });
     expect(assertFederalDncForMarketing).not.toHaveBeenCalled();
-    expect(isFederalDncListed).toHaveBeenCalledWith("+13125550100", { vendorProjectId: "SAN-123456" });
+    expect(isFederalDncListed).toHaveBeenCalledWith("+13125550100", {
+      vendorProjectId: "SAN-123456",
+    });
     expect(result.allowed).toBe(false);
     if (!result.allowed) expect(result.customerMessage).toBe(SALES_DNC_LISTED_MESSAGE);
   });
@@ -204,6 +212,59 @@ describe("one-off and bulk sales screening", () => {
   });
 });
 
+describe("manual service retries and callbacks", () => {
+  const priorCall = (status: string, matches = true) => ({
+    id: 1n,
+    callId: "carrier-one",
+    metadata: {
+      native_voice: {
+        twilio_call_sid: matches ? "carrier-one" : "different-call",
+        carrier_status: status,
+      },
+    },
+  });
+
+  afterEach(() => vi.resetModules());
+
+  it.each([
+    ["appointment_service", "busy", true, true],
+    ["appointment_service", "no-answer", true, true],
+    ["existing_customer", "completed", true, false],
+    ["callback", "completed", true, true],
+    ["callback", "ringing", true, false],
+    ["appointment_service", "busy", false, false],
+    [undefined, "busy", true, false],
+  ] satisfies Array<[OutboundPurpose | undefined, string, boolean, boolean]>)(
+    "handles %s with carrier outcome %s and receipt match %s",
+    async (manualCallPurpose, outcome, matches, allowed) => {
+      const { evaluateOutboundDialGate } = await loadGate([[priorCall(outcome, matches)]]);
+      const result = await evaluateOutboundDialGate({
+        userId: "tenant-1",
+        phone: "+13125550100",
+        isMarketingCall: false,
+        manualCallPurpose,
+      });
+      expect(result.allowed).toBe(allowed);
+      if (!result.allowed) expect(result.reason).toBe("skipped_duplicate");
+    },
+  );
+
+  it("permits one service retry and still enforces an opt-out for a requested callback", async () => {
+    const { evaluateOutboundDialGate } = await loadGate([
+      [priorCall("busy"), { ...priorCall("no-answer"), id: 2n }],
+    ]);
+    const request = { userId: "tenant-1", phone: "+13125550100", isMarketingCall: false };
+    expect(
+      await evaluateOutboundDialGate({ ...request, manualCallPurpose: "appointment_service" }),
+    ).toMatchObject({ allowed: false, reason: "skipped_duplicate" });
+
+    const optedOut = await loadGate([[priorCall("completed")]], true);
+    expect(
+      await optedOut.evaluateOutboundDialGate({ ...request, manualCallPurpose: "callback" }),
+    ).toMatchObject({ allowed: false, reason: "blocked_internal_dnc" });
+  });
+});
+
 describe("opted-out numbers", () => {
   afterEach(() => {
     vi.resetModules();
@@ -243,4 +304,42 @@ describe("opted-out numbers", () => {
     expect(rememberContactOutbound).not.toHaveBeenCalled();
     expect(readContactOutboundRecord).not.toHaveBeenCalled();
   });
+});
+
+it("keeps the owner's explicit sales choice on a one-off voice call to a returning contact", async () => {
+  vi.resetModules();
+  const rememberContactOutbound = vi.fn(async () => {});
+  const recordSalesDncAttestation = vi.fn(async () => {});
+  vi.doMock("../src/lib/server-context", () => ({
+    drizzle: {},
+    log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+  }));
+  vi.doMock("../src/lib/compliance", () => ({ isDncBlocked: async () => false }));
+  vi.doMock("../src/lib/outbound-contact-consent", () => ({
+    readContactOutboundRecord: async () => ({ permissionConfirmed: true, nonsalesConfirmed: true }),
+    rememberContactOutbound,
+  }));
+  vi.doMock("../src/lib/sales-dnc-attestation", () => ({ recordSalesDncAttestation }));
+  const { screenManualOutbound } = await import("../src/lib/outbound-manual-screening");
+  const result = await screenManualOutbound({
+    userId: "tenant-1",
+    phone: "+13125550100",
+    channel: "call",
+    requestedPurpose: "sales",
+    relationship: {
+      kind: "returning_contact",
+      source: "call",
+      sourceId: "inbound-1",
+      at: ATTESTATION_AT.toISOString(),
+    },
+    salesAttestationConfirmed: true,
+  });
+  expect(result).toMatchObject({
+    ok: true,
+    screening: { callPurpose: "sales", requestedCallPurpose: "sales", isMarketingCall: true },
+  });
+  expect(recordSalesDncAttestation).toHaveBeenCalledOnce();
+  expect(rememberContactOutbound).toHaveBeenCalledWith(
+    expect.objectContaining({ purpose: "sales" }),
+  );
 });

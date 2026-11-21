@@ -1,10 +1,8 @@
 /**
- * The side panel: Computer (the work panel), and Configure (Details, the
- * setup form, and Summary, the setup review). Configure sections are
- * route-owned; Rehearse lives in the conversation, not the panel.
+ * Bot setup is route-owned. Opening it keeps the conversation and Computer
+ * view state available when the owner returns to work.
  */
 export type StudioInspectorSection = "details" | "setup" | "review";
-export type StudioPanelSection = StudioInspectorSection;
 export type StudioWorkroomMode = "configure" | "test";
 
 export type StudioRouteStateInput = {
@@ -96,27 +94,17 @@ export function setStudioInspectorSectionParams(
   current: URLSearchParams,
   section: StudioInspectorSection,
 ): URLSearchParams {
-  const hadCommand = current.has("command") || current.has("commandNonce");
   const next = canonicalStudioParams(current);
   next.set("section", section);
-  next.delete("panel");
-  // Looking at the Bot's identity should not switch the conversation or
-  // consume an in-flight rehearsal command.
-  if (section === "details") return next;
-  next.set("chat", "setup");
-  if (hadCommand) next.set("workroom", "test");
-  next.delete("command");
-  next.delete("commandNonce");
+  next.delete("detail");
   return next;
 }
 
 export function clearStudioInspectorSectionParams(current: URLSearchParams): URLSearchParams {
   const next = canonicalStudioParams(current);
-  if (next.get("section") === "details") {
+  if (["details", "setup", "review"].includes(next.get("section") || "")) {
     next.delete("section");
-  } else if (next.get("section") === "setup" || next.get("section") === "review") {
-    next.set("chat", "setup");
-    next.delete("section");
+    next.delete("detail");
   }
   return next;
 }

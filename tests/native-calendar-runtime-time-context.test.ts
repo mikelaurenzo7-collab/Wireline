@@ -66,6 +66,8 @@ describe("native Calendar runtime date authority", () => {
     expect(prompt).toContain("Calendar-local today is 2026-09-27; tomorrow is 2026-09-28");
     expect(prompt).toContain("The saved Calendar timezone is America/Chicago");
     expect(prompt).toContain("even when the Bot's date differs");
+    expect(prompt).toContain("say the day, date and time naturally in the business's local time");
+    expect(prompt).toContain("Name the timezone only when the caller asks");
     expect(prompt).toContain("Check availability and use only the returned slots");
     expect(prompt).not.toContain("tomorrow is 2026-09-29");
     expect({ agent, saved }).toEqual(before);

@@ -12,8 +12,10 @@ import {
   CREATE_BRIEF_MAX_CHARS,
   clearCreateBrief,
   isCreateBriefRecoveryOwner,
+  isCreateBriefTraining,
   readCreateBrief,
   rememberCreateBrief,
+  useCreateBriefTraining,
 } from "../lib/create-brief-recovery";
 import {
   extractionBodyPersistedSomething,
@@ -118,6 +120,7 @@ export default function StudioAgentWorkspacePanel({
     permission,
   } = snapshot.values;
   const applyingSetup = snapshot.saving;
+  const trainingBrief = useCreateBriefTraining(user?.id ?? "", agentId);
   const toneOptions = PERSONALITIES.some((tone) => tone === setupPersonality)
     ? PERSONALITIES
     : [...PERSONALITIES, setupPersonality];
@@ -196,7 +199,7 @@ export default function StudioAgentWorkspacePanel({
     let cancelled = false;
     setLoadingSetup(true);
     setSetupLoadError(null);
-    const recovered = user?.id ? readCreateBrief(user.id, agentId) : "";
+    const recovered = user?.id && !trainingBrief ? readCreateBrief(user.id, agentId) : "";
     setupDrafts.seedKnowledge(agentId, recovered);
     setRecoveringBrief(Boolean(recovered));
     const startedRevision = setupDrafts.revision();
@@ -237,7 +240,7 @@ export default function StudioAgentWorkspacePanel({
     return () => {
       cancelled = true;
     };
-  }, [agentId, reloadKey, user?.id, setupDrafts]);
+  }, [agentId, reloadKey, user?.id, setupDrafts, trainingBrief]);
 
   async function saveManual(type: "tone" | "directive", content: string, replacePrefix?: string) {
     const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/manual`, {
@@ -303,6 +306,7 @@ export default function StudioAgentWorkspacePanel({
     if (
       !agentId ||
       !user?.id ||
+      isCreateBriefTraining(user.id, agentId) ||
       !snapshot.dirty ||
       !isCurrentAgent(agentId, user.id) ||
       !setupDrafts.beginSave(agentId)
@@ -430,6 +434,10 @@ export default function StudioAgentWorkspacePanel({
           ) : null}
         </header>
 
+        {trainingBrief ? (
+          <StatusNotice tone="info">Applying your starting brief…</StatusNotice>
+        ) : null}
+
         <section className={sectionClass} aria-label="Tone and knowledge">
           {loadingSetup ? (
             <div className="flex min-h-32 items-center justify-center gap-2 text-sm text-muted-foreground">
@@ -521,7 +529,7 @@ export default function StudioAgentWorkspacePanel({
                 ) : null}
                 <textarea
                   id="setup-knowledge"
-                  disabled={applyingSetup}
+                  disabled={applyingSetup || trainingBrief}
                   maxLength={recoveringBrief ? CREATE_BRIEF_MAX_CHARS : undefined}
                   value={setupKnowledge}
                   onChange={(event) => {
@@ -612,7 +620,7 @@ export default function StudioAgentWorkspacePanel({
                 size={compact ? "sm" : undefined}
                 className="h-auto whitespace-normal"
                 onClick={() => void applySetup()}
-                disabled={applyingSetup || !snapshot.dirty}
+                disabled={applyingSetup || trainingBrief || !snapshot.dirty}
               >
                 {applyingSetup ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />

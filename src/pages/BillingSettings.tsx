@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { Loader2, Plus, ShieldCheck } from "lucide-react";
 
 import { Button } from "../components/atoms";
@@ -13,6 +13,7 @@ import UsageSpendCard from "../components/usage-billing/UsageSpendCard";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { authFetch } from "../lib/api";
+import { firstBotSetupHref } from "../lib/auth-redirect";
 import {
   activatedPostCreateWizard,
   checkoutReturnFlowFromSearch,
@@ -30,6 +31,7 @@ import {
   updatePostCreateWizard,
 } from "../lib/wireline-create-flow";
 import { isUsagePlanId, planById } from "../lib/plan-catalog";
+import { getStoredSignupIntent, parseSignupIntent } from "../lib/signup-intent";
 import { SMS_LAUNCH_UI_ENABLED } from "../lib/product-copy";
 import {
   CONVERSATION_BALANCE_COPY,
@@ -74,6 +76,7 @@ function waitForCheckoutRetry(delayMs: number): Promise<void> {
 }
 
 export default function BillingSettings() {
+  const { search } = useLocation();
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionState>(null);
   const [balanceUsd, setBalanceUsd] = useState<number | null>(null);
@@ -89,6 +92,7 @@ export default function BillingSettings() {
   const [liveChannels, setLiveChannels] = useState<{
     channels: readonly string[];
     linesUsed: number;
+    agentCount: number | undefined;
   } | null>(null);
   const [checkoutAvailability, setCheckoutAvailability] = useState<CheckoutAvailability>("loading");
   const [refreshKey, setRefreshKey] = useState(0);
@@ -230,7 +234,7 @@ export default function BillingSettings() {
           // Persist the fulfilled plan before reopening this same Bot's guide.
           // A dismissed or replaced guide must not be resumed by a late return.
           if (wizard && updatePostCreateWizard(wizard)) {
-            window.location.replace("/studio");
+            window.location.replace(`/studio?agent=${encodeURIComponent(wizard.agentId)}`);
             return;
           }
         }
@@ -250,6 +254,7 @@ export default function BillingSettings() {
             setLiveChannels({
               channels: data.channel_entitlements?.channels ?? [],
               linesUsed: data.phone_lines_used ?? 0,
+              agentCount: data.agent_count,
             });
             setStatusUnavailable(false);
           } else {
@@ -324,6 +329,13 @@ export default function BillingSettings() {
     (subscription?.status === "active" || subscription?.status === "trialing");
   const balanceDue = Math.max(0, -(balanceUsd ?? 0));
   const balanceMinuteEstimates = conversationBalanceMinuteEstimates();
+  const params = new URLSearchParams(search);
+  const onboarding =
+    params.get("onboarding") === "1" ||
+    (params.get("billing") === "canceled" && liveChannels?.agentCount === 0);
+  const createBotHref = firstBotSetupHref(
+    parseSignupIntent(search)?.preferredTemplateId ?? getStoredSignupIntent()?.preferredTemplateId,
+  );
 
   async function addBalance(amountUsd: number) {
     if (!canAddBalance) {
@@ -358,8 +370,22 @@ export default function BillingSettings() {
   return (
     <WorkspaceShell contentClassName="min-w-0 overflow-x-clip pt-1 pb-6">
       <WorkspacePageFrame mode="narrow">
-        <SettingsTabs />
-        <WorkspacePageIntro title="Billing" titleHidden />
+        {onboarding ? (
+          <WorkspacePageIntro
+            title="Choose a Plan"
+            description="Start a subscription for live work, or set up and rehearse your Bot for free."
+            action={
+              <Button asChild variant="secondary">
+                <Link to={createBotHref}>Set Up a Bot First</Link>
+              </Button>
+            }
+          />
+        ) : (
+          <>
+            <SettingsTabs />
+            <WorkspacePageIntro title="Billing" titleHidden />
+          </>
+        )}
 
         {checkoutReturnNotice ? (
           <StatusNotice
@@ -369,7 +395,11 @@ export default function BillingSettings() {
             aria-live="polite"
             action={
               checkoutReturnNotice.planConfirmed && liveChannels ? (
-                liveChannels.channels.includes("voice") && liveChannels.linesUsed === 0 ? (
+                liveChannels.agentCount === 0 ? (
+                  <Button asChild size="sm">
+                    <Link to={createBotHref}>Create Your Bot</Link>
+                  </Button>
+                ) : liveChannels.channels.includes("voice") && liveChannels.linesUsed === 0 ? (
                   <Button asChild size="sm">
                     <Link to="/phone?tab=setup">Choose Your Number</Link>
                   </Button>
@@ -515,6 +545,7 @@ export default function BillingSettings() {
         <UsageSpendCard
           refreshKey={refreshKey}
           hasSubscription={Boolean(subscription?.has_subscription)}
+          checkoutReady={billingReady && liveChannels !== null && !statusUnavailable}
           grantedPlanName={
             !loading &&
             !statusUnavailable &&

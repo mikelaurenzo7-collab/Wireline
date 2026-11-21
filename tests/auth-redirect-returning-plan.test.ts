@@ -69,11 +69,11 @@ describe("post-auth destination", () => {
     expect(resolvePostAuthDestination("business", "?redirect=%2F%2Fevil.example")).toBe("/studio");
   });
 
-  it("sends a fresh signup to Studio even when a settings return target rides along", () => {
+  it("shows plans first even when an incidental settings return target rides along", () => {
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
     expect(resolvePostAuthDestination("business", "?redirect=%2Fsettings")).toBe(
-      "/studio?create=1",
+      "/settings/billing?plan=usage&interval=month&onboarding=1",
     );
   });
 
@@ -85,14 +85,29 @@ describe("post-auth destination", () => {
     );
   });
 
-  it("sends every fresh signup into the same one-workspace Bot Studio", () => {
+  it("sends an ordinary fresh signup to plan review once", () => {
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
     const destination = resolvePostAuthDestination("business", "");
 
-    expect(destination).toBe("/studio?create=1");
+    expect(destination).toBe("/settings/billing?plan=usage&interval=month&onboarding=1");
     expect(destination).not.toContain("posture=");
     expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
+  });
+
+  it("preserves a selected paid plan, its included options, and the role during fresh signup", () => {
+    sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+    const search =
+      "?plan=usage&interval=month&tier=lite&number=0&email_address=1&template=front-desk";
+    const expected =
+      "/settings/billing?plan=usage&interval=month&number=0&email_address=1&tier=lite&onboarding=1&template=front-desk";
+
+    expect(resolvePostAuthDestination("business", search)).toBe(expected);
+    window.location.search = search;
+    captureSignupIntentFromLocation();
+    persistOAuthReturnFromSearch(search);
+    sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+    expect(resolvePostAuthDestination("business", "")).toBe(expected);
   });
 
   it("opens the role selected on a marketing CTA after email signup", () => {
@@ -197,7 +212,7 @@ describe("post-auth destination", () => {
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
     expect(resolvePostAuthDestination("personal", "?template=unknown-role")).toBe(
-      "/studio?create=1",
+      "/settings/billing?plan=usage&interval=month&onboarding=1",
     );
   });
 
@@ -233,11 +248,13 @@ describe("post-auth destination", () => {
     },
   );
 
-  it("keeps fresh OAuth signups in Studio even when they selected a paid plan", () => {
+  it("shows plan review after OAuth when an older paid CTA has no current tier", () => {
     persistOAuthReturnFromSearch("?plan=team&interval=year");
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
-    expect(resolvePostAuthDestination("business", "")).toBe("/studio?create=1");
+    expect(resolvePostAuthDestination("business", "")).toBe(
+      "/settings/billing?plan=usage&interval=month&onboarding=1",
+    );
     expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBeNull();
     expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
   });

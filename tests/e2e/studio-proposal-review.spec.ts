@@ -219,10 +219,8 @@ test("Studio opens Computer for the Bot currently selected", async ({ page }) =>
   await mockWorkspace(page);
   await page.goto(`/studio?agent=${bots[1].id}`);
 
-  const browser = page
-    .getByRole("navigation", { name: "Workspace view" })
-    .getByRole("button", { name: "Computer", exact: true });
-  await browser.click();
+  await page.getByRole("button", { name: "Computer", exact: true }).click();
+  await page.getByRole("button", { name: "View browser", exact: true }).click();
   await expect(page).toHaveURL(
     (url) =>
       url.pathname === "/studio" &&
@@ -283,38 +281,28 @@ test("Studio reviews and saves distinct operating rules independently", async ({
   ]);
 });
 
-test("mobile Conversation and Computer share one row without losing a task draft", async ({
-  page,
-}, info) => {
+test("mobile Computer and the separate Bot setup preserve a task draft", async ({ page }, info) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await mockWorkspace(page);
   await page.goto(`/studio?agent=${bots[1].id}&chat=computer`);
-  const views = page.getByRole("navigation", { name: "Workspace view" });
   const draft = page.getByRole("textbox", { name: /^Task for / });
   await expect(draft).toBeVisible();
   expect(
     await draft.evaluate((element) => element.getBoundingClientRect().height),
   ).toBeLessThanOrEqual(54);
   await draft.fill("Keep this unsent task while I inspect my Bot.");
-  const conversationButton = views.getByRole("button", { name: "Conversation", exact: true });
-  const computerButton = views.getByRole("button", { name: "Computer", exact: true });
-  expect(await conversationButton.evaluate((node) => node.getBoundingClientRect().top)).toBe(
-    await computerButton.evaluate((node) => node.getBoundingClientRect().top),
-  );
-  await computerButton.click();
+  const computerButton = page.getByRole("button", { name: "Computer", exact: true });
+  await expect(computerButton).toHaveCount(1);
+  await expect(computerButton).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "View browser", exact: true }).click();
   await expect(page.getByRole("button", { name: "Open browser", exact: true })).toBeVisible();
-  await conversationButton.click();
+  await page.getByRole("button", { name: "Close Computer", exact: true }).click();
   await expect(draft).toHaveValue("Keep this unsent task while I inspect my Bot.");
   await page.getByRole("button", { name: "Set Up Bot", exact: true }).click();
-  await expect(
-    page.getByRole("complementary", { name: "Workspace panel", exact: true }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Close panel", exact: true }).click();
-  await expect(page.getByRole("textbox", { name: "Message Sales Bot", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Use browser", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Bot setup", exact: true })).toBeVisible();
+  await expect(computerButton).toHaveCount(0);
+  await page.getByRole("button", { name: "Back to Work", exact: true }).click();
   await expect(draft).toHaveValue("Keep this unsent task while I inspect my Bot.");
-  await expect(views.getByRole("button")).toHaveCount(2);
-  await expect(conversationButton).toHaveAttribute("aria-pressed", "true");
   await draft.fill("");
   await page.evaluate(() =>
     document.documentElement.style.setProperty("font-size", "32px", "important"),
@@ -475,9 +463,7 @@ test("message drafts survive navigation and private rehearsal without a second c
   await messageInput.fill("Keep this unsent instruction.");
   await page.getByRole("button", { name: "Rehearse", exact: true }).click();
   await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
-  await expect(
-    page.getByRole("complementary", { name: "Workspace panel", exact: true }),
-  ).toBeHidden();
+  await expect(page.getByRole("complementary", { name: "Computer", exact: true })).toBeHidden();
   await expect(messageInput).toBeHidden();
   await expect(page.getByRole("textbox", { name: "Type a test", exact: true })).toHaveCount(1);
   await expect(page.getByRole("textbox")).toHaveCount(1);

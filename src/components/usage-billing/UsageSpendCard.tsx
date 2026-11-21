@@ -5,10 +5,11 @@ import { authFetch } from "../../lib/api";
 import { captureSignupIntentFromLocation, usageAddonsFromIntent } from "../../lib/signup-intent";
 import { usePaidPlanAvailability } from "../../hooks/usePaidPlanAvailability";
 import {
+  DEFAULT_PUBLIC_USAGE_TIER,
+  PUBLIC_USAGE_TIERS,
   USAGE_ADDONS,
   USAGE_DEFAULT_MONTHLY_CAP_USD,
   USAGE_TIERS,
-  publicUsageTierId,
   usageTier,
   type UsageTierId,
   formatUsdCents,
@@ -22,10 +23,12 @@ import type { UsageSpendResponse } from "../../types/api-billing";
 export default function UsageSpendCard({
   refreshKey = 0,
   hasSubscription = false,
+  checkoutReady = true,
   grantedPlanName,
 }: {
   refreshKey?: number;
   hasSubscription?: boolean;
+  checkoutReady?: boolean;
   grantedPlanName?: string;
 }) {
   const [state, setState] = useState<UsageSpendResponse | null>(null);
@@ -33,11 +36,11 @@ export default function UsageSpendCard({
   const [busy, setBusy] = useState(false);
   const capSavingRef = useRef(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [addons] = useState(() => usageAddonsFromIntent(captureSignupIntentFromLocation()));
-  const [tier, setTier] = useState<UsageTierId>(() =>
-    publicUsageTierId(captureSignupIntentFromLocation()?.preferredUsageTier),
+  const [intent] = useState(captureSignupIntentFromLocation);
+  const addons = usageAddonsFromIntent(intent);
+  const [selectedTier, setTier] = useState<UsageTierId | undefined>(() =>
+    PUBLIC_USAGE_TIERS.find((tier) => tier === intent?.preferredUsageTier),
   );
-  const plan = usageTier(tier);
   const [number, setNumber] = useState(addons.number);
   const [emailAddress, setEmailAddress] = useState(addons.emailAddress);
   const { canActivate, usageTiers } = usePaidPlanAvailability({ planId: "usage" });
@@ -61,7 +64,7 @@ export default function UsageSpendCard({
 
   if (!state || !state.enabled) return null;
 
-  async function startCheckout() {
+  async function startCheckout(tier: UsageTierId) {
     setBusy(true);
     setMessage(null);
     try {
@@ -162,7 +165,12 @@ export default function UsageSpendCard({
     // Checkout refuses a second live subscription. Do not present its offer
     // as an active allowance or lead an existing subscriber to a dead end.
     if (hasSubscription) return null;
-    if (!canActivate("usage")) return null;
+    if (!canActivate("usage") || usageTiers.length === 0) return null;
+    const defaultTier = usageTiers.includes(DEFAULT_PUBLIC_USAGE_TIER)
+      ? DEFAULT_PUBLIC_USAGE_TIER
+      : usageTiers[0];
+    const tier = selectedTier ?? defaultTier;
+    const plan = usageTiers.includes(tier) ? USAGE_TIERS[tier] : null;
     const Offer = grantedPlanName ? "details" : "div";
     return (
       <section className="mt-6" aria-label="Subscription Plans">
@@ -179,32 +187,64 @@ export default function UsageSpendCard({
                 Optional. Your current {grantedPlanName} access is granted separately.
               </p>
             ) : null}
-            <label className="mt-3 block text-sm font-semibold">
-              Plan
-              <select
-                value={tier}
-                onChange={(event) => setTier(event.target.value as UsageTierId)}
-                className="ml-3 min-h-11 rounded-lg border border-border bg-background px-3"
+            <fieldset
+              aria-describedby={plan ? undefined : "usage-plan-availability"}
+              className="mt-3 min-w-0"
+              disabled={busy}
+            >
+              <legend className="sr-only">Monthly subscription tier</legend>
+              <div className="grid auto-cols-fr grid-flow-col gap-2 sm:gap-3">
+                {usageTiers.map((id) => {
+                  const option = USAGE_TIERS[id];
+                  const selected = plan?.id === id;
+                  return (
+                    <label
+                      key={id}
+                      data-selected={selected}
+                      className="flex min-w-0 cursor-pointer flex-col justify-center gap-1 rounded-xl border border-border bg-background px-2 py-3 leading-tight hover:border-foreground/40 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary data-[selected=true]:border-primary data-[selected=true]:bg-primary/5 sm:px-4"
+                    >
+                      <input
+                        type="radio"
+                        name="usage-tier"
+                        value={id}
+                        checked={selected}
+                        onChange={() => setTier(id)}
+                        className="sr-only"
+                      />
+                      <span className="text-xs font-semibold sm:text-sm">{option.name}</span>
+                      <span className="whitespace-nowrap text-sm text-foreground">
+                        <strong>${option.monthlyUsd}</strong>
+                        <span className="text-xs text-muted-foreground">/mo</span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+            {plan ? (
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                ${plan.monthlyUsd}/month includes ${plan.includedWorkUsd} of work shared across
+                calls, SMS, email and Computer. Your allowance resets monthly without rollover.
+                Extra work stays within a monthly limit you set (default $
+                {USAGE_DEFAULT_MONTHLY_CAP_USD}) before tax. Applicable tax is added separately.
+              </p>
+            ) : (
+              <p
+                id="usage-plan-availability"
+                role="status"
+                className="mt-1 text-sm text-muted-foreground"
               >
-                {usageTiers.map((id) => (
-                  <option value={id} key={id}>
-                    {USAGE_TIERS[id].name} · ${USAGE_TIERS[id].monthlyUsd}/Month
-                  </option>
-                ))}
-              </select>
-            </label>
-            <p className="mt-1 text-sm text-muted-foreground">
-              ${plan.monthlyUsd}/month includes ${plan.includedWorkUsd} of work shared across calls,
-              SMS, email and Computer. Your allowance resets monthly without rollover. Extra work
-              stays within a monthly limit you set (default ${USAGE_DEFAULT_MONTHLY_CAP_USD}) before
-              tax. Applicable tax is added separately.
-            </p>
+                Your selected plan is currently unavailable. Choose an available plan.
+              </p>
+            )}
           </div>
-          <p className="text-sm">
-            {plan.includedNumbers} {plan.includedNumbers === 1 ? "Number" : "Numbers"} +{" "}
-            {plan.includedEmailAddresses}{" "}
-            {plan.includedEmailAddresses === 1 ? "Email Address" : "Email Addresses"} Included
-          </p>
+          {plan ? (
+            <p className="text-sm">
+              {plan.includedNumbers} {plan.includedNumbers === 1 ? "Number" : "Numbers"} +{" "}
+              {plan.includedEmailAddresses}{" "}
+              {plan.includedEmailAddresses === 1 ? "Email Address" : "Email Addresses"} Included
+            </p>
+          ) : null}
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="flex min-h-11 items-center gap-3 text-sm">
               <Checkbox checked={number} onChange={(e) => setNumber(e.target.checked)} />
@@ -220,8 +260,11 @@ export default function UsageSpendCard({
           </div>
           <Button
             type="button"
-            disabled={busy || !usageTiers.includes(tier)}
-            onClick={() => void startCheckout()}
+            className="w-full sm:w-auto"
+            disabled={busy || !plan || !checkoutReady}
+            onClick={() => {
+              if (plan && checkoutReady) void startCheckout(plan.id);
+            }}
           >
             Review Plan
           </Button>

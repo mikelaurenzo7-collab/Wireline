@@ -107,7 +107,7 @@ test("Studio setup edits survive Review and closing the inspector without saving
   await page.getByRole("tab", { name: "Set Up", exact: true }).click();
   await expect(page.getByLabel("Opening Greeting")).toHaveValue("Welcome to the repair desk.");
   await expect(page.getByText("Unsaved changes", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Close panel", exact: true }).click();
+  await page.getByRole("button", { name: "Back to Work", exact: true }).click();
   await page.getByRole("button", { name: "Set Up Bot", exact: true }).click();
   await expect(page.getByLabel("Opening Greeting")).toHaveValue("Welcome to the repair desk.");
   await capture(page, info, "studio-draft-desktop");
@@ -264,7 +264,7 @@ test("Studio settings and navigation reflow at 320px with enlarged text", async 
   await page.getByRole("tab", { name: "Set Up", exact: true }).click();
   await expect(page.getByLabel("Opening Greeting")).toHaveValue("Welcome to the repair desk.");
   await capture(page, info, "studio-320-enlarged-text");
-  await page.getByRole("button", { name: "Close panel", exact: true }).click();
+  await page.getByRole("button", { name: "Back to Work", exact: true }).click();
   await expect(page.getByRole("button", { name: "Set Up Bot", exact: true })).toBeFocused();
   const workroom = page.getByRole("region", { name: "Front Desk workroom", exact: true });
   await expect(workroom).toBeVisible();

@@ -30,7 +30,9 @@ describe("voice catalog", () => {
     const registry = read("src/server/register-api-routes.ts");
     expect(registry).not.toContain("voicesRouter");
     expect(registry).not.toContain("voices-routes");
-    expect(read("src/pages/AgentStudioHome.tsx")).toContain("consumeCreateWarning");
+    expect(read("src/components/onboarding/PostCreateActivationWizard.tsx")).toContain(
+      "Applying your starting brief",
+    );
   });
 
   it("keeps ElevenLabs out of the launch readiness network probe", () => {

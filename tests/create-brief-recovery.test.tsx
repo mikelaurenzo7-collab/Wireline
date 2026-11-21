@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CreateAgentDialog from "../src/components/CreateAgentDialog";
 import StudioAgentWorkspacePanel from "../src/components/StudioAgentWorkspacePanel";
 import {
+  isCreateBriefTraining,
   readCreateBrief,
   rememberCreateBrief,
   setCreateBriefRecoveryOwner,
@@ -46,6 +47,7 @@ vi.mock("react", async (original) => ({
     if (h.mounting) h.effects.push(effect);
   },
   useMemo: (factory: () => unknown) => factory(),
+  useSyncExternalStore: (_subscribe: unknown, snapshot: () => unknown) => snapshot(),
 }));
 vi.mock("react-router", () => ({
   Link: "a",
@@ -54,7 +56,7 @@ vi.mock("react-router", () => ({
 }));
 vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: h.userId } }) }));
 vi.mock("../src/contexts/AgentsContext", () => ({
-  useAgents: () => ({ agents: [], refresh: vi.fn(), reload: vi.fn(async () => {}) }),
+  useAgents: () => ({ agents: [], rememberCreatedAgent: vi.fn() }),
   AGENTS_CHANGED_EVENT: "agents-changed",
 }));
 vi.mock("../src/lib/api", () => ({
@@ -207,6 +209,7 @@ describe("first-brief recovery after Bot creation", () => {
       );
       await create();
       expect(h.onCreated).toHaveBeenCalledOnce();
+      await vi.waitFor(() => expect(isCreateBriefTraining(h.userId, h.botId)).toBe(false));
       expect(
         h.event.mock.calls.some(
           ([event]) =>
@@ -229,7 +232,11 @@ describe("first-brief recovery after Bot creation", () => {
 
   it("does not restore a successfully applied brief", async () => {
     await create();
-    expect(h.event.mock.calls.some(([event]) => event.event === "training_asset_added")).toBe(true);
+    await vi.waitFor(() =>
+      expect(h.event.mock.calls.some(([event]) => event.event === "training_asset_added")).toBe(
+        true,
+      ),
+    );
     await mount("setup");
     expect(knowledge().props.value).toBe("");
   });
@@ -319,13 +326,14 @@ describe("pending brief ownership", () => {
     h.fetch.mockImplementation((path: string) =>
       path === "/api/train/extract" ? pending.promise : usualFetch(path),
     );
-    const creating = create();
-    await vi.waitFor(() => expect(readCreateBrief(h.userId, h.botId)).toBe(brief));
+    await create();
+    expect(h.onCreated).toHaveBeenCalledOnce();
+    expect(h.navigate).toHaveBeenCalledOnce();
+    expect(readCreateBrief(h.userId, h.botId)).toBe(brief);
+    h.event.mockClear();
     setCreateBriefRecoveryOwner(null);
     pending.resolve(json({ readiness: { rules: 1, facts: 0, tone: false } }));
-    await creating;
-    expect(h.onCreated).not.toHaveBeenCalled();
-    expect(h.navigate).not.toHaveBeenCalled();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
     expect(h.event).not.toHaveBeenCalled();
     expect(window.dispatchEvent).not.toHaveBeenCalled();
     setCreateBriefRecoveryOwner(h.userId);
@@ -340,9 +348,8 @@ describe("pending brief ownership", () => {
     h.fetch.mockImplementation((path: string) =>
       path.endsWith("/manual") ? pending.promise : usualFetch(path),
     );
-    elements(render()).find(
-      (element) => element.type === "button" && text(element) === "Warm",
-    )!.props.onClick!();
+    elements(render()).find((element) => element.type === "button" && text(element) === "Warm")!
+      .props.onClick!();
     elements(render()).find(
       (element) => element.type === "button" && text(element) === "Save Changes",
     )!.props.onClick!();

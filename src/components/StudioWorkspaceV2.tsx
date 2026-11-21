@@ -1,4 +1,4 @@
-import { Maximize2, Minimize2, Monitor, Plus, Users, X } from "lucide-react";
+import { ArrowLeft, Maximize2, Minimize2, Plus, Users, X } from "lucide-react";
 import { Link, Navigate, useSearchParams } from "react-router";
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 
@@ -40,23 +40,13 @@ const ComputerWorkbench = lazy(() =>
 );
 
 type InspectorSection = "details" | "setup" | "review";
-/** The panel's resting content: the computer. Rehearse lives in the conversation, not the panel. */
-type RestingSection = "computer";
-type PanelSection = RestingSection | InspectorSection;
-/** Top-level panel tabs: the computer work panel, and bot configuration. */
-type PanelTab = "computer" | "configure";
 type WorkroomMode = "configure" | "test";
 
 const BOT_LANGUAGE = customerAgentLanguage();
 // A wider computer workspace has its own size preference. Earlier saved widths
 // belong to the narrower setup inspector and cannot fit a usable computer panel.
 const STUDIO_INSPECTOR_STORAGE_KEY = "wireline:studio-panel:v3";
-const STUDIO_PANEL_REST_STORAGE_KEY = "wireline:studio-panel-rest:v1";
-const PANEL_TABS: ReadonlyArray<{ id: PanelTab; label: string }> = [
-  { id: "computer", label: "Computer" },
-  { id: "configure", label: "Configure" },
-];
-const CONFIGURE_TABS: ReadonlyArray<{ id: InspectorSection; label: string }> = [
+const SETUP_TABS: ReadonlyArray<{ id: InspectorSection; label: string }> = [
   { id: "details", label: "Details" },
   { id: "setup", label: "Set Up" },
   { id: "review", label: "Summary" },
@@ -76,12 +66,6 @@ function readStoredPanelCollapsed(): boolean {
   } catch {
     return true;
   }
-}
-
-function readStoredRestingSection(): RestingSection {
-  // Rehearse used to rest here; it now lives in the conversation, so every
-  // stored resting section resolves to the computer.
-  return "computer";
 }
 
 function StudioLoadingState() {
@@ -178,15 +162,12 @@ function StudioWorkspaceContent() {
   } = useStudioActiveAgentId();
   const [params, setParams] = useSearchParams();
   const workroomRef = useRef<StudioWorkroomHandle>(null);
-  const inspectorTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const configureTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const computerRouteApplied = useRef(false);
+  const setupTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const panelExpandRef = useRef<HTMLButtonElement | null>(null);
+  const returnFocus = useRef<{ view: "setup" | "computer"; id: string } | null>(null);
   const splitWorkspace = useMediaQuery("(min-width: 1180px)");
-  // Wide screens open Work chat beside its computer panel. Setup shares
-  // that optional panel; explicit links reopen it even after a saved collapse.
+  // Explicit Computer links reopen the pane even after a saved collapse.
   const [panelCollapsed, setPanelCollapsedState] = useState(readStoredPanelCollapsed);
-  const [restingSection, setRestingSectionState] = useState(readStoredRestingSection);
   // Full width hides the conversation (kept mounted) until the owner restores it.
   const [panelExpanded, setPanelExpanded] = useState(false);
   const [workspaceWidth, setWorkspaceWidth] = useState(0);
@@ -205,12 +186,7 @@ function StudioWorkspaceContent() {
   const commandNonceParam = params.get("commandNonce");
   const legacyMode = params.get("mode");
   const legacyView = params.get("view");
-  const setupChat =
-    params.get("chat") !== "computer" ||
-    sectionParam === "setup" ||
-    sectionParam === "review" ||
-    workroomParam === "test" ||
-    Boolean(commandParam || commandNonceParam);
+  const setupChat = params.get("chat") !== "computer";
   const routeState = {
     section: sectionParam,
     workroom: workroomParam,
@@ -218,9 +194,7 @@ function StudioWorkspaceContent() {
     commandNonce: commandNonceParam,
   };
 
-  const [inspectorSection, setInspectorSection] = useState<InspectorSection>(() =>
-    readStudioInspectorSection(sectionParam),
-  );
+  const inspectorSection = readStudioInspectorSection(sectionParam);
   const [workroomMode, setWorkroomModeState] = useState<WorkroomMode>(() =>
     readStudioWorkroomMode(routeState),
   );
@@ -228,16 +202,13 @@ function StudioWorkspaceContent() {
     agentId: string;
     ownerId: string;
   } | null>(null);
-  // Details are requested explicitly, including links from creation and review.
-  // The route owns visibility so a saved desktop collapse cannot hide a deep link.
   const inspectorOpen = ["details", "setup", "review"].includes(sectionParam || "");
   const computerFocused = params.get("focus") === "computer" && !inspectorOpen;
-  const panelSection: PanelSection = inspectorOpen
-    ? inspectorSection
-    : computerFocused
-      ? "computer"
-      : restingSection;
-  const panelOpen = splitWorkspace && (inspectorOpen || computerFocused || !panelCollapsed);
+  const panelOpen =
+    splitWorkspace &&
+    !inspectorOpen &&
+    (computerFocused ||
+      (workroomMode !== "test" && (panelParam === "computer" || !panelCollapsed)));
   const mobileBrowserOpen = !splitWorkspace && panelParam === "computer" && !inspectorOpen;
   const panelFill = panelOpen && (panelExpanded || computerFocused);
   // Configure and Rehearse keep separate histories (session keys by mode).
@@ -262,15 +233,6 @@ function StudioWorkspaceContent() {
     workspaceObserverRef.current = observer;
   }, []);
 
-  const setRestingSection = useCallback((section: RestingSection) => {
-    setRestingSectionState(section);
-    try {
-      window.localStorage.setItem(STUDIO_PANEL_REST_STORAGE_KEY, section);
-    } catch {
-      // Storage may be unavailable in private browsing or hardened webviews.
-    }
-  }, []);
-
   const setPanelCollapsed = useCallback((collapsed: boolean) => {
     setPanelCollapsedState(collapsed);
     try {
@@ -286,23 +248,31 @@ function StudioWorkspaceContent() {
   }, []);
 
   useEffect(() => {
-    // A Details link opens the panel; a rehearsal request closes it, so the
-    // rehearsal conversation owns the full conversation area.
-    if (!splitWorkspace) return;
-    if (inspectorOpen) setPanelCollapsed(false);
-    else if (workroomMode === "test") setPanelCollapsed(true);
-  }, [inspectorOpen, setPanelCollapsed, splitWorkspace, workroomMode]);
+    if (!splitWorkspace || inspectorOpen || requestedAgentUnavailable) return;
+    if (workroomMode === "test") setPanelCollapsed(true);
+    else if (panelParam === "computer") setPanelCollapsed(false);
+  }, [
+    inspectorOpen,
+    panelParam,
+    requestedAgentUnavailable,
+    setPanelCollapsed,
+    splitWorkspace,
+    workroomMode,
+  ]);
 
   useEffect(() => {
-    // Full width belongs to an open wide-screen panel only.
-    if (!panelOpen) setPanelExpanded(false);
-  }, [panelOpen]);
+    if (!splitWorkspace) setPanelExpanded(false);
+  }, [splitWorkspace]);
 
   useEffect(() => {
-    const inspectorRequested = ["details", "setup", "review"].includes(sectionParam || "");
-    if (inspectorRequested) {
-      setInspectorSection(readStudioInspectorSection(sectionParam));
-    }
+    const target = returnFocus.current;
+    if (!target) return;
+    if (target.view === "setup" ? inspectorOpen : panelOpen || mobileBrowserOpen) return;
+    document.getElementById(target.id)?.focus({ preventScroll: true });
+    returnFocus.current = null;
+  }, [inspectorOpen, mobileBrowserOpen, panelOpen]);
+
+  useEffect(() => {
     setWorkroomModeState(
       readStudioWorkroomMode({
         section: sectionParam,
@@ -377,16 +347,7 @@ function StudioWorkspaceContent() {
 
   const openInspector = useCallback(
     (section: InspectorSection) => {
-      setInspectorSection(section);
-      setParams(
-        (current) => {
-          const next = setStudioInspectorSectionParams(current, section);
-          next.delete("focus");
-          next.delete("detail");
-          return next;
-        },
-        { replace: true },
-      );
+      setParams((current) => setStudioInspectorSectionParams(current, section), { replace: true });
     },
     [setParams],
   );
@@ -400,6 +361,11 @@ function StudioWorkspaceContent() {
     );
   }, [setParams]);
 
+  const openComputerMode = useCallback(() => {
+    if (splitWorkspace) setPanelCollapsed(false);
+    requestBrowserTask();
+  }, [requestBrowserTask, setPanelCollapsed, splitWorkspace]);
+
   const requestMessage = useCallback(() => {
     setParams(
       (current) => {
@@ -411,89 +377,28 @@ function StudioWorkspaceContent() {
     );
   }, [setParams]);
 
-  const openPanelSection = useCallback(
-    (section: PanelSection) => {
-      if (section === "computer") {
-        setRestingSection("computer");
-        setPanelCollapsed(false);
-        // Opening the computer returns the conversation to Configure without
-        // touching its chat mode, so a Computer task keeps its task composer.
-        setWorkroomModeState("configure");
-        setParams(
-          (current) => {
-            const next = setStudioWorkroomModeParams(
-              clearStudioInspectorSectionParams(current),
-              "configure",
-            );
-            next.delete("detail");
-            return next;
-          },
-          { replace: true },
-        );
-        return;
-      }
-      openInspector(section);
-    },
-    [openInspector, setPanelCollapsed, setParams, setRestingSection, setWorkroomModeState],
-  );
-
-  useEffect(() => {
-    // The Computer destination and the optional side panel share one workbench.
-    // Keep its explicit route so narrow screens and reloads retain the same panel.
-    if (panelParam !== "computer" || !splitWorkspace) {
-      computerRouteApplied.current = false;
-      return;
-    }
-    if (requestedAgentUnavailable || computerRouteApplied.current) return;
-    // Apply each explicit route once; local panel changes can render before the
-    // router commits their URL update and must not reopen the previous panel.
-    computerRouteApplied.current = true;
-    openPanelSection("computer");
-  }, [openPanelSection, panelParam, requestedAgentUnavailable, splitWorkspace]);
-
-  const closeInspector = useCallback(() => {
+  const closeComputer = useCallback(() => {
+    returnFocus.current = { view: "computer", id: "studio-panel-toggle" };
     setPanelExpanded(false);
-    if (splitWorkspace) {
-      // Closing the wide-screen panel also returns the conversation to editing.
-      setPanelCollapsed(true);
-      setParams(
-        (current) => {
-          const cleared = clearStudioInspectorSectionParams(current);
-          const next =
-            sectionParam === "details"
-              ? cleared
-              : setStudioWorkroomModeParams(cleared, "configure");
-          next.delete("focus");
-          next.delete("panel");
-          next.delete("detail");
-          return next;
-        },
-        { replace: true },
-      );
-    } else {
-      setParams(
-        (current) => {
-          const next = clearStudioInspectorSectionParams(current);
-          next.delete("focus");
-          next.delete("panel");
-          next.delete("detail");
-          return next;
-        },
-        { replace: true },
-      );
-    }
-    requestAnimationFrame(() =>
-      document
-        .getElementById(
-          sectionParam === "details"
-            ? "studio-bot-details-toggle"
-            : sectionParam
-              ? "studio-settings-toggle"
-              : "studio-panel-toggle",
-        )
-        ?.focus(),
+    if (splitWorkspace) setPanelCollapsed(true);
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete("focus");
+        next.delete("panel");
+        return next;
+      },
+      { replace: true },
     );
-  }, [sectionParam, setPanelCollapsed, setParams, splitWorkspace]);
+  }, [setPanelCollapsed, setParams, splitWorkspace]);
+
+  const closeSetup = useCallback(() => {
+    returnFocus.current = {
+      view: "setup",
+      id: sectionParam === "details" ? "studio-bot-details-toggle" : "studio-settings-toggle",
+    };
+    setParams(clearStudioInspectorSectionParams, { replace: true });
+  }, [sectionParam, setParams]);
 
   const setWorkroomMode = useCallback(
     (mode: WorkroomMode) => {
@@ -525,44 +430,17 @@ function StudioWorkspaceContent() {
   const rehearsalVisible = workroomMode === "test";
 
   const showBrowser = useCallback(() => {
-    if (splitWorkspace) openPanelSection("computer");
-    else
-      setParams(
-        (current) => {
-          const next = clearStudioInspectorSectionParams(current);
-          next.set("panel", "computer");
-          next.delete("detail");
-          next.delete("focus");
-          return next;
-        },
-        { replace: true },
-      );
-  }, [openPanelSection, setParams, splitWorkspace]);
-
-  useEffect(() => {
-    const handleToggle = () => {
-      if ((panelOpen && panelSection === "computer") || mobileBrowserOpen) closeInspector();
-      else showBrowser();
-    };
-    const handleClose = () => closeInspector();
-    window.addEventListener("wireline:studio-toggle-panel", handleToggle);
-    window.addEventListener("wireline:studio-close-panel", handleClose);
-    return () => {
-      window.removeEventListener("wireline:studio-toggle-panel", handleToggle);
-      window.removeEventListener("wireline:studio-close-panel", handleClose);
-    };
-  }, [closeInspector, mobileBrowserOpen, panelOpen, panelSection, showBrowser]);
-
-  useEffect(() => {
-    window.dispatchEvent(
-      new CustomEvent("wireline:studio-panel-state", {
-        detail: {
-          open: panelOpen || mobileBrowserOpen,
-          section: mobileBrowserOpen ? "computer" : panelSection,
-        },
-      }),
+    if (splitWorkspace) setPanelCollapsed(false);
+    setParams(
+      (current) => {
+        const next = clearStudioInspectorSectionParams(current);
+        next.set("panel", "computer");
+        next.delete("focus");
+        return next;
+      },
+      { replace: true },
     );
-  }, [mobileBrowserOpen, panelOpen, panelSection]);
+  }, [setPanelCollapsed, setParams, splitWorkspace]);
 
   useEffect(() => {
     if (!rehearsalFocusRequest) return;
@@ -573,7 +451,7 @@ function StudioWorkspaceContent() {
       setRehearsalFocusRequest(null);
       return;
     }
-    if (loading || !rehearsalVisible || (!splitWorkspace && inspectorOpen)) return;
+    if (loading || !rehearsalVisible || inspectorOpen) return;
     // Focusing is separate from starting: only the account holder's explicit
     // Start click may request a microphone or create a voice session.
     workroomRef.current?.focusVoiceRehearsal();
@@ -585,7 +463,6 @@ function StudioWorkspaceContent() {
     panelOpen,
     rehearsalFocusRequest,
     rehearsalVisible,
-    splitWorkspace,
     user?.id,
   ]);
 
@@ -650,7 +527,6 @@ function StudioWorkspaceContent() {
       onRehearseVoiceInChat={startRehearsal}
       drafts={setupDrafts}
       className="h-full border-t-0"
-      compact={splitWorkspace}
     />
   );
 
@@ -665,7 +541,6 @@ function StudioWorkspaceContent() {
       onRehearse={startRehearsal}
       focusEmail={params.get("detail") === "email"}
       className="h-full"
-      compact={splitWorkspace}
     />
   );
 
@@ -675,19 +550,15 @@ function StudioWorkspaceContent() {
       agent={active}
       phoneLookupDegraded={phoneLookupDegraded}
       onEmail={() => {
-        setInspectorSection("review");
         setParams(
           (current) => {
             const next = setStudioInspectorSectionParams(current, "review");
             next.set("detail", "email");
-            next.delete("focus");
             return next;
           },
           { replace: true },
         );
       }}
-      onComputer={showBrowser}
-      onSetup={() => openInspector("setup")}
     />
   );
 
@@ -765,8 +636,10 @@ function StudioWorkspaceContent() {
         ),
       }))}
       browserRequested={!setupChat}
+      computerViewOpen={panelOpen || mobileBrowserOpen}
       autoReply={!inspectorOpen && !mobileBrowserOpen}
       onRequestBrowserTask={requestBrowserTask}
+      onActivateComputer={openComputerMode}
       onRequestMessage={requestMessage}
       onShowBrowser={showBrowser}
       timelineNotice={
@@ -787,44 +660,17 @@ function StudioWorkspaceContent() {
       layout={splitWorkspace ? "split" : "standalone"}
       modeControls="composer"
       mode={mainMode}
-      // With the private rehearsal pane open, Set up chat only edits the Bot.
-      // Narrow screens switch that same setup conversation into rehearsal.
       onModeChange={panelOpen ? undefined : setWorkroomMode}
       allowOutbound={Boolean(active.phone_number)}
       phoneNumber={active.phone_number}
-      voiceVisible={(splitWorkspace || !inspectorOpen) && !mobileBrowserOpen}
+      voiceVisible={!inspectorOpen && !mobileBrowserOpen}
     />
   );
-
-  // Keyed by Bot: a different Bot's computer composer never inherits a draft.
-  const computerPanel =
-    (panelOpen && panelSection === "computer") || mobileBrowserOpen ? (
-      <Suspense
-        fallback={
-          <div className="p-3" aria-busy="true" aria-label="Loading computer">
-            <PanelSkeleton rows={4} />
-          </div>
-        }
-      >
-        <ComputerWorkbench
-          key={active.id}
-          agentId={active.id}
-          layout="panel"
-          chatControls={splitWorkspace}
-        />
-      </Suspense>
-    ) : null;
-
-  const activePanelTab: PanelTab = inspectorOpen ? "configure" : "computer";
-  const activePanelSection: PanelSection = splitWorkspace ? panelSection : inspectorSection;
-  const selectPanelTab = (tab: PanelTab) =>
-    tab === "computer" ? openPanelSection("computer") : openInspector(inspectorSection);
 
   const restoreSplitView = () => {
     setPanelExpanded(false);
     if (!computerFocused) return;
     setPanelCollapsed(false);
-    setRestingSection("computer");
     setParams(
       (current) => {
         const next = new URLSearchParams(current);
@@ -835,242 +681,168 @@ function StudioWorkspaceContent() {
     );
   };
 
-  const inspectorHeader = (
-    <header className="wl-studio-panel-header">
-      {splitWorkspace ? (
-        <div className="wl-studio-panel-tabs" role="tablist" aria-label="Workspace panel">
-          {PANEL_TABS.map(({ id, label }, index) => (
+  const computerPanel =
+    panelOpen || mobileBrowserOpen ? (
+      <aside
+        id="studio-computer-panel"
+        className="flex h-full min-h-0 min-w-0 w-full flex-col"
+        aria-label="Computer"
+        onKeyDown={(event) => {
+          if (
+            event.key !== "Escape" ||
+            !panelFill ||
+            event.defaultPrevented ||
+            document.fullscreenElement ||
+            event.nativeEvent.isComposing
+          )
+            return;
+          // A website, editor or open dialog owns Escape before workspace chrome.
+          if (
+            event.target instanceof Element &&
+            event.target.closest(
+              'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [role="menu"], .wl-computer-screen__viewport',
+            )
+          )
+            return;
+          event.preventDefault();
+          event.stopPropagation();
+          restoreSplitView();
+          panelExpandRef.current?.focus();
+        }}
+      >
+        <header className="wl-studio-panel-header">
+          <h2 className="text-sm font-semibold">Computer</h2>
+          <div className="wl-studio-panel-actions">
+            {splitWorkspace ? (
+              <button
+                ref={panelExpandRef}
+                type="button"
+                onClick={() => {
+                  if (panelFill) restoreSplitView();
+                  else setPanelExpanded(true);
+                }}
+                className="wl-studio-panel-action wl-focus-ring-halo"
+                aria-label={panelFill ? "Restore split view" : "Expand panel"}
+                aria-pressed={panelFill}
+                title={panelFill ? "Restore split view (Esc)" : "Expand panel"}
+              >
+                {panelFill ? (
+                  <Minimize2 className="size-4" aria-hidden="true" />
+                ) : (
+                  <Maximize2 className="size-4" aria-hidden="true" />
+                )}
+                {panelFill ? <span>Split view</span> : null}
+              </button>
+            ) : null}
             <button
-              key={id}
-              ref={(element) => {
-                inspectorTabRefs.current[index] = element;
-              }}
-              id={`studio-inspector-tab-${id}`}
               type="button"
-              role="tab"
-              aria-selected={activePanelTab === id}
-              aria-controls="studio-inspector-panel"
-              tabIndex={activePanelTab === id ? 0 : -1}
-              onClick={() => selectPanelTab(id)}
-              onKeyDown={(event) => {
-                const last = PANEL_TABS.length - 1;
-                const nextIndex =
-                  event.key === "Home"
-                    ? 0
-                    : event.key === "End"
-                      ? last
-                      : event.key === "ArrowLeft"
-                        ? index === 0
-                          ? last
-                          : index - 1
-                        : event.key === "ArrowRight"
-                          ? index === last
-                            ? 0
-                            : index + 1
-                          : null;
-                if (nextIndex === null) return;
-                event.preventDefault();
-                selectPanelTab(PANEL_TABS[nextIndex]!.id);
-                inspectorTabRefs.current[nextIndex]?.focus();
-              }}
-              className="wl-studio-panel-tab wl-focus-ring-halo"
+              onClick={closeComputer}
+              className="wl-studio-panel-action wl-focus-ring-halo"
+              aria-label="Close Computer"
+              title="Close Computer"
             >
-              {label}
+              <X className="size-4" aria-hidden="true" />
             </button>
-          ))}
-        </div>
-      ) : null}
-      {activePanelTab === "configure" ? (
-        <div
-          className="wl-studio-panel-tabs wl-studio-panel-tabs--configure"
-          role="tablist"
-          aria-label="Configure sections"
-        >
-          {CONFIGURE_TABS.map(({ id, label }, index) => (
-            <button
-              key={id}
-              ref={(element) => {
-                configureTabRefs.current[index] = element;
-              }}
-              id={`studio-inspector-subtab-${id}`}
-              type="button"
-              role="tab"
-              aria-selected={inspectorSection === id}
-              aria-controls="studio-inspector-panel"
-              tabIndex={inspectorSection === id ? 0 : -1}
-              onClick={() => openInspector(id)}
-              onKeyDown={(event) => {
-                const last = CONFIGURE_TABS.length - 1;
-                const nextIndex =
-                  event.key === "Home"
-                    ? 0
-                    : event.key === "End"
-                      ? last
-                      : event.key === "ArrowLeft"
-                        ? index === 0
-                          ? last
-                          : index - 1
-                        : event.key === "ArrowRight"
-                          ? index === last
-                            ? 0
-                            : index + 1
-                          : null;
-                if (nextIndex === null) return;
-                event.preventDefault();
-                openInspector(CONFIGURE_TABS[nextIndex]!.id);
-                configureTabRefs.current[nextIndex]?.focus();
-              }}
-              className="wl-studio-panel-tab wl-focus-ring-halo"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      ) : null}
-      <div className="wl-studio-panel-actions">
-        {splitWorkspace ? (
-          <button
-            ref={panelExpandRef}
-            type="button"
-            onClick={() => {
-              if (panelFill) restoreSplitView();
-              else setPanelExpanded(true);
-            }}
-            className="wl-studio-panel-action wl-focus-ring-halo"
-            aria-label={panelFill ? "Restore split view" : "Expand panel"}
-            aria-pressed={panelFill}
-            aria-controls="studio-inspector"
-            title={panelFill ? "Restore split view (Esc)" : "Expand panel"}
+          </div>
+        </header>
+        <div className="min-h-0 flex-1 overflow-hidden">
+          <Suspense
+            fallback={
+              <div className="p-3" aria-busy="true" aria-label="Loading computer">
+                <PanelSkeleton rows={4} />
+              </div>
+            }
           >
-            {panelFill ? (
-              <Minimize2 className="size-4" aria-hidden="true" />
-            ) : (
-              <Maximize2 className="size-4" aria-hidden="true" />
-            )}
-            {panelFill ? <span>Split view</span> : null}
-          </button>
-        ) : null}
-        <button
-          type="button"
-          onClick={closeInspector}
-          className="wl-studio-panel-action wl-focus-ring-halo"
-          aria-label="Close panel"
-          title="Close panel"
-        >
-          <X className="size-4" aria-hidden="true" />
-        </button>
-      </div>
-    </header>
-  );
+            <ComputerWorkbench
+              key={active.id}
+              agentId={active.id}
+              layout="panel"
+              chatControls={splitWorkspace}
+            />
+          </Suspense>
+        </div>
+      </aside>
+    ) : null;
 
-  const inspectorBody = (
-    <div
-      id="studio-inspector-panel"
-      role="tabpanel"
-      aria-labelledby={
-        splitWorkspace
-          ? `studio-inspector-tab-${activePanelTab}`
-          : `studio-inspector-subtab-${inspectorSection}`
-      }
-      className="min-h-0 flex-1 overflow-hidden"
+  const botSetup = inspectorOpen ? (
+    <section
+      id="studio-inspector"
+      aria-label="Bot setup"
+      className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
     >
-      {activePanelSection === "computer"
-        ? computerPanel
-        : activePanelSection === "details"
+      <header className="border-b border-border">
+        <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-x-3 px-3 py-1 sm:px-6">
+          <div className="wl-studio-panel-tabs" role="tablist" aria-label="Bot setup sections">
+            {SETUP_TABS.map(({ id, label }, index) => (
+              <button
+                key={id}
+                ref={(element) => {
+                  setupTabRefs.current[index] = element;
+                }}
+                id={`studio-inspector-subtab-${id}`}
+                type="button"
+                role="tab"
+                aria-selected={inspectorSection === id}
+                aria-controls="studio-inspector-panel"
+                tabIndex={inspectorSection === id ? 0 : -1}
+                onClick={() => openInspector(id)}
+                onKeyDown={(event) => {
+                  const count = SETUP_TABS.length;
+                  const nextIndex =
+                    event.key === "Home"
+                      ? 0
+                      : event.key === "End"
+                        ? count - 1
+                        : event.key === "ArrowLeft"
+                          ? (index + count - 1) % count
+                          : event.key === "ArrowRight"
+                            ? (index + 1) % count
+                            : null;
+                  if (nextIndex === null) return;
+                  event.preventDefault();
+                  openInspector(SETUP_TABS[nextIndex]!.id);
+                  setupTabRefs.current[nextIndex]?.focus();
+                }}
+                className="wl-studio-panel-tab wl-focus-ring-halo"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <Button type="button" size="sm" variant="ghost" onClick={closeSetup} className="min-h-11">
+            <ArrowLeft className="size-4" aria-hidden="true" />
+            Back to Work
+          </Button>
+        </div>
+      </header>
+      <div
+        id="studio-inspector-panel"
+        role="tabpanel"
+        aria-labelledby={`studio-inspector-subtab-${inspectorSection}`}
+        className="min-h-0 flex-1 overflow-hidden"
+      >
+        {inspectorSection === "details"
           ? detailsPanel
-          : activePanelSection === "review"
+          : inspectorSection === "review"
             ? reviewPanel
             : setupPanel}
-    </div>
-  );
-
-  const inspector = (
-    <aside
-      id="studio-inspector"
-      className="flex h-full min-h-0 w-full flex-col"
-      aria-label="Workspace panel"
-      onKeyDown={(event) => {
-        if (
-          event.key !== "Escape" ||
-          !panelFill ||
-          event.defaultPrevented ||
-          document.fullscreenElement ||
-          event.nativeEvent.isComposing
-        )
-          return;
-        // A website, editor or open dialog owns Escape before workspace chrome.
-        if (
-          event.target instanceof Element &&
-          event.target.closest(
-            'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [role="menu"], .wl-computer-screen__viewport',
-          )
-        )
-          return;
-        event.preventDefault();
-        event.stopPropagation();
-        restoreSplitView();
-        panelExpandRef.current?.focus();
-      }}
-    >
-      {inspectorHeader}
-      {inspectorBody}
-    </aside>
-  );
+      </div>
+    </section>
+  ) : null;
 
   return (
     <div className="wl-studio-workspace flex h-full min-h-0 flex-col overflow-hidden bg-background">
-      {!splitWorkspace && !inspectorOpen ? (
-        <nav className="wl-studio-surface-nav" aria-label="Workspace view">
-          <button
-            type="button"
-            aria-pressed={!mobileBrowserOpen}
-            onClick={() =>
-              setParams(
-                (current) => {
-                  const next = new URLSearchParams(current);
-                  next.delete("panel");
-                  next.delete("focus");
-                  return next;
-                },
-                { replace: true },
-              )
-            }
-          >
-            Conversation
-          </button>
-          <button
-            type="button"
-            aria-pressed={mobileBrowserOpen}
-            onClick={() => {
-              if (splitWorkspace) openPanelSection("computer");
-              else
-                setParams(
-                  (current) => {
-                    const next = new URLSearchParams(current);
-                    next.set("panel", "computer");
-                    next.delete("focus");
-                    return next;
-                  },
-                  { replace: true },
-                );
-            }}
-          >
-            <Monitor className="size-4" aria-hidden="true" />
-            Computer
-          </button>
-        </nav>
-      ) : null}
       <div ref={measureWorkspace} className="flex min-h-0 flex-1 overflow-hidden">
-        {/* Keep drafts and in-flight conversations intact while mobile details
-          are open or the panel is full width. */}
+        {/* Keep drafts and in-flight conversations intact while another view is open. */}
         <div
-          className={`${(!splitWorkspace && inspectorOpen) || mobileBrowserOpen || panelFill ? "hidden" : "block"} min-h-0 min-w-0 flex-1 overflow-hidden`}
+          className={`${inspectorOpen || mobileBrowserOpen || panelFill ? "hidden" : "block"} min-h-0 min-w-0 flex-1 overflow-hidden`}
         >
           <div className="flex h-full min-h-0 flex-col">
             <div className="min-h-0 flex-1">{workroom}</div>
           </div>
         </div>
-        {splitWorkspace ? (
+        {botSetup}
+        {splitWorkspace && !inspectorOpen ? (
           <WorkspaceResizablePanel
             storageKey={STUDIO_INSPECTOR_STORAGE_KEY}
             side="right"
@@ -1081,19 +853,17 @@ function StudioWorkspaceContent() {
             collapsed={!panelOpen}
             fill={panelFill}
             onCollapsedChange={(collapsed) => {
-              if (collapsed) closeInspector();
-              else openPanelSection(panelSection);
+              if (collapsed) closeComputer();
+              else showBrowser();
             }}
             resizeHandleLabel="Resize workspace panel"
-            controlsId="studio-inspector"
+            controlsId="studio-computer-panel"
             className={panelOpen ? "wl-studio-panel-surface" : undefined}
           >
-            {({ collapsed }) => (collapsed ? null : inspector)}
+            {({ collapsed }) => (collapsed ? null : computerPanel)}
           </WorkspaceResizablePanel>
         ) : mobileBrowserOpen ? (
           <div className="min-h-0 min-w-0 flex-1 overflow-hidden">{computerPanel}</div>
-        ) : inspectorOpen ? (
-          <div className="min-h-0 min-w-0 flex-1 overflow-hidden">{inspector}</div>
         ) : null}
       </div>
     </div>

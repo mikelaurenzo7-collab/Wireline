@@ -11,10 +11,12 @@ import { resolveVoiceLabel } from "../lib/voice-catalog";
 import { resolveAgentGreeting } from "../lib/agent-greeting";
 import { resolveDeliveryToneLabel } from "../lib/compose-setup-personality";
 import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
+import { useAuth } from "../contexts/AuthContext";
 import { useChannelEntitlements } from "../hooks/useChannelEntitlements";
 import ChannelAccessNotice from "./ChannelAccessNotice";
 import { activationBillingHref, getStoredSignupIntent } from "../lib/signup-intent";
 import { formatPhone } from "../lib/safe-number";
+import { useCreateBriefTraining } from "../lib/create-brief-recovery";
 
 type AgentConfigResponse = {
   role?: string | null;
@@ -63,6 +65,8 @@ export default function StudioAgentReviewPanel({
   compact = false,
   focusEmail = false,
 }: StudioAgentReviewPanelProps) {
+  const { user } = useAuth();
+  const trainingBrief = useCreateBriefTraining(user?.id ?? "", agentId);
   const emailSectionRef = useRef<HTMLDivElement>(null);
   const access = useChannelEntitlements();
   const [config, setConfig] = useState<AgentConfigResponse | null>(null);
@@ -234,7 +238,7 @@ export default function StudioAgentReviewPanel({
     return () => {
       cancelled = true;
     };
-  }, [agentId, reloadKey]);
+  }, [agentId, reloadKey, trainingBrief]);
 
   const voiceIncluded = access.includes("voice");
   const [callVoice, setCallVoice] = useState<{

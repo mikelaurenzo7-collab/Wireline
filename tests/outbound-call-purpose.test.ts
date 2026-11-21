@@ -44,7 +44,9 @@ describe("screened direct outbound", () => {
       requireFederalDncScreening: false,
       hasExpressWrittenConsent: false,
     });
-    expect(screenedDirectOutboundCall("appointment_service").requireFederalDncScreening).toBe(false);
+    expect(screenedDirectOutboundCall("appointment_service").requireFederalDncScreening).toBe(
+      false,
+    );
     expect(screenedDirectOutboundCall("existing_customer").requireFederalDncScreening).toBe(false);
     expect(screenedDirectOutboundCall("returning_contact")).toMatchObject({
       callPurpose: "returning_contact",
@@ -67,7 +69,9 @@ describe("screened direct outbound", () => {
       isRequestedCallback: false,
     });
     expect(screenedDirectOutboundCall("marketing_or_sales").callPurpose).toBe("sales");
-    expect(screenedDirectOutboundCall("service_or_requested").callPurpose).toBe("appointment_service");
+    expect(screenedDirectOutboundCall("service_or_requested").callPurpose).toBe(
+      "appointment_service",
+    );
     expect(screenedDirectOutboundCall("sales", { returning: true })).toMatchObject({
       callPurpose: "returning_contact",
       requireFederalDncScreening: false,
@@ -75,9 +79,7 @@ describe("screened direct outbound", () => {
     expect(screenedDirectOutboundCall("appointment_service", { returning: true }).callPurpose).toBe(
       "appointment_service",
     );
-    expect(
-      outboundCallingEnabledFor("sales", { general: false, nonMarketing: false }),
-    ).toBe(true);
+    expect(outboundCallingEnabledFor("sales", { general: false, nonMarketing: false })).toBe(true);
   });
 });
 
@@ -108,6 +110,15 @@ describe("effective purpose", () => {
   it("warns when a non-sales note sounds like a promotion and does not block", () => {
     expect(salesContentWarning("We have a limited time discount")).toMatch(/Switch to Sales/);
     expect(salesContentWarning("Confirming your Tuesday appointment")).toBeNull();
+    expect(
+      salesContentWarning("Offer Tuesday at 10 or Wednesday at 2 for the inspection."),
+    ).toBeNull();
+    expect(
+      salesContentWarning("Confirm any special instructions for getting to the property."),
+    ).toBeNull();
+    expect(salesContentWarning("Mention the limited-time offer of 20% off.")).toMatch(
+      /Switch to Sales/,
+    );
   });
 });
 

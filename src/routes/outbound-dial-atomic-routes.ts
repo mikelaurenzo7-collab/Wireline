@@ -9,7 +9,10 @@ import { validate } from "../middleware/input-validation";
 import { AppError } from "../lib/api-error";
 import { normalizeOutboundNumber } from "../lib/dialer-compliance";
 import { evaluateOutboundDialGate } from "../lib/outbound-dial-gate";
-import { CALL_NEEDS_PERMISSION_MESSAGE } from "../lib/outbound-compliance-copy";
+import {
+  CALL_NEEDS_PERMISSION_MESSAGE,
+  ONE_CALL_PER_DAY_MESSAGE,
+} from "../lib/outbound-compliance-copy";
 import { OUTBOUND_CALL_PURPOSES, outboundConsentMetadata } from "../lib/outbound-call-purpose";
 import { screenManualOutbound } from "../lib/outbound-manual-screening";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
@@ -131,8 +134,7 @@ function gateResponse(res: Response, gate: DeniedOutboundDialGate) {
   }
   return res.status(409).json({
     code: "DUPLICATE_DIAL_SUPPRESSED",
-    error:
-      gate.customerMessage || "This number already got a call today. You can try again tomorrow.",
+    error: gate.customerMessage || ONE_CALL_PER_DAY_MESSAGE,
     reason: gate.reason,
     status: gate.status,
   });
@@ -294,6 +296,11 @@ router.post(
         salesScreening: screening.requireFederalDncScreening ? "one_off" : "bulk",
         hasExpressWrittenConsent: false,
         isRequestedCallback: false,
+        manualCallPurpose:
+          screening.requestedCallPurpose === effectiveCallPurpose &&
+          (!prepared || effectiveCallPurpose !== "callback")
+            ? effectiveCallPurpose
+            : undefined,
         metadata: { has_express_written_consent: false },
         audit: manual.audit,
       });

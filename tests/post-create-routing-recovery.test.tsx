@@ -41,8 +41,10 @@ vi.mock("react", async (importOriginal) => ({
   },
   useCallback: (callback: unknown) => callback,
   useMemo: (factory: () => unknown) => factory(),
+  useSyncExternalStore: (_subscribe: unknown, snapshot: () => unknown) => snapshot(),
 }));
 vi.mock("react-router", () => ({ Link: "a", useNavigate: () => h.navigate }));
+vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: null }) }));
 vi.mock("../src/lib/api", () => ({ authFetch: h.fetch }));
 vi.mock("../src/lib/use-modal-focus-trap", () => ({ useModalFocusTrap: vi.fn() }));
 vi.mock("../src/lib/use-body-scroll-lock", () => ({ useBodyScrollLock: vi.fn() }));
@@ -142,7 +144,11 @@ async function mount() {
   render();
   h.mounting = false;
   cleanups = h.effects.map((effect) => effect());
-  await vi.waitFor(() => expect(text(render())).not.toContain("Checking your line"));
+  await vi.waitFor(() => {
+    const visible = text(render());
+    expect(visible).not.toContain("Checking your line");
+    expect(visible).not.toContain("Checking plan availability");
+  });
 }
 beforeEach(() => {
   h.channels = ["voice", "email", "sms"];
@@ -247,6 +253,7 @@ describe("setup guide requires confirmed calling", () => {
   );
 
   it("uses honest soft-open copy instead of a checkout CTA when billing is closed", async () => {
+    h.channels = [];
     payload = {
       agentId: "bot",
       agentName: "Front Desk",
@@ -261,7 +268,7 @@ describe("setup guide requires confirmed calling", () => {
     expect(text(tree)).toContain("Live activation isn't available right now");
     expect(text(tree)).toContain("Keep trying your Bot privately in Set Up, then check back soon.");
     expect(text(tree)).not.toContain("Every paid plan includes a US number");
-    expect(text(tree)).not.toContain("Choose your plan");
+    expect(text(tree)).not.toContain("Choose Plan");
     expect(text(tree)).not.toContain("Starter begins at $19/mo");
     const contact = elements(tree).find(
       (element) => element.type === "a" && text(element) === "Contact support",
@@ -269,7 +276,8 @@ describe("setup guide requires confirmed calling", () => {
     expect(contact?.props.to).toBe("/contact?topic=billing");
   });
 
-  it("keeps the paid-plan CTA when self-serve checkout is available", async () => {
+  it("offers a paid plan to a free Bot when self-serve checkout is available", async () => {
+    h.channels = [];
     payload = {
       agentId: "bot",
       agentName: "Front Desk",
@@ -279,13 +287,35 @@ describe("setup guide requires confirmed calling", () => {
     };
     stubFetch({ numbers: [], checkoutAvailable: true });
     await mount();
-    expect(text(render())).toContain("Choose your plan");
+    expect(button("Choose a number")).toBeUndefined();
     const plan = elements(render()).find(
-      (element) => element.type === "a" && text(element) === "Choose your plan",
+      (element) => element.type === "a" && text(element) === "Choose Plan",
     );
     expect(plan?.props.to).toBe("/settings/billing");
     expect(text(render())).not.toContain("Live activation isn't available right now");
   });
+
+  it.each([true, false])(
+    "honors confirmed voice access after a previous activation rejection with checkout available %s",
+    async (checkoutAvailable) => {
+      payload = {
+        agentId: "bot",
+        agentName: "Front Desk",
+        phoneProvisionRequested: true,
+        phoneProvisioned: false,
+        phoneActivationRequired: true,
+        identityBootstrapComplete: true,
+      };
+      stubFetch({ numbers: [], checkoutAvailable });
+      await mount();
+      expect(text(render())).not.toContain("Live activation isn't available right now");
+      expect(text(render())).not.toContain("Choose Plan");
+      expect(text(render())).not.toContain("Choose your plan");
+      expect(button("Choose a number")?.props.disabled).toBe(false);
+      button("Choose a number")?.props.onClick?.();
+      expect(h.navigate).toHaveBeenCalledWith("/phone?tab=setup&agent=bot");
+    },
+  );
 });
 
 it("email-only activation has no phone prerequisite or invented live milestone", async () => {

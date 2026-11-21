@@ -2,6 +2,7 @@ import {
   activationBillingHref,
   getStoredSignupIntent,
   getSignupWedgeRecommendation,
+  mergeSignupIntent,
   parseSignupIntent,
   recommendedPlanFromIntent,
   type SignupIntent,
@@ -110,16 +111,19 @@ export function persistOAuthReturnFromSearch(search: string): void {
   persistAuthRedirect(readRedirectFromSearch(search) || returningPaidIntentDestination(search));
 }
 
+export function firstBotSetupHref(template?: string): string {
+  if (template) return `/studio?create=1&template=${encodeURIComponent(template)}`;
+  return "/studio?create=1";
+}
+
 export function resolvePostAuthDestination(
   _workspaceMode: WorkspaceMode,
   search = typeof window !== "undefined" ? window.location.search : "",
 ): string {
   const freshSignup = isFreshSignupSession();
   const fromSearch = readRedirectFromSearch(search);
-  // A fresh signup's first screen is always create-first Studio. Only the
-  // preserved return targets (MCP OAuth, invite acceptance) may outrank it;
-  // an incidental target such as the /settings deep link AppShell's
-  // signed-out bounce manufactures must not replace the first-run flow.
+  // An invite or Connect authorization owns its own first-run flow. Ignore
+  // incidental deep links during other signups so the current choice wins.
   if (fromSearch && (!freshSignup || isFreshSignupPreservedRedirect(fromSearch))) {
     persistAuthRedirect(null);
     if (freshSignup) clearFreshSignupSession();
@@ -145,13 +149,22 @@ export function resolvePostAuthDestination(
     clearFreshSignupSession();
     const currentIntent = parseSignupIntent(search);
     const storedIntent = getStoredSignupIntent();
+    const intent = currentIntent?.preferredPlanId
+      ? mergeSignupIntent(storedIntent, currentIntent)
+      : (currentIntent ?? storedIntent);
     const template =
       currentIntent?.preferredTemplateId ||
       getSignupWedgeRecommendation(currentIntent?.signupWedge)?.templateId ||
       storedIntent?.preferredTemplateId ||
       getSignupWedgeRecommendation(storedIntent?.signupWedge)?.templateId;
-    if (template) return `/studio?create=1&template=${encodeURIComponent(template)}`;
-    return "/studio?create=1";
+    const plan = intent?.preferredPlanId;
+    if (plan === "personal" || (!plan && template)) return firstBotSetupHref(template);
+
+    const billingHref = plan
+      ? activationBillingHref(intent)
+      : "/settings/billing?plan=usage&interval=month";
+    const templateParam = template ? `&template=${encodeURIComponent(template)}` : "";
+    return `${billingHref}&onboarding=1${templateParam}`;
   }
 
   const stored = readStoredValue(AUTH_REDIRECT_KEY);

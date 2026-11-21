@@ -29,6 +29,7 @@ vi.mock("../src/components/StripeBillingCard", () => ({
   default: "billing-card",
   BillingTrustFooter: "footer",
 }));
+vi.mock("react-router", () => ({ Link: "a", useLocation: () => window.location }));
 vi.mock("../src/components/atoms", () => ({ Button: "button" }));
 vi.mock("../src/components/molecules/StatusNotice", () => ({ StatusNotice: "aside" }));
 vi.mock("../src/components/settings/SettingsTabs", () => ({ default: "nav" }));

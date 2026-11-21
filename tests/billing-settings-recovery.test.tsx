@@ -76,7 +76,7 @@ vi.mock("react", async (original) => {
     },
   };
 });
-vi.mock("react-router", () => ({ Link: "a" }));
+vi.mock("react-router", () => ({ Link: "a", useLocation: () => window.location }));
 vi.mock("motion/react", () => ({ motion: { div: "div" } }));
 vi.mock("../src/components/UsageMeter", () => ({ default: "usage-meter" }));
 vi.mock("../src/components/ui/shadcn/ShadButton", () => ({ ShadButton: "button" }));

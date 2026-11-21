@@ -17,6 +17,11 @@ for (const sessionFailure of ["unavailable", "offline"] as const) {
     let failSession = false;
     let saved = false;
     let configReadsAfterSave = 0;
+    let rosterRefreshes = 0;
+    let releaseBackground = () => {};
+    const background = new Promise<void>((resolve) => {
+      releaseBackground = resolve;
+    });
     const trainingMessages: string[] = [];
     await page.route("**/api/**", async (route) => {
       const request = route.request();
@@ -35,13 +40,20 @@ for (const sessionFailure of ["unavailable", "offline"] as const) {
           createCount += 1;
           created = true;
           await route.fulfill({ json: bot });
-        } else await route.fulfill({ json: { agents: created ? [bot] : [] } });
+        } else {
+          if (created) {
+            rosterRefreshes += 1;
+            await background;
+          }
+          await route.fulfill({ json: { agents: created ? [bot] : [] } });
+        }
         return;
       }
       if (path === "/api/train/extract") {
         extractionCount += 1;
         trainingMessages.push(request.postDataJSON().message);
         if (extractionCount === 1) {
+          await background;
           await route.fulfill({ status: 503, json: { error: "Training unavailable" } });
         } else {
           saved = true;
@@ -70,8 +82,17 @@ for (const sessionFailure of ["unavailable", "offline"] as const) {
     await create.getByRole("textbox", { name: "Describe the Job" }).fill(brief);
     await create.getByRole("button", { name: "Create Bot", exact: true }).click();
     const guide = page.getByRole("dialog", { name: /Next Up for/ });
-    await guide.getByRole("button", { name: "Close setup guide" }).click();
     const knowledge = page.locator("#setup-knowledge");
+    try {
+      await expect(guide).toBeVisible({ timeout: 6_000 });
+      await expect(guide.getByText("Applying your starting brief…", { exact: true })).toBeVisible();
+      await expect.poll(() => rosterRefreshes).toBeGreaterThan(0);
+      await expect(page).toHaveURL(new RegExp(`agent=${bot.id}&section=setup$`));
+      await guide.getByRole("button", { name: "Close setup guide" }).click();
+      await expect(knowledge).toBeDisabled();
+    } finally {
+      releaseBackground();
+    }
     await expect(knowledge).toHaveValue(brief);
     await expect(
       page.getByText(

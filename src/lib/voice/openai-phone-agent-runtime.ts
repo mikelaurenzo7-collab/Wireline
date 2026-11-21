@@ -251,13 +251,17 @@ function nativeCalendarTimeContext(value: unknown, now: Date): string {
       "NATIVE CALENDAR TIME CONTEXT:",
       `Calendar-local today is ${today}; tomorrow is ${tomorrow.toISOString().slice(0, 10)}. The saved Calendar timezone is ${calendar.time_zone}.`,
       "For appointment scheduling, resolve relative dates such as today and tomorrow from this Calendar-local date, even when the Bot's date differs. Use the saved Calendar timezone and the timezone returned by availability. If the caller uses another timezone, confirm the exact appointment date and time in the Calendar timezone before booking.",
+      "In an ordinary local conversation, say the day, date and time naturally in the business's local time. Name the timezone only when the caller asks or the location or timing could make the appointment ambiguous.",
       calendar.enabled
         ? [
             "Saved hours do not prove availability. Check availability and use only the returned slots before booking.",
             {
-              automatic: "This Calendar books automatically. Once the caller confirms the available slot and you have their name and service, use book_appointment without asking the owner. Confirm only the result returned by the tool.",
-              approval: "The owner chose approval. You can still check an available slot and submit the caller’s request with book_appointment. Say the request is pending only after the tool returns Requested.",
-              inherit: "This Calendar follows the Bot’s permission. Submit the confirmed slot using the enabled booking tool and describe its returned status.",
+              automatic:
+                "This Calendar books automatically. Once the caller confirms the available slot and you have their name and service, use book_appointment without asking the owner. Confirm only the result returned by the tool.",
+              approval:
+                "The owner chose approval. You can still check an available slot and submit the caller’s request with book_appointment. Say the request is pending only after the tool returns Requested.",
+              inherit:
+                "This Calendar follows the Bot’s permission. Submit the confirmed slot using the enabled booking tool and describe its returned status.",
             }[calendar.booking_mode],
           ].join(" ")
         : "Native Calendar booking is paused. Do not claim availability or a completed booking, and do not bypass the pause with a connected calendar.",

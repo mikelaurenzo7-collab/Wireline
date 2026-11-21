@@ -17,7 +17,10 @@ import {
 } from "../lib/outbound-call-purpose";
 import { readContactOutboundRecord } from "../lib/outbound-contact-consent";
 import { screenManualOutbound } from "../lib/outbound-manual-screening";
-import { CALL_NEEDS_PERMISSION_MESSAGE } from "../lib/outbound-compliance-copy";
+import {
+  CALL_NEEDS_PERMISSION_MESSAGE,
+  ONE_CALL_PER_DAY_MESSAGE,
+} from "../lib/outbound-compliance-copy";
 import { deriveRelationship } from "../lib/outbound-relationship";
 import { readSalesDncAttestation } from "../lib/sales-dnc-attestation";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
@@ -651,9 +654,7 @@ router.post(
         });
         return res.status(409).json({
           code: "DUPLICATE_DIAL_SUPPRESSED",
-          error:
-            gate.customerMessage ||
-            "This number already got a call today. You can try again tomorrow.",
+          error: gate.customerMessage || ONE_CALL_PER_DAY_MESSAGE,
           reason: gate.reason,
           status: gate.status,
         });

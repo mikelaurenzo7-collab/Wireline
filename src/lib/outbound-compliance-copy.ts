@@ -23,7 +23,7 @@ export const INTERNAL_DNC_MESSAGE =
   "This person asked not to be contacted. We won't call or text them from this line.";
 
 export const ONE_CALL_PER_DAY_MESSAGE =
-  "This number already got a call today. You can try again tomorrow.";
+  "BotBound attempted a call to this number in the last 24 hours. Check History for the outcome.";
 
 export const CONTACT_PERMISSION_LABEL = "I have this person's permission to contact them.";
 

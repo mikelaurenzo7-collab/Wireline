@@ -6,9 +6,11 @@ const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("activation path contract", () => {
-  it("routes every fresh signup into the same Studio create flow", () => {
+  it("offers plan review and a direct path to private Studio setup", () => {
     const authRedirect = read("src/lib/auth-redirect.ts");
     expect(authRedirect).toContain('return "/studio?create=1"');
+    expect(authRedirect).toContain("&onboarding=1");
+    expect(read("src/pages/BillingSettings.tsx")).toContain("Set Up a Bot First");
     expect(authRedirect).not.toContain("create=1&posture=");
   });
 
@@ -101,9 +103,8 @@ describe("activation path contract", () => {
     expect(billing).toContain("shouldResumePostCreateLaunch(");
     expect(billing).toContain("Boolean(readPostCreateWizard())");
     expect(billing).toContain("readPostCreateWizardStep()");
-    expect(billing).toContain('window.location.replace("/studio")');
-    expect(billing.indexOf("window.history.replaceState")).toBeLessThan(
-      billing.indexOf('window.location.replace("/studio")'),
-    );
+    const resume = "window.location.replace(`/studio?agent=${encodeURIComponent(wizard.agentId)}`)";
+    expect(billing).toContain(resume);
+    expect(billing.indexOf("window.history.replaceState")).toBeLessThan(billing.indexOf(resume));
   });
 });

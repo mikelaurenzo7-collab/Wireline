@@ -1,15 +1,6 @@
 import { useState } from "react";
 import StudioMemoryEditor from "./StudioMemoryEditor";
-import {
-  BookOpen,
-  Brain,
-  CalendarClock,
-  ChevronRight,
-  Mail,
-  Monitor,
-  Phone,
-  Settings2,
-} from "lucide-react";
+import { BookOpen, Brain, CalendarClock, ChevronRight, Mail, Phone } from "lucide-react";
 import { Link } from "react-router";
 
 import BotMark from "../BotMark";
@@ -23,17 +14,9 @@ type Props = {
   agent: WorkspaceAgentSummary;
   phoneLookupDegraded: boolean;
   onEmail: () => void;
-  onComputer: () => void;
-  onSetup: () => void;
 };
 
-export default function StudioBotDetailsPanel({
-  agent,
-  phoneLookupDegraded,
-  onEmail,
-  onComputer,
-  onSetup,
-}: Props) {
+export default function StudioBotDetailsPanel({ agent, phoneLookupDegraded, onEmail }: Props) {
   const [memoryOpen, setMemoryOpen] = useState(false);
   const lineStatus = agentLineStatus(agent, phoneLookupDegraded);
   const phoneDescription =
@@ -102,18 +85,6 @@ export default function StudioBotDetailsPanel({
               <StudioMemoryEditor key={agent.id} agentId={agent.id} agentName={agent.name} />
             ) : null}
           </details>
-          <button
-            className="wl-bot-details-row wl-focus-ring-halo"
-            type="button"
-            onClick={onComputer}
-          >
-            <Monitor size={18} aria-hidden="true" />
-            <span>
-              <strong>Computer</strong>
-              <small>Open the browser beside your work</small>
-            </span>
-            <ChevronRight size={16} aria-hidden="true" />
-          </button>
           <details className="wl-bot-details-disclosure">
             <summary className="wl-bot-details-row wl-focus-ring-halo">
               <CalendarClock size={18} aria-hidden="true" />
@@ -134,14 +105,6 @@ export default function StudioBotDetailsPanel({
               </span>
             </div>
           </details>
-          <button className="wl-bot-details-row wl-focus-ring-halo" type="button" onClick={onSetup}>
-            <Settings2 size={18} aria-hidden="true" />
-            <span>
-              <strong>Setup</strong>
-              <small>Voice, instructions, and behavior</small>
-            </span>
-            <ChevronRight size={16} aria-hidden="true" />
-          </button>
         </div>
       </div>
     </div>

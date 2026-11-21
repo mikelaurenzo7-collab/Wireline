@@ -1,8 +1,45 @@
+import { useSyncExternalStore } from "react";
+
 /** A first brief stays in this browser tab until extraction is confirmed. */
 export const CREATE_BRIEF_MAX_CHARS = 10_000;
 const PREFIX = "wireline:create-brief:v1:";
 const memory = new Map<string, string>();
+const activeTraining = new Set<string>();
+const trainingListeners = new Set<() => void>();
 let currentOwner: string | null | undefined;
+
+function notifyTraining() {
+  for (const listener of trainingListeners) listener();
+}
+
+function subscribeToTraining(listener: () => void) {
+  trainingListeners.add(listener);
+  return () => trainingListeners.delete(listener);
+}
+
+export function isCreateBriefTraining(userId: string, agentId: string): boolean {
+  const key = keyFor(userId, agentId);
+  return key !== null && activeTraining.has(key);
+}
+
+export function useCreateBriefTraining(userId: string, agentId: string): boolean {
+  return useSyncExternalStore(
+    subscribeToTraining,
+    () => isCreateBriefTraining(userId, agentId),
+    () => false,
+  );
+}
+
+/** In-flight work is tab-local. A reload can recover the brief without assuming it saved. */
+export function beginCreateBriefTraining(userId: string, agentId: string): () => void {
+  const key = keyFor(userId, agentId);
+  if (!key) return () => {};
+  activeTraining.add(key);
+  notifyTraining();
+  return () => {
+    if (activeTraining.delete(key)) notifyTraining();
+  };
+}
 
 export function isCreateBriefRecoveryOwner(userId: string): boolean {
   return Boolean(userId) && (currentOwner === undefined || currentOwner === userId);
@@ -11,6 +48,7 @@ export function isCreateBriefRecoveryOwner(userId: string): boolean {
 /** A failed session probe cannot establish ownership or erase a private draft. */
 export function suspendCreateBriefRecovery(): void {
   currentOwner = null;
+  notifyTraining();
 }
 
 function keyFor(userId: string, agentId: string): string | null {
@@ -26,6 +64,10 @@ export function setCreateBriefRecoveryOwner(userId: string | null): void {
   for (const key of memory.keys()) {
     if (!keepPrefix || !key.startsWith(keepPrefix)) memory.delete(key);
   }
+  for (const key of activeTraining) {
+    if (!keepPrefix || !key.startsWith(keepPrefix)) activeTraining.delete(key);
+  }
+  notifyTraining();
   try {
     for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
       const key = sessionStorage.key(index);

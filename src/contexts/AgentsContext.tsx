@@ -30,6 +30,7 @@ interface AgentsContextValue {
   refresh: () => void;
   /** Load the Bot list and resolve after it is stored, before a route change. */
   reload: () => Promise<void>;
+  rememberCreatedAgent: (agent: WorkspaceAgentSummary) => void;
   forgetDeletedAgent: (agentId: string) => void;
 }
 
@@ -41,6 +42,7 @@ const AgentsContext = createContext<AgentsContextValue>({
   hasAgents: false,
   refresh: () => {},
   reload: async () => {},
+  rememberCreatedAgent: () => {},
   forgetDeletedAgent: () => {},
 });
 
@@ -181,6 +183,18 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user?.id]);
   const refresh = useCallback(() => setNonce((value) => value + 1), []);
+  const rememberCreatedAgent = useCallback(
+    (agent: WorkspaceAgentSummary) => {
+      // The create response confirms this Bot. Discard inventory reads
+      // started before creation, and let number lookup refresh in parallel.
+      generation.current += 1;
+      setAgents((current) => [...current.filter((entry) => entry.id !== agent.id), agent]);
+      setLoading(false);
+      setDegraded(false);
+      refresh();
+    },
+    [refresh],
+  );
   const forgetDeletedAgent = useCallback((agentId: string) => {
     // An inventory request started before deletion must not restore the old Bot.
     generation.current += 1;
@@ -226,9 +240,19 @@ export function AgentsProvider({ children }: { children: React.ReactNode }) {
       hasAgents: agents.length > 0,
       refresh,
       reload,
+      rememberCreatedAgent,
       forgetDeletedAgent,
     }),
-    [agents, loading, degraded, phoneLookupDegraded, refresh, reload, forgetDeletedAgent],
+    [
+      agents,
+      loading,
+      degraded,
+      phoneLookupDegraded,
+      refresh,
+      reload,
+      rememberCreatedAgent,
+      forgetDeletedAgent,
+    ],
   );
 
   return <AgentsContext.Provider value={value}>{children}</AgentsContext.Provider>;

@@ -89,6 +89,7 @@ vi.mock("../src/contexts/AgentsContext", () => ({
     refresh: h.refreshAgents,
   }),
 }));
+vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: null }) }));
 vi.mock("../src/lib/api", () => ({ authFetch: h.fetch }));
 vi.mock("../src/hooks/useStreamingChat", () => ({
   useStreamingChat: () => ({ state: { phase: "idle" }, send: vi.fn(), reset: vi.fn() }),

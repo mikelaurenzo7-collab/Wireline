@@ -63,6 +63,7 @@ vi.mock("react", async (original) => ({
     if (h.mounting) h.effects.push(effect);
   },
   useMemo: (factory: () => unknown) => factory(),
+  useSyncExternalStore: (_subscribe: unknown, snapshot: () => unknown) => snapshot(),
 }));
 vi.mock("react-router", () => ({ Link: "a" }));
 vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: h.userId } }) }));

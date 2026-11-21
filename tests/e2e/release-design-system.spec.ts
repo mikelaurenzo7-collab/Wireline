@@ -380,7 +380,7 @@ test("Studio retains a draft and exposes the final action after text enlargement
     });
     throw error;
   }
-  await page.getByRole("button", { name: "Close panel", exact: true }).click();
+  await page.getByRole("button", { name: "Back to Work", exact: true }).click();
   const composer = page.getByRole("textbox", { name: "Message Front Desk", exact: true });
   await expect(composer).toBeVisible();
   const suggestions = page

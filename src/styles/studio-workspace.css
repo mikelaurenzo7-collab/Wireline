@@ -196,11 +196,6 @@
 }
 
 @media (max-width: 767px) {
-  .wl-studio-panel-header {
-    min-width: 0;
-    overflow: hidden;
-  }
-
   .wl-studio-panel-tabs {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -248,24 +243,6 @@
   flex: 0 0 auto;
   align-items: center;
   margin-inline-start: auto;
-}
-
-/* Keep the two navigation levels distinct in the narrow desktop inspector. */
-@media (min-width: 1180px) {
-  .wl-studio-panel-header {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-
-  .wl-studio-panel-tabs--configure {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-
-  .wl-studio-panel-actions {
-    grid-column: 2;
-    grid-row: 1;
-  }
 }
 
 .wl-studio-panel-action {
@@ -556,40 +533,6 @@
   overflow-wrap: anywhere;
 }
 
-.wl-studio-surface-nav {
-  display: flex;
-  flex: 0 0 auto;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  padding: 0.4rem 0.75rem;
-  border-bottom: 1px solid var(--studio-rule);
-}
-
-.wl-studio-surface-nav button {
-  display: inline-flex;
-  min-width: 0;
-  min-height: 2.75rem;
-  flex: 1 1 5rem;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.8rem;
-  border-radius: 0.5rem;
-  color: var(--wireline-color-text-secondary);
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.wl-studio-surface-nav button[aria-pressed="true"] {
-  background: var(--wireline-color-surface-subtle);
-  color: var(--wireline-color-text-primary);
-}
-
-.wl-studio-surface-nav button:focus-visible {
-  outline: 2px solid var(--wireline-color-focus-default);
-  outline-offset: 2px;
-}
-
 .wl-studio-chat__header {
   min-height: 3.5rem;
   border-bottom: 1px solid var(--studio-rule);
@@ -652,10 +595,6 @@
 }
 
 @media (max-width: 639px) {
-  .wl-studio-surface-nav {
-    padding-block: 0.25rem;
-  }
-
   .wl-studio-chat__composer {
     padding: 0.25rem 0.75rem 0.5rem;
   }

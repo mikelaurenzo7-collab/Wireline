@@ -1,6 +1,6 @@
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, gte, ne } from "drizzle-orm";
+import { eq, and, desc, gte, ne } from "drizzle-orm";
 import { assertFederalDncForMarketing, isFederalDncListed } from "./federal-dnc-service";
 import { getDncProvider } from "./dnc-provider";
 import { isDncBlocked } from "./compliance";
@@ -15,15 +15,33 @@ import {
   SALES_DNC_LISTED_MESSAGE,
   quietHoursBlockedMessage,
 } from "./outbound-compliance-copy";
-import {
-  recordOutboundPurposeAudit,
-  type OutboundAuditDecision,
-} from "./outbound-purpose-audit";
+import { recordOutboundPurposeAudit, type OutboundAuditDecision } from "./outbound-purpose-audit";
 import type { DerivedRelationship } from "./outbound-relationship";
 import { currentSalesDncAttestation } from "./sales-dnc-attestation";
+import type { OutboundPurpose } from "./outbound-call-purpose";
 
 const DUPLICATE_WINDOW_MS = 24 * 60 * 60 * 1000;
 const SAN_RE = /^[A-Za-z0-9-]{6,20}$/;
+const SERVICE_PURPOSES: readonly OutboundPurpose[] = [
+  "appointment_service",
+  "existing_customer",
+  "returning_contact",
+  "callback",
+];
+const CARRIER_TERMINAL_STATES = ["completed", "busy", "no-answer", "failed", "canceled"];
+
+function confirmedCarrierOutcome(lead: {
+  callId: string | null;
+  metadata: unknown;
+}): string | null {
+  if (!lead.callId || !lead.metadata || typeof lead.metadata !== "object") return null;
+  const voice = (lead.metadata as { native_voice?: unknown }).native_voice;
+  if (!voice || typeof voice !== "object") return null;
+  const terminal = voice as { carrier_status?: unknown; twilio_call_sid?: unknown };
+  return terminal.twilio_call_sid === lead.callId && typeof terminal.carrier_status === "string"
+    ? terminal.carrier_status
+    : null;
+}
 
 /** Merge gate diagnostics onto the current lead document without replacing it. */
 export function mergeLeadMetadata(
@@ -61,7 +79,12 @@ export type OutboundAuditInput = {
 };
 
 export type OutboundDialGateResult =
-  | { allowed: true; tcpaDecision: ConsentDecision; customerMessage?: string; contentWarning?: string | null }
+  | {
+      allowed: true;
+      tcpaDecision: ConsentDecision;
+      customerMessage?: string;
+      contentWarning?: string | null;
+    }
   | {
       allowed: false;
       status: string;
@@ -111,7 +134,8 @@ function registryProjectId(san: unknown, registration: unknown): string | undefi
  * Shared compliance gate for campaign dials, intake auto-dial, callbacks, and
  * manual Studio outbound. Federal Do Not Call screening runs only for sales.
  * Every purpose still enforces quiet hours, the workspace opt-out list, and
- * the one-call-per-day window.
+ * the repeat-call window. Owner-initiated service calls can retry a confirmed
+ * busy or unanswered number. A requested callback may follow a settled call.
  *
  * Bulk sales fails closed when no provider is configured. One-off sales does
  * not: it requires the workspace attestation, and it screens only when a
@@ -152,6 +176,8 @@ export async function evaluateOutboundDialGate(opts: {
    * Federal DNC still runs only when the effective purpose is sales.
    */
   isLiveSessionFollowUp?: boolean;
+  /** Purpose confirmed by the owner in the atomic direct voice dial flow. */
+  manualCallPurpose?: OutboundPurpose;
   audit?: OutboundAuditInput;
 }): Promise<OutboundDialGateResult> {
   const isLiveSessionFollowUp = opts.isLiveSessionFollowUp === true;
@@ -169,7 +195,13 @@ export async function evaluateOutboundDialGate(opts: {
   const effectivePurpose = opts.audit?.effectivePurpose ?? requestedPurpose;
   const auditBase: Omit<
     OutboundAuditDecision,
-    "dncChecked" | "dncSource" | "decision" | "blockCode" | "dncResult" | "dncListVersion" | "quietHoursTz"
+    | "dncChecked"
+    | "dncSource"
+    | "decision"
+    | "blockCode"
+    | "dncResult"
+    | "dncListVersion"
+    | "quietHoursTz"
   > = {
     userId: opts.userId,
     channel: opts.audit?.channel ?? "call",
@@ -233,15 +265,18 @@ export async function evaluateOutboundDialGate(opts: {
   } else if (requiresFederalDncScreening) {
     const federalGate = assertFederalDncForMarketing();
     if (!federalGate.allowed) {
-      return finish({
-        allowed: false,
-        status: "AutoDialFailed",
-        reason: "federal_dnc_unconfigured",
-        metadataPatch: { federal_dnc_configured: false },
-        federalDncCode: federalGate.code,
-        federalDncMessage: federalGate.message,
-        customerMessage: federalGate.message,
-      }, { dncResult: "unconfigured" });
+      return finish(
+        {
+          allowed: false,
+          status: "AutoDialFailed",
+          reason: "federal_dnc_unconfigured",
+          metadataPatch: { federal_dnc_configured: false },
+          federalDncCode: federalGate.code,
+          federalDncMessage: federalGate.message,
+          customerMessage: federalGate.message,
+        },
+        { dncResult: "unconfigured" },
+      );
     }
   }
 
@@ -292,19 +327,36 @@ export async function evaluateOutboundDialGate(opts: {
     const otherConditions = [
       eq(schema.outboundLeads.userId, opts.userId),
       eq(schema.outboundLeads.customerNumber, opts.phone),
+      eq(schema.outboundLeads.demo, false),
       gte(schema.outboundLeads.lastCalledAt, since),
     ];
     if (opts.leadId != null && opts.leadId !== "") {
       otherConditions.push(ne(schema.outboundLeads.id, BigInt(opts.leadId)));
     }
 
-    const [otherRecent] = await drizzle
-      .select({ id: schema.outboundLeads.id })
+    const manualService =
+      !requiresFederalDncScreening &&
+      opts.manualCallPurpose !== undefined &&
+      SERVICE_PURPOSES.includes(opts.manualCallPurpose);
+    const recentQuery = drizzle
+      .select({
+        id: schema.outboundLeads.id,
+        callId: schema.outboundLeads.callId,
+        metadata: schema.outboundLeads.metadata,
+      })
       .from(schema.outboundLeads)
-      .where(and(...otherConditions))
-      .limit(1);
+      .where(and(...otherConditions));
+    const [otherRecent, secondRecent] = manualService
+      ? await recentQuery.orderBy(desc(schema.outboundLeads.lastCalledAt)).limit(2)
+      : await recentQuery.limit(1);
+    const outcome = manualService && otherRecent ? confirmedCarrierOutcome(otherRecent) : null;
+    const callbackAllowed =
+      opts.manualCallPurpose === "callback" &&
+      outcome !== null &&
+      CARRIER_TERMINAL_STATES.includes(outcome);
+    const retryAllowed = !secondRecent && (outcome === "busy" || outcome === "no-answer");
 
-    if (otherRecent) {
+    if (otherRecent && !callbackAllowed && !retryAllowed) {
       return finish(
         {
           allowed: false,

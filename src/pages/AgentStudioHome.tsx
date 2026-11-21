@@ -14,11 +14,7 @@ import {
   type BrowserCommandContext,
 } from "../lib/browser-command-context";
 import { bootstrapManagedBotIdentity } from "../lib/bot-identity-bootstrap";
-import {
-  consumeCreateWarning,
-  readPostCreateWizard,
-  updatePostCreateWizard,
-} from "../lib/wireline-create-flow";
+import { readPostCreateWizard, updatePostCreateWizard } from "../lib/wireline-create-flow";
 import type { PostCreateWizardPayload } from "../lib/wireline-create-flow";
 import PostCreateActivationWizard from "../components/onboarding/PostCreateActivationWizard";
 import { authFetch } from "../lib/api";
@@ -108,18 +104,6 @@ export default function AgentStudioHome() {
       cancelled = true;
     };
   }, [loading, handoffId, setParams, toast]);
-
-  useEffect(() => {
-    const warning = consumeCreateWarning();
-    if (warning) {
-      toast({
-        type: "warning",
-        title: "Bot Created",
-        message: warning,
-        duration: 12_000,
-      });
-    }
-  }, [toast, params]);
 
   useEffect(() => {
     const wizard = readPostCreateWizard();

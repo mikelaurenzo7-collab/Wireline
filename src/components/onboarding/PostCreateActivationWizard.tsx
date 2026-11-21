@@ -9,12 +9,13 @@ import SimpleVoicePicker from "../voice/SimpleVoicePicker";
 import { Button } from "../atoms";
 import { StatusNotice } from "../molecules";
 import SoftOpenCheckoutNote from "./SoftOpenCheckoutNote";
+import { useAuth } from "../../contexts/AuthContext";
 import { authFetch } from "../../lib/api";
+import { readCreateBrief, useCreateBriefTraining } from "../../lib/create-brief-recovery";
 import { fetchSelfServeCheckoutAvailable } from "../../lib/checkout-availability";
 import {
   ACTIVATION_PENDING_COPY,
   POST_CREATE_WIZARD_COPY,
-  SOFT_OPEN_CHECKOUT_COPY,
 } from "../../lib/wireline-onboarding-copy";
 import { setPostSignupFlowActive } from "../../lib/post-signup-onboarding";
 import {
@@ -67,7 +68,12 @@ export default function PostCreateActivationWizard({
   payload,
   onClose,
 }: PostCreateActivationWizardProps) {
+  const { user } = useAuth();
+  const trainingBrief = useCreateBriefTraining(user?.id ?? "", payload.agentId);
+  const briefNeedsReview =
+    !trainingBrief && Boolean(readCreateBrief(user?.id ?? "", payload.agentId));
   const access = useChannelEntitlements();
+  const hasVoiceAccess = access.includes("voice");
   const navigate = useNavigate();
   const [step, setStepState] = useState<WizardStep>(() => {
     const stored = readPostCreateWizardStep();
@@ -86,16 +92,11 @@ export default function PostCreateActivationWizard({
   // A reserved number is not proof of working routing. A successful inventory
   // read is authoritative, including when an older payload's line was removed.
   const phoneNumber = phoneLookup ? phoneLookup.phoneNumber : payload.phoneNumber || null;
-  const loadingPhone = refreshingPhone;
   const hasLiveLine = Boolean(
-    access.includes("voice") && phoneLookup?.active && !refreshingPhone && !phoneLookupFailed,
+    hasVoiceAccess && phoneLookup?.active && !refreshingPhone && !phoneLookupFailed,
   );
   const [wireError, setWireError] = useState<string | null>(null);
-  // 402 ACTIVATION_REQUIRED is not an error — it is the go-live moment for a
-  // customer who just built and trained a Bot. When checkout is open it is a
-  // plan-choice panel. When checkout is closed it must not imply Stripe works.
   const [checkoutAvailable, setCheckoutAvailable] = useState<boolean | null>(null);
-  const activationNeeded = !phoneNumber && payload.phoneActivationRequired === true;
   const [testStarted, setTestStarted] = useState(false);
 
   const stepOrder: WizardStep[] = ["train", "voice", "test", "launch", "complete"];
@@ -232,7 +233,7 @@ export default function PostCreateActivationWizard({
   }, [payload.agentId, phoneNumber, hasLiveLine]);
 
   const completeCopy = useMemo(() => {
-    if (!access.includes("voice"))
+    if (!hasVoiceAccess)
       return {
         title: "Your Bot Is Saved",
         detail: "Keep rehearsing privately, or open your selected channels to finish setup.",
@@ -252,37 +253,11 @@ export default function PostCreateActivationWizard({
         detail: "Calling is not confirmed yet. Open Phone setup to finish connecting this number.",
       };
     }
-    if (activationNeeded && checkoutAvailable === false) {
-      return {
-        title: POST_CREATE_WIZARD_COPY.complete.deferredTitle,
-        detail: SOFT_OPEN_CHECKOUT_COPY.savedDetail(payload.agentName),
-      };
-    }
     return {
       title: POST_CREATE_WIZARD_COPY.complete.deferredTitle,
       detail: POST_CREATE_WIZARD_COPY.complete.deferredDetail(payload.agentName),
     };
-  }, [
-    hasLine,
-    hasLiveLine,
-    phoneNumber,
-    payload.agentName,
-    checkoutAvailable,
-    activationNeeded,
-    access,
-  ]);
-
-  // A sales pause must not prevent an existing paid customer from choosing
-  // their line. The Phone picker checks current server-owned entitlement.
-  const checkoutClosed = activationNeeded && checkoutAvailable === false;
-  const canProvisionNumber = !activationNeeded || checkoutAvailable === true;
-  const waitingForLaunch =
-    loadingPhone ||
-    (activationNeeded &&
-      !hasLiveLine &&
-      !hasLine &&
-      !phoneLookupFailed &&
-      checkoutAvailable === null);
+  }, [hasVoiceAccess, hasLine, hasLiveLine, phoneNumber, payload.agentName]);
 
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalFocusTrap(dialogRef, { onEscape: dismiss });
@@ -350,6 +325,16 @@ export default function PostCreateActivationWizard({
         </nav>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+          {trainingBrief ? (
+            <StatusNotice tone="info" className="mb-4">
+              Applying your starting brief…
+            </StatusNotice>
+          ) : briefNeedsReview ? (
+            <StatusNotice tone="info" className="mb-4">
+              Your starting brief is saved in Set Up. Open Tone &amp; Knowledge to review and apply
+              it.
+            </StatusNotice>
+          ) : null}
           {step === "train" ? (
             <section className="grid gap-4">
               <div>
@@ -403,7 +388,7 @@ export default function PostCreateActivationWizard({
             </section>
           ) : null}
 
-          {step === "launch" && !access.includes("voice") ? (
+          {step === "launch" && !hasVoiceAccess ? (
             <section className="grid gap-4">
               {access.status !== "ready" ? (
                 <ChannelAccessNotice access={access} channel="voice" />
@@ -435,15 +420,15 @@ export default function PostCreateActivationWizard({
                     ) : null}
                   </div>
                 </>
+              ) : checkoutAvailable === null ? (
+                <p role="status" className="text-sm text-muted-foreground">
+                  Checking plan availability…
+                </p>
+              ) : checkoutAvailable === false ? (
+                <SoftOpenCheckoutNote />
               ) : (
                 <>
-                  {checkoutAvailable === false ? (
-                    <SoftOpenCheckoutNote />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Calls, SMS, Email, and Computer.
-                    </p>
-                  )}
+                  <p className="text-sm text-muted-foreground">Calls, SMS, Email, and Computer.</p>
                   <Button asChild size="sm">
                     <Link
                       to={activationPlanPath}
@@ -459,15 +444,13 @@ export default function PostCreateActivationWizard({
               </Button>
             </section>
           ) : null}
-          {step === "launch" && access.includes("voice") ? (
+          {step === "launch" && hasVoiceAccess ? (
             <section className="grid gap-4">
-              {waitingForLaunch ? (
+              {refreshingPhone ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                   Checking your line…
                 </div>
-              ) : checkoutClosed && !hasLiveLine && !hasLine && !phoneLookupFailed ? (
-                <SoftOpenCheckoutNote />
               ) : (
                 <>
                   <div>
@@ -475,7 +458,7 @@ export default function PostCreateActivationWizard({
                       {POST_CREATE_WIZARD_COPY.steps.launch.title}
                     </p>
                     <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                      Your Calls package includes a US number. Callers reach this Bot directly.
+                      {POST_CREATE_WIZARD_COPY.steps.launch.detail}
                     </p>
                   </div>
 
@@ -511,24 +494,7 @@ export default function PostCreateActivationWizard({
                     </div>
                   )}
 
-                  {activationNeeded && !phoneLookupFailed && canProvisionNumber ? (
-                    <div className="rounded-xl border border-primary/25 bg-[var(--wireline-color-action-primary-container)] px-4 py-4">
-                      <p className="text-sm font-semibold text-foreground">
-                        {POST_CREATE_WIZARD_COPY.steps.launch.activationRequired}
-                      </p>
-                      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                        Review your selected package in Billing before connecting a number.
-                      </p>
-                      <Button asChild size="sm" className="mt-3">
-                        <Link
-                          to={activationPlanPath}
-                          onClick={() => stashPostCreateWizardStep("launch")}
-                        >
-                          {POST_CREATE_WIZARD_COPY.steps.launch.activationCta}
-                        </Link>
-                      </Button>
-                    </div>
-                  ) : wireError ? (
+                  {wireError ? (
                     <StatusNotice
                       tone="destructive"
                       title={wireError}
@@ -581,23 +547,17 @@ export default function PostCreateActivationWizard({
                       </Link>
                     </Button>
                   </>
-                ) : checkoutClosed ? (
-                  <Button type="button" variant="secondary" size="sm" onClick={() => finish()}>
-                    {POST_CREATE_WIZARD_COPY.steps.launch.skip}
-                  </Button>
                 ) : (
                   <>
-                    {canProvisionNumber ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={refreshingPhone || phoneLookupFailed}
-                        onClick={chooseNumber}
-                      >
-                        <Phone size={14} aria-hidden="true" />
-                        {POST_CREATE_WIZARD_COPY.steps.launch.primary}
-                      </Button>
-                    ) : null}
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={refreshingPhone || phoneLookupFailed}
+                      onClick={chooseNumber}
+                    >
+                      <Phone size={14} aria-hidden="true" />
+                      {POST_CREATE_WIZARD_COPY.steps.launch.primary}
+                    </Button>
                     <Button type="button" variant="secondary" size="sm" onClick={() => finish()}>
                       {POST_CREATE_WIZARD_COPY.steps.launch.skip}
                     </Button>
@@ -723,20 +683,10 @@ export default function PostCreateActivationWizard({
           ) : null}
           {step === "complete" ? (
             <>
-              {!hasLiveLine && access.includes("voice") ? (
+              {!hasLiveLine && hasVoiceAccess ? (
                 <Button asChild variant="secondary" size="sm">
-                  <Link
-                    to={
-                      checkoutClosed && !hasLine
-                        ? SOFT_OPEN_CHECKOUT_COPY.href
-                        : `/phone?tab=setup&agent=${encodeURIComponent(payload.agentId)}`
-                    }
-                  >
-                    {hasLine
-                      ? "Open Phone Setup"
-                      : checkoutClosed
-                        ? SOFT_OPEN_CHECKOUT_COPY.cta
-                        : POST_CREATE_WIZARD_COPY.complete.phoneCta}
+                  <Link to={`/phone?tab=setup&agent=${encodeURIComponent(payload.agentId)}`}>
+                    {hasLine ? "Open Phone Setup" : POST_CREATE_WIZARD_COPY.complete.phoneCta}
                   </Link>
                 </Button>
               ) : null}

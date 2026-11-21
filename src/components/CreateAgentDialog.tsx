@@ -13,10 +13,11 @@ import { useNavigate, useSearchParams } from "react-router";
 import { Button, Input, Textarea } from "./atoms";
 import BotMarkPicker from "./BotMarkPicker";
 import { StatusNotice } from "./molecules";
-import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
+import { useAgents, type WorkspaceAgentSummary } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import {
   CREATE_BRIEF_MAX_CHARS,
+  beginCreateBriefTraining,
   clearCreateBrief,
   isCreateBriefRecoveryOwner,
   rememberCreateBrief,
@@ -24,11 +25,7 @@ import {
 import { extractionPersistedSomething } from "../lib/training-extraction-result";
 import { authFetch, safeJson } from "../lib/api";
 import { isBusinessTemplateCategory } from "../lib/agent-create-defaults";
-import {
-  stashCreateWarning,
-  stashPostCreateWizard,
-  type PostCreateWizardPayload,
-} from "../lib/wireline-create-flow";
+import { stashPostCreateWizard, type PostCreateWizardPayload } from "../lib/wireline-create-flow";
 import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { setPostSignupFlowActive } from "../lib/post-signup-onboarding";
@@ -88,6 +85,68 @@ function defaultName(templateKey: TemplateKey) {
   return `${template.name} Bot`;
 }
 
+async function applyStartingBrief({
+  userId,
+  agentId,
+  brief,
+  template,
+  signal,
+  reportTraining,
+}: {
+  userId: string;
+  agentId: string;
+  brief: string;
+  template: ReturnType<typeof templateForKey>;
+  signal: AbortSignal;
+  reportTraining: boolean;
+}) {
+  if (!rememberCreateBrief(userId, agentId, brief)) return;
+  const finish = beginCreateBriefTraining(userId, agentId);
+  try {
+    const response = await authFetch("/api/train/extract", {
+      method: "POST",
+      signal,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        agentId,
+        message: [
+          `Role starter: ${template.name}.`,
+          `Conversation direction: ${template.direction}.`,
+          `Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")
+            .map((channel) => channel.label)
+            .join(", ")}.`,
+          `First brief: ${brief}`,
+        ].join("\n"),
+      }),
+    });
+    const applied = await extractionPersistedSomething(response);
+    if (!applied || !isCreateBriefRecoveryOwner(userId) || signal.aborted) return;
+    clearCreateBrief(userId, agentId, brief);
+    if (reportTraining) {
+      emitProductEvent({
+        event: "training_asset_added",
+        agentId,
+        metadata: {
+          source: "fast_start_brief",
+          template: template.key,
+          role: TECHNICAL_ROLE_BY_TEMPLATE[template.key],
+          workspace_model: "one_workspace",
+          object: "bot",
+        },
+      });
+      emitProductEvent({
+        event: "launch_readiness_reached",
+        agentId,
+        metadata: { source: "fast_start_brief", has_training: true },
+      });
+    }
+  } catch {
+    // Setup can recover the original brief if the automatic pass fails.
+  } finally {
+    finish();
+  }
+}
+
 /** Keep provider and infrastructure errors out of the first-run experience. */
 function safeCreateAgentError(
   status: number,
@@ -137,7 +196,7 @@ export default function CreateAgentDialog({
 }) {
   const navigate = useNavigate();
   const [, setParams] = useSearchParams();
-  const { agents, refresh, reload } = useAgents();
+  const { agents, rememberCreatedAgent } = useAgents();
   const { user } = useAuth();
   const activeUserIdRef = useRef(user?.id ?? null);
   const createAbortRef = useRef<AbortController | null>(null);
@@ -160,7 +219,6 @@ export default function CreateAgentDialog({
   const briefIsTemplateTextRef = useRef(true);
   const markWasChosenRef = useRef(false);
   const [creating, setCreating] = useState(false);
-  const [createStage, setCreateStage] = useState<"creating" | "training">("creating");
   const [error, setError] = useState("");
   const [customizing, setCustomizing] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -272,7 +330,6 @@ export default function CreateAgentDialog({
     const legacyCapabilityProfile = isBusinessTemplateCategory(selectedTemplate.category);
 
     setCreating(true);
-    setCreateStage("creating");
     setError("");
     const controller = new AbortController();
     createAbortRef.current = controller;
@@ -292,12 +349,16 @@ export default function CreateAgentDialog({
       });
       const body = (await safeJson(response)) as {
         id?: string;
+        name?: string;
         mark_key?: unknown;
+        role?: string;
+        channel?: WorkspaceAgentSummary["channel"];
+        is_business_agent?: boolean;
         error?: string;
         code?: string;
       } | null;
       if (!isCreateBriefRecoveryOwner(creationUserId) || controller.signal.aborted) return;
-      if (!response.ok || !body?.id) {
+      if (!response.ok || typeof body?.id !== "string" || !body.id) {
         if (isCurrentAccount()) {
           // The Bot limit opens the account-wide limit dialog, which states the
           // plan's real cap and links to Studio. Left open beneath it, this form
@@ -316,61 +377,27 @@ export default function CreateAgentDialog({
         return;
       }
 
-      let trainingApplied = false;
+      const savedAgent: WorkspaceAgentSummary = {
+        id: body.id,
+        name: body.name || finalName,
+        mark_key: isBotMarkKey(body.mark_key) ? body.mark_key : null,
+        role: body.role ?? role,
+        channel: body.channel ?? "voice",
+        is_business_agent: body.is_business_agent ?? legacyCapabilityProfile,
+      };
+      const stillOpen = isCurrentAccount();
       if (finalBrief) {
-        setCreateStage("training");
-        rememberCreateBrief(creationUserId, body.id, finalBrief);
-        try {
-          const extractRes = await authFetch("/api/train/extract", {
-            method: "POST",
-            signal: controller.signal,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              agentId: body.id,
-              message: [
-                `Role starter: ${selectedTemplate.name}.`,
-                `Conversation direction: ${selectedTemplate.direction}.`,
-                `Configurable channels: ${BOT_CHANNELS.filter((channel) => channel.key !== "text")
-                  .map((channel) => channel.label)
-                  .join(", ")}.`,
-                `First brief: ${finalBrief}`,
-              ].join("\n"),
-            }),
-          });
-          trainingApplied = await extractionPersistedSomething(extractRes);
-        } catch {
-          trainingApplied = false;
-        }
-      }
-
-      if (!isCreateBriefRecoveryOwner(creationUserId) || controller.signal.aborted) return;
-      if (trainingApplied) clearCreateBrief(creationUserId, body.id, finalBrief);
-      if (!isCurrentAccount()) return;
-      await reload();
-      window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
-      refresh();
-      if (trainingApplied) {
-        emitProductEvent({
-          event: "training_asset_added",
+        void applyStartingBrief({
+          userId: creationUserId,
           agentId: body.id,
-          metadata: {
-            source: "fast_start_brief",
-            template: templateKey,
-            role,
-            workspace_model: "one_workspace",
-            object: "bot",
-          },
+          brief: finalBrief,
+          template: selectedTemplate,
+          signal: controller.signal,
+          reportTraining: stillOpen,
         });
-        emitProductEvent({
-          event: "launch_readiness_reached",
-          agentId: body.id,
-          metadata: { source: "fast_start_brief", has_training: true },
-        });
-      } else if (finalBrief) {
-        stashCreateWarning(
-          `${finalName} was created. Your starting brief is preserved in Tone & knowledge. Review it and save changes to try again.`,
-        );
       }
+      rememberCreatedAgent(savedAgent);
+      if (!stillOpen) return;
       emitProductEvent({
         event: "agent_draft_created",
         agentId: body.id,
@@ -408,8 +435,8 @@ export default function CreateAgentDialog({
       }
       const wizardPayload: PostCreateWizardPayload = {
         agentId: body.id,
-        agentName: finalName,
-        markKey: isBotMarkKey(body.mark_key) ? body.mark_key : null,
+        agentName: savedAgent.name,
+        markKey: savedAgent.mark_key ?? null,
         phoneProvisionRequested: false,
         phoneProvisioned: false,
       };
@@ -591,9 +618,7 @@ export default function CreateAgentDialog({
 
           {creating ? (
             <p aria-live="polite" className="mt-5 text-sm text-muted-foreground">
-              {createStage === "training"
-                ? "Bot created. Now teaching it the job from your brief. This can take a few seconds."
-                : "Creating your Bot…"}
+              Creating your Bot…
             </p>
           ) : null}
 
@@ -625,11 +650,7 @@ export default function CreateAgentDialog({
               ) : (
                 <WandSparkles size={15} aria-hidden="true" />
               )}
-              {creating
-                ? createStage === "training"
-                  ? "Teaching It the Job…"
-                  : "Creating Your Bot…"
-                : language.createCta}
+              {creating ? "Creating Your Bot…" : language.createCta}
             </Button>
           </div>
         </div>
