@@ -277,6 +277,7 @@ describe("native calendar transactional booking", () => {
   });
 
   it("requests owner approval when inherited confirmation resolves to Ask", async () => {
+    h.rows.get("wireline_settings")![0].nativeCalendar.booking_mode = "inherit";
     h.rows.set("wireline_agents", [{ id: "owned", userId: user, autonomyLevel: "draft" }]);
     const asked = await bookNativeAppointment(user, { ...input("ask"), agentId: "owned" });
     expect(asked.status).toBe("Requested");
