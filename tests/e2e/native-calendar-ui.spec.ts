@@ -151,6 +151,86 @@ test("native bookings do not imply that a Google Calendar event exists", async (
   await expect(booking.getByRole("link", { name: /Google Calendar/ })).toHaveCount(0);
 });
 
+test("Calendar shows local booking days and refreshes an approval that changed elsewhere", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.clock.setFixedTime(new Date("2026-11-21T23:30:00Z"));
+  await mockCalendar(page);
+  await page.route("**/api/calendar/settings", (route) =>
+    route.fulfill({
+      json: {
+        configured: true,
+        settings: { ...initial(), enabled: true, booking_mode: "approval" },
+      },
+    }),
+  );
+  const appointment = {
+    id: "inspection-qa",
+    customer_name: "Jordan Lee",
+    service_type: "Property inspection",
+    booking_source: "native",
+    status: "Requested",
+    date: "2026-11-21",
+    time: "19:30",
+    start_at: "2026-11-22T01:30:00Z",
+    end_at: "2026-11-22T02:00:00Z",
+    time_zone: "America/Chicago",
+  };
+  const tomorrow = {
+    ...appointment,
+    id: "second-inspection-qa",
+    customer_name: "Sam Taylor",
+    service_type: "Second inspection",
+    status: "Confirmed",
+    date: "2026-11-22",
+    start_at: "2026-11-23T01:30:00Z",
+    end_at: "2026-11-23T02:00:00Z",
+  };
+  let refreshed = false;
+  const approvals: unknown[] = [];
+  await page.route(/\/api\/appointments(?:\?.*)?$/, (route) =>
+    route.fulfill({
+      json: {
+        appointments: [{ ...appointment, status: refreshed ? "Cancelled" : "Requested" }, tomorrow],
+      },
+    }),
+  );
+  await page.route("**/api/appointments/inspection-qa", (route) => {
+    const body = route.request().postDataJSON();
+    approvals.push(body);
+    refreshed = true;
+    return body.expected_status === "Requested"
+      ? route.fulfill({
+          status: 409,
+          json: {
+            code: "CONFLICT",
+            error: "This appointment changed. Refresh before updating it.",
+          },
+        })
+      : route.fulfill({ json: { appointment: { ...appointment, status: "Confirmed" } } });
+  });
+
+  await page.goto("/calendar");
+  const upcoming = page.getByRole("region", { name: "Upcoming" });
+  const row = upcoming.getByRole("listitem").filter({ hasText: "Property inspection" });
+  await expect(row).toContainText("7:30 PM");
+  await expect(upcoming.getByText("Today", { exact: true })).toBeVisible();
+  await expect(upcoming.getByText("Tomorrow", { exact: true })).toBeVisible();
+  await row.getByRole("button", { name: "Confirm", exact: true }).click();
+  await expect(
+    page.getByText("This appointment changed. Refresh before updating it."),
+  ).toBeVisible();
+  expect(approvals).toEqual([{ status: "Confirmed", expected_status: "Requested" }]);
+  await expect(row.getByText("Requested", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Refresh Calendar", exact: true }).click();
+  await page.locator("summary").filter({ hasText: "History" }).click();
+  const cancelled = page.getByRole("listitem").filter({ hasText: "Property inspection" });
+  await expect(cancelled.getByText("Cancelled", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Confirm", exact: true })).toHaveCount(0);
+  expect(approvals).toHaveLength(1);
+});
+
 for (const width of [320, 1440]) {
   test(`Calendar availability preserves failed drafts and fits ${width}px${width === 320 ? " at 200% text" : ""}`, async ({
     page,

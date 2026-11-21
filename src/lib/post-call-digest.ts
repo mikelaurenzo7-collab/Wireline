@@ -809,7 +809,7 @@ export function bookingRequestLine(request: DigestBookingRequest): string {
 }
 
 const BOOKING_REQUEST_NEXT_ACTION =
-  "Confirm or cancel the booking request in Calendar so the caller gets an answer.";
+  "Confirm or cancel the booking request in Calendar, then let the caller know.";
 
 /** A booking the Bot made on this call (the calendar tool stores the call's id). */
 async function callBookedAppointment(userId: string, providerCallId: string): Promise<boolean> {

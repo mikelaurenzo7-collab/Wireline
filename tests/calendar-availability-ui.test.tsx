@@ -177,6 +177,39 @@ describe("native Calendar availability UI", () => {
     expect(button("Enable Booking").props.disabled).toBe(false);
   });
 
+  it("keeps the approval draft when a valid-looking receipt returns different booking rules", async () => {
+    field("calendar-booking-mode").props.onChange!({ target: { value: "approval" } });
+    h.fetch.mockResolvedValueOnce(
+      response({
+        settings: { ...settings, enabled: true, booking_mode: "automatic" },
+        configured: true,
+      }),
+    );
+    await submit();
+    expect(saved).not.toHaveBeenCalled();
+    expect(field("calendar-booking-mode").props.value).toBe("approval");
+    expect(text(render())).not.toContain("Availability saved.");
+  });
+
+  it("accepts the server's normalized timezone, name and weekday ordering", async () => {
+    settings = {
+      ...settings,
+      appointment_name: " Inspection ",
+      time_zone: "US/Central",
+      weekly_hours: [{ day: 5, start: "09:00", end: "17:00" }, ...settings.weekly_hours],
+    };
+    const confirmed = {
+      ...settings,
+      enabled: true,
+      appointment_name: "Inspection",
+      time_zone: "America/Chicago",
+      weekly_hours: [...settings.weekly_hours].reverse(),
+    };
+    h.fetch.mockResolvedValueOnce(response({ settings: confirmed, configured: true }));
+    await submit();
+    expect(saved).toHaveBeenCalledWith(confirmed);
+  });
+
   it("requires hours before enabling but allows an already configured calendar to be paused", async () => {
     settings.weekly_hours = [];
     await submit();

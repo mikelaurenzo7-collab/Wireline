@@ -53,6 +53,29 @@ export function readCalendarSettings(value: unknown): CalendarSettings | null {
   return settings;
 }
 
+export function calendarSettingsMatch(
+  expected: CalendarSettings,
+  saved: CalendarSettings,
+): boolean {
+  const zone = (timeZone: string) =>
+    new Intl.DateTimeFormat("en", { timeZone }).resolvedOptions().timeZone;
+  return (
+    expected.enabled === saved.enabled &&
+    zone(expected.time_zone) === zone(saved.time_zone) &&
+    expected.appointment_name.trim() === saved.appointment_name &&
+    expected.duration_minutes === saved.duration_minutes &&
+    expected.buffer_minutes === saved.buffer_minutes &&
+    expected.minimum_notice_minutes === saved.minimum_notice_minutes &&
+    expected.booking_mode === saved.booking_mode &&
+    expected.weekly_hours.length === saved.weekly_hours.length &&
+    expected.weekly_hours.every((hours) =>
+      saved.weekly_hours.some(
+        (row) => row.day === hours.day && row.start === hours.start && row.end === hours.end,
+      ),
+    )
+  );
+}
+
 export function initialCalendarSettings(
   settings: CalendarSettings,
   configured: boolean,

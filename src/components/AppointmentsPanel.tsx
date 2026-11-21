@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, CheckCircle2, Clock3, ExternalLink, RefreshCw } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import { addDaysToIsoDate } from "../lib/calendar-time";
+import { isoToLocalDateKey, localDateKey } from "../lib/date-display";
 import { formatPhone } from "../lib/safe-number";
 import { Badge, Button, EmptyState, Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";
@@ -383,15 +385,16 @@ function GoogleCalendarCard() {
   );
 }
 
-function groupAppointmentsByDay(items: Appointment[]) {
+function groupAppointmentsByDay(items: Appointment[], calendarTimeZone?: string) {
   const groups: Array<{ label: string; date: string; items: Appointment[] }> = [];
   const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
-  const tomorrow = new Date(now.getTime() + 86400000);
-  const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+  const todayStr = localDateKey(now, calendarTimeZone) || localDateKey(now);
+  const tomorrowStr = addDaysToIsoDate(todayStr, 1);
 
   for (const item of items) {
-    const rawDate = item.start_at?.slice(0, 10) || item.date || "Upcoming";
+    const bookedDate = item.time_zone && isoToLocalDateKey(item.start_at, item.time_zone);
+    const rawDate =
+      bookedDate || item.date || isoToLocalDateKey(item.start_at, calendarTimeZone) || "Upcoming";
     let label = rawDate;
     if (rawDate === todayStr) label = "Today";
     else if (rawDate === tomorrowStr) label = "Tomorrow";
@@ -421,11 +424,13 @@ function groupAppointmentsByDay(items: Appointment[]) {
 
 export default function AppointmentsPanel({
   calendarConfigured = null,
+  calendarTimeZone,
   onConfigure,
   reloadKey = 0,
   onAppointmentUpdated,
 }: {
   calendarConfigured?: boolean | null;
+  calendarTimeZone?: string;
   onConfigure?: () => void;
   reloadKey?: number;
   onAppointmentUpdated?: () => void;
@@ -475,6 +480,10 @@ export default function AppointmentsPanel({
       if (!Array.isArray(data?.appointments) || (data.hasMore && !data.nextCursor))
         throw new Error("Could not load appointment history. Try again.");
       const page = data.appointments;
+      if (!cursor) {
+        setMutationError(null);
+        setCancelConfirmId(null);
+      }
       setAppointments((current) => {
         if (!cursor) return page;
         const known = new Set(current.map((appointment) => appointment.id));
@@ -513,7 +522,7 @@ export default function AppointmentsPanel({
       const response = await authFetch(`/api/appointments/${encodeURIComponent(appointment.id)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, expected_status: appointment.status }),
       });
       const body = (await response.json().catch(() => null)) as {
         appointment?: { id?: string; status?: string };
@@ -600,7 +609,6 @@ export default function AppointmentsPanel({
   if (appointments.length === 0) {
     return (
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-5 sm:px-6">
-        <GoogleCalendarCard />
         <EmptyState
           headingAs="h2"
           framed
@@ -610,7 +618,11 @@ export default function AppointmentsPanel({
           className="w-full"
           icon={<CalendarDays className="size-5" aria-hidden="true" />}
           title="No Appointments Yet"
-          description="Appointments your Bot books will appear here."
+          description={
+            calendarConfigured === false
+              ? "Set your availability and booking rules so your Bot can take appointments."
+              : "Appointments your Bot books will appear here."
+          }
           action={
             calendarConfigured === false && onConfigure ? (
               <Button variant="secondary" size="sm" onClick={onConfigure}>
@@ -619,16 +631,31 @@ export default function AppointmentsPanel({
             ) : undefined
           }
         />
+        <GoogleCalendarCard />
       </div>
     );
   }
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-5 sm:px-6">
-      <GoogleCalendarCard />
-
       {mutationError ? (
-        <StatusNotice tone="warning" title="Appointment Not Updated">
+        <StatusNotice
+          tone="warning"
+          title="Appointment Not Updated"
+          action={
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                onAppointmentUpdated?.();
+                void loadAppointments();
+              }}
+            >
+              Refresh Calendar
+            </Button>
+          }
+        >
           {mutationError}
         </StatusNotice>
       ) : null}
@@ -641,7 +668,7 @@ export default function AppointmentsPanel({
         </div>
         {upcoming.length ? (
           <div className="space-y-4">
-            {groupAppointmentsByDay(upcoming).map((group) => (
+            {groupAppointmentsByDay(upcoming, calendarTimeZone).map((group) => (
               <div key={group.date} className="space-y-1.5">
                 <div className="flex items-center gap-2 px-0.5">
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -717,6 +744,7 @@ export default function AppointmentsPanel({
           </ul>
         </details>
       ) : null}
+      <GoogleCalendarCard />
     </div>
   );
 }

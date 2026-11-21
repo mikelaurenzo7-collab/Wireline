@@ -381,7 +381,9 @@ describe("durable post-call customer follow-up", () => {
       "Water heater &lt;quote&gt; on 2026-10-12 at 09:00 (America/Chicago) is waiting for you.",
     );
     expect(html).toContain("/calendar");
-    expect(html).toContain("Confirm or cancel the booking request in Calendar");
+    expect(html).toContain(
+      "Confirm or cancel the booking request in Calendar, then let the caller know.",
+    );
     expect(text).toContain(
       "Booking request: Water heater <quote> on 2026-10-12 at 09:00 (America/Chicago) is waiting for you.",
     );

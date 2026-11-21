@@ -1,7 +1,11 @@
 import { useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { authFetch } from "../lib/api";
-import { readCalendarSettings, type CalendarSettings } from "../lib/calendar-settings-client";
+import {
+  calendarSettingsMatch,
+  readCalendarSettings,
+  type CalendarSettings,
+} from "../lib/calendar-settings-client";
 import { timeZoneOptions } from "../lib/time-zone-options";
 import { Button, Input, NativeSelect, Switch } from "./atoms";
 import { StatusNotice } from "./molecules";
@@ -124,7 +128,7 @@ export default function CalendarAvailabilityPanel({
       if (!response.ok)
         throw new Error(body?.error || "Availability could not be saved. Try again.");
       const confirmed = readCalendarSettings(body?.settings);
-      if (!confirmed || body?.configured !== true)
+      if (!confirmed || body?.configured !== true || !calendarSettingsMatch(next, confirmed))
         throw new Error(
           "We couldn't confirm the saved availability. Reload Calendar to check it before retrying.",
         );
@@ -160,7 +164,8 @@ export default function CalendarAvailabilityPanel({
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Set your hours to let your Bot book appointments here.
+              Set when your Bot can book appointments and when you want to approve them. A Google or
+              Outlook connection is optional.
             </p>
           )}
 

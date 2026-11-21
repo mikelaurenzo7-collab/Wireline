@@ -322,10 +322,19 @@ describe("native calendar transactional booking", () => {
     await expect(bookNativeAppointment(user, input("another"))).rejects.toMatchObject({
       status: 409,
     });
-    expect((await updateCalendarAppointment(user, row.id, { status: "Confirmed" })).status).toBe(
-      "Confirmed",
-    );
+    const approved = await updateCalendarAppointment(user, row.id, {
+      status: "Confirmed",
+      expected_status: "Requested",
+    });
+    expect(approved.status).toBe("Confirmed");
+    await expect(
+      updateCalendarAppointment(user, row.id, {
+        status: "Cancelled",
+        expected_status: "Requested",
+      }),
+    ).rejects.toMatchObject({ status: 409 });
     expect(h.rows.get("wireline_appointments")).toHaveLength(1);
+    expect(h.rows.get("wireline_appointments")![0].status).toBe("Confirmed");
   });
 
   it.each(["Confirmed", "Scheduled", "Rescheduled"])(

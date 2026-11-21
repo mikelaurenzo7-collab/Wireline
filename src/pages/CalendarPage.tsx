@@ -152,6 +152,7 @@ export default function CalendarPage() {
                 calendarConfigured={
                   configured === null ? null : Boolean(configured && savedSettings?.enabled)
                 }
+                calendarTimeZone={configured ? savedSettings?.time_zone : undefined}
                 onConfigure={() => selectTab("availability")}
                 reloadKey={agendaReload}
                 onAppointmentUpdated={() => setBookingNotice(null)}

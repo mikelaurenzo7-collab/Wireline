@@ -287,7 +287,10 @@ describe("appointment history and recovery", () => {
     h.fetch.mockImplementation(async (_url: string, init?: RequestInit) => {
       if (init?.method === "PATCH") {
         patches++;
-        expect(JSON.parse(String(init.body))).toEqual({ status: "Confirmed" });
+        expect(JSON.parse(String(init.body))).toEqual({
+          status: "Confirmed",
+          expected_status: "Requested",
+        });
         return patches === 1
           ? response({ error: "That slot is no longer available." }, 409)
           : response({ appointment: { id: pending.id, status: "Confirmed" } });
