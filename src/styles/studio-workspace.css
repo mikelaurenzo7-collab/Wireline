@@ -403,84 +403,6 @@
   grid-column: 1 / -1;
 }
 
-.wl-studio-starters {
-  width: min(100%, 26rem);
-  color: var(--wireline-color-text-secondary);
-  font-size: 0.8125rem;
-  text-align: left;
-}
-
-.wl-studio-starters summary {
-  display: inline-flex;
-  min-height: 2.25rem;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto;
-  padding: 0.35rem 0.875rem;
-  border-radius: 9999px;
-  border: 1px solid color-mix(in srgb, var(--studio-rule) 75%, transparent);
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-surface-subtle) 65%,
-    var(--wireline-color-canvas-default)
-  );
-  cursor: pointer;
-  list-style: none;
-  font-size: 0.75rem;
-  font-weight: 500;
-  transition: all 140ms ease;
-}
-
-.wl-studio-starters summary::-webkit-details-marker {
-  display: none;
-}
-
-.wl-studio-starters summary::after {
-  margin-inline-start: 0.4rem;
-  content: "+";
-  font-weight: 400;
-  opacity: 0.65;
-}
-
-.wl-studio-starters[open] summary::after {
-  content: "-";
-}
-
-.wl-studio-starters > div {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  padding-top: 0.625rem;
-}
-
-.wl-studio-starters button {
-  min-height: 2.5rem;
-  padding: 0.5rem 0.875rem;
-  border-radius: 0.65rem;
-  border: 1px solid color-mix(in srgb, var(--studio-rule) 75%, transparent);
-  background: var(--wireline-color-surface-default);
-  color: var(--wireline-color-text-primary);
-  font-size: 0.8125rem;
-  line-height: 1.45;
-  text-align: left;
-  overflow-wrap: anywhere;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.03);
-  transition: all 140ms ease;
-}
-
-.wl-studio-starters summary:hover,
-.wl-studio-starters button:hover {
-  border-color: var(--wireline-color-border-strong);
-  background: var(--wireline-color-surface-subtle);
-  color: var(--wireline-color-text-primary);
-}
-
-.wl-studio-starters summary:focus-visible,
-.wl-studio-starters button:focus-visible {
-  outline: 2px solid var(--wireline-color-focus-default);
-  outline-offset: 2px;
-}
-
 .wl-workspace-shell .wl-work-send {
   border-color: var(--wireline-color-text-primary);
   background: var(--wireline-color-text-primary);
@@ -702,17 +624,6 @@
 
 .wl-studio-message.is-bot .wl-studio-message__body {
   padding-block: 0.25rem;
-}
-
-.wl-studio-chat__welcome {
-  display: flex;
-  min-height: 100%;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  padding: 2.5rem 1rem;
-  text-align: center;
 }
 
 .wl-studio-chat__composer > div {

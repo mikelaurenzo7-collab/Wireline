@@ -34,7 +34,6 @@ import StudioProposalReview, {
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import { authFetch } from "../lib/api";
 import type { BotMarkKey } from "../lib/bot-mark";
-import { WORKSPACE_VOICE } from "../lib/product-copy";
 import { reconcileStudioCommandDraft } from "../lib/studio-route-state";
 import { WL_COMPOSER_CLASSES } from "../lib/wireline-design-system";
 import { retainStudioConversationMessages } from "../lib/studio-session-state";
@@ -67,8 +66,6 @@ export type StudioConversationSession = {
 };
 
 type WorkroomMode = "configure" | "test";
-
-const CONFIGURE_PROMPTS = WORKSPACE_VOICE.configurePrompts;
 
 function MessageSkeletons() {
   return (
@@ -311,9 +308,6 @@ const StudioWorkroom = forwardRef<
   const injectedCommandNonceRef = useRef<string | null>(commandNonce || null);
   const split = layout === "split";
   const composerId = "studio-workroom-message";
-  const quickPrompts = CONFIGURE_PROMPTS;
-  const showStarterPrompts =
-    !taskComposer.taskMode && !loading && !sending && messages.length === 0 && !draft.trim();
 
   useImperativeHandle(
     ref,
@@ -594,26 +588,6 @@ const StudioWorkroom = forwardRef<
       {clearing ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
     </button>
   );
-  const starterPrompts = showStarterPrompts ? (
-    <details className="wl-studio-starters" aria-label="Starter prompts">
-      <summary>Suggestions</summary>
-      <div>
-        {quickPrompts.slice(0, 3).map((prompt) => (
-          <button
-            key={prompt}
-            type="button"
-            onClick={() => {
-              setDraft(prompt);
-              requestAnimationFrame(() => inputRef.current?.focus());
-            }}
-          >
-            {prompt}
-          </button>
-        ))}
-      </div>
-    </details>
-  ) : null;
-
   return (
     <section
       className="wl-studio-chat flex h-full min-h-0 flex-col overflow-y-auto bg-background"
@@ -796,9 +770,7 @@ const StudioWorkroom = forwardRef<
                     </div>
                   ) : null}
                 </div>
-              ) : (
-                <div className="wl-studio-chat__welcome">{starterPrompts}</div>
-              )}
+              ) : null}
             </div>
           </section>
 

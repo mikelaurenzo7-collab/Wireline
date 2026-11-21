@@ -176,7 +176,6 @@ export const WORKSPACE_VOICE = {
   createHeadline: "Create Your Bot",
   runHeadline: "Your Bot Is Live",
   emptyCue: "Describe the job. Connect calls, email, knowledge, and computer tasks.",
-  configurePrompts: ["Set the greeting", "Choose the tone", "Add a rule"],
   testPrompts: [
     "What can you help with?",
     "I want to book an appointment.",

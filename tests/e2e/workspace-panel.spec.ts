@@ -344,13 +344,6 @@ for (const width of [700, 1206]) {
     );
 
     const suggestions = room.locator("details.wl-studio-starters");
-    await expect(suggestions).toHaveJSProperty("open", false);
-    await expect(
-      suggestions.getByRole("button", { name: "Set the greeting", exact: true }),
-    ).toBeHidden();
-    await suggestions.getByText("Suggestions", { exact: true }).click();
-    await suggestions.getByRole("button", { name: "Set the greeting", exact: true }).click();
-    await expect(input).toHaveValue("Set the greeting");
     await expect(suggestions).toHaveCount(0);
     await input.fill("Keep this unsent instruction while I change views.");
 

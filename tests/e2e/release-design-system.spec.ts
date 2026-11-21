@@ -386,18 +386,10 @@ test("Studio retains a draft and exposes the final action after text enlargement
   const suggestions = page
     .getByRole("region", { name: "Front Desk workroom", exact: true })
     .locator("details.wl-studio-starters");
-  const addRule = suggestions.getByRole("button", { name: "Add a rule", exact: true });
-  await expect(suggestions).toHaveJSProperty("open", false);
-  await expect(addRule).toBeHidden();
-  const disclosure = suggestions.locator("summary");
-  await disclosure.focus();
-  await expect(disclosure).toBeFocused();
-  await disclosure.press("Enter");
-  await expect(suggestions).toHaveJSProperty("open", true);
-  await expect(addRule).toBeVisible();
-  await addRule.click();
+  await expect(suggestions).toHaveCount(0);
+  await composer.focus();
   await expect(composer).toBeFocused();
-  await expect(composer).toHaveValue("Add a rule");
+  await expect(composer).toHaveValue("");
 });
 
 test("More navigation leaves focus on the destination page", async ({ page }) => {
