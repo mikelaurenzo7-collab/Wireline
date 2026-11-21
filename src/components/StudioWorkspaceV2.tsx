@@ -1,4 +1,4 @@
-import { Maximize2, Minimize2, Monitor, Plus, Sparkles, Users, X } from "lucide-react";
+import { Maximize2, Minimize2, Monitor, Plus, Users, X } from "lucide-react";
 import { Link, Navigate, useSearchParams } from "react-router";
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 
@@ -6,7 +6,6 @@ import { Button, Skeleton } from "../components/atoms";
 import { PanelSkeleton } from "../components/atoms/skeleton-presets";
 import { EmptyState } from "../components/ui/EmptyState";
 import { StatusNotice } from "./molecules/StatusNotice";
-import { BotBoundLockup } from "./brand/BotBoundBrand";
 import WorkspaceResizablePanel from "../components/layout/WorkspaceResizablePanel";
 import { useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -120,12 +119,7 @@ function StudioEmptyState() {
       data-studio-first-run
       className="flex h-full min-h-0 w-full flex-col overflow-y-auto px-4 pb-8 pt-8 sm:px-6 sm:pt-12 lg:pt-16"
     >
-      <BotBoundLockup size="standard" surface="bare" className="mx-auto mb-6" />
-      <EmptyState
-        icon={Sparkles}
-        title="Create Your Bot"
-        className="wl-composer-dock mx-auto w-full max-w-3xl"
-      >
+      <EmptyState title="Create Your Bot" className="wl-composer-dock mx-auto w-full max-w-3xl">
         <div className="mx-auto mt-2 w-full max-w-xl text-left">
           <label
             className="mb-2 block text-sm font-semibold text-foreground"

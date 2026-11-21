@@ -633,7 +633,7 @@ const StudioWorkroom = forwardRef<
                   variant="ghost"
                   onClick={() => selectMode("configure")}
                 >
-                  Back to Configure
+                  Back to chat
                 </Button>
               ) : onModeChange ? (
                 // Changing the Bot and trying it are one Set Up job, so they are
@@ -797,12 +797,7 @@ const StudioWorkroom = forwardRef<
                   ) : null}
                 </div>
               ) : (
-                <div className="wl-studio-chat__welcome">
-                  <MessageCircle className="size-6" aria-hidden="true" />
-                  <h2>What can {agentName} do for you?</h2>
-                  <p>Ask a question, draft something, or give your Bot a task.</p>
-                  {starterPrompts}
-                </div>
+                <div className="wl-studio-chat__welcome">{starterPrompts}</div>
               )}
             </div>
           </section>

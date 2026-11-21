@@ -22,7 +22,7 @@ export default function AppearanceSettings() {
         className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(min(100%,4.5rem),1fr))] gap-2"
         role="group"
         aria-label="Theme"
-        aria-describedby={helpId}
+        aria-describedby={theme === "system" ? helpId : undefined}
       >
         {OPTIONS.map(({ id, label, Icon }) => {
           const selected = theme === id;
@@ -44,11 +44,11 @@ export default function AppearanceSettings() {
           );
         })}
       </div>
-      <p id={helpId} className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        {theme === "system"
-          ? "Matches your device’s theme."
-          : `${theme === "light" ? "Light" : "Dark"} appearance.`}
-      </p>
+      {theme === "system" ? (
+        <p id={helpId} className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          Matches your device’s theme.
+        </p>
+      ) : null}
     </section>
   );
 }

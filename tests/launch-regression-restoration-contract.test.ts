@@ -204,9 +204,10 @@ describe("restored launch regression guards", () => {
     expect(security).not.toContain("Live outbound dialing is gated");
     expect(security).not.toContain("DNCScrub");
     expect(security).not.toContain("FEDERAL_DNC_API_KEY");
-    // Shows the owner's own registry status, not BotBound's vendor configuration.
-    expect(compliance).toContain("Call Screening");
-    expect(compliance).toContain("BotBound screens sales and marketing calls.");
+    // Screening configuration must not be presented as permission to place a call.
+    expect(compliance).toContain("Campaign Screening");
+    expect(compliance).toContain("summary.federal_dnc_configured === true");
+    expect(compliance).not.toContain("You don't register anything.");
     expect(compliance).not.toContain("Screening setup needed");
     expect(compliance).not.toContain("DNCScrub");
   });

@@ -130,21 +130,13 @@ export default function ComplianceCenter() {
           <StatusNotice tone="destructive" className="mt-3" title={error} />
         ) : summary ? (
           <div className="mt-4 space-y-3">
-            <dl className="grid gap-3 border-y border-border py-4 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+            <dl className="grid gap-3 border-y border-border py-4 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
               <div className="flex items-baseline justify-between gap-4 sm:block">
                 <dt className="shrink-0 text-xs font-medium text-muted-foreground">
-                  Sales Call Screening
+                  Campaign Screening
                 </dt>
                 <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">
-                  On
-                </dd>
-              </div>
-              <div className="flex items-baseline justify-between gap-4 sm:block">
-                <dt className="shrink-0 text-xs font-medium text-muted-foreground">
-                  Call Screening
-                </dt>
-                <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">
-                  On
+                  {summary.federal_dnc_configured === true ? "Configured" : "Unavailable"}
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-4 sm:block">
@@ -166,7 +158,9 @@ export default function ComplianceCenter() {
               </div>
             </dl>
             <p className="text-sm text-muted-foreground">
-              BotBound screens sales and marketing calls. You don't register anything.
+              {summary.federal_dnc_configured === true
+                ? "Recipient permission and calling limits still apply."
+                : "Campaign calls remain blocked until screening is configured."}
             </p>
           </div>
         ) : null}

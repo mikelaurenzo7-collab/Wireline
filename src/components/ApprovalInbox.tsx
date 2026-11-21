@@ -302,14 +302,11 @@ function actionIcon(task: FollowUpTaskRow) {
   return <Sparkles size={16} aria-hidden="true" />;
 }
 
-function ApprovalEmptyCard({ title, description }: { title: string; description: string }) {
+function ApprovalEmptyCard({ title }: { title: string }) {
   return (
     <div className="flex items-start gap-3 rounded-xl border border-border px-5 py-6">
       <Check className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-      <div>
-        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-      </div>
+      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
     </div>
   );
 }
@@ -1141,12 +1138,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
         actionableTasks.length === 0 ? (
           !loading && !error && !bucketUnavailable ? (
             <ApprovalEmptyCard
-              title={bucket === "compliance" ? "Compliance Queue Clear" : "Approval Queue Clear"}
-              description={
-                bucket === "compliance"
-                  ? "Reviews that need you will appear here."
-                  : "Nothing needs your approval."
-              }
+              title={bucket === "compliance" ? "No Reviews Waiting" : "No Approvals Waiting"}
             />
           ) : null
         ) : (
@@ -1201,10 +1193,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
         )
       ) : bucketItems.length === 0 ? (
         !loading && !error && !bucketUnavailable ? (
-          <ApprovalEmptyCard
-            title={`${BUCKET_LABELS[bucket]} Clear`}
-            description="Nothing needs your attention."
-          />
+          <ApprovalEmptyCard title={`${BUCKET_LABELS[bucket]} Clear`} />
         ) : null
       ) : (
         <div className="grid gap-3">

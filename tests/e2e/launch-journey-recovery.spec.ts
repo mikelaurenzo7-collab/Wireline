@@ -410,7 +410,7 @@ test("Studio preserves each Bot's configuration draft through voice rehearsal", 
 
   await page.getByRole("combobox", { name: "Switch Bot" }).selectOption("bot-sales");
   await expect(page.getByText("Speak With Sales Bot", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+  await page.getByRole("button", { name: "Back to chat", exact: true }).click();
   const salesBuild = page.getByRole("textbox", { name: "Message Sales Bot", exact: true });
   await expect(salesBuild).toHaveValue("");
   await salesBuild.fill("Sales setup draft");
@@ -423,7 +423,7 @@ test("Studio preserves each Bot's configuration draft through voice rehearsal", 
   await expect(page.getByText("Speak With Front Desk", { exact: true })).toBeVisible();
   await page.getByRole("combobox", { name: "Switch Bot" }).selectOption("bot-sales");
   await expect(page.getByText("Speak With Sales Bot", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+  await page.getByRole("button", { name: "Back to chat", exact: true }).click();
   await expect(salesBuild).toHaveValue("Sales setup draft");
 });
 
@@ -438,11 +438,11 @@ test("a legacy rehearsal command never becomes a configuration instruction after
   );
   await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
-  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+  await page.getByRole("button", { name: "Back to chat", exact: true }).click();
   const configure = page.getByRole("textbox", { name: "Message Front Desk", exact: true });
   await expect(configure).toHaveValue("");
   await configure.fill("My configuration draft");
   await page.getByRole("button", { name: "Rehearse", exact: true }).click();
-  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+  await page.getByRole("button", { name: "Back to chat", exact: true }).click();
   await expect(configure).toHaveValue("My configuration draft");
 });

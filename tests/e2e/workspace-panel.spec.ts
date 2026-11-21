@@ -239,7 +239,11 @@ test("the desktop roster opens each Bot's own work and its identity details", as
   await front.click();
   await expect(conversation(page)).toHaveValue("Keep this draft with Front Desk");
   await roster.getByRole("link", { name: "Add a Bot" }).click();
-  await expect(page.getByRole("dialog").getByText(/One Bot can handle many jobs/)).toBeVisible();
+  await expect(
+    page
+      .getByRole("dialog")
+      .getByText("Add a Bot for a separate identity. Channels depend on your plan."),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Close Bot setup" }).click();
   expect(api.starts).toHaveLength(0);
 });
@@ -366,7 +370,7 @@ for (const width of [700, 1206]) {
       await expect(
         page.getByRole("button", { name: "Start Rehearsal", exact: true }),
       ).toBeVisible();
-      await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+      await page.getByRole("button", { name: "Back to chat", exact: true }).click();
       await expect(input).toBeFocused();
     } else {
       await page
@@ -377,7 +381,7 @@ for (const width of [700, 1206]) {
       await expect(
         page.getByRole("button", { name: "Start Rehearsal", exact: true }),
       ).toBeVisible();
-      await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+      await page.getByRole("button", { name: "Back to chat", exact: true }).click();
     }
     await expect(input).toHaveValue("Keep this unsent instruction while I change views.");
     expect(api.starts).toEqual([]);
@@ -976,7 +980,7 @@ test.describe("wide screens", () => {
       rehearsal.getByRole("textbox", { name: "Customer message for Front Desk", exact: true }),
     ).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath("workspace-try-it.png") });
-    await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+    await page.getByRole("button", { name: "Back to chat", exact: true }).click();
     await expect(conversation(page)).toHaveValue("Keep this unsent instruction.");
 
     await page.getByRole("button", { name: "Open Computer Panel" }).click();
@@ -1505,9 +1509,7 @@ test.describe("wide screens", () => {
       page.getByRole("region", { name: "Front Desk voice rehearsal", exact: true }),
     ).toBeVisible();
     await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Back to Configure", exact: true }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Back to chat", exact: true })).toBeVisible();
   });
 });
 

@@ -359,7 +359,7 @@ for (const failure of ["unavailable", "malformed"] as const) {
       expect(requests).toHaveLength(2);
       await page.getByRole("button", { name: "Rehearse", exact: true }).click();
       await expect(review).toHaveCount(0);
-      await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+      await page.getByRole("button", { name: "Back to chat", exact: true }).click();
       await expect(review.getByText(opening.value, { exact: true })).toBeVisible();
       await expect(save).toBeDisabled();
       expect(requests).toHaveLength(2);
@@ -444,7 +444,7 @@ test("message drafts survive navigation and private rehearsal without a second c
   await expect(page).toHaveURL((url) => url.pathname === "/inbox");
   await page.goBack();
   await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+  await page.getByRole("button", { name: "Back to chat", exact: true }).click();
   await expect(messageInput).toHaveValue("Keep this unsent instruction.");
   await expect(review).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Message Front Desk", exact: true })).toHaveCount(
@@ -465,7 +465,7 @@ test("message drafts survive navigation and private rehearsal without a second c
     fullPage: true,
     animations: "disabled",
   });
-  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+  await page.getByRole("button", { name: "Back to chat", exact: true }).click();
   await expect(messageInput).toHaveValue("Keep this unsent instruction.");
 });
 
@@ -488,7 +488,7 @@ for (const section of ["Set Up", "Summary"] as const) {
       .click();
     await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeFocused();
     await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
-    await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+    await page.getByRole("button", { name: "Back to chat", exact: true }).click();
     await expect(input).toHaveValue("Keep my configuration draft.");
     await expect(input).toHaveCSS("resize", "none");
   });
@@ -515,7 +515,7 @@ test("setup focuses voice without seeding a customer message or replacing the Se
   });
   await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeFocused();
   await expect(testInput).toHaveCount(0);
-  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+  await page.getByRole("button", { name: "Back to chat", exact: true }).click();
   await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
 });
 
@@ -528,7 +528,7 @@ test("Set Up proposals survive rehearsal and Bot switches without appearing on a
   await expect(page.getByRole("button", { name: "Start Rehearsal", exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: /^Customer message for/ })).toHaveCount(0);
   await expect(review).toHaveCount(0);
-  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+  await page.getByRole("button", { name: "Back to chat", exact: true }).click();
   await expect(review.getByText(opening.value, { exact: true })).toBeVisible();
 
   await page.getByRole("combobox", { name: "Switch Bot" }).selectOption(bots[1].id);
@@ -589,7 +589,7 @@ test("a delayed clear remains pending across remounts and cannot restore deleted
     0,
   );
   await page.getByRole("button", { name: "Rehearse", exact: true }).click();
-  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+  await page.getByRole("button", { name: "Back to chat", exact: true }).click();
   await expect(review).toHaveCount(0);
   await expect(page.getByText(plan.reply, { exact: true })).toHaveCount(0);
   expect(deleteCount).toBe(1);
@@ -612,7 +612,7 @@ test("voice rehearsal has no typed endpoint or configuration submission", async 
   await expect(page.getByRole("region", { name: "Review Email capability" })).toHaveCount(0);
   await expect(page.getByText(emailDraft.subject, { exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Open Inbox", exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+  await page.getByRole("button", { name: "Back to chat", exact: true }).click();
   await expect(page.getByRole("region", { name: "Review Opening greeting" })).toHaveCount(0);
   expect(
     writes.filter((request) => /apply-change|toggle-tool|run-action|outbound/.test(request.path)),

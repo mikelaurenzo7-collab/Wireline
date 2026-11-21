@@ -458,7 +458,7 @@ test("legacy customer commands stay in voice rehearsal without editing the Bot o
   await expect(page.getByRole("textbox", { name: "Type a test", exact: true })).toHaveValue("");
   expect((await microphoneCount(page)).microphones).toBe(0);
   expect(sessions).toEqual([]);
-  await page.getByRole("button", { name: "Back to Configure", exact: true }).click();
+  await page.getByRole("button", { name: "Back to chat", exact: true }).click();
   await expect(page).not.toHaveURL(/command(?:Nonce)?=/);
   await page.getByRole("button", { name: "Use browser", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Task for Front Desk", exact: true })).toHaveValue(

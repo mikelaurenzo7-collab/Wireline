@@ -59,10 +59,6 @@ export default function StudioBotDetailsPanel({
             </p>
           </div>
         </header>
-        <p className="wl-bot-details-intro">
-          Your Bot's identity, knowledge, and tools are all here.
-        </p>
-
         <div className="wl-bot-details-list">
           <Link className="wl-bot-details-row wl-focus-ring-halo" to={phoneHref}>
             <Phone size={18} aria-hidden="true" />

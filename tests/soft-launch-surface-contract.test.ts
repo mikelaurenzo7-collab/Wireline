@@ -34,10 +34,10 @@ describe("soft launch surfaces", () => {
     expect(searchWorkspaceCommands("campaign")).toEqual([]);
   });
 
-  it("keeps Create Bot to one brief and states the launch channels", () => {
+  it("keeps Create Bot to one brief without promotional copy", () => {
     const create = read("src/components/CreateAgentDialog.tsx");
     expect(create).toContain("Describe the Job");
-    expect(create).toContain("Answers and calls, plus email and a computer.");
+    expect(create).not.toContain("Answers and calls, plus email and a computer.");
     expect(create).not.toContain("SMS is coming soon");
     expect(create).not.toContain("setup wizard");
   });

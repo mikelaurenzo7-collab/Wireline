@@ -120,7 +120,7 @@ describe("approval count availability", () => {
     expect(textOf(render(() => ApprovalInbox({})))).toContain("Last loaded items are shown");
     expect(
       elements(render(() => ApprovalInbox({}))).some(
-        (node) => node.props.title === "Approval Queue Clear",
+        (node) => node.props.title === "No Approvals Waiting",
       ),
     ).toBe(false);
   });
