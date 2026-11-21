@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { composeInboundOpening } from "../src/lib/voice/inbound-opening";
+import { detectAiDisclosure, detectRecordingDisclosure } from "../src/lib/tcpa-consent";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
@@ -146,12 +148,14 @@ describe("live call recording (owner choice) contract", () => {
     const session = read("src/lib/voice/openai-sip-session.ts");
     // Outbound: the compliance composer receives the flag itself.
     expect(session).toContain("recordingEnabled: input.callRecordingEnabled === true");
-    // Inbound: with the flag off the greeting is returned untouched; with it
-    // on, the composer's recording notice is prepended.
-    expect(read("src/lib/voice/inbound-opening.ts")).toContain(
-      "this call may be recorded for quality and compliance",
-    );
-    expect(read("src/lib/voice/inbound-opening.ts")).toContain("return input.recordingEnabled");
+    const greeting = "Hi, I'm Nora, and I'm an AI assistant with BotBound. How can I help?";
+    const inbound = { greeting, agentName: "Nora", businessName: "BotBound" };
+    const unrecordedOpening = composeInboundOpening({ ...inbound, recordingEnabled: false });
+    const recordedOpening = composeInboundOpening({ ...inbound, recordingEnabled: true });
+    expect(unrecordedOpening).toBe(greeting);
+    expect(detectRecordingDisclosure(unrecordedOpening).found).toBe(false);
+    expect(detectAiDisclosure(recordedOpening).found).toBe(true);
+    expect(detectRecordingDisclosure(recordedOpening).found).toBe(true);
     // AI-identity disclosure composition stays flag-independent.
     expect(session).toContain("complianceFirstMessagePrefix(");
     expect(session).toContain("outboundAiCall: true");
