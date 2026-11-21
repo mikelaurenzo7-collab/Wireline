@@ -53,6 +53,20 @@ describe("injected-environment read-only Stripe audit runner", () => {
     expect(run).toHaveBeenCalledTimes(3);
   });
 
+  it("checks the same shared-work catalog as checkout when usage billing is active", () => {
+    const run = vi.fn().mockReturnValue({ status: 0 });
+    expect(
+      runStripeAudit({
+        env: { STRIPE_SECRET_KEY: "sk_live_fixture_only", USAGE_BILLING_ENABLED: "TRUE" },
+        run,
+      }),
+    ).toBe(0);
+    expect(run.mock.calls.map(([, [script]]) => basename(script))).toEqual([
+      "audit-stripe-account-identity-live.mjs",
+      "audit-stripe-shared-work-live.mjs",
+    ]);
+  });
+
   it("does not expose child-process error details or a credential on startup failure", () => {
     const run = vi.fn().mockReturnValue({ error: new Error("sk_live_fixture_only") });
     expect(() =>

@@ -3,13 +3,13 @@
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { tsImport } from "tsx/esm/api";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const audits = [
-  "audit-stripe-account-identity-live.mjs",
-  "audit-stripe-product-copy-live.mjs",
-  "audit-stripe-catalog-live.mjs",
-];
+const { usageBillingEnabled } = await tsImport(
+  "../src/lib/usage-billing-config.ts",
+  import.meta.url,
+);
 
 export function runStripeAudit({ env = process.env, run = spawnSync } = {}) {
   const secret = env.STRIPE_SECRET_KEY?.trim();
@@ -24,6 +24,10 @@ export function runStripeAudit({ env = process.env, run = spawnSync } = {}) {
     );
   }
 
+  const catalogAudits = usageBillingEnabled(env)
+    ? ["audit-stripe-shared-work-live.mjs"]
+    : ["audit-stripe-product-copy-live.mjs", "audit-stripe-catalog-live.mjs"];
+  const audits = ["audit-stripe-account-identity-live.mjs", ...catalogAudits];
   let failed = false;
   for (const audit of audits) {
     const result = run(process.execPath, [fileURLToPath(new URL(audit, import.meta.url))], {

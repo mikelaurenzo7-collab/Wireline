@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createElevenLabsCloneEngine } from "../src/lib/voice/clone-engines";
 
 import {
   createElevenLabsVoiceClient,
@@ -49,6 +50,22 @@ const dto = () => ({
   maxCreditLimitExtension: 0,
   canExtendVoiceLimit: false,
 });
+it.each([true, false])(
+  "passes the provider's verification decision to live voice creation (%s)",
+  async (required) => {
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json(subscription()))
+      .mockResolvedValueOnce(
+        Response.json({ voice_id: "clone_test_123", requires_verification: required }),
+      );
+    const engine = createElevenLabsCloneEngine({ ELEVENLABS_API_KEY: KEY }, fetchImpl);
+    await expect(engine.create({ name: "Test voice", wav: Buffer.alloc(80) })).resolves.toEqual({
+      providerVoiceId: "clone_test_123",
+      requiresVerification: required,
+    });
+  },
+);
 function setup(body: unknown, status = 200, timeoutMs = 1_000) {
   const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
     new Response(JSON.stringify(body), {

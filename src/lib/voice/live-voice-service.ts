@@ -517,7 +517,11 @@ export const liveVoiceService = {
       throw friendlyProviderError(new CloneEngineError("elevenlabs", "not_configured"));
 
     return fenced(actor.id, "live_voice_create", async () => {
-      let created: { engine: CloneEngine; providerVoiceId: string } | null = null;
+      let created: {
+        engine: CloneEngine;
+        providerVoiceId: string;
+        requiresVerification?: boolean;
+      } | null = null;
       const now = new Date();
       const values: LiveVoiceRecordValues = {
         userId: actor.id,
@@ -561,12 +565,12 @@ export const liveVoiceService = {
         for (const candidateId of candidates) {
           const engine = cloneEngine(candidateId);
           try {
-            const { providerVoiceId } = await engine.create({
+            const result = await engine.create({
               name,
               wav,
               gender,
             });
-            created = { engine, providerVoiceId };
+            created = { engine, ...result };
             break;
           } catch (error) {
             lastError = error;
@@ -581,6 +585,12 @@ export const liveVoiceService = {
           }
         }
         if (!created) throw friendlyProviderError(lastError);
+        if (created.requiresVerification)
+          throw new AppError(
+            422,
+            "LIVE_VOICE_PROVIDER_VERIFICATION_REQUIRED",
+            "ElevenLabs requires separate speaker verification for this recording. Your Bot can keep using its current voice.",
+          );
         const savedClone = created;
         const row = await drizzle.transaction(async (tx) => {
           await tx.execute(

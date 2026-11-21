@@ -32,7 +32,12 @@ async function checkSharedWorkTier({ stripe, env, tier }) {
   await validateUsageCheckoutCatalog(stripe, env, tier);
 }
 
-async function readSharedWorkCatalog({ key, env, usageCheckoutConfigured, checkUsageTier }) {
+export async function readSharedWorkCatalog({
+  key,
+  env,
+  usageCheckoutConfigured,
+  checkUsageTier = checkSharedWorkTier,
+}) {
   const { PUBLIC_USAGE_TIERS } = await tsImport(
     "../../src/lib/usage-billing-catalog.ts",
     import.meta.url,
