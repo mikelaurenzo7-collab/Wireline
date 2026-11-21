@@ -34,10 +34,18 @@ export const STUDIO_CANVAS_FORBIDDEN = {
     { id: "agent-switcher", pattern: /StudioAgentBar/ },
   ],
   studioChrome: [
+    {
+      id: "computer-absent-from-bot-header",
+      pattern: /id="studio-panel-toggle"|Open Computer Panel/,
+    },
     { id: "full-roster-copy", pattern: /Your agents|All Bots/ },
     { id: "duplicate-workspace-sections", pattern: /WorkspaceSectionNav/ },
   ],
   canvas: [
+    {
+      id: "retired-mixed-workspace-tabs",
+      pattern: /aria-label="Workspace (panel|view)"|label: "Configure"/,
+    },
     { id: "agent-roster-grid", pattern: /Your agents/ },
     { id: "spatial-canvas", pattern: /StudioAgentCanvas/ },
     { id: "separate-task-composer", pattern: /StudioTaskChat|composerOverride/ },
@@ -112,19 +120,19 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "bot-switcher", pattern: /aria-label="Switch Bot"/ },
     { id: "bot-switch-options", pattern: /agents\.map/ },
     { id: "settings-entry", pattern: /id="studio-settings-toggle"/ },
-    { id: "settings-expanded-state", pattern: /aria-expanded=\{inspectorOpen\}/ },
+    { id: "setup-entry-when-working", pattern: /!inspectorOpen && !detailsOpen \? \(/ },
   ],
   canvas: [
-    // Computer work and configuration share the side panel; rehearsal lives
-    // in the conversation, not a panel tab.
+    // The conversation owns tasks and rehearsal. Bot setup has its own view.
     { id: "single-workroom", pattern: /onModeChange=\{panelOpen \? undefined : setWorkroomMode\}/ },
-    { id: "panel-tabs", pattern: /\{ id: "configure", label: "Configure" \}/ },
-    { id: "computer-panel", pattern: /\{ id: "computer", label: "Computer" \}/ },
-    { id: "mobile-surface-switch", pattern: /aria-label="Workspace view"/ },
+    { id: "bot-setup-view", pattern: /id="studio-inspector"[\s\S]*aria-label="Bot setup"/ },
+    { id: "computer-panel", pattern: /id="studio-computer-panel"[\s\S]*<h2[^>]*>Computer<\/h2>/ },
     {
-      id: "inspector-body",
-      pattern: /activePanelSection === "review"\s*\? reviewPanel\s*: setupPanel/,
+      id: "accessible-setup-tabs",
+      pattern: /role="tablist"[\s\S]*aria-label="Bot setup sections"/,
     },
+    { id: "back-to-work", pattern: /onClick=\{closeSetup\}[\s\S]*Back to Work/ },
+    { id: "setup-body", pattern: /inspectorSection === "review"\s*\? reviewPanel\s*: setupPanel/ },
     { id: "try-it-beside", pattern: /setWorkroomMode\("test"\)/ },
     { id: "deep-editor", pattern: /StudioAgentWorkspacePanel/ },
     { id: "chat-workroom", pattern: /<StudioWorkroom/ },
@@ -154,6 +162,10 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "split-layout", pattern: /layout === "split"|layout="split"/ },
     { id: "composer-focus", pattern: /focusComposer/ },
     { id: "shared-task-composer", pattern: /useStudioTaskComposer/ },
+    {
+      id: "computer-entry-in-composer",
+      pattern: /id="studio-panel-toggle"[\s\S]*aria-pressed=\{taskComposer\.taskMode\}/,
+    },
     { id: "shared-composer-input", pattern: /value=\{composerDraft\}/ },
   ],
   workspacePanel: [

@@ -42,10 +42,12 @@ export const STUDIO_CANVAS_FORBIDDEN = {
     { id: "agent-tablist", pattern: /role="tablist"/ },
   ],
   studioChrome: [
+    { id: "computer-absent-from-bot-header", pattern: /id="studio-panel-toggle"|Open Computer Panel/ },
     { id: "full-roster-copy", pattern: /Your agents|All Bots/ },
     { id: "duplicate-workspace-sections", pattern: /WorkspaceSectionNav/ },
   ],
   canvas: [
+    { id: "retired-mixed-workspace-tabs", pattern: /aria-label="Workspace (panel|view)"|label: "Configure"/ },
     { id: "agent-roster-grid", pattern: /Your agents/ },
     { id: "spatial-canvas", pattern: /StudioAgentCanvas/ },
     { id: "separate-task-composer", pattern: /StudioTaskChat|composerOverride/ },
@@ -113,20 +115,16 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "bot-switcher", pattern: /aria-label="Switch Bot"/ },
     { id: "bot-switch-options", pattern: /agents\.map/ },
     { id: "settings-entry", pattern: /id="studio-settings-toggle"/ },
-    { id: "settings-expanded-state", pattern: /aria-expanded=\{inspectorOpen\}/ },
+    { id: "setup-entry-when-working", pattern: /!inspectorOpen && !detailsOpen \? \(/ },
   ],
   canvas: [
-    // One conversation owns messages, task history and rehearsal. The optional
-    // panel holds the computer and Bot details, never a second rehearsal chat.
+    // The conversation owns tasks and rehearsal. Bot setup has its own view.
     { id: "single-workroom", pattern: /onModeChange=\{panelOpen \? undefined : setWorkroomMode\}/ },
-    { id: "configure-panel", pattern: /\{ id: "configure", label: "Configure" \}/ },
-    { id: "computer-panel", pattern: /\{ id: "computer", label: "Computer" \}/ },
-    { id: "accessible-panel-tabs", pattern: /role="tablist"[\s\S]*aria-label="Workspace panel"/ },
-    { id: "mobile-surface-switch", pattern: /aria-label="Workspace view"/ },
-    {
-      id: "inspector-body",
-      pattern: /activePanelSection === "review"\s*\? reviewPanel\s*: setupPanel/,
-    },
+    { id: "bot-setup-view", pattern: /id="studio-inspector"[\s\S]*aria-label="Bot setup"/ },
+    { id: "computer-panel", pattern: /id="studio-computer-panel"[\s\S]*<h2[^>]*>Computer<\/h2>/ },
+    { id: "accessible-setup-tabs", pattern: /role="tablist"[\s\S]*aria-label="Bot setup sections"/ },
+    { id: "back-to-work", pattern: /onClick=\{closeSetup\}[\s\S]*Back to Work/ },
+    { id: "setup-body", pattern: /inspectorSection === "review"\s*\? reviewPanel\s*: setupPanel/ },
     {
       id: "rehearsal-in-conversation",
       pattern: /setWorkroomMode\("test"\);[\s\S]*if \(splitWorkspace\) setPanelCollapsed\(true\)/,
@@ -155,7 +153,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "create-first-empty-state", pattern: /Create Your Bot/i },
     { id: "command-nonce", pattern: /commandNonce/ },
     { id: "progressive-inspector", pattern: /collapsed=\{!panelOpen\}/ },
-    // The conversation hides only when the owner chooses Full width.
+    // The owner can expand Computer and restore the split view.
     { id: "full-width-panel", pattern: /fill=\{panelFill\}/ },
   ],
   workroom: [
@@ -163,6 +161,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "split-layout", pattern: /split/ },
     { id: "composer-focus", pattern: /focusComposer/ },
     { id: "shared-task-composer", pattern: /useStudioTaskComposer/ },
+    { id: "computer-entry-in-composer", pattern: /id="studio-panel-toggle"[\s\S]*aria-pressed=\{taskComposer\.taskMode\}/ },
     { id: "shared-composer-input", pattern: /value=\{composerDraft\}/ },
   ],
   workspacePanel: [
