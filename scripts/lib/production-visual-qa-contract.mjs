@@ -55,13 +55,13 @@ export const PRODUCTION_VISUAL_AUTHENTICATED_EXPECTATIONS = Object.freeze([
   visualExpectation("/connections/salesforce", "salesforce"),
   visualExpectation("/phone", "phone", ["primary-logs"]),
   visualExpectation("/phone?tab=setup#company-identity", "phone", [
-    "primary-setup",
+    "primary-lines",
     "company-identity",
   ]),
   visualExpectation("/phone?tab=logs", "phone", ["primary-logs"]),
   visualExpectation("/phone?tab=outbound", "phone", ["primary-outbound", "secondary-dispatch"]),
   visualExpectation("/phone?tab=campaigns", "phone", ["primary-outbound", "secondary-campaigns"]),
-  visualExpectation("/phone?tab=callbacks", "phone", ["primary-outbound", "secondary-callbacks"]),
+  visualExpectation("/phone?tab=callbacks", "phone", ["primary-logs"]),
   visualExpectation("/calendar", "calendar", ["agenda"]),
   visualExpectation("/calendar?tab=availability", "calendar", ["availability"]),
   visualExpectation("/computer", "computer"),
@@ -78,7 +78,7 @@ export const PRODUCTION_VISUAL_AUTHENTICATED_EXPECTATIONS = Object.freeze([
   visualExpectation("/settings/not-a-route", "authenticated-not-found", ["not-found"]),
   visualExpectation("/admin", "admin", ["panel-accounts"]),
   visualExpectation("/admin?tab=subscription", "admin", ["panel-subscription"]),
-  visualExpectation("/admin?tab=team", "admin", ["panel-team"]),
+  visualExpectation("/admin?tab=team", "settings", ["team"]),
   visualExpectation("/admin?tab=branding", "admin", ["panel-branding"]),
   visualExpectation("/admin?tab=carrier", "admin", ["panel-carrier"]),
 ]);
@@ -87,7 +87,7 @@ export const PRODUCTION_VISUAL_COMPATIBILITY_EXPECTATIONS = Object.freeze([
   visualExpectation("/overview", "studio"),
   visualExpectation("/studio/live-video", "studio"),
   visualExpectation("/settings/phone#company-identity", "phone", [
-    "primary-setup",
+    "primary-lines",
     "company-identity",
   ]),
   visualExpectation("/apps", "settings", ["apps"]),
@@ -166,16 +166,26 @@ const expectationByCaptureKey = new Map([
   ].map((expectation) => [`authenticated\u0000${expectation.route}`, expectation]),
 ]);
 
-export function productionVisualRouteExpectation(mode, route) {
+const computerPanelExpectation = visualExpectation("/computer", "studio", ["computer-panel"]);
+
+function opensComputerBesideChat(viewportName) {
+  const viewport = PRODUCTION_VISUAL_VIEWPORTS.find(({ name }) => name === viewportName);
+  return Boolean(viewport && viewport.width >= 1180);
+}
+
+export function productionVisualRouteExpectation(mode, route, viewportName) {
+  if (mode === "authenticated" && route === "/computer" && opensComputerBesideChat(viewportName)) {
+    return computerPanelExpectation;
+  }
   return expectationByCaptureKey.get(`${mode}\u0000${route}`) ?? null;
 }
 
-export function productionVisualSemanticKey(mode, route) {
+export function productionVisualSemanticKey(mode, route, viewportName) {
   // AuthPortal deliberately renders the same signup form for these two URLs.
   // Keep their route-specific marker assertions distinct; only their expected
   // screenshot identity is shared.
   const captureRoute = mode === "public" && route === "/get-started" ? "/signup" : route;
-  const expectation = productionVisualRouteExpectation(mode, captureRoute);
+  const expectation = productionVisualRouteExpectation(mode, captureRoute, viewportName);
   return expectation ? `${expectation.page}\u0000${expectation.states.join("\u0000")}` : null;
 }
 
@@ -192,7 +202,8 @@ export function requiredProductionVisualSemanticAssertions() {
         ],
       ],
     ]) {
-      for (const expectation of expectations) {
+      for (const { route } of expectations) {
+        const expectation = productionVisualRouteExpectation(mode, route, viewport.name);
         assertions.push({
           viewport: viewport.name,
           mode,
@@ -219,12 +230,18 @@ export function visualQaFileStem(route) {
   );
 }
 
-export function routeReachedExactly(baseUrl, requestedRoute, finalUrl) {
+export function routeReachedExactly(
+  baseUrl,
+  requestedRoute,
+  finalUrl,
+  viewportName,
+  rosterIds = [],
+) {
   try {
     const base = new URL(baseUrl);
     const requested = new URL(requestedRoute, `${base.origin}/`);
     const final = new URL(finalUrl);
-    const expectedPath = PRODUCTION_VISUAL_REDIRECTS.get(requested.pathname) || requested.pathname;
+    let expectedPath = PRODUCTION_VISUAL_REDIRECTS.get(requested.pathname) || requested.pathname;
     let expectedSearch = requested.search;
     let expectedHash = requested.hash;
     if (requested.pathname === "/settings/phone") {
@@ -236,6 +253,32 @@ export function routeReachedExactly(baseUrl, requestedRoute, finalUrl) {
       // This retired surface intentionally discards its old route state.
       expectedSearch = "";
       expectedHash = "";
+    }
+    if (requested.pathname === "/admin" && requested.searchParams.get("tab") === "team") {
+      expectedPath = "/settings/team";
+      expectedSearch = "";
+      expectedHash = "";
+    }
+    if (requested.pathname === "/computer" && opensComputerBesideChat(viewportName)) {
+      expectedPath = "/studio";
+      const search = new URLSearchParams({ panel: "computer" });
+      const agent = requested.searchParams.get("agent")?.trim();
+      if (agent) search.set("agent", agent);
+      expectedSearch = `?${search}`;
+      expectedHash = "";
+    }
+    // Studio can select a Bot when a populated workspace opens an unscoped link.
+    const search = new URLSearchParams(expectedSearch);
+    const selected = final.searchParams.get("agent");
+    if (
+      expectedPath === "/studio" &&
+      !search.has("create") &&
+      !search.has("agent") &&
+      selected &&
+      rosterIds.includes(selected)
+    ) {
+      search.set("agent", selected);
+      expectedSearch = `?${search}`;
     }
     return (
       final.origin === base.origin &&

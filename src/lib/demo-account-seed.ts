@@ -73,7 +73,22 @@ export const LEGACY_DEMO_SMS_NUMBERS = Array.from(
   (_, i) => `+1555010${String(i + 1).padStart(4, "0")}`,
 );
 
-export const ALL_DEMO_SMS_NUMBERS = [...DEMO_SMS_NUMBERS, ...LEGACY_DEMO_SMS_NUMBERS];
+const ALL_DEMO_SMS_NUMBERS = [...DEMO_SMS_NUMBERS, ...LEGACY_DEMO_SMS_NUMBERS];
+
+/** Demo conversations have no carrier destination. Live line threads can share a caller number. */
+export function demoSmsThreadFilter(userId: string, numbers = ALL_DEMO_SMS_NUMBERS) {
+  return and(
+    eq(smsThreads.userId, userId),
+    isNull(smsThreads.destinationNumber),
+    inArray(smsThreads.customerNumber, numbers),
+  );
+}
+
+export function lockDemoData(tx: DemoSeedDb, userId: string) {
+  return tx.execute(
+    sql`select pg_advisory_xact_lock(hashtextextended(${`demo-seed:${userId}`}, 0))`,
+  );
+}
 
 const SAMPLE_SUMMARIES = [
   "Qualified inbound lead, asked about pricing for 5-seat plan. Booked Maya for demo Thursday 2pm.",
@@ -334,9 +349,7 @@ async function countSeedSmsThreads(userId: string, tx: DemoSeedDb = drizzle): Pr
   const [row] = await tx
     .select({ c: sql<number>`COUNT(*)::int` })
     .from(smsThreads)
-    .where(
-      and(eq(smsThreads.userId, userId), inArray(smsThreads.customerNumber, DEMO_SMS_NUMBERS)),
-    );
+    .where(demoSmsThreadFilter(userId, DEMO_SMS_NUMBERS));
   return Number(row?.c ?? 0);
 }
 
@@ -344,12 +357,7 @@ async function pruneLegacyDemoSmsThreads(userId: string, tx: DemoSeedDb): Promis
   const rows = await tx
     .select({ id: smsThreads.id })
     .from(smsThreads)
-    .where(
-      and(
-        eq(smsThreads.userId, userId),
-        inArray(smsThreads.customerNumber, LEGACY_DEMO_SMS_NUMBERS),
-      ),
-    );
+    .where(demoSmsThreadFilter(userId, LEGACY_DEMO_SMS_NUMBERS));
   if (rows.length === 0) return 0;
   const threadIds = rows.map((row) => row.id);
   await tx.delete(smsMessages).where(inArray(smsMessages.threadId, threadIds));
@@ -439,7 +447,11 @@ async function refreshDemoShowcaseCopy(userId: string, tx: DemoSeedDb): Promise<
       .update(smsThreads)
       .set({ summary: snippet })
       .where(
-        and(eq(smsThreads.userId, userId), eq(smsThreads.customerNumber, DEMO_SMS_NUMBERS[i])),
+        and(
+          eq(smsThreads.userId, userId),
+          isNull(smsThreads.destinationNumber),
+          eq(smsThreads.customerNumber, DEMO_SMS_NUMBERS[i]),
+        ),
       );
   }
 
@@ -525,6 +537,7 @@ export async function seedDemoAccountData(userId: string): Promise<{
   const userPrefix = userId.slice(0, 8);
 
   await drizzle.transaction(async (tx) => {
+    await lockDemoData(tx, userId);
     await backfillTenantDemoRows(userId, tx);
 
     {
@@ -722,10 +735,8 @@ export async function seedDemoAccountData(userId: string): Promise<{
     {
       const prunedLegacy = await pruneLegacyDemoSmsThreads(userId, tx);
       const before = await countSeedSmsThreads(userId, tx);
-      const need = Math.max(0, TARGET.smsThreads - before);
       let inserted = 0;
-      for (let i = 0; i < need; i++) {
-        const phone = DEMO_SMS_NUMBERS[i];
+      for (const [i, phone] of DEMO_SMS_NUMBERS.entries()) {
         const cust = SAMPLE_CUSTOMERS[i % SAMPLE_CUSTOMERS.length];
         let threadId: string | undefined;
         const [insertedThread] = await tx
@@ -740,14 +751,23 @@ export async function seedDemoAccountData(userId: string): Promise<{
             lastMessageAt: randomCreatedAt(5),
             createdAt: randomCreatedAt(12),
           })
-          .onConflictDoNothing({ target: [smsThreads.userId, smsThreads.customerNumber] })
+          .onConflictDoNothing({
+            target: [smsThreads.userId, smsThreads.customerNumber],
+            where: isNull(smsThreads.destinationNumber),
+          })
           .returning({ id: smsThreads.id });
         threadId = insertedThread?.id;
         if (!threadId) {
           const [existing] = await tx
             .select({ id: smsThreads.id })
             .from(smsThreads)
-            .where(and(eq(smsThreads.userId, userId), eq(smsThreads.customerNumber, phone)))
+            .where(
+              and(
+                eq(smsThreads.userId, userId),
+                isNull(smsThreads.destinationNumber),
+                eq(smsThreads.customerNumber, phone),
+              ),
+            )
             .limit(1);
           threadId = existing?.id;
         }
@@ -776,7 +796,7 @@ export async function seedDemoAccountData(userId: string): Promise<{
               createdAt: randomCreatedAt(4),
             });
           }
-          inserted++;
+          if (insertedThread) inserted++;
         }
       }
       if (prunedLegacy > 0) {

@@ -5,12 +5,14 @@ import { PageMeta } from "../lib/page-meta";
 const SOLUTIONS = {
   sales: {
     title: "Sales",
-    description: "Create a Bot for sales. Add another whenever you want one.",
+    description:
+      "Qualify a new inquiry, capture what the prospect needs, and prepare a follow-up for you to review.",
     primary: { href: "/signup?wedge=sales", label: "Create a Bot" },
   },
   support: {
     title: "Front Desk",
-    description: "Create a Bot for the front desk. Add another whenever you want one.",
+    description:
+      "Answer common questions, offer available appointment times, and send requests that need a person to your team.",
     primary: { href: "/signup?wedge=support", label: "Create a Bot" },
   },
 } as const;
@@ -35,7 +37,7 @@ export default function SolutionsPage() {
           <div className="mx-auto flex max-w-3xl flex-col items-center justify-center text-center">
             <h1 className="marketing-hero-title mx-auto">{page.title}</h1>
             <p className="mx-auto mt-8 max-w-md text-lg leading-8 text-muted-foreground">
-              Create a Bot. Add another whenever you want one.
+              {page.description}
             </p>
             <div className="marketing-hero__actions mt-10">
               <Link

@@ -27,6 +27,6 @@ describe("GTM conversion events contract", () => {
   it("does not render industry script excerpts on vertical landing pages", () => {
     const landing = read("src/pages/VerticalLanding.tsx");
     expect(landing).not.toContain("scriptPreview");
-    expect(landing).toContain("Create a Bot. Add another whenever you want one.");
+    expect(landing).toContain("{cfg.metaDescription}");
   });
 });

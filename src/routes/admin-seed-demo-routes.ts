@@ -6,14 +6,15 @@
 import { Router, Response } from "express";
 import { AppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
-import { eq, and, inArray, like } from "drizzle-orm";
+import { eq, and, like } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { requirePlatformAdmin } from "../middleware/platform-admin";
 import { invalidateDashboard } from "../lib/dashboard-cache";
 import { seedFounderAssistant, resolveFounderUserId } from "../lib/founder-fleet-seed";
 import {
   DEFAULT_DEMO_EMAIL,
-  ALL_DEMO_SMS_NUMBERS,
+  demoSmsThreadFilter,
+  lockDemoData,
   resolveDemoUserId,
   seedDemoAccountData,
 } from "../lib/demo-account-seed";
@@ -148,15 +149,7 @@ router.delete(
             )
         ).length;
         counts.sms_threads = (
-          await db
-            .select({ id: smsThreads.id })
-            .from(smsThreads)
-            .where(
-              and(
-                eq(smsThreads.userId, userId),
-                inArray(smsThreads.customerNumber, ALL_DEMO_SMS_NUMBERS),
-              ),
-            )
+          await db.select({ id: smsThreads.id }).from(smsThreads).where(demoSmsThreadFilter(userId))
         ).length;
         return counts;
       };
@@ -180,6 +173,7 @@ router.delete(
         sms_threads: 0,
       };
       await drizzle.transaction(async (tx) => {
+        await lockDemoData(tx, userId);
         const r1 = await tx
           .delete(callLogs)
           .where(and(eq(callLogs.userId, userId), eq(callLogs.demo, true)))
@@ -217,23 +211,13 @@ router.delete(
         const seedSms = await tx
           .select({ id: smsThreads.id })
           .from(smsThreads)
-          .where(
-            and(
-              eq(smsThreads.userId, userId),
-              inArray(smsThreads.customerNumber, ALL_DEMO_SMS_NUMBERS),
-            ),
-          );
+          .where(demoSmsThreadFilter(userId));
         for (const row of seedSms) {
           await tx.delete(smsMessages).where(eq(smsMessages.threadId, row.id));
         }
         const r6 = await tx
           .delete(smsThreads)
-          .where(
-            and(
-              eq(smsThreads.userId, userId),
-              inArray(smsThreads.customerNumber, ALL_DEMO_SMS_NUMBERS),
-            ),
-          )
+          .where(demoSmsThreadFilter(userId))
           .returning({ id: smsThreads.id });
         counts.sms_threads = r6.length;
       });

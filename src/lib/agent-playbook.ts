@@ -168,11 +168,14 @@ export function parseAgentPlaybook(
   if (!alwaysMention)
     return {
       ok: false,
-      error: `"Always mention" holds up to ${PLAYBOOK_LIMITS.alwaysMention} short items.`,
+      error: `"Always mention" holds up to ${PLAYBOOK_LIMITS.alwaysMention} items of up to ${PLAYBOOK_LIMITS.itemChars} characters each.`,
     };
   const neverSay = cleanList(root.neverSay, PLAYBOOK_LIMITS.neverSay, PLAYBOOK_LIMITS.itemChars);
   if (!neverSay)
-    return { ok: false, error: `"Never say" holds up to ${PLAYBOOK_LIMITS.neverSay} short items.` };
+    return {
+      ok: false,
+      error: `"Never say" holds up to ${PLAYBOOK_LIMITS.neverSay} items of up to ${PLAYBOOK_LIMITS.itemChars} characters each.`,
+    };
 
   return { ok: true, value: { version: 1, exactLines, situations, alwaysMention, neverSay } };
 }

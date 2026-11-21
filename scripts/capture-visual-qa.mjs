@@ -172,7 +172,7 @@ async function settle(page) {
 
 async function waitForRouteContent(page, viewportName, route, requireAuth, issues) {
   const mode = requireAuth ? "authenticated" : "public";
-  const expectation = productionVisualRouteExpectation(mode, route);
+  const expectation = productionVisualRouteExpectation(mode, route, viewportName);
   if (!expectation) {
     pushIssue(issues, {
       viewport: viewportName,
@@ -227,8 +227,8 @@ async function recordScreenshotDigest(file, viewportName, route, requireAuth, is
   const existingRoute = screenshotDigestOwners.get(key);
   if (existingRoute && existingRoute !== route) {
     const mode = requireAuth ? "authenticated" : "public";
-    const currentSemanticKey = productionVisualSemanticKey(mode, route);
-    const existingSemanticKey = productionVisualSemanticKey(mode, existingRoute);
+    const currentSemanticKey = productionVisualSemanticKey(mode, route, viewportName);
+    const existingSemanticKey = productionVisualSemanticKey(mode, existingRoute, viewportName);
     // Compatibility redirects are expected to be byte-identical to their
     // canonical surface. The shared page/state contract is the authority; two
     // genuinely distinct surfaces still fail this gate.

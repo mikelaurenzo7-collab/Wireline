@@ -160,7 +160,9 @@ describe("production visual QA safety gate", () => {
     expect(capture).toContain("PRODUCTION_VISUAL_AUTHENTICATED_ROUTES");
     expect(capture).toContain('"phone,desktop,laptop,breakpoint,short"');
     expect(capture).toContain("path: `${prefix}-scroll-end.png`");
-    expect(capture).toContain("routeReachedExactly(baseUrl, route, finalUrl)");
+    expect(capture).toContain(
+      "routeReachedExactly(baseUrl, route, finalUrl, viewportName, rosterIds)",
+    );
     expect(capture).toContain('createHash("sha256")');
     expect(capture).toContain("artifactDirectory: timestamp");
     expect(capture).toContain("assertCleanCheckout(repoRoot, sourceCommit)");
@@ -252,6 +254,41 @@ describe("production visual QA safety gate", () => {
     },
     visualGateTestTimeout(2),
   );
+
+  it("follows the current Computer, Team and Calls destinations for the signed-in workspace", () => {
+    const origin = CANONICAL_PRODUCTION_VISUAL_BASE_URL;
+    const roster = ["qa-bot"];
+    expect(
+      productionVisualRouteExpectation("authenticated", "/computer", "desktop")?.states,
+    ).toEqual(["computer-panel"]);
+    expect(productionVisualRouteExpectation("authenticated", "/computer", "breakpoint")?.page).toBe(
+      "computer",
+    );
+    expect(
+      productionVisualRouteExpectation("authenticated", "/phone?tab=callbacks")?.states,
+    ).toEqual(["primary-logs"]);
+    expect(
+      productionVisualRouteExpectation("authenticated", "/phone?tab=setup#company-identity")
+        ?.states,
+    ).toContain("primary-lines");
+    expect(routeReachedExactly(origin, "/admin?tab=team", origin + "/settings/team", "phone")).toBe(
+      true,
+    );
+    for (const [route, destination, viewport, accepted] of [
+      ["/computer", "/studio?panel=computer&agent=qa-bot", "desktop", true],
+      ["/computer", "/studio?panel=computer&agent=qa-bot", "phone", false],
+      ["/computer", "/studio?panel=computer&agent=other", "desktop", false],
+      ["/computer", "/studio?agent=qa-bot", "desktop", false],
+      ["/computer", "/computer", "breakpoint", true],
+      ["/studio", "/studio?agent=qa-bot", "phone", true],
+      ["/studio", "/studio?agent=qa-bot&extra=1", "phone", false],
+      ["/studio?create=1", "/studio?create=1&agent=qa-bot", "desktop", false],
+    ] as const) {
+      expect(routeReachedExactly(origin, route, origin + destination, viewport, roster)).toBe(
+        accepted,
+      );
+    }
+  });
 
   it("matches redirects by exact parsed origin, pathname, query, and hash", () => {
     expect(

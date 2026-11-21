@@ -73,7 +73,7 @@ export default function VerticalLanding({
       <section className="marketing-section marketing-section--screen mx-auto flex max-w-3xl flex-col items-center justify-center text-center">
         <h1 className="marketing-hero-title mx-auto">{cfg.headline}</h1>
         <p className="mx-auto mt-8 max-w-md text-lg leading-8 text-muted-foreground">
-          Create a Bot. Add another whenever you want one.
+          {cfg.metaDescription}
         </p>
         <div className="marketing-hero__actions mt-10">
           <CtaLink

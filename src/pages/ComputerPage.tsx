@@ -2351,7 +2351,7 @@ export function ComputerWorkbench({
           ? STATUS_COPY[activeTask.status]
           : { label: "Ready", variant: "success" as const };
     return (
-      <div ref={panelRef} className="wl-computer-panel">
+      <div ref={panelRef} className="wl-computer-panel" data-visual-qa-state="computer-panel">
         {!selected ? (
           <div className="wl-computer-panel__toolbar">
             <span aria-live="polite">

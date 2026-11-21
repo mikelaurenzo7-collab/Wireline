@@ -231,7 +231,7 @@ function attachDiagnostics(page, viewportName, mode, issues) {
 }
 
 function emptySemanticAssertion(viewportName, route, mode) {
-  const expectation = productionVisualRouteExpectation(mode, route);
+  const expectation = productionVisualRouteExpectation(mode, route, viewportName);
   return {
     viewport: viewportName,
     mode,
@@ -312,7 +312,15 @@ async function assertSemanticContent(page, viewportName, route, mode, issues) {
   return assertion;
 }
 
-async function captureRoute(page, viewportName, route, issues, semanticAssertions, mode) {
+async function captureRoute(
+  page,
+  viewportName,
+  route,
+  issues,
+  semanticAssertions,
+  mode,
+  rosterIds = [],
+) {
   let semanticAssertion = emptySemanticAssertion(viewportName, route, mode);
   try {
     const response = await page.goto(`${baseUrl}${route}`, {
@@ -331,7 +339,7 @@ async function captureRoute(page, viewportName, route, issues, semanticAssertion
       });
     }
     const finalUrl = page.url();
-    if (!routeReachedExactly(baseUrl, route, finalUrl)) {
+    if (!routeReachedExactly(baseUrl, route, finalUrl, viewportName, rosterIds)) {
       pushIssue(issues, {
         viewport: viewportName,
         route,
@@ -480,13 +488,21 @@ const browser = await chromium.launch({
 });
 
 let storageState = null;
+let rosterIds = [];
 try {
   const seedViewport = allViewports.find((viewport) => viewport.name === "desktop");
   const seedContext = await createContext(browser, seedViewport);
   const seedPage = await seedContext.newPage();
   await blockThirdPartyBeacons(seedPage);
   attachDiagnostics(seedPage, "auth-seed", "authenticated", issues);
-  if (await signIn(seedPage, issues)) storageState = await seedContext.storageState();
+  if (await signIn(seedPage, issues)) {
+    storageState = await seedContext.storageState();
+    const response = await seedContext.request.get(`${baseUrl}/api/agents`);
+    if (!response.ok())
+      throw new Error(`Could not verify the signed-in Bot roster (${response.status()}).`);
+    const { agents } = await response.json();
+    rosterIds = agents.map(({ id }) => id);
+  }
   await seedContext.close();
 
   for (const viewport of viewports) {
@@ -512,6 +528,7 @@ try {
         issues,
         semanticAssertions,
         "authenticated",
+        rosterIds,
       );
     }
     await authContext.close();

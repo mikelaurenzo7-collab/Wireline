@@ -92,6 +92,7 @@ describe("marketing signup continuity", () => {
       const renderedText = elements(page)
         .map((element) => Children.toArray(element.props.children).join(""))
         .join(" ");
+      expect(renderedText).toContain(WEDGES[slug].metaDescription);
       expect(renderedText).not.toMatch(/outbound calls are not available yet|coming soon/i);
     },
   );
@@ -149,10 +150,11 @@ describe("marketing signup continuity", () => {
     const renderedText = elements(page)
       .map((element) => Children.toArray(element.props.children).join(""))
       .join(" ");
+    expect(heroLink?.props.to).toBe(`/signup?wedge=${wedge}`);
+    if (wedge === "support") expect(renderedText).toContain("offer available appointment times");
     if (wedge === "sales") {
-      expect(renderedText).toContain("Create a Bot. Add another whenever you want one.");
+      expect(renderedText).toContain("Qualify a new inquiry");
       expect(renderedText).not.toContain("Find the Right Prospects");
-      expect(heroLink?.props.to).toBe("/signup?wedge=sales");
       expect(renderedText).not.toMatch(
         /server-verifiable consent records|Federal Do Not Call screening|not available yet|coming soon/i,
       );
