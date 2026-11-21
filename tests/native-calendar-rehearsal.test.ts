@@ -26,6 +26,8 @@ describe("native Calendar rehearsal policy", () => {
     expect(prompt).toContain("owner chose automatic booking");
     expect(prompt).toContain("Do not ask for separate owner confirmation");
     expect(prompt).toContain("no live calendar access and creates no appointments");
+    expect(prompt).toContain("Name the timezone only when asked or when it resolves ambiguity");
+    expect(prompt).toContain("Ask what other times work before discussing owner follow-up");
     expect(h.settings).toHaveBeenCalledWith("tenant");
     expect(h.availability).not.toHaveBeenCalled();
     expect(h.book).not.toHaveBeenCalled();

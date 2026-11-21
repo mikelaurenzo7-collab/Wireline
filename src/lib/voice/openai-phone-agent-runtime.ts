@@ -258,6 +258,7 @@ function nativeCalendarTimeContext(value: unknown, now: Date): string {
       calendar.enabled
         ? [
             "Saved hours do not prove availability. Check availability and use only the returned slots before booking.",
+            "Submit only the final date and time the caller agrees to. If that slot is taken or the caller declines the options, ask for another window and check availability again. If no time works or the caller needs an exception, offer owner follow-up. When create_followup_task is available, save the caller’s preferred times and the conflict, and confirm the follow-up only after the tool succeeds.",
             {
               automatic:
                 "This Calendar books automatically. Once the caller confirms the available slot and you have their name and service, use book_appointment without asking the owner. Confirm only the result returned by the tool.",

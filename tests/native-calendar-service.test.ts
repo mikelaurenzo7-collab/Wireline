@@ -419,6 +419,60 @@ describe("native calendar transactional booking", () => {
     expect(availability.slots.map((slot) => slot.time)).toEqual(["09:10", "09:25", "09:40"]);
   });
 
+  it("automatically books one appraisal inspection at the caller's final available time", async () => {
+    h.rows.set("wireline_agents", [{ id: "owned", userId: user, autonomyLevel: "supervised" }]);
+    h.rows.set("wireline_call_logs", [{ id: 1, vapiCallId: "inspection-call", userId: user }]);
+    await saveNativeCalendarSettings(user, {
+      ...config(),
+      appointment_name: "Appraisal inspection",
+      duration_minutes: 60,
+      buffer_minutes: 15,
+      minimum_notice_minutes: 120,
+      booking_mode: "automatic",
+      weekly_hours: [
+        { day: 1, start: "10:00", end: "12:00" },
+        { day: 2, start: "13:00", end: "15:00" },
+      ],
+    });
+    const monday = await getNativeCalendarAvailability(user, { date: "2026-09-28" });
+    expect(monday.slots.map((slot) => slot.time)).toEqual([
+      "10:00",
+      "10:15",
+      "10:30",
+      "10:45",
+      "11:00",
+    ]);
+    const tuesday = await getNativeCalendarAvailability(user, { date: "2026-09-29" });
+    const slot = tuesday.slots.find((option) => option.time === "13:30")!;
+    expect(tuesday.booking_mode).toBe("automatic");
+    expect(h.rows.get("wireline_appointments")).toBeUndefined();
+
+    const finalChoice = {
+      ...input("inspection-call-final", slot.time),
+      date: slot.date,
+      timeZone: tuesday.time_zone,
+      serviceType: "Appraisal inspection",
+      agentId: "owned",
+      callId: "inspection-call",
+    };
+    await expect(
+      bookNativeAppointment(user, { ...finalChoice, time: "15:00", requestKey: "outside-hours" }),
+    ).rejects.toMatchObject({ status: 409 });
+    const booked = await bookNativeAppointment(user, finalChoice);
+    expect(booked).toMatchObject({
+      status: "Scheduled",
+      timeZone: "America/Chicago",
+      created: true,
+    });
+    expect(booked.startAt.toISOString()).toBe(slot.start_at);
+    expect(booked.endAt.getTime() - booked.startAt.getTime()).toBe(3_600_000);
+    expect(await bookNativeAppointment(user, finalChoice)).toMatchObject({
+      id: booked.id,
+      created: false,
+    });
+    expect(h.rows.get("wireline_appointments")).toHaveLength(1);
+  });
+
   it("pauses new bookings without erasing existing appointments", async () => {
     const row = await bookNativeAppointment(user, input("one"));
     await saveNativeCalendarSettings(user, { ...config(), enabled: false });

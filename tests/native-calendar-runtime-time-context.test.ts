@@ -85,6 +85,24 @@ describe("native Calendar runtime date authority", () => {
     );
   });
 
+  it("tries other times before asking the owner to handle an automatic booking exception", () => {
+    const prompt = compose({
+      ...DEFAULT_NATIVE_CALENDAR,
+      enabled: true,
+      booking_mode: "automatic",
+    });
+    expect(prompt).toContain("Submit only the final date and time the caller agrees to");
+    expect(prompt).toContain("ask for another window and check availability again");
+    expect(prompt).toContain(
+      "If no time works or the caller needs an exception, offer owner follow-up",
+    );
+    expect(prompt).toContain(
+      "When create_followup_task is available, save the caller’s preferred times",
+    );
+    expect(prompt).toContain("confirm the follow-up only after the tool succeeds");
+    expect(prompt).toContain("use book_appointment without asking the owner");
+  });
+
   it.each([undefined, null])(
     "retains the Bot-local fallback without a saved Calendar (%s)",
     (value) => {
