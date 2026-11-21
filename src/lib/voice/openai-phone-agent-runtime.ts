@@ -229,7 +229,11 @@ function runtimeTimeContext(timeZoneValue: string | null, now = new Date()): str
   }
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   const date = `${values.year}-${values.month}-${values.day}`;
-  return `TIME CONTEXT:\nToday is ${date}. The Bot's configured IANA timezone is ${timeZone}. Use that timezone for local dates and times unless the caller confirms a different one or the native Calendar time context below applies.`;
+  return [
+    "TIME CONTEXT:",
+    `Today is ${date}. The Bot's configured IANA timezone is ${timeZone}. Use that timezone for local dates and times unless the caller confirms a different one or the native Calendar time context below applies.`,
+    "When scheduling a local appointment, say the day, date and time naturally in the business's local time. Name the timezone only when the caller asks or the location or timing could make the appointment ambiguous.",
+  ].join("\n");
 }
 
 function nativeCalendarTimeContext(value: unknown, now: Date): string {
@@ -251,7 +255,6 @@ function nativeCalendarTimeContext(value: unknown, now: Date): string {
       "NATIVE CALENDAR TIME CONTEXT:",
       `Calendar-local today is ${today}; tomorrow is ${tomorrow.toISOString().slice(0, 10)}. The saved Calendar timezone is ${calendar.time_zone}.`,
       "For appointment scheduling, resolve relative dates such as today and tomorrow from this Calendar-local date, even when the Bot's date differs. Use the saved Calendar timezone and the timezone returned by availability. If the caller uses another timezone, confirm the exact appointment date and time in the Calendar timezone before booking.",
-      "In an ordinary local conversation, say the day, date and time naturally in the business's local time. Name the timezone only when the caller asks or the location or timing could make the appointment ambiguous.",
       calendar.enabled
         ? [
             "Saved hours do not prove availability. Check availability and use only the returned slots before booking.",

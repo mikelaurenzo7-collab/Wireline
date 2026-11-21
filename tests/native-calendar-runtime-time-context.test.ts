@@ -90,6 +90,8 @@ describe("native Calendar runtime date authority", () => {
     (value) => {
       const prompt = compose(value);
       expect(prompt).toContain("Today is 2026-09-28. The Bot's configured IANA timezone is UTC");
+      expect(prompt).toContain("say the day, date and time naturally in the business's local time");
+      expect(prompt).toContain("Name the timezone only when the caller asks");
       expect(prompt).not.toContain("NATIVE CALENDAR TIME CONTEXT:");
       expect(prompt).not.toContain("America/Chicago");
     },
@@ -125,5 +127,12 @@ describe("native Calendar runtime date authority", () => {
     );
     expect(booking.properties.timezone.description).toContain("timezone returned by availability");
     expect(booking.properties.timezone.description).toContain("saved timezone is authoritative");
+  });
+
+  it("requires a timezone for the booking tool and only clarifies it with the caller when needed", () => {
+    const booking = AGENT_TOOL_DEFS.book_appointment;
+    expect(booking.parameters.required).toContain("timezone");
+    expect(booking.description).toContain("the caller confirms the date and time");
+    expect(booking.description).toContain("only when asked or when the time is ambiguous");
   });
 });

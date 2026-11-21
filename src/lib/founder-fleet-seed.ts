@@ -271,7 +271,7 @@ const KNOWLEDGE_SNIPPETS: Record<string, string[]> = {
     "Never invent a root cause. If telemetry does not show it, say what is known and escalate with the call id.",
   ],
   scheduler: [
-    "Confirm date, time, timezone, and contact method out loud before closing any booking.",
+    "Confirm the date, time and contact method before closing a booking. Name the timezone only if the caller asks or the time would be ambiguous.",
     "A walkthrough is the offer. Capture what the caller wants to see so the demo is specific to them.",
   ],
 };
@@ -285,7 +285,7 @@ const DIRECTIVE_SNIPPETS: string[] = [
 
 const LESSON_SNIPPETS: string[] = [
   "When price objections arise, acknowledge first then reframe around ROI and cost of inaction.",
-  "For scheduling, always read back date, time, timezone, and contact method before closing.",
+  "Read back the appointment date, time and contact method. Clarify the timezone when it matters to the caller.",
   "In chat, offer to turn a business plan outline into config changes (greeting, tone, tools) when relevant.",
   "Logo requests in agent chat -> outline concepts here; send the operator to the Workspace for brand artifacts.",
 ];

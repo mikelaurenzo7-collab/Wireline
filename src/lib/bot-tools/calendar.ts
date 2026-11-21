@@ -58,7 +58,7 @@ function calendarInputFailure(toolCallId: string, error: unknown): ToolCallResul
   if (!(error instanceof CalendarTimeError)) return null;
   return {
     toolCallId,
-    result: `${error.message} Ask the caller to confirm the exact date, time, and timezone before trying again.`,
+    result: `${error.message} Confirm the date and time before trying again. Clarify the timezone when it would resolve ambiguity.`,
   };
 }
 
@@ -131,7 +131,7 @@ export async function handleCalendarToolCall(
             calendar: "BotBound",
             ...availability,
             instruction:
-              "Offer only these available slots, in the stated timezone. Check the booking result before saying an appointment is confirmed.",
+              "Offer only these available slots and use the returned timezone when booking. Check the booking result before saying an appointment is confirmed.",
           }),
         };
       }

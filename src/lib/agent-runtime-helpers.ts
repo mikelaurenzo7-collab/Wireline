@@ -416,7 +416,7 @@ export const AGENT_TOOL_DEFS = {
   book_appointment: {
     name: "book_appointment",
     description:
-      "Books an appointment after checking availability and the caller confirms the exact time and timezone. Follow the returned status: Scheduled is booked; Requested is awaiting the owner's chosen approval. Do not invent an owner-confirmation requirement for automatic booking.",
+      "Books an appointment after checking availability and the caller confirms the date and time. Use the availability timezone for the booking. Clarify it with the caller only when asked or when the time is ambiguous. Follow the returned status: Scheduled is booked; Requested is awaiting the owner's chosen approval. Do not invent an owner-confirmation requirement for automatic booking.",
     parameters: {
       type: "object",
       properties: {
@@ -433,7 +433,7 @@ export const AGENT_TOOL_DEFS = {
         timezone: {
           type: "string",
           description:
-            "IANA timezone for the appointment, such as America/Chicago. Use the timezone returned by availability; a configured native Calendar's saved timezone is authoritative. For an unconfigured external calendar, confirm the caller's timezone or use the Bot's configured timezone.",
+            "IANA timezone for the appointment, such as America/Chicago. Use the timezone returned by availability; a configured native Calendar's saved timezone is authoritative. If availability supplies no timezone, use the timezone agreed with the caller or the Bot's configured timezone.",
         },
         customer_name: { type: "string", description: "Caller's full name." },
         service_type: {
