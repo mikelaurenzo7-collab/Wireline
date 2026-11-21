@@ -6,6 +6,7 @@ import { authFetch } from "../lib/api";
 import {
   AGENT_TOOL_CATALOG,
   isAgentToolConfigurable,
+  normalizeEnabledTools,
   resolveAgentTools,
   type AgentToolCatalogEntry,
   type AgentToolName,
@@ -211,10 +212,23 @@ export default function AgentToolPermissions({
         body: JSON.stringify({ enabled_tools: enabled }),
       });
       if (!response.ok) throw new Error("Actions could not be saved.");
-      const body = (await response.json()) as { enabledTools?: AgentToolName[] };
+      const body = (await response.json().catch(() => null)) as {
+        success?: unknown;
+        enabledTools?: unknown;
+      } | null;
       if (loadedAgentRef.current !== savedFor) return;
-      // Trust the server's normalized set so the UI cannot drift from storage.
-      if (Array.isArray(body.enabledTools)) setEnabled(body.enabledTools);
+      const confirmed = normalizeEnabledTools(body?.enabledTools);
+      const requested = new Set(enabled);
+      if (
+        (body?.success !== undefined && body.success !== true) ||
+        confirmed === null ||
+        confirmed.length !== requested.size ||
+        confirmed.some((tool) => !requested.has(tool))
+      )
+        throw new Error(
+          "Actions could not be confirmed. Your selection is kept. Check current settings before retrying.",
+        );
+      setEnabled(confirmed);
       setNotice("Try the updated actions before the next live call.");
     } catch (reason) {
       if (loadedAgentRef.current !== savedFor) return;

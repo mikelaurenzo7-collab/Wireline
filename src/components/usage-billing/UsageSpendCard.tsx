@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "../atoms";
 import { Checkbox } from "../ui/shadcn/Checkbox";
 import { authFetch } from "../../lib/api";
@@ -31,6 +31,7 @@ export default function UsageSpendCard({
   const [state, setState] = useState<UsageSpendResponse | null>(null);
   const [capDraft, setCapDraft] = useState("");
   const [busy, setBusy] = useState(false);
+  const capSavingRef = useRef(false);
   const [message, setMessage] = useState<string | null>(null);
   const [addons] = useState(() => usageAddonsFromIntent(captureSignupIntentFromLocation()));
   const [tier, setTier] = useState<UsageTierId>(() =>
@@ -90,11 +91,14 @@ export default function UsageSpendCard({
   }
 
   async function saveCap() {
+    if (capSavingRef.current) return;
     const value = Number(capDraft);
     if (!Number.isFinite(value)) {
       setMessage("Enter a dollar amount.");
       return;
     }
+    const requestedCap = Math.round(value * 100) / 100;
+    capSavingRef.current = true;
     setBusy(true);
     setMessage(null);
     try {
@@ -104,6 +108,7 @@ export default function UsageSpendCard({
         body: JSON.stringify({ monthly_cap_usd: value }),
       });
       const body = (await response.json().catch(() => null)) as {
+        ok?: unknown;
         cap_usd?: number;
         at_cap?: boolean;
         spent_usd?: number;
@@ -114,22 +119,41 @@ export default function UsageSpendCard({
       } | null;
       if (!response.ok)
         throw new Error(body?.error || body?.message || "Limit could not be saved.");
+      if (
+        (body?.ok !== undefined && body.ok !== true) ||
+        typeof body?.cap_usd !== "number" ||
+        !Number.isFinite(body.cap_usd) ||
+        body.cap_usd !== requestedCap ||
+        typeof body.at_cap !== "boolean" ||
+        typeof body.spent_usd !== "number" ||
+        !Number.isFinite(body.spent_usd) ||
+        typeof body.pct !== "number" ||
+        !Number.isFinite(body.pct) ||
+        typeof body.headroom_usd !== "number" ||
+        !Number.isFinite(body.headroom_usd)
+      )
+        throw new Error(
+          "Limit could not be confirmed. Your draft is kept. Refresh billing before retrying.",
+        );
+      const { cap_usd, at_cap, spent_usd, pct, headroom_usd } = body;
       setState((current) =>
         current && current.enabled && current.usage_account
           ? {
               ...current,
-              cap_usd: body?.cap_usd ?? value,
-              at_cap: body?.at_cap ?? current.at_cap,
-              spent_usd: body?.spent_usd ?? current.spent_usd,
-              pct: body?.pct ?? current.pct,
-              headroom_usd: body?.headroom_usd ?? current.headroom_usd,
+              cap_usd,
+              at_cap,
+              spent_usd,
+              pct,
+              headroom_usd,
             }
           : current,
       );
+      setCapDraft(String(cap_usd));
       setMessage("Monthly limit saved.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Limit could not be saved.");
     } finally {
+      capSavingRef.current = false;
       setBusy(false);
     }
   }
@@ -268,7 +292,12 @@ export default function UsageSpendCard({
               max={state.max_cap_usd}
               step="1"
               value={capDraft}
-              onChange={(event) => setCapDraft(event.target.value)}
+              disabled={busy || state.reconciliation_required}
+              onChange={(event) => {
+                if (capSavingRef.current) return;
+                setCapDraft(event.target.value);
+                setMessage(null);
+              }}
               className="mt-1 block min-h-11 w-40 rounded-lg border border-border bg-background px-3 text-sm"
             />
           </label>

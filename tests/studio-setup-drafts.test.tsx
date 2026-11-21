@@ -263,8 +263,9 @@ describe("Studio inspector draft lifecycle", () => {
 
     await save();
 
-    expect(h.fetch.mock.calls.filter(([, options]) => options?.method).map(([path]) => path))
-      .toEqual(["/api/train/extract"]);
+    expect(
+      h.fetch.mock.calls.filter(([, options]) => options?.method).map(([path]) => path),
+    ).toEqual(["/api/train/extract"]);
     expect(h.config.personality).toBe("Updated support policy in another editor.");
     expect(h.config.directives).toEqual([{ content: "Opening greeting: New approved greeting" }]);
   });
@@ -289,6 +290,41 @@ describe("Studio inspector draft lifecycle", () => {
     expect(field("bot-permission")?.props.disabled).toBe(false);
   });
 
+  it.each(["missing", "wrong Bot", "wrong permission", "malformed"])(
+    "keeps the current permission after a %s receipt and can retry",
+    async (kind) => {
+      const usual = h.fetch.getMockImplementation()!;
+      const writes: unknown[] = [];
+      h.fetch.mockImplementation((path: string, options?: RequestInit) => {
+        if (!path.endsWith("/permission")) return usual(path, options);
+        writes.push(JSON.parse(String(options?.body)));
+        return Promise.resolve(
+          json(
+            writes.length > 1
+              ? { id: "bot-a", permission: "full" }
+              : kind === "missing"
+                ? {}
+                : kind === "malformed"
+                  ? null
+                  : {
+                      id: kind === "wrong Bot" ? "bot-b" : "bot-a",
+                      permission: kind === "wrong permission" ? "ask" : "full",
+                    },
+          ),
+        );
+      });
+      await mount();
+      change("bot-permission", "full");
+      await vi.waitFor(() => expect(drafts.read("bot-a").saving).toBe(false));
+      expect(drafts.read("bot-a").values.permission).toBe("auto");
+      expect(text(render())).toContain("Permission could not be confirmed");
+      await vi.waitFor(() => expect(field("bot-permission")?.props.disabled).toBe(false));
+      change("bot-permission", "full");
+      await vi.waitFor(() => expect(field("bot-permission")?.props.value).toBe("full"));
+      expect(writes).toEqual([{ level: "full" }, { level: "full" }]);
+    },
+  );
+
   it("finishes the original Bot's save after switching to another Bot", async () => {
     const pending = deferred();
     const usual = h.fetch.getMockImplementation()!;
@@ -310,7 +346,8 @@ describe("Studio inspector draft lifecycle", () => {
     await vi.waitFor(() => expect(drafts.read("bot-a").saving).toBe(false));
     const mutations = h.fetch.mock.calls.filter(([, options]) => options?.method);
     expect(mutations.map(([path]) => path)).toEqual([
-      "/api/agent-config/bot-a/manual", "/api/agent-config/bot-a/manual",
+      "/api/agent-config/bot-a/manual",
+      "/api/agent-config/bot-a/manual",
     ]);
     expect(drafts.read("bot-a").dirty).toBe(false);
     expect(drafts.read("bot-b").dirty).toBe(false);

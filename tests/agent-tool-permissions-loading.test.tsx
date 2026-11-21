@@ -287,6 +287,81 @@ describe("agent action editor loading", () => {
     expect(selected("Platform Actions")).toHaveLength(1);
   });
 
+  it.each(["missing", "malformed", "unknown", "different", "refused"])(
+    "keeps an action selection after a %s save receipt and confirms an exact retry",
+    async (kind) => {
+      const writes: string[][] = [];
+      h.fetch.mockImplementation((url: string, options?: RequestInit) => {
+        if (options?.method === "POST") {
+          const submitted = JSON.parse(String(options.body)).enabled_tools;
+          writes.push(submitted);
+          const enabledTools =
+            kind === "malformed" ? "unconfirmed" : kind === "unknown" ? ["unknown_tool"] : [];
+          return Promise.resolve(
+            json(
+              writes.length > 1
+                ? { success: true, enabledTools: submitted }
+                : kind === "missing"
+                  ? { success: true }
+                  : kind === "refused"
+                    ? { success: false, enabledTools: submitted }
+                    : { success: true, enabledTools },
+            ),
+          );
+        }
+        return Promise.resolve(
+          json(url.startsWith("/api/agent-config/") ? { enabledTools: [] } : { accounts: [] }),
+        );
+      });
+      render();
+      toggle();
+      await flush();
+      const firstAction = () => elements(render()).find((node) => node.type === "input")!;
+      firstAction().props.onChange!();
+      const save = () =>
+        elements(render()).find(
+          (node) => node.type === "button" && textOf(node).includes("Save Actions"),
+        )!;
+      save().props.onClick!();
+      await flush();
+      expect(textOf(render())).toContain("Actions could not be confirmed");
+      expect(textOf(render())).not.toContain("Try the updated actions");
+      expect(firstAction().props.checked).toBe(true);
+      save().props.onClick!();
+      await flush();
+      expect(textOf(render())).toContain("Try the updated actions");
+      expect(writes).toHaveLength(2);
+      expect(writes[1]).toEqual(writes[0]);
+    },
+  );
+
+  it("accepts a reordered and deduplicated receipt of the requested actions", async () => {
+    h.fetch.mockImplementation((url: string, options?: RequestInit) => {
+      if (options?.method === "POST") {
+        const submitted = JSON.parse(String(options.body)).enabled_tools as string[];
+        return Promise.resolve(
+          json({ enabledTools: [...submitted].reverse().concat(submitted[0]) }),
+        );
+      }
+      return Promise.resolve(
+        json(url.startsWith("/api/agent-config/") ? { enabledTools: [] } : { accounts: [] }),
+      );
+    });
+    render();
+    toggle();
+    await flush();
+    for (const index of [0, 1])
+      elements(render()).filter((node) => node.type === "input")[index].props.onChange!();
+    elements(render()).find(
+      (node) => node.type === "button" && textOf(node).includes("Save Actions"),
+    )!.props.onClick!();
+    await flush();
+    expect(textOf(render())).toContain("Try the updated actions");
+    expect(
+      elements(render()).filter((node) => node.type === "input" && node.props.checked),
+    ).toHaveLength(2);
+  });
+
   it("recovers when collapsed after config but before optional connections load", async () => {
     let releaseConnections!: () => void;
     const delayed = new Promise<void>((resolve) => {

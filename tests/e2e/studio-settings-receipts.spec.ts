@@ -9,7 +9,7 @@ const emptyPlaybook = {
   neverSay: [],
 };
 
-async function mockStudio(page: Page) {
+async function mockStudio(page: Page, config: Record<string, unknown> = {}) {
   await page.route("**/api/**", (route) => {
     const path = new URL(route.request().url()).pathname;
     // All account and provider endpoints are fixtures.
@@ -29,6 +29,7 @@ async function mockStudio(page: Page) {
                     timezone: "UTC",
                     out_of_hours_message: null,
                   },
+                  ...config,
                 }
               : { accounts: [], data: [], numbers: [], integrations: [], messages: [] },
     });
@@ -39,6 +40,69 @@ async function openSetup(page: Page) {
   await page.goto(`/studio?agent=${bot.id}`);
   await page.getByRole("button", { name: "Set Up Bot", exact: true }).click();
 }
+
+test("Permission rejects another Bot's receipt and confirms a safe retry", async ({ page }) => {
+  await mockStudio(page, { permission: "auto" });
+  const writes: unknown[] = [];
+  await page.route(`**/api/agents/${bot.id}/permission`, (route) => {
+    writes.push(route.request().postDataJSON());
+    return route.fulfill({
+      json: { id: writes.length === 1 ? "another-bot" : bot.id, permission: "ask" },
+    });
+  });
+  await openSetup(page);
+  const permission = page.getByLabel("Permission", { exact: true });
+  await expect(permission).toHaveValue("auto");
+  await permission.selectOption("ask");
+  await expect(page.getByText(/Permission could not be confirmed\./)).toBeVisible();
+  await expect(permission).toHaveValue("auto");
+  expect(writes).toEqual([{ level: "ask" }]);
+  await permission.selectOption("ask");
+  await expect(permission).toHaveValue("ask");
+  await expect(page.getByText(/Permission could not be confirmed\./)).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Calendar settings", exact: true })).toHaveAttribute(
+    "href",
+    "/calendar?tab=availability",
+  );
+  expect(writes).toEqual([{ level: "ask" }, { level: "ask" }]);
+});
+
+test("Actions keeps the owner's selection until the saved tools are confirmed", async ({
+  page,
+}) => {
+  await mockStudio(page, { enabledTools: [] });
+  const writes: Array<{ enabled_tools: string[] }> = [];
+  await page.route(`**/api/agents/${bot.id}/tools`, (route) => {
+    const submitted = route.request().postDataJSON();
+    writes.push(submitted);
+    return route.fulfill({
+      json:
+        writes.length === 1
+          ? { success: true }
+          : { success: true, enabledTools: submitted.enabled_tools },
+    });
+  });
+  await openSetup(page);
+  const actions = page.getByRole("region", { name: "Actions", exact: true });
+  await actions.getByRole("button", { name: "Actions", exact: true }).click();
+  await actions.locator("summary", { hasText: "Platform Actions" }).click();
+  const knowledge = actions.getByRole("checkbox", { name: /^Search knowledge base/ });
+  await expect(knowledge).not.toBeChecked();
+  await knowledge.check();
+  await actions.getByRole("button", { name: "Save Actions", exact: true }).click();
+  await expect(actions.getByText(/Actions could not be confirmed\./)).toBeVisible();
+  await expect(actions.getByText(/Try the updated actions/)).toHaveCount(0);
+  await expect(knowledge).toBeChecked();
+  expect(writes).toEqual([{ enabled_tools: ["search_knowledge_base"] }]);
+  await actions.getByRole("button", { name: "Save Actions", exact: true }).click();
+  await expect(actions.getByText(/Try the updated actions/)).toBeVisible();
+  await expect(actions.getByText(/Actions could not be confirmed\./)).toHaveCount(0);
+  await expect(knowledge).toBeChecked();
+  expect(writes).toEqual([
+    { enabled_tools: ["search_knowledge_base"] },
+    { enabled_tools: ["search_knowledge_base"] },
+  ]);
+});
 
 for (const kind of ["missing", "malformed", "different"] as const) {
   test(`Hours preserves the draft after a ${kind} save confirmation`, async ({ page }) => {

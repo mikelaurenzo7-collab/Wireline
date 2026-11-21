@@ -68,11 +68,13 @@ vi.mock("../src/lib/use-body-scroll-lock", () => ({ useBodyScrollLock: vi.fn() }
 vi.mock("../src/lib/use-modal-focus-trap", () => ({ useModalFocusTrap: vi.fn() }));
 
 type Props = {
+  id?: string;
+  value?: string;
   children?: ReactNode;
   disabled?: boolean;
   showBalance?: boolean;
   onClick?: () => unknown;
-  onChange?: () => unknown;
+  onChange?: (event?: { target: { value: string } }) => unknown;
   to?: string;
   open?: boolean;
   "aria-label"?: string;
@@ -173,6 +175,123 @@ beforeEach(() => {
 });
 
 describe("billing plan decisions", () => {
+  it("freezes one pending limit request, accepts rounding and clears success on a new edit", async () => {
+    let finish!: (response: Response) => void;
+    const writes: unknown[] = [];
+    h.fetch.mockImplementation((_path: string, options?: RequestInit) => {
+      if (options?.method === "PUT") {
+        writes.push(JSON.parse(String(options.body)));
+        return new Promise<Response>((resolve) => {
+          finish = resolve;
+        });
+      }
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            enabled: true,
+            usage_account: true,
+            period: "2026-11",
+            spent_usd: 10,
+            cap_usd: 25,
+            pct: 40,
+            at_cap: false,
+            headroom_usd: 15,
+            max_cap_usd: 1000,
+          }),
+        ),
+      );
+    });
+    render("usage");
+    h.effects[0]();
+    const cap = () => render("usage").find((node) => node.props.id === "usage-monthly-cap")!;
+    await vi.waitFor(() => expect(cap()).toBeDefined());
+    cap().props.onChange!({ target: { value: "40.125" } });
+    const save = button("usage", "Save Limit");
+    save.props.onClick!();
+    save.props.onClick!();
+    expect(writes).toHaveLength(1);
+    expect(cap().props.disabled).toBe(true);
+    finish(
+      new Response(
+        JSON.stringify({
+          ok: true,
+          cap_usd: 40.13,
+          spent_usd: 10,
+          pct: (10 / 40.13) * 100,
+          at_cap: false,
+          headroom_usd: 30.13,
+        }),
+      ),
+    );
+    await vi.waitFor(() => expect(cap().props.disabled).not.toBe(true));
+    expect(cap().props.value).toBe("40.13");
+    expect(text(render("usage"))).toContain("Monthly limit saved.");
+    cap().props.onChange!({ target: { value: "60" } });
+    expect(text(render("usage"))).not.toContain("Monthly limit saved.");
+    expect(text(render("usage"))).toContain("$10.00 of $40.13");
+    expect(writes).toHaveLength(1);
+  });
+
+  it.each(["missing", "different", "malformed", "partial", "refused"])(
+    "keeps the saved spending limit after a %s receipt and preserves the requested limit",
+    async (kind) => {
+      const state = {
+        enabled: true,
+        usage_account: true,
+        period: "2026-11",
+        spent_usd: 10,
+        cap_usd: 25,
+        pct: 40,
+        at_cap: false,
+        headroom_usd: 15,
+        max_cap_usd: 1000,
+      };
+      const confirmed = {
+        ok: true,
+        cap_usd: 40,
+        spent_usd: 10,
+        pct: 25,
+        at_cap: false,
+        headroom_usd: 30,
+      };
+      const writes: unknown[] = [];
+      h.fetch.mockImplementation(async (_path: string, options?: RequestInit) => {
+        if (options?.method !== "PUT") return { ok: true, json: async () => state };
+        writes.push(JSON.parse(String(options.body)));
+        return {
+          ok: true,
+          json: async () =>
+            writes.length > 1
+              ? confirmed
+              : kind === "missing"
+                ? {}
+                : kind === "partial"
+                  ? { ok: true, cap_usd: 40 }
+                  : {
+                      ...confirmed,
+                      ok: kind !== "refused",
+                      cap_usd: kind === "different" ? 30 : kind === "malformed" ? "40" : 40,
+                    },
+        };
+      });
+      render("usage");
+      h.effects[0]();
+      const cap = () => render("usage").find((node) => node.props.id === "usage-monthly-cap")!;
+      await vi.waitFor(() => expect(cap()).toBeDefined());
+      cap().props.onChange!({ target: { value: "40" } });
+      button("usage", "Save Limit").props.onClick!();
+      await vi.waitFor(() => expect(button("usage", "Save Limit").props.disabled).not.toBe(true));
+      expect(text(render("usage"))).toContain("Limit could not be confirmed");
+      expect(text(render("usage"))).not.toContain("Monthly limit saved.");
+      expect(text(render("usage"))).toContain("$10.00 of $25.00");
+      expect(cap().props.value).toBe("40");
+      button("usage", "Save Limit").props.onClick!();
+      await vi.waitFor(() => expect(text(render("usage"))).toContain("Monthly limit saved."));
+      expect(text(render("usage"))).toContain("$10.00 of $40.00");
+      expect(writes).toEqual([{ monthly_cap_usd: 40 }, { monthly_cap_usd: 40 }]);
+    },
+  );
+
   it("sends the selected usage identities from signup to Checkout", async () => {
     window.location.search = "?plan=usage&interval=month&number=0&email_address=1";
     render("usage");

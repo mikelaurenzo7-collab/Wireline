@@ -239,11 +239,7 @@ export default function StudioAgentWorkspacePanel({
     };
   }, [agentId, reloadKey, user?.id, setupDrafts]);
 
-  async function saveManual(
-    type: "tone" | "directive",
-    content: string,
-    replacePrefix?: string,
-  ) {
+  async function saveManual(type: "tone" | "directive", content: string, replacePrefix?: string) {
     const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/manual`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -284,6 +280,12 @@ export default function StudioAgentWorkspacePanel({
         },
       );
       if (!response.ok) throw new Error("Permission could not be saved.");
+      const receipt = (await response.json().catch(() => null)) as {
+        id?: unknown;
+        permission?: unknown;
+      } | null;
+      if (receipt?.id !== permissionAgentId || receipt.permission !== level)
+        throw new Error("Permission could not be confirmed.");
       setupDrafts.confirm(permissionAgentId, {}, { permission: level });
     } catch {
       if (isCurrentAgent(permissionAgentId, permissionUserId)) {
@@ -338,11 +340,7 @@ export default function StudioAgentWorkspacePanel({
       if (!isCurrentOwner()) return;
       if (edits.tone !== undefined) {
         await saveManual("tone", edits.tone);
-        setupDrafts.confirm(
-          setupAgentId,
-          { tone: edits.tone },
-          { tone: edits.tone },
-        );
+        setupDrafts.confirm(setupAgentId, { tone: edits.tone }, { tone: edits.tone });
         confirmedChange = true;
       }
       if (!isCurrentOwner()) return;
@@ -597,7 +595,12 @@ export default function StudioAgentWorkspacePanel({
                     ? "This Bot completes allowed actions without waiting."
                     : permission === "ask"
                       ? "This Bot waits for your approval before it acts."
-                      : "This Bot handles ordinary work and asks before it emails, texts, or updates a customer record."}
+                      : "This Bot handles ordinary work and asks before it emails, texts, or updates a customer record."}{" "}
+                  Calendar confirmations follow{" "}
+                  <Link to="/calendar?tab=availability" className="font-medium underline">
+                    Calendar settings
+                  </Link>
+                  .
                 </p>
                 {permissionError ? (
                   <StatusNotice tone="destructive">{permissionError}</StatusNotice>

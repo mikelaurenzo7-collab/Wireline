@@ -32,6 +32,73 @@ const accountSpendResponses: Record<string, unknown> = {
   "/api/spend/budget": { budget: { monthly_limit_usd: "2", warn_threshold_pct: 80 } },
 };
 
+test("the owner keeps a spending-limit draft after an unconfirmed save and can retry", async ({
+  page,
+}) => {
+  const writes: unknown[] = [];
+  await page.route("**/api/**", (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === "/api/billing/usage-spend" && route.request().method() === "PUT") {
+      writes.push(route.request().postDataJSON());
+      return route.fulfill({
+        json:
+          writes.length === 1
+            ? { ok: true }
+            : {
+                ok: true,
+                cap_usd: 40,
+                spent_usd: 10,
+                at_cap: false,
+                pct: 25,
+                headroom_usd: 30,
+              },
+      });
+    }
+    return route.fulfill({
+      json:
+        path === "/api/auth/session"
+          ? { user: { id: "limit-owner", email: "owner@example.test" } }
+          : path === "/api/billing/usage-spend"
+            ? {
+                enabled: true,
+                usage_account: true,
+                tier: "standard",
+                cap_usd: 25,
+                spent_usd: 10,
+                at_cap: false,
+                pct: 40,
+                headroom_usd: 15,
+                max_cap_usd: 1000,
+              }
+            : path === "/api/billing/status"
+              ? {
+                  stripe_configured: true,
+                  subscription: { status: "active", plan_id: "usage" },
+                  agent_count: 2,
+                }
+              : { agents: [], accounts: [], data: [], numbers: [], integrations: [], ledger: [] },
+    });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/settings/billing");
+  const usage = page.getByRole("region", { name: "Usage this period", exact: true });
+  const limit = usage.getByRole("spinbutton", { name: "Monthly limit (USD)", exact: true });
+  await expect(usage.getByText("$10.00 of $25.00", { exact: true })).toBeVisible();
+  await limit.fill("40");
+  await usage.getByRole("button", { name: "Save Limit", exact: true }).click();
+  await expect(usage.getByText(/Limit could not be confirmed\./)).toBeVisible();
+  await expect(usage.getByText("Monthly limit saved.", { exact: true })).toHaveCount(0);
+  await expect(limit).toHaveValue("40");
+  await expect(usage.getByText("$10.00 of $25.00", { exact: true })).toBeVisible();
+  await usage.getByRole("button", { name: "Save Limit", exact: true }).click();
+  await expect(usage.getByText("Monthly limit saved.", { exact: true })).toBeVisible();
+  await expect(usage.getByText("$10.00 of $40.00", { exact: true })).toBeVisible();
+  await limit.fill("60");
+  await expect(usage.getByText("Monthly limit saved.", { exact: true })).toHaveCount(0);
+  await expect(usage.getByText("$10.00 of $40.00", { exact: true })).toBeVisible();
+  expect(writes).toEqual([{ monthly_cap_usd: 40 }, { monthly_cap_usd: 40 }]);
+});
+
 for (const width of [1440, 390]) {
   test(`recent balance activity is readable and links to separate AI spend at ${width}px`, async ({
     page,
