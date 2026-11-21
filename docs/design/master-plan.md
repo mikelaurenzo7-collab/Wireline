@@ -38,6 +38,8 @@ The old Flutter dashboard was a disconnected mock with fixed metrics and unsuppo
 
 The launch report now validates each configured Shared Work tier through the existing checkout validator. Legacy price lookups use batches of at most ten keys. A failed tier, missing configuration, test-mode credential or partial lookup cannot certify a live catalog. This is a read-only reporting correction; it does not change a price, subscription or charge.
 
+B6 was reproduced on November 20: a missed call displayed a completion placeholder and its attempt duration twice. Missing-transcript summaries now use neutral text, including the known historical placeholder at display time. Missed reports omit the duration badge; other reports show duration once. Call report headings follow the page hierarchy. Stored call data and outcome classification remain unchanged; this correction does not establish live call quality.
+
 ## Next work in order
 
 | Priority | Work | Acceptance |
@@ -61,7 +63,6 @@ The following reports are not accepted defects on current main. Reproduce before
 | CAP-01, one-Bot 402, B3 | Separate current Shared Work capacity from legacy subscriptions and identity slots. The old 120-picture ceiling is not a current Bot cap; never reinstate it. |
 | Business Hours vs Calendar | Answering hours and booking availability are different settings. Inspect saved states; never rewrite an existing schedule merely to change a default. |
 | B1/B2, VOICE-01/02/03 | Trace the particular call's source and saved inputs for a retired-price report. Preserve legitimate customer prices and never claim a historical root cause without evidence. |
-| B6 | Pair missing transcripts with actual call outcome; neutral fallback text must not imply a completed customer action. |
 | B7, team 503, D5, approvals | Capture the actual failed response, saved permission and dispatch path. Do not turn an unavailable team into an empty successful team or revive a disconnected grant. |
 | B5, D3/4/6/7/8/9/11/12/17, Polish 1/2/3/4 | Recheck selected conversation, titles, save scope, navigation, channel state, glyphs, focus and controls on populated and empty workspaces. Preserve read-state and save side effects. |
 | D10/14/16/18, PUB-01/02/03/04/05 | Measure current public hierarchy, pricing allowance, metadata, FAQ wording, links, manifest and footer behavior. The earlier storefront candidates are historical, not a plan to restore deleted UI. |

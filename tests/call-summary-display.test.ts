@@ -15,4 +15,22 @@ describe("call history summary", () => {
       readableCallSummary("The caller asked about pricing.", "Caller: What does it cost?"),
     ).toBe("The caller asked about pricing.");
   });
+
+  it("replaces the legacy completion claim when no transcript is available", () => {
+    expect(
+      readableCallSummary("Native voice call completed without a usable transcript.", null),
+    ).toBe("No transcript is available for this call.");
+  });
+
+  it("does not hide a recovered transcript behind the legacy placeholder", () => {
+    expect(
+      readableCallSummary(
+        "Native voice call completed without a usable transcript.",
+        "Caller: Please call me back tomorrow.",
+      ),
+    ).toBe("No summary is available for this call yet.");
+    expect(readableCallSummary("The caller completed their booking.", null)).toBe(
+      "The caller completed their booking.",
+    );
+  });
 });

@@ -302,7 +302,7 @@ export function compactOpenAITranscript(lines: OpenAITranscriptLine[]): string {
  * with the Bot's disclosure and greeting, which says nothing about the call.
  */
 export function deterministicSummary(transcript: string): string {
-  if (!transcript.trim()) return "Native voice call completed without a usable transcript.";
+  if (!transcript.trim()) return "No transcript is available for this call.";
   const callerTurns = transcript
     .split("\n")
     .filter((line) => line.startsWith("Caller: "))

@@ -90,7 +90,7 @@ type Props = {
 };
 let tree: ReactNode;
 let agentId = "first";
-const json = (calls: Array<{ id: string }>, total = 3, status = 200) =>
+const json = <T extends { id: string }>(calls: T[], total = 3, status = 200) =>
   new Response(JSON.stringify({ calls, total, hasMore: calls.length < total }), { status });
 function deferred() {
   let resolve!: (r: Response) => void;
@@ -166,6 +166,58 @@ describe("call history request ordering", () => {
     expect(text(tree)).not.toContain("Lead score");
     expect(text(tree)).not.toContain("Quality score");
     expect(text(tree)).not.toContain("Intent");
+  });
+
+  it("does not present a missed attempt as a completed conversation", async () => {
+    h.fetch.mockResolvedValueOnce(
+      json([
+        {
+          id: "missed",
+          outcome_tag: "missed",
+          duration_seconds: 4,
+          summary: "Native voice call completed without a usable transcript.",
+        },
+      ], 1),
+    );
+    await settle();
+    const call = elements(tree).find(
+      (node) => node.type === "button" && text(node).includes("Missed"),
+    );
+    call!.props.onClick!();
+    await settle();
+    expect(text(tree)).toContain("What happenedThe call was missed.");
+    expect(text(tree)).toContain("No transcript is available for this call.");
+    expect(text(tree)).not.toContain("completed");
+    expect(text(tree)).not.toContain("4s");
+  });
+
+  it("shows duration once in a connected report with sequential headings", async () => {
+    h.fetch.mockResolvedValueOnce(
+      json([
+        {
+          id: "connected",
+          outcome_tag: "other",
+          duration_seconds: 65,
+          transcript: "Caller: Thanks for your help.",
+          recording_url: "https://example.com/recording.mp3",
+        },
+      ], 1),
+    );
+    await settle();
+    const call = elements(tree).find(
+      (node) => node.type === "button" && text(node).includes("No request"),
+    );
+    call!.props.onClick!();
+    await settle();
+    const report = elements(tree).find((node) => node.props["aria-label"] === "Call report");
+    expect(text(report).match(/1m 5s/g)).toHaveLength(1);
+    const headings = elements(report).filter((node) => /^h[1-6]$/.test(String(node.type)));
+    expect(headings.map((node) => [node.type, text(node)])).toEqual([
+      ["h2", "Unknown Caller"],
+      ["h3", "Recording"],
+      ["h3", "Summary"],
+      ["h3", "Transcript"],
+    ]);
   });
 
   it("blocks overlapping refresh and duplicate pagination, then retains all loaded calls", async () => {

@@ -110,6 +110,15 @@ export function readableCallSummary(
 ) {
   const text = summary?.trim();
   if (!text) return "No summary is available for this call yet.";
+  // Older empty-transcript placeholders claimed completion even for missed calls.
+  if (
+    text === "Native voice call completed without a usable transcript." ||
+    text === "No transcript is available for this call."
+  ) {
+    return transcript?.trim()
+      ? "No summary is available for this call yet."
+      : "No transcript is available for this call.";
+  }
   // Some older calls stored a clipped transcript in the summary field. Show
   // the full transcript once, under its own disclosure, instead of duplicating it.
   const excerpt = text.replace(/…$/, "").replace(/\s+/g, " ");
@@ -448,14 +457,13 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
         <p className="text-xs font-semibold text-primary">Call report</p>
         <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
-            <h3 className="font-mono text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate">
+            <h2 className="font-mono text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate">
               {formatPhone(selected.customer_number, "Unknown Caller")}
-            </h3>
+            </h2>
             <p className="wl-preserve-case mt-1 text-xs text-muted-foreground">
               {[
                 selected.agent_name,
                 formatTime(selected.created_at),
-                formatDuration(selected.duration_seconds),
               ]
                 .filter(Boolean)
                 .join(" · ")}
@@ -467,7 +475,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
             >
               {callOutcomeLabel(reportHappened(selected))}
             </span>
-            {selected.duration_seconds ? (
+            {reportHappened(selected) !== "missed" && (selected.duration_seconds ?? 0) > 0 ? (
               <span className="inline-flex items-center rounded-lg border border-border bg-card px-2.5 py-1 font-mono text-xs font-medium text-muted-foreground">
                 {formatDuration(selected.duration_seconds)}
               </span>
@@ -502,10 +510,10 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
       {selected.recording_url ? (
         <section aria-label="Call recording" className="rounded-2xl border border-border/80 bg-card/60 p-4 shadow-xs">
           <div className="flex items-center justify-between pb-2">
-            <h4 className="flex items-center gap-2 text-xs font-semibold text-foreground">
+            <h3 className="flex items-center gap-2 text-xs font-semibold text-foreground">
               <Mic className="size-3.5 text-primary" aria-hidden="true" />
               Recording
-            </h4>
+            </h3>
             <a
               href={selected.recording_url}
               target="_blank"
@@ -527,9 +535,9 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
 
       <section className="rounded-2xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs space-y-4">
         <div>
-          <h4 className="text-xs font-semibold tracking-[0.08em] uppercase text-muted-foreground">
+          <h3 className="text-xs font-semibold tracking-[0.08em] uppercase text-muted-foreground">
             {selected.summary?.trim().startsWith("Caller:") ? "Caller Excerpt" : "Summary"}
-          </h4>
+          </h3>
           <p className="wl-preserve-case mt-2 text-sm leading-6 text-foreground">
             {readableCallSummary(selected.summary, selected.transcript)}
           </p>
@@ -555,9 +563,9 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
       {selected.transcript ? (
         <section className="rounded-2xl border border-border/80 bg-card/60 p-4 sm:p-5 shadow-xs">
           <div className="flex items-center justify-between pb-3 border-b border-border/60">
-            <h4 className="text-xs font-semibold tracking-[0.08em] uppercase text-muted-foreground">
+            <h3 className="text-xs font-semibold tracking-[0.08em] uppercase text-muted-foreground">
               Transcript
-            </h4>
+            </h3>
             <span className="text-[11px] text-muted-foreground">
               {parseDialogue(selected.transcript, selected.agent_name).length > 1
                 ? "Dialogue turns"
