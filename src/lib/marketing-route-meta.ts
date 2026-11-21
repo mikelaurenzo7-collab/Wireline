@@ -142,7 +142,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/solutions/sales": {
     title: "Sales",
     description:
-      "Qualify a new inquiry, capture what the prospect needs, and prepare a follow-up for you to review.",
+      "Qualify a new inquiry, capture what the prospect needs, and draft a reply for your review.",
   },
   "/solutions/support": {
     title: "Front Desk",

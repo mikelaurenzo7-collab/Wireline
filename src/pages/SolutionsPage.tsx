@@ -6,7 +6,7 @@ const SOLUTIONS = {
   sales: {
     title: "Sales",
     description:
-      "Qualify a new inquiry, capture what the prospect needs, and prepare a follow-up for you to review.",
+      "Qualify a new inquiry, capture what the prospect needs, and draft a reply for your review.",
     primary: { href: "/signup?wedge=sales", label: "Create a Bot" },
   },
   support: {
