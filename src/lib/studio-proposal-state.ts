@@ -19,9 +19,9 @@ export type StoredStudioMessageMetadata = {
 const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === "object" && !Array.isArray(value);
 
-/** Older assistant turns claimed an approval existed without storing its card. */
+/** An explicit ready-to-approve claim needs a card; an inline draft does not. */
 export const claimsStudioReview = (text: string) =>
-  /\b(?:i(?:'ve| have) drafted|approve it when ready|ready for (?:your )?approval)\b/i.test(text);
+  /\b(?:approve it when ready|ready for (?:your )?approval)\b/i.test(text);
 
 /** Only normalized, actionable cards are stored with an assistant turn. */
 export function storedStudioProposals(

@@ -58,4 +58,11 @@ describe("durable Studio review state", () => {
     expect(claimsStudioReview("I've drafted the updated rule. Approve it when ready.")).toBe(true);
     expect(claimsStudioReview("I can draft a rule when you tell me what to change.")).toBe(false);
   });
+
+  it.each([
+    "I've drafted the intake summary below. The appointment is unconfirmed.",
+    "I have drafted a follow-up email below. Nothing has been sent.",
+  ])("does not treat an inline deliverable as a missing approval card: %s", (reply) => {
+    expect(claimsStudioReview(reply)).toBe(false);
+  });
 });

@@ -177,6 +177,19 @@ describe("reviewable Studio Build plans", () => {
     expect(plan.reply).toContain("Nothing is waiting for approval");
   });
 
+  it("preserves an inline draft without inventing an approval or external action", () => {
+    const reply =
+      "I've drafted the intake summary below.\nSam QA requests a Chicago consultation on November 24 at 2 p.m. The consultation is 20 minutes and has no charge. The appointment is unconfirmed. Nothing has been booked or sent.";
+    const plan = normalizePlan({ reply }, { userMessage: "Draft an intake summary only." });
+    expect(plan).toEqual({
+      reply,
+      changes: [],
+      toolToggles: [],
+      actions: [],
+      integrationJobs: [],
+    });
+  });
+
   it("does not append a duplicate when asked to remove and replace a rule", () => {
     const plan = normalizePlan(
       {
