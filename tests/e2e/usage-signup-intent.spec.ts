@@ -1,5 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { USAGE_PLAN } from "../../src/lib/plan-catalog";
+import { PUBLIC_USAGE_TIERS, type UsageTierId } from "../../src/lib/usage-billing-catalog";
 
 test("a legacy Personal signup preserves its intent across reloads", async ({ page }) => {
   await page.route("**/api/**", async (route) => {
@@ -59,67 +60,80 @@ test("a legacy Personal signup preserves its intent across reloads", async ({ pa
     });
 });
 
+async function simulateUsageSignup(
+  page: Page,
+  usageTiers: readonly UsageTierId[] = PUBLIC_USAGE_TIERS,
+) {
+  let authenticated = false;
+  const purchases: unknown[] = [];
+  // All API traffic is synthetic. This proves the browser handoff, not a
+  // real account creation, payment, or Stripe invoice.
+  await page.route("**/api/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === "/api/billing/checkout") {
+      purchases.push(route.request().postDataJSON());
+      await route.fulfill({ status: 400, json: { error: "Synthetic checkout stopped." } });
+      return;
+    }
+    const json =
+      path === "/api/auth/session"
+        ? {
+            user: authenticated
+              ? { id: "usage-owner", email: "usage@example.test", full_name: "Usage Owner" }
+              : null,
+          }
+        : path === "/api/billing/plans"
+          ? {
+              stripe_configured: true,
+              checkout_available: true,
+              usage_checkout_available: true,
+              usage_tiers: usageTiers,
+              billing_model: "usage",
+              plans: [
+                {
+                  ...USAGE_PLAN,
+                  configured: true,
+                  annual_configured: false,
+                  contact_sales: false,
+                  checkout_availability: "available",
+                  pricing_model: "usage",
+                },
+              ],
+            }
+          : path === "/api/billing/status"
+            ? {
+                stripe_configured: true,
+                email_verified: true,
+                agent_count: 0,
+                subscription: null,
+              }
+            : path === "/api/billing/usage-spend"
+              ? { enabled: true, usage_account: false }
+              : {
+                  accounts: [],
+                  data: [],
+                  agents: [],
+                  integrations: [],
+                  ledger: [],
+                  balance_usd: 0,
+                };
+    await route.fulfill({ json });
+  });
+  return {
+    purchases,
+    signIn: () => {
+      authenticated = true;
+    },
+  };
+}
+
 for (const [tier, name, price] of [
   ["lite", "Lite", 12],
   ["standard", "Starter", 24],
   ["plus", "Plus", 49],
 ] as const) {
   test(`${name} and its extra identities survive signup and reach checkout`, async ({ page }) => {
-    let authenticated = false;
-    const purchases: unknown[] = [];
-    // All API traffic is synthetic. This proves the browser handoff, not a
-    // real account creation, payment, or Stripe invoice.
-    await page.route("**/api/**", async (route) => {
-      const path = new URL(route.request().url()).pathname;
-      if (path === "/api/billing/checkout") {
-        purchases.push(route.request().postDataJSON());
-        await route.fulfill({ status: 400, json: { error: "Synthetic checkout stopped." } });
-        return;
-      }
-      const json =
-        path === "/api/auth/session"
-          ? {
-              user: authenticated
-                ? { id: "usage-owner", email: "usage@example.test", full_name: "Usage Owner" }
-                : null,
-            }
-          : path === "/api/billing/plans"
-            ? {
-                stripe_configured: true,
-                checkout_available: true,
-                usage_checkout_available: true,
-                usage_tiers: ["lite", "standard", "plus"],
-                billing_model: "usage",
-                plans: [
-                  {
-                    ...USAGE_PLAN,
-                    configured: true,
-                    annual_configured: false,
-                    contact_sales: false,
-                    checkout_availability: "available",
-                    pricing_model: "usage",
-                  },
-                ],
-              }
-            : path === "/api/billing/status"
-              ? {
-                  stripe_configured: true,
-                  email_verified: true,
-                  agent_count: 0,
-                  subscription: null,
-                }
-              : path === "/api/billing/usage-spend"
-                ? { enabled: true, usage_account: false }
-                : {
-                    accounts: [],
-                    data: [],
-                    agents: [],
-                    integrations: [],
-                    ledger: [],
-                    balance_usd: 0,
-                  };
-      await route.fulfill({ json });
-    });
+    const { purchases, signIn } = await simulateUsageSignup(page);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/pricing");
     const privacy = page.getByRole("region", { name: "Privacy Choices" });
@@ -135,7 +149,7 @@ for (const [tier, name, price] of [
     );
     await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
 
-    authenticated = true;
+    signIn();
     // No query parameters here: Billing must recover the signup choice.
     await page.goto("/settings/billing");
     const offer = page.getByRole("region", { name: "Subscription Plans" });
@@ -162,3 +176,66 @@ for (const [tier, name, price] of [
     await expect(offer).toContainText("Synthetic checkout stopped.");
   });
 }
+
+test("choosing a priced plan card starts at its base price after an earlier estimate", async ({
+  page,
+}) => {
+  const { purchases, signIn } = await simulateUsageSignup(page);
+  await page.goto("/pricing");
+  await page.getByRole("button", { name: "Essential Only", exact: true }).click();
+  const estimate = page.getByRole("article", { name: "Monthly estimate" });
+  await estimate.getByRole("checkbox", { name: /^Extra Number/i }).check();
+  await estimate.getByRole("checkbox", { name: /^Extra Email Address/i }).check();
+  await estimate.getByRole("link", { name: "Get Starter", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
+
+  await page.goBack();
+  await page.getByRole("link", { name: "Get started with Lite", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
+  signIn();
+  await page.goto("/settings/billing");
+  const offer = page.getByRole("region", { name: "Subscription Plans" });
+  await expect(offer.getByRole("combobox")).toHaveValue("lite");
+  await expect(offer.getByRole("checkbox", { name: /^Extra Number/ })).not.toBeChecked();
+  await expect(offer.getByRole("checkbox", { name: /^Extra Email Address/ })).not.toBeChecked();
+  await offer.getByRole("button", { name: "Review Plan", exact: true }).click();
+  await expect
+    .poll(() => purchases)
+    .toEqual([
+      {
+        plan_id: "usage",
+        usage_tier: "lite",
+        interval: "month",
+        addons: { number: 0, email_address: 0 },
+      },
+    ]);
+});
+
+test("an unavailable saved plan can be replaced with the only offered tier", async ({ page }) => {
+  const { purchases, signIn } = await simulateUsageSignup(page, ["plus"]);
+  signIn();
+  await page.goto("/settings/billing?plan=usage&tier=lite&number=0&email_address=0");
+  const offer = page.getByRole("region", { name: "Subscription Plans" });
+  const plan = offer.getByRole("combobox");
+  const review = offer.getByRole("button", { name: "Review Plan", exact: true });
+  await expect(offer.getByRole("status")).toContainText(
+    "Your selected plan is currently unavailable",
+  );
+  await expect(plan).toHaveValue("");
+  await expect(review).toBeDisabled();
+
+  await plan.selectOption("plus");
+  await expect(offer.getByText("$49/month includes $36 of work", { exact: false })).toBeVisible();
+  await expect(offer.getByText("2 Numbers + 2 Email Addresses Included")).toBeVisible();
+  await review.click();
+  await expect
+    .poll(() => purchases)
+    .toEqual([
+      {
+        plan_id: "usage",
+        usage_tier: "plus",
+        interval: "month",
+        addons: { number: 0, email_address: 0 },
+      },
+    ]);
+});

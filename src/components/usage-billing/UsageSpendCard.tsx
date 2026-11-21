@@ -5,10 +5,11 @@ import { authFetch } from "../../lib/api";
 import { captureSignupIntentFromLocation, usageAddonsFromIntent } from "../../lib/signup-intent";
 import { usePaidPlanAvailability } from "../../hooks/usePaidPlanAvailability";
 import {
+  DEFAULT_PUBLIC_USAGE_TIER,
+  PUBLIC_USAGE_TIERS,
   USAGE_ADDONS,
   USAGE_DEFAULT_MONTHLY_CAP_USD,
   USAGE_TIERS,
-  publicUsageTierId,
   usageTier,
   type UsageTierId,
   formatUsdCents,
@@ -33,11 +34,11 @@ export default function UsageSpendCard({
   const [busy, setBusy] = useState(false);
   const capSavingRef = useRef(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [addons] = useState(() => usageAddonsFromIntent(captureSignupIntentFromLocation()));
-  const [tier, setTier] = useState<UsageTierId>(() =>
-    publicUsageTierId(captureSignupIntentFromLocation()?.preferredUsageTier),
+  const [intent] = useState(captureSignupIntentFromLocation);
+  const addons = usageAddonsFromIntent(intent);
+  const [selectedTier, setTier] = useState<UsageTierId | undefined>(() =>
+    PUBLIC_USAGE_TIERS.find((tier) => tier === intent?.preferredUsageTier),
   );
-  const plan = usageTier(tier);
   const [number, setNumber] = useState(addons.number);
   const [emailAddress, setEmailAddress] = useState(addons.emailAddress);
   const { canActivate, usageTiers } = usePaidPlanAvailability({ planId: "usage" });
@@ -61,7 +62,7 @@ export default function UsageSpendCard({
 
   if (!state || !state.enabled) return null;
 
-  async function startCheckout() {
+  async function startCheckout(tier: UsageTierId) {
     setBusy(true);
     setMessage(null);
     try {
@@ -162,7 +163,12 @@ export default function UsageSpendCard({
     // Checkout refuses a second live subscription. Do not present its offer
     // as an active allowance or lead an existing subscriber to a dead end.
     if (hasSubscription) return null;
-    if (!canActivate("usage")) return null;
+    if (!canActivate("usage") || usageTiers.length === 0) return null;
+    const defaultTier = usageTiers.includes(DEFAULT_PUBLIC_USAGE_TIER)
+      ? DEFAULT_PUBLIC_USAGE_TIER
+      : usageTiers[0];
+    const tier = selectedTier ?? defaultTier;
+    const plan = usageTiers.includes(tier) ? USAGE_TIERS[tier] : null;
     const Offer = grantedPlanName ? "details" : "div";
     return (
       <section className="mt-6" aria-label="Subscription Plans">
@@ -182,10 +188,16 @@ export default function UsageSpendCard({
             <label className="mt-3 block text-sm font-semibold">
               Plan
               <select
-                value={tier}
+                value={plan?.id ?? ""}
                 onChange={(event) => setTier(event.target.value as UsageTierId)}
+                aria-describedby={plan ? undefined : "usage-plan-availability"}
                 className="ml-3 min-h-11 rounded-lg border border-border bg-background px-3"
               >
+                {!plan ? (
+                  <option value="" disabled>
+                    Choose a plan
+                  </option>
+                ) : null}
                 {usageTiers.map((id) => (
                   <option value={id} key={id}>
                     {USAGE_TIERS[id].name} · ${USAGE_TIERS[id].monthlyUsd}/Month
@@ -193,18 +205,30 @@ export default function UsageSpendCard({
                 ))}
               </select>
             </label>
-            <p className="mt-1 text-sm text-muted-foreground">
-              ${plan.monthlyUsd}/month includes ${plan.includedWorkUsd} of work shared across calls,
-              SMS, email and Computer. Your allowance resets monthly without rollover. Extra work
-              stays within a monthly limit you set (default ${USAGE_DEFAULT_MONTHLY_CAP_USD}) before
-              tax. Applicable tax is added separately.
-            </p>
+            {plan ? (
+              <p className="mt-1 text-sm text-muted-foreground">
+                ${plan.monthlyUsd}/month includes ${plan.includedWorkUsd} of work shared across
+                calls, SMS, email and Computer. Your allowance resets monthly without rollover.
+                Extra work stays within a monthly limit you set (default $
+                {USAGE_DEFAULT_MONTHLY_CAP_USD}) before tax. Applicable tax is added separately.
+              </p>
+            ) : (
+              <p
+                id="usage-plan-availability"
+                role="status"
+                className="mt-1 text-sm text-muted-foreground"
+              >
+                Your selected plan is currently unavailable. Choose an available plan.
+              </p>
+            )}
           </div>
-          <p className="text-sm">
-            {plan.includedNumbers} {plan.includedNumbers === 1 ? "Number" : "Numbers"} +{" "}
-            {plan.includedEmailAddresses}{" "}
-            {plan.includedEmailAddresses === 1 ? "Email Address" : "Email Addresses"} Included
-          </p>
+          {plan ? (
+            <p className="text-sm">
+              {plan.includedNumbers} {plan.includedNumbers === 1 ? "Number" : "Numbers"} +{" "}
+              {plan.includedEmailAddresses}{" "}
+              {plan.includedEmailAddresses === 1 ? "Email Address" : "Email Addresses"} Included
+            </p>
+          ) : null}
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="flex min-h-11 items-center gap-3 text-sm">
               <Checkbox checked={number} onChange={(e) => setNumber(e.target.checked)} />
@@ -220,8 +244,10 @@ export default function UsageSpendCard({
           </div>
           <Button
             type="button"
-            disabled={busy || !usageTiers.includes(tier)}
-            onClick={() => void startCheckout()}
+            disabled={busy || !plan}
+            onClick={() => {
+              if (plan) void startCheckout(plan.id);
+            }}
           >
             Review Plan
           </Button>

@@ -256,7 +256,10 @@ export default function UsagePricingPanel({
               </details>
               <div className="mx-6 mb-5">
                 <Link
-                  to={signupHrefForPlan("usage", { usageTier: id })}
+                  to={signupHrefForPlan("usage", {
+                    usageTier: id,
+                    usageAddons: { number: false, emailAddress: false },
+                  })}
                   aria-label={`Get started with ${option.name}`}
                   className={`inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl px-4 text-sm font-semibold transition-all ${
                     tier === id ? "marketing-btn-primary" : "marketing-btn-secondary"
