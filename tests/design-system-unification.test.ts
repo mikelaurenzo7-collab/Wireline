@@ -234,8 +234,8 @@ describe("Milestone 3: Design System Unification & Workspace Polish Contracts", 
       expect(studioV2).toContain("storageKey={STUDIO_INSPECTOR_STORAGE_KEY}");
 
       // Studio composer dock
-      expect(workroom).toContain("showStarterPrompts");
-      expect(workroom).toContain("quickPrompts.slice(0, 3)");
+      expect(workroom).toContain('aria-label="Rehearse"');
+      expect(workroom).not.toContain("wl-studio-starters");
       expect(workroom).toContain('textarea.style.minHeight = "3.25rem"');
 
       // Context chrome with switchable bot roster

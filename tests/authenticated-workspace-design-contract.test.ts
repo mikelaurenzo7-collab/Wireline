@@ -156,8 +156,8 @@ describe("authenticated workspace design architecture", () => {
 
   it("keeps the Studio composer compact, adaptive, and keyboard-native", () => {
     const workroom = read("src/components/StudioWorkroom.tsx");
-    expect(workroom).toContain("showStarterPrompts");
-    expect(workroom).toContain("quickPrompts.slice(0, 3)");
+    expect(workroom).not.toContain("wl-studio-starters");
+    expect(workroom).toContain("value={composerDraft}");
     expect(workroom).toContain("rows={1}");
     expect(workroom).toContain('textarea.style.minHeight = "3.25rem"');
     expect(workroom).toContain("Math.min(Math.max(textarea.scrollHeight, 52), 160)");

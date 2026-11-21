@@ -246,8 +246,8 @@ describe("secure website knowledge ingestion", () => {
     expect(registry).toContain("app.use(websiteKnowledgeRouter)");
     expect(page).toContain("<WebsiteKnowledgeImport");
     expect(page).toContain("setKnowledgeRevision");
-    expect(component).toContain("Add facts and rules from one public page of your website.");
-    expect(component).toContain("Website Knowledge");
+    expect(component).toContain("Add knowledge from one public website page.");
+    expect(component).toContain("Public website page URL");
     expect(component).toContain('type="url"');
     expect(component).toContain("Import Page");
   });

@@ -34,7 +34,7 @@ describe("live voice trust surface", () => {
 
     expect(openai).toContain("<ConversationMessage");
     expect(openai).toContain("channel={line.channel}");
-    expect(openai).toContain('upsertLine(id, "You", text, "voice", true)');
+    expect(openai).toContain('upsertLine(id, "You", text, "voice", replace)');
     expect(openai).toContain('author={line.role === "You" ? "customer" : "assistant"}');
     expect(openai).toContain('label={line.role === "You" ? "You" : agentName}');
   });

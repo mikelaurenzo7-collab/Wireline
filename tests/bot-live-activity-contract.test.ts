@@ -29,14 +29,14 @@ describe("Bot Live activity source and action contracts", () => {
 
   it("makes waiting computer work and pending approvals actionable without auto-running anything", () => {
     expect(panel).toContain("setSelectedId(activeComputerTask.id)");
-    expect(panel).toContain("Reply in Computer");
+    expect(panel).toContain("Reply to task");
     expect(panel).toContain("Watch live work");
     expect(panel).toContain('to="/approvals"');
     expect(panel).toContain("Review approvals");
     expect(panel).toContain('setSourcesUnavailable(successfulSources !== 3)');
     expect(panel).toContain("Checking recent activity…");
     expect(panel).toContain("Activity unavailable");
-    expect(panel).toContain("This does not mean the Bot has done nothing.");
+    expect(panel).toMatch(/sourcesUnavailable\s*\? "Couldn’t load recent activity\."\s*:\s*"No recent activity\."/);
     expect(panel).toContain('waitingApprovals.length');
     expect(panel).toContain('"Needs review"');
   });
