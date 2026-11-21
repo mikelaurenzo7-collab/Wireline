@@ -169,6 +169,9 @@ const SAMPLE_EMAIL_SUBJECTS = [
   "Scheduling conflict on Thursday demo",
 ];
 
+const SAMPLE_STOP_CONFIRMATION =
+  "You have been unsubscribed. You will not receive any more messages from this number. Reply START to opt back in.";
+
 const SAMPLE_SMS_SNIPPETS = [
   "Hi, can someone call me about the Pro plan?",
   "Yes Thursday 2pm works for the demo.",
@@ -773,28 +776,45 @@ export async function seedDemoAccountData(userId: string): Promise<{
         }
 
         if (threadId) {
+          const inbound = SAMPLE_SMS_SNIPPETS[i % SAMPLE_SMS_SNIPPETS.length];
+          const genericReply = `Hi ${cust.name.split(" ")[0]}, Avery from BotBound. Happy to help with that. Reply anytime.`;
+          const outboundSid = `seed-sms-${userPrefix}-${i}-out`;
+          const isStop = inbound === "STOP";
           const msgCount = await tx
             .select({ c: sql<number>`COUNT(*)::int` })
             .from(smsMessages)
             .where(eq(smsMessages.threadId, threadId));
           if (Number(msgCount[0]?.c ?? 0) === 0) {
+            const receivedAt = randomCreatedAt(5);
             await tx.insert(smsMessages).values({
               userId,
               threadId,
               direction: "in",
-              body: SAMPLE_SMS_SNIPPETS[i % SAMPLE_SMS_SNIPPETS.length],
+              body: inbound,
               twilioSid: `seed-sms-${userPrefix}-${i}-in`,
-              createdAt: randomCreatedAt(5),
+              createdAt: receivedAt,
             });
             await tx.insert(smsMessages).values({
               userId,
               threadId,
               direction: "out",
-              body: `Hi ${cust.name.split(" ")[0]}, Avery from BotBound. Happy to help with that. Reply anytime.`,
-              twilioSid: `seed-sms-${userPrefix}-${i}-out`,
+              body: isStop ? SAMPLE_STOP_CONFIRMATION : genericReply,
+              twilioSid: outboundSid,
               agentId,
-              createdAt: randomCreatedAt(4),
+              createdAt: new Date(Math.min(Date.now(), receivedAt.getTime() + 30_000)),
             });
+          } else if (isStop) {
+            // Repair only the old synthetic reply, preserving edits and real messages.
+            await tx
+              .update(smsMessages)
+              .set({ body: SAMPLE_STOP_CONFIRMATION })
+              .where(
+                and(
+                  eq(smsMessages.threadId, threadId),
+                  eq(smsMessages.twilioSid, outboundSid),
+                  eq(smsMessages.body, genericReply),
+                ),
+              );
           }
           if (insertedThread) inserted++;
         }

@@ -141,11 +141,13 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   },
   "/solutions/sales": {
     title: "Sales",
-    description: "Create a Bot for sales. Add another whenever you want one.",
+    description:
+      "Qualify a new inquiry, capture what the prospect needs, and prepare a follow-up for you to review.",
   },
   "/solutions/support": {
     title: "Front Desk",
-    description: "Create a Bot for the front desk. Add another whenever you want one.",
+    description:
+      "Answer common questions, offer available appointment times, and send requests that need a person to your team.",
   },
 };
 
