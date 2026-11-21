@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { detectAiDisclosure, detectRecordingDisclosure } from "../src/lib/tcpa-consent";
 import {
   INBOUND_SIP_REFER_PATH,
   XAI_CONNECT_TIMEOUT_SECONDS,
@@ -175,19 +176,32 @@ describe("greeting discloses AI first", () => {
       agentName: "Ava",
       recordingEnabled: true,
     });
-    expect(line).toMatch(/^Hi, you're speaking with an AI assistant/);
-    expect(line).toContain("may be recorded");
+    expect(line).toBe(
+      "Hi, I'm Ava, and I'm an AI assistant. This call may be recorded for quality and compliance.",
+    );
+    expect(detectAiDisclosure(line).found).toBe(true);
+    expect(detectRecordingDisclosure(line).found).toBe(true);
   });
 
   it("leads with the disclosure and keeps the owner's greeting", () => {
     const opening = composeInboundOpening({
-      greeting: "Thanks for calling Joe's Plumbing! How can I help?",
-      agentName: "Ava",
-      businessName: "Joe's Plumbing",
+      greeting: "Hi, I’m Nora, BotBound’s AI assistant. How can I help?",
+      agentName: "Nora",
+      businessName: "BotBound",
       recordingEnabled: false,
     });
-    expect(opening.startsWith("Hi, you're speaking with an AI assistant")).toBe(true);
-    expect(opening).toContain("How can I help?");
+    expect(opening).toBe("Hi, I'm Nora, and I'm an AI assistant with BotBound. How can I help?");
+    expect(detectAiDisclosure(opening).found).toBe(true);
+  });
+
+  it("names a business once when the Bot uses that same name", () => {
+    expect(
+      inboundDisclosureLine({
+        agentName: "BotBound",
+        businessName: "BOTBOUND",
+        recordingEnabled: false,
+      }),
+    ).toBe("Hi, I'm an AI assistant with BOTBOUND.");
   });
 
   it("a resumed leg discloses again without replaying the greeting", () => {
@@ -199,6 +213,9 @@ describe("greeting discloses AI first", () => {
     });
     expect(opening).toMatch(/^You're still speaking with an AI assistant/);
     expect(opening).not.toContain("Thanks for calling");
+    expect(opening).not.toContain("Ava");
+    expect(detectAiDisclosure(opening).found).toBe(true);
+    expect(detectRecordingDisclosure(opening).found).toBe(true);
   });
 });
 

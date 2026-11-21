@@ -416,11 +416,14 @@ describe("native SIP opening delivery", () => {
       const opening = h.sent.find((event) => event.type === "response.create")?.response;
       expect(opening?.instructions).toContain("warm, natural speaking style");
       expect(opening?.instructions).toContain(
-        `Say exactly these words and nothing else: ${direction === "inbound" ? "Hi, you're speaking with an AI assistant for Nora at BOTBOUND LLC. How can I help you?" : "I am an AI assistant. Hi, this is Nora with BOTBOUND LLC. You can call us back at the business."}`,
+        `Say exactly these words and nothing else: ${direction === "inbound" ? "Hi, I'm Nora, and I'm an AI assistant with BOTBOUND LLC. How can I help you?" : "I am an AI assistant. Hi, this is Nora with BOTBOUND LLC. You can call us back at the business."}`,
       );
       if (direction === "inbound") {
-        expect(h.sent.find((event) => event.type === "session.update")?.session.instructions).toContain(
-          "Do not restart the introduction",
+        const instructions = h.sent.find((event) => event.type === "session.update")?.session
+          .instructions;
+        expect(instructions).toContain("Do not restart the introduction");
+        expect(instructions).toContain(
+          "Addressing you by name is not a request for an introduction.",
         );
         // Inbound discloses AI first; the owner's identity line is not repeated.
         expect(opening?.instructions).not.toContain("this is Nora with BotBound");

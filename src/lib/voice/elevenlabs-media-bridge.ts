@@ -165,6 +165,7 @@ export function createClonedMediaSession(input: {
   const speechProvider = catalogVoice?.provider ?? "elevenlabs";
   const speech = clonedSpeechStreams({
     voiceId: input.voice?.voiceId ?? catalogVoice?.id ?? "",
+    catalogVoice: Boolean(catalogVoice),
     elevenLabsKey,
     cartesiaKey,
     speechProvider,

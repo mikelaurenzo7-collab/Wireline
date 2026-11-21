@@ -1,6 +1,7 @@
 import type { SpeechStream } from "./elevenlabs-media-session";
 import {
   ELEVENLABS_CLONE_SPEECH_SETTINGS,
+  ELEVENLABS_SPEECH_SETTINGS,
   ELEVENLABS_SPEECH_MODEL,
 } from "./elevenlabs-speech-settings";
 import { CARTESIA_API_VERSION, CARTESIA_SPEECH_MODEL } from "./phone-catalog-service";
@@ -86,6 +87,7 @@ export function clonedSpeechStreams(input: {
   elevenLabsKey: string;
   cartesiaKey?: string;
   speechProvider?: "elevenlabs" | "cartesia";
+  catalogVoice?: boolean;
   openAIKey: string;
   stockVoice: string;
   fetchImpl?: typeof fetch;
@@ -127,7 +129,9 @@ export function clonedSpeechStreams(input: {
                   body: JSON.stringify({
                     text,
                     model_id: ELEVENLABS_SPEECH_MODEL,
-                    voice_settings: ELEVENLABS_CLONE_SPEECH_SETTINGS,
+                    voice_settings: input.catalogVoice
+                      ? ELEVENLABS_SPEECH_SETTINGS
+                      : ELEVENLABS_CLONE_SPEECH_SETTINGS,
                     ...(previousRequestIds.length
                       ? { previous_request_ids: previousRequestIds }
                       : previousText

@@ -2295,8 +2295,7 @@ async function runRealtimeSession(
     if (toolName !== "start_computer_task" && toolName !== "reply_computer_task") return;
     const idMatch = /task_id=([0-9a-f-]{36})/i.exec(outputText);
     const statusMatch = /status=([a-z_]+)/i.exec(outputText);
-    if (!idMatch?.[1] || !computerTaskIds.has(idMatch[1]) || statusMatch?.[1] !== "running")
-      return;
+    if (!idMatch?.[1] || !computerTaskIds.has(idMatch[1]) || statusMatch?.[1] !== "running") return;
     watchedComputerTasks.set(idMatch[1], { status: "running", question: null });
     if (!computerWatchTimer) {
       computerWatchTimer = setInterval(() => void pollWatchedComputerTasks(), 2_500);
@@ -2821,7 +2820,7 @@ async function runRealtimeSession(
           ? `${runtime.session.instructions}\n\n${buildOutboundInstructions(input)}`
           : [
               runtime.session.instructions,
-              "The phone connection delivers the opening greeting and AI disclosure. After the caller speaks, answer their latest question directly. If they interrupt or correct a detail, use the correction and ask only for the next missing detail. Do not restart the introduction or repeat an earlier answer unless the caller asks.",
+              "The phone connection delivers the opening greeting and AI disclosure. After the caller speaks, answer their latest question directly in one or two short sentences when possible. Do not restart the introduction or give your name again unless they ask who is speaking. Addressing you by name is not a request for an introduction. If they interrupt or correct a detail, use the latest request or correction and ask only for the next missing detail.",
             ].join("\n\n");
 
         if (provider === "xai") {

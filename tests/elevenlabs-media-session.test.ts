@@ -429,44 +429,51 @@ describe("speech provider transport", () => {
     expect(await collect(pcm24ToMulaw(split()))).toEqual(await collect(pcm24ToMulaw(whole())));
     expect(await collect(pcm24ToMulaw(split()))).toEqual(Buffer.alloc(4, 255));
   });
-  it("reserves spend before provider contact and requests raw telephone audio", async () => {
-    const order: string[] = [];
-    let url = "";
-    let body: Record<string, unknown> = {};
-    const stream = clonedSpeechStreams({
-      voiceId: "clone1",
-      elevenLabsKey: "test",
-      openAIKey: "test",
-      stockVoice: "nova",
-      reserve: async () => {
-        order.push("reserve");
-      },
-      fetchImpl: async (input, init) => {
-        order.push("fetch");
-        url = String(input);
-        body = JSON.parse(String(init?.body));
-        return new Response(new Uint8Array([255]));
-      },
-    });
-    for await (const _chunk of stream.cloneSpeech("Hello", new AbortController().signal, {
-      previousText: "Good morning.",
-    })) {
-      /* consume */
-    }
-    expect(order).toEqual(["reserve", "fetch"]);
-    expect(url).toContain("output_format=ulaw_8000");
-    expect(body).toMatchObject({
-      previous_text: "Good morning.",
-      model_id: "eleven_flash_v2_5",
-      voice_settings: {
-        stability: 0.5,
-        similarity_boost: 0.8,
-        style: 0,
-        speed: 1,
-        use_speaker_boost: false,
-      },
-    });
-  });
+  it.each([
+    { catalogVoice: false, similarityBoost: 0.8 },
+    { catalogVoice: true, similarityBoost: 0.75 },
+  ])(
+    "reserves spend and requests the telephone preset (catalog=$catalogVoice)",
+    async ({ catalogVoice, similarityBoost }) => {
+      const order: string[] = [];
+      let url = "";
+      let body: Record<string, unknown> = {};
+      const stream = clonedSpeechStreams({
+        voiceId: "voice1",
+        catalogVoice,
+        elevenLabsKey: "test",
+        openAIKey: "test",
+        stockVoice: "nova",
+        reserve: async () => {
+          order.push("reserve");
+        },
+        fetchImpl: async (input, init) => {
+          order.push("fetch");
+          url = String(input);
+          body = JSON.parse(String(init?.body));
+          return new Response(new Uint8Array([255]));
+        },
+      });
+      for await (const _chunk of stream.cloneSpeech("Hello", new AbortController().signal, {
+        previousText: "Good morning.",
+      })) {
+        /* consume */
+      }
+      expect(order).toEqual(["reserve", "fetch"]);
+      expect(url).toContain("output_format=ulaw_8000");
+      expect(body).toMatchObject({
+        previous_text: "Good morning.",
+        model_id: "eleven_flash_v2_5",
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: similarityBoost,
+          style: 0,
+          speed: 1,
+          use_speaker_boost: false,
+        },
+      });
+    },
+  );
   it("never contacts a provider when cost admission fails", async () => {
     let requests = 0;
     const stream = clonedSpeechStreams({

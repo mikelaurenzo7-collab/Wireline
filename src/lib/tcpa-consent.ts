@@ -754,7 +754,7 @@ const AI_DISCLOSURE_PATTERNS: RegExp[] = [
   /\b(?:i'm|i am)\s+an?\s+ai\s+(?:assistant|agent|voice)\b/i,
   /\b(?:i'm|i am)\s+not\s+a\s+(?:real\s+)?human\b/i,
   // Third-person agent framing ("you're speaking with an AI assistant").
-  /\byou(?:'re| are)\s+(?:speaking|talking)\s+(?:with|to)\s+an?\s+(?:ai|automated|virtual)\b/i,
+  /\byou(?:'re| are)\s+(?:still\s+)?(?:speaking|talking)\s+(?:with|to)\s+an?\s+(?:ai|automated|virtual)\b/i,
 ];
 
 export function detectAiDisclosure(transcript: string | null | undefined): {

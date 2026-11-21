@@ -32,11 +32,15 @@ export function inboundDisclosureLine(input: {
   recordingEnabled: boolean;
 }): string {
   const business = clean(input.businessName);
-  const agent = clean(input.agentName) || "this business";
-  const forWhom = business && business !== agent ? `${agent} at ${business}` : agent;
-  return input.recordingEnabled
-    ? `Hi, you're speaking with an AI assistant for ${forWhom}, and this call may be recorded for quality and compliance.`
-    : `Hi, you're speaking with an AI assistant for ${forWhom}.`;
+  const agent = clean(input.agentName);
+  const namedAgent = agent && agent.toLowerCase() !== business.toLowerCase();
+  const introduction = namedAgent ? `Hi, I'm ${agent}, and I'm` : "Hi, I'm";
+  const affiliation = business ? ` with ${business}` : "";
+  return `${introduction} an AI assistant${affiliation}.${recordingNotice(input.recordingEnabled)}`;
+}
+
+function recordingNotice(enabled: boolean): string {
+  return enabled ? " This call may be recorded for quality and compliance." : "";
 }
 
 export function composeInboundOpening(input: {
@@ -51,7 +55,9 @@ export function composeInboundOpening(input: {
   if (input.leg === "resume") {
     // The caller already heard the greeting on the leg that failed. Repeat
     // the disclosure first, then pick the conversation back up.
-    return `${disclosure.replace(/^Hi, you're/, "You're still")} Sorry, we got cut off for a moment. What can I help you with?`;
+    const business = clean(input.businessName);
+    const affiliation = business ? ` with ${business}` : "";
+    return `You're still speaking with an AI assistant${affiliation}.${recordingNotice(input.recordingEnabled)} Sorry, we got cut off for a moment. What can I help you with?`;
   }
   const greeting = input.greeting.replace(/\s+/g, " ").trim();
   const { first, rest } = firstSentence(greeting);
