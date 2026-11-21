@@ -72,6 +72,7 @@ export class ElevenLabsMediaSession extends EventEmitter {
   private cancelledResponses = new Set<string>();
   private pendingCompletions = new Set<Event>();
   private initialized = false;
+  private openingPending = false;
   private marks = new Map<
     string,
     { finish: (played: boolean) => void; timer: ReturnType<typeof setTimeout> }
@@ -166,6 +167,23 @@ export class ElevenLabsMediaSession extends EventEmitter {
     this.modelSend(event);
   }
 
+  playOpening(text: string) {
+    this.openingPending = true;
+    this.enqueueSpeech(text);
+    this.work = this.work.then(() => {
+      this.openingPending = false;
+      this.releaseEarlyAudio();
+    });
+  }
+
+  private releaseEarlyAudio() {
+    if (!this.initialized || this.openingPending || this.readyState !== 1) return;
+    for (const audio of this.earlyAudio)
+      this.modelSend({ type: "input_audio_buffer.append", audio });
+    this.earlyAudio = [];
+    this.earlyAudioBytes = 0;
+  }
+
   private carrierEvent(raw: unknown) {
     if (this.readyState === 3) return;
     let event: Event;
@@ -202,12 +220,18 @@ export class ElevenLabsMediaSession extends EventEmitter {
       this.fail("Invalid carrier audio");
       return;
     }
-    if (!this.initialized) {
+    if (!this.initialized && this.earlyAudioBytes + audio.length > 128_000) {
+      this.fail("Realtime startup too slow");
+      return;
+    }
+    // A long owner-written greeting must not exhaust the startup audio
+    // buffer. After the limit, release the caller audio to normal barge-in.
+    if (this.openingPending && this.earlyAudioBytes + audio.length > 128_000) {
+      this.openingPending = false;
+      this.releaseEarlyAudio();
+    }
+    if (!this.initialized || this.openingPending) {
       this.earlyAudioBytes += audio.length;
-      if (this.earlyAudioBytes > 128_000) {
-        this.fail("Realtime startup too slow");
-        return;
-      }
       this.earlyAudio.push(audio);
       return;
     }
@@ -225,10 +249,7 @@ export class ElevenLabsMediaSession extends EventEmitter {
     }
     if (event.type === "session.updated" && !this.initialized) {
       this.initialized = true;
-      for (const audio of this.earlyAudio)
-        this.modelSend({ type: "input_audio_buffer.append", audio });
-      this.earlyAudio = [];
-      this.earlyAudioBytes = 0;
+      this.releaseEarlyAudio();
     }
     if (event.type === "input_audio_buffer.speech_started") this.interrupt();
     if (event.type === "response.created") {
@@ -532,6 +553,14 @@ function speechBoundary(text: string): number {
     const end = match.index!;
     const prefix = text.slice(0, end + 1);
     if (match[0][0] === "." && /(?:\b(?:Mr|Mrs|Ms|Dr|Prof|St|vs|etc)|\b[A-Z])\.$/u.test(prefix))
+      continue;
+    // Keep a lead-in and its answer in the same synthesis request. A lone
+    // acknowledgment still plays as soon as the model ends its response.
+    if (
+      /^\s*(?:hi|hello|yes|no|sure|absolutely|of course|certainly|okay|thanks|good question)[.!?]$/iu.test(
+        prefix,
+      )
+    )
       continue;
     return end + match[0].length - 1;
   }

@@ -2063,19 +2063,22 @@ async function runRealtimeSession(
       endedReason,
     );
 
-  const ws = mediaCallSid(input.callId)
+  const mediaSession = mediaCallSid(input.callId)
     ? createClonedMediaSession({
         callId: input.callId,
         userId: input.userId,
         voice: runtime.customVoice ?? null,
         catalogVoice: runtime.catalogVoice ?? null,
       })
-    : new WebSocket(buildRealtimeSipSocketUrl(input.callId), {
-        headers: { Authorization: `Bearer ${apiKey}` },
-        // xAI's Dial gives up after XAI_CONNECT_TIMEOUT_SECONDS and fails over,
-        // so a slow xAI handshake must not hold the leg longer than that.
-        handshakeTimeout: provider === "xai" ? XAI_WS_OPEN_TIMEOUT_MS : WS_OPEN_TIMEOUT_MS,
-      });
+    : null;
+  const ws =
+    mediaSession ??
+    new WebSocket(buildRealtimeSipSocketUrl(input.callId), {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      // xAI's Dial gives up after XAI_CONNECT_TIMEOUT_SECONDS and fails over,
+      // so a slow xAI handshake must not hold the leg longer than that.
+      handshakeTimeout: provider === "xai" ? XAI_WS_OPEN_TIMEOUT_MS : WS_OPEN_TIMEOUT_MS,
+    });
 
   const ownsSession = () => !ownershipSignal?.aborted;
   const abortForLostOwnership = () => {
@@ -2631,7 +2634,12 @@ async function runRealtimeSession(
       return;
     }
     if (type === "output_audio_buffer.stopped" || type === "output_audio_buffer.cleared") {
-      if (finishExactOpeningIfNeeded(type === "output_audio_buffer.stopped")) return;
+      if (finishExactOpeningIfNeeded(type === "output_audio_buffer.stopped")) {
+        // The media bridge speaks the inbound greeting directly, so no model
+        // response.done event follows to commit the mark-confirmed transcript.
+        if (mediaSession && callDirection(input) === "inbound") flushAssistantTurn();
+        return;
+      }
       requestToolContinuationWhenReady();
       return;
     }
@@ -2820,7 +2828,7 @@ async function runRealtimeSession(
           ? `${runtime.session.instructions}\n\n${buildOutboundInstructions(input)}`
           : [
               runtime.session.instructions,
-              "The phone connection delivers the opening greeting and AI disclosure. After the caller speaks, answer their latest question directly in one or two short sentences when possible. Do not restart the introduction or give your name again unless they ask who is speaking. Addressing you by name is not a request for an introduction. If they interrupt or correct a detail, use the latest request or correction and ask only for the next missing detail.",
+              "The phone connection delivers the opening greeting and AI disclosure. After the caller speaks, lead with a direct answer in one or two short sentences when possible. Use natural phrasing and ordinary punctuation. Skip repeated acknowledgments and filler. Do not restart the introduction or give your name again unless they ask who is speaking. Addressing you by name is not a request for an introduction. If they interrupt or correct a detail, use the latest request or correction and ask only for the next missing detail.",
             ].join("\n\n");
 
         if (provider === "xai") {
@@ -2878,16 +2886,21 @@ async function runRealtimeSession(
           });
           if (opening) {
             // Keep the compliance opening isolated from the conversational turn.
-            // A constrained response instruction owns the first playback.
             awaitingExactOpeningPlayback = true;
             capturingOpeningTranscript = true;
-            sendJson(ws, {
-              type: "response.create",
-              response: {
-                instructions: `Use the configured voice with a warm, natural speaking style. Say exactly these words and nothing else: ${opening}`,
-                output_modalities: ["audio"],
-              },
-            });
+            if (mediaSession && !outbound) {
+              // Playback owns the literal greeting. Early caller audio is
+              // queued until the carrier acknowledges that opening.
+              mediaSession.playOpening(opening);
+            } else {
+              sendJson(ws, {
+                type: "response.create",
+                response: {
+                  instructions: `Use the configured voice with a warm, natural speaking style. Say exactly these words and nothing else: ${opening}`,
+                  output_modalities: ["audio"],
+                },
+              });
+            }
           } else {
             sendJson(ws, { type: "response.create" });
           }

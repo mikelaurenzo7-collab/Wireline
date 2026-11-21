@@ -88,6 +88,54 @@ function setup(cloneSpeech: SpeechStream = audio, markTimeoutMs = 1000, initialS
 }
 
 describe("cloned phone media", () => {
+  it("synthesizes the exact opening once and releases queued caller audio after playback", async () => {
+    const spoken: string[] = [];
+    const s = setup(async function* (text) {
+      spoken.push(text);
+      yield new Uint8Array([255]);
+    });
+    const opening = "Hi, I'm Nora, and I'm an AI assistant with BotBound. How can I help?";
+    s.session.playOpening(opening);
+    s.carrier.receive({ event: "media", media: { track: "inbound", payload: "eA==" } });
+    await tick();
+    expect(spoken).toEqual([opening]);
+    expect(s.model.sent).toEqual([]);
+    expect(s.events.some((event) => event.type === "response.output_audio_transcript.delta")).toBe(
+      false,
+    );
+    s.acknowledge();
+    await tick();
+    expect(
+      s.events
+        .filter((event) => event.type === "response.output_audio_transcript.delta")
+        .map((event) => event.delta.trim()),
+    ).toEqual([opening]);
+    expect(s.events.some((event) => event.type === "output_audio_buffer.stopped")).toBe(true);
+    expect(s.model.sent).toEqual([{ type: "input_audio_buffer.append", audio: "eA==" }]);
+    s.session.close();
+  });
+
+  it("joins an acknowledgment to the answer so the voice can read them together", async () => {
+    const spoken: string[] = [];
+    const s = setup(async function* (text) {
+      spoken.push(text);
+      yield new Uint8Array([255]);
+    });
+    s.speak("Absolutely. I can collect an estimate request. What rooms need new carpet?");
+    await tick();
+    expect(spoken[0]).toBe("Absolutely. I can collect an estimate request.");
+    s.acknowledge();
+    await tick();
+    expect(spoken[1]).toBe("What rooms need new carpet?");
+    s.acknowledge();
+    await tick();
+    s.speak("Yes.", "r2");
+    await tick();
+    expect(spoken[2]).toBe("Yes.");
+    s.acknowledge();
+    s.session.close();
+  });
+
   it("prepares only one clause ahead while preserving carrier playback order", async () => {
     const requested: string[] = [];
     const previous: string[] = [];
