@@ -9,10 +9,14 @@ const h = vi.hoisted(() => ({
   email: vi.fn(),
   preferences: vi.fn(),
   endedReason: "pre-session-rejected",
+  conversation: null as Record<string, unknown> | null,
+  calendarReceipt: false,
+  savedOutcome: undefined as unknown,
 }));
 vi.mock("drizzle-orm", () => ({
   and: (...parts: unknown[]) => parts,
   eq: (...parts: unknown[]) => parts,
+  inArray: (...parts: unknown[]) => parts,
   sql: () => "sql",
 }));
 vi.mock("../src/db/schema", () => {
@@ -22,6 +26,7 @@ vi.mock("../src/db/schema", () => {
     callLogs: table("calls"),
     jobs: table("jobs"),
     agents: table("agents"),
+    appointments: table("appointments"),
     users: table("users"),
     deletionQueue: table("deletion"),
   };
@@ -52,6 +57,13 @@ vi.mock("../src/lib/server-context", () => {
           }
           return Promise.resolve([{ id: "job", result: h.progress }]).then(resolve);
         }
+        if (name === "appointments")
+          return Promise.resolve(h.calendarReceipt ? [{ id: "booking" }] : []).then(resolve);
+        if (name === "calls" && operation === "update" && "outcomeTag" in values) {
+          h.savedOutcome = values.outcomeTag;
+          // End at the local write boundary before any external delivery.
+          return Promise.resolve([]).then(resolve);
+        }
         if (name !== "calls") throw new Error(`Unexpected ${operation} on ${name}`);
         return Promise.resolve([
           {
@@ -63,6 +75,7 @@ vi.mock("../src/lib/server-context", () => {
             pipelineError: "spend_commit_failed",
             vapiCallId: "openai:rtc_test",
             summary: "Rejected before session startup.",
+            ...h.conversation,
           },
         ]).then(resolve);
       },
@@ -129,6 +142,9 @@ const job = {
 
 beforeEach(() => {
   h.endedReason = "pre-session-rejected";
+  h.conversation = null;
+  h.calendarReceipt = false;
+  h.savedOutcome = undefined;
   h.progress = {};
   h.checkpoints = [];
   h.replay.mockReset().mockResolvedValue(undefined);
@@ -181,4 +197,28 @@ describe("pre-session provider cleanup jobs", () => {
     expect(h.environment).not.toHaveBeenCalled();
     expect(h.email).not.toHaveBeenCalled();
   });
+});
+
+describe("queued native call outcomes", () => {
+  it.each([
+    [false, false, "followup"],
+    [true, false, "followup"],
+    [true, true, "booked"],
+  ] as const)(
+    "rebuilds the outcome from the call and Calendar (finalization=%s, booking=%s)",
+    async (withFinalization, booked, expected) => {
+      h.environment.mockResolvedValue({ allowed: true, environment: "production" });
+      h.endedReason = "provider-disconnected";
+      h.conversation = {
+        durationSeconds: 61,
+        transcript: "Caller: Is that appointment booked? Can you send me an email?",
+        summary: "Caller: Is that appointment booked? Can you send me an email?",
+      };
+      h.calendarReceipt = booked;
+      h.progress = { finalization: { state: "completed" } };
+      const payload = withFinalization ? job.payload : { userId: "tenant", callLogId: "1" };
+      await expect(handlePostCallDigestJob({ ...job, payload })).resolves.toBeUndefined();
+      expect(h.savedOutcome).toBe(expected);
+    },
+  );
 });

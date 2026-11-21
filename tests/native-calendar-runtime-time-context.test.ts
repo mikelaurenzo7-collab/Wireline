@@ -71,6 +71,18 @@ describe("native Calendar runtime date authority", () => {
     expect({ agent, saved }).toEqual(before);
   });
 
+  it.each([
+    ["automatic", "use book_appointment without asking the owner"],
+    ["approval", "submit the caller’s request"],
+    ["inherit", "describe its returned status"],
+  ] as const)("uses the saved %s confirmation policy on calls", (booking_mode, instruction) => {
+    const prompt = compose({ ...DEFAULT_NATIVE_CALENDAR, enabled: true, booking_mode });
+    expect(prompt).toContain(instruction);
+    expect(compose({ ...DEFAULT_NATIVE_CALENDAR, enabled: false, booking_mode })).not.toContain(
+      instruction,
+    );
+  });
+
   it.each([undefined, null])(
     "retains the Bot-local fallback without a saved Calendar (%s)",
     (value) => {

@@ -95,7 +95,7 @@ export function classifyCallOutcome(input: {
     const said = `${caller} ${input.intentLabel || ""}`.toLowerCase();
     if (/\b(not interested|no thanks|no thank you)\b/.test(said)) return "other";
     if (/\b(qualified|interested|hot lead|budget|good fit)\b/.test(said)) return "qualified";
-    if (/\b(callback|follow.?up|call.?back|reach out later|next week)\b/.test(said)) {
+    if (/\b(callback|follow.?up|call.?back|reach out later|next week|send me an? (?:email|text))\b/.test(said)) {
       return "followup";
     }
     if (/\b(question|info|how does|pricing|price|cost|what is|hours)\b/.test(said)) return "info";
@@ -818,8 +818,10 @@ async function callBookedAppointment(userId: string, providerCallId: string): Pr
 }
 
 export async function runPostCallDigest(ctx: CallContext): Promise<PostCallDigestCoreResult> {
+  // Older native-call jobs may predate durable finalization metadata. Their
+  // provider ID still identifies the call whose Calendar receipt must be checked.
   const observed =
-    ctx.finalization?.provider === "openai_sip"
+    ctx.finalization?.provider === "openai_sip" || ctx.vapiCallId?.startsWith("openai:")
       ? {
           callerText: callerTurnsText(ctx.transcript),
           appointmentBooked: ctx.vapiCallId
@@ -1202,6 +1204,7 @@ async function authoritativeCallContext(job: JobRow): Promise<CallContext> {
     endedReason: call.endedReason,
     pipelineError: call.pipelineError,
     vapiCallType: payload.vapiCallType || null,
+    finalization: openAISipFinalizationFromJob(job),
     demo: call.demo,
     vapiCallId: call.vapiCallId,
     escalationAttempted: call.escalationAttempted,
@@ -1925,7 +1928,7 @@ export function nextActionFromOutcome(tag: string): string {
     case "qualified":
       return "Route to the closer or schedule a demo within 48 hours while intent is current.";
     case "followup":
-      return "Create or confirm the promised callback and preserve the reason and timing.";
+      return "Review the requested follow-up, contact method and timing before acting.";
     case "dnc":
       return "Confirm the number is suppressed from all future outreach.";
     case "unreachable":

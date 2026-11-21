@@ -9,10 +9,16 @@ export function callEndingLabel(reason: string): string {
 }
 
 export function recentCallIssueLabel(
-  call: Pick<VoiceLatencyRecentCallRow, "pipelineError" | "durationSeconds">,
+  call: Pick<VoiceLatencyRecentCallRow, "pipelineError"> &
+    Partial<Pick<VoiceLatencyRecentCallRow, "durationSeconds" | "sttError" | "ttsError">>,
 ): string | null {
   const error = call.pipelineError?.toLowerCase();
-  if (!error) return null;
+  if (!error) {
+    if (call.sttError && call.ttsError) return "Speech recognition and voice generation issues";
+    if (call.sttError) return "Speech recognition issue";
+    if (call.ttsError) return "Voice generation issue";
+    return null;
+  }
   if (error === "startup" || error.startsWith("pre-session")) return "Call setup issue";
   if (error === "connection") return "Connection issue";
   if (error === "heartbeat") return "Voice connection issue";

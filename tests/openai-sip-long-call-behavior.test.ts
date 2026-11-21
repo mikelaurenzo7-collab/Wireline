@@ -419,6 +419,9 @@ describe("native SIP opening delivery", () => {
         `Say exactly these words and nothing else: ${direction === "inbound" ? "Hi, you're speaking with an AI assistant for Nora at BOTBOUND LLC. How can I help you?" : "I am an AI assistant. Hi, this is Nora with BOTBOUND LLC. You can call us back at the business."}`,
       );
       if (direction === "inbound") {
+        expect(h.sent.find((event) => event.type === "session.update")?.session.instructions).toContain(
+          "Do not restart the introduction",
+        );
         // Inbound discloses AI first; the owner's identity line is not repeated.
         expect(opening?.instructions).not.toContain("this is Nora with BotBound");
       }

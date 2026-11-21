@@ -19,6 +19,16 @@ const settings = () =>
 const now = new Date("2026-09-28T12:00:00Z");
 
 describe("native calendar booking policy", () => {
+  it("offers automatic booking on first setup and preserves saved confirmation choices", () => {
+    expect(DEFAULT_NATIVE_CALENDAR.enabled).toBe(false);
+    expect(DEFAULT_NATIVE_CALENDAR.booking_mode).toBe("automatic");
+    for (const booking_mode of ["approval", "inherit", "automatic"]) {
+      expect(validateNativeCalendarSettings({ ...settings(), booking_mode }).booking_mode).toBe(
+        booking_mode,
+      );
+    }
+  });
+
   it("requires an explicit enable, known timezone and usable weekly hours", () => {
     expect(() =>
       nativeAppointmentInterval(

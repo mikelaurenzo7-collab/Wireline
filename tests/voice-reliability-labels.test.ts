@@ -19,6 +19,18 @@ describe("voice reliability labels", () => {
     );
   });
 
+  it("distinguishes speech recognition and playback issues without a pipeline label", () => {
+    expect(recentCallIssueLabel({ pipelineError: null, sttError: true })).toBe(
+      "Speech recognition issue",
+    );
+    expect(recentCallIssueLabel({ pipelineError: null, ttsError: true })).toBe(
+      "Voice generation issue",
+    );
+    expect(recentCallIssueLabel({ pipelineError: null, sttError: true, ttsError: true })).toBe(
+      "Speech recognition and voice generation issues",
+    );
+  });
+
   it("keeps later processing failures visible without calling them setup failures", () => {
     expect(recentCallIssueLabel({ pipelineError: "openai_response", durationSeconds: 29 })).toBe(
       "Call processing issue",

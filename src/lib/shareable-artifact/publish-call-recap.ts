@@ -93,7 +93,7 @@ function nextActionsFor(tag: string): CallRecapAction[] {
     case "followup":
       return [
         {
-          description: "Create or confirm the promised callback; keep the reason and timing.",
+          description: "Review the requested follow-up, contact method and timing before acting.",
         },
       ];
     case "info":

@@ -26,7 +26,7 @@ export const DEFAULT_NATIVE_CALENDAR: NativeCalendarSettings = {
   duration_minutes: 30,
   buffer_minutes: 0,
   minimum_notice_minutes: 60,
-  booking_mode: "inherit",
+  booking_mode: "automatic",
   weekly_hours: [1, 2, 3, 4, 5].map((day) => ({ day, start: "09:00", end: "17:00" })),
 };
 

@@ -2819,7 +2819,10 @@ async function runRealtimeSession(
           : buildInboundOpening(input, runtime);
         const instructions = outbound
           ? `${runtime.session.instructions}\n\n${buildOutboundInstructions(input)}`
-          : runtime.session.instructions;
+          : [
+              runtime.session.instructions,
+              "The phone connection delivers the opening greeting and AI disclosure. After the caller speaks, answer their latest question directly. If they interrupt or correct a detail, use the correction and ask only for the next missing detail. Do not restart the introduction or repeat an earlier answer unless the caller asks.",
+            ].join("\n\n");
 
         if (provider === "xai") {
           xaiSessionOptions = {
