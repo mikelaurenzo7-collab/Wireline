@@ -133,6 +133,114 @@ beforeEach(() => {
 });
 
 describe("human handoff editor", () => {
+  it.each(["phone", "email", "transfer", "keywords", "failed flag"] as const)(
+    "retains the owner's routing after a different %s receipt and confirms a retry",
+    async (difference) => {
+      const writes: unknown[] = [];
+      h.fetch.mockImplementation((_url: string, init?: RequestInit) => {
+        if (init?.method !== "PATCH") return Promise.resolve(json({ businessProfile: profile }));
+        const sent = JSON.parse(String(init.body));
+        writes.push(sent);
+        const confirmed = { ...profile, ...sent };
+        if (writes.length === 1) {
+          if (difference === "phone") confirmed.escalation_phone = "+13125550125";
+          if (difference === "email") confirmed.escalation_email = "someone-else@example.test";
+          if (difference === "transfer") confirmed.escalation_handoff_enabled = false;
+          if (difference === "keywords") confirmed.escalation_keywords = ["sales"];
+        }
+        return Promise.resolve(
+          json({
+            success: difference === "failed flag" && writes.length === 1 ? false : true,
+            businessProfile: confirmed,
+          }),
+        );
+      });
+      await open();
+      field("human-handoff-phone").props.onChange!({ target: { value: "(312) 555-0123" } });
+      field("human-handoff-transfer").props.onCheckedChange!(true);
+      field("human-handoff-keywords").props.onChange!({
+        target: { value: "manager, urgent\nmanager" },
+      });
+      await submit();
+      expect(text(render())).toContain("save could not be confirmed");
+      expect(text(render())).not.toContain("Live transfers are on");
+      expect(field("human-handoff-phone").props.value).toBe("(312) 555-0123");
+      expect(field("human-handoff-transfer").props.checked).toBe(true);
+      expect(field("human-handoff-keywords").props.value).toBe("manager, urgent\nmanager");
+      expect(drafts.get("bot-a")?.saved).toEqual({
+        phone: "",
+        email: "team@example.com",
+        transfer: false,
+        keywords: "",
+      });
+      expect(window.dispatchEvent).not.toHaveBeenCalled();
+      await submit();
+      expect(text(render())).toContain("Live transfers are on");
+      expect(field("human-handoff-phone").props.value).toBe("+13125550123");
+      expect(field("human-handoff-keywords").props.value).toBe("manager\nurgent");
+      expect(writes).toHaveLength(2);
+      expect(writes[1]).toEqual(writes[0]);
+    },
+  );
+
+  it("confirms explicit clearing and rejects a retained legacy transfer destination", async () => {
+    const writes: unknown[] = [];
+    h.fetch.mockImplementation((_url: string, init?: RequestInit) => {
+      if (init?.method !== "PATCH")
+        return Promise.resolve(
+          json({
+            businessProfile: {
+              ...profile,
+              transfer_phone: "+13125550123",
+              escalation_handoff_enabled: true,
+            },
+          }),
+        );
+      const sent = JSON.parse(String(init.body));
+      writes.push(sent);
+      return Promise.resolve(
+        json({
+          success: true,
+          businessProfile: {
+            ...profile,
+            ...sent,
+            transfer_phone: writes.length === 1 ? "+13125550123" : null,
+          },
+        }),
+      );
+    });
+    await open();
+    field("human-handoff-phone").props.onChange!({ target: { value: "" } });
+    field("human-handoff-email").props.onChange!({ target: { value: "" } });
+    field("human-handoff-transfer").props.onCheckedChange!(false);
+    await submit();
+    expect(text(render())).toContain("save could not be confirmed");
+    expect(drafts.get("bot-a")?.saved?.phone).toBe("+13125550123");
+    expect(field("human-handoff-phone").props.value).toBe("");
+    await submit();
+    expect(text(render())).toContain("Human handoff settings saved.");
+    expect(drafts.get("bot-a")?.saved).toEqual({
+      phone: "",
+      email: "",
+      transfer: false,
+      keywords: "",
+    });
+    expect(writes).toEqual([
+      {
+        escalation_phone: null,
+        escalation_email: null,
+        escalation_handoff_enabled: false,
+        escalation_keywords: [],
+      },
+      {
+        escalation_phone: null,
+        escalation_email: null,
+        escalation_handoff_enabled: false,
+        escalation_keywords: [],
+      },
+    ]);
+  });
+
   it("keeps malformed loads unavailable and recovers on retry without exposing empty editable routing", async () => {
     h.fetch
       .mockResolvedValueOnce(json({}))

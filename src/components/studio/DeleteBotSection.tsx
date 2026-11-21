@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Loader2, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -26,6 +26,24 @@ const BLOCKED_MESSAGES: Record<DeletionBlock, string> = {
   identity_setup: "This Bot's number or mailbox is being set up. Try again in a minute.",
 };
 
+function readDeletionPreview(value: unknown): DeletionPreview | null {
+  if (!value || typeof value !== "object") return null;
+  const preview = value as Record<string, unknown>;
+  if (
+    typeof preview.name !== "string" ||
+    !preview.name.trim() ||
+    !Array.isArray(preview.phone_numbers) ||
+    !preview.phone_numbers.every((phone) => typeof phone === "string") ||
+    !Array.isArray(preview.mailboxes) ||
+    !preview.mailboxes.every((mailbox) => typeof mailbox === "string") ||
+    (preview.blocked_by !== null &&
+      (typeof preview.blocked_by !== "string" ||
+        !Object.prototype.hasOwnProperty.call(BLOCKED_MESSAGES, preview.blocked_by)))
+  )
+    return null;
+  return value as DeletionPreview;
+}
+
 /**
  * Deleting a Bot frees its slot on the plan. The section loads what deletion
  * releases (number, managed mailbox) when it opens, so the confirmation names
@@ -52,22 +70,38 @@ export default function DeleteBotSection({
   const [previewVersion, setPreviewVersion] = useState(0);
   const [confirmation, setConfirmation] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const deletingRef = useRef(false);
+  const mounted = useRef(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
     let active = true;
     setLoading(true);
     setLoadError(null);
+    setPreview(null);
+    setConfirmation("");
     void (async () => {
       try {
         const response = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/deletion`);
-        const body = (await response.json().catch(() => null)) as
-          (DeletionPreview & { error?: string }) | null;
-        if (!response.ok || !body) {
-          throw new Error(body?.error || "Couldn't check what deleting this Bot releases.");
+        const body = (await response.json().catch(() => null)) as { error?: unknown } | null;
+        if (!response.ok) {
+          throw new Error(
+            typeof body?.error === "string"
+              ? body.error
+              : "Couldn't check what deleting this Bot releases.",
+          );
         }
-        if (active) setPreview(body);
+        const next = readDeletionPreview(body);
+        if (!next) throw new Error("The deletion check could not be confirmed. Try again.");
+        if (active) setPreview(next);
       } catch (err) {
         if (active) {
           setLoadError(
@@ -84,7 +118,16 @@ export default function DeleteBotSection({
   }, [agentId, open, previewVersion]);
 
   async function deleteBot() {
-    if (confirmation !== "DELETE" || deleting || !preview || preview.blocked_by) return;
+    if (
+      confirmation !== "DELETE" ||
+      deletingRef.current ||
+      loading ||
+      loadError ||
+      !preview ||
+      preview.blocked_by
+    )
+      return;
+    deletingRef.current = true;
     setDeleting(true);
     setError(null);
     try {
@@ -93,17 +136,32 @@ export default function DeleteBotSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ confirmation: "DELETE" }),
       });
-      const body = (await response.json().catch(() => null)) as { error?: string } | null;
-      if (!response.ok) throw new Error(body?.error || "Couldn't delete this Bot. Try again.");
+      const body = (await response.json().catch(() => null)) as {
+        deleted?: unknown;
+        error?: unknown;
+      } | null;
+      if (!response.ok)
+        throw new Error(
+          typeof body?.error === "string" ? body.error : "Couldn't delete this Bot. Try again.",
+        );
+      if (body?.deleted !== true)
+        throw new Error("Deletion could not be confirmed. Check your Bots before trying again.");
+      // The owner can leave this Bot while deletion finishes. Refresh the
+      // roster, but do not navigate away from their current work or show a
+      // success notice from a retired settings panel.
+      window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
+      if (!mounted.current) return;
       if (readPostCreateWizard()?.agentId === agentId) clearPostCreateWizard();
       forgetDeletedAgent(agentId);
       navigate("/studio", { replace: true });
-      window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       toast({ type: "success", title: "Bot Deleted", message: `${agentName} was deleted.` });
     } catch (err) {
+      if (!mounted.current) return;
       setError(err instanceof Error ? err.message : "Couldn't delete this Bot. Try again.");
-      setDeleting(false);
       setPreviewVersion((version) => version + 1);
+    } finally {
+      deletingRef.current = false;
+      if (mounted.current) setDeleting(false);
     }
   }
 
@@ -167,17 +225,31 @@ export default function DeleteBotSection({
             </StatusNotice>
           ) : null}
           {loadError ? (
-            <StatusNotice tone="destructive" title="Couldn't Check This Bot">
+            <StatusNotice
+              tone="destructive"
+              title="Couldn't Check This Bot"
+              action={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={loading || deleting}
+                  onClick={() => setPreviewVersion((version) => version + 1)}
+                >
+                  Try Again
+                </Button>
+              }
+            >
               {loadError}
             </StatusNotice>
           ) : null}
           {error ? (
-            <StatusNotice tone="destructive" title="Bot Not Deleted">
+            <StatusNotice tone="destructive" title="Deletion Needs Attention">
               {error}
             </StatusNotice>
           ) : null}
 
-          {preview && !blocked ? (
+          {!loading && !loadError && preview && !blocked ? (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <label
                 className="grid gap-2 text-sm text-muted-foreground"

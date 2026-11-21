@@ -160,30 +160,36 @@ test("a saved setup guide follows its Bot across navigation and reloads", async 
   await page.getByRole("combobox", { name: "Switch Bot" }).selectOption("bot-front-desk");
   await expect(guide).toBeVisible();
 
-  await page.route("**/api/agents", (route) =>
-    route.fulfill({ json: { agents: [agents[1]] } }),
-  );
+  await page.route("**/api/agents", (route) => route.fulfill({ json: { agents: [agents[1]] } }));
   await page.reload();
   await expect(page.getByText("Bot Unavailable", { exact: true })).toBeVisible();
   await expect(guide).toHaveCount(0);
 });
 
-test("deleting the selected Bot clears its guide and selects the remaining Bot before reload", async ({ page }) => {
+test("deleting the selected Bot clears its guide and selects the remaining Bot before reload", async ({
+  page,
+}) => {
   await mockWorkspace(page);
   let deleted = false;
   let releaseRoster: () => void = () => {};
-  const reload = new Promise<void>((resolve) => { releaseRoster = resolve; });
+  const reload = new Promise<void>((resolve) => {
+    releaseRoster = resolve;
+  });
   await page.route("**/api/agents", async (route) => {
     if (deleted) await reload;
     await route.fulfill({ json: { agents: deleted ? [agents[1]] : agents } });
   });
   await page.route("**/api/agents/bot-front-desk/deletion", (route) =>
-    route.fulfill({ json: { name: "Front Desk", phone_numbers: [], mailboxes: [], blocked_by: null } }),
+    route.fulfill({
+      json: { name: "Front Desk", phone_numbers: [], mailboxes: [], blocked_by: null },
+    }),
   );
   await page.route("**/api/agents/bot-front-desk", async (route) => {
     if (route.request().method() !== "DELETE") return route.fallback();
     deleted = true;
-    await route.fulfill({ json: { ok: true } });
+    await route.fulfill({
+      json: { deleted: true, phone_numbers_released: 0, mailboxes_released: 0 },
+    });
   });
 
   try {
@@ -200,9 +206,191 @@ test("deleting the selected Bot clears its guide and selects the remaining Bot b
     await section.getByRole("button", { name: "Delete Bot", exact: true }).click();
     await expect(page.getByRole("button", { name: "Sales Bot details" })).toBeVisible();
     await expect(page).toHaveURL(/agent=bot-sales/);
-    expect(await page.evaluate(() => sessionStorage.getItem("wireline:post-create-wizard"))).toBeNull();
+    expect(
+      await page.evaluate(() => sessionStorage.getItem("wireline:post-create-wizard")),
+    ).toBeNull();
   } finally {
     releaseRoster();
+  }
+});
+
+test("an unconfirmed Bot deletion stays scoped and requires a fresh check before retry", async ({
+  page,
+}, testInfo) => {
+  await mockWorkspace(page);
+  let checks = 0;
+  let recovered = false;
+  const deletions: string[] = [];
+  await page.route("**/api/agents/bot-front-desk/deletion", (route) => {
+    checks += 1;
+    return route.fulfill(
+      checks > 1 && !recovered
+        ? { status: 503, json: { error: "Deletion check unavailable." } }
+        : {
+            json: {
+              name: "Front Desk",
+              phone_numbers: ["+13125550100"],
+              mailboxes: ["desk@example.test"],
+              blocked_by: null,
+            },
+          },
+    );
+  });
+  await page.route("**/api/agents/bot-front-desk", (route) => {
+    if (route.request().method() !== "DELETE") return route.fallback();
+    deletions.push(route.request().url());
+    return route.fulfill({ json: { ok: true } });
+  });
+  await page.goto("/studio?agent=bot-front-desk&section=setup");
+  const section = page.getByRole("region", { name: "Delete Bot", exact: true });
+  await section.locator("summary").click();
+  await section.getByLabel("Type DELETE to Confirm").fill("DELETE");
+  await section.getByRole("button", { name: "Delete Bot", exact: true }).click();
+  await expect(section.getByText(/Deletion could not be confirmed/)).toBeVisible();
+  await expect(section.getByText("Deletion check unavailable.", { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/agent=bot-front-desk/);
+  await expect(section.getByRole("button", { name: "Delete Bot", exact: true })).toHaveCount(0);
+  expect(deletions).toHaveLength(1);
+  await section.screenshot({ path: testInfo.outputPath("deletion-recheck-unavailable.png") });
+  recovered = true;
+  await section.getByRole("button", { name: "Try Again", exact: true }).click();
+  await expect(section.getByLabel("Type DELETE to Confirm")).toHaveValue("");
+  await expect(section.getByText(/desk@example.test/)).toBeVisible();
+  await expect(section.getByRole("button", { name: "Delete Bot", exact: true })).toBeDisabled();
+  expect(deletions).toHaveLength(1);
+});
+
+for (const kind of ["missing", "malformed", "unknown block"] as const) {
+  test(`a ${kind} Bot deletion preview stays unavailable and can recover`, async ({ page }) => {
+    await mockWorkspace(page);
+    let recovered = false;
+    let deletes = 0;
+    await page.route("**/api/agents/bot-front-desk/deletion", (route) =>
+      route.fulfill({
+        json: recovered
+          ? { name: "Front Desk", phone_numbers: [], mailboxes: [], blocked_by: null }
+          : kind === "missing"
+            ? {}
+            : {
+                name: "Front Desk",
+                phone_numbers: kind === "malformed" ? "unconfirmed" : [],
+                mailboxes: [],
+                blocked_by: kind === "unknown block" ? "unknown" : null,
+              },
+      }),
+    );
+    await page.route("**/api/agents/bot-front-desk", (route) => {
+      if (route.request().method() !== "DELETE") return route.fallback();
+      deletes += 1;
+      return route.fulfill({ json: { deleted: true } });
+    });
+    await page.goto("/studio?agent=bot-front-desk&section=setup");
+    const section = page.getByRole("region", { name: "Delete Bot", exact: true });
+    await section.locator("summary").click();
+    await expect(section.getByText(/deletion check could not be confirmed/i)).toBeVisible();
+    await expect(section.getByLabel("Type DELETE to Confirm")).toHaveCount(0);
+    expect(deletes).toBe(0);
+    recovered = true;
+    await section.getByRole("button", { name: "Try Again", exact: true }).click();
+    await expect(section.getByLabel("Type DELETE to Confirm")).toHaveValue("");
+    await expect(section.getByRole("button", { name: "Delete Bot", exact: true })).toBeDisabled();
+    expect(deletes).toBe(0);
+  });
+}
+
+for (const [block, message] of [
+  ["live_call", "This Bot is on a call or still wrapping one up."],
+  ["outbound_call", "This Bot is placing a call."],
+  ["computer_task", "This Bot is working on a computer task."],
+  ["identity_setup", "This Bot's number or mailbox is being set up."],
+] as const) {
+  test(`a ${block} deletion preview explains the active work and cannot submit`, async ({
+    page,
+  }) => {
+    await mockWorkspace(page);
+    let deletes = 0;
+    await page.route("**/api/agents/bot-front-desk/deletion", (route) =>
+      route.fulfill({
+        json: {
+          name: "Front Desk",
+          phone_numbers: [],
+          mailboxes: [],
+          blocked_by: block,
+        },
+      }),
+    );
+    await page.route("**/api/agents/bot-front-desk", (route) => {
+      if (route.request().method() !== "DELETE") return route.fallback();
+      deletes += 1;
+      return route.fulfill({ json: { deleted: true } });
+    });
+    await page.goto("/studio?agent=bot-front-desk&section=setup");
+    const section = page.getByRole("region", { name: "Delete Bot", exact: true });
+    await section.locator("summary").click();
+    await expect(section.getByText(message, { exact: false })).toBeVisible();
+    await expect(section.getByLabel("Type DELETE to Confirm")).toHaveCount(0);
+    expect(deletes).toBe(0);
+  });
+}
+
+test("a late confirmed deletion refreshes the roster without interrupting current work", async ({
+  page,
+}) => {
+  await mockWorkspace(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  let release!: () => void;
+  const ready = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let deleting = false;
+  let deleted = false;
+  let rosterReads = 0;
+  await page.route("**/api/agents", (route) => {
+    rosterReads += 1;
+    return route.fulfill({ json: { agents: deleted ? [agents[1]] : agents } });
+  });
+  await page.route("**/api/agents/bot-front-desk/deletion", (route) =>
+    route.fulfill({
+      json: {
+        name: "Front Desk",
+        phone_numbers: [],
+        mailboxes: [],
+        blocked_by: null,
+      },
+    }),
+  );
+  await page.route("**/api/agents/bot-front-desk", async (route) => {
+    if (route.request().method() !== "DELETE") return route.fallback();
+    deleting = true;
+    await ready;
+    deleted = true;
+    await route.fulfill({
+      json: { deleted: true, phone_numbers_released: 0, mailboxes_released: 0 },
+    });
+  });
+  try {
+    await page.goto("/studio?agent=bot-front-desk&section=setup");
+    const section = page.getByRole("region", { name: "Delete Bot", exact: true });
+    await section.locator("summary").click();
+    await section.getByLabel("Type DELETE to Confirm").fill("DELETE");
+    await section.getByRole("button", { name: "Delete Bot", exact: true }).click();
+    await expect.poll(() => deleting).toBe(true);
+    await page.getByRole("combobox", { name: "Switch Bot", exact: true }).selectOption("bot-sales");
+    await page.getByRole("button", { name: "Close panel", exact: true }).click();
+    const composer = page.getByRole("textbox", { name: "Message Sales Bot", exact: true });
+    await expect(composer).toBeVisible();
+    await composer.fill("Keep my Sales draft while the other Bot finishes.");
+    await page.getByRole("link", { name: "Inbox", exact: true }).click();
+    await expect(page).toHaveURL(/\/inbox(?:\?|$)/);
+    const before = rosterReads;
+    release();
+    await expect.poll(() => rosterReads).toBeGreaterThan(before);
+    await expect(page).toHaveURL(/\/inbox(?:\?|$)/);
+    await page.goBack();
+    await expect(page).toHaveURL(/agent=bot-sales/);
+    await expect(composer).toHaveValue("Keep my Sales draft while the other Bot finishes.");
+  } finally {
+    release();
   }
 });
 

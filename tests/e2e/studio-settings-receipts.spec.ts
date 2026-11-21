@@ -41,6 +41,72 @@ async function openSetup(page: Page) {
   await page.getByRole("button", { name: "Set Up Bot", exact: true }).click();
 }
 
+test("Human Handoff preserves routing after a different destination and confirms retry and clear", async ({
+  page,
+}, testInfo) => {
+  await mockStudio(page, {
+    businessProfile: {
+      business_hours: null,
+      timezone: "America/Chicago",
+      out_of_hours_message: null,
+      escalation_phone: null,
+      transfer_phone: null,
+      escalation_email: "team@example.test",
+      escalation_handoff_enabled: false,
+      escalation_keywords: [],
+    },
+  });
+  const writes: Array<Record<string, unknown>> = [];
+  await page.route(`**/api/agent-config/${bot.id}/business`, (route) => {
+    const submitted = route.request().postDataJSON();
+    writes.push(submitted);
+    return route.fulfill({
+      json: {
+        success: true,
+        businessProfile: {
+          ...submitted,
+          transfer_phone: null,
+          escalation_phone: writes.length === 1 ? "+13125550125" : submitted.escalation_phone,
+        },
+      },
+    });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openSetup(page);
+  const handoff = page.getByRole("button", { name: /^Human Handoff/ });
+  await handoff.click();
+  const settings = page.locator("#human-handoff-settings");
+  const phone = settings.getByLabel("Phone number", { exact: true });
+  const email = settings.getByLabel("Notification email", { exact: true });
+  await phone.fill("(312) 555-0123");
+  await settings.getByRole("switch", { name: "Transfer live calls", exact: true }).check();
+  await settings.getByLabel(/Escalate when callers mention/).fill("manager, urgent\nmanager");
+  await settings.getByRole("button", { name: "Save Handoff", exact: true }).click();
+  await expect(settings.getByText(/save could not be confirmed/)).toBeVisible();
+  await expect(settings.getByText(/Live transfers are on/)).toHaveCount(0);
+  await expect(handoff).toContainText("Notify & review");
+  await expect(phone).toHaveValue("(312) 555-0123");
+  await settings.screenshot({ path: testInfo.outputPath("handoff-unconfirmed-mobile.png") });
+  await settings.getByRole("button", { name: "Save Handoff", exact: true }).click();
+  await expect(settings.getByText(/Live transfers are on/)).toBeVisible();
+  await expect(phone).toHaveValue("+13125550123");
+  await expect(settings.getByLabel(/Escalate when callers mention/)).toHaveValue("manager\nurgent");
+  expect(writes[1]).toEqual(writes[0]);
+  await phone.fill("");
+  await email.fill("");
+  await settings.getByRole("switch", { name: "Transfer live calls", exact: true }).uncheck();
+  await settings.getByLabel(/Escalate when callers mention/).fill("");
+  await settings.getByRole("button", { name: "Save Handoff", exact: true }).click();
+  await expect(settings.getByText("Human handoff settings saved.", { exact: true })).toBeVisible();
+  await settings.screenshot({ path: testInfo.outputPath("handoff-confirmed-clear-mobile.png") });
+  expect(writes[2]).toEqual({
+    escalation_phone: null,
+    escalation_email: null,
+    escalation_handoff_enabled: false,
+    escalation_keywords: [],
+  });
+});
+
 test("Permission rejects another Bot's receipt and confirms a safe retry", async ({ page }) => {
   await mockStudio(page, { permission: "auto" });
   const writes: unknown[] = [];

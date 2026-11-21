@@ -144,6 +144,7 @@ export default function HumanHandoffEditor({ agentId, ownerId, botPhone, drafts,
         },
       );
       const body = (await response.json().catch(() => null)) as {
+        success?: unknown;
         businessProfile?: unknown;
         error?: unknown;
       } | null;
@@ -154,7 +155,17 @@ export default function HumanHandoffEditor({ agentId, ownerId, botPhone, drafts,
             : "Human handoff settings could not be saved.",
         );
       const confirmed = readHumanHandoffProfile(body?.businessProfile);
-      if (!confirmed)
+      const expected: HumanHandoffValues = {
+        phone: normalizeHandoffPhone(submitted.phone) || "",
+        email: submitted.email.trim(),
+        transfer: submitted.transfer,
+        keywords: handoffKeywords(submitted.keywords).join("\n"),
+      };
+      if (
+        !confirmed ||
+        (body?.success !== undefined && body.success !== true) ||
+        !sameHumanHandoff(confirmed, expected)
+      )
         throw new Error("The save could not be confirmed. Your draft is preserved; try again.");
       draft.saved = confirmed;
       if (sameHumanHandoff(draft.values, submitted)) draft.values = confirmed;
@@ -298,7 +309,7 @@ export default function HumanHandoffEditor({ agentId, ownerId, botPhone, drafts,
               </fieldset>
               {notice ? <StatusNotice tone="success">{notice}</StatusNotice> : null}
               {saveError || draft.error ? (
-                <StatusNotice tone="destructive" title="Handoff Not Saved">
+                <StatusNotice tone="destructive" title="Handoff Needs Attention">
                   {saveError || draft.error}
                 </StatusNotice>
               ) : null}
