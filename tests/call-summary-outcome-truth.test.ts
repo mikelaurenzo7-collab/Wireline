@@ -21,9 +21,7 @@ describe("call summary and outcome truth", () => {
     expect(deterministicSummary(GREETING)).toBe(
       "The caller did not say anything the Bot could transcribe.",
     );
-    expect(deterministicSummary("")).toBe(
-      "No transcript is available for this call.",
-    );
+    expect(deterministicSummary("")).toBe("No transcript is available for this call.");
     expect(callerTurnsText(transcript)).not.toContain("appointment");
   });
 
@@ -38,6 +36,33 @@ describe("call summary and outcome truth", () => {
       });
     expect(live(false)).not.toBe("booked");
     expect(live(true)).toBe("booked");
+  });
+
+  it("keeps a Calendar receipt when native transcript or timing is incomplete", () => {
+    for (const [durationSeconds, callerText] of [
+      [null, "Tuesday works."],
+      [90, ""],
+      [5, "Yes."],
+    ] as const) {
+      expect(
+        classifyCallOutcome({
+          durationSeconds,
+          observed: { callerText, appointmentBooked: true },
+        }),
+      ).toBe("booked");
+    }
+    expect(
+      classifyCallOutcome({
+        durationSeconds: null,
+        observed: { callerText: "What are your hours?", appointmentBooked: false },
+      }),
+    ).toBe("info");
+    expect(
+      classifyCallOutcome({
+        durationSeconds: null,
+        observed: { callerText: "Please stop calling me.", appointmentBooked: true },
+      }),
+    ).toBe("dnc");
   });
 
   it("uses explicit revocation language for opt-outs, not ordinary words", () => {

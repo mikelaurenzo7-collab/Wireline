@@ -20,6 +20,7 @@ interface Action {
 export interface EmptyStateProps {
   icon?: ElementType<{ className?: string; strokeWidth?: number }> | ReactNode;
   title: string;
+  headingAs?: "h2" | "h3";
   description?: ReactNode;
   actions?: Action[];
   /** Single primary action slot (atoms API compatibility). */
@@ -58,6 +59,7 @@ export interface EmptyStateProps {
 export function EmptyState({
   icon: IconOrNode,
   title,
+  headingAs,
   description,
   actions = [],
   action,
@@ -129,6 +131,7 @@ export function EmptyState({
       ) : null}
 
       <SectionHeader
+        headingAs={headingAs}
         tone="instrument"
         titleTone={titleTone}
         eyebrow={eyebrow}

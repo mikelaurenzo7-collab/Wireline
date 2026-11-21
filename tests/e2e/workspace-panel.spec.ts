@@ -1639,6 +1639,8 @@ for (const width of [1440, 390]) {
     });
     const reply = page.getByRole("textbox", { name: "Reply to Front Desk", exact: true });
     await expect(reply).toBeVisible();
+    await expect(page.getByText("1 browser action · Waiting for you", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Use browser controls for passwords/)).toHaveCount(1);
     await proof(page, info, `work-checkpoint-${width}`);
     if (width > 1000) {
       await page.getByRole("button", { name: "Tasks", exact: true }).click();

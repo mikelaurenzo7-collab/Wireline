@@ -119,7 +119,11 @@ function StudioEmptyState() {
       data-studio-first-run
       className="flex h-full min-h-0 w-full flex-col overflow-y-auto px-4 pb-8 pt-8 sm:px-6 sm:pt-12 lg:pt-16"
     >
-      <EmptyState title="Create Your Bot" className="wl-composer-dock mx-auto w-full max-w-3xl">
+      <EmptyState
+        title="Create Your Bot"
+        headingAs="h2"
+        className="wl-composer-dock mx-auto w-full max-w-3xl py-6"
+      >
         <div className="mx-auto mt-2 w-full max-w-xl text-left">
           <label
             className="mb-2 block text-sm font-semibold text-foreground"
@@ -620,6 +624,7 @@ function StudioWorkspaceContent() {
       <EmptyState
         fill
         icon={Users}
+        headingAs="h2"
         title="Choose a Bot"
         action={
           <Button asChild>

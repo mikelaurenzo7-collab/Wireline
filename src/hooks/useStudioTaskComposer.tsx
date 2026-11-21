@@ -262,13 +262,15 @@ export function useStudioTaskComposer({
       ) : null}
       {taskMode && ownActive ? (
         <p className="wl-work-composer-hint" role="status">
-          {awaitingReply
-            ? "Your answer continues the current browser task. Use browser controls for passwords or codes."
-            : handoff
-              ? "Tell your Bot what to do in the browser you opened."
-              : ownActive.ownerControl
-                ? "Finish your browser step, then return control to your Bot."
-                : "Your Bot is working. You can message it while the browser task continues."}
+          {ownActive.stopping
+            ? "Stopping after the current step…"
+            : awaitingReply
+              ? "Your reply continues this task."
+              : handoff
+                ? "Tell your Bot what to do in the browser you opened."
+                : ownActive.ownerControl
+                  ? "Finish your browser step, then return control to your Bot."
+                  : "Your Bot is working. You can message it while the browser task continues."}
         </p>
       ) : null}
       {error ? (

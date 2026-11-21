@@ -6,6 +6,13 @@ import BotMark from "./BotMark";
 import { ACTIVE_COMPUTER_TASKS, type ComputerTask } from "../contexts/ComputerWorkspaceContext";
 import type { BotMarkKey } from "../lib/bot-mark";
 
+function taskActivityLabel(task: ComputerTask) {
+  if (!ACTIVE_COMPUTER_TASKS.includes(task.status)) return null;
+  if (task.stopping) return "Stopping";
+  if (task.ownerControl) return "You control the browser";
+  return task.status === "needs_input" ? "Waiting for you" : "In progress";
+}
+
 export default function StudioTaskMessages({
   selected,
   agentId,
@@ -21,6 +28,7 @@ export default function StudioTaskMessages({
   onShowBrowser: () => void;
   onReply?: () => void;
 }) {
+  const activityLabel = taskActivityLabel(selected);
   return (
     <>
       <article className="wl-studio-message is-owner ml-auto max-w-[84%]" aria-label="Your task">
@@ -35,7 +43,7 @@ export default function StudioTaskMessages({
           <details className="wl-work-steps">
             <summary>
               {selected.actionCount} browser {selected.actionCount === 1 ? "action" : "actions"}
-              {ACTIVE_COMPUTER_TASKS.includes(selected.status) ? " · In progress" : ""}
+              {activityLabel ? ` · ${activityLabel}` : ""}
             </summary>
             <ol>
               {selected.events
@@ -77,7 +85,7 @@ export default function StudioTaskMessages({
             </span>
           </p>
         ) : null}
-        {selected.status === "needs_input" ? (
+        {selected.status === "needs_input" && !selected.stopping ? (
           <div className="wl-work-question">
             <TaskResultText>
               {selected.preparingBrowser

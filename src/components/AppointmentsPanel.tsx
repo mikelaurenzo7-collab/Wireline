@@ -602,6 +602,7 @@ export default function AppointmentsPanel({
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-5 sm:px-6">
         <GoogleCalendarCard />
         <EmptyState
+          headingAs="h2"
           framed
           density="compact"
           titleTone="ui"

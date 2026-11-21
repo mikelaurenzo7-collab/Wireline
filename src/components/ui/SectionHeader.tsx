@@ -3,6 +3,7 @@ import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { cn } from "../../lib/utils";
 
 interface SectionHeaderProps {
+  headingAs?: "h2" | "h3";
   eyebrow?: string;
   title: string;
   description?: React.ReactNode;
@@ -18,6 +19,7 @@ interface SectionHeaderProps {
 
 /** Shared section hierarchy for product and marketing surfaces. */
 export function SectionHeader({
+  headingAs: Heading = "h3",
   eyebrow,
   title,
   description,
@@ -38,7 +40,7 @@ export function SectionHeader({
       )}
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-5">
         <div className="min-w-0 flex-1">
-          <h3
+          <Heading
             className={cn(
               "max-w-full break-words text-balance",
               marketing
@@ -49,7 +51,7 @@ export function SectionHeader({
             )}
           >
             {title}
-          </h3>
+          </Heading>
           {description && (
             <p className="mt-1.5 max-w-prose break-words text-balance text-[length:var(--wireline-typography-caption-size)] leading-relaxed text-muted-foreground">
               {description}

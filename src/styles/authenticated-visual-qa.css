@@ -256,11 +256,3 @@
 [data-studio-first-run] {
   justify-content: center;
 }
-
-[data-studio-first-run] .bb-lockup {
-  opacity: 0.92;
-}
-
-[data-studio-first-run] .wl-empty-state {
-  padding-top: 0;
-}

@@ -90,8 +90,9 @@ export function classifyCallOutcome(input: {
     const caller = input.observed.callerText;
     if (detectOptOut(caller).kind === "dnc") return "dnc";
     if (/\bwrong number\b/i.test(caller)) return "unreachable";
-    if ((input.durationSeconds ?? 0) < 8 || !caller.trim()) return "unreachable";
     if (input.observed.appointmentBooked) return "booked";
+    if (!caller.trim() || (input.durationSeconds != null && input.durationSeconds < 8))
+      return "unreachable";
     const said = `${caller} ${input.intentLabel || ""}`.toLowerCase();
     if (/\b(not interested|no thanks|no thank you)\b/.test(said)) return "other";
     if (/\b(qualified|interested|hot lead|budget|good fit)\b/.test(said)) return "qualified";

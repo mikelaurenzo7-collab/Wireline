@@ -169,6 +169,7 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
         initialAgentId={agentId || undefined}
       />
       <EmptyState
+        headingAs="h2"
         fill
         density="compact"
         titleTone="ui"

@@ -18,6 +18,7 @@ import { buildAgentOptionLabels } from "../lib/agent-option-labels";
 function EmptyKnowledge() {
   return (
     <EmptyState
+      headingAs="h2"
       fill
       density="compact"
       titleTone="ui"
