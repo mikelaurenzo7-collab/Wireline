@@ -53,11 +53,16 @@ describe("PR 729 hardening contract", () => {
   it("keeps a chosen agent sender associated with its Messaging Service", () => {
     const twilio = read("src/lib/twilio-service.ts");
     expect(twilio).toContain("sender = agentSender || sender;");
+    // The Service carrying the sender's approved registration wins over a
+    // stored one; an unreadable registration keeps the stored Service.
+    expect(twilio).toContain(
+      "registeredServiceSid !== undefined ? registeredServiceSid : settings.messagingServiceSid;",
+    );
     const serviceBlock = twilio.slice(
-      twilio.indexOf("} else if (settings.messagingServiceSid) {"),
+      twilio.indexOf("} else if (messagingServiceSid) {"),
       twilio.indexOf("const reservationReference"),
     );
-    expect(serviceBlock).toContain("payload.messagingServiceSid = settings.messagingServiceSid;");
+    expect(serviceBlock).toContain("payload.messagingServiceSid = messagingServiceSid;");
     expect(serviceBlock).toContain("if (sender) payload.from = cleanPhone(sender);");
   });
 

@@ -8,7 +8,9 @@ const read = (path: string) =>
 describe("settings entitlement write lockdown", () => {
   it("rejects entitlement columns via SettingsSchema strip (no passthrough)", () => {
     const contract = read("contracts/api-types.ts");
-    const schemaMatch = contract.match(/export const SettingsSchema = z\.object\(\{([\s\S]*?)\}\);/);
+    const schemaMatch = contract.match(
+      /export const SettingsSchema = z\.object\(\{([\s\S]*?)\}\);/,
+    );
     expect(schemaMatch).not.toBeNull();
     const schemaBody = schemaMatch![1];
     expect(contract).not.toMatch(/SettingsSchema[\s\S]*\.passthrough\(\)/);
@@ -30,6 +32,20 @@ describe("settings entitlement write lockdown", () => {
     expect(route).toMatch(/Allowlist only[\s\S]*liveVideoAddonEnabled/);
     // Legacy deny-list alone is insufficient with Drizzle column matching.
     expect(route).not.toMatch(/delete update\.subscriptionStatus;\s*\n\s*delete update\.maxAgents/);
+  });
+
+  it("keeps the shared-account Messaging Service SID platform-admin only", () => {
+    const route = read("src/routes/settings-routes.ts");
+    const client = route.match(/const CLIENT_WRITABLE_SETTINGS = new Set\(\[([\s\S]*?)\]\);/);
+    const admin = route.match(/const ADMIN_WRITABLE_SETTINGS = new Set\(\[([\s\S]*?)\]\);/);
+    expect(client).not.toBeNull();
+    expect(admin).not.toBeNull();
+    // A tenant-written Service SID lets Twilio pick a neighbour's pooled line.
+    expect(client![1]).not.toContain('"twilioMessagingServiceSid"');
+    expect(admin![1]).toContain('"twilioMessagingServiceSid"');
+    // Sender identities a tenant may still set are checked against owned lines.
+    expect(client![1]).toContain('"twilioSmsFromNumber"');
+    expect(route).toContain("await assertTelecomIdentityOwned(req.user.id, update)");
   });
 
   it("applies Zod parse result onto req.body so strip cannot be bypassed", () => {

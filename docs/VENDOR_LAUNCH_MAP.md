@@ -65,6 +65,8 @@ State recording consent is a separate question. A notice, area-code inference, o
 
 SMS sender inventory is not equivalent to carrier registration. US messaging must use the appropriate approved toll-free or A2P 10DLC registration and tenant isolation model before volume traffic is opened. STOP/HELP and consent behavior must be exercised end to end.
 
+The send boundary reads registration from Twilio (`src/lib/twilio-sms-registration.ts`). A local sender texts US recipients only while it sits in a Messaging Service whose A2P campaign is VERIFIED, and that Service is attached to the send. A toll-free sender needs an approved verification. A known-unregistered or pending sender is refused before any reservation or carrier request; an unreadable state proceeds to the carrier. The sender must be a line the workspace currently owns, and the Messaging Service SID is platform-admin only. The first text to a new recipient carries the workspace brand and `Reply STOP to opt out.` An approved BotBound LLC campaign covers BotBound's own texts, not another business's; each customer business needs its own Brand and campaign before it texts. `npm run vendor:readiness` reports registered senders as `twilio_sms_registration`.
+
 ### Federal DNC
 
 Marketing/campaign outbound must remain fail-closed while the federal DNC vendor or

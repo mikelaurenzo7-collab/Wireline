@@ -45,7 +45,6 @@ const CLIENT_WRITABLE_SETTINGS = new Set([
   "twilioMessagingEnabled",
   "twilioLookupEnabled",
   "twilioManagerAlertsEnabled",
-  "twilioMessagingServiceSid",
   "twilioSmsFromNumber",
   "twilioWhatsappFromNumber",
   "twilioManagerAlertNumber",
@@ -62,8 +61,22 @@ const CLIENT_WRITABLE_SETTINGS = new Set([
   "csatSmsEnabled",
 ]);
 
-/** Platform-admin-only capacity fields — never via Stripe-bypass self-service. */
-const ADMIN_WRITABLE_SETTINGS = new Set(["subscriptionStatus", "maxAgents", "extraAgents"]);
+/**
+ * Platform-admin-only fields — never via Stripe-bypass self-service.
+ *
+ * A Messaging Service SID is a platform carrier identity: every workspace
+ * shares one Twilio account, and a Service without a pinned sender lets Twilio
+ * choose any number in its pool under that Service's A2P registration. A
+ * tenant that wrote another Service's SID could text from a neighbour's line
+ * under someone else's campaign. Sends resolve the Service from the sender's
+ * own registration instead (`src/lib/twilio-sms-registration.ts`).
+ */
+const ADMIN_WRITABLE_SETTINGS = new Set([
+  "subscriptionStatus",
+  "maxAgents",
+  "extraAgents",
+  "twilioMessagingServiceSid",
+]);
 
 /**
  * Retention bounds published in `docs/SLA.md`: "default 365 days, minimum 90

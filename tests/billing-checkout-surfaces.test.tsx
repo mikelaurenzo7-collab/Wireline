@@ -331,7 +331,7 @@ describe("billing plan decisions", () => {
         render("modal").some(
           (element) =>
             element.props.to ===
-            "/settings/billing?plan=usage&interval=month&number=0&email_address=0",
+            "/settings/billing?plan=usage&interval=month&number=0&email_address=0&tier=standard",
         ),
       ).toBe(true),
     );

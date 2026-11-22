@@ -501,6 +501,82 @@ record(
   },
 );
 
+// An SMS-capable number is not a sender US carriers accept. Local numbers need
+// a Messaging Service pool with a VERIFIED A2P 10DLC campaign; toll-free numbers
+// need an approved verification. Mirrors src/lib/twilio-sms-registration.ts.
+const TOLL_FREE_E164 = /^\+18(?:00|33|44|55|66|77|88)\d{7}$/;
+const smsRegistrationReads = twilioConfigured
+  ? await Promise.all([
+      Promise.all(
+        twilioServices.map(async (service) => {
+          const sid = encodeURIComponent(String(service?.sid || ""));
+          const headers = { Authorization: twilioAuthorization };
+          const [campaigns, senders] = await Promise.all([
+            readJson(`https://messaging.twilio.com/v1/Services/${sid}/Compliance/Usa2p`, {
+              headers,
+            }),
+            readJson(`https://messaging.twilio.com/v1/Services/${sid}/PhoneNumbers?PageSize=400`, {
+              headers,
+            }),
+          ]);
+          return {
+            ok: Boolean(campaigns.ok && senders.ok),
+            verified: arrayAt(campaigns.body, "compliance").some(
+              (campaign) => String(campaign?.campaign_status || "").toUpperCase() === "VERIFIED",
+            ),
+            senders: arrayAt(senders.body, "phone_numbers")
+              .map((sender) => sender?.phone_number)
+              .filter((value) => typeof value === "string"),
+          };
+        }),
+      ),
+      readJson("https://messaging.twilio.com/v1/Tollfree/Verifications?PageSize=200", {
+        headers: { Authorization: twilioAuthorization },
+      }),
+    ])
+  : null;
+const registeredLocalSenders = new Set(
+  (smsRegistrationReads?.[0] ?? [])
+    .filter((service) => service.verified)
+    .flatMap((service) => service.senders)
+    .filter((phoneNumber) => !TOLL_FREE_E164.test(phoneNumber)),
+);
+const approvedTollFreeSids = new Set(
+  arrayAt(smsRegistrationReads?.[1]?.body, "verifications")
+    .filter((verification) => String(verification?.status || "").toUpperCase() === "TWILIO_APPROVED")
+    .map((verification) => verification?.tollfree_phone_number_sid),
+);
+const registeredSmsSenders = smsCapableNumbers.filter((number) =>
+  TOLL_FREE_E164.test(String(number?.phone_number || ""))
+    ? approvedTollFreeSids.has(number?.sid)
+    : registeredLocalSenders.has(number?.phone_number),
+);
+const smsRegistrationReadable = Boolean(
+  smsRegistrationReads &&
+  smsRegistrationReads[0].every((service) => service.ok) &&
+  smsRegistrationReads[1]?.ok,
+);
+record(
+  "twilio_sms_registration",
+  false,
+  registeredSmsSenders.length > 0 ? "ready" : "degraded",
+  smsRegistrationReadable
+    ? `${registeredSmsSenders.length}/${smsCapableNumbers.length} SMS-capable number(s) can text US recipients (approved A2P 10DLC campaign pool or approved toll-free verification).`
+    : "A2P campaign or toll-free verification state could not be read; SMS sender eligibility is unverified.",
+  registeredSmsSenders.length > 0
+    ? "Bind each workspace texting line to a registered sender; texts from other lines are refused before the carrier."
+    : "Register a Brand and A2P campaign (or approve toll-free verification) and pool the texting line before offering SMS.",
+  {
+    readable: smsRegistrationReadable,
+    sms_capable_number_count: smsCapableNumbers.length,
+    registered_sender_count: registeredSmsSenders.length,
+    verified_campaign_service_count: (smsRegistrationReads?.[0] ?? []).filter(
+      (service) => service.verified,
+    ).length,
+    approved_toll_free_count: approvedTollFreeSids.size,
+  },
+);
+
 record(
   "twilio_whatsapp",
   false,
