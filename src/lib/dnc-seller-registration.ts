@@ -7,10 +7,15 @@ import * as schema from "../db/schema";
 import { AppError } from "./api-error";
 import { drizzle, log, tenantStore } from "./server-context";
 import {
+  readDncSellerSetup,
   readStoredDncSellerRegistration,
+  dncRenewalCheckAt,
   dncSellerRegistrationState,
+  dncSellerSetupState,
   type DncSellerRegistration,
   type DncSellerRegistrationState,
+  type DncSellerSetup,
+  type DncSellerVerification,
 } from "./dnc-seller-registration-rules";
 
 async function readRegistrationValue(userId: string): Promise<unknown> {
@@ -22,10 +27,8 @@ async function readRegistrationValue(userId: string): Promise<unknown> {
   return row?.registration ?? null;
 }
 
-export async function readDncSellerRegistration(
-  userId: string,
-): Promise<DncSellerRegistration | null> {
-  return readStoredDncSellerRegistration(await readRegistrationValue(userId));
+export async function getDncSellerSetup(userId: string): Promise<DncSellerSetup> {
+  return readDncSellerSetup(await readRegistrationValue(userId));
 }
 
 function unchangedRegistration(userId: string, rawRegistration: unknown) {
@@ -35,13 +38,70 @@ function unchangedRegistration(userId: string, rawRegistration: unknown) {
   );
 }
 
+export async function saveDncSellerVerification(
+  userId: string,
+  value: Pick<DncSellerVerification, "ftc_org_id" | "san">,
+): Promise<DncSellerSetup> {
+  const [row] = await drizzle
+    .select({
+      registration: schema.settings.dncSellerRegistration,
+      businessName: schema.settings.businessName,
+    })
+    .from(schema.settings)
+    .where(eq(schema.settings.userId, userId))
+    .limit(1);
+  const raw = row?.registration ?? null;
+  const { registration, verification } = readDncSellerSetup(raw);
+  if (
+    verification?.state === "pending" &&
+    verification.ftc_org_id === value.ftc_org_id &&
+    verification.san === value.san
+  )
+    return { registration, verification };
+
+  const now = new Date();
+  // Keep the current verified term usable while its replacement is staged.
+  const current =
+    registration?.ftc_org_id === value.ftc_org_id &&
+    registration.san !== value.san &&
+    dncSellerRegistrationState(registration, now) === "active"
+      ? registration
+      : null;
+  const request: DncSellerVerification = {
+    ...value,
+    seller_name: row?.businessName?.trim().slice(0, 200) || "BotBound workspace",
+    attested_by: userId,
+    attested_at: now.toISOString(),
+    state: "pending",
+    project_code: null,
+    first_check_at: null,
+    next_check_at: current ? dncRenewalCheckAt(current.expires_on, now) : now.toISOString(),
+  };
+  const updated = await drizzle
+    .update(schema.settings)
+    .set({ dncSellerRegistration: { ...current, verification: request }, updatedAt: now })
+    .where(unchangedRegistration(userId, raw))
+    .returning({ userId: schema.settings.userId });
+  if (!updated.length)
+    throw AppError.fromHttpStatus(
+      409,
+      "Reload Compliance to check your subscription, then try again.",
+    );
+  return { registration: current, verification: request };
+}
+
 /** Save the owner's subscription. Changed subscription details require re-linking. */
 export async function saveDncSellerRegistration(input: {
   userId: string;
   value: Pick<DncSellerRegistration, "san" | "seller_name" | "area_codes" | "expires_on">;
 }): Promise<DncSellerRegistration> {
   const rawRegistration = await readRegistrationValue(input.userId);
-  const existing = readStoredDncSellerRegistration(rawRegistration);
+  const { registration: existing, verification } = readDncSellerSetup(rawRegistration);
+  if (existing?.ftc_org_id || verification)
+    throw AppError.fromHttpStatus(
+      409,
+      "Use your FTC Organization ID and SAN to update this subscription.",
+    );
   const keepLink =
     existing?.san === input.value.san &&
     existing.seller_name === input.value.seller_name &&
@@ -104,6 +164,8 @@ export async function linkDncSellerVendorProject(input: {
     const rawRegistration = await readRegistrationValue(input.userId);
     const existing = readStoredDncSellerRegistration(rawRegistration);
     if (!existing) throw AppError.fromHttpStatus(404, "This account has no DNC registration.");
+    if (existing.ftc_org_id)
+      throw AppError.fromHttpStatus(409, "This subscription uses automatic vendor verification.");
     // The admin configured the vendor project for a specific SAN; refuse if it changed since.
     if (existing.san !== input.expectedSan)
       throw AppError.fromHttpStatus(409, "The account's SAN changed. Check the vendor project.");
@@ -129,10 +191,12 @@ export async function linkDncSellerVendorProject(input: {
 export type DncSellerRegistrationSummary = {
   user_id: string;
   seller_name: string;
-  san: string;
+  san: string | null;
   state: DncSellerRegistrationState;
-  expires_on: string;
+  expires_on: string | null;
   vendor_project_id: string | null;
+  vendor_campaign_id: number | null;
+  verification_state: DncSellerVerification["state"] | null;
 };
 
 /** Platform admin: every recorded registration, so pending links can be configured. */
@@ -150,15 +214,19 @@ export async function listDncSellerRegistrations(): Promise<DncSellerRegistratio
   );
   const summaries: DncSellerRegistrationSummary[] = [];
   for (const row of rows) {
-    const registration = readStoredDncSellerRegistration(row.registration);
-    if (!row.userId || !registration) continue;
+    const setup = readDncSellerSetup(row.registration);
+    const { registration, verification } = setup;
+    const seller = registration ?? verification;
+    if (!row.userId || !seller) continue;
     summaries.push({
       user_id: row.userId,
-      seller_name: registration.seller_name,
-      san: registration.san,
-      state: dncSellerRegistrationState(registration),
-      expires_on: registration.expires_on,
-      vendor_project_id: registration.vendor_project_id,
+      seller_name: seller.seller_name,
+      san: registration && !registration.ftc_org_id ? registration.san : null,
+      state: dncSellerSetupState(setup),
+      expires_on: registration?.expires_on ?? null,
+      vendor_project_id: registration?.vendor_project_id ?? verification?.project_code ?? null,
+      vendor_campaign_id: registration?.vendor_campaign_id ?? null,
+      verification_state: verification?.state ?? null,
     });
   }
   return summaries;

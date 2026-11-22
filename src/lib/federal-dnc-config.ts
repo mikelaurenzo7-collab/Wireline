@@ -20,3 +20,13 @@ export function isFederalDncVendorConfigured(): boolean {
   }
   return true;
 }
+
+/** The Projects API and its campaign IDs are specific to DNCScrub. */
+export function isDncScrubProjectConnectionConfigured(): boolean {
+  const provider = process.env.FEDERAL_DNC_PROVIDER?.trim().toLowerCase();
+  return (
+    (!provider || provider === "dncscrub") &&
+    process.env.FEDERAL_DNC_API_URL?.trim() === "https://www.dncscrub.com/app/main/rpc/scrub" &&
+    isFederalDncVendorConfigured()
+  );
+}

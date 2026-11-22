@@ -16,6 +16,8 @@ import { touchNavCounts } from "../lib/nav-counts-invalidate";
 import { CAMPAIGN_STATUS, LEAD_STATUS } from "../lib/outbound-status";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { assertFederalDncForMarketing } from "../lib/federal-dnc-service";
+import { getDncSellerSetup } from "../lib/dnc-seller-registration";
+import { dncSellerSetupState } from "../lib/dnc-seller-registration-rules";
 import { enqueue } from "../lib/job-queue";
 
 const router = Router();
@@ -65,7 +67,10 @@ router.get("/api/campaigns", authenticateUser, async (req: AuthenticatedRequest,
       return { ...c, leads_count: s.total, dialed_count: s.dialed, connected_count: s.connected };
     });
 
-    res.json({ campaigns: mapObjectToSnake(enriched) });
+    res.json({
+      campaigns: mapObjectToSnake(enriched),
+      dnc_setup_needed: dncSellerSetupState(await getDncSellerSetup(req.user.id)) !== "active",
+    });
   } catch (error: any) {
     log.error("Failed to fetch campaigns", { error: getErrorMessage(error) });
     throw AppError.fromHttpStatus(500, "Failed to fetch campaigns");
@@ -353,6 +358,13 @@ router.post(
           code: "LAUNCH_APPROVAL_REQUIRED",
           error:
             "Confirm the compliance checklist before launching. Set launch_approval_confirmed: true after review.",
+        });
+      }
+
+      if (dncSellerSetupState(await getDncSellerSetup(req.user.id)) !== "active") {
+        return res.status(409).json({
+          code: "SELLER_DNC_SETUP_REQUIRED",
+          error: "Connect an active Do Not Call Registry subscription before launching a campaign.",
         });
       }
 

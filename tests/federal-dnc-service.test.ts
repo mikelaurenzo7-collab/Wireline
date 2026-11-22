@@ -115,6 +115,27 @@ describe("federal-dnc-service", () => {
     expect(fetchMock.mock.calls[1][0]).not.toContain("projId");
   });
 
+  it("uses the verified campaign scope and skips screening if the provider changes", async () => {
+    vi.stubEnv("FEDERAL_DNC_API_URL", "https://www.dncscrub.com/app/main/rpc/scrub");
+    vi.stubEnv("FEDERAL_DNC_API_KEY", "scrub-login-id");
+    vi.stubEnv("FEDERAL_DNC_PROVIDER", "dncscrub");
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [{ Phone: "3125550100", ResultCode: "C" }],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const scope = { vendorProjectId: "BBSELLER", vendorCampaignId: 42 };
+    expect(await lookupFederalDnc("+13125550100", scope)).toMatchObject({ source: "vendor" });
+    const url = new URL(fetchMock.mock.calls[0][0]);
+    expect(url.searchParams.get("campaignId")).toBe("42");
+    expect(url.searchParams.has("projId")).toBe(false);
+
+    vi.stubEnv("FEDERAL_DNC_API_URL", "https://different-vendor.example.test");
+    vi.stubEnv("FEDERAL_DNC_PROVIDER", "http");
+    expect(await lookupFederalDnc("+13125550100", scope)).toMatchObject({ source: "error" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("treats misplaced Vercel tokens as unconfigured", () => {
     process.env.FEDERAL_DNC_API_URL = "https://www.dncscrub.com/app/main/rpc/scrub";
     process.env.FEDERAL_DNC_API_KEY = "vcp_notARealDncKey";

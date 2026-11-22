@@ -49,7 +49,7 @@ export const CAMPAIGN_SALES_BADGE =
   "Sales campaign. Connect your seller's Do Not Call Registry subscription to screen each number.";
 
 export const DNC_SAN_HELP =
-  "Add your full Registry subscription in Compliance so BotBound can connect the correct screening project.";
+  "In Compliance, verify your FTC Organization ID and subscription number to connect screening.";
 
 function hourLabel(hour: number): string {
   const normalized = ((hour % 24) + 24) % 24;

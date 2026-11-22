@@ -554,6 +554,16 @@ const runSweepHandler = async (req: SweepRequest, res: Response) => {
       await processWebhookRetries();
     }
 
+    // Leave time for the bounded provider calls inside the seller sweep.
+    if (withinSweepBudget() && Date.now() - sweepStart < SWEEP_BUDGET_MS - 15_000) {
+      try {
+        const { sweepDncSellerRegistrations } = await import("../lib/dnc-seller-maintenance");
+        await sweepDncSellerRegistrations(now);
+      } catch {
+        log.error("DNC seller maintenance sweep failed");
+      }
+    }
+
     // JavaScript Promise.race cannot cancel the losing handler. The previous
     // 30-second race rescheduled a job while its original side effects kept
     // running. External clients already enforce their own timeouts; the sweep

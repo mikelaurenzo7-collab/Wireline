@@ -50,7 +50,7 @@ describe("launch readiness DNC deferral", () => {
     expect(gate).toContain("const federalGate = assertFederalDncForMarketing()");
     expect(gate).toContain('reason: "federal_dnc_unconfigured"');
     expect(gate).toMatch(
-      /lookupFederalDnc\(opts\.phone,\s*\{\s*vendorProjectId: seller\.vendorProjectId,?\s*\}\)/,
+      /lookupFederalDnc\(opts\.phone,\s*\{\s*vendorProjectId: seller\.vendorProjectId,[\s\S]*?vendorCampaignId: seller\.vendorCampaignId/,
     );
     expect(gate).toContain("isDncBlocked(opts.userId, opts.phone)");
     expect(gate).toContain("resolveCallingHoursForPhone");

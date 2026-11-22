@@ -9,13 +9,19 @@
  * The dial gate decides when a lookup is required. A configured provider
  * fails closed on transport errors and unrecognized results.
  */
-import { isFederalDncVendorConfigured } from "./federal-dnc-config";
+import {
+  isDncScrubProjectConnectionConfigured,
+  isFederalDncVendorConfigured,
+} from "./federal-dnc-config";
 import { parseDncScrubResult } from "./federal-dnc-result.mjs";
+import { isDncCampaignId } from "./dnc-seller-registration-rules";
 import { log } from "./server-context";
 
 export type DncLookupOptions = {
   /** Vendor project configured against the seller's registry subscription. */
   vendorProjectId?: string;
+  /** DNCScrub's verified default campaign for a seller provisioned via Projects v1.5. */
+  vendorCampaignId?: number;
 };
 
 export type DncLookupResult = {
@@ -56,12 +62,14 @@ function isDncScrubProvider(apiUrl: string): boolean {
   }
 }
 
-function buildDncScrubRequestUrl(apiUrl: string, phone10: string, projectId?: string): string {
+function buildDncScrubRequestUrl(apiUrl: string, phone10: string, scope: DncLookupOptions): string {
   const url = new URL(apiUrl);
   url.searchParams.set("phoneList", phone10);
   url.searchParams.set("version", "5");
   url.searchParams.set("output", "json");
-  if (projectId) url.searchParams.set("projId", projectId);
+  if (scope.vendorCampaignId !== undefined)
+    url.searchParams.set("campaignId", String(scope.vendorCampaignId));
+  else if (scope.vendorProjectId) url.searchParams.set("projId", scope.vendorProjectId);
   return url.toString();
 }
 
@@ -75,9 +83,18 @@ const federalHttpDncProvider: DncProvider = {
       return { listed: false, listDate: null, source: "unconfigured" };
     }
     const projectId = options?.vendorProjectId?.trim() || undefined;
+    const campaignId = options?.vendorCampaignId;
+    if (
+      campaignId !== undefined &&
+      (!projectId || !isDncCampaignId(campaignId) || !isDncScrubProjectConnectionConfigured())
+    )
+      return { listed: true, listDate: null, source: "error" };
     try {
       if (isDncScrubProvider(apiUrl)) {
-        return await lookupDncScrub(apiUrl, apiKey, number, projectId);
+        return await lookupDncScrub(apiUrl, apiKey, number, {
+          vendorProjectId: projectId,
+          vendorCampaignId: campaignId,
+        });
       }
       return await lookupGenericPost(apiUrl, apiKey, number, projectId);
     } catch (error) {
@@ -112,7 +129,7 @@ async function lookupDncScrub(
   apiUrl: string,
   apiKey: string,
   phone: string,
-  projectId?: string,
+  scope: DncLookupOptions,
 ): Promise<DncLookupResult> {
   const phone10 = normalizeUsPhone10(phone);
   if (!phone10) {
@@ -122,7 +139,7 @@ async function lookupDncScrub(
     return { listed: true, listDate: null, source: "error" };
   }
 
-  const response = await fetch(buildDncScrubRequestUrl(apiUrl, phone10, projectId), {
+  const response = await fetch(buildDncScrubRequestUrl(apiUrl, phone10, scope), {
     method: "GET",
     headers: { loginId: apiKey, Accept: "application/json" },
     redirect: "error",

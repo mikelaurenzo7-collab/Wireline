@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { Download, ExternalLink, Loader2, Shield } from "lucide-react";
 
 import DncManager from "./DncManager";
@@ -60,6 +60,8 @@ function consentEventLabel(event: string): string {
 }
 
 export default function ComplianceCenter() {
+  const [searchParams] = useSearchParams();
+  const openRegistryFromLink = searchParams.get("screening") === "setup";
   const [summary, setSummary] = useState<ComplianceCenterSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -193,6 +195,7 @@ export default function ComplianceCenter() {
 
       <div className="grid gap-4">
         <details
+          open={openRegistryFromLink || undefined}
           className="wl-paper wl-paper-elevated p-4 sm:p-5"
           onToggle={(event) => {
             if (event.currentTarget.open) setRegistryOpened(true);
@@ -201,7 +204,7 @@ export default function ComplianceCenter() {
           <summary className="cursor-pointer text-sm font-semibold text-foreground">
             Do Not Call Registry
           </summary>
-          {registryOpened ? <DncRegistrationCard /> : null}
+          {registryOpened || openRegistryFromLink ? <DncRegistrationCard /> : null}
         </details>
 
         {summary ? (

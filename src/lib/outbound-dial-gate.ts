@@ -3,10 +3,7 @@ import * as schema from "../db/schema";
 import { eq, and, desc, gte, ne } from "drizzle-orm";
 import { assertFederalDncForMarketing, lookupFederalDnc } from "./federal-dnc-service";
 import { getDncProvider } from "./dnc-provider";
-import {
-  evaluateDncSellerRegistration,
-  readStoredDncSellerRegistration,
-} from "./dnc-seller-registration-rules";
+import { evaluateDncSellerRegistration, readDncSellerSetup } from "./dnc-seller-registration-rules";
 import { isDncBlocked } from "./compliance";
 import { evaluateOutboundConsent, type ConsentDecision } from "./tcpa-consent";
 import { resolveCallingHoursForPhone } from "./tcpa-calling-hours";
@@ -402,14 +399,18 @@ export async function evaluateOutboundDialGate(opts: {
       workspaceSalesSettings = await loadWorkspaceSalesSettings(opts.userId);
     }
     const storedRegistration = workspaceSalesSettings?.dncSellerRegistration;
+    const setup = readDncSellerSetup(storedRegistration);
     const screenThisNumber =
       !oneOffSales ||
+      Boolean(setup.verification || setup.registration?.ftc_org_id) ||
       (getDncProvider().configured() &&
         (Boolean(workspaceSalesSettings?.dncSan?.trim()) || storedRegistration != null));
     if (screenThisNumber) {
       const seller = evaluateDncSellerRegistration(
-        readStoredDncSellerRegistration(storedRegistration),
+        setup.registration,
         opts.phone,
+        undefined,
+        setup.verification,
       );
       if (!seller.allowed) {
         const uncovered = seller.code === "SELLER_DNC_AREA_CODE_NOT_COVERED";
@@ -428,6 +429,7 @@ export async function evaluateOutboundDialGate(opts: {
 
       const lookup = await lookupFederalDnc(opts.phone, {
         vendorProjectId: seller.vendorProjectId,
+        ...(seller.vendorCampaignId ? { vendorCampaignId: seller.vendorCampaignId } : {}),
       });
       if (lookup.source !== "vendor") {
         return finish(

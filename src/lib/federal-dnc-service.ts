@@ -10,8 +10,11 @@
  * vendor result can clear it.
  */
 import { BULK_SALES_SCREENING_REQUIRED_MESSAGE } from "./outbound-compliance-copy";
-import { getDncProvider, normalizeUsPhone10 } from "./dnc-provider";
-import { isFederalDncVendorConfigured } from "./federal-dnc-config";
+import { getDncProvider, normalizeUsPhone10, type DncLookupOptions } from "./dnc-provider";
+import {
+  isDncScrubProjectConnectionConfigured,
+  isFederalDncVendorConfigured,
+} from "./federal-dnc-config";
 import { log } from "./server-context";
 
 export { isFederalDncVendorConfigured, normalizeUsPhone10 };
@@ -24,7 +27,7 @@ export type FederalDncLookupResult = {
 };
 
 /** Vendor project linked to the seller's own registry subscription. */
-export type FederalDncLookupOptions = { vendorProjectId?: string };
+export type FederalDncLookupOptions = DncLookupOptions;
 
 export type FederalDncMarketingGate =
   | { allowed: true; configured: true }
@@ -59,8 +62,10 @@ export async function lookupFederalDnc(
   if (!provider.configured()) {
     return { listed: false, source: "unconfigured", checked_at, list_version: null };
   }
+  if (options.vendorCampaignId !== undefined && !isDncScrubProjectConnectionConfigured())
+    return { listed: true, source: "error", checked_at, list_version: null };
   try {
-    const hit = await provider.lookup(phone, { vendorProjectId: options.vendorProjectId });
+    const hit = await provider.lookup(phone, options);
     return {
       listed: hit.listed,
       source: hit.source,

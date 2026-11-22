@@ -25,12 +25,13 @@ function isDncScrubProvider(apiUrl) {
   }
 }
 
-function buildDncScrubRequestUrl(apiUrl, { phone, projectId }) {
+function buildDncScrubRequestUrl(apiUrl, { phone, projectId, campaignId }) {
   const url = new URL(apiUrl);
   url.searchParams.set("phoneList", phone);
   url.searchParams.set("version", "5");
   url.searchParams.set("output", "json");
-  if (projectId) url.searchParams.set("projId", projectId);
+  if (campaignId) url.searchParams.set("campaignId", campaignId);
+  else if (projectId) url.searchParams.set("projId", projectId);
   return url.toString();
 }
 
@@ -133,9 +134,10 @@ async function main() {
   const apiKey = process.env.FEDERAL_DNC_API_KEY?.trim() || "";
   const apiUrl = process.env.FEDERAL_DNC_API_URL?.trim() || "";
   const projectId = process.env.FEDERAL_DNC_PROBE_PROJECT_ID?.trim() || "";
+  const campaignId = process.env.FEDERAL_DNC_PROBE_CAMPAIGN_ID?.trim() || "";
   const areaCode = process.env.FEDERAL_DNC_PROBE_AREA_CODE?.trim() || "202";
 
-  if (!apiKey && !apiUrl && !projectId) {
+  if (!apiKey && !apiUrl && !projectId && !campaignId) {
     output(
       {
         configured: false,
@@ -210,24 +212,34 @@ async function main() {
     return;
   }
 
-  if ((projectId && !/^[A-Za-z0-9_-]{1,64}$/.test(projectId)) || !/^[2-9]\d{2}$/.test(areaCode)) {
+  const dncscrub = isDncScrubProvider(apiUrl);
+  if (
+    (projectId && !/^[A-Za-z0-9_-]{1,64}$/.test(projectId)) ||
+    (campaignId &&
+      (!dncscrub ||
+        projectId ||
+        !/^[1-9]\d*$/.test(campaignId) ||
+        !Number.isSafeInteger(Number(campaignId)))) ||
+    !/^[2-9]\d{2}$/.test(areaCode)
+  ) {
     output(
       {
         configured: true,
         probe_ok: false,
         listed: true,
         source: "error",
-        detail: "Enter a valid screening project ID and a three-digit probe area code.",
+        detail:
+          "Use one valid screening project or DNCScrub campaign ID and a three-digit probe area code.",
       },
       1,
     );
     return;
   }
 
-  const scope = { phone: areaCode + TEST_NUMBER_SUFFIX, projectId };
-  const project_scoped = Boolean(projectId);
+  const scope = { phone: areaCode + TEST_NUMBER_SUFFIX, projectId, campaignId };
+  const project_scoped = Boolean(projectId || campaignId);
   try {
-    const result = isDncScrubProvider(apiUrl)
+    const result = dncscrub
       ? await probeDncScrub(apiUrl, apiKey, scope)
       : await probeGenericPost(apiUrl, apiKey, scope);
     output(

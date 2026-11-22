@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useState, type FormEvent } from "react";
 import { Check, Copy, ExternalLink, Loader2 } from "lucide-react";
+import { Link } from "react-router";
 
 import { authFetch, readApiJson } from "../lib/api";
 import {
@@ -7,6 +8,7 @@ import {
   parseAreaCodes,
   type DncAreaCodeSuggestion,
   type DncSellerRegistrationState,
+  type DncSellerVerification,
 } from "../lib/dnc-seller-registration-rules";
 import { Button, Skeleton } from "./atoms";
 import { FormField, StatusNotice } from "./molecules";
@@ -15,405 +17,430 @@ import { Input } from "./ui/shadcn/Input";
 
 type RegistrationResponse = {
   state: DncSellerRegistrationState;
+  verification_available: boolean;
   dnc_san?: string | null;
   registration: {
     san: string;
-    seller_name: string;
+    ftc_org_id: string | null;
     area_codes: string[] | "all";
     expires_on: string;
-    attested_at: string;
-    screening_connected: boolean;
+    verified: boolean;
+    renewal_due: boolean;
   } | null;
-  setup?: {
-    suggested_seller_name: string | null;
-    suggested_area_codes: DncAreaCodeSuggestion[];
-    suggested_expires_on: string;
-    outbound_contact_count: number;
-  };
+  verification:
+    | (Pick<DncSellerVerification, "state" | "ftc_org_id" | "san"> & {
+        scheduled_on?: string | null;
+      })
+    | null;
+  setup?: { suggested_area_codes: DncAreaCodeSuggestion[] };
 };
 
-export const DNC_REGISTRATION_STATE_LABEL: Record<DncSellerRegistrationState, string> = {
-  missing: "Not added",
-  pending_link: "Connecting",
-  expired: "Expired",
-  active: "Active",
-};
-
-const STATE_DETAIL: Record<DncSellerRegistrationState, string> = {
-  missing:
-    "Connect your business's Registry subscription to screen recipients for campaigns and automated sales.",
-  pending_link:
-    "Your subscription is saved. Campaign screening can use it once BotBound connects the provider project.",
-  expired:
-    "Renew your subscription at the Registry, then save the current subscription details here.",
-  active: "This subscription is linked for screening numbers in its covered area codes.",
-};
-
-/** Registry subscriptions include five area codes at no cost. */
+const REGISTRATION_API = "/api/compliance/dnc-registration";
 const FREE_AREA_CODES = 5;
 
-/** The owner's typed list, token by token, so a toggle never discards their edits. */
-function areaCodeTokens(value: string): string[] {
-  if (value.trim().toLowerCase() === "all") return [];
-  return value
-    .split(/[\s,;]+/)
-    .map((token) => token.trim())
-    .filter(Boolean);
-}
-
-function suggestionNote(suggestion: DncAreaCodeSuggestion): string {
-  const parts: string[] = [];
-  if (suggestion.ownLine) parts.push("your line");
-  if (suggestion.contacts > 0) {
-    parts.push(`${suggestion.contacts} ${suggestion.contacts === 1 ? "contact" : "contacts"}`);
-  }
-  return parts.join(" · ");
-}
+const expiryFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "long", timeZone: "UTC" });
 
 export default function DncRegistrationCard() {
   const [data, setData] = useState<RegistrationResponse | null>(null);
+  const [view, setView] = useState<"guide" | "connect" | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [san, setSan] = useState("");
-  const [sellerName, setSellerName] = useState("");
   const [areaCodes, setAreaCodes] = useState("");
-  const [expiresOn, setExpiresOn] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [orgId, setOrgId] = useState("");
+  const [san, setSan] = useState("");
   const [attest, setAttest] = useState(false);
   const attestId = useId();
-  const applyResponse = useCallback((next: RegistrationResponse) => {
-    setData((previous) => ({ ...next, setup: next.setup ?? previous?.setup }));
-    const reg = next.registration;
-    const setup = next.setup;
-    setSan(reg?.san ?? next.dnc_san ?? "");
-    // A first-time owner starts from BotBound's prefill; a saved
-    // registration always shows exactly what was saved.
-    setSellerName(reg?.seller_name ?? setup?.suggested_seller_name ?? "");
-    setAreaCodes(
-      reg
-        ? reg.area_codes === "all"
-          ? "all"
-          : reg.area_codes.join(", ")
-        : (setup?.suggested_area_codes ?? [])
-            .slice(0, FREE_AREA_CODES)
-            .map((item) => item.code)
-            .join(", "),
-    );
-    setExpiresOn(reg?.expires_on ?? setup?.suggested_expires_on ?? "");
-    setAttest(false);
-  }, []);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
     try {
       const result = await readApiJson<RegistrationResponse>(
-        await authFetch("/api/compliance/dnc-registration"),
+        await authFetch(REGISTRATION_API, { signal }),
       );
+      if (signal?.aborted) return;
       if (!result.ok) throw new Error(result.error);
-      applyResponse(result.data);
+      setData(result.data);
+      setAreaCodes(
+        (result.data.setup?.suggested_area_codes ?? [])
+          .slice(0, FREE_AREA_CODES)
+          .map((item) => item.code)
+          .join(", "),
+      );
     } catch {
-      setError("Could not load your Do Not Call registration.");
+      if (!signal?.aborted) setError("Could not load your Do Not Call subscription.");
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
-  }, [applyResponse]);
+  }, []);
 
   useEffect(() => {
-    void load();
+    const controller = new AbortController();
+    void load(controller.signal);
+    return () => controller.abort();
   }, [load]);
 
-  async function save(event: FormEvent<HTMLFormElement>) {
+  const verificationPending = data?.verification?.state === "pending";
+  const verificationAvailable = data?.verification_available === true;
+  const scheduledRenewal = data?.verification?.scheduled_on;
+  useEffect(() => {
+    if (!verificationPending || !verificationAvailable || view) return;
+    const controller = new AbortController();
+    async function refresh() {
+      try {
+        const result = await readApiJson<RegistrationResponse>(
+          await authFetch(REGISTRATION_API + "?status_only=1", { signal: controller.signal }),
+        );
+        if (result.ok && !controller.signal.aborted) {
+          setData((previous) => ({ ...result.data, setup: previous?.setup }));
+        }
+      } catch {
+        // The stored request continues on the server while this page is offline.
+      }
+    }
+    const refreshOnFocus = () => void refresh();
+    const timer = scheduledRenewal ? undefined : window.setInterval(refreshOnFocus, 15_000);
+    window.addEventListener("focus", refreshOnFocus);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshOnFocus);
+      controller.abort();
+    };
+  }, [verificationPending, verificationAvailable, scheduledRenewal, view]);
+
+  function openConnect(renewal = false) {
+    setOrgId(data?.verification?.ftc_org_id ?? data?.registration?.ftc_org_id ?? "");
+    setSan(
+      renewal ? "" : (data?.verification?.san ?? data?.registration?.san ?? data?.dnc_san ?? ""),
+    );
+    setAttest(false);
+    setError(null);
+    setView("connect");
+  }
+
+  async function verify(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
     setError(null);
     try {
       const result = await readApiJson<RegistrationResponse>(
-        await authFetch("/api/compliance/dnc-registration", {
+        await authFetch(REGISTRATION_API, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            san,
-            seller_name: sellerName,
-            area_codes: areaCodes,
-            expires_on: expiresOn,
-            attest,
-          }),
+          body: JSON.stringify({ ftc_org_id: orgId, san, attest }),
         }),
       );
       if (!result.ok) {
         setError(result.error);
         return;
       }
-      applyResponse(result.data);
-      setEditing(false);
+      setData((previous) => ({ ...result.data, setup: previous?.setup }));
+      setView(null);
     } catch {
-      setError("Could not save your Do Not Call registration.");
+      setError("Could not save your Do Not Call subscription. Try again.");
     } finally {
       setSaving(false);
     }
   }
 
-  async function copyAreaCodes(codes: string) {
+  const codes = parseAreaCodes(areaCodes);
+  const chosenCodes = Array.isArray(codes) ? codes : [];
+  const choices = new Set(chosenCodes);
+
+  function toggleAreaCode(code: string) {
+    const entries = areaCodes
+      .trim()
+      .split(/[\s,;]+/)
+      .filter(Boolean);
+    const next = entries.includes(code)
+      ? entries.filter((entry) => entry !== code)
+      : [...entries, code];
+    setAreaCodes(next.join(", "));
+    setCopied(false);
+  }
+
+  async function copyAreaCodes() {
     try {
-      await navigator.clipboard.writeText(codes);
+      await navigator.clipboard.writeText(chosenCodes.join(", "));
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopied(false);
     }
   }
 
-  const state = data?.state ?? "missing";
-  const reg = data?.registration ?? null;
-  const suggestions = data?.setup?.suggested_area_codes ?? [];
-  const showForm = data !== null && (editing || state === "missing");
-  // The form field is the one list: it is what the owner subscribes to at the
-  // registry and what BotBound screens against, so chips and Copy both use it.
-  const nationwide = parseAreaCodes(areaCodes) === "all";
-  const chosenCodes = areaCodeTokens(areaCodes);
-  const chosen = new Set(chosenCodes);
-
-  function toggleAreaCode(code: string) {
-    const next = chosen.has(code)
-      ? chosenCodes.filter((token) => token !== code)
-      : [...chosenCodes, code];
-    setAreaCodes(next.join(", "));
+  if (loading) return <Skeleton shape="surface" className="mt-3 h-24 w-full" />;
+  if (!data) {
+    return (
+      <div className="mt-3 grid gap-3">
+        <StatusNotice
+          tone="destructive"
+          title={error || "Could not load your Do Not Call subscription."}
+        />
+        <div>
+          <Button type="button" size="sm" variant="secondary" onClick={() => void load()}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
   }
 
+  const reg = data.registration;
+  const verification = data.verification;
+  const currentView = view ?? (data.state === "missing" ? "guide" : null);
+  const registryLink = (
+    <Button size="sm" variant="secondary" asChild>
+      <a href={DNC_REGISTRY_URL} target="_blank" rel="noreferrer">
+        <ExternalLink className="size-3.5" aria-hidden="true" />
+        Open the FTC Registry
+      </a>
+    </Button>
+  );
+
   return (
-    <div>
-      {loading ? (
-        <Skeleton shape="surface" className="mt-3 h-[96px] w-full" />
-      ) : data === null ? (
-        <div className="mt-3 grid gap-3">
-          <StatusNotice
-            tone="destructive"
-            title={error || "Could not load your Do Not Call registration."}
-          />
+    <div className="mt-3 grid gap-4 text-sm">
+      {currentView === "guide" ? (
+        <>
+          <p className="leading-6 text-muted-foreground">
+            Set up Do Not Call screening before launching a sales campaign. The FTC issues a
+            subscription number after you choose the area codes you plan to contact.
+          </p>
           <div>
-            <Button type="button" size="sm" variant="secondary" onClick={() => void load()}>
-              Try Again
+            <Button type="button" size="sm" variant="secondary" onClick={() => openConnect()}>
+              I already have a subscription
             </Button>
           </div>
-        </div>
-      ) : (
-        <div className="mt-3 grid gap-4 text-sm">
-          <p className="leading-6 text-muted-foreground">
-            <span className="font-semibold text-foreground">
-              {DNC_REGISTRATION_STATE_LABEL[state]}.
-            </span>{" "}
-            {STATE_DETAIL[state]}
-          </p>
-
-          {reg && !showForm ? (
-            <dl className="grid gap-2 border-y border-border py-3 sm:grid-cols-2">
-              <div>
-                <dt className="text-xs font-medium text-muted-foreground">Registered seller</dt>
-                <dd className="font-medium text-foreground">{reg.seller_name}</dd>
-              </div>
-              <div>
-                <dt className="text-xs font-medium text-muted-foreground">SAN</dt>
-                <dd className="font-medium text-foreground">{reg.san}</dd>
-              </div>
-              <div>
-                <dt className="text-xs font-medium text-muted-foreground">Area codes</dt>
-                <dd className="font-medium text-foreground">
-                  {reg.area_codes === "all" ? "All area codes" : reg.area_codes.join(", ")}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs font-medium text-muted-foreground">Expires</dt>
-                <dd className="font-medium text-foreground">{reg.expires_on}</dd>
-              </div>
-            </dl>
-          ) : null}
-
-          {showForm ? (
-            <>
-              <ol className="grid gap-4">
-                <li className="grid gap-2">
-                  <p className="font-medium text-foreground">1. Create your free Seller account</p>
-                  <p className="leading-6 text-muted-foreground">
-                    At the FTC Registry, choose <span className="text-foreground">Seller</span> for
-                    the business whose products or services the campaign will promote. Have your EIN
-                    ready.
-                  </p>
-                  <div>
-                    <Button type="button" size="sm" variant="secondary" asChild>
-                      <a href={DNC_REGISTRY_URL} target="_blank" rel="noreferrer">
-                        <ExternalLink className="size-3.5" aria-hidden="true" />
-                        Open the Registry
-                      </a>
-                    </Button>
-                  </div>
-                </li>
-
-                <li className="grid gap-2">
-                  <p className="font-medium text-foreground">2. Subscribe to your area codes</p>
-                  {suggestions.length ? (
-                    <>
-                      <p className="leading-6 text-muted-foreground">
-                        Based on your lines and contacts. Tap to add or remove; the selected list is
-                        what you subscribe to at the registry and what BotBound screens.
-                      </p>
-                      <ul className="flex flex-wrap gap-2" aria-label="Suggested area codes">
-                        {suggestions.map((item) => {
-                          const selected = nationwide || chosen.has(item.code);
-                          return (
-                            <li key={item.code}>
-                              <button
-                                type="button"
-                                aria-pressed={selected}
-                                disabled={nationwide}
-                                onClick={() => toggleAreaCode(item.code)}
-                                className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-left transition-colors wl-focus-ring-halo disabled:cursor-default ${
-                                  selected
-                                    ? "border-brand bg-brand/10 text-foreground"
-                                    : "border-border bg-card text-foreground hover:bg-muted"
-                                }`}
-                              >
-                                {selected ? (
-                                  <Check className="size-3.5 text-brand" aria-hidden="true" />
-                                ) : null}
-                                <span className="font-semibold">{item.code}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {suggestionNote(item)}
-                                </span>
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                      <div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="secondary"
-                          disabled={nationwide || chosenCodes.length === 0}
-                          onClick={() => void copyAreaCodes(chosenCodes.join(", "))}
-                        >
-                          {copied ? (
-                            <Check className="size-3.5" aria-hidden="true" />
-                          ) : (
-                            <Copy className="size-3.5" aria-hidden="true" />
-                          )}
-                          {copied ? "Copied" : "Copy Selected Area Codes"}
-                        </Button>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="leading-6 text-muted-foreground">
-                      Subscribe to each area code your Bot will call. Your own line's area code is a
-                      good start.
-                    </p>
-                  )}
-                  <p className="text-xs leading-5 text-muted-foreground">
-                    {nationwide
-                      ? "The nationwide list covers every area code at the registry's full annual fee."
-                      : `${chosenCodes.length} selected. The first ${FREE_AREA_CODES} are free; each extra area code has an annual fee.`}
-                  </p>
-                </li>
-
-                <li className="grid gap-3">
-                  <p className="font-medium text-foreground">
-                    3. Paste your subscription account number (SAN)
-                  </p>
-                  <p className="leading-6 text-muted-foreground">
-                    Find your SAN and subscription expiration in Manage/Renew Subscriptions after
-                    the FTC processes your order. Enter the details shown on your Registry account.
-                  </p>
-                  <form
-                    className="grid gap-3 sm:grid-cols-2"
-                    onSubmit={(event) => void save(event)}
-                  >
-                    <FormField label="Subscription account number (SAN)" required>
-                      <Input
-                        value={san}
-                        onChange={(event) => setSan(event.target.value)}
-                        autoComplete="off"
-                        maxLength={20}
-                      />
-                    </FormField>
-                    <FormField label="Registered business name" required>
-                      <Input
-                        value={sellerName}
-                        onChange={(event) => setSellerName(event.target.value)}
-                        autoComplete="organization"
-                        maxLength={200}
-                      />
-                    </FormField>
-                    <FormField
-                      label="Area codes"
-                      description='Separate with commas, or enter "all" for the nationwide list.'
-                      required
-                    >
-                      <Input
-                        value={areaCodes}
-                        onChange={(event) => setAreaCodes(event.target.value)}
-                        placeholder="312, 773"
-                        inputMode="numeric"
-                      />
-                    </FormField>
-                    <FormField label="Subscription expires" required>
-                      <Input
-                        type="date"
-                        value={expiresOn}
-                        onChange={(event) => setExpiresOn(event.target.value)}
-                      />
-                    </FormField>
-                    <div className="flex items-start gap-2 sm:col-span-2">
-                      <Checkbox
-                        id={attestId}
-                        className="mt-1"
-                        checked={attest}
-                        onChange={(event) => setAttest(event.target.checked)}
-                      />
-                      <label htmlFor={attestId} className="leading-6 text-foreground">
-                        This subscription belongs to my business, and I authorize BotBound to screen
-                        my marketing calls and texts against the registry with it.
-                      </label>
-                    </div>
-                    {error ? (
-                      <StatusNotice tone="destructive" className="sm:col-span-2" title={error} />
-                    ) : null}
-                    <div className="flex flex-wrap gap-2 sm:col-span-2">
-                      <Button type="submit" size="sm" disabled={saving || !attest || !san.trim()}>
-                        {saving ? <Loader2 className="size-3.5 animate-spin" /> : null}
-                        Save Registration
-                      </Button>
-                      {reg ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => {
-                            if (data) applyResponse(data);
-                            setError(null);
-                            setEditing(false);
-                          }}
-                        >
-                          Cancel
-                        </Button>
-                      ) : null}
-                    </div>
-                  </form>
-                </li>
-              </ol>
-            </>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              <Button type="button" size="sm" variant="secondary" onClick={() => setEditing(true)}>
-                Update Registration
+          <div className="grid gap-3 border-t border-border pt-4">
+            <h3 className="font-semibold text-foreground">Choose recipient area codes</h3>
+            <p className="leading-6 text-muted-foreground">
+              {data.setup?.suggested_area_codes.length
+                ? "We suggested up to five area codes from your recent recipients. Adjust this list to match who you plan to contact."
+                : "Use the first three digits of the US phone numbers you plan to contact."}{" "}
+              The first {FREE_AREA_CODES} area codes are free. The FTC collects any fee for
+              additional coverage.
+            </p>
+            {data.setup?.suggested_area_codes.length ? (
+              <ul className="flex flex-wrap gap-2" aria-label="Suggested recipient area codes">
+                {data.setup.suggested_area_codes.map(({ code, contacts }) => {
+                  const selected = choices.has(code);
+                  return (
+                    <li key={code}>
+                      <button
+                        type="button"
+                        aria-pressed={selected}
+                        onClick={() => toggleAreaCode(code)}
+                        className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 wl-focus-ring-halo ${selected ? "border-brand bg-brand/10" : "border-border bg-card hover:bg-muted"}`}
+                      >
+                        {selected ? (
+                          <Check className="size-3.5 text-brand" aria-hidden="true" />
+                        ) : null}
+                        <span className="font-semibold">{code}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {contacts} {contacts === 1 ? "recipient" : "recipients"}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+            <FormField label="Area codes to order">
+              <Input
+                placeholder="312, 773"
+                value={areaCodes}
+                onChange={(event) => {
+                  setAreaCodes(event.target.value);
+                  setCopied(false);
+                }}
+              />
+            </FormField>
+            <div>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                disabled={!chosenCodes.length}
+                onClick={() => void copyAreaCodes()}
+              >
+                {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                {copied ? "Copied" : "Copy Area Codes"}
               </Button>
             </div>
-          )}
+          </div>
+          <div className="grid gap-3">
+            <h3 className="font-semibold text-foreground">Get your subscription from the FTC</h3>
+            <ol className="list-decimal space-y-1 pl-5 leading-6 text-muted-foreground">
+              <li>Register your business as a Seller, then activate your FTC account.</li>
+              <li>Under Create New Subscription, order the area codes you chose.</li>
+              <li>
+                After processing, sign in to get your Organization ID and subscription number (SAN).
+              </li>
+            </ol>
+            <p className="text-xs leading-5 text-muted-foreground">
+              A free subscription can take a few business days to process. Come back here once your
+              number appears.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {registryLink}
+              <Button type="button" size="sm" onClick={() => openConnect()}>
+                I Have My Subscription Number
+              </Button>
+            </div>
+          </div>
+        </>
+      ) : null}
 
-          {error && !showForm ? <StatusNotice tone="destructive" title={error} /> : null}
-        </div>
-      )}
+      {currentView === "connect" ? (
+        <form className="grid gap-3 sm:grid-cols-2" onSubmit={(event) => void verify(event)}>
+          <div className="grid gap-2 sm:col-span-2">
+            <h3 className="font-semibold text-foreground">Connect your FTC subscription</h3>
+            <p className="leading-6 text-muted-foreground">
+              Sign in to the FTC Registry to find your Organization ID and subscription number. Look
+              under Manage/Renew Subscriptions if the number is still processing.
+            </p>
+          </div>
+          <FormField label="FTC Organization ID" required>
+            <Input
+              value={orgId}
+              onChange={(event) => setOrgId(event.target.value)}
+              autoComplete="off"
+              maxLength={30}
+              spellCheck={false}
+              required
+            />
+          </FormField>
+          <FormField label="Subscription number (SAN)" required>
+            <Input
+              value={san}
+              onChange={(event) => setSan(event.target.value)}
+              autoComplete="off"
+              maxLength={20}
+              spellCheck={false}
+              required
+            />
+          </FormField>
+          <div className="flex items-start gap-2 sm:col-span-2">
+            <Checkbox
+              id={attestId}
+              className="mt-1"
+              checked={attest}
+              onChange={(event) => setAttest(event.target.checked)}
+            />
+            <label htmlFor={attestId} className="leading-6">
+              This subscription belongs to my business, and I authorize BotBound and its screening
+              provider to verify it and use it for my sales calls and texts.
+            </label>
+          </div>
+          <div className="flex flex-wrap gap-2 sm:col-span-2">
+            <Button
+              type="submit"
+              size="sm"
+              disabled={saving || !attest || !orgId.trim() || !san.trim()}
+            >
+              {saving ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : null}
+              Verify Subscription
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              disabled={saving}
+              onClick={() => {
+                setError(null);
+                setView(null);
+              }}
+            >
+              {data.state === "missing" ? "Back to Setup" : "Cancel"}
+            </Button>
+          </div>
+        </form>
+      ) : null}
+
+      {currentView === null ? (
+        <>
+          {reg ? (
+            <div className="grid gap-2 border-y border-border py-3">
+              <p className="font-semibold">
+                {data.state === "expired"
+                  ? "Subscription expired"
+                  : data.state === "active"
+                    ? reg.verified
+                      ? "Subscription verified"
+                      : "Screening linked"
+                    : "Awaiting screening link"}
+              </p>
+              <p className="text-muted-foreground">
+                {reg.area_codes === "all" ? "All US area codes" : reg.area_codes.join(", ")} ·{" "}
+                {data.state === "expired" ? "Expired" : "Expires"}{" "}
+                {expiryFormat.format(new Date(reg.expires_on + "T00:00:00Z"))}
+              </p>
+              {reg.renewal_due ? (
+                <p className="text-muted-foreground">
+                  Renew at the FTC Registry and verify your new subscription number here.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {verification?.state === "pending" && scheduledRenewal ? (
+            <StatusNotice title="Renewal saved">
+              BotBound will check your new subscription on{" "}
+              {expiryFormat.format(new Date(scheduledRenewal + "T00:00:00Z"))}, as the new term
+              begins.
+            </StatusNotice>
+          ) : verification?.state === "pending" ? (
+            <StatusNotice
+              title={
+                verificationAvailable ? "Verifying subscription" : "Subscription details saved"
+              }
+            >
+              {verificationAvailable
+                ? "BotBound is checking the subscription. You can leave this page and come back to see the result."
+                : "Verification will start when the screening connection is available for this workspace."}
+            </StatusNotice>
+          ) : null}
+          {verification?.state === "failed" ? (
+            <StatusNotice tone="warning" title="We couldn’t verify that subscription">
+              Check that the Organization ID and current SAN belong to the same business. If you
+              just subscribed or renewed, check the status at the FTC Registry before trying again.
+            </StatusNotice>
+          ) : null}
+          {verification?.state === "unavailable" ? (
+            <StatusNotice tone="warning" title="Screening verification is unavailable">
+              Try again, or contact{" "}
+              <a className="underline" href="mailto:support@botbound.app">
+                BotBound support
+              </a>{" "}
+              if this continues.
+            </StatusNotice>
+          ) : null}
+
+          <div className="flex flex-wrap gap-2">
+            {(data.state === "expired" || reg?.renewal_due) && registryLink}
+            {data.state === "active" ? (
+              <Button size="sm" asChild>
+                <Link to="/phone?tab=outbound&view=campaigns">Go to Campaigns</Link>
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() =>
+                openConnect(!verification && Boolean(reg?.renewal_due || data.state === "expired"))
+              }
+            >
+              {verification
+                ? "Check Subscription Details"
+                : reg?.renewal_due || data.state === "expired"
+                  ? "Verify Renewal"
+                  : "Update Subscription"}
+            </Button>
+          </div>
+        </>
+      ) : null}
+      {error ? <StatusNotice tone="destructive" title={error} /> : null}
     </div>
   );
 }

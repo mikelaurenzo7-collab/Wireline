@@ -194,9 +194,9 @@ describe("restored launch regression guards", () => {
     expect(kb).toContain("document type that does not match its extension");
     expect(kb).toContain("Knowledge could not be loaded.");
     expect(checklist).toContain("getIntegrationChecklistStatus(intRes)");
-    // The owner's checklist tracks their own registry subscription, never
-    // platform engineering controls.
-    expect(checklist).toContain('registryState === "active" || registryState === "pending_link"');
+    // A saved or pending subscription does not complete campaign screening.
+    expect(checklist).toContain('done: registryState === "active"');
+    expect(checklist).not.toContain('registryState === "pending_link"');
     expect(checklist).not.toMatch(/Row-level security|audit log enabled|SOC 2/i);
     expect(security).toContain(
       "Campaign screening uses the seller's own Do Not Call Registry subscription.",

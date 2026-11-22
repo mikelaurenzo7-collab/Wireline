@@ -5,7 +5,7 @@ import { log, auditLogger, drizzle } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
-import { tcpaRateLimit } from "../middleware/api-rate-limits";
+import { dncRegistrationWriteRateLimit, tcpaRateLimit } from "../middleware/api-rate-limits";
 import {
   evaluateOutboundConsent,
   getConsentRuleForPhone,
@@ -21,26 +21,32 @@ import { getErrorMessage } from "../lib/server-utils";
 import { reportError } from "../lib/error-reporter";
 import type { AuthenticatedRequest } from "../types/auth";
 import { isFederalDncVendorConfigured } from "../lib/federal-dnc-service";
+import { isDncScrubProjectConnectionConfigured } from "../lib/federal-dnc-config";
+import { isProductionDeployment } from "../lib/deployment-environment";
+import { liveExternalActionPolicyForUser } from "../lib/account-environment-policy";
 import { phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
 import { requirePlatformAdmin } from "../middleware/platform-admin";
 import {
   clearDncSellerRegistration,
+  getDncSellerSetup,
   linkDncSellerVendorProject,
   listDncSellerRegistrations,
-  readDncSellerRegistration,
   readWorkspaceDncSan,
   saveDncSellerRegistration,
+  saveDncSellerVerification,
   saveWorkspaceDncSan,
 } from "../lib/dnc-seller-registration";
 import {
   DNC_REGISTRY_URL,
-  defaultDncExpiresOn,
   dncSellerRegistrationState,
+  dncSellerSetupState,
+  isDncRenewalDue,
   isValidVendorProjectId,
   normalizeOptionalDncSan,
   parseDncSellerRegistrationInput,
+  parseDncSellerVerificationInput,
   suggestDncAreaCodes,
-  type DncSellerRegistration,
+  type DncSellerSetup,
 } from "../lib/dnc-seller-registration-rules";
 import { DNC_SAN_HELP } from "../lib/outbound-compliance-copy";
 
@@ -193,11 +199,17 @@ router.delete(
 // SELLER NATIONAL DNC REGISTRATION
 // ==========================================
 
-/** Owner view: the vendor project id is operator configuration and stays private. */
-function sellerRegistrationResponse(registration: DncSellerRegistration | null) {
+/** The vendor project and campaign IDs stay private to the server. */
+async function sellerRegistrationResponse(userId: string, setup: DncSellerSetup) {
+  const { registration, verification } = setup;
+  const state = dncSellerSetupState(setup);
   return {
-    state: dncSellerRegistrationState(registration),
+    state,
     registry_url: DNC_REGISTRY_URL,
+    verification_available:
+      isProductionDeployment() &&
+      isDncScrubProjectConnectionConfigured() &&
+      (await liveExternalActionPolicyForUser(userId)).allowed,
     registration: registration
       ? {
           san: registration.san,
@@ -205,44 +217,40 @@ function sellerRegistrationResponse(registration: DncSellerRegistration | null) 
           area_codes: registration.area_codes,
           expires_on: registration.expires_on,
           attested_at: registration.attested_at,
-          screening_connected: Boolean(registration.vendor_project_id),
+          ftc_org_id: registration.ftc_org_id ?? null,
+          verified: Boolean(registration.vendor_campaign_id),
+          screening_connected: state === "active",
+          renewal_due: state === "active" && isDncRenewalDue(registration.expires_on),
+        }
+      : null,
+    verification: verification
+      ? {
+          state: verification.state,
+          ftc_org_id: verification.ftc_org_id,
+          san: verification.san,
+          scheduled_on:
+            !verification.first_check_at &&
+            verification.next_check_at &&
+            verification.next_check_at > new Date().toISOString()
+              ? verification.next_check_at.slice(0, 10)
+              : null,
         }
       : null,
   };
 }
 
-/**
- * Prefill for the guided setup so the owner only has to do the one step the
- * registry requires of them in person: their business name, the area codes
- * their lines and outbound contacts actually use, and a 12-month expiry.
- */
+/** Suggest the area codes the owner intends to call, using recent real recipients. */
 async function sellerRegistrationSetupHints(userId: string) {
-  const lines = await drizzle
-    .select({ phoneNumber: schema.phoneNumbers.phoneNumber })
-    .from(schema.phoneNumbers)
-    .where(eq(schema.phoneNumbers.userId, userId));
   const contacts = await drizzle
-    .select({
-      customerNumber: schema.outboundLeads.customerNumber,
-      phoneNumber: schema.outboundLeads.phoneNumber,
-    })
+    .select({ customerNumber: schema.outboundLeads.customerNumber })
     .from(schema.outboundLeads)
-    .where(eq(schema.outboundLeads.userId, userId))
+    .where(and(eq(schema.outboundLeads.userId, userId), eq(schema.outboundLeads.demo, false)))
     .orderBy(desc(schema.outboundLeads.id))
     .limit(5000);
-  const [settingsRow] = await drizzle
-    .select({ businessName: schema.settings.businessName })
-    .from(schema.settings)
-    .where(eq(schema.settings.userId, userId))
-    .limit(1);
   return {
-    suggested_seller_name: settingsRow?.businessName?.trim() || null,
-    suggested_area_codes: suggestDncAreaCodes({
-      lineNumbers: lines.map((line) => line.phoneNumber),
-      contactNumbers: contacts.map((lead) => lead.customerNumber || lead.phoneNumber || ""),
-    }),
-    suggested_expires_on: defaultDncExpiresOn(),
-    outbound_contact_count: contacts.length,
+    suggested_area_codes: suggestDncAreaCodes(
+      contacts.flatMap(({ customerNumber }) => (customerNumber ? [customerNumber] : [])),
+    ),
   };
 }
 
@@ -250,12 +258,15 @@ router.get(
   "/api/compliance/dnc-registration",
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
-    const registration = await readDncSellerRegistration(req.user.id);
+    const setup = await getDncSellerSetup(req.user.id);
+    res.set("Cache-Control", "no-store");
     res.json({
-      ...sellerRegistrationResponse(registration),
+      ...(await sellerRegistrationResponse(req.user.id, setup)),
       dnc_san: await readWorkspaceDncSan(req.user.id),
       dnc_san_help: DNC_SAN_HELP,
-      setup: await sellerRegistrationSetupHints(req.user.id),
+      ...(req.query.status_only === "1"
+        ? {}
+        : { setup: await sellerRegistrationSetupHints(req.user.id) }),
     });
   },
 );
@@ -274,7 +285,22 @@ router.put(
 router.put(
   "/api/compliance/dnc-registration",
   authenticateUser,
+  dncRegistrationWriteRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
+    res.set("Cache-Control", "no-store");
+    if (Object.hasOwn(req.body ?? {}, "ftc_org_id")) {
+      const parsed = parseDncSellerVerificationInput(req.body ?? {});
+      if (!parsed.ok) throw AppError.fromHttpStatus(400, parsed.error);
+      const setup = await saveDncSellerVerification(req.user.id, parsed.value);
+      void auditLogger
+        .logSettings("updated", {
+          userId: req.user.id,
+          changes: { dnc_seller_verification_requested: true },
+          ip: req.ip,
+        })
+        .catch(() => log.warn("Could not audit DNC seller verification request"));
+      return res.status(202).json(await sellerRegistrationResponse(req.user.id, setup));
+    }
     const parsed = parseDncSellerRegistrationInput(req.body ?? {});
     if (!parsed.ok) throw AppError.fromHttpStatus(400, parsed.error);
     const registration = await saveDncSellerRegistration({
@@ -304,7 +330,7 @@ router.put(
         tags: { ops: "dnc_registration_pending_link" },
       });
     }
-    res.json(sellerRegistrationResponse(registration));
+    res.json(await sellerRegistrationResponse(req.user.id, { registration, verification: null }));
   },
 );
 
@@ -322,7 +348,9 @@ router.delete(
       .catch((err) =>
         log.warn("audit seller DNC registration failed", { error: getErrorMessage(err) }),
       );
-    res.json(sellerRegistrationResponse(null));
+    res.json(
+      await sellerRegistrationResponse(req.user.id, { registration: null, verification: null }),
+    );
   },
 );
 
@@ -332,6 +360,7 @@ router.get(
   authenticateUser,
   requirePlatformAdmin,
   async (_req: AuthenticatedRequest, res: Response) => {
+    res.set("Cache-Control", "no-store");
     res.json({ registrations: await listDncSellerRegistrations() });
   },
 );
