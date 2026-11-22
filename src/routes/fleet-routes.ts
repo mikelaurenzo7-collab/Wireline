@@ -49,13 +49,21 @@ async function assertOwnedAgent(agentId: string, userId: string): Promise<void> 
 }
 
 /** A text to the stored caller is a follow-up, so the sales checkbox stays hidden. */
-async function annotateRecordedCallTexts<T extends { taskType?: string | null; sourceType?: string | null; sourceId?: string | null; payload?: unknown }>(
-  userId: string,
-  tasks: T[],
-): Promise<Array<T & { textFollowsCall: boolean }>> {
+async function annotateRecordedCallTexts<
+  T extends {
+    taskType?: string | null;
+    sourceType?: string | null;
+    sourceId?: string | null;
+    payload?: unknown;
+  },
+>(userId: string, tasks: T[]): Promise<Array<T & { textFollowsCall: boolean }>> {
   const ids = new Set<string>();
   for (const task of tasks) {
-    if (task.taskType !== "send_text_message" || task.sourceType !== "phone_call" || !task.sourceId) {
+    if (
+      task.taskType !== "send_text_message" ||
+      task.sourceType !== "phone_call" ||
+      !task.sourceId
+    ) {
       continue;
     }
     for (const id of recordedCallIds(task.sourceId)) ids.add(id);
@@ -221,17 +229,20 @@ router.get(
         .where(and(...whereClauses))
         .limit(1000);
 
-      const sortedTasks = await annotateRecordedCallTexts(req.user.id, (tasks || []).sort((a: any, b: any) => {
-        if (a.status === "completed" && b.status !== "completed") return 1;
-        if (a.status !== "completed" && b.status === "completed") return -1;
-        const priorityWeight: Record<string, number> = { high: 3, medium: 2, low: 1 };
-        const weightA = priorityWeight[a.priority?.toLowerCase() || ""] || 0;
-        const weightB = priorityWeight[b.priority?.toLowerCase() || ""] || 0;
-        if (weightA !== weightB) return weightB - weightA;
-        if (a.dueDate && b.dueDate)
-          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-        return new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime();
-      }));
+      const sortedTasks = await annotateRecordedCallTexts(
+        req.user.id,
+        (tasks || []).sort((a: any, b: any) => {
+          if (a.status === "completed" && b.status !== "completed") return 1;
+          if (a.status !== "completed" && b.status === "completed") return -1;
+          const priorityWeight: Record<string, number> = { high: 3, medium: 2, low: 1 };
+          const weightA = priorityWeight[a.priority?.toLowerCase() || ""] || 0;
+          const weightB = priorityWeight[b.priority?.toLowerCase() || ""] || 0;
+          if (weightA !== weightB) return weightB - weightA;
+          if (a.dueDate && b.dueDate)
+            return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+          return new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime();
+        }),
+      );
 
       res.json({ tasks: sortedTasks });
     } catch (error: any) {
@@ -684,7 +695,10 @@ router.post(
         });
       } else {
         const status =
-          result.errorCode === "TASK_CHANGED"
+          result.errorCode === "TASK_CHANGED" ||
+          result.errorCode === "SMS_SENDER_UNREGISTERED" ||
+          result.errorCode === "SMS_SENDER_REGISTRATION_PENDING" ||
+          result.errorCode === "SMS_SENDER_NOT_OWNED"
             ? 409
             : result.errorCode === "COMMUNICATION_BLOCKED"
               ? 422

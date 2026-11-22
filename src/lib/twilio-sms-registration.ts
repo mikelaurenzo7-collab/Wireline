@@ -145,16 +145,18 @@ export async function readSmsRegistrationSnapshot(
   return { readAtMs: nowMs, numberSids, pools, tollFree };
 }
 
+// Owner-facing: these reach Inbox and Approvals as written. Keep carrier
+// program names out; operators read the code and the readiness report.
 const UNREGISTERED_LOCAL =
-  "This line isn't registered with US carriers for texting, so the text wasn't sent. Add it to a Messaging Service with an approved A2P 10DLC campaign, then try again.";
+  "This line isn't approved by US carriers for texting yet, so the text wasn't sent. Texting turns on when your business registration is approved.";
 const PENDING_LOCAL =
-  "This line's carrier registration for texting is still in review, so the text wasn't sent. Try again after the campaign is approved.";
+  "This line's texting approval is still in review, so the text wasn't sent. You can send it again once it's approved.";
 const UNVERIFIED_TOLL_FREE =
-  "This toll-free line hasn't been verified for texting, so the text wasn't sent. Carriers block unverified toll-free texts.";
+  "This toll-free line isn't approved for texting yet, so the text wasn't sent. Texting turns on when its verification is approved.";
 const PENDING_TOLL_FREE =
-  "This toll-free line's texting verification is still in review, so the text wasn't sent. Carriers block texts until it is approved.";
+  "This toll-free line's texting approval is still in review, so the text wasn't sent. You can send it again once it's approved.";
 const REJECTED_TOLL_FREE =
-  "This toll-free line's texting verification was rejected, so the text wasn't sent. Correct and resubmit the verification first.";
+  "This toll-free line wasn't approved for texting, so the text wasn't sent. Contact support to fix and resubmit its registration.";
 
 /** Pure classification of one sender against a snapshot. */
 export function classifySmsSender(

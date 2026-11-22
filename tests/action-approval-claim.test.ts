@@ -249,4 +249,53 @@ describe("task approval at the durable action boundary", () => {
       drizzle.transaction((tx) => assertTaskCanBeEdited(tx, "tenant", "task")),
     ).resolves.toBeUndefined();
   });
+
+  it("runs a retryable pre-carrier failure again once the cause is fixed", async () => {
+    const execute = vi
+      .fn()
+      .mockResolvedValueOnce({
+        success: false,
+        errorCode: "CONTACT_PERMISSION_REQUIRED",
+        error: "Confirm permission before sending.",
+        retryable: true,
+      })
+      .mockResolvedValueOnce({ success: true });
+
+    await expect(runIdempotentActionExecution({ ...input, execute })).resolves.toMatchObject({
+      errorCode: "CONTACT_PERMISSION_REQUIRED",
+      retryable: true,
+    });
+    expect(h.records[0].metadata.status).toBe("retryable");
+
+    await expect(runIdempotentActionExecution({ ...input, execute })).resolves.toEqual({
+      success: true,
+    });
+    expect(execute).toHaveBeenCalledTimes(2);
+    expect(h.records).toHaveLength(1);
+    expect(h.records[0].metadata.status).toBe("completed");
+
+    // The success is final: a third approval replays it and never sends twice.
+    await expect(runIdempotentActionExecution({ ...input, execute })).resolves.toEqual({
+      success: true,
+    });
+    expect(execute).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps an unmarked failure final", async () => {
+    const execute = vi.fn(async () => ({ success: false, error: "Carrier outcome unknown" }));
+    await runIdempotentActionExecution({ ...input, execute });
+    await runIdempotentActionExecution({ ...input, execute });
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(h.records[0].metadata.status).toBe("failed");
+  });
+
+  it("allows edits while a failure is retryable", async () => {
+    await runIdempotentActionExecution({
+      ...input,
+      execute: async () => ({ success: false, error: "Line not approved yet", retryable: true }),
+    });
+    await expect(
+      drizzle.transaction((tx) => assertTaskCanBeEdited(tx, "tenant", "task")),
+    ).resolves.toBeUndefined();
+  });
 });

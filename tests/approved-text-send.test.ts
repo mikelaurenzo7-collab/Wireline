@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { SALES_ATTESTATION_REQUIRED_MESSAGE, SALES_DNC_ATTESTATION_VERSION } from "../src/lib/outbound-compliance-copy";
+import {
+  SALES_ATTESTATION_REQUIRED_MESSAGE,
+  SALES_DNC_ATTESTATION_VERSION,
+} from "../src/lib/outbound-compliance-copy";
 import { recordedCallIds, textConfirmationsFromBody } from "../src/lib/approved-text-confirmations";
 
 const ATTESTATION_AT = new Date("2026-10-26T15:00:00.000Z");
@@ -57,9 +60,9 @@ async function loadApprovedText(selectRows: unknown[][]) {
     }),
     rememberContactOutbound: async () => {},
   }));
-  const { screenApprovedText } = await import("../src/lib/action-engine");
+  const { screenApprovedText, smsActionResult } = await import("../src/lib/action-engine");
   const { evaluateOutboundDialGate } = await import("../src/lib/outbound-dial-gate");
-  return { screenApprovedText, evaluateOutboundDialGate };
+  return { screenApprovedText, smsActionResult, evaluateOutboundDialGate };
 }
 
 describe("approved text confirmations", () => {
@@ -72,6 +75,32 @@ describe("approved text confirmations", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.resetModules();
+  });
+
+  it("lets an unsent text be approved again but keeps a possibly delivered one final", async () => {
+    const { smsActionResult } = await loadApprovedText([]);
+    expect(
+      smsActionResult({
+        ok: false,
+        code: "SMS_SENDER_UNREGISTERED",
+        reason: "This line isn't approved by US carriers for texting yet, so the text wasn't sent.",
+      }),
+    ).toEqual({
+      success: false,
+      errorCode: "SMS_SENDER_UNREGISTERED",
+      error: "This line isn't approved by US carriers for texting yet, so the text wasn't sent.",
+      retryable: true,
+    });
+    expect(
+      smsActionResult({
+        ok: false,
+        code: "SMS_PROVIDER_OUTCOME_AMBIGUOUS",
+        reason: "Delivery status is unknown.",
+        providerOutcomeAmbiguous: true,
+        doNotResend: true,
+      }),
+    ).not.toHaveProperty("retryable");
+    expect(smsActionResult({ ok: true })).toEqual({ success: true });
   });
 
   it("matches a raw carrier id and the openai prefix as the same call", () => {

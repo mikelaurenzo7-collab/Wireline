@@ -528,8 +528,7 @@ export async function screenApprovedText(input: {
   lastCalledAt?: Date | null;
   metadata?: Record<string, unknown> | null;
 }): Promise<
-  | { ok: true; sales: boolean }
-  | { ok: false; error: string; errorCode?: string; sales: boolean }
+  { ok: true; sales: boolean } | { ok: false; error: string; errorCode?: string; sales: boolean }
 > {
   // A model purpose cannot choose this. The stored caller is the only
   // non-sales exemption. Every other single recipient is one-off sales.
@@ -589,7 +588,8 @@ async function handleSendTextMessage(
     return { success: false, error: "A destination number is required." };
   }
   const entityPolicy = await externalEntityActionPolicyForUser(userId, { phone });
-  if (!entityPolicy.allowed) return { success: false, error: entityPolicy.message };
+  if (!entityPolicy.allowed)
+    return { success: false, error: entityPolicy.message, retryable: true };
 
   const requestedOnThisCall = await liveCallTextCounterpart(userId, phone, context);
   const [lead] = await drizzle
@@ -621,10 +621,17 @@ async function handleSendTextMessage(
       userId,
       error: getErrorMessage(err),
     });
-    return { success: false, error: "Compliance gate failed (fail-closed)." };
+    return { success: false, error: "Compliance gate failed (fail-closed).", retryable: true };
   }
   if (!screened.ok) {
-    return { success: false, error: screened.error, errorCode: screened.errorCode };
+    // Screening runs before any carrier request; the owner can fix the cause
+    // (a consent box, quiet hours) and approve the same task again.
+    return {
+      success: false,
+      error: screened.error,
+      errorCode: screened.errorCode,
+      retryable: true,
+    };
   }
 
   const sent = await sendTenantMessage(userId, {
@@ -632,7 +639,29 @@ async function handleSendTextMessage(
     body: action.payload.body,
     agentId: action.agentId,
   });
-  return sent.ok ? { success: true } : { success: false, error: sent.reason || "SMS send failed" };
+  return smsActionResult(sent);
+}
+
+/**
+ * A text that was refused before Twilio, or that Twilio definitively
+ * rejected, delivered nothing and may be approved again. An accepted or
+ * ambiguous send stays final so a retry can never text twice.
+ */
+export function smsActionResult(sent: {
+  ok: boolean;
+  reason?: string;
+  code?: string;
+  providerOutcomeAmbiguous?: boolean;
+  doNotResend?: boolean;
+}): ActionResult {
+  if (sent.ok) return { success: true };
+  const unsent = sent.providerOutcomeAmbiguous !== true && sent.doNotResend !== true;
+  return {
+    success: false,
+    error: sent.reason || "SMS send failed",
+    ...(sent.code ? { errorCode: sent.code } : {}),
+    ...(unsent ? { retryable: true } : {}),
+  };
 }
 
 async function handleDraftSendTextMessage(

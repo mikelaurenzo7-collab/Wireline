@@ -31,4 +31,10 @@ export interface ActionResult {
   actionId?: string;
   error?: string;
   errorCode?: string;
+  /**
+   * Nothing reached a carrier or provider, so the same action may run again
+   * (for example after a consent box is ticked or a line finishes registering).
+   * Leave unset for any outcome that might have delivered.
+   */
+  retryable?: boolean;
 }
