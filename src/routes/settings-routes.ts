@@ -22,6 +22,7 @@ import { SettingsSchema } from "../../contracts/api-types";
 import { clampAgentCapacity, clampExtraAgentAddons } from "../lib/agent-capacity";
 import { BOT_MARK_IDENTITY_CAPACITY } from "../lib/bot-mark";
 import { openAISipConfigured } from "../lib/voice/openai-sip-config";
+import { browserPreferenceEnvelope } from "../lib/server-owned-preferences";
 
 const router = Router();
 
@@ -291,7 +292,7 @@ router.get(
         help_enabled: data?.helpEnabled ?? true,
         keyboard_shortcuts_enabled: data?.keyboardShortcutsEnabled ?? true,
         persona: data?.persona ?? null,
-        preferences: data?.preferences ?? {},
+        preferences: browserPreferenceEnvelope(data?.preferences),
       });
     } catch (error) {
       if (error instanceof AppError) throw error;

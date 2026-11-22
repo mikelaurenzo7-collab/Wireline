@@ -48,6 +48,7 @@ import postCallOutputRouter from "../routes/post-call-output-routes";
 import nativePhoneReleaseRouter from "../routes/native-phone-release-routes";
 import nativePhoneRoutingRouter from "../routes/native-phone-routing-routes";
 import companyIdentityRouter from "../routes/company-identity-routes";
+import textingRegistrationRouter from "../routes/texting-registration-routes";
 import sharedWorkspaceReadinessRouter from "../routes/shared-workspace-readiness-routes";
 import teamRouter from "../routes/team-routes";
 import emailRouter from "../routes/email-routes";
@@ -150,6 +151,7 @@ export function registerApiRoutes(app: Express): void {
   app.use(nativePhoneReleaseRouter);
   app.use(nativePhoneRoutingRouter);
   app.use(companyIdentityRouter);
+  app.use(textingRegistrationRouter);
   app.use(sharedWorkspaceReadinessRouter);
   app.use(teamRouter);
   app.use(spendControlRouter);

@@ -6,6 +6,7 @@ import { Button, EmptyState } from "./atoms";
 import { StatusNotice } from "./molecules";
 import SoftOpenCheckoutNote from "./onboarding/SoftOpenCheckoutNote";
 import CompanyIdentityPack from "./settings/CompanyIdentityPack";
+import TextingRegistrationForm from "./settings/TextingRegistrationForm";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { useAgents } from "../contexts/AgentsContext";
 import { canOfferAnotherLine } from "../lib/bot-roster-policy";
@@ -45,7 +46,7 @@ export function lineTextingApprovalCopy(
   if (approval === "pending")
     return "Carrier approval for texting is in review. Texts send once it is approved.";
   if (approval === "not_approved")
-    return "Not approved for texting yet. Contact support@botbound.app to register your business with carriers.";
+    return "Not approved for texting yet. Add your business details under Texting Registration so carriers can approve it.";
   return null;
 }
 
@@ -126,6 +127,7 @@ export default function PhoneSetupPanel({
     saving: false,
   });
   const companyIdentityRef = useRef<HTMLDetailsElement>(null);
+  const textingRegistrationRef = useRef<HTMLDetailsElement>(null);
   const previousPreferredAgentRef = useRef("");
   const appliedLinePreferenceRef = useRef("");
   const preferredAgentId = agents.some((agent) => agent.id === initialAgentId)
@@ -251,9 +253,15 @@ export default function PhoneSetupPanel({
   }
 
   useEffect(() => {
-    if (location.hash !== "#company-identity") return;
+    const target =
+      location.hash === "#company-identity"
+        ? companyIdentityRef
+        : location.hash === "#texting-registration"
+          ? textingRegistrationRef
+          : null;
+    if (!target) return;
     const id = window.setTimeout(() => {
-      const section = companyIdentityRef.current;
+      const section = target.current;
       if (!section) return;
       section.open = true;
       section.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -902,6 +910,17 @@ export default function PhoneSetupPanel({
                         data-texting-approval={activeNumber.texting_approval}
                       >
                         {lineTextingApprovalCopy(activeNumber.texting_approval)}
+                        {activeNumber.texting_approval === "not_approved" ? (
+                          <>
+                            {" "}
+                            <Link
+                              to={{ search: location.search, hash: "#texting-registration" }}
+                              className="font-semibold text-foreground underline underline-offset-2"
+                            >
+                              Add business details
+                            </Link>
+                          </>
+                        ) : null}
                       </span>
                     ) : null}
                   </p>
@@ -1025,6 +1044,23 @@ export default function PhoneSetupPanel({
         </summary>
         <div className="border-t border-border p-4">
           <CompanyIdentityPack />
+        </div>
+      </details>
+
+      <details
+        ref={textingRegistrationRef}
+        id="texting-registration"
+        className="group rounded-xl border border-border bg-card"
+      >
+        <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">
+          <ChevronRight
+            className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90 motion-reduce:transition-none"
+            aria-hidden="true"
+          />
+          Texting Registration
+        </summary>
+        <div className="border-t border-border p-4">
+          <TextingRegistrationForm />
         </div>
       </details>
     </div>

@@ -10,8 +10,15 @@
  * `--confirm-billing`. The campaign waits for brand approval; rerun later.
  *
  * Usage:
- *   npm run carrier:register -- --details partner.json --line +13125550100 \
+ *   npm run carrier:register -- --workspace <user id> \
  *     --state ~/botbound-registrations/ridge.json [--apply] [--confirm-billing]
+ *   npm run carrier:register -- --details partner.json --line +13125550100 \
+ *     --state ~/botbound-registrations/ridge.json
+ *
+ * `--workspace` reads the details the owner saved in Lines (sealed in their
+ * preferences) and the workspace's one line. It needs DATABASE_URL with a role
+ * that can read wireline_user_preferences, and the same WIRELINE_DATA_KEY the
+ * API uses. `--details` reads a JSON file in the same shape instead.
  *
  * Environment: TWILIO_ACCOUNT_SID plus TWILIO_API_KEY/TWILIO_API_SECRET (or
  * TWILIO_AUTH_TOKEN), TWILIO_PRIMARY_CUSTOMER_PROFILE_SID (BotBound's approved
@@ -23,6 +30,12 @@ import "dotenv/config";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { getPostgresConnectionConfig } from "../src/lib/postgres-tls.mjs";
+import {
+  openTextingRegistration,
+  readStoredTextingRegistration,
+  type TextingRegistrationInput,
+} from "../src/lib/texting-registration-details.ts";
 import {
   composeCampaign,
   executeRegistration,
@@ -36,6 +49,7 @@ import {
 
 type Flags = {
   details?: string;
+  workspace?: string;
   line?: string;
   state?: string;
   apply: boolean;
@@ -50,6 +64,7 @@ function parseFlags(argv: string[]): Flags {
     const arg = argv[i];
     const next = () => argv[++i];
     if (arg === "--details") flags.details = next();
+    else if (arg === "--workspace") flags.workspace = next();
     else if (arg === "--line") flags.line = next();
     else if (arg === "--state") flags.state = next();
     else if (arg === "--apply") flags.apply = true;
@@ -174,14 +189,73 @@ async function preflight(input: {
   return { phoneNumberSid, problems };
 }
 
+/** The owner's saved details and the workspace's lines, read straight from the database. */
+async function loadWorkspace(
+  userId: string,
+): Promise<{ input: TextingRegistrationInput; lines: string[] }> {
+  const connectionString = env("DATABASE_POOL_URL") || env("POSTGRES_URL") || env("DATABASE_URL");
+  if (!connectionString) throw new Error("--workspace needs DATABASE_URL.");
+  const { default: pg } = await import("pg");
+  const pool = new pg.Pool({ ...getPostgresConnectionConfig(connectionString), max: 1 });
+  try {
+    const preferences = await pool.query(
+      "SELECT preferences FROM wireline_user_preferences WHERE user_id = $1",
+      [userId],
+    );
+    const stored = readStoredTextingRegistration(preferences.rows[0]?.preferences);
+    if (!stored) {
+      throw new Error(
+        "This workspace hasn't saved texting registration details. The owner adds them in Lines.",
+      );
+    }
+    const lines = await pool.query(
+      "SELECT phone_number FROM wireline_phone_numbers WHERE user_id = $1 ORDER BY created_at",
+      [userId],
+    );
+    return {
+      input: openTextingRegistration(stored),
+      lines: lines.rows.map((row: { phone_number: string }) => row.phone_number),
+    };
+  } finally {
+    await pool.end();
+  }
+}
+
 async function main() {
   const flags = parseFlags(process.argv.slice(2));
-  if (!flags.details || !flags.line || !flags.state) {
-    throw new Error("--details, --line and --state are required. Run with --help for usage.");
+  if ((!flags.details && !flags.workspace) || !flags.state) {
+    throw new Error(
+      "--workspace (or --details) and --state are required. Run with --help for usage.",
+    );
   }
-  const details = JSON.parse(
-    readFileSync(resolve(flags.details), "utf8"),
-  ) as CustomerBusinessDetails;
+  let details: CustomerBusinessDetails;
+  if (flags.workspace) {
+    const workspace = await loadWorkspace(flags.workspace);
+    if (workspace.input.flow === "sole_proprietor") {
+      const sole = workspace.input.details;
+      console.log(
+        `${sole.brandName} is a sole proprietor without an EIN. That registration uses Twilio's Sole Proprietor flow, which this command does not run yet.`,
+      );
+      console.log(
+        `Owner: ${sole.firstName} ${sole.lastName}; verification mobile ends ${sole.mobilePhone.slice(-4)}.`,
+      );
+      process.exit(2);
+    }
+    details = workspace.input.details;
+    if (!flags.line) {
+      if (workspace.lines.length !== 1) {
+        throw new Error(
+          `This workspace has ${workspace.lines.length} lines; pass --line with the one to register.`,
+        );
+      }
+      flags.line = workspace.lines[0];
+    } else if (!workspace.lines.includes(flags.line)) {
+      throw new Error(`${flags.line} is not one of this workspace's lines.`);
+    }
+  } else {
+    details = JSON.parse(readFileSync(resolve(flags.details!), "utf8")) as CustomerBusinessDetails;
+  }
+  if (!flags.line) throw new Error("--line is required with --details.");
   const errors = validateBusinessDetails(details);
   if (errors.length) {
     console.error("Business details need correction before anything is sent:");

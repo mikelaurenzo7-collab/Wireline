@@ -137,6 +137,89 @@ export function validateBusinessDetails(details: CustomerBusinessDetails): strin
   return errors;
 }
 
+/**
+ * A sole proprietor without an EIN registers through Twilio's Sole Proprietor
+ * flow: a Starter Customer Profile (policy RN806dd6cd175f314e1f96a9727ee271f4),
+ * a Sole Proprietor A2P TrustProduct (policy RN670d5d2e282a6130ae063b234b6019c8),
+ * a SOLE_PROPRIETOR brand verified by the owner replying YES to a text from
+ * The Campaign Registry, then one campaign with exactly one number.
+ *
+ * Source: https://www.twilio.com/docs/messaging/compliance/a2p-10dlc/onboarding-isv-api-sole-prop-new
+ * (read 2026-11-22 through Twilio's documentation search). The verification
+ * mobile must be the owner's own phone, never a Twilio or other CPaaS number,
+ * and TCR allows each mobile at most three Sole Proprietor brands.
+ */
+export const STARTER_CUSTOMER_PROFILE_POLICY_SID = "RN806dd6cd175f314e1f96a9727ee271f4";
+export const SOLE_PROPRIETOR_TRUST_PRODUCT_POLICY_SID = "RN670d5d2e282a6130ae063b234b6019c8";
+
+/**
+ * Twilio's `vertical` values for `sole_proprietor_information`, a different
+ * list from BUSINESS_INDUSTRIES. GAMBLING, GOVERNMENT, NGO, POLITICAL and
+ * POSTAL are left out: BotBound does not serve those senders.
+ */
+export const SOLE_PROPRIETOR_VERTICALS = [
+  "AGRICULTURE",
+  "COMMUNICATION",
+  "CONSTRUCTION",
+  "EDUCATION",
+  "ENERGY",
+  "ENTERTAINMENT",
+  "FINANCIAL",
+  "HEALTHCARE",
+  "HOSPITALITY",
+  "HUMAN_RESOURCES",
+  "INSURANCE",
+  "LEGAL",
+  "MANUFACTURING",
+  "PROFESSIONAL",
+  "REAL_ESTATE",
+  "RETAIL",
+  "TECHNOLOGY",
+  "TRANSPORTATION",
+] as const;
+
+export type SoleProprietorDetails = {
+  /** Name customers see in texts; usually the owner's name or trade name. */
+  brandName: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  /** The owner's own mobile. Carriers text it a YES confirmation. */
+  mobilePhone: string;
+  vertical: (typeof SOLE_PROPRIETOR_VERTICALS)[number];
+  address: CustomerBusinessDetails["address"];
+  /** Optional; a campaign reads better with one. */
+  websiteUrl?: string;
+};
+
+/** Every problem at once, in the owner's words. `blockedNumbers` are lines BotBound or Twilio provided. */
+export function validateSoleProprietorDetails(
+  details: SoleProprietorDetails,
+  options: { blockedNumbers?: readonly string[] } = {},
+): string[] {
+  const errors: string[] = [];
+  const text = (value: unknown) => typeof value === "string" && value.trim().length > 0;
+  if (!text(details.brandName)) errors.push("Brand name is required.");
+  if (!text(details.firstName) || !text(details.lastName))
+    errors.push("Your first and last name are required.");
+  if (!EMAIL.test(String(details.email || ""))) errors.push("Email is invalid.");
+  const mobile = String(details.mobilePhone || "");
+  if (!E164_US.test(mobile)) errors.push("Mobile number must be +1 and 10 digits.");
+  else if (options.blockedNumbers?.includes(mobile))
+    errors.push("Use your own cell phone for the carrier confirmation text, not a BotBound line.");
+  if (!SOLE_PROPRIETOR_VERTICALS.includes(details.vertical))
+    errors.push("Choose the kind of work you do.");
+  const address = details.address ?? ({} as CustomerBusinessDetails["address"]);
+  if (!text(address.street) || !text(address.city)) errors.push("Street and city are required.");
+  if (!US_REGION.test(String(address.region || "")))
+    errors.push("State must be a two-letter code.");
+  if (!US_ZIP.test(String(address.postalCode || "")))
+    errors.push("ZIP code must have five digits.");
+  if (details.websiteUrl && !httpsUrl(details.websiteUrl))
+    errors.push("Website must be an https:// address.");
+  return errors;
+}
+
 export type ComposedCampaign = {
   description: string;
   messageFlow: string;

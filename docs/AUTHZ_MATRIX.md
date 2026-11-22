@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 470
-**Protected:** 381
+**Routes scanned:** 473
+**Protected:** 384
 **Public (allowlisted):** 89
 **Violations:** 0
 
@@ -542,6 +542,9 @@
 | team-routes.ts | POST | `/api/team/invite` | inline | permission | — | Protected |
 | team-routes.ts | GET | `/api/team/workspaces` | inline | — | — | Protected |
 | team-routes.ts | POST | `/api/team/workspaces/:tenantId/select` | inline | — | — | Protected |
+| texting-registration-routes.ts | GET | `/api/texting-registration` | inline | — | — | Protected |
+| texting-registration-routes.ts | PUT | `/api/texting-registration` | inline | — | — | Protected |
+| texting-registration-routes.ts | DELETE | `/api/texting-registration` | inline | — | — | Protected |
 | twilio-tollfree-webhook.ts | POST | `/api/twilio-webhook/tollfree-verification-status` | — | — | yes | Public (allowlisted) |
 | twilio-webhook-base.ts | POST | `/api/twilio-webhook/live-recording-complete` | — | — | yes | Public (allowlisted) |
 | twilio-webhook-base.ts | POST | `/api/twilio-webhook/singing-receptionist` | — | — | yes | Public (allowlisted) |
