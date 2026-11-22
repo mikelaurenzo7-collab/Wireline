@@ -41,7 +41,9 @@ export default function AgentStudioHome() {
   const identityBootstrapAgentIds = useRef(new Set<string>());
 
   useEffect(() => {
-    if (loading || params.get("create") !== "1") return;
+    // An open dialog owns its own handoff: the roster gains the new Bot before
+    // creation navigates, and that must not look like an existing Bot.
+    if (loading || showCreate || params.get("create") !== "1") return;
     // One Bot per business: a create link opens the existing Bot's setup. An
     // unreadable roster keeps the old behavior rather than guessing a count.
     const existing = agents.find((agent) => agent.id === resolvedId) ?? agents[0];
@@ -69,7 +71,7 @@ export default function AgentStudioHome() {
       return;
     }
     setShowCreate(true);
-  }, [loading, degraded, params, agents, resolvedId, setParams]);
+  }, [loading, showCreate, degraded, params, agents, resolvedId, setParams]);
 
   useEffect(() => {
     if (!browserContext) return;
