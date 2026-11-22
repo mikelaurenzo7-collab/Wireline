@@ -900,10 +900,10 @@ export default function PhoneSetupPanel({
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3">
                   <p className="max-w-prose text-xs leading-5 text-muted-foreground">
                     {texting.enabled && texting.fromNumber === activeNumber.phone_number
-                      ? "Texts send from this line. STOP, HELP, and START still apply."
+                      ? "Texts send from this line. Customers can reply STOP anytime to opt out."
                       : texting.enabled
                         ? "Texts are on for another line. Turn them on here to send from this number."
-                        : "Texts are off. Turn them on to send and reply from this number. STOP, HELP, and START still apply."}
+                        : "Texts are off. Turn them on to send and reply from this number."}
                     {lineTextingApprovalCopy(activeNumber.texting_approval) ? (
                       <span
                         className="mt-1 block"

@@ -108,6 +108,7 @@ async function notifyFounder(userId: string, stored: StoredTextingRegistration) 
 router.get(
   "/api/texting-registration",
   authenticateUser,
+  userPreferencesRateLimit,
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     res.json(payload(await loadState(req.user.id)));
   }),
