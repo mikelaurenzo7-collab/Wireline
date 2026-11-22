@@ -10,37 +10,42 @@ const engine = read("src/lib/action-engine.ts");
 describe("action-engine outbound SMS compliance gate", () => {
   it("routes auto send_text_message through evaluateOutboundDialGate before Twilio send", () => {
     expect(engine).toContain('import { evaluateOutboundDialGate } from "./outbound-dial-gate"');
-    expect(engine).toContain("classifyUntrustedDirectDial");
+    expect(engine).toContain('import { screenManualOutbound } from "./outbound-manual-screening"');
     expect(engine).toContain("sanitizeUntrustedOutboundMetadata");
 
     const handlerMatch = engine.match(/async function handleSendTextMessage\([\s\S]*?\n\}/);
     expect(handlerMatch).not.toBeNull();
     const handler = handlerMatch![0];
 
-    expect(handler).toContain("await evaluateOutboundDialGate({");
-    expect(handler).toContain("isMarketingCall: purpose.isMarketingCall");
-    expect(handler).toContain("requireFederalDncScreening: !requestedOnThisCall");
-    expect(handler).toContain('salesScreening: "one_off"');
-    expect(handler).toContain("isLiveSessionFollowUp: requestedOnThisCall");
-    expect(handler).toContain("hasExpressWrittenConsent: false");
-    expect(handler).toContain("userId");
-    expect(handler).toContain("phone");
+    expect(handler).toContain("await screenApprovedText({");
     expect(handler).toContain("leadId: lead?.id");
     expect(handler).toContain("lastCalledAt: lead?.lastCalledAt");
-    expect(handler).toContain("metadata:");
-    // Gate must run before the Twilio send, not after.
-    expect(handler.indexOf("evaluateOutboundDialGate")).toBeLessThan(
-      handler.indexOf("sendTenantMessage"),
-    );
+    expect(handler.indexOf("screenApprovedText")).toBeLessThan(handler.indexOf("sendTenantMessage"));
     expect(handler).toContain("failing closed");
     expect(handler).toContain("success: false");
+
+    const screeningStart = engine.indexOf("export async function screenApprovedText");
+    const screeningEnd = engine.indexOf("async function handleSendTextMessage");
+    expect(screeningStart).toBeGreaterThan(-1);
+    expect(screeningEnd).toBeGreaterThan(screeningStart);
+    const gate = engine.slice(screeningStart, screeningEnd);
+    expect(gate).toContain("await screenManualOutbound({");
+    expect(gate).toContain('requestedPurpose');
+    expect(gate).toContain('"sales"');
+    expect(gate).toContain("await evaluateOutboundDialGate({");
+    expect(gate.indexOf("screenManualOutbound")).toBeLessThan(gate.indexOf("evaluateOutboundDialGate"));
+    expect(gate).toContain('salesScreening: "one_off"');
+    expect(gate).toContain("isLiveSessionFollowUp: input.requestedOnThisCall");
+    expect(gate).toContain("hasExpressWrittenConsent: false");
+    expect(gate).toContain("gate.customerMessage");
+    expect(gate).not.toContain("callPurpose");
   });
 
   it("does not let a tenant-configurable agent role mint a non-marketing exemption", () => {
     expect(engine).not.toContain("NON_MARKETING_SMS_ROLES");
     expect(engine).not.toContain("schema.agents.role");
     expect(engine).toContain("cleanOutboundSmsPhone");
-    expect(engine).toContain('callPurpose: "sales"');
-    expect(engine).toContain("classifyUntrustedDirectDial");
+    expect(engine).toContain('? "appointment_service" : "sales"');
+    expect(engine).not.toContain("classifyUntrustedDirectDial");
   });
 });

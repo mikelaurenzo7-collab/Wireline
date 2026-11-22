@@ -36,6 +36,7 @@ import {
   normalizeEnabledTools,
 } from "../lib/agent-capabilities";
 import { executeAction } from "../lib/action-engine";
+import { textConfirmationsFromBody } from "../lib/approved-text-confirmations";
 import { runStructuredStream } from "../lib/ai-structured";
 import { isRuntimeAvailable } from "../lib/ai-client";
 import { withAudit } from "../middleware/audit-middleware";
@@ -953,7 +954,18 @@ router.post(
           reasoning: "Account Holder-approved action from agent chat",
           agentId,
         },
-        { sourceId: agentId, sourceType: "workspace_chat" },
+        {
+          sourceId: agentId,
+          sourceType: "workspace_chat",
+          ...(kind === "send_text_message"
+            ? {
+                textConfirmations: textConfirmationsFromBody(req.body, {
+                  ip: req.ip,
+                  userAgent: typeof req.get === "function" ? req.get("user-agent") || null : null,
+                }),
+              }
+            : {}),
+        },
         "auto",
       );
 

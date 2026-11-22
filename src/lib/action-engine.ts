@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { runIdempotentActionExecution } from "./action-execution-idempotency";
@@ -17,10 +17,13 @@ import { actionExecutionMode } from "./bot-permission";
 import { bookNativeAppointment, getNativeCalendarConfiguration } from "./native-calendar";
 import { touchNavCounts } from "./nav-counts-invalidate";
 import { evaluateOutboundDialGate } from "./outbound-dial-gate";
+import { sanitizeUntrustedOutboundMetadata } from "./outbound-call-purpose";
+import { screenManualOutbound } from "./outbound-manual-screening";
 import {
-  classifyUntrustedDirectDial,
-  sanitizeUntrustedOutboundMetadata,
-} from "./outbound-call-purpose";
+  cleanOutboundSmsPhone,
+  recordedCallIds,
+  type TextSendConfirmations,
+} from "./approved-text-confirmations";
 import { searchLeads } from "./apollo-service";
 import { getErrorMessage } from "./server-utils";
 import { drizzle, log } from "./server-context";
@@ -88,13 +91,14 @@ type ResolvedActionPolicy = {
   agentTimeZone: string | null;
 };
 
-/** Match twilio-service cleanPhone so gate/lead lookup use the same destination. */
-function cleanOutboundSmsPhone(raw: string | null | undefined): string {
-  const input = String(raw || "").replace(/^whatsapp:/i, "");
-  const cleaned = input.replace(/[^0-9+]/g, "");
-  if (!cleaned) return "";
-  return cleaned.startsWith("+") ? `+${cleaned.slice(1).replace(/\+/g, "")}` : cleaned;
-}
+export type { TextSendConfirmations } from "./approved-text-confirmations";
+
+export type ActionExecutionContext = {
+  sourceId: string;
+  sourceType: string;
+  approvalTaskId?: string;
+  textConfirmations?: TextSendConfirmations;
+};
 
 async function recoverSourceAgentId(
   userId: string,
@@ -249,7 +253,7 @@ async function resolveActionPolicy(
 export async function executeAction(
   userId: string,
   action: ActionItem,
-  context: { sourceId: string; sourceType: string; approvalTaskId?: string },
+  context: ActionExecutionContext,
   autonomyOverride?: "auto" | "draft",
 ): Promise<ActionResult> {
   try {
@@ -289,7 +293,7 @@ export async function executeAction(
 async function executeAutonomousAction(
   userId: string,
   action: ActionItem,
-  context: { sourceId: string; sourceType: string; approvalTaskId?: string },
+  context: ActionExecutionContext,
   agentTimeZone: string | null,
 ): Promise<ActionResult> {
   if (AUTONOMOUS_LIVE_EXTERNAL_ACTIONS.has(action.type)) {
@@ -503,21 +507,82 @@ async function liveCallTextCounterpart(
   context: { sourceId: string; sourceType: string },
 ): Promise<boolean> {
   if (context.sourceType !== "phone_call" || !context.sourceId) return false;
-  const [call] = await drizzle
+  const ids = recordedCallIds(context.sourceId);
+  if (!ids.length) return false;
+  const calls = await drizzle
     .select({ customerNumber: schema.callLogs.customerNumber })
     .from(schema.callLogs)
-    .where(
-      and(eq(schema.callLogs.userId, userId), eq(schema.callLogs.vapiCallId, context.sourceId)),
-    )
+    .where(and(eq(schema.callLogs.userId, userId), inArray(schema.callLogs.vapiCallId, ids)))
     .limit(1);
-  const caller = cleanOutboundSmsPhone(call?.customerNumber);
+  const caller = cleanOutboundSmsPhone(calls[0]?.customerNumber);
   return Boolean(caller) && caller === phone;
+}
+
+export async function screenApprovedText(input: {
+  userId: string;
+  phone: string;
+  requestedOnThisCall: boolean;
+  confirmations?: TextSendConfirmations;
+  content?: string;
+  leadId?: bigint | number | string;
+  lastCalledAt?: Date | null;
+  metadata?: Record<string, unknown> | null;
+}): Promise<
+  | { ok: true; sales: boolean }
+  | { ok: false; error: string; errorCode?: string; sales: boolean }
+> {
+  // A model purpose cannot choose this. The stored caller is the only
+  // non-sales exemption. Every other single recipient is one-off sales.
+  const requestedPurpose = input.requestedOnThisCall ? "appointment_service" : "sales";
+  const confirmations = input.confirmations;
+  const manual = await screenManualOutbound({
+    userId: input.userId,
+    phone: input.phone,
+    channel: "sms",
+    requestedPurpose,
+    permissionConfirmed: confirmations?.permissionConfirmed === true,
+    nonsalesConfirmed: confirmations?.nonsalesConfirmed === true,
+    content: input.content,
+    salesAttestationConfirmed: confirmations?.salesAttestationConfirmed === true,
+    actorIp: confirmations?.actorIp,
+    userAgent: confirmations?.userAgent,
+  });
+  if (!manual.ok) {
+    return {
+      ok: false,
+      error: manual.error,
+      errorCode: manual.code,
+      sales: !input.requestedOnThisCall,
+    };
+  }
+  const gate = await evaluateOutboundDialGate({
+    userId: input.userId,
+    phone: input.phone,
+    leadId: input.leadId,
+    lastCalledAt: input.lastCalledAt,
+    metadata: sanitizeUntrustedOutboundMetadata(input.metadata || {}),
+    isMarketingCall: manual.screening.isMarketingCall,
+    requireFederalDncScreening: manual.screening.requireFederalDncScreening,
+    salesScreening: "one_off",
+    isLiveSessionFollowUp: input.requestedOnThisCall,
+    hasExpressWrittenConsent: false,
+    audit: manual.audit,
+  });
+  if (!gate.allowed) {
+    return {
+      ok: false,
+      error: gate.customerMessage || "This text was not sent.",
+      errorCode: gate.reason,
+      sales: manual.screening.isMarketingCall,
+    };
+  }
+  return { ok: true, sales: manual.screening.isMarketingCall };
 }
 
 async function handleSendTextMessage(
   userId: string,
   action: ActionItem,
-  context: { sourceId: string; sourceType: string },
+  context: ActionExecutionContext,
 ): Promise<ActionResult> {
   const phone = cleanOutboundSmsPhone(action.payload.to);
   if (!phone) {
@@ -526,16 +591,7 @@ async function handleSendTextMessage(
   const entityPolicy = await externalEntityActionPolicyForUser(userId, { phone });
   if (!entityPolicy.allowed) return { success: false, error: entityPolicy.message };
 
-  // An agent role is tenant-configurable and cannot prove that the consumer
-  // requested this message. A single owner-approved text is one-off sales
-  // unless this call's stored number is the destination.
   const requestedOnThisCall = await liveCallTextCounterpart(userId, phone, context);
-  const purpose = requestedOnThisCall
-    ? { isMarketingCall: false }
-    : classifyUntrustedDirectDial({
-        callPurpose: "sales",
-      });
-
   const [lead] = await drizzle
     .select({
       id: schema.outboundLeads.id,
@@ -548,33 +604,27 @@ async function handleSendTextMessage(
     )
     .limit(1);
 
+  let screened: Awaited<ReturnType<typeof screenApprovedText>>;
   try {
-    const gate = await evaluateOutboundDialGate({
+    screened = await screenApprovedText({
       userId,
       phone,
+      requestedOnThisCall,
+      confirmations: context.textConfirmations,
+      content: typeof action.payload.body === "string" ? action.payload.body : "",
       leadId: lead?.id,
       lastCalledAt: lead?.lastCalledAt,
-      metadata: sanitizeUntrustedOutboundMetadata(
-        (lead?.metadata as Record<string, unknown> | null) || {},
-      ),
-      isMarketingCall: purpose.isMarketingCall,
-      requireFederalDncScreening: !requestedOnThisCall,
-      salesScreening: "one_off",
-      isLiveSessionFollowUp: requestedOnThisCall,
-      hasExpressWrittenConsent: false,
+      metadata: (lead?.metadata as Record<string, unknown> | null) || {},
     });
-    if (!gate.allowed) {
-      return {
-        success: false,
-        error: `Outbound SMS blocked (${gate.reason}).`,
-      };
-    }
   } catch (err: unknown) {
     log.warn("action-engine SMS compliance gate failed, failing closed", {
       userId,
       error: getErrorMessage(err),
     });
     return { success: false, error: "Compliance gate failed (fail-closed)." };
+  }
+  if (!screened.ok) {
+    return { success: false, error: screened.error, errorCode: screened.errorCode };
   }
 
   const sent = await sendTenantMessage(userId, {

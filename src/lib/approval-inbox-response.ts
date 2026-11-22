@@ -12,6 +12,8 @@ export type FollowUpTaskRow = {
   sourceType?: string | null;
   source_id?: string | null;
   sourceId?: string | null;
+  textFollowsCall?: boolean;
+  text_follows_call?: boolean;
   agent?: { name?: string | null };
   agentId?: string | null;
   agent_id?: string | null;

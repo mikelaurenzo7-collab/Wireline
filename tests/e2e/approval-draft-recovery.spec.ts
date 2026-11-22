@@ -501,6 +501,8 @@ test("edited approvals require a fresh recipient review if the destination chang
   await page.clock.fastForward(30_000);
   await expect(email).toContainText(emailTo);
   await expect(sms).toContainText(smsTo);
+  await sms.getByRole("checkbox", { name: /permission to contact/i }).check();
+  await sms.getByRole("checkbox", { name: /responsible for having permission/i }).check();
   await email.getByRole("button", { name: "Approve", exact: true }).click();
   await sms.getByRole("button", { name: "Approve", exact: true }).click();
   await expect(email.getByRole("alert")).toContainText("recipient changed while you were editing");
@@ -537,6 +539,9 @@ test("edited approvals require a fresh recipient review if the destination chang
     expected_task_type: "send_text_message",
     expected_agent_id: null,
     expected_priority: null,
+    permissionConfirmed: true,
+    nonsalesConfirmed: false,
+    salesAttestationConfirmed: true,
   });
 });
 
