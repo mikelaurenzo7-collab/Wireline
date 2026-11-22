@@ -8,6 +8,7 @@
     "src/lib/federal-dnc-service.ts",
     "src/lib/launch-readiness.ts",
     "scripts/reconcile-paid-bot-identities.mts",
-    "scripts/recover-post-call-finalization.mts"
+    "scripts/recover-post-call-finalization.mts",
+    "scripts/register-customer-texting.mts"
   ]
 }

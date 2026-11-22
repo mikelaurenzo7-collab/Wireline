@@ -154,6 +154,7 @@ describe("company identity pack", () => {
     const routes = read("src/routes/company-identity-routes.ts");
     const identity = read("src/lib/company-identity.ts");
     const guard = read("src/routes/user-preference-guard-routes.ts");
+    const serverOwnedPreferences = read("src/lib/server-owned-preferences.ts");
     const registry = read("src/server/register-api-routes.ts");
 
     expect(routes).toMatch(/router\.get\(\r?\n\s+"\/api\/company-identity"/);
@@ -191,10 +192,13 @@ describe("company identity pack", () => {
     expect(guard).toContain("Canonical preference writer");
     expect(guard).toContain("pg_advisory_xact_lock");
     expect(guard).toContain("FOR UPDATE");
-    expect(guard).toContain(
-      "requestedEnvelope.company_identity = currentEnvelope.company_identity",
+    // Every server-owned namespace is copied from the stored envelope or removed.
+    expect(guard).toContain("for (const key of SERVER_OWNED_PREFERENCE_KEYS)");
+    expect(guard).toContain("requestedEnvelope[key] = currentEnvelope[key]");
+    expect(guard).toContain("delete requestedEnvelope[key]");
+    expect(serverOwnedPreferences).toContain(
+      'SERVER_OWNED_PREFERENCE_KEYS = ["company_identity", "texting_registration"]',
     );
-    expect(guard).toContain("delete requestedEnvelope.company_identity");
     expect(registry).toContain(
       'import userPreferenceGuardRouter from "../routes/user-preference-guard-routes"',
     );

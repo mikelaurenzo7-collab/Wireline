@@ -491,6 +491,96 @@ test("caller identity deep links reveal the section", async ({ page }) => {
   await expect(page.locator("#company-identity")).toHaveAttribute("open", "");
 });
 
+test("texting registration collects a sole proprietor's details and lists every fix", async ({
+  page,
+}) => {
+  await mockWorkspace(page);
+  const options = {
+    businessTypes: ["Limited Liability Corporation", "Corporation"],
+    industries: ["PROFESSIONAL_SERVICES", "REAL_ESTATE"],
+    verticals: ["PROFESSIONAL", "REAL_ESTATE"],
+    jobPositions: ["CEO", "Other"],
+  };
+  const empty = {
+    status: "needs_details",
+    flow: null,
+    summary: null,
+    details: null,
+    submitted_at: null,
+    default_brand_name: "Ridge Inspections",
+    options,
+  };
+  const saves: Array<Record<string, unknown>> = [];
+  await page.route("**/api/texting-registration", async (route) => {
+    if (route.request().method() === "GET") {
+      await route.fulfill({ json: empty });
+      return;
+    }
+    const body = route.request().postDataJSON() as Record<string, unknown>;
+    saves.push(body);
+    if (saves.length === 1) {
+      await route.fulfill({
+        status: 400,
+        json: {
+          error: "Some business details need a fix before they can be saved.",
+          code: "TEXTING_REGISTRATION_INVALID",
+          details: {
+            problems: [
+              "Use your own cell phone for the carrier confirmation text, not a BotBound line.",
+            ],
+          },
+        },
+      });
+      return;
+    }
+    await route.fulfill({
+      json: {
+        ok: true,
+        ...empty,
+        status: "received",
+        flow: "sole_proprietor",
+        summary: { brandName: "Ridge Inspections", einLastFour: null },
+        details: body.details,
+        submitted_at: "2026-11-22T12:00:00Z",
+      },
+    });
+  });
+
+  await page.goto("/phone?tab=setup#texting-registration");
+  const section = page.locator("#texting-registration");
+  await expect(section).toHaveAttribute("open", "");
+  await section.getByRole("radio", { name: "I'm a sole proprietor without an EIN" }).check();
+  await expect(section.getByRole("textbox", { name: "Brand name", exact: true })).toHaveValue(
+    "Ridge Inspections",
+  );
+  await expect(section.getByRole("textbox", { name: "EIN" })).toHaveCount(0);
+  await section.getByRole("textbox", { name: "First name" }).fill("Pat");
+  await section.getByRole("textbox", { name: "Last name" }).fill("Lee");
+  await section.getByRole("textbox", { name: "Email" }).fill("pat@example.com");
+  await section
+    .getByRole("textbox", { name: "Your cell phone", exact: true })
+    .fill("(312) 555-0100");
+  await section.getByRole("combobox", { name: "Kind of work" }).selectOption("REAL_ESTATE");
+  await section.getByRole("textbox", { name: "Street" }).fill("1 Main St");
+  await section.getByRole("textbox", { name: "City" }).fill("Springfield");
+  await section.getByRole("textbox", { name: "State", exact: true }).fill("il");
+  await section.getByRole("textbox", { name: "ZIP code" }).fill("62701");
+  await section.getByRole("button", { name: "Save business details" }).click();
+
+  await expect(section.getByRole("alert")).toContainText("not a BotBound line");
+  expect(saves[0]).toMatchObject({
+    flow: "sole_proprietor",
+    details: { mobilePhone: "(312) 555-0100", address: { region: "IL" } },
+  });
+
+  await section
+    .getByRole("textbox", { name: "Your cell phone", exact: true })
+    .fill("(312) 555-0199");
+  await section.getByRole("button", { name: "Save business details" }).click();
+  await expect(section.getByRole("status")).toContainText("reply YES within 24 hours");
+  await expect(section.getByRole("button", { name: "Save changes" })).toBeVisible();
+});
+
 test("changing a role starter preserves a supplied customer brief", async ({ page }) => {
   await mockWorkspace(page);
   const brief = "Book a 30-minute appointment only after confirming the customer's ZIP code.";

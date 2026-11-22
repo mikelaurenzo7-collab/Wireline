@@ -170,7 +170,7 @@ export async function readSmsRegistrationSnapshot(
 // Owner-facing: these reach Inbox and Approvals as written. Keep carrier
 // program names out; operators read the code and the readiness report.
 const UNREGISTERED_LOCAL =
-  "This line isn't approved by US carriers for texting yet, so the text wasn't sent. Texting turns on when your business registration is approved.";
+  "This line isn't approved by US carriers for texting yet, so the text wasn't sent. Add your business details in Lines under Texting Registration; texting turns on once carriers approve it.";
 const PENDING_LOCAL =
   "This line's texting approval is still in review, so the text wasn't sent. You can send it again once it's approved.";
 const UNVERIFIED_TOLL_FREE =

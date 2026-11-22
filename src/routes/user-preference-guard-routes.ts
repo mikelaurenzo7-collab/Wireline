@@ -4,6 +4,10 @@ import { eq, sql } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { AppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
+import {
+  browserPreferenceEnvelope,
+  SERVER_OWNED_PREFERENCE_KEYS,
+} from "../lib/server-owned-preferences";
 import { getErrorMessage } from "../lib/server-utils";
 import { authenticateUser } from "../middleware/auth";
 import { userPreferencesRateLimit } from "../middleware/api-rate-limits";
@@ -23,7 +27,7 @@ function preferenceEnvelope(value: unknown): PreferenceEnvelope {
  * Canonical preference writer. This route intentionally precedes the legacy
  * settings router, terminates the request, and serializes with Company Identity
  * writes. The client-supplied envelope can never replace the server-owned
- * company_identity namespace, including during concurrent saves.
+ * namespaces (SERVER_OWNED_PREFERENCE_KEYS), including during concurrent saves.
  */
 router.post(
   "/api/user-preferences",
@@ -68,10 +72,12 @@ router.post(
             .limit(1);
           const currentEnvelope = preferenceEnvelope(existing?.preferences);
           const requestedEnvelope = preferenceEnvelope(update.preferences);
-          if (Object.prototype.hasOwnProperty.call(currentEnvelope, "company_identity")) {
-            requestedEnvelope.company_identity = currentEnvelope.company_identity;
-          } else {
-            delete requestedEnvelope.company_identity;
+          for (const key of SERVER_OWNED_PREFERENCE_KEYS) {
+            if (Object.prototype.hasOwnProperty.call(currentEnvelope, key)) {
+              requestedEnvelope[key] = currentEnvelope[key];
+            } else {
+              delete requestedEnvelope[key];
+            }
           }
           update.preferences = requestedEnvelope;
         }
@@ -97,7 +103,7 @@ router.post(
           help_enabled: data?.helpEnabled ?? true,
           keyboard_shortcuts_enabled: data?.keyboardShortcutsEnabled ?? true,
           persona: data?.persona ?? null,
-          preferences: data?.preferences ?? {},
+          preferences: browserPreferenceEnvelope(data?.preferences),
         },
       });
     } catch (error) {

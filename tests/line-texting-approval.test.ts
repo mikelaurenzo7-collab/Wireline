@@ -9,7 +9,7 @@ describe("line texting approval", () => {
     expect(lineTextingApprovalCopy("approved")).toBe("Approved by US carriers for texting.");
     expect(lineTextingApprovalCopy("pending")).toContain("in review");
     expect(lineTextingApprovalCopy("not_approved")).toContain(
-      "register your business with carriers",
+      "Add your business details under Texting Registration",
     );
     expect(lineTextingApprovalCopy("unknown")).toBeNull();
     expect(lineTextingApprovalCopy(undefined)).toBeNull();
