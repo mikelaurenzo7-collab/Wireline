@@ -34,6 +34,8 @@ import {
   type TwilioMessageChannel,
   type TwilioSendResult,
 } from "./twilio-service-base";
+import { resolveSmsSenderRegistration } from "./twilio-sms-registration";
+import { composeFirstContactSmsBody, firstContactSenderName } from "./sms-first-contact";
 
 export * from "./twilio-service-base";
 
@@ -70,6 +72,8 @@ interface MessagingSettings {
   messagingServiceSid: string | null;
   smsFromNumber: string | null;
   whatsappFromNumber: string | null;
+  /** Workspace brand or business name used to identify a first text. */
+  senderName: string | null;
 }
 
 function cleanPhone(raw: string | null | undefined): string {
@@ -218,6 +222,8 @@ async function settingsFor(userId: string): Promise<MessagingSettings> {
       messagingServiceSid: schema.settings.twilioMessagingServiceSid,
       smsFromNumber: schema.settings.twilioSmsFromNumber,
       whatsappFromNumber: schema.settings.twilioWhatsappFromNumber,
+      brandName: schema.settings.brandName,
+      businessName: schema.settings.businessName,
     })
     .from(schema.settings)
     .where(eq(schema.settings.userId, userId))
@@ -228,6 +234,10 @@ async function settingsFor(userId: string): Promise<MessagingSettings> {
     messagingServiceSid: row?.messagingServiceSid || null,
     smsFromNumber: row?.smsFromNumber || null,
     whatsappFromNumber: row?.whatsappFromNumber || null,
+    senderName: firstContactSenderName({
+      brandName: row?.brandName,
+      businessName: row?.businessName,
+    }),
   };
 }
 
@@ -251,14 +261,14 @@ async function existingThread(userId: string, customerNumber: string, destinatio
   return thread || null;
 }
 
-async function tenantOwnsSmsSender(
-  userId: string,
-  sender: string,
-  settings: MessagingSettings,
-): Promise<boolean> {
+/**
+ * Every workspace shares one carrier account, so a stored default is only a
+ * preference. A released or reassigned line can still sit in settings; the
+ * sender is owned only while this workspace holds its phone line row.
+ */
+async function tenantOwnsSmsSender(userId: string, sender: string): Promise<boolean> {
   const normalized = cleanPhone(sender);
   if (!normalized) return false;
-  if (cleanPhone(settings.smsFromNumber) === normalized) return true;
 
   const [line] = await drizzle
     .select({ id: schema.phoneNumbers.id })
@@ -474,7 +484,7 @@ export async function sendTenantMessage(
       channel,
     };
   }
-  if (requestedSender && !(await tenantOwnsSmsSender(userId, requestedSender, settings))) {
+  if (requestedSender && !(await tenantOwnsSmsSender(userId, requestedSender))) {
     return {
       ok: false,
       configured: isTwilioConfigured(),
@@ -496,13 +506,20 @@ export async function sendTenantMessage(
     };
   }
 
+  // A first text to this recipient names the sender and says how to opt out,
+  // matching the registered campaign samples. Replies in a thread stay as written.
+  const deliveredBody =
+    channel === "sms" && !thread
+      ? composeFirstContactSmsBody({ body, senderName: settings.senderName })
+      : body;
+
   const fencedSend = await runTenantProviderWorkWithDeletionFence({
     userId,
     operation: "twilio_message_send",
     retainOnSuccess: (result: TwilioSendResult) =>
       result.ok || result.providerOutcomeAmbiguous === true,
     perform: async (): Promise<TwilioSendResult> => {
-      const segments = channel === "sms" ? estimateSmsSegments(body) : 1;
+      const segments = channel === "sms" ? estimateSmsSegments(deliveredBody) : 1;
       const whatsappRate = channel === "whatsapp" ? whatsappCustomerRate() : null;
       if (channel === "whatsapp" && whatsappRate == null) {
         return {
@@ -544,10 +561,64 @@ export async function sendTenantMessage(
           channel,
         };
       }
+      // A requested sender was checked above. A stored or fallback default
+      // must also still belong to this workspace before it can send.
+      if (
+        channel === "sms" &&
+        sender &&
+        !requestedSender &&
+        !(await tenantOwnsSmsSender(userId, sender))
+      ) {
+        log.warn("Outbound SMS refused: default sender is not a workspace line", {
+          userId,
+          senderSuffix: cleanPhone(sender).slice(-4),
+        });
+        return {
+          ok: false,
+          configured: true,
+          enabled: true,
+          reason:
+            "The texting line saved for this workspace is no longer connected to it. Choose a line in Phone settings before sending.",
+          code: "SMS_SENDER_NOT_OWNED",
+          recovery_path: "/phone",
+          channel,
+        };
+      }
+
+      // US carriers block and still bill texts from an unregistered sender.
+      // Twilio's own registration state decides; an unreadable state proceeds.
+      let registeredServiceSid: string | null | undefined;
+      if (channel === "sms" && sender && phone.startsWith("+1")) {
+        const registration = await resolveSmsSenderRegistration(cleanPhone(sender));
+        if (registration.status === "unregistered") {
+          log.warn("Outbound SMS refused before the carrier: sender is not registered", {
+            userId,
+            senderSuffix: cleanPhone(sender).slice(-4),
+            senderKind: registration.kind,
+            code: registration.code,
+          });
+          return {
+            ok: false,
+            configured: true,
+            enabled: true,
+            reason: registration.reason,
+            code: registration.code,
+            recovery_path: "/phone",
+            channel,
+          };
+        }
+        if (registration.status === "registered") {
+          registeredServiceSid = registration.messagingServiceSid;
+        }
+      }
+      // The Service that carries the sender's approved registration wins over
+      // a stored one, which may not contain this sender.
+      const messagingServiceSid =
+        registeredServiceSid !== undefined ? registeredServiceSid : settings.messagingServiceSid;
 
       const payload: Record<string, any> = withTwilioMessageReliability({
         to: address(phone, channel),
-        body,
+        body: deliveredBody,
       });
       const mediaUrls = Array.isArray(params.mediaUrl)
         ? params.mediaUrl.filter((url) => typeof url === "string" && url.trim())
@@ -559,8 +630,8 @@ export async function sendTenantMessage(
       }
       if (channel === "whatsapp") {
         payload.from = address(cleanPhone(sender), channel);
-      } else if (settings.messagingServiceSid) {
-        payload.messagingServiceSid = settings.messagingServiceSid;
+      } else if (messagingServiceSid) {
+        payload.messagingServiceSid = messagingServiceSid;
         // Keep Messaging Service controls while pinning the exact tenant line.
         // If `From` is omitted, Twilio may dynamically select another sender
         // from the pool and the immediate `accepted` response may not identify
@@ -842,7 +913,7 @@ export async function sendTenantMessage(
           channel === "sms"
             ? cleanPhone(String(message.from || payload.from || "")) || undefined
             : undefined,
-        body,
+        body: deliveredBody,
         sid: message.sid,
         channel,
         agentId: params.agentId,

@@ -19,6 +19,7 @@ function installSendMocks(options: {
   fenceDenied?: boolean;
   threadStatus?: string;
   smsFromNumber?: string | null;
+  brandName?: string | null;
   lookupEnabled?: boolean;
   newRecipient?: boolean;
   insufficientBalance?: boolean;
@@ -88,6 +89,8 @@ function installSendMocks(options: {
           messagingServiceSid: options.noSender ? null : "MGservice",
           smsFromNumber: options.smsFromNumber ?? null,
           whatsappFromNumber: null,
+          brandName: options.brandName ?? null,
+          businessName: null,
         },
       ];
     } else if ("phone" in projection) {
@@ -855,4 +858,162 @@ describe("Twilio accepted-message reliability", () => {
       );
     },
   );
+});
+
+describe("SMS sender registration and first contact", () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  function mockRegistration(result: Record<string, unknown>) {
+    const resolveSmsSenderRegistration = vi.fn(async () => result);
+    vi.doMock("../src/lib/twilio-sms-registration", () => ({ resolveSmsSenderRegistration }));
+    return resolveSmsSenderRegistration;
+  }
+
+  it("refuses a known-unregistered sender before any reservation or carrier request", async () => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted" },
+      smsFromNumber: "+14155550999",
+      sharedWork: true,
+    });
+    const resolve = mockRegistration({
+      status: "unregistered",
+      kind: "local_10dlc",
+      code: "SMS_SENDER_UNREGISTERED",
+      reason: "This line isn't registered with US carriers for texting, so the text wasn't sent.",
+    });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+
+    const result = await sendTenantMessage("user-1", {
+      to: "+14155550123",
+      body: "Your estimate is ready.",
+      channel: "sms",
+    });
+
+    expect(resolve).toHaveBeenCalledWith("+14155550999");
+    expect(result).toMatchObject({
+      ok: false,
+      code: "SMS_SENDER_UNREGISTERED",
+      recovery_path: "/phone",
+    });
+    expect(mocks.createMessage).not.toHaveBeenCalled();
+    expect(mocks.reserveSmsUsage).not.toHaveBeenCalled();
+    expect(mocks.reserveRuntimeUsage).not.toHaveBeenCalled();
+  });
+
+  it("sends through the Service that carries the sender's approved campaign", async () => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted" },
+      smsFromNumber: "+14155550999",
+    });
+    mockRegistration({
+      status: "registered",
+      kind: "local_10dlc",
+      messagingServiceSid: "MGregistered",
+    });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+
+    const result = await sendTenantMessage("user-1", {
+      to: "+14155550123",
+      body: "Your estimate is ready.",
+      channel: "sms",
+    });
+
+    expect(result).toMatchObject({ ok: true });
+    expect(mocks.createMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messagingServiceSid: "MGregistered",
+        from: "+14155550999",
+        body: "Your estimate is ready.",
+      }),
+    );
+  });
+
+  it("keeps the stored Service when registration cannot be read", async () => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted" },
+      smsFromNumber: "+14155550999",
+    });
+    mockRegistration({ status: "unknown", kind: "local_10dlc", reason: "unreadable" });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+
+    const result = await sendTenantMessage("user-1", {
+      to: "+14155550123",
+      body: "Hello",
+      channel: "sms",
+    });
+
+    expect(result).toMatchObject({ ok: true });
+    expect(mocks.createMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ messagingServiceSid: "MGservice", from: "+14155550999" }),
+    );
+  });
+
+  it("refuses a stored default sender this workspace no longer owns", async () => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted" },
+      smsFromNumber: "+14155550999",
+      newRecipient: true,
+    });
+    const resolve = mockRegistration({
+      status: "registered",
+      kind: "local_10dlc",
+      messagingServiceSid: null,
+    });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+
+    const result = await sendTenantMessage("user-1", {
+      to: "+14155550123",
+      body: "Hello",
+      channel: "sms",
+    });
+
+    expect(result).toMatchObject({ ok: false, code: "SMS_SENDER_NOT_OWNED" });
+    expect(resolve).not.toHaveBeenCalled();
+    expect(mocks.createMessage).not.toHaveBeenCalled();
+    expect(mocks.reserveRuntimeUsage).not.toHaveBeenCalled();
+  });
+
+  it("names the sender and adds opt-out language to a first text only", async () => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted" },
+      newRecipient: true,
+      brandName: "Ridge Inspections",
+    });
+    mockRegistration({ status: "unknown", kind: null, reason: "no sender" });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+
+    const result = await sendTenantMessage("user-1", {
+      to: "+14155550123",
+      body: "Your inspection is confirmed for Tuesday at 9 a.m.",
+      channel: "sms",
+    });
+
+    expect(result).toMatchObject({ ok: true });
+    expect(mocks.createMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: "Ridge Inspections: Your inspection is confirmed for Tuesday at 9 a.m. Reply STOP to opt out.",
+      }),
+    );
+  });
+
+  it("leaves a reply in an existing conversation as written", async () => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted" },
+      brandName: "Ridge Inspections",
+    });
+    mockRegistration({ status: "unknown", kind: null, reason: "no sender" });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+
+    await sendTenantMessage("user-1", {
+      to: "+14155550123",
+      body: "See you then.",
+      channel: "sms",
+    });
+
+    expect(mocks.createMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ body: "See you then." }),
+    );
+  });
 });

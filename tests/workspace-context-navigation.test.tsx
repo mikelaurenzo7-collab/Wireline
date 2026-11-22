@@ -230,6 +230,13 @@ async function loadLines(numbers = lines, checkoutAvailable = true) {
   phone();
   await vi.waitFor(() => expect(text(phone())).not.toContain("Loading lines…"));
 }
+/** Lines and plans load, and the texting toggle reads settings. Nothing is written. */
+function expectOnlyLineReads() {
+  const calls = h.fetch.mock.calls as Array<[string, RequestInit | undefined]>;
+  expect(calls.map(([path]) => path)).toContain("/api/settings");
+  expect(calls).toHaveLength(3);
+  expect(calls.every(([, options]) => !options?.method || options.method === "GET")).toBe(true);
+}
 function selectedLine() {
   return elements(phone()).find(
     (node) => node.type === "button" && node.props["aria-pressed"] === true,
@@ -375,7 +382,7 @@ describe("Bot context across workspace pages", () => {
     button("Add Line").props.onClick!();
     expect(formBot().props.value).toBe("bot-b");
     expect(text(selectedLine())).toContain("Bravo");
-    expect(h.fetch).toHaveBeenCalledTimes(2);
+    expectOnlyLineReads();
   });
 
   it("applies Studio context when the Bot roster loads after line inventory", async () => {
@@ -402,7 +409,7 @@ describe("Bot context across workspace pages", () => {
       false,
     );
     expect(button("Add Line")).toBeDefined();
-    expect(h.fetch).toHaveBeenCalledTimes(2);
+    expectOnlyLineReads();
   });
 
   it("opens setup for a reviewed Bot without a line and preserves a manual cancellation", async () => {
@@ -423,7 +430,7 @@ describe("Bot context across workspace pages", () => {
     h.preferred = "bot-b";
     expect(formBot()).toBeUndefined();
     expect(text(selectedLine())).toContain("Bravo");
-    expect(h.fetch).toHaveBeenCalledTimes(2);
+    expectOnlyLineReads();
   });
 
   it("keeps provisioning focused on the chosen Bot even when Studio initially selected another", async () => {
