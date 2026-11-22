@@ -210,7 +210,7 @@ export async function handleMissedCallAlertJob(job: {
   };
   await tenantStore.run(alert.userId, async () => {
     const [call] = await drizzle
-      .select({ outcomeTag: schema.callLogs.outcomeTag })
+      .select({ outcomeTag: schema.callLogs.outcomeTag, agentId: schema.callLogs.agentId })
       .from(schema.callLogs)
       .where(
         and(
@@ -220,6 +220,10 @@ export async function handleMissedCallAlertJob(job: {
       )
       .limit(1);
     if (call?.outcomeTag === VOICEMAIL_OUTCOME) return;
+    // Text the caller first, while the lead is warm. It never throws, and a
+    // retry after a failed owner email is held back by its 24-hour caller cap.
+    const { maybeSendMissedCallTextBack } = await import("../missed-call-text-back");
+    await maybeSendMissedCallTextBack({ ...alert, agentId: call?.agentId ?? null });
     await alertOwner(alert);
   });
 }

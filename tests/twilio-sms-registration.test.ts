@@ -97,6 +97,7 @@ describe("SMS sender registration", () => {
       status: "registered",
       kind: "local_10dlc",
       messagingServiceSid: "MGapproved",
+      coversMissedCalls: false,
     });
     expect(classifySmsSender(LOCAL_POOLED_NO_CAMPAIGN, snapshot)).toMatchObject({
       status: "unregistered",
@@ -129,6 +130,39 @@ describe("SMS sender registration", () => {
       code: "SMS_SENDER_UNREGISTERED",
     });
     expect(classifySmsSender("+18005550199", snapshot)).toMatchObject({ status: "unknown" });
+  });
+
+  it("records whether the approved campaign describes missed-call texts", async () => {
+    const { client } = fakeClient();
+    const campaignList = client.messaging.v1.services;
+    const services = Object.assign(
+      (sid: string) => {
+        const context = campaignList(sid);
+        return sid === "MGapproved"
+          ? {
+              ...context,
+              usAppToPerson: {
+                list: async () => [
+                  {
+                    campaignStatus: "VERIFIED",
+                    description: "Customer care texts.",
+                    messageFlow: "If a caller's call is missed, the business may send one text.",
+                  },
+                ],
+              },
+            }
+          : context;
+      },
+      { list: campaignList.list },
+    );
+    const snapshot = await readSmsRegistrationSnapshot(
+      { ...client, messaging: { v1: { ...client.messaging.v1, services } } },
+      0,
+    );
+    expect(classifySmsSender(LOCAL_REGISTERED, snapshot)).toMatchObject({
+      status: "registered",
+      coversMissedCalls: true,
+    });
   });
 
   it("treats an unfamiliar campaign state as unknown rather than blocking", async () => {

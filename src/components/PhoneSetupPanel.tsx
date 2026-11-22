@@ -25,7 +25,17 @@ type PhoneNumberRecord = {
   native_voice_error?: string | null;
   /** US carrier approval for texting, read from Twilio by the server. */
   texting_approval?: "approved" | "pending" | "not_approved" | "unknown" | null;
+  /** The line's approved carrier campaign covers missed-call follow-up texts. */
+  missed_call_texts_covered?: boolean | null;
 };
+
+/** What the missed-call text-back switch does on this line, in plain words. */
+export function missedCallTextBackCopy(enabled: boolean, covered: boolean): string {
+  if (!enabled) return "Text back callers your Bot misses, once per caller per day.";
+  if (covered)
+    return "Callers your Bot misses get one text from this line inviting them to reply or call back.";
+  return "On, but this line's carrier registration doesn't cover missed-call texts yet, so none will send. Contact support@botbound.app to add it.";
+}
 
 /** Plain words for whether carriers accept texts from a line. */
 export function lineTextingApprovalCopy(
@@ -110,6 +120,11 @@ export default function PhoneSetupPanel({
     loaded: false,
     saving: false,
   });
+  const [missedCallTexts, setMissedCallTexts] = useState({
+    enabled: false,
+    loaded: false,
+    saving: false,
+  });
   const companyIdentityRef = useRef<HTMLDetailsElement>(null);
   const previousPreferredAgentRef = useRef("");
   const appliedLinePreferenceRef = useRef("");
@@ -153,6 +168,55 @@ export default function PhoneSetupPanel({
     })();
     return () => controller.abort();
   }, []);
+
+  const textsOnThisLine = Boolean(
+    texting.loaded && texting.enabled && activeNumber?.phone_number === texting.fromNumber,
+  );
+
+  useEffect(() => {
+    if (!textsOnThisLine || missedCallTexts.loaded) return;
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const response = await authFetch("/api/user-preferences", { signal: controller.signal });
+        if (!response.ok || controller.signal.aborted) return;
+        const body = (await response.json()) as { preferences?: Record<string, unknown> };
+        const setting = body.preferences?.missed_call_text_back as
+          { enabled?: unknown } | undefined;
+        setMissedCallTexts({ enabled: setting?.enabled === true, loaded: true, saving: false });
+      } catch {
+        // Leave the switch hidden when preferences cannot be read.
+      }
+    })();
+    return () => controller.abort();
+  }, [textsOnThisLine, missedCallTexts.loaded]);
+
+  async function setMissedCallTextBack(enabled: boolean) {
+    if (missedCallTexts.saving) return;
+    setMissedCallTexts((current) => ({ ...current, saving: true }));
+    setError(null);
+    try {
+      // Read the current envelope first: the writer stores the whole object.
+      const current = await authFetch("/api/user-preferences");
+      const body = current.ok
+        ? ((await current.json()) as { preferences?: Record<string, unknown> })
+        : null;
+      if (!body) throw new Error("Preferences could not be read.");
+      const response = await authFetch("/api/user-preferences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          preferences: { ...(body.preferences ?? {}), missed_call_text_back: { enabled } },
+        }),
+      });
+      if (!response.ok) throw new Error("Missed-call texts could not be updated.");
+      setMissedCallTexts({ enabled, loaded: true, saving: false });
+      setMessage(enabled ? "Missed-call texts are on." : "Missed-call texts are off.");
+    } catch {
+      setMissedCallTexts((current) => ({ ...current, saving: false }));
+      setError("Couldn't update missed-call texts.");
+    }
+  }
 
   async function setLineTexts(enabled: boolean) {
     if (!activeNumber || texting.saving) return;
@@ -855,6 +919,31 @@ export default function PhoneSetupPanel({
                     {texting.enabled && texting.fromNumber === activeNumber.phone_number
                       ? "Turn off texts"
                       : "Turn on texts"}
+                  </Button>
+                </div>
+              ) : null}
+
+              {textsOnThisLine && missedCallTexts.loaded ? (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                  <p
+                    className="max-w-prose text-xs leading-5 text-muted-foreground"
+                    data-missed-call-texts={missedCallTexts.enabled ? "on" : "off"}
+                  >
+                    {missedCallTextBackCopy(
+                      missedCallTexts.enabled,
+                      activeNumber.missed_call_texts_covered === true,
+                    )}
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    disabled={missedCallTexts.saving || working}
+                    onClick={() => void setMissedCallTextBack(!missedCallTexts.enabled)}
+                  >
+                    {missedCallTexts.enabled
+                      ? "Turn off missed-call texts"
+                      : "Turn on missed-call texts"}
                   </Button>
                 </div>
               ) : null}

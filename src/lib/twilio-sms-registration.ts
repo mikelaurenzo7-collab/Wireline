@@ -25,6 +25,8 @@ export type SmsSenderRegistration =
       kind: SmsSenderKind;
       /** Service that carries the approved registration, when the sender is pooled. */
       messagingServiceSid: string | null;
+      /** The approved campaign describes texting a caller whose call was missed. */
+      coversMissedCalls?: boolean;
     }
   | {
       status: "unregistered";
@@ -46,7 +48,11 @@ export interface SmsRegistrationClient {
           list(options: { limit: number }): Promise<Array<{ phoneNumber: string }>>;
         };
         usAppToPerson: {
-          list(options: { limit: number }): Promise<Array<{ campaignStatus: string }>>;
+          list(options: {
+            limit: number;
+          }): Promise<
+            Array<{ campaignStatus: string; description?: string; messageFlow?: string }>
+          >;
         };
       }) & {
         list(options: { limit: number }): Promise<Array<{ sid: string }>>;
@@ -60,7 +66,16 @@ export interface SmsRegistrationClient {
   };
 }
 
-type PooledService = { serviceSid: string; campaignStatuses: string[] };
+type PooledService = {
+  serviceSid: string;
+  campaignStatuses: string[];
+  /** A VERIFIED campaign in this Service describes missed-call follow-up texts. */
+  coversMissedCalls?: boolean;
+};
+
+/** Carriers vetted exactly what the campaign says; missed-call texts need it said. */
+export const MISSED_CALL_COVERAGE =
+  /missed[- ]call|call (?:is|was) missed|missed (?:their|a|the) call/i;
 
 export type SmsRegistrationSnapshot = {
   readAtMs: number;
@@ -118,6 +133,13 @@ export async function readSmsRegistrationSnapshot(
           String(campaign?.campaignStatus || "")
             .trim()
             .toUpperCase(),
+        ),
+        coversMissedCalls: campaigns.some(
+          (campaign) =>
+            String(campaign?.campaignStatus || "").toUpperCase() === "VERIFIED" &&
+            MISSED_CALL_COVERAGE.test(
+              `${campaign?.description ?? ""} ${campaign?.messageFlow ?? ""}`,
+            ),
         ),
       };
       for (const sender of senders) {
@@ -207,7 +229,12 @@ export function classifySmsSender(
 
   const verified = pooled.find((service) => service.campaignStatuses.includes("VERIFIED"));
   if (verified) {
-    return { status: "registered", kind, messagingServiceSid: verified.serviceSid };
+    return {
+      status: "registered",
+      kind,
+      messagingServiceSid: verified.serviceSid,
+      coversMissedCalls: verified.coversMissedCalls === true,
+    };
   }
   const statuses = pooled.flatMap((service) => service.campaignStatuses);
   if (statuses.some((status) => PENDING_CAMPAIGN_STATUSES.has(status))) {

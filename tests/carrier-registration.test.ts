@@ -13,6 +13,7 @@ import {
   type RegistrationHttp,
   type RegistrationSids,
 } from "../src/lib/carrier-registration";
+import { MISSED_CALL_COVERAGE } from "../src/lib/twilio-sms-registration";
 
 const details: CustomerBusinessDetails = {
   legalName: "Ridge Home Inspections LLC",
@@ -95,6 +96,8 @@ describe("customer texting registration", () => {
       '"May Ridge Inspections text the details to this number?',
     );
     expect(campaign.messageFlow).toContain(details.privacyUrl);
+    // Missed-call follow-up is described, so the send path may allow it.
+    expect(MISSED_CALL_COVERAGE.test(`${campaign.description} ${campaign.messageFlow}`)).toBe(true);
     for (const sample of campaign.messageSamples) {
       expect(sample.startsWith("Ridge Inspections: ")).toBe(true);
       expect(sample).toContain("Reply STOP to opt out, HELP for help.");
@@ -182,7 +185,7 @@ describe("customer texting registration", () => {
     const posts = second.calls.filter((call) => call.method === "POST");
     expect(posts).toHaveLength(1);
     expect(posts[0].url).toContain("/Compliance/Usa2p");
-    expect(posts[0].form?.MessageSamples).toHaveLength(2);
+    expect(posts[0].form?.MessageSamples).toHaveLength(3);
   });
 
   it("stops on a failed brand and on a noncompliant evaluation", async () => {
