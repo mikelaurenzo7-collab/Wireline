@@ -104,8 +104,9 @@ export function classifyCallOutcome(input: {
       return "followup";
     }
     if (
-      /\b(question|info|how does|pricing|price|cost|what is|hours)\b/.test(said) ||
-      /\btell me\s+(what|how|when|where|who|why|which|if|whether)\b/i.test(caller)
+      /\b(question|info|how does|pricing|price|cost|what is|what does|hours)\b/.test(said) ||
+      /\bwhat can you do\b/.test(said) ||
+      /\btell me\s*,?\s*(?:about|what|how|when|where|who|why|which|if|whether)\b/i.test(caller)
     ) {
       return "info";
     }

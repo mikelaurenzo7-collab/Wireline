@@ -54,6 +54,7 @@ type OutboundDialDialogProps = {
   initialAgentId?: string;
   initialNumber?: string;
   initialContext?: string;
+  initialPurpose?: OutboundPurposeChoice;
   preparedCall?: PreparedCall;
 };
 
@@ -68,12 +69,15 @@ function DirectOutboundDialDialog({
   initialAgentId = "",
   initialNumber = "",
   initialContext = "",
+  initialPurpose,
   preparedCall,
   userId,
 }: OutboundDialDialogProps & { userId: string }) {
   const { agents, loading, degraded, phoneLookupDegraded } = useAgents();
   const { toast } = useToast();
-  const [selectedPurpose, setPurpose] = useState<OutboundPurposeChoice | null>(null);
+  const [selectedPurpose, setPurpose] = useState<OutboundPurposeChoice | null>(
+    initialPurpose ?? null,
+  );
   const [contactLookup, setContactLookup] = useState<{
     phone: string;
     context: OutboundContactContext;

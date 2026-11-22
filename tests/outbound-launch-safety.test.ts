@@ -32,6 +32,9 @@ describe("outbound launch safety", () => {
   it("requires federal DNC at launch for all campaigns", () => {
     const launch = read("src/routes/campaign-routes.ts");
     expect(launch).toContain("assertFederalDncForMarketing()");
+    expect(launch.indexOf("assertFederalDncForMarketing()")).toBeLessThan(
+      launch.indexOf("Promote imported Pending leads into Queued"),
+    );
     expect(launch).not.toContain("requiresFederalDnc");
     expect(launch).not.toContain("parsePlaybookFromGoal");
   });

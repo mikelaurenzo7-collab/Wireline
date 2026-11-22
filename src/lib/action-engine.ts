@@ -492,10 +492,32 @@ async function handleSendEmail(
   return { success: true, queued: true };
 }
 
+/**
+ * A text produced from a recorded call, to that call's number, is a requested
+ * follow-up. The destination has to match the stored caller. A model-supplied
+ * purpose cannot create this exemption.
+ */
+async function liveCallTextCounterpart(
+  userId: string,
+  phone: string,
+  context: { sourceId: string; sourceType: string },
+): Promise<boolean> {
+  if (context.sourceType !== "phone_call" || !context.sourceId) return false;
+  const [call] = await drizzle
+    .select({ customerNumber: schema.callLogs.customerNumber })
+    .from(schema.callLogs)
+    .where(
+      and(eq(schema.callLogs.userId, userId), eq(schema.callLogs.vapiCallId, context.sourceId)),
+    )
+    .limit(1);
+  const caller = cleanOutboundSmsPhone(call?.customerNumber);
+  return Boolean(caller) && caller === phone;
+}
+
 async function handleSendTextMessage(
   userId: string,
   action: ActionItem,
-  _context: { sourceId: string; sourceType: string },
+  context: { sourceId: string; sourceType: string },
 ): Promise<ActionResult> {
   const phone = cleanOutboundSmsPhone(action.payload.to);
   if (!phone) {
@@ -505,12 +527,14 @@ async function handleSendTextMessage(
   if (!entityPolicy.allowed) return { success: false, error: entityPolicy.message };
 
   // An agent role is tenant-configurable and cannot prove that the consumer
-  // requested this message. Autonomous direct SMS therefore enters the shared
-  // gate as untrusted marketing unless a future server-owned artifact is
-  // resolved here explicitly.
-  const purpose = classifyUntrustedDirectDial({
-    callPurpose: "sales",
-  });
+  // requested this message. A single owner-approved text is one-off sales
+  // unless this call's stored number is the destination.
+  const requestedOnThisCall = await liveCallTextCounterpart(userId, phone, context);
+  const purpose = requestedOnThisCall
+    ? { isMarketingCall: false }
+    : classifyUntrustedDirectDial({
+        callPurpose: "sales",
+      });
 
   const [lead] = await drizzle
     .select({
@@ -534,7 +558,9 @@ async function handleSendTextMessage(
         (lead?.metadata as Record<string, unknown> | null) || {},
       ),
       isMarketingCall: purpose.isMarketingCall,
-      requireFederalDncScreening: true,
+      requireFederalDncScreening: !requestedOnThisCall,
+      salesScreening: "one_off",
+      isLiveSessionFollowUp: requestedOnThisCall,
       hasExpressWrittenConsent: false,
     });
     if (!gate.allowed) {

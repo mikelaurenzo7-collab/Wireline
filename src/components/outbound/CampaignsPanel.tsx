@@ -149,8 +149,8 @@ export default function CampaignsPanel({ initialAgentId }: { initialAgentId?: st
     const playbook = parsePlaybookFromGoal(campaignGoal);
     const checklist = [
       "I attest lead source and consent provenance are documented for this list.",
-      "Workspace call windows and retry caps are enforced at dial time (server timezone; not lead-state jurisdiction hours).",
-      "I understand campaigns need number screening, and numbers on the Do Not Call list are skipped.",
+      "Calling hours are the recipient's local time, checked when each call is placed.",
+      "Campaigns stay blocked until Do Not Call screening is connected. A refused launch does not queue the list.",
     ];
     const confirmed = window.confirm(
       `Before this campaign launches, number screening, Do Not Call rules, and calling hours still apply:\n\n${checklist

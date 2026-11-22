@@ -184,7 +184,11 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [dialDraft, setDialDraft] = useState<{ agentId?: string; number?: string } | null>(null);
+  const [dialDraft, setDialDraft] = useState<{
+    agentId?: string;
+    number?: string;
+    purpose?: "callback";
+  } | null>(null);
   const [query, setQuery] = useState("");
   const desktop = useMediaQuery("(min-width: 1024px)");
   const requestState = useRef({ generation: 0, pageInFlight: false });
@@ -496,6 +500,10 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
                   setDialDraft({
                     agentId: selected.agent_id || agentId || undefined,
                     number: reviewNumber,
+                    // A finished call is a requested callback so the 24-hour
+                    // rule does not reject it after the form is filled.
+                    // Busy and unanswered stay a review of the original purpose.
+                    ...(reviewRetry ? {} : { purpose: "callback" as const }),
                   })
                 }
                 className="gap-1.5 text-xs"
@@ -767,10 +775,16 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
       )}
 
       <OutboundDialDialog
+        key={
+          dialDraft
+            ? `${dialDraft.number ?? ""}:${dialDraft.purpose ?? "review"}`
+            : "closed"
+        }
         open={dialDraft !== null}
         onClose={() => setDialDraft(null)}
         initialAgentId={dialDraft?.agentId}
         initialNumber={dialDraft?.number}
+        initialPurpose={dialDraft?.purpose}
       />
     </div>
   );
