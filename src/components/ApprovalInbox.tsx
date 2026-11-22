@@ -30,6 +30,12 @@ import { OCCUPIED_APPOINTMENT_STATUSES } from "../lib/native-calendar-policy";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
 import { StatusNotice } from "./molecules";
+import { SalesAttestationCheckbox } from "./outbound/OutboundPurposePicker";
+import { Checkbox } from "./ui/shadcn/Checkbox";
+import {
+  CONTACT_PERMISSION_LABEL,
+  NONSALES_CONFIRMATION_LABEL,
+} from "../lib/outbound-compliance-copy";
 
 type ApprovalBucket = "pending" | "compliance" | "hot_leads" | "escalations" | "knowledge_gaps";
 
@@ -428,6 +434,14 @@ function ApprovalTaskCard({
       : (task.description ?? null),
   });
   const canEditMessage = ["send_email", "send_text_message"].includes(rawTaskType(task));
+  const isTextApproval = rawTaskType(task) === "send_text_message" && !manualTask;
+  const followsCall = Boolean(task.textFollowsCall || task.text_follows_call);
+  const [permissionChecked, setPermissionChecked] = useState(false);
+  const [nonsalesChecked, setNonsalesChecked] = useState(false);
+  const [salesChecked, setSalesChecked] = useState(false);
+  const textConfirmed =
+    !isTextApproval ||
+    (permissionChecked && (followsCall ? nonsalesChecked : salesChecked));
   const hasSubject = rawTaskType(task).includes("email") || "subject" in savedPayload;
   const evidence = evidenceSnippet(savedTask, editing && canEditMessage, true);
   const preview = approvalPreview(savedTask, manualTask);
@@ -594,6 +608,13 @@ function ApprovalTaskCard({
               : (task.agentId ?? task.agent_id ?? null),
           expected_priority:
             canEditMessage && editing ? draftRef.current.expectedPriority : (task.priority ?? null),
+          ...(isTextApproval
+            ? {
+                permissionConfirmed: permissionChecked,
+                nonsalesConfirmed: followsCall && nonsalesChecked,
+                salesAttestationConfirmed: !followsCall && salesChecked,
+              }
+            : {}),
         }),
       });
       const body = await response.json().catch(() => null);
@@ -815,6 +836,36 @@ function ApprovalTaskCard({
             </details>
           </div>
         ) : null}
+        {isTextApproval ? (
+          <div className="mt-3 grid gap-3">
+            <label className="flex items-start gap-2 text-sm leading-5 text-foreground">
+              <Checkbox
+                className="mt-0.5"
+                checked={permissionChecked}
+                disabled={busy}
+                onChange={(event) => setPermissionChecked(event.target.checked)}
+              />
+              <span>{CONTACT_PERMISSION_LABEL}</span>
+            </label>
+            {followsCall ? (
+              <label className="flex items-start gap-2 text-sm leading-5 text-foreground">
+                <Checkbox
+                  className="mt-0.5"
+                  checked={nonsalesChecked}
+                  disabled={busy}
+                  onChange={(event) => setNonsalesChecked(event.target.checked)}
+                />
+                <span>{NONSALES_CONFIRMATION_LABEL}</span>
+              </label>
+            ) : (
+              <SalesAttestationCheckbox
+                checked={salesChecked}
+                disabled={busy}
+                onChange={setSalesChecked}
+              />
+            )}
+          </div>
+        ) : null}
         {decisionError ? (
           <p role="alert" className="mt-3 flex items-start gap-1.5 text-xs text-destructive">
             <AlertTriangle className="mt-0.5 shrink-0" size={12} aria-hidden="true" />
@@ -826,7 +877,9 @@ function ApprovalTaskCard({
             type="button"
             size="sm"
             disabled={
-              busy || (Boolean(reviewConflict) && (canEditMessage || !refreshedReviewReady))
+              busy ||
+              !textConfirmed ||
+              (Boolean(reviewConflict) && (canEditMessage || !refreshedReviewReady))
             }
             onClick={() => {
               if (reviewConflict) {

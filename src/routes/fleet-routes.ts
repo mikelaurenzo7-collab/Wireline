@@ -18,6 +18,11 @@ import { ACTIVE_OPERATOR_TASK_STATUSES, isManualOperatorTask } from "../lib/oper
 import { parseFormData, FollowUpTaskCreateSchema } from "../lib/form-validators";
 import { compileActivityFeed } from "../lib/fleet-activity";
 import { executeAction } from "../lib/action-engine";
+import {
+  cleanOutboundSmsPhone,
+  recordedCallIds,
+  textConfirmationsFromBody,
+} from "../lib/approved-text-confirmations";
 import { assertTaskCanBeEdited } from "../lib/action-execution-idempotency";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import type { ActionItem } from "../lib/action-types";
@@ -42,6 +47,54 @@ async function assertOwnedAgent(agentId: string, userId: string): Promise<void> 
     .limit(1);
   if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 }
+
+/** A text to the stored caller is a follow-up, so the sales checkbox stays hidden. */
+async function annotateRecordedCallTexts<T extends { taskType?: string | null; sourceType?: string | null; sourceId?: string | null; payload?: unknown }>(
+  userId: string,
+  tasks: T[],
+): Promise<Array<T & { textFollowsCall: boolean }>> {
+  const ids = new Set<string>();
+  for (const task of tasks) {
+    if (task.taskType !== "send_text_message" || task.sourceType !== "phone_call" || !task.sourceId) {
+      continue;
+    }
+    for (const id of recordedCallIds(task.sourceId)) ids.add(id);
+  }
+  const calls = ids.size
+    ? await drizzle
+        .select({
+          vapiCallId: schema.callLogs.vapiCallId,
+          customerNumber: schema.callLogs.customerNumber,
+        })
+        .from(schema.callLogs)
+        .where(
+          and(eq(schema.callLogs.userId, userId), inArray(schema.callLogs.vapiCallId, [...ids])),
+        )
+    : [];
+  const callerById = new Map<string, string | null>();
+  for (const call of calls) {
+    if (call.vapiCallId) callerById.set(call.vapiCallId, call.customerNumber);
+  }
+  return tasks.map((task) => {
+    const payload =
+      task.payload && typeof task.payload === "object" && !Array.isArray(task.payload)
+        ? (task.payload as Record<string, unknown>)
+        : {};
+    const destination = typeof payload.to === "string" ? payload.to : "";
+    const caller = (task.sourceId ? recordedCallIds(task.sourceId) : [])
+      .map((id) => callerById.get(id))
+      .find((number) => typeof number === "string" && number.length > 0);
+    return {
+      ...task,
+      textFollowsCall:
+        task.taskType === "send_text_message" &&
+        task.sourceType === "phone_call" &&
+        cleanOutboundSmsPhone(destination) !== "" &&
+        cleanOutboundSmsPhone(destination) === cleanOutboundSmsPhone(caller),
+    };
+  });
+}
+
 const FLEET_TASK_PRIORITIES = ["low", "medium", "high"] as const;
 
 router.post(
@@ -168,7 +221,7 @@ router.get(
         .where(and(...whereClauses))
         .limit(1000);
 
-      const sortedTasks = (tasks || []).sort((a: any, b: any) => {
+      const sortedTasks = await annotateRecordedCallTexts(req.user.id, (tasks || []).sort((a: any, b: any) => {
         if (a.status === "completed" && b.status !== "completed") return 1;
         if (a.status !== "completed" && b.status === "completed") return -1;
         const priorityWeight: Record<string, number> = { high: 3, medium: 2, low: 1 };
@@ -178,7 +231,7 @@ router.get(
         if (a.dueDate && b.dueDate)
           return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
         return new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime();
-      });
+      }));
 
       res.json({ tasks: sortedTasks });
     } catch (error: any) {
@@ -544,6 +597,14 @@ router.post(
           sourceId: task.sourceId || taskId,
           sourceType: task.sourceType || "manual_approval",
           approvalTaskId: taskId,
+          ...(task.taskType === "send_text_message"
+            ? {
+                textConfirmations: textConfirmationsFromBody(req.body, {
+                  ip: req.ip,
+                  userAgent: typeof req.get === "function" ? req.get("user-agent") || null : null,
+                }),
+              }
+            : {}),
         },
         "auto",
       );
@@ -627,7 +688,17 @@ router.post(
             ? 409
             : result.errorCode === "COMMUNICATION_BLOCKED"
               ? 422
-              : 500;
+              : result.errorCode === "CONTACT_PERMISSION_REQUIRED" ||
+                  result.errorCode === "NONSALES_CONFIRMATION_REQUIRED" ||
+                  result.errorCode === "DO_NOT_CONTACT" ||
+                  result.errorCode === "SALES_ATTESTATION_REQUIRED" ||
+                  result.errorCode === "sales_attestation_required" ||
+                  result.errorCode === "federal_dnc_unconfigured" ||
+                  result.errorCode === "outside_permitted_calling_hours" ||
+                  result.errorCode === "blocked_internal_dnc" ||
+                  result.errorCode === "blocked_tcpa"
+                ? 403
+                : 500;
         res.status(status).json({
           code: result.errorCode || "INTERNAL_ERROR",
           error:
