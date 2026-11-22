@@ -616,6 +616,7 @@ export async function handleTwilioVoiceFallback(req: Request, res: Response) {
     agentId: destination?.userId === tenantUserId ? destination.agentId : null,
     twilioCallSid: String(req.body?.CallSid || ""),
     callerNumber: from || null,
+    calledNumber: to || null,
     reason: "unavailable",
   });
   return res.status(200).send(missedCallVoicemailEnabled() ? voicemailTwiml() : twimlHangup());

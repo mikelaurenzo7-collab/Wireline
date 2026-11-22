@@ -54,6 +54,8 @@ type MissedCallAlert = {
   userId: string;
   twilioCallSid: string;
   callerNumber: string | null;
+  /** The line the caller dialed; a text-back replies from that same line. */
+  calledNumber?: string | null;
   reason: MissedCallReason;
 };
 
@@ -206,11 +208,12 @@ export async function handleMissedCallAlertJob(job: {
     userId: payload.userId,
     twilioCallSid: payload.twilioCallSid,
     callerNumber: typeof payload.callerNumber === "string" ? payload.callerNumber : null,
+    calledNumber: typeof payload.calledNumber === "string" ? payload.calledNumber : null,
     reason: payload.reason,
   };
   await tenantStore.run(alert.userId, async () => {
     const [call] = await drizzle
-      .select({ outcomeTag: schema.callLogs.outcomeTag })
+      .select({ outcomeTag: schema.callLogs.outcomeTag, agentId: schema.callLogs.agentId })
       .from(schema.callLogs)
       .where(
         and(
@@ -220,6 +223,10 @@ export async function handleMissedCallAlertJob(job: {
       )
       .limit(1);
     if (call?.outcomeTag === VOICEMAIL_OUTCOME) return;
+    // Text the caller first, while the lead is warm. It never throws, and its
+    // durable attempt row keeps a retry after a failed owner email from texting again.
+    const { maybeSendMissedCallTextBack } = await import("../missed-call-text-back");
+    await maybeSendMissedCallTextBack({ ...alert, agentId: call?.agentId ?? null });
     await alertOwner(alert);
   });
 }
@@ -236,6 +243,7 @@ export async function recordMissedCall(input: {
   agentId: string | null;
   twilioCallSid: string;
   callerNumber: string | null;
+  calledNumber?: string | null;
   reason: MissedCallReason;
 }): Promise<void> {
   if (!input.twilioCallSid) return;
@@ -266,6 +274,7 @@ export async function recordMissedCall(input: {
           userId: input.userId,
           twilioCallSid: input.twilioCallSid,
           callerNumber,
+          calledNumber: input.calledNumber ? sanitizePhone(input.calledNumber) || null : null,
           reason: input.reason,
         };
         await tx.insert(schema.jobs).values({

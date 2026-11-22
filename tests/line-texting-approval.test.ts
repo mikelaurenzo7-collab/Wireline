@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { lineTextingApprovalCopy } from "../src/components/PhoneSetupPanel";
+import { lineTextingApprovalCopy, missedCallTextBackCopy } from "../src/components/PhoneSetupPanel";
 
 describe("line texting approval", () => {
   it("tells the owner whether carriers accept texts from the line", () => {
@@ -21,7 +21,17 @@ describe("line texting approval", () => {
       "utf8",
     );
     expect(route).toContain("resolveSmsSenderRegistration(phoneNumber)");
-    expect(route).toContain('texting_approval: textingApproval.get(row.phoneNumber) ?? "unknown"');
-    expect(route).toMatch(/setTimeout\(\(\) => resolveTimer\("unknown"\), 1500\)/);
+    expect(route).toContain(
+      'texting_approval: textingApproval.get(row.phoneNumber)?.approval ?? "unknown"',
+    );
+    expect(route).toContain("missed_call_texts_covered:");
+    expect(route).toContain("missedCallsCovered: registration.coversMissedCalls === true");
+    expect(route).toMatch(/setTimeout\(\(\) => resolveTimer\(unknown\), 1500\)/);
+  });
+
+  it("says plainly when missed-call texts are on but the campaign does not cover them", () => {
+    expect(missedCallTextBackCopy(false, false)).toContain("once per caller per day");
+    expect(missedCallTextBackCopy(true, true)).toContain("get one text from this line");
+    expect(missedCallTextBackCopy(true, false)).toContain("so none will send");
   });
 });

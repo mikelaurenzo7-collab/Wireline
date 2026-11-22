@@ -85,27 +85,38 @@ async function queueManagedIdentity(userId: string, agentId: string): Promise<vo
 }
 
 export type LineTextingApproval = "approved" | "pending" | "not_approved" | "unknown";
+type LineTexting = { approval: LineTextingApproval; missedCallsCovered: boolean };
 
 /**
- * Whether US carriers accept texts from this line, read from Twilio through
- * the same cached snapshot the send path uses. A slow read never holds up the
- * Lines page; it reports "unknown" instead.
+ * Whether US carriers accept texts from this line, and whether its approved
+ * campaign covers missed-call follow-up, read from Twilio through the same
+ * cached snapshot the send path uses. A slow read never holds up the Lines
+ * page; it reports "unknown" instead.
  */
-async function lineTextingApproval(phoneNumber: string): Promise<LineTextingApproval> {
+async function lineTexting(phoneNumber: string): Promise<LineTexting> {
+  const unknown: LineTexting = { approval: "unknown", missedCallsCovered: false };
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const unknown = new Promise<LineTextingApproval>((resolveTimer) => {
-    timer = setTimeout(() => resolveTimer("unknown"), 1500);
+  const timeout = new Promise<LineTexting>((resolveTimer) => {
+    timer = setTimeout(() => resolveTimer(unknown), 1500);
   });
   const read = resolveSmsSenderRegistration(phoneNumber)
-    .then((registration): LineTextingApproval => {
-      if (registration.status === "registered") return "approved";
+    .then((registration): LineTexting => {
+      if (registration.status === "registered")
+        return {
+          approval: "approved",
+          missedCallsCovered: registration.coversMissedCalls === true,
+        };
       if (registration.status === "unregistered")
-        return registration.code === "SMS_SENDER_REGISTRATION_PENDING" ? "pending" : "not_approved";
-      return "unknown";
+        return {
+          approval:
+            registration.code === "SMS_SENDER_REGISTRATION_PENDING" ? "pending" : "not_approved",
+          missedCallsCovered: false,
+        };
+      return unknown;
     })
-    .catch((): LineTextingApproval => "unknown");
+    .catch((): LineTexting => unknown);
   try {
-    return await Promise.race([read, unknown]);
+    return await Promise.race([read, timeout]);
   } finally {
     clearTimeout(timer);
   }
@@ -129,9 +140,7 @@ router.get(
       .where(eq(schema.phoneNumbers.userId, req.user.id));
     const textingApproval = new Map(
       await Promise.all(
-        rows.map(
-          async (row) => [row.phoneNumber, await lineTextingApproval(row.phoneNumber)] as const,
-        ),
+        rows.map(async (row) => [row.phoneNumber, await lineTexting(row.phoneNumber)] as const),
       ),
     );
     res.setHeader("Cache-Control", "private, no-store");
@@ -165,7 +174,9 @@ router.get(
           provider: "twilio_openai_realtime_sip",
           native_voice_status: nativeVoiceStatus,
           native_voice_error: nativeVoiceError,
-          texting_approval: textingApproval.get(row.phoneNumber) ?? "unknown",
+          texting_approval: textingApproval.get(row.phoneNumber)?.approval ?? "unknown",
+          missed_call_texts_covered:
+            textingApproval.get(row.phoneNumber)?.missedCallsCovered ?? false,
           created_at: row.createdAt?.toISOString() ?? null,
         };
       }),
