@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ShieldCheck, ExternalLink } from "lucide-react";
 import { Link } from "react-router";
 import { authFetch } from "../../lib/api";
+import { DNC_SETUP_PATH } from "../../lib/dnc-seller-registration-rules";
 import { cn } from "../../lib/utils";
 import { getIntegrationChecklistStatus } from "./compliance-checklist-status";
 
@@ -20,9 +21,9 @@ const BASE_ITEMS: ChecklistItem[] = [
   { id: "opt_outs", label: "Opt-out requests are blocked automatically", done: true },
   {
     id: "dnc_registry",
-    label: "Do Not Call Registry subscription added",
+    label: "Do Not Call screening connected for campaigns",
     done: false,
-    href: "/settings/compliance",
+    href: DNC_SETUP_PATH,
   },
   {
     id: "integrations",
@@ -40,12 +41,12 @@ export default function ComplianceChecklist() {
     (async () => {
       try {
         const [registryRes, intRes] = await Promise.all([
-          authFetch("/api/compliance/dnc-registration").then((r) => (r.ok ? r.json() : null)),
+          authFetch("/api/compliance/dnc-registration?status_only=1").then((r) =>
+            r.ok ? r.json() : null,
+          ),
           authFetch("/api/oauth/integration-health").then((r) => (r.ok ? r.json() : null)),
         ]);
         if (cancelled) return;
-        // The owner's part is done once the subscription is added; BotBound
-        // then connects screening ("Connecting") on its side.
         const registryState = typeof registryRes?.state === "string" ? registryRes.state : null;
         // Empty or failed health responses cannot prove a connection is healthy.
         const integrationStatus = getIntegrationChecklistStatus(intRes);
@@ -54,7 +55,7 @@ export default function ComplianceChecklist() {
             if (item.id === "dnc_registry") {
               return {
                 ...item,
-                done: registryState === "active" || registryState === "pending_link",
+                done: registryState === "active",
               };
             }
             if (item.id === "integrations") {

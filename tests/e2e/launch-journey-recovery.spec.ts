@@ -43,6 +43,80 @@ async function mockWorkspace(page: Page) {
   });
 }
 
+test("guides a seller from Registry setup to confirmed screening coverage", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockWorkspace(page);
+  await page.clock.install();
+  await page.route("**/api/compliance/center", (route) =>
+    route.fulfill({ json: { federal_dnc_configured: false, recent_consent_events: [] } }),
+  );
+  let submitted: unknown;
+  let verifiedSubscription = false;
+  await page.route("**/api/campaigns", (route) =>
+    route.fulfill({
+      json: {
+        dnc_setup_needed: !verifiedSubscription,
+        campaigns: [
+          { id: "fixture-campaign", name: "Fixture campaign", status: "draft", leads_count: 1 },
+        ],
+      },
+    }),
+  );
+  const san = "FIXTURE-123456";
+  const orgId = "11111111-11111";
+  await page.route("**/api/compliance/dnc-registration*", (route) => {
+    if (route.request().method() === "PUT") submitted = route.request().postDataJSON();
+    const verified = submitted && new URL(route.request().url()).searchParams.has("status_only");
+    if (verified) verifiedSubscription = true;
+    return route.fulfill({
+      json: submitted
+        ? {
+            state: verified ? "active" : "pending_link",
+            verification_available: true,
+            verification: verified ? null : { state: "pending", ftc_org_id: orgId, san },
+            registration: verified
+              ? {
+                  san,
+                  ftc_org_id: orgId,
+                  area_codes: ["312", "773"],
+                  expires_on: "2027-10-31",
+                  verified: true,
+                }
+              : null,
+          }
+        : {
+            state: "missing",
+            registration: null,
+            setup: {
+              suggested_area_codes: [{ code: "312", contacts: 1 }],
+            },
+          },
+    });
+  });
+  await page.goto("/phone?tab=outbound&view=campaigns");
+  await page.getByRole("link", { name: "Set Up Screening" }).click();
+  await expect(page.getByLabel("Area codes to order")).toHaveValue("312");
+  await expect(page.getByRole("link", { name: "Open the FTC Registry" })).toHaveAttribute(
+    "href",
+    "https://telemarketing.donotcall.gov",
+  );
+  await page.getByRole("button", { name: "I already have a subscription" }).click();
+  await page.getByLabel("FTC Organization ID").fill(orgId);
+  await page.getByLabel("Subscription number (SAN)").fill(san);
+  const verify = page.getByRole("button", { name: "Verify Subscription" });
+  await expect(verify).toBeDisabled();
+  await page.getByRole("checkbox", { name: /This subscription belongs to my business/ }).check();
+  await verify.click();
+  await expect(page.getByText("Verifying subscription", { exact: true })).toBeVisible();
+  expect(submitted).toEqual({ ftc_org_id: orgId, san, attest: true });
+  await page.clock.fastForward(15_000);
+  await expect(page.getByText("Subscription verified", { exact: true })).toBeVisible();
+  await expect(page.getByText(/312, 773.*October 31, 2027/)).toBeVisible();
+  await expect(page.getByText("Unavailable", { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Go to Campaigns" }).click();
+  await expect(page.getByRole("button", { name: "Launch", exact: true })).toBeVisible();
+});
+
 test("setup offers cloning at voice selection and resumes before rehearsal", async ({ page }) => {
   await mockWorkspace(page);
   let cloneCreates = 0;

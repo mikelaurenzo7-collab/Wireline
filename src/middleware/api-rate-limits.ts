@@ -338,6 +338,13 @@ export const tcpaRateLimit = createRateLimiter({
   max: 60,
 });
 
+export const dncRegistrationWriteRateLimit = createRateLimiter({
+  bucket: "api:dnc-registration",
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  failClosedOnError: true,
+});
+
 /**
  * SOC2 compliance endpoints rate limiter.
  * 100 requests per 15 minutes per user.

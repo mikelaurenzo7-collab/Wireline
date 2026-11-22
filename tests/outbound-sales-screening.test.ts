@@ -19,17 +19,45 @@ function attestedRow(san: string | null) {
   };
 }
 
-async function loadGate(selectRows: unknown[][], optedOut = false) {
+const subscription = {
+  san: "SAN-123456",
+  seller_name: "Fixture Seller",
+  area_codes: ["312"],
+  expires_on: "2040-01-31",
+  attested_at: ATTESTATION_AT.toISOString(),
+  attested_by: "owner-1",
+  vendor_project_id: "proj-seller-1",
+  vendor_linked_at: ATTESTATION_AT.toISOString(),
+};
+
+async function loadGate(selectRows: unknown[][], optedOut = false, vendorConfigured = false) {
   vi.resetModules();
   let calls = 0;
   const limit = async () => selectRows[calls++] ?? [];
-  const isFederalDncListed = vi.fn(async () => false);
-  const assertFederalDncForMarketing = vi.fn(() => ({
-    allowed: false as const,
-    configured: false as const,
-    code: "FEDERAL_DNC_NOT_CONFIGURED" as const,
-    message: "bulk blocked",
-  }));
+  const lookupFederalDnc = vi.fn(
+    async (): Promise<{
+      listed: boolean;
+      source: "vendor" | "error" | "unconfigured";
+      checked_at: string;
+      list_version: string | null;
+    }> => ({
+      listed: false,
+      source: "vendor",
+      checked_at: ATTESTATION_AT.toISOString(),
+      list_version: null,
+    }),
+  );
+  const assertFederalDncForMarketing = vi.fn(() =>
+    vendorConfigured
+      ? { allowed: true as const, configured: true as const }
+      : {
+          allowed: false as const,
+          configured: false as const,
+          code: "FEDERAL_DNC_NOT_CONFIGURED" as const,
+          message: "bulk blocked",
+        },
+  );
+  const audit = vi.fn(async () => undefined);
   vi.doMock("../src/lib/server-context", () => ({
     drizzle: {
       select: () => ({
@@ -48,11 +76,12 @@ async function loadGate(selectRows: unknown[][], optedOut = false) {
   }));
   vi.doMock("../src/lib/federal-dnc-service", () => ({
     assertFederalDncForMarketing,
-    isFederalDncListed,
+    lookupFederalDnc,
   }));
   vi.doMock("../src/lib/compliance", () => ({ isDncBlocked: async () => optedOut }));
+  vi.doMock("../src/lib/outbound-purpose-audit", () => ({ recordOutboundPurposeAudit: audit }));
   const { evaluateOutboundDialGate } = await import("../src/lib/outbound-dial-gate");
-  return { evaluateOutboundDialGate, isFederalDncListed, assertFederalDncForMarketing };
+  return { evaluateOutboundDialGate, lookupFederalDnc, assertFederalDncForMarketing, audit };
 }
 
 describe("one-off and bulk sales screening", () => {
@@ -78,7 +107,7 @@ describe("one-off and bulk sales screening", () => {
   });
 
   it("lets one-off sales through without a provider after the workspace attestation", async () => {
-    const { evaluateOutboundDialGate, isFederalDncListed, assertFederalDncForMarketing } =
+    const { evaluateOutboundDialGate, lookupFederalDnc, assertFederalDncForMarketing } =
       await loadGate([[attestedRow(null)], []]);
     const result = await evaluateOutboundDialGate({
       userId: "tenant-1",
@@ -87,12 +116,12 @@ describe("one-off and bulk sales screening", () => {
       salesScreening: "one_off",
     });
     expect(result.allowed).toBe(true);
-    expect(isFederalDncListed).not.toHaveBeenCalled();
+    expect(lookupFederalDnc).not.toHaveBeenCalled();
     expect(assertFederalDncForMarketing).not.toHaveBeenCalled();
   });
 
   it("blocks one-off sales until the workspace attestation is saved", async () => {
-    const { evaluateOutboundDialGate, isFederalDncListed } = await loadGate([[], []]);
+    const { evaluateOutboundDialGate, lookupFederalDnc } = await loadGate([[], []]);
     const result = await evaluateOutboundDialGate({
       userId: "tenant-1",
       phone: "+13125550100",
@@ -101,15 +130,28 @@ describe("one-off and bulk sales screening", () => {
     });
     expect(result.allowed).toBe(false);
     if (!result.allowed) expect(result.reason).toBe("sales_attestation_required");
-    expect(isFederalDncListed).not.toHaveBeenCalled();
+    expect(lookupFederalDnc).not.toHaveBeenCalled();
   });
 
-  it("still blocks a listed number on one-off sales when a provider and SAN are both configured", async () => {
+  it("still blocks a listed number on one-off sales when the seller's project is linked", async () => {
     vi.stubEnv("FEDERAL_DNC_API_URL", "https://www.dncscrub.com/app/main/rpc/scrub");
     vi.stubEnv("FEDERAL_DNC_API_KEY", "scrub-login-id");
-    const { evaluateOutboundDialGate, isFederalDncListed, assertFederalDncForMarketing } =
-      await loadGate([[attestedRow("san-123456")], []]);
-    isFederalDncListed.mockResolvedValue(true);
+    const { evaluateOutboundDialGate, lookupFederalDnc, assertFederalDncForMarketing } =
+      await loadGate([
+        [
+          {
+            ...attestedRow("different-san"),
+            dncSellerRegistration: subscription,
+          },
+        ],
+        [],
+      ]);
+    lookupFederalDnc.mockResolvedValue({
+      listed: true,
+      source: "vendor",
+      checked_at: ATTESTATION_AT.toISOString(),
+      list_version: null,
+    });
     const result = await evaluateOutboundDialGate({
       userId: "tenant-1",
       phone: "+13125550100",
@@ -117,8 +159,8 @@ describe("one-off and bulk sales screening", () => {
       salesScreening: "one_off",
     });
     expect(assertFederalDncForMarketing).not.toHaveBeenCalled();
-    expect(isFederalDncListed).toHaveBeenCalledWith("+13125550100", {
-      vendorProjectId: "SAN-123456",
+    expect(lookupFederalDnc).toHaveBeenCalledWith("+13125550100", {
+      vendorProjectId: "proj-seller-1",
     });
     expect(result.allowed).toBe(false);
     if (!result.allowed) expect(result.customerMessage).toBe(SALES_DNC_LISTED_MESSAGE);
@@ -127,7 +169,7 @@ describe("one-off and bulk sales screening", () => {
   it("does not screen one-off sales when a provider is configured without a SAN", async () => {
     vi.stubEnv("FEDERAL_DNC_API_URL", "https://www.dncscrub.com/app/main/rpc/scrub");
     vi.stubEnv("FEDERAL_DNC_API_KEY", "scrub-login-id");
-    const { evaluateOutboundDialGate, isFederalDncListed } = await loadGate([
+    const { evaluateOutboundDialGate, lookupFederalDnc } = await loadGate([
       [attestedRow(null)],
       [],
     ]);
@@ -138,11 +180,11 @@ describe("one-off and bulk sales screening", () => {
       salesScreening: "one_off",
     });
     expect(result.allowed).toBe(true);
-    expect(isFederalDncListed).not.toHaveBeenCalled();
+    expect(lookupFederalDnc).not.toHaveBeenCalled();
   });
 
   it("keeps untagged sales bulk and fail-closed without a provider", async () => {
-    const { evaluateOutboundDialGate, isFederalDncListed, assertFederalDncForMarketing } =
+    const { evaluateOutboundDialGate, lookupFederalDnc, assertFederalDncForMarketing } =
       await loadGate([]);
     const result = await evaluateOutboundDialGate({
       userId: "tenant-1",
@@ -152,8 +194,87 @@ describe("one-off and bulk sales screening", () => {
     expect(result.allowed).toBe(false);
     if (!result.allowed) expect(result.reason).toBe("federal_dnc_unconfigured");
     expect(assertFederalDncForMarketing).toHaveBeenCalledOnce();
-    expect(isFederalDncListed).not.toHaveBeenCalled();
+    expect(lookupFederalDnc).not.toHaveBeenCalled();
   });
+
+  it.each([
+    [null, "SELLER_DNC_REGISTRATION_REQUIRED"],
+    [{ ...subscription, vendor_project_id: null }, "SELLER_DNC_REGISTRATION_PENDING"],
+    [{ ...subscription, expires_on: "2020-01-31" }, "SELLER_DNC_REGISTRATION_EXPIRED"],
+    [{ ...subscription, area_codes: ["773"] }, "SELLER_DNC_AREA_CODE_NOT_COVERED"],
+  ] as const)("blocks bulk sales with subscription %j", async (dncSellerRegistration, code) => {
+    const { evaluateOutboundDialGate, lookupFederalDnc } = await loadGate(
+      [[], [{ dncSan: subscription.san, dncSellerRegistration }]],
+      false,
+      true,
+    );
+    const result = await evaluateOutboundDialGate({
+      userId: "tenant-1",
+      phone: "+13125550100",
+      hasExpressWrittenConsent: true,
+    });
+    expect(result).toMatchObject({ allowed: false, federalDncCode: code });
+    expect(lookupFederalDnc).not.toHaveBeenCalled();
+  });
+
+  it.each(["call", "sms"] as const)(
+    "scopes a bulk %s screen to the linked seller project",
+    async (channel) => {
+      const { evaluateOutboundDialGate, lookupFederalDnc, audit } = await loadGate(
+        [[], [{ dncSan: "OTHER-SAN", dncSellerRegistration: subscription }]],
+        false,
+        true,
+      );
+      const result = await evaluateOutboundDialGate({
+        userId: "tenant-1",
+        phone: "+13125550100",
+        hasExpressWrittenConsent: true,
+        audit: { channel },
+      });
+      expect(result.allowed).toBe(true);
+      expect(lookupFederalDnc).toHaveBeenCalledExactlyOnceWith("+13125550100", {
+        vendorProjectId: "proj-seller-1",
+      });
+      expect(audit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dncChecked: true,
+          dncSource: "vendor",
+          dncResult: "clear",
+          dncListVersion: null,
+        }),
+      );
+    },
+  );
+
+  it.each(["error", "unconfigured"] as const)(
+    "blocks and records a %s lookup as unavailable",
+    async (source) => {
+      const { evaluateOutboundDialGate, lookupFederalDnc, audit } = await loadGate(
+        [[], [{ dncSellerRegistration: subscription }]],
+        false,
+        true,
+      );
+      lookupFederalDnc.mockResolvedValue({
+        listed: false,
+        source,
+        checked_at: ATTESTATION_AT.toISOString(),
+        list_version: null,
+      });
+      const result = await evaluateOutboundDialGate({
+        userId: "tenant-1",
+        phone: "+13125550100",
+        hasExpressWrittenConsent: true,
+      });
+      expect(result).toMatchObject({ allowed: false, reason: "federal_dnc_unconfigured" });
+      expect(audit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          decision: "blocked",
+          dncResult: source,
+          dncListVersion: null,
+        }),
+      );
+    },
+  );
 
   it("does not let a client callback purpose skip the one-call-per-day limit or grant consent", async () => {
     const screening = screenedDirectOutboundCall("callback");
@@ -179,7 +300,7 @@ describe("one-off and bulk sales screening", () => {
     }));
     vi.doMock("../src/lib/federal-dnc-service", () => ({
       assertFederalDncForMarketing: () => ({ allowed: true, configured: true }),
-      isFederalDncListed: async () => false,
+      lookupFederalDnc: async () => false,
     }));
     vi.doMock("../src/lib/compliance", () => ({ isDncBlocked: async () => false }));
     vi.doMock("../src/lib/tcpa-consent", () => ({ evaluateOutboundConsent }));

@@ -1,7 +1,7 @@
 # Vendor Launch Map
 
 **Status:** Active canonical operating map.  
-**Updated:** October 25, 2026.
+**Updated:** November 21, 2026.
 
 > Current source routes structured reasoning through xAI first, then OpenAI. Gemini is retired and AI Gateway is disabled on Render. [Deployment Runbook](DEPLOYMENT_RUNBOOK.md) governs actual provider configuration; do not enable an optional provider merely because it appears in this map.
 
@@ -74,20 +74,28 @@ the seller's own subscription is unavailable. The supported DNCScrub configurati
 `FEDERAL_DNC_API_KEY` containing the generated API user's key (sent as `loginId`).
 The API key is not the seller's Subscription Account Number (SAN).
 
-Each seller records its legal name, SAN, covered area codes and expiry in Compliance.
-Configure a separate vendor project with that SAN, then link the exact project through
-the platform-admin DNC registration route. Runtime sends its `projId` on marketing
-lookups and rejects missing, unlinked, expired or uncovered seller registrations.
-One BotBound subscription cannot be shared across unrelated customer sellers.
+Campaign setup links sellers to their own FTC registration and suggests destination area codes.
+The seller enrolls and pays any fee at the Registry, then authorizes BotBound to verify their
+FTC Organization ID and SAN in Compliance. The authenticated jobs sweep creates a scoped
+Projects v1.5 connection and polls for verification. Only the vendor's validated area codes
+and expiration activate an automatic connection. Outbound screening uses the returned
+`DefaultCampaignId` via the scrub API's `campaignId` parameter.
 
-Validate vendor authentication and project access, then retain scoped scrub evidence.
-`npm run dnc:probe` checks a synthetic number on the default project; it neither proves
-seller linkage nor grants permission to call. It makes a vendor API request, whose
-billing depends on the vendor agreement. Keep internal suppression, written marketing
-consent, supported calling hours and provider gates intact. The current version-5
-scrub response remains supported by the vendor; do not change formats without updating
-both runtime and probe parsing. See [API authentication](https://docs.dncscrub.com/api-reference/authentication),
-[project setup](https://docs.dncscrub.com/api-reference/other/project-create), and
+Renewal reminders go to the verified owner email within 30 days of expiry. A new SAN entered
+during that window is staged for the new term, and BotBound keeps screening under the
+current subscription until it expires. Each SAN uses its own project. Existing manually
+linked records continue to use `projId`. Manage inactive projects and revoke discontinued
+seller access with DNCScrub under the vendor agreement.
+
+Confirm that the licensed account can create and read Projects v1.5, validate one authorized
+seller subscription, and provide current federal and applicable state lists. In the approved
+operator environment set `FEDERAL_DNC_PROBE_CAMPAIGN_ID` to the project's default campaign ID
+and `FEDERAL_DNC_PROBE_AREA_CODE` to a verified area code, then run `npm run dnc:probe`.
+For a legacy link use `FEDERAL_DNC_PROBE_PROJECT_ID` instead. The probe checks one synthetic
+number, and may be metered under the vendor agreement. Record coverage and list freshness
+from the vendor. Keep internal suppression, written marketing consent, calling hours and
+provider gates intact. See [API authentication](https://docs.dncscrub.com/api-reference/authentication),
+[project setup](https://docs.dncscrub.com/api-reference/other/projects-upsert), and
 [FTC seller subscriptions](https://www.ftc.gov/business-guidance/resources/qa-telemarketers-sellers-about-dnc-provisions-tsr-0).
 
 ### WhatsApp

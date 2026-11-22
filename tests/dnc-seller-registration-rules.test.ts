@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
-  defaultDncExpiresOn,
+  dncRenewalCheckAt,
   dncSellerRegistrationState,
+  isDncRenewalDue,
   suggestDncAreaCodes,
   evaluateDncSellerRegistration,
   parseAreaCodes,
   parseDncSellerRegistrationInput,
+  parseDncSellerVerificationInput,
+  readDncSellerSetup,
   readStoredDncSellerRegistration,
   usAreaCode,
   type DncSellerRegistration,
@@ -127,29 +130,64 @@ describe("seller DNC registration state and gate", () => {
     expect(usAreaCode("+44 20 7123 4567")).toBeNull();
   });
 
-  it("prefills the area codes and term an owner needs to subscribe to", () => {
+  it("ranks destination area codes by recipient count", () => {
     expect(
-      suggestDncAreaCodes({
-        lineNumbers: ["+13125845703"],
-        contactNumbers: ["+15617270142", "561-555-0100", "+13125550101", "+442071234567", ""],
-      }),
+      suggestDncAreaCodes([
+        "+15617270142",
+        "561-555-0100",
+        "+13125550101",
+        "+13125550101",
+        "+442071234567",
+        "",
+      ]),
     ).toEqual([
-      { code: "561", contacts: 2, ownLine: false },
-      { code: "312", contacts: 1, ownLine: true },
+      { code: "561", contacts: 2 },
+      { code: "312", contacts: 1 },
     ]);
-    expect(defaultDncExpiresOn(NOW)).toBe("2027-10-17");
-    // The prefilled term passes the same validation the owner's save does.
-    expect(
-      parseDncSellerRegistrationInput(
-        {
-          san: "ABC123456",
-          seller_name: "Acme Plumbing LLC",
-          area_codes: "561, 312",
-          expires_on: defaultDncExpiresOn(NOW),
-          attest: true,
-        },
-        NOW,
-      ).ok,
-    ).toBe(true);
   });
+
+  it("keeps a pending renewal separate from the current verified term", () => {
+    const current = registration({ ftc_org_id: "11111111-11111", vendor_campaign_id: 42 });
+    const setup = readDncSellerSetup({
+      ...current,
+      verification: { ...current, san: "NEW-SAN-12", state: "pending" },
+    });
+    expect(setup.verification?.san).toBe("NEW-SAN-12");
+    expect(
+      evaluateDncSellerRegistration(setup.registration, "+13125550100", NOW, setup.verification),
+    ).toEqual({ allowed: true, vendorProjectId: "proj-acme", vendorCampaignId: 42 });
+    expect(
+      evaluateDncSellerRegistration(
+        setup.registration,
+        "+13125550100",
+        new Date("2027-10-02"),
+        setup.verification,
+      ),
+    ).toMatchObject({ allowed: false, code: "SELLER_DNC_REGISTRATION_PENDING" });
+    expect(readStoredDncSellerRegistration({ ...current, vendor_campaign_id: null })).toBeNull();
+  });
+
+  it("opens the renewal reminder window 30 days before expiry", () => {
+    expect(isDncRenewalDue("2026-11-17", NOW)).toBe(true);
+    expect(isDncRenewalDue("2026-11-18", NOW)).toBe(false);
+    expect(isDncRenewalDue("2026-10-17", NOW)).toBe(false);
+    expect(dncRenewalCheckAt("2026-10-31", NOW)).toBe("2026-11-01T12:00:00.000Z");
+    expect(dncRenewalCheckAt("2027-10-31", NOW)).toBe(NOW.toISOString());
+  });
+});
+
+it("requires owner authorization and only accepts FTC IDs for verification", () => {
+  const input = {
+    ftc_org_id: " 11111111-11111 ",
+    san: " abc123456 ",
+    attest: true,
+    area_codes: "all",
+    expires_on: "2027-10-31",
+    vendor_campaign_id: 42,
+  };
+  expect(parseDncSellerVerificationInput(input)).toEqual({
+    ok: true,
+    value: { ftc_org_id: "11111111-11111", san: "ABC123456" },
+  });
+  expect(parseDncSellerVerificationInput({ ...input, attest: false }).ok).toBe(false);
 });

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { Download, ExternalLink, Loader2, Shield } from "lucide-react";
 
 import DncManager from "./DncManager";
+import DncRegistrationCard from "./DncRegistrationCard";
 import { authFetch } from "../lib/api";
 import { formatPhone } from "../lib/safe-number";
 import type { ConsentLedgerEvent } from "../lib/tcpa-consent";
@@ -59,10 +60,13 @@ function consentEventLabel(event: string): string {
 }
 
 export default function ComplianceCenter() {
+  const [searchParams] = useSearchParams();
+  const openRegistryFromLink = searchParams.get("screening") === "setup";
   const [summary, setSummary] = useState<ComplianceCenterSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [registryOpened, setRegistryOpened] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -159,8 +163,8 @@ export default function ComplianceCenter() {
             </dl>
             <p className="text-sm text-muted-foreground">
               {summary.federal_dnc_configured === true
-                ? "Recipient permission and calling limits still apply."
-                : "Campaign calls remain blocked until screening is configured."}
+                ? "Campaigns require a connected seller subscription, recipient permission and calling limits."
+                : "Campaigns stay paused while the screening provider is unavailable. You can prepare your Registry subscription below."}
             </p>
           </div>
         ) : null}
@@ -190,6 +194,19 @@ export default function ComplianceCenter() {
       </section>
 
       <div className="grid gap-4">
+        <details
+          open={openRegistryFromLink || undefined}
+          className="wl-paper wl-paper-elevated p-4 sm:p-5"
+          onToggle={(event) => {
+            if (event.currentTarget.open) setRegistryOpened(true);
+          }}
+        >
+          <summary className="cursor-pointer text-sm font-semibold text-foreground">
+            Do Not Call Registry
+          </summary>
+          {registryOpened || openRegistryFromLink ? <DncRegistrationCard /> : null}
+        </details>
+
         {summary ? (
           <section className="wl-paper wl-paper-elevated p-4 sm:p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">

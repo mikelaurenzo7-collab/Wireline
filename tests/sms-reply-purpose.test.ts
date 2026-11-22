@@ -12,10 +12,17 @@ describe("sms reply purpose", () => {
       tcpaDecision: { allowed: true },
     }));
     await evaluateSmsThreadReplyGate(
-      { userId: "tenant-1", threadId: "thread-1", phone: "+14155550123", requestedPurpose: "sales" },
+      {
+        userId: "tenant-1",
+        threadId: "thread-1",
+        phone: "+14155550123",
+        requestedPurpose: "sales",
+      },
       {
         now: () => nowMs,
-        loadLatestInboundArtifact: async () => ({ createdAt: new Date(nowMs - 2 * 60 * 60 * 1000) }),
+        loadLatestInboundArtifact: async () => ({
+          createdAt: new Date(nowMs - 2 * 60 * 60 * 1000),
+        }),
         deriveRelationship: async () => null,
         evaluateGate,
       },
@@ -36,7 +43,12 @@ describe("sms reply purpose", () => {
       reason: "federal_dnc_unconfigured" as const,
     }));
     const result = await evaluateSmsThreadReplyGate(
-      { userId: "tenant-1", threadId: "thread-1", phone: "+14155550123", requestedPurpose: "sales" },
+      {
+        userId: "tenant-1",
+        threadId: "thread-1",
+        phone: "+14155550123",
+        requestedPurpose: "sales",
+      },
       {
         now: () => nowMs,
         loadLatestInboundArtifact: async () => null,
@@ -62,7 +74,7 @@ describe("sales-only federal screening", () => {
   });
 
   it("skips the registry lookup for personal, appointment, existing customer, and returning calls", async () => {
-    const isFederalDncListed = vi.fn(async () => true);
+    const lookupFederalDnc = vi.fn(async () => true);
     vi.doMock("../src/lib/server-context", () => ({
       drizzle: {
         select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) }),
@@ -70,15 +82,25 @@ describe("sales-only federal screening", () => {
       log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     }));
     vi.doMock("../src/lib/tcpa-calling-hours", () => ({
-      resolveCallingHoursForPhone: () => ({ allowed: true, timeZone: "America/Chicago", startHour: 8, endHour: 20 }),
+      resolveCallingHoursForPhone: () => ({
+        allowed: true,
+        timeZone: "America/Chicago",
+        startHour: 8,
+        endHour: 20,
+      }),
     }));
     vi.doMock("../src/lib/federal-dnc-service", () => ({
       assertFederalDncForMarketing: vi.fn(),
-      isFederalDncListed,
+      lookupFederalDnc,
     }));
     vi.doMock("../src/lib/compliance", () => ({ isDncBlocked: async () => false }));
     const { evaluateOutboundDialGate } = await import("../src/lib/outbound-dial-gate");
-    for (const purpose of ["personal", "appointment_service", "existing_customer", "returning_contact"]) {
+    for (const purpose of [
+      "personal",
+      "appointment_service",
+      "existing_customer",
+      "returning_contact",
+    ]) {
       const result = await evaluateOutboundDialGate({
         userId: "tenant-1",
         phone: "+13125550100",
@@ -88,7 +110,7 @@ describe("sales-only federal screening", () => {
       });
       expect(result.allowed, purpose).toBe(true);
     }
-    expect(isFederalDncListed).not.toHaveBeenCalled();
+    expect(lookupFederalDnc).not.toHaveBeenCalled();
   });
 
   it("fails a sales call closed when registry access is unset and blocks every purpose on the workspace list", async () => {
@@ -102,9 +124,10 @@ describe("sales-only federal screening", () => {
         allowed: false as const,
         configured: false as const,
         code: "FEDERAL_DNC_NOT_CONFIGURED" as const,
-        message: "Campaigns and automated sales need number screening before they can send. Add a Do Not Call screening connection in Settings. One-at-a-time sales calls and texts still work after you confirm you're responsible for permission and Do Not Call rules. Personal, appointment, and follow-up calls still work.",
+        message:
+          "Campaigns and automated sales need number screening before they can send. Add a Do Not Call screening connection in Settings. One-at-a-time sales calls and texts still work after you confirm you're responsible for permission and Do Not Call rules. Personal, appointment, and follow-up calls still work.",
       }),
-      isFederalDncListed: vi.fn(),
+      lookupFederalDnc: vi.fn(),
     }));
     vi.doMock("../src/lib/compliance", () => ({ isDncBlocked }));
     const { evaluateOutboundDialGate } = await import("../src/lib/outbound-dial-gate");
@@ -124,11 +147,16 @@ describe("sales-only federal screening", () => {
       log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
     }));
     vi.doMock("../src/lib/tcpa-calling-hours", () => ({
-      resolveCallingHoursForPhone: () => ({ allowed: false, timeZone: "America/Chicago", startHour: 8, endHour: 20 }),
+      resolveCallingHoursForPhone: () => ({
+        allowed: false,
+        timeZone: "America/Chicago",
+        startHour: 8,
+        endHour: 20,
+      }),
     }));
     vi.doMock("../src/lib/federal-dnc-service", () => ({
       assertFederalDncForMarketing: () => ({ allowed: true, configured: true }),
-      isFederalDncListed: async () => false,
+      lookupFederalDnc: async () => false,
     }));
     vi.doMock("../src/lib/compliance", () => ({ isDncBlocked: async () => false }));
     const hours = await import("../src/lib/outbound-dial-gate");
@@ -155,7 +183,7 @@ describe("sales-only federal screening", () => {
     }));
     vi.doMock("../src/lib/federal-dnc-service", () => ({
       assertFederalDncForMarketing: () => ({ allowed: true, configured: true }),
-      isFederalDncListed: async () => false,
+      lookupFederalDnc: async () => false,
     }));
     vi.doMock("../src/lib/compliance", () => ({ isDncBlocked: async () => true }));
     const blocked = await import("../src/lib/outbound-dial-gate");
@@ -172,8 +200,13 @@ describe("sales-only federal screening", () => {
     }
   });
 
-  it("passes the workspace SAN to the registry lookup for a sales call", async () => {
-    const isFederalDncListed = vi.fn(async () => true);
+  it("uses the linked vendor project for a sales call", async () => {
+    const lookupFederalDnc = vi.fn(async () => ({
+      listed: true,
+      source: "vendor",
+      checked_at: "2026-10-26T15:00:00Z",
+      list_version: null,
+    }));
     let selects = 0;
     vi.doMock("../src/lib/server-context", () => ({
       drizzle: {
@@ -182,7 +215,22 @@ describe("sales-only federal screening", () => {
             where: () => ({
               limit: async () => {
                 selects += 1;
-                return selects === 1 ? [] : [{ dncSan: "san-123456", dncSellerRegistration: null }];
+                return selects === 1
+                  ? []
+                  : [
+                      {
+                        dncSan: "SAN-123456",
+                        dncSellerRegistration: {
+                          san: "SAN-123456",
+                          seller_name: "Fixture Seller",
+                          area_codes: ["212"],
+                          expires_on: "2040-01-31",
+                          attested_at: "2026-10-26T15:00:00Z",
+                          attested_by: "tenant-1",
+                          vendor_project_id: "proj-seller-212",
+                        },
+                      },
+                    ];
               },
             }),
           }),
@@ -195,7 +243,7 @@ describe("sales-only federal screening", () => {
     }));
     vi.doMock("../src/lib/federal-dnc-service", () => ({
       assertFederalDncForMarketing: () => ({ allowed: true, configured: true }),
-      isFederalDncListed,
+      lookupFederalDnc,
     }));
     vi.doMock("../src/lib/compliance", () => ({ isDncBlocked: async () => false }));
     const { evaluateOutboundDialGate } = await import("../src/lib/outbound-dial-gate");
@@ -205,7 +253,9 @@ describe("sales-only federal screening", () => {
       isMarketingCall: true,
       leadId: undefined,
     });
-    expect(isFederalDncListed).toHaveBeenCalledWith("+12125550100", { vendorProjectId: "SAN-123456" });
+    expect(lookupFederalDnc).toHaveBeenCalledWith("+12125550100", {
+      vendorProjectId: "proj-seller-212",
+    });
     expect(listed.allowed).toBe(false);
     if (!listed.allowed) expect(listed.customerMessage).toBe(SALES_DNC_LISTED_MESSAGE);
   });

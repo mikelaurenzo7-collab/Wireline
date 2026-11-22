@@ -32,7 +32,9 @@ describe("outbound compliance contract", () => {
     expect(read("src/lib/voice/openai-outbound-placement.ts")).toContain("lastCalledAt:");
 
     expect(gate).toContain("isDncBlocked(opts.userId, opts.phone)");
-    expect(gate).toContain("isFederalDncListed(opts.phone)");
+    expect(gate).toMatch(
+      /lookupFederalDnc\(opts\.phone,\s*\{\s*vendorProjectId: seller\.vendorProjectId,[\s\S]*?vendorCampaignId: seller\.vendorCampaignId/,
+    );
     expect(gate).toContain("is_marketing_call: isMarketingCall");
     expect(gate).toContain("resolveCallingHoursForPhone");
     expect(gate).toContain('reason: "outside_permitted_calling_hours"');
@@ -47,10 +49,14 @@ describe("outbound compliance contract", () => {
     expect(federal).toContain('code: "FEDERAL_DNC_NOT_CONFIGURED"');
     expect(federal).toContain("allowed: false");
     expect(federal).toContain('source: "unconfigured"');
-    expect(federal).toContain('return { listed: false, source: "unconfigured", checked_at }');
+    expect(federal).toContain(
+      'return { listed: false, source: "unconfigured", checked_at, list_version: null }',
+    );
     expect(gate).toContain("const federalGate = assertFederalDncForMarketing()");
     expect(gate).toContain('reason: "federal_dnc_unconfigured"');
-    expect(gate).toContain("isFederalDncListed(opts.phone)");
+    expect(gate).toMatch(
+      /lookupFederalDnc\(opts\.phone,\s*\{\s*vendorProjectId: seller\.vendorProjectId,[\s\S]*?vendorCampaignId: seller\.vendorCampaignId/,
+    );
     expect(gate).toContain("isDncBlocked(opts.userId, opts.phone)");
     expect(gate).toContain("evaluateOutboundConsent");
     expect(readiness).toContain("deferred_checklist");
@@ -105,7 +111,7 @@ describe("outbound compliance contract", () => {
     expect(dialGate).toContain("is_marketing_call: isMarketingCall");
     expect(dialGate).toContain("hasExpressWrittenConsent");
     expect(campaignDialer).toContain('call_purpose: "marketing_or_sales"');
-    expect(dialGate).toContain("isFederalDncListed");
+    expect(dialGate).toContain("lookupFederalDnc");
     expect(campaignDialer).toContain('source: "campaign"');
   });
 

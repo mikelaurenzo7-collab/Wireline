@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDncProvider } from "../src/lib/dnc-provider";
 import {
   assertFederalDncForMarketing,
-  isFederalDncListed,
   isFederalDncVendorConfigured,
   lookupFederalDnc,
   normalizeUsPhone10,
@@ -28,7 +27,6 @@ describe("federal-dnc-service", () => {
     expect(result.listed).toBe(false);
     expect(result.source).toBe("unconfigured");
     expect(isFederalDncVendorConfigured()).toBe(false);
-    expect(await isFederalDncListed("+15551234567")).toBe(false);
   });
 
   it("fails closed when vendor is configured but lookup errors", async () => {
@@ -38,7 +36,6 @@ describe("federal-dnc-service", () => {
     const result = await lookupFederalDnc("+15551234567");
     expect(result.source).toBe("error");
     expect(result.listed).toBe(true);
-    expect(await isFederalDncListed("+15551234567")).toBe(true);
   });
 
   it("uses DNCScrub GET auth and fails closed outside documented callable codes", async () => {
@@ -58,6 +55,7 @@ describe("federal-dnc-service", () => {
     const clear = await lookupFederalDnc("+15551234567");
     expect(clear.source).toBe("vendor");
     expect(clear.listed).toBe(false);
+    expect(clear.list_version).toBeNull();
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toContain("phoneList=5551234567");
@@ -67,7 +65,7 @@ describe("federal-dnc-service", () => {
     expect(init?.headers).toMatchObject({ loginId: "scrub-login-id" });
     expect(init?.headers).not.toHaveProperty("Authorization");
 
-    for (const resultCode of ["E", "G", "H", "O", "W", "X", "Y"]) {
+    for (const resultCode of ["E", "G", "W", "X", "Y"]) {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         json: async () => [{ Phone: "5551234567", ResultCode: resultCode }],
@@ -75,7 +73,7 @@ describe("federal-dnc-service", () => {
       expect((await lookupFederalDnc("+15551234567")).listed).toBe(false);
     }
 
-    for (const resultCode of ["D", "P", "B", "I", "M", "L", "F", "V", "", "UNKNOWN"]) {
+    for (const resultCode of ["D", "P", "B", "I", "M", "L", "F", "V", "H", "O", "", "UNKNOWN"]) {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         json: async () => [{ Phone: "5551234567", ResultCode: resultCode }],
@@ -87,6 +85,8 @@ describe("federal-dnc-service", () => {
       [],
       [null],
       [{}],
+      [{ ResultCode: "C" }],
+      [{ Phone: "3125550100", ResultCode: "C" }],
       [{ ResultCode: "UNKNOWN" }],
       [{ ResultCode: "C" }, { ResultCode: "D" }],
     ]) {
@@ -113,6 +113,27 @@ describe("federal-dnc-service", () => {
 
     await lookupFederalDnc("+15551234567");
     expect(fetchMock.mock.calls[1][0]).not.toContain("projId");
+  });
+
+  it("uses the verified campaign scope and skips screening if the provider changes", async () => {
+    vi.stubEnv("FEDERAL_DNC_API_URL", "https://www.dncscrub.com/app/main/rpc/scrub");
+    vi.stubEnv("FEDERAL_DNC_API_KEY", "scrub-login-id");
+    vi.stubEnv("FEDERAL_DNC_PROVIDER", "dncscrub");
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [{ Phone: "3125550100", ResultCode: "C" }],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const scope = { vendorProjectId: "BBSELLER", vendorCampaignId: 42 };
+    expect(await lookupFederalDnc("+13125550100", scope)).toMatchObject({ source: "vendor" });
+    const url = new URL(fetchMock.mock.calls[0][0]);
+    expect(url.searchParams.get("campaignId")).toBe("42");
+    expect(url.searchParams.has("projId")).toBe(false);
+
+    vi.stubEnv("FEDERAL_DNC_API_URL", "https://different-vendor.example.test");
+    vi.stubEnv("FEDERAL_DNC_PROVIDER", "http");
+    expect(await lookupFederalDnc("+13125550100", scope)).toMatchObject({ source: "error" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("treats misplaced Vercel tokens as unconfigured", () => {

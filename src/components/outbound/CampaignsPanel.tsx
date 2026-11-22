@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router";
 import { Loader2, Megaphone, Pause, Play, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import { authFetch } from "../../lib/api";
 import { logFetchError } from "../../lib/utils";
@@ -16,6 +17,7 @@ import {
 } from "../../lib/sales-playbooks";
 import { LeadHuntReview } from "./LeadHuntReview";
 import { CAMPAIGN_SALES_BADGE } from "../../lib/outbound-compliance-copy";
+import { DNC_SETUP_PATH } from "../../lib/dnc-seller-registration-rules";
 
 type Campaign = {
   id: string;
@@ -46,6 +48,7 @@ export default function CampaignsPanel({ initialAgentId }: { initialAgentId?: st
   const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [dncSetupNeeded, setDncSetupNeeded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -84,6 +87,7 @@ export default function CampaignsPanel({ initialAgentId }: { initialAgentId?: st
         ]);
         if (!campRes.ok) throw new Error("Failed to load campaigns");
         const campBody = await campRes.json();
+        setDncSetupNeeded(campBody.dnc_setup_needed === true);
         const campaignList: Campaign[] = Array.isArray(campBody.campaigns)
           ? campBody.campaigns
           : [];
@@ -169,6 +173,7 @@ export default function CampaignsPanel({ initialAgentId }: { initialAgentId?: st
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
+        if (body.code === "SELLER_DNC_SETUP_REQUIRED") setDncSetupNeeded(true);
         throw new Error(body.error || "Launch failed");
       }
       toast.success("Campaign launched");
@@ -291,6 +296,15 @@ export default function CampaignsPanel({ initialAgentId }: { initialAgentId?: st
           <p className="text-xs text-muted-foreground">
             {SALES_PLAYBOOKS.find((playbook) => playbook.id === playbookId)?.objective}
           </p>
+          {dncSetupNeeded ? (
+            <p className="text-sm text-muted-foreground">
+              You can save a draft now. Before you launch,{" "}
+              <Link to={DNC_SETUP_PATH} className="font-medium text-foreground underline">
+                set up Do Not Call screening
+              </Link>
+              .
+            </p>
+          ) : null}
           <Select
             value={agentId || "__none__"}
             onValueChange={(v) => setAgentId(v === "__none__" ? "" : v)}
@@ -346,20 +360,26 @@ export default function CampaignsPanel({ initialAgentId }: { initialAgentId?: st
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {c.status === "draft" || c.status === "paused" ? (
-                    <ShadButton
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      disabled={busyId === c.id}
-                      onClick={() => void launchCampaign(c.id, c.goal)}
-                    >
-                      {busyId === c.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Play className="h-3.5 w-3.5" />
-                      )}
-                      Launch
-                    </ShadButton>
+                    dncSetupNeeded ? (
+                      <ShadButton size="sm" variant="secondary" asChild>
+                        <Link to={DNC_SETUP_PATH}>Set Up Screening</Link>
+                      </ShadButton>
+                    ) : (
+                      <ShadButton
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        disabled={busyId === c.id}
+                        onClick={() => void launchCampaign(c.id, c.goal)}
+                      >
+                        {busyId === c.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Play className="h-3.5 w-3.5" />
+                        )}
+                        Launch
+                      </ShadButton>
+                    )
                   ) : c.status === "running" ? (
                     <ShadButton
                       type="button"

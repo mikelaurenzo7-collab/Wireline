@@ -231,8 +231,15 @@ async function placeOutboundCallAfterDeletionFence(
   let spend: PlatformCostReservation | undefined;
   try {
     const attemptId = input.requestKey ?? placementId;
-    // A caller-supplied artifact is a callback, cadence, or intake signature.
-    // A normal outbound call gets a screening receipt instead, not express consent.
+    if (telemarketing && !input.consentArtifactId) {
+      throw new AppError(
+        403,
+        "MARKETING_VOICE_PERMISSION_REQUIRED",
+        "A sales call needs the recipient's documented written permission for AI voice calls.",
+      );
+    }
+    // Marketing requires a matching recipient signature. Service calls can
+    // use a screening receipt when the workflow has no signed grant.
     const permission = input.consentArtifactId
       ? await inspectOutboundRecipientPermission({
           userId: input.userId,
@@ -407,6 +414,7 @@ async function placeOutboundCallAfterDeletionFence(
       : {
           ok: false,
           status: error instanceof AppError ? error.status : twilioStatus(error) || 502,
+          ...(error instanceof AppError ? { code: error.code } : {}),
           error:
             error instanceof AppError
               ? error.message

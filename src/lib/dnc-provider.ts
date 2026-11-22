@@ -6,22 +6,27 @@
  * A future vendor adapter or in-house registry screen can register with
  * registerDncProvider. This module does not ship an in-house FTC file screen.
  *
- * Sales campaigns fail closed when the selected provider is not configured.
- * One-off sales calls and texts do not require a provider; the dial gate
- * decides that. A configured provider still fails closed on transport errors.
+ * The dial gate decides when a lookup is required. A configured provider
+ * fails closed on transport errors and unrecognized results.
  */
-import { isFederalDncVendorConfigured } from "./federal-dnc-config";
+import {
+  isDncScrubProjectConnectionConfigured,
+  isFederalDncVendorConfigured,
+} from "./federal-dnc-config";
 import { parseDncScrubResult } from "./federal-dnc-result.mjs";
+import { isDncCampaignId } from "./dnc-seller-registration-rules";
 import { log } from "./server-context";
 
 export type DncLookupOptions = {
-  /** Seller registry account number, when the workspace saved one. */
-  san?: string;
+  /** Vendor project configured against the seller's registry subscription. */
+  vendorProjectId?: string;
+  /** DNCScrub's verified default campaign for a seller provisioned via Projects v1.5. */
+  vendorCampaignId?: number;
 };
 
 export type DncLookupResult = {
   listed: boolean;
-  /** When the provider reports a list date. The HTTP provider uses the check time. */
+  /** Registry list date, if provided by the vendor. */
   listDate: string | null;
   source: "vendor" | "unconfigured" | "error";
 };
@@ -57,12 +62,14 @@ function isDncScrubProvider(apiUrl: string): boolean {
   }
 }
 
-function buildDncScrubRequestUrl(apiUrl: string, phone10: string, san?: string): string {
+function buildDncScrubRequestUrl(apiUrl: string, phone10: string, scope: DncLookupOptions): string {
   const url = new URL(apiUrl);
   url.searchParams.set("phoneList", phone10);
   url.searchParams.set("version", "5");
   url.searchParams.set("output", "json");
-  if (san) url.searchParams.set("projId", san);
+  if (scope.vendorCampaignId !== undefined)
+    url.searchParams.set("campaignId", String(scope.vendorCampaignId));
+  else if (scope.vendorProjectId) url.searchParams.set("projId", scope.vendorProjectId);
   return url.toString();
 }
 
@@ -70,21 +77,31 @@ const federalHttpDncProvider: DncProvider = {
   id: "federal_http",
   configured: () => isFederalDncVendorConfigured(),
   async lookup(number, options) {
-    const listDate = new Date().toISOString();
     const apiKey = process.env.FEDERAL_DNC_API_KEY?.trim();
     const apiUrl = process.env.FEDERAL_DNC_API_URL?.trim();
     if (!isFederalDncVendorConfigured() || !apiKey || !apiUrl) {
       return { listed: false, listDate: null, source: "unconfigured" };
     }
-    const san = options?.san?.trim() || undefined;
+    const projectId = options?.vendorProjectId?.trim() || undefined;
+    const campaignId = options?.vendorCampaignId;
+    if (
+      campaignId !== undefined &&
+      (!projectId || !isDncCampaignId(campaignId) || !isDncScrubProjectConnectionConfigured())
+    )
+      return { listed: true, listDate: null, source: "error" };
     try {
       if (isDncScrubProvider(apiUrl)) {
-        return await lookupDncScrub(apiUrl, apiKey, number, listDate, san);
+        return await lookupDncScrub(apiUrl, apiKey, number, {
+          vendorProjectId: projectId,
+          vendorCampaignId: campaignId,
+        });
       }
-      return await lookupGenericPost(apiUrl, apiKey, number, listDate, san);
+      return await lookupGenericPost(apiUrl, apiKey, number, projectId);
     } catch (error) {
-      log.warn("federal DNC lookup failed", { error: String(error) });
-      return { listed: true, listDate, source: "error" };
+      log.warn("federal DNC lookup failed", {
+        errorType: error instanceof Error ? error.name : "unknown",
+      });
+      return { listed: true, listDate: null, source: "error" };
     }
   },
 };
@@ -112,30 +129,30 @@ async function lookupDncScrub(
   apiUrl: string,
   apiKey: string,
   phone: string,
-  listDate: string,
-  san?: string,
+  scope: DncLookupOptions,
 ): Promise<DncLookupResult> {
   const phone10 = normalizeUsPhone10(phone);
   if (!phone10) {
     log.warn("federal DNC dncscrub: invalid US phone for scrub", {
       phoneDigits: phone.replace(/\D/g, "").length,
     });
-    return { listed: true, listDate, source: "error" };
+    return { listed: true, listDate: null, source: "error" };
   }
 
-  const response = await fetch(buildDncScrubRequestUrl(apiUrl, phone10, san), {
+  const response = await fetch(buildDncScrubRequestUrl(apiUrl, phone10, scope), {
     method: "GET",
     headers: { loginId: apiKey, Accept: "application/json" },
+    redirect: "error",
     signal: AbortSignal.timeout(8_000),
   });
   if (!response.ok) {
     log.warn("federal DNC dncscrub returned non-OK", { status: response.status });
-    return { listed: true, listDate, source: "error" };
+    return { listed: true, listDate: null, source: "error" };
   }
-  const result = parseDncScrubResult(await response.json());
+  const result = parseDncScrubResult(await response.json(), phone10);
   return {
     listed: result.listed,
-    listDate,
+    listDate: null,
     source: result.recognized ? "vendor" : "error",
   };
 }
@@ -144,8 +161,7 @@ async function lookupGenericPost(
   apiUrl: string,
   apiKey: string,
   phone: string,
-  listDate: string,
-  san?: string,
+  projectId?: string,
 ): Promise<DncLookupResult> {
   const response = await fetch(apiUrl, {
     method: "POST",
@@ -154,21 +170,22 @@ async function lookupGenericPost(
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: JSON.stringify(san ? { phone, san, project_id: san } : { phone }),
+    body: JSON.stringify(projectId ? { phone, project_id: projectId } : { phone }),
+    redirect: "error",
     signal: AbortSignal.timeout(8_000),
   });
   if (!response.ok) {
     log.warn("federal DNC vendor returned non-OK", { status: response.status });
-    return { listed: true, listDate, source: "error" };
+    return { listed: true, listDate: null, source: "error" };
   }
   const data = (await response.json()) as { listed?: unknown; listDate?: unknown };
   if (typeof data?.listed !== "boolean") {
     log.warn("federal DNC vendor returned an unrecognized payload, failing closed");
-    return { listed: true, listDate, source: "error" };
+    return { listed: true, listDate: null, source: "error" };
   }
   return {
     listed: data.listed,
-    listDate: typeof data.listDate === "string" && data.listDate.trim() ? data.listDate : listDate,
+    listDate: typeof data.listDate === "string" ? data.listDate.trim() || null : null,
     source: "vendor",
   };
 }

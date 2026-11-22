@@ -166,19 +166,41 @@ describe("ordinary outbound pre-SIP funding", () => {
     { role: "receptionist", isBusinessAgent: true, callPurpose: "marketing_or_sales" },
     { role: "personal_assistant", isBusinessAgent: false, callPurpose: "marketing_or_sales" },
   ] as const)(
-    "places a screened call for every Bot audience without a separate activation flag: %j",
+    "checks the signed sales permission before funding for every Bot audience: %j",
     async ({ callPurpose, ...agent }) => {
       vi.stubEnv("BOTBOUND_GENERAL_OUTBOUND_ENABLED", "false");
       vi.stubEnv("BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED", "false");
       h.agent = { id: "bot", ...agent };
-      await expect(placeOutboundCall({ ...input, callPurpose })).resolves.toMatchObject({
+      await expect(
+        placeOutboundCall({
+          ...input,
+          callPurpose,
+          consentArtifactId: "fixture-signed-permission",
+        }),
+      ).resolves.toMatchObject({
         ok: true,
         callId: sid,
       });
-      expect(h.permission).not.toHaveBeenCalled();
-      expect(h.order).toEqual(["fund", "spend", "dispatch", "create"]);
+      expect(h.permission).toHaveBeenCalledWith(
+        expect.objectContaining({
+          artifactId: "fixture-signed-permission",
+          callPurpose,
+          phone: input.customerNumber,
+        }),
+      );
+      expect(h.order).toEqual(["permission", "fund", "spend", "dispatch", "create"]);
     },
   );
+  it("blocks a new sales call without a signed artifact before funding or carrier dispatch", async () => {
+    await expect(placeOutboundCall({ ...input, callPurpose: "sales" })).resolves.toMatchObject({
+      ok: false,
+      status: 403,
+      code: "MARKETING_VOICE_PERMISSION_REQUIRED",
+    });
+    expect(h.prepare).not.toHaveBeenCalled();
+    expect(h.reserveSpend).not.toHaveBeenCalled();
+    expect(h.create).not.toHaveBeenCalled();
+  });
   it("does not treat the free personal plan as a paid voice entitlement", async () => {
     vi.stubEnv("BOTBOUND_GENERAL_OUTBOUND_ENABLED", "false");
     vi.stubEnv("BOTBOUND_NON_MARKETING_OUTBOUND_ENABLED", "true");

@@ -31,7 +31,7 @@ describe("launch readiness cross-surface contract", () => {
     );
     expect(kb).toContain("document type that does not match its extension");
     expect(security).toMatch(
-      /BotBound screens the national do-not-call list, the account block list, and calling hours before an outgoing call\./i,
+      /Campaign screening uses the seller's own Do Not Call Registry subscription\./i,
     );
     expect(security).not.toContain("Live outbound dialing is gated");
     expect(security).not.toContain("FEDERAL_DNC_API_KEY");
@@ -42,7 +42,9 @@ describe("launch readiness cross-surface contract", () => {
     const changelog = read("src/components/PublicChangelog.tsx");
     const pricing = read("src/pages/Pricing.tsx");
     const aiErrors = read("src/lib/ai-stream-errors.ts");
-    expect(app).toContain('<Route path="/blog" element={<PreservingRedirect to="/changelog" />} />');
+    expect(app).toContain(
+      '<Route path="/blog" element={<PreservingRedirect to="/changelog" />} />',
+    );
     expect(changelog).not.toContain("Wireline");
     expect(pricing).toMatch(/Bot/i);
     expect(pricing).not.toContain("AI conversation workforce");

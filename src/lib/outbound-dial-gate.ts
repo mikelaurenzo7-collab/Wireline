@@ -1,8 +1,9 @@
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc, gte, ne } from "drizzle-orm";
-import { assertFederalDncForMarketing, isFederalDncListed } from "./federal-dnc-service";
+import { assertFederalDncForMarketing, lookupFederalDnc } from "./federal-dnc-service";
 import { getDncProvider } from "./dnc-provider";
+import { evaluateDncSellerRegistration, readDncSellerSetup } from "./dnc-seller-registration-rules";
 import { isDncBlocked } from "./compliance";
 import { evaluateOutboundConsent, type ConsentDecision } from "./tcpa-consent";
 import { resolveCallingHoursForPhone } from "./tcpa-calling-hours";
@@ -13,6 +14,7 @@ import {
   ONE_CALL_PER_DAY_MESSAGE,
   SALES_ATTESTATION_REQUIRED_MESSAGE,
   SALES_DNC_LISTED_MESSAGE,
+  SALES_DNC_LOOKUP_FAILED_MESSAGE,
   quietHoursBlockedMessage,
 } from "./outbound-compliance-copy";
 import { recordOutboundPurposeAudit, type OutboundAuditDecision } from "./outbound-purpose-audit";
@@ -21,7 +23,6 @@ import { currentSalesDncAttestation } from "./sales-dnc-attestation";
 import type { OutboundPurpose } from "./outbound-call-purpose";
 
 const DUPLICATE_WINDOW_MS = 24 * 60 * 60 * 1000;
-const SAN_RE = /^[A-Za-z0-9-]{6,20}$/;
 const SERVICE_PURPOSES: readonly OutboundPurpose[] = [
   "appointment_service",
   "existing_customer",
@@ -121,15 +122,6 @@ async function loadWorkspaceSalesSettings(userId: string): Promise<WorkspaceSale
   return settings ?? null;
 }
 
-function registryProjectId(san: unknown, registration: unknown): string | undefined {
-  const direct = typeof san === "string" ? san.trim().toUpperCase() : "";
-  if (SAN_RE.test(direct)) return direct;
-  if (!registration || typeof registration !== "object") return undefined;
-  const stored = (registration as { san?: unknown }).san;
-  const fallback = typeof stored === "string" ? stored.trim().toUpperCase() : "";
-  return SAN_RE.test(fallback) ? fallback : undefined;
-}
-
 /**
  * Shared compliance gate for campaign dials, intake auto-dial, callbacks, and
  * manual Studio outbound. Federal Do Not Call screening runs only for sales.
@@ -137,9 +129,10 @@ function registryProjectId(san: unknown, registration: unknown): string | undefi
  * the repeat-call window. Owner-initiated service calls can retry a confirmed
  * busy or unanswered number. A requested callback may follow a settled call.
  *
- * Bulk sales fails closed when no provider is configured. One-off sales does
- * not: it requires the workspace attestation, and it screens only when a
- * provider and a seller account number are both configured.
+ * Bulk sales requires a provider and an active, linked seller subscription.
+ * One-off sales requires the workspace attestation. If the provider is
+ * configured and the seller has entered a subscription, that screen must
+ * also pass using the linked project.
  */
 export async function evaluateOutboundDialGate(opts: {
   userId: string;
@@ -152,9 +145,8 @@ export async function evaluateOutboundDialGate(opts: {
   /** Sales defaults to true when omitted. Non-sales callers pass false. */
   isMarketingCall?: boolean;
   /**
-   * Sales purpose. Bulk sales requires a configured provider. One-off sales
-   * requires the workspace attestation and screens only when a provider and
-   * SAN are both configured.
+   * Sales purpose. Bulk sales requires a configured provider and seller project.
+   * One-off sales requires the workspace attestation.
    */
   requireFederalDncScreening?: boolean;
   /**
@@ -399,52 +391,83 @@ export async function evaluateOutboundDialGate(opts: {
     );
   }
 
-  let isFederalDnc = false;
   let dncChecked = false;
-  let dncResult: string | null = requiresFederalDncScreening ? null : "skipped";
+  let dncResult = "skipped";
   let dncListVersion: string | null = null;
   if (requiresFederalDncScreening) {
-    if (!workspaceSalesSettings) {
+    if (!oneOffSales) {
       workspaceSalesSettings = await loadWorkspaceSalesSettings(opts.userId);
     }
-    const projectId = registryProjectId(
-      workspaceSalesSettings?.dncSan,
-      workspaceSalesSettings?.dncSellerRegistration,
-    );
-    const screenThisNumber = oneOffSales
-      ? getDncProvider().configured() && Boolean(projectId)
-      : true;
+    const storedRegistration = workspaceSalesSettings?.dncSellerRegistration;
+    const setup = readDncSellerSetup(storedRegistration);
+    const screenThisNumber =
+      !oneOffSales ||
+      Boolean(setup.verification || setup.registration?.ftc_org_id) ||
+      (getDncProvider().configured() &&
+        (Boolean(workspaceSalesSettings?.dncSan?.trim()) || storedRegistration != null));
     if (screenThisNumber) {
-      isFederalDnc = projectId
-        ? await isFederalDncListed(opts.phone, { vendorProjectId: projectId })
-        : await isFederalDncListed(opts.phone);
-      dncChecked = true;
-      dncResult = isFederalDnc ? "listed" : "clear";
-      dncListVersion = new Date().toISOString();
-    } else {
-      dncResult = "skipped";
-    }
-  }
+      const seller = evaluateDncSellerRegistration(
+        setup.registration,
+        opts.phone,
+        undefined,
+        setup.verification,
+      );
+      if (!seller.allowed) {
+        const uncovered = seller.code === "SELLER_DNC_AREA_CODE_NOT_COVERED";
+        return finish(
+          {
+            allowed: false,
+            status: uncovered ? LEAD_STATUS.BLOCKED_TCPA : "AutoDialFailed",
+            reason: uncovered ? "blocked_tcpa" : "federal_dnc_unconfigured",
+            federalDncCode: seller.code,
+            federalDncMessage: seller.message,
+            customerMessage: seller.message,
+          },
+          { dncResult: seller.code, quietHoursTz },
+        );
+      }
 
-  if (requiresFederalDncScreening && isFederalDnc) {
-    return finish(
-      {
-        allowed: false,
-        status: LEAD_STATUS.BLOCKED_TCPA,
-        reason: "blocked_tcpa",
-        metadataPatch: { federal_dnc_blocked: true },
-        consentLogEvent: "outbound_blocked_tcpa",
-        federalDncMessage: SALES_DNC_LISTED_MESSAGE,
-        customerMessage: SALES_DNC_LISTED_MESSAGE,
-      },
-      { dncChecked, dncSource: "vendor", dncResult, dncListVersion, quietHoursTz },
-    );
+      const lookup = await lookupFederalDnc(opts.phone, {
+        vendorProjectId: seller.vendorProjectId,
+        ...(seller.vendorCampaignId ? { vendorCampaignId: seller.vendorCampaignId } : {}),
+      });
+      if (lookup.source !== "vendor") {
+        return finish(
+          {
+            allowed: false,
+            status: "AutoDialFailed",
+            reason: "federal_dnc_unconfigured",
+            federalDncCode: "FEDERAL_DNC_LOOKUP_FAILED",
+            federalDncMessage: SALES_DNC_LOOKUP_FAILED_MESSAGE,
+            customerMessage: SALES_DNC_LOOKUP_FAILED_MESSAGE,
+          },
+          { dncResult: lookup.source, quietHoursTz },
+        );
+      }
+
+      dncChecked = true;
+      dncResult = lookup.listed ? "listed" : "clear";
+      dncListVersion = lookup.list_version;
+      if (lookup.listed) {
+        return finish(
+          {
+            allowed: false,
+            status: LEAD_STATUS.BLOCKED_TCPA,
+            reason: "blocked_tcpa",
+            metadataPatch: { federal_dnc_blocked: true },
+            consentLogEvent: "outbound_blocked_tcpa",
+            federalDncMessage: SALES_DNC_LISTED_MESSAGE,
+            customerMessage: SALES_DNC_LISTED_MESSAGE,
+          },
+          { dncChecked, dncSource: "vendor", dncResult, dncListVersion, quietHoursTz },
+        );
+      }
+    }
   }
 
   const tcpaDecision = evaluateOutboundConsent({
     phone: opts.phone,
     is_internal_dnc: false,
-    is_federal_dnc: isFederalDnc,
     is_marketing_call: isMarketingCall,
     has_express_written_consent: hasExpressWrittenConsent,
   });
