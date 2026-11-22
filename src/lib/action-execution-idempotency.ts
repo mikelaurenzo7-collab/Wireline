@@ -120,6 +120,7 @@ function cachedResult(metadata: Record<string, unknown>): ActionResult | null {
     ...(typeof row.actionId === "string" ? { actionId: row.actionId } : {}),
     ...(typeof row.error === "string" ? { error: row.error } : {}),
     ...(typeof row.errorCode === "string" ? { errorCode: row.errorCode } : {}),
+    ...(row.retryable === true ? { retryable: true } : {}),
   };
 }
 
@@ -198,6 +199,27 @@ async function claimExecution(input: {
 
     if (existing) {
       const metadata = metadataRecord(existing.metadata);
+      // A retryable failure never reached a carrier or provider. Reclaim it
+      // under this advisory lock so a corrected retry runs exactly once.
+      if (metadata.status === "retryable") {
+        const taskIds = Array.isArray(metadata.approvalTaskIds) ? metadata.approvalTaskIds : [];
+        await tx
+          .update(schema.auditLog)
+          .set({
+            severity: "info",
+            metadata: sql`coalesce(${schema.auditLog.metadata}, '{}'::jsonb) || ${JSON.stringify({
+              status: "processing",
+              output: null,
+              completedAt: null,
+              startedAt: new Date().toISOString(),
+              ...(input.approvalTask
+                ? { approvalTaskIds: [...new Set([...taskIds, input.approvalTask.id])] }
+                : {}),
+            })}::jsonb`,
+          })
+          .where(eq(schema.auditLog.id, existing.id));
+        return { kind: "claimed", auditId: existing.id };
+      }
       if (input.approvalTask) {
         const taskIds = Array.isArray(metadata.approvalTaskIds) ? metadata.approvalTaskIds : [];
         // A supervisor can turn an automatic email into a draft under the auto
@@ -261,7 +283,8 @@ async function finishExecution(
   result: ActionResult,
   error?: unknown,
 ): Promise<void> {
-  const status = result.success ? "completed" : "failed";
+  // Only an explicitly unsent failure may be retried; every other outcome is final.
+  const status = result.success ? "completed" : result.retryable === true ? "retryable" : "failed";
   await drizzle
     .update(schema.auditLog)
     .set({
@@ -275,6 +298,7 @@ async function finishExecution(
           ...(result.actionId ? { actionId: result.actionId } : {}),
           ...(result.error ? { error: result.error.slice(0, 800) } : {}),
           ...(result.errorCode ? { errorCode: result.errorCode } : {}),
+          ...(result.retryable === true ? { retryable: true } : {}),
         },
         ...(error
           ? {
