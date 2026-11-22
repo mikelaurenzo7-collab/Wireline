@@ -8,6 +8,9 @@
  * Run: npm run economics:report
  */
 import {
+  A2P_CAMPAIGN_MONTHLY_USD,
+  A2P_REGISTRATION_AMORTIZATION_MONTHS,
+  A2P_REGISTRATION_ONE_TIME_USD,
   PHONE_NUMBER_COST_MONTHLY_USD,
   MANAGED_MAILBOX_COST_MONTHLY_USD,
   STRIPE_PLANS,
@@ -178,6 +181,24 @@ for (const row of sharedRows) {
     console.log(
       `REVIEW: ${row.name} reserve stress is below the ${pct(HARD_CONTRIBUTION_MARGIN_FLOOR)} contribution floor.`,
     );
+}
+// BotBound absorbs each texting business's carrier registration. Show what it
+// does to the same stress scenario during the amortization window and after.
+const registrationFirstMonthsUsd =
+  A2P_REGISTRATION_ONE_TIME_USD / A2P_REGISTRATION_AMORTIZATION_MONTHS + A2P_CAMPAIGN_MONTHLY_USD;
+console.log(
+  `Absorbed texting registration: ${money(A2P_REGISTRATION_ONE_TIME_USD)} one time over ${A2P_REGISTRATION_AMORTIZATION_MONTHS} months + ${money(A2P_CAMPAIGN_MONTHLY_USD)}/mo campaign = ${money(registrationFirstMonthsUsd)}/mo per texting business, then ${money(A2P_CAMPAIGN_MONTHLY_USD)}/mo.`,
+);
+for (const row of sharedRows) {
+  const early = row.stressContributionUsd - registrationFirstMonthsUsd;
+  const later = row.stressContributionUsd - A2P_CAMPAIGN_MONTHLY_USD;
+  console.log(
+    [
+      `${row.name.padEnd(9)} texting`,
+      `stress months 1-${A2P_REGISTRATION_AMORTIZATION_MONTHS} ${money(early)} (${pct(early / row.monthlyUsd)})`,
+      `after ${money(later)} (${pct(later / row.monthlyUsd)})`,
+    ].join(" | "),
+  );
 }
 for (const comparison of sharedUsageRetailComparisons()) {
   console.log(
