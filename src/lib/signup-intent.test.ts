@@ -76,8 +76,8 @@ describe("signup-intent", () => {
     });
   });
 
-  it("defaults unqualified signup traffic to the paid Personal plan", () => {
-    expect(recommendedPlanFromIntent(null)).toBe("personal");
+  it("sends a missing signup intent to the public shared-work plan", () => {
+    expect(recommendedPlanFromIntent(null)).toBe("usage");
   });
 
   it("replaces an earlier role with a new solution without losing billing or acquisition context", () => {
@@ -137,7 +137,9 @@ describe("signup-intent", () => {
     expect(activationBillingHref(parseSignupIntent("?plan=free&interval=year"))).toBe(
       "/settings/billing?plan=personal&interval=year",
     );
-    expect(activationBillingHref(null)).toBe("/settings/billing?plan=personal&interval=month");
+    expect(activationBillingHref(null)).toBe(
+      "/settings/billing?plan=usage&interval=month&number=0&email_address=0&tier=standard",
+    );
   });
 
   it.each([

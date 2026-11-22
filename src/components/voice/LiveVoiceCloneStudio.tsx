@@ -570,7 +570,7 @@ export default function LiveVoiceCloneStudio({
       <section id={anchorId} tabIndex={-1} aria-labelledby={`${id}-title`} className={shellClass}>
         {renderHeader(
           error
-            ? "Record a short script so callers hear you."
+            ? "Voice cloning is unavailable right now."
             : `${agentName} can answer calls in your own voice once cloning is on for your account.`,
         )}
         {error ? (

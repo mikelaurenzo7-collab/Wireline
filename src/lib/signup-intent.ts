@@ -444,7 +444,7 @@ export function captureSignupIntentFromLocation(): SignupIntent | null {
 export function recommendedPlanFromIntent(intent: SignupIntent | null | undefined): SignupPlanId {
   if (intent?.preferredPlanId) return intent.preferredPlanId;
   if (intent?.signupWedge) return SIGNUP_WEDGE_RECOMMENDATIONS[intent.signupWedge].defaultPlanId;
-  return "personal";
+  return "usage";
 }
 
 /** A current billing choice takes precedence over earlier signup attribution. */
@@ -468,7 +468,12 @@ export function activationBillingHref(intent: SignupIntent | null | undefined): 
   });
   if (plan === "usage") {
     setUsageAddonParams(params, usageAddonsFromIntent(intent));
-    if (isUsageTierId(intent?.preferredUsageTier)) params.set("tier", intent.preferredUsageTier);
+    params.set(
+      "tier",
+      intent && isUsageTierId(intent.preferredUsageTier)
+        ? intent.preferredUsageTier
+        : DEFAULT_PUBLIC_USAGE_TIER,
+    );
   }
   return `/settings/billing?${params.toString()}`;
 }

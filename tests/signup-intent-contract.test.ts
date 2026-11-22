@@ -33,7 +33,7 @@ describe("signup intent contract", () => {
       preferredUsageAddons: { number: false, emailAddress: true },
     });
     expect(activationBillingHref(intent)).toBe(
-      "/settings/billing?plan=usage&interval=month&number=0&email_address=1",
+      "/settings/billing?plan=usage&interval=month&number=0&email_address=1&tier=standard",
     );
     expect(parseSignupIntent(activationBillingHref(intent).split("?")[1])).toMatchObject({
       preferredUsageAddons: { number: false, emailAddress: true },
