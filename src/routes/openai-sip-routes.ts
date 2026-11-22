@@ -511,6 +511,7 @@ async function admitRealtimeCall(
       agentId: sessionInput.agentId,
       twilioCallSid: sessionInput.inboundTwilioCallSid ?? "",
       callerNumber: sessionInput.callerNumber,
+      calledNumber: sessionInput.calledNumber,
       reason: missedReason(sessionInput.admission.reason),
     });
     await rejectCall(callId, 603);
