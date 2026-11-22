@@ -71,7 +71,7 @@ The isolated speech worker has its own [setup guide](../services/voice-engine/RE
 | [USAGE_BILLING.md](./USAGE_BILLING.md)                                                               | Canonical current shared-work offer: Lite $12 / Starter $24 / Plus $49, meters, caps, and checkout. |
 | [business-usage-pricing-decision.md](./business-usage-pricing-decision.md)                       | Historical $19-era billing decision; superseded by USAGE_BILLING.md and the usage catalog.            |
 | [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md)                                                       | Checkout, entitlement, webhook, cancellation, and reconciliation proof.                            |
-| [PRODUCT_SHOWCASE_MATRIX.md](./PRODUCT_SHOWCASE_MATRIX.md)                                       | Whole-product feature and commercial-status matrix.                                                |
+| [PRODUCT_SHOWCASE_MATRIX.md](./PRODUCT_SHOWCASE_MATRIX.md)                                       | August 2026 historical snapshot. Not the current launch status.                                 |
 | [TRUST_CONVERSION_PACK.md](./TRUST_CONVERSION_PACK.md)                                           | Customer-facing trust, compliance, and proof posture.                                              |
 | [LAUNCH_READINESS_AND_MARGIN.md](./LAUNCH_READINESS_AND_MARGIN.md)                               | Launch readiness and account-level margin operating model.                                         |
 | [RECAP_AND_PROPOSAL_ARTIFACTS.md](./RECAP_AND_PROPOSAL_ARTIFACTS.md)                             | Shareable recap/proposal artifact contract and entitlement boundaries.                             |

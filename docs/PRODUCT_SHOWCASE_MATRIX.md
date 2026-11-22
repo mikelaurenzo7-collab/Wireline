@@ -1,6 +1,6 @@
 # BotBound Product Showcase Matrix
 
-Status: **Active canonical showcase**. This document keeps every meaningful BotBound capability visible while separating launch-critical product from deliberate expansion surfaces.
+Status: **Historical snapshot, August 2026**. It is not the current launch status. Current offer and release gates live in the founder command center and `docs/design/master-plan.md`.
 
 ## Commercial posture
 
@@ -71,7 +71,7 @@ evidence before making a current readiness claim.
 | ------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | Core web runtime                                        | **Live**          | Calls, texts, email, and owner controls through Create, Training, Connections, and Studio on botbound.app                                     |
 | Included capacity + Runtime Allowance + Runtime Balance | **Live**          | Paid plans consume included voice/runtime capacity first; prepaid Runtime Balance funds explicit overflow with no automatic postpaid overage |
-| Outbound hub + campaigns + cadences                     | **Live**          | Federal DNC integration and applicable consent/registration remain required for marketing use in production                                  |
+| Outbound hub + campaigns + cadences                     | **Not the launch offer** | One-off service and sales calls can run. Bulk campaigns stay fail-closed until federal screening is configured.                    |
 | Trust Center (`/trust`)                                 | **Live**          | Current control posture and explicit compliance boundaries                                                                                   |
 | BotBound Command (browser extension)                    | **Early access**  | In-product install guide at `/apps/command`; store submission waits on store review readiness                                                |
 | iOS app                                                 | **Planned**       | Code + simulator CI; TestFlight pending; CarPlay Phase 2                                                                                     |

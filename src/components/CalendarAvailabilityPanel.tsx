@@ -316,7 +316,7 @@ export default function CalendarAvailabilityPanel({
                   ? "Requests hold their time until you confirm or cancel them."
                   : settings.booking_mode === "automatic"
                     ? "Once a caller confirms an available time, the Bot can book it."
-                    : "Each Bot uses its own permission to book or ask for approval."}
+                    : "Ask waits for your approval. Auto and Full book the time the caller confirms."}
               </p>
             </div>
           </section>
