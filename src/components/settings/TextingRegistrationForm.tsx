@@ -160,7 +160,9 @@ function Field(props: {
 }) {
   const hintId = useId();
   return (
-    <label className={`grid gap-1.5 text-xs font-medium text-foreground ${props.className ?? ""}`}>
+    <label
+      className={`grid content-start gap-1.5 text-xs font-medium text-foreground ${props.className ?? ""}`}
+    >
       {props.label}
       {props.children({ describedBy: props.hint ? hintId : undefined })}
       {props.hint ? (
@@ -469,7 +471,6 @@ export default function TextingRegistrationForm() {
                 inputMode="numeric"
                 autoComplete="off"
                 maxLength={11}
-                placeholder="12-3456789"
                 required={!(state.summary?.einLastFour && state.flow === "business")}
               />
             )}

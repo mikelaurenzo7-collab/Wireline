@@ -1040,7 +1040,8 @@ export default function PhoneSetupPanel({
             className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90 motion-reduce:transition-none"
             aria-hidden="true"
           />
-          Caller Identity
+          {/* The shell spaces summary children apart; this keeps the title by its chevron. */}
+          <span className="flex-1">Caller Identity</span>
         </summary>
         <div className="border-t border-border p-4">
           <CompanyIdentityPack />
@@ -1057,7 +1058,7 @@ export default function PhoneSetupPanel({
             className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90 motion-reduce:transition-none"
             aria-hidden="true"
           />
-          Texting Registration
+          <span className="flex-1">Texting Registration</span>
         </summary>
         <div className="border-t border-border p-4">
           <TextingRegistrationForm />
