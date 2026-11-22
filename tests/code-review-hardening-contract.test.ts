@@ -77,7 +77,9 @@ describe("code review hardening contracts", () => {
     expect(twilio).toContain("if (!legacy) return res.status(200).send(emptyTwiml());");
     expect(twilio).toContain("const confirmation =");
     expect(twilio).toContain('control === "stop"');
-    expect(twilio).toContain("helpConfirmationTwiml()");
+    expect(twilio).toContain(
+      "helpConfirmationTwiml(smsHelpReplyText(await loadSmsHelpIdentity(userId)))",
+    );
     expect(twilio).toContain(".send(productionReply(confirmation))");
   });
 

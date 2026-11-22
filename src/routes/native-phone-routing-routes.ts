@@ -29,6 +29,7 @@ import { releaseNativeTenantNumber } from "../lib/voice/native-phone-release";
 import { phoneNumberRateLimiter } from "../middleware/api-rate-limits";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
+import { resolveSmsSenderRegistration } from "../lib/twilio-sms-registration";
 
 const router = Router();
 const MAX_POSTGRES_BIGINT = 9_223_372_036_854_775_807n;
@@ -83,6 +84,33 @@ async function queueManagedIdentity(userId: string, agentId: string): Promise<vo
   }
 }
 
+export type LineTextingApproval = "approved" | "pending" | "not_approved" | "unknown";
+
+/**
+ * Whether US carriers accept texts from this line, read from Twilio through
+ * the same cached snapshot the send path uses. A slow read never holds up the
+ * Lines page; it reports "unknown" instead.
+ */
+async function lineTextingApproval(phoneNumber: string): Promise<LineTextingApproval> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const unknown = new Promise<LineTextingApproval>((resolveTimer) => {
+    timer = setTimeout(() => resolveTimer("unknown"), 1500);
+  });
+  const read = resolveSmsSenderRegistration(phoneNumber)
+    .then((registration): LineTextingApproval => {
+      if (registration.status === "registered") return "approved";
+      if (registration.status === "unregistered")
+        return registration.code === "SMS_SENDER_REGISTRATION_PENDING" ? "pending" : "not_approved";
+      return "unknown";
+    })
+    .catch((): LineTextingApproval => "unknown");
+  try {
+    return await Promise.race([read, unknown]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 router.get(
   "/api/phone-numbers",
   authenticateUser,
@@ -99,6 +127,13 @@ router.get(
       })
       .from(schema.phoneNumbers)
       .where(eq(schema.phoneNumbers.userId, req.user.id));
+    const textingApproval = new Map(
+      await Promise.all(
+        rows.map(
+          async (row) => [row.phoneNumber, await lineTextingApproval(row.phoneNumber)] as const,
+        ),
+      ),
+    );
     res.setHeader("Cache-Control", "private, no-store");
     res.json({
       numbers: rows.map((row) => {
@@ -130,6 +165,7 @@ router.get(
           provider: "twilio_openai_realtime_sip",
           native_voice_status: nativeVoiceStatus,
           native_voice_error: nativeVoiceError,
+          texting_approval: textingApproval.get(row.phoneNumber) ?? "unknown",
           created_at: row.createdAt?.toISOString() ?? null,
         };
       }),
