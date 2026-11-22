@@ -2,6 +2,7 @@ import { Router, type NextFunction, type Request, type Response } from "express"
 import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
+import { loadSmsHelpIdentity, smsHelpReplyText } from "../lib/sms-help-reply";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { matchesCarrierKeyword } from "../lib/carrier-keywords";
@@ -110,8 +111,14 @@ function optInRetryTwiml(): string {
   return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>We couldn't process your resubscribe request just now. Please reply START again in a few minutes.</Message></Response>`;
 }
 
-function helpConfirmationTwiml(): string {
-  return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>BotBound SMS help: reply STOP to opt out or START to opt back in. Contact support@botbound.app for support. Message and data rates may apply.</Message></Response>`;
+function helpConfirmationTwiml(text: string = smsHelpReplyText()): string {
+  const escaped = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+  return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escaped}</Message></Response>`;
 }
 
 function resolveConsentControl(
@@ -370,7 +377,8 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
         ? optOutConfirmationTwiml()
         : control === "start"
           ? optInConfirmationTwiml()
-          : helpConfirmationTwiml();
+          : // The line owner's brand, not BotBound's, answers HELP on a customer line.
+            helpConfirmationTwiml(smsHelpReplyText(await loadSmsHelpIdentity(userId)));
     return res.status(200).send(productionReply(confirmation));
   });
 });

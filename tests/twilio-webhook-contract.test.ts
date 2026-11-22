@@ -65,7 +65,9 @@ describe("Twilio webhook XML contract", () => {
     expect(route).toContain("HELP_KEYWORDS");
     expect(route).toContain("You have been unsubscribed");
     expect(route).toContain("You have been resubscribed");
-    expect(route).toContain("support@botbound.app");
+    // HELP names the line owner's brand; BotBound's address is only the fallback.
+    expect(route).toContain("smsHelpReplyText(await loadSmsHelpIdentity(tenantUserId))");
+    expect(read("src/lib/sms-help-reply.ts")).toContain("support@botbound.app");
     expect(route).toContain("twimlEmpty()");
     // Twilio's native Advanced Opt-Out (OptOutType) is handled ahead of the
     // legacy keyword-matching base router so it never double-replies.

@@ -156,8 +156,8 @@ export function composeCampaign(details: CustomerBusinessDetails): ComposedCampa
   const legal = details.legalName.trim();
   const website = details.websiteUrl.trim();
   return {
-    description: `${legal} uses this local number for non-promotional customer-care and appointment follow-up texts that its own customers and callers request. During a call with the ${brand} assistant, the caller asks for a text, and the assistant confirms the number and asks permission before sending.`,
-    messageFlow: `During a phone call with the ${brand} assistant, a caller asks to receive information or an appointment confirmation by text. The assistant confirms the destination number and asks: "May ${brand} text the details to this number? Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help." A text is sent only after the caller agrees. Consent is not a condition of purchase and is never shared. Privacy policy: ${details.privacyUrl.trim()}`,
+    description: `${legal} uses this local number for non-promotional customer-care and appointment follow-up texts that its own customers and callers request. During a call with the ${brand} AI assistant, which identifies itself as AI when it answers, the caller asks for a text, and the assistant confirms the number and asks permission before sending.`,
+    messageFlow: `During a phone call with the ${brand} AI assistant, which identifies itself as AI when it answers, a caller asks to receive information or an appointment confirmation by text. The assistant confirms the destination number and asks: "May ${brand} text the details to this number? Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help." A text is sent only after the caller agrees. Consent is not a condition of purchase and is never shared. Privacy policy: ${details.privacyUrl.trim()}`,
     messageSamples: [
       `${brand}: Here are the details you asked for on your call: ${website} Reply STOP to opt out, HELP for help.`,
       `${brand}: Your appointment is confirmed for Tuesday at 9:00 a.m. Reply STOP to opt out, HELP for help.`,

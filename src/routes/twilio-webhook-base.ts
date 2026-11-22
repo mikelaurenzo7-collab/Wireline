@@ -27,6 +27,7 @@ import { Router, Request, Response } from "express";
 import { createHash } from "node:crypto";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
+import { loadSmsHelpIdentity, smsHelpReplyText } from "../lib/sms-help-reply";
 import { eq, and, inArray, isNull, or, sql } from "drizzle-orm";
 import { sanitizePhone } from "../lib/agent-runtime-helpers";
 import { smsOutcomeAfterMessage } from "../lib/sms-thread-outcome";
@@ -389,13 +390,10 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         });
         return res.status(503).send(twimlEmpty());
       }
+      // The line owner's brand, not BotBound's, answers HELP on a customer line.
       return res
         .status(200)
-        .send(
-          appReply(
-            "BotBound SMS help: reply STOP to opt out or START to opt back in. Contact support@botbound.app for support. Message and data rates may apply.",
-          ),
-        );
+        .send(appReply(smsHelpReplyText(await loadSmsHelpIdentity(tenantUserId))));
     }
 
     if (/^\s*[1-5]\s*$/.test(body)) {
