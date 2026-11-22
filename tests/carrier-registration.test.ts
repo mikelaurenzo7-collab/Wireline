@@ -23,6 +23,7 @@ const details: CustomerBusinessDetails = {
   ein: "12-3456789",
   websiteUrl: "https://ridgeinspections.example",
   privacyUrl: "https://ridgeinspections.example/privacy",
+  termsUrl: "https://ridgeinspections.example/terms",
   address: { street: "100 Main St", city: "Springfield", region: "IL", postalCode: "62701" },
   representative: {
     firstName: "Dana",
@@ -126,6 +127,20 @@ describe("customer texting registration", () => {
     });
     expect(steps.find((step) => step.key === "brand")).toMatchObject({ billable: true });
     expect(steps.find((step) => step.key === "brand")!.form.SkipAutomaticSecVet).toBe("true");
+    // Twilio rejects a campaign without both policy links (30934, 30908, 30882),
+    // and asks for the content flags; BotBound's own campaign failed without them.
+    expect(steps.find((step) => step.key === "campaign")!.form).toMatchObject({
+      PrivacyPolicyUrl: details.privacyUrl,
+      TermsAndConditionsUrl: details.termsUrl,
+      AgeGated: "false",
+      DirectLending: "false",
+    });
+  });
+
+  it("requires a terms of service page", () => {
+    expect(validateBusinessDetails({ ...details, termsUrl: "" })).toContain(
+      "Terms of service must be an https:// address.",
+    );
   });
 
   it("skips steps already done and refuses to send an unresolved SID", () => {

@@ -123,6 +123,7 @@ export function normalizeTextingRegistrationInput(body: unknown): TextingRegistr
       ein: normalizeEin(text(details.ein, 20)),
       websiteUrl: normalizeUrl(details.websiteUrl),
       privacyUrl: normalizeUrl(details.privacyUrl),
+      termsUrl: normalizeUrl(details.termsUrl),
       address: normalizeAddress(details.address),
       representative: {
         firstName: text(rep.firstName),
