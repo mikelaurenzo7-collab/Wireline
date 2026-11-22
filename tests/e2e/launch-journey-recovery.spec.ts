@@ -550,18 +550,20 @@ test("texting registration collects a sole proprietor's details and lists every 
   const section = page.locator("#texting-registration");
   await expect(section).toHaveAttribute("open", "");
   await section.getByRole("radio", { name: "I'm a sole proprietor without an EIN" }).check();
-  await expect(section.getByRole("textbox", { name: "Brand name" })).toHaveValue(
+  await expect(section.getByRole("textbox", { name: "Brand name", exact: true })).toHaveValue(
     "Ridge Inspections",
   );
   await expect(section.getByRole("textbox", { name: "EIN" })).toHaveCount(0);
   await section.getByRole("textbox", { name: "First name" }).fill("Pat");
   await section.getByRole("textbox", { name: "Last name" }).fill("Lee");
   await section.getByRole("textbox", { name: "Email" }).fill("pat@example.com");
-  await section.getByRole("textbox", { name: "Your cell phone" }).fill("(312) 555-0100");
+  await section
+    .getByRole("textbox", { name: "Your cell phone", exact: true })
+    .fill("(312) 555-0100");
   await section.getByRole("combobox", { name: "Kind of work" }).selectOption("REAL_ESTATE");
   await section.getByRole("textbox", { name: "Street" }).fill("1 Main St");
   await section.getByRole("textbox", { name: "City" }).fill("Springfield");
-  await section.getByRole("textbox", { name: "State" }).fill("il");
+  await section.getByRole("textbox", { name: "State", exact: true }).fill("il");
   await section.getByRole("textbox", { name: "ZIP code" }).fill("62701");
   await section.getByRole("button", { name: "Save business details" }).click();
 
@@ -571,7 +573,9 @@ test("texting registration collects a sole proprietor's details and lists every 
     details: { mobilePhone: "(312) 555-0100", address: { region: "IL" } },
   });
 
-  await section.getByRole("textbox", { name: "Your cell phone" }).fill("(312) 555-0199");
+  await section
+    .getByRole("textbox", { name: "Your cell phone", exact: true })
+    .fill("(312) 555-0199");
   await section.getByRole("button", { name: "Save business details" }).click();
   await expect(section.getByRole("status")).toContainText("reply YES within 24 hours");
   await expect(section.getByRole("button", { name: "Save changes" })).toBeVisible();

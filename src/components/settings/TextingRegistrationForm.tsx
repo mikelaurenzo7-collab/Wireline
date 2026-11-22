@@ -152,6 +152,10 @@ export function textingRegistrationReceivedCopy(flow: Flow | null): string {
     : base;
 }
 
+/**
+ * A labelled control with an optional hint. The hint sits outside the label so
+ * it is announced once, as a description, not as part of the field's name.
+ */
 function Field(props: {
   label: string;
   hint?: string;
@@ -160,17 +164,17 @@ function Field(props: {
 }) {
   const hintId = useId();
   return (
-    <label
-      className={`grid content-start gap-1.5 text-xs font-medium text-foreground ${props.className ?? ""}`}
-    >
-      {props.label}
-      {props.children({ describedBy: props.hint ? hintId : undefined })}
+    <div className={`grid content-start gap-1.5 ${props.className ?? ""}`}>
+      <label className="grid gap-1.5 text-xs font-medium text-foreground">
+        {props.label}
+        {props.children({ describedBy: props.hint ? hintId : undefined })}
+      </label>
       {props.hint ? (
-        <span id={hintId} className="text-[11px] font-normal leading-4 text-muted-foreground">
+        <span id={hintId} className="text-xs leading-4 text-muted-foreground">
           {props.hint}
         </span>
       ) : null}
-    </label>
+    </div>
   );
 }
 
@@ -201,16 +205,16 @@ function AddressFields(props: { value: Address; onChange: (next: Address) => voi
           />
         )}
       </Field>
-      <Field label="State" className="sm:col-span-1">
-        {() => (
+      <Field label="State" hint="Two letters" className="sm:col-span-1">
+        {({ describedBy }) => (
           <Input
             value={props.value.region}
             onChange={(event) =>
               props.onChange({ ...props.value, region: event.target.value.toUpperCase() })
             }
             autoComplete="address-level1"
+            aria-describedby={describedBy}
             maxLength={2}
-            placeholder="IL"
             required
           />
         )}
@@ -367,7 +371,8 @@ export default function TextingRegistrationForm() {
     >
       <p className="max-w-prose text-sm leading-6 text-muted-foreground">
         US carriers approve texts from a business only after they know who is sending. Enter your
-        details once. BotBound registers your line and covers the carrier fees.
+        details once; it takes about three minutes. BotBound registers your line and covers the
+        carrier fees.
       </p>
 
       {received && !saved ? (
@@ -549,7 +554,6 @@ export default function TextingRegistrationForm() {
                   value={business.representative.phone}
                   onChange={(event) => setRep("phone", event.target.value)}
                   autoComplete="tel"
-                  placeholder="(312) 555-0100"
                   required
                 />
               )}
@@ -560,16 +564,16 @@ export default function TextingRegistrationForm() {
                   value={business.representative.businessTitle}
                   onChange={(event) => setRep("businessTitle", event.target.value)}
                   autoComplete="organization-title"
-                  placeholder="Owner"
                   required
                 />
               )}
             </Field>
-            <Field label="Role">
-              {() => (
+            <Field label="Role" hint="Owners usually choose CEO.">
+              {({ describedBy }) => (
                 <NativeSelect
                   value={business.representative.jobPosition}
                   onChange={(event) => setRep("jobPosition", event.target.value)}
+                  aria-describedby={describedBy}
                   required
                 >
                   <option value="">Choose one</option>
@@ -654,7 +658,6 @@ export default function TextingRegistrationForm() {
                 onChange={(event) => setSole({ ...sole, mobilePhone: event.target.value })}
                 aria-describedby={describedBy}
                 autoComplete="tel"
-                placeholder="(312) 555-0100"
                 required
               />
             )}
