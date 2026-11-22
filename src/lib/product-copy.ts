@@ -185,8 +185,8 @@ export const WORKSPACE_VOICE = {
 } as const;
 
 export const PRODUCT_VERSATILITY = {
-  eyebrow: "AS MANY BOTS AS YOU WANT.",
-  tagline: "Create a Bot for a job. Add another whenever you want one.",
+  eyebrow: "ONE BOT. EVERY TASK.",
+  tagline: "One Bot answers, follows up and books. Turn on the tasks it should handle.",
   short:
     "Bots for incoming calls, reviewed service calls, email, web research, support, and appointment requests.",
   hero: "Give the Work a Bot. Step In Only When You Want To",

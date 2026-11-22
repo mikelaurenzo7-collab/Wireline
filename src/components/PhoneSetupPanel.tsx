@@ -8,6 +8,7 @@ import SoftOpenCheckoutNote from "./onboarding/SoftOpenCheckoutNote";
 import CompanyIdentityPack from "./settings/CompanyIdentityPack";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { useAgents } from "../contexts/AgentsContext";
+import { canOfferAnotherLine } from "../lib/bot-roster-policy";
 import { authFetch } from "../lib/api";
 import {
   fetchSelfServeCheckoutAvailable,
@@ -125,7 +126,9 @@ export default function PhoneSetupPanel({
         setTexting({
           enabled: settings.twilio_messaging_enabled === true,
           fromNumber:
-            typeof settings.twilio_sms_from_number === "string" ? settings.twilio_sms_from_number : "",
+            typeof settings.twilio_sms_from_number === "string"
+              ? settings.twilio_sms_from_number
+              : "",
           loaded: true,
           saving: false,
         });
@@ -470,6 +473,12 @@ export default function PhoneSetupPanel({
   // searches verify live-work access on the server before querying the carrier.
   const showSoftOpen = liveNumberClosed;
   const showProvisionForm = addingLine && !inventoryUnavailable && !showSoftOpen;
+  // One line per business: a single-Bot workspace with its line needs no
+  // second number. Multi-Bot workspaces keep adding a line per Bot.
+  const offerAnotherLine =
+    agentsLoading ||
+    agentsDegraded ||
+    canOfferAnotherLine({ lineCount: numbers.length, botCount: agents.length });
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4">
@@ -479,19 +488,21 @@ export default function PhoneSetupPanel({
           <p className="text-xs text-muted-foreground">
             {numbers.length} {numbers.length === 1 ? "line" : "lines"}
           </p>
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              setLiveNumberClosed(false);
-              setAddingLine((value) => !value);
-            }}
-            disabled={loading || inventoryUnavailable || working}
-          >
-            <Plus className="size-4" aria-hidden="true" />
-            Add Line
-          </Button>
+          {offerAnotherLine ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                setLiveNumberClosed(false);
+                setAddingLine((value) => !value);
+              }}
+              disabled={loading || inventoryUnavailable || working}
+            >
+              <Plus className="size-4" aria-hidden="true" />
+              Add Line
+            </Button>
+          ) : null}
         </div>
       ) : null}
 

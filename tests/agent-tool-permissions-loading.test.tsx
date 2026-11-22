@@ -59,6 +59,13 @@ function render() {
   h.effects = [];
   return AgentToolPermissions({ agentId: "bot-1" });
 }
+/** The per-action list, without the Tasks shortcuts rendered above it. */
+function actionElements(): Array<ReactElement<NodeProps>> {
+  const tree = elements(render());
+  const tasks = tree.find((node) => node.props["aria-label"] === "Bot tasks");
+  const taskNodes = new Set(tasks ? elements(tasks) : []);
+  return tree.filter((node) => !taskNodes.has(node));
+}
 function toggle() {
   elements(render())
     .find((node) => typeof node.props["aria-expanded"] === "boolean")
@@ -161,7 +168,7 @@ describe("agent action editor loading", () => {
     await flush();
     expect(textOf(render())).toContain("SMS");
     expect(textOf(render())).not.toContain("WhatsApp");
-    elements(render()).find((node) => node.type === "input")!.props.onChange!();
+    actionElements().find((node) => node.type === "input")!.props.onChange!();
     elements(render()).find(
       (node) => node.type === "button" && textOf(node).includes("Save Actions"),
     )!.props.onClick!();
@@ -221,7 +228,7 @@ describe("agent action editor loading", () => {
     render();
     toggle();
     await flush();
-    const firstAction = () => elements(render()).find((node) => node.type === "input")!;
+    const firstAction = () => actionElements().find((node) => node.type === "input")!;
     firstAction().props.onChange!();
     const editor = elements(render());
     const save = editor.find(
@@ -242,7 +249,7 @@ describe("agent action editor loading", () => {
         ?.props.disabled,
     ).toBe(true);
     expect(
-      elements(render()).filter((node) => node.type === "input" && node.props.checked),
+      actionElements().filter((node) => node.type === "input" && node.props.checked),
     ).toHaveLength(submitted.length);
     expect(h.fetch.mock.calls.filter(([, options]) => options?.method === "POST")).toHaveLength(1);
     settle(new Response("unavailable", { status: 503 }));
@@ -316,7 +323,7 @@ describe("agent action editor loading", () => {
       render();
       toggle();
       await flush();
-      const firstAction = () => elements(render()).find((node) => node.type === "input")!;
+      const firstAction = () => actionElements().find((node) => node.type === "input")!;
       firstAction().props.onChange!();
       const save = () =>
         elements(render()).find(
@@ -351,14 +358,14 @@ describe("agent action editor loading", () => {
     toggle();
     await flush();
     for (const index of [0, 1])
-      elements(render()).filter((node) => node.type === "input")[index].props.onChange!();
+      actionElements().filter((node) => node.type === "input")[index].props.onChange!();
     elements(render()).find(
       (node) => node.type === "button" && textOf(node).includes("Save Actions"),
     )!.props.onClick!();
     await flush();
     expect(textOf(render())).toContain("Try the updated actions");
     expect(
-      elements(render()).filter((node) => node.type === "input" && node.props.checked),
+      actionElements().filter((node) => node.type === "input" && node.props.checked),
     ).toHaveLength(2);
   });
 
@@ -394,7 +401,7 @@ describe("agent action editor loading", () => {
     render();
     const cleanup = toggle();
     await flush();
-    const firstAction = () => elements(render()).find((node) => node.type === "input")!;
+    const firstAction = () => actionElements().find((node) => node.type === "input")!;
     firstAction().props.onChange!();
     expect(firstAction().props.checked).toBe(true);
     const calls = h.fetch.mock.calls.length;

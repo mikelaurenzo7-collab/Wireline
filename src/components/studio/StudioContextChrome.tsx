@@ -6,6 +6,7 @@ import { Button } from "../atoms/Button";
 import BotMark from "../BotMark";
 import { useStudioActiveAgentId } from "../../hooks/useStudioActiveAgentId";
 import { buildAgentOptionLabels } from "../../lib/agent-option-labels";
+import { canOfferAnotherBot } from "../../lib/bot-roster-policy";
 import { agentLineStatus, agentReadinessLabel } from "../../lib/agent-readiness";
 import { customerAgentLanguage } from "../../lib/product-copy";
 import {
@@ -151,7 +152,7 @@ export default function StudioContextChrome() {
               {readyLabel}
             </span>
           ) : null}
-          {agents.length > 0 ? (
+          {agents.length > 0 && canOfferAnotherBot(agents.length) ? (
             <Button
               asChild
               variant="secondary"

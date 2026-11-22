@@ -65,7 +65,7 @@ export function channelSelectionKey(channels: readonly CommunicationChannel[]): 
 }
 
 export function channelPlanHighlights(plan: ChannelPlanOption): string[] {
-  const highlights = ["Unlimited Bots"];
+  const highlights = ["One Bot for every task"];
   if (plan.included_phone_numbers > 0)
     highlights.push(
       `${plan.included_phone_numbers} phone number${plan.included_phone_numbers === 1 ? "" : "s"} included`,

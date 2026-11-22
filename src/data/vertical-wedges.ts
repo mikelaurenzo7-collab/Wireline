@@ -273,7 +273,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Does It Work for a Single Professional or a Full Brokerage?",
-        a: "A solo professional can start on a Calls plan and add more Bots in the same workspace. For brokerage needs beyond included phone capacity, contact BotBound to plan the rollout. Extra usage is billed at the listed rates.",
+        a: "A solo professional starts with one Bot and one line, then turns on the tasks it should handle. A brokerage that needs separate identities can add Bots in the same workspace; for phone capacity beyond what is included, contact BotBound to plan the rollout. Extra usage is billed at the listed rates.",
       },
       {
         q: "How Does It Qualify the Buyer?",
