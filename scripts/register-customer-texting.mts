@@ -70,9 +70,15 @@ function env(name: string): string {
 
 function twilioAuthorization(): string | null {
   const account = env("TWILIO_ACCOUNT_SID");
-  const user = env("TWILIO_API_KEY") || account;
-  const secret = env("TWILIO_API_SECRET") || env("TWILIO_AUTH_TOKEN");
-  if (!account || !user || !secret) return null;
+  const apiKey = env("TWILIO_API_KEY");
+  const apiSecret = env("TWILIO_API_SECRET");
+  const authToken = env("TWILIO_AUTH_TOKEN");
+  if (!account) return null;
+  // A complete API key pair wins; otherwise the account SID and Auth Token.
+  // Never pair an API key with the Auth Token.
+  const [user, secret] =
+    apiKey && apiSecret ? [apiKey, apiSecret] : authToken ? [account, authToken] : [null, null];
+  if (!user || !secret) return null;
   return `Basic ${Buffer.from(`${user}:${secret}`).toString("base64")}`;
 }
 
