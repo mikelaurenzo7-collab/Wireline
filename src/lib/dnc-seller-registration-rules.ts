@@ -255,10 +255,9 @@ export function suggestDncAreaCodes(
     .slice(0, limit);
 }
 
-/** A new subscription runs 12 months: the day before the purchase date's anniversary. */
+/** A new subscription runs 12 months from the first day of its start month. */
 export function defaultDncExpiresOn(now = new Date()): string {
-  const next = new Date(Date.UTC(now.getUTCFullYear() + 1, now.getUTCMonth(), now.getUTCDate()));
-  next.setUTCDate(next.getUTCDate() - 1);
+  const next = new Date(Date.UTC(now.getUTCFullYear() + 1, now.getUTCMonth(), 0));
   return next.toISOString().slice(0, 10);
 }
 

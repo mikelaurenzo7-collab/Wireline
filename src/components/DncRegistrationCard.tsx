@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useId, useState, type FormEvent } from "react";
 import { Check, Copy, ExternalLink, Loader2 } from "lucide-react";
 
 import { authFetch, readApiJson } from "../lib/api";
@@ -8,7 +8,6 @@ import {
   type DncAreaCodeSuggestion,
   type DncSellerRegistrationState,
 } from "../lib/dnc-seller-registration-rules";
-import { DNC_SAN_HELP } from "../lib/outbound-compliance-copy";
 import { Button, Skeleton } from "./atoms";
 import { FormField, StatusNotice } from "./molecules";
 import { Checkbox } from "./ui/shadcn/Checkbox";
@@ -16,9 +15,7 @@ import { Input } from "./ui/shadcn/Input";
 
 type RegistrationResponse = {
   state: DncSellerRegistrationState;
-  registry_url: string;
   dnc_san?: string | null;
-  dnc_san_help?: string;
   registration: {
     san: string;
     seller_name: string;
@@ -44,11 +41,12 @@ export const DNC_REGISTRATION_STATE_LABEL: Record<DncSellerRegistrationState, st
 
 const STATE_DETAIL: Record<DncSellerRegistrationState, string> = {
   missing:
-    "Optional. If you have a National Do Not Call Registry account number, paste it below. Sales screening still runs. Personal, appointment, and follow-up calls don't use it.",
+    "Connect your business's Registry subscription to screen recipients for campaigns and automated sales.",
   pending_link:
-    "Your account number is saved. Sales screening can use it after this connection finishes. One-at-a-time calls and texts are not waiting on it.",
-  expired: "Renew your subscription at the registry, then update the expiration date here.",
-  active: "Sales calls and texts can include your registry account number.",
+    "Your subscription is saved. Campaign screening can use it once BotBound connects the provider project.",
+  expired:
+    "Renew your subscription at the Registry, then save the current subscription details here.",
+  active: "This subscription is linked for screening numbers in its covered area codes.",
 };
 
 /** Registry subscriptions include five area codes at no cost. */
@@ -72,11 +70,7 @@ function suggestionNote(suggestion: DncAreaCodeSuggestion): string {
   return parts.join(" · ");
 }
 
-export default function DncRegistrationCard({
-  onStateChange,
-}: {
-  onStateChange?: (state: DncSellerRegistrationState) => void;
-} = {}) {
+export default function DncRegistrationCard() {
   const [data, setData] = useState<RegistrationResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -84,24 +78,16 @@ export default function DncRegistrationCard({
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [san, setSan] = useState("");
-  const [workspaceSan, setWorkspaceSan] = useState("");
-  const [savingSan, setSavingSan] = useState(false);
   const [sellerName, setSellerName] = useState("");
   const [areaCodes, setAreaCodes] = useState("");
   const [expiresOn, setExpiresOn] = useState("");
   const [attest, setAttest] = useState(false);
   const attestId = useId();
-  // A ref keeps an inline parent callback from re-creating load() each render.
-  const onStateChangeRef = useRef(onStateChange);
-  onStateChangeRef.current = onStateChange;
-
   const applyResponse = useCallback((next: RegistrationResponse) => {
     setData((previous) => ({ ...next, setup: next.setup ?? previous?.setup }));
-    onStateChangeRef.current?.(next.state);
-    setWorkspaceSan(next.dnc_san ?? "");
     const reg = next.registration;
     const setup = next.setup;
-    setSan(reg?.san ?? "");
+    setSan(reg?.san ?? next.dnc_san ?? "");
     // A first-time owner starts from BotBound's prefill; a saved
     // registration always shows exactly what was saved.
     setSellerName(reg?.seller_name ?? setup?.suggested_seller_name ?? "");
@@ -170,30 +156,6 @@ export default function DncRegistrationCard({
     }
   }
 
-  async function saveWorkspaceSan(event: FormEvent) {
-    event.preventDefault();
-    setSavingSan(true);
-    setError(null);
-    try {
-      const result = await readApiJson<{ dnc_san: string | null }>(
-        await authFetch("/api/compliance/dnc-san", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ san: workspaceSan }),
-        }),
-      );
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-      setWorkspaceSan(result.data.dnc_san ?? "");
-    } catch {
-      setError("Could not save the account number.");
-    } finally {
-      setSavingSan(false);
-    }
-  }
-
   async function copyAreaCodes(codes: string) {
     try {
       await navigator.clipboard.writeText(codes);
@@ -207,7 +169,7 @@ export default function DncRegistrationCard({
   const state = data?.state ?? "missing";
   const reg = data?.registration ?? null;
   const suggestions = data?.setup?.suggested_area_codes ?? [];
-  const showForm = editing || state === "missing";
+  const showForm = data !== null && (editing || state === "missing");
   // The form field is the one list: it is what the owner subscribes to at the
   // registry and what BotBound screens against, so chips and Copy both use it.
   const nationwide = parseAreaCodes(areaCodes) === "all";
@@ -222,47 +184,29 @@ export default function DncRegistrationCard({
   }
 
   return (
-    <section
-      className="wl-paper wl-paper-elevated p-4 sm:p-5"
-      aria-labelledby="dnc-registration-title"
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <h3 id="dnc-registration-title" className="text-sm font-semibold text-foreground">
-          Do Not Call Registry
-        </h3>
-        {!loading ? (
-          <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground">
-            {DNC_REGISTRATION_STATE_LABEL[state]}
-          </span>
-        ) : null}
-      </div>
-
+    <div>
       {loading ? (
         <Skeleton shape="surface" className="mt-3 h-[96px] w-full" />
+      ) : data === null ? (
+        <div className="mt-3 grid gap-3">
+          <StatusNotice
+            tone="destructive"
+            title={error || "Could not load your Do Not Call registration."}
+          />
+          <div>
+            <Button type="button" size="sm" variant="secondary" onClick={() => void load()}>
+              Try Again
+            </Button>
+          </div>
+        </div>
       ) : (
         <div className="mt-3 grid gap-4 text-sm">
-          <p className="leading-6 text-muted-foreground">{STATE_DETAIL[state]}</p>
-          <form className="grid gap-2" onSubmit={(event) => void saveWorkspaceSan(event)}>
-            <label className="grid gap-1">
-              <span className="text-xs font-medium text-muted-foreground">
-                Registry account number (optional)
-              </span>
-              <Input
-                value={workspaceSan}
-                onChange={(event) => setWorkspaceSan(event.target.value)}
-                autoComplete="off"
-                placeholder="Leave blank if you don't have one"
-                aria-describedby="dnc-san-help"
-              />
-            </label>
-            <p id="dnc-san-help" className="text-xs leading-5 text-muted-foreground">
-              {data?.dnc_san_help || DNC_SAN_HELP}
-            </p>
-            <Button type="submit" variant="secondary" disabled={savingSan}>
-              {savingSan ? <Loader2 className="size-4 animate-spin" /> : null}
-              Save account number
-            </Button>
-          </form>
+          <p className="leading-6 text-muted-foreground">
+            <span className="font-semibold text-foreground">
+              {DNC_REGISTRATION_STATE_LABEL[state]}.
+            </span>{" "}
+            {STATE_DETAIL[state]}
+          </p>
 
           {reg && !showForm ? (
             <dl className="grid gap-2 border-y border-border py-3 sm:grid-cols-2">
@@ -289,17 +233,13 @@ export default function DncRegistrationCard({
 
           {showForm ? (
             <>
-              {state === "missing" ? (
-                <p className="text-xs font-medium text-muted-foreground">
-                  About 10 minutes · Free for up to {FREE_AREA_CODES} area codes
-                </p>
-              ) : null}
               <ol className="grid gap-4">
                 <li className="grid gap-2">
                   <p className="font-medium text-foreground">1. Create your free Seller account</p>
                   <p className="leading-6 text-muted-foreground">
-                    At the FTC registry, choose <span className="text-foreground">Seller</span> (not
-                    Telemarketer). Have your EIN ready; sole proprietors can use an SSN.
+                    At the FTC Registry, choose <span className="text-foreground">Seller</span> for
+                    the business whose products or services the campaign will promote. Have your EIN
+                    ready.
                   </p>
                   <div>
                     <Button type="button" size="sm" variant="secondary" asChild>
@@ -382,8 +322,8 @@ export default function DncRegistrationCard({
                     3. Paste your subscription account number (SAN)
                   </p>
                   <p className="leading-6 text-muted-foreground">
-                    The registry shows it right after you subscribe. We filled in the rest; check it
-                    matches your registry receipt.
+                    Find your SAN and subscription expiration in Manage/Renew Subscriptions after
+                    the FTC processes your order. Enter the details shown on your Registry account.
                   </p>
                   <form
                     className="grid gap-3 sm:grid-cols-2"
@@ -474,6 +414,6 @@ export default function DncRegistrationCard({
           {error && !showForm ? <StatusNotice tone="destructive" title={error} /> : null}
         </div>
       )}
-    </section>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 # Vendor Launch Map
 
 **Status:** Active canonical operating map.  
-**Updated:** October 25, 2026.
+**Updated:** November 21, 2026.
 
 > Current source routes structured reasoning through xAI first, then OpenAI. Gemini is retired and AI Gateway is disabled on Render. [Deployment Runbook](DEPLOYMENT_RUNBOOK.md) governs actual provider configuration; do not enable an optional provider merely because it appears in this map.
 
@@ -76,17 +76,24 @@ The API key is not the seller's Subscription Account Number (SAN).
 
 Each seller records its legal name, SAN, covered area codes and expiry in Compliance.
 Configure a separate vendor project with that SAN, then link the exact project through
-the platform-admin DNC registration route. Runtime sends its `projId` on marketing
-lookups and rejects missing, unlinked, expired or uncovered seller registrations.
+the platform-admin DNC registration route. Bulk sales uses that project's `projId`
+and requires a current seller subscription covering the recipient. One-off sales
+follows the existing recipient and workspace checks. When a seller has entered
+a subscription and screening is configured, the linked project must clear the
+screen. A screening receipt alone cannot authorize an AI sales call. The
+carrier call also requires the recipient's server-verified written permission.
 One BotBound subscription cannot be shared across unrelated customer sellers.
 
-Validate vendor authentication and project access, then retain scoped scrub evidence.
-`npm run dnc:probe` checks a synthetic number on the default project; it neither proves
-seller linkage nor grants permission to call. It makes a vendor API request, whose
-billing depends on the vendor agreement. Keep internal suppression, written marketing
-consent, supported calling hours and provider gates intact. The current version-5
-scrub response remains supported by the vendor; do not change formats without updating
-both runtime and probe parsing. See [API authentication](https://docs.dncscrub.com/api-reference/authentication),
+Before linking, confirm the vendor project uses the right seller SAN, the
+required federal and state lists, and current registry data. In the approved
+operator environment set `FEDERAL_DNC_PROBE_PROJECT_ID` and
+`FEDERAL_DNC_PROBE_AREA_CODE` to the project ID and a covered area code, then run
+`npm run dnc:probe`. This checks a synthetic number via the specified project.
+The probe uses the default project when no project ID is supplied. Retain
+vendor evidence for the SAN, coverage and list freshness separately from the
+probe response. The probe makes a vendor API request, whose billing depends on
+the vendor agreement. Keep internal suppression, written marketing consent,
+supported calling hours and provider gates intact. See [API authentication](https://docs.dncscrub.com/api-reference/authentication),
 [project setup](https://docs.dncscrub.com/api-reference/other/project-create), and
 [FTC seller subscriptions](https://www.ftc.gov/business-guidance/resources/qa-telemarketers-sellers-about-dnc-provisions-tsr-0).
 

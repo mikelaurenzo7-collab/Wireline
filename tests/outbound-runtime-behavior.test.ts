@@ -72,17 +72,10 @@ describe("outbound dial gate runtime", () => {
     vi.clearAllMocks();
     delete process.env.NODE_ENV;
     delete process.env.VERCEL;
-    // Seller registry subscription is covered by its own tests below.
-    vi.doMock("../src/lib/dnc-seller-registration", () => ({
-      evaluateSellerDncForMarketing: async () => ({
-        allowed: true,
-        vendorProjectId: "proj-seller",
-      }),
-    }));
   });
 
-  it("screens marketing calls with BotBound's registry access and no user subscription", async () => {
-    const isFederalDncListed = vi.fn(async () => false);
+  it("blocks marketing calls with platform configuration and no seller subscription", async () => {
+    const lookupFederalDnc = vi.fn(async () => false);
     vi.doMock("../src/lib/server-context", () => ({
       drizzle: {
         select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) }),
@@ -94,7 +87,7 @@ describe("outbound dial gate runtime", () => {
     }));
     vi.doMock("../src/lib/federal-dnc-service", () => ({
       assertFederalDncForMarketing: () => ({ allowed: true, configured: true }),
-      isFederalDncListed,
+      lookupFederalDnc,
     }));
     vi.doMock("../src/lib/compliance", () => ({ isDncBlocked: async () => false }));
 
@@ -106,8 +99,11 @@ describe("outbound dial gate runtime", () => {
       hasExpressWrittenConsent: true,
     });
 
-    expect(result.allowed).toBe(true);
-    expect(isFederalDncListed).toHaveBeenCalledWith("+13125551234");
+    expect(result).toMatchObject({
+      allowed: false,
+      federalDncCode: "SELLER_DNC_REGISTRATION_REQUIRED",
+    });
+    expect(lookupFederalDnc).not.toHaveBeenCalled();
   });
 
   it("fails marketing outbound closed before dialing when Federal DNC is unconfigured", async () => {
@@ -117,7 +113,7 @@ describe("outbound dial gate runtime", () => {
       code: "FEDERAL_DNC_NOT_CONFIGURED" as const,
       message: "Federal DNC screening must be configured before marketing outbound can run.",
     }));
-    const isFederalDncListed = vi.fn(async () => false);
+    const lookupFederalDnc = vi.fn(async () => false);
     const isDncBlocked = vi.fn(async () => false);
 
     vi.doMock("../src/lib/server-context", () => ({
@@ -126,7 +122,7 @@ describe("outbound dial gate runtime", () => {
     }));
     vi.doMock("../src/lib/federal-dnc-service", () => ({
       assertFederalDncForMarketing,
-      isFederalDncListed,
+      lookupFederalDnc,
     }));
     vi.doMock("../src/lib/compliance", () => ({ isDncBlocked }));
 
@@ -145,7 +141,7 @@ describe("outbound dial gate runtime", () => {
     expect(result.federalDncCode).toBe("FEDERAL_DNC_NOT_CONFIGURED");
     expect(result.metadataPatch).toEqual({ federal_dnc_configured: false });
     expect(assertFederalDncForMarketing).toHaveBeenCalledOnce();
-    expect(isFederalDncListed).not.toHaveBeenCalled();
+    expect(lookupFederalDnc).not.toHaveBeenCalled();
     expect(isDncBlocked).not.toHaveBeenCalled();
   });
 
@@ -163,7 +159,7 @@ describe("outbound dial gate runtime", () => {
     }));
     vi.doMock("../src/lib/federal-dnc-service", () => ({
       assertFederalDncForMarketing,
-      isFederalDncListed: async () => false,
+      lookupFederalDnc: async () => false,
     }));
     vi.doMock("../src/lib/compliance", () => ({
       isDncBlocked: async () => false,
@@ -182,7 +178,7 @@ describe("outbound dial gate runtime", () => {
   });
 
   it.each([undefined, false])(
-    "does not require express written consent when server-verified consent is %s",
+    "keeps service calls available without marketing written consent (%s)",
     async (hasExpressWrittenConsent) => {
       vi.doMock("../src/lib/server-context", () => ({
         drizzle: {
@@ -195,7 +191,7 @@ describe("outbound dial gate runtime", () => {
       }));
       vi.doMock("../src/lib/federal-dnc-service", () => ({
         assertFederalDncForMarketing: () => ({ allowed: true }),
-        isFederalDncListed: async () => false,
+        lookupFederalDnc: async () => false,
       }));
       vi.doMock("../src/lib/compliance", () => ({ isDncBlocked: async () => false }));
 
@@ -203,14 +199,14 @@ describe("outbound dial gate runtime", () => {
       const result = await evaluateOutboundDialGate({
         userId: "tenant-user",
         phone: "+13125551234",
-        isMarketingCall: true,
+        isMarketingCall: false,
         metadata: { has_express_written_consent: true },
         hasExpressWrittenConsent,
       });
 
       expect(result).toMatchObject({
         allowed: true,
-        tcpaDecision: { allowed: true, must_disclose_recording: true, must_offer_opt_out: true },
+        tcpaDecision: { allowed: true, must_disclose_recording: true },
       });
     },
   );
@@ -219,7 +215,7 @@ describe("outbound dial gate runtime", () => {
     const select = vi.fn();
     const assertFederalDncForMarketing = vi.fn();
     const isDncBlocked = vi.fn(async () => false);
-    const isFederalDncListed = vi.fn(async () => false);
+    const lookupFederalDnc = vi.fn(async () => false);
     const resolveCallingHoursForPhone = vi.fn(() => ({ allowed: true }));
     vi.doMock("../src/lib/server-context", () => ({
       drizzle: { select },
@@ -228,7 +224,7 @@ describe("outbound dial gate runtime", () => {
     vi.doMock("../src/lib/tcpa-calling-hours", () => ({ resolveCallingHoursForPhone }));
     vi.doMock("../src/lib/federal-dnc-service", () => ({
       assertFederalDncForMarketing,
-      isFederalDncListed,
+      lookupFederalDnc,
     }));
     vi.doMock("../src/lib/compliance", () => ({ isDncBlocked }));
 
@@ -244,7 +240,7 @@ describe("outbound dial gate runtime", () => {
     expect(result.allowed).toBe(true);
     expect(resolveCallingHoursForPhone).toHaveBeenCalledWith("+13125551234");
     expect(isDncBlocked).toHaveBeenCalledWith("tenant-user", "+13125551234");
-    expect(isFederalDncListed).not.toHaveBeenCalled();
+    expect(lookupFederalDnc).not.toHaveBeenCalled();
     expect(assertFederalDncForMarketing).not.toHaveBeenCalled();
     expect(select).not.toHaveBeenCalled();
   });
@@ -273,7 +269,7 @@ describe("outbound dial gate runtime", () => {
     }));
     vi.doMock("../src/lib/federal-dnc-service", () => ({
       assertFederalDncForMarketing: () => ({ allowed: true }),
-      isFederalDncListed: async () => false,
+      lookupFederalDnc: async () => false,
     }));
     vi.doMock("../src/lib/compliance", () => ({
       isDncBlocked: async () => false,
@@ -313,7 +309,7 @@ describe("outbound dial gate runtime", () => {
     }));
     vi.doMock("../src/lib/federal-dnc-service", () => ({
       assertFederalDncForMarketing: () => ({ allowed: true }),
-      isFederalDncListed: async () => false,
+      lookupFederalDnc: async () => false,
     }));
     vi.doMock("../src/lib/compliance", () => ({
       isDncBlocked: async () => false,
@@ -378,7 +374,7 @@ describe("campaign dialer outside-window reschedule", () => {
     vi.doMock("../src/lib/job-queue", () => ({ enqueue }));
     vi.doMock("../src/lib/federal-dnc-service", () => ({
       assertFederalDncForMarketing: () => ({ allowed: true }),
-      isFederalDncListed: async () => false,
+      lookupFederalDnc: async () => false,
     }));
     vi.doMock("../src/lib/voice/outbound-call-service", () => ({
       placeOutboundCall: vi.fn(),

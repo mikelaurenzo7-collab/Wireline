@@ -5,13 +5,21 @@ import { describe, expect, it } from "vitest";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const scriptUrl = new URL("../scripts/probe-federal-dnc.mjs", import.meta.url).href;
 
-function probe(payload, provider = "dncscrub") {
+function probe(payload, provider = "dncscrub", scope = {}) {
   const run = spawnSync(
     process.execPath,
     [
       "--input-type=module",
       "--eval",
-      `globalThis.fetch = async () => Response.json(${JSON.stringify(payload)});
+      `globalThis.fetch = async (url) => {
+         if (${Boolean(scope.FEDERAL_DNC_PROBE_PROJECT_ID)}) {
+           const params = new URL(url).searchParams;
+           if (params.get("projId") !== "fixture-seller-project" || params.get("phoneList") !== "3125550100") {
+             throw new Error("unexpected probe scope");
+           }
+         }
+         return Response.json(${JSON.stringify(payload)});
+       };
        await import(${JSON.stringify(scriptUrl)});`,
     ],
     {
@@ -23,6 +31,9 @@ function probe(payload, provider = "dncscrub") {
         FEDERAL_DNC_API_URL: "https://dnc.example.test/check",
         FEDERAL_DNC_API_KEY: "test-only-login-id",
         FEDERAL_DNC_PROVIDER: provider,
+        FEDERAL_DNC_PROBE_PROJECT_ID: "",
+        FEDERAL_DNC_PROBE_AREA_CODE: "",
+        ...scope,
       },
     },
   );
@@ -32,7 +43,15 @@ function probe(payload, provider = "dncscrub") {
 
 describe("federal DNC operator probe", () => {
   it.each(
-    [[], [null], [{}], [{ ResultCode: "UNKNOWN" }], [{ ResultCode: 1 }]].map((payload) => ({
+    [
+      [],
+      [null],
+      [{}],
+      [{ ResultCode: "C" }],
+      [{ Phone: "2025550101", ResultCode: "C" }],
+      [{ Phone: "2025550100", ResultCode: "UNKNOWN" }],
+      [{ Phone: "2025550100", ResultCode: 1 }],
+    ].map((payload) => ({
       payload,
     })),
   )("does not certify a malformed DNCScrub response: %j", ({ payload }) => {
@@ -41,19 +60,29 @@ describe("federal DNC operator probe", () => {
     expect(result).toMatchObject({ probe_ok: false, listed: true, source: "error" });
   });
 
-  it.each(["D", "P", "B", "I", "M", "L", "F", "V"])(
+  it.each(["D", "P", "B", "I", "M", "L", "F", "V", "H", "O"])(
     "recognizes blocked result %s without reporting it callable",
     (ResultCode) => {
-      const { status, result } = probe([{ ResultCode }]);
+      const { status, result } = probe([{ Phone: "2025550100", ResultCode }]);
       expect(status).toBe(0);
       expect(result).toMatchObject({ probe_ok: true, listed: true, source: "vendor" });
     },
   );
 
   it("recognizes a callable response", () => {
-    const { status, result } = probe([{ ResultCode: " c " }]);
+    const { status, result } = probe([{ Phone: "2025550100", ResultCode: " c " }]);
     expect(status).toBe(0);
     expect(result).toMatchObject({ probe_ok: true, listed: false, source: "vendor" });
+  });
+
+  it("probes the linked project with a synthetic number in the selected area code", () => {
+    const { status, result } = probe([{ Phone: "3125550100", ResultCode: "C" }], "dncscrub", {
+      FEDERAL_DNC_PROBE_PROJECT_ID: "fixture-seller-project",
+      FEDERAL_DNC_PROBE_AREA_CODE: "312",
+    });
+    expect(status).toBe(0);
+    expect(result).toMatchObject({ probe_ok: true, project_scoped: true, source: "vendor" });
+    expect(JSON.stringify(result)).not.toContain("fixture-seller-project");
   });
 
   it.each(

@@ -137,7 +137,7 @@ describe("seller DNC registration state and gate", () => {
       { code: "561", contacts: 2, ownLine: false },
       { code: "312", contacts: 1, ownLine: true },
     ]);
-    expect(defaultDncExpiresOn(NOW)).toBe("2027-10-17");
+    expect(defaultDncExpiresOn(NOW)).toBe("2027-09-30");
     // The prefilled term passes the same validation the owner's save does.
     expect(
       parseDncSellerRegistrationInput(

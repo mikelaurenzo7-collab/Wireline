@@ -3,7 +3,7 @@
 import "dotenv/config";
 import { parseDncScrubResult } from "../src/lib/federal-dnc-result.mjs";
 
-const TEST_PHONE = "2025550100";
+const TEST_NUMBER_SUFFIX = "5550100";
 const TIMEOUT_MS = 8_000;
 
 function output(result, exitCode) {
@@ -25,21 +25,23 @@ function isDncScrubProvider(apiUrl) {
   }
 }
 
-function buildDncScrubRequestUrl(apiUrl) {
+function buildDncScrubRequestUrl(apiUrl, { phone, projectId }) {
   const url = new URL(apiUrl);
-  url.searchParams.set("phoneList", TEST_PHONE);
+  url.searchParams.set("phoneList", phone);
   url.searchParams.set("version", "5");
   url.searchParams.set("output", "json");
+  if (projectId) url.searchParams.set("projId", projectId);
   return url.toString();
 }
 
-async function probeDncScrub(apiUrl, apiKey) {
-  const response = await fetch(buildDncScrubRequestUrl(apiUrl), {
+async function probeDncScrub(apiUrl, apiKey, scope) {
+  const response = await fetch(buildDncScrubRequestUrl(apiUrl, scope), {
     method: "GET",
     headers: {
       loginId: apiKey,
       Accept: "application/json",
     },
+    redirect: "error",
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   const text = await response.text();
@@ -62,7 +64,7 @@ async function probeDncScrub(apiUrl, apiKey) {
     };
   }
 
-  const result = parseDncScrubResult(payload);
+  const result = parseDncScrubResult(payload, scope.phone);
   if (!result.recognized) {
     return {
       probe_ok: false,
@@ -75,11 +77,11 @@ async function probeDncScrub(apiUrl, apiKey) {
     probe_ok: true,
     listed: result.listed,
     detail:
-      "DNCScrub returned a recognized result for the harmless NANP probe number. This is not permission to call.",
+      "DNCScrub returned a recognized result for the synthetic number. Calling still requires recipient eligibility.",
   };
 }
 
-async function probeGenericPost(apiUrl, apiKey) {
+async function probeGenericPost(apiUrl, apiKey, { phone, projectId }) {
   const response = await fetch(apiUrl, {
     method: "POST",
     headers: {
@@ -87,7 +89,8 @@ async function probeGenericPost(apiUrl, apiKey) {
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    body: JSON.stringify({ phone: TEST_PHONE }),
+    body: JSON.stringify(projectId ? { phone, project_id: projectId } : { phone }),
+    redirect: "error",
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   const text = await response.text();
@@ -122,15 +125,17 @@ async function probeGenericPost(apiUrl, apiKey) {
     probe_ok: true,
     listed: payload.listed,
     detail:
-      "Generic federal DNC endpoint returned a boolean listed result. This is not permission to call.",
+      "The screening endpoint returned a boolean listed result. Calling still requires recipient eligibility.",
   };
 }
 
 async function main() {
   const apiKey = process.env.FEDERAL_DNC_API_KEY?.trim() || "";
   const apiUrl = process.env.FEDERAL_DNC_API_URL?.trim() || "";
+  const projectId = process.env.FEDERAL_DNC_PROBE_PROJECT_ID?.trim() || "";
+  const areaCode = process.env.FEDERAL_DNC_PROBE_AREA_CODE?.trim() || "202";
 
-  if (!apiKey && !apiUrl) {
+  if (!apiKey && !apiUrl && !projectId) {
     output(
       {
         configured: false,
@@ -205,28 +210,46 @@ async function main() {
     return;
   }
 
-  try {
-    const result = isDncScrubProvider(apiUrl)
-      ? await probeDncScrub(apiUrl, apiKey)
-      : await probeGenericPost(apiUrl, apiKey);
-    output(
-      {
-        configured: true,
-        probe_ok: result.probe_ok,
-        listed: result.listed,
-        source: result.probe_ok ? "vendor" : "error",
-        detail: result.detail,
-      },
-      result.probe_ok ? 0 : 1,
-    );
-  } catch (error) {
+  if ((projectId && !/^[A-Za-z0-9_-]{1,64}$/.test(projectId)) || !/^[2-9]\d{2}$/.test(areaCode)) {
     output(
       {
         configured: true,
         probe_ok: false,
         listed: true,
         source: "error",
-        detail: error instanceof Error ? error.message : String(error),
+        detail: "Enter a valid screening project ID and a three-digit probe area code.",
+      },
+      1,
+    );
+    return;
+  }
+
+  const scope = { phone: areaCode + TEST_NUMBER_SUFFIX, projectId };
+  const project_scoped = Boolean(projectId);
+  try {
+    const result = isDncScrubProvider(apiUrl)
+      ? await probeDncScrub(apiUrl, apiKey, scope)
+      : await probeGenericPost(apiUrl, apiKey, scope);
+    output(
+      {
+        configured: true,
+        probe_ok: result.probe_ok,
+        project_scoped,
+        listed: result.listed,
+        source: result.probe_ok ? "vendor" : "error",
+        detail: result.detail,
+      },
+      result.probe_ok ? 0 : 1,
+    );
+  } catch {
+    output(
+      {
+        configured: true,
+        probe_ok: false,
+        project_scoped,
+        listed: true,
+        source: "error",
+        detail: "The screening provider could not complete the probe.",
       },
       1,
     );

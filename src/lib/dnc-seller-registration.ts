@@ -2,48 +2,51 @@
  * Storage for each seller's own National Do Not Call Registry subscription.
  * Rules live in ./dnc-seller-registration-rules so the browser shares them.
  */
-import { eq, isNotNull } from "drizzle-orm";
+import { and, eq, isNotNull, sql } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { AppError } from "./api-error";
 import { drizzle, log, tenantStore } from "./server-context";
 import {
-  evaluateDncSellerRegistration,
   readStoredDncSellerRegistration,
   dncSellerRegistrationState,
-  type DncSellerGateResult,
   type DncSellerRegistration,
   type DncSellerRegistrationState,
 } from "./dnc-seller-registration-rules";
 
-export async function readDncSellerRegistration(
-  userId: string,
-): Promise<DncSellerRegistration | null> {
+async function readRegistrationValue(userId: string): Promise<unknown> {
   const [row] = await drizzle
     .select({ registration: schema.settings.dncSellerRegistration })
     .from(schema.settings)
     .where(eq(schema.settings.userId, userId))
     .limit(1);
-  return readStoredDncSellerRegistration(row?.registration);
+  return row?.registration ?? null;
 }
 
-/** Marketing gate: a missing, unlinked, expired or non-covering registration fails closed. */
-export async function evaluateSellerDncForMarketing(
+export async function readDncSellerRegistration(
   userId: string,
-  phone: string,
-): Promise<DncSellerGateResult> {
-  return evaluateDncSellerRegistration(await readDncSellerRegistration(userId), phone);
+): Promise<DncSellerRegistration | null> {
+  return readStoredDncSellerRegistration(await readRegistrationValue(userId));
 }
 
-/**
- * Save the owner's subscription. A changed SAN clears the vendor link, because
- * the vendor project is configured with the previous SAN.
- */
+function unchangedRegistration(userId: string, rawRegistration: unknown) {
+  return and(
+    eq(schema.settings.userId, userId),
+    sql`coalesce(${schema.settings.dncSellerRegistration}, 'null'::jsonb) = ${JSON.stringify(rawRegistration)}::jsonb`,
+  );
+}
+
+/** Save the owner's subscription. Changed subscription details require re-linking. */
 export async function saveDncSellerRegistration(input: {
   userId: string;
   value: Pick<DncSellerRegistration, "san" | "seller_name" | "area_codes" | "expires_on">;
 }): Promise<DncSellerRegistration> {
-  const existing = await readDncSellerRegistration(input.userId);
-  const keepLink = existing?.san === input.value.san;
+  const rawRegistration = await readRegistrationValue(input.userId);
+  const existing = readStoredDncSellerRegistration(rawRegistration);
+  const keepLink =
+    existing?.san === input.value.san &&
+    existing.seller_name === input.value.seller_name &&
+    existing.expires_on === input.value.expires_on &&
+    JSON.stringify(existing.area_codes) === JSON.stringify(input.value.area_codes);
   const registration: DncSellerRegistration = {
     ...input.value,
     attested_at: new Date().toISOString(),
@@ -54,9 +57,13 @@ export async function saveDncSellerRegistration(input: {
   const updated = await drizzle
     .update(schema.settings)
     .set({ dncSellerRegistration: registration, updatedAt: new Date() })
-    .where(eq(schema.settings.userId, input.userId))
+    .where(unchangedRegistration(input.userId, rawRegistration))
     .returning({ userId: schema.settings.userId });
-  if (!updated.length) throw AppError.fromHttpStatus(409, "Account settings are not ready yet.");
+  if (!updated.length)
+    throw AppError.fromHttpStatus(
+      409,
+      "Reload Compliance to check the current registration, then try again.",
+    );
   if (!registration.vendor_project_id)
     log.info("DNC seller registration awaiting vendor link", { userId: input.userId });
   return registration;
@@ -94,7 +101,8 @@ export async function linkDncSellerVendorProject(input: {
   vendorProjectId: string;
 }): Promise<DncSellerRegistration> {
   return tenantStore.run(input.userId, async () => {
-    const existing = await readDncSellerRegistration(input.userId);
+    const rawRegistration = await readRegistrationValue(input.userId);
+    const existing = readStoredDncSellerRegistration(rawRegistration);
     if (!existing) throw AppError.fromHttpStatus(404, "This account has no DNC registration.");
     // The admin configured the vendor project for a specific SAN; refuse if it changed since.
     if (existing.san !== input.expectedSan)
@@ -104,10 +112,16 @@ export async function linkDncSellerVendorProject(input: {
       vendor_project_id: input.vendorProjectId,
       vendor_linked_at: new Date().toISOString(),
     };
-    await drizzle
+    const updated = await drizzle
       .update(schema.settings)
       .set({ dncSellerRegistration: registration, updatedAt: new Date() })
-      .where(eq(schema.settings.userId, input.userId));
+      .where(unchangedRegistration(input.userId, rawRegistration))
+      .returning({ userId: schema.settings.userId });
+    if (!updated.length)
+      throw AppError.fromHttpStatus(
+        409,
+        "The registration changed. Confirm the vendor project against the current subscription.",
+      );
     return registration;
   });
 }

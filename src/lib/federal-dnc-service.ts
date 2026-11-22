@@ -5,10 +5,9 @@
  * (DNCScrub-style). See dnc-provider.ts for the adapter seam. No in-house
  * FTC file screen ships here.
  *
- * Campaigns and other bulk sales fail closed when that provider is not
- * configured. One-off sales calls and texts do not. They require a one-time
- * workspace attestation, and they are screened only when a provider and a
- * seller account number are both configured. Provider errors still fail closed.
+ * Campaigns and other bulk sales require a configured provider and linked
+ * seller project at the dispatch gate. When a lookup runs, only a valid
+ * vendor result can clear it.
  */
 import { BULK_SALES_SCREENING_REQUIRED_MESSAGE } from "./outbound-compliance-copy";
 import { getDncProvider, normalizeUsPhone10 } from "./dnc-provider";
@@ -21,9 +20,10 @@ export type FederalDncLookupResult = {
   listed: boolean;
   source: "vendor" | "unconfigured" | "error";
   checked_at: string;
+  list_version: string | null;
 };
 
-/** Seller account number, sent as the vendor project id when present. */
+/** Vendor project linked to the seller's own registry subscription. */
 export type FederalDncLookupOptions = { vendorProjectId?: string };
 
 export type FederalDncMarketingGate =
@@ -57,24 +57,18 @@ export async function lookupFederalDnc(
   const checked_at = new Date().toISOString();
   const provider = getDncProvider();
   if (!provider.configured()) {
-    return { listed: false, source: "unconfigured", checked_at };
+    return { listed: false, source: "unconfigured", checked_at, list_version: null };
   }
   try {
-    const hit = await provider.lookup(phone, { san: options.vendorProjectId });
+    const hit = await provider.lookup(phone, { vendorProjectId: options.vendorProjectId });
     return {
       listed: hit.listed,
-      source: hit.source === "vendor" ? "vendor" : hit.source === "unconfigured" ? "unconfigured" : "error",
-      checked_at: hit.listDate ?? checked_at,
+      source: hit.source,
+      checked_at,
+      list_version: hit.source === "vendor" ? hit.listDate : null,
     };
   } catch (error) {
     log.warn("federal DNC lookup failed", { error: String(error) });
-    return { listed: true, source: "error", checked_at };
+    return { listed: true, source: "error", checked_at, list_version: null };
   }
-}
-
-export async function isFederalDncListed(
-  phone: string,
-  options: FederalDncLookupOptions = {},
-): Promise<boolean> {
-  return (await lookupFederalDnc(phone, options)).listed;
 }

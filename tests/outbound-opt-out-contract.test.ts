@@ -3,7 +3,10 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { detectOptOut } from "../src/lib/tcpa-consent";
-import { SALES_DNC_LISTED_MESSAGE, INTERNAL_DNC_MESSAGE } from "../src/lib/outbound-compliance-copy";
+import {
+  SALES_DNC_LISTED_MESSAGE,
+  INTERNAL_DNC_MESSAGE,
+} from "../src/lib/outbound-compliance-copy";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -24,7 +27,8 @@ describe("one workspace do-not-contact list", () => {
     expect(gate).toContain("isDncBlocked(opts.userId, opts.phone)");
     expect(send).toContain("isDncBlocked");
     expect(INTERNAL_DNC_MESSAGE).toMatch(/won't call or text/);
-    expect(SALES_DNC_LISTED_MESSAGE).toContain("Existing customer");
+    expect(SALES_DNC_LISTED_MESSAGE).toContain("blocked this sales call or text");
+    expect(SALES_DNC_LISTED_MESSAGE).not.toMatch(/Existing customer|Returning their call/i);
   });
 });
 

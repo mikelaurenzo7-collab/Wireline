@@ -3,11 +3,13 @@
  * LAWYER REVIEW NEEDED before these sentences are treated as legal advice.
  */
 
-export const SALES_DNC_LISTED_MESSAGE =
-  "This number is on the Do Not Call list, so we can't place sales calls or texts to it. If they're already your customer, or they reached out to you recently, choose Existing customer or Returning their call instead.";
+export const SALES_DNC_LISTED_MESSAGE = "Do Not Call screening blocked this sales call or text.";
 
 export const SALES_DNC_UNAVAILABLE_MESSAGE =
-  "Campaigns and automated sales need number screening before they can send. Add a Do Not Call screening connection in Settings. One-at-a-time sales calls and texts still work after you confirm you're responsible for permission and Do Not Call rules. Personal, appointment, and follow-up calls still work.";
+  "Campaigns and automated sales need an active Do Not Call screening connection. Check Campaign Screening in Compliance.";
+
+export const SALES_DNC_LOOKUP_FAILED_MESSAGE =
+  "Do Not Call screening could not check this number. Try again after screening is available.";
 
 export const BULK_SALES_SCREENING_REQUIRED_MESSAGE = SALES_DNC_UNAVAILABLE_MESSAGE;
 
@@ -44,10 +46,10 @@ export const CUSTOMER_SINCE_REQUIRED_MESSAGE =
   "Enter the approximate date of their last purchase or service.";
 
 export const CAMPAIGN_SALES_BADGE =
-  "Sales campaign. Number screening has to be connected, and Do Not Call numbers are skipped.";
+  "Sales campaign. Connect your seller's Do Not Call Registry subscription to screen each number.";
 
 export const DNC_SAN_HELP =
-  "Optional. If you connect Do Not Call screening, paste your registry account number here and we send it with sales checks. One-at-a-time sales calls and texts work without it after you confirm you're responsible for permission and Do Not Call rules. Campaigns need screening connected. Personal, appointment, and follow-up calls don't use it.";
+  "Add your full Registry subscription in Compliance so BotBound can connect the correct screening project.";
 
 function hourLabel(hour: number): string {
   const normalized = ((hour % 24) + 24) % 24;

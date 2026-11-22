@@ -198,8 +198,8 @@ describe("restored launch regression guards", () => {
     // platform engineering controls.
     expect(checklist).toContain('registryState === "active" || registryState === "pending_link"');
     expect(checklist).not.toMatch(/Row-level security|audit log enabled|SOC 2/i);
-    expect(security).toMatch(
-      /BotBound screens the national do-not-call list, the account block list, and calling hours before an outgoing call\./i,
+    expect(security).toContain(
+      "Campaign screening uses the seller's own Do Not Call Registry subscription.",
     );
     expect(security).not.toContain("Live outbound dialing is gated");
     expect(security).not.toContain("DNCScrub");

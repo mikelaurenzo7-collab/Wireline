@@ -25,7 +25,6 @@ vi.mock("../src/lib/account-environment-policy", () => ({
 
 vi.mock("../src/lib/federal-dnc-service", () => ({
   assertFederalDncForMarketing: mocks.federalDncLookup,
-  isFederalDncListed: mocks.federalDncLookup,
 }));
 
 vi.mock("../src/lib/outbound-dial-gate", () => ({

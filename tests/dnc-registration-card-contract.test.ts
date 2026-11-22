@@ -3,6 +3,10 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const card = readFileSync(resolve(process.cwd(), "src/components/DncRegistrationCard.tsx"), "utf8");
+const compliance = readFileSync(
+  resolve(process.cwd(), "src/components/ComplianceCenter.tsx"),
+  "utf8",
+);
 
 /**
  * The owner subscribes at the registry to whatever they copy from this card,
@@ -11,6 +15,12 @@ const card = readFileSync(resolve(process.cwd(), "src/components/DncRegistration
  * actually paid for.
  */
 describe("DNC registration card keeps one area-code list", () => {
+  it("opens the seller's registration form from Compliance", () => {
+    expect(compliance).toMatch(/<summary[^>]*>\s*Do Not Call Registry\s*<\/summary>/);
+    expect(compliance).toContain("<DncRegistrationCard />");
+    expect(card).toContain('authFetch("/api/compliance/dnc-registration"');
+  });
+
   it("copies the form's selected codes, never the whole suggestion list", () => {
     expect(card).toContain("copyAreaCodes(chosenCodes.join(", "))");
     expect(card).not.toMatch(/suggestedCodes/);

@@ -43,6 +43,56 @@ async function mockWorkspace(page: Page) {
   });
 }
 
+test("saves the seller's Registry subscription from Compliance", async ({ page }) => {
+  await mockWorkspace(page);
+  await page.route("**/api/compliance/center", (route) =>
+    route.fulfill({ json: { federal_dnc_configured: false, recent_consent_events: [] } }),
+  );
+  let submitted: unknown;
+  await page.route("**/api/compliance/dnc-registration", (route) => {
+    if (route.request().method() === "PUT") submitted = route.request().postDataJSON();
+    return route.fulfill({
+      json: submitted
+        ? {
+            state: "pending_link",
+            registration: {
+              san: "FIXTURE-123456",
+              seller_name: "Fixture Inspections",
+              area_codes: ["312"],
+              expires_on: "2027-10-31",
+            },
+          }
+        : {
+            state: "missing",
+            registration: null,
+            setup: {
+              suggested_seller_name: "Fixture Inspections",
+              suggested_area_codes: [{ code: "312", ownLine: true, contacts: 1 }],
+              suggested_expires_on: "2027-10-31",
+            },
+          },
+    });
+  });
+  await page.goto("/settings/compliance");
+  await page.getByText("Do Not Call Registry", { exact: true }).click();
+  await page
+    .getByLabel("Subscription account number (SAN)", { exact: false })
+    .fill("FIXTURE-123456");
+  const save = page.getByRole("button", { name: "Save Registration" });
+  await expect(save).toBeDisabled();
+  await page.getByRole("checkbox", { name: /This subscription belongs to my business/ }).check();
+  await save.click();
+  await expect(page.getByText("Your subscription is saved.", { exact: false })).toBeVisible();
+  expect(submitted).toEqual({
+    san: "FIXTURE-123456",
+    seller_name: "Fixture Inspections",
+    area_codes: "312",
+    expires_on: "2027-10-31",
+    attest: true,
+  });
+  await expect(page.getByText("Unavailable", { exact: true })).toBeVisible();
+});
+
 test("setup offers cloning at voice selection and resumes before rehearsal", async ({ page }) => {
   await mockWorkspace(page);
   let cloneCreates = 0;
