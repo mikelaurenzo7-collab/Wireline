@@ -32,6 +32,7 @@ const businessBody = {
     ein: "12-3456789",
     websiteUrl: "ridge.example",
     privacyUrl: "https://ridge.example/privacy",
+    termsUrl: "ridge.example/terms",
     address: { street: "1 Main St", city: "Springfield", region: "il", postalCode: "62701" },
     representative: {
       firstName: "Pat",
@@ -75,6 +76,7 @@ describe("texting registration details", () => {
     expect(input.details.legalName).toBe("Ridge Inspections LLC");
     expect(input.details.ein).toBe("123456789");
     expect(input.details.websiteUrl).toBe("https://ridge.example");
+    expect(input.details.termsUrl).toBe("https://ridge.example/terms");
     expect(input.details.address.region).toBe("IL");
     expect(input.details.representative.email).toBe("pat@ridge.example");
     expect(input.details.representative.phone).toBe("+13125550100");

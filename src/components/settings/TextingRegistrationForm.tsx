@@ -16,6 +16,7 @@ type BusinessForm = {
   ein: string;
   websiteUrl: string;
   privacyUrl: string;
+  termsUrl: string;
   address: Address;
   representative: {
     firstName: string;
@@ -63,6 +64,7 @@ const EMPTY_BUSINESS: BusinessForm = {
   ein: "",
   websiteUrl: "",
   privacyUrl: "",
+  termsUrl: "",
   address: EMPTY_ADDRESS,
   representative: {
     firstName: "",
@@ -118,6 +120,7 @@ function businessFrom(details: Record<string, unknown>): BusinessForm {
     ein: "",
     websiteUrl: textOf(details.websiteUrl),
     privacyUrl: textOf(details.privacyUrl),
+    termsUrl: textOf(details.termsUrl),
     address: addressOf(details.address),
     representative: {
       firstName: textOf(rep.firstName),
@@ -502,6 +505,22 @@ export default function TextingRegistrationForm() {
                 type="url"
                 value={business.privacyUrl}
                 onChange={(event) => setBusiness({ ...business, privacyUrl: event.target.value })}
+                aria-describedby={describedBy}
+                placeholder="https://"
+                required
+              />
+            )}
+          </Field>
+          <Field
+            label="Terms of service page"
+            className="sm:col-span-2"
+            hint="Carriers now require it alongside the privacy policy."
+          >
+            {({ describedBy }) => (
+              <Input
+                type="url"
+                value={business.termsUrl}
+                onChange={(event) => setBusiness({ ...business, termsUrl: event.target.value })}
                 aria-describedby={describedBy}
                 placeholder="https://"
                 required

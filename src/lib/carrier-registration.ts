@@ -76,6 +76,8 @@ export type CustomerBusinessDetails = {
   websiteUrl: string;
   /** Page stating that mobile numbers and consent are not shared. */
   privacyUrl: string;
+  /** Terms of service page. Twilio requires both URLs on every campaign since June 30, 2026. */
+  termsUrl: string;
   address: { street: string; city: string; region: string; postalCode: string };
   representative: {
     firstName: string;
@@ -119,6 +121,7 @@ export function validateBusinessDetails(details: CustomerBusinessDetails): strin
   if (normalizeEin(details.ein).length !== 9) errors.push("EIN must have nine digits.");
   if (!httpsUrl(details.websiteUrl)) errors.push("Website must be an https:// address.");
   if (!httpsUrl(details.privacyUrl)) errors.push("Privacy policy must be an https:// address.");
+  if (!httpsUrl(details.termsUrl)) errors.push("Terms of service must be an https:// address.");
   const address = details.address ?? ({} as CustomerBusinessDetails["address"]);
   if (!text(address.street) || !text(address.city)) errors.push("Street and city are required.");
   if (!US_REGION.test(String(address.region || "")))
@@ -240,7 +243,7 @@ export function composeCampaign(details: CustomerBusinessDetails): ComposedCampa
   const website = details.websiteUrl.trim();
   return {
     description: `${legal} uses this local number for non-promotional customer-care and appointment follow-up texts that its own customers and callers request. During a call with the ${brand} AI assistant, which identifies itself as AI when it answers, the caller asks for a text, and the assistant confirms the number and asks permission before sending. When a caller's call is missed, the business may send that caller one text offering help.`,
-    messageFlow: `During a phone call with the ${brand} AI assistant, which identifies itself as AI when it answers, a caller asks to receive information or an appointment confirmation by text. The assistant confirms the destination number and asks: "May ${brand} text the details to this number? Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help." A text is sent only after the caller agrees. When a caller's call is missed, the business may send that one caller a single reply offering help, with opt-out instructions; it never texts numbers that did not call. Consent is not a condition of purchase and is never shared. Privacy policy: ${details.privacyUrl.trim()}`,
+    messageFlow: `During a phone call with the ${brand} AI assistant, which identifies itself as AI when it answers, a caller asks to receive information or an appointment confirmation by text. The assistant confirms the destination number and asks: "May ${brand} text the details to this number? Message frequency varies. Message and data rates may apply. Reply STOP to opt out or HELP for help." A text is sent only after the caller agrees. When a caller's call is missed, the business may send that one caller a single reply offering help, with opt-out instructions; it never texts numbers that did not call. Consent is not a condition of purchase and is never shared. Privacy policy: ${details.privacyUrl.trim()} Terms: ${details.termsUrl.trim()}`,
     messageSamples: [
       `${brand}: Here are the details you asked for on your call: ${website} Reply STOP to opt out, HELP for help.`,
       `${brand}: Your appointment is confirmed for Tuesday at 9:00 a.m. Reply STOP to opt out, HELP for help.`,
@@ -533,6 +536,11 @@ export function planRegistration(
         UsAppToPersonUsecase: campaign.usecase,
         HasEmbeddedLinks: String(campaign.hasEmbeddedLinks),
         HasEmbeddedPhone: String(campaign.hasEmbeddedPhone),
+        // Required since June 30, 2026 (errors 30934, 30908, 30882 when missing or wrong).
+        PrivacyPolicyUrl: details.privacyUrl.trim(),
+        TermsAndConditionsUrl: details.termsUrl.trim(),
+        AgeGated: "false",
+        DirectLending: "false",
       },
       billable: true,
       // Twilio refuses a campaign until its brand is APPROVED (error 30994).
