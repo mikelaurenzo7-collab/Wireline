@@ -23,7 +23,21 @@ type PhoneNumberRecord = {
   created_at?: string | null;
   native_voice_status?: string | null;
   native_voice_error?: string | null;
+  /** US carrier approval for texting, read from Twilio by the server. */
+  texting_approval?: "approved" | "pending" | "not_approved" | "unknown" | null;
 };
+
+/** Plain words for whether carriers accept texts from a line. */
+export function lineTextingApprovalCopy(
+  approval: PhoneNumberRecord["texting_approval"],
+): string | null {
+  if (approval === "approved") return "Approved by US carriers for texting.";
+  if (approval === "pending")
+    return "Carrier approval for texting is in review. Texts send once it is approved.";
+  if (approval === "not_approved")
+    return "Not approved for texting yet. Contact support@botbound.app to register your business with carriers.";
+  return null;
+}
 
 type ProvisionResponse = {
   ok?: boolean;
@@ -818,6 +832,14 @@ export default function PhoneSetupPanel({
                       : texting.enabled
                         ? "Texts are on for another line. Turn them on here to send from this number."
                         : "Texts are off. Turn them on to send and reply from this number. STOP, HELP, and START still apply."}
+                    {lineTextingApprovalCopy(activeNumber.texting_approval) ? (
+                      <span
+                        className="mt-1 block"
+                        data-texting-approval={activeNumber.texting_approval}
+                      >
+                        {lineTextingApprovalCopy(activeNumber.texting_approval)}
+                      </span>
+                    ) : null}
                   </p>
                   <Button
                     type="button"
