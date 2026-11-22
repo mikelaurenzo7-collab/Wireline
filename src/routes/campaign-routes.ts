@@ -356,6 +356,14 @@ router.post(
         });
       }
 
+      const federalGate = assertFederalDncForMarketing();
+      if (!federalGate.allowed) {
+        return res.status(503).json({
+          code: federalGate.code,
+          error: federalGate.message,
+        });
+      }
+
       // Promote imported Pending leads into Queued so create → import → launch works.
       await drizzle
         .update(schema.outboundLeads)
@@ -391,14 +399,6 @@ router.post(
 
       if (!queued || queued.length === 0) {
         throw AppError.fromHttpStatus(400, "No queued leads in this campaign.");
-      }
-
-      const federalGate = assertFederalDncForMarketing();
-      if (!federalGate.allowed) {
-        return res.status(503).json({
-          code: federalGate.code,
-          error: federalGate.message,
-        });
       }
 
       const previousStatus = campaign.status;

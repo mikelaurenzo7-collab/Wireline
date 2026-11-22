@@ -43,8 +43,7 @@ export const DNC_REGISTRATION_STATE_LABEL: Record<DncSellerRegistrationState, st
 };
 
 const STATE_DETAIL: Record<DncSellerRegistrationState, string> = {
-  missing:
-    "Optional. If you have a National Do Not Call Registry account number, paste it below. Sales screening still runs. Personal, appointment, and follow-up calls don't use it.",
+  missing: DNC_SAN_HELP,
   pending_link:
     "Your account number is saved. Sales screening can use it after this connection finishes. One-at-a-time calls and texts are not waiting on it.",
   expired: "Renew your subscription at the registry, then update the expiration date here.",

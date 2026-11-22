@@ -19,8 +19,9 @@ describe("action-engine outbound SMS compliance gate", () => {
 
     expect(handler).toContain("await evaluateOutboundDialGate({");
     expect(handler).toContain("isMarketingCall: purpose.isMarketingCall");
-    expect(handler).toContain("requireFederalDncScreening: true");
-    expect(handler).not.toContain("one_off");
+    expect(handler).toContain("requireFederalDncScreening: !requestedOnThisCall");
+    expect(handler).toContain('salesScreening: "one_off"');
+    expect(handler).toContain("isLiveSessionFollowUp: requestedOnThisCall");
     expect(handler).toContain("hasExpressWrittenConsent: false");
     expect(handler).toContain("userId");
     expect(handler).toContain("phone");

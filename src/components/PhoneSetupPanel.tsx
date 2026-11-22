@@ -89,6 +89,12 @@ export default function PhoneSetupPanel({
   const [liveNumberClosed, setLiveNumberClosed] = useState(false);
   const [selectedNumberId, setSelectedNumberId] = useState<string | null>(null);
   const [addingLine, setAddingLine] = useState(false);
+  const [texting, setTexting] = useState({
+    enabled: false,
+    fromNumber: "",
+    loaded: false,
+    saving: false,
+  });
   const companyIdentityRef = useRef<HTMLDetailsElement>(null);
   const previousPreferredAgentRef = useRef("");
   const appliedLinePreferenceRef = useRef("");
@@ -102,6 +108,66 @@ export default function PhoneSetupPanel({
     () => agents.find((agent) => agent.id === activeNumber?.agent_id),
     [activeNumber?.agent_id, agents],
   );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const response = await authFetch("/api/settings", { signal: controller.signal });
+        if (!response.ok) return;
+        const body = (await response.json()) as {
+          settings?: { twilio_messaging_enabled?: boolean; twilio_sms_from_number?: string | null };
+          twilio_messaging_enabled?: boolean;
+          twilio_sms_from_number?: string | null;
+        };
+        const settings = body.settings ?? body;
+        if (controller.signal.aborted) return;
+        setTexting({
+          enabled: settings.twilio_messaging_enabled === true,
+          fromNumber:
+            typeof settings.twilio_sms_from_number === "string" ? settings.twilio_sms_from_number : "",
+          loaded: true,
+          saving: false,
+        });
+      } catch {
+        // Leave the control hidden when settings cannot be read. An unread
+        // switch must not claim that texts are off.
+      }
+    })();
+    return () => controller.abort();
+  }, []);
+
+  async function setLineTexts(enabled: boolean) {
+    if (!activeNumber || texting.saving) return;
+    setTexting((current) => ({ ...current, saving: true }));
+    setError(null);
+    try {
+      const response = await authFetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          twilio_messaging_enabled: enabled,
+          ...(enabled ? { twilio_sms_from_number: activeNumber.phone_number } : {}),
+        }),
+      });
+      const body = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) {
+        setError(body.error || "Couldn't update texts for this line.");
+        setTexting((current) => ({ ...current, saving: false }));
+        return;
+      }
+      setTexting({
+        enabled,
+        fromNumber: enabled ? activeNumber.phone_number : texting.fromNumber,
+        loaded: true,
+        saving: false,
+      });
+      setMessage(enabled ? "Texts send from this line." : "Texts are off.");
+    } catch {
+      setTexting((current) => ({ ...current, saving: false }));
+      setError("Couldn't update texts for this line.");
+    }
+  }
 
   useEffect(() => {
     if (location.hash !== "#company-identity") return;
@@ -730,6 +796,33 @@ export default function PhoneSetupPanel({
                       {loading ? "Checking connection…" : "Retry Connection"}
                     </Button>
                   )}
+                </div>
+              ) : null}
+
+              {texting.loaded ? (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3">
+                  <p className="max-w-prose text-xs leading-5 text-muted-foreground">
+                    {texting.enabled && texting.fromNumber === activeNumber.phone_number
+                      ? "Texts send from this line. STOP, HELP, and START still apply."
+                      : texting.enabled
+                        ? "Texts are on for another line. Turn them on here to send from this number."
+                        : "Texts are off. Turn them on to send and reply from this number. STOP, HELP, and START still apply."}
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    disabled={texting.saving || working}
+                    onClick={() =>
+                      void setLineTexts(
+                        !(texting.enabled && texting.fromNumber === activeNumber.phone_number),
+                      )
+                    }
+                  >
+                    {texting.enabled && texting.fromNumber === activeNumber.phone_number
+                      ? "Turn off texts"
+                      : "Turn on texts"}
+                  </Button>
                 </div>
               ) : null}
 

@@ -88,6 +88,11 @@ describe("call summary and outcome truth", () => {
       "dnc",
     );
     expect(classify("Can you tell me a joke?")).toBe("other");
+    expect(classify("What does BotBound do?")).toBe("info");
+    expect(classify("What can you do?")).toBe("info");
+    expect(classify("Can you tell me about BotBound?")).toBe("info");
+    expect(classify("Can you tell me, what BotBound does?")).toBe("info");
+    expect(classify("What does BotBound do? Please stop calling me.")).toBe("dnc");
   });
 
   it("uses explicit revocation language for opt-outs, not ordinary words", () => {

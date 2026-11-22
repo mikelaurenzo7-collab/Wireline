@@ -139,7 +139,7 @@ Use a disposable founder/demo account until a real customer exists. Never manufa
 ### The handoff must stay coherent
 
 - Give the Bot a name and verify the greeting, workspace identity, sending address, business signature, website and plan links agree. Only use verified facts and links supplied by that Bot's owner; never add BotBound's business links to another customer's message.
-- Incoming calls open with an AI disclosure and include a recording notice when call recording is enabled. An opening that already starts with an AI disclosure plays as written when recording is off. Listen to the deployed greeting on a live call and check that the AI disclosure, recording notice if enabled, and saved greeting details are audible.
+- Incoming calls speak "Hi, I'm {name}, and I'm an AI assistant with {business}." A saved greeting whose first sentence already says that plays unchanged when recording is off. Any other hello-style first sentence is replaced by that line, and the rest of the greeting follows. When call recording is on, that line ends with "and this call may be recorded for quality and compliance." Listen on a live call, not in Rehearse.
 - Keep private rehearsal and the actual phone runtime distinct in the evidence. A good microphone rehearsal does not prove the live number's voice, cadence or tool results.
 - When a caller requests an email, confirm the provider result briefly. Verify one delivered message and correct clickable links; do not repeat the entire email aloud or promise delivery when only a send was accepted.
 - Review a longer call, interruption, unavailable action and owner handoff. Confirm the owner can find the outcome and act on it without an integration.
