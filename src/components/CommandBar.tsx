@@ -37,6 +37,8 @@ import { ScrollArea } from "./ui/shadcn/ScrollArea";
 import { APP_KEYBOARD_SHORTCUTS, scopedWorkspaceHref } from "../constants/navigation";
 import { customerAgentLanguage } from "../lib/product-copy";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
+import { useAgents } from "../contexts/AgentsContext";
+import { canOfferAnotherBot } from "../lib/bot-roster-policy";
 
 type CommandCategory = "Workspace" | "Create" | "Manage";
 
@@ -198,9 +200,17 @@ export function resolveCommandSelectionIndex(
   return currentIndex;
 }
 
-export function searchWorkspaceCommands(query: string): readonly CommandItem[] {
+export function searchWorkspaceCommands(
+  query: string,
+  options: { botCount?: number } = {},
+): readonly CommandItem[] {
   const language = customerAgentLanguage();
-  const available = WORKSPACE_COMMANDS.map((command) =>
+  // A single-Bot workspace grows through tasks; creating another Bot lives in
+  // Settings > Advanced, so the palette stops offering it.
+  const offerAnotherBot = options.botCount === undefined || canOfferAnotherBot(options.botCount);
+  const available = WORKSPACE_COMMANDS.filter(
+    (command) => offerAnotherBot || command.id !== "create-bot",
+  ).map((command) =>
     command.id === "agents" ? { ...command, label: language.navLabel } : command,
   );
   const term = query.trim().toLocaleLowerCase();
@@ -224,7 +234,8 @@ export default function CommandBar() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
-  const { requestedId, resolvedId } = useStudioActiveAgentId();
+  const { agents, requestedId, resolvedId } = useStudioActiveAgentId();
+  const { loading: agentsLoading, degraded: agentsDegraded } = useAgents();
   // Preserve explicit scope so a stale link cannot navigate into another Bot.
   const activeAgentId = requestedId?.trim() || resolvedId;
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -235,7 +246,11 @@ export default function CommandBar() {
 
   useBodyScrollLock(isOpen);
 
-  const filteredCommands = useMemo(() => searchWorkspaceCommands(query), [query]);
+  const botCount = agentsLoading || agentsDegraded ? undefined : agents.length;
+  const filteredCommands = useMemo(
+    () => searchWorkspaceCommands(query, { botCount }),
+    [query, botCount],
+  );
 
   const close = useCallback(() => {
     setIsOpen(false);

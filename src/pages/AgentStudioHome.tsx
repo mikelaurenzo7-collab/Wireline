@@ -18,6 +18,7 @@ import { readPostCreateWizard, updatePostCreateWizard } from "../lib/wireline-cr
 import type { PostCreateWizardPayload } from "../lib/wireline-create-flow";
 import PostCreateActivationWizard from "../components/onboarding/PostCreateActivationWizard";
 import { authFetch } from "../lib/api";
+import { shouldOpenExistingBot } from "../lib/bot-roster-policy";
 
 export default function AgentStudioHome() {
   const [params, setParams] = useSearchParams();
@@ -40,8 +41,35 @@ export default function AgentStudioHome() {
   const identityBootstrapAgentIds = useRef(new Set<string>());
 
   useEffect(() => {
-    if (!loading && params.get("create") === "1") setShowCreate(true);
-  }, [loading, params]);
+    if (loading || params.get("create") !== "1") return;
+    // One Bot per business: a create link opens the existing Bot's setup. An
+    // unreadable roster keeps the old behavior rather than guessing a count.
+    const existing = agents.find((agent) => agent.id === resolvedId) ?? agents[0];
+    if (
+      !degraded &&
+      existing &&
+      shouldOpenExistingBot({
+        createRequested: true,
+        anotherRequested: params.get("another") === "1",
+        botCount: agents.length,
+      })
+    ) {
+      setParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          next.delete("create");
+          next.delete("template");
+          next.delete("brief");
+          next.set("agent", existing.id);
+          next.set("section", "setup");
+          return next;
+        },
+        { replace: true },
+      );
+      return;
+    }
+    setShowCreate(true);
+  }, [loading, degraded, params, agents, resolvedId, setParams]);
 
   useEffect(() => {
     if (!browserContext) return;

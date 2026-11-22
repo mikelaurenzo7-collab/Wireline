@@ -268,7 +268,7 @@ test("the desktop roster opens each Bot's own work and its identity details", as
   await expect(
     page
       .getByRole("dialog")
-      .getByText("Add a Bot for a separate identity. Channels depend on your plan."),
+      .getByText(/Most businesses need one Bot: give it more tasks instead\./),
   ).toBeVisible();
   await page.getByRole("button", { name: "Close Bot setup" }).click();
   expect(api.starts).toHaveLength(0);

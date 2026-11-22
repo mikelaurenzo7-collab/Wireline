@@ -361,7 +361,7 @@ export function currentPricingFacts(): string[] {
     ...plans,
     `SMS is $${sms} per sent segment. Calls are $${calls} per minute, email replies are $${email}, and Computer is $${computer} per minute. Calls, SMS, email, and Computer share one monthly allowance.`,
     `Extra numbers are $${USAGE_ADDONS.number.usdMonthly}/month. Extra email addresses are $${USAGE_ADDONS.email_address.usdMonthly}/month.`,
-    "Every plan includes unlimited Bots. Usage charges apply across all of them.",
+    "Every plan includes one Bot that handles calls, texts, email and Computer tasks. A separate business identity can add another Bot with no per-Bot charge; usage is shared across all of them.",
     "Quote only these prices. If asked for a discount or a retired offer, give these prices and escalate instead of inventing an offer.",
   ];
 }

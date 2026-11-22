@@ -288,6 +288,7 @@ export default function CreateAgentDialog({
       (current) => {
         const next = new URLSearchParams(current);
         next.delete("create");
+        next.delete("another");
         next.delete("brief");
         next.delete("template");
         next.delete("posture");
@@ -504,7 +505,8 @@ export default function CreateAgentDialog({
         <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-6">
           {agents.length > 0 ? (
             <p className="mb-4 text-sm text-muted-foreground">
-              Add a Bot for a separate identity. Channels depend on your plan.
+              Most businesses need one Bot: give it more tasks instead. Add another only for a
+              separate business identity. Channels depend on your plan.
             </p>
           ) : null}
           <div className="grid min-w-0 grid-cols-1 gap-5">

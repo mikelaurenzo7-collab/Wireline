@@ -13,10 +13,20 @@ the conversation across channels under shared knowledge, rules, approvals, and
 memory. SMS retains its sender and recipient permission gates. Role templates change
 the Bot's job; they do not create separate products, account modes or backend policies.
 
-Start with one focused Bot. The current Shared Work offer has no per-Bot charge;
-included numbers, email addresses, work allowances and execution limits remain finite.
-Retained channel packages keep their saved Bot limits. Never infer a universal one-Bot
-limit or an extra-Bot charge from a historical package.
+**One Bot, one line, one inbox per business is the default.** The Bot takes on more
+work through tasks (answer questions, take messages, book appointments, text and email
+follow-ups, web work), which turn on bundles of its actions (`src/lib/bot-tasks.ts`).
+More Bots are not the way to add work. Carrier registration fits this shape: each
+business needs its own A2P Brand and campaign, a Sole Proprietor brand allows one
+texting number, and caller reputation builds on one number.
+
+The workspace offers another Bot only to a workspace with none, or to one that already
+runs several (`src/lib/bot-roster-policy.ts`). Settings > Advanced keeps "Add another
+Bot" for a separate business identity. The server keeps no Bot cap, so API, MCP and
+existing multi-Bot workspaces are unchanged. The current Shared Work offer has no
+per-Bot charge; included numbers, email addresses, work allowances and execution
+limits remain finite. Retained channel packages keep their saved Bot limits. Never infer
+an extra-Bot charge from a historical package.
 
 ## Focus and expansion
 

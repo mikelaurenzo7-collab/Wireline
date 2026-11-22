@@ -26,7 +26,7 @@ vi.mock("react", async (original) => ({
   },
   useRef: (initial: unknown) => (h.refs[h.refCursor++] ??= { current: initial }),
 }));
-vi.mock("react-router", () => ({ useNavigate: () => h.navigate }));
+vi.mock("react-router", () => ({ Link: "a", useNavigate: () => h.navigate }));
 vi.mock("../src/contexts/AuthContext", () => ({
   useAuth: () => ({
     user: { id: "synthetic-owner", email: "owner@example.test" },

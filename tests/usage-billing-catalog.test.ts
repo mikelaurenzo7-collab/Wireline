@@ -363,7 +363,8 @@ describe("Stripe setup script parity", () => {
     expect(facts).toContain("Starter is $24/month");
     expect(facts).toContain("Plus is $49/month");
     expect(facts).toContain("SMS is $0.04 per sent segment");
-    expect(facts).toContain("unlimited Bots");
+    expect(facts).toContain("one Bot that handles calls, texts, email and Computer tasks");
+    expect(facts).toContain("no per-Bot charge");
     expect(facts).not.toContain(retired);
     expect(isStaleBotBoundPricing(`BotBound Calls plan is ${retired}`)).toBe(true);
     expect(isStaleBotBoundPricing("A haircut is 19 dollars")).toBe(false);

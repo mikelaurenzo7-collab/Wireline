@@ -12,6 +12,7 @@ import {
   type AgentToolName,
 } from "../lib/agent-capabilities";
 import { getAllIntegrationPlaybooks } from "../lib/integration-playbooks";
+import { BOT_TASKS, botTaskTools, isBotTaskEnabled, setBotTaskEnabled } from "../lib/bot-tasks";
 import { resolveTenantToolIntegrationStatus } from "../lib/tenant-tool-integration-status";
 import { cn } from "../lib/utils";
 import { SMS_LAUNCH_UI_ENABLED } from "../lib/product-copy";
@@ -44,6 +45,10 @@ const VISIBLE_TOOLS = AGENT_TOOL_CATALOG.filter(
     (SMS_LAUNCH_UI_ENABLED || tool.name !== "send_text_message"),
 );
 const PLATFORM_TOOLS = VISIBLE_TOOLS.filter((tool) => !tool.integration);
+const VISIBLE_TOOL_NAMES = new Set<AgentToolName>(VISIBLE_TOOLS.map((tool) => tool.name));
+const isVisibleTool = (tool: AgentToolName) => VISIBLE_TOOL_NAMES.has(tool);
+/** Tasks with at least one action this workspace can configure. */
+const VISIBLE_TASKS = BOT_TASKS.filter((task) => botTaskTools(task, isVisibleTool).length > 0);
 
 export default function AgentToolPermissions({
   agentId,
@@ -176,6 +181,16 @@ export default function AgentToolPermissions({
     setEnabled((current) => {
       const list = current ?? [];
       return list.includes(tool) ? list.filter((name) => name !== tool) : [...list, tool];
+    });
+  };
+
+  const toggleTask = (task: (typeof VISIBLE_TASKS)[number]) => {
+    if (savingRef.current) return;
+    setNotice(null);
+    setEnabled((current) => {
+      const list = current ?? [];
+      const on = isBotTaskEnabled(task, new Set(list), isVisibleTool);
+      return setBotTaskEnabled(list, task, !on, isVisibleTool);
     });
   };
 
@@ -334,6 +349,33 @@ export default function AgentToolPermissions({
               aria-label="Bot action permissions"
               className="min-w-0 space-y-5"
             >
+              <div>
+                <h4 className="text-sm font-semibold text-foreground">Tasks</h4>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  Your Bot can do all of these. Turn on what it should handle, then save.
+                </p>
+                <ul className="mt-2 divide-y divide-border" aria-label="Bot tasks">
+                  {VISIBLE_TASKS.map((task) => (
+                    <li key={task.id}>
+                      <label className="flex cursor-pointer items-start gap-2.5 py-3 hover:bg-muted/40">
+                        <Checkbox
+                          checked={isBotTaskEnabled(task, enabledSet, isVisibleTool)}
+                          onChange={() => toggleTask(task)}
+                          className="mt-0.5"
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-medium text-foreground">
+                            {task.label}
+                          </span>
+                          <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                            {task.description}
+                          </span>
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </div>
               <div className="divide-y divide-border">
                 {getAllIntegrationPlaybooks().map((playbook) => {
                   const tools = VISIBLE_TOOLS.filter(

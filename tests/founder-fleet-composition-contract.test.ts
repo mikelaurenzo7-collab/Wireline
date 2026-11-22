@@ -159,7 +159,7 @@ describe("founder fleet composition", () => {
     expect(facts).toContain("Starter is $24/month");
     expect(facts).toContain("Plus is $49/month");
     expect(facts).toContain("SMS is $0.04 per sent segment");
-    expect(facts).toContain("unlimited Bots");
+    expect(facts).toContain("no per-Bot charge");
     expect(facts).not.toContain(retired);
     expect(facts).not.toContain("channel packages include one Bot");
     expect(facts).not.toContain("prepaid Runtime Balance");
