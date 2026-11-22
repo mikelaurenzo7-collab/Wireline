@@ -119,21 +119,24 @@ Runtime execution reads the saved Bot profile, selected model/voice posture, con
 - Billing, webhooks, account deletion, provider callbacks, and connected-tool writes are server-owned workflows.
 - Browser/mobile clients may initiate intent but must not own authorization decisions.
 - Outbound marketing dials run tenant DNC + federal DNC (when configured) + TCPA consent gates before PSTN spend.
+- Texts send only from a line the workspace owns and that Twilio reports as carrier-registered (A2P campaign verified or toll-free approved). Registration state is read from Twilio (`src/lib/twilio-sms-registration.ts`), not stored, so the send path and Lines never disagree with the carrier.
+- One user's preferences are a single shared JSON envelope. Every writer reads and writes it under the shared lock (`src/lib/preference-envelope.ts`; enforced by `tests/preference-envelope-writers.test.ts`). `company_identity` and `texting_registration` are server-owned: the general preferences API never replaces them, and owner business details are sealed with `WIRELINE_DATA_KEY`.
 - CSP policy checks, authorization checks, product-doc checks, and functional tests remain in the full verification path.
 - Supabase Auth advisor findings must not be represented as BotBound auth blockers unless BotBound adopts Supabase Auth. BotBound's custom password and HIBP controls remain the authoritative launch gate.
 
 ## Source-of-truth discipline
 
-| Concern                                       | Canonical source                                                                                      |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Product language                              | `src/lib/product-copy.ts`, `docs/README.md`                                                           |
-| Current pricing                               | `docs/USAGE_BILLING.md`, `src/lib/usage-billing-catalog.ts`                                            |
-| Plan compatibility and entitlements            | `src/lib/plan-catalog.ts`; historical billing decisions do not define new offers                    |
-| Runtime Balance (Conversation Balance module) | `src/lib/conversation-balance.ts`                                                                     |
-| Design                                        | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css` |
-| Models                                        | `src/lib/ai-models.ts`                                                                                |
-| Retired presenter compatibility               | `docs/PRODUCT_SHOWCASE_MATRIX.md`, `src/lib/video-presenter/copy.ts`                                  |
-| Repo hygiene                                  | `CODEBASE_HEALTH.md`                                                                                  |
+| Concern                                       | Canonical source                                                                                                      |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Product language                              | `src/lib/product-copy.ts`, `docs/README.md`                                                                           |
+| Current pricing                               | `docs/USAGE_BILLING.md`, `src/lib/usage-billing-catalog.ts`                                                           |
+| Plan compatibility and entitlements           | `src/lib/plan-catalog.ts`; historical billing decisions do not define new offers                                      |
+| Runtime Balance (Conversation Balance module) | `src/lib/conversation-balance.ts`                                                                                     |
+| Design                                        | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`                 |
+| Models                                        | `src/lib/ai-models.ts`                                                                                                |
+| Carrier texting registration                  | Twilio, read through `src/lib/twilio-sms-registration.ts`; owner details in `src/lib/texting-registration-details.ts` |
+| Retired presenter compatibility               | `docs/PRODUCT_SHOWCASE_MATRIX.md`, `src/lib/video-presenter/copy.ts`                                                  |
+| Repo hygiene                                  | `CODEBASE_HEALTH.md`                                                                                                  |
 
 ## Verification
 

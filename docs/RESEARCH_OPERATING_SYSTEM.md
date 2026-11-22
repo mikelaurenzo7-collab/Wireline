@@ -5,7 +5,7 @@ This document turns BotBound research into an execution system. It is not a back
 1. **Trust** — the Bot is safe, reliable, permissioned, auditable, and understandable.
 2. **Activation** — a user reaches a trained, testable, useful Bot quickly.
 3. **Retention** — the Bot keeps producing measurable value after the first call, text, handoff, or follow-up.
-4. **Expansion** — one useful Bot becomes more Bots, surfaces, numbers, teammates, and governed workflows.
+4. **Expansion** — one useful Bot takes on more tasks, channels, surfaces, teammates, and governed workflows, on the business's one line.
 
 The canonical public promise is **Your Bot for calls, texts, and email.** The
 public story leads with capabilities and outcomes, without a setup sequence. Technical surfaces may
@@ -38,7 +38,7 @@ BotBound should be studied like a regulated communications product, a conversion
 | Does the Bot behave correctly in real calls under messy caller behavior?                            | Voice trust determines retention.                    | 100-call dogfood set across everyday delegation, owner-operated, front desk, sales, and support use cases.    | Launch readiness for public traffic.                    |
 | Are phone provisioning, call routing, SMS, transcripts, and follow-up reliable enough for paid use? | The line cannot feel experimental once live.         | Synthetic probes, provider error taxonomy, end-to-end traces, retry/fallback results.                         | Production launch and SLA posture.                      |
 | Is the public story understood in under five seconds on mobile?                                     | Mobile browser is the first impression.              | Five-second tests, first-click tests, mobile scroll maps, CTA comprehension.                                  | Hero/landing iteration and ad readiness.                |
-| Are static metadata, runtime metadata, social previews, and installable-app metadata aligned?       | Crawlers and share surfaces see static output first. | Static metadata contracts and canonical-origin HTML fetch after the Render deployment.                      | SEO/social confidence.                                  |
+| Are static metadata, runtime metadata, social previews, and installable-app metadata aligned?       | Crawlers and share surfaces see static output first. | Static metadata contracts and canonical-origin HTML fetch after the Render deployment.                        | SEO/social confidence.                                  |
 | Do tests actually guard the product promises that matter?                                           | Visual polish can regress silently.                  | CI runs product voice, metadata, authz, CSP, build, server smoke, extension checks, and e2e where practical.  | Safe iteration velocity.                                |
 
 ### P1 — monetization and retention
@@ -202,7 +202,7 @@ Metrics:
 - Checkout start -> completed subscription/top-up.
 - Balance top-up repeat rate.
 - Gross margin per voice minute and per account.
-- Expansion from Free Builder to live use, higher capacity, and additional Bots.
+- Expansion from Free Builder to live use, higher capacity, and more tasks on the same Bot.
 
 ### 6. Growth, SEO, and content
 
