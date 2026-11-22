@@ -44,6 +44,7 @@
     "dnc:probe": "node scripts/probe-federal-dnc.mjs",
     "launch:status": "node scripts/generate-launch-status.mjs",
     "twilio:usage-triggers": "node scripts/provision-twilio-usage-triggers.mjs",
+    "carrier:register": "node --import tsx scripts/register-customer-texting.mts",
     "runtime:policy:check": "node scripts/check-runtime-policy.mjs",
     "stripe:setup": "node scripts/setup-stripe-catalog.mjs",
     "stripe:audit-live": "node scripts/run-stripe-audit-live.mjs",
