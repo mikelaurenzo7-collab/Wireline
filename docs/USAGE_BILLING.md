@@ -94,6 +94,22 @@ Published provider prices and internal reservations are planning inputs, not mea
 net profit. Track actual provider costs, payment fees, refunds, fixed hosting and founder
 support time. The earlier v1 margin percentages are retired; do not reuse them for v2.
 
+### Texting registration (absorbed)
+
+BotBound absorbs each texting business's US carrier registration (founder decision,
+November 22, 2026). Twilio's published fees, read that day, are $4.50 per brand plus $15
+campaign vetting, once, then $2/month (Sole Proprietor) or $1.50/month (Low-Volume
+Mixed) per campaign ([Twilio](https://help.twilio.com/articles/1260803965530)). The
+constants live in `src/lib/plan-catalog.ts`. `npm run economics:report` shows their effect
+on each tier's stress scenario, about $5.25 a month for the first six months and $2 a month
+after that. Under that stress case Lite falls below zero during the first six months,
+while Starter and Plus stay positive. Typical metered use carries the cost on every tier.
+
+To keep the one-time fee from going to churned trials, register a business only when it
+turns texting on and after its first successful payment. Each business has one line and
+one registration. No price changed. Whether Lite's price or its texting access needs to
+change is an open founder review.
+
 ## Spend caps
 
 - Default cap $100 a month. Minimum is fixed charges (base plus add-ons) plus $5; maximum $25,000.

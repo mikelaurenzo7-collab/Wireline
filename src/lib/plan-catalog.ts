@@ -21,6 +21,17 @@ export const VOICE_VARIABLE_COST_PER_MIN_USD = 0.128;
  */
 export const TENANT_OBSERVED_COGS_HEADROOM_RATIO = 1.15;
 export const PHONE_NUMBER_COST_MONTHLY_USD = 1.15;
+/**
+ * Twilio A2P 10DLC fees per texting business, absorbed by BotBound (founder
+ * decision, 2026-11-22). Source: help.twilio.com/articles/1260803965530, read
+ * 2026-11-22: $4.50 brand (Sole Proprietor or Low-Volume Standard) plus $15
+ * campaign vetting, one time; then $2/month Sole Proprietor or $1.50/month
+ * Low-Volume Mixed campaign. The model uses the higher monthly fee.
+ */
+export const A2P_REGISTRATION_ONE_TIME_USD = 19.5;
+export const A2P_CAMPAIGN_MONTHLY_USD = 2;
+/** Months over which the one-time registration is spread in pricing review. */
+export const A2P_REGISTRATION_AMORTIZATION_MONTHS = 6;
 /** AgentMail capacity allocation per paid Bot; not an additional invoice on top of the base subscription. */
 export const MANAGED_MAILBOX_COST_MONTHLY_USD = 2;
 export const PAYMENT_PROCESSING_RATE = 0.029;
