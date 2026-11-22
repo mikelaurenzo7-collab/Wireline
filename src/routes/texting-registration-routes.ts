@@ -1,8 +1,9 @@
 import { Router, type Response } from "express";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { AppError, asyncHandler } from "../lib/api-error";
+import { lockPreferenceEnvelope } from "../lib/preference-envelope";
 import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { isVaultConfigured } from "../lib/secret-vault";
@@ -80,17 +81,6 @@ function payload(state: Awaited<ReturnType<typeof loadState>>) {
   };
 }
 
-async function lockPreferences(db: Pick<typeof drizzle, "execute">, userId: string) {
-  // The same advisory lock as Company Identity and the canonical preference
-  // writer, so the three never overwrite each other's envelope.
-  await db.execute(
-    sql`SELECT pg_advisory_xact_lock(hashtext('company-identity'), hashtext(${userId}))`,
-  );
-  await db.execute(
-    sql`SELECT user_id FROM wireline_user_preferences WHERE user_id = ${userId} FOR UPDATE`,
-  );
-}
-
 async function notifyFounder(userId: string, stored: StoredTextingRegistration) {
   const ownerEmail = process.env.OWNER_EMAIL;
   if (!ownerEmail) return;
@@ -139,7 +129,7 @@ router.put(
     let input = normalizeTextingRegistrationInput(req.body);
 
     const firstSubmission = await drizzle.transaction(async (tx) => {
-      await lockPreferences(tx, userId);
+      await lockPreferenceEnvelope(tx, userId);
       const current = await loadState(userId, tx);
 
       // An edit may leave the EIN blank to keep the one already on file.
@@ -203,7 +193,7 @@ router.delete(
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.id;
     await drizzle.transaction(async (tx) => {
-      await lockPreferences(tx, userId);
+      await lockPreferenceEnvelope(tx, userId);
       const current = await loadState(userId, tx);
       if (!current.stored) return;
       const envelope = { ...current.envelope };

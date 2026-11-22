@@ -160,7 +160,7 @@ describe("texting registration details", () => {
     expect(registry).toContain("app.use(textingRegistrationRouter)");
     expect(route).toContain("if (!isVaultConfigured())");
     expect(route).toContain("SECURE_STORAGE_UNAVAILABLE");
-    expect(route).toContain("pg_advisory_xact_lock(hashtext('company-identity')");
+    expect(route).toContain("await lockPreferenceEnvelope(tx, userId);");
     expect(route).toContain('action: "texting_registration.details_saved"');
     expect(route).toContain('action: "texting_registration.details_removed"');
     expect(route).toContain("TEXTING_REGISTRATION_INVALID");

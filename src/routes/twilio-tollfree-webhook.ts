@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from "express";
 import { eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
+import { lockPreferenceEnvelope } from "../lib/preference-envelope";
 import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
@@ -124,56 +125,61 @@ router.post(
 
       // 3. Update company identity provider status in user preferences if tenant identified
       if (targetUserId) {
-        const [prefRow] = await drizzle
-          .select({ preferences: schema.userPreferences.preferences })
-          .from(schema.userPreferences)
-          .where(eq(schema.userPreferences.userId, targetUserId))
-          .limit(1);
+        const ownerId = targetUserId;
+        // Shared envelope: read and write under the lock every preferences writer takes.
+        await drizzle.transaction(async (tx) => {
+          await lockPreferenceEnvelope(tx, ownerId);
+          const [prefRow] = await tx
+            .select({ preferences: schema.userPreferences.preferences })
+            .from(schema.userPreferences)
+            .where(eq(schema.userPreferences.userId, ownerId))
+            .limit(1);
 
-        const currentPrefs =
-          prefRow?.preferences && typeof prefRow.preferences === "object"
-            ? (prefRow.preferences as Record<string, unknown>)
-            : {};
+          const currentPrefs =
+            prefRow?.preferences && typeof prefRow.preferences === "object"
+              ? (prefRow.preferences as Record<string, unknown>)
+              : {};
 
-        const companyIdentity =
-          currentPrefs.company_identity && typeof currentPrefs.company_identity === "object"
-            ? { ...(currentPrefs.company_identity as Record<string, unknown>) }
-            : null;
+          const companyIdentity =
+            currentPrefs.company_identity && typeof currentPrefs.company_identity === "object"
+              ? { ...(currentPrefs.company_identity as Record<string, unknown>) }
+              : null;
 
-        if (companyIdentity) {
-          const currentProviderStatus =
-            companyIdentity.providerStatus && typeof companyIdentity.providerStatus === "object"
-              ? { ...(companyIdentity.providerStatus as Record<string, unknown>) }
-              : { voice: "not_requested", sms: "not_requested", email: "not_requested" };
+          if (companyIdentity) {
+            const currentProviderStatus =
+              companyIdentity.providerStatus && typeof companyIdentity.providerStatus === "object"
+                ? { ...(companyIdentity.providerStatus as Record<string, unknown>) }
+                : { voice: "not_requested", sms: "not_requested", email: "not_requested" };
 
-          currentProviderStatus.sms = providerStatus;
-          companyIdentity.providerStatus = currentProviderStatus;
-          companyIdentity.tollfreeVerificationSid = verificationSid;
-          companyIdentity.tollfreeVerificationStatus = normalized;
-          if (reason) {
-            companyIdentity.tollfreeRejectionReason = reason;
-          }
+            currentProviderStatus.sms = providerStatus;
+            companyIdentity.providerStatus = currentProviderStatus;
+            companyIdentity.tollfreeVerificationSid = verificationSid;
+            companyIdentity.tollfreeVerificationStatus = normalized;
+            if (reason) {
+              companyIdentity.tollfreeRejectionReason = reason;
+            }
 
-          const nextPrefs = {
-            ...currentPrefs,
-            company_identity: companyIdentity,
-          };
+            const nextPrefs = {
+              ...currentPrefs,
+              company_identity: companyIdentity,
+            };
 
-          await drizzle
-            .insert(schema.userPreferences)
-            .values({
-              userId: targetUserId,
-              preferences: nextPrefs,
-              updatedAt: new Date(),
-            })
-            .onConflictDoUpdate({
-              target: schema.userPreferences.userId,
-              set: {
+            await tx
+              .insert(schema.userPreferences)
+              .values({
+                userId: ownerId,
                 preferences: nextPrefs,
                 updatedAt: new Date(),
-              },
-            });
-        }
+              })
+              .onConflictDoUpdate({
+                target: schema.userPreferences.userId,
+                set: {
+                  preferences: nextPrefs,
+                  updatedAt: new Date(),
+                },
+              });
+          }
+        });
       }
 
       // 4. Audit trail entry

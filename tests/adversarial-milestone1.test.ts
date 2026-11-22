@@ -120,6 +120,18 @@ function createMockRes() {
   return res;
 }
 
+/** Run a transaction against the spied drizzle methods; the envelope lock is a no-op here. */
+function runTransactionsOnSpies() {
+  vi.spyOn(drizzle, "transaction").mockImplementation((async (
+    fn: (tx: unknown) => Promise<unknown>,
+  ) =>
+    fn({
+      execute: async () => [],
+      select: (...args: unknown[]) => (drizzle.select as (...a: unknown[]) => unknown)(...args),
+      insert: (...args: unknown[]) => (drizzle.insert as (...a: unknown[]) => unknown)(...args),
+    })) as never);
+}
+
 describe("Adversarial Stress Testing — Milestone 1", () => {
   beforeEach(() => {
     vi.stubEnv("NODE_ENV", "production");
@@ -561,6 +573,7 @@ describe("Adversarial Stress Testing — Milestone 1", () => {
     });
 
     it("evaluates whether replayed PENDING callback overwrites an already TWILIO_APPROVED status", async () => {
+      runTransactionsOnSpies();
       let savedPreferences: Record<string, unknown> | null = null;
       vi.spyOn(drizzle, "select").mockImplementation((() => {
         // Return phone number row and userPreferences row with already approved status

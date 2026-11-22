@@ -19,8 +19,7 @@ import { drizzle } from "../src/lib/server-context";
 
 const AUTH_TOKEN = "test-auth-token-tollfree-verification";
 const ACCOUNT_SID = "AC11111111111111111111111111111111";
-const WEBHOOK_URL =
-  "https://botbound.app/api/twilio-webhook/tollfree-verification-status";
+const WEBHOOK_URL = "https://botbound.app/api/twilio-webhook/tollfree-verification-status";
 
 function chainQuery<T>(rows: T[]) {
   const builder: Record<string, unknown> = {};
@@ -119,8 +118,21 @@ function createMockRes() {
   return res;
 }
 
+/** Run a transaction against the spied drizzle methods; the envelope lock is a no-op here. */
+function runTransactionsOnSpies() {
+  vi.spyOn(drizzle, "transaction").mockImplementation((async (
+    fn: (tx: unknown) => Promise<unknown>,
+  ) =>
+    fn({
+      execute: async () => [],
+      select: (...args: unknown[]) => (drizzle.select as (...a: unknown[]) => unknown)(...args),
+      insert: (...args: unknown[]) => (drizzle.insert as (...a: unknown[]) => unknown)(...args),
+    })) as never);
+}
+
 describe("Twilio Trust Hub & Toll-Free Verification Flow", () => {
   beforeEach(() => {
+    runTransactionsOnSpies();
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("VERCEL", "1");
     vi.stubEnv("APP_URL", "https://botbound.app");
@@ -216,10 +228,7 @@ describe("Twilio Trust Hub & Toll-Free Verification Flow", () => {
 
   describe("CLI Dry-Run Execution", () => {
     it("executes CLI --dry-run cleanly with Node 22", () => {
-      const scriptPath = resolve(
-        process.cwd(),
-        "scripts/submit-twilio-tollfree-verification.mjs",
-      );
+      const scriptPath = resolve(process.cwd(), "scripts/submit-twilio-tollfree-verification.mjs");
       const output = execSync(`node "${scriptPath}" --dry-run`, {
         encoding: "utf8",
         cwd: process.cwd(),
@@ -235,17 +244,11 @@ describe("Twilio Trust Hub & Toll-Free Verification Flow", () => {
     });
 
     it("accepts custom toll-free phone number via CLI", () => {
-      const scriptPath = resolve(
-        process.cwd(),
-        "scripts/submit-twilio-tollfree-verification.mjs",
-      );
-      const output = execSync(
-        `node "${scriptPath}" --phone-number +18882682686 --dry-run`,
-        {
-          encoding: "utf8",
-          cwd: process.cwd(),
-        },
-      );
+      const scriptPath = resolve(process.cwd(), "scripts/submit-twilio-tollfree-verification.mjs");
+      const output = execSync(`node "${scriptPath}" --phone-number +18882682686 --dry-run`, {
+        encoding: "utf8",
+        cwd: process.cwd(),
+      });
 
       const receipt = JSON.parse(output);
       expect(receipt.ok).toBe(true);
@@ -254,10 +257,7 @@ describe("Twilio Trust Hub & Toll-Free Verification Flow", () => {
     });
 
     it("rejects invalid non-toll-free number via CLI", () => {
-      const scriptPath = resolve(
-        process.cwd(),
-        "scripts/submit-twilio-tollfree-verification.mjs",
-      );
+      const scriptPath = resolve(process.cwd(), "scripts/submit-twilio-tollfree-verification.mjs");
       let failed = false;
       try {
         execSync(`node "${scriptPath}" --phone-number +14155550100 --dry-run`, {
@@ -348,8 +348,8 @@ describe("Twilio Trust Hub & Toll-Free Verification Flow", () => {
 
   describe("Webhook Status Progression & Telemetry", () => {
     it("handles TWILIO_APPROVED status callback and writes telemetry", async () => {
-      vi.spyOn(drizzle, "select").mockImplementation(() =>
-        chainQuery([{ userId: "user-123" }]) as never,
+      vi.spyOn(drizzle, "select").mockImplementation(
+        () => chainQuery([{ userId: "user-123" }]) as never,
       );
       const insertSpy = vi
         .spyOn(drizzle, "insert")
@@ -378,8 +378,8 @@ describe("Twilio Trust Hub & Toll-Free Verification Flow", () => {
     });
 
     it("handles TWILIO_REJECTED with reason and logs warning audit", async () => {
-      vi.spyOn(drizzle, "select").mockImplementation(() =>
-        chainQuery([{ userId: "user-123" }]) as never,
+      vi.spyOn(drizzle, "select").mockImplementation(
+        () => chainQuery([{ userId: "user-123" }]) as never,
       );
       const insertSpy = vi
         .spyOn(drizzle, "insert")
@@ -409,8 +409,8 @@ describe("Twilio Trust Hub & Toll-Free Verification Flow", () => {
     });
 
     it("handles IN_REVIEW and PENDING progression", async () => {
-      vi.spyOn(drizzle, "select").mockImplementation(() =>
-        chainQuery([{ userId: "user-123" }]) as never,
+      vi.spyOn(drizzle, "select").mockImplementation(
+        () => chainQuery([{ userId: "user-123" }]) as never,
       );
       vi.spyOn(drizzle, "insert").mockImplementation(() => chainInsert() as never);
 
