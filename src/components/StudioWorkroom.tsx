@@ -38,6 +38,7 @@ import { reconcileStudioCommandDraft } from "../lib/studio-route-state";
 import { WL_COMPOSER_CLASSES } from "../lib/wireline-design-system";
 import { retainStudioConversationMessages } from "../lib/studio-session-state";
 import LinkifiedText from "./ui/LinkifiedText";
+import TaskResultText from "./computer/TaskResultText";
 import BotMark from "./BotMark";
 import StudioHandsFree from "./studio/StudioHandsFree";
 import { useStudioTaskComposer } from "../hooks/useStudioTaskComposer";
@@ -117,9 +118,7 @@ function MessageBubble({
     <article className="wl-studio-message is-bot w-full" aria-label={`${agentName} response`}>
       <div className="min-w-0">
         <div className="wl-studio-message__body">
-          <p className="whitespace-pre-wrap break-words">
-            <LinkifiedText>{message.content}</LinkifiedText>
-          </p>
+          <TaskResultText>{message.content}</TaskResultText>
         </div>
         {message.proposals ? (
           <StudioProposalReview
