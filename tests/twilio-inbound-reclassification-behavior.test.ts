@@ -342,6 +342,52 @@ describe("signed Twilio voice reclassification fence", () => {
 });
 
 describe("signed Twilio SMS reclassification fence", () => {
+  it("queues one durable reply only when a new ordinary inbound message commits", async () => {
+    vi.doUnmock("../src/routes/twilio-webhook-base");
+    vi.doMock("../src/lib/server-context", () => ({
+      drizzle: {},
+      log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+      tenantStore: { run: vi.fn(async (_userId: string, operation: () => unknown) => operation()) },
+    }));
+    const inserted: Array<Record<string, unknown>> = [];
+    const tx: any = {
+      insert: vi.fn(() => {
+        const index = tx.insert.mock.calls.length;
+        const chain: any = {};
+        chain.values = vi.fn((value: Record<string, unknown>) => {
+          inserted.push(value);
+          return chain;
+        });
+        chain.onConflictDoNothing = vi.fn(() => chain);
+        chain.returning = vi.fn(async () =>
+          index === 1 ? [{ id: "11111111-1111-4111-8111-111111111111" }]
+            : index === 2 ? [{ id: 42n }] : []);
+        return chain;
+      }),
+      update: vi.fn(() => ({ set: () => ({ where: async () => [] }) })),
+    };
+    const { persistInboundSmsEvidence } = await import("../src/routes/twilio-webhook-base");
+    await persistInboundSmsEvidence(tx, {
+      userId: TENANT_ID,
+      agentId: "bot-1",
+      destinationNumber: "+17736949780",
+      customerNumber: "+13125550124",
+      body: "Could I book an appointment?",
+      messageSid: "SM00000000000000000000000000000042",
+      queueAutoReply: true,
+    });
+    expect(inserted[2]).toMatchObject({
+      userId: TENANT_ID,
+      type: "sms_auto_reply",
+      maxAttempts: 3,
+      payload: {
+        threadId: "11111111-1111-4111-8111-111111111111",
+        inboundMessageId: "42",
+      },
+    });
+    expect(tx.update).toHaveBeenCalledTimes(1);
+  });
+
   it("preserves operator ownership and clears a stale Bot when the exact line is unassigned", async () => {
     vi.doUnmock("../src/routes/twilio-webhook-base");
     vi.doMock("../src/lib/server-context", () => ({

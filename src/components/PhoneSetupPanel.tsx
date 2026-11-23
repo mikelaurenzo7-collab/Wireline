@@ -28,6 +28,8 @@ type PhoneNumberRecord = {
   texting_approval?: "approved" | "pending" | "not_approved" | "unknown" | null;
   /** The line's approved carrier campaign covers missed-call follow-up texts. */
   missed_call_texts_covered?: boolean | null;
+  /** Approved carrier use case explicitly includes customer-initiated text replies. */
+  inbound_text_replies_covered?: boolean | null;
 };
 
 /** What the missed-call text-back switch does on this line, in plain words. */
@@ -126,6 +128,11 @@ export default function PhoneSetupPanel({
     loaded: false,
     saving: false,
   });
+  const [automaticTextReplies, setAutomaticTextReplies] = useState({
+    enabledNumbers: [] as string[],
+    loaded: false,
+    saving: false,
+  });
   const companyIdentityRef = useRef<HTMLDetailsElement>(null);
   const textingRegistrationRef = useRef<HTMLDetailsElement>(null);
   const previousPreferredAgentRef = useRef("");
@@ -136,6 +143,8 @@ export default function PhoneSetupPanel({
 
   const activeNumber =
     numbers.find((number) => number.id === selectedNumberId) || numbers[0] || null;
+  const automaticTextRepliesEnabled =
+    Boolean(activeNumber && automaticTextReplies.enabledNumbers.includes(activeNumber.phone_number));
   const attachedAgent = useMemo(
     () => agents.find((agent) => agent.id === activeNumber?.agent_id),
     [activeNumber?.agent_id, agents],
@@ -176,7 +185,7 @@ export default function PhoneSetupPanel({
   );
 
   useEffect(() => {
-    if (!textsOnThisLine || missedCallTexts.loaded) return;
+    if (!textsOnThisLine || (missedCallTexts.loaded && automaticTextReplies.loaded)) return;
     const controller = new AbortController();
     void (async () => {
       try {
@@ -186,12 +195,51 @@ export default function PhoneSetupPanel({
         const setting = body.preferences?.missed_call_text_back as
           { enabled?: unknown } | undefined;
         setMissedCallTexts({ enabled: setting?.enabled === true, loaded: true, saving: false });
+        const autoReply = body.preferences?.sms_auto_reply as { enabledNumbers?: unknown } | undefined;
+        const enabledNumbers = Array.isArray(autoReply?.enabledNumbers)
+          ? autoReply.enabledNumbers.filter((value): value is string => typeof value === "string")
+          : [];
+        setAutomaticTextReplies({ enabledNumbers, loaded: true, saving: false });
       } catch {
         // Leave the switch hidden when preferences cannot be read.
       }
     })();
     return () => controller.abort();
-  }, [textsOnThisLine, missedCallTexts.loaded]);
+  }, [textsOnThisLine, missedCallTexts.loaded, automaticTextReplies.loaded]);
+
+  async function toggleAutomaticTextReplies(enabled: boolean) {
+    if (automaticTextReplies.saving || !activeNumber?.agent_id || (enabled && activeNumber.inbound_text_replies_covered !== true)) return;
+    const lineNumber = activeNumber.phone_number;
+    setAutomaticTextReplies((current) => ({ ...current, saving: true }));
+    setError(null);
+    try {
+      const current = await authFetch("/api/user-preferences");
+      const body = current.ok
+        ? ((await current.json()) as { preferences?: Record<string, unknown> })
+        : null;
+      if (!body) throw new Error("Preferences could not be read.");
+      const existing = body.preferences?.sms_auto_reply as { enabledNumbers?: unknown } | undefined;
+      const enabledNumbers = Array.isArray(existing?.enabledNumbers)
+        ? existing.enabledNumbers.filter((value): value is string => typeof value === "string")
+        : [];
+      const nextNumbers = enabled
+        ? [...new Set([...enabledNumbers, lineNumber])]
+        : enabledNumbers.filter((number) => number !== lineNumber);
+      const response = await authFetch("/api/user-preferences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          preferences: { ...(body.preferences ?? {}), sms_auto_reply: { enabledNumbers: nextNumbers } },
+        }),
+      });
+      if (!response.ok) throw new Error("Automatic text replies could not be updated.");
+      setAutomaticTextReplies({ enabledNumbers: nextNumbers, loaded: true, saving: false });
+      setMessage(enabled ? "Automatic text replies are on." : "Automatic text replies are off.");
+    } catch {
+      setAutomaticTextReplies((current) => ({ ...current, saving: false }));
+      setError("Couldn't update automatic text replies.");
+    }
+  }
 
   async function setMissedCallTextBack(enabled: boolean) {
     if (missedCallTexts.saving) return;
@@ -963,6 +1011,33 @@ export default function PhoneSetupPanel({
                     {missedCallTexts.enabled
                       ? "Turn off missed-call texts"
                       : "Turn on missed-call texts"}
+                  </Button>
+                </div>
+              ) : null}
+
+              {textsOnThisLine && automaticTextReplies.loaded ? (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                  <p className="max-w-prose text-xs leading-5 text-muted-foreground">
+                    {!activeNumber.agent_id
+                      ? "Assign a Bot to this line before turning on automatic text replies."
+                      : activeNumber.inbound_text_replies_covered === false
+                        ? "Automatic replies need carrier approval for customer-initiated texts. This line currently covers another texting use case."
+                      : activeNumber.inbound_text_replies_covered == null
+                        ? "Carrier approval for automatic replies could not be checked. Retry the line connection."
+                      : automaticTextRepliesEnabled
+                        ? "Your Bot answers routine incoming texts from this line. Requests needing a person stay in Inbox."
+                        : "Let your Bot answer routine incoming texts automatically. Requests needing a person stay in Inbox."}
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    disabled={!activeNumber.agent_id || (activeNumber.inbound_text_replies_covered !== true && !automaticTextRepliesEnabled) || automaticTextReplies.saving || working}
+                    onClick={() => void toggleAutomaticTextReplies(!automaticTextRepliesEnabled)}
+                  >
+                    {automaticTextRepliesEnabled
+                      ? "Turn off automatic replies"
+                      : "Turn on automatic replies"}
                   </Button>
                 </div>
               ) : null}

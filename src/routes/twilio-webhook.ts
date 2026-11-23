@@ -21,6 +21,7 @@ import { resolveTwilioInboundEnvironment } from "../lib/twilio-inbound-environme
 import { claimTwilioUsageAlert } from "../lib/twilio-usage-alert-idempotency";
 import { opaqueIdSuffixForLog, phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
 import { sanitizePhone } from "../lib/agent-runtime-helpers";
+import { smsAutoReplyEnabled } from "../lib/sms-auto-reply-policy";
 import baseRouter from "./twilio-webhook-base";
 import { lookupMessagingDestination, persistInboundSmsEvidence } from "./twilio-webhook-base";
 import tollfreeWebhookRouter from "./twilio-tollfree-webhook";
@@ -233,6 +234,12 @@ async function persistConsentControl(input: {
             return false;
           });
       if (!smsOptOut && !failsafeBlocked) {
+        const [ownerPreferences] = input.agentId
+          ? await tx.select({ preferences: schema.userPreferences.preferences })
+              .from(schema.userPreferences)
+              .where(eq(schema.userPreferences.userId, input.userId))
+              .limit(1)
+          : [];
         await persistInboundSmsEvidence(tx, {
           userId: input.userId,
           agentId: input.agentId,
@@ -240,6 +247,7 @@ async function persistConsentControl(input: {
           customerNumber: input.customerNumber,
           body: input.body,
           messageSid: input.messageSid,
+          queueAutoReply: smsAutoReplyEnabled(ownerPreferences?.preferences, input.destinationNumber),
         });
         return "passthrough";
       }

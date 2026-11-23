@@ -78,6 +78,9 @@ const SELF_MANAGED_DELETION_FENCE_JOB_TYPES = new Set<JobRow["type"]>([
   "openai_realtime_hangup",
   PAID_BOT_IDENTITY_JOB_TYPE,
   "account_deletion_billing_reconciliation",
+  // sendTenantMessage owns a provider lease; nesting it under this worker's
+  // transaction-level deletion fence would contend on the same tenant lock.
+  "sms_auto_reply",
 ]);
 
 /** Carrier acceptance predates deletion, so finish its accounting/history
@@ -502,6 +505,13 @@ async function dispatchJobInProviderContext(job: JobRow): Promise<void> {
   }
   if (job.type === "twilio_message_reconciliation") {
     await handleTwilioMessageReconciliationJob(job);
+    return;
+  }
+  if (job.type === "sms_auto_reply") {
+    assertLaunchProviderSpendAllowed(job);
+    const { processSmsAutoReplyJob } = await import("./sms-auto-reply");
+    const outcome = await processSmsAutoReplyJob(job);
+    await persistJobResult(job.id, { outcome });
     return;
   }
   if (job.type === "twilio_fallback_reconcile") {
