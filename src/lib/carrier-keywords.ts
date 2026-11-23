@@ -83,13 +83,13 @@ export function matchesSmsRevocationRequest(body: string): boolean {
   return [
     /^(?:please )?(?:stop|quit|end|revoke|cancel|unsubscribe|opt ?out)(?: please)?$/,
     /^(?:please |can you |could you |would you )?(?:stop (?:texting|messaging|calling|contacting) me|(?:do not|don't) (?:text|message|call|contact) me)(?: (?:again|anymore|any more|please))?$/,
-    /^(?:please |can you |could you |would you )?stop (?:sending|calling|contacting|messaging) (?:me|this number)(?: (?:texts?|messages?|calls?|again|please))?$/,
-    /^(?:please )?(?:do not|don't) send (?:me|this number) (?:any more )?(?:texts?|messages?)(?: (?:again|please))?$/,
+    /^(?:please |can you |could you |would you )?stop (?:sending|calling|contacting|messaging) (?:me|this number)(?: (?:texts?|text messages?|messages?|sms|calls?|again|please))?$/,
+    /^(?:please )?(?:do not|don't) send (?:me|this number) (?:any more )?(?:texts?|text messages?|messages?|sms)(?: (?:again|please))?$/,
     /^(?:please )?(?:remove|take) me (?:off|from) (?:your |the )?(?:text|texting|message|messaging|call|contact) list$/,
     /^(?:please )?(?:remove|take) me (?:off|from) (?:your |the )?list$/,
     /^(?:please )?remove (?:my|this) (?:number|phone number)(?: (?:from your list|please))?$/,
-    /^(?:please )?(?:no more|i (?:do not|don't) want (?:any )?more) (?:texts?|messages?|calls?)(?: please)?$/,
-    /^(?:please )?i (?:do not|don't) want to (?:hear from you|receive (?:any more )?(?:texts?|messages?|calls?))(?: (?:again|anymore|any more|please))?$/,
+    /^(?:please )?(?:no more|i (?:do not|don't) want (?:any )?more) (?:texts?|text messages?|messages?|sms|calls?)(?: please)?$/,
+    /^(?:please )?i (?:do not|don't) want to (?:hear from you|receive (?:any more )?(?:texts?|text messages?|messages?|sms|calls?))(?: (?:again|anymore|any more|please))?$/,
     /^(?:please )?(?:unsubscribe me|opt me out)(?: please)?$/,
   ].some((pattern) => pattern.test(request));
 }

@@ -261,18 +261,21 @@ describe("keywords Twilio already answers", () => {
     expect(reply.body).toContain("<Message>You have been unsubscribed");
   });
 
-  it("records a clear free-text opt-out before confirming it", async () => {
-    const reply = await deliver("Please stop texting me.", "SM-natural-stop");
-    expect(reply.status).toBe(200);
-    expect(reply.body).toContain("<Message>You have been unsubscribed");
-    expect(h.writes).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ reason: "opt-out", source: "sms_opt_out" }),
-        expect.objectContaining({ event: "sms_opt_out", state: "opted_out" }),
-      ]),
-    );
-    expect(h.evidence).toHaveBeenCalledOnce();
-  });
+  it.each(["Please stop texting me.", "Please stop sending me text messages."])(
+    "records the free-text opt-out %s before confirming it",
+    async (body) => {
+      const reply = await deliver(body, "SM-natural-stop");
+      expect(reply.status).toBe(200);
+      expect(reply.body).toContain("<Message>You have been unsubscribed");
+      expect(h.writes).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ reason: "opt-out", source: "sms_opt_out" }),
+          expect.objectContaining({ event: "sms_opt_out", state: "opted_out" }),
+        ]),
+      );
+      expect(h.evidence).toHaveBeenCalledOnce();
+    },
+  );
 
   it("asks Twilio to redeliver an unrecorded STOP it has already confirmed", async () => {
     h.failTransaction = true;

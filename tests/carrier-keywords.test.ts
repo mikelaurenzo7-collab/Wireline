@@ -55,6 +55,10 @@ describe("clear requests to stop SMS", () => {
     "Remove my number from your list",
     "Please don't send me any more texts",
     "Stop sending me messages",
+    "Please stop sending me text messages.",
+    "Please do not send me text messages",
+    "No more text messages please",
+    "I do not want to receive SMS",
     "I don't want to hear from you again",
     "Please unsubscribe",
   ])("recognizes %j", (body) => {
@@ -72,6 +76,8 @@ describe("clear requests to stop SMS", () => {
     "End the call",
     "Stop by tomorrow",
     "Quit the appointment process",
+    "I don't want texts about this appointment, call me",
+    "Text messages about tomorrow's appointment are okay",
   ])("leaves an ordinary reply in the inbox: %j", (body) => {
     expect(matchesSmsRevocationRequest(body)).toBe(false);
   });
