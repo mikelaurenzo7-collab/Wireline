@@ -9,6 +9,11 @@ import {
 } from "./lib/production-visual-qa-contract.mjs";
 import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
 import { isIntentionalCaptureAbort } from "./lib/visual-capture-diagnostics.mjs";
+import {
+  applyCaptureTheme,
+  THEME_STORAGE_KEY,
+  visualCaptureTheme,
+} from "./lib/visual-capture-theme.mjs";
 
 const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "http://localhost:3000").replace(
   /\/$/,
@@ -16,7 +21,8 @@ const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "http://localhost:3000"
 );
 const outputRoot = path.resolve(process.env.WIRELINE_VISUAL_OUTPUT_DIR || "artifacts/visual-qa");
 const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-const outputDir = path.join(outputRoot, timestamp);
+const captureTheme = visualCaptureTheme();
+const outputDir = path.join(outputRoot, captureTheme === "dark" ? `${timestamp}-dark` : timestamp);
 const email = process.env.WIRELINE_VISUAL_EMAIL?.trim();
 const password = process.env.WIRELINE_VISUAL_PASSWORD;
 const routeTimeoutMs = Number(process.env.WIRELINE_VISUAL_ROUTE_TIMEOUT_MS || 90_000);
@@ -693,6 +699,10 @@ async function newCapturedContext(options) {
       /* private contexts may block storage */
     }
   });
+  await context.addInitScript(applyCaptureTheme, {
+    theme: captureTheme,
+    storageKey: THEME_STORAGE_KEY,
+  });
   return context;
 }
 
@@ -759,6 +769,7 @@ try {
 const manifest = {
   baseUrl,
   outputDir,
+  theme: captureTheme,
   authenticatedCapture: Boolean(authenticatedStorageState),
   viewports: activeViewports.map(({ name, width, height }) => ({ name, width, height })),
   marketingRoutes: activeMarketingRoutes,
