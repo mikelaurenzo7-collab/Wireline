@@ -15,6 +15,7 @@ import {
   mediaCallSid,
   clonedMediaOrigin,
 } from "./cloned-media-config";
+import { connectXaiCarrierAudio } from "./xai-carrier-audio";
 import { ElevenLabsMediaSession } from "./elevenlabs-media-session";
 import { clonedSpeechStreams, clonedStockVoice } from "./cloned-speech-stream";
 import { voiceWorkerServiceSecret } from "./openai-sip-worker-config";
@@ -56,6 +57,7 @@ const startFrame = z.object({
     customParameters: z.object({
       token: z.string().min(1).max(4096),
       direction: z.enum(["inbound", "outbound"]),
+      engine: z.literal("xai").optional(),
     }),
   }),
 });
@@ -134,6 +136,19 @@ export async function prepareMediaRecording(callId: string, enabled: boolean): P
     recordingStatusCallbackMethod: "POST",
     recordingStatusCallbackEvent: ["completed"],
   });
+}
+
+export function createXaiCarrierSession(callId: string, apiKey: string): WebSocket {
+  const entry = streams.get(callId);
+  if (!entry?.authorized || entry.claimed || entry.carrier.readyState !== WebSocket.OPEN)
+    throw new Error("Authorized carrier stream is unavailable");
+  entry.claimed = true;
+  entry.carrier.off("message", entry.buffer);
+  const model = connectXaiCarrierAudio(entry.carrier, entry.streamSid, apiKey);
+  // The bot speaks its disclosure first. Frames buffered during admission
+  // precede the greeting and must not trigger a separate model response.
+  entry.earlyFrames = [];
+  return model;
 }
 
 export function createClonedMediaSession(input: {
@@ -316,8 +331,13 @@ export function installClonedMediaServer(
           carrier.close(1008, "Invalid stream identity");
           return;
         }
-        id = `media:${data.callSid}`;
-        if (streams.has(id)) {
+        const mediaId = `media:${data.callSid}`;
+        if (params.engine && params.direction !== "outbound") {
+          carrier.close(1008, "Unsupported media direction");
+          return;
+        }
+        id = params.engine ? `xai:${mediaId}` : mediaId;
+        if (streams.has(mediaId) || streams.has(`xai:${mediaId}`)) {
           carrier.close(1008, "Call already attached");
           return;
         }

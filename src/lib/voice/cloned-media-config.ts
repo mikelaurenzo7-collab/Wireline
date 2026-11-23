@@ -3,7 +3,7 @@ import { voiceWorkerOrigin } from "./openai-sip-worker-config";
 export const CLONED_MEDIA_PATH = "/api/voice/cloned-media";
 export const CLONED_MEDIA_ADMIT_PATH = "/api/voice/cloned-media/admit";
 export const mediaCallSid = (id: string): string | null =>
-  /^media:CA[a-f0-9]{32}$/i.test(id) ? id.slice(6) : null;
+  /^(?:xai:)?media:(CA[a-f0-9]{32})$/i.exec(id)?.[1] ?? null;
 
 export function clonedMediaOrigin(env: NodeJS.ProcessEnv = process.env): string {
   return voiceWorkerOrigin({
