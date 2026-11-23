@@ -8,8 +8,8 @@
  *        wireline_consent_log so we have an audit trail.
  *   2. START / UNSTOP / YES keywords → remove from DNC (opt-back-in).
  *   3. Any other inbound text → persist it and bind the conversation to the
- *      Bot assigned to the destination line. OpenAI reply intelligence is
- *      requested from the authenticated inbox; Twilio remains the only
+ *      Bot assigned to the destination line. Explicitly enabled automatic
+ *      replies are queued in the same transaction; Twilio remains the only
  *      carrier and send boundary.
  *
  * OpenAI Realtime handles conversation audio over Twilio SIP; this is the SMS counterpart. The
@@ -47,6 +47,7 @@ import {
   phoneSuffixForLog,
 } from "../lib/twilio-webhook-privacy";
 import { resolveTwilioInboundEnvironment } from "../lib/twilio-inbound-environment";
+import { smsAutoReplyEnabled } from "../lib/sms-auto-reply-policy";
 import { enforceFundedCarrierCallLimit } from "../lib/voice/funded-carrier-call";
 import {
   completeTwilioVoiceFallback,
@@ -404,6 +405,13 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
     }
 
     try {
+      const [ownerPreferences] = destination.agentId
+        ? await drizzle
+            .select({ preferences: schema.userPreferences.preferences })
+            .from(schema.userPreferences)
+            .where(eq(schema.userPreferences.userId, tenantUserId))
+            .limit(1)
+        : [];
       await drizzle.transaction(async (tx) =>
         persistInboundSmsEvidence(tx, {
           userId: tenantUserId,
@@ -412,6 +420,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
           customerNumber: fromNormalized,
           body,
           messageSid,
+          queueAutoReply: smsAutoReplyEnabled(ownerPreferences?.preferences, destination.destinationNumber),
         }),
       );
     } catch (e: any) {
@@ -437,6 +446,8 @@ export async function persistInboundSmsEvidence(
     customerNumber: string;
     body: string;
     messageSid: string;
+    /** Ordinary inbound messages only. Keyword handlers never queue AI replies. */
+    queueAutoReply?: boolean;
   },
 ): Promise<void> {
   // Establish the conversation row without racing another first message. A
@@ -490,6 +501,19 @@ export async function persistInboundSmsEvidence(
     .onConflictDoNothing()
     .returning({ id: schema.smsMessages.id });
   if (!insertedMessage) return;
+
+  // The inbox evidence and one background reply job commit together. A
+  // redelivered Twilio SID cannot enqueue a second job; a failed enqueue
+  // rolls back the message so Twilio can safely redeliver the webhook.
+  if (input.queueAutoReply && input.agentId && input.messageSid) {
+    await tx.insert(schema.jobs).values({
+      userId: input.userId,
+      type: "sms_auto_reply",
+      status: "pending",
+      maxAttempts: 3,
+      payload: { threadId: thread.id, inboundMessageId: String(insertedMessage.id) },
+    });
+  }
 
   await tx
     .update(schema.smsThreads)

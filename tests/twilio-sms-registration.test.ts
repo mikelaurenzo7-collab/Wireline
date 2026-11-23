@@ -6,6 +6,7 @@ vi.mock("../src/lib/server-context", () => ({
 vi.mock("../src/lib/twilio-service-base", () => ({ getTwilioClient: () => null }));
 
 import {
+  INBOUND_REPLY_COVERAGE,
   classifySmsSender,
   readSmsRegistrationSnapshot,
   resetSmsRegistrationCache,
@@ -98,6 +99,7 @@ describe("SMS sender registration", () => {
       kind: "local_10dlc",
       messagingServiceSid: "MGapproved",
       coversMissedCalls: false,
+      coversInboundReplies: false,
     });
     // In a Messaging Service with no campaign yet: carrier:register attaches
     // the line before the campaign exists, so this is registration underway.
@@ -166,6 +168,39 @@ describe("SMS sender registration", () => {
     expect(classifySmsSender(LOCAL_REGISTERED, snapshot)).toMatchObject({
       status: "registered",
       coversMissedCalls: true,
+      coversInboundReplies: false,
+    });
+  });
+
+  it("reads inbound reply coverage only from a verified campaign on the exact service", async () => {
+    const { client } = fakeClient();
+    const campaignList = client.messaging.v1.services;
+    const services = Object.assign(
+      (sid: string) => {
+        const context = campaignList(sid);
+        return sid === "MGapproved"
+          ? {
+              ...context,
+              usAppToPerson: {
+                list: async () => [
+                  { campaignStatus: "FAILED", description: "Customers text us for support." },
+                  { campaignStatus: "VERIFIED", description: "Customers text us for support." },
+                ],
+              },
+            }
+          : context;
+      },
+      { list: campaignList.list },
+    );
+    const snapshot = await readSmsRegistrationSnapshot(
+      { ...client, messaging: { v1: { ...client.messaging.v1, services } } },
+      0,
+    );
+    expect(classifySmsSender(LOCAL_REGISTERED, snapshot)).toMatchObject({
+      status: "registered", coversInboundReplies: true,
+    });
+    expect(classifySmsSender(LOCAL_PENDING, snapshot)).toMatchObject({
+      status: "unregistered",
     });
   });
 
@@ -243,6 +278,17 @@ describe("SMS sender registration", () => {
       status: "unknown",
       kind: "local_10dlc",
     });
+  });
+});
+
+describe("inbound automation campaign coverage", () => {
+  it("does not treat call-requested texts as an approved inbound reply program", () => {
+    expect(INBOUND_REPLY_COVERAGE.test(
+      "During a customer-care call, the customer asks for a text. After verbal permission we send the requested information.",
+    )).toBe(false);
+    expect(INBOUND_REPLY_COVERAGE.test(
+      "Customers text us for support after seeing the published number and consent disclosures. The Bot automatically replies to incoming customer texts.",
+    )).toBe(true);
   });
 });
 

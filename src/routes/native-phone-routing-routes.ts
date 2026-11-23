@@ -85,7 +85,11 @@ async function queueManagedIdentity(userId: string, agentId: string): Promise<vo
 }
 
 export type LineTextingApproval = "approved" | "pending" | "not_approved" | "unknown";
-type LineTexting = { approval: LineTextingApproval; missedCallsCovered: boolean };
+type LineTexting = {
+  approval: LineTextingApproval;
+  missedCallsCovered: boolean;
+  inboundRepliesCovered: boolean | null;
+};
 
 /**
  * Whether US carriers accept texts from this line, and whether its approved
@@ -94,7 +98,7 @@ type LineTexting = { approval: LineTextingApproval; missedCallsCovered: boolean 
  * page; it reports "unknown" instead.
  */
 async function lineTexting(phoneNumber: string): Promise<LineTexting> {
-  const unknown: LineTexting = { approval: "unknown", missedCallsCovered: false };
+  const unknown: LineTexting = { approval: "unknown", missedCallsCovered: false, inboundRepliesCovered: null };
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<LineTexting>((resolveTimer) => {
     timer = setTimeout(() => resolveTimer(unknown), 1500);
@@ -105,12 +109,14 @@ async function lineTexting(phoneNumber: string): Promise<LineTexting> {
         return {
           approval: "approved",
           missedCallsCovered: registration.coversMissedCalls === true,
+          inboundRepliesCovered: registration.coversInboundReplies === true,
         };
       if (registration.status === "unregistered")
         return {
           approval:
             registration.code === "SMS_SENDER_REGISTRATION_PENDING" ? "pending" : "not_approved",
           missedCallsCovered: false,
+          inboundRepliesCovered: false,
         };
       return unknown;
     })
@@ -177,6 +183,8 @@ router.get(
           texting_approval: textingApproval.get(row.phoneNumber)?.approval ?? "unknown",
           missed_call_texts_covered:
             textingApproval.get(row.phoneNumber)?.missedCallsCovered ?? false,
+          inbound_text_replies_covered:
+            textingApproval.get(row.phoneNumber)?.inboundRepliesCovered ?? null,
           created_at: row.createdAt?.toISOString() ?? null,
         };
       }),

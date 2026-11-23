@@ -543,10 +543,23 @@ export async function sendTenantMessage(
     };
   }
 
-  // A first text to this recipient names the sender and says how to opt out,
-  // matching the registered campaign samples. Replies in a thread stay as written.
+  // An inbound-first conversation already has a thread, but the first text
+  // FROM the business still needs its sender name and opt-out instruction.
+  const [priorOutbound] = channel === "sms" && thread
+    ? await drizzle
+        .select({ id: schema.smsMessages.id })
+        .from(schema.smsMessages)
+        .where(
+          and(
+            eq(schema.smsMessages.userId, userId),
+            eq(schema.smsMessages.threadId, thread.id),
+            eq(schema.smsMessages.direction, "out"),
+          ),
+        )
+        .limit(1)
+    : [];
   const deliveredBody =
-    channel === "sms" && !thread
+    channel === "sms" && !priorOutbound
       ? composeFirstContactSmsBody({ body, senderName: settings.senderName })
       : body;
 

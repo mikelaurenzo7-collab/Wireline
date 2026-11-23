@@ -39,6 +39,7 @@ export type JobType =
   | "post_call_finalization_recovery"
   | "scheduled_report"
   | "twilio_message_reconciliation"
+  | "sms_auto_reply"
   | "twilio_fallback_reconcile"
   | "phone_test_reconcile"
   | "outbound_placement_reconcile"

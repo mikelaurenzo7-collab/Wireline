@@ -8,29 +8,55 @@ export default function SmsConsentPage() {
     <MarketingChrome>
       <PageMeta
         title="SMS Consent | BotBound"
-        description="BotBound customer care SMS: permission script, message examples, and instructions to stop messages."
+        description="Text BotBound for customer care, or review how we obtain permission for call follow ups and honor STOP and HELP."
         path="/sms-consent"
         noIndex
       />
       <article className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-6 sm:py-14">
         <h1 className="mb-5 text-2xl font-semibold tracking-tight text-foreground">
-          Permission Before a Text.
+          BotBound Customer Care Texts
         </h1>
-        <p className="mb-4 text-base text-muted-foreground">BotBound Customer Care</p>
         <p className="text-base leading-7 text-muted-foreground">
-          BotBound uses its own customer service number for information and support requested during
-          a conversation. This program does not include cold outreach, purchased lists, or marketing
-          campaigns.
+          BotBound LLC uses its own customer service number to answer support questions, send
+          information requested during a call, and follow up about appointments. These are
+          non-promotional conversations with BotBound, not messages sent on behalf of other
+          businesses using our platform.
         </p>
-        <p className="mt-4 rounded-md border border-border bg-muted/30 p-4 text-sm leading-6">
-          Texting is included. A text goes out only after the recipient agrees. This page documents
-          that opt-in flow. It does not collect consent or show that any person has already agreed
-          to receive messages.
-        </p>
+
+        <section className="mt-10 space-y-4" aria-labelledby="start-by-text">
+          <h2 id="start-by-text" className="text-xl font-semibold">
+            Start a Support Conversation by Text
+          </h2>
+          <p className="leading-7 text-muted-foreground">
+            Text your BotBound question to{" "}
+            <a className="font-semibold text-brand underline" href="sms:+17736949780">
+              (773) 694-9780
+            </a>
+            . By sending a question to this number, you request replies from BotBound about that
+            conversation. An AI assistant or a person may answer. We do not add you to a marketing
+            list or send unrelated offers. Do not text sensitive personal information.
+          </p>
+          <p className="rounded-md border border-border bg-muted/30 p-4 text-sm leading-6">
+            Message frequency varies with the conversation. Message and data rates may apply. Reply
+            STOP to opt out or HELP for help. Texting is optional and is not a condition of purchase.
+            Read our <Link className="text-brand underline" to="/terms">Terms of Service</Link> and{" "}
+            <Link className="text-brand underline" to="/privacy">Privacy Policy</Link> before
+            texting. You can also email{" "}
+            <a className="text-brand underline" href="mailto:support@botbound.app">
+              support@botbound.app
+            </a>
+            .
+          </p>
+          <p className="leading-7 text-muted-foreground">
+            Your first message is the request to begin this customer-care conversation. A reply to
+            that request may be automated. A message to us does not give permission for unrelated
+            future outreach.
+          </p>
+        </section>
 
         <section className="mt-10 space-y-4" aria-labelledby="verbal-consent">
           <h2 id="verbal-consent" className="text-xl font-semibold">
-            How We Ask
+            Texts Requested During a Call
           </h2>
           <p className="leading-7 text-muted-foreground">
             When a caller requests information by text, the Bot confirms the destination and asks
@@ -50,14 +76,29 @@ export default function SmsConsentPage() {
           </p>
         </section>
 
+        <section className="mt-10 space-y-4" aria-labelledby="missed-call">
+          <h2 id="missed-call" className="text-xl font-semibold">
+            If We Miss Your Call
+          </h2>
+          <p className="leading-7 text-muted-foreground">
+            If you call this number and we cannot answer, BotBound may send one text offering to
+            help, with an opt-out instruction. We do not send a missed-call text to a number that
+            did not call us. Further conversation follows only if you reply or request it.
+          </p>
+        </section>
+
         <section className="mt-10 space-y-4" aria-labelledby="message-example">
           <h2 id="message-example" className="text-xl font-semibold">
-            Example Message
+            Example Messages
           </h2>
           <blockquote className="rounded-lg border border-border bg-muted/30 p-5 text-base leading-7">
             BotBound: Here is the information you requested during your call:
             https://botbound.app/pricing. Reply STOP to unsubscribe or HELP for help. Message and
             data rates may apply.
+          </blockquote>
+          <blockquote className="rounded-lg border border-border bg-muted/30 p-5 text-base leading-7">
+            BotBound: Thanks for texting. What can we help you with? Message frequency varies.
+            Message and data rates may apply. Reply STOP to opt out or HELP for help.
           </blockquote>
         </section>
 
@@ -83,14 +124,14 @@ export default function SmsConsentPage() {
 
         <section className="mt-10 space-y-4" aria-labelledby="activation-records">
           <h2 id="activation-records" className="text-xl font-semibold">
-            Before Activation
+            How We Keep Permission
           </h2>
           <p className="leading-7 text-muted-foreground">
-            The sender must be verified and the Bot must use this permission flow. Each recipient’s
-            affirmative response must be retained with the destination, time, sender, and
-            conversation reference before sending. Opt out records must be checked on subsequent
-            sends. This public script is documentation, not a substitute for those individual
-            records.
+            For call-requested texts, BotBound retains the affirmative answer with the destination,
+            time, sender, and conversation reference. For customer-initiated texts, we retain the
+            inbound message and limit replies to that conversation. We check opt-out records before
+            subsequent sends. This page describes how to request texts; it does not prove that any
+            particular person consented.
           </p>
           <p className="leading-7 text-muted-foreground">
             Businesses using BotBound need their own sender verification, business identity, and
