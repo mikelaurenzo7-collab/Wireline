@@ -38,6 +38,8 @@ const outputRoot = path.resolve(
 );
 const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
 const captureTheme = visualCaptureTheme();
+// The production gate requires the run folder to be the bare timestamp
+// (isSafeProductionVisualArtifactDirectory), so the theme lives in the manifest.
 const outputDir = path.join(outputRoot, timestamp);
 const qaEmail = process.env.WIRELINE_VISUAL_EMAIL?.trim();
 const qaPassword = process.env.WIRELINE_VISUAL_PASSWORD;
