@@ -34,7 +34,12 @@ import { smsOutcomeAfterMessage } from "../lib/sms-thread-outcome";
 import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
 import { reportError } from "../lib/error-reporter";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
-import { matchesCarrierKeyword } from "../lib/carrier-keywords";
+import {
+  matchesCarrierKeyword,
+  SMS_HELP_KEYWORDS,
+  SMS_OPT_IN_KEYWORDS,
+  SMS_OPT_OUT_KEYWORDS,
+} from "../lib/carrier-keywords";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
 import {
   buildFailoverVoicemailEmail,
@@ -58,22 +63,10 @@ import {
 
 const router = Router();
 
-const OPT_OUT_KEYWORDS = new Set([
-  "stop",
-  "stopall",
-  "unsubscribe",
-  "cancel",
-  "end",
-  "quit",
-  "revoke",
-  "optout",
-  "opt-out",
-  "opt out",
-]);
-
-const OPT_IN_KEYWORDS = new Set(["start", "unstop", "yes", "optin", "opt-in", "opt in"]);
-
-const HELP_KEYWORDS = new Set(["help", "info", "support"]);
+// One source of truth: src/lib/carrier-keywords.ts.
+const OPT_OUT_KEYWORDS = SMS_OPT_OUT_KEYWORDS;
+const OPT_IN_KEYWORDS = SMS_OPT_IN_KEYWORDS;
+const HELP_KEYWORDS = SMS_HELP_KEYWORDS;
 
 function twimlReply(body: string): string {
   const escaped = body

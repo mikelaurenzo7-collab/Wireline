@@ -38,6 +38,33 @@ export function matchesCarrierKeyword(
 }
 
 /**
+ * The consent words the application recognises: Twilio's registered keywords
+ * plus the common spellings customers type ("opt out", "opt-in"). Both SMS
+ * webhook routes read these sets; do not keep another copy.
+ */
+export const SMS_OPT_OUT_KEYWORDS: ReadonlySet<string> = new Set([
+  "stop",
+  "stopall",
+  "unsubscribe",
+  "cancel",
+  "end",
+  "quit",
+  "revoke",
+  "optout",
+  "opt-out",
+  "opt out",
+]);
+export const SMS_OPT_IN_KEYWORDS: ReadonlySet<string> = new Set([
+  "start",
+  "unstop",
+  "yes",
+  "optin",
+  "opt-in",
+  "opt in",
+]);
+export const SMS_HELP_KEYWORDS: ReadonlySet<string> = new Set(["help", "info", "support"]);
+
+/**
  * Single-word keywords Twilio answers by itself on long codes, in its own words,
  * before the message reaches our webhook (https://help.twilio.com/articles/223134027).
  * STOP-type words also put the sender on Twilio's block list, so any text we

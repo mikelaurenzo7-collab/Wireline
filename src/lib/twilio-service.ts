@@ -2,7 +2,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 
-import { isDncBlocked } from "./compliance";
+import { isDncBlocked, normalizeDncPhone } from "./compliance";
 
 import * as schema from "../db/schema";
 import { resolveAgentSmsFromNumber } from "./agent-phone-lines";
@@ -293,6 +293,43 @@ function whatsappCustomerRate(): number | null {
   if (process.env.WIRELINE_WHATSAPP_PRIVATE_BETA !== "true") return null;
   const rate = Number(process.env.WIRELINE_WHATSAPP_CUSTOMER_RATE_USD || "");
   return Number.isFinite(rate) && rate > 0 ? money(rate) : null;
+}
+
+/** Twilio refuses to text a number that sent it a STOP-type keyword. */
+export const TWILIO_UNSUBSCRIBED_RECIPIENT = 21610;
+export const SMS_RECIPIENT_OPTED_OUT = "SMS_RECIPIENT_OPTED_OUT";
+
+/**
+ * Record the carrier-level opt-out a refused send reveals. Without it the app
+ * keeps believing it may text a number Twilio has blocked (for example after
+ * a Twilio STOP followed by an "opt in" that Twilio does not recognise), and
+ * every later send fails. The row is written exactly like an SMS STOP, so a
+ * later START clears it the ordinary way. Independent of the request
+ * transaction, like the provider-outcome audit below.
+ */
+export async function recordCarrierOptOutFromRejectedSend(
+  userId: string,
+  phone: string,
+): Promise<boolean> {
+  const normalized = normalizeDncPhone(phone);
+  if (!userId || !normalized) return false;
+  await tenantStore.exit(() =>
+    tenantStore.run(userId, () =>
+      drizzle.transaction(async (tx: typeof drizzle) => {
+        await tx
+          .insert(schema.dncList)
+          .values({
+            userId,
+            phone: normalized,
+            phoneRaw: phone,
+            reason: "opt-out",
+            source: "sms_opt_out",
+          })
+          .onConflictDoNothing({ target: [schema.dncList.userId, schema.dncList.phone] });
+      }),
+    ),
+  );
+  return true;
 }
 
 async function persistAmbiguousTwilioProviderOutcome(input: {
@@ -872,6 +909,34 @@ export async function sendTenantMessage(
             channel,
             providerOutcomeAmbiguous: true,
             doNotResend: true,
+          };
+        }
+
+        const providerCode = Number((error as { code?: number } | null)?.code || 0);
+        if (channel === "sms" && providerCode === TWILIO_UNSUBSCRIBED_RECIPIENT) {
+          let recorded = false;
+          try {
+            recorded = await recordCarrierOptOutFromRejectedSend(userId, phone);
+          } catch (dncError) {
+            log.error("Carrier opt-out from a refused send could not be recorded", {
+              userId,
+              destinationSuffix: phone.slice(-4),
+              error: getErrorMessage(dncError),
+            });
+          }
+          log.warn("Twilio refused a text to an opted-out number", {
+            userId,
+            destinationSuffix: phone.slice(-4),
+            carrierOptOutRecorded: recorded,
+          });
+          return {
+            ok: false,
+            configured: true,
+            enabled: true,
+            reason:
+              "This customer has opted out of texts from this number. They can reply START to receive texts again.",
+            code: SMS_RECIPIENT_OPTED_OUT,
+            channel,
           };
         }
 

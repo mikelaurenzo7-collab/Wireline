@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { twilioAnswersKeyword } from "../src/lib/carrier-keywords";
+import { SMS_OPT_OUT_KEYWORDS, twilioAnswersKeyword } from "../src/lib/carrier-keywords";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -62,12 +62,16 @@ describe("opt-out vocabulary matches the registered campaign", () => {
     "revoke",
   ];
 
-  it("records every registered opt-out word as Do Not Contact", () => {
+  it("records every registered opt-out word as Do Not Contact, from one shared list", () => {
+    for (const word of registered) expect(SMS_OPT_OUT_KEYWORDS.has(word), word).toBe(true);
+    expect(read("src/routes/twilio-webhook.ts")).toContain(
+      "const LEGACY_OPT_OUT_KEYWORDS = SMS_OPT_OUT_KEYWORDS;",
+    );
+    expect(read("src/routes/twilio-webhook-base.ts")).toContain(
+      "const OPT_OUT_KEYWORDS = SMS_OPT_OUT_KEYWORDS;",
+    );
     for (const file of ["src/routes/twilio-webhook.ts", "src/routes/twilio-webhook-base.ts"]) {
-      const source = read(file);
-      const start = source.indexOf("OPT_OUT_KEYWORDS = new Set([");
-      const set = source.slice(start, source.indexOf("]);", start));
-      for (const word of registered) expect(set, `${file} ${word}`).toContain(`"${word}"`);
+      expect(read(file), file).not.toMatch(/OPT_(?:OUT|IN)_KEYWORDS = new Set\(/);
     }
   });
 
