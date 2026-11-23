@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, ChevronDown } from "lucide-react";
 import { Checkbox } from "../ui/shadcn/Checkbox";
 import { signupHrefForPlan } from "../../lib/signup-intent";
 import {
@@ -217,7 +217,10 @@ export default function UsagePricingPanel({
                 <span className="flex items-center justify-between gap-2 text-lg font-semibold">
                   {option.name}
                   {tier === id ? (
-                    <Check className="size-5 text-primary" aria-hidden="true" />
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                      <Check className="size-4" aria-hidden="true" />
+                      Estimating
+                    </span>
                   ) : null}
                 </span>
                 <span className="mt-3 block">
@@ -235,12 +238,16 @@ export default function UsagePricingPanel({
                   {option.includedEmailAddresses === 1 ? "email address" : "email addresses"}
                 </span>
               </button>
-              <details className="mx-6 mb-3">
+              <details className="group mx-6 mb-3">
                 <summary
                   aria-label={`${option.name} Plan Details`}
-                  className="cursor-pointer rounded-md py-2 text-sm font-semibold wl-focus-ring-halo"
+                  className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-md py-2 text-sm font-semibold wl-focus-ring-halo [&::-webkit-details-marker]:hidden"
                 >
                   Plan Details
+                  <ChevronDown
+                    className="size-4 text-muted-foreground transition-transform group-open:rotate-180 motion-reduce:transition-none"
+                    aria-hidden="true"
+                  />
                 </summary>
                 <p className="pb-2 text-xs leading-5 text-muted-foreground">
                   Calls, SMS, email, and Computer share this allowance. Resets monthly with no

@@ -139,7 +139,11 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
     ? `/phone?tab=outbound&agent=${encodeURIComponent(agentId)}`
     : "/phone?tab=outbound";
   const emptyState = !hasAgents
-    ? { title: "Create a Bot", action: { label: "New Bot", to: "/studio?create=1" } }
+    ? {
+        title: "No Calls Yet",
+        description: "Calls appear here once your Bot has a phone line.",
+        action: { label: "Create Bot", to: "/studio?create=1" },
+      }
     : !livePhone
       ? {
           // A direct call cannot start until at least one Bot has a connected
@@ -148,9 +152,7 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
           action: { label: "Add a Line", to: setupHref },
           secondary: {
             label: "Rehearse",
-            to: agentId
-              ? `/studio?agent=${encodeURIComponent(agentId)}&workroom=test`
-              : "/studio",
+            to: agentId ? `/studio?agent=${encodeURIComponent(agentId)}&workroom=test` : "/studio",
           },
         }
       : {
@@ -177,6 +179,7 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
         className="w-full"
         icon={History}
         title={emptyState.title}
+        description={"description" in emptyState ? emptyState.description : undefined}
         actions={[
           { ...emptyState.action, primary: true },
           ...("secondary" in emptyState && emptyState.secondary ? [emptyState.secondary] : []),

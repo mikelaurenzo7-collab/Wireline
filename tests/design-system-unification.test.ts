@@ -270,7 +270,7 @@ describe("Milestone 3: Design System Unification & Workspace Polish Contracts", 
       const smsThreads = read("src/components/SmsThreads.tsx");
 
       expect(emailPage).toContain('{ id: "email", label: "Email" }');
-      expect(emailPage).toContain('{ id: "sms", label: "SMS" }');
+      expect(emailPage).toContain('{ id: "sms", label: "Texts" }');
       expect(emailPage).toContain('{ id: "approvals", label: "Approvals" }');
       expect(emailPage).toContain("<WorkspaceControlBand");
       expect(emailPage).toContain("<EmailInbox");
