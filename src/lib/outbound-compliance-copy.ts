@@ -29,6 +29,9 @@ export const CONTACT_PERMISSION_LABEL = "I have this person's permission to cont
 
 export const NONSALES_CONFIRMATION_LABEL = "This isn't selling anything.";
 
+export const firstNonSalesContactLabel = (channel: "call" | "sms") =>
+  `I have this person's permission for this non-sales ${channel === "call" ? "call" : "text"}.`;
+
 export const CONTACT_PERMISSION_VERSION = "contact-permission-2026-10-26";
 export const NONSALES_CONFIRMATION_VERSION = "nonsales-confirmation-2026-10-26";
 

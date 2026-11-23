@@ -2,6 +2,7 @@ import {
   CONTACT_PERMISSION_LABEL,
   NONSALES_CONFIRMATION_LABEL,
   SALES_DNC_ATTESTATION_LABEL,
+  firstNonSalesContactLabel,
 } from "../../lib/outbound-compliance-copy";
 import { SALES_CONTENT_WARNING } from "../../lib/outbound-call-purpose";
 import { Checkbox } from "../ui/shadcn/Checkbox";
@@ -120,7 +121,21 @@ export default function OutboundPurposePicker({
           />
         </label>
       ) : null}
-      {showPermission ? (
+      {showPermission && showNonsales ? (
+        <label className="flex items-start gap-2 text-sm leading-5 text-foreground">
+          <Checkbox
+            className="mt-0.5"
+            checked={permissionChecked && nonsalesChecked}
+            disabled={disabled}
+            onChange={(event) => {
+              onPermission(event.target.checked);
+              onNonsales(event.target.checked);
+            }}
+          />
+          <span>{firstNonSalesContactLabel(channel)}</span>
+        </label>
+      ) : null}
+      {showPermission && !showNonsales ? (
         <label className="flex items-start gap-2 text-sm leading-5 text-foreground">
           <Checkbox
             className="mt-0.5"
@@ -131,7 +146,7 @@ export default function OutboundPurposePicker({
           <span>{permissionLabel}</span>
         </label>
       ) : null}
-      {showNonsales ? (
+      {showNonsales && !showPermission ? (
         <label className="flex items-start gap-2 text-sm leading-5 text-foreground">
           <Checkbox
             className="mt-0.5"
@@ -141,6 +156,11 @@ export default function OutboundPurposePicker({
           />
           <span>{NONSALES_CONFIRMATION_LABEL}</span>
         </label>
+      ) : null}
+      {showPermission || showNonsales ? (
+        <p className="text-xs leading-5 text-muted-foreground">
+          We remember this for this number and check opt-outs before each contact.
+        </p>
       ) : null}
       {contentWarning ? (
         <p className="text-sm text-foreground" role="status">

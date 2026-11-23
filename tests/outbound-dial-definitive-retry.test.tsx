@@ -3,8 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import OutboundDialDialog from "../src/components/OutboundDialDialog";
 import OutboundHub from "../src/components/outbound/OutboundHub";
 import OutboundPurposePicker from "../src/components/outbound/OutboundPurposePicker";
-import { NONSALES_CONFIRMATION_LABEL } from "../src/lib/outbound-compliance-copy";
-import { OUTBOUND_CONSENT_LABEL } from "../src/lib/outbound-consent-copy";
+import { firstNonSalesContactLabel } from "../src/lib/outbound-compliance-copy";
 import { authFetch } from "../src/lib/api";
 import { readPendingOutboundDial } from "../src/lib/outbound-dial-recovery";
 
@@ -440,7 +439,7 @@ describe("direct outbound definitive-refusal retry", () => {
     expect(posts()).toHaveLength(1);
   });
 
-  it("places a prepared call after the permission boxes are clicked", async () => {
+  it("places a prepared call after the combined first-contact confirmation", async () => {
     preparedCall = {
       request_key: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
       agent_id: "bot-1",
@@ -457,8 +456,7 @@ describe("direct outbound definitive-refusal retry", () => {
     expect(textOf(rendered)).toContain("Appointment/service");
     expect(textOf(rendered)).not.toContain("appointment_service");
     expect(button("Place call").props.disabled).toBe(true);
-    clickCheckbox(OUTBOUND_CONSENT_LABEL);
-    clickCheckbox(NONSALES_CONFIRMATION_LABEL);
+    clickCheckbox(firstNonSalesContactLabel("call"));
     await settle();
     expect(button("Place call").props.disabled).toBe(false);
     await place();
