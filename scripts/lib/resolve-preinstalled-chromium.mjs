@@ -1,8 +1,30 @@
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 
 const require = createRequire(import.meta.url);
+
+// Chromium builds unpack into `chrome-linux64/` since build 1200 and into
+// `chrome-linux/` before it; a sandbox can hold either.
+const LINUX_BUILD_DIRS = ["chrome-linux64", "chrome-linux"];
+
+function chromeExecutableIn(buildDir) {
+  for (const dir of LINUX_BUILD_DIRS) {
+    const executable = path.join(buildDir, dir, "chrome");
+    if (existsSync(executable)) return executable;
+  }
+  return undefined;
+}
+
+/**
+ * playwright-core no longer exports `./browsers.json`, so `require()` of it
+ * throws ERR_PACKAGE_PATH_NOT_EXPORTED. Read the manifest beside the exported
+ * package.json instead.
+ */
+function readBrowsersManifest() {
+  const packageJson = require.resolve("playwright-core/package.json");
+  return JSON.parse(readFileSync(path.join(path.dirname(packageJson), "browsers.json"), "utf8"));
+}
 
 /**
  * Resolve a Chromium executable for sandboxes whose preinstalled browser cache
@@ -25,7 +47,7 @@ export function resolvePreinstalledChromium(env = process.env) {
   if (!browsersPath || !existsSync(browsersPath)) return undefined;
 
   try {
-    const manifest = require("playwright-core/browsers.json");
+    const manifest = readBrowsersManifest();
     const revisionOf = (name) =>
       manifest.browsers?.find((browser) => browser.name === name)?.revision;
 
@@ -39,13 +61,8 @@ export function resolvePreinstalledChromium(env = process.env) {
 
     const chromiumRevision = revisionOf("chromium");
     if (chromiumRevision) {
-      const pinned = path.join(
-        browsersPath,
-        `chromium-${chromiumRevision}`,
-        "chrome-linux",
-        "chrome",
-      );
-      if (existsSync(pinned)) return pinned;
+      const pinned = chromeExecutableIn(path.join(browsersPath, `chromium-${chromiumRevision}`));
+      if (pinned) return pinned;
     }
   } catch {
     // Manifest unreadable — fall through to the newest preinstalled build.
@@ -56,8 +73,8 @@ export function resolvePreinstalledChromium(env = process.env) {
       .filter((name) => /^chromium-\d+$/.test(name))
       .sort((a, b) => Number(b.slice("chromium-".length)) - Number(a.slice("chromium-".length)));
     for (const build of builds) {
-      const executable = path.join(browsersPath, build, "chrome-linux", "chrome");
-      if (existsSync(executable)) return executable;
+      const executable = chromeExecutableIn(path.join(browsersPath, build));
+      if (executable) return executable;
     }
   } catch {
     // Browsers directory unreadable — let Playwright resolve normally.
@@ -90,8 +107,6 @@ export function chromiumLaunchOptions(env = process.env) {
   const proxyServer = env.WIRELINE_CAPTURE_PROXY ?? env.HTTPS_PROXY ?? env.https_proxy;
   return {
     ...(executablePath ? { executablePath } : {}),
-    ...(proxyServer
-      ? { proxy: { server: proxyServer, bypass: "localhost,127.0.0.1,::1" } }
-      : {}),
+    ...(proxyServer ? { proxy: { server: proxyServer, bypass: "localhost,127.0.0.1,::1" } } : {}),
   };
 }
