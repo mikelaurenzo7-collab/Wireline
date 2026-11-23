@@ -36,3 +36,41 @@ export function matchesCarrierKeyword(
   const firstWord = normalized.split(/\s+/)[0] ?? "";
   return firstWord.length > 0 && keywords.has(firstWord);
 }
+
+/**
+ * Single-word keywords Twilio answers by itself on long codes, in its own words,
+ * before the message reaches our webhook (https://help.twilio.com/articles/223134027).
+ * STOP-type words also put the sender on Twilio's block list, so any text we
+ * then send back fails with error 21610 (and logs a Twilio error for every
+ * unsubscribe). START-type words get Twilio's own re-subscribe reply, so ours
+ * would arrive as a second one. HELP and INFO are not forwarded at all unless
+ * Advanced Opt-Out is on for the Messaging Service.
+ */
+const TWILIO_DEFAULT_KEYWORDS: ReadonlySet<string> = new Set([
+  "stop",
+  "stopall",
+  "unsubscribe",
+  "cancel",
+  "end",
+  "revoke",
+  "optout",
+  "quit",
+  "start",
+  "yes",
+  "unstop",
+  "help",
+  "info",
+]);
+
+/**
+ * True when the whole message is one of those keywords, so Twilio has already
+ * replied and the application must not send a second confirmation. Twilio only
+ * matches the entire body, so "STOP please" and "opt out" are ours to answer.
+ */
+export function twilioAnswersKeyword(body: string): boolean {
+  return TWILIO_DEFAULT_KEYWORDS.has(
+    String(body ?? "")
+      .trim()
+      .toLowerCase(),
+  );
+}

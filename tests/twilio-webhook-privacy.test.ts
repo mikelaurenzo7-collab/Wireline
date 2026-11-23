@@ -150,9 +150,12 @@ describe("Twilio webhook privacy hardening", () => {
   it("never confirms a legacy STOP unless canonical persistence commits", () => {
     const route = read("src/routes/twilio-webhook.ts");
 
-    expect(route).toContain(
-      "if (legacy) return res.status(200).send(productionReply(optOutRetryTwiml()))",
-    );
+    // A failed write only ever gets the retry prompt, never a confirmation. When
+    // Twilio already answered the keyword, that prompt would be blocked (21610),
+    // so the failure goes back as a status that makes Twilio redeliver instead.
+    expect(route).toContain("if (legacy && !twilioAnswersKeyword(body)) {");
+    expect(route).toContain("return res.status(200).send(productionReply(optOutRetryTwiml()));");
+    expect(route).toContain("return res.status(failsafeStored ? 200 : 503).send(emptyTwiml());");
     expect(route).not.toContain("failsafeStored ? optOutConfirmationTwiml()");
     expect(route).toContain("return res.status(200).send(productionReply(confirmation))");
   });

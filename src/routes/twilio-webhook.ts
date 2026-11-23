@@ -5,9 +5,9 @@ import * as schema from "../db/schema";
 import { loadSmsHelpIdentity, smsHelpReplyText } from "../lib/sms-help-reply";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
-import { matchesCarrierKeyword } from "../lib/carrier-keywords";
+import { matchesCarrierKeyword, twilioAnswersKeyword } from "../lib/carrier-keywords";
 import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
-import { clearDncFailsafe, recordDncFailsafe } from "../lib/dnc-failsafe";
+import { clearDncFailsafe, isDncFailsafeBlocked, recordDncFailsafe } from "../lib/dnc-failsafe";
 import { reportError } from "../lib/error-reporter";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import { shouldApplyTwilioMessageStatusTransition } from "../lib/twilio-message-reliability";
@@ -27,6 +27,7 @@ const LEGACY_OPT_OUT_KEYWORDS = new Set([
   "cancel",
   "end",
   "quit",
+  "revoke",
   "optout",
   "opt-out",
   "opt out",
@@ -160,7 +161,7 @@ async function persistConsentControl(input: {
   body: string;
   control: ConsentControl;
   legacy: boolean;
-}): Promise<"applied" | "duplicate"> {
+}): Promise<"applied" | "duplicate" | "passthrough"> {
   const event =
     input.control === "stop"
       ? "sms_opt_out"
@@ -199,6 +200,41 @@ async function persistConsentControl(input: {
           messageSid: input.messageSid,
         });
         return "duplicate";
+      }
+    }
+
+    if (input.control === "start" && input.legacy) {
+      // "Yes", "Start" and "Unstop" are also plain words. They re-subscribe a
+      // customer only when this number has an SMS opt-out (or an emergency STOP
+      // marker) to reverse. Otherwise the customer is just answering the Bot
+      // ("Yes" to "Does Tuesday work?"): writing a consent grant would invent
+      // evidence the customer never gave, and the reply would never reach the
+      // inbox as the conversation it is. Store it as an ordinary inbound text.
+      const [smsOptOut] = await tx
+        .select({ id: schema.dncList.id })
+        .from(schema.dncList)
+        .where(
+          and(
+            eq(schema.dncList.userId, input.userId),
+            inArray(schema.dncList.phone, dncPhoneCandidates(input.customerNumber)),
+            eq(schema.dncList.reason, "opt-out"),
+            or(
+              eq(schema.dncList.source, "twilio_advanced_opt_out"),
+              eq(schema.dncList.source, "sms_opt_out"),
+            ),
+          ),
+        )
+        .limit(1);
+      if (!smsOptOut && !(await isDncFailsafeBlocked(input.userId, input.customerNumber))) {
+        await persistInboundSmsEvidence(tx, {
+          userId: input.userId,
+          agentId: input.agentId,
+          destinationNumber: input.destinationNumber,
+          customerNumber: input.customerNumber,
+          body: input.body,
+          messageSid: input.messageSid,
+        });
+        return "passthrough";
       }
     }
 
@@ -274,6 +310,12 @@ async function persistConsentControl(input: {
  * Twilio Advanced Opt-Out has already sent its own carrier confirmation when
  * OptOutType is present. Legacy STOP/START/HELP replies are intercepted here too so
  * every DNC mutation and consent event commits atomically through one path.
+ *
+ * Without Advanced Opt-Out, Twilio still answers its single-word defaults
+ * itself (STOP/START/YES/UNSTOP and friends; HELP and INFO are not forwarded at
+ * all), so the application only confirms the variants Twilio does not recognise
+ * ("opt out", "STOP calling me"). A START-type word counts as a re-subscribe
+ * only when the number has an opt-out to reverse.
  */
 router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next: NextFunction) => {
   const optOutType = String(req.body?.OptOutType || "").toUpperCase();
@@ -319,10 +361,12 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
         legacy,
       });
 
-      if (result === "duplicate") {
+      if (result === "duplicate" || result === "passthrough") {
         // Provider redelivery must not generate another paid confirmation or
         // let an old START erase a newer emergency STOP. If the first START's
         // failsafe clear failed, the retry prompt asks for a fresh START/SID.
+        // A passthrough is an ordinary one-word reply, already stored as inbox
+        // evidence, with nothing to confirm.
         res.setHeader("Content-Type", "text/xml");
         return res.status(200).send(emptyTwiml());
       }
@@ -361,7 +405,12 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
 
       res.setHeader("Content-Type", "text/xml");
       if (control === "stop") {
-        if (legacy) return res.status(200).send(productionReply(optOutRetryTwiml()));
+        // Twilio has already blocked this number, so a text from us would fail
+        // with 21610. A failed record must still reach Twilio as a 503 so it
+        // redelivers the webhook, unless the emergency marker holds the STOP.
+        if (legacy && !twilioAnswersKeyword(body)) {
+          return res.status(200).send(productionReply(optOutRetryTwiml()));
+        }
         return res.status(failsafeStored ? 200 : 503).send(emptyTwiml());
       }
       if (control === "start") {
@@ -371,7 +420,10 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
     }
 
     res.setHeader("Content-Type", "text/xml");
-    if (!legacy) return res.status(200).send(emptyTwiml());
+    // Advanced Opt-Out and Twilio's default keyword handling have already sent
+    // their own confirmation. A second one would either bounce (STOP, blocked
+    // number, error 21610 on every unsubscribe) or arrive as a duplicate (START).
+    if (!legacy || twilioAnswersKeyword(body)) return res.status(200).send(emptyTwiml());
     const confirmation =
       control === "stop"
         ? optOutConfirmationTwiml()

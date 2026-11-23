@@ -74,7 +74,10 @@ describe("code review hardening contracts", () => {
     expect(twilio).toContain('eq(schema.dncList.source, "twilio_advanced_opt_out")');
     expect(twilio).toContain('eq(schema.dncList.source, "sms_opt_out")');
     expect(twilio).toContain('eq(schema.dncList.reason, "opt-out")');
-    expect(twilio).toContain("if (!legacy) return res.status(200).send(emptyTwiml());");
+    // Twilio already answers its default keywords; the app confirms only the rest, once.
+    expect(twilio).toContain(
+      "if (!legacy || twilioAnswersKeyword(body)) return res.status(200).send(emptyTwiml());",
+    );
     expect(twilio).toContain("const confirmation =");
     expect(twilio).toContain('control === "stop"');
     expect(twilio).toContain(
