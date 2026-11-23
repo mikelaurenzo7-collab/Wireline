@@ -30,9 +30,13 @@ describe("SMS HELP reply", () => {
     expect(smsHelpReplyText()).toBe(
       "BotBound SMS help: reply STOP to opt out or START to opt back in. Contact support@botbound.app for support. Message and data rates may apply.",
     );
-    expect(smsHelpReplyText({ brandName: "Ridge", supportEmail: "not-an-email" })).toContain(
-      "Contact support@botbound.app for support.",
-    );
+  });
+
+  it("never pairs a customer's brand with BotBound's support inbox", () => {
+    const reply = smsHelpReplyText({ brandName: "Ridge", supportEmail: "not-an-email" });
+    expect(reply).toContain("Ridge SMS help:");
+    expect(reply).toContain("Reply to this message for support.");
+    expect(reply).not.toContain("botbound.app");
   });
 
   it("falls back to platform wording when identity cannot be read", async () => {

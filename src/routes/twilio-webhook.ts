@@ -429,10 +429,16 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
         return res.status(failsafeStored ? 200 : 503).send(emptyTwiml());
       }
       if (control === "start") {
-        // Twilio has already told the customer they are resubscribed; a
-        // "please reply START again" text would contradict it. Ask Twilio to
-        // redeliver the webhook so the record catches up instead.
-        if (legacy && twilioAnswered) return res.status(503).send(emptyTwiml());
+        // A failed transaction saved nothing, so Twilio's redelivery retries it
+        // cleanly and no contradicting "reply START again" text is needed after
+        // Twilio's own confirmation. A failed marker clear happens after the
+        // opt-in committed: a redelivery would be a duplicate that must not
+        // clear markers (an old START cannot erase a newer emergency STOP), so
+        // only a fresh START can finish it, and the customer is asked for one.
+        const optInCommitted = getErrorMessage(error) === "DNC_FAILSAFE_CLEAR_FAILED";
+        if (legacy && twilioAnswered && !optInCommitted) {
+          return res.status(503).send(emptyTwiml());
+        }
         return res.status(200).send(legacy ? productionReply(optInRetryTwiml()) : emptyTwiml());
       }
       return res.status(503).send(emptyTwiml());
@@ -449,6 +455,9 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
         : control === "start"
           ? optInConfirmationTwiml()
           : // The line owner's brand, not BotBound's, answers HELP on a customer line.
+            // Twilio never forwards SMS HELP/INFO without Advanced Opt-Out (then
+            // Twilio sends the service's configured reply), so this serves
+            // "support" and WhatsApp, where Twilio answers nothing.
             helpConfirmationTwiml(smsHelpReplyText(await loadSmsHelpIdentity(userId)));
     return res.status(200).send(productionReply(confirmation));
   });

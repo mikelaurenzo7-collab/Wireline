@@ -186,6 +186,22 @@ describe("SMS sender registration", () => {
     ).resolves.toMatchObject({ status: "unknown" });
   });
 
+  it("treats a line the snapshot never saw as unknown, never as unregistered", async () => {
+    const healthy = fakeClient();
+    await expect(
+      resolveSmsSenderRegistration("+13125550199", { client: healthy.client, nowMs: 1_000 }),
+    ).resolves.toMatchObject({ status: "unknown", kind: "local_10dlc" });
+  });
+
+  it("re-checks a refusal against a fresh read once the snapshot is a minute old", async () => {
+    const healthy = fakeClient();
+    await resolveSmsSenderRegistration(LOCAL_UNPOOLED, { client: healthy.client, nowMs: 0 });
+    await resolveSmsSenderRegistration(LOCAL_UNPOOLED, { client: healthy.client, nowMs: 30_000 });
+    expect(healthy.calls.services).toBe(1);
+    await resolveSmsSenderRegistration(LOCAL_UNPOOLED, { client: healthy.client, nowMs: 61_000 });
+    expect(healthy.calls.services).toBe(2);
+  });
+
   it("keeps a recent good snapshot through a transient read failure", async () => {
     const healthy = fakeClient();
     await resolveSmsSenderRegistration(LOCAL_REGISTERED, { client: healthy.client, nowMs: 0 });

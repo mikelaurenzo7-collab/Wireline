@@ -18,15 +18,21 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_BRAND_LENGTH = 40;
 
 export function smsHelpReplyText(identity: Partial<SmsHelpIdentity> = {}): string {
-  const brand =
-    String(identity.brandName || "")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, MAX_BRAND_LENGTH)
-      .trim() || PLATFORM_HELP_IDENTITY.brandName;
+  const ownBrand = String(identity.brandName || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, MAX_BRAND_LENGTH)
+    .trim();
   const email = String(identity.supportEmail || "").trim();
-  const contact = EMAIL.test(email) ? email : PLATFORM_HELP_IDENTITY.supportEmail;
-  return `${brand} SMS help: reply STOP to opt out or START to opt back in. Contact ${contact} for support. Message and data rates may apply.`;
+  const brand = ownBrand || PLATFORM_HELP_IDENTITY.brandName;
+  // Never pair a customer's brand with BotBound's inbox: without the owner's
+  // own support email, point to the line itself (replies reach their Inbox).
+  const contact = EMAIL.test(email)
+    ? `Contact ${email} for support.`
+    : ownBrand
+      ? "Reply to this message for support."
+      : `Contact ${PLATFORM_HELP_IDENTITY.supportEmail} for support.`;
+  return `${brand} SMS help: reply STOP to opt out or START to opt back in. ${contact} Message and data rates may apply.`;
 }
 
 /** Read the line owner's brand and support email. Any read failure keeps the platform wording. */

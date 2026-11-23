@@ -281,6 +281,24 @@ describe("task approval at the durable action boundary", () => {
     expect(execute).toHaveBeenCalledTimes(2);
   });
 
+  it("replays a retryable failure to a re-drive that carries no owner approval", async () => {
+    const execute = vi.fn(async () => ({
+      success: false,
+      errorCode: "QUIET_HOURS",
+      error: "Outside the recipient's texting hours.",
+      retryable: true,
+    }));
+    const { approvalTask: _approval, ...automatic } = input;
+    await runIdempotentActionExecution({ ...automatic, execute });
+    // A queue re-drive or re-extraction hours later must not send it.
+    await expect(runIdempotentActionExecution({ ...automatic, execute })).resolves.toMatchObject({
+      errorCode: "QUIET_HOURS",
+      retryable: true,
+    });
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(h.records[0].metadata.status).toBe("retryable");
+  });
+
   it("keeps an unmarked failure final", async () => {
     const execute = vi.fn(async () => ({ success: false, error: "Carrier outcome unknown" }));
     await runIdempotentActionExecution({ ...input, execute });

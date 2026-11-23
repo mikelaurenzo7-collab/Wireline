@@ -126,7 +126,9 @@ function cachedResult(metadata: Record<string, unknown>): ActionResult | null {
 
 function resultForExisting(metadata: Record<string, unknown>): ClaimResult {
   const status = String(metadata.status || "");
-  if (status === "completed" || status === "failed") {
+  // A retryable failure is a recorded outcome too: a re-drive without a fresh
+  // owner approval gets that failure back, not "still processing".
+  if (status === "completed" || status === "failed" || status === "retryable") {
     const output = cachedResult(metadata);
     if (output) return { kind: "cached", result: output };
   }
@@ -199,9 +201,12 @@ async function claimExecution(input: {
 
     if (existing) {
       const metadata = metadataRecord(existing.metadata);
-      // A retryable failure never reached a carrier or provider. Reclaim it
-      // under this advisory lock so a corrected retry runs exactly once.
-      if (metadata.status === "retryable") {
+      // A retryable failure never reached a carrier or provider. Only an
+      // owner's fresh approval may reclaim it (under this advisory lock, so a
+      // corrected retry runs exactly once). A queue re-drive or re-extraction
+      // gets the cached failure back: an automatic text refused at 9:58pm must
+      // not go out hours later without a new decision.
+      if (metadata.status === "retryable" && input.approvalTask) {
         const taskIds = Array.isArray(metadata.approvalTaskIds) ? metadata.approvalTaskIds : [];
         await tx
           .update(schema.auditLog)
@@ -212,9 +217,7 @@ async function claimExecution(input: {
               output: null,
               completedAt: null,
               startedAt: new Date().toISOString(),
-              ...(input.approvalTask
-                ? { approvalTaskIds: [...new Set([...taskIds, input.approvalTask.id])] }
-                : {}),
+              approvalTaskIds: [...new Set([...taskIds, input.approvalTask.id])],
             })}::jsonb`,
           })
           .where(eq(schema.auditLog.id, existing.id));

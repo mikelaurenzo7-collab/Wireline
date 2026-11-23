@@ -76,6 +76,8 @@ Consequences:
 3. System paths such as sign-in, provider callbacks, and verified webhooks must remain explicitly reviewed because they can run without tenant context.
 4. A new table is not launch-ready until grants, RLS, account deletion, audit coverage, and authorization behavior are all addressed.
 
+Reviewed operator exception: `npm run carrier:register -- --workspace <user id>` (`scripts/register-customer-texting.mts`) runs on the founder's machine with the operator `DATABASE_URL`, outside `tenantStore`. It makes two read-only queries for the one named workspace (its `wireline_user_preferences` row and its `wireline_phone_numbers` rows) and writes nothing to the database. Any database write added to it must go through `tenantStore.run(userId, ...)`.
+
 ## Schema-change workflow
 
 1. **Inspect current state**
