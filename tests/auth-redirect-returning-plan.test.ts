@@ -69,11 +69,11 @@ describe("post-auth destination", () => {
     expect(resolvePostAuthDestination("business", "?redirect=%2F%2Fevil.example")).toBe("/studio");
   });
 
-  it("shows plans first even when an incidental settings return target rides along", () => {
+  it("opens first-Bot setup even when an incidental settings return target rides along", () => {
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
     expect(resolvePostAuthDestination("business", "?redirect=%2Fsettings")).toBe(
-      "/settings/billing?plan=usage&interval=month&onboarding=1",
+      "/studio?create=1",
     );
   });
 
@@ -85,12 +85,12 @@ describe("post-auth destination", () => {
     );
   });
 
-  it("sends an ordinary fresh signup to plan review once", () => {
+  it("sends an ordinary fresh signup to free first-Bot setup once", () => {
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
     const destination = resolvePostAuthDestination("business", "");
 
-    expect(destination).toBe("/settings/billing?plan=usage&interval=month&onboarding=1");
+    expect(destination).toBe("/studio?create=1");
     expect(destination).not.toContain("posture=");
     expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
   });
@@ -212,7 +212,7 @@ describe("post-auth destination", () => {
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
     expect(resolvePostAuthDestination("personal", "?template=unknown-role")).toBe(
-      "/settings/billing?plan=usage&interval=month&onboarding=1",
+      "/studio?create=1",
     );
   });
 
@@ -248,13 +248,13 @@ describe("post-auth destination", () => {
     },
   );
 
-  it("shows plan review after OAuth when an older paid CTA has no current tier", () => {
+  it("opens free setup after OAuth when an older paid CTA names no current tier", () => {
+    // A retired plan slug is not a plan the visitor chose; plans stay one tap
+    // away wherever live work needs one.
     persistOAuthReturnFromSearch("?plan=team&interval=year");
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
-    expect(resolvePostAuthDestination("business", "")).toBe(
-      "/settings/billing?plan=usage&interval=month&onboarding=1",
-    );
+    expect(resolvePostAuthDestination("business", "")).toBe("/studio?create=1");
     expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBeNull();
     expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
   });

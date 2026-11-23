@@ -158,13 +158,13 @@ export function resolvePostAuthDestination(
       storedIntent?.preferredTemplateId ||
       getSignupWedgeRecommendation(storedIntent?.signupWedge)?.templateId;
     const plan = intent?.preferredPlanId;
-    if (plan === "personal" || (!plan && template)) return firstBotSetupHref(template);
+    // Setup and private rehearsal are free, so a new owner starts by building
+    // their Bot. Only a visitor who already picked a paid plan goes to review
+    // it first; everyone else meets plans when live work needs one.
+    if (plan === "personal" || !plan) return firstBotSetupHref(template);
 
-    const billingHref = plan
-      ? activationBillingHref(intent)
-      : "/settings/billing?plan=usage&interval=month";
     const templateParam = template ? `&template=${encodeURIComponent(template)}` : "";
-    return `${billingHref}&onboarding=1${templateParam}`;
+    return `${activationBillingHref(intent)}&onboarding=1${templateParam}`;
   }
 
   const stored = readStoredValue(AUTH_REDIRECT_KEY);

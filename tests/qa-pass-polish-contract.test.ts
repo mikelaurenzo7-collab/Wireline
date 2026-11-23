@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import {
+  estimateFromSliders,
+  EXAMPLE_MONTH,
+} from "../src/components/usage-billing/UsagePricingPanel";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -39,5 +43,39 @@ describe("QA pass polish", () => {
   it("keeps the home hero badge on one line at phone widths", () => {
     const home = read("src/components/marketing/WireAgentLanding.tsx");
     expect(home).toContain('<span className="sm:hidden">Voice, Inbox &amp; Computer</span>');
+  });
+
+  it("opens the estimator on an example month that fits inside Starter", () => {
+    const estimate = estimateFromSliders({
+      tier: "standard",
+      ...EXAMPLE_MONTH,
+      number: false,
+      emailAddress: false,
+    });
+    expect(estimate.workUsd).toBeGreaterThan(0);
+    expect(estimate.workUsd).toBeLessThanOrEqual(14);
+    expect(estimate.includedRemainingUsd).toBeGreaterThanOrEqual(0);
+    expect(read("src/components/usage-billing/UsagePricingPanel.tsx")).toContain(
+      "starts from an example month; set it to yours.",
+    );
+  });
+
+  it("starts a plain signup in free Bot setup and keeps chosen plans on review", () => {
+    const redirect = read("src/lib/auth-redirect.ts");
+    expect(redirect).toContain(
+      'if (plan === "personal" || !plan) return firstBotSetupHref(template);',
+    );
+    expect(redirect).toContain(
+      "return `${activationBillingHref(intent)}&onboarding=1${templateParam}`;",
+    );
+  });
+
+  it("gives every industry page its pain points, questions and a pricing path", () => {
+    const page = read("src/pages/VerticalLanding.tsx");
+    expect(page).toContain("cfg.pains.map");
+    expect(page).toContain("cfg.faqs.map");
+    expect(page).toContain("{cfg.primaryCta.label}");
+    expect(page).toContain('to="/pricing"');
+    expect(page).toContain("{cfg.trustLine}");
   });
 });
